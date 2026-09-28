@@ -15,3 +15,6 @@ coverage/
 /.agent-annotations/
 /.nocobase/
 *.log
+
+# macOS folder metadata.
+.DS_Store
