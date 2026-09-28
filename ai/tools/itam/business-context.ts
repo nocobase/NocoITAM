@@ -10,10 +10,9 @@ import {
   runTool,
   toolServices,
   workbenchServiceToken,
-  type ItamAgentContext,
 } from './shared.js';
 
-const tool: ToolsOptions<ItamAgentContext> = defineTools<ItamAgentContext>({
+const tool: ToolsOptions = defineTools({
   scope: 'GENERAL',
   defaultPermission: 'ALLOW',
   silence: true,

@@ -20,12 +20,11 @@ export function useAITranslate(): (
   options?: Readonly<Record<string, unknown>>,
 ) => string {
   const { i18n } = useTranslation();
-  // Application change (ITAM): the application's i18n runtime initialises
-  // i18next before it adds the locale's resources, so `resolvedLanguage`
-  // stays on the English fallback and the chat rendered in English inside a
-  // Chinese application. `language` is the locale actually chosen.
-  const locale = i18n.language || i18n.resolvedLanguage;
-  const messages = locale?.toLowerCase().startsWith('zh') ? zhCN : enUS;
+  const messages = (i18n.language ?? i18n.resolvedLanguage)
+    ?.toLowerCase()
+    .startsWith('zh')
+    ? zhCN
+    : enUS;
 
   return useCallback(
     (

@@ -10,55 +10,76 @@ export const REPORTS_PATH = 'itam/reports';
 
 export const REMINDER_KINDS = [
   'warrantyExpiring',
-  'entitlementExpiring',
+  'entitlementRenewing',
+  'entitlementEnding',
+  'entitlementMaintenance',
   'entitlementEnded',
   'idleDevice',
   'auditOverdue',
   'leftPersonHoldings',
   'entitlementOverAllocated',
   'lowStock',
-  'loanOverdue',
   'purchaseOverdue',
-  'vendorLateDeliveries',
-  'batchDefect',
 ] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
-/**
- * The kinds that describe a shape across several records rather than one
- * record passing a limit. The workbench gives them their own card: "this
- * device's warranty is ending" and "this vendor's last three orders were
- * all late" are not the same kind of thing to read.
- */
-export const PATTERN_KINDS: ReadonlySet<ReminderKind> = new Set([
-  'vendorLateDeliveries',
-  'batchDefect',
-]);
 
 /** Where each reminder kind's list lives. */
 /**
- * Kinds a 我的待办 card already lists, record by record, so 需要关注 leaves
- * them out: the same devices on one screen twice, once as work and once as
- * risk, reads as two problems. The reminder itself stays — the daily job is
- * what notifies the borrower and the owner, and Ava reads the counts.
+ * 需要关注 checks eleven rules, which as one flat list is a wall of
+ * near-identical lines. They read as three clusters — what is happening to
+ * the assets, what is happening to the entitlements, and what is happening
+ * to the goods coming in — so the card groups them and the eye has
+ * somewhere to land. Every kind belongs to exactly one group, and the
+ * order here is the order they appear in.
  */
-export const SUPERSEDED_KINDS: ReadonlySet<ReminderKind> = new Set([
-  'loanOverdue',
-]);
+export const REMINDER_GROUPS: readonly {
+  readonly key: string;
+  readonly kinds: readonly ReminderKind[];
+}[] = [
+  // A leaver holds devices, accessories and seats at once, so the rule
+  // belongs to none of the asset groups — its subject is the person, and
+  // somebody who has left with the company's equipment is the first thing
+  // on this card worth reading.
+  { key: 'people', kinds: ['leftPersonHoldings'] },
+  {
+    // 设备, not 资产: 资产 is the umbrella over all five kinds, and every
+    // rule here is about a device. The one rule the other kinds have —
+    // 低于水位 — is in `supply` with the goods coming in.
+    key: 'devices',
+    kinds: ['warrantyExpiring', 'idleDevice', 'auditOverdue'],
+  },
+  {
+    key: 'entitlements',
+    kinds: [
+      // A subscription's own life in order — about to charge, about to
+      // stop, already stopped — and the perpetual licence's maintenance
+      // after it.
+      'entitlementRenewing',
+      'entitlementEnding',
+      'entitlementEnded',
+      'entitlementMaintenance',
+      'entitlementOverAllocated',
+    ],
+  },
+  { key: 'supply', kinds: ['lowStock', 'purchaseOverdue'] },
+];
 
 export const REMINDER_ROUTES: Readonly<Record<ReminderKind, string>> = {
   warrantyExpiring: '/devices?view=warrantyExpiring',
-  entitlementExpiring: '/entitlements?view=expiring',
+  entitlementRenewing: '/entitlements?view=renewing',
+  entitlementEnding: '/entitlements?view=ending',
+  entitlementMaintenance: '/entitlements?view=maintenance',
   entitlementEnded: '/entitlements?view=ended',
   idleDevice: '/devices?view=idle',
   auditOverdue: '/devices?view=auditOverdue',
   leftPersonHoldings: '/people?employmentStatus=left',
   entitlementOverAllocated: '/entitlements?view=overAllocated',
+  // Three kinds are counted and the link can only open one list, so it
+  // opens the accessories — the kind most of them are. The card's own row
+  // says how many in total.
   lowStock: '/accessories?view=lowStock',
-  loanOverdue: '/devices?status=onLoan',
   purchaseOverdue: '/procurement?view=overdue',
-  vendorLateDeliveries: '/vendors',
-  batchDefect: '/repairs',
 };
 
 export interface ReminderSummary {

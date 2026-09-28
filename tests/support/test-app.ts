@@ -1,3 +1,4 @@
+import { AuthorizationDeniedError } from '@nocobase/authorization/core';
 import path from 'node:path';
 
 import { authenticationToken } from '@nocobase/app-plugin-authentication';
@@ -200,14 +201,23 @@ export async function createTestApp(
         resource: { type: string; id: string };
         action: string;
       }) => allowed(request.resource.id, request.action),
+      // A settings item (`requireGrant` in `server/routes/itam/http.ts`):
+      // refused with the plugin's own error, whose response is the 403.
+      require: async (request: {
+        resource: { type: string; id: string };
+        action: string;
+      }) => {
+        if (!allowed(request.resource.id, request.action))
+          throw new AuthorizationDeniedError({ effect: 'deny', reasons: [] });
+      },
     };
   };
   /**
    * A Collection owns `read`, `create`, `update` and `delete` and nothing
    * else: since template beta.43 the real authorizer answers any other action
    * on one with `UNKNOWN_DATABASE_RESOURCE_OR_ACTION`. A business operation
-   * (`assign`, `issue`, `approve`…) is asked for on the resource declared for
-   * it in `server/providers/itam/authz-resources.ts`. Mirroring both halves
+   * (`assign`, `issue`, `approve`…) is asked for on the composite resource
+   * declared for it in `server/providers/itam/authz-resources.ts`. Mirroring both halves
    * here is what makes a route that asks the wrong one fail in tests rather
    * than in the browser.
    */
@@ -215,7 +225,7 @@ export async function createTestApp(
     resource: { type: string; id: string },
     action: string,
   ): boolean => {
-    if (resource.type === 'resource')
+    if (resource.type === 'composite')
       return (
         ITAM_RESOURCES.some(
           (declared) => declared.build().name === resource.id,
@@ -256,27 +266,6 @@ export async function createTestApp(
         identity.principal.id,
         MANAGER_USERS.has(identity.principal.id) ? 'manager' : 'employee',
       ),
-    guard:
-      (
-        select: (context: never) => {
-          resource: { type: string; id: string };
-          action: string;
-        },
-      ): MiddlewareHandler =>
-      async (context, next) => {
-        const role = (context.req.header('x-test-role') ??
-          'employee') as TestRole;
-        const request = select(context as never);
-        if (
-          !(ROLE_GRANTS[role] ?? ROLE_GRANTS.employee)(
-            request.resource.id,
-            request.action,
-          )
-        ) {
-          return context.json({ code: 'FORBIDDEN' }, 403);
-        }
-        await next();
-      },
   } as never);
 
   const app = { container } as unknown as Application;
@@ -284,6 +273,10 @@ export async function createTestApp(
 
   const root = new Hono();
   root.onError((error, context) => {
+    // An error that carries its own response (the authorization plugin's
+    // denial) answers with it, as the application server does.
+    if ('getResponse' in error && typeof error.getResponse === 'function')
+      return (error as { getResponse(): Response }).getResponse();
     console.error(error);
     return context.json({ code: 'INTERNAL', message: String(error) }, 500);
   });

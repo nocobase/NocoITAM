@@ -1,4 +1,4 @@
-import { defineAuthorizationResource } from '@nocobase/authorization/core';
+import { defineCompositeResource } from '@nocobase/authorization/core';
 import {
   defineDatabasePermission,
   type DatabaseAuthorizationConditions,
@@ -19,6 +19,10 @@ import {
  * `assign` or `issue` on the Collection instead makes every one of them deny
  * with `UNKNOWN_DATABASE_RESOURCE_OR_ACTION`.
  *
+ * Since authorization 0.2.0-beta.21 such a resource is a *composite*
+ * (`defineCompositeResource`, stored as `type: 'composite'`), listed in the
+ * permission workspace under the ITAM subsection rather than a resource group.
+ *
  * Each operation grants the Collection it works on, so a stored grant on
  * `itam.devices/assign` expands at resolve time into a database grant whose
  * `origin` names that operation. The route asks the Collection for its
@@ -27,7 +31,7 @@ import {
  * why the rules of the default-access, sharing and restriction plugins keep
  * applying to what an operation may touch.
  */
-export const ITAM_RESOURCE_GROUP = 'itam';
+export const ITAM_RESOURCE_SECTION = 'itam';
 
 /** The four a Collection owns; everything else is an operation of its own. */
 const CRUD = new Set(['read', 'create', 'update', 'delete']);
@@ -70,21 +74,19 @@ const resourceOf = (collection: ItamCollectionDefinition) => {
   );
   // A resource is validated as it is defined and must already carry its
   // actions, so they are added inside the callback rather than after it.
-  return defineAuthorizationResource(
-    resourceIdOf(collection.name),
-    (resource) =>
-      operationsOf(collection).reduce(
-        (builder, action) =>
-          builder.action(action, (declaration) =>
-            declaration.grant(
-              collection.name,
-              databaseActionOf(action) === 'read'
-                ? permission
-                : permission.update([...collection.fields]),
-            ),
+  return defineCompositeResource(resourceIdOf(collection.name), (resource) =>
+    operationsOf(collection).reduce(
+      (builder, action) =>
+        builder.action(action, (declaration) =>
+          declaration.grant(
+            collection.name,
+            databaseActionOf(action) === 'read'
+              ? permission
+              : permission.update([...collection.fields]),
           ),
-        resource.title(collection.title).group(ITAM_RESOURCE_GROUP),
-      ),
+        ),
+      resource.title(collection.title),
+    ),
   );
 };
 
@@ -150,7 +152,7 @@ export async function decideWith(
   }
   const operation = { resource: resourceIdOf(collection), action } as const;
   const held = await authorize({
-    resource: { type: 'resource', id: operation.resource },
+    resource: { type: 'composite', id: operation.resource },
     action,
   });
   if (held.effect === 'deny') return undefined;

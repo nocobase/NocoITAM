@@ -20,9 +20,8 @@ import {
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { cn } from '@/lib/utils';
 import {
-  PATTERN_KINDS,
+  REMINDER_GROUPS,
   REMINDER_ROUTES,
-  SUPERSEDED_KINDS,
   useMyWork,
   useReminders,
   useReport,
@@ -132,7 +131,6 @@ function ItWorkbench(): ReactElement {
       <MyWork />
       <div className='grid gap-6 @3xl:grid-cols-2'>
         <Attention />
-        <Attention patterns />
         <DeviceStatus section={section('byStatus')} />
         <ExpiringSoon />
       </div>
@@ -140,10 +138,14 @@ function ItWorkbench(): ReactElement {
   );
 }
 
-const SEVERITY_DOT: Readonly<Record<string, string>> = {
-  critical: 'bg-destructive',
-  warning: 'bg-warning-foreground',
-  info: 'bg-muted-foreground/60',
+/**
+ * Only the two critical rules colour their count. Severity is a property of
+ * the rule rather than of how bad today is, and seven of eleven are
+ * `warning` — a colour on most rows differentiates nothing. The order
+ * already carries severity; the colour is kept for the exception.
+ */
+const SEVERITY_TEXT: Readonly<Record<string, string>> = {
+  critical: 'text-destructive',
 };
 
 /**
@@ -156,83 +158,98 @@ const SEVERITY_DOT: Readonly<Record<string, string>> = {
  * a chore list, when the second is something to think about rather than
  * something to clear.
  */
-function Attention({
-  patterns = false,
-}: {
-  readonly patterns?: boolean;
-}): ReactElement | null {
+function Attention(): ReactElement | null {
   const { t } = useTranslation();
   const settings = useItamSettings();
   const thresholds = settings.data?.thresholds;
   const reminders = useReminders(true);
+  const byKind = new Map(
+    (reminders.data ?? []).map((entry) => [entry.kind, entry]),
+  );
+  // Every rule stays listed, the empty ones last **within their group**: a
+  // rule that vanishes at zero cannot be told from one that was never set
+  // up, and "0" is an answer — it says the check ran.
   const rank = { critical: 0, warning: 1, info: 2 } as const;
-  const rows = (reminders.data ?? [])
-    .filter(
-      (entry) =>
-        entry.count > 0 &&
-        PATTERN_KINDS.has(entry.kind) === patterns &&
-        !SUPERSEDED_KINDS.has(entry.kind),
-    )
-    .sort((a, b) => rank[a.severity] - rank[b.severity]);
-  // Nothing found is the ordinary state for a pattern, and a card saying so
-  // every day is a card nobody reads.
-  if (patterns && rows.length === 0) return null;
+  const groups = REMINDER_GROUPS.map((group) => ({
+    key: group.key,
+    rows: group.kinds
+      .flatMap((kind) => {
+        const entry = byKind.get(kind);
+        return entry ? [entry] : [];
+      })
+      .sort(
+        (a, b) =>
+          Number(b.count > 0) - Number(a.count > 0) ||
+          rank[a.severity] - rank[b.severity],
+      ),
+  })).filter((group) => group.rows.length > 0);
+
+  const label = (kind: string) =>
+    t(`workbench.reminders.${kind}`, {
+      warrantyDays: thresholds?.warrantyDays ?? 30,
+      idleDays: thresholds?.idleDays ?? 90,
+      auditDays: thresholds?.auditDays ?? 365,
+      subscriptionExpiryDays: thresholds?.subscriptionExpiryDays ?? 7,
+      maintenanceExpiryDays: thresholds?.maintenanceExpiryDays ?? 30,
+    });
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          {t(patterns ? 'workbench.patterns' : 'workbench.attention')}
-          <Badge variant='secondary' className='tabular-nums'>
-            {rows.length}
-          </Badge>
-        </CardTitle>
+        <CardTitle>{t('workbench.attention')}</CardTitle>
       </CardHeader>
-      <CardContent>
-        {reminders.data && rows.length === 0 ? (
+      <CardContent className='space-y-4'>
+        {reminders.data && groups.length === 0 ? (
           <p className='text-sm text-muted-foreground'>
             {t('workbench.nothingToAttend')}
           </p>
         ) : (
-          <ul className='divide-y divide-border rounded-lg border border-border bg-card text-sm'>
-            {rows.map((entry) => (
-              <li key={entry.kind}>
-                <Link
-                  to={REMINDER_ROUTES[entry.kind]}
-                  title={t(`workbench.reminderCaptions.${entry.kind}`, {
-                    subscriptionExpiryDays:
-                      thresholds?.subscriptionExpiryDays ?? 7,
-                    maintenanceExpiryDays:
-                      thresholds?.maintenanceExpiryDays ?? 30,
-                    lateDeliveryOrders: thresholds?.lateDeliveryOrders ?? 3,
-                    lateDeliveryDays: thresholds?.lateDeliveryDays ?? 7,
-                    batchDefectDays: thresholds?.batchDefectDays ?? 90,
-                    batchDefectDevices: thresholds?.batchDefectDevices ?? 3,
-                  })}
-                  className='flex items-center justify-between gap-3 px-3 py-2 hover:bg-muted'
-                >
-                  <span className='flex min-w-0 items-center gap-2'>
-                    <span
-                      aria-hidden='true'
-                      className={cn(
-                        'size-2 shrink-0 rounded-full',
-                        SEVERITY_DOT[entry.severity],
-                      )}
-                    />
-                    <span className='truncate'>
-                      {t(`workbench.reminders.${entry.kind}`, {
-                        warrantyDays: thresholds?.warrantyDays ?? 30,
-                        idleDays: thresholds?.idleDays ?? 90,
-                        auditDays: thresholds?.auditDays ?? 365,
+          groups.map((group) => (
+            <section key={group.key}>
+              <h3 className='mb-1 text-xs font-medium tracking-wide text-muted-foreground'>
+                {t(`workbench.reminderGroups.${group.key}`)}
+              </h3>
+              {/* No inner frame: the card is the frame. The number carries
+                  the severity, so there is one signal per row instead of a
+                  coloured dot beside a grey count. */}
+              <ul className='-mx-2 text-sm'>
+                {group.rows.map((entry) => (
+                  <li key={entry.kind}>
+                    <Link
+                      to={REMINDER_ROUTES[entry.kind]}
+                      title={t(`workbench.reminderCaptions.${entry.kind}`, {
+                        subscriptionExpiryDays:
+                          thresholds?.subscriptionExpiryDays ?? 7,
+                        maintenanceExpiryDays:
+                          thresholds?.maintenanceExpiryDays ?? 30,
                       })}
-                    </span>
-                  </span>
-                  <span className='tabular-nums text-muted-foreground'>
-                    {entry.count}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                      className={cn(
+                        'flex items-baseline justify-between gap-3 rounded-md px-2 py-1.5 hover:bg-muted',
+                        entry.count === 0 && 'text-muted-foreground',
+                      )}
+                    >
+                      <span className='min-w-0 truncate'>
+                        {label(entry.kind)}
+                      </span>
+                      <span
+                        className={cn(
+                          'shrink-0 tabular-nums',
+                          entry.count === 0
+                            ? 'text-muted-foreground/50'
+                            : cn(
+                                'font-medium',
+                                SEVERITY_TEXT[entry.severity],
+                              ),
+                        )}
+                      >
+                        {entry.count}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
         )}
       </CardContent>
     </Card>

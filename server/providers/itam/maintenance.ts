@@ -7,11 +7,11 @@ import {
 
 import type { DeviceService } from './devices.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
-import type { ItamNotifier } from './notifier.js';
 import type { SettingsService } from './settings.js';
 import { endedWhere, expiringWhere } from './entitlements.js';
 import type { EntitlementService } from './entitlements.js';
 import type { MasterDataService } from './master-data.js';
+import type { ItamNotifier } from './notifier.js';
 
 /**
  * The time-driven automation: daily status maintenance (subscription
@@ -24,32 +24,19 @@ export type MaintenanceJob = 'daily' | 'monthly' | 'leavers';
 
 export const REMINDER_KINDS = [
   'warrantyExpiring',
-  'entitlementExpiring',
+  'entitlementRenewing',
+  'entitlementEnding',
+  'entitlementMaintenance',
   'entitlementEnded',
   'idleDevice',
   'auditOverdue',
   'leftPersonHoldings',
   'entitlementOverAllocated',
   'lowStock',
-  'loanOverdue',
   'purchaseOverdue',
-  'vendorLateDeliveries',
-  'batchDefect',
 ] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
-/**
- * The kinds that describe a shape across several records rather than one
- * record passing a limit. They are computed and stored like any other
- * reminder — same table, same自动消解 — but the workbench shows them in
- * their own card: "这台设备保修要到期了" and "这家供应商最近三单都晚了" are
- * not the same kind of thing to read, and one list of both reads as a
- * miscellany.
- */
-export const PATTERN_KINDS: ReadonlySet<ReminderKind> = new Set([
-  'vendorLateDeliveries',
-  'batchDefect',
-]);
 
 export interface ReminderSummary {
   readonly kind: ReminderKind;
@@ -81,14 +68,6 @@ const DAY = 86_400_000;
 const addDays = (date: Date, days: number): Date =>
   new Date(date.getTime() + days * DAY);
 
-/** Whole days from one stored date to another; both are `YYYY-MM-DD…`. */
-const daysBetween = (from: string, to: string): number =>
-  Math.round(
-    (Date.parse(`${to.slice(0, 10)}T00:00:00Z`) -
-      Date.parse(`${from.slice(0, 10)}T00:00:00Z`)) /
-      86_400_000,
-  );
-
 interface ReminderRow {
   readonly kind: ReminderKind;
   readonly subjectType: string;
@@ -107,6 +86,45 @@ export function createMaintenanceService(dependencies: {
 }): MaintenanceService {
   const { database, settings, devices, entitlements, masterData, notifier } =
     dependencies;
+
+  /**
+   * Tells the borrower and the device's 负责人 that a loan is past its date.
+   *
+   * It is not a reminder and writes no row: the workbench's 设备借出逾期未还
+   * card answers "which ones" live, from this same query, so a stored copy
+   * would be a staler second answer (decided 2026-09-28). What made the
+   * notification once-only was never the reminders table but the key the
+   * notification plugin deduplicates on — `<device>:<date>`, so a loan that
+   * stays overdue is announced once, not every night.
+   */
+  const notifyOverdueLoans = async (now: Date): Promise<number> => {
+    const today = isoDate(now);
+    const overdue = await database
+      .query()
+      .selectFrom('devices')
+      .select(['id', 'deviceNo', 'expectedReturnDate', 'assigneeId', 'ownerId'])
+      .where('status', '=', 'onLoan')
+      .where('expectedReturnDate', '<', today)
+      .execute<Row>();
+    for (const device of overdue) {
+      const holder = await database
+        .query()
+        .selectFrom('people')
+        .select('userId')
+        .where('id', '=', asText(device.assigneeId) ?? '')
+        .executeTakeFirst<{ userId: string | null }>();
+      const date = asText(device.expectedReturnDate) ?? '';
+      await notifier.notify({
+        key: `loanOverdue:${String(device.id)}:${date}`,
+        to: [holder?.userId, asText(device.ownerId)],
+        title: `Loan overdue: ${String(device.deviceNo)}`,
+        body: `Expected back on ${date}`,
+        url: `/devices/${String(device.id)}`,
+        source: { type: 'device', referenceId: String(device.id) },
+      });
+    }
+    return overdue.length;
+  };
 
   /** Every reminder the rules produce right now. */
   const collect = async (now: Date): Promise<readonly ReminderRow[]> => {
@@ -139,31 +157,58 @@ export function createMaintenanceService(dependencies: {
         },
       });
 
-    // Expiry of either kind, or a perpetual entitlement's maintenance end.
-    const expiringEntitlements = await expiringWhere(
-      today,
-      isoDate(addDays(now, thresholds.subscriptionExpiryDays)),
-      isoDate(addDays(now, thresholds.maintenanceExpiryDays)),
-    )(
-      query
-        .selectFrom('entitlements')
-        .select(['id', 'kind', 'name', 'expiryDate', 'maintenanceExpiryDate']),
-    ).execute<Row>();
-    for (const entitlement of expiringEntitlements)
-      rows.push({
-        kind: 'entitlementExpiring',
-        subjectType: 'entitlements',
-        subjectId: String(entitlement.id),
-        severity: 'warning',
-        data: {
-          name: entitlement.name,
-          kind: entitlement.kind,
-          date:
-            entitlement.kind === 'subscription'
-              ? entitlement.expiryDate
-              : entitlement.maintenanceExpiryDate,
-        },
-      });
+    // Three dates, three different acts: a subscription about to charge, a
+    // subscription about to stop, and a perpetual licence whose support
+    // ends. One line saying "renewing or ending" could not say which.
+    const EXPIRY_HORIZONS = [
+      {
+        horizon: 'renewing' as const,
+        kind: 'entitlementRenewing' as const,
+        days: thresholds.subscriptionExpiryDays,
+        dateField: 'expiryDate',
+      },
+      {
+        horizon: 'ending' as const,
+        kind: 'entitlementEnding' as const,
+        days: thresholds.subscriptionExpiryDays,
+        dateField: 'expiryDate',
+      },
+      {
+        horizon: 'maintenance' as const,
+        kind: 'entitlementMaintenance' as const,
+        days: thresholds.maintenanceExpiryDays,
+        dateField: 'maintenanceExpiryDate',
+      },
+    ];
+    for (const entry of EXPIRY_HORIZONS) {
+      const found = await expiringWhere(
+        entry.horizon,
+        today,
+        isoDate(addDays(now, entry.days)),
+      )(
+        query
+          .selectFrom('entitlements')
+          .select([
+            'id',
+            'kind',
+            'name',
+            'expiryDate',
+            'maintenanceExpiryDate',
+          ]),
+      ).execute<Row>();
+      for (const entitlement of found)
+        rows.push({
+          kind: entry.kind,
+          subjectType: 'entitlements',
+          subjectId: String(entitlement.id),
+          severity: 'warning',
+          data: {
+            name: entitlement.name,
+            kind: entitlement.kind,
+            date: entitlement[entry.dateField],
+          },
+        });
+    }
 
     // Ended without being renewed, and still holding seats to take back.
     const ended = await endedWhere(today)(
@@ -310,7 +355,10 @@ export function createMaintenanceService(dependencies: {
         'usedQuantity',
         'minimumQuantity',
       ])
-      .where('kind', 'in', ['accessory', 'consumable'])
+      // Every kind that is kept as a quantity, components included: a spare
+      // SSD running out is what a water level is for, and their page has
+      // always offered the field — leaving them out of the check meant a
+      // value you could set and never hear about (fixed 2026-09-28).
       .execute<Row>();
     for (const item of stock) {
       const available = Number(item.totalQuantity) - Number(item.usedQuantity);
@@ -345,136 +393,6 @@ export function createMaintenanceService(dependencies: {
         },
       });
 
-    const loans = await query
-      .selectFrom('devices')
-      .select([
-        'id',
-        'deviceNo',
-        'name',
-        'expectedReturnDate',
-        'assigneeId',
-        'ownerId',
-      ])
-      .where('status', '=', 'onLoan')
-      .where('expectedReturnDate', '<', today)
-      .execute<Row>();
-    for (const device of loans)
-      rows.push({
-        kind: 'loanOverdue',
-        subjectType: 'devices',
-        subjectId: String(device.id),
-        severity: 'warning',
-        data: {
-          deviceNo: device.deviceNo,
-          name: device.name,
-          date: device.expectedReturnDate,
-          assigneeId: device.assigneeId,
-          ownerId: device.ownerId,
-        },
-      });
-
-    // Cross-record patterns. Neither is a limit one record passes: the
-    // subject is a vendor or a batch, and what makes it a finding is a shape
-    // across several records over time. Both resolve themselves — the next
-    // order arriving on time, the window rolling past the repairs — which is
-    // why they can live in the reminders table with everything else.
-    const received = await query
-      .selectFrom('purchaseOrders')
-      .select(['id', 'orderNo', 'vendorId', 'expectedAt', 'receivedAt'])
-      .where('vendorId', 'is not', null)
-      .where('expectedAt', 'is not', null)
-      .where('receivedAt', 'is not', null)
-      .execute<Row>();
-    const byVendor = new Map<string, Row[]>();
-    for (const order of received)
-      byVendor.set(String(order.vendorId), [
-        ...(byVendor.get(String(order.vendorId)) ?? []),
-        order,
-      ]);
-    const vendorNames = new Map(
-      (
-        await query.selectFrom('vendors').select(['id', 'name']).execute<Row>()
-      ).map((row) => [String(row.id), String(row.name)]),
-    );
-    for (const [vendorId, orders] of byVendor) {
-      // The most recent ones only: a vendor that was late two years ago and
-      // punctual since is not a finding.
-      const recent = [...orders]
-        .sort((a: Row, b: Row) =>
-          (asText(b.receivedAt) ?? '').localeCompare(
-            asText(a.receivedAt) ?? '',
-          ),
-        )
-        .slice(0, thresholds.lateDeliveryOrders);
-      if (recent.length < thresholds.lateDeliveryOrders) continue;
-      const lateness = recent.map((order: Row) =>
-        daysBetween(
-          asText(order.expectedAt) ?? '',
-          asText(order.receivedAt) ?? '',
-        ),
-      );
-      if (!lateness.every((days: number) => days > thresholds.lateDeliveryDays))
-        continue;
-      rows.push({
-        kind: 'vendorLateDeliveries',
-        subjectType: 'vendors',
-        subjectId: vendorId,
-        severity: 'warning',
-        data: {
-          name: vendorNames.get(vendorId) ?? '',
-          orders: recent.length,
-          worstDays: Math.max(...lateness),
-          orderNos: recent.map((order: Row) => order.orderNo),
-        },
-      });
-    }
-
-    // The local `addDays` works on Date, which is what the datetime column
-    // has to be compared through (`dbDateTime`).
-    const defectSince = addDays(now, -thresholds.batchDefectDays);
-    const repaired = await query
-      .selectFrom('repairs')
-      .innerJoin('devices', 'devices.id', 'repairs.deviceId')
-      .select([
-        'devices.id as deviceId',
-        'devices.deviceNo as deviceNo',
-        'devices.modelId as modelId',
-        'devices.purchaseDate as purchaseDate',
-      ])
-      .where('repairs.createdAt', '>=', dbDateTime(defectSince))
-      .where('devices.modelId', 'is not', null)
-      .where('devices.purchaseDate', 'is not', null)
-      .execute<Row>();
-    // A batch is what was bought together: the same model in the same month.
-    const byBatch = new Map<string, Map<string, Row>>();
-    for (const row of repaired) {
-      const key = `${String(row.modelId)}|${(asText(row.purchaseDate) ?? '').slice(0, 7)}`;
-      const devices = byBatch.get(key) ?? new Map<string, Row>();
-      devices.set(String(row.deviceId), row);
-      byBatch.set(key, devices);
-    }
-    const modelNames = new Map(
-      (
-        await query.selectFrom('models').select(['id', 'name']).execute<Row>()
-      ).map((row) => [String(row.id), String(row.name)]),
-    );
-    for (const [key, devices] of byBatch) {
-      if (devices.size < thresholds.batchDefectDevices) continue;
-      const [modelId, month] = key.split('|');
-      rows.push({
-        kind: 'batchDefect',
-        subjectType: 'models',
-        subjectId: modelId,
-        severity: 'warning',
-        data: {
-          name: modelNames.get(modelId) ?? '',
-          month,
-          devices: devices.size,
-          deviceNos: [...devices.values()].map((row: Row) => row.deviceNo),
-        },
-      });
-    }
-
     return rows;
   };
 
@@ -495,6 +413,7 @@ export function createMaintenanceService(dependencies: {
       return {
         subscriptions,
         reservationsReleased: released.length,
+        loansOverdue: await notifyOverdueLoans(now),
         reminders: await this.computeReminders(now),
       };
     },
@@ -552,25 +471,6 @@ export function createMaintenanceService(dependencies: {
           }
         }
       });
-      // The two reminders the specification also delivers as notifications.
-      for (const row of rows) {
-        if (row.kind === 'loanOverdue') {
-          const holder = await database
-            .query()
-            .selectFrom('people')
-            .select('userId')
-            .where('id', '=', asText(row.data.assigneeId) ?? '')
-            .executeTakeFirst<{ userId: string | null }>();
-          await notifier.notify({
-            key: `loanOverdue:${row.subjectId}:${String(row.data.date)}`,
-            to: [holder?.userId, asText(row.data.ownerId) ?? ''],
-            title: `Loan overdue: ${String(row.data.deviceNo)}`,
-            body: `Expected back on ${String(row.data.date)}`,
-            url: `/devices/${row.subjectId}`,
-            source: { type: 'device', referenceId: row.subjectId },
-          });
-        }
-      }
       return REMINDER_KINDS.map((kind) => ({
         kind,
         count: rows.filter((row) => row.kind === kind).length,

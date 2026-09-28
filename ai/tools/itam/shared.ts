@@ -1,8 +1,4 @@
-import {
-  defineTools,
-  type AgentContext,
-  type ToolsOptions,
-} from '@nocobase/ai-employee';
+import { defineTools, type ToolsOptions } from '@nocobase/ai-employee';
 
 import { databaseManagerToken } from '@nocobase/db';
 
@@ -47,7 +43,7 @@ import {
  * person may see through the pages; a write tool runs only once that
  * person confirmed its card, and then as them.
  */
-export type ItamAgentContext = AgentContext<unknown, unknown>;
+export type ItamAgentContext = Parameters<ToolsOptions['invoke']>[0];
 
 export const SEARCHABLE_COLLECTIONS: readonly [string, ...string[]] = [
   ...LISTABLE_COLLECTIONS,
@@ -216,8 +212,8 @@ export function writeTool(
   name: AiWriteTool,
   introduction: { readonly title: string; readonly about: string },
   description: string,
-): ToolsOptions<ItamAgentContext> {
-  return defineTools<ItamAgentContext>({
+): ToolsOptions {
+  return defineTools({
     scope: 'GENERAL',
     execution: 'backend',
     defaultPermission: 'ASK',
@@ -256,8 +252,8 @@ export function recordTool(
   name: AiRecordTool,
   introduction: { readonly title: string; readonly about: string },
   description: string,
-): ToolsOptions<ItamAgentContext> {
-  return defineTools<ItamAgentContext>({
+): ToolsOptions {
+  return defineTools({
     scope: 'GENERAL',
     execution: 'backend',
     defaultPermission: 'ASK',

@@ -1,5 +1,4 @@
 import {
-  createApiClient,
   resolveAppUrl,
   type ApiClient,
   type ApiRequestOptions,
@@ -10,17 +9,14 @@ import type {
   AIEmployee,
   AIModel,
 } from '../providers/types.js';
-import type {
-  AIConversationActiveState,
-  AIService,
-  CreateAIConversationOptions,
-} from './types.js';
+import type { AIService, CreateAIConversationOptions } from './types.js';
 import type { UpdateToolCallDecisionOptions } from './types.js';
 import {
   getToolCallState,
   getToolProviderMetadata,
   type NocoBaseToolCall,
 } from '../providers/stream-event-utils.js';
+import { toText } from '../shared/text.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
@@ -44,7 +40,7 @@ const toAttachment = (
   if (typeof filename !== 'string') return undefined;
   return {
     ...value,
-    uid: String(value.id ?? value.uid ?? `${filename}-${index}`),
+    uid: toText(value.id ?? value.uid, `${filename}-${index}`),
     filename,
     status: 'done' as const,
     size: typeof value.size === 'number' ? value.size : undefined,
@@ -73,8 +69,7 @@ const toHistoryMessage = (
     (typeof rawServerMessageId === 'string' && /^\d+$/.test(rawServerMessageId))
       ? String(rawServerMessageId)
       : undefined;
-  const messageId =
-    serverMessageId ?? String(message.key ?? `history-${index}`);
+  const messageId = serverMessageId ?? toText(message.key, `history-${index}`);
   const text =
     typeof content.content === 'string'
       ? content.content
@@ -101,8 +96,8 @@ const toHistoryMessage = (
       : [];
   for (const rawToolCall of toolCalls) {
     if (!isRecord(rawToolCall)) continue;
-    const toolCallId = String(rawToolCall.id ?? `tool-${crypto.randomUUID()}`);
-    const toolName = String(rawToolCall.name ?? 'tool');
+    const toolCallId = toText(rawToolCall.id, `tool-${crypto.randomUUID()}`);
+    const toolName = toText(rawToolCall.name, 'tool');
     const toolCall = rawToolCall as NocoBaseToolCall;
     const { failed, completed } = getToolCallState(toolCall);
     const callProviderMetadata = getToolProviderMetadata(toolCall);
@@ -114,7 +109,7 @@ const toHistoryMessage = (
             toolName,
             state: 'output-error',
             input: parseToolInput(rawToolCall.args ?? {}),
-            errorText: String(rawToolCall.content ?? 'Tool call failed'),
+            errorText: toText(rawToolCall.content, 'Tool call failed'),
             callProviderMetadata,
           }
         : completed
@@ -156,9 +151,9 @@ const toHistoryMessage = (
         ? rawConversation.username
         : (messages.find((item) => item.metadata?.employeeUsername)?.metadata
             ?.employeeUsername ?? 'sub-agent');
-    const sessionId = String(
-      rawConversation.sessionId ??
-        `sub-agent-history-${index}-${conversationIndex}`,
+    const sessionId = toText(
+      rawConversation.sessionId,
+      `sub-agent-history-${index}-${conversationIndex}`,
     );
     parts.push({
       type: 'data-subAgent',
@@ -181,7 +176,7 @@ const toHistoryMessage = (
       url: attachment.url ?? attachment.preview ?? '',
     });
   }
-  const rawRole = String(message.role ?? 'assistant');
+  const rawRole = toText(message.role, 'assistant');
   const role =
     rawRole === 'user' || rawRole === 'system' ? rawRole : 'assistant';
   return {
@@ -237,12 +232,21 @@ function resolveResourceUrl(value: string): string {
   return resolveAppUrl(value.replace(/^\/+/, ''));
 }
 
+/** Convert a newest-first server history page using the shared chat protocol. */
+export function toAIChatHistoryMessages(
+  rows: readonly unknown[],
+): AIChatMessage[] {
+  return [...rows]
+    .reverse()
+    .filter(
+      (value) =>
+        !isRecord(value) || (value.role !== 'tool' && value.role !== 'system'),
+    )
+    .map((value, index) => toHistoryMessage(value, index, resolveResourceUrl));
+}
+
 export class NocoBaseAIService implements AIService {
-  constructor(
-    private readonly client: ApiClient = createApiClient({
-      baseURL: resolveAppUrl('/api'),
-    }),
-  ) {}
+  constructor(private readonly client: ApiClient) {}
 
   private aiAction<T>(
     resource: string,
@@ -282,6 +286,7 @@ export class NocoBaseAIService implements AIService {
         llmServiceTitle: string;
         enabledModels?: Array<{ label: string; value: string }>;
         supportWebSearch?: boolean;
+        webSearchModels?: string[];
         isToolConflict?: boolean;
       }>
     >('ai', 'listAllEnabledModels', { method: 'GET' });
@@ -291,7 +296,10 @@ export class NocoBaseAIService implements AIService {
         label: model.label,
         llmService: service.llmService,
         llmServiceTitle: service.llmServiceTitle,
-        supportWebSearch: service.supportWebSearch,
+        supportWebSearch:
+          service.supportWebSearch === true &&
+          (!service.webSearchModels?.length ||
+            service.webSearchModels.includes(model.value)),
         isToolConflict: service.isToolConflict,
       })),
     );
@@ -333,8 +341,9 @@ export class NocoBaseAIService implements AIService {
             typeof value.title === 'string' && value.title
               ? value.title
               : 'New conversation',
-          employeeUsername: String(
-            employee?.username ?? value.aiEmployeeUsername ?? '',
+          employeeUsername: toText(
+            employee?.username ?? value.aiEmployeeUsername,
+            '',
           ),
           updatedAt:
             typeof value.updatedAt === 'string'
@@ -373,15 +382,7 @@ export class NocoBaseAIService implements AIService {
     const rows = Array.isArray(response)
       ? response
       : (response.data ?? response.rows ?? []);
-    return [...rows]
-      .reverse()
-      .filter((value) => {
-        if (!isRecord(value)) return true;
-        return value.role !== 'tool' && value.role !== 'system';
-      })
-      .map((value, index) =>
-        toHistoryMessage(value, index, resolveResourceUrl),
-      );
+    return toAIChatHistoryMessages(rows);
   }
 
   async getConversationActiveState(sessionId: string) {
@@ -393,7 +394,7 @@ export class NocoBaseAIService implements AIService {
     });
     const state = response?.llmActiveState;
     return state === 'idle' || state === 'streaming' || state === 'invoking'
-      ? (state as AIConversationActiveState)
+      ? state
       : undefined;
   }
 
@@ -508,5 +509,3 @@ export class NocoBaseAIService implements AIService {
     });
   }
 }
-
-export const nocobaseAIService = new NocoBaseAIService();
