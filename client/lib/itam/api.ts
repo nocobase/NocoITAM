@@ -231,10 +231,6 @@ export interface ItamSettings {
     idleSeatRatio: number;
     defaultStockMinimum: number;
     /** The two cross-record patterns' windows and counts. */
-    lateDeliveryDays: number;
-    lateDeliveryOrders: number;
-    batchDefectDays: number;
-    batchDefectDevices: number;
   };
   readonly numbering: Record<
     string,

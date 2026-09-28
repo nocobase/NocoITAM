@@ -85,21 +85,47 @@ Rules learned while building it:
   is code: change the cron in the provider, never the plugin's tables. Test
   the service and the provider's target (`tests/logic/itam-schedules.test.ts`),
   not the clock.
-- A reminder is one record passing a limit; the two `PATTERN_KINDS` are a
-  shape across several records — a vendor whose last three orders all came
-  in late (`vendorLateDeliveries`), a model+purchase-month whose devices are
-  being repaired together (`batchDefect`). They are stored and self-resolve
-  like every other kind, but the workbench gives them their own card
-  (`Attention patterns`), because "this device's warranty is ending" and
-  "this vendor has been late three times" do not read as one list. The set
-  is declared twice — `maintenance.ts` and `client/lib/itam/workbench.ts` —
-  and a pattern card with nothing in it is not rendered at all: finding no
-  pattern is the normal case. Their `REMINDER_ROUTES` entry points at the
-  vendor or model list, not at one record. Judging them is arithmetic, not a
-  model: what counts as late is a threshold somebody set. A pattern needs
-  several records to show at all, so the demo generator builds each one
-  deliberately (three late arrivals in a row, a batch with three repairs);
-  a single crafted record would leave the card empty.
+- 需要关注 groups its eleven rules into four sections (`REMINDER_GROUPS` in
+  `client/lib/itam/workbench.ts`: 人员 first — somebody who left with the
+  company's equipment is the first thing worth reading, and a leaver holds
+  devices, accessories and seats at once so the rule belongs to no asset
+  group — then 设备, **not** 资产, which is the umbrella over all five kinds
+  while every rule there is about a device; then entitlements, stock and
+  purchasing). A row does not repeat its group: inside 设备 the label is
+  保修 30 天内到期, not 保修 30 天内到期的设备 — one flat list of eleven near-identical lines gives the eye
+  nowhere to land. Only a `critical` rule colours its count: severity is a
+  property of the rule rather than of how bad today is, seven of the eleven
+  are `warning`, and a colour on most rows differentiates nothing. The sort
+  already carries severity. There is no inner frame — the card is the frame.
+- 需要关注 lists **every** rule it checks, the empty ones last and dimmed: a
+  rule that vanishes at zero cannot be told from one that was never set up,
+  and `0` is an answer — it says the check ran. Neither that card nor 我的待办
+  carries a count beside its heading: every row has its own number, and a sum
+  of unrelated rules is not something anybody acts on.
+- An entitlement's dates are three reminders, not one (2026-09-28): a
+  subscription that will **charge** (`entitlementRenewing`, auto-renew on,
+  monthly ones excluded — twelve notices a year that the same bill is coming
+  is noise), one that will **stop** (`entitlementEnding`, auto-renew off),
+  and a perpetual licence whose **support** ends
+  (`entitlementMaintenance`). They ask for opposite acts, and one line
+  saying "renewing or ending" could not say which. `expiringWhere` takes an
+  `ExpiryHorizon`; `'any'` is the three together, which is what the
+  entitlements page's own 即将到期 statistic counts.
+- A reminder must ask for an act. The two cross-record patterns —
+  供应商连续延迟交货 and 同批次设备集中报修 — were removed a week after they
+  were added (2026-09-28, migration `202609280008_drop_pattern_reminders`,
+  taking the `PATTERN_KINDS` split, the 发现的模式 card,
+  `ReminderSummary.findings` and four thresholds with them). Each stated
+  something true and neither had a next step: a vendor's delivery record is
+  read when somebody picks a vendor, which happens in the purchase order's
+  own form, and a batch's repair history is read on the model. A standing
+  alert nobody acts on teaches people to skip a row, and a list with one
+  skippable row stops being read. The vendor rule also could not clear
+  itself — it judged the most recent N arrivals with no time limit, so a
+  vendor you stopped buying from kept the warning for ever. Both facts are
+  worth having as **statistics on the vendor and the model**; that is not a
+  reminder. Do not reintroduce either without a new decision in
+  `docs/IMPLEMENTATION_PLAN.md`.
 - AI resources live in `ai/` (employees, tools). The AI plugin does **not**
   scan that directory: it registers only what an `AIResourceRegistrar` hands
   it, so `ai/index.ts` (`ItamAiResources`, `ITAM_TOOLS`) lists the employee
@@ -683,10 +709,16 @@ Rules learned while building it:
   to-do nobody can act on is not a to-do.
 - A to-do card and a 需要关注 reminder must not describe the same records:
   the same devices on one screen, once as work and once as risk, read as two
-  problems. 设备借出逾期未还 and the `loanOverdue` reminder are the same
-  query, so `SUPERSEDED_KINDS` (`client/lib/itam/workbench.ts`) drops that
-  one from 需要关注 — the reminder itself stays, because the daily job is
-  what notifies the borrower and the owner from it, and Ava reads the counts.
+  problems. 设备借出逾期未还 was both, so the `loanOverdue` **reminder** went
+  (2026-09-28, migration `202609280006_drop_loan_overdue_reminder`): the card
+  answers "which ones" live, from the same query, scoped to the device's
+  负责人, while a stored row was a staler second answer that 需要关注 had to
+  be told to hide. The daily job still **notifies** the borrower and the
+  owner — `notifyOverdueLoans` in `maintenance.ts` runs that query and sends,
+  writing no row. What made a notification once-only was never the reminders
+  table but the key the notification plugin deduplicates on
+  (`loanOverdue:<device>:<date>`), so a rule may leave the reminder layer
+  and keep its notification.
 - A record listed on a card is tagged with its kind only when its title is
   just a number (采购单, 报废单, 维修单); a device reads 编号 / 名称 and an
   audit task reads its name, so both name themselves.
