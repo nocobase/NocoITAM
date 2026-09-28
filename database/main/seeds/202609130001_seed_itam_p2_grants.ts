@@ -105,7 +105,7 @@ const db = (
  *
  * Since template beta.43 `read` / `create` / `update` / `delete` are the
  * Collection's actions, while an operation such as `assign` or `issue` is
- * granted on the resource declared for it
+ * granted on the composite resource declared for it
  * (`server/providers/itam/authz-resources.ts`). The fields an operation may
  * write live in that declaration, so only the record-access choice is stored
  * here.
@@ -127,12 +127,12 @@ const splitOperations = (grants: readonly Grant[]): Grant[] =>
       ...(operations.length > 0
         ? [
             {
-              resource: { type: 'resource', id: `itam.${collection}` },
+              resource: { type: 'composite', id: `itam.${collection}` },
               actions: operations.map((entry) => ({
                 action: entry.action,
                 policy: {
-                  type: 'resource',
-                  [collection]: recordAccessOf(entry.policy),
+                  type: 'composite',
+                  scopes: { [collection]: recordAccessOf(entry.policy) },
                 },
               })),
             },

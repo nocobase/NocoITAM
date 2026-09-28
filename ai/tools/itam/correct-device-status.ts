@@ -1,8 +1,8 @@
 import type { ToolsOptions } from '@nocobase/ai-employee';
 
-import { writeTool, type ItamAgentContext } from './shared.js';
+import { writeTool } from './shared.js';
 
-const tool: ToolsOptions<ItamAgentContext> = writeTool(
+const tool: ToolsOptions = writeTool(
   'itam_correct_device_status',
   {
     title: 'ITAM: correct a device status',

@@ -63,7 +63,12 @@ describe('application config', () => {
     expect(drive.default).toBe('local');
     expect(drive.disks.local).toEqual({
       driver: 'fs',
-      location: fileURLToPath(new URL('../../storage', import.meta.url)),
+      // Application change (ITAM): `tests/support/setup.ts` points
+      // APP_STORAGE_DIR at a temporary directory, which the drive config
+      // honours since app-server 1.0.0-beta.29.
+      location:
+        process.env.APP_STORAGE_DIR ??
+        fileURLToPath(new URL('../../storage', import.meta.url)),
       visibility: 'private',
     });
     expect(drive.disks.public).toBeUndefined();

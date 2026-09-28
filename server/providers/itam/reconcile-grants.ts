@@ -1,8 +1,8 @@
 import type {
   PermissionGrant,
   PermissionGrantAction,
-  PermissionSetsApi,
-} from '@nocobase/authorization/permissions';
+} from '@nocobase/authorization/core';
+import type { PermissionSetsApi } from '@nocobase/authorization/permission-sets';
 
 import { operationsOf, resourceIdOf } from './authz-resources.js';
 import { ITAM_COLLECTIONS } from './collections.js';
@@ -36,8 +36,8 @@ const STALE_COLLECTIONS = new Set([
  * anything else — an operation removed with its feature (the seat usage
  * import, subscription bills) or a resource removed with its collection
  * (`itam.tickets`, which the P4 seed still produces from the tickets grant) —
- * makes the authorization plugin refuse the whole set ("Invalid business
- * resource grant"), so it is dropped here rather than listed by hand.
+ * makes the authorization plugin skip it with a warning, and throw at a
+ * development start, so it is dropped here rather than listed by hand.
  */
 const DECLARED_OPERATIONS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
   ITAM_COLLECTIONS.map((collection) => [
@@ -149,17 +149,45 @@ const UNSCOPED_ACTIONS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ['main.repairs', new Set(['delete'])],
 ]);
 
-/** Drops the record scope from the operations above. */
+/**
+ * Drops the record scope from the operations above: a composite grant's data
+ * scopes go to `allRecords`, a Collection grant loses its `recordAccess`.
+ */
 function unscopeOperations(grant: PermissionGrant): {
   grant: PermissionGrant;
   changed: boolean;
 } {
+  if (grant.resource.type === 'composite') {
+    const operations = UNSCOPED_OPERATIONS.get(grant.resource.id);
+    if (!operations) return { grant, changed: false };
+    let changed = false;
+    const actions = grant.actions.map((entry) => {
+      const policy = entry.policy as
+        { type?: unknown; scopes?: Record<string, unknown> } | undefined;
+      if (!operations.has(entry.action) || policy?.type !== 'composite')
+        return entry;
+      const scopes = policy.scopes ?? {};
+      if (Object.values(scopes).every((scope) => scope === 'allRecords'))
+        return entry;
+      changed = true;
+      return {
+        ...entry,
+        policy: {
+          ...policy,
+          scopes: Object.fromEntries(
+            Object.keys(scopes).map((key) => [key, 'allRecords']),
+          ),
+        } as unknown as PermissionGrantAction['policy'],
+      };
+    });
+    return changed
+      ? { grant: { ...grant, actions }, changed }
+      : { grant, changed };
+  }
   const operations =
-    grant.resource.type === 'resource'
-      ? UNSCOPED_OPERATIONS.get(grant.resource.id)
-      : grant.resource.type === 'database.collection'
-        ? UNSCOPED_ACTIONS.get(grant.resource.id)
-        : undefined;
+    grant.resource.type === 'database.collection'
+      ? UNSCOPED_ACTIONS.get(grant.resource.id)
+      : undefined;
   if (!operations) return { grant, changed: false };
   let changed = false;
   const actions = grant.actions.map((entry) => {
@@ -352,7 +380,7 @@ export async function reconcileGrants(
         return [];
       }
       if (
-        grant.resource.type !== 'resource' ||
+        grant.resource.type !== 'composite' ||
         !grant.resource.id.startsWith('itam.')
       )
         return [grant];

@@ -9,8 +9,10 @@
   },
   "include": [
     "vite.config.ts",
-    "scripts/*.ts",
     "cli/**/*.ts",
+    // Application change (ITAM): development scripts such as `data-reset.ts`,
+    // which must stay out of the server build.
+    "scripts/**/*.ts",
     "playwright.config.ts",
     "e2e/**/*.ts"
   ]

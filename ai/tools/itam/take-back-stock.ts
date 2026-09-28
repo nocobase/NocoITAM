@@ -1,8 +1,8 @@
 import type { ToolsOptions } from '@nocobase/ai-employee';
 
-import { recordTool, type ItamAgentContext } from './shared.js';
+import { recordTool } from './shared.js';
 
-const tool: ToolsOptions<ItamAgentContext> = recordTool(
+const tool: ToolsOptions = recordTool(
   'itam_take_back_stock',
   {
     title: 'ITAM: take back stock',

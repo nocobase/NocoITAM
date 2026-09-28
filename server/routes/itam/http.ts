@@ -3,7 +3,7 @@ import type {
   DatabaseAuthorizationConditions,
   DatabaseAuthorizationParams,
 } from '@nocobase/app-plugin-authorization/server';
-import type { Context } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import type { ZodError } from 'zod';
 
 import {
@@ -47,6 +47,23 @@ export async function decideFor(
   if (!conditions) throw new ForbiddenError('Not allowed');
   return conditions;
 }
+
+/**
+ * Refuses a caller who does not hold `action` on `resource` outright — for a
+ * settings item, which has no record scope. `require` throws the plugin's
+ * `AuthorizationDeniedError`, whose own response is the 403. (The plugin's
+ * `guard` middleware, which this replaced, went with authorization
+ * 0.2.0-beta.21.)
+ */
+export const requireGrant =
+  (
+    resource: { readonly type: string; readonly id: string },
+    action: string,
+  ): MiddlewareHandler<AuthorizationEnv> =>
+  async (context, next) => {
+    await context.get('authz').require({ resource, action });
+    await next();
+  };
 
 /** Which stream a history request wants; `all` is the merged timeline. */
 export function historyKind(

@@ -1,4 +1,4 @@
-import { apiClientToken, useService } from '@nocobase/app-client';
+import { useApiClient } from '@nocobase/app-client';
 import { useMemo } from 'react';
 
 import { AIProvider, type AIProviderProps } from '../providers/ai-provider.js';
@@ -8,9 +8,11 @@ import {
   AIToolRendererProvider,
   type AIToolRendererMap,
 } from './tools/tool-renderer-provider.js';
-import type { AIPageContextFailurePolicy } from './page-elements/page-element-provider.js';
+import type { AIPageContextFailurePolicy } from './page-elements/page-element-store.js';
 
-export type NocoBaseAIRootProviderProps = AIProviderProps & {
+export type NocoBaseAIRootProviderProps = Omit<AIProviderProps, 'service'> & {
+  /** Replaces the service built from the application's `ApiClient`. */
+  service?: AIProviderProps['service'];
   toolRenderers?: AIToolRendererMap;
   contextFailurePolicy?: AIPageContextFailurePolicy;
 };
@@ -22,7 +24,7 @@ export function NocoBaseAIRootProvider({
   service: providedService,
   ...aiProviderProps
 }: NocoBaseAIRootProviderProps) {
-  const api = useService(apiClientToken);
+  const api = useApiClient();
   const service = useMemo(
     () => providedService ?? new NocoBaseAIService(api),
     [api, providedService],

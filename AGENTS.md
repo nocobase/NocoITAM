@@ -233,12 +233,15 @@ Rules learned while building it:
   `accessory` / `consumable` / `component` / `entitlement`; the labels
   (设备 … 授权) live in the locales.
 - The application is unreleased, so seeds are edited in place to the data
-  wanted (no compensating seeds). The seeder refuses to start on an executed
-  seed whose checksum changed, and re-running a seed never rewrites present
-  rows, so after editing one run `pnpm data:reset --demo`
-  (`cli/dev-commands/data-reset.ts`): it wipes the ITAM tables and the ITAM
+  wanted (no compensating seeds). An executed seed whose checksum changed
+  is reported at start-up, and re-running a seed never rewrites present
+  rows, so after editing one run `pnpm --silent data:reset --demo`
+  (`scripts/data-reset.ts`): it wipes the ITAM tables and the ITAM
   seed history, re-runs the seeds and regenerates the demo, keeping users,
-  sessions and permission sets. Migrations stay immutable once applied.
+  sessions and permission sets. It is a script, not a `pnpm nocobase app`
+  command, because since `@nocobase/app-cli` 1.0 (template beta.49) every
+  application command ships in the deployment's `dist/cli`, and one that
+  wipes the database must not. Migrations stay immutable once applied.
 - Seeds carry data, not UI text: the category seed writes names and field
   labels in the deployment's default locale (`APP_DEFAULT_LOCALE`, else
   `i18n.defaultLocale` in `config.yml`) because a seed's context holds only
@@ -375,8 +378,7 @@ Rules learned while building it:
   no last-used date, no usage import, no "unused seats" view, and
   `reconcile-grants.ts` drops every stored `itam.*` grant on an operation
   `collections.ts` no longer declares (`DECLARED_OPERATIONS`) — the plugin
-  refuses a whole set over one such grant ("Invalid business resource
-  grant"). `idleSeatRatio` stays because the 闲置
+  skips such a grant with a warning and throws at a development start. `idleSeatRatio` stays because the 闲置
   compliance status counts unassigned seats, not usage. Like stock items, an entitlement carries no purchase order,
   price or contract (migration `202609200003_drop_entitlement_purchase_fields`):
   receiving an order line either creates one or adds seats to an existing
@@ -434,9 +436,17 @@ Rules learned while building it:
   shape.
 - A Collection owns `read`, `create`, `update` and `delete` and nothing else.
   This application's own operations (`assign`, `issue`, `approve`, `export`…)
-  are business resources declared in
-  `server/providers/itam/authz-resources.ts`: one `itam.<collection>` per
-  Collection that has them, each operation granting that Collection. Asking
+  are composite resources declared in
+  `server/providers/itam/authz-resources.ts` (`defineCompositeResource`,
+  stored as `{ type: 'composite', id }` with the policy
+  `{ type: 'composite', scopes: { <collection>: <record access> } }`): one
+  `itam.<collection>` per Collection that has them, each operation granting
+  that Collection. The provider registers them with
+  `authz.compositeResources.define` and lists them in the permission
+  workspace's ITAM subsection of 业务权限 (`authz.ui.place`); they were
+  "business resources" (`type: 'resource'`) until authorization
+  0.2.0-beta.21 (template beta.49), and `202609280007_composite_grants`
+  rewrote the stored grants. Asking
   the Collection for `assign` is answered with
   `UNKNOWN_DATABASE_RESOURCE_OR_ACTION` — a deny, with no error to notice.
   Every decision therefore goes through `decideWith` (routes reach it as
@@ -446,7 +456,7 @@ Rules learned while building it:
   `params.operation`, and narrows the response fields to the caller's `read`
   grant. A stored grant names `itam.devices/assign`, which
   `202609240001_move_operations_to_resources` rewrote from the old
-  `main.devices/assign`; the seeds do the same through their
+  `main.devices/assign`; the seeds write the composite shape through their
   `splitOperations` helper. `tests/support/test-app.ts` mirrors the
   catalogue, so a route that asks the wrong resource fails in tests. A route
   that decides by calling `authz.authorize` itself skips all of this: it is
@@ -784,8 +794,11 @@ Rules learned while building it:
   everything" would only be another copy to keep in step. The seeds create
   `itam-employee` / `itam-it-support` / `itam-asset-manager` and nothing
   else, and this application's own settings belong to the Asset Manager
-  (`itam.settings` read + update), since nobody else but root could change
-  them. Deleting a device likewise stays with root.
+  (the settings item `settings:itam.settings`, read + update — a resource
+  type of its own, `itam.settings` / `general`, before template beta.49),
+  since nobody else but root could change them. Routes refuse it with
+  `requireGrant` (`server/routes/itam/http.ts`), which calls the context's
+  `require`: the plugin's `guard` middleware is gone. Deleting a device likewise stays with root.
 - Notifications take one message per channel: ITAM sends
   `messages: { 'in-app': { to, title, body, target } }`, and `config.yml`
   names that channel under `notification.channels` as a map entry.
@@ -936,18 +949,19 @@ Rules learned while building it:
 
 ## Load the development skills
 
-`.agents/skills/nocobase-app-development/` holds the detailed guidance behind this file (synchronized by `pnpm skills:sync`; `skills/itam-conventions.md` keeps what this application added to it). Read its `SKILL.md` first — it routes to the reference that matches your task instead of making you read everything:
+`.agents/skills/nocobase-app-development/` holds the detailed guidance behind this file (synchronized by `pnpm nocobase skills sync`; `skills/itam-conventions.md` keeps what this application added to it). Read its `SKILL.md` first — it routes to the reference that matches your task instead of making you read everything:
 
-| Task                                             | Reference                               |
-| ------------------------------------------------ | --------------------------------------- |
-| Add a page, route, or navigation entry           | `references/client-pages-and-routes.md` |
-| Build or style UI                                | `references/components-and-styling.md`  |
-| Add an HTTP endpoint                             | `references/server-routes.md`           |
-| Read or write data                               | `references/database-and-data.md`       |
-| Change the schema                                | `references/migrations.md`              |
-| Add translatable text                            | `references/i18n.md`                    |
-| Add a service, background job, or scheduled task | `references/services-and-jobs.md`       |
-| Write tests and verify                           | `references/testing.md`                 |
+| Task                                                         | Reference                            |
+| ------------------------------------------------------------ | ------------------------------------ |
+| Any frontend change: pages, routes, components, styles, copy | `references/frontend/ui-workflow.md` |
+| Add an HTTP endpoint                                         | `references/server-routes.md`        |
+| Read or write data                                           | `references/database-and-data.md`    |
+| Change the schema                                            | `references/migrations.md`           |
+| Switch or add a database connection                          | `references/database-connections.md` |
+| Translate server-produced text or add a language             | `references/i18n.md`                 |
+| Add a service, background job, or scheduled task             | `references/services-and-jobs.md`    |
+| Write tests and verify                                       | `references/testing.md`              |
+| Run or add a command                                         | `references/cli.md`, `references/commands.md` |
 
 Read the one page your task needs, not the whole directory.
 
@@ -997,6 +1011,7 @@ const appRoutes: AppClientRouteContribution = defineAppRoutes([
     name: 'orders',
     path: '/orders',
     auth: 'required',
+    authz: { resource: { type: 'page', id: 'orders' }, action: 'access' },
     componentLoader: () => import('./pages/orders.js'),
   },
 ]);
@@ -1078,7 +1093,7 @@ const migration: MigrationDefinition = defineMigration({
 
 Edit an existing migration only while the branch that introduced it is unmerged. Once merged, every correction is a new migration.
 
-The exported `name` must match the filename. Apply with `pnpm db:apply` and verify against a real database. `pnpm db:reset`, `db:rollback`, `db:redo`, `db:repair` and `db:doctor` are the rest of that family; never edit the history table by hand.
+The exported `name` must match the filename. Apply with `pnpm nocobase db apply` and verify against a real database. `db reset`, `db rollback`, `db redo`, `db repair` and `db unlock` are the rest of that family (there is no `db doctor` since template beta.49; `db apply --dry-run` reports what is pending, and a start-up warning names every executed task whose source changed); never edit the history table by hand.
 
 At runtime, resolve `databaseManagerToken` from the container and use `database.query()` to read and write the default connection. Use `database.query('analytics')` for another connection. Application tasks use `database/<connectionName>/{migrations,seeds}` and bind to that connection explicitly; plugin tasks and default runtime access stay on `database.default`. Only managed connections run migrations or seeds. See the migrations reference for execution and upgrade rules.
 
@@ -1093,31 +1108,29 @@ t('orders.title');
 
 To reword a plugin's string, add an `overrides` block keyed by that plugin's package name in your locale file. Do not edit the plugin.
 
-The languages the application offers are its own locale files, not a configured list, and the two sides are read separately: `client/locales/` decides what the picker shows, `server/locales/` what the server will answer in. Adding a language means adding its file to both. `pnpm nocobase app i18n:check` reports one declared on a single side.
+The languages the application offers are its own locale files, not a configured list, and the two sides are read separately: `client/locales/` decides what the picker shows, `server/locales/` what the server will answer in. Adding a language means adding its file to both. `pnpm nocobase locales check` reports one declared on a single side.
 
 The account menu language control in `client/layouts/components/language-switcher.tsx` uses a shadcn submenu with radio items. Render it inside `DropdownMenuContent` to preserve menu keyboard navigation and selection semantics.
 
 ## The command line
 
-`pnpm nocobase` runs this application's CLI. It holds three kinds of command: `plugin *` manages the plugins this application uses, `app *` is what this application writes for itself in `cli/commands/`, and each registered plugin contributes its own commands under a topic it declares — a workflow plugin's commands appear under `workflow`.
+`pnpm nocobase <topic> <command>` runs this application's CLI, the `nocobase` bin of `@nocobase/app-cli`. Only `pnpm dev`, `pnpm build`, `pnpm start`, the quality scripts and this application's own `pnpm data:reset` are scripts; every other command goes through `pnpm nocobase`, with no script alias (template beta.49 removed `pnpm db:apply`, `pnpm skills:sync`, `pnpm plugin:register` and the rest). `pnpm nocobase --help` lists the tree and `--help` on a command gives its flags. Read `.agents/skills/nocobase-app-development/references/cli.md` before running one: `db reset`, `db rollback`, `db redo` and `db repair` refuse to run without `--force` outside a terminal, and that refusal is not something to work around.
 
 ```bash
 pnpm nocobase --help          # every topic and command
-pnpm nocobase app info        # a command this application owns
-pnpm nocobase app i18n:check  # languages declared on only one side
+pnpm nocobase db apply        # migrations and seeds
+pnpm nocobase locales check   # languages declared on only one side
 ```
 
-Add a command of your own as an oclif `Command` subclass in `cli/commands/`, then list it in `cli/commands/index.ts`; the key becomes its name under `app`. These commands are static tooling — they read and write files and packages. They do not start the application, so nothing in them may resolve a service or query the database. Anything needing the running application is a server route or a job, not a command.
+A command this application owns is a file under `cli/commands/` whose path is its name below the `app` topic, extending `AppCommand` from `@nocobase/app-cli` (`references/commands.md`). There is none today. Every application command is compiled into `dist/cli` and runs in a deployment, so there is no development-only application command any more: `data:reset`, which wipes the database, is the script `scripts/data-reset.ts` instead (`pnpm --silent data:reset --demo`).
 
-`cli/` is compiled into `dist` alongside the server, so a deployed application runs the same commands with `node ./cli/index.js`. The shared commands (`info`, `db:*`, `collections:generate`, `i18n:check`) arrive from `@nocobase/app-cli` through `cli/standard-commands.ts`; `cli/dev-commands/` holds this application's own `data:reset`, which runs only from source.
-
-A command that cannot work in a deployment belongs in `cli/dev-commands/` instead, which the build excludes — client inspection is there because it needs Vite and the browser client, and neither exists in `dist`. Put a command there rather than shipping one that fails the moment someone runs it.
+`pnpm build` is `nocobase build`, extended only through build hooks a CLI plugin declares. This application's one build step — copying the seeds' data files (`database/main/seeds/assets/`) next to the compiled seeds, which tsc does not — is the `afterServerBuild` hook in `cli/itam.ts`, registered in `cli/plugins.ts` like a plugin's; it runs `scripts/copy-seed-assets.mjs`. A deployment runs the CLI as `node dist/cli/index.js <topic> <command>`.
 
 ## Plugins
 
 Plugins are registered in `client/plugins.ts`, `server/plugins.ts`, and `cli/plugins.ts`. Presence in the array enables a plugin and array order is contribution order. A plugin appears in the roots matching what it ships, so a plugin with only commands is listed in `cli/plugins.ts` alone. Bulk Skills synchronization and plugin updates discover plugins from these composition roots.
 
-Let `pnpm plugin:register` and `pnpm plugin:unregister` add and remove entries. Edit these files by hand only to reorder entries or to pass a plugin its options.
+Let `pnpm nocobase plugin register` and `pnpm nocobase plugin unregister` add and remove entries. Edit these files by hand only to reorder entries or to pass a plugin its options.
 
 To customize a plugin's page, pass an option on its registration, add a source extension under `client/extensions/*/extension.ts`, or add an entry to `client/route-overrides.ts`. Do not redeclare the plugin's route — a duplicate `/login` is a conflict, not a customization. An override replaces only `componentLoader`; route identity, path, and auth mode stay with the plugin. One route takes one override across all three mechanisms.
 
@@ -1135,7 +1148,7 @@ To customize a plugin's page, pass an option on its registration, add a source e
 | File upload and metadata through Repository                                                       | `@nocobase/app-plugin-file`           |
 | Translated text and language switching                                                            | `@nocobase/app-plugin-i18n`           |
 
-Run `pnpm skills:sync` if `.agents/skills/` is missing or looks out of date, then read the Skill for the plugin you need. It documents that plugin's public entries, the ownership boundary, and how to verify the result — which is faster and more correct than inferring an API from its source.
+Run `pnpm nocobase skills sync` if `.agents/skills/` is missing or looks out of date, then read the Skill for the plugin you need. It documents that plugin's public entries, the ownership boundary, and how to verify the result — which is faster and more correct than inferring an API from its source.
 
 Building a permission system, a notification sender, or a job scheduler by hand when a registered plugin already provides one is the most expensive mistake available here. Prefer the plugin; write your own only when you have read its Skill and confirmed it genuinely does not fit.
 
@@ -1181,6 +1194,14 @@ Declare such a package in `dependencies` when you write the code; nothing will r
 
 Without `--tar` no archive is produced, which is what you want when the build is only going to be run locally.
 
+### Building a Docker image
+
+`Dockerfile` and `Dockerfile.dockerignore` build this application from its sources: a build stage runs `pnpm install --frozen-lockfile` and `pnpm build`, and a `node:24-bookworm-slim` runtime stage receives `dist/` and `config.example.yml` only. The runtime has no pnpm, so it runs the two `dist/package.json` scripts directly: `start` is `node ./server/standalone.js`, which the image starts as `node dist/server/standalone.js`, and `nocobase` is `node ./cli/index.js`, run as `node dist/cli/index.js <topic> <command>`. The deployment root is `/app`, so configuration is `/app/config.yml` and storage is `/app/storage`, both mounted at runtime.
+
+The client is not tied to a mount path, so `APP_BASE_PATH` is a runtime variable, `/main` in the image unless the container is started with `-e APP_BASE_PATH=<path>`; the health check probes the same path. The build stage runs on `$BUILDPLATFORM` and passes `--target linux-$TARGETARCH`, so a multi-platform build does not compile under emulation; do not move the build stage to the target platform or switch the runtime to Alpine, which would need the musl target. Keep `Dockerfile.dockerignore` beside the Dockerfile: BuildKit reads it only there, and without it `config.yml`, `.env`, and `storage/` enter the build context.
+
+`--build-arg DIST=prebuilt` skips the build stage and packages the `dist/` in the context instead, selected through `FROM dist-${DIST}` so BuildKit never runs the stage it does not use. That stage refuses a `dist/` whose `nocobase.buildTarget` is not linux, glibc, the target architecture and the image's Node major, and one from an `@nocobase/app-cli` that does not record `nocobase.relocatable`, whose client is tied to the path it was built for. The ignore file re-includes `dist/` last and whole, so dependency directories inside it named like excluded paths (`langchain/storage`) survive, and then excludes `dist/.env`, which can carry `DB_PASSWORD` from local `.env` files. Keep those rules in that order.
+
 ### Building for another platform
 
 `pnpm build` targets the machine it runs on, so `pnpm build && pnpm start` works. A deployment build says where it is going: `--target linux-x64`, `--target linux-arm64`, `--target linux-x64-musl`, plus `--node-version` when the server's Node major differs. Every build prints the platform it produced and records it in `dist/package.json` under `nocobase.buildTarget`.
@@ -1209,11 +1230,9 @@ pnpm build
 
 Add tests for what you changed: a route's authenticated, unauthenticated, and unauthorized responses; a migration's `up` and `down` against a real database; a page's actual behavior. Tests belong in `tests/`, or in `e2e/` when they need a real server. Never place a test beside the source it covers.
 
-`pnpm nocobase --help` lists every command. Template beta.43 retired the client and server inspection commands with its own `cli/dev-commands/`.
+`pnpm nocobase --help` lists every command.
 
-For creating or editing theme presets, read `.agents/skills/nocobase-app-development/references/themes.md` (from the application root).
-
-For UI styling, use the shared color, font, size, spacing, radius and shadow contract in `skills/itam-conventions.md` and `.agents/skills/nocobase-app-development/references/theme-tokens.md` (from the application root). Prefer its Tailwind utilities so components respond to theme changes; keep deliberate fixed-size exceptions explicit.
+For UI styling and for creating or editing theme presets, use the shared color, font, size, spacing, radius and shadow contract in `skills/itam-conventions.md` and `.agents/skills/nocobase-app-development/references/frontend/references/theme.md` (from the application root). Since template beta.49 there are two presets, `compact` (the default, the density this application was built at) and `default` (roomier); the header's 外观 menu switches mode and preset, and there is no theme settings page. ITAM's darker page background (`--background: oklch(0.97 0 0)`) is set in both preset files. Prefer its Tailwind utilities so components respond to theme changes; keep deliberate fixed-size exceptions explicit.
 
 Application startup defaults belong in `config.yml`: `i18n.defaultLocale` for the language, and `client.app.defaultColorScheme` and `client.app.defaultTheme` for appearance. Valid browser-local choices take precedence. Which languages the application offers is not configured — its own `client/locales/` and `server/locales/` are that list. See the i18n and themes references.
 

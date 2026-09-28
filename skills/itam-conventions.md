@@ -1,7 +1,7 @@
 # ITAM conventions
 
 The framework guidance now arrives as a package-owned Skill: read
-`.agents/skills/nocobase-app-development/` (run `pnpm skills:sync` if that
+`.agents/skills/nocobase-app-development/` (run `pnpm nocobase skills sync` if that
 directory is missing). This file keeps what belongs to this application —
 the additions that used to live in the committed `skills/` copy the template
 stopped shipping in beta.43.
@@ -23,7 +23,7 @@ registered in `server/providers/itam/index.ts`, a route under
 `server/routes/itam/` using `http.ts`, field metadata under `client/lib/itam/`,
 and pages composed from `client/components/itam/`.
 
-## From `references/components-and-styling.md`
+## From `references/frontend/references/styling.md` (was `components-and-styling.md`)
 
 ### Shared tag appearance
 
@@ -56,7 +56,7 @@ template, ancestor breadcrumb) live in `master-domain-parts.tsx`. A new need
 is an optional `DomainConfig` slot that other collections leave unset, not a
 page of its own.
 
-## From `references/theme-tokens.md`
+## From `references/frontend/references/theme.md` (was `theme-tokens.md`)
 
 | Tokens                                              | Meaning / consumers                                                  |
 | --------------------------------------------------- | -------------------------------------------------------------------- |

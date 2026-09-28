@@ -819,8 +819,14 @@ export function findItamCollection(
   return ITAM_COLLECTIONS.find((collection) => collection.name === name);
 }
 
-/** Settings and configuration are one non-database resource with two actions. */
+/**
+ * Settings and configuration are one settings item with two actions,
+ * registered by the provider (`authz.settings.add`). It was a resource type
+ * of its own (`itam.settings` / `general`) until authorization
+ * 0.2.0-beta.21 made administration surfaces settings items; migration
+ * `202609280007_composite_grants` moved the stored grants.
+ */
 export const ITAM_SETTINGS_RESOURCE = {
-  type: 'itam.settings',
-  id: 'general',
+  type: 'settings',
+  id: 'itam.settings',
 } as const;

@@ -22,7 +22,6 @@ import { cn } from '@/lib/utils';
 import {
   PATTERN_KINDS,
   REMINDER_ROUTES,
-  SUPERSEDED_KINDS,
   useMyWork,
   useReminders,
   useReport,
@@ -168,10 +167,7 @@ function Attention({
   const rank = { critical: 0, warning: 1, info: 2 } as const;
   const rows = (reminders.data ?? [])
     .filter(
-      (entry) =>
-        entry.count > 0 &&
-        PATTERN_KINDS.has(entry.kind) === patterns &&
-        !SUPERSEDED_KINDS.has(entry.kind),
+      (entry) => entry.count > 0 && PATTERN_KINDS.has(entry.kind) === patterns,
     )
     .sort((a, b) => rank[a.severity] - rank[b.severity]);
   // Nothing found is the ordinary state for a pattern, and a card saying so

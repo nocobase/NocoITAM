@@ -6,7 +6,6 @@ import {
   summarize,
   runTool,
   toolServices,
-  type ItamAgentContext,
 } from './shared.js';
 
 const schema = z.object({
@@ -21,7 +20,7 @@ const schema = z.object({
   pageSize: z.number().int().min(1).max(50).optional(),
 });
 
-const tool: ToolsOptions<ItamAgentContext> = defineTools<ItamAgentContext>({
+const tool: ToolsOptions = defineTools({
   scope: 'GENERAL',
   defaultPermission: 'ALLOW',
   introduction: {

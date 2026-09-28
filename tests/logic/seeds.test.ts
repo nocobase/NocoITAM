@@ -227,7 +227,11 @@ describe('ITAM seeds', () => {
     // platform's administrator holds nothing of ours.
     expect(
       (manager?.grants ?? [])
-        .find((grant) => grant.resource.type === 'itam.settings')
+        .find(
+          (grant) =>
+            grant.resource.type === 'settings' &&
+            grant.resource.id === 'itam.settings',
+        )
         ?.actions.map((action) => action.action)
         .sort(),
     ).toEqual(['read', 'update']);
@@ -313,7 +317,7 @@ describe('ITAM seeds', () => {
 
   it('strips operations and resources the application no longer declares', async () => {
     const grant = (actions: readonly string[], id = 'itam.entitlements') => ({
-      resource: { type: 'resource', id },
+      resource: { type: 'composite', id },
       actions: actions.map((action) => ({ action })),
     });
     const updated: {

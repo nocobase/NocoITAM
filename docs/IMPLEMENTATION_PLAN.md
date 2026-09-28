@@ -2238,3 +2238,65 @@ Manual steps for an existing database, before `pnpm db:apply`: three
 authorization migrations moved into the new `authz-*` plugin packages and two
 were retired, so their history rows must be re-homed and removed — see
 `docs/UPGRADE-beta43.md`.
+
+## Template upgrade: beta.43 → beta.49 (2026-09-28)
+
+`@nocobase/app-template-default` 1.0.0-beta.43 → 1.0.0-beta.49, together with
+every NocoBase package the template pins (authentication and users to 1.0,
+the AI employee plugin to 1.0.0-beta.25, workflow to 1.0.0-beta.28,
+authorization to 0.2.0-beta.21, app-server to 1.0.0-beta.29, app-cli to
+1.0.0-beta.8). The users page could not rename a user before this —
+authentication 0.1.0-beta.20 rejected an unchanged username as taken and
+answered 500; 1.0.0-beta.22+ skips it.
+
+What the template changed:
+
+- **One CLI.** `@nocobase/app-cli` 1.0 is the `nocobase` bin and owns dev,
+  build and start; `scripts/*.mjs`, `cli/index.ts`, `cli/standard-commands.ts`,
+  `@nocobase/app-tools` and `@nocobase/nb3-cli` are gone, and so are the
+  `pnpm db:apply` / `skills:sync` / `plugin:register` aliases — every command
+  is `pnpm nocobase <topic> <command>`. `db doctor` no longer exists.
+- **Themes.** Two presets remain: `compact` (the new default, the density
+  this application was built at) and `default` (roomier). The theme settings
+  page went; the header's 外观 menu picks mode and preset.
+- **Toasts** come from `@/components/ui/toast`, mounted once in
+  `client/react-providers.ts`; `sonner` and the notification-provider plugin
+  are gone. The install-page plugin went too.
+- **Routes** must declare `authz` on every first page; `withPageGrants()`
+  already did.
+- A `Dockerfile` builds the application from source.
+
+What it changed inside ITAM:
+
+- **Authorization.** Business resources became *composite resources*
+  (`defineCompositeResource`, `type: 'composite'`, policy
+  `{ type: 'composite', scopes }`); `authz.db` is `authz.database`,
+  `permissionSetsToken` is `authz.permissionSets`, record access is
+  `authz.recordAccess.define({ collections })`, the `guard` middleware went
+  (`requireGrant` in `server/routes/itam/http.ts` uses `require`), and the
+  settings resource type `itam.settings` / `general` is the settings item
+  `settings:itam.settings`. The permission workspace lists ITAM's operations
+  and its settings item under ITAM subsections (`authz.ui`). Migration
+  `202609280007_composite_grants` rewrote the stored grants (up and down);
+  the seeds write the new shape.
+- **`data:reset`** is `scripts/data-reset.ts`: app-cli 1.0 ships every
+  application command in `dist/cli`, and a command that wipes the database
+  must not be there.
+- **Seed assets** are copied by an `afterServerBuild` hook (`cli/itam.ts`,
+  `scripts/copy-seed-assets.mjs`), the only extension point `nocobase build`
+  offers.
+- **AI chat Registry copy** three-way merged against the recipe it was
+  installed from (0.1.0-beta.14). Upstream fixed the chat's language itself,
+  so that edit was dropped; the tool titles, frontend tools on the request,
+  page-tool auto-approval, declining pending cards on send and the launcher
+  edits stay. The AI tools are plain `ToolsOptions` now that its type
+  parameter names dependencies, not the context.
+
+Manual step for an existing database: `@nocobase/app-plugin-authz-default-access`
+0.1.0-beta.5 edited its executed migration `202608210002_create_default_access_rules`
+in place (a new `key` column), and every non-root permission check reads that
+table, so they all answer 500 until it matches. Upstream's advice is to reset
+the database. When the table is empty — it was here — rebuilding it from the
+plugin's own migration (`down` then `up`) is enough; the start-up checksum
+warning for it remains until `pnpm nocobase db repair`, which realigns every
+drifted checksum at once and was therefore left to the owner.
