@@ -5,7 +5,6 @@ import { reconcileGrants } from './reconcile-grants.js';
 import type { Application } from '@nocobase/app-server/application';
 import {
   authorizationToken,
-  permissionSetsToken,
   condition,
   type DatabaseScope,
 } from '@nocobase/app-plugin-authorization/server';
@@ -38,8 +37,8 @@ import {
   createProcurementService,
   procurementServiceToken,
 } from './procurement.js';
-import { ITAM_COLLECTIONS } from './collections.js';
-import { ITAM_RESOURCE_GROUP, ITAM_RESOURCES } from './authz-resources.js';
+import { ITAM_COLLECTIONS, ITAM_SETTINGS_RESOURCE } from './collections.js';
+import { ITAM_RESOURCE_SECTION, ITAM_RESOURCES } from './authz-resources.js';
 import {
   createEntitlementService,
   entitlementServiceToken,
@@ -98,7 +97,8 @@ function demoAccounts(container: ServiceContainer): DemoAccounts {
   return {
     async create(spec) {
       const users = container.resolve(userAdministrationServiceToken);
-      const permissionSets = container.resolve(permissionSetsToken);
+      const permissionSets =
+        container.resolve(authorizationToken).permissionSets;
       // An account left over from a demo that was wiped another way (a
       // `pnpm data:reset`, which empties the table the demo tracks them in)
       // is taken over rather than refused: same name, password and Permission
@@ -140,7 +140,8 @@ function demoAccounts(container: ServiceContainer): DemoAccounts {
       // configured no deletion hooks, and this application configures none,
       // so the demo revokes the assignment itself and then deletes the
       // account through the authentication plugin, which owns the row.
-      const permissionSets = container.resolve(permissionSetsToken);
+      const permissionSets =
+        container.resolve(authorizationToken).permissionSets;
       for (const assignment of await permissionSets.listAssignments())
         if (
           assignment.subject.type === 'user' &&
@@ -375,27 +376,29 @@ export default class ItamProvider extends ServiceProvider<Application> {
           const others = rows
             .map((row) => String(row.id))
             .filter((id) => id !== actorId);
-          if (others.length === 0 || !container.has(permissionSetsToken))
+          if (others.length === 0 || !container.has(authorizationToken))
             return others[0];
+          const permissionSets =
+            container.resolve(authorizationToken).permissionSets;
           const approvers = new Set<string>();
-          for (const set of await container.resolve(permissionSetsToken).list())
+          for (const set of await permissionSets.list())
             if (
               set.grants.some(
                 (grant) =>
-                  grant.resource.type === 'resource' &&
+                  grant.resource.type === 'composite' &&
                   grant.resource.id === 'itam.purchaseOrders' &&
                   grant.actions.some((entry) => entry.action === 'approve'),
               )
             )
-              for (const assignment of await container
-                .resolve(permissionSetsToken)
-                .listAssignments(set.key))
+              for (const assignment of await permissionSets.listAssignments(
+                set.key,
+              ))
                 if (assignment.subject.type === 'user')
                   approvers.add(String(assignment.subject.id));
           return others.find((id) => approvers.has(id)) ?? others[0];
         },
         ...(container.has(userAdministrationServiceToken) &&
-        container.has(permissionSetsToken)
+        container.has(authorizationToken)
           ? { accounts: demoAccounts(container) }
           : {}),
         // The test harness has no config; the seeds' env override applies.
@@ -414,11 +417,13 @@ export default class ItamProvider extends ServiceProvider<Application> {
   }
 
   public override async start(): Promise<void> {
-    if (!this.app.container.has(permissionSetsToken)) return;
+    if (!this.app.container.has(authorizationToken)) return;
     // Idempotent and cheap: older seeds may have just re-granted the
     // removed tickets collection and pages or the tables that became
     // `entitlements`.
-    await reconcileGrants(this.app.container.resolve(permissionSetsToken));
+    await reconcileGrants(
+      this.app.container.resolve(authorizationToken).permissionSets,
+    );
   }
 
   public override boot(): Promise<void> {
@@ -428,11 +433,11 @@ export default class ItamProvider extends ServiceProvider<Application> {
 
     // Registration is the opt-in for granting on a collection. Since beta.43
     // a Collection owns only read / create / update / delete; this
-    // application's own operations (assign, issue, approve…) are resources of
-    // their own, declared in `authz-resources.ts` and registered below.
+    // application's own operations (assign, issue, approve…) are composite
+    // resources, declared in `authz-resources.ts` and registered below.
     const crud = new Set(['read', 'create', 'update', 'delete']);
     for (const collection of ITAM_COLLECTIONS) {
-      authz.db.collections.add({
+      authz.database.collections.add({
         // The id a request and a stored grant name: the connection-qualified
         // form the routes build (`main.devices`). Registering the bare name
         // leaves every ITAM collection outside the permission model, which
@@ -442,21 +447,39 @@ export default class ItamProvider extends ServiceProvider<Application> {
         actions: collection.actions.filter((name) => crud.has(name)),
       });
     }
-    authz.resourceGroups.add({
-      name: ITAM_RESOURCE_GROUP,
+    // The permission workspace lists the operations under one ITAM
+    // subsection of 业务, and the settings item under one of 管理.
+    authz.ui.sections.add({
+      name: ITAM_RESOURCE_SECTION,
       title: 'ITAM',
-      category: 'business',
+      parent: 'business',
     });
-    for (const resource of ITAM_RESOURCES) resource.register(authz.resources);
+    for (const resource of ITAM_RESOURCES)
+      authz.ui.place(authz.compositeResources.define(resource), {
+        section: ITAM_RESOURCE_SECTION,
+      });
+    authz.ui.sections.add({
+      name: `${ITAM_RESOURCE_SECTION}.admin`,
+      title: 'ITAM',
+      parent: 'administration',
+    });
+    authz.settings.add({
+      id: ITAM_SETTINGS_RESOURCE.id,
+      title: 'ITAM settings',
+      actions: [{ name: 'read' }, { name: 'update' }],
+    });
+    authz.ui.place(ITAM_SETTINGS_RESOURCE, {
+      section: `${ITAM_RESOURCE_SECTION}.admin`,
+    });
 
     // "Records held by me": the devices whose assignee is the person linked to
     // the signed-in user. Employees read their own holdings through this.
-    // Since beta.43 a policy declares the collections it applies to and
-    // returns a scope: `false` denies every row, a node filters them.
-    authz.recordAccess.add({
+    // A record access names the collections it applies to and returns a
+    // scope: `false` denies every row, a node filters them.
+    authz.recordAccess.define({
       key: 'itam.assetsIHold',
       title: 'Devices I hold',
-      resources: [{ type: 'database.collection', id: 'main.devices' }],
+      collections: ['main.devices'],
       async resolve({ principal }): Promise<DatabaseScope> {
         const person = await database
           .query()
@@ -480,36 +503,21 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // The scope is built in `record-access.ts`, where it is unit tested —
     // the route tests' authorization double grants by role and never
     // evaluates a Record Access policy.
-    authz.recordAccess.add({
+    authz.recordAccess.define({
       key: 'itam.myAudits',
       title: 'Audits I run',
-      resources: [{ type: 'database.collection', id: 'main.auditTasks' }],
+      collections: ['main.auditTasks'],
       resolve: ({ principal }): Promise<DatabaseScope> =>
         auditsIRunScope(database, principal.id),
     });
 
     // "My own person record" for the employee side.
-    authz.recordAccess.add({
+    authz.recordAccess.define({
       key: 'itam.myPerson',
       title: 'My person record',
-      resources: [{ type: 'database.collection', id: 'main.people' }],
+      collections: ['main.people'],
       resolve: ({ principal }): DatabaseScope =>
         condition('userId', '$eq', principal.id),
-    });
-
-    authz.resourceTypes.add({
-      resourceType: 'itam.settings',
-      async authorize(request, context) {
-        const grants = await context.grants.resolve({
-          principal: request.principal,
-          subjects: request.subjects,
-          resource: request.resource,
-          action: request.action,
-        });
-        return grants.length > 0
-          ? { effect: 'permit', reasons: [] }
-          : { effect: 'deny', reasons: [] };
-      },
     });
 
     // The ITAM assistant and its tools (`ai/`), registered with the AI

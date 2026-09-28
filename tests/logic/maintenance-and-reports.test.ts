@@ -177,10 +177,14 @@ describe('maintenance, reminders, workbench and reports', () => {
     const count = (kind: string) =>
       reminders.find((entry) => entry.kind === kind)?.count;
     expect(count('warrantyExpiring')).toBe(1);
-    expect(count('loanOverdue')).toBe(1);
     expect(count('lowStock')).toBe(1);
     expect(count('auditOverdue')).toBe(1);
-    // The overdue loan notifies the borrower and the owner (the actor is nobody).
+    // An overdue loan is no longer a reminder — the workbench's
+    // 设备借出逾期未还 card answers it live, from the same query — but the
+    // daily job still tells the borrower and the device's 负责人, straight
+    // from that query and writing no row (2026-09-28).
+    expect(count('loanOverdue')).toBeUndefined();
+    expect(run.loansOverdue).toBe(1);
     expect(app.notifications.map((n) => n.to.id).sort()).toEqual(
       [employee.user, manager.user].sort(),
     );
@@ -210,19 +214,14 @@ describe('maintenance, reminders, workbench and reports', () => {
     const counts = await data<{ kind: string; count: number }[]>(
       await get('workbench/reminders'),
     );
-    expect(counts.find((entry) => entry.kind === 'loanOverdue')?.count).toBe(1);
+    expect(
+      counts.find((entry) => entry.kind === 'warrantyExpiring')?.count,
+    ).toBe(1);
     const list = await data<{ id: string; data: { deviceNo: string } }[]>(
-      await get('workbench/reminders/loanOverdue'),
+      await get('workbench/reminders/warrantyExpiring'),
     );
     expect(list[0]?.data.deviceNo).toBe('DE-000001');
     expect((await get('workbench/reminders', employee)).status).toBe(403);
-
-    // Returning the device resolves it.
-    await post(`devices/${warranty.id}/return`, {});
-    const recomputed = await maintenance.computeReminders();
-    expect(
-      recomputed.find((entry) => entry.kind === 'loanOverdue')?.count,
-    ).toBe(0);
 
     // Monthly depreciation says how many devices it recomputed; the
     // scheduler plugin keeps the history, so there is no run list here.
@@ -231,101 +230,41 @@ describe('maintenance, reminders, workbench and reports', () => {
     expect((await get('workbench/jobs')).status).toBe(404);
   });
 
-  it('finds the two cross-record patterns and lets them resolve', async () => {
-    // Neither is a limit one record passed: the subject is a batch or a
-    // vendor, and what makes it a finding is a shape across several records.
-    const maintenance = app.container.resolve(maintenanceServiceToken);
-    const vendor = await create('master/vendors', {
-      name: 'Slow Supplies',
-      types: ['repairProvider'],
+  it('counts a component below its water level, and lists it', async () => {
+    // A component is kept as a quantity like an accessory, and its page has
+    // always offered a water level; the check used to skip its kind, so the
+    // value could be set and never heard about (fixed 2026-09-28).
+    const componentCategory = await create('master/categories', {
+      name: 'SSD',
+      appliesTo: 'component',
     });
-    const batch = await Promise.all(
-      [1, 2, 3].map((index) =>
-        create('devices', {
-          modelId,
-          locationId,
-          serialNo: `BATCH-${index}`,
-          purchaseDate: '2026-01-15',
-        }),
-      ),
-    );
-    const countOf = async (kind: string) => {
-      const rows = (await maintenance.computeReminders()) as {
-        kind: string;
-        count: number;
-      }[];
-      return rows.find((row) => row.kind === kind)?.count ?? 0;
-    };
-
-    // Two of the batch under repair is not yet a pattern; the third is.
-    for (const device of batch.slice(0, 2))
-      await post('repairs', {
-        deviceId: device.id,
-        method: 'vendorWarranty',
-        vendorId: vendor.id,
-        faultDescription: 'Screen flickers',
-        expectedReturnAt: '2030-01-01',
-      });
-    expect(await countOf('batchDefect')).toBe(0);
-    await post('repairs', {
-      deviceId: batch[2]!.id,
-      method: 'vendorWarranty',
-      vendorId: vendor.id,
-      faultDescription: 'Screen flickers',
-      expectedReturnAt: '2030-01-01',
+    const maker = await create('master/manufacturers', { name: 'Test Samsung' });
+    const componentModel = await create('master/models', {
+      name: '1TB NVMe',
+      categoryId: componentCategory.id,
+      manufacturerId: maker.id,
     });
-    expect(await countOf('batchDefect')).toBe(1);
-
-    // A device bought in another month is not of that batch, so a fourth
-    // repair does not make a second finding.
-    const other = await create('devices', {
-      modelId,
+    const spare = await create('stock', {
+      kind: 'component',
+      name: '1TB NVMe',
+      categoryId: componentCategory.id,
+      modelId: componentModel.id,
       locationId,
-      serialNo: 'BATCH-OTHER',
-      purchaseDate: '2025-06-02',
+      totalQuantity: 1,
+      minimumQuantity: 4,
     });
-    await post('repairs', {
-      deviceId: other.id,
-      method: 'vendorWarranty',
-      vendorId: vendor.id,
-      faultDescription: 'Screen flickers',
-      expectedReturnAt: '2030-01-01',
-    });
-    expect(await countOf('batchDefect')).toBe(1);
+    const reminders = await app.container
+      .resolve(maintenanceServiceToken)
+      .computeReminders();
+    // The accessory the fixture stocks is below its level too.
+    expect(reminders.find((entry) => entry.kind === 'lowStock')?.count).toBe(2);
 
-    // The vendor rule reads the promised date against the arrival date, so
-    // the orders are written straight in: going through the whole request →
-    // approval → order → receive路径 would only stamp today's dates, which
-    // the rule then has to be told to ignore.
-    const query = app.container.resolve(databaseManagerToken).query();
-    const order = async (no: string, expected: string, received: string) => {
-      const now = new Date().toISOString().replace('Z', '').slice(0, 23);
-      await query
-        .insertInto('purchaseOrders')
-        .values({
-          id: `po-${no}`,
-          orderNo: no,
-          reason: 'newHire',
-          requesterId: manager.user,
-          vendorId: vendor.id,
-          status: 'completed',
-          expectedAt: expected,
-          receivedAt: received,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .execute();
-    };
-    // Two orders a fortnight late is not yet a pattern; the third is.
-    await order('PO-A', '2026-01-10', '2026-01-24');
-    await order('PO-B', '2026-02-10', '2026-02-24');
-    expect(await countOf('vendorLateDeliveries')).toBe(0);
-    await order('PO-C', '2026-03-10', '2026-03-24');
-    expect(await countOf('vendorLateDeliveries')).toBe(1);
-    // And it resolves itself: the vendor is judged on its recent orders
-    // together, so the next one arriving on time clears the finding.
-    await order('PO-D', '2026-04-10', '2026-04-11');
-    expect(await countOf('vendorLateDeliveries')).toBe(0);
+    // And the named view lists it: 低于水位 compares columns, so it cannot
+    // be a filter parameter.
+    const listed = await data<{ id: string }[]>(
+      await get('stock?filter[kind]=component&filter[view]=lowStock'),
+    );
+    expect(listed.map((row) => row.id)).toEqual([spare.id]);
   });
 
   it('counts only the overdue loans on devices this reader is responsible for', async () => {

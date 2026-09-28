@@ -20,7 +20,12 @@ import {
   DEFAULT_ITAM_SETTINGS,
   type ItamSettingsKey,
 } from '../../providers/itam/settings.js';
-import { errorResponse, principalId, readJsonObject } from './http.js';
+import {
+  errorResponse,
+  principalId,
+  readJsonObject,
+  requireGrant,
+} from './http.js';
 import { ValidationError } from '../../providers/itam/errors.js';
 
 /**
@@ -84,7 +89,7 @@ export const settingsRoutes: AppApiRouteContribution<Application> =
                   action,
                 }
               : {
-                  resource: { type: 'resource', id: resourceIdOf(collection) },
+                  resource: { type: 'composite', id: resourceIdOf(collection) },
                   action,
                 },
           );
@@ -100,10 +105,7 @@ export const settingsRoutes: AppApiRouteContribution<Application> =
 
     routes.put(
       '/:key',
-      authorization.guard(() => ({
-        resource: ITAM_SETTINGS_RESOURCE,
-        action: 'update',
-      })),
+      requireGrant(ITAM_SETTINGS_RESOURCE, 'update'),
       async (context) => {
         const key = context.req.param('key');
         try {

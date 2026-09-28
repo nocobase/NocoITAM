@@ -9,9 +9,19 @@ coverage/
 .env.*
 !.env.example
 
+# Collection artifacts: what the database currently resolves each
+# Collection to, written by `nocobase collections generate` and refreshed by
+# `db apply` and `pnpm dev`. A local cache for every connection — safe to
+# delete, never read back. An external connection's hand-written
+# `database/<connection>/metadata/` is committed; this is not.
+database/*/collections/
+
 # Local application state.
 /storage/
 /.agents/
 /.agent-annotations/
 /.nocobase/
 *.log
+
+# macOS folder metadata.
+.DS_Store

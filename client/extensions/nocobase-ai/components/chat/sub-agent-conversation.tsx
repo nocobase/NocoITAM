@@ -6,40 +6,68 @@ import {
   useAI,
   type AISubAgentConversation as AISubAgentConversationType,
   type AIToolCallDecision,
+  type AIEmployee,
 } from '../../providers/index.js';
 import { AIEmployeeAvatar } from './ai-employee-avatar.js';
 import { MarkdownMessage } from './markdown-message.js';
 import { ReasoningPanel } from './reasoning-panel.js';
-import {
-  getToolCallName,
-  isToolCallPart,
-  ToolCallCard,
-} from './tool-call-card.js';
+import { ToolCallCard } from './tool-call-card.js';
+import { getToolCallName, isToolCallPart } from './tool-call-utils.js';
 import { useAITranslate } from '../../locales/use-ai-translate.js';
+import { withStableKeys } from '../../shared/keys.js';
 
-export function SubAgentConversation({
-  conversation,
-  onToolCallDecision,
-  status = 'ready',
-  decideToolCall,
-  focusComposer,
-}: {
+const getPartKey = (
+  part: AISubAgentConversationType['messages'][number]['parts'][number],
+) => {
+  if (part.type === 'data-subAgent') return part.id ?? part.data.sessionId;
+  if (isToolCallPart(part)) return part.toolCallId;
+  return part.type;
+};
+
+type SubAgentConversationProps = {
   conversation: AISubAgentConversationType;
   onToolCallDecision?: (decision: AIToolCallDecision) => void | Promise<void>;
   status?: 'submitted' | 'streaming' | 'ready' | 'error';
   decideToolCall?: (decision: AIToolCallDecision) => Promise<void>;
   focusComposer?: () => void;
-}) {
-  const t = useAITranslate();
+  readOnly?: boolean;
+};
+
+export function SubAgentConversation(props: SubAgentConversationProps) {
+  return props.readOnly ? (
+    <SubAgentConversationView {...props} />
+  ) : (
+    <ConnectedSubAgentConversation {...props} />
+  );
+}
+
+function ConnectedSubAgentConversation(props: SubAgentConversationProps) {
   const ai = useAI();
-  const completed = conversation.status === 'completed';
-  const [expanded, setExpanded] = useState(true);
-  const employee = ai.employees.find(
-    (item) => item.username === conversation.username,
-  ) ?? {
+  return (
+    <SubAgentConversationView
+      {...props}
+      employee={ai.employees.find(
+        (item) => item.username === props.conversation.username,
+      )}
+    />
+  );
+}
+
+function SubAgentConversationView({
+  conversation,
+  onToolCallDecision,
+  status = 'ready',
+  decideToolCall,
+  focusComposer,
+  readOnly = false,
+  employee = {
     username: conversation.username,
     nickname: conversation.username,
-  };
+  },
+}: SubAgentConversationProps & { employee?: AIEmployee }) {
+  const t = useAITranslate();
+  const completed = conversation.status === 'completed';
+  const [expanded, setExpanded] = useState(true);
   const messages =
     conversation.messages[0]?.role === 'user'
       ? conversation.messages.slice(1)
@@ -73,61 +101,68 @@ export function SubAgentConversation({
       {expanded ? (
         <div className='min-w-0 space-y-3 border-t border-dashed px-3 py-3'>
           {messages.flatMap((message) =>
-            message.parts.map((part, index) => {
-              if (part.type === 'reasoning') {
+            withStableKeys(message.parts, getPartKey).map(
+              ({ key, item: part }) => {
+                if (part.type === 'reasoning') {
+                  return (
+                    <ReasoningPanel
+                      key={`${message.id}-${key}`}
+                      streaming={part.state === 'streaming'}
+                    >
+                      {part.text}
+                    </ReasoningPanel>
+                  );
+                }
+                if (part.type === 'text') {
+                  return (
+                    <div
+                      key={`${message.id}-${key}`}
+                      className='ai-markdown min-w-0 max-w-full [overflow-wrap:anywhere] text-sm leading-6 text-foreground'
+                    >
+                      <MarkdownMessage>{part.text}</MarkdownMessage>
+                    </div>
+                  );
+                }
+                if (part.type === 'data-subAgent') {
+                  return (
+                    <SubAgentConversation
+                      key={`${message.id}-${key}`}
+                      conversation={part.data}
+                      readOnly={readOnly}
+                      onToolCallDecision={onToolCallDecision}
+                      status={status}
+                      decideToolCall={decideToolCall}
+                      focusComposer={focusComposer}
+                    />
+                  );
+                }
+                if (!isToolCallPart(part)) return [];
                 return (
-                  <ReasoningPanel
-                    key={`${message.id}-reasoning-${index}`}
-                    streaming={part.state === 'streaming'}
-                  >
-                    {part.text}
-                  </ReasoningPanel>
-                );
-              }
-              if (part.type === 'text') {
-                return (
-                  <div
-                    key={`${message.id}-text-${index}`}
-                    className='ai-markdown min-w-0 max-w-full [overflow-wrap:anywhere] text-sm leading-6 text-foreground'
-                  >
-                    <MarkdownMessage>{part.text}</MarkdownMessage>
-                  </div>
-                );
-              }
-              if (part.type === 'data-subAgent') {
-                return (
-                  <SubAgentConversation
-                    key={part.id ?? part.data.sessionId}
-                    conversation={part.data}
-                    onToolCallDecision={onToolCallDecision}
-                    status={status}
-                    decideToolCall={decideToolCall}
-                    focusComposer={focusComposer}
+                  <ToolCallCard
+                    key={`${message.id}-${key}`}
+                    part={part}
+                    approval={
+                      message.metadata?.toolApprovals?.[part.toolCallId]
+                    }
+                    disabled={interactionPending}
+                    readOnly={readOnly}
+                    onRevise={focusComposer}
+                    onDecision={async (decision, input) => {
+                      if (readOnly) return;
+                      const toolDecision = {
+                        messageId: message.id,
+                        toolCallId: part.toolCallId,
+                        toolName: getToolCallName(part),
+                        decision,
+                        input,
+                      } satisfies AIToolCallDecision;
+                      await decideToolCall?.(toolDecision);
+                      await onToolCallDecision?.(toolDecision);
+                    }}
                   />
                 );
-              }
-              if (!isToolCallPart(part)) return [];
-              return (
-                <ToolCallCard
-                  key={part.toolCallId}
-                  part={part}
-                  approval={message.metadata?.toolApprovals?.[part.toolCallId]}
-                  disabled={interactionPending}
-                  onRevise={focusComposer}
-                  onDecision={async (decision, input) => {
-                    const toolDecision = {
-                      messageId: message.id,
-                      toolCallId: part.toolCallId,
-                      toolName: getToolCallName(part),
-                      decision,
-                      input,
-                    } satisfies AIToolCallDecision;
-                    await decideToolCall?.(toolDecision);
-                    await onToolCallDecision?.(toolDecision);
-                  }}
-                />
-              );
-            }),
+              },
+            ),
           )}
           {!messages.length ? (
             <div

@@ -7,7 +7,7 @@ import {
 } from '../../../server/providers/itam/index.js';
 import { COUNT_FIELDS } from '../../../server/providers/itam/devices.js';
 import { REPORT_NAMES } from '../../../server/providers/itam/reports.js';
-import { runTool, toolServices, type ItamAgentContext } from './shared.js';
+import { runTool, toolServices } from './shared.js';
 
 const schema = z.object({
   devicesBy: z.enum(COUNT_FIELDS).optional(),
@@ -25,7 +25,7 @@ const schema = z.object({
   categoryId: z.string().max(64).optional(),
 });
 
-const tool: ToolsOptions<ItamAgentContext> = defineTools<ItamAgentContext>({
+const tool: ToolsOptions = defineTools({
   scope: 'GENERAL',
   defaultPermission: 'ALLOW',
   introduction: {

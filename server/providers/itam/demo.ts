@@ -1376,7 +1376,8 @@ export function createDemoService(dependencies: {
           name: texts.officeLicense,
           licensingModel: 'perDevice',
           // The licence never expires; its maintenance does, in six weeks.
-          maintenanceExpiryDate: daysFromNow(45),
+          // Inside the 30-day window, so 维保即将到期 has something to show.
+          maintenanceExpiryDate: daysFromNow(20),
         },
       });
       await entitlements.assignSeats(
@@ -1416,6 +1417,48 @@ export function createDemoService(dependencies: {
         })),
         context,
         all('entitlements', 'assignSeat'),
+      );
+      // Two subscriptions whose dates fall inside the week: one that will
+      // charge (yearly auto-renew) and one that will stop (nothing renews
+      // it). They are opposite acts, and the workbench lists them apart.
+      await track(
+        'entitlements',
+        await entitlements.create(
+          {
+            kind: 'subscription',
+            name: 'Zoom Workplace Pro（年付）',
+            softwareProductId: zoom.id,
+            billingModel: 'perSeat',
+            seatCount: 2,
+            billingCycle: 'year',
+            unitPrice: 150,
+            currency: 'USD',
+            expiryDate: daysFromNow(5),
+            autoRenew: true,
+            ownerId: actorId,
+          },
+          context,
+          all('entitlements', 'create'),
+        ),
+      );
+      await track(
+        'entitlements',
+        await entitlements.create(
+          {
+            kind: 'subscription',
+            name: 'Figma Professional（试用）',
+            softwareProductId: figma.id,
+            billingModel: 'flat',
+            billingCycle: 'year',
+            unitPrice: 900,
+            currency: 'USD',
+            expiryDate: daysFromNow(6),
+            autoRenew: false,
+            ownerId: actorId,
+          },
+          context,
+          all('entitlements', 'create'),
+        ),
       );
       const figmaSub = await track(
         'entitlements',
@@ -1624,10 +1667,9 @@ export function createDemoService(dependencies: {
           cost: 0,
           notes: texts.repairNotes,
         },
-        // Two of the 2023-11 MacBook Pro batch with the same swollen
-        // battery. With SG-LT-004 already out at the shop, three of that
-        // batch have been in for repair inside the window, which is what
-        // 同批次设备集中报修 looks for — a pattern no single record shows.
+        // Two more of the 2023-11 MacBook Pro batch, same swollen battery:
+        // a repair history with something in it, on devices that are still
+        // in use.
         {
           deviceId: String(laptops[0].id),
           method: 'vendorWarranty',
@@ -2261,27 +2303,25 @@ export function createDemoService(dependencies: {
           ).map((row) => row.recordId),
         )
         .execute<Row>();
-      // 供应商连续延迟交货 is a shape across orders, so the demo has to be
-      // late three times running for it to show at all. The three most
-      // recent arrivals get dates of their own — ordered and promised weeks
-      // back, arrived nine to sixteen days after they were due — because
-      // the lateness has to fit between the promised date and today. The
-      // rest arrive the day after they were due.
-      const LATE_DELIVERIES = [
-        { expectedDaysAgo: 19, lateDays: 9 },
-        { expectedDaysAgo: 26, lateDays: 13 },
-        { expectedDaysAgo: 34, lateDays: 16 },
+      // Every received order arrives the day after it was due. The three
+      // most recent get dates of their own as well: their definitions
+      // promise delivery days from now, which for an order already received
+      // would stamp an arrival in the future.
+      const RECENT_ARRIVALS = [
+        { expectedDaysAgo: 19 },
+        { expectedDaysAgo: 26 },
+        { expectedDaysAgo: 34 },
       ] as const;
       const newestFirst = [...receivedOrders].sort((a: Row, b: Row) =>
         (asText(b.expectedAt) ?? '').localeCompare(asText(a.expectedAt) ?? ''),
       );
       for (const [index, row] of newestFirst.entries()) {
-        const late = LATE_DELIVERIES[index];
+        const late = RECENT_ARRIVALS[index];
         const expected = late
           ? daysFromNow(-late.expectedDaysAgo)
           : asText(row.expectedAt);
         if (!expected) continue;
-        const arrived = addDays(expected, late ? late.lateDays : 1);
+        const arrived = addDays(expected, 1);
         await database
           .query()
           .updateTable('purchaseOrders')

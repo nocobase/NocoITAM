@@ -1,5 +1,6 @@
 // @vitest-environment node
 import addRepairNo from '../../database/main/migrations/202609190002_add_repair_no.js';
+import compositeGrants from '../../database/main/migrations/202609280007_composite_grants.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -130,6 +131,87 @@ describe('ITAM migrations', () => {
     ).toMatchObject({ nextValue: 3 });
   });
 
+  it('moves stored operation and settings grants to composites and back', async () => {
+    db = await createTestDatabase();
+    const connection = db.database.connection();
+    const context = {
+      connection,
+      query: connection.query,
+      builder: connection.builder,
+    };
+    // The authorization plugin owns this table; the ITAM migrations alone
+    // do not create it.
+    await connection.builder.createCollection(
+      'authorizationPermissionSets',
+      (collection) => {
+        collection.string('id', { length: 64, primary: true });
+        collection.string('key', { length: 255, nullable: false });
+        collection.json('grants', { nullable: false });
+        collection.datetime('createdAt', { nullable: false });
+        collection.datetime('updatedAt', { nullable: false });
+      },
+    );
+    const page = {
+      resource: { type: 'page', id: 'devices' },
+      actions: [{ action: 'access' }],
+    };
+    const before = [
+      page,
+      {
+        resource: { type: 'resource', id: 'itam.devices' },
+        actions: [
+          {
+            action: 'assign',
+            policy: { type: 'resource', devices: 'allRecords' },
+          },
+        ],
+      },
+      {
+        resource: { type: 'itam.settings', id: 'general' },
+        actions: [{ action: 'read' }, { action: 'update' }],
+      },
+    ];
+    const now = new Date();
+    await connection.query
+      .insertInto('authorizationPermissionSets')
+      .values({
+        id: 'set',
+        key: 'set',
+        grants: before,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .execute();
+    const grants = async () =>
+      (
+        await connection.query
+          .selectFrom('authorizationPermissionSets')
+          .select('grants')
+          .where('id', '=', 'set')
+          .executeTakeFirst<{ grants: unknown }>()
+      )?.grants;
+
+    await compositeGrants.up(context);
+    expect(await grants()).toEqual([
+      page,
+      {
+        resource: { type: 'composite', id: 'itam.devices' },
+        actions: [
+          {
+            action: 'assign',
+            policy: { type: 'composite', scopes: { devices: 'allRecords' } },
+          },
+        ],
+      },
+      {
+        resource: { type: 'settings', id: 'itam.settings' },
+        actions: [{ action: 'read' }, { action: 'update' }],
+      },
+    ]);
+    await compositeGrants.down!(context);
+    expect(await grants()).toEqual(before);
+  });
+
   it('enforces unique device numbers', async () => {
     db = await createTestDatabase();
     const query = db.database.query();
@@ -163,7 +245,7 @@ describe('ITAM migrations', () => {
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(78);
+    expect(rolledBack.rolledBack.length).toBe(81);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

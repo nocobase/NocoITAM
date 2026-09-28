@@ -4,9 +4,9 @@ import {
   CREATE_FIELD_GUIDE,
   CREATE_REQUIREMENTS,
 } from '../../../server/routes/itam/ai-records.js';
-import { recordTool, type ItamAgentContext } from './shared.js';
+import { recordTool } from './shared.js';
 
-const tool: ToolsOptions<ItamAgentContext> = recordTool(
+const tool: ToolsOptions = recordTool(
   'itam_create_record',
   {
     title: 'ITAM: create a record',

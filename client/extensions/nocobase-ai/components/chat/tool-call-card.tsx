@@ -5,10 +5,7 @@ import {
 } from '../../shared/ui/collapsible.js';
 import { Button } from '../../shared/ui/button.js';
 import { cn } from '../../shared/utils.js';
-import type {
-  AIChatMessage,
-  AIToolCallApproval,
-} from '../../providers/index.js';
+import type { AIToolCallApproval } from '../../providers/index.js';
 import {
   Check,
   ChevronDown,
@@ -17,23 +14,10 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from '@nocobase/i18n/client';
-import { useEffect, useState, type ReactNode } from 'react';
-import { useAIToolRenderer } from '../tools/tool-renderer-provider.js';
+import { useState, type ReactNode } from 'react';
+import { useAIToolRenderer } from '../tools/tool-renderer-context.js';
 import { useAITranslate } from '../../locales/use-ai-translate.js';
-
-export type ToolCallPart = Extract<
-  AIChatMessage['parts'][number],
-  { type: `tool-${string}` | 'dynamic-tool' }
->;
-
-export function isToolCallPart(
-  part: AIChatMessage['parts'][number],
-): part is ToolCallPart {
-  return part.type === 'dynamic-tool' || part.type.startsWith('tool-');
-}
-
-export const getToolCallName = (part: ToolCallPart) =>
-  part.type === 'dynamic-tool' ? part.toolName : part.type.slice(5);
+import { getToolCallName, type ToolCallPart } from './tool-call-utils.js';
 
 const toolLabel = (part: ToolCallPart) =>
   getToolCallName(part)
@@ -95,23 +79,6 @@ const approvalFromPart = (
     : undefined;
 };
 
-export type NocoBaseToolCallMetadata = {
-  autoApprove?: boolean;
-  invokeStatus?: string;
-  messageId?: string;
-  requiresApproval?: boolean;
-  selectedSuggestion?: string;
-  status?: string;
-};
-
-export const getNocoBaseToolCallMetadata = (part: ToolCallPart) => {
-  if (!('callProviderMetadata' in part)) return undefined;
-  const metadata = part.callProviderMetadata?.nocobase;
-  return metadata && typeof metadata === 'object'
-    ? (metadata as NocoBaseToolCallMetadata)
-    : undefined;
-};
-
 type ToolCallCardProps = {
   part: ToolCallPart;
   approval?: AIToolCallApproval;
@@ -122,6 +89,7 @@ type ToolCallCardProps = {
   onRevise?: () => void;
   inlineActions?: ReactNode;
   disabled?: boolean;
+  readOnly?: boolean;
 };
 
 export function ToolCallCard({
@@ -131,6 +99,7 @@ export function ToolCallCard({
   onRevise,
   inlineActions,
   disabled = false,
+  readOnly = false,
 }: ToolCallCardProps) {
   const t = useAITranslate();
   // Application change (ITAM): a tool's title comes from the application's
@@ -146,7 +115,8 @@ export function ToolCallCard({
   );
   const [deciding, setDeciding] = useState(false);
   const renderer = useAIToolRenderer(getToolCallName(part));
-  const Renderer = renderer?.component;
+  // Custom renderers can invoke tools on mount; disabled controls alone are not a read-only boundary.
+  const Renderer = readOnly ? undefined : renderer?.component;
   const [open, setOpen] = useState(false);
   const toolStatus = getStatus(part, t);
   const approvalRequired =
@@ -174,15 +144,19 @@ export function ToolCallCard({
   const hasInput = part.input !== undefined;
   const hasError = part.state === 'output-error';
 
-  useEffect(() => {
+  const [syncedApprovalStatus, setSyncedApprovalStatus] = useState(
+    resolvedApproval?.status,
+  );
+  if (syncedApprovalStatus !== resolvedApproval?.status) {
+    setSyncedApprovalStatus(resolvedApproval?.status);
     setApprovalStatus(resolvedApproval?.status ?? 'pending');
-  }, [resolvedApproval?.status]);
+  }
 
   const decide = async (
     decision: 'approve' | 'reject' | 'edit',
     input?: unknown,
   ) => {
-    if (disabled) return;
+    if (disabled || readOnly) return;
     setDeciding(true);
     try {
       await onDecision?.(decision, input);
@@ -247,11 +221,11 @@ export function ToolCallCard({
           </span>
           <ChevronDown className='size-3.5 shrink-0 transition-transform group-data-panel-open/tool-call:rotate-180' />
         </CollapsibleTrigger>
-        {inlineActions ? (
+        {inlineActions && !readOnly ? (
           <div className='flex shrink-0 items-center pr-2'>{inlineActions}</div>
         ) : null}
       </div>
-      {approvalRequired && !renderer?.handlesApproval ? (
+      {approvalRequired && !readOnly && !renderer?.handlesApproval ? (
         <div className='flex items-center justify-between gap-3 border-t px-3 py-2.5'>
           <p className='text-xs text-muted-foreground'>
             {t(
@@ -299,6 +273,12 @@ export function ToolCallCard({
         ) : hasInput ? (
           <ToolCallValue label={t('tool.input', 'Input')} value={part.input} />
         ) : null}
+        {readOnly && part.state === 'output-available' ? (
+          <ToolCallValue
+            label={t('tool.output', 'Output')}
+            value={part.output}
+          />
+        ) : null}
         {part.state === 'output-error' ? (
           <ToolCallValue
             label={t('tool.error', 'Error')}
@@ -306,7 +286,10 @@ export function ToolCallCard({
             error
           />
         ) : null}
-        {!Renderer && !hasInput && !hasError ? (
+        {!Renderer &&
+        !hasInput &&
+        !hasError &&
+        !(readOnly && part.state === 'output-available') ? (
           <p className='px-3 py-3 text-xs text-muted-foreground'>
             {t('tool.waitingInput', 'Waiting for tool input…')}
           </p>

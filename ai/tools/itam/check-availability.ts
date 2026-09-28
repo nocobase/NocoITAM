@@ -1,12 +1,7 @@
 import { defineTools, type ToolsOptions } from '@nocobase/ai-employee';
 import { z } from 'zod';
 
-import {
-  runTool,
-  summarize,
-  toolServices,
-  type ItamAgentContext,
-} from './shared.js';
+import { runTool, summarize, toolServices } from './shared.js';
 
 const schema = z.object({
   modelId: z.string().max(64).optional(),
@@ -15,7 +10,7 @@ const schema = z.object({
   stockName: z.string().max(100).optional(),
 });
 
-const tool: ToolsOptions<ItamAgentContext> = defineTools<ItamAgentContext>({
+const tool: ToolsOptions = defineTools({
   scope: 'GENERAL',
   defaultPermission: 'ALLOW',
   introduction: {

@@ -1,8 +1,8 @@
 import type { ToolsOptions } from '@nocobase/ai-employee';
 
-import { writeTool, type ItamAgentContext } from './shared.js';
+import { writeTool } from './shared.js';
 
-const tool: ToolsOptions<ItamAgentContext> = writeTool(
+const tool: ToolsOptions = writeTool(
   'itam_create_purchase_order',
   {
     title: 'ITAM: draft a purchase order',

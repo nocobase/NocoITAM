@@ -32,6 +32,7 @@ import {
   parseListOptions,
   principalId,
   readJsonObject,
+  requireGrant,
 } from './http.js';
 
 /**
@@ -176,10 +177,7 @@ export const dataRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
     });
 
     // Demo data: administrators generate or clear it from the settings page.
-    const admin = authorization.guard(() => ({
-      resource: ITAM_SETTINGS_RESOURCE,
-      action: 'update',
-    }));
+    const admin = requireGrant(ITAM_SETTINGS_RESOURCE, 'update');
     routes.get('/demo', admin, async (context) => {
       try {
         return context.json({ data: await demo.status() });

@@ -15,12 +15,12 @@ import {
 } from '../../shared/ui/tabs.js';
 import { Download, FileCode2, LoaderCircle, Printer } from 'lucide-react';
 import {
-  createContext,
+  Component,
   lazy,
   type PropsWithChildren,
+  type ReactNode,
   Suspense,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -35,12 +35,15 @@ import {
   type BusinessReportData,
 } from './business-report-utils.js';
 import { useAITranslate } from '../../locales/use-ai-translate.js';
+import { BusinessReportDialogContext } from './business-report-dialog-context.js';
+import { withStableKeys } from '../../shared/keys.js';
 
 type BusinessReportDialogSnapshot = {
   open: boolean;
   toolCallId?: string;
   report?: BusinessReportData;
   ready: boolean;
+  chartError?: boolean;
 };
 
 const closedSnapshot: BusinessReportDialogSnapshot = {
@@ -64,37 +67,28 @@ const sameReport = (
   left.fileName === right.fileName &&
   sameCharts(left.charts, right.charts);
 
-type BusinessReportDialogController = {
-  open: (
-    toolCallId: string,
-    report: BusinessReportData,
-    ready: boolean,
-  ) => void;
-  update: (
-    toolCallId: string,
-    report: BusinessReportData,
-    ready: boolean,
-  ) => void;
-};
-
-const BusinessReportDialogContext =
-  createContext<BusinessReportDialogController | null>(null);
-
-export function useBusinessReportDialog() {
-  const value = useContext(BusinessReportDialogContext);
-  if (!value) {
-    throw new Error(
-      'useBusinessReportDialog must be used inside BusinessReportDialogProvider',
-    );
-  }
-  return value;
-}
-
 export function BusinessReportDialogProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState(closedSnapshot);
+  const [renderErrors, setRenderErrors] = useState<
+    Record<string, BusinessReportData>
+  >({});
+  const hasRenderError = useCallback(
+    (toolCallId: string, report: BusinessReportData) =>
+      sameReport(renderErrors[toolCallId], report),
+    [renderErrors],
+  );
+  const onChartError = useCallback(() => {
+    const { toolCallId, report } = state;
+    if (!toolCallId || !report) return;
+    setRenderErrors((current) =>
+      sameReport(current[toolCallId], report)
+        ? current
+        : { ...current, [toolCallId]: report },
+    );
+  }, [state]);
   const open = useCallback(
     (toolCallId: string, report: BusinessReportData, ready: boolean) =>
-      setState({ open: true, toolCallId, report, ready }),
+      setState({ open: ready, toolCallId, report, ready }),
     [],
   );
   const update = useCallback(
@@ -104,16 +98,35 @@ export function BusinessReportDialogProvider({ children }: PropsWithChildren) {
         if (current.ready === ready && sameReport(current.report, report)) {
           return current;
         }
-        return { ...current, report, ready };
+        return {
+          ...current,
+          open: current.open && ready,
+          report,
+          ready,
+        };
       }),
     [],
   );
-  const controller = useMemo(() => ({ open, update }), [open, update]);
+  const controller = useMemo(
+    () => ({
+      open,
+      update,
+      hasRenderError,
+    }),
+    [open, update, hasRenderError],
+  );
   return (
     <BusinessReportDialogContext.Provider value={controller}>
       {children}
       <BusinessReportDialogHost
-        state={state}
+        state={{
+          ...state,
+          chartError:
+            state.toolCallId && state.report
+              ? hasRenderError(state.toolCallId, state.report)
+              : false,
+        }}
+        onChartError={onChartError}
         onOpenChange={(nextOpen) =>
           setState((current) =>
             current.open === nextOpen
@@ -124,6 +137,31 @@ export function BusinessReportDialogProvider({ children }: PropsWithChildren) {
       />
     </BusinessReportDialogContext.Provider>
   );
+}
+
+class ReportChartErrorBoundary extends Component<
+  PropsWithChildren<{
+    onError: () => void;
+    fallback: ReactNode;
+    failed?: boolean;
+  }>,
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch() {
+    this.props.onError();
+  }
+
+  render() {
+    return this.state.failed || this.props.failed
+      ? this.props.fallback
+      : this.props.children;
+  }
 }
 
 function ChartPreview({ options }: { options: Record<string, unknown> }) {
@@ -137,8 +175,10 @@ function ChartPreview({ options }: { options: Record<string, unknown> }) {
 function BusinessReportDialogHost({
   state,
   onOpenChange,
+  onChartError,
 }: {
   state: BusinessReportDialogSnapshot;
+  onChartError: () => void;
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useAITranslate();
@@ -146,7 +186,7 @@ function BusinessReportDialogHost({
   const [activeTab, setActiveTab] = useState('preview');
   const [htmlPreview, setHtmlPreview] = useState('');
   const [htmlPreviewSignature, setHtmlPreviewSignature] = useState('');
-  const [htmlLoading, setHtmlLoading] = useState(false);
+  const [htmlErrorSignature, setHtmlErrorSignature] = useState('');
   const [exporting, setExporting] = useState<'html' | 'pdf'>();
   const [exportError, setExportError] = useState<string>();
   const reportSignature = useMemo(
@@ -168,26 +208,83 @@ function BusinessReportDialogHost({
     [activeTab, reportMarkdown],
   );
 
-  useEffect(() => {
+  const exportHtml = async () => {
+    if (!report) return;
+    setExportError(undefined);
+    setExporting('html');
+    try {
+      const html = await buildBusinessReportHtml(report, { printMode: true });
+      downloadBusinessReportFile(
+        `${fileName}.html`,
+        html,
+        'text/html;charset=utf-8',
+      );
+    } catch (error) {
+      onChartError();
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : t('tool.businessReport.exportHtmlError', 'Unable to export HTML'),
+      );
+    } finally {
+      setExporting(undefined);
+    }
+  };
+
+  const printPdf = async () => {
+    if (!report) return;
+    setExportError(undefined);
+    setExporting('pdf');
+    try {
+      const opened = await printBusinessReport(report);
+      if (!opened) {
+        setExportError(
+          t(
+            'tool.businessReport.popupBlocked',
+            'Popup blocked. Allow popups and try printing again.',
+          ),
+        );
+      }
+    } catch (error) {
+      onChartError();
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : t('tool.businessReport.printError', 'Unable to print report'),
+      );
+    } finally {
+      setExporting(undefined);
+    }
+  };
+
+  // A new tool call resets the dialog while rendering rather than in an
+  // effect, so the first render already shows the new report's preview tab.
+  const [syncedToolCallId, setSyncedToolCallId] = useState(state.toolCallId);
+  if (syncedToolCallId !== state.toolCallId) {
+    setSyncedToolCallId(state.toolCallId);
     setActiveTab('preview');
     setHtmlPreview('');
     setHtmlPreviewSignature('');
+    setHtmlErrorSignature('');
     setExportError(undefined);
-  }, [state.toolCallId]);
+  }
+
+  // Whether the HTML tab is waiting for a build is derived from what has been
+  // built, so the effect only records results and never toggles a flag.
+  const htmlPreviewReady =
+    Boolean(htmlPreview) && htmlPreviewSignature === reportSignature;
+  const htmlLoading =
+    state.open &&
+    activeTab === 'html' &&
+    state.ready &&
+    !state.chartError &&
+    Boolean(report) &&
+    !htmlPreviewReady &&
+    htmlErrorSignature !== reportSignature;
 
   useEffect(() => {
-    if (
-      !state.open ||
-      activeTab !== 'html' ||
-      !state.ready ||
-      !report?.markdown ||
-      (htmlPreview && htmlPreviewSignature === reportSignature)
-    ) {
-      return;
-    }
+    if (!htmlLoading || !report) return;
     let active = true;
-    setHtmlLoading(true);
-    setHtmlPreview('');
     void buildBusinessReportHtml(report)
       .then((html) => {
         if (!active) return;
@@ -195,30 +292,19 @@ function BusinessReportDialogHost({
         setHtmlPreviewSignature(reportSignature);
       })
       .catch((error: unknown) => {
-        if (active) {
-          setExportError(
-            error instanceof Error
-              ? error.message
-              : t('tool.businessReport.buildHtmlError', 'Unable to build HTML'),
-          );
-        }
-      })
-      .finally(() => {
-        if (active) setHtmlLoading(false);
+        if (!active) return;
+        setHtmlErrorSignature(reportSignature);
+        onChartError();
+        setExportError(
+          error instanceof Error
+            ? error.message
+            : t('tool.businessReport.buildHtmlError', 'Unable to build HTML'),
+        );
       });
     return () => {
       active = false;
     };
-  }, [
-    activeTab,
-    htmlPreview,
-    htmlPreviewSignature,
-    report,
-    reportSignature,
-    state.open,
-    state.ready,
-    t,
-  ]);
+  }, [htmlLoading, report, reportSignature, onChartError, t]);
 
   if (!report) return null;
   const summary =
@@ -235,6 +321,14 @@ function BusinessReportDialogHost({
         <div className='border-b px-5 py-4'>
           <DialogTitle>{report.title}</DialogTitle>
           <DialogDescription className='mt-1'>{summary}</DialogDescription>
+          {state.chartError ? (
+            <p role='alert' className='mt-3 text-sm text-destructive'>
+              {t(
+                'tool.businessReport.chartFailed',
+                'Report chart rendering failed. Correct the chart options and retry.',
+              )}
+            </p>
+          ) : null}
         </div>
         <Tabs
           value={activeTab}
@@ -252,21 +346,36 @@ function BusinessReportDialogHost({
             value='preview'
             className='mt-3 min-h-0 overflow-auto rounded-lg border bg-background p-5'
           >
-            <div className='space-y-4'>
-              {previewParts.map((item, index) =>
-                item.type === 'markdown' ? (
-                  <div key={index} className='ai-markdown'>
-                    <MarkdownMessage variant='document'>
-                      {item.content}
-                    </MarkdownMessage>
-                  </div>
-                ) : (
-                  <div key={index} className='rounded-lg border p-3'>
-                    <ChartPreview options={item.options} />
-                  </div>
-                ),
-              )}
-            </div>
+            <ReportChartErrorBoundary
+              key={`${state.toolCallId}:${reportSignature}`}
+              onError={onChartError}
+              failed={state.chartError}
+              fallback={
+                <p className='rounded-lg border border-destructive p-4 text-sm text-destructive'>
+                  {t(
+                    'tool.businessReport.previewUnavailable',
+                    'Chart preview is unavailable.',
+                  )}
+                </p>
+              }
+            >
+              <div className='space-y-4'>
+                {withStableKeys(previewParts, (item) => item.type).map(
+                  ({ key, item }) =>
+                    item.type === 'markdown' ? (
+                      <div key={key} className='ai-markdown'>
+                        <MarkdownMessage variant='document'>
+                          {item.content}
+                        </MarkdownMessage>
+                      </div>
+                    ) : (
+                      <div key={key} className='rounded-lg border p-3'>
+                        <ChartPreview options={item.options} />
+                      </div>
+                    ),
+                )}
+              </div>
+            </ReportChartErrorBoundary>
           </TabsContent>
           <TabsContent
             value='markdown'
@@ -280,13 +389,14 @@ function BusinessReportDialogHost({
             value='html'
             className='mt-3 min-h-0 overflow-hidden rounded-lg border bg-background'
           >
-            {htmlPreview ? (
+            {htmlPreviewReady ? (
               <iframe
                 title={t(
                   'tool.businessReport.htmlPreview',
                   '{{title}} HTML preview',
                   { title: report.title },
                 )}
+                sandbox=''
                 srcDoc={htmlPreview}
                 className='size-full min-h-[480px] border-0 bg-white'
               />
@@ -308,7 +418,7 @@ function BusinessReportDialogHost({
           ) : null}
           <Button
             variant='outline'
-            disabled={!report.markdown}
+            disabled={!state.ready || state.chartError}
             onClick={() =>
               downloadBusinessReportFile(
                 `${fileName}.md`,
@@ -322,32 +432,10 @@ function BusinessReportDialogHost({
           </Button>
           <Button
             variant='outline'
-            disabled={!report.markdown || exporting !== undefined}
-            onClick={async () => {
-              setExportError(undefined);
-              setExporting('html');
-              try {
-                const html = await buildBusinessReportHtml(report, {
-                  printMode: true,
-                });
-                downloadBusinessReportFile(
-                  `${fileName}.html`,
-                  html,
-                  'text/html;charset=utf-8',
-                );
-              } catch (error) {
-                setExportError(
-                  error instanceof Error
-                    ? error.message
-                    : t(
-                        'tool.businessReport.exportHtmlError',
-                        'Unable to export HTML',
-                      ),
-                );
-              } finally {
-                setExporting(undefined);
-              }
-            }}
+            disabled={
+              !state.ready || state.chartError || exporting !== undefined
+            }
+            onClick={() => void exportHtml()}
           >
             {exporting === 'html' ? (
               <LoaderCircle className='animate-spin' />
@@ -357,33 +445,10 @@ function BusinessReportDialogHost({
             {t('tool.businessReport.downloadHtml', 'Download HTML')}
           </Button>
           <Button
-            disabled={!report.markdown || exporting !== undefined}
-            onClick={async () => {
-              setExportError(undefined);
-              setExporting('pdf');
-              try {
-                const opened = await printBusinessReport(report);
-                if (!opened) {
-                  setExportError(
-                    t(
-                      'tool.businessReport.popupBlocked',
-                      'Popup blocked. Allow popups and try printing again.',
-                    ),
-                  );
-                }
-              } catch (error) {
-                setExportError(
-                  error instanceof Error
-                    ? error.message
-                    : t(
-                        'tool.businessReport.printError',
-                        'Unable to print report',
-                      ),
-                );
-              } finally {
-                setExporting(undefined);
-              }
-            }}
+            disabled={
+              !state.ready || state.chartError || exporting !== undefined
+            }
+            onClick={() => void printPdf()}
           >
             {exporting === 'pdf' ? (
               <LoaderCircle className='animate-spin' />

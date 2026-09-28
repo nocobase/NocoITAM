@@ -1,8 +1,4 @@
-import type {
-  AIEmployeeManager,
-  ToolsManager,
-  ToolsOptions,
-} from '@nocobase/ai-employee';
+import type { AIEmployeeManager, ToolsManager } from '@nocobase/ai-employee';
 import { AIResourceRegistrar } from '@nocobase/app-plugin-ai-employee/server';
 
 import type { SettingsService } from '../server/providers/itam/settings.js';
@@ -128,10 +124,6 @@ export class ItamAiResources extends AIResourceRegistrar {
   protected override async registerTools(
     toolsManager: ToolsManager,
   ): Promise<void> {
-    // The manager takes tools of any context; the plugin hands each of ours
-    // the agent context `ItamAgentContext` describes.
-    await toolsManager.registerTools(
-      ITAM_TOOLS as unknown as ToolsOptions<unknown>[],
-    );
+    await toolsManager.registerTools(ITAM_TOOLS);
   }
 }

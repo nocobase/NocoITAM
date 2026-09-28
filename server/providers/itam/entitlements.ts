@@ -1484,30 +1484,59 @@ async function receivedSpend(
  * would be flagged every month), a perpetual one's maintenance within
  * `maintenanceLimit`. The two horizons are separate settings.
  */
+/**
+ * The three ways an entitlement's date asks for something, each a different
+ * act (split 2026-09-28 — one line saying "renewing or ending" could not
+ * say which):
+ *
+ * - `renewing`: a subscription that will **charge** on its date. Monthly
+ *   ones are left out: they renew every month, and twelve notices a year
+ *   that the same bill is coming is noise.
+ * - `ending`: a subscription that will **stop** on its date, because it is
+ *   not set to renew. The opposite action — renew it or lose access.
+ * - `maintenance`: a perpetual licence whose support and updates end. The
+ *   licence itself never expires.
+ */
+export type ExpiryHorizon = 'renewing' | 'ending' | 'maintenance';
+
+/**
+ * `any` is the three together — the entitlements page counts "anything with
+ * a date coming up" as one statistic, while the workbench asks for each act
+ * on its own. It takes both limits, because a subscription's horizon and a
+ * maintenance contract's are separate thresholds.
+ */
 export function expiringWhere(
+  horizon: ExpiryHorizon | 'any',
   day: string,
-  subscriptionLimit: string,
-  maintenanceLimit: string,
+  limit: string,
+  maintenanceLimit: string = limit,
 ): ExtraWhere {
   return (query) =>
-    query.where((eb) =>
-      eb.or([
-        eb.and([
-          eb('kind', '=', 'subscription'),
-          eb('expiryDate', '>=', day),
-          eb('expiryDate', '<=', subscriptionLimit),
-          eb.or([
-            eb('autoRenew', '=', false),
-            eb('billingCycle', '!=', 'month'),
-          ]),
-        ]),
-        eb.and([
-          eb('kind', '=', 'perpetual'),
-          eb('maintenanceExpiryDate', '>=', day),
-          eb('maintenanceExpiryDate', '<=', maintenanceLimit),
-        ]),
-      ]),
-    );
+    query.where((eb) => {
+      const dated = [
+        eb('kind', '=', 'subscription'),
+        eb('expiryDate', '>=', day),
+        eb('expiryDate', '<=', limit),
+      ];
+      // Charges on its date, unless it charges every month.
+      const renewing = eb.and([
+        ...dated,
+        eb('autoRenew', '=', true),
+        eb('billingCycle', '!=', 'month'),
+      ]);
+      // Stops on its date, because nothing renews it.
+      const ending = eb.and([...dated, eb('autoRenew', '=', false)]);
+      // The licence stays; its support and updates end.
+      const maintenance = eb.and([
+        eb('kind', '=', 'perpetual'),
+        eb('maintenanceExpiryDate', '>=', day),
+        eb('maintenanceExpiryDate', '<=', maintenanceLimit),
+      ]);
+      if (horizon === 'renewing') return renewing;
+      if (horizon === 'ending') return ending;
+      if (horizon === 'maintenance') return maintenance;
+      return eb.or([renewing, ending, maintenance]);
+    });
 }
 
 /**
@@ -1540,8 +1569,28 @@ async function viewWhere(
       return {
         filter: {},
         extra: expiringWhere(
+          'any',
           day,
           addDays(day, thresholds.subscriptionExpiryDays),
+          addDays(day, thresholds.maintenanceExpiryDays),
+        ),
+      };
+    case 'renewing':
+    case 'ending':
+      return {
+        filter: {},
+        extra: expiringWhere(
+          view,
+          day,
+          addDays(day, thresholds.subscriptionExpiryDays),
+        ),
+      };
+    case 'maintenance':
+      return {
+        filter: {},
+        extra: expiringWhere(
+          'maintenance',
+          day,
           addDays(day, thresholds.maintenanceExpiryDays),
         ),
       };

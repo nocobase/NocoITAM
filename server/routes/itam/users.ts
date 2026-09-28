@@ -2,7 +2,7 @@ import {
   authenticationToken,
   userAdministrationServiceToken,
 } from '@nocobase/app-plugin-authentication';
-import { permissionSetsToken } from '@nocobase/app-plugin-authorization/server';
+import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
 import type { Application } from '@nocobase/app-server/application';
 import {
   defineApiRoutes,
@@ -98,15 +98,16 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
       q: string,
     ): Promise<{ id: string; name: string }[]> => {
       if (
-        !app.container.has(permissionSetsToken) ||
+        !app.container.has(authorizationToken) ||
         !app.container.has(userAdministrationServiceToken)
       )
         return [];
-      const permissionSets = app.container.resolve(permissionSetsToken);
+      const permissionSets =
+        app.container.resolve(authorizationToken).permissionSets;
       const sets = (await permissionSets.list()).filter((set) =>
         set.grants.some(
           (grant) =>
-            grant.resource.type === 'resource' &&
+            grant.resource.type === 'composite' &&
             grant.resource.id === resource &&
             grant.actions.some((entry) => entry.action === action),
         ),
@@ -154,38 +155,44 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
 
     // Who a repair may be made the responsibility of: whoever may finish
     // one. An employee holds no repair grant, so they are not offered.
-    router.get('/itam/users/repair-owners', auth.required(), async (context) => {
-      const url = new URL(context.req.url);
-      // Asked for particular ids, this is a name lookup, not a candidate
-      // list: the owner a repair already holds must read back even when
-      // they are not a candidate now — `root` belongs to no permission set
-      // of this application's, and a set may be changed after the fact.
-      const ids = url.searchParams
-        .getAll('ids')
-        .flatMap((value) => value.split(','))
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .slice(0, 100);
-      if (ids.length > 0) {
-        if (!app.container.has(userAdministrationServiceToken))
-          return context.json(listed([]));
-        const page = await app.container
-          .resolve(userAdministrationServiceToken)
-          .list({ userIds: ids, pageSize: ids.length });
+    router.get(
+      '/itam/users/repair-owners',
+      auth.required(),
+      async (context) => {
+        const url = new URL(context.req.url);
+        // Asked for particular ids, this is a name lookup, not a candidate
+        // list: the owner a repair already holds must read back even when
+        // they are not a candidate now — `root` belongs to no permission set
+        // of this application's, and a set may be changed after the fact.
+        const ids = url.searchParams
+          .getAll('ids')
+          .flatMap((value) => value.split(','))
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .slice(0, 100);
+        if (ids.length > 0) {
+          if (!app.container.has(userAdministrationServiceToken))
+            return context.json(listed([]));
+          const page = await app.container
+            .resolve(userAdministrationServiceToken)
+            .list({ userIds: ids, pageSize: ids.length });
+          return context.json(
+            listed(
+              page.items.map((user) => ({ id: user.id, name: user.name })),
+            ),
+          );
+        }
         return context.json(
-          listed(page.items.map((user) => ({ id: user.id, name: user.name }))),
-        );
-      }
-      return context.json(
-        listed(
-          await holdersOf(
-            'itam.repairs',
-            'complete',
-            url.searchParams.get('q') ?? '',
+          listed(
+            await holdersOf(
+              'itam.repairs',
+              'complete',
+              url.searchParams.get('q') ?? '',
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
     router.get(
       '/itam/users/repair-owners/:id',
       auth.required(),
