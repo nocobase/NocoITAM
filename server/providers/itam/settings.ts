@@ -25,17 +25,6 @@ export interface ItamSettings {
     readonly auditDays: number;
     readonly idleSeatRatio: number;
     readonly defaultStockMinimum: number;
-    /**
-     * The two cross-record patterns. A pattern is a shape across several
-     * records rather than one record passing a limit, so both its window
-     * and how many hits make it a pattern are the administrator's to set —
-     * a rule nobody can tune is a rule people switch off after the first
-     * false positive.
-     */
-    readonly lateDeliveryDays: number;
-    readonly lateDeliveryOrders: number;
-    readonly batchDefectDays: number;
-    readonly batchDefectDevices: number;
   };
   readonly numbering: Readonly<Record<NumberingKind, NumberingRule>>;
   readonly ai: {
@@ -74,10 +63,6 @@ export const DEFAULT_ITAM_SETTINGS: ItamSettings = {
     auditDays: 365,
     idleSeatRatio: 0.3,
     defaultStockMinimum: 5,
-    lateDeliveryDays: 7,
-    lateDeliveryOrders: 3,
-    batchDefectDays: 90,
-    batchDefectDevices: 3,
   },
   numbering: {
     device: { prefix: 'DE-', width: 6, start: 1 },

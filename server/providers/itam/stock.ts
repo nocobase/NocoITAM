@@ -678,13 +678,42 @@ export function createStockService(
       Number(row.totalQuantity ?? 0) - Number(row.usedQuantity ?? 0),
   });
 
+  /**
+   * The items whose free quantity is under their water level — the same
+   * predicate the `lowStock` reminder counts, for all three kinds. It
+   * compares two columns minus a third, which neither a filter parameter
+   * nor `whereRef` can state, so the ids are resolved first and the list
+   * filters on them (as `itam.myAudits` does for its JSON column). Empty
+   * means no row: `''` is nobody's id.
+   */
+  const lowStockIds = async (): Promise<readonly string[]> => {
+    const rows = await database
+      .query()
+      .selectFrom('stockItems')
+      .select(['id', 'totalQuantity', 'usedQuantity', 'minimumQuantity'])
+      .where('minimumQuantity', '>', 0)
+      .execute<Row>();
+    const ids = rows
+      .filter(
+        (row) =>
+          Number(row.totalQuantity ?? 0) - Number(row.usedQuantity ?? 0) <
+          Number(row.minimumQuantity ?? 0),
+      )
+      .map((row) => String(row.id));
+    return ids.length > 0 ? ids : [''];
+  };
+
   return {
     async list(options, conditions) {
+      const { view, ...filter } = options.filter ?? {};
+      const ids = view === 'lowStock' ? await lowStockIds() : undefined;
       const result = await listCollection(
         database,
         definition,
-        options,
+        { ...options, filter },
         conditions,
+        {},
+        ids ? (query) => query.where('id', 'in', ids) : undefined,
       );
       return { ...result, data: result.data.map(withAvailable) };
     },

@@ -114,12 +114,15 @@ function NumberField({
   value,
   onChange,
   step,
+  hint,
 }: {
   readonly id: string;
   readonly label: string;
   readonly value: number;
   readonly onChange: (value: number) => void;
   readonly step?: number;
+  /** What the number decides, in a line. A threshold's name rarely says. */
+  readonly hint?: string;
 }): ReactElement {
   return (
     <div className='grid gap-1.5'>
@@ -131,6 +134,9 @@ function NumberField({
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
       />
+      {hint ? (
+        <p className='text-xs text-muted-foreground'>{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -195,6 +201,7 @@ function ThresholdsCard({
             key={key}
             id={`threshold-${key}`}
             label={t(`settings.thresholds.${key}`)}
+            hint={t(`settings.thresholdHints.${key}`, { defaultValue: '' })}
             value={draft[key]}
             step={key === 'idleSeatRatio' ? 0.05 : 1}
             onChange={(next) => setDraft({ ...draft, [key]: next })}
