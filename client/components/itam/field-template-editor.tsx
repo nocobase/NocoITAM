@@ -1,0 +1,649 @@
+import { useTranslation } from '@nocobase/i18n/client';
+import {
+  Eye,
+  EyeOff,
+  GripVertical,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useState, type DragEvent, type ReactElement } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+import { ConfirmDialog } from './confirm-dialog.js';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { apiErrorBody } from '@/lib/itam/api';
+import { errorMessage } from '@/lib/itam/format';
+import { cn } from '@/lib/utils';
+
+/** One extended field of a category, as stored in `categories.fieldTemplate`. */
+export interface TemplateField {
+  readonly key: string;
+  readonly label: string;
+  readonly type: 'text' | 'number' | 'date' | 'select' | 'boolean';
+  readonly required?: boolean;
+  readonly options?: readonly string[];
+  /** Kept in the template (its values survive) but not shown on device pages. */
+  readonly hidden?: boolean;
+}
+
+const TYPES: readonly TemplateField['type'][] = [
+  'text',
+  'number',
+  'date',
+  'select',
+  'boolean',
+];
+
+function parseTemplate(value: unknown): TemplateField[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const field = entry as Partial<TemplateField>;
+    if (typeof field.key !== 'string' || typeof field.label !== 'string')
+      return [];
+    return [
+      {
+        key: field.key,
+        label: field.label,
+        type: TYPES.includes(field.type as TemplateField['type'])
+          ? (field.type as TemplateField['type'])
+          : 'text',
+        required: Boolean(field.required),
+        options: Array.isArray(field.options)
+          ? field.options.map(String)
+          : undefined,
+        ...(field.hidden ? { hidden: true } : {}),
+      },
+    ];
+  });
+}
+
+/** Derives a camelCase key from a label the first time a row gets one. */
+function keyFromLabel(label: string): string {
+  const ascii = label
+    .normalize('NFKD')
+    .replace(/[^A-Za-z0-9 ]/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (ascii.length === 0) return '';
+  return ascii
+    .map((part, index) =>
+      index === 0
+        ? part.toLowerCase()
+        : part[0].toUpperCase() + part.slice(1).toLowerCase(),
+    )
+    .join('');
+}
+
+/**
+ * Edits a category's extended-field definitions in a table: label, key,
+ * type, required and (for selects) the options. Saved as a whole; the device
+ * pages of that category pick the new template up on their next load.
+ */
+let nextRowId = 0;
+/** A row under edit: the field plus a stable id and the options as typed. */
+type EditRow = TemplateField & { rid: number; optionsText: string };
+const parseOptions = (text: string): string[] =>
+  text
+    .split(/[,，]/)
+    .map((option) => option.trim())
+    .filter(Boolean);
+const withIds = (fields: TemplateField[]): EditRow[] =>
+  fields.map((field) => ({
+    ...field,
+    rid: nextRowId++,
+    optionsText: (field.options ?? []).join(', '),
+  }));
+// Options come from the typed text so a comma or space in progress is kept.
+const stripIds = (rows: readonly EditRow[]): TemplateField[] =>
+  rows.map(({ rid: _rid, optionsText, ...field }) => ({
+    ...field,
+    options:
+      field.type === 'select' ? parseOptions(optionsText) : field.options,
+  }));
+
+export function FieldTemplateEditor({
+  value,
+  editable,
+  usage,
+  onSave,
+}: {
+  readonly value: unknown;
+  readonly editable: boolean;
+  /** Devices holding a value per key; such fields can be hidden, not deleted. */
+  readonly usage?: Readonly<Record<string, number>>;
+  readonly onSave: (template: TemplateField[]) => Promise<void>;
+}): ReactElement {
+  const { t } = useTranslation();
+  const [rows, setRows] = useState(() => withIds(parseTemplate(value)));
+  // A category with no extended fields yet opens in the editor: its read-only
+  // state is an empty card whose only offer is 编辑, so the reader has to
+  // press a button to be told they can add one. Starting in the editor puts
+  // 添加字段 straight in front of them. Cancelling still returns to the
+  // empty card — that is the reader saying they did not want one.
+  const [editing, setEditing] = useState(
+    () => editable && parseTemplate(value).length === 0,
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+  // Problems surface only after a save attempt; a fresh row starts quiet.
+  const [attempted, setAttempted] = useState(false);
+  // Removing a row that already describes a field asks first; a blank row
+  // just goes.
+  const [removing, setRemoving] = useState<number>();
+  const removeRow = (index: number) =>
+    setRows((current) => current.filter((_, at) => at !== index));
+  /** Inserts a blank row after `index` (at the end when undefined). */
+  const insertAfter = (index?: number) =>
+    setRows((current) => {
+      const blank = {
+        key: '',
+        label: '',
+        type: 'text' as const,
+        required: false,
+        rid: nextRowId++,
+        optionsText: '',
+      };
+      const at = index === undefined ? current.length : index + 1;
+      return [...current.slice(0, at), blank, ...current.slice(at)];
+    });
+  const dirty =
+    JSON.stringify(stripIds(rows)) !== JSON.stringify(parseTemplate(value));
+
+  const update = (index: number, patch: Partial<EditRow>) =>
+    setRows((current) =>
+      current.map((row, at) => (at === index ? { ...row, ...patch } : row)),
+    );
+  // Rows reorder by dragging the grip; the drop target is the row under
+  // the pointer, before or after it depending on the pointer's half.
+  const [dragIndex, setDragIndex] = useState<number>();
+  const [dropAt, setDropAt] = useState<number>();
+  const reorder = (from: number, to: number) =>
+    setRows((current) => {
+      if (from === to || from + 1 === to) return current;
+      const next = [...current];
+      const [moved] = next.splice(from, 1);
+      next.splice(to > from ? to - 1 : to, 0, moved);
+      return next;
+    });
+  const dropIndexFor = (event: DragEvent<HTMLElement>, index: number) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return event.clientY - rect.top < rect.height / 2 ? index : index + 1;
+  };
+
+  // One problem per row, attached to the cell it concerns.
+  type ProblemCell = 'label' | 'key' | 'options';
+  const problems = new Map<number, { cell: ProblemCell; message: string }>();
+  const seen = new Set<string>();
+  rows.forEach((row, index) => {
+    if (!row.label.trim())
+      problems.set(index, {
+        cell: 'label',
+        message: t('fieldTemplate.labelRequired'),
+      });
+    else if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(row.key))
+      problems.set(index, {
+        cell: 'key',
+        message: t('fieldTemplate.keyInvalid'),
+      });
+    else if (seen.has(row.key))
+      problems.set(index, {
+        cell: 'key',
+        message: t('fieldTemplate.keyDuplicate'),
+      });
+    else if (
+      row.type === 'select' &&
+      parseOptions(row.optionsText).length === 0
+    )
+      problems.set(index, {
+        cell: 'options',
+        message: t('fieldTemplate.optionsRequired'),
+      });
+    seen.add(row.key);
+  });
+  const problemAt = (index: number, cell: ProblemCell) =>
+    attempted && problems.get(index)?.cell === cell
+      ? problems.get(index)?.message
+      : undefined;
+  const problemText = (index: number, cell: ProblemCell) => {
+    const message = problemAt(index, cell);
+    return message ? (
+      <p className='mt-1 text-xs text-destructive'>{message}</p>
+    ) : null;
+  };
+
+  const save = async () => {
+    if (problems.size > 0) {
+      setAttempted(true);
+      return;
+    }
+    setSaving(true);
+    setError(undefined);
+    try {
+      await onSave(
+        stripIds(rows).map((row) => ({
+          key: row.key,
+          label: row.label.trim(),
+          type: row.type,
+          ...(row.required ? { required: true } : {}),
+          ...(row.hidden ? { hidden: true } : {}),
+          ...(row.type === 'select' ? { options: row.options ?? [] } : {}),
+        })),
+      );
+      setEditing(false);
+    } catch (caught) {
+      setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    const fields = parseTemplate(value);
+    return (
+      <Card className='py-0'>
+        <CardContent className='space-y-3 p-4'>
+          <div className='flex min-h-9 items-center justify-between gap-3 border-b border-border/60 pb-2'>
+            <div className='min-w-0'>
+              <h2 className='font-heading text-sm font-semibold'>
+                {t('fieldTemplate.title')}
+              </h2>
+            </div>
+            {editable ? (
+              <Button
+                size='sm'
+                variant='outline'
+                className='shrink-0'
+                onClick={() => {
+                  setRows(withIds(parseTemplate(value)));
+                  setError(undefined);
+                  setAttempted(false);
+                  setEditing(true);
+                }}
+              >
+                <Pencil data-icon='inline-start' />
+                {t('actions.edit')}
+              </Button>
+            ) : null}
+          </div>
+          {fields.length === 0 ? (
+            <p className='text-sm text-muted-foreground'>
+              {t('fieldTemplate.empty')}
+            </p>
+          ) : (
+            <div className='flex flex-wrap gap-2'>
+              {fields.map((field) => (
+                <Badge
+                  key={field.key}
+                  variant={field.hidden ? 'outline' : 'secondary'}
+                  className={cn(
+                    field.hidden && 'text-muted-foreground line-through',
+                  )}
+                  title={
+                    field.hidden ? t('fieldTemplate.hiddenHint') : undefined
+                  }
+                >
+                  {field.hidden ? <EyeOff className='size-3.5' /> : null}
+                  {field.label}
+                  <span className='font-normal text-muted-foreground no-underline'>
+                    {t(`fieldTemplate.types.${field.type}`)}
+                    {field.required ? ' *' : ''}
+                  </span>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className='py-0'>
+      <CardContent className='space-y-3 p-4'>
+        <div className='flex min-h-9 items-center justify-between gap-3 border-b border-border/60 pb-2'>
+          <div className='min-w-0'>
+            <h2 className='font-heading text-sm font-semibold'>
+              {t('fieldTemplate.title')}
+            </h2>
+          </div>
+          {/* Nothing has been written yet, so there is nothing to keep or
+              throw away: the card offers only 添加字段 until a row exists. */}
+          {editable && rows.length > 0 ? (
+            <div className='flex items-center gap-2'>
+              <Button
+                size='sm'
+                variant='ghost'
+                disabled={saving}
+                onClick={() => {
+                  setRows(withIds(parseTemplate(value)));
+                  setError(undefined);
+                  setEditing(false);
+                }}
+              >
+                <X data-icon='inline-start' />
+                {t('actions.cancel')}
+              </Button>
+              <Button
+                size='sm'
+                disabled={!dirty || saving}
+                onClick={() => void save()}
+              >
+                <Save data-icon='inline-start' />
+                {t('actions.save')}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+        {rows.length === 0 ? (
+          <div className='flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground'>
+            {t('fieldTemplate.empty')}
+            {/* The only thing to do on an empty card, so it reads as the
+                action it is rather than as a muted secondary one. */}
+            <Button size='sm' onClick={() => insertAfter()}>
+              <Plus data-icon='inline-start' />
+              {t('fieldTemplate.add')}
+            </Button>
+          </div>
+        ) : (
+          <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {editable ? <TableHead className='w-8' /> : null}
+                  <TableHead>{t('fieldTemplate.label')}</TableHead>
+                  <TableHead className='w-40'>
+                    {t('fieldTemplate.key')}
+                  </TableHead>
+                  <TableHead className='w-32'>
+                    {t('fieldTemplate.type')}
+                  </TableHead>
+                  <TableHead className='w-16 text-center'>
+                    {t('fieldTemplate.required')}
+                  </TableHead>
+                  <TableHead>{t('fieldTemplate.options')}</TableHead>
+                  {editable ? <TableHead className='w-28' /> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row, index) => (
+                  <TableRow
+                    key={row.rid}
+                    className={cn(
+                      dragIndex === index && 'opacity-40',
+                      row.hidden && 'text-muted-foreground',
+                      dropAt === index &&
+                        'shadow-[inset_0_2px_0_0_var(--color-primary)]',
+                      dropAt === index + 1 &&
+                        index === rows.length - 1 &&
+                        'shadow-[inset_0_-2px_0_0_var(--color-primary)]',
+                    )}
+                    onDragOver={(event) => {
+                      if (dragIndex === undefined) return;
+                      event.preventDefault();
+                      const at = dropIndexFor(event, index);
+                      if (at !== dropAt) setDropAt(at);
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      if (dragIndex !== undefined)
+                        reorder(dragIndex, dropIndexFor(event, index));
+                      setDragIndex(undefined);
+                      setDropAt(undefined);
+                    }}
+                  >
+                    {editable ? (
+                      <TableCell className='pr-0'>
+                        <span
+                          draggable
+                          aria-label={t('fieldTemplate.drag')}
+                          className='inline-flex cursor-grab text-muted-foreground/60 active:cursor-grabbing'
+                          onDragStart={(event) => {
+                            event.dataTransfer.effectAllowed = 'move';
+                            event.dataTransfer.setData('text/plain', row.key);
+                            setDragIndex(index);
+                          }}
+                          onDragEnd={() => {
+                            setDragIndex(undefined);
+                            setDropAt(undefined);
+                          }}
+                        >
+                          <GripVertical className='size-4' />
+                        </span>
+                      </TableCell>
+                    ) : null}
+                    <TableCell>
+                      {editable ? (
+                        <Input
+                          value={row.label}
+                          aria-invalid={
+                            problemAt(index, 'label') ? true : undefined
+                          }
+                          onChange={(event) =>
+                            update(index, {
+                              label: event.target.value,
+                              ...(row.key === '' ||
+                              row.key === keyFromLabel(row.label)
+                                ? { key: keyFromLabel(event.target.value) }
+                                : {}),
+                            })
+                          }
+                        />
+                      ) : (
+                        row.label
+                      )}
+                      {problemText(index, 'label')}
+                    </TableCell>
+                    <TableCell>
+                      {editable ? (
+                        <Input
+                          value={row.key}
+                          className='font-mono text-xs'
+                          aria-invalid={
+                            problemAt(index, 'key') ? true : undefined
+                          }
+                          onChange={(event) =>
+                            update(index, { key: event.target.value })
+                          }
+                        />
+                      ) : (
+                        <code className='text-xs'>{row.key}</code>
+                      )}
+                      {problemText(index, 'key')}
+                    </TableCell>
+                    <TableCell>
+                      {editable ? (
+                        <Select
+                          items={TYPES.map((type) => ({
+                            value: type,
+                            label: t(`fieldTemplate.types.${type}`),
+                          }))}
+                          value={row.type}
+                          onValueChange={(next) =>
+                            update(index, {
+                              type: next as TemplateField['type'],
+                            })
+                          }
+                        >
+                          <SelectTrigger className='w-full'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TYPES.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {t(`fieldTemplate.types.${type}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        t(`fieldTemplate.types.${row.type}`)
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex justify-center'>
+                        <Checkbox
+                          checked={Boolean(row.required)}
+                          disabled={!editable}
+                          aria-label={t('fieldTemplate.required')}
+                          onCheckedChange={(checked) =>
+                            update(index, { required: Boolean(checked) })
+                          }
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {row.type === 'select' ? (
+                        editable ? (
+                          <>
+                            <Input
+                              value={row.optionsText}
+                              placeholder={t(
+                                'fieldTemplate.optionsPlaceholder',
+                              )}
+                              aria-invalid={
+                                problemAt(index, 'options') ? true : undefined
+                              }
+                              onChange={(event) =>
+                                update(index, {
+                                  optionsText: event.target.value,
+                                })
+                              }
+                            />
+                            {problemText(index, 'options')}
+                          </>
+                        ) : (
+                          (row.options ?? []).join(', ')
+                        )
+                      ) : (
+                        <span className='text-muted-foreground'>—</span>
+                      )}
+                    </TableCell>
+                    {editable ? (
+                      <TableCell>
+                        <div className='flex items-center justify-end gap-0.5'>
+                          <Button
+                            size='icon'
+                            variant='ghost'
+                            aria-label={t('fieldTemplate.addBelow')}
+                            onClick={() => insertAfter(index)}
+                          >
+                            <Plus />
+                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  size='icon'
+                                  variant='ghost'
+                                  aria-label={
+                                    row.hidden
+                                      ? t('fieldTemplate.show')
+                                      : t('fieldTemplate.hide')
+                                  }
+                                  onClick={() =>
+                                    update(index, { hidden: !row.hidden })
+                                  }
+                                />
+                              }
+                            >
+                              {row.hidden ? <EyeOff /> : <Eye />}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {row.hidden
+                                ? t('fieldTemplate.showTip')
+                                : t('fieldTemplate.hideTip')}
+                            </TooltipContent>
+                          </Tooltip>
+                          {(usage?.[row.key] ?? 0) > 0 ? (
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <span className='inline-flex' tabIndex={0} />
+                                }
+                              >
+                                <Button
+                                  size='icon'
+                                  variant='ghost'
+                                  disabled
+                                  aria-label={t('fieldTemplate.remove')}
+                                >
+                                  <Trash2 />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {t('fieldTemplate.inUse', {
+                                  count: usage?.[row.key] ?? 0,
+                                })}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Button
+                              size='icon'
+                              variant='ghost'
+                              aria-label={t('fieldTemplate.remove')}
+                              onClick={() =>
+                                row.label.trim() || row.key
+                                  ? setRemoving(index)
+                                  : removeRow(index)
+                              }
+                            >
+                              <Trash2 />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        {error ? <p className='text-sm text-destructive'>{error}</p> : null}
+        <ConfirmDialog
+          open={removing !== undefined}
+          onOpenChange={(open) => !open && setRemoving(undefined)}
+          title={t('fieldTemplate.removeTitle', {
+            label: removing !== undefined ? rows[removing]?.label : '',
+          })}
+          description={t('fieldTemplate.removeDescription')}
+          destructive
+          confirmLabel={t('fieldTemplate.remove')}
+          onConfirm={() => {
+            if (removing !== undefined) removeRow(removing);
+            setRemoving(undefined);
+          }}
+        />
+      </CardContent>
+    </Card>
+  );
+}

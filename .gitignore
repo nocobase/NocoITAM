@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+
+# Local configuration, including the generated AUTH_SECRET.
+/config.yml
+# Local secrets (model API keys) that config.yml refers to as ${...}.
+.env
+.env.*
+!.env.example
+
+# Local application state.
+/storage/
+/.agents/
+/.agent-annotations/
+/.nocobase/
+*.log

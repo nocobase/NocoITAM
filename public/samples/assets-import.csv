@@ -1,0 +1,5 @@
+assetNo,serialNo,name,model,location,department,ownership,vendor,purchaseDate,purchasePrice,currency,warrantyEndDate,notes
+,C02XK1ABMD6T,MacBook Pro 14 (M4) – Li Na,MacBook Pro 14 M4,HQ / Floor 3,Engineering,owned,Apple Store,2026-03-02,2199,CNY,2029-03-01,Imported from spreadsheet
+,C02XK1ABMD7U,MacBook Pro 14 (M4) – spare,MacBook Pro 14 M4,HQ / Floor 3,,owned,Apple Store,2026-03-02,2199,CNY,2029-03-01,
+,5CG1234ABC,ThinkPad T14 Gen 5,ThinkPad T14 Gen 5,HQ / Floor 2,Sales,leased,Lenovo Direct,2025-11-15,1099,CNY,2028-11-14,Lease ends 2028-11
+,DELL-U2723QE-77A1,Dell U2723QE monitor,Dell U2723QE,HQ / Floor 2,Sales,owned,Dell,2025-11-15,499,CNY,2028-11-14,

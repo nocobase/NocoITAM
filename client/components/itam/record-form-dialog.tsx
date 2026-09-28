@@ -1,0 +1,274 @@
+import type { FileRecord } from '@nocobase/app-plugin-file/client';
+import { useTranslation } from '@nocobase/i18n/client';
+import { useState, type FormEvent, type ReactElement } from 'react';
+
+import { FieldLabel } from '@/components/itam/field-label';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { apiErrorBody, type ItamRecord } from '@/lib/itam/api';
+import {
+  resolveFormField,
+  changeFormField,
+  type FieldDefinition,
+} from '@/lib/itam/fields';
+import { errorMessage } from '@/lib/itam/format';
+
+import { AttachmentsUpload } from './attachments-upload.js';
+import { FieldInput } from './field-input.js';
+
+export interface RecordFormDialogProps {
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly title: string;
+  readonly description?: string;
+  readonly fields: readonly FieldDefinition[];
+  readonly initial?: Readonly<Record<string, unknown>>;
+  readonly submitting?: boolean;
+  readonly error?: unknown;
+  readonly onSubmit: (
+    values: Record<string, unknown>,
+    attachments: readonly FileRecord[],
+  ) => Promise<void> | void;
+  /** Offer an attachment field (create only); the files come back with the values. */
+  readonly attachments?: boolean;
+  /** The record being edited, so a tree field can exclude it from parents. */
+  readonly recordId?: string;
+  /**
+   * Called after a field changes; whatever it returns is merged into the
+   * values (a model choice filling in the name, for example). `record` is
+   * the chosen record when the field is a reference.
+   */
+  readonly derive?: (
+    change: { key: string; value: unknown; record?: ItamRecord },
+    values: Readonly<Record<string, unknown>>,
+  ) => Record<string, unknown> | undefined;
+}
+
+/** Create / edit dialog driven by field definitions. */
+export function RecordFormDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  fields,
+  initial,
+  submitting,
+  error,
+  onSubmit,
+  recordId,
+  derive,
+  attachments,
+}: RecordFormDialogProps): ReactElement {
+  const [files, setFiles] = useState<readonly FileRecord[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const { t } = useTranslation();
+  const editable = fields.filter((field) => field.form !== false);
+  // Mount the dialog with a `key` that changes per record so this initial
+  // state is computed fresh for every create / edit session.
+  const [values, setValues] = useState<Record<string, unknown>>(() => {
+    const next: Record<string, unknown> = { ...initial };
+    for (const field of editable) {
+      next[field.key] =
+        initial?.[field.key] ??
+        field.defaultValue ??
+        (field.type === 'multiselect'
+          ? []
+          : field.type === 'boolean'
+            ? false
+            : null);
+    }
+    return next;
+  });
+
+  const currencyFields = new Set(
+    fields.map((field) => field.currencyField).filter(Boolean),
+  );
+  const resolved = editable
+    .map((field) => resolveFormField(field, values))
+    .filter((field) => !field.visibleWhen || field.visibleWhen(values));
+  const missing = resolved.some(
+    (field) =>
+      field.required &&
+      (values[field.key] == null || String(values[field.key]).trim() === ''),
+  );
+  const body = apiErrorBody(error);
+  const fieldErrors = new Map<string, string>();
+  // An issue only becomes a field's message when the form actually shows
+  // that field. A rejection about something else — a value passed through
+  // outside the form, a key the endpoint does not accept — has an empty or
+  // unknown path, and pinning it to a field nobody renders loses it: the
+  // dialog would sit there as if nothing had happened.
+  const shownFields = new Set(resolved.map((field) => field.key));
+  const unattached: string[] = [];
+  for (const issue of body?.issues ?? []) {
+    if (issue.path && shownFields.has(issue.path))
+      fieldErrors.set(issue.path, issue.message);
+    else unattached.push(issue.message);
+  }
+  if (body?.field && body.message) fieldErrors.set(body.field, body.message);
+  const generalError = !error
+    ? undefined
+    : unattached.length > 0
+      ? unattached.join('\n')
+      : fieldErrors.size === 0
+        ? (body?.message ?? errorMessage(error))
+        : undefined;
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (missing) return;
+    const payload: Record<string, unknown> = {};
+    // Editing (a recordId is set) sends only what changed; creating sends
+    // every value, including presets passed through `initial`.
+    const editingRecord = Boolean(recordId);
+    for (const field of editable) {
+      // A hidden dependent field sends nothing.
+      if (field.visibleWhen && !field.visibleWhen(values)) continue;
+      const value = values[field.key];
+      if (
+        editingRecord &&
+        JSON.stringify(value ?? null) ===
+          JSON.stringify(initial?.[field.key] ?? null)
+      )
+        continue;
+      if (value === null && !editingRecord) continue;
+      payload[field.key] = value;
+    }
+    await onSubmit(payload, files);
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => (!submitting ? onOpenChange(next) : undefined)}
+    >
+      <DialogContent className='max-h-[90svh] overflow-y-auto sm:max-w-lg'>
+        <form onSubmit={(event) => void submit(event)} className='space-y-4'>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            {description ? (
+              <DialogDescription>{description}</DialogDescription>
+            ) : null}
+          </DialogHeader>
+          <div className='grid gap-4'>
+            {resolved.map((field) => {
+              if (field.visibleWhen && !field.visibleWhen(values)) return null;
+              // A currency edited with its amount has no row of its own.
+              if (currencyFields.has(field.key)) return null;
+              const id = `form-${field.key}`;
+              const message = fieldErrors.get(field.key);
+              if (field.currencyField) {
+                const currencyKey = field.currencyField;
+                return (
+                  <div key={field.key} className='grid gap-1.5'>
+                    <Label htmlFor={id}>
+                      {t(field.label)}
+                      {field.required ? (
+                        <span className='text-destructive'> *</span>
+                      ) : null}
+                    </Label>
+                    <FieldInput
+                      id={id}
+                      field={field}
+                      value={{
+                        amount: values[field.key] ?? null,
+                        currency: values[currencyKey] ?? null,
+                      }}
+                      onChange={(value) => {
+                        const pair = (value ?? {}) as {
+                          amount?: unknown;
+                          currency?: unknown;
+                        };
+                        setValues((current) => ({
+                          ...current,
+                          [field.key]: pair.amount ?? null,
+                          [currencyKey]: pair.currency ?? null,
+                        }));
+                      }}
+                      disabled={
+                        submitting || Boolean(field.readonlyWhen?.(values))
+                      }
+                    />
+                    {message ? (
+                      <p className='text-xs text-destructive'>{message}</p>
+                    ) : null}
+                  </div>
+                );
+              }
+              return (
+                <div key={field.key} className='grid gap-1.5'>
+                  <Label htmlFor={id}>
+                    <FieldLabel
+                      label={t(field.label)}
+                      hint={
+                        field.readonlyHint && field.readonlyWhen?.(values)
+                          ? field.readonlyHint
+                          : undefined
+                      }
+                    >
+                      {field.required ? (
+                        <span className='text-destructive'>*</span>
+                      ) : null}
+                    </FieldLabel>
+                  </Label>
+                  <FieldInput
+                    id={id}
+                    field={field}
+                    value={values[field.key]}
+                    onChange={(value, record) =>
+                      setValues((current) => {
+                        const next = changeFormField(field, value, current);
+                        return {
+                          ...next,
+                          ...derive?.({ key: field.key, value, record }, next),
+                        };
+                      })
+                    }
+                    disabled={
+                      submitting || Boolean(field.readonlyWhen?.(values))
+                    }
+                    excludeId={recordId}
+                  />
+                  {message ? (
+                    <p className='text-xs text-destructive'>{message}</p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          {attachments && !recordId ? (
+            <AttachmentsUpload
+              value={files}
+              onChange={setFiles}
+              onBusy={setUploading}
+            />
+          ) : null}
+          {generalError ? (
+            <p className='text-sm text-destructive'>{generalError}</p>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type='button'
+              variant='outline'
+              disabled={submitting}
+              onClick={() => onOpenChange(false)}
+            >
+              {t('actions.cancel')}
+            </Button>
+            <Button type='submit' disabled={submitting || missing || uploading}>
+              {t('actions.save')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

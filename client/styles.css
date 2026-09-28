@@ -1,0 +1,195 @@
+@import 'tailwindcss';
+@config "../tailwind.config.mjs";
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import './theme/themes/default.css';
+@import './theme/themes/modern-minimal.css';
+@import './theme/themes/violet-bloom.css';
+@import './theme/themes/mocha-mousse.css';
+@import './theme/themes/bubblegum.css';
+@import './theme/themes/amethyst-haze.css';
+@import './theme/themes/notebook.css';
+@import './theme/themes/graphite.css';
+@import './theme/themes/perpetuity.css';
+@import './theme/themes/kodama-grove.css';
+@import './theme/themes/cosmic-night.css';
+@import './theme/themes/tangerine.css';
+@import './theme/themes/quantum-rose.css';
+@import './theme/themes/nature.css';
+@import './theme/themes/bold-tech.css';
+@import './theme/themes/elegant-luxury.css';
+@import './theme/themes/amber-minimal.css';
+@import './theme/themes/neo-brutalism.css';
+@import './theme/themes/solar-dusk.css';
+@import './theme/themes/claymorphism.css';
+@import './theme/themes/cyberpunk.css';
+@import './theme/themes/pastel-dreams.css';
+@import './theme/themes/clean-slate.css';
+@import './theme/themes/caffeine.css';
+@import './theme/themes/ocean-breeze.css';
+@import './theme/themes/retro-arcade.css';
+@import './theme/themes/midnight-bloom.css';
+@import './theme/themes/candyland.css';
+@import './theme/themes/northern-lights.css';
+@import './theme/themes/vintage-paper.css';
+@import './theme/themes/sunset-horizon.css';
+@source "./components/ui";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-heading: var(--font-sans);
+  /* These names are implemented below as runtime-variable utilities. */
+  --shadow-2xs: initial;
+  --shadow-xs: initial;
+  --shadow-sm: initial;
+  --shadow-md: initial;
+  --shadow-lg: initial;
+  --shadow-xl: initial;
+  --shadow-2xl: initial;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-link: var(--link);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply min-h-svh bg-background font-sans text-base text-foreground antialiased;
+    margin: 0;
+  }
+
+  /* Keep semantic text in application and plugin content on the same typography. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    @apply font-mono;
+  }
+}
+
+/* Named shadows normally compile to literal values. Arbitrary-value utilities
+   preserve the runtime token and Tailwind's ring/shadow composition. */
+@utility shadow-2xs {
+  @apply shadow-(--shadow-2xs);
+}
+@utility shadow-xs {
+  @apply shadow-(--shadow-xs);
+}
+@utility shadow-sm {
+  @apply shadow-(--shadow-sm);
+}
+@utility shadow-md {
+  @apply shadow-(--shadow-md);
+}
+@utility shadow-lg {
+  @apply shadow-(--shadow-lg);
+}
+@utility shadow-xl {
+  @apply shadow-(--shadow-xl);
+}
+@utility shadow-2xl {
+  @apply shadow-(--shadow-2xl);
+}
+
+/* Tokens this application adds to the theme contract. A preset redefines the
+   template's own tokens; these are defined once here so every preset — and a
+   preset added later — carries them. Values track the neutral palette rather
+   than a preset's hue, which is what keeps a link or a warning recognizable
+   across themes. */
+:root {
+  --destructive-foreground: oklch(0.985 0 0);
+  /* Links read greenish so they stand apart from primary buttons. */
+  --link: oklch(0.5 0.12 165);
+  --warning: oklch(0.96 0.06 85);
+  --warning-foreground: oklch(0.45 0.12 70);
+  /* A calm blue for tags that classify rather than warn (a perpetual
+     licence beside an amber subscription). */
+  --info: oklch(0.95 0.03 250);
+  --info-foreground: oklch(0.45 0.13 255);
+  /* Green for a tag that says nothing is wrong — a counted item that
+     matches the books — beside the amber and red that say something is. */
+  --success: oklch(0.95 0.05 150);
+  --success-foreground: oklch(0.45 0.13 155);
+}
+:root.dark {
+  --destructive-foreground: oklch(0.985 0 0);
+  --link: oklch(0.76 0.12 165);
+  --warning: oklch(0.3 0.05 80);
+  --warning-foreground: oklch(0.88 0.12 85);
+  --info: oklch(0.3 0.05 255);
+  --info-foreground: oklch(0.85 0.09 250);
+  --success: oklch(0.3 0.05 155);
+  --success-foreground: oklch(0.85 0.12 155);
+}
+
+/* Application-wide tag contract. Plugin Registry copies own separate Badge
+   primitives, so a shared slot selector keeps their tags consistent without
+   editing generated extensions. Unlayered rules deliberately own geometry;
+   semantic background/text variants and focus rings remain component-owned. */
+[data-slot='badge'] {
+  @apply h-auto min-h-5 gap-1 rounded-md border-0 px-2 py-0.5 text-xs font-medium whitespace-nowrap;
+}
+
+/* Legacy outline tags use the same filled treatment as neutral tags. */
+[data-slot='badge'][data-variant='outline'] {
+  @apply bg-muted text-muted-foreground;
+}

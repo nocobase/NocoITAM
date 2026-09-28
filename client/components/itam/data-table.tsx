@@ -1,0 +1,162 @@
+import { useTranslation } from '@nocobase/i18n/client';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import type { ReactElement, ReactNode } from 'react';
+
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { errorMessage } from '@/lib/itam/format';
+import { cn } from '@/lib/utils';
+
+import { EmptyState } from './empty-state.js';
+import { Pagination, type PaginationProps } from './pagination.js';
+
+export interface DataTableColumn<T> {
+  readonly key: string;
+  readonly header: ReactNode;
+  readonly render: (row: T) => ReactNode;
+  readonly sortable?: boolean;
+  readonly className?: string;
+  readonly width?: string;
+}
+
+export interface DataTableProps<T extends { readonly id: string }> {
+  readonly columns: readonly DataTableColumn<T>[];
+  readonly rows: readonly T[] | undefined;
+  readonly loading?: boolean;
+  readonly error?: unknown;
+  readonly empty?: ReactNode;
+  readonly sort?: { readonly field: string; readonly order: 'asc' | 'desc' };
+  readonly onSortChange?: (field: string) => void;
+  readonly onRowClick?: (row: T) => void;
+  readonly pagination?: PaginationProps;
+  readonly rowActions?: (row: T) => ReactNode;
+}
+
+/** Server-paged table with sorting and the three data states. */
+export function DataTable<T extends { readonly id: string }>({
+  columns,
+  rows,
+  loading,
+  error,
+  empty,
+  sort,
+  onSortChange,
+  onRowClick,
+  pagination,
+  rowActions,
+}: DataTableProps<T>): ReactElement {
+  const { t } = useTranslation();
+  if (error) {
+    return (
+      <EmptyState
+        title={t('common.loadFailed')}
+        description={errorMessage(error)}
+      />
+    );
+  }
+
+  // An empty result shows only the hint, never a bare table header: the
+  // same reading everywhere, in tabs and on list pages.
+  if (rows && rows.length === 0 && !loading) {
+    return <>{empty ?? <EmptyState title={t('common.empty')} />}</>;
+  }
+
+  return (
+    <div className='space-y-3'>
+      <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((column) => {
+                const active = sort?.field === column.key;
+                return (
+                  <TableHead
+                    key={column.key}
+                    className={column.className}
+                    style={{ width: column.width }}
+                  >
+                    {column.sortable && onSortChange ? (
+                      <button
+                        type='button'
+                        className='inline-flex items-center gap-1 hover:text-foreground'
+                        onClick={() => onSortChange(column.key)}
+                      >
+                        {column.header}
+                        {active ? (
+                          sort?.order === 'asc' ? (
+                            <ArrowUp className='size-3.5' />
+                          ) : (
+                            <ArrowDown className='size-3.5' />
+                          )
+                        ) : (
+                          <ArrowUpDown className='size-3.5 opacity-40' />
+                        )}
+                      </button>
+                    ) : (
+                      column.header
+                    )}
+                  </TableHead>
+                );
+              })}
+              {rowActions ? <TableHead className='w-12' /> : null}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && !rows
+              ? ['a', 'b', 'c', 'd', 'e'].map((placeholder) => (
+                  <TableRow key={placeholder}>
+                    {columns.map((column) => (
+                      <TableCell key={column.key}>
+                        <Skeleton className='h-4 w-2/3' />
+                      </TableCell>
+                    ))}
+                    {rowActions ? <TableCell /> : null}
+                  </TableRow>
+                ))
+              : null}
+            {rows?.map((row) => (
+              <TableRow
+                key={row.id}
+                className={cn(
+                  onRowClick && 'cursor-pointer',
+                  loading && 'opacity-60',
+                )}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+              >
+                {columns.map((column) => (
+                  <TableCell
+                    key={column.key}
+                    // Long text wraps inside a bounded column instead of
+                    // stretching the table sideways.
+                    className={cn(
+                      'max-w-80 whitespace-normal break-words',
+                      column.className,
+                    )}
+                  >
+                    {column.render(row)}
+                  </TableCell>
+                ))}
+                {rowActions ? (
+                  <TableCell
+                    className='text-right'
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {rowActions(row)}
+                  </TableCell>
+                ) : null}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      {pagination ? <Pagination {...pagination} /> : null}
+    </div>
+  );
+}

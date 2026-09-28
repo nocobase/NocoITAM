@@ -1,0 +1,13 @@
+DELIVERY NOTE  No. DN-20260908-031
+Vendor: Apple Store (Shanghai)          Date: 2026-09-08
+Ship to: Example Corp, HQ Floor 3       PO: PO-2026-0031
+
+Item                          Qty   Unit price   Warranty
+MacBook Pro 14 M4 16GB/512GB   10   CNY 2199.00  36 months
+
+Serial numbers:
+C02XK1ABMD6T  C02XK1ABMD7U  C02XK1ABMD8V  C02XK1ABMD9W  C02XK1ABME0X
+C02XK1ABME1Y  C02XK1ABME2Z  C02XK1ABME3A  C02XK1ABME4B  C02XK1ABME5C
+
+Total: CNY 21990.00
+Received by: ______________   Date: ________

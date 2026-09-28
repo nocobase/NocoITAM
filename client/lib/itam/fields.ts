@@ -1,0 +1,258 @@
+/**
+ * Field metadata that drives the generic list, form and detail components.
+ * Labels and option labels are translation keys resolved by the component.
+ */
+export type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'select'
+  | 'multiselect'
+  | 'reference'
+  | 'money'
+  /** A standalone ISO currency code, chosen from `CURRENCIES`. */
+  | 'currency'
+  /** Stored as a fraction (0.05), shown and edited as a percentage (5). */
+  | 'percent'
+  /** A web address: shown as a link that breaks anywhere, edited as text. */
+  | 'url';
+
+export interface FieldOption {
+  readonly value: string;
+  /** Translation key. */
+  readonly label: string;
+}
+
+export interface ReferenceTarget {
+  /** Master-data collection the value points at. */
+  readonly collection: string;
+  readonly labelField?: string;
+  /** Extra list filter applied when searching options. */
+  readonly filter?: Readonly<Record<string, string>>;
+  /** Translation key shown under the options when `filter` hides some. */
+  readonly filterHint?: string;
+}
+
+/** The follow-up choice of a cascading field; see `dependent` below. */
+export interface DependentField {
+  readonly key: string;
+  readonly label: string;
+  readonly options: readonly { value: string; label: string }[];
+  readonly required?: boolean;
+  /** Which answers of the field above call for this one. */
+  readonly when: (value: unknown) => boolean;
+}
+
+export interface FieldDefinition {
+  readonly key: string;
+  /** Translation key for the label. */
+  readonly label: string;
+  /**
+   * A label that depends on the record (a subscription's price reads per
+   * seat or per cycle); `undefined` keeps `label`. Lists and history keep
+   * `label`, since they show many records at once.
+   */
+  readonly labelWhen?: (
+    values: Readonly<Record<string, unknown>>,
+  ) => string | undefined;
+  readonly type: FieldType;
+  readonly required?: boolean;
+  readonly requiredWhen?: (
+    values: Readonly<Record<string, unknown>>,
+  ) => boolean;
+  readonly referenceFilter?: (
+    values: Readonly<Record<string, unknown>>,
+  ) => Readonly<Record<string, string>>;
+  /** Dependent choices become invalid when this field changes. */
+  readonly clearOnChange?: readonly string[];
+  /** False when a detail summary already displays this field. */
+  readonly detail?: boolean;
+  /**
+   * The value is never read back, only replaced: a product key reads as a
+   * mask, so the inline editor starts empty and an empty draft leaves the
+   * stored value alone rather than writing the mask over it.
+   */
+  readonly writeOnly?: boolean;
+  /** Ordering within its detail information group; default 0. */
+  readonly detailOrder?: number;
+  readonly options?: readonly FieldOption[];
+  readonly reference?: ReferenceTarget;
+  /** Shown as a list column. */
+  readonly column?: boolean;
+  /** Editable in the create / edit form. Defaults to true. */
+  readonly form?: boolean;
+  /** Group heading (translation key) on the detail page. */
+  readonly group?: string;
+  readonly min?: number;
+  readonly max?: number;
+  readonly step?: number;
+  /**
+   * A money field edited together with its currency: the value is then
+   * `{ amount, currency }` and `currencyField` names the record's currency
+   * field the second half is saved to.
+   */
+  readonly currencyField?: string;
+  /**
+   * A reference that may be answered with free text instead: the value is
+   * then `{ vendorId, name }` and `alternateField` names the record's text
+   * field the second half is saved to. One answer of one kind — picking a
+   * record clears the text and vice versa.
+   */
+  readonly alternateField?: string;
+  /**
+   * A second choice this answer calls for (数据清除 已清除 → 清除方式):
+   * the two are one cascading control and one save, so an answer is never
+   * left half given. The value is then `{ value, dependent }`, and
+   * `when` says which answers ask for it.
+   */
+  readonly dependent?: DependentField;
+  readonly placeholder?: string;
+  /** Booleans edit with a switch by default; `select` shows a yes / no list. */
+  readonly control?: 'select';
+  /** Value a create form starts with. */
+  readonly defaultValue?: unknown;
+  /** Shown only while the record's other values satisfy this. */
+  readonly visibleWhen?: (values: Readonly<Record<string, unknown>>) => boolean;
+  /** Shown but not editable for these values (a rule the record inherits). */
+  readonly readonlyWhen?: (
+    values: Readonly<Record<string, unknown>>,
+  ) => boolean;
+  /** Translation key explaining why the field is read-only when it is. */
+  readonly readonlyHint?: string;
+}
+
+/** Resolve dependent form constraints against the current record. */
+export function resolveFormField(
+  field: FieldDefinition,
+  values: Readonly<Record<string, unknown>>,
+): FieldDefinition {
+  return {
+    ...field,
+    label: field.labelWhen?.(values) ?? field.label,
+    required: field.requiredWhen ? field.requiredWhen(values) : field.required,
+    reference:
+      field.reference && field.referenceFilter
+        ? { ...field.reference, filter: field.referenceFilter(values) }
+        : field.reference,
+  };
+}
+export function changeFormField(
+  field: FieldDefinition,
+  value: unknown,
+  values: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  return {
+    ...values,
+    ...Object.fromEntries(
+      (field.clearOnChange ?? []).map((key) => [key, null]),
+    ),
+    [field.key]: value,
+  };
+}
+
+/** Fields that only matter under straight-line depreciation. */
+export const whenStraightLine = (
+  values: Readonly<Record<string, unknown>>,
+): boolean => values.depreciationMethod === 'straightLine';
+
+/**
+ * The login user responsible for the record. Every business record has one
+ * (it defaults to the creator and drives "records I own" access); it sits
+ * first in the 系统 group, editable there, and is never asked for on
+ * creation.
+ */
+export const OWNER_FIELD: FieldDefinition = {
+  key: 'ownerId',
+  label: 'fields.owner',
+  type: 'reference',
+  required: true,
+  reference: { collection: 'users' },
+  group: 'groups.system',
+  detailOrder: -1,
+};
+
+export const AUDIT_FIELDS: readonly FieldDefinition[] = [
+  {
+    key: 'createdById',
+    label: 'fields.createdBy',
+    type: 'reference',
+    reference: { collection: 'users' },
+    form: false,
+    group: 'groups.system',
+  },
+  {
+    key: 'createdAt',
+    label: 'fields.createdAt',
+    type: 'date',
+    form: false,
+    group: 'groups.system',
+  },
+  {
+    key: 'updatedAt',
+    label: 'fields.updatedAt',
+    type: 'date',
+    form: false,
+    column: true,
+    group: 'groups.system',
+  },
+];
+
+/** The fields a list can filter by: enumerations and references. */
+export function filterableFields(
+  fields: readonly FieldDefinition[],
+): readonly FieldDefinition[] {
+  return fields.filter(
+    (field) =>
+      field.column &&
+      field.form !== false &&
+      (field.type === 'select' ||
+        field.type === 'multiselect' ||
+        (field.type === 'reference' && field.key !== 'parentId')),
+  );
+}
+
+/** The perpetual / subscription choice, which reads as its own badge. */
+export function isEntitlementKindField(field: FieldDefinition): boolean {
+  return (
+    field.options?.every((option) =>
+      option.label.startsWith('enums.entitlementKind.'),
+    ) ?? false
+  );
+}
+
+/** A purchase order's status, which reads in its own tone per state. */
+export function isPurchaseOrderStatusField(field: FieldDefinition): boolean {
+  return (
+    field.options?.every((option) =>
+      option.label.startsWith('enums.poStatus.'),
+    ) ?? false
+  );
+}
+
+/** A disposal's status, which reads in its own tone per state. */
+export function isDisposalStatusField(field: FieldDefinition): boolean {
+  return (
+    field.options?.every((option) =>
+      option.label.startsWith('enums.disposalStatus.'),
+    ) ?? false
+  );
+}
+
+/** An audit task's status, which reads in its own tone per state. */
+export function isAuditStatusField(field: FieldDefinition): boolean {
+  return (
+    field.options?.every((option) =>
+      option.label.startsWith('enums.auditStatus.'),
+    ) ?? false
+  );
+}
+
+export function isAssetTypeField(field: FieldDefinition): boolean {
+  return (
+    field.options?.some((option) =>
+      /^(enums\.(appliesTo|requestAssetType))\./.test(option.label),
+    ) ?? false
+  );
+}

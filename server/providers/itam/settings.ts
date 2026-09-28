@@ -1,0 +1,193 @@
+import type { DatabaseConnection, DatabaseManager } from '@nocobase/db';
+import {
+  createServiceToken,
+  type ServiceToken,
+} from '@nocobase/service-provider';
+
+/**
+ * ITAM configuration, one JSON document per key. Defaults live here so a
+ * missing row never breaks a caller; the seed writes them so administrators
+ * can see and edit them.
+ */
+export interface ItamSettings {
+  readonly general: {
+    readonly currency: string;
+    readonly timeZone: string;
+    readonly dateFormat: string;
+  };
+  readonly thresholds: {
+    readonly warrantyDays: number;
+    /** How far ahead a perpetual entitlement's maintenance end is flagged. */
+    readonly maintenanceExpiryDays: number;
+    /** How far ahead a subscription's renewal or end is flagged. */
+    readonly subscriptionExpiryDays: number;
+    readonly idleDays: number;
+    readonly auditDays: number;
+    readonly idleSeatRatio: number;
+    readonly defaultStockMinimum: number;
+    /**
+     * The two cross-record patterns. A pattern is a shape across several
+     * records rather than one record passing a limit, so both its window
+     * and how many hits make it a pattern are the administrator's to set —
+     * a rule nobody can tune is a rule people switch off after the first
+     * false positive.
+     */
+    readonly lateDeliveryDays: number;
+    readonly lateDeliveryOrders: number;
+    readonly batchDefectDays: number;
+    readonly batchDefectDevices: number;
+  };
+  readonly numbering: Readonly<Record<NumberingKind, NumberingRule>>;
+  readonly ai: {
+    readonly businessNotes: string;
+    /**
+     * Whether the AI plugin's own built-in employees were switched off once,
+     * so the application's assistant is the one people meet. Set by the
+     * registrar (`ai/index.ts`), not shown on the settings page; an
+     * administrator who re-enables one on the AI employees page keeps it.
+     */
+    readonly builtInEmployeesDisabled: boolean;
+  };
+}
+
+export type NumberingKind = 'device' | 'purchaseOrder' | 'disposal' | 'repair';
+
+export interface NumberingRule {
+  readonly prefix: string;
+  readonly width: number;
+  readonly start: number;
+}
+
+export type ItamSettingsKey = keyof ItamSettings;
+
+export const DEFAULT_ITAM_SETTINGS: ItamSettings = {
+  general: {
+    currency: 'CNY',
+    timeZone: 'Asia/Shanghai',
+    dateFormat: 'YYYY-MM-DD',
+  },
+  thresholds: {
+    warrantyDays: 30,
+    maintenanceExpiryDays: 30,
+    subscriptionExpiryDays: 7,
+    idleDays: 90,
+    auditDays: 365,
+    idleSeatRatio: 0.3,
+    defaultStockMinimum: 5,
+    lateDeliveryDays: 7,
+    lateDeliveryOrders: 3,
+    batchDefectDays: 90,
+    batchDefectDevices: 3,
+  },
+  numbering: {
+    device: { prefix: 'DE-', width: 6, start: 1 },
+    purchaseOrder: { prefix: 'PO-', width: 6, start: 1 },
+    disposal: { prefix: 'DP-', width: 6, start: 1 },
+    repair: { prefix: 'RP-', width: 6, start: 1 },
+  },
+  ai: {
+    businessNotes: '',
+    builtInEmployeesDisabled: false,
+  },
+};
+
+export interface SettingsService {
+  all(): Promise<ItamSettings>;
+  /**
+   * Pass the transaction's connection when reading inside a transaction: the
+   * SQLite pool holds one connection, so a read through the manager while a
+   * transaction is open waits for it forever.
+   */
+  get<K extends ItamSettingsKey>(
+    key: K,
+    connection?: DatabaseConnection,
+  ): Promise<ItamSettings[K]>;
+  set<K extends ItamSettingsKey>(
+    key: K,
+    value: ItamSettings[K],
+    actorId?: string,
+  ): Promise<ItamSettings[K]>;
+}
+
+export const settingsServiceToken: ServiceToken<SettingsService> =
+  createServiceToken<SettingsService>('itam/settings-service');
+
+export function createSettingsService(
+  database: DatabaseManager,
+): SettingsService {
+  const parse = (value: unknown): unknown =>
+    typeof value === 'string' ? JSON.parse(value) : value;
+
+  const merge = <K extends ItamSettingsKey>(
+    key: K,
+    stored: unknown,
+  ): ItamSettings[K] => {
+    const defaults = DEFAULT_ITAM_SETTINGS[key];
+    if (!stored || typeof stored !== 'object') return defaults;
+    // A numbering kind added after the rules were saved (repairs) keeps its
+    // default instead of vanishing behind the stored map.
+    if (key === 'numbering')
+      return {
+        ...defaults,
+        ...(stored as ItamSettings['numbering']),
+      };
+    return { ...defaults, ...stored };
+  };
+
+  return {
+    async all() {
+      const rows = await database
+        .query()
+        .selectFrom('itamSettings')
+        .select(['key', 'value'])
+        .execute();
+      const stored = new Map(rows.map((row) => [row.key, parse(row.value)]));
+      const keys = Object.keys(DEFAULT_ITAM_SETTINGS) as ItamSettingsKey[];
+      return Object.fromEntries(
+        keys.map((key) => [key, merge(key, stored.get(key))]),
+      ) as unknown as ItamSettings;
+    },
+    async get(key, connection) {
+      const row = await (connection ? connection.query : database.query())
+        .selectFrom('itamSettings')
+        .select(['key', 'value'])
+        .where('key', '=', key)
+        .executeTakeFirst();
+      return merge(key, row ? parse(row.value) : undefined);
+    },
+    async set(key, value, actorId) {
+      const next = merge(key, value);
+      const now = new Date();
+      const existing = await database
+        .query()
+        .selectFrom('itamSettings')
+        .select('key')
+        .where('key', '=', key)
+        .executeTakeFirst();
+      if (existing) {
+        await database
+          .query()
+          .updateTable('itamSettings')
+          .set({
+            value: next,
+            updatedById: actorId ?? null,
+            updatedAt: now,
+          })
+          .where('key', '=', key)
+          .execute();
+      } else {
+        await database
+          .query()
+          .insertInto('itamSettings')
+          .values({
+            key,
+            value: next,
+            updatedById: actorId ?? null,
+            updatedAt: now,
+          })
+          .execute();
+      }
+      return next;
+    },
+  };
+}
