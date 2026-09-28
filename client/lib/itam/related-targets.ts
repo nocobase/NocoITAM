@@ -42,11 +42,11 @@ export function masterTarget(collection: string): RelatedTarget {
 /** Stock items of every kind; each row routes to its kind's list. */
 export const stockTarget: RelatedTarget = {
   path: STOCK_PATH,
-  // In a related tab the quantity on hand is simply 总计.
-  fields: stockFields('accessory').map((field) =>
-    field.key === 'totalQuantity'
-      ? { ...field, label: 'fields.quantityTotal' }
-      : field,
+  // A related tab keeps its first four columns: the quantities read as
+  // 累计入库 and 在库, as on the record, and the category (which follows the
+  // model) gives way to 在库.
+  fields: stockFields('accessory').filter(
+    (field) => field.key !== 'categoryId',
   ),
   nameField: 'name',
   i18n: 'stock',
