@@ -511,7 +511,6 @@ const zhCN: AppResource = {
     quantity: '数量',
     reservedUntil: '预留截止日期',
     totalQuantity: '总数量',
-    quantityTotal: '总计',
     usedQuantity: {
       accessory: '已发放',
       consumable: '已消耗',
