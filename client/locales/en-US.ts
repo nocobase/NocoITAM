@@ -519,7 +519,6 @@ const enUS = {
     quantity: 'Quantity',
     reservedUntil: 'Reserved until',
     totalQuantity: 'Total',
-    quantityTotal: 'Total',
     usedQuantity: {
       accessory: 'Issued',
       consumable: 'Consumed',
