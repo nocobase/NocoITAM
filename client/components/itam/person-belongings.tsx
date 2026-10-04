@@ -264,27 +264,6 @@ export function PersonBelongings({
                     {item.account}
                   </span>
                 ) : null}
-                {/* What is inside it. Not a line of its own to settle — a
-                    component goes back in the device it is installed in — so
-                    it hangs off that row: indented behind a rule, under the
-                    word that says what the indent means. */}
-                {item.installed && item.installed.length > 0 ? (
-                  <span className='mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-muted/50 px-2 py-1 text-xs text-muted-foreground'>
-                    <span>{t('people.recovery.installed')}</span>
-                    {item.installed.map((part) => (
-                      <span key={part.id} className='flex items-center gap-1.5'>
-                        <AssetTypeBadge value='component' />
-                        {/* Its own record: a component is an inventory item
-                            like any other, and what is in the laptop is
-                            worth being able to look at. */}
-                        <RecordLink to={`/components/${part.stockItemId}`}>
-                          {part.name}
-                        </RecordLink>
-                        {part.quantity > 1 ? `×${part.quantity}` : ''}
-                      </span>
-                    ))}
-                  </span>
-                ) : null}
               </span>
             ),
           },
@@ -356,6 +335,26 @@ export function PersonBelongings({
           ...item,
           id: `${item.kind}-${item.id}`,
         }))}
+        // What is inside a device, in a band of its own across the row: a
+        // component is not another thing to settle beside the laptop, and
+        // the status, the owner and the handling on that row are the
+        // laptop's.
+        subRow={(item) =>
+          item.installed && item.installed.length > 0 ? (
+            <span className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground'>
+              <span>{t('people.recovery.installed')}</span>
+              {item.installed.map((part) => (
+                <span key={part.id} className='flex items-center gap-1.5'>
+                  <AssetTypeBadge value='component' />
+                  <RecordLink to={`/components/${part.stockItemId}`}>
+                    {part.name}
+                  </RecordLink>
+                  {part.quantity > 1 ? `×${part.quantity}` : ''}
+                </span>
+              ))}
+            </span>
+          ) : null
+        }
         onRowClick={(item) => openRecord(recordOf(item))}
       />
       {/* The other half of offboarding, and the half no button settles:

@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import type { ReactElement, ReactNode } from 'react';
+import { Fragment, type ReactElement, type ReactNode } from 'react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -37,6 +37,13 @@ export interface DataTableProps<T extends { readonly id: string }> {
   readonly onRowClick?: (row: T) => void;
   readonly pagination?: PaginationProps;
   readonly rowActions?: (row: T) => ReactNode;
+  /**
+   * A band under a row, spanning every column, for what belongs to that row
+   * rather than beside it — the components installed in a device, say. It
+   * crosses the columns because none of them is about it: the status and
+   * the owner on the row above are the device's.
+   */
+  readonly subRow?: (row: T) => ReactNode;
 }
 
 /** Server-paged table with sorting and the three data states. */
@@ -51,6 +58,7 @@ export function DataTable<T extends { readonly id: string }>({
   onRowClick,
   pagination,
   rowActions,
+  subRow,
 }: DataTableProps<T>): ReactElement {
   const { t } = useTranslation();
   if (error) {
@@ -121,38 +129,55 @@ export function DataTable<T extends { readonly id: string }>({
                   </TableRow>
                 ))
               : null}
-            {rows?.map((row) => (
-              <TableRow
-                key={row.id}
-                className={cn(
-                  onRowClick && 'cursor-pointer',
-                  loading && 'opacity-60',
-                )}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-              >
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.key}
-                    // Long text wraps inside a bounded column instead of
-                    // stretching the table sideways.
+            {rows?.map((row) => {
+              const band = subRow?.(row);
+              return (
+                <Fragment key={row.id}>
+                  <TableRow
                     className={cn(
-                      'max-w-80 whitespace-normal break-words',
-                      column.className,
+                      onRowClick && 'cursor-pointer',
+                      loading && 'opacity-60',
                     )}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
                   >
-                    {column.render(row)}
-                  </TableCell>
-                ))}
-                {rowActions ? (
-                  <TableCell
-                    className='text-right'
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    {rowActions(row)}
-                  </TableCell>
-                ) : null}
-              </TableRow>
-            ))}
+                    {columns.map((column) => (
+                      <TableCell
+                        key={column.key}
+                        // Long text wraps inside a bounded column instead of
+                        // stretching the table sideways.
+                        className={cn(
+                          'max-w-80 whitespace-normal break-words',
+                          column.className,
+                        )}
+                      >
+                        {column.render(row)}
+                      </TableCell>
+                    ))}
+                    {rowActions ? (
+                      <TableCell
+                        className='text-right'
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {rowActions(row)}
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                  {band ? (
+                    <TableRow className='hover:bg-transparent'>
+                      <TableCell
+                        colSpan={columns.length + (rowActions ? 1 : 0)}
+                        // The page's own background, not the muted fill a
+                        // neutral tag wears — side by side those two read as
+                        // the same grey.
+                        className='bg-background py-1.5'
+                      >
+                        {band}
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                </Fragment>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
