@@ -256,7 +256,8 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
 };
 
 /**
- * The person the demo marks as having left.
+ * The person the demo sets up to leave — it does not mark them left; that
+ * is the one act worth performing by hand, see where this is used.
  *
  * They are IT, and they sign in like everybody else: leaving is only half a
  * story while the register has nothing of theirs to hand over. A salesperson
@@ -2333,12 +2334,17 @@ export function createDemoService(dependencies: {
         all('disposals', 'execute'),
       );
 
-      // A leaver who still holds a laptop and a seat.
-      await masterData.markPersonLeft(
-        String(chenJie.id),
-        actorId,
-        all('people', 'markLeft'),
-      );
+      // The one who is about to leave is **not** marked left here. Everything
+      // that makes offboarding worth seeing is already in place — they hold
+      // a device in repair that answers to somebody else, a device the
+      // reader answers for, an accessory and a seat, and they are named on
+      // four records — so pressing 标记离职 is what shows the whole of it
+      // happening: the snapshot written, the owners notified, the to-do
+      // appearing, the progress counting down. Generating it already left
+      // would show the aftermath and never the act.
+      //
+      // The cost is that a fresh demo has no 离职资产回收 to-do until
+      // somebody presses the button.
 
       // Receiving stamps the arrival date itself — `receivedAt` is a
       // lifecycle field no operation edits — so every demo order would
