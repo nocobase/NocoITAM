@@ -17,9 +17,12 @@ const icons = {
 export function AssetTypeBadge({
   value,
   label,
+  className,
 }: {
   readonly value: unknown;
   readonly label?: ReactNode;
+  /** For a tag on a tinted band, which its own fill would disappear into. */
+  readonly className?: string;
 }): ReactElement {
   const { t } = useTranslation();
   const kind = text(value);
@@ -34,7 +37,7 @@ export function AssetTypeBadge({
     ];
   if (!kind) return <span className='text-muted-foreground'>—</span>;
   return (
-    <Badge variant='outline'>
+    <Badge variant='outline' className={className}>
       {Icon ? <Icon className='size-3' aria-hidden='true' /> : null}
       {label ?? t(`enums.appliesTo.${kind}`, { defaultValue: kind })}
     </Badge>

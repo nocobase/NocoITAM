@@ -921,24 +921,22 @@ const messages = {
     noHoldings: 'Nothing held',
     recovery: {
       title: 'To recover',
-      since: 'left on {{date}} and still holds these assets.',
-      left: 'has left and still holds these assets.',
+      since: 'This person left on {{date}} and still holds these assets:',
+      left: 'This person has left and still holds these assets:',
       // One sentence: the share that is the reader's is a clause of the same
       // statement rather than a second announcement.
       sinceMine_one:
-        'left on {{date}} and still holds these assets, {{count}} of them yours to settle.',
+        'This person left on {{date}} and still holds these assets, {{count}} of them yours to settle:',
       sinceMine_other:
-        'left on {{date}} and still holds these assets, {{count}} of them yours to settle.',
+        'This person left on {{date}} and still holds these assets, {{count}} of them yours to settle:',
       leftMine_one:
-        'has left and still holds these assets, {{count}} of them yours to settle.',
+        'This person has left and still holds these assets, {{count}} of them yours to settle:',
       leftMine_other:
-        'has left and still holds these assets, {{count}} of them yours to settle.',
+        'This person has left and still holds these assets, {{count}} of them yours to settle:',
       you: 'you',
       owner: 'owner: {{name}}',
-      handover_one: 'Still answers for {{count}} record — hand it over',
-      handover_other: 'Still answers for {{count}} records — hand them over',
-      responsible_one: 'Answers for {{count}} record',
-      responsible_other: 'Answers for {{count}} records',
+      responsible_one: 'This person answers for {{count}} record:',
+      responsible_other: 'This person answers for {{count}} records:',
       changeOwner: 'Hand over',
       changeOwnerHint:
         'Name who answers for {{record}} from now on. Only its current owner or whoever created it may do this.',

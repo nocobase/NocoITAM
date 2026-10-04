@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CornerDownRight, Undo2 } from 'lucide-react';
+import { ArrowRightLeft, CornerDownRight, Undo2 } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
@@ -219,7 +219,8 @@ export function PersonBelongings({
             what they hold, and saying so in prose first adds nothing. */}
       {left ? (
         <p className='text-sm text-muted-foreground'>
-          <RecordLink to={`/people/${personId}`}>{personName}</RecordLink>{' '}
+          {/* The sentence names nobody: the page's own title does, and in
+              the queue the heading above it does. */}
           {t(
             `people.recovery.${recovery.data.leaveDate ? 'since' : 'left'}${
               mine > 0 ? 'Mine' : ''
@@ -350,7 +351,10 @@ export function PersonBelongings({
               </span>
               {item.installed.map((part) => (
                 <span key={part.id} className='flex items-center gap-1.5'>
-                  <AssetTypeBadge value='component' />
+                  {/* The band is the page's background; a tag wearing the
+                      muted fill would sink into it, so here it wears the
+                      card's. */}
+                  <AssetTypeBadge value='component' className='bg-card' />
                   <RecordLink to={`/components/${part.stockItemId}`}>
                     {part.name}
                   </RecordLink>
@@ -368,13 +372,11 @@ export function PersonBelongings({
             it, so each row is a way into that record rather than an action
             here. */}
       {owned.length > 0 ? (
-        <section className='space-y-2'>
+        <section className='space-y-2 pt-3'>
           <p className='text-sm text-muted-foreground'>
-            {/* Handing them over is what a leaver's records need; for
-                somebody still here it is simply what they answer for. */}
-            {t(`people.recovery.${left ? 'handover' : 'responsible'}`, {
-              count: owned.length,
-            })}
+            {/* The same line whether or not they have left: what the
+                records need is a new name on them either way. */}
+            {t('people.recovery.responsible', { count: owned.length })}
           </p>
           {/* One record per line: they are things to go and settle, not a
                 set of tags. Each says what kind it is and in which seat it
@@ -402,7 +404,9 @@ export function PersonBelongings({
                       )}
                     </Badge>
                   )}
-                  <RecordLink to={to}>{record.label}</RecordLink>
+                  <RecordLink to={to} className='font-medium'>
+                    {record.label}
+                  </RecordLink>
                   <span className='text-xs text-muted-foreground'>
                     {t(
                       record.field === 'requesterId'
@@ -417,10 +421,13 @@ export function PersonBelongings({
                         record — the service refuses it when this reader may
                         not make it. */}
                   <Button
-                    variant='ghost'
+                    variant='outline'
                     size='sm'
                     onClick={() => setHandover(record)}
                   >
+                    {/* Passing it to somebody else: the record stays, the
+                        name on it changes. */}
+                    <ArrowRightLeft data-icon='inline-start' />
                     {t('people.recovery.changeOwner')}
                   </Button>
                 </li>

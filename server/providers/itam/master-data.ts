@@ -79,6 +79,8 @@ const OWNED_BY_USER: readonly {
   readonly collection: string;
   readonly field: string;
   readonly label: string;
+  /** A second column joined to the first — a device reads 编号 / 名称. */
+  readonly label2?: string;
   /** The asset type, as a constant or as the column that holds it. */
   readonly assetType?: { readonly value: string } | { readonly column: string };
 }[] = [
@@ -86,6 +88,7 @@ const OWNED_BY_USER: readonly {
     collection: 'devices',
     field: 'ownerId',
     label: 'deviceNo',
+    label2: 'name',
     assetType: { value: 'device' },
   },
   {
@@ -904,10 +907,13 @@ export function createMasterDataService(
           entry.assetType && 'column' in entry.assetType
             ? entry.assetType.column
             : undefined;
+        const columns = ['id', entry.label];
+        if (entry.label2) columns.push(entry.label2);
+        if (column) columns.push(column);
         const rows = await database
           .query()
           .selectFrom(entry.collection)
-          .select(column ? ['id', entry.label, column] : ['id', entry.label])
+          .select(columns)
           .where(entry.field, '=', userId)
           .where((eb) => compileAuthzScope(eb, conditions.scope))
           .orderBy(entry.label, 'asc')
@@ -916,7 +922,12 @@ export function createMasterDataService(
           found.push({
             collection: entry.collection,
             id: String(row.id),
-            label: asText(row[entry.label]) ?? String(row.id),
+            label: [
+              asText(row[entry.label]) ?? String(row.id),
+              entry.label2 ? asText(row[entry.label2]) : undefined,
+            ]
+              .filter(Boolean)
+              .join(' / '),
             field: entry.field as OwnedRecord['field'],
             ...(entry.assetType
               ? {
