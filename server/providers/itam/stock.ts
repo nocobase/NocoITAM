@@ -1284,6 +1284,9 @@ export function stockMovementEvents(database: DatabaseManager): DerivedEvents {
         sourceType: asText(row.sourceType) ?? null,
         sourceId: asText(row.sourceId) ?? null,
         actorId: asText(row.actorId) ?? null,
+        // A movement records who, not through what; the line it derives
+        // says so rather than claiming a provenance nobody wrote down.
+        origin: null,
         operationId: null,
         createdAt: row.createdAt as string,
       };

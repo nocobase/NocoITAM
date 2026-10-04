@@ -112,7 +112,11 @@ export const dataRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
             collection,
             body.csv,
             mapping,
-            { actorId: principalId(context), sourceType: 'import' },
+            {
+              actorId: principalId(context),
+              origin: 'import',
+              sourceType: 'import',
+            },
             conditions,
           ),
         });
