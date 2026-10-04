@@ -25,7 +25,12 @@ export function CollapsibleText({
   const shown = long && !open ? preview(lines, chars, maxLines) : text;
   return (
     <span className={className}>
-      <span className='whitespace-pre-wrap break-words'>{shown}</span>
+      {/* `wrap-anywhere`, not `break-words`: a value with no spaces in it —
+          an e-mail address, a URL, a serial — is one long word, and
+          `break-word` neither counts it towards the box's minimum width nor
+          breaks it until it is already too late. This both lets the box
+          shrink around it and breaks it where it has to. */}
+      <span className='whitespace-pre-wrap wrap-anywhere'>{shown}</span>
       {long ? (
         <button
           type='button'
