@@ -9,7 +9,7 @@ const tool: ToolsOptions = writeTool(
     about:
       'Corrects a device status that no longer matches reality, with a reason.',
   },
-  "Correct ONE device's status when the record is wrong (an idle device marked in use, a lost one). A reason is required.",
+  "Correct ONE device's status when the record is wrong (an idle device marked in use, a lost one). A reason is required. Scrapping a device is not a correction: 报废 and 已报废 are reached by raising a disposal on the device's page, where it is approved and then carried out, so this tool cannot set them — say so rather than proposing something else.",
 );
 
 export default tool;
