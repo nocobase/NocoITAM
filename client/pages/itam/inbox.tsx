@@ -226,8 +226,12 @@ function PaneHeading({
       <RecordLink to={to} className='font-heading text-base font-medium'>
         {title}
       </RecordLink>
+      {/* A rule between them: the job is about the person, not part of
+          their name, and at a glance two words in a row read as one. */}
       {subtitle ? (
-        <span className='text-sm text-muted-foreground'>{subtitle}</span>
+        <span className='border-l border-border pl-2 text-sm text-muted-foreground'>
+          {subtitle}
+        </span>
       ) : null}
     </div>
   );
