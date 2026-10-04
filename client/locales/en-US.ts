@@ -899,6 +899,7 @@ const messages = {
     empty: 'No departments yet',
   },
   people: {
+    followsLeaveDate: 'Follows the leave date: a date that has come means left',
     title: 'People',
     object: 'person',
     new: 'New person',

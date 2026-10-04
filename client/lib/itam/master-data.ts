@@ -689,6 +689,11 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         type: 'select',
         column: true,
         options: options('employmentStatus', ['active', 'left']),
+        // The leave date decides it; the server refuses it as an input. It
+        // stays on the form because it is worth reading, and read-only
+        // because two ways to say the same thing disagree sooner or later.
+        readonlyWhen: () => true,
+        readonlyHint: 'people.followsLeaveDate',
         group: 'groups.employment',
       },
       {
