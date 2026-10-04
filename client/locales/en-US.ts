@@ -639,11 +639,11 @@ const messages = {
       other: 'Other',
     },
     appliesTo: {
-      device: 'Devices',
-      accessory: 'Accessories',
-      consumable: 'Consumables',
-      component: 'Components',
-      entitlement: 'Entitlements',
+      device: 'Device',
+      accessory: 'Accessory',
+      consumable: 'Consumable',
+      component: 'Component',
+      entitlement: 'Entitlement',
     },
     depreciationMethod: {
       none: 'No depreciation',
