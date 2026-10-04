@@ -1009,11 +1009,17 @@ Rules learned while building it:
   are still the route children `master()` declares in `client/routes.ts`,
   and their history tab is `client/pages/itam/record-history-tab.tsx`,
   which reads the collection from the route's first segment.
-- The sidebar opens the groups `EXPANDED_NAVIGATION_GROUPS` in
-  `client/routes.ts` names — today the 资产 group, since the five asset
-  types are what this application is about — as well as whichever group
-  holds the page being read. A group the reader closes stays closed for the
-  session.
+- The application's sidebar does not fold (2026-10-04): a group without a
+  page of its own reads as a small heading with its pages always listed
+  under it — `groupsAsHeadings` on `NavigationTree`, which only
+  `client/layouts/app-layout.tsx` turns on, so the settings and dev menus
+  keep folding. In the icon-only sidebar the heading gives way to a thin
+  rule. Since nothing marks where an unfolded group ends, every page sits
+  either above the groups (工作台 and 我的资产, both about the reader) or
+  inside one (收件箱, 资产, 业务, 主数据); an ungrouped entry placed after
+  a group reads as part of it. 业务 holds 采购, 维修, 盘点, 报废 and 报表.
+  Route names are what stored page grants reference, so regrouping changes
+  no grant — `tests/logic/client-routes.test.ts` pins only their order.
 
 ## Load the development skills
 

@@ -13,7 +13,6 @@ import {
 } from 'react';
 import { Link } from 'react-router';
 import { EMPTY_ARRAY } from '@/lib/constants';
-import { EXPANDED_NAVIGATION_GROUPS } from '@/routes';
 import {
   Tooltip,
   TooltipTrigger,
@@ -44,6 +43,14 @@ function isDesktop() {
 
 interface NavigationTreeProps {
   readonly collapsed: boolean;
+  /**
+   * Application change (ITAM): a group without a page of its own reads as a
+   * heading with its pages always listed under it, instead of a disclosure
+   * the reader opens and closes. The application's menu is short enough to
+   * show whole, and its groups name what the pages are about. Only the app
+   * layout asks for this; the settings and dev menus keep folding groups.
+   */
+  readonly groupsAsHeadings?: boolean;
   readonly inPopover?: boolean;
   readonly item: RouteNavigationItem;
   readonly onNavigate: () => void;
@@ -52,6 +59,7 @@ interface NavigationTreeProps {
 
 export function NavigationTree({
   collapsed,
+  groupsAsHeadings = false,
   inPopover = false,
   item,
   onNavigate,
@@ -74,10 +82,7 @@ export function NavigationTree({
   const icon = Icon ? <Icon /> : null;
 
   const selected = containsSelection(item, selectedKey);
-  // A group the application asks to start open does, even when the page
-  // being read is elsewhere; closing it still sticks for the session.
-  const startsOpen =
-    selected || EXPANDED_NAVIGATION_GROUPS.has(item.route.name);
+  const startsOpen = selected;
   const [disclosure, setDisclosure] = useState({
     key: selectedKey,
     expanded: startsOpen,
@@ -91,6 +96,37 @@ export function NavigationTree({
   }
   const expanded = disclosure.expanded;
   if (popoverOpen && (!collapsed || !desktop)) setPopoverOpen(false);
+
+  if (groupsAsHeadings && children.length > 0 && !item.route.componentLoader) {
+    return (
+      <div role='group' aria-label={label} className='pt-3 first:pt-0'>
+        {/* In the icon-only sidebar a label has no room: a rule marks where the group starts. */}
+        <div
+          className={`truncate px-3 pb-1 text-xs font-medium text-sidebar-foreground/70 ${collapsed ? 'md:hidden' : ''}`}
+        >
+          {label}
+        </div>
+        {collapsed ? (
+          <div
+            aria-hidden='true'
+            className='mx-2 mb-1 hidden border-t border-sidebar-border md:block'
+          />
+        ) : null}
+        <div className='space-y-1'>
+          {children.map((child) => (
+            <NavigationTree
+              collapsed={collapsed}
+              groupsAsHeadings
+              item={child}
+              key={routeKey(child.route)}
+              onNavigate={onNavigate}
+              selectedKey={selectedKey}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Collapsed groups need an interactive surface, not a tooltip containing links.
   if (collapsed && desktop && children.length > 0) {

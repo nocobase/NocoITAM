@@ -56,6 +56,7 @@ const messages = {
     inbox: 'To do',
     notifications: 'Notifications',
     assetsGroup: 'Assets',
+    operationsGroup: 'Operations',
     devices: 'Devices',
     accessories: 'Accessories',
     consumables: 'Consumables',

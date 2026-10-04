@@ -55,6 +55,7 @@ const zhCN: AppResource = {
     inbox: '待我处理',
     notifications: '通知',
     assetsGroup: '资产',
+    operationsGroup: '业务',
     devices: '设备',
     accessories: '配件',
     consumables: '耗材',

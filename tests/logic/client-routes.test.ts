@@ -63,6 +63,7 @@ describe('app client routes', () => {
         .map((page) => page.authorizedAs),
     ).toEqual([
       'workbench',
+      'my-assets',
       'inbox',
       'notifications',
       'devices',
@@ -84,7 +85,6 @@ describe('app client routes', () => {
       'locations',
       'departments',
       'people',
-      'my-assets',
     ]);
     // A detail page is not a menu entry and carries no grant of its own.
     expect(
