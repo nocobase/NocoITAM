@@ -529,8 +529,23 @@ export default class ItamProvider extends ServiceProvider<Application> {
     if (this.app.container.has(aiManagerToken)) {
       const ai = this.app.container.resolve(aiManagerToken);
       const settings = this.app.container.resolve(settingsServiceToken);
-      return import('../../../ai/index.js').then(({ ItamAiResources }) =>
-        new ItamAiResources(settings).registerAIResources(ai),
+      return import('../../../ai/index.js').then(
+        ({ ItamAiResources, LOGO_AVATAR_PATH }) => {
+          // The employee's avatar is the application's mark. The record keeps
+          // the root-relative path, which the client resolves under the mount
+          // path; with a public origin configured it is absolutised, so the
+          // plugin's own settings pages — which render it outside this
+          // application — show it too. NocoCRM does the same.
+          const identity = this.app.config.get<{ publicOrigin?: string }>('app');
+          const origin = (identity?.publicOrigin ?? '')
+            .toString()
+            .trim()
+            .replace(/\/+$/, '');
+          const avatar = origin
+            ? `${origin}${this.app.publicBasePath.replace(/\/+$/, '')}${LOGO_AVATAR_PATH}`
+            : undefined;
+          return new ItamAiResources(settings, avatar).registerAIResources(ai);
+        },
       );
     }
     return Promise.resolve();

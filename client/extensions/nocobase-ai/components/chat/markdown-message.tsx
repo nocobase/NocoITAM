@@ -3,6 +3,14 @@ import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { cn } from '../../shared/utils.js';
+// Application change (ITAM): the model's Markdown never loads an image, and a
+// link's target is narrowed. A field a person typed into the register reaches
+// this conversation, so an instruction planted there could otherwise have the
+// answer end with an image whose URL carries what the model just read.
+import {
+  markdownImage,
+  safeMarkdownUrl,
+} from '../../../../components/itam/ai/markdown-safety.js';
 
 type MarkdownMessageProps = {
   children: string;
@@ -31,6 +39,8 @@ function createMarkdownComponents(
   const document = variant === 'document';
 
   return {
+    // Application change (ITAM): see the import above.
+    img: markdownImage,
     h1: ({ className, ...props }) => (
       <h1
         {...props}
@@ -182,6 +192,8 @@ export function MarkdownMessage({
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
+      // Application change (ITAM): see the import above.
+      urlTransform={safeMarkdownUrl}
       components={variant === 'document' ? documentComponents : chatComponents}
     >
       {children}

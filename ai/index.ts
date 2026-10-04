@@ -3,7 +3,9 @@ import { AIResourceRegistrar } from '@nocobase/app-plugin-ai-employee/server';
 
 import type { SettingsService } from '../server/providers/itam/settings.js';
 
-import itamEmployee from './employees/itam.js';
+import itamEmployee, { LOGO_AVATAR_PATH } from './employees/itam.js';
+
+export { LOGO_AVATAR_PATH };
 import aggregate from './tools/itam/aggregate.js';
 import assignDevice from './tools/itam/assign-device.js';
 import assignSeat from './tools/itam/assign-seat.js';
@@ -57,26 +59,36 @@ export const ITAM_TOOLS = [
  * employee that names them, as the plugin expects.
  */
 export class ItamAiResources extends AIResourceRegistrar {
-  /** Without settings (a test's bare manager) the built-ins are left alone. */
-  public constructor(private readonly settings?: SettingsService) {
+  /**
+   * Without settings (a test's bare manager) the built-ins are left alone.
+   * `avatar` overrides the employee's own root-relative mark with an absolute
+   * URL, which the provider builds when a public origin is configured so the
+   * plugin's settings pages show it too.
+   */
+  public constructor(
+    private readonly settings?: SettingsService,
+    private readonly avatar?: string,
+  ) {
     super({ source: 'itam' });
   }
 
   protected override async registerAIEmployees(
     aiEmployeeManager: AIEmployeeManager,
   ): Promise<void> {
-    await aiEmployeeManager.registerEmployee(itamEmployee);
-    await this.orderAfterAva(aiEmployeeManager);
+    await aiEmployeeManager.registerEmployee(
+      this.avatar ? { ...itamEmployee, avatar: this.avatar } : itamEmployee,
+    );
+    await this.orderAfterNoco(aiEmployeeManager);
     await this.disableBuiltInEmployees(aiEmployeeManager);
   }
 
   /**
    * The AI employees page lists by `sort`, then name, and SQLite puts an
    * empty sort first — so the plugin's employees, which mostly declare none,
-   * would stand ahead of Ava (`sort: -1`). Those with no order get one after
+   * would stand ahead of Noco (`sort: -1`). Those with no order get one after
    * her; an order someone already gave is kept.
    */
-  private async orderAfterAva(
+  private async orderAfterNoco(
     aiEmployeeManager: AIEmployeeManager,
   ): Promise<void> {
     for (const employee of await aiEmployeeManager.listEmployees())
@@ -89,7 +101,7 @@ export class ItamAiResources extends AIResourceRegistrar {
 
   /**
    * The plugin registers its own employees (Dex, Viz, Atlas…) on every
-   * start. Ava is the one this application is built around, so the others
+   * start. Noco is the one this application is built around, so the others
    * are switched off once — decided 2026-09-27: not deleted, because the
    * plugin would register them again, and an administrator may turn one
    * back on at 设置 → AI 员工, which registration then keeps. The flag is

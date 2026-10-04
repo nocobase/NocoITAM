@@ -485,7 +485,7 @@ describe('the plugin built-in employees', () => {
     expect(await enabled('dex')).toBe(false);
     expect(await enabled('itam')).toBe(true);
     expect(ai.builtInEmployeesDisabled).toBe(true);
-    // Ava comes first on the AI employees page, which lists by sort.
+    // Noco comes first on the AI employees page, which lists by sort.
     const order = (await manager.employeeManager.listEmployees()).map(
       (employee) => employee.username,
     );
