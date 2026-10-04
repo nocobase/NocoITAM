@@ -922,20 +922,13 @@ export function createMasterDataService(
      *
      * Every path that marks somebody left takes it — the button, a leave
      * date entered or moved into the past, and the nightly job for a date
-     * that merely came round — so it exists whenever it could be needed. It
-     * is written once: a second one would reset the denominator, and the
-     * first is the fact.
+     * that merely came round — so it exists whenever it could be needed.
+     * Each of those fires only on the move into `left`, so one leaving
+     * writes one snapshot; somebody reinstated and then leaving again gets
+     * a second, and the progress is read against the newest. The older ones
+     * stay where every other event stays, on the timeline.
      */
     async snapshotBelongings(id, connection) {
-      const query = connection ? connection.query : database.query();
-      const existing = await query
-        .selectFrom('historyEvents')
-        .select('id')
-        .where('subjectType', '=', 'people')
-        .where('subjectId', '=', id)
-        .where('type', '=', 'belongingsSnapshot')
-        .executeTakeFirst<{ id: string }>();
-      if (existing) return;
       const items = recoveryPlan(
         await this.personHoldings(id, connection),
       ).filter(
@@ -962,6 +955,8 @@ export function createMasterDataService(
         .where('subjectType', '=', 'people')
         .where('subjectId', '=', id)
         .where('type', '=', 'belongingsSnapshot')
+        // The newest: a person may have left, come back and left again.
+        .orderBy('createdAt', 'desc')
         .executeTakeFirst<Row>();
       if (!row) return undefined;
       const payload = decodeRow(row).payload as
