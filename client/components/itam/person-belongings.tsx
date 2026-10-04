@@ -189,10 +189,21 @@ export function PersonBelongings({
   // A record handed over keeps its place too, for the same reason an asset
   // does: the list is the size of the job.
   const handedOver = recovery.data.settledOwned;
+  // Settled rows keep their place among their own kind rather than sinking
+  // to the bottom: the list is the snapshot, and a reader looking for the
+  // laptop should find it where the laptops are, whether or not it is back.
+  const KIND_ORDER: Readonly<Record<RecoveryItem['kind'], number>> = {
+    device: 0,
+    stock: 1,
+    seat: 2,
+  };
   const rows: (RecoveryItem & { readonly done?: boolean })[] = [
     ...items,
     ...done.map((item) => ({ ...item, done: true })),
-  ];
+  ].sort(
+    (a, b) =>
+      KIND_ORDER[a.kind] - KIND_ORDER[b.kind] || a.label.localeCompare(b.label),
+  );
   // Nothing in their name at all: say so once rather than show two empty
   // headings.
   if (
@@ -443,72 +454,74 @@ export function PersonBelongings({
             {[
               ...owned,
               ...handedOver.map((record) => ({ ...record, done: true })),
-            ].map((record) => {
-              const to = `/${referenceRoute(record.collection)}/${record.id}`;
-              const kind = recordTarget(to);
-              return (
-                <li
-                  key={`${record.collection}-${record.id}`}
-                  className='flex flex-wrap items-center gap-2 py-2'
-                >
-                  {/* An asset wears the same icon tag as everywhere else;
+            ]
+              .sort((a, b) => a.label.localeCompare(b.label))
+              .map((record) => {
+                const to = `/${referenceRoute(record.collection)}/${record.id}`;
+                const kind = recordTarget(to);
+                return (
+                  <li
+                    key={`${record.collection}-${record.id}`}
+                    className='flex flex-wrap items-center gap-2 py-2'
+                  >
+                    {/* An asset wears the same icon tag as everywhere else;
                         a repair or an order is not an asset, so it says what
                         kind of document it is instead. */}
-                  {record.assetType ? (
-                    <AssetTypeBadge value={record.assetType} />
-                  ) : (
-                    <Badge
-                      variant='secondary'
-                      data-tag='kind'
-                      className='shrink-0'
-                    >
-                      {t(
-                        DOCUMENT_TAG[record.collection] ??
-                          `${kind?.i18n ?? record.collection}.object`,
-                      )}
-                    </Badge>
-                  )}
-                  <RecordLink to={to} className='font-medium'>
-                    {record.label}
-                  </RecordLink>
-                  <span className='text-xs text-muted-foreground'>
-                    {t(
-                      record.field === 'requesterId'
-                        ? 'fields.requester'
-                        : 'fields.owner',
+                    {record.assetType ? (
+                      <AssetTypeBadge value={record.assetType} />
+                    ) : (
+                      <Badge
+                        variant='secondary'
+                        data-tag='kind'
+                        className='shrink-0'
+                      >
+                        {t(
+                          DOCUMENT_TAG[record.collection] ??
+                            `${kind?.i18n ?? record.collection}.object`,
+                        )}
+                      </Badge>
                     )}
-                    {' · '}
-                    {/* Whoever that field names now: once it is handed over
+                    <RecordLink to={to} className='font-medium'>
+                      {record.label}
+                    </RecordLink>
+                    <span className='text-xs text-muted-foreground'>
+                      {t(
+                        record.field === 'requesterId'
+                          ? 'fields.requester'
+                          : 'fields.owner',
+                      )}
+                      {' · '}
+                      {/* Whoever that field names now: once it is handed over
                         that is somebody else, and the leaver's name there
                         would be last week's answer. */}
-                    {record.ownerId
-                      ? (owners.users?.get(record.ownerId) ?? record.ownerId)
-                      : personName}
-                  </span>
-                  {/* Handing it over is an ordinary edit of that one
+                      {record.ownerId
+                        ? (owners.users?.get(record.ownerId) ?? record.ownerId)
+                        : personName}
+                    </span>
+                    {/* Handing it over is an ordinary edit of that one
                         field, so it is offered here rather than only on the
                         record — the service refuses it when this reader may
                         not make it. */}
-                  {'done' in record && record.done ? (
-                    <span className='flex items-center gap-1 text-xs text-muted-foreground'>
-                      <Check className='size-3.5' aria-hidden='true' />
-                      {t('people.recovery.doneHandover')}
-                    </span>
-                  ) : (
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => setHandover(record)}
-                    >
-                      {/* Passing it to somebody else: the record stays, the
+                    {'done' in record && record.done ? (
+                      <span className='flex items-center gap-1 text-xs text-muted-foreground'>
+                        <Check className='size-3.5' aria-hidden='true' />
+                        {t('people.recovery.doneHandover')}
+                      </span>
+                    ) : (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => setHandover(record)}
+                      >
+                        {/* Passing it to somebody else: the record stays, the
                         name on it changes. */}
-                      <ArrowRightLeft data-icon='inline-start' />
-                      {t('people.recovery.changeOwner')}
-                    </Button>
-                  )}
-                </li>
-              );
-            })}
+                        <ArrowRightLeft data-icon='inline-start' />
+                        {t('people.recovery.changeOwner')}
+                      </Button>
+                    )}
+                  </li>
+                );
+              })}
           </ul>
         </section>
       ) : null}
