@@ -25,6 +25,13 @@ export interface RecoveryItem {
   readonly targetId: string;
   readonly quantity?: number;
   readonly status?: string;
+  /** Which of the five asset types it is, for the row's own label. */
+  readonly assetType:
+    | 'device'
+    | 'accessory'
+    | 'consumable'
+    | 'component'
+    | 'entitlement';
 }
 
 export interface PersonRecovery {

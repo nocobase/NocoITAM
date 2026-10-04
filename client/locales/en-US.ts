@@ -928,6 +928,10 @@ const messages = {
       owner: 'owner: {{name}}',
       accountsStay:
         'Reclaiming a seat frees the licence, not the login: disable the account or change the shared key in the vendor console.',
+      columns: {
+        item: 'To recover',
+        handling: 'Handling',
+      },
       groups: {
         device: 'Devices',
         stock: 'Accessories, consumables and components',

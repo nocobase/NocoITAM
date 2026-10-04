@@ -117,6 +117,17 @@ export interface RecoveryItem {
   readonly quantity?: number;
   /** A device's status, which is what decided its handling. */
   readonly status?: string;
+  /**
+   * Which of the five asset types it is, as the pages label them: a page
+   * listing devices, stock and seats together needs to say which each row
+   * is, and `kind` groups the three stock types under one name.
+   */
+  readonly assetType:
+    | 'device'
+    | 'accessory'
+    | 'consumable'
+    | 'component'
+    | 'entitlement';
 }
 
 export function deviceHandling(status: string): RecoveryHandling {
@@ -146,6 +157,7 @@ export function recoveryPlan(holdings: {
       // A device is returned on itself.
       targetId: String(row.id),
       status: asText(row.status) ?? '',
+      assetType: 'device' as const,
     })),
     ...holdings.stock.map((row) => ({
       kind: 'stock' as const,
@@ -155,6 +167,8 @@ export function recoveryPlan(holdings: {
       ownerId: asText(row.ownerId) ?? null,
       targetId: asText(row.stockItemId) ?? '',
       quantity: Number(row.quantity) || 0,
+      assetType: (asText(row.kind) ??
+        'accessory') as RecoveryItem['assetType'],
     })),
     ...holdings.entitlementSeats.map((row) => ({
       kind: 'seat' as const,
@@ -164,6 +178,7 @@ export function recoveryPlan(holdings: {
       ownerId: asText(row.ownerId) ?? null,
       ...(asText(row.account) ? { account: asText(row.account) } : {}),
       targetId: asText(row.entitlementId) ?? '',
+      assetType: 'entitlement' as const,
     })),
   ];
 }

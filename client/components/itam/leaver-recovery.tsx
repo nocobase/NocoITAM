@@ -4,28 +4,27 @@ import { Undo2 } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
+import { DataTable } from '@/components/itam/data-table';
 import { DeviceReturnDialog } from '@/components/itam/device-return-dialog';
+import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/lib/itam/api';
 import { useAiPageContext } from '@/lib/itam/ai-context';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
 import { formatDate } from '@/lib/itam/format';
-import { useCollectionPermissions, useCurrentUserId } from '@/lib/itam/permissions';
-import { useReferenceNames } from '@/lib/itam/references';
-import { STOCK_PATH } from '@/lib/itam/stock';
 import {
-  usePersonRecovery,
-  type RecoveryItem,
-} from '@/lib/itam/recovery';
+  useCollectionPermissions,
+  useCurrentUserId,
+} from '@/lib/itam/permissions';
+import { useReferenceNames } from '@/lib/itam/references';
+import { useOpenRecord } from '@/lib/itam/record-drawer';
+import { STOCK_PATH, STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
+import { usePersonRecovery, type RecoveryItem } from '@/lib/itam/recovery';
 
 /**
  * 待回收: what a leaver still holds, and the way to hand each item back from
@@ -60,6 +59,7 @@ export function LeaverRecovery({
   const api = useApi();
   const queryClient = useQueryClient();
   const me = useCurrentUserId();
+  const openRecord = useOpenRecord();
   const recovery = usePersonRecovery(personId);
   const devicePermissions = useCollectionPermissions('devices', ['return']);
   const stockPermissions = useCollectionPermissions('stockItems', ['issue']);
@@ -69,10 +69,7 @@ export function LeaverRecovery({
   const [pending, setPending] = useState<RecoveryItem>();
   // Its own memo: the reference goes into the names request and the page
   // context below, and a new array each render would re-register both.
-  const items = useMemo(
-    () => recovery.data?.items ?? [],
-    [recovery.data],
-  );
+  const items = useMemo(() => recovery.data?.items ?? [], [recovery.data]);
   const owners = useReferenceNames(
     useMemo(
       () => [{ collection: 'users', ids: items.map((item) => item.ownerId) }],
@@ -154,12 +151,6 @@ export function LeaverRecovery({
     stock: Boolean(stockPermissions.issue),
     seat: Boolean(seatPermissions.assignSeat),
   };
-  const groups = (['device', 'stock', 'seat'] as const)
-    .map((kind) => ({
-      kind,
-      rows: items.filter((item) => item.kind === kind),
-    }))
-    .filter((group) => group.rows.length > 0);
 
   const act = (item: RecoveryItem) => {
     setPending(item);
@@ -167,6 +158,16 @@ export function LeaverRecovery({
     takeBackStock.reset();
     reclaimSeat.reset();
   };
+
+  // Where the row's own record lives, so a reader can look at the thing
+  // before handing it back: the device, the stock item it was issued from,
+  // the entitlement the seat belongs to.
+  const recordOf = (item: RecoveryItem): string =>
+    item.kind === 'device'
+      ? `/devices/${item.targetId}`
+      : item.kind === 'seat'
+        ? `/entitlements/${item.targetId}`
+        : `/${STOCK_ROUTES[item.assetType as StockKind] ?? 'accessories'}/${item.targetId}`;
 
   return (
     <Card ref={contextRef}>
@@ -187,7 +188,7 @@ export function LeaverRecovery({
           </AiShortcut>
         ) : null}
       </CardHeader>
-      <CardContent className='space-y-4'>
+      <CardContent className='space-y-3'>
         <p className='text-sm text-muted-foreground'>
           {recovery.data.leaveDate
             ? t('people.recovery.since', {
@@ -197,67 +198,110 @@ export function LeaverRecovery({
             : t('people.recovery.left', { name: personName })}
           {mine > 0 ? ` ${t('people.recovery.mine', { count: mine })}` : ''}
         </p>
-        {groups.map((group) => (
-          <section key={group.kind} className='space-y-1'>
-            <h4 className='text-xs font-medium text-muted-foreground'>
-              {t(`people.recovery.groups.${group.kind}`)}
-            </h4>
-            <ul className='divide-y divide-border'>
-              {group.rows.map((item) => (
-                <li
-                  key={`${item.kind}-${item.id}`}
-                  className='flex flex-wrap items-center justify-between gap-2 py-2'
-                >
-                  <div className='min-w-0'>
-                    <p className='truncate text-sm font-medium'>
-                      {item.label}
-                      {item.quantity && item.quantity > 1
-                        ? ` ×${item.quantity}`
-                        : ''}
-                    </p>
-                    <p className='truncate text-xs text-muted-foreground'>
-                      {[
-                        item.account,
-                        item.status
-                          ? t(`enums.deviceStatus.${item.status}`)
-                          : undefined,
-                        item.ownerId
-                          ? t('people.recovery.owner', {
-                              name:
-                                item.ownerId === me
-                                  ? t('people.recovery.you')
-                                  : (owners.users?.get(item.ownerId) ??
-                                    item.ownerId),
-                            })
-                          : undefined,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                  </div>
-                  {/* A handling nobody can carry out from here says what it
-                      waits for instead of offering a button that would make
-                      the record disagree with the thing. */}
-                  {item.handling === 'wait' ||
-                  item.handling === 'confirmConsumed' ? (
+        {/* The asset lists' own table, because that is what this is — the
+            five asset types in one list, each row saying which it is. The
+            devices, the stock and the seats stay in that order; a heading
+            per group would split five rows into three tables. */}
+        <DataTable
+          columns={[
+            {
+              key: 'item',
+              header: t('people.recovery.columns.item'),
+              // Name and what identifies this one of it in a single cell,
+              // the way a device's 编号 / 名称 are: the account a seat
+              // carries, and how many of a stock item are held.
+              render: (item) => (
+                <span className='grid gap-0.5'>
+                  <span className='flex min-w-0 items-center gap-2 font-medium'>
+                    {/* Which of the five it is reads in front of the name,
+                        the way a to-do row is tagged: one mixed list, and
+                        the tag is what tells the rows apart. */}
+                    <AssetTypeBadge value={item.assetType} />
+                    {item.label}
+                    {item.kind === 'stock' ? (
+                      <span className='ml-1 tabular-nums text-muted-foreground'>
+                        ×{item.quantity ?? 0}
+                      </span>
+                    ) : null}
+                  </span>
+                  {item.account ? (
                     <span className='text-xs text-muted-foreground'>
-                      {t(`people.recovery.handling.${item.handling}`)}
+                      {item.account}
                     </span>
-                  ) : allowed[item.kind] ? (
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => act(item)}
-                    >
-                      <Undo2 data-icon='inline-start' />
-                      {t(`people.recovery.handling.${item.handling}`)}
-                    </Button>
                   ) : null}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+                </span>
+              ),
+            },
+            {
+              key: 'state',
+              header: t('fields.status'),
+              className: 'w-px whitespace-nowrap',
+              // Only a device has one, and it is what decided its handling.
+              // Stock and seats have none to state, so the column is theirs
+              // to leave empty rather than to fill with something else.
+              render: (item) =>
+                item.kind === 'device' ? (
+                  <DeviceStatusBadge status={item.status} />
+                ) : (
+                  <span className='text-muted-foreground'>—</span>
+                ),
+            },
+            {
+              key: 'owner',
+              header: t('fields.owner'),
+              className: 'w-px whitespace-nowrap',
+              render: (item) =>
+                item.ownerId ? (
+                  <span
+                    className={
+                      item.ownerId === me
+                        ? 'font-medium'
+                        : 'text-muted-foreground'
+                    }
+                  >
+                    {item.ownerId === me
+                      ? t('people.recovery.you')
+                      : (owners.users?.get(item.ownerId) ?? item.ownerId)}
+                  </span>
+                ) : (
+                  '—'
+                ),
+            },
+            {
+              key: 'handling',
+              header: t('people.recovery.columns.handling'),
+              className: 'w-px whitespace-nowrap',
+              // A handling nobody can carry out from here says what it waits
+              // for instead of offering a button that would make the record
+              // disagree with the thing.
+              render: (item) =>
+                item.handling === 'wait' ||
+                item.handling === 'confirmConsumed' ? (
+                  <span className='text-xs text-muted-foreground'>
+                    {t(`people.recovery.handling.${item.handling}`)}
+                  </span>
+                ) : allowed[item.kind] ? (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={(event) => {
+                      // The row opens the record; the button does its own job.
+                      event.stopPropagation();
+                      act(item);
+                    }}
+                  >
+                    <Undo2 data-icon='inline-start' />
+                    {t(`people.recovery.handling.${item.handling}`)}
+                  </Button>
+                ) : null,
+            },
+          ]}
+          rows={items.map((item) => ({
+            ...item,
+            id: `${item.kind}-${item.id}`,
+          }))}
+          onRowClick={(item) => openRecord(recordOf(item))}
+        />
         {/* Reclaiming a seat frees the licence, not the login: this
             application is a register and reaches no vendor's console. */}
         {items.some((item) => item.handling === 'reclaim') ? (
