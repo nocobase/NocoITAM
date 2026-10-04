@@ -174,7 +174,6 @@ export function PersonBelongings({
   // Settled rows keep their place in the list: a recovery is a job of a
   // known size, and a list that only shrinks never says what was done.
   const done = recovery.data.settled;
-  const progress = recovery.data.progress;
   // A record handed over keeps its place too, for the same reason an asset
   // does: the list is the size of the job.
   const handedOver = recovery.data.settledOwned;
@@ -246,33 +245,20 @@ export function PersonBelongings({
       {/* Only a leaver gets a sentence: for everybody else the table is
             what they hold, and saying so in prose first adds nothing. */}
       {left ? (
-        <p className='flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm text-muted-foreground'>
+        <p className='text-sm text-muted-foreground'>
           {/* The sentence names nobody: the page's own title does, and in
               the queue the heading above it does. */}
-          <span>
-            {t(
-              `people.recovery.${recovery.data.leaveDate ? 'since' : 'left'}${
-                mine > 0 ? 'Mine' : ''
-              }`,
-              {
-                date: recovery.data.leaveDate
-                  ? formatDate(recovery.data.leaveDate)
-                  : '',
-                count: mine,
-              },
-            )}
-          </span>
-          {/* How much of it is done, against the snapshot taken when they
-              left: the live list alone cannot say, because what is settled
-              has left it. Shown from the start, before anything is settled —
-              0 / 5 is the size of the job, which is worth knowing before
-              starting it. Without a snapshot there is no denominator and no
-              claim is made. */}
-          {progress ? (
-            <span className='shrink-0 tabular-nums'>
-              {t('people.recovery.progress', progress)}
-            </span>
-          ) : null}
+          {t(
+            `people.recovery.${recovery.data.leaveDate ? 'since' : 'left'}${
+              mine > 0 ? 'Mine' : ''
+            }`,
+            {
+              date: recovery.data.leaveDate
+                ? formatDate(recovery.data.leaveDate)
+                : '',
+              count: mine,
+            },
+          )}
         </p>
       ) : null}
       {/* The asset lists' own table, because that is what this is — the
@@ -346,7 +332,14 @@ export function PersonBelongings({
               item.done ? (
                 <span className='flex items-center gap-1 text-xs text-muted-foreground'>
                   <Check className='size-3.5' aria-hidden='true' />
-                  {t('people.recovery.done')}
+                  {/* Which act settled it: a device and a holding were
+                      returned, a seat was reclaimed. "Handled" says one of
+                      them happened without saying which. */}
+                  {t(
+                    item.handling === 'reclaim'
+                      ? 'people.recovery.doneReclaim'
+                      : 'people.recovery.doneReturn',
+                  )}
                 </span>
               ) : item.handling === 'wait' ||
                 item.handling === 'confirmConsumed' ? (
@@ -481,7 +474,7 @@ export function PersonBelongings({
                   {'done' in record && record.done ? (
                     <span className='flex items-center gap-1 text-xs text-muted-foreground'>
                       <Check className='size-3.5' aria-hidden='true' />
-                      {t('people.recovery.done')}
+                      {t('people.recovery.doneHandover')}
                     </span>
                   ) : (
                     <Button
