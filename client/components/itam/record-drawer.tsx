@@ -165,7 +165,7 @@ function RecordDrawerBody({
  * around it alone and any path outside the record is handed back through
  * `onLeave`.
  *
- * The drawer is one place this is shown; 待我处理 is the other, where the
+ * The drawer is one place this is shown; 我的待办 is the other, where the
  * item picked from the queue is worked on beside the list. Both want the
  * record's own page rather than a second rendering of it, so neither builds
  * one.

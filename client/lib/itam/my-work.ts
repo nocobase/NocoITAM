@@ -25,7 +25,7 @@ export interface WorkCard {
  * The to-dos waiting on the signed-in user, merged and tagged for display.
  *
  * Both places that show them read this: the workbench's compact strip below,
- * and 待我处理, which lays the same cards out as a queue beside the item
+ * and 我的待办, which lays the same cards out as a queue beside the item
  * being worked on. Which records are waiting, and the merging of the two
  * kinds of approval into one card, is decided once.
  */

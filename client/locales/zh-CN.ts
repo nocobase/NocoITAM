@@ -52,7 +52,7 @@ const zhCN: AppResource = {
     label: '应用导航',
     workbench: '工作台',
     inboxGroup: '收件箱',
-    inbox: '待我处理',
+    inbox: '我的待办',
     notifications: '通知',
     assetsGroup: '资产',
     operationsGroup: '业务',

@@ -12,7 +12,7 @@ import { formatDate } from '@/lib/itam/format';
 import { useWorkCards, type CardRecord } from '@/lib/itam/my-work';
 
 /**
- * 待我处理: the work waiting on this reader, as a queue beside the thing
+ * 我的待办: the work waiting on this reader, as a queue beside the thing
  * being worked on.
  *
  * The workbench answers "is anything waiting" the moment somebody signs in,

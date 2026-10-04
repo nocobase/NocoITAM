@@ -53,7 +53,7 @@ const messages = {
     label: 'Application navigation',
     workbench: 'Workbench',
     inboxGroup: 'Inbox',
-    inbox: 'To do',
+    inbox: 'My to-dos',
     notifications: 'Notifications',
     assetsGroup: 'Assets',
     operationsGroup: 'Operations',
