@@ -88,6 +88,12 @@ export interface MyWorkRecord {
   readonly date: string | null;
   /** Application route; the row opens it in the record drawer. */
   readonly url: string;
+  /**
+   * How many things behind this record are the reader's own, where the record
+   * stands for several — a leaver holds a number of them, and only some
+   * answer to the person reading. Absent where the record is itself the work.
+   */
+  readonly count?: number;
 }
 
 export interface MyWorkItem {

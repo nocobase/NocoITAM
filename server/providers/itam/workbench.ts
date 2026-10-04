@@ -31,6 +31,12 @@ export interface MyWorkRecord {
   readonly date: string | null;
   /** Application route of the record; the workbench opens it in the drawer. */
   readonly url: string;
+  /**
+   * How many things behind this record are the reader's own, where the record
+   * stands for several — a leaver holds a number of things, and only some of
+   * them answer to the person reading. Absent where the record is the work.
+   */
+  readonly count?: number;
 }
 
 export interface MyWorkItem {
@@ -339,11 +345,15 @@ export function createWorkbenchService(dependencies: {
       // as two problems.
       const peopleConditions = await decide('people', 'read');
       if (peopleConditions) {
-        const mine = new Set<string>();
+        // How many of each leaver's holdings are this reader's, not just
+        // which leavers have any: the row says 2 项 without being opened, and
+        // a leaver whose other four things answer to somebody else does not
+        // look like four more than it is.
+        const mine = new Map<string, number>();
         const addHolders = (rows: readonly Row[], column: string): void => {
           for (const row of rows) {
             const holder = asText(row[column]);
-            if (holder) mine.add(holder);
+            if (holder) mine.set(holder, (mine.get(holder) ?? 0) + 1);
           }
         };
         const owned = (table: string, scope: DatabaseAuthorizationConditions) =>
@@ -412,7 +422,7 @@ export function createWorkbenchService(dependencies: {
           ) =>
             query
               .where('employmentStatus', '=', 'left')
-              .where('id', 'in', [...mine]);
+              .where('id', 'in', [...mine.keys()]);
           const total = await count('people', peopleConditions, leavers);
           if (total > 0) {
             const rows = await take(
@@ -430,6 +440,7 @@ export function createWorkbenchService(dependencies: {
                 title: String(row.name),
                 date: asText(row.leaveDate) ?? null,
                 url: `/people/${String(row.id)}`,
+                count: mine.get(String(row.id)) ?? 0,
               })),
             });
           }
