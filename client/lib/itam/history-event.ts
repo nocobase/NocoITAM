@@ -123,6 +123,12 @@ export function describeEvent(
         count: count('count'),
         left: count('differences'),
       });
+    case 'recoveryPrepared':
+      return t('history.summaries.recoveryPrepared', {
+        devices: count('devices'),
+        stock: count('stock'),
+        seats: count('seats'),
+      });
     case 'stockedIn':
       return t('history.summaries.stockedIn', { count: count('count') });
     case 'unregisteredFound':

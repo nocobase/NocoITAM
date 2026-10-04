@@ -57,6 +57,7 @@ import {
   createMaintenanceService,
   maintenanceServiceToken,
 } from './maintenance.js';
+import { i18nToken } from '@nocobase/app-server/i18n';
 import { createItamNotifier, itamNotifierToken } from './notifier.js';
 import { createNumberingService, numberingServiceToken } from './numbering.js';
 import { createRepairService, repairServiceToken } from './repairs.js';
@@ -215,6 +216,17 @@ export default class ItamProvider extends ServiceProvider<Application> {
               .getLogger('itam')
               .warn({ err: error }, message);
         },
+        // The deployment's own language: a notification is written into
+        // somebody's inbox, and the reader's own choice is a browser setting
+        // the server does not hold. A container without i18n — a test's —
+        // keeps the notifier's fallback.
+        (text) => {
+          if ('text' in text) return text.text;
+          if (!container.has(i18nToken)) return text.key;
+          return container
+            .resolve(i18nToken)
+            .getFixedT('itam')(text.key, { ...text.params });
+        },
       ),
     );
     container.singleton(deviceServiceToken, () =>
@@ -318,6 +330,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
       createMaintenanceService({
         database: container.resolve(databaseManagerToken),
         settings: container.resolve(settingsServiceToken),
+        history: container.resolve(historyServiceToken),
         devices: container.resolve(deviceServiceToken),
         entitlements: container.resolve(entitlementServiceToken),
         masterData: container.resolve(masterDataServiceToken),

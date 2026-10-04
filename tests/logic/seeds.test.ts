@@ -208,7 +208,7 @@ describe('ITAM seeds', () => {
       employeeGrants
         .filter((grant) => grant.resource.type === 'page')
         .map((grant) => grant.resource.id),
-    ).toEqual(['workbench', 'my-assets']);
+    ).toEqual(['workbench', 'inbox', 'notifications', 'my-assets']);
     const updated: string[] = [];
     await reconcileGrants({
       list: async () => rows,
