@@ -1,11 +1,12 @@
 # Application Development Guidelines
 
-This repository is a NocoBase Solution. The NocoSolution repository is included as the `nocosolution/` submodule: `nocosolution/guidelines/` holds the series-wide guidelines, starting with the guideline `solution-guideline.md`, and `nocosolution/NocoITAM/` holds this Solution's plans and phase documents. NocoSolution is a private, internal repository, so the submodule is optional: code, builds, tests and CI never depend on it. Without access to it, `nocosolution/` stays empty, and every instruction below that refers to it is skipped.
+This repository is a NocoBase Solution. The NocoSolution repository is cloned into `nocosolution/`, which this repository ignores: `nocosolution/guidelines/` holds the series-wide guidelines, starting with the guideline `solution-guideline.md`, and `nocosolution/NocoITAM/` holds this Solution's plans and phase documents. NocoSolution is a private, internal repository, so the clone is optional: code, builds, tests and CI never depend on it. Without access to it, `nocosolution/` does not exist, and every instruction below that refers to it is skipped.
 
-- At the start of work, run `git pull && { git submodule update --init --remote --merge && git -C nocosolution sparse-checkout set guidelines NocoITAM || true; }`. The submodule step fails without access to NocoSolution; that is expected and not an error. The sparse checkout keeps only `nocosolution/guidelines/` and `nocosolution/NocoITAM/` in the working tree; it is a local setting, repeated harmlessly on every run. To read another Solution's documents, for cross-Solution integration, run `git -C nocosolution sparse-checkout add <OtherSolution>`; `git -C nocosolution sparse-checkout disable` restores the full tree.
+- At the start of work, run `git pull && { if [ -e nocosolution/.git ]; then git -C nocosolution pull --ff-only || true; else GIT_TERMINAL_PROMPT=0 git clone --quiet --sparse https://github.com/nocobase/NocoSolution.git nocosolution 2>/dev/null && git -C nocosolution sparse-checkout set guidelines NocoITAM || true; fi; }`. The first run clones NocoSolution with only `guidelines/` and `NocoITAM/` checked out; later runs pull it. Without access to NocoSolution the clone fails silently and leaves nothing behind; that is expected and not an error. It is a separate repository, not a submodule, so nothing here records which of its commits is checked out. To read another Solution's documents, for cross-Solution integration, run `git -C nocosolution sparse-checkout add <OtherSolution>`; `git -C nocosolution sparse-checkout disable` restores the full tree.
 - Before drafting or revising a plan, changing the skeleton, adding a temporary implementation, or designing cross-Solution integration, read the whole guideline `nocosolution/guidelines/solution-guideline.md`.
 - Every other file in `nocosolution/guidelines/` states at its top what it covers and when it applies; before a task, check them and follow the ones that apply to it.
 - Do not edit anything in `nocosolution/guidelines/`; in `nocosolution/`, change only `nocosolution/NocoITAM/`. When a plan departs from the guideline or needs something it does not cover, mark it in the plan as a departure from guideline section X.Y with the reason, or as a proposal for the guideline; the guideline's maintainer decides whether to update it.
+- Changes to `nocosolution/NocoITAM/` are commits to NocoSolution, not to this repository: make them on a branch in `nocosolution/`, push it and merge it through a NocoSolution pull request, then switch `nocosolution/` back to `main` so the start-of-work command keeps it current. When a change here needs a document change there, open both and link each from the other.
 - Never copy text from `nocosolution/` into this repository; write English documentation here instead.
 
 This is a NocoBase 3 application. Do not apply globally installed NocoBase 2 Skills. You are building the application itself — its pages, its API, its database tables. Everything under this directory is application-owned source code that you may edit directly.
@@ -21,11 +22,11 @@ Default is the clean application starting point. It registers product capabiliti
 ## This application: ITAM
 
 This application is the IT Asset Management system described in its
-specification, `nocosolution/NocoITAM/SPEC.md` (in the optional submodule; edit it
+specification, `nocosolution/NocoITAM/SPEC.md` (in the optional NocoSolution clone; edit it
 with targeted replacements only, never a formatter), built phase by phase per
 `docs/IMPLEMENTATION_PLAN.md`. Read both before adding a feature; the plan
 records which phase owns what and the decisions already taken, and stands on
-its own when the submodule is unavailable.
+its own when the clone is unavailable.
 
 Where ITAM code lives, on top of the template layout below:
 
