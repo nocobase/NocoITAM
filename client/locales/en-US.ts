@@ -1381,6 +1381,8 @@ const messages = {
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
       leaverRecovery: "Recover a leaver's assets",
+      mine_one: '{{count}} for you',
+      mine_other: '{{count}} for you',
     },
     reminderGroups: {
       devices: 'Devices',

@@ -321,14 +321,22 @@ describe('maintenance, reminders, workbench and reports', () => {
     await app.container.resolve(maintenanceServiceToken).runJob('leavers');
 
     const workOf = async (who: { user: string; role: 'support' | 'manager' }) =>
-      data<{ key: string; count: number; records: { id: string }[] }[]>(
-        await get('workbench/my-work', who),
-      );
+      data<
+        {
+          key: string;
+          count: number;
+          records: { id: string; count?: number }[];
+        }[]
+      >(await get('workbench/my-work', who));
     const mine = (await workOf(manager)).find(
       (item) => item.key === 'leaverRecovery',
     );
     expect(mine?.count).toBe(1);
     expect(mine?.records.map((row) => row.id)).toEqual([leaver.id]);
+    // The row says how many of this leaver's holdings are the reader's, so it
+    // is read without being opened — one device here, not the whole of what
+    // they hold.
+    expect(mine?.records[0]?.count).toBe(1);
     // Someone who may read every device, but answers for none of this
     // leaver's, has nothing to do about them.
     expect(
