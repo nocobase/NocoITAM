@@ -846,6 +846,29 @@ Rules learned while building it:
 - Notifications take one message per channel: ITAM sends
   `messages: { 'in-app': { to, title, body, target } }`, and `config.yml`
   names that channel under `notification.channels` as a map entry.
+- A secret in `config.yml` is written there as a value, never as `${NAME}`:
+  nothing expands that, so the placeholder is stored and sent as the key
+  itself, and a provider answers 401 with a value ending in `}`. The AI
+  plugin's own warning names the two ways —
+  `pnpm nocobase config set --from-env ai.llmServices.<service>.options.apiKey=<VARIABLE>`,
+  which reads the variable and writes the value into the gitignored
+  `config.yml`, or a mapping in `env` of `server/config/ai.ts`
+  (`OPENAI_API_KEY: envString('llmServices.openai.options.apiKey')`, the way
+  NocoCRM does it). The mapping is for a runtime-injected secret and has one
+  trap: it **creates** what it maps onto, so mapping a service the
+  configuration does not declare leaves a half-service with an `apiKey` and no
+  `provider`, which every test application then fails validation on — map only
+  declared services. `config.example.yml` still shows `${RESEND_API_KEY}`
+  under `notification`, which is as unexpanded as any other.
+  `pnpm nocobase config check` reports a service whose key is missing, so it
+  is the check after either route.
+- An LLM service is stored in `llmServices`, synchronized from the
+  configuration at every start, and a start whose configuration was wrong
+  stores the wrong value. The next start overwrites it, so fixing the
+  configuration is enough — but only because this synchronization updates; a
+  key corrected in the database alone is overwritten back. On a Hub the
+  mapping in `server/config/ai.ts` is code, so changing it needs a deployment
+  rather than a configuration edit.
 - A file Repository is bound to a Policy; the attachment routes pass a
   permissive one because they authorize every call against the owner record
   first (`server/routes/itam/attachments.ts`).
