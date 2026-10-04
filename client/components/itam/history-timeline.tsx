@@ -29,7 +29,15 @@ import { cn } from '@/lib/utils';
 import { EmptyState } from './empty-state.js';
 import { RecordLink } from './record-link.js';
 
+/**
+ * What put the line there, beside who it is attributed to. Absent on rows
+ * written before it was recorded, and `human` on a person's own edit —
+ * neither is shown, because saying so on every line says nothing.
+ */
+export type HistoryOrigin = 'human' | 'agent' | 'import' | 'schedule';
+
 export interface HistoryEvent {
+  readonly origin?: HistoryOrigin | null;
   readonly id: string;
   readonly type: string;
   readonly summary: string;
@@ -39,6 +47,7 @@ export interface HistoryEvent {
 }
 
 export interface ChangeLogEntry {
+  readonly origin?: HistoryOrigin | null;
   readonly id: string;
   readonly action: string;
   readonly field: string | null;
@@ -57,6 +66,7 @@ const STATUS_ENUMS: Readonly<Record<string, string>> = {
 
 /** One line of the merged timeline: an event, the fields it changed, or both. */
 export interface TimelineItem {
+  readonly origin?: HistoryOrigin | null;
   readonly id: string;
   readonly createdAt: string;
   readonly actorId: string | null;
@@ -403,6 +413,9 @@ function TimelineRow({
       <div className='mt-0.5 text-xs text-muted-foreground tabular-nums'>
         {formatDate(item.createdAt, true)}
         {actor ? ` · ${actor}` : ''}
+        {item.origin && item.origin !== 'human'
+          ? ` · ${t(`history.origin.${item.origin}`)}`
+          : ''}
       </div>
     </li>
   );

@@ -1396,6 +1396,7 @@ export function createEntitlementService(
               type: 'renewalAdvanced',
               summary: `Renewal date ${from} → ${to}`,
               payload: { from, to },
+              origin: 'schedule',
               sourceType: 'scheduler',
             },
             connection,

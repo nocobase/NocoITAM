@@ -193,6 +193,11 @@ const messages = {
     auditItems: 'Audit items',
   },
   history: {
+    origin: {
+      agent: 'proposed by Noco',
+      import: 'through a data import',
+      schedule: 'by a scheduled task',
+    },
     fieldsChanged_one: '{{count}} field updated',
     fieldsChanged_other: '{{count}} fields updated',
     showFields_one: 'Show {{count}} field',
