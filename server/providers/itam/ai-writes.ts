@@ -8,7 +8,7 @@ import { unrestricted } from './authz-filter.js';
 import type { Row } from './collection-query.js';
 import {
   ASSIGNEE_TYPES,
-  DEVICE_STATUSES,
+  CORRECTABLE_STATUSES,
   OPERATION_FROM,
   RETURN_TARGETS,
   type DeviceOperation,
@@ -110,7 +110,10 @@ export const AI_WRITE_SCHEMAS = {
   itam_correct_device_status: z.object({
     title,
     deviceId: id,
-    status: z.enum(DEVICE_STATUSES),
+    // A terminal state is not a correction: see CORRECTABLE_STATUSES.
+    status: z.enum(
+      CORRECTABLE_STATUSES as unknown as [DeviceStatus, ...DeviceStatus[]],
+    ),
     reason: z.string().min(1).max(2000),
   }),
   itam_assign_seat: z.object({
