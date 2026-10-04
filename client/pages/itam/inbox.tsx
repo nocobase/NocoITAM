@@ -12,11 +12,16 @@ import { Page } from '@/components/itam/page-header';
  * the rest of the overview around them. It carries no total, for the same
  * reason the card strip carries none — a sum of unrelated rules is not
  * something anybody acts on, and every row has its own number.
+ *
+ * `expand` is the difference between the two: here a to-do whose action has
+ * no record page of its own — a leaver's recovery — is rendered open, with
+ * its items and the buttons that settle them, so the work is done on this
+ * page rather than pointed at from it.
  */
 export default function InboxPage(): ReactElement {
   return (
     <Page>
-      <MyWork />
+      <MyWork expand />
     </Page>
   );
 }

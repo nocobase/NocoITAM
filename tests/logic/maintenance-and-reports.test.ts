@@ -36,6 +36,16 @@ describe('maintenance, reminders, workbench and reports', () => {
   const data = async <T = Record<string, unknown>>(
     response: Response,
   ): Promise<T> => ((await response.json()) as { data: T }).data;
+  /** They leave: the date is the only input, and the status follows it. */
+  const leave = async (id: string, date = '2020-01-31') => {
+    const response = await app.request(`/api/itam/master/people/${id}`, {
+      ...json({ leaveDate: date }),
+      method: 'PATCH',
+      ...manager,
+    });
+    if (response.status !== 200)
+      throw new Error(`leave ${id}: ${await response.text()}`);
+  };
   const create = async (path: string, body: Record<string, unknown>) => {
     const response = await post(path, body);
     if (response.status !== 201)
@@ -153,7 +163,11 @@ describe('maintenance, reminders, workbench and reports', () => {
       leaveDate: '2999-01-31',
     });
     const maintenance = app.container.resolve(maintenanceServiceToken);
-    expect((await maintenance.runJob('leavers')).leavers).toBe(1);
+    // Both were settled when they were written — a date already passed makes
+    // somebody left on the spot — so the job has nobody to mark tonight. What
+    // it is for is a stored date that merely comes round, which is the
+    // `markDueLeavers` call below.
+    expect((await maintenance.runJob('leavers')).leavers).toBe(0);
     const run = await maintenance.runJob('daily');
     const statusOf = async (id: string) =>
       (
@@ -301,10 +315,11 @@ describe('maintenance, reminders, workbench and reports', () => {
   it('makes a leaver a to-do for whoever answers for what they hold', async () => {
     const support = { user: 'sam', role: 'support' as const };
     const hr = await create('master/departments', { name: 'HR' });
+    // Issued to them while they still worked here: an assignment refuses
+    // somebody who has already left, which is the order this happens in.
     const leaver = await create('master/people', {
       name: 'Zhou Yi',
       departmentId: hr.id,
-      leaveDate: '2020-01-31',
     });
     const device = await create('devices', {
       modelId,
@@ -318,6 +333,7 @@ describe('maintenance, reminders, workbench and reports', () => {
       targetType: 'person',
       targetId: leaver.id,
     });
+    await leave(leaver.id);
     await app.container.resolve(maintenanceServiceToken).runJob('leavers');
 
     const workOf = async (who: { user: string; role: 'support' | 'manager' }) =>
@@ -395,10 +411,11 @@ describe('maintenance, reminders, workbench and reports', () => {
 
   it('prepares a leaver recovery once and hands it to the owner', async () => {
     const hr = await create('master/departments', { name: 'HR' });
+    // Issued to them while they still worked here: an assignment refuses
+    // somebody who has already left, which is the order this happens in.
     const leaver = await create('master/people', {
       name: 'Zhou Yi',
       departmentId: hr.id,
-      leaveDate: '2020-01-31',
     });
     const device = await create('devices', {
       modelId,
@@ -410,6 +427,7 @@ describe('maintenance, reminders, workbench and reports', () => {
       targetType: 'person',
       targetId: leaver.id,
     });
+    await leave(leaver.id);
     const maintenance = app.container.resolve(maintenanceServiceToken);
     const first = await maintenance.runJob('leavers');
     expect(first.recoveriesPrepared).toBe(1);

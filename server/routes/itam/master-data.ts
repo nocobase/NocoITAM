@@ -17,6 +17,7 @@ import {
   masterDataServiceToken,
 } from '../../providers/index.js';
 import { ValidationError } from '../../providers/itam/errors.js';
+import { recoveryPlan } from '../../providers/itam/maintenance.js';
 import {
   errorResponse,
   parseListOptions,
@@ -199,6 +200,47 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
           );
         }
         return context.json({ data: await masterData.personHoldings(id) });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    /**
+     * What is still to be recovered from a person, and what is to be done
+     * with each item.
+     *
+     * The same plan the nightly job prepares (`recoveryPlan`), read live: the
+     * stored one is a snapshot of the night it was made, and somebody working
+     * through the list needs to see what is left now. Items whose handling is
+     * `none` are left out — a device already lost or disposed of is not in
+     * anybody's hands to give back. Read under the person's own `read`
+     * decision, like the holdings beside it; each action the page then offers
+     * is authorized by its own endpoint.
+     */
+    routes.get('/people/:id/recovery', async (context) => {
+      try {
+        const conditions = await decideCollection(context, 'people', 'read');
+        const id = context.req.param('id');
+        const person = await masterData.get('people', id, conditions);
+        if (!person) {
+          return context.json(
+            { code: 'NOT_FOUND', message: 'Record not found' },
+            404,
+          );
+        }
+        const items = recoveryPlan(await masterData.personHoldings(id)).filter(
+          (item) => item.handling !== 'none',
+        );
+        return context.json({
+          data: {
+            // The page shows the plan only for somebody who has left, and
+            // that answer belongs with the plan rather than to a second
+            // request for the record.
+            employmentStatus: person.employmentStatus ?? null,
+            leaveDate: person.leaveDate ?? null,
+            items,
+          },
+        });
       } catch (error) {
         return errorResponse(context, error);
       }

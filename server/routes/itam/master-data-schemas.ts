@@ -152,7 +152,10 @@ export function masterDataSchema(
 export const CREATE_DEFAULTS: Readonly<
   Record<string, Readonly<Record<string, unknown>>>
 > = {
-  people: { employmentStatus: 'active' },
+  // 在职状态 is not defaulted here: the service derives it from the leave
+  // date on every write (`employmentFor`), and a default of `active` was the
+  // value a person entered with a date already passed kept until the nightly
+  // job came round.
   categories: {
     requiresSerial: false,
     assignableToPerson: true,

@@ -40,6 +40,7 @@ import {
 } from '@/components/itam/assign-dialog';
 import { FieldValue } from '@/components/itam/cells';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
+import { DeviceReturnDialog } from '@/components/itam/device-return-dialog';
 import { DeleteDialog } from '@/components/itam/delete-dialog';
 import {
   DetailPage,
@@ -94,7 +95,6 @@ import {
   DEVICE_FIELDS,
   DEVICE_STATUSES,
   OPERATION_FROM,
-  RETURN_TARGETS,
   type AssigneeType,
 } from '@/lib/itam/devices';
 import { attachmentCount, useAttachmentGroups } from '@/lib/itam/attachments';
@@ -782,7 +782,7 @@ export default function DeviceDetailPage(): ReactElement {
         />
       ) : null}
       {dialog === 'return' ? (
-        <ReturnDialog
+        <DeviceReturnDialog
           currentLocationId={text(data.locationId) || null}
           busy={operation.isPending}
           error={operation.error}
@@ -902,91 +902,6 @@ export default function DeviceDetailPage(): ReactElement {
         }}
       />
     </>
-  );
-}
-
-function ReturnDialog({
-  currentLocationId,
-  busy,
-  error,
-  onClose,
-  onConfirm,
-}: {
-  readonly currentLocationId: string | null;
-  readonly busy: boolean;
-  readonly error: unknown;
-  readonly onClose: () => void;
-  readonly onConfirm: (body: Record<string, unknown>) => void;
-}): ReactElement {
-  const { t } = useTranslation();
-  const [nextStatus, setNextStatus] = useState<string>('inStock');
-  // Where it goes back to; starts from where it is now.
-  const [locationId, setLocationId] = useState<string | null>(
-    currentLocationId,
-  );
-  const [condition, setCondition] = useState('');
-  const items = RETURN_TARGETS.map((value) => ({
-    value,
-    label: t(`enums.deviceStatus.${value}`),
-  }));
-  return (
-    <ConfirmDialog
-      open
-      onOpenChange={(open) => !open && onClose()}
-      title={t('deviceActions.return.title')}
-      description={t('deviceActions.return.descriptionOne')}
-      busy={busy}
-      error={error}
-      confirmLabel={t('deviceActions.return.confirm')}
-      onConfirm={() =>
-        onConfirm({
-          nextStatus,
-          locationId: locationId ?? undefined,
-          condition: condition || undefined,
-        })
-      }
-    >
-      <div className='grid gap-1.5'>
-        <Label htmlFor='return-status'>
-          {t('deviceActions.return.nextStatus')}
-        </Label>
-        <Select
-          items={items}
-          value={nextStatus}
-          onValueChange={(value) => setNextStatus(String(value))}
-        >
-          <SelectTrigger id='return-status' className='w-full'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {items.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className='grid gap-1.5'>
-        <Label htmlFor='return-location'>{t('fields.location')}</Label>
-        <ReferenceSelect
-          id='return-location'
-          reference={{ collection: 'locations' }}
-          value={locationId}
-          onChange={setLocationId}
-        />
-      </div>
-      <div className='grid gap-1.5'>
-        <Label htmlFor='return-condition'>
-          {t('deviceActions.return.condition')}
-        </Label>
-        <Input
-          id='return-condition'
-          value={condition}
-          onChange={(event) => setCondition(event.target.value)}
-        />
-      </div>
-    </ConfirmDialog>
   );
 }
 

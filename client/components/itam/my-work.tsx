@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 
+import { LeaverRecovery } from '@/components/itam/leaver-recovery';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -41,12 +42,26 @@ interface WorkCard {
   readonly links: readonly { readonly label: string; readonly url: string }[];
 }
 
-export function MyWork(): ReactElement | null {
+export function MyWork({
+  expand = false,
+}: {
+  /**
+   * Work the list through here rather than only point at it: a to-do whose
+   * action has no other home is rendered open, with its items and the
+   * buttons that settle them. 待我处理 asks for this; the workbench does not
+   * — there the strip answers "is anything waiting" at a glance, and the
+   * records are opened in the record drawer, which carries each one's own
+   * actions already.
+   */
+  readonly expand?: boolean;
+} = {}): ReactElement | null {
   const { t } = useTranslation();
   const work = useMyWork();
   const items = work.data ?? [];
   const find = (key: string) => items.find((item) => item.key === key);
   const cards: WorkCard[] = [];
+  /** Cards rendered open, above the compact ones. */
+  const expanded: ReactElement[] = [];
 
   // 待我审批 is one card for both kinds of request, each record tagged with
   // the kind it is. The two stay separate to-dos underneath, because each
@@ -96,6 +111,21 @@ export function MyWork(): ReactElement | null {
   ]) {
     const item = find(key);
     if (!item) continue;
+    // A leaver's recovery is the one to-do with no record page of its own to
+    // act on: a seat has none, and a stock item's page lists every holder. So
+    // where the list is worked through, it is rendered open.
+    if (expand && key === 'leaverRecovery') {
+      expanded.push(
+        ...item.records.map((record) => (
+          <LeaverRecovery
+            key={record.id}
+            personId={record.id}
+            personName={record.title}
+          />
+        )),
+      );
+      continue;
+    }
     const tag = TAGGED[key];
     cards.push({
       key,
@@ -114,7 +144,7 @@ export function MyWork(): ReactElement | null {
   // Nothing is waiting on this reader at all (an employee, whose work is
   // their own assets): the strip says nothing rather than showing a heading
   // over a row of empty boxes.
-  if (cards.length === 0) return null;
+  if (cards.length === 0 && expanded.length === 0) return null;
   return (
     <section className='space-y-3'>
       {/* No total beside the heading: each card carries its own number, and
@@ -125,6 +155,11 @@ export function MyWork(): ReactElement | null {
       {/* Three to a row at full width, by the page's own room rather than
           the window's — the assistant panel narrows the page while the
           window stays wide. */}
+      {/* An open card is the width of the page: it carries a list with its
+          own actions, which a third of a row cannot hold. */}
+      {expanded.length > 0 ? (
+        <div className='space-y-3'>{expanded}</div>
+      ) : null}
       <div className='grid gap-3 @2xl:grid-cols-2 @4xl:grid-cols-3'>
         {cards.map((card) => (
           <WorkCardView key={card.key} card={card} />
