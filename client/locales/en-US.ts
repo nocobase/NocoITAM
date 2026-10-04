@@ -1,6 +1,8 @@
 import type { LocaleResource } from '@nocobase/i18n';
 
-const enUS = {
+import authUi from '../extensions/nocobase-auth-ui/locales/en-US.js';
+
+const messages = {
   home: {
     title: 'Start building your application',
     description:
@@ -74,6 +76,7 @@ const enUS = {
     myAssets: 'My assets',
     itamSettings: 'System settings',
     breadcrumb: 'Breadcrumb',
+    back: 'Back',
     brandHome: 'NocoITAM home',
     brandApps: 'NocoITAM applications',
   },
@@ -2311,6 +2314,10 @@ const enUS = {
       'Route {{label}} from {{packageName}} could not be loaded.',
   },
 };
+
+// The sign-in pages' own strings (template beta.53), under the keys their
+// components look up; this application's entries win where both define one.
+const enUS: typeof authUi & typeof messages = { ...authUi, ...messages };
 
 /**
  * The shape every locale of this application follows, derived from the English wording above.

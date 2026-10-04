@@ -2394,3 +2394,41 @@ the database. When the table is empty — it was here — rebuilding it from the
 plugin's own migration (`down` then `up`) is enough; the start-up checksum
 warning for it remains until `pnpm nocobase db repair`, which realigns every
 drifted checksum at once and was therefore left to the owner.
+
+## Template upgrade: beta.49 → beta.53 (2026-10-04)
+
+`@nocobase/app-template-default` 1.0.0-beta.49 → 1.0.0-beta.53 and the
+packages it pins (app-server 1.0.0-beta.32, app-cli 1.0.0-beta.11, AI
+employee 1.0.0-beta.29, workflow 1.0.0-beta.31, users 1.0.0-beta.13,
+authorization 0.2.0-beta.22, …), plus the new `@nocobase/jobs` and
+`@nocobase/hub-cli`.
+
+What the template changed:
+
+- **It ships only the primitives its shell uses** (button, dialog,
+  dropdown-menu, input, label, popover, spinner, toast, tooltip) and no
+  longer the data table, date picker, typography or reference pages. The
+  18 primitives ITAM imports (badge, card, chart, select, table, tabs, …)
+  stay as this application's own files; the rest, the reference pages and
+  their tests went, with the client packages only they used
+  (`@tanstack/react-table`, `react-day-picker`, `date-fns`, `input-otp`,
+  `embla-carousel-react`, `react-resizable-panels`, `@shadcn/react`).
+  `recharts` and `cmdk` stay because ITAM's chart and command use them.
+- **Sign-in pages carry their own copy** (`client/extensions/nocobase-auth-ui/locales/`),
+  spread into the application's locales; ITAM's nested locale files spread
+  it the same way. `navigation.back` is new, for `BackButton`.
+- **Configuration**: `server/config/jobs.ts` and `scheduler.ts`; the server
+  compiles as ESNext with tsc-alias, and `workflows/` compiles with it.
+  `ai.llmServices` in `config.yml` is a map keyed by service name now — the
+  list form is refused at start-up, so the live file was converted.
+- Hub publishing left app-cli for `@nocobase/hub-cli` (`pnpm nocobase hub …`);
+  the `nocobase.cli.publishing` key went. The AI plugin contributes CLI
+  commands.
+
+Inside ITAM:
+
+- The AI chat Registry copy merged onto the beta.29 recipe with no conflict
+  (upstream changed only chat-state timing).
+- `tests/logic/app-locale-coverage.test.ts` skips `client/extensions/nocobase-ai`,
+  which translates through its own `useAITranslate()` and locales, and
+  `tests/components/page-harness.test.tsx` reads ITAM's nested keys.

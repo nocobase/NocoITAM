@@ -3,17 +3,18 @@
   "compilerOptions": {
     // Application configuration factories infer exports during the full TypeScript build.
     "isolatedDeclarations": false,
+    // tsc-alias completes relative ESM paths after compilation.
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "rootDir": ".",
-    "outDir": "dist",
-    "paths": {
-      "@/jobs/*.js": ["./server/jobs/*.ts"],
-      "@/jobs/*": ["./server/jobs/*"]
-    }
+    "outDir": "dist"
   },
+  "tsc-alias": { "resolveFullPaths": true },
   "include": [
     "server/**/*.ts",
     "database/**/*.ts",
     "cli/**/*.ts",
+    "workflows/**/*.ts",
     // The AI employee and its tools compile with the server.
     "ai/**/*.ts"
   ]
