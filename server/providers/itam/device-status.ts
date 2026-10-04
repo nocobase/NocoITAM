@@ -29,6 +29,32 @@ export type AssigneeType = (typeof ASSIGNEE_TYPES)[number];
 export const RESERVATION_TYPES: typeof ASSIGNEE_TYPES = ASSIGNEE_TYPES;
 export type ReservationType = (typeof RESERVATION_TYPES)[number];
 
+/**
+ * The statuses a correction may set, which is every one a person can get back
+ * out of.
+ *
+ * `disposed` is left out because it is final: no operation starts from it, and
+ * it is what executing a disposal produces — a decision with an approval
+ * behind it, not a correction. `pendingDisposal` is left out because it is
+ * what a disposal request produces, and setting it directly would put a device
+ * on its way out with nobody having asked. The rest are reversible:
+ * `reactivate` undoes `retired`, `restore` undoes `lost`, and the operations
+ * move the others between themselves.
+ *
+ * It is what the assistant may propose (`server/providers/itam/ai-writes.ts`):
+ * a terminal state is a person's own act on the record's page, taken there
+ * with everything the page shows. A person correcting a status by hand is not
+ * narrowed by this.
+ */
+export const CORRECTABLE_STATUSES: readonly DeviceStatus[] = [
+  'inStock',
+  'inUse',
+  'onLoan',
+  'inRepair',
+  'retired',
+  'lost',
+];
+
 /** Statuses counted as "in use" for utilisation. */
 export const IN_USE_STATUSES: readonly DeviceStatus[] = ['inUse', 'onLoan'];
 
