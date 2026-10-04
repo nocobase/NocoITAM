@@ -19,6 +19,15 @@ import {
  */
 export const LOGO_AVATAR_PATH = '/assets/logo-mark.png';
 
+/**
+ * The Solution's own skills, which the AI Employee plugin loads from
+ * `ai/skills/<name>/SKILL.md` — it scans that directory itself, and the build
+ * copies it into `dist`. A skill is the working method in a document business
+ * people can read and change without a release, which is what makes it a
+ * deliverable of its own rather than prose buried in these instructions.
+ */
+export const ITAM_SKILLS = ['offboarding'] as const;
+
 const employee: AIEmployeeOptions = defineAIEmployee({
   username: 'itam',
   category: 'itam',
@@ -52,6 +61,8 @@ const employee: AIEmployeeOptions = defineAIEmployee({
     { name: 'itam_take_back_stock', autoCall: true },
     { name: 'itam_receive_purchase_line', autoCall: true },
   ],
+  skills: [...ITAM_SKILLS],
+  chatSettings: { enableSkills: true, enableTools: true },
   // First on the AI employees page, ahead of the plugin's own (see ai/index.ts).
   sort: -1,
   systemPrompt: `You are Noco, the IT device management (ITAM) assistant inside this application.
