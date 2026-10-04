@@ -62,6 +62,8 @@ export interface OwnedRecord {
   readonly label: string;
   /** Which field names them: a 负责人 on most, a 申请人 on a request. */
   readonly field: 'ownerId' | 'requesterId';
+  /** Who that field names **now**, which is somebody else once handed over. */
+  readonly ownerId?: string | null;
   /**
    * Which of the five asset types it is, where it is an asset at all: the
    * pages tag those with their own icon, and a repair order or a purchase
@@ -989,7 +991,104 @@ export function createMasterDataService(
             owned?: readonly OwnedRecord[];
           }
         | undefined;
-      return { items: payload?.items ?? [], owned: payload?.owned ?? [] };
+      const items = payload?.items ?? [];
+      const owned = payload?.owned ?? [];
+
+      // What the snapshot settles is *which* things were in their name. Every
+      // other word about them — the name, who answers for it now, what state
+      // it is in — is read from the record, because that is where it lives
+      // and it keeps changing after somebody leaves: a device handed to
+      // another owner, an order renamed. A row rendered out of the payload
+      // would quietly show last month's answer beside this month's.
+      const byId = <T extends Row>(rows: readonly T[]) =>
+        new Map(rows.map((entry) => [String(entry.id), entry]));
+      const read = (collection: string, ids: readonly string[], fields: readonly string[]) =>
+        ids.length === 0
+          ? Promise.resolve([] as Row[])
+          : database
+              .query()
+              .selectFrom(collection)
+              .select(['id', ...fields])
+              .where('id', 'in', [...ids])
+              .execute<Row>();
+
+      const devices = byId(
+        await read(
+          'devices',
+          items.filter((item) => item.kind === 'device').map((item) => item.id),
+          ['deviceNo', 'name', 'status', 'ownerId'],
+        ),
+      );
+      const stockItems = byId(
+        await read(
+          'stockItems',
+          items.filter((item) => item.kind === 'stock').map((item) => item.targetId),
+          ['name', 'kind', 'ownerId'],
+        ),
+      );
+      const entitlements = byId(
+        await read(
+          'entitlements',
+          items.filter((item) => item.kind === 'seat').map((item) => item.targetId),
+          ['name', 'ownerId'],
+        ),
+      );
+
+      const refreshed = items.map((item) => {
+        const live =
+          item.kind === 'device'
+            ? devices.get(item.id)
+            : item.kind === 'stock'
+              ? stockItems.get(item.targetId)
+              : entitlements.get(item.targetId);
+        // Deleted since: the snapshot's own copy is all there is left of it.
+        if (!live) return item;
+        return {
+          ...item,
+          label:
+            item.kind === 'device'
+              ? `${asText(live.deviceNo) ?? ''} / ${asText(live.name) ?? ''}`.trim()
+              : (asText(live.name) ?? item.label),
+          ownerId: asText(live.ownerId) ?? null,
+          ...(item.kind === 'device'
+            ? { status: asText(live.status) ?? '' }
+            : {}),
+        };
+      });
+
+      const ownedNow = await Promise.all(
+        OWNED_BY_USER.map(async (entry) => {
+          const ids = owned
+            .filter((record) => record.collection === entry.collection)
+            .map((record) => record.id);
+          const columns = [
+            entry.label,
+            entry.field,
+            ...(entry.label2 ? [entry.label2] : []),
+          ];
+          return [entry.collection, byId(await read(entry.collection, ids, columns))] as const;
+        }),
+      );
+      const ownedLive = new Map(ownedNow);
+      const refreshedOwned = owned.map((record) => {
+        const entry = OWNED_BY_USER.find(
+          (candidate) => candidate.collection === record.collection,
+        );
+        const live = ownedLive.get(record.collection)?.get(record.id);
+        if (!entry || !live) return record;
+        return {
+          ...record,
+          ownerId: asText(live[entry.field]) ?? null,
+          label: [
+            asText(live[entry.label]) ?? record.label,
+            entry.label2 ? asText(live[entry.label2]) : undefined,
+          ]
+            .filter(Boolean)
+            .join(' / '),
+        };
+      });
+
+      return { items: refreshed, owned: refreshedOwned };
     },
 
     async personOwnedRecords(id, allowed, connection) {
@@ -1010,7 +1109,7 @@ export function createMasterDataService(
           entry.assetType && 'column' in entry.assetType
             ? entry.assetType.column
             : undefined;
-        const columns = ['id', entry.label];
+        const columns = ['id', entry.label, entry.field];
         if (entry.label2) columns.push(entry.label2);
         if (column) columns.push(column);
         const rows = await read
@@ -1031,6 +1130,7 @@ export function createMasterDataService(
               .filter(Boolean)
               .join(' / '),
             field: entry.field as OwnedRecord['field'],
+            ownerId: asText(row[entry.field]) ?? null,
             ...(entry.assetType
               ? {
                   assetType:

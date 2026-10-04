@@ -941,6 +941,7 @@ const messages = {
       changeOwnerHint:
         'Name who answers for {{record}} from now on. Only its current owner or whoever created it may do this.',
       installed: 'Contains',
+      done: 'Settled',
       doneReturn: 'Returned',
       doneReclaim: 'Reclaimed',
       doneHandover: 'Handed over',

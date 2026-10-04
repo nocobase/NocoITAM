@@ -929,6 +929,7 @@ const zhCN: AppResource = {
       changeOwner: '移交',
       changeOwnerHint: '指定今后由谁负责 {{record}}。只有现任负责人或创建人能做这件事。',
       installed: '内含',
+      done: '已处理',
       doneReturn: '已归还',
       doneReclaim: '已回收',
       doneHandover: '已移交',
