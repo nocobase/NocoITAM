@@ -188,6 +188,11 @@ const zhCN: AppResource = {
     auditItems: '盘点明细',
   },
   history: {
+    origin: {
+      agent: '经 Noco 提议',
+      import: '经数据导入',
+      schedule: '经定时任务',
+    },
     fieldsChanged_one: '更新了 {{count}} 个字段',
     fieldsChanged_other: '更新了 {{count}} 个字段',
     showFields_one: '查看 {{count}} 个字段',
