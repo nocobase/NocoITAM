@@ -9,6 +9,7 @@ import {
 import {
   AppWindow,
   BarChart3,
+  Briefcase,
   Building2,
   ClipboardCheck,
   Cpu,
@@ -172,17 +173,6 @@ const withPageGrants = (
  * The application's page routes, also read by the record drawer, which
  * mounts a record's own detail page (and its tabs) inside the drawer.
  */
-/**
- * Navigation groups the sidebar opens on a fresh visit. The five asset types
- * are what this application is about, so its menu starts showing them
- * instead of a closed group the reader has to find; everything else opens
- * when it holds the page being read. A group the reader closes stays closed
- * for the rest of the session.
- */
-export const EXPANDED_NAVIGATION_GROUPS: ReadonlySet<string> = new Set([
-  'devices-group',
-]);
-
 export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
   withPageGrants([
     {
@@ -215,6 +205,17 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       auth: 'required',
       navigation: { title: 'navigation.workbench', icon: LayoutDashboard },
       componentLoader: () => import('./pages/itam/workbench.js'),
+    },
+    // What a person holds is their own entry, not a group of one: the
+    // employee side of this application is that single page. It sits with
+    // the workbench above the groups — both are about the reader — and an
+    // ungrouped entry after a group would read as part of it.
+    {
+      name: 'my-assets',
+      path: '/my-assets',
+      auth: 'required',
+      navigation: { title: 'navigation.myAssets', icon: Laptop },
+      componentLoader: () => import('./pages/itam/employee/my-assets.js'),
     },
     {
       // Right after the overview: what waits on this reader, in the two
@@ -316,47 +317,60 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
         }),
       ],
     },
-    domainRoute('procurement', 'navigation.procurement', ShoppingCart, {
-      list: () => import('./pages/itam/procurement/procurement.js'),
-      detail: () => import('./pages/itam/procurement/procurement-detail.js'),
-      tabs: {
-        generated: () => import('./pages/itam/procurement/tab-generated.js'),
-        attachments: () =>
-          import('./pages/itam/procurement/tab-attachments.js'),
-        history: () => import('./pages/itam/procurement/tab-history.js'),
-      },
-    }),
-    domainRoute('repairs', 'navigation.repairs', Wrench, {
-      list: () => import('./pages/itam/repairs/repairs.js'),
-      detail: () => import('./pages/itam/repairs/repairs-detail.js'),
-      tabs: {
-        attachments: () => import('./pages/itam/repairs/tab-attachments.js'),
-        history: () => import('./pages/itam/repairs/tab-history.js'),
-      },
-    }),
-    domainRoute('audits', 'navigation.audits', ClipboardCheck, {
-      list: () => import('./pages/itam/audits/audits.js'),
-      detail: () => import('./pages/itam/audits/audits-detail.js'),
-      tabs: {
-        items: () => import('./pages/itam/audits/tab-items.js'),
-        attachments: () => import('./pages/itam/audits/tab-attachments.js'),
-        history: () => import('./pages/itam/audits/tab-history.js'),
-      },
-    }),
-    domainRoute('disposals', 'navigation.disposals', Recycle, {
-      list: () => import('./pages/itam/disposals/disposals.js'),
-      detail: () => import('./pages/itam/disposals/disposals-detail.js'),
-      tabs: {
-        attachments: () => import('./pages/itam/disposals/tab-attachments.js'),
-        history: () => import('./pages/itam/disposals/tab-history.js'),
-      },
-    }),
+    // The work that moves a record through its steps, and the reports read
+    // over it: a heading of its own, so these pages do not read as part of
+    // the asset group above them now that groups no longer fold.
     {
-      name: 'reports',
-      path: '/reports',
-      auth: 'required',
-      navigation: { title: 'navigation.reports', icon: BarChart3 },
-      componentLoader: () => import('./pages/itam/reports/reports.js'),
+      name: 'operations-group',
+      navigation: { title: 'navigation.operationsGroup', icon: Briefcase },
+      children: [
+        domainRoute('procurement', 'navigation.procurement', ShoppingCart, {
+          list: () => import('./pages/itam/procurement/procurement.js'),
+          detail: () =>
+            import('./pages/itam/procurement/procurement-detail.js'),
+          tabs: {
+            generated: () =>
+              import('./pages/itam/procurement/tab-generated.js'),
+            attachments: () =>
+              import('./pages/itam/procurement/tab-attachments.js'),
+            history: () => import('./pages/itam/procurement/tab-history.js'),
+          },
+        }),
+        domainRoute('repairs', 'navigation.repairs', Wrench, {
+          list: () => import('./pages/itam/repairs/repairs.js'),
+          detail: () => import('./pages/itam/repairs/repairs-detail.js'),
+          tabs: {
+            attachments: () =>
+              import('./pages/itam/repairs/tab-attachments.js'),
+            history: () => import('./pages/itam/repairs/tab-history.js'),
+          },
+        }),
+        domainRoute('audits', 'navigation.audits', ClipboardCheck, {
+          list: () => import('./pages/itam/audits/audits.js'),
+          detail: () => import('./pages/itam/audits/audits-detail.js'),
+          tabs: {
+            items: () => import('./pages/itam/audits/tab-items.js'),
+            attachments: () => import('./pages/itam/audits/tab-attachments.js'),
+            history: () => import('./pages/itam/audits/tab-history.js'),
+          },
+        }),
+        domainRoute('disposals', 'navigation.disposals', Recycle, {
+          list: () => import('./pages/itam/disposals/disposals.js'),
+          detail: () => import('./pages/itam/disposals/disposals-detail.js'),
+          tabs: {
+            attachments: () =>
+              import('./pages/itam/disposals/tab-attachments.js'),
+            history: () => import('./pages/itam/disposals/tab-history.js'),
+          },
+        }),
+        {
+          name: 'reports',
+          path: '/reports',
+          auth: 'required',
+          navigation: { title: 'navigation.reports', icon: BarChart3 },
+          componentLoader: () => import('./pages/itam/reports/reports.js'),
+        },
+      ],
     },
     {
       name: 'master-data',
@@ -530,15 +544,6 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
           ],
         }),
       ],
-    },
-    // What a person holds is their own entry, not a group of one: the
-    // employee side of this application is that single page.
-    {
-      name: 'my-assets',
-      path: '/my-assets',
-      auth: 'required',
-      navigation: { title: 'navigation.myAssets', icon: Laptop },
-      componentLoader: () => import('./pages/itam/employee/my-assets.js'),
     },
   ]);
 

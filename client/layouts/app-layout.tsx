@@ -93,6 +93,7 @@ export function AppLayout({
               {menuItems.map((item) => (
                 <NavigationTree
                   collapsed={desktopSidebarCollapsed}
+                  groupsAsHeadings
                   item={item}
                   key={routeKey(item.route)}
                   onNavigate={() => setMobileSidebarOpen(false)}
