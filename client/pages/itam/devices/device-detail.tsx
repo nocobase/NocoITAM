@@ -9,10 +9,10 @@ import {
   MoreHorizontal,
   PowerOff,
   Recycle,
-  RotateCcw,
   Search,
   SearchX,
   Trash2,
+  Undo2,
   UserPlus,
   Wrench,
 } from 'lucide-react';
@@ -382,7 +382,9 @@ export default function DeviceDetailPage(): ReactElement {
     push(
       'return',
       permissions.return,
-      <RotateCcw data-icon='inline-start' />,
+      // The same icon as every other "take it back": stock, seats and the
+      // leaver's recovery all use it.
+      <Undo2 data-icon='inline-start' />,
       t('deviceActions.return.title'),
       () => setDialog('return'),
       'default',

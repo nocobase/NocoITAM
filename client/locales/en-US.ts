@@ -921,17 +921,18 @@ const messages = {
     noHoldings: 'Nothing held',
     recovery: {
       title: 'To recover',
-      since: '{{name}} left on {{date}}, and still holds these.',
-      left: '{{name}} has left, and still holds these.',
+      since: 'left on {{date}}, and still holds these.',
+      left: 'has left, and still holds these.',
       mine: '{{count}} of them are yours to settle.',
       you: 'you',
       owner: 'owner: {{name}}',
-      accountsStay:
-        'Reclaiming a seat frees the licence, not the login: disable the account or change the shared key in the vendor console.',
       handover_one: 'Still answers for {{count}} record — hand it over',
       handover_other: 'Still answers for {{count}} records — hand them over',
+      changeOwner: 'Hand over',
+      changeOwnerHint:
+        'Name who answers for {{record}} from now on. Only its current owner or whoever created it may do this.',
       columns: {
-        item: 'To recover',
+        item: 'Asset to recover',
         handling: 'Handling',
       },
       groups: {
@@ -942,8 +943,7 @@ const messages = {
       handling: {
         return: 'Return',
         takeBack: 'Back into stock',
-        reclaim: 'Reclaim seat',
-        wait: 'At the repair shop — settle it once the repair is finished',
+        wait: 'Settle once the repair is finished',
         confirmConsumed: 'Issued — check whether any is left to take back',
       },
     },
@@ -1314,7 +1314,7 @@ const messages = {
       '"{{name}}" is removed from this record; its history records it.',
     removeDisposalDevice: '{{name}} is removed from this disposal.',
     reclaimSeat:
-      'The seat held by {{name}} is taken back and can be assigned again.',
+      'The seat held by {{name}} is taken back and can be assigned again. Reclaiming frees the licence, not the login — the account still has to be disabled, or the shared key changed, in the vendor console.',
     runJob: 'Run "{{job}}" now; the result is recorded in the run log.',
     generateDemo:
       'Demo records are generated from the seed data and can be cleared at any time.',

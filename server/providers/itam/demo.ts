@@ -1004,6 +1004,11 @@ export function createDemoService(dependencies: {
       await assign(airs[0].id, zhaoMin.id);
       await assign(thinkpads[0].id, liuYang.id);
       await assign(expiredLaptop.id, chenJie.id);
+      // A second thing in the leaver's hands, this one answering to the
+      // account that generated the demo: their laptop is at the repair shop
+      // and answers to IT support, so without this the person reading the
+      // recovery has nothing on it they can actually hand back.
+      await assign(airs[1].id, chenJie.id);
       await assign(monitors[0].id, liNa.id);
       await assign(monitors[1].id, zhaoMin.id);
       await assign(deskPc.id, wangFang.id);

@@ -1,7 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { LeaverRecovery } from '@/components/itam/leaver-recovery';
 import { Page } from '@/components/itam/page-header';
@@ -34,13 +34,35 @@ export default function InboxPage(): ReactElement {
   // told from one the reader does not have — but here a heading with no rows
   // under it is just a line to scroll past on the way to the work.
   const cards = useWorkCards().filter((card) => card.records.length > 0);
-  const rows = cards.flatMap((card) =>
-    card.records.map((record) => ({ card, record })),
-  );
-  const [chosen, setChosen] = useState<string>();
+  // Which to-do is in view and which record is open live in the address, so
+  // every item in the queue has one of its own: a reload lands back on it,
+  // and it can be sent to whoever should look at it. Replacing rather than
+  // pushing keeps the back button on the page the reader came from, the way
+  // a list and its detail behave everywhere else.
+  const [params, setParams] = useSearchParams();
+  const kind = params.get('view') ?? undefined;
+  const chosen = params.get('open') ?? undefined;
+  const choose = (next: Readonly<Record<string, string | undefined>>) => {
+    const updated = new URLSearchParams(params);
+    for (const [key, value] of Object.entries(next)) {
+      if (value === undefined) updated.delete(key);
+      else updated.set(key, value);
+    }
+    setParams(updated, { replace: true });
+  };
   // Beside the list the first stands open before anything is picked; narrow,
   // nothing is open until one is.
   const [reading, setReading] = useState(false);
+  // One list across every to-do, oldest date first. Each record's date is
+  // the day its own to-do turns on — submitted, due, expected back, left —
+  // so soonest first is "what has waited longest or is furthest past due",
+  // which is the order a queue is worked in. A record without one goes last.
+  const rows = cards
+    .filter((card) => kind === undefined || card.key === kind)
+    .flatMap((card) => card.records.map((record) => ({ card, record })))
+    .sort((a, b) =>
+      (a.record.date ?? '9999').localeCompare(b.record.date ?? '9999'),
+    );
   const current = rows.find((row) => row.record.url === chosen) ?? rows[0];
   const total = cards.reduce((sum, card) => sum + card.count, 0);
 
@@ -55,6 +77,30 @@ export default function InboxPage(): ReactElement {
             </span>
           ) : null}
         </h2>
+        {/* The to-dos as a filter across the top rather than as headings
+            over the rows: headings cut a queue of eight into six segments
+            and stop it being ordered by urgency across them, while the same
+            words up here both say what is waiting and narrow the list to
+            it. The counts are each whole queue's. */}
+        {cards.length > 0 ? (
+          <div className='flex flex-wrap gap-1'>
+            <FilterChip
+              label={t('common.all')}
+              count={total}
+              active={kind === undefined}
+              onClick={() => choose({ view: undefined, open: undefined })}
+            />
+            {cards.map((card) => (
+              <FilterChip
+                key={card.key}
+                label={card.label}
+                count={card.count}
+                active={kind === card.key}
+                onClick={() => choose({ view: card.key, open: undefined })}
+              />
+            ))}
+          </div>
+        ) : null}
         {!current ? (
           <p className='rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground'>
             {t('workbench.nothingPending')}
@@ -63,41 +109,32 @@ export default function InboxPage(): ReactElement {
           // Side by side the list and the item share one card; narrow, each
           // stands on the page on its own.
           <div className='grid @3xl:grid-cols-[22rem_minmax(0,1fr)] @3xl:overflow-hidden @3xl:rounded-xl @3xl:border @3xl:border-border @3xl:bg-card'>
-            <ul
-              className={`@3xl:block @3xl:overflow-y-auto @3xl:border-r @3xl:border-border ${
+            <div
+              className={`min-w-0 @3xl:block @3xl:border-r @3xl:border-border ${
                 reading ? 'hidden' : ''
               }`}
             >
-              {cards.map((card) => (
-                <li key={card.key}>
-                  {/* The to-do the rows below belong to. The count is the
-                      whole queue's; the rows are its first few. */}
-                  <p className='border-b border-border bg-muted/40 px-4 py-1.5 text-xs font-medium text-muted-foreground'>
-                    {card.label}
-                    <span className='ml-2 tabular-nums'>{card.count}</span>
-                  </p>
-                  <ul>
-                    {card.records.map((record) => (
-                      <li
-                        key={record.url}
-                        className='border-b border-border last:border-b-0'
-                      >
-                        <WorkRow
-                          record={record}
-                          chosen={record.url === current.record.url}
-                          onChoose={() => {
-                            setChosen(record.url);
-                            setReading(
-                              !window.matchMedia('(min-width: 48rem)').matches,
-                            );
-                          }}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
+              <ul className='@3xl:overflow-y-auto'>
+                {rows.map(({ card, record }) => (
+                  <li
+                    key={record.url}
+                    className='border-b border-border last:border-b-0'
+                  >
+                    <WorkRow
+                      kind={card.label}
+                      record={record}
+                      chosen={record.url === current.record.url}
+                      onChoose={() => {
+                        choose({ open: record.url });
+                        setReading(
+                          !window.matchMedia('(min-width: 48rem)').matches,
+                        );
+                      }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
             <div className={`min-w-0 ${reading ? '' : 'hidden @3xl:block'}`}>
               {reading ? (
                 <div className='flex h-12 items-center px-3 @3xl:hidden'>
@@ -128,6 +165,9 @@ export default function InboxPage(): ReactElement {
                   key={current.record.url}
                   to={current.record.url}
                   onLeave={(path) => void navigate(path)}
+                  toolbar={
+                    <OpenFullPage onLeave={(path) => void navigate(path)} />
+                  }
                 />
               )}
             </div>
@@ -138,11 +178,72 @@ export default function InboxPage(): ReactElement {
   );
 }
 
+/**
+ * Leaves the queue for the record itself.
+ *
+ * The pane shows the record's own page but the page's address is the
+ * inbox's, so there is otherwise no way to open it whole, keep it, or send
+ * it to somebody. It reads the pane's own location, which follows the tabs
+ * inside it.
+ */
+function OpenFullPage({
+  onLeave,
+}: {
+  readonly onLeave: (path: string) => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  const location = useLocation();
+  return (
+    <div className='flex h-10 items-center justify-end px-3'>
+      <Button
+        variant='ghost'
+        size='sm'
+        onClick={() => onLeave(`${location.pathname}${location.search}`)}
+      >
+        <ExternalLink data-icon='inline-start' />
+        {t('common.openFullPage')}
+      </Button>
+    </div>
+  );
+}
+
+/** A to-do as a filter: what is waiting, and the way to see only it. */
+function FilterChip({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  readonly label: string;
+  readonly count: number;
+  readonly active: boolean;
+  readonly onClick: () => void;
+}): ReactElement {
+  return (
+    <button
+      type='button'
+      aria-pressed={active}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors ${
+        active
+          ? 'bg-primary text-primary-foreground'
+          : 'text-muted-foreground hover:bg-muted'
+      }`}
+    >
+      {label}
+      <span className='tabular-nums'>{count}</span>
+    </button>
+  );
+}
+
 function WorkRow({
+  kind,
   record,
   chosen,
   onChoose,
 }: {
+  /** Which to-do it belongs to, which no heading says any more. */
+  readonly kind: string;
   readonly record: CardRecord;
   readonly chosen: boolean;
   readonly onChoose: () => void;
@@ -158,11 +259,12 @@ function WorkRow({
       }`}
     >
       <span className='flex min-w-0 items-center gap-2'>
-        {record.tag ? (
-          <Badge variant='outline' className='shrink-0'>
-            {record.tag}
-          </Badge>
-        ) : null}
+        {/* One tag, naming the to-do rather than the record's own kind: in
+            a flat list that is what tells the rows apart, and the title
+            already says what the record is. */}
+        <Badge variant='outline' className='shrink-0'>
+          {kind}
+        </Badge>
         <span className='truncate font-medium'>{record.title}</span>
       </span>
       <span className='flex items-center gap-2 text-xs text-muted-foreground tabular-nums'>

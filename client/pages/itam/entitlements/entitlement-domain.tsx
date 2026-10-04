@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarX,
   SlidersHorizontal,
-  UserMinus,
+  Undo2,
   UserPlus,
 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
@@ -566,7 +566,8 @@ export default function EntitlementSeatsTab(): ReactElement {
                   })
                 }
               >
-                <UserMinus data-icon='inline-start' />
+                {/* The same icon as every other "take it back". */}
+                <Undo2 data-icon='inline-start' />
                 {t('entitlements.reclaimSeat')}
               </Button>
             ) : null}

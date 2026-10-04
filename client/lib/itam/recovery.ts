@@ -39,6 +39,8 @@ export interface OwnedRecord {
   readonly collection: string;
   readonly id: string;
   readonly label: string;
+  /** Which field names them: a 负责人 on most, a 申请人 on a request. */
+  readonly field: 'ownerId' | 'requesterId';
 }
 
 export interface PersonRecovery {
