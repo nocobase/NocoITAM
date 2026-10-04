@@ -41,7 +41,8 @@ export interface MyWorkItem {
     | 'pendingDisposalExecution'
     | 'activeRepairs'
     | 'activeAudits'
-    | 'loansDueToday';
+    | 'loansDueToday'
+    | 'leaverRecovery';
   readonly count: number;
   /** Application route with the matching filter. */
   readonly url: string;
@@ -326,6 +327,113 @@ export function createWorkbenchService(dependencies: {
             url: `/audits/${String(row.id)}`,
           })),
         });
+      }
+
+      // 离职资产回收: somebody marked as left who still holds something the
+      // reader is responsible for. Scoped by the owner of the thing held, not
+      // by the grant: recovering a device belongs to its 负责人, the way
+      // chasing a loan back does. A leaver whose holdings answer to two people
+      // is a to-do for both, each seeing the part that is theirs — which is
+      // also why this replaced the `leftPersonHoldings` reminder rather than
+      // joining it: the same people on one screen as both work and risk read
+      // as two problems.
+      const peopleConditions = await decide('people', 'read');
+      if (peopleConditions) {
+        const mine = new Set<string>();
+        const addHolders = (rows: readonly Row[], column: string): void => {
+          for (const row of rows) {
+            const holder = asText(row[column]);
+            if (holder) mine.add(holder);
+          }
+        };
+        const owned = (table: string, scope: DatabaseAuthorizationConditions) =>
+          database
+            .query()
+            .selectFrom(table)
+            .where((eb) => compileAuthzScope(eb, scope.scope))
+            .where('ownerId', '=', userId);
+
+        const deviceConditions = await decide('devices', 'read');
+        if (deviceConditions)
+          addHolders(
+            await owned('devices', deviceConditions)
+              .where('assigneeType', '=', 'person')
+              .select(['assigneeId'])
+              .execute<Row>(),
+            'assigneeId',
+          );
+
+        // Stock and seats are held through the item and the entitlement, which
+        // is where the owner is; the holding rows themselves are reached
+        // through the parent the reader may already read.
+        const stockConditions = await decide('stockItems', 'read');
+        if (stockConditions) {
+          const ids = (
+            await owned('stockItems', stockConditions).select(['id']).execute<Row>()
+          ).map((row) => String(row.id));
+          if (ids.length > 0)
+            addHolders(
+              await database
+                .query()
+                .selectFrom('stockHoldings')
+                .where('stockItemId', 'in', ids)
+                .where('holderType', '=', 'person')
+                .where('quantity', '>', 0)
+                .select(['holderId'])
+                .execute<Row>(),
+              'holderId',
+            );
+        }
+
+        const entitlementConditions = await decide('entitlements', 'read');
+        if (entitlementConditions) {
+          const ids = (
+            await owned('entitlements', entitlementConditions)
+              .select(['id'])
+              .execute<Row>()
+          ).map((row) => String(row.id));
+          if (ids.length > 0)
+            addHolders(
+              await database
+                .query()
+                .selectFrom('entitlementSeats')
+                .where('entitlementId', 'in', ids)
+                .where('holderType', '=', 'person')
+                .where('releasedAt', 'is', null)
+                .select(['holderId'])
+                .execute<Row>(),
+              'holderId',
+            );
+        }
+
+        if (mine.size > 0) {
+          const leavers = (
+            query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
+          ) =>
+            query
+              .where('employmentStatus', '=', 'left')
+              .where('id', 'in', [...mine]);
+          const total = await count('people', peopleConditions, leavers);
+          if (total > 0) {
+            const rows = await take(
+              'people',
+              peopleConditions,
+              ['id', 'name', 'leaveDate'],
+              leavers,
+            );
+            items.push({
+              key: 'leaverRecovery',
+              count: total,
+              url: '/people?employmentStatus=left',
+              records: rows.map((row) => ({
+                id: String(row.id),
+                title: String(row.name),
+                date: asText(row.leaveDate) ?? null,
+                url: `/people/${String(row.id)}`,
+              })),
+            });
+          }
+        }
       }
 
       const devices = await decide('devices', 'read');

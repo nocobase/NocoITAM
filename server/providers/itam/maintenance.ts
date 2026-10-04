@@ -30,7 +30,6 @@ export const REMINDER_KINDS = [
   'entitlementEnded',
   'idleDevice',
   'auditOverdue',
-  'leftPersonHoldings',
   'entitlementOverAllocated',
   'lowStock',
   'purchaseOverdue',
@@ -281,50 +280,6 @@ export function createMaintenanceService(dependencies: {
         severity: 'info',
         data: { deviceNo: device.deviceNo, name: device.name },
       });
-
-    const left = await query
-      .selectFrom('people')
-      .select(['id', 'name'])
-      .where('employmentStatus', '=', 'left')
-      .execute<Row>();
-    for (const person of left) {
-      const id = String(person.id);
-      const [devicesHeld, stockHeld, seatsHeld] = await Promise.all([
-        query
-          .selectFrom('devices')
-          .select((eb) => [eb.fn.countAll().as('total')])
-          .where('assigneeType', '=', 'person')
-          .where('assigneeId', '=', id)
-          .executeTakeFirst<{ total: number | string }>(),
-        query
-          .selectFrom('stockHoldings')
-          .select((eb) => [eb.fn.countAll().as('total')])
-          .where('holderType', '=', 'person')
-          .where('holderId', '=', id)
-          .where('quantity', '>', 0)
-          .executeTakeFirst<{ total: number | string }>(),
-        query
-          .selectFrom('entitlementSeats')
-          .select((eb) => [eb.fn.countAll().as('total')])
-          .where('holderType', '=', 'person')
-          .where('holderId', '=', id)
-          .where('releasedAt', 'is', null)
-          .executeTakeFirst<{ total: number | string }>(),
-      ]);
-      const counts = {
-        devices: Number(devicesHeld?.total ?? 0),
-        stock: Number(stockHeld?.total ?? 0),
-        seats: Number(seatsHeld?.total ?? 0),
-      };
-      if (Object.values(counts).some((count) => count > 0))
-        rows.push({
-          kind: 'leftPersonHoldings',
-          subjectType: 'people',
-          subjectId: id,
-          severity: 'critical',
-          data: { name: person.name, ...counts },
-        });
-    }
 
     const over = await query
       .selectFrom('entitlements')
