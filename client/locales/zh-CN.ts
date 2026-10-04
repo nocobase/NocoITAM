@@ -919,6 +919,10 @@ const zhCN: AppResource = {
       owner: '负责人：{{name}}',
       accountsStay:
         '回收席位只释放授权，不会让账号失效：还需在软件后台停用账号或更换共用密钥。',
+      columns: {
+        item: '待回收项',
+        handling: '处理方式',
+      },
       groups: {
         device: '设备',
         stock: '配件、耗材与组件',
