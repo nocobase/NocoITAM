@@ -1,36 +1,31 @@
-import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
-
-import { defineSeed, type SeedDefinition } from '@nocobase/db';
+import {
+  defineSeed,
+  type SeedContext,
+  type SeedDefinition,
+} from '@nocobase/db';
 
 /**
- * The seed context carries only the database, so the locale is read the way
- * the server resolves it: `APP_DEFAULT_LOCALE`, else `config.yml` /
- * `config.yaml` / `config.json` next to the application, else `en-US`.
+ * The language this deployment writes installation data in.
+ *
+ * `context.config` is the application's own runtime configuration — the same
+ * reader the server resolves `i18n.defaultLocale` through — so this answer
+ * holds wherever the host starts the process from. The seeds used to look for
+ * `config.yml` themselves, relative to `process.cwd()`, which matched the
+ * deployment only when the working directory happened to be the deployment
+ * root. `pnpm dev` always did and a Hub deployment never did, so every seeded
+ * name came out in English there while looking correct in development, and the
+ * fallback was a valid locale rather than an error, so nothing said so.
+ *
+ * `APP_DEFAULT_LOCALE` remains the fallback for a runner given no application
+ * configuration, such as a standalone seeder in a test.
  */
-function resolveDefaultLocale(): string {
-  const fromEnvironment = process.env.APP_DEFAULT_LOCALE?.trim();
-  if (fromEnvironment) return fromEnvironment;
-  const root = process.env.APP_CONFIG_FILE
-    ? path.resolve(process.env.APP_CONFIG_FILE)
-    : ['config.yml', 'config.yaml', 'config.json']
-        .map((name) => path.resolve(process.cwd(), name))
-        .find((candidate) => existsSync(candidate));
-  if (!root || !existsSync(root)) return 'en-US';
-  const text = readFileSync(root, 'utf8');
-  if (root.endsWith('.json')) {
-    try {
-      const parsed = JSON.parse(text) as { i18n?: { defaultLocale?: string } };
-      return parsed.i18n?.defaultLocale ?? 'en-US';
-    } catch {
-      return 'en-US';
-    }
-  }
-  const block = /^i18n:\s*\n((?:[ \t]+.*\n?)*)/m.exec(text);
-  const line = block
-    ? /^[ \t]+defaultLocale:[ \t]*["']?([A-Za-z-]+)/m.exec(block[1] ?? '')
-    : undefined;
-  return line?.[1] ?? 'en-US';
+function resolveLocale(context: SeedContext): string {
+  const dotted = context.config.get<string>('i18n.defaultLocale')?.trim();
+  if (dotted) return dotted;
+  const section = context.config.get<{ defaultLocale?: string }>('i18n');
+  const nested = section?.defaultLocale?.trim();
+  if (nested) return nested;
+  return process.env.APP_DEFAULT_LOCALE?.trim() || 'en-US';
 }
 
 /**
@@ -97,12 +92,11 @@ const BUSINESS_NOTES: Readonly<Record<string, string>> = {
 - Device names are "site-type-number": SG for the Singapore HQ, JP for the Japan office; LT laptop, DT desktop, MN monitor, PH phone, e.g. SG-LT-001.`,
 };
 
-const LOCALE = resolveDefaultLocale();
 
 // Default ITAM configuration. The settings service merges defaults over
 // whatever is stored, so this seed exists to make the defaults visible and
 // editable; it never overwrites a key an administrator has already saved.
-const DEFAULTS: Readonly<Record<string, unknown>> = {
+const defaults = (locale: string): Readonly<Record<string, unknown>> => ({
   general: {
     currency: 'CNY',
     timeZone: 'Asia/Shanghai',
@@ -123,8 +117,8 @@ const DEFAULTS: Readonly<Record<string, unknown>> = {
     disposal: { prefix: 'DP-', width: 6, start: 1 },
     repair: { prefix: 'RP-', width: 6, start: 1 },
   },
-  ai: { businessNotes: BUSINESS_NOTES[LOCALE] ?? BUSINESS_NOTES['en-US'] },
-};
+  ai: { businessNotes: BUSINESS_NOTES[locale] ?? BUSINESS_NOTES['en-US'] },
+});
 
 type SeedQuery = Parameters<SeedDefinition['run']>[0]['query'];
 
@@ -154,14 +148,16 @@ async function addBusinessNotes(
 const seed: SeedDefinition = defineSeed({
   name: '202609120001_seed_itam_settings',
 
-  async run({ query }) {
+  async run(context) {
+    const { query } = context;
+    const locale = resolveLocale(context);
     const existing = await query
       .selectFrom('itamSettings')
       .select('key')
       .execute();
     const present = new Set(existing.map((row) => row.key));
     const now = new Date();
-    for (const [key, value] of Object.entries(DEFAULTS)) {
+    for (const [key, value] of Object.entries(defaults(locale))) {
       if (present.has(key)) {
         // The AI row may already exist before this runs — the registrar
         // records its own flag there at start-up — so the notes are added

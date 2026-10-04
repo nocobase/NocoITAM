@@ -1,7 +1,8 @@
-import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
-
-import { defineSeed, type SeedDefinition } from '@nocobase/db';
+import {
+  defineSeed,
+  type SeedContext,
+  type SeedDefinition,
+} from '@nocobase/db';
 
 // A starter category tree so the application is usable on first start. Only
 // written when no category exists; fixed ids keep repeat runs reproducible.
@@ -10,36 +11,29 @@ import { defineSeed, type SeedDefinition } from '@nocobase/db';
 // the administrator afterwards.
 
 /**
- * The seed context carries only the database, so the locale is read the way
- * the server resolves it: `APP_DEFAULT_LOCALE`, else `config.yml` /
- * `config.yaml` / `config.json` next to the application, else `en-US`.
+ * The language this deployment writes installation data in.
+ *
+ * `context.config` is the application's own runtime configuration — the same
+ * reader the server resolves `i18n.defaultLocale` through — so this answer
+ * holds wherever the host starts the process from. The seeds used to look for
+ * `config.yml` themselves, relative to `process.cwd()`, which matched the
+ * deployment only when the working directory happened to be the deployment
+ * root. `pnpm dev` always did and a Hub deployment never did, so every seeded
+ * name came out in English there while looking correct in development, and the
+ * fallback was a valid locale rather than an error, so nothing said so.
+ *
+ * `APP_DEFAULT_LOCALE` remains the fallback for a runner given no application
+ * configuration, such as a standalone seeder in a test.
  */
-function resolveDefaultLocale(): string {
-  const fromEnvironment = process.env.APP_DEFAULT_LOCALE?.trim();
-  if (fromEnvironment) return fromEnvironment;
-  const root = process.env.APP_CONFIG_FILE
-    ? path.resolve(process.env.APP_CONFIG_FILE)
-    : ['config.yml', 'config.yaml', 'config.json']
-        .map((name) => path.resolve(process.cwd(), name))
-        .find((candidate) => existsSync(candidate));
-  if (!root || !existsSync(root)) return 'en-US';
-  const text = readFileSync(root, 'utf8');
-  if (root.endsWith('.json')) {
-    try {
-      const parsed = JSON.parse(text) as { i18n?: { defaultLocale?: string } };
-      return parsed.i18n?.defaultLocale ?? 'en-US';
-    } catch {
-      return 'en-US';
-    }
-  }
-  const block = /^i18n:\s*\n((?:[ \t]+.*\n?)*)/m.exec(text);
-  const line = block
-    ? /^[ \t]+defaultLocale:[ \t]*["']?([A-Za-z-]+)/m.exec(block[1] ?? '')
-    : undefined;
-  return line?.[1] ?? 'en-US';
+function resolveLocale(context: SeedContext): string {
+  const dotted = context.config.get<string>('i18n.defaultLocale')?.trim();
+  if (dotted) return dotted;
+  const section = context.config.get<{ defaultLocale?: string }>('i18n');
+  const nested = section?.defaultLocale?.trim();
+  if (nested) return nested;
+  return process.env.APP_DEFAULT_LOCALE?.trim() || 'en-US';
 }
 
-const LOCALE = resolveDefaultLocale();
 
 /** Category names by id for locales other than English. */
 const NAMES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
@@ -105,16 +99,17 @@ const LABELS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   },
 };
 
-const localizedName = (category: CategorySeed): string =>
-  NAMES[LOCALE]?.[category.id] ?? category.name;
+const localizedName = (category: CategorySeed, locale: string): string =>
+  NAMES[locale]?.[category.id] ?? category.name;
 const localizedTemplate = (
   template: readonly unknown[] | undefined,
+  locale: string,
 ): readonly unknown[] | undefined =>
   template?.map((field) => {
     if (!field || typeof field !== 'object' || !('label' in field))
       return field;
     const label = String(field.label);
-    return { ...field, label: LABELS[LOCALE]?.[label] ?? label };
+    return { ...field, label: LABELS[locale]?.[label] ?? label };
   });
 interface CategorySeed {
   readonly id: string;
@@ -432,7 +427,9 @@ const CATEGORIES: readonly CategorySeed[] = [
 const seed: SeedDefinition = defineSeed({
   name: '202609120002_seed_itam_categories',
 
-  async run({ query }) {
+  async run(context) {
+    const { query } = context;
+    const locale = resolveLocale(context);
     const any = await query
       .selectFrom('categories')
       .select('id')
@@ -445,7 +442,7 @@ const seed: SeedDefinition = defineSeed({
         .insertInto('categories')
         .values({
           id: category.id,
-          name: localizedName(category),
+          name: localizedName(category, locale),
           parentId: category.parentId ?? null,
           appliesTo: category.appliesTo,
           requiresSerial: category.requiresSerial ?? false,
@@ -457,7 +454,7 @@ const seed: SeedDefinition = defineSeed({
           replacementMonths: category.replacementMonths ?? null,
           auditCycleDays: category.auditCycleDays ?? null,
           fieldTemplate: category.fieldTemplate
-            ? localizedTemplate(category.fieldTemplate)
+            ? localizedTemplate(category.fieldTemplate, locale)
             : null,
           sort: category.sort,
           createdById: null,

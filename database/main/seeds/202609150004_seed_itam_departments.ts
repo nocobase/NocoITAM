@@ -1,40 +1,39 @@
-import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
 
-import { defineSeed, type SeedDefinition } from '@nocobase/db';
+import {
+  defineSeed,
+  type SeedContext,
+  type SeedDefinition,
+} from '@nocobase/db';
 
 // A starter organisation so people and devices can be filed under a
 // department from the first day. Names are data written once in the
 // deployment's default language, like the categories, and renamed by the
 // administrator afterwards. Each node is written only when its id is absent.
 
-/** Same resolution as the category seed: env, then config, then en-US. */
-function resolveDefaultLocale(): string {
-  const fromEnvironment = process.env.APP_DEFAULT_LOCALE?.trim();
-  if (fromEnvironment) return fromEnvironment;
-  const root = process.env.APP_CONFIG_FILE
-    ? path.resolve(process.env.APP_CONFIG_FILE)
-    : ['config.yml', 'config.yaml', 'config.json']
-        .map((name) => path.resolve(process.cwd(), name))
-        .find((candidate) => existsSync(candidate));
-  if (!root || !existsSync(root)) return 'en-US';
-  const text = readFileSync(root, 'utf8');
-  if (root.endsWith('.json')) {
-    try {
-      const parsed = JSON.parse(text) as { i18n?: { defaultLocale?: string } };
-      return parsed.i18n?.defaultLocale ?? 'en-US';
-    } catch {
-      return 'en-US';
-    }
-  }
-  const block = /^i18n:\s*\n((?:[ \t]+.*\n?)*)/m.exec(text);
-  const line = block
-    ? /^[ \t]+defaultLocale:[ \t]*["']?([A-Za-z-]+)/m.exec(block[1] ?? '')
-    : undefined;
-  return line?.[1] ?? 'en-US';
+/**
+ * The language this deployment writes installation data in.
+ *
+ * `context.config` is the application's own runtime configuration — the same
+ * reader the server resolves `i18n.defaultLocale` through — so this answer
+ * holds wherever the host starts the process from. The seeds used to look for
+ * `config.yml` themselves, relative to `process.cwd()`, which matched the
+ * deployment only when the working directory happened to be the deployment
+ * root. `pnpm dev` always did and a Hub deployment never did, so every seeded
+ * name came out in English there while looking correct in development, and the
+ * fallback was a valid locale rather than an error, so nothing said so.
+ *
+ * `APP_DEFAULT_LOCALE` remains the fallback for a runner given no application
+ * configuration, such as a standalone seeder in a test.
+ */
+function resolveLocale(context: SeedContext): string {
+  const dotted = context.config.get<string>('i18n.defaultLocale')?.trim();
+  if (dotted) return dotted;
+  const section = context.config.get<{ defaultLocale?: string }>('i18n');
+  const nested = section?.defaultLocale?.trim();
+  if (nested) return nested;
+  return process.env.APP_DEFAULT_LOCALE?.trim() || 'en-US';
 }
 
-const LOCALE = resolveDefaultLocale();
 
 interface DepartmentSeed {
   readonly id: string;
@@ -93,13 +92,15 @@ const NAMES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   },
 };
 
-const localizedName = (department: DepartmentSeed): string =>
-  NAMES[LOCALE]?.[department.id] ?? department.name;
+const localizedName = (department: DepartmentSeed, locale: string): string =>
+  NAMES[locale]?.[department.id] ?? department.name;
 
 const seed: SeedDefinition = defineSeed({
   name: '202609150004_seed_itam_departments',
 
-  async run({ query }) {
+  async run(context) {
+    const { query } = context;
+    const locale = resolveLocale(context);
     const now = new Date();
     for (const department of DEPARTMENTS) {
       const existing = await query
@@ -121,7 +122,7 @@ const seed: SeedDefinition = defineSeed({
         .insertInto('departments')
         .values({
           id: department.id,
-          name: localizedName(department),
+          name: localizedName(department, locale),
           parentId: department.parentId ?? null,
           code: department.code,
           path: `${parent ? parent.path : '/'}${department.id}/`,
