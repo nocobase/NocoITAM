@@ -1,3 +1,4 @@
+import { NotificationInAppProvider } from '@nocobase/app-plugin-notification-in-app/client';
 import {
   defineClientReactProviders,
   type AppClientReactProviderDefinition,
@@ -28,6 +29,15 @@ export const reactProviders: readonly AppClientReactProviderDefinition[] =
       component: Toaster,
       layer: 'application',
       name: 'toaster',
+    },
+    {
+      // The in-app inbox reads its unread count and revision from here and
+      // throws without it. The register has been sending to that channel all
+      // along — an overdue loan, a leaver's recovery — into an inbox no
+      // surface mounted, since the plugin registers only a development page.
+      component: NotificationInAppProvider,
+      layer: 'application',
+      name: 'notification-in-app',
     },
   ]);
 
