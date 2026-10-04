@@ -137,6 +137,15 @@ export function deviceHandling(status: string): RecoveryHandling {
   return 'none';
 }
 
+/**
+ * What is to be done with a stock holding.
+ *
+ * In practice a person's holdings are accessories: issuing a consumable
+ * records a `consume` movement and no holding — it is gone — and a component
+ * installs on a device rather than on somebody. The other two answers stay
+ * because the mapping is total and the kinds are data, not because a
+ * recovery has been seen to contain one.
+ */
 export function stockHandling(kind: string): RecoveryHandling {
   return kind === 'consumable' ? 'confirmConsumed' : 'takeBack';
 }

@@ -915,7 +915,13 @@ const zhCN: AppResource = {
       title: '待回收',
       since: '已于 {{date}} 离职，以下是他名下还未归还的资产。',
       left: '已离职，以下是他名下还未归还的资产。',
-      mine: '其中 {{count}} 项由你负责。',
+      sinceMine_one:
+        '已于 {{date}} 离职，以下是他名下还未归还的资产，其中 {{count}} 项由你负责。',
+      sinceMine_other:
+        '已于 {{date}} 离职，以下是他名下还未归还的资产，其中 {{count}} 项由你负责。',
+      leftMine_one: '已离职，以下是他名下还未归还的资产，其中 {{count}} 项由你负责。',
+      leftMine_other:
+        '已离职，以下是他名下还未归还的资产，其中 {{count}} 项由你负责。',
       you: '你',
       owner: '负责人：{{name}}',
       handover_one: '还负责 {{count}} 条记录，需要移交',

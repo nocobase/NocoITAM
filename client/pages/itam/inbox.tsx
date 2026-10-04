@@ -9,7 +9,7 @@ import { RecordPane } from '@/components/itam/record-drawer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/itam/format';
-import { useWorkCards, type CardRecord } from '@/lib/itam/my-work';
+import { useWorkCards, WORK_TONE, type CardRecord } from '@/lib/itam/my-work';
 
 /**
  * 我的待办: the work waiting on this reader, as a queue beside the thing
@@ -122,6 +122,7 @@ export default function InboxPage(): ReactElement {
                   >
                     <WorkRow
                       kind={card.label}
+                      tone={WORK_TONE[card.key]}
                       record={record}
                       chosen={record.url === current.record.url}
                       onChoose={() => {
@@ -166,7 +167,7 @@ export default function InboxPage(): ReactElement {
                   to={current.record.url}
                   onLeave={(path) => void navigate(path)}
                   toolbar={
-                    <OpenFullPage onLeave={(path) => void navigate(path)} />
+                    <OpenPaneFullPage onLeave={(path) => void navigate(path)} />
                   }
                 />
               )}
@@ -192,14 +193,9 @@ function OpenFullPage({
   readonly onLeave: (path: string) => void;
 }): ReactElement {
   const { t } = useTranslation();
-  const location = useLocation();
   return (
     <div className='flex h-10 items-center justify-end px-3'>
-      <Button
-        variant='ghost'
-        size='sm'
-        onClick={() => onLeave(`${location.pathname}${location.search}`)}
-      >
+      <Button variant='ghost' size='sm' onClick={() => onLeave('')}>
         <ExternalLink data-icon='inline-start' />
         {t('common.openFullPage')}
       </Button>
@@ -236,14 +232,31 @@ function FilterChip({
   );
 }
 
+/** The pane's own location, which the plain button cannot read from outside. */
+function OpenPaneFullPage({
+  onLeave,
+}: {
+  readonly onLeave: (path: string) => void;
+}): ReactElement {
+  const location = useLocation();
+  return (
+    <OpenFullPage
+      onLeave={() => onLeave(`${location.pathname}${location.search}`)}
+    />
+  );
+}
+
 function WorkRow({
   kind,
+  tone,
   record,
   chosen,
   onChoose,
 }: {
   /** Which to-do it belongs to, which no heading says any more. */
   readonly kind: string;
+  /** That to-do's own colour, so the eye sorts the queue without reading. */
+  readonly tone: string | undefined;
   readonly record: CardRecord;
   readonly chosen: boolean;
   readonly onChoose: () => void;
@@ -262,10 +275,18 @@ function WorkRow({
         {/* One tag, naming the to-do rather than the record's own kind: in
             a flat list that is what tells the rows apart, and the title
             already says what the record is. */}
-        <Badge variant='outline' className='shrink-0'>
+        <Badge
+          variant={tone ? undefined : 'outline'}
+          className={`shrink-0 ${tone ?? ''}`}
+        >
           {kind}
         </Badge>
         <span className='truncate font-medium'>{record.title}</span>
+        {record.subtitle ? (
+          <span className='truncate text-xs text-muted-foreground'>
+            {record.subtitle}
+          </span>
+        ) : null}
       </span>
       <span className='flex items-center gap-2 text-xs text-muted-foreground tabular-nums'>
         {/* Where a record stands for several things — a leaver holds a

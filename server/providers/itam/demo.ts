@@ -1285,6 +1285,15 @@ export function createDemoService(dependencies: {
         context,
         all('stockItems', 'issue'),
       );
+      // The leaver holds one of these too: a dock goes back to stock, which
+      // is a different answer from a device's 归还 and from a seat's 回收,
+      // and the recovery has to show all three.
+      await stock.issue(
+        String(docks.id),
+        { holderType: 'person', holderId: String(chenJie.id), quantity: 1 },
+        context,
+        all('stockItems', 'issue'),
+      );
       // One dock went out and came back, so a return shows in the history.
       await stock.issue(
         String(docks.id),
@@ -1363,6 +1372,17 @@ export function createDemoService(dependencies: {
         totalQuantity: 5,
         minimumQuantity: 2,
       });
+      // A component sits on the leaver's laptop. It is not theirs to give
+      // back — a component belongs to the device it is installed on, and
+      // goes wherever that goes — so the recovery lists the laptop and not
+      // this; what it shows is that recovering a device recovers what is in
+      // it.
+      await stock.issue(
+        String(ssd.id),
+        { holderType: 'device', holderId: String(airs[1].id), quantity: 1 },
+        context,
+        all('stockItems', 'issue'),
+      );
       // A drive went into a laptop and came out again, so the component's
       // log shows an install and an uninstall.
       for (const holder of [laptops[1], laptops[2]])

@@ -84,6 +84,8 @@ export interface ReminderSummary {
 export interface MyWorkRecord {
   readonly id: string;
   readonly title: string;
+  /** What the title does not say on its own — a person's job. */
+  readonly subtitle?: string | null;
   readonly date: string | null;
   /** Application route; the row opens it in the record drawer. */
   readonly url: string;

@@ -198,6 +198,17 @@ export function LeaverRecovery({
       ? t('entitlements.reclaimSeat')
       : t(`people.recovery.handling.${item.handling}`);
 
+  /**
+   * What to call a record that is not an asset. The to-do rows tag these the
+   * same way — 采购, 维修, 报废 — and the tag names the kind of work, not the
+   * document: 「采购单」 beside its own number says 单 twice.
+   */
+  const DOCUMENT_TAG: Readonly<Record<string, string>> = {
+    repairs: 'workbench.work.tagRepair',
+    purchaseOrders: 'workbench.work.tagPurchase',
+    disposals: 'workbench.work.tagDisposal',
+  };
+
   const recordOf = (item: RecoveryItem): string =>
     item.kind === 'device'
       ? `/devices/${item.targetId}`
@@ -221,12 +232,17 @@ export function LeaverRecovery({
               the inbox as often as from their own page, and the rest of who
               they are — department, the rest of what they hold — is there. */}
           <RecordLink to={`/people/${personId}`}>{personName}</RecordLink>{' '}
-          {recovery.data.leaveDate
-            ? t('people.recovery.since', {
-                date: formatDate(recovery.data.leaveDate),
-              })
-            : t('people.recovery.left')}
-          {mine > 0 ? ` ${t('people.recovery.mine', { count: mine })}` : ''}
+          {t(
+            `people.recovery.${recovery.data.leaveDate ? 'since' : 'left'}${
+              mine > 0 ? 'Mine' : ''
+            }`,
+            {
+              date: recovery.data.leaveDate
+                ? formatDate(recovery.data.leaveDate)
+                : '',
+              count: mine,
+            },
+          )}
         </p>
         {/* The asset lists' own table, because that is what this is — the
             five asset types in one list, each row saying which it is. The
@@ -338,7 +354,7 @@ export function LeaverRecovery({
             it, so each row is a way into that record rather than an action
             here. */}
         {owned.length > 0 ? (
-          <section className='space-y-1'>
+          <section className='space-y-2'>
             <p className='text-sm text-muted-foreground'>
               {t('people.recovery.handover', { count: owned.length })}
             </p>
@@ -346,20 +362,28 @@ export function LeaverRecovery({
                 set of tags. Each says what kind it is and in which seat it
                 names them, because a device's 负责人 and an order's 申请人
                 are not the same job. */}
-            <ul className='grid gap-1 text-sm'>
+            <ul className='divide-y divide-border text-sm'>
               {owned.map((record) => {
                 const to = `/${referenceRoute(record.collection)}/${record.id}`;
                 const kind = recordTarget(to);
                 return (
                   <li
                     key={`${record.collection}-${record.id}`}
-                    className='flex flex-wrap items-center gap-2'
+                    className='flex flex-wrap items-center gap-2 py-2'
                   >
-                    {kind ? (
+                    {/* An asset wears the same icon tag as everywhere else;
+                        a repair or an order is not an asset, so it says what
+                        kind of document it is instead. */}
+                    {record.assetType ? (
+                      <AssetTypeBadge value={record.assetType} />
+                    ) : (
                       <Badge variant='outline' className='shrink-0'>
-                        {t(`${kind.i18n}.object`)}
+                        {t(
+                          DOCUMENT_TAG[record.collection] ??
+                            `${kind?.i18n ?? record.collection}.object`,
+                        )}
                       </Badge>
-                    ) : null}
+                    )}
                     <RecordLink to={to}>{record.label}</RecordLink>
                     <span className='text-xs text-muted-foreground'>
                       {t(
