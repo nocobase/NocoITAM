@@ -2,18 +2,21 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserRoundX } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
-import { Link } from 'react-router';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { masterDataPath, useApi, type ItamRecord } from '@/lib/itam/api';
-import { deviceLabel, text } from '@/lib/itam/format';
+import { text } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
-import { STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
 
 import { usePersonHoldings } from './holdings.js';
 
-/** "Mark as left": warns about what the person still holds, then marks them. */
+/**
+ * 标记离职: records the leave date as today, which is what makes somebody a
+ * leaver. The dialog says how much is still in their name, not what each
+ * item is — the 归属 tab behind it lists them, and this is a decision about
+ * the person.
+ */
 export function PersonActions({
   record,
 }: {
@@ -48,35 +51,11 @@ export function PersonActions({
   // devices, accessories, and entitlement seats.
   const devices = holdings.data?.devices ?? [];
   const stock = holdings.data?.stock ?? [];
-  const seats = (holdings.data?.entitlementSeats ?? []).map((row) => ({
-    id: text(row.id),
-    name: [text(row.name), text(row.account)].filter(Boolean).join(' · '),
-    to: `/entitlements/${text(row.entitlementId)}`,
-  }));
-  const groups = [
-    {
-      key: 'devices',
-      label: t('tabs.devices'),
-      items: devices.map((row) => ({
-        id: text(row.id),
-        name: deviceLabel(row),
-        to: `/devices/${text(row.id)}`,
-      })),
-    },
-    {
-      key: 'accessories',
-      label: t('people.stockHeld'),
-      items: stock.map((row) => ({
-        id: text(row.id),
-        name: `${text(row.name)} × ${text(row.quantity)}`,
-        to: `/${STOCK_ROUTES[text(row.kind) as StockKind] ?? 'accessories'}/${text(row.stockItemId)}`,
-      })),
-    },
-    { key: 'entitlements', label: t('entitlements.object'), items: seats },
-  ].filter((group) => group.items.length > 0);
-  const summary = groups
-    .map((group) => `${group.label} ${group.items.length}`)
-    .join(t('common.listSeparator'));
+  const seats = holdings.data?.entitlementSeats ?? [];
+  // How much is at stake, not what each item is: the 归属 tab behind this
+  // dialog lists them, and pressing the button is a decision about the
+  // person rather than about any one of their things.
+  const held = devices.length + stock.length + seats.length;
   return (
     <>
       <Button variant='outline' onClick={() => setOpen(true)}>
@@ -88,8 +67,8 @@ export function PersonActions({
         onOpenChange={setOpen}
         title={t('people.markLeftTitle', { name: text(record.name) })}
         description={
-          groups.length > 0
-            ? t('people.markLeftHoldings', { summary })
+          held > 0
+            ? t('people.markLeftHoldings', { count: held })
             : t('people.markLeftClean')
         }
         busy={markLeft.isPending}
@@ -97,31 +76,7 @@ export function PersonActions({
         destructive
         confirmLabel={t('people.markLeft')}
         onConfirm={() => markLeft.mutate()}
-      >
-        {groups.length > 0 ? (
-          <div className='max-h-60 space-y-3 overflow-y-auto text-sm'>
-            {groups.map((group) => (
-              <div key={group.key} className='space-y-1'>
-                <div className='text-xs font-medium text-muted-foreground'>
-                  {group.label}
-                </div>
-                <ul className='space-y-1'>
-                  {group.items.map((item) => (
-                    <li key={item.id}>
-                      <Link
-                        className='text-link underline-offset-4 hover:underline'
-                        to={item.to}
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </ConfirmDialog>
+      ></ConfirmDialog>
     </>
   );
 }

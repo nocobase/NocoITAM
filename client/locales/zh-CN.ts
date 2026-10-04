@@ -907,9 +907,11 @@ const zhCN: AppResource = {
     },
     markLeft: '标记离职',
     markLeftTitle: '将 {{name}} 标记为离职？',
-    markLeftHoldings:
-      '该人员名下仍有 {{summary}}，归还或释放前保持分配状态，并在工作台提醒',
-    markLeftClean: '该人员名下没有持有物，离职后不再可分配',
+    markLeftHoldings_one:
+      '离职日期记为今天。名下 {{count}} 项资产仍挂在他名下，待回收会进入各自负责人的待我处理。',
+    markLeftHoldings_other:
+      '离职日期记为今天。名下 {{count}} 项资产仍挂在他名下，待回收会进入各自负责人的待我处理。',
+    markLeftClean: '离职日期记为今天。名下没有持有物。',
     noHoldings: '暂无持有',
     recovery: {
       title: '待回收',
