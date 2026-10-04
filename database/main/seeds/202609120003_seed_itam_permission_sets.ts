@@ -99,6 +99,8 @@ const SYSTEM_READ = ['historyEvents', 'changeLogs', 'allocations', 'reminders'];
  */
 const IT_PAGES = [
   'workbench',
+  'inbox',
+  'notifications',
   'devices',
   'accessories',
   'consumables',
@@ -127,7 +129,12 @@ const IT_PAGES = [
  */
 const MANAGER_PAGES = [...IT_PAGES, 'reports', 'scheduler.schedules'];
 /** An employee's whole application: the workbench and what they hold. */
-const EMPLOYEE_PAGES = ['workbench', 'my-assets'];
+const EMPLOYEE_PAGES = [
+  'workbench',
+  'inbox',
+  'notifications',
+  'my-assets',
+];
 
 interface Grant {
   readonly resource: { readonly type: string; readonly id: string };
