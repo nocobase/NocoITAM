@@ -1383,7 +1383,7 @@ const zhCN: AppResource = {
       activeRepairs: '进行中的维修',
       activeAudits: '进行中的盘点',
       loansDueToday: '设备借出逾期未还',
-      leaverRecovery: '离职资产回收',
+      leaverRecovery: '离职交接',
       mine_one: '{{count}} 项待你处理',
       mine_other: '{{count}} 项待你处理',
     },

@@ -1427,7 +1427,7 @@ const messages = {
       activeRepairs: 'Repairs in progress',
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
-      leaverRecovery: "Recover a leaver's assets",
+      leaverRecovery: 'Offboarding',
       mine_one: '{{count}} for you',
       mine_other: '{{count}} for you',
     },
