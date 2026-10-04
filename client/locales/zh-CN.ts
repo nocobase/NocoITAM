@@ -917,16 +917,11 @@ const zhCN: AppResource = {
     noHoldings: '暂无持有',
     recovery: {
       title: '待回收',
-      since: '该人员已于 {{date}} 离职，以下是其名下还未归还的资产：',
-      left: '该人员已离职，以下是其名下还未归还的资产：',
-      sinceMine_one:
-        '该人员已于 {{date}} 离职，以下是其名下还未归还的资产，其中 {{count}} 项由你负责：',
-      sinceMine_other:
-        '该人员已于 {{date}} 离职，以下是其名下还未归还的资产，其中 {{count}} 项由你负责：',
+      left: '该人员已离职，以下是其离职时持有的资产快照：',
       leftMine_one:
-        '该人员已离职，以下是其名下还未归还的资产，其中 {{count}} 项由你负责：',
+        '该人员已离职，以下是其离职时持有的资产快照，其中 {{count}} 项由你负责：',
       leftMine_other:
-        '该人员已离职，以下是其名下还未归还的资产，其中 {{count}} 项由你负责：',
+        '该人员已离职，以下是其离职时持有的资产快照，其中 {{count}} 项由你负责：',
       you: '你',
       owner: '负责人：{{name}}',
       responsible_one: '该人员是 {{count}} 条记录的负责人：',
@@ -934,6 +929,7 @@ const zhCN: AppResource = {
       changeOwner: '移交',
       changeOwnerHint: '指定今后由谁负责 {{record}}。只有现任负责人或创建人能做这件事。',
       installed: '内含',
+      done: '已处理',
       doneReturn: '已归还',
       doneReclaim: '已回收',
       doneHandover: '已移交',

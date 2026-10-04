@@ -55,6 +55,8 @@ export interface OwnedRecord {
   readonly label: string;
   /** Which field names them: a 负责人 on most, a 申请人 on a request. */
   readonly field: 'ownerId' | 'requesterId';
+  /** Who that field names now, which is somebody else once handed over. */
+  readonly ownerId?: string | null;
   /** Which asset type it is, where it is an asset at all. */
   readonly assetType?: string;
 }

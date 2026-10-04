@@ -22,7 +22,6 @@ import { useApi } from '@/lib/itam/api';
 import { useAiPageContext } from '@/lib/itam/ai-context';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
-import { formatDate } from '@/lib/itam/format';
 import {
   useCollectionPermissions,
   useCurrentUserId,
@@ -86,8 +85,21 @@ export function PersonBelongings({
   const items = useMemo(() => recovery.data?.items ?? [], [recovery.data]);
   const owners = useReferenceNames(
     useMemo(
-      () => [{ collection: 'users', ids: items.map((item) => item.ownerId) }],
-      [items],
+      () => [
+        {
+          collection: 'users',
+          ids: [
+            ...items.map((item) => item.ownerId),
+            ...(recovery.data?.settled.map((item) => item.ownerId ?? null) ??
+              []),
+            ...(recovery.data?.owned.map((record) => record.ownerId ?? null) ??
+              []),
+            ...(recovery.data?.settledOwned.map((r) => r.ownerId ?? null) ??
+              []),
+          ],
+        },
+      ],
+      [items, recovery.data],
     ),
   );
   // Registered as page context, with no shortcut of its own: the card is
@@ -248,17 +260,12 @@ export function PersonBelongings({
         <p className='text-sm text-muted-foreground'>
           {/* The sentence names nobody: the page's own title does, and in
               the queue the heading above it does. */}
-          {t(
-            `people.recovery.${recovery.data.leaveDate ? 'since' : 'left'}${
-              mine > 0 ? 'Mine' : ''
-            }`,
-            {
-              date: recovery.data.leaveDate
-                ? formatDate(recovery.data.leaveDate)
-                : '',
-              count: mine,
-            },
-          )}
+          {/* The date is on the record above; what this line is for is
+              saying that the table below is the whole of what was in their
+              name when they left, settled rows included. */}
+          {t(`people.recovery.${mine > 0 ? 'leftMine' : 'left'}`, {
+            count: mine,
+          })}
         </p>
       ) : null}
       {/* The asset lists' own table, because that is what this is — the
@@ -332,13 +339,19 @@ export function PersonBelongings({
               item.done ? (
                 <span className='flex items-center gap-1 text-xs text-muted-foreground'>
                   <Check className='size-3.5' aria-hidden='true' />
-                  {/* Which act settled it: a device and a holding were
-                      returned, a seat was reclaimed. "Handled" says one of
-                      them happened without saying which. */}
+                  {/* Which act settled it. Settled means it is no longer in
+                      their name, and that is not always a return: a device
+                      transferred to somebody else leaves the list the same
+                      way, and so does one scrapped or marked lost. Only a
+                      device now in stock was returned; for the rest the
+                      status badge beside its name says where it went, and
+                      this says no more than that it is done. */}
                   {t(
-                    item.handling === 'reclaim'
+                    item.kind === 'seat'
                       ? 'people.recovery.doneReclaim'
-                      : 'people.recovery.doneReturn',
+                      : item.kind === 'stock' || item.status === 'inStock'
+                        ? 'people.recovery.doneReturn'
+                        : 'people.recovery.done',
                   )}
                 </span>
               ) : item.handling === 'wait' ||
@@ -465,7 +478,12 @@ export function PersonBelongings({
                         : 'fields.owner',
                     )}
                     {' · '}
-                    {personName}
+                    {/* Whoever that field names now: once it is handed over
+                        that is somebody else, and the leaver's name there
+                        would be last week's answer. */}
+                    {record.ownerId
+                      ? (owners.users?.get(record.ownerId) ?? record.ownerId)
+                      : personName}
                   </span>
                   {/* Handing it over is an ordinary edit of that one
                         field, so it is offered here rather than only on the
