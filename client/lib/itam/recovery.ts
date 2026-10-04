@@ -37,6 +37,8 @@ export interface RecoveryItem {
     readonly name: string;
     readonly quantity: number;
   }[];
+  /** The repair a device in the shop is waiting on, named so it can be opened. */
+  readonly waitingOn?: { readonly id: string; readonly label: string };
   /** Which of the five asset types it is, for the row's own label. */
   readonly assetType:
     | 'device'

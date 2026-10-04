@@ -950,7 +950,7 @@ const messages = {
       progress: '{{done}} of {{total}} settled',
       columns: {
         item: 'Asset held',
-        handling: 'Handling',
+        handling: 'Action',
       },
       groups: {
         device: 'Devices',
@@ -959,8 +959,7 @@ const messages = {
       },
       handling: {
         return: 'Return',
-        takeBack: 'Back into stock',
-        wait: 'Settle once the repair is finished',
+        wait: 'Can be returned once the repair is finished',
         confirmConsumed: 'Issued — check whether any is left to take back',
       },
     },

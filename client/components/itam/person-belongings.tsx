@@ -195,12 +195,15 @@ export function PersonBelongings({
   // before handing it back: the device, the stock item it was issued from,
   // the entitlement the seat belongs to.
   // Each handling reads as the word the page that owns the act uses: a seat
-  // is 回收 on its entitlement's own page, so it is 回收 here. One act, one
-  // name, wherever it is offered.
+  // is 回收 on its entitlement's page and a holding is 归还 on the stock
+  // item's, so they are those here. One act, one name, wherever it is
+  // offered; which kind of thing it is, the tag in front of the name says.
   const handlingLabel = (item: RecoveryItem): string =>
     item.handling === 'reclaim'
       ? t('entitlements.reclaimSeat')
-      : t(`people.recovery.handling.${item.handling}`);
+      : item.handling === 'takeBack'
+        ? t('stock.return')
+        : t(`people.recovery.handling.${item.handling}`);
 
   /**
    * What to call a record that is not an asset. The to-do rows tag these the
@@ -273,6 +276,9 @@ export function PersonBelongings({
                         the tag is what tells the rows apart. */}
                   <AssetTypeBadge value={item.assetType} />
                   {item.label}
+                  {item.kind === 'device' ? (
+                    <DeviceStatusBadge status={item.status} />
+                  ) : null}
                   {item.kind === 'stock' ? (
                     <span className='ml-1 tabular-nums text-muted-foreground'>
                       ×{item.quantity ?? 0}
@@ -286,20 +292,6 @@ export function PersonBelongings({
                 ) : null}
               </span>
             ),
-          },
-          {
-            key: 'state',
-            header: t('fields.status'),
-            className: 'w-px whitespace-nowrap',
-            // Only a device has one, and it is what decided its handling.
-            // Stock and seats have none to state, so the column is theirs
-            // to leave empty rather than to fill with something else.
-            render: (item) =>
-              item.kind === 'device' ? (
-                <DeviceStatusBadge status={item.status} />
-              ) : (
-                <span className='text-muted-foreground'>—</span>
-              ),
           },
           {
             key: 'owner',
@@ -339,8 +331,16 @@ export function PersonBelongings({
                 </span>
               ) : item.handling === 'wait' ||
                 item.handling === 'confirmConsumed' ? (
-                <span className='text-xs text-muted-foreground'>
+                <span className='flex items-center gap-1.5 text-xs text-muted-foreground'>
                   {handlingLabel(item)}
+                  {/* What it is waiting for. Not a button: finishing a repair
+                      belongs to the repair and to its own 负责人 — but a row
+                      that only says "wait" is a dead end. */}
+                  {item.waitingOn ? (
+                    <RecordLink to={`/repairs/${item.waitingOn.id}`}>
+                      {item.waitingOn.label}
+                    </RecordLink>
+                  ) : null}
                 </span>
               ) : allowed[item.kind] ? (
                 <Button

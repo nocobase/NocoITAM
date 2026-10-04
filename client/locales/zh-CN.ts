@@ -938,7 +938,7 @@ const zhCN: AppResource = {
       progress: '已处理 {{done}} / {{total}}',
       columns: {
         item: '持有资产',
-        handling: '处理方式',
+        handling: '操作',
       },
       groups: {
         device: '设备',
@@ -947,8 +947,7 @@ const zhCN: AppResource = {
       },
       handling: {
         return: '归还',
-        takeBack: '退回库存',
-        wait: '维修完成后再收',
+        wait: '维修完成后可归还',
         confirmConsumed: '已领用 —— 确认是否还有未使用的可退回',
       },
     },

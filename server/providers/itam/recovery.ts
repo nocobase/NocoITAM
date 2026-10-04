@@ -51,6 +51,12 @@ export interface RecoveryItem {
   /** A device's status, which is what decided its handling. */
   readonly status?: string;
   /**
+   * The repair a device in the shop is waiting on. The row does not offer
+   * to finish it — that belongs to the repair and to its own 负责人 — but
+   * it names it, because "wait" without saying what for is a dead end.
+   */
+  readonly waitingOn?: { readonly id: string; readonly label: string };
+  /**
    * What is installed in it, for a device. A component belongs to the device
    * rather than to whoever holds it, and goes back inside it — so it is not
    * a line of its own to settle, but it has to be visible: handing the
@@ -102,7 +108,16 @@ export function recoveryPlan(holdings: {
   readonly stock: readonly Row[];
   readonly entitlementSeats: readonly Row[];
   readonly installed?: readonly Row[];
+  readonly openRepairs?: readonly Row[];
 }): readonly RecoveryItem[] {
+  const repairOn = (deviceId: string) => {
+    const row = (holdings.openRepairs ?? []).find(
+      (entry) => String(entry.deviceId) === deviceId,
+    );
+    return row
+      ? { id: String(row.id), label: asText(row.repairNo) ?? String(row.id) }
+      : undefined;
+  };
   const installedIn = (deviceId: string) =>
     (holdings.installed ?? [])
       .filter((row) => String(row.holderId ?? row.deviceId) === deviceId)
@@ -124,6 +139,9 @@ export function recoveryPlan(holdings: {
       status: asText(row.status) ?? '',
       assetType: 'device' as const,
       installed: installedIn(String(row.id)),
+      ...(deviceHandling(asText(row.status) ?? '') === 'wait'
+        ? { waitingOn: repairOn(String(row.id)) }
+        : {}),
     })),
     ...holdings.stock.map((row) => ({
       kind: 'stock' as const,
