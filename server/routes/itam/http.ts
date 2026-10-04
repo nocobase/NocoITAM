@@ -83,6 +83,24 @@ export async function decideCollection(
 }
 
 /**
+ * The same decision, answered with `undefined` rather than a refusal.
+ *
+ * For a handler that reads several collections to answer one question and
+ * leaves out the ones this caller may not read: refusing the whole request
+ * because one of them is beyond them would make the answer depend on the
+ * widest grant anybody holds.
+ */
+export async function maybeDecide(
+  context: ItamContext,
+  collection: string,
+  action: string,
+): Promise<DatabaseAuthorizationConditions | undefined> {
+  const authz = context.get('authz');
+  const authorize = authz.authorize.bind(authz) as unknown as Authorize;
+  return (await decideWith(authorize, collection, action)) ?? undefined;
+}
+
+/**
  * The context a service writes history with. Each call opens one operation:
  * the id it carries is what lets the timeline fold an event's own field
  * changes into it, so a handler builds it once and passes it down.

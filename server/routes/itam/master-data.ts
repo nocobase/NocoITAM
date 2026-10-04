@@ -2,6 +2,7 @@ import { authenticationToken } from '@nocobase/app-plugin-authentication';
 import {
   authorizationToken,
   type AuthorizationEnv,
+  type DatabaseAuthorizationConditions,
 } from '@nocobase/app-plugin-authorization/server';
 import type { Application } from '@nocobase/app-server/application';
 import {
@@ -26,6 +27,7 @@ import {
   decideFor,
   historyKind,
   decideCollection,
+  maybeDecide,
 } from './http.js';
 
 import { CREATE_DEFAULTS, masterDataSchema } from './master-data-schemas.js';
@@ -36,6 +38,21 @@ import { CREATE_DEFAULTS, masterDataSchema } from './master-data-schemas.js';
  * decision and hands its conditions to the service, which applies them in
  * the query.
  */
+/**
+ * The collections whose records name whoever answers for them, which a
+ * person's recovery reads to say what has to change hands. The service holds
+ * the field each one names them in; this is only which decisions to take.
+ */
+const OWNED_COLLECTIONS = [
+  'devices',
+  'stockItems',
+  'entitlements',
+  'repairs',
+  'purchaseOrders',
+  'disposals',
+  'locations',
+] as const;
+
 const COLLECTION_NAMES = new Set(
   MASTER_DATA_COLLECTIONS.map((collection) => collection.name),
 );
@@ -231,6 +248,14 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
         const items = recoveryPlan(await masterData.personHoldings(id)).filter(
           (item) => item.handling !== 'none',
         );
+        // What they answer for is read under each collection's own `read`
+        // decision, and a collection this caller cannot read is left out
+        // rather than refusing the whole answer.
+        const allowed = new Map<string, DatabaseAuthorizationConditions>();
+        for (const collection of OWNED_COLLECTIONS) {
+          const conditions = await maybeDecide(context, collection, 'read');
+          if (conditions) allowed.set(collection, conditions);
+        }
         return context.json({
           data: {
             // The page shows the plan only for somebody who has left, and
@@ -239,6 +264,7 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
             employmentStatus: person.employmentStatus ?? null,
             leaveDate: person.leaveDate ?? null,
             items,
+            owned: await masterData.personOwnedRecords(id, allowed),
           },
         });
       } catch (error) {

@@ -12,6 +12,7 @@ import {
   pickFields,
 } from './authz-filter.js';
 import {
+  asText,
   decodeRow,
   listCollection,
   type ListOptions,
@@ -47,6 +48,36 @@ export interface PersonHoldings {
   readonly stock: readonly Row[];
   readonly entitlementSeats: readonly Row[];
 }
+
+/** A record that still names somebody, and so has to change hands. */
+export interface OwnedRecord {
+  readonly collection: string;
+  readonly id: string;
+  readonly label: string;
+}
+
+/**
+ * Every collection whose records name whoever answers for them, and the
+ * field that does the naming.
+ *
+ * 申请人 is that person for a purchase order and a disposal — neither has a
+ * 负责人 of its own, and reusing the requester keeps one notion of whose
+ * record it is. The label is what the pages call the record: a number where
+ * it has one, a name otherwise.
+ */
+const OWNED_BY_USER: readonly {
+  readonly collection: string;
+  readonly field: string;
+  readonly label: string;
+}[] = [
+  { collection: 'devices', field: 'ownerId', label: 'deviceNo' },
+  { collection: 'stockItems', field: 'ownerId', label: 'name' },
+  { collection: 'entitlements', field: 'ownerId', label: 'name' },
+  { collection: 'repairs', field: 'ownerId', label: 'repairNo' },
+  { collection: 'purchaseOrders', field: 'requesterId', label: 'orderNo' },
+  { collection: 'disposals', field: 'requesterId', label: 'disposalNo' },
+  { collection: 'locations', field: 'ownerId', label: 'name' },
+];
 
 /**
  * Whether somebody has left is the leave date and nothing else.
@@ -231,6 +262,22 @@ export interface MasterDataService {
   ): Promise<{ readonly left: number; readonly reinstated: number }>;
   /** Everything a person currently holds: devices, stock, entitlement seats. */
   personHoldings(id: string): Promise<PersonHoldings>;
+  /**
+   * The records that still name this person as the one who answers for them.
+   *
+   * Holding and answering for are different halves of offboarding and are
+   * reached differently: what somebody holds points at their **person**
+   * record, what they answer for points at their **sign-in**, which a person
+   * record may not have. Somebody with no linked account owns nothing, which
+   * is the right answer rather than a missing one.
+   *
+   * Each collection is read under its own decision, so a caller sees only
+   * what they could read in that collection's own list.
+   */
+  personOwnedRecords(
+    id: string,
+    allowed: ReadonlyMap<string, DatabaseAuthorizationConditions>,
+  ): Promise<readonly OwnedRecord[]>;
   delete(
     collection: string,
     id: string,
@@ -809,6 +856,39 @@ export function createMasterDataService(
         updated ?? {},
         outputFields(definition.fields, conditions),
       );
+    },
+
+    async personOwnedRecords(id, allowed) {
+      const person = await database
+        .query()
+        .selectFrom('people')
+        .select('userId')
+        .where('id', '=', id)
+        .executeTakeFirst<Row>();
+      const userId = asText(person?.userId);
+      // Nobody signs in as them, so no record can name them.
+      if (!userId) return [];
+      const found: OwnedRecord[] = [];
+      for (const entry of OWNED_BY_USER) {
+        const conditions = allowed.get(entry.collection);
+        if (!conditions) continue;
+        const rows = await database
+          .query()
+          .selectFrom(entry.collection)
+          .select(['id', entry.label])
+          .where(entry.field, '=', userId)
+          .where((eb) => compileAuthzScope(eb, conditions.scope))
+          .orderBy(entry.label, 'asc')
+          .execute<Row>();
+        for (const row of rows) {
+          found.push({
+            collection: entry.collection,
+            id: String(row.id),
+            label: asText(row[entry.label]) ?? String(row.id),
+          });
+        }
+      }
+      return found;
     },
 
     async personHoldings(id) {

@@ -507,6 +507,8 @@ describe('master data routes', () => {
         employmentStatus: 'left',
         leaveDate: '2020-01-01',
         items: [],
+        // Nobody signs in as them, so no record can name them.
+        owned: [],
       },
     });
     expect(
@@ -525,6 +527,46 @@ describe('master data routes', () => {
       (await app.request('/api/itam/master/people/999999/recovery', manager))
         .status,
     ).toBe(404);
+  });
+
+  /**
+   * The other half of a recovery: what still names them. It reaches them
+   * through their sign-in rather than their person record, which is why a
+   * person with no linked account owns nothing — the case above.
+   */
+  it('lists the records a leaver still answers for', async () => {
+    const manager = { user: 'mia', role: 'manager' } as const;
+    const department = (await (
+      await app.request('/api/itam/master/departments', {
+        ...json({ name: 'IT' }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+    const person = (await (
+      await app.request('/api/itam/master/people', {
+        ...json({
+          name: 'Zhou Yi',
+          departmentId: department.data.id,
+          leaveDate: '2020-01-01',
+          // The sign-in they had while they worked here.
+          userId: 'mia',
+        }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+    await app.request('/api/itam/master/locations', {
+      ...json({ name: 'Server room', type: 'room', ownerId: 'mia' }),
+      ...manager,
+    });
+    const recovery = (await (
+      await app.request(
+        `/api/itam/master/people/${person.data.id}/recovery`,
+        manager,
+      )
+    ).json()) as { data: { owned: { collection: string; label: string }[] } };
+    expect(recovery.data.owned).toEqual([
+      { collection: 'locations', id: expect.any(String), label: 'Server room' },
+    ]);
   });
 
   it("reports a record's footprint and ancestors", async () => {
