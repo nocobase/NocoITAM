@@ -798,8 +798,11 @@ export function createProcurementService(deps: {
         key: `purchaseOrder:${id}:submitted:${String(row.updatedAt)}`,
         to: asked,
         actorId: context.actorId,
-        title: `Approval requested: ${title}`,
-        body: 'A purchase order is waiting for your decision.',
+        title: {
+          key: 'notifications.approvalRequested',
+          params: { title },
+        },
+        body: { key: 'notifications.approvalBody', params: {} },
         url: `/procurement/${id}`,
         source: { type: 'purchaseOrder', referenceId: id },
       });
@@ -845,8 +848,15 @@ export function createProcurementService(deps: {
         key: `purchaseOrder:${id}:${decision}:${String(row.updatedAt)}`,
         to: [requesterId],
         actorId: context.actorId,
-        title: `${decision === 'approved' ? 'Approved' : 'Rejected'}: ${title}`,
-        body: comment ?? '',
+        title: {
+          key:
+            decision === 'approved'
+              ? 'notifications.approvalApproved'
+              : 'notifications.approvalRejected',
+          params: { title },
+        },
+        // The approver's own sentence, passed through as written.
+        body: { text: comment ?? '' },
         url: `/procurement/${id}`,
         source: { type: 'purchaseOrder', referenceId: id },
       });

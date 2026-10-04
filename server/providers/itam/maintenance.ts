@@ -200,8 +200,11 @@ export function createMaintenanceService(dependencies: {
       await notifier.notify({
         key: `loanOverdue:${String(device.id)}:${date}`,
         to: [holder?.userId, asText(device.ownerId)],
-        title: `Loan overdue: ${String(device.deviceNo)}`,
-        body: `Expected back on ${date}`,
+        title: {
+          key: 'notifications.loanOverdue',
+          params: { deviceNo: String(device.deviceNo) },
+        },
+        body: { key: 'notifications.loanOverdueBody', params: { date } },
         url: `/devices/${String(device.id)}`,
         source: { type: 'device', referenceId: String(device.id) },
       });
@@ -277,8 +280,14 @@ export function createMaintenanceService(dependencies: {
         await notifier.notify({
           key: `leaverRecovery:${id}:${owner}`,
           to: [owner],
-          title: `Recover from ${asText(person.name) ?? ''}`,
-          body: `${theirs.length} of their holdings are yours to settle`,
+          title: {
+            key: 'notifications.leaverRecovery',
+            params: { name: asText(person.name) ?? '' },
+          },
+          body: {
+            key: 'notifications.leaverRecoveryBody',
+            params: { count: theirs.length },
+          },
           url: `/people/${id}`,
           source: { type: 'person', referenceId: id },
         });

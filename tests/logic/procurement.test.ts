@@ -208,7 +208,10 @@ describe('procurement', () => {
       })),
     ).toContainEqual({
       to: 'ann',
-      title: expect.stringContaining('Approval requested'),
+      // The notifier resolves a named message; a container without i18n —
+      // this one — keeps the key, which is what makes the assertion stable
+      // in either language.
+      title: expect.stringContaining('notifications.approvalRequested'),
     });
     const approved = await post(
       `purchase-orders/${order.id}/decide`,
