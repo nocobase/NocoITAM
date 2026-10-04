@@ -23,7 +23,8 @@ export interface CardRecord extends MyWorkRecord {
  * and dark mode carry them.
  */
 export const WORK_TONE: Readonly<Record<string, string>> = {
-  pendingApprovals: 'bg-info text-info-foreground',
+  // The firmest of them: somebody is waiting on this reader to decide.
+  pendingApprovals: 'bg-primary text-primary-foreground',
   // A person left with the company's equipment: the one that was `critical`
   // while it was a reminder.
   leaverRecovery: 'bg-destructive/10 text-destructive',

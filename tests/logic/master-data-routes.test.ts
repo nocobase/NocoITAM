@@ -507,6 +507,9 @@ describe('master data routes', () => {
         employmentStatus: 'left',
         leaveDate: '2020-01-01',
         items: [],
+        // They held nothing when they left, so there is nothing settled
+        // either — and no snapshot was taken, for the same reason.
+        settled: [],
         // Nobody signs in as them, so no record can name them.
         owned: [],
       },

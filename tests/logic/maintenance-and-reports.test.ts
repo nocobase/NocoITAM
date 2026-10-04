@@ -409,6 +409,46 @@ describe('maintenance, reminders, workbench and reports', () => {
     expect(await statusOf()).toBe('active');
   });
 
+  /**
+   * The live list cannot say how much of a recovery is done, because what is
+   * settled has left it. The snapshot taken as somebody is marked left is
+   * the denominator, and what it holds that nobody holds now is the part
+   * that is finished — listed, not merely counted, so the reader sees which.
+   */
+  it('keeps what a leaver had, so a settled item still reads', async () => {
+    const hr = await create('master/departments', { name: 'HR' });
+    const leaver = await create('master/people', {
+      name: 'Zhou Yi',
+      departmentId: hr.id,
+    });
+    const device = await create('devices', {
+      modelId,
+      locationId,
+      serialNo: 'SN-SNAP',
+      ownerId: manager.user,
+    });
+    await post(`devices/${device.id}/assign`, {
+      targetType: 'person',
+      targetId: leaver.id,
+    });
+    await leave(leaver.id);
+
+    const recovery = async () =>
+      data<{
+        items: { id: string }[];
+        settled: { id: string; label: string }[];
+      }>(await get(`master/people/${leaver.id}/recovery`));
+    const before = await recovery();
+    expect(before.items.map((item) => item.id)).toEqual([device.id]);
+    expect(before.settled).toEqual([]);
+
+    await post(`devices/${device.id}/return`, { nextStatus: 'inStock' });
+    const after = await recovery();
+    // Gone from what is left, still in what the recovery was.
+    expect(after.items).toEqual([]);
+    expect(after.settled.map((item) => item.id)).toEqual([device.id]);
+  });
+
   it('prepares a leaver recovery once and hands it to the owner', async () => {
     const hr = await create('master/departments', { name: 'HR' });
     // Issued to them while they still worked here: an assignment refuses

@@ -61,6 +61,12 @@ export interface PersonRecovery {
   readonly employmentStatus: string | null;
   readonly leaveDate: string | null;
   readonly items: readonly RecoveryItem[];
+  /**
+   * What the snapshot taken at leaving held and nobody holds now: the part
+   * of the recovery that is done. It is listed with the rest, so the reader
+   * sees what was settled as well as what is left.
+   */
+  readonly settled: readonly RecoveryItem[];
   readonly owned: readonly OwnedRecord[];
 }
 

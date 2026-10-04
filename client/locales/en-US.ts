@@ -941,6 +941,8 @@ const messages = {
       changeOwnerHint:
         'Name who answers for {{record}} from now on. Only its current owner or whoever created it may do this.',
       installed: 'Contains',
+      done: 'Settled',
+      progress: '{{done}} of {{total}} settled',
       columns: {
         item: 'Asset held',
         handling: 'Handling',
