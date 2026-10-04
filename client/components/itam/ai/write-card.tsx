@@ -831,7 +831,7 @@ export function ItamWriteCard({
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
           <p className='font-medium'>
-            {/* The title is Ava's sentence about the proposal; once the
+            {/* The title is Noco's sentence about the proposal; once the
                 user has changed it, the sentence may no longer be true. */}
             {(!changed && text(args.title)) || t(`ai.write.tools.${tool}`)}
           </p>
