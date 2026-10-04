@@ -317,6 +317,8 @@ const WITHDRAWN_COLLECTIONS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
  */
 const IT_PAGES: readonly string[] = [
   'workbench',
+  'inbox',
+  'notifications',
   'devices',
   'accessories',
   'consumables',
@@ -338,7 +340,7 @@ const IT_PAGES: readonly string[] = [
   'my-assets',
 ];
 const ADDED_PAGES: ReadonlyMap<string, readonly string[]> = new Map([
-  ['itam-employee', ['workbench', 'my-assets']],
+  ['itam-employee', ['workbench', 'inbox', 'notifications', 'my-assets']],
   ['itam-it-support', IT_PAGES],
   ['itam-asset-manager', [...IT_PAGES, 'reports', 'scheduler.schedules']],
 ]);

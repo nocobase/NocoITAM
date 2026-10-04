@@ -655,8 +655,11 @@ export function createAuditService(dependencies: {
         key: `auditTask:${id}:started`,
         to: executors,
         actorId: context.actorId,
-        title: `Audit started: ${name}`,
-        body: `Planned until ${String(row.plannedEnd)}`,
+        title: { key: 'notifications.auditStarted', params: { name } },
+        body: {
+          key: 'notifications.auditStartedBody',
+          params: { date: String(row.plannedEnd) },
+        },
         url: `/audits/${id}`,
         source: { type: 'auditTask', referenceId: id },
       });

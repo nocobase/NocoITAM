@@ -11,6 +11,7 @@ import type { SettingsService } from './settings.js';
 import { endedWhere, expiringWhere } from './entitlements.js';
 import type { EntitlementService } from './entitlements.js';
 import type { MasterDataService } from './master-data.js';
+import type { HistoryService } from './history.js';
 import type { ItamNotifier } from './notifier.js';
 
 /**
@@ -75,6 +76,81 @@ interface ReminderRow {
   readonly data: Readonly<Record<string, unknown>>;
 }
 
+/**
+ * What is to be done with one thing a leaver holds. The same judgements the
+ * offboarding skill states in prose, as rules — because they are rules: which
+ * of these applies follows from the record, not from reading it. The
+ * assistant still does the reading and the proposing; this is only what the
+ * nightly job can say without one.
+ */
+export type RecoveryHandling =
+  /** Hand it back to stock: the ordinary case. */
+  | 'return'
+  /** At the repair shop, so returning it now would stop the record matching. */
+  | 'wait'
+  /** An accessory or component goes back to its stock item. */
+  | 'takeBack'
+  /** A consumable issued is usually used up; somebody has to say. */
+  | 'confirmConsumed'
+  /** A seat is reclaimed — and the account behind it still signs in. */
+  | 'reclaim'
+  /** Already out of use; nothing to recover. */
+  | 'none';
+
+export interface RecoveryItem {
+  readonly kind: 'device' | 'stock' | 'seat';
+  readonly id: string;
+  readonly label: string;
+  readonly handling: RecoveryHandling;
+  /** Who answers for it, which is who the preparation is handed to. */
+  readonly ownerId: string | null;
+  /** The account a reclaimed seat leaves behind, when it carries one. */
+  readonly account?: string;
+}
+
+export function deviceHandling(status: string): RecoveryHandling {
+  if (status === 'inRepair') return 'wait';
+  if (status === 'inUse' || status === 'onLoan') return 'return';
+  // Lost, retired, pending disposal, disposed: not in their hands to give back.
+  return 'none';
+}
+
+export function stockHandling(kind: string): RecoveryHandling {
+  return kind === 'consumable' ? 'confirmConsumed' : 'takeBack';
+}
+
+/** Everything a leaver holds, each with what is to be done with it. */
+export function recoveryPlan(holdings: {
+  readonly devices: readonly Row[];
+  readonly stock: readonly Row[];
+  readonly entitlementSeats: readonly Row[];
+}): readonly RecoveryItem[] {
+  return [
+    ...holdings.devices.map((row) => ({
+      kind: 'device' as const,
+      id: String(row.id),
+      label: `${asText(row.deviceNo) ?? ''} / ${asText(row.name) ?? ''}`.trim(),
+      handling: deviceHandling(asText(row.status) ?? ''),
+      ownerId: asText(row.ownerId) ?? null,
+    })),
+    ...holdings.stock.map((row) => ({
+      kind: 'stock' as const,
+      id: String(row.id),
+      label: asText(row.name) ?? '',
+      handling: stockHandling(asText(row.kind) ?? ''),
+      ownerId: asText(row.ownerId) ?? null,
+    })),
+    ...holdings.entitlementSeats.map((row) => ({
+      kind: 'seat' as const,
+      id: String(row.id),
+      label: asText(row.name) ?? '',
+      handling: 'reclaim' as const,
+      ownerId: asText(row.ownerId) ?? null,
+      ...(asText(row.account) ? { account: asText(row.account) } : {}),
+    })),
+  ];
+}
+
 export function createMaintenanceService(dependencies: {
   database: DatabaseManager;
   settings: SettingsService;
@@ -82,9 +158,17 @@ export function createMaintenanceService(dependencies: {
   entitlements: EntitlementService;
   masterData: MasterDataService;
   notifier: ItamNotifier;
+  history: HistoryService;
 }): MaintenanceService {
-  const { database, settings, devices, entitlements, masterData, notifier } =
-    dependencies;
+  const {
+    database,
+    settings,
+    devices,
+    entitlements,
+    masterData,
+    notifier,
+    history,
+  } = dependencies;
 
   /**
    * Tells the borrower and the device's 负责人 that a loan is past its date.
@@ -116,13 +200,101 @@ export function createMaintenanceService(dependencies: {
       await notifier.notify({
         key: `loanOverdue:${String(device.id)}:${date}`,
         to: [holder?.userId, asText(device.ownerId)],
-        title: `Loan overdue: ${String(device.deviceNo)}`,
-        body: `Expected back on ${date}`,
+        title: {
+          key: 'notifications.loanOverdue',
+          params: { deviceNo: String(device.deviceNo) },
+        },
+        body: { key: 'notifications.loanOverdueBody', params: { date } },
         url: `/devices/${String(device.id)}`,
         source: { type: 'device', referenceId: String(device.id) },
       });
     }
     return overdue.length;
+  };
+
+  /**
+   * Hands each leaver's recovery to whoever answers for what they still hold.
+   *
+   * The nightly job prepares it rather than waiting to be asked: somebody who
+   * left on Friday should not depend on a person opening the chat on Monday.
+   * The preparation is a rule, not a model call — which of the handlings
+   * applies follows from the record, and this application runs nothing AI
+   * outside a conversation (2026-09-27). The assistant still does the reading
+   * and the proposing, with the same judgements written out for it in
+   * `ai/skills/offboarding`.
+   *
+   * It is written once per leaver: a `recoveryPrepared` event on the person is
+   * both the preparation and the record that it was made, so a leaver who was
+   * marked before this shipped gets one on the next run, and nobody gets a
+   * second one every night. The notification goes to the owners it names,
+   * each told only the part they answer for.
+   */
+  const prepareRecoveries = async (): Promise<number> => {
+    const left = await database
+      .query()
+      .selectFrom('people')
+      .select(['id', 'name'])
+      .where('employmentStatus', '=', 'left')
+      .execute<Row>();
+    let prepared = 0;
+    for (const person of left) {
+      const id = String(person.id);
+      const done = await database
+        .query()
+        .selectFrom('historyEvents')
+        .select('id')
+        .where('subjectType', '=', 'people')
+        .where('subjectId', '=', id)
+        .where('type', '=', 'recoveryPrepared')
+        .executeTakeFirst<{ id: string }>();
+      if (done) continue;
+      const items = recoveryPlan(await masterData.personHoldings(id));
+      const outstanding = items.filter((item) => item.handling !== 'none');
+      // Nothing held is not a preparation worth making, and writing one would
+      // claim work where there is none.
+      if (outstanding.length === 0) continue;
+      const counts = {
+        devices: outstanding.filter((item) => item.kind === 'device').length,
+        stock: outstanding.filter((item) => item.kind === 'stock').length,
+        seats: outstanding.filter((item) => item.kind === 'seat').length,
+      };
+      await history.record({
+        subjectType: 'people',
+        subjectId: id,
+        type: 'recoveryPrepared',
+        summary: `Recovery prepared: ${outstanding.length} to settle`,
+        payload: { ...counts, items: outstanding },
+        sourceType: 'scheduler',
+        origin: 'schedule',
+      });
+      // Each owner is told their own part: a list of somebody else's devices
+      // is not something they can act on, and a shared one leaves everybody
+      // assuming the other will.
+      const owners = new Set(
+        outstanding
+          .map((item) => item.ownerId)
+          .filter((owner): owner is string => owner !== null),
+      );
+      for (const owner of owners) {
+        const theirs = outstanding.filter((item) => item.ownerId === owner);
+        await notifier.notify({
+          key: `leaverRecovery:${id}:${owner}`,
+          to: [owner],
+          title: {
+            key: 'notifications.leaverRecovery',
+            params: { name: asText(person.name) ?? '' },
+          },
+          body: {
+            key: 'notifications.leaverRecoveryBody',
+            params: { count: theirs.length },
+          },
+          url: `/people/${id}`,
+          source: { type: 'person', referenceId: id },
+        });
+      }
+      prepared += 1;
+    }
+    return prepared;
   };
 
   /** Every reminder the rules produce right now. */
@@ -362,7 +534,10 @@ export function createMaintenanceService(dependencies: {
       // Its own task, scheduled before the daily one so the reminders that
       // run computes already flag what a new leaver still holds.
       if (job === 'leavers')
-        return { leavers: await masterData.markDueLeavers(isoDate(now)) };
+        return {
+          leavers: await masterData.markDueLeavers(isoDate(now)),
+          recoveriesPrepared: await prepareRecoveries(),
+        };
       const subscriptions = await entitlements.advanceRenewals(now);
       const released = await devices.releaseExpiredReservations(isoDate(now));
       return {

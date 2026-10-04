@@ -52,6 +52,9 @@ const messages = {
     collapse: 'Collapse navigation',
     label: 'Application navigation',
     workbench: 'Workbench',
+    inboxGroup: 'Inbox',
+    inbox: 'To do',
+    notifications: 'Notifications',
     assetsGroup: 'Assets',
     devices: 'Devices',
     accessories: 'Accessories',
@@ -344,6 +347,8 @@ const messages = {
       renewalAdvanced: 'Next renewal {{from}} → {{to}}',
       left: 'Marked as left',
       leftOnLeaveDate: 'Leave date {{date}} reached; marked as left',
+      recoveryPrepared:
+        'Recovery listed: {{devices}} devices, {{stock}} stock, {{seats}} seats',
       seatAssign: 'Seat assigned to {{target}}',
       seatAssigned: 'Seat on {{target}}',
       seatReclaim: 'Seat reclaimed from {{target}}',
