@@ -4,6 +4,8 @@ import { useState, type ReactElement } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { Page } from '@/components/itam/page-header';
+import { RecordLink } from '@/components/itam/record-link';
+import { PersonBelongings } from '@/components/itam/person-belongings';
 import { RecordPane } from '@/components/itam/record-drawer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -148,14 +150,36 @@ export default function InboxPage(): ReactElement {
                   </Button>
                 </div>
               ) : null}
-              <RecordPane
-                key={current.record.url}
-                to={current.record.url}
-                onLeave={(path) => void navigate(path)}
-                toolbar={
-                  <OpenPaneFullPage onLeave={(path) => void navigate(path)} />
-                }
-              />
+              {/* A leaver's row opens their 归属 and nothing else: who they
+                  are is not the work — what is in their name is. Every other
+                  row opens its record, where the work is the record. */}
+              {current.card.key === 'leaverRecovery' ? (
+                <>
+                  <PaneHeading
+                    kind={current.card.label}
+                    tone={WORK_TONE[current.card.key]}
+                    title={current.record.title}
+                    subtitle={current.record.subtitle}
+                    to={current.record.url}
+                  />
+                  <div className='px-4 pb-6'>
+                    <PersonBelongings
+                      key={current.record.id}
+                      personId={current.record.id}
+                      personName={current.record.title}
+                    />
+                  </div>
+                </>
+              ) : (
+                <RecordPane
+                  key={current.record.url}
+                  to={current.record.url}
+                  onLeave={(path) => void navigate(path)}
+                  toolbar={
+                    <OpenPaneFullPage onLeave={(path) => void navigate(path)} />
+                  }
+                />
+              )}
             </div>
           </div>
         )}
@@ -172,6 +196,43 @@ export default function InboxPage(): ReactElement {
  * it to somebody. It reads the pane's own location, which follows the tabs
  * inside it.
  */
+/**
+ * What the pane is showing, where it is not a record page and so carries no
+ * title of its own. The name opens the record in the drawer, which is the
+ * way into a record everywhere else here.
+ */
+function PaneHeading({
+  kind,
+  tone,
+  title,
+  subtitle,
+  to,
+}: {
+  /** The to-do this is, wearing the colour it wears in the queue. */
+  readonly kind: string;
+  readonly tone: string | undefined;
+  readonly title: string;
+  readonly subtitle?: string | null;
+  readonly to: string;
+}): ReactElement {
+  return (
+    <div className='flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pt-4 pb-3'>
+      <Badge
+        variant={tone ? undefined : 'outline'}
+        className={`shrink-0 ${tone ?? ''}`}
+      >
+        {kind}
+      </Badge>
+      <RecordLink to={to} className='font-heading text-base font-medium'>
+        {title}
+      </RecordLink>
+      {subtitle ? (
+        <span className='text-sm text-muted-foreground'>{subtitle}</span>
+      ) : null}
+    </div>
+  );
+}
+
 function OpenFullPage({
   onLeave,
 }: {
