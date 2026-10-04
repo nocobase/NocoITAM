@@ -914,10 +914,11 @@ const messages = {
     },
     markLeft: 'Mark as left',
     markLeftTitle: 'Mark {{name}} as left?',
-    markLeftHoldings:
-      'This person still holds {{summary}}. Everything stays assigned until returned or released and is flagged on the workbench.',
-    markLeftClean:
-      'This person holds nothing. They will no longer be assignable.',
+    markLeftHoldings_one:
+      'The leave date is recorded as today. {{count}} asset stays in their name, and the recovery goes to whoever answers for it.',
+    markLeftHoldings_other:
+      'The leave date is recorded as today. {{count}} assets stay in their name, and the recovery goes to whoever answers for them.',
+    markLeftClean: 'The leave date is recorded as today. They hold nothing.',
     noHoldings: 'Nothing held',
     recovery: {
       title: 'To recover',
