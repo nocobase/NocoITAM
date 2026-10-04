@@ -84,6 +84,10 @@ export function MyWork(): ReactElement | null {
     pendingDisposalExecution: 'workbench.work.tagDisposal',
   };
   for (const key of [
+    // First after the approvals: somebody has left with the company's
+    // equipment, which was the one `critical` rule while this was a reminder.
+    // A person names themselves, so these records take no tag.
+    'leaverRecovery',
     'awaitingReceipt',
     'pendingDisposalExecution',
     'activeRepairs',
