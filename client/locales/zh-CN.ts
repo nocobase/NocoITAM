@@ -892,7 +892,7 @@ const zhCN: AppResource = {
     empty: '暂无部门',
   },
   people: {
-    followsLeaveDate: '由离职日期决定：填写离职日期即为已离职',
+    followsLeaveDate: '由离职日期决定：日期到了即为已离职，日期未到仍是在职',
     title: '人员',
     object: '人员',
     new: '创建人员',
