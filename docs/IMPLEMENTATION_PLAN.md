@@ -1,6 +1,6 @@
 # ITAM implementation plan
 
-Derived from `SPEC.md`. This is the working plan for building the IT Asset
+Derived from `nocosolution/NocoITAM/SPEC.md`. This is the working plan for building the IT Asset
 Management application on the NocoBase 3 application template. Update it when a
 decision changes; do not let it drift from what the code does.
 
@@ -999,7 +999,7 @@ holderId?, account?}])`（永久授权按授权方式决定持有人类型；订
 ### 2026-09-25 采购单支持 CSV 导入（多行合并为一张单）
 
 采购单此前不能导入不是一个决定，是 SPEC 自相矛盾后实现只落了一半：导入章节
-（`SPEC.md` 数据导入与导出，原名「数据导入与外部数据对账」）列举的可导入对象里没有采购单，而采购单
+（`nocosolution/NocoITAM/SPEC.md` 数据导入与导出，原名「数据导入与外部数据对账」）列举的可导入对象里没有采购单，而采购单
 列表页的动作行写着「导入/导出」。现在按后者补齐。
 
 - 导入机制新增**分组**概念（`ImportSpec.group`）：`by` 指定分组列，`lines`
@@ -1290,7 +1290,7 @@ holderId?, account?}])`（永久授权按授权方式决定持有人类型；订
 
 ### 2026-09-26 采购明细不存接收状态
 
-`SPEC.md` 里写过一个只读的**接收状态**（未到货 / 部分到货 / 已到货），实现从
+`nocosolution/NocoITAM/SPEC.md` 里写过一个只读的**接收状态**（未到货 / 部分到货 / 已到货），实现从
 未落地：明细只有 `receivedQuantity`，页面把它和数量一起显示成 `1 / 2`，颜色
 区分三种情况。派生出来的状态再存一份，只会和数量对不上，所以规格里删掉这个
 字段，保留「已到货数量」。
