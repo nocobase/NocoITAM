@@ -180,7 +180,7 @@ const messages = {
   tabs: {
     history: 'History',
     children: 'Sub-items',
-    holdings: 'Holdings',
+    holdings: 'In their name',
     relatedAssets: 'Related assets',
     devices: 'Devices',
     purchaseOrders: 'Purchase orders',
@@ -937,11 +937,14 @@ const messages = {
       owner: 'owner: {{name}}',
       handover_one: 'Still answers for {{count}} record — hand it over',
       handover_other: 'Still answers for {{count}} records — hand them over',
+      responsible_one: 'Answers for {{count}} record',
+      responsible_other: 'Answers for {{count}} records',
       changeOwner: 'Hand over',
       changeOwnerHint:
         'Name who answers for {{record}} from now on. Only its current owner or whoever created it may do this.',
+      installed: 'Contains',
       columns: {
-        item: 'Asset to recover',
+        item: 'Asset held',
         handling: 'Handling',
       },
       groups: {

@@ -118,6 +118,19 @@ export interface RecoveryItem {
   /** A device's status, which is what decided its handling. */
   readonly status?: string;
   /**
+   * What is installed in it, for a device. A component belongs to the device
+   * rather than to whoever holds it, and goes back inside it — so it is not
+   * a line of its own to settle, but it has to be visible: handing the
+   * laptop back hands these back with it.
+   */
+  readonly installed?: readonly {
+    readonly id: string;
+    /** The component's own record, which its name opens. */
+    readonly stockItemId: string;
+    readonly name: string;
+    readonly quantity: number;
+  }[];
+  /**
    * Which of the five asset types it is, as the pages label them: a page
    * listing devices, stock and seats together needs to say which each row
    * is, and `kind` groups the three stock types under one name.
@@ -155,7 +168,17 @@ export function recoveryPlan(holdings: {
   readonly devices: readonly Row[];
   readonly stock: readonly Row[];
   readonly entitlementSeats: readonly Row[];
+  readonly installed?: readonly Row[];
 }): readonly RecoveryItem[] {
+  const installedIn = (deviceId: string) =>
+    (holdings.installed ?? [])
+      .filter((row) => String(row.holderId ?? row.deviceId) === deviceId)
+      .map((row) => ({
+        id: String(row.id),
+        stockItemId: asText(row.stockItemId) ?? '',
+        name: asText(row.name) ?? '',
+        quantity: Number(row.quantity) || 0,
+      }));
   return [
     ...holdings.devices.map((row) => ({
       kind: 'device' as const,
@@ -167,6 +190,7 @@ export function recoveryPlan(holdings: {
       targetId: String(row.id),
       status: asText(row.status) ?? '',
       assetType: 'device' as const,
+      installed: installedIn(String(row.id)),
     })),
     ...holdings.stock.map((row) => ({
       kind: 'stock' as const,

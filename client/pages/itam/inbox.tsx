@@ -3,7 +3,6 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
-import { LeaverRecovery } from '@/components/itam/leaver-recovery';
 import { Page } from '@/components/itam/page-header';
 import { RecordPane } from '@/components/itam/record-drawer';
 import { Badge } from '@/components/ui/badge';
@@ -149,28 +148,14 @@ export default function InboxPage(): ReactElement {
                   </Button>
                 </div>
               ) : null}
-              {/* A leaver's recovery is the one to-do whose answer is not a
-                  record page: it is one person's whole handover, which the
-                  card lists with the action each item needs. Everything else
-                  is settled on its own record, so that page is what opens. */}
-              {current.card.key === 'leaverRecovery' ? (
-                <div className='p-4'>
-                  <LeaverRecovery
-                    key={current.record.id}
-                    personId={current.record.id}
-                    personName={current.record.title}
-                  />
-                </div>
-              ) : (
-                <RecordPane
-                  key={current.record.url}
-                  to={current.record.url}
-                  onLeave={(path) => void navigate(path)}
-                  toolbar={
-                    <OpenPaneFullPage onLeave={(path) => void navigate(path)} />
-                  }
-                />
-              )}
+              <RecordPane
+                key={current.record.url}
+                to={current.record.url}
+                onLeave={(path) => void navigate(path)}
+                toolbar={
+                  <OpenPaneFullPage onLeave={(path) => void navigate(path)} />
+                }
+              />
             </div>
           </div>
         )}
