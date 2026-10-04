@@ -8,6 +8,11 @@ import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { DataTable } from '@/components/itam/data-table';
 import { DeviceReturnDialog } from '@/components/itam/device-return-dialog';
 import { RecordLink } from '@/components/itam/record-link';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { EmptyState } from '@/components/itam/empty-state';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
@@ -195,12 +200,15 @@ export function PersonBelongings({
   // before handing it back: the device, the stock item it was issued from,
   // the entitlement the seat belongs to.
   // Each handling reads as the word the page that owns the act uses: a seat
-  // is 回收 on its entitlement's own page, so it is 回收 here. One act, one
-  // name, wherever it is offered.
+  // is 回收 on its entitlement's page and a holding is 归还 on the stock
+  // item's, so they are those here. One act, one name, wherever it is
+  // offered; which kind of thing it is, the tag in front of the name says.
   const handlingLabel = (item: RecoveryItem): string =>
     item.handling === 'reclaim'
       ? t('entitlements.reclaimSeat')
-      : t(`people.recovery.handling.${item.handling}`);
+      : item.handling === 'takeBack'
+        ? t('stock.return')
+        : t(`people.recovery.handling.${item.handling}`);
 
   /**
    * What to call a record that is not an asset. The to-do rows tag these the
@@ -212,6 +220,10 @@ export function PersonBelongings({
     purchaseOrders: 'workbench.work.tagPurchase',
     disposals: 'workbench.work.tagDisposal',
   };
+
+  /** Why it cannot be done yet, and what it is waiting on. */
+  const waitingLabel = (item: RecoveryItem): string =>
+    [handlingLabel(item), item.waitingOn?.label].filter(Boolean).join(' · ');
 
   const recordOf = (item: RecoveryItem): string =>
     item.kind === 'device'
@@ -273,6 +285,9 @@ export function PersonBelongings({
                         the tag is what tells the rows apart. */}
                   <AssetTypeBadge value={item.assetType} />
                   {item.label}
+                  {item.kind === 'device' ? (
+                    <DeviceStatusBadge status={item.status} />
+                  ) : null}
                   {item.kind === 'stock' ? (
                     <span className='ml-1 tabular-nums text-muted-foreground'>
                       ×{item.quantity ?? 0}
@@ -286,20 +301,6 @@ export function PersonBelongings({
                 ) : null}
               </span>
             ),
-          },
-          {
-            key: 'state',
-            header: t('fields.status'),
-            className: 'w-px whitespace-nowrap',
-            // Only a device has one, and it is what decided its handling.
-            // Stock and seats have none to state, so the column is theirs
-            // to leave empty rather than to fill with something else.
-            render: (item) =>
-              item.kind === 'device' ? (
-                <DeviceStatusBadge status={item.status} />
-              ) : (
-                <span className='text-muted-foreground'>—</span>
-              ),
           },
           {
             key: 'owner',
@@ -339,9 +340,26 @@ export function PersonBelongings({
                 </span>
               ) : item.handling === 'wait' ||
                 item.handling === 'confirmConsumed' ? (
-                <span className='text-xs text-muted-foreground'>
-                  {handlingLabel(item)}
-                </span>
+                // The act this row would take, offered and refused: the
+                // button says what would happen to this thing, disabled says
+                // not yet, and the tooltip says why — naming the repair it
+                // waits on, since "once the repair is finished" leaves the
+                // reader asking which.
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <span tabIndex={0} aria-label={waitingLabel(item)} />
+                    }
+                  >
+                    <Button variant='outline' size='sm' disabled>
+                      <Undo2 data-icon='inline-start' />
+                      {item.kind === 'device'
+                        ? t('deviceActions.return.title')
+                        : t('stock.return')}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{waitingLabel(item)}</TooltipContent>
+                </Tooltip>
               ) : allowed[item.kind] ? (
                 <Button
                   variant='outline'
@@ -420,7 +438,11 @@ export function PersonBelongings({
                   {record.assetType ? (
                     <AssetTypeBadge value={record.assetType} />
                   ) : (
-                    <Badge variant='outline' className='shrink-0'>
+                    <Badge
+                      variant='secondary'
+                      data-tag='kind'
+                      className='shrink-0'
+                    >
                       {t(
                         DOCUMENT_TAG[record.collection] ??
                           `${kind?.i18n ?? record.collection}.object`,

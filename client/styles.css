@@ -165,6 +165,14 @@
   @apply bg-muted text-muted-foreground;
 }
 
+/* A tag that says *what kind of thing* a row is — an asset type, a kind of
+   document — is outlined; a tag that says *what state something is in* is
+   filled. The two sit side by side on the same row, and one glance has to
+   tell them apart. */
+[data-slot='badge'][data-tag='kind'] {
+  @apply border border-border bg-transparent text-muted-foreground;
+}
+
 /* The application's one toaster mounts before any dialog opens, and every
    overlay shares z-50, so a dialog portaled later would paint over its toasts.
    Lift the viewport here rather than in the generated component; left outside

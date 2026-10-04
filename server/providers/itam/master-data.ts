@@ -50,6 +50,8 @@ export interface PersonHoldings {
   readonly entitlementSeats: readonly Row[];
   /** Components installed in those devices, each naming the device it is in. */
   readonly installed?: readonly Row[];
+  /** The repair each device still at the shop is waiting on. */
+  readonly openRepairs?: readonly Row[];
 }
 
 /** A record that still names somebody, and so has to change hands. */
@@ -1098,9 +1100,23 @@ export function createMasterDataService(
               .where('stockHoldings.holderType', '=', 'device')
               .where('stockHoldings.holderId', 'in', deviceIds)
               .execute<Row>();
+      // The repair a device in the shop is waiting on. The row cannot offer
+      // to finish it — that is an operation on the repair, and only its own
+      // 负责人 may carry it out — but saying "wait" without saying what for
+      // is a dead end.
+      const repairs =
+        deviceIds.length === 0
+          ? []
+          : await read
+              .selectFrom('repairs')
+              .select(['id', 'repairNo', 'deviceId'])
+              .where('deviceId', 'in', deviceIds)
+              .where('result', '=', 'inProgress')
+              .execute<Row>();
       const decode = (rows: readonly Row[]) =>
         rows.map((row) => decodeRow(row));
       return {
+        openRepairs: decode(repairs),
         devices: decode(devices),
         stock: decode(stock),
         entitlementSeats: decode(entitlementSeats),

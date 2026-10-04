@@ -919,6 +919,10 @@ const messages = {
     markLeftHoldings_other:
       'The leave date is recorded as today. {{count}} assets stay in their name, and the recovery goes to whoever answers for them.',
     markLeftClean: 'The leave date is recorded as today. They hold nothing.',
+    markLeftOwned_one:
+      '{{count}} record names them as well, and will need handing over.',
+    markLeftOwned_other:
+      '{{count}} records name them as well, and will need handing over.',
     noHoldings: 'Nothing held',
     recovery: {
       title: 'To recover',
@@ -946,7 +950,7 @@ const messages = {
       progress: '{{done}} of {{total}} settled',
       columns: {
         item: 'Asset held',
-        handling: 'Handling',
+        handling: 'Action',
       },
       groups: {
         device: 'Devices',
@@ -955,8 +959,7 @@ const messages = {
       },
       handling: {
         return: 'Return',
-        takeBack: 'Back into stock',
-        wait: 'Settle once the repair is finished',
+        wait: 'Can be returned once the repair is finished',
         confirmConsumed: 'Issued — check whether any is left to take back',
       },
     },
