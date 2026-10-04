@@ -917,11 +917,11 @@ const zhCN: AppResource = {
     noHoldings: '暂无持有',
     recovery: {
       title: '待回收',
-      left: '该人员已离职，以下是其离职时持有的资产快照：',
+      left: '以下是该人员离职时持有的资产快照：',
       leftMine_one:
-        '该人员已离职，以下是其离职时持有的资产快照，其中 {{count}} 项由你负责：',
+        '以下是该人员离职时持有的资产快照，其中未处理的 {{count}} 项由你负责：',
       leftMine_other:
-        '该人员已离职，以下是其离职时持有的资产快照，其中 {{count}} 项由你负责：',
+        '以下是该人员离职时持有的资产快照，其中未处理的 {{count}} 项由你负责：',
       you: '你',
       owner: '负责人：{{name}}',
       responsible_one: '该人员是 {{count}} 条记录的负责人：',

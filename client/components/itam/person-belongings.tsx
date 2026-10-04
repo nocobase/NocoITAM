@@ -275,9 +275,11 @@ export function PersonBelongings({
         <p className='text-sm text-muted-foreground'>
           {/* The sentence names nobody: the page's own title does, and in
               the queue the heading above it does. */}
-          {/* The date is on the record above; what this line is for is
-              saying that the table below is the whole of what was in their
-              name when they left, settled rows included. */}
+          {/* The date is on the record above, and so is the status, so
+              the line does not open by saying they left — 离职时 says it
+              once. What it is for is saying that the table below is the
+              whole of what was in their name then, settled rows
+              included. */}
           {t(`people.recovery.${mine > 0 ? 'leftMine' : 'left'}`, {
             count: mine,
           })}

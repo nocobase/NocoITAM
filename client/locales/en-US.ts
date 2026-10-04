@@ -926,13 +926,17 @@ const messages = {
     noHoldings: 'Nothing held',
     recovery: {
       title: 'To recover',
-      left: 'This person has left; this is what was in their name then:',
+      left: "This is what was in this person's name when they left:",
       // One sentence: the share that is the reader's is a clause of the same
-      // statement rather than a second announcement.
+      // statement rather than a second announcement. The clause says
+      // "unsettled" out loud, because the sentence it hangs off introduces
+      // the whole snapshot, settled rows included, while the count covers
+      // only what is left — a reader taking "of them" at its word would be
+      // looking for a number that is not there.
       leftMine_one:
-        'This person has left; this is what was in their name then, {{count}} of it yours to settle:',
+        "This is what was in this person's name when they left, {{count}} unsettled item in your name:",
       leftMine_other:
-        'This person has left; this is what was in their name then, {{count}} of them yours to settle:',
+        "This is what was in this person's name when they left, {{count}} unsettled items in your name:",
       you: 'you',
       owner: 'owner: {{name}}',
       responsible_one: 'This person answers for {{count}} record:',
