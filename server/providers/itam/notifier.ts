@@ -10,12 +10,27 @@ import {
  * recipients, and never let a delivery failure fail the business operation.
  * Services call it after their transaction committed.
  */
+/**
+ * A message named rather than written. Nothing this application puts in
+ * somebody's inbox is English prose, so a notification carries the key of a
+ * string in `server/locales` and the values it interpolates; the notifier
+ * resolves it in the deployment's language.
+ */
+export type TranslatableText =
+  | { readonly key: string; readonly params?: Readonly<Record<string, unknown>> }
+  /**
+   * Somebody's own words — an approver's comment — which pass through as
+   * they were written. The rule is that the *application* does not write
+   * prose into an inbox, not that a person's sentence is rewritten.
+   */
+  | { readonly text: string };
+
 export interface NotificationInput {
   /** Business key; the plugin deduplicates repeated sends of the same key. */
   readonly key: string;
   readonly to: readonly (string | null | undefined)[];
-  readonly title: string;
-  readonly body: string;
+  readonly title: TranslatableText;
+  readonly body: TranslatableText;
   /** Application-internal path the notification opens. */
   readonly url?: string;
   /** The user whose action caused the notification; excluded from `to`. */
@@ -51,6 +66,13 @@ export type NotificationSender = (input: {
 export function createItamNotifier(
   send: NotificationSender | undefined,
   log: (message: string, error: unknown) => void = () => {},
+  /**
+   * Resolves a named message. A container without i18n — a test's — falls
+   * back to the key, which keeps the delivery and its assertions working
+   * without pretending to translate.
+   */
+  translate: (text: TranslatableText) => string = (text) =>
+    'text' in text ? text.text : text.key,
 ): ItamNotifier {
   return {
     async notify(input) {
@@ -71,8 +93,8 @@ export function createItamNotifier(
             messages: {
               'in-app': {
                 to: id,
-                title: input.title,
-                body: input.body,
+                title: translate(input.title),
+                body: translate(input.body),
                 ...(input.url
                   ? { target: { type: 'route' as const, path: input.url } }
                   : {}),

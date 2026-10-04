@@ -681,8 +681,11 @@ export function createDisposalService(dependencies: {
         key: `disposal:${id}:submitted:${String(row.updatedAt)}`,
         to: approverIds,
         actorId: context.actorId,
-        title: `Approval requested: ${title}`,
-        body: 'A disposal request is waiting for your decision.',
+        title: {
+          key: 'notifications.approvalRequested',
+          params: { title },
+        },
+        body: { key: 'notifications.approvalBody', params: {} },
         url: `/disposals/${id}`,
         source: { type: 'disposal', referenceId: id },
       });
@@ -737,8 +740,15 @@ export function createDisposalService(dependencies: {
         key: `disposal:${id}:${decision}:${String(row.updatedAt)}`,
         to: [requesterId],
         actorId: context.actorId,
-        title: `${decision === 'approved' ? 'Approved' : 'Rejected'}: ${title}`,
-        body: comment ?? '',
+        title: {
+          key:
+            decision === 'approved'
+              ? 'notifications.approvalApproved'
+              : 'notifications.approvalRejected',
+          params: { title },
+        },
+        // The approver's own sentence, passed through as written.
+        body: { text: comment ?? '' },
         url: `/disposals/${id}`,
         source: { type: 'disposal', referenceId: id },
       });
