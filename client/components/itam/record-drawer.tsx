@@ -125,7 +125,6 @@ function RecordDrawerBody({
   // The page inside carries the visible title; the drawer's own name is
   // for assistive technology only.
   const record = useItamRecord<ItamRecord>(target.path, target.id);
-  const page = recordPage(target.route);
   const title = (
     <>
       <SheetTitle className='sr-only'>
@@ -137,43 +136,79 @@ function RecordDrawerBody({
     </>
   );
   return (
-    <>
-      {page ? (
-        <IsolatedRouter initialPath={to}>
-          <DrawerToolbar
-            title={title}
-            canGoBack={canGoBack}
-            onBack={onBack}
-            onLeave={onLeave}
-          />
-          <Routes>
-            <Route
-              path={`/${target.route}/:id`}
-              // The page brings its own padding and lays out by its own
-              // width, so it reads like a narrow screen here.
-              element={<RoutePage page={page.Detail} />}
-            >
-              {page.tabs.map((tab) => (
-                <Route
-                  key={tab.path}
-                  path={tab.path}
-                  element={<RoutePage page={tab.Component} />}
-                />
-              ))}
-            </Route>
-            {/* Anywhere else belongs to the page, not the drawer. */}
-            <Route path='*' element={<LeaveDrawer onLeave={onLeave} />} />
-          </Routes>
-        </IsolatedRouter>
-      ) : (
+    <RecordPane
+      to={to}
+      onLeave={onLeave}
+      toolbar={
+        <DrawerToolbar
+          title={title}
+          canGoBack={canGoBack}
+          onBack={onBack}
+          onLeave={onLeave}
+        />
+      }
+      fallback={
         <>
           {title}
           <div className='p-4'>
             <EmptyState title={t('common.notFound')} />
           </div>
         </>
-      )}
-    </>
+      }
+    />
+  );
+}
+
+/**
+ * A record's own detail page — header, actions, information card and tabs —
+ * mounted in a router of its own, so switching tabs inside leaves the page
+ * around it alone and any path outside the record is handed back through
+ * `onLeave`.
+ *
+ * The drawer is one place this is shown; 待我处理 is the other, where the
+ * item picked from the queue is worked on beside the list. Both want the
+ * record's own page rather than a second rendering of it, so neither builds
+ * one.
+ */
+export function RecordPane({
+  to,
+  onLeave,
+  toolbar,
+  fallback = null,
+}: {
+  readonly to: string;
+  /** A path outside the record: whoever mounts the pane moves there. */
+  readonly onLeave: (path: string) => void;
+  /** Rendered inside the pane's own router, so it can read its location. */
+  readonly toolbar?: ReactNode;
+  /** Shown when the link names no detail page. */
+  readonly fallback?: ReactNode;
+}): ReactElement | null {
+  const target = recordTarget(to);
+  const page = target ? recordPage(target.route) : undefined;
+  if (!target || !page) return <>{fallback}</>;
+  return (
+    <IsolatedRouter initialPath={to}>
+      {toolbar}
+      <Routes>
+        <Route
+          path={`/${target.route}/:id`}
+          // The page brings its own padding and lays out by its own
+          // width, so it reads like a narrow screen here.
+          element={<RoutePage page={page.Detail} />}
+        >
+          {page.tabs.map((tab) => (
+            <Route
+              key={tab.path}
+              path={tab.path}
+              element={<RoutePage page={tab.Component} />}
+            />
+          ))}
+        </Route>
+        {/* Anywhere else belongs to the page around the pane. */}
+        <Route path='*' element={<LeaveDrawer onLeave={onLeave} />} />
+      </Routes>
+    </IsolatedRouter>
   );
 }
 
