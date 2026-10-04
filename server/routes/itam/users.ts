@@ -31,6 +31,37 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
     const auth = app.container.resolve(authenticationToken);
     const database = app.container.resolve(databaseManagerToken);
 
+    /**
+     * The sign-ins whose person has left.
+     *
+     * Somebody who has left answers for nothing new: they cannot be picked
+     * as a 负责人 or a 申请人, the way they cannot be assigned a device. It
+     * is read through `people.userId`, because that is what ties an account
+     * to the register — an account with no person record is nobody's leaver
+     * and stays pickable.
+     *
+     * A name lookup (`?ids=`) is never filtered: a record that already
+     * names somebody must read back whoever that is, exactly as the
+     * approvers endpoint answers for anybody when asked by id.
+     */
+    const leftUserIds = async (
+      userIds: readonly string[],
+    ): Promise<ReadonlySet<string>> => {
+      if (userIds.length === 0) return new Set();
+      const rows = await database
+        .query()
+        .selectFrom('people')
+        .select('userId')
+        .where('employmentStatus', '=', 'left')
+        .where('userId', 'in', [...userIds])
+        .execute<{ userId: string | null }>();
+      return new Set(
+        rows
+          .map((row) => row.userId)
+          .filter((id): id is string => id !== null),
+      );
+    };
+
     router.get('/itam/users', auth.required(), async (context) => {
       if (!app.container.has(userAdministrationServiceToken))
         return context.json({ data: [], total: 0, page: 1, pageSize: 0 });
@@ -72,13 +103,22 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
           if (person.userId && person.departmentId)
             departments.set(person.userId, person.departmentId);
       }
-      return context.json({
-        data: page.items.map((user) => ({
+      // Picking somebody: a leaver is not a candidate. Asked for ids, this
+      // is a name lookup and answers for them regardless.
+      const left =
+        ids.length > 0
+          ? new Set<string>()
+          : await leftUserIds(page.items.map((user) => user.id));
+      const data = page.items
+        .filter((user) => !left.has(user.id))
+        .map((user) => ({
           id: user.id,
           name: user.name,
           departmentId: departments.get(user.id) ?? null,
-        })),
-        total: page.total,
+        }));
+      return context.json({
+        data,
+        total: page.total - (page.items.length - data.length),
         page: page.page,
         pageSize: page.pageSize,
       });
@@ -121,8 +161,10 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
       const users = app.container.resolve(userAdministrationServiceToken);
       const page = await users.list({ userIds: [...ids], pageSize: 100 });
       const needle = q.trim().toLowerCase();
+      const left = await leftUserIds(page.items.map((user) => user.id));
       return page.items
         .filter((user) => !user.disabledAt)
+        .filter((user) => !left.has(user.id))
         .filter((user) => !needle || user.name.toLowerCase().includes(needle))
         .map((user) => ({ id: user.id, name: user.name }));
     };

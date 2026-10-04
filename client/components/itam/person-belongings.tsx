@@ -351,10 +351,7 @@ export function PersonBelongings({
               </span>
               {item.installed.map((part) => (
                 <span key={part.id} className='flex items-center gap-1.5'>
-                  {/* The band is the page's background; a tag wearing the
-                      muted fill would sink into it, so here it wears the
-                      card's. */}
-                  <AssetTypeBadge value='component' className='bg-card' />
+                  <AssetTypeBadge value='component' />
                   <RecordLink to={`/components/${part.stockItemId}`}>
                     {part.name}
                   </RecordLink>
