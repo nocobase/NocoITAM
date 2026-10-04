@@ -1,8 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { defineSeed, type SeedDefinition } from '@nocobase/db';
+import {
+  defineSeed,
+  type SeedContext,
+  type SeedDefinition,
+} from '@nocobase/db';
 
 // Common manufacturers and models so a fresh installation can register
 // assets without typing the catalogue first. Each record is written only when
@@ -17,33 +21,30 @@ import { defineSeed, type SeedDefinition } from '@nocobase/db';
 // live in `assets/models/` next to this seed; `CREDITS.md` there lists the
 // photos' licenses, which `imageCredit` repeats on the model page.
 
-/** Same resolution as the category seed: env, then config, then en-US. */
-function resolveDefaultLocale(): string {
-  const fromEnvironment = process.env.APP_DEFAULT_LOCALE?.trim();
-  if (fromEnvironment) return fromEnvironment;
-  const root = process.env.APP_CONFIG_FILE
-    ? path.resolve(process.env.APP_CONFIG_FILE)
-    : ['config.yml', 'config.yaml', 'config.json']
-        .map((name) => path.resolve(process.cwd(), name))
-        .find((candidate) => existsSync(candidate));
-  if (!root || !existsSync(root)) return 'en-US';
-  const text = readFileSync(root, 'utf8');
-  if (root.endsWith('.json')) {
-    try {
-      const parsed = JSON.parse(text) as { i18n?: { defaultLocale?: string } };
-      return parsed.i18n?.defaultLocale ?? 'en-US';
-    } catch {
-      return 'en-US';
-    }
-  }
-  const block = /^i18n:\s*\n((?:[ \t]+.*\n?)*)/m.exec(text);
-  const line = block
-    ? /^[ \t]+defaultLocale:[ \t]*["']?([A-Za-z-]+)/m.exec(block[1] ?? '')
-    : undefined;
-  return line?.[1] ?? 'en-US';
+/**
+ * The language this deployment writes installation data in.
+ *
+ * `context.config` is the application's own runtime configuration — the same
+ * reader the server resolves `i18n.defaultLocale` through — so this answer
+ * holds wherever the host starts the process from. The seeds used to look for
+ * `config.yml` themselves, relative to `process.cwd()`, which matched the
+ * deployment only when the working directory happened to be the deployment
+ * root. `pnpm dev` always did and a Hub deployment never did, so every seeded
+ * name came out in English there while looking correct in development, and the
+ * fallback was a valid locale rather than an error, so nothing said so.
+ *
+ * `APP_DEFAULT_LOCALE` remains the fallback for a runner given no application
+ * configuration, such as a standalone seeder in a test.
+ */
+function resolveLocale(context: SeedContext): string {
+  const dotted = context.config.get<string>('i18n.defaultLocale')?.trim();
+  if (dotted) return dotted;
+  const section = context.config.get<{ defaultLocale?: string }>('i18n');
+  const nested = section?.defaultLocale?.trim();
+  if (nested) return nested;
+  return process.env.APP_DEFAULT_LOCALE?.trim() || 'en-US';
 }
 
-const LOCALE = resolveDefaultLocale();
 
 interface ManufacturerSeed {
   readonly id: string;
@@ -333,13 +334,18 @@ const SPECIFICATIONS: Readonly<
   },
 };
 
-const localizedSpecification = (model: ModelSeed): string | null =>
-  SPECIFICATIONS[LOCALE]?.[model.id] ?? model.specification ?? null;
+const localizedSpecification = (
+  model: ModelSeed,
+  locale: string,
+): string | null =>
+  SPECIFICATIONS[locale]?.[model.id] ?? model.specification ?? null;
 
 const seed: SeedDefinition = defineSeed({
   name: '202609150001_seed_itam_manufacturers_models',
 
-  async run({ query }) {
+  async run(context) {
+    const { query } = context;
+    const locale = resolveLocale(context);
     const now = new Date();
     // Seed id → the id to reference (an existing manufacturer of that name
     // keeps its own id).
@@ -452,7 +458,7 @@ const seed: SeedDefinition = defineSeed({
           manufacturerId:
             manufacturerIds.get(model.manufacturerId) ?? model.manufacturerId,
           code: model.code ?? null,
-          specification: localizedSpecification(model),
+          specification: localizedSpecification(model, locale),
           imageFileId: await pictureFile(model.image),
           imageCredit: model.imageCredit ?? null,
           warrantyMonths: model.warrantyMonths ?? null,
