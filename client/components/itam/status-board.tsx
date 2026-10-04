@@ -135,98 +135,103 @@ export function createStatusBoard(
     return (
       <section
         aria-label={statusLabel}
-        className='flex w-[17rem] shrink-0 flex-col gap-2 rounded-xl bg-muted/40 p-2'
+        // A tint of the foreground rather than `bg-muted`: the page itself is
+        // grey, and muted is the same grey, so the column vanished.
+        className='flex w-[16rem] shrink-0 flex-col rounded-xl bg-foreground/[0.04]'
       >
-        <header className='flex h-7 items-center gap-2 px-1'>
-          {statusDefinition ? (
-            <FieldValue field={statusDefinition} value={status} />
-          ) : (
-            <span className='text-sm font-medium'>{statusLabel}</span>
-          )}
+        {/* The heading is the status's name, not its coloured tag: a row of
+            differently coloured tags read as noise, and the order of the
+            columns already says where each one stands. */}
+        <header className='flex h-10 shrink-0 items-center gap-2 px-3'>
+          <span className='truncate text-sm font-medium'>{statusLabel}</span>
           <span className='text-xs text-muted-foreground tabular-nums'>
             {list.data ? total : ''}
           </span>
         </header>
-        {list.isLoading ? (
-          <Skeleton className='h-24 w-full rounded-lg' />
-        ) : rows.length === 0 ? (
-          <p className='rounded-lg border border-dashed border-border py-6 text-center text-xs text-muted-foreground'>
-            {t('common.empty')}
-          </p>
-        ) : (
-          <ul className='flex flex-col gap-2'>
-            {rows.map((row) => {
-              const meta = config.card.meta && render(config.card.meta, row);
-              const lines = (config.card.lines ?? [])
-                .map((part) => render(part, row))
-                .filter((node) => !blank(node));
-              const footer = (config.card.footer ?? [])
-                .map((part) => render(part, row))
-                .filter((node) => !blank(node));
-              return (
-                <li key={String(row.id)}>
-                  <button
-                    type='button'
-                    className='w-full rounded-lg border border-border bg-card p-3 text-left shadow-xs transition hover:border-foreground/20 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
-                    onClick={() => void navigate(`/${config.route}/${row.id}`)}
-                  >
-                    <div className='flex items-baseline justify-between gap-2'>
-                      <span className='min-w-0 truncate text-sm font-medium'>
-                        {text(row[config.nameField])}
-                      </span>
-                      {meta ? (
-                        <span className='shrink-0 text-sm font-medium tabular-nums'>
-                          {meta}
+        <div className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2'>
+          {list.isLoading ? (
+            <Skeleton className='h-24 w-full rounded-lg' />
+          ) : rows.length === 0 ? (
+            <p className='py-4 text-center text-xs text-muted-foreground'>
+              {t('common.empty')}
+            </p>
+          ) : (
+            <ul className='flex flex-col gap-2'>
+              {rows.map((row) => {
+                const meta = config.card.meta && render(config.card.meta, row);
+                const lines = (config.card.lines ?? [])
+                  .map((part) => render(part, row))
+                  .filter((node) => !blank(node));
+                const footer = (config.card.footer ?? [])
+                  .map((part) => render(part, row))
+                  .filter((node) => !blank(node));
+                return (
+                  <li key={String(row.id)}>
+                    <button
+                      type='button'
+                      className='w-full rounded-lg border border-border/60 bg-card p-3 text-left shadow-xs transition hover:border-foreground/20 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                      onClick={() =>
+                        void navigate(`/${config.route}/${row.id}`)
+                      }
+                    >
+                      <div className='flex items-baseline justify-between gap-2'>
+                        <span className='min-w-0 truncate text-sm font-medium'>
+                          {text(row[config.nameField])}
                         </span>
-                      ) : null}
-                    </div>
-                    {lines.length > 0 ? (
-                      <div className='mt-1 space-y-0.5 text-sm'>
-                        {lines.map((line, index) => (
-                          <p
-                            // Lines are positional: the config's order.
-                            // eslint-disable-next-line @eslint-react/no-array-index-key -- see above
-                            key={index}
-                            className={
-                              index === 0
-                                ? 'truncate'
-                                : 'truncate text-muted-foreground'
-                            }
-                          >
-                            {line}
-                          </p>
-                        ))}
+                        {meta ? (
+                          <span className='shrink-0 text-sm text-muted-foreground tabular-nums'>
+                            {meta}
+                          </span>
+                        ) : null}
                       </div>
-                    ) : null}
-                    {footer.length > 0 ? (
-                      <p className='mt-2 flex min-w-0 items-center gap-1.5 truncate text-xs text-muted-foreground'>
-                        {footer.map((part, index) => (
-                          // eslint-disable-next-line @eslint-react/no-array-index-key -- positional, as above
-                          <Fragment key={index}>
-                            {index > 0 ? (
-                              <span aria-hidden='true'>·</span>
-                            ) : null}
-                            <span className='truncate'>{part}</span>
-                          </Fragment>
-                        ))}
-                      </p>
-                    ) : null}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {rows.length < total ? (
-          <Button
-            variant='ghost'
-            size='sm'
-            disabled={list.isFetching}
-            onClick={() => setPageSize((current) => current + PAGE)}
-          >
-            {t('common.loadMore')}
-          </Button>
-        ) : null}
+                      {lines.length > 0 ? (
+                        <div className='mt-1 space-y-0.5 text-sm'>
+                          {lines.map((line, index) => (
+                            <p
+                              // Lines are positional: the config's order.
+                              // eslint-disable-next-line @eslint-react/no-array-index-key -- see above
+                              key={index}
+                              className={
+                                index === 0
+                                  ? 'truncate'
+                                  : 'truncate text-muted-foreground'
+                              }
+                            >
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      ) : null}
+                      {footer.length > 0 ? (
+                        <p className='mt-2 flex min-w-0 items-center gap-1.5 truncate text-xs text-muted-foreground'>
+                          {footer.map((part, index) => (
+                            // eslint-disable-next-line @eslint-react/no-array-index-key -- positional, as above
+                            <Fragment key={index}>
+                              {index > 0 ? (
+                                <span aria-hidden='true'>·</span>
+                              ) : null}
+                              <span className='truncate'>{part}</span>
+                            </Fragment>
+                          ))}
+                        </p>
+                      ) : null}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {rows.length < total ? (
+            <Button
+              variant='ghost'
+              size='sm'
+              disabled={list.isFetching}
+              onClick={() => setPageSize((current) => current + PAGE)}
+            >
+              {t('common.loadMore')}
+            </Button>
+          ) : null}
+        </div>
       </section>
     );
   }
@@ -238,8 +243,12 @@ export function createStatusBoard(
       ? config.statuses.filter((status) => status === chosen)
       : config.statuses;
     return (
-      // Columns are as tall as their cards, not the page.
-      <div className='-mx-1 flex items-start gap-3 overflow-x-auto px-1 pb-2'>
+      // The board takes the rest of the page's height (`Page fill`), so the
+      // columns reach the bottom, each scrolls its own cards, and the
+      // sideways scrollbar sits at the foot of the page instead of under
+      // the shortest column. Below 20rem it stops shrinking and the page
+      // scrolls instead.
+      <div className='-mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
         {statuses.map((status) => (
           <StatusColumn key={status} status={status} filter={filter} q={q} />
         ))}

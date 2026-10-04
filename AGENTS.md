@@ -1334,8 +1334,13 @@ per status in the order work moves, each paging on its own with the
 server's total in its header, cards that open the record. A card has no
 labels: its heading and a right-aligned figure (`meta`), a line or two of
 what it is about (`lines`), and who / when in small muted text (`footer`),
-each a field key or a function of the record; columns are as tall as
-their cards. `?layout=table`
+each a field key or a function of the record. The board takes the rest
+of the page's height (`Page fill`): columns reach the bottom and scroll
+their own cards, so the sideways scrollbar sits at the foot of the page
+rather than under the shortest column (2026-10-04; they used to be as tall
+as their cards). A column is a tint of the foreground, because `bg-muted`
+is the page's own grey, and its heading is the status's name and count
+without the coloured tag. `?layout=table`
 is the list. A named view (`filter.view`: 待我审批, 到货逾期) decides the
 statuses itself, so it always reads as the list. Status changes stay the
 record's own actions — cards are not dragged, because each step asks for

@@ -313,7 +313,7 @@ function DomainList({
   const Views = domain.Views;
 
   return (
-    <Page>
+    <Page fill={layout === 'board'}>
       <PageHeader
         title={t(`${domain.i18n}.title`)}
         total={list.data?.total}
