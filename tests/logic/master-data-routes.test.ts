@@ -472,6 +472,61 @@ describe('master data routes', () => {
     ).toBe(403);
   });
 
+  /**
+   * The recovery plan a leaver's page reads. What is to be done with each
+   * item is unit tested in `leaver-recovery-prepared.test.ts`; this is the
+   * endpoint around it — who may read it, and that it answers for somebody
+   * holding nothing rather than making the page guess.
+   */
+  it('answers what is still to be recovered from a person', async () => {
+    const manager = { user: 'mia', role: 'manager' } as const;
+    const department = (await (
+      await app.request('/api/itam/master/departments', {
+        ...json({ name: 'Support' }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+    const person = (await (
+      await app.request('/api/itam/master/people', {
+        ...json({
+          name: 'Nobody',
+          departmentId: department.data.id,
+          leaveDate: '2020-01-01',
+        }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+    const response = await app.request(
+      `/api/itam/master/people/${person.data.id}/recovery`,
+      manager,
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      data: {
+        // A date in the past, so the status follows it.
+        employmentStatus: 'left',
+        leaveDate: '2020-01-01',
+        items: [],
+      },
+    });
+    expect(
+      (await app.request(`/api/itam/master/people/${person.data.id}/recovery`))
+        .status,
+    ).toBe(401);
+    expect(
+      (
+        await app.request(
+          `/api/itam/master/people/${person.data.id}/recovery`,
+          { user: 'eve', role: 'employee' },
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (await app.request('/api/itam/master/people/999999/recovery', manager))
+        .status,
+    ).toBe(404);
+  });
+
   it("reports a record's footprint and ancestors", async () => {
     const manager = { user: 'mia', role: 'manager' } as const;
     const create = async (collection: string, body: Record<string, unknown>) =>

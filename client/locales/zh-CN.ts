@@ -892,7 +892,7 @@ const zhCN: AppResource = {
     empty: '暂无部门',
   },
   people: {
-    followsLeaveDate: '由离职日期决定：填写离职日期即为已离职',
+    followsLeaveDate: '由离职日期决定：日期到了即为已离职，日期未到仍是在职',
     title: '人员',
     object: '人员',
     new: '创建人员',
@@ -910,6 +910,28 @@ const zhCN: AppResource = {
       '该人员名下仍有 {{summary}}，归还或释放前保持分配状态，并在工作台提醒',
     markLeftClean: '该人员名下没有持有物，离职后不再可分配',
     noHoldings: '暂无持有',
+    recovery: {
+      title: '待回收',
+      since: '{{name}} 已于 {{date}} 离职，以下是他名下还未归还的。',
+      left: '{{name}} 已离职，以下是他名下还未归还的。',
+      mine: '其中 {{count}} 项由你负责。',
+      you: '你',
+      owner: '负责人：{{name}}',
+      accountsStay:
+        '回收席位只释放授权，不会让账号失效：还需在软件后台停用账号或更换共用密钥。',
+      groups: {
+        device: '设备',
+        stock: '配件、耗材与组件',
+        seat: '授权席位',
+      },
+      handling: {
+        return: '归还',
+        takeBack: '退回库存',
+        reclaim: '回收席位',
+        wait: '在维修商处 —— 维修单完成后再收',
+        confirmConsumed: '已领用 —— 确认是否还有未使用的可退回',
+      },
+    },
     stockHeld: '配件',
     seats: '授权席位',
   },
@@ -1984,6 +2006,7 @@ const zhCN: AppResource = {
     reportInsight: 'AI 报表解读',
     parseDocument: '解析单据',
     groupDifferences: '分析盘点差异',
+    leaverRecovery: '离职回收',
     // Titles of the steps the chat lists, by tool name.
     tools: {
       itam_business_context: '读取业务背景',
@@ -2077,6 +2100,8 @@ const zhCN: AppResource = {
         '请读取我附上或粘贴的送货单 / 报价单 / 发票：逐行匹配型号或软件产品，把明细加入当前采购单草稿（数量、单价按单据填写）。对不上的行列出来问我，不要猜。',
       reportInsight:
         '请解读屏幕上的这张报表：三到五句话，先说最重要的数字和变化，指出异常，最后给一条建议。',
+      leaverRecovery:
+        '帮我回收 {{name}} 名下还未归还的东西：按这个页面上的清单逐项说明该怎么处理、为什么，能回收的直接提出来，只能由人处理的（他还负责的记录要移交、共用账号和密钥、在修的设备）单独列出。',
       groupDifferences:
         '请分析这次盘点的未处理差异：按最可能的原因分组（工位调整、使用人记录错误、在修、离职未还、真丢失、账外设备等），列出每组的设备，并给出处理建议。',
       planToday:

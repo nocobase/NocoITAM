@@ -379,9 +379,10 @@ export function createDemoService(dependencies: {
         managerUserId ??
         (await dependencies.otherUser?.(actorId)) ??
         'demo-approver';
-      // The route schemas add these defaults; the service expects them present.
+      // The route schemas add these defaults; the service expects them
+      // present. 在职状态 is not among them — the service derives it from the
+      // leave date, and stating it is refused.
       const MASTER_DEFAULTS: Readonly<Record<string, Row>> = {
-        people: { employmentStatus: 'active' },
         categories: {
           requiresSerial: false,
           assignableToPerson: true,

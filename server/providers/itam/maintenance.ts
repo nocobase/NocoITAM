@@ -106,6 +106,17 @@ export interface RecoveryItem {
   readonly ownerId: string | null;
   /** The account a reclaimed seat leaves behind, when it carries one. */
   readonly account?: string;
+  /**
+   * What the handling is addressed to, which is not always the item: a stock
+   * holding is taken back on its stock item and a seat is reclaimed on its
+   * entitlement, so a page offering the action needs that id rather than the
+   * row's own.
+   */
+  readonly targetId: string;
+  /** How many are held, for a stock holding. */
+  readonly quantity?: number;
+  /** A device's status, which is what decided its handling. */
+  readonly status?: string;
 }
 
 export function deviceHandling(status: string): RecoveryHandling {
@@ -132,6 +143,9 @@ export function recoveryPlan(holdings: {
       label: `${asText(row.deviceNo) ?? ''} / ${asText(row.name) ?? ''}`.trim(),
       handling: deviceHandling(asText(row.status) ?? ''),
       ownerId: asText(row.ownerId) ?? null,
+      // A device is returned on itself.
+      targetId: String(row.id),
+      status: asText(row.status) ?? '',
     })),
     ...holdings.stock.map((row) => ({
       kind: 'stock' as const,
@@ -139,6 +153,8 @@ export function recoveryPlan(holdings: {
       label: asText(row.name) ?? '',
       handling: stockHandling(asText(row.kind) ?? ''),
       ownerId: asText(row.ownerId) ?? null,
+      targetId: asText(row.stockItemId) ?? '',
+      quantity: Number(row.quantity) || 0,
     })),
     ...holdings.entitlementSeats.map((row) => ({
       kind: 'seat' as const,
@@ -147,6 +163,7 @@ export function recoveryPlan(holdings: {
       handling: 'reclaim' as const,
       ownerId: asText(row.ownerId) ?? null,
       ...(asText(row.account) ? { account: asText(row.account) } : {}),
+      targetId: asText(row.entitlementId) ?? '',
     })),
   ];
 }

@@ -73,4 +73,35 @@ describe('what is to be done with what a leaver holds', () => {
     // preparation has to carry it for the note the skill asks for.
     expect(seat?.account).toBe('zhang.san@example.com');
   });
+
+  /**
+   * The page offers each handling as the operation it already is, and two of
+   * the three are addressed to something other than the item: a holding is
+   * taken back on its stock item, a seat is reclaimed on its entitlement. The
+   * row's own id would be refused by both endpoints, so the plan carries the
+   * target.
+   */
+  it('says what each handling is addressed to', () => {
+    const [device, stock, seat] = recoveryPlan({
+      devices: [
+        { id: 'd1', deviceNo: 'DE-1', name: 'Laptop', status: 'inUse' },
+      ],
+      stock: [
+        {
+          id: 'h1',
+          stockItemId: 'si1',
+          quantity: 2,
+          name: 'Dock',
+          kind: 'accessory',
+        },
+      ],
+      entitlementSeats: [{ id: 's1', entitlementId: 'e1', name: 'Figma' }],
+    });
+    // A device is returned on itself.
+    expect(device?.targetId).toBe('d1');
+    expect(device?.status).toBe('inUse');
+    expect(stock?.targetId).toBe('si1');
+    expect(stock?.quantity).toBe(2);
+    expect(seat?.targetId).toBe('e1');
+  });
 });

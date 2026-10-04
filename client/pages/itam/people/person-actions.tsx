@@ -35,9 +35,11 @@ export function PersonActions({
         })
       ).data,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['itam', masterDataPath('people')],
-      });
+      // The whole of `['itam']`, as the operation dialogs do: marking
+      // somebody left moves what is read elsewhere — their 待回收, the
+      // workbench's 离职资产回收 card and 待我处理's queue — and this page is
+      // often reached in the record drawer over one of them.
+      await queryClient.invalidateQueries({ queryKey: ['itam'] });
       setOpen(false);
     },
   });

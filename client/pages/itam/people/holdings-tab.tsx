@@ -4,19 +4,31 @@ import type { ReactElement } from 'react';
 import { useParams } from 'react-router';
 
 import { DeviceListEmbed } from '@/components/itam/device-list-embed';
+import { LeaverRecovery } from '@/components/itam/leaver-recovery';
 import { Badge } from '@/components/ui/badge';
-import { masterDataPath, useApi } from '@/lib/itam/api';
+import { masterDataPath, useApi, type ItamRecord } from '@/lib/itam/api';
+import { text } from '@/lib/itam/format';
 import {
   EntitlementSeatsList,
   StockHoldingsList,
 } from '@/components/itam/holdings-lists';
 
-/** Everything a person holds, grouped: devices, accessories, software entitlements. */
+/**
+ * Everything a person holds, grouped: devices, accessories, software
+ * entitlements — with 待回收 above them once they have left, which is where
+ * the workbench's 离职资产回收 to-do lands and where the handing back is done.
+ */
 export default function PersonHoldingsTab(): ReactElement {
   const { t } = useTranslation();
   const { id = '' } = useParams();
   const api = useApi();
   const path = masterDataPath('people');
+  const person = useQuery({
+    queryKey: ['itam', path, id],
+    enabled: Boolean(id),
+    queryFn: async () =>
+      (await api.request<{ data: ItamRecord }>({ path: `${path}/${id}` })).data,
+  });
   // The same stats the detail page loads for its tab count; each section
   // heading shows its share.
   const stats = useQuery({
@@ -41,6 +53,7 @@ export default function PersonHoldingsTab(): ReactElement {
   );
   return (
     <div className='space-y-6'>
+      <LeaverRecovery personId={id} personName={text(person.data?.name)} />
       <section className='space-y-2'>
         {heading(t('tabs.devices'), 'devices')}
         <DeviceListEmbed filter={{ assigneeType: 'person', assigneeId: id }} />

@@ -604,10 +604,24 @@ export function createMasterDataService(
       if (collection === 'categories' && parent)
         input = { ...input, appliesTo: parent.appliesTo };
       await assertModelCategory(collection, input);
+      // 在职状态 follows the leave date on a create as well as an update: a
+      // person entered with a date already passed — a leaver recorded after
+      // the fact, or an import — was stored `active` and stayed so until the
+      // nightly job came round, which is long enough for the register to say
+      // somebody still works here when the file said otherwise.
+      if (collection === 'people' && 'employmentStatus' in input) {
+        throw new ValidationError(
+          'Employment status follows the leave date and cannot be set directly',
+          'employmentStatus',
+        );
+      }
       const id = crypto.randomUUID();
       const now = new Date();
       const values: Record<string, unknown> = {
         ...input,
+        ...(collection === 'people'
+          ? { employmentStatus: employmentFor(input.leaveDate, today()) }
+          : {}),
         id,
         createdAt: now,
         updatedAt: now,

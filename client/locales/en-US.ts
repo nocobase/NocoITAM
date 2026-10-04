@@ -918,6 +918,28 @@ const messages = {
     markLeftClean:
       'This person holds nothing. They will no longer be assignable.',
     noHoldings: 'Nothing held',
+    recovery: {
+      title: 'To recover',
+      since: '{{name}} left on {{date}}, and still holds these.',
+      left: '{{name}} has left, and still holds these.',
+      mine: '{{count}} of them are yours to settle.',
+      you: 'you',
+      owner: 'owner: {{name}}',
+      accountsStay:
+        'Reclaiming a seat frees the licence, not the login: disable the account or change the shared key in the vendor console.',
+      groups: {
+        device: 'Devices',
+        stock: 'Accessories, consumables and components',
+        seat: 'Entitlement seats',
+      },
+      handling: {
+        return: 'Return',
+        takeBack: 'Back into stock',
+        reclaim: 'Reclaim seat',
+        wait: 'At the repair shop — settle it once the repair is finished',
+        confirmConsumed: 'Issued — check whether any is left to take back',
+      },
+    },
     stockHeld: 'Accessories',
     seats: 'Entitlement seats',
   },
@@ -2096,6 +2118,7 @@ const messages = {
     reportInsight: 'Interpret this report',
     parseDocument: 'Parse a document',
     groupDifferences: 'Explain the differences',
+    leaverRecovery: 'Offboarding recovery',
     // Titles of the steps the chat lists, by tool name.
     tools: {
       itam_business_context: 'Read business context',
@@ -2191,6 +2214,8 @@ const messages = {
         'Read the delivery note / quote / invoice I attach or paste: match each line to a model or software product and add the lines to this purchase order draft (quantity and unit price as the document states). List the lines you could not match and ask me; do not guess.',
       reportInsight:
         'Interpret the report on screen: three to five sentences, the most important number and change first, any anomaly, then one recommendation.',
+      leaverRecovery:
+        'Help me recover what {{name}} still holds: go through the list on this page item by item, say how each one is to be settled and why, propose the actions you can take, and list separately what only a person can do (handovers of records they own, shared accounts and keys, devices in repair).',
       groupDifferences:
         'Analyse the open differences of this audit: group them by their most likely cause (moved desk, wrong holder record, in repair, leaver not returned, truly lost, unregistered device…), list the devices in each group, and say how to handle each.',
       planToday:
