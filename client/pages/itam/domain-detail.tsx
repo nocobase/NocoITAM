@@ -419,7 +419,13 @@ export function DomainDetailPage({
                           renderInput={domain.fieldEditor?.(field, data)}
                           recordId={id}
                           display={
-                            <span className='inline-flex flex-wrap items-center gap-x-3 gap-y-1'>
+                            // `min-w-0` on the items, or a value with no
+                            // spaces in it — an e-mail, a URL — keeps this
+                            // box at its own width and spills out of the
+                            // card: a flex item's `min-width: auto` is its
+                            // content, and the breaking inside never gets a
+                            // narrower box to break into.
+                            <span className='inline-flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 *:min-w-0'>
                               {domain.fieldDisplay?.(field, data) ?? (
                                 <FieldValue
                                   field={field}
