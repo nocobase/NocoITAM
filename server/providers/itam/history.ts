@@ -171,8 +171,21 @@ export interface HistoryService {
 export const historyServiceToken: ServiceToken<HistoryService> =
   createServiceToken<HistoryService>('itam/history-service');
 
+/**
+ * A value as the query layer decoded it, unwrapped once more only when it is
+ * still the JSON text a row written before template beta.43 stored (the
+ * writer encoded it itself, so the column held the JSON of the JSON). Such
+ * text is a quoted string, an object, an array or a literal. A string that
+ * merely *looks* like JSON is a value in its own right: a user id made of
+ * digits parsed as one came back a number, which the timeline then could
+ * not look up and showed as the bare id.
+ */
 const parseJson = (value: unknown): unknown =>
-  typeof value === 'string' ? safeParse(value) : value;
+  typeof value === 'string' && LEGACY_JSON.test(value)
+    ? safeParse(value)
+    : value;
+
+const LEGACY_JSON = /^(?:["{[]|true$|false$|null$)/;
 
 function safeParse(value: string): unknown {
   try {

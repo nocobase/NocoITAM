@@ -51,6 +51,24 @@ describe('what put a line on the timeline', () => {
     expect(item?.actorId).toBe('user-1');
   });
 
+  it('reads a value back as the text it was, digits included', async () => {
+    // A user id the users plugin issues is all digits; parsed as JSON it
+    // came back a number, and the timeline showed the id instead of a name.
+    await history().log({
+      ...subject,
+      action: 'update',
+      field: 'ownerId',
+      oldValue: 'e000c207-1a27-459c-9b84-c15a8e1b23bc',
+      newValue: '390266703839233',
+      actorId: 'user-1',
+    });
+    const [item] = (await history().timeline(subject)).data;
+    expect(item?.changes[0]?.oldValue).toBe(
+      'e000c207-1a27-459c-9b84-c15a8e1b23bc',
+    );
+    expect(item?.changes[0]?.newValue).toBe('390266703839233');
+  });
+
   it('records it on a field change too', async () => {
     await history().log({
       ...subject,
