@@ -213,6 +213,10 @@ export function PersonBelongings({
     handedOver.length === 0
   )
     return <EmptyState title={t('people.noHoldings')} />;
+  // Of what is still to do, how much is this reader's. Settled rows are
+  // deliberately out: the sentence promises a size of job, and counting a
+  // returned device because somebody later made the reader its owner would
+  // make that number go up after the work went down.
   const mine = items.filter((item) => item.ownerId === me).length;
   const allowed: Readonly<Record<RecoveryItem['kind'], boolean>> = {
     device: Boolean(devicePermissions.return),
@@ -271,9 +275,11 @@ export function PersonBelongings({
         <p className='text-sm text-muted-foreground'>
           {/* The sentence names nobody: the page's own title does, and in
               the queue the heading above it does. */}
-          {/* The date is on the record above; what this line is for is
-              saying that the table below is the whole of what was in their
-              name when they left, settled rows included. */}
+          {/* The date is on the record above, and so is the status, so
+              the line does not open by saying they left — 离职时 says it
+              once. What it is for is saying that the table below is the
+              whole of what was in their name then, settled rows
+              included. */}
           {t(`people.recovery.${mine > 0 ? 'leftMine' : 'left'}`, {
             count: mine,
           })}
@@ -326,7 +332,14 @@ export function PersonBelongings({
             header: t('fields.owner'),
             className: 'w-px whitespace-nowrap',
             render: (item) =>
-              item.ownerId ? (
+              // Nobody to chase about a settled row. This column is here to
+              // say who to tell about getting the thing back, so once the
+              // row is done it has no answer — and leaving it live made it
+              // drift: a returned device assigned to somebody else changes
+              // the owner on a row about a person who left weeks ago. The
+              // reader is not meant to watch that; the ✓ beside it is the
+              // whole of what the row still has to say.
+              item.done ? null : item.ownerId ? (
                 <span
                   className={
                     item.ownerId === me
