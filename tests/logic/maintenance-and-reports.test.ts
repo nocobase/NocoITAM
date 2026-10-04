@@ -166,9 +166,11 @@ describe('maintenance, reminders, workbench and reports', () => {
     // Someone already marked is not marked again; the date still ahead is
     // acted on once it comes — one person, not two.
     expect(
-      await app.container
-        .resolve(masterDataServiceToken)
-        .markDueLeavers('2999-12-31'),
+      (
+        await app.container
+          .resolve(masterDataServiceToken)
+          .markDueLeavers('2999-12-31')
+      ).left,
     ).toBe(1);
     const reminders = run.reminders as {
       kind: string;
@@ -341,6 +343,46 @@ describe('maintenance, reminders, workbench and reports', () => {
     expect(reminders.map((row) => row.kind)).not.toContain(
       'leftPersonHoldings',
     );
+  });
+
+  it('derives 在职状态 from the leave date and refuses it as an input', async () => {
+    const hr = await create('master/departments', { name: 'HR' });
+    const person = await create('master/people', {
+      name: 'Zhou Yi',
+      departmentId: hr.id,
+    });
+    const statusOf = async () =>
+      (
+        await data<{ employmentStatus: string }>(
+          await get(`master/people/${person.id}`),
+        )
+      ).employmentStatus;
+    expect(await statusOf()).toBe('active');
+
+    // A date that has come settles it on the spot, not at the next run.
+    await app.request(`/api/itam/master/people/${person.id}`, {
+      ...json({ leaveDate: '2020-01-31' }),
+      method: 'PATCH',
+      ...manager,
+    });
+    expect(await statusOf()).toBe('left');
+
+    // Extending the notice period puts them back, without anything else to undo.
+    await app.request(`/api/itam/master/people/${person.id}`, {
+      ...json({ leaveDate: '2099-01-31' }),
+      method: 'PATCH',
+      ...manager,
+    });
+    expect(await statusOf()).toBe('active');
+
+    // Setting it directly is refused rather than ignored, so a caller is told
+    // the field is not theirs instead of watching the value not stick.
+    const direct = await app.request(
+      `/api/itam/master/people/${person.id}`,
+      { ...json({ employmentStatus: 'left' }), method: 'PATCH', ...manager },
+    );
+    expect(direct.status).toBe(400);
+    expect(await statusOf()).toBe('active');
   });
 
   it('prepares a leaver recovery once and hands it to the owner', async () => {

@@ -48,6 +48,30 @@ export interface PersonHoldings {
   readonly entitlementSeats: readonly Row[];
 }
 
+/**
+ * Whether somebody has left is the leave date and nothing else.
+ *
+ * It used to be a field of its own, which meant three writers — the form's
+ * select, 标记离职, and the nightly job — and any two of them could disagree:
+ * a status set back to 在职 with the date still in the past was reversed again
+ * that night, and one set to 已离职 with no date gave a person the recovery
+ * list without the leaving ever appearing on their timeline.
+ *
+ * So the date is the only input and the status follows it, derived here on
+ * every write and by the nightly job for a date that merely came round. The
+ * hire date deliberately takes no part: somebody is active from the moment
+ * they exist in the register, because a device is reserved and a kit prepared
+ * before the first day, and an assignment refuses a person who has left
+ * (`devices.ts`, `entitlements.ts`).
+ */
+export function employmentFor(
+  leaveDate: unknown,
+  day: string,
+): 'active' | 'left' {
+  const date = typeof leaveDate === 'string' ? leaveDate.trim() : '';
+  return date !== '' && date <= day ? 'left' : 'active';
+}
+
 /** Related collections a list shows counts of, per master-data collection. */
 const LIST_COUNTS: Readonly<
   Record<
@@ -201,7 +225,10 @@ export interface MasterDataService {
    * `day`) as left, keeping that date; the daily maintenance calls it.
    * Returns how many were marked.
    */
-  markDueLeavers(day: string): Promise<number>;
+  /** Reconciles 在职状态 with the leave dates, both ways. */
+  markDueLeavers(
+    day: string,
+  ): Promise<{ readonly left: number; readonly reinstated: number }>;
   /** Everything a person currently holds: devices, stock, entitlement seats. */
   personHoldings(id: string): Promise<PersonHoldings>;
   delete(
@@ -672,8 +699,22 @@ export function createMasterDataService(
         }
       }
 
+      // 在职状态 follows the leave date; see `employmentFor`. An attempt to
+      // set it directly is refused rather than ignored, so a caller is told
+      // the field is not theirs instead of watching the value not stick.
+      if (collection === 'people' && 'employmentStatus' in input) {
+        throw new ValidationError(
+          'Employment status follows the leave date and cannot be set directly',
+          'employmentStatus',
+        );
+      }
       const values: Record<string, unknown> = {
         ...input,
+        ...(collection === 'people' && 'leaveDate' in input
+          ? {
+              employmentStatus: employmentFor(input.leaveDate, today()),
+            }
+          : {}),
         updatedAt: new Date(),
       };
       delete values.id;
@@ -903,7 +944,37 @@ export function createMasterDataService(
           );
         });
       }
-      return due.length;
+      // The other direction, which was missing: a leave date cleared or moved
+      // out again leaves somebody marked as left for ever, and extending a
+      // notice period is not rare. The status is the date's, so the job
+      // reconciles both ways.
+      const back = await database
+        .query()
+        .selectFrom('people')
+        .selectAll()
+        .where('employmentStatus', '=', 'left')
+        .execute<Row>();
+      const reinstated = back.filter(
+        (person) => employmentFor(person.leaveDate, day) === 'active',
+      );
+      for (const person of reinstated) {
+        const id = String(person.id);
+        await database.transaction(async (connection) => {
+          await connection.query
+            .updateTable('people')
+            .set({ employmentStatus: 'active', updatedAt: new Date() })
+            .where('id', '=', id)
+            .execute();
+          await history.logChanges(
+            { subjectType: 'people', subjectId: id },
+            person,
+            { employmentStatus: 'active' },
+            { sourceType: 'scheduler', origin: 'schedule' },
+            connection,
+          );
+        });
+      }
+      return { left: due.length, reinstated: reinstated.length };
     },
 
     async move(collection, id, target, actorId, conditions) {
