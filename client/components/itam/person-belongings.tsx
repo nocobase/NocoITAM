@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Undo2 } from 'lucide-react';
+import { CornerDownRight, Undo2 } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
@@ -341,8 +341,13 @@ export function PersonBelongings({
         // laptop's.
         subRow={(item) =>
           item.installed && item.installed.length > 0 ? (
-            <span className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground'>
-              <span>{t('people.recovery.installed')}</span>
+            <span className='flex flex-wrap items-center gap-x-2 gap-y-1 pl-4 text-xs text-muted-foreground'>
+              {/* Indented behind a corner, so the band reads as hanging off
+                  the row above rather than as a row of its own. */}
+              <span className='flex items-center gap-1'>
+                <CornerDownRight className='size-3.5' aria-hidden='true' />
+                {t('people.recovery.installed')}
+              </span>
               {item.installed.map((part) => (
                 <span key={part.id} className='flex items-center gap-1.5'>
                   <AssetTypeBadge value='component' />
