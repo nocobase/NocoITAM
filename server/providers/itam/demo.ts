@@ -119,9 +119,9 @@ const ADMIN_POSITIONS: Readonly<Record<string, string>> = {
 export function demoAccountUsernames(): readonly string[] {
   return [
     ...DEMO_STAFF_ACCOUNTS.map((spec) => spec.username),
-    ...(PERSON_NAMES['en-US'] ?? [])
-      .filter((_, index) => index !== LEAVER_INDEX)
-      .map((entry) => entry.mail.replaceAll('.', '')),
+    ...(PERSON_NAMES['en-US'] ?? []).map((entry) =>
+      entry.mail.replaceAll('.', ''),
+    ),
   ];
 }
 
@@ -255,7 +255,17 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   },
 };
 
-/** The person the demo marks as having left; they get no sign-in. */
+/**
+ * The person the demo marks as having left.
+ *
+ * They are IT, and they sign in like everybody else: leaving is only half a
+ * story while the register has nothing of theirs to hand over. A salesperson
+ * answers for none of its records, so the one who leaves is the IT support
+ * engineer — their devices, their repairs and the orders they raised all
+ * need somebody else's name on them, which is the part of offboarding no
+ * return button settles. Their account stays enabled, which is the point the
+ * assistant makes about seats: this register cannot disable a sign-in.
+ */
 const LEAVER_INDEX = 3;
 
 /** Demo people by locale: display name and the romanised mailbox. */
@@ -266,7 +276,7 @@ const PERSON_NAMES: Readonly<
     { name: 'Li Na', mail: 'li.na', position: 'Frontend Engineer' },
     { name: 'Zhang Wei', mail: 'zhang.wei', position: 'Backend Engineer' },
     { name: 'Wang Fang', mail: 'wang.fang', position: 'Sales Manager' },
-    { name: 'Chen Jie', mail: 'chen.jie', position: 'Sales Representative' },
+    { name: 'Chen Jie', mail: 'chen.jie', position: 'IT Support Engineer' },
     { name: 'Liu Yang', mail: 'liu.yang', position: 'QA Engineer' },
     { name: 'Zhao Min', mail: 'zhao.min', position: 'Presales Consultant' },
   ],
@@ -274,7 +284,7 @@ const PERSON_NAMES: Readonly<
     { name: '李娜', mail: 'li.na', position: '前端工程师' },
     { name: '张伟', mail: 'zhang.wei', position: '后端工程师' },
     { name: '王芳', mail: 'wang.fang', position: '销售经理' },
-    { name: '陈杰', mail: 'chen.jie', position: '销售代表' },
+    { name: '陈杰', mail: 'chen.jie', position: 'IT 支持工程师' },
     { name: '刘洋', mail: 'liu.yang', position: '测试工程师' },
     { name: '赵敏', mail: 'zhao.min', position: '售前顾问' },
   ],
@@ -509,22 +519,25 @@ export function createDemoService(dependencies: {
         PERSON_NAMES[dependencies.locale?.() ?? 'en-US'] ??
         PERSON_NAMES['en-US'];
       const texts = TEXTS[dependencies.locale?.() ?? 'en-US'] ?? TEXTS['en-US'];
-      const departmentsByIndex = [rnd, rnd, sales, sales, rnd, sales];
+      const itDept = await seededIn('departments', 'dept-it');
+      // The leaver is IT support; the rest are the two business teams.
+      const departmentsByIndex = [rnd, rnd, sales, itDept, rnd, sales];
       for (const [index, entry] of personNames.entries()) {
-        // Everyone but the leaver (index 3, who is marked left further down)
-        // signs in, so 我的资产 can be read as each of them. The username is
-        // the romanised mailbox, which does not move with the locale the
+        // Everybody signs in, so 我的资产 can be read as each of them — the
+        // leaver included, because a person who has left still owns the
+        // records that name them and those point at a sign-in. The username
+        // is the romanised mailbox, which does not move with the locale the
         // display names follow.
-        const userId =
-          index === LEAVER_INDEX
-            ? undefined
-            : await account({
-                username: entry.mail.replaceAll('.', ''),
-                name: entry.name,
-                email: `${entry.mail}@northbridge.example`,
-                password: DEMO_EMPLOYEE_PASSWORD,
-                permissionSet: 'itam-employee',
-              });
+        const userId = await account({
+          username: entry.mail.replaceAll('.', ''),
+          name: entry.name,
+          email: `${entry.mail}@northbridge.example`,
+          password: DEMO_EMPLOYEE_PASSWORD,
+          // The leaver is IT: what they answer for is what makes offboarding
+          // more than handing equipment back.
+          permissionSet:
+            index === LEAVER_INDEX ? 'itam-it-support' : 'itam-employee',
+        });
         people.push(
           await md('people', {
             name: entry.name,
@@ -550,7 +563,7 @@ export function createDemoService(dependencies: {
 
       // The two staff sign-ins get a person record of their own, in IT, so
       // the equipment they are issued has somebody to be assigned to.
-      const itDepartment = await seededIn('departments', 'dept-it');
+      const itDepartment = itDept;
       const staffNames =
         STAFF_PEOPLE[dependencies.locale?.() ?? 'en-US'] ??
         STAFF_PEOPLE['en-US'];
@@ -606,6 +619,13 @@ export function createDemoService(dependencies: {
         });
       })();
 
+      // What the leaver answers for. Returning equipment is only half of
+      // offboarding: the records naming them as 负责人 or 申请人 keep naming
+      // them until somebody takes them over, and nothing but a person can do
+      // that. The demo gives them a few so the handover half has something
+      // to show.
+      const leaverUserId = asText(chenJie.userId) ?? actorId;
+
       // Devices: a batch of laptops bought together (same warranty), monitors, and problem records.
       const device = async (input: Row) =>
         track(
@@ -636,6 +656,9 @@ export function createDemoService(dependencies: {
             purchaseDate: daysFromNow(-1060),
             purchasePrice: 15999,
             warrantyEndDate: daysFromNow(20 + index * 2),
+            // The last two are the leaver's to answer for; their holders
+            // keep them, so these are purely a handover.
+            ...(index >= 3 ? { ownerId: leaverUserId } : {}),
             attributes: {
               os: 'macOS 15.6',
               cpu: 'Apple M3',
@@ -648,12 +671,17 @@ export function createDemoService(dependencies: {
           }),
         );
       }
+      // The laptop the leaver holds answers to IT support, not to the
+      // account that generated the demo: a leaver's things belong to more
+      // than one person, which is the whole reason the recovery lists every
+      // item and counts only the reader's own.
       const expiredLaptop = await device({
         modelId: latitude.id,
         serialNo: '7YQ2K73',
         name: 'SG-LT-006',
         departmentId: sales.id,
         vendorId: reseller.id,
+        ownerId: supportUserId ?? actorId,
         purchaseDate: daysFromNow(-1500),
         purchasePrice: 8999,
         warrantyEndDate: daysFromNow(-100),
@@ -1731,6 +1759,9 @@ export function createDemoService(dependencies: {
             faultDescription: texts.repairScreen,
             sentAt: daysFromNow(-1),
             expectedReturnAt: daysFromNow(6),
+            // Raised by the leaver and still out at the shop: finishing it
+            // is the owner's, so it has to change hands.
+            ownerId: leaverUserId,
           },
           context,
           all('repairs', 'create'),
@@ -1748,6 +1779,9 @@ export function createDemoService(dependencies: {
             neededBy: daysFromNow(30),
             vendorId: reseller.id,
             departmentId: rnd.id,
+            // The leaver raised it and never submitted it: a draft nobody
+            // owns is a request that quietly stops existing.
+            requesterId: leaverUserId,
           },
           context,
           all('purchaseOrders', 'create'),

@@ -34,10 +34,18 @@ export interface RecoveryItem {
     | 'entitlement';
 }
 
+/** A record that still names them, which only a person can hand over. */
+export interface OwnedRecord {
+  readonly collection: string;
+  readonly id: string;
+  readonly label: string;
+}
+
 export interface PersonRecovery {
   readonly employmentStatus: string | null;
   readonly leaveDate: string | null;
   readonly items: readonly RecoveryItem[];
+  readonly owned: readonly OwnedRecord[];
 }
 
 /** Which handlings a person carries out here, rather than somewhere else. */

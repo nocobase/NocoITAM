@@ -920,6 +920,8 @@ const zhCN: AppResource = {
       owner: '负责人：{{name}}',
       accountsStay:
         '回收席位只释放授权，不会让账号失效：还需在软件后台停用账号或更换共用密钥。',
+      handover_one: '还负责 {{count}} 条记录，需要移交',
+      handover_other: '还负责 {{count}} 条记录，需要移交',
       columns: {
         item: '待回收项',
         handling: '处理方式',
@@ -2011,7 +2013,6 @@ const zhCN: AppResource = {
     reportInsight: 'AI 报表解读',
     parseDocument: '解析单据',
     groupDifferences: '分析盘点差异',
-    leaverRecovery: '离职回收',
     // Titles of the steps the chat lists, by tool name.
     tools: {
       itam_business_context: '读取业务背景',
@@ -2105,8 +2106,6 @@ const zhCN: AppResource = {
         '请读取我附上或粘贴的送货单 / 报价单 / 发票：逐行匹配型号或软件产品，把明细加入当前采购单草稿（数量、单价按单据填写）。对不上的行列出来问我，不要猜。',
       reportInsight:
         '请解读屏幕上的这张报表：三到五句话，先说最重要的数字和变化，指出异常，最后给一条建议。',
-      leaverRecovery:
-        '帮我回收 {{name}} 名下还未归还的东西：按这个页面上的清单逐项说明该怎么处理、为什么，能回收的直接提出来，只能由人处理的（他还负责的记录要移交、共用账号和密钥、在修的设备）单独列出。',
       groupDifferences:
         '请分析这次盘点的未处理差异：按最可能的原因分组（工位调整、使用人记录错误、在修、离职未还、真丢失、账外设备等），列出每组的设备，并给出处理建议。',
       planToday:

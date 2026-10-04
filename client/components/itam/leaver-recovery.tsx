@@ -3,11 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Undo2 } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
-import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { DataTable } from '@/components/itam/data-table';
 import { DeviceReturnDialog } from '@/components/itam/device-return-dialog';
+import { RecordLink } from '@/components/itam/record-link';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +21,7 @@ import {
   useCollectionPermissions,
   useCurrentUserId,
 } from '@/lib/itam/permissions';
-import { useReferenceNames } from '@/lib/itam/references';
+import { referenceRoute, useReferenceNames } from '@/lib/itam/references';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
 import { STOCK_PATH, STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
 import { usePersonRecovery, type RecoveryItem } from '@/lib/itam/recovery';
@@ -76,11 +76,11 @@ export function LeaverRecovery({
       [items],
     ),
   );
-  const {
-    ref: contextRef,
-    available: aiAvailable,
-    ask,
-  } = useAiPageContext({
+  // Registered as page context, with no shortcut of its own: the card is
+  // already the list such a shortcut would ask for, so a button here would
+  // have Noco read the screen back. Asking it anything from the launcher
+  // while this is open still carries the list.
+  const { ref: contextRef } = useAiPageContext({
     id: 'itam-leaver-recovery',
     title: t('people.recovery.title'),
     kind: 'leaverRecovery',
@@ -145,6 +145,7 @@ export function LeaverRecovery({
   if (recovery.data?.employmentStatus !== 'left' || items.length === 0)
     return null;
 
+  const owned = recovery.data.owned;
   const mine = items.filter((item) => item.ownerId === me).length;
   const allowed: Readonly<Record<RecoveryItem['kind'], boolean>> = {
     device: Boolean(devicePermissions.return),
@@ -178,15 +179,6 @@ export function LeaverRecovery({
             {items.length}
           </Badge>
         </CardTitle>
-        {aiAvailable ? (
-          <AiShortcut
-            onClick={() =>
-              ask(t('ai.prompts.leaverRecovery', { name: personName }))
-            }
-          >
-            {t('ai.leaverRecovery')}
-          </AiShortcut>
-        ) : null}
       </CardHeader>
       <CardContent className='space-y-3'>
         <p className='text-sm text-muted-foreground'>
@@ -302,6 +294,29 @@ export function LeaverRecovery({
           }))}
           onRowClick={(item) => openRecord(recordOf(item))}
         />
+        {/* The other half of offboarding, and the half no button settles:
+            the records that still name them. Changing who answers for one is
+            a decision, and only its current owner or its creator may make
+            it, so each row is a way into that record rather than an action
+            here. */}
+        {owned.length > 0 ? (
+          <section className='space-y-1'>
+            <h4 className='text-xs font-medium text-muted-foreground'>
+              {t('people.recovery.handover', { count: owned.length })}
+            </h4>
+            <ul className='flex flex-wrap gap-x-3 gap-y-1 text-sm'>
+              {owned.map((record) => (
+                <li key={`${record.collection}-${record.id}`}>
+                  <RecordLink
+                    to={`/${referenceRoute(record.collection)}/${record.id}`}
+                  >
+                    {record.label}
+                  </RecordLink>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         {/* Reclaiming a seat frees the licence, not the login: this
             application is a register and reaches no vendor's console. */}
         {items.some((item) => item.handling === 'reclaim') ? (
