@@ -1,12 +1,12 @@
+# Application Development Guidelines
+
 This repository is a NocoBase Solution. The NocoSolution repository is included as the `nocosolution/` submodule: `nocosolution/guidelines/` holds the series-wide guidelines, starting with the guideline `solution-guideline.md`, and `nocosolution/NocoITAM/` holds this Solution's plans and phase documents. NocoSolution is a private, internal repository, so the submodule is optional: code, builds, tests and CI never depend on it. Without access to it, `nocosolution/` stays empty, and every instruction below that refers to it is skipped.
 
-- At the start of work, run `git pull && { git submodule update --init --remote --merge || true; }`. The submodule step fails without access to NocoSolution; that is expected and not an error.
+- At the start of work, run `git pull && { git submodule update --init --remote --merge && git -C nocosolution sparse-checkout set guidelines NocoITAM || true; }`. The submodule step fails without access to NocoSolution; that is expected and not an error. The sparse checkout keeps only `nocosolution/guidelines/` and `nocosolution/NocoITAM/` in the working tree; it is a local setting, repeated harmlessly on every run. To read another Solution's documents, for cross-Solution integration, run `git -C nocosolution sparse-checkout add <OtherSolution>`; `git -C nocosolution sparse-checkout disable` restores the full tree.
 - Before drafting or revising a plan, changing the skeleton, adding a temporary implementation, or designing cross-Solution integration, read the whole guideline `nocosolution/guidelines/solution-guideline.md`.
 - Every other file in `nocosolution/guidelines/` states at its top what it covers and when it applies; before a task, check them and follow the ones that apply to it.
 - Do not edit anything in `nocosolution/guidelines/`; in `nocosolution/`, change only `nocosolution/NocoITAM/`. When a plan departs from the guideline or needs something it does not cover, mark it in the plan as a departure from guideline section X.Y with the reason, or as a proposal for the guideline; the guideline's maintainer decides whether to update it.
 - Never copy text from `nocosolution/` into this repository; write English documentation here instead.
-
-# Application Development Guidelines
 
 This is a NocoBase 3 application. Do not apply globally installed NocoBase 2 Skills. You are building the application itself — its pages, its API, its database tables. Everything under this directory is application-owned source code that you may edit directly.
 
@@ -1018,13 +1018,16 @@ Business code goes in these places. This is where you work, and where you should
 client/routes.ts          Declare a page route
 client/pages/             The page component
 client/components/        Your components
-client/components/ui/     shadcn/ui primitives; add with the CLI, do not hand-write
+client/components/ui/     shadcn/ui primitives; add with the CLI, never hand-write or edit (the few
+                          deliberate edits are listed under "Menus and destructive actions")
+client/hooks/             Hooks shared across features
 client/locales/           Every user-visible string
-client/service-provider.ts Client startup and CRUD resource integration
+client/service-provider.ts Client startup: services that boot with the application
 server/routes/            HTTP endpoints
 server/providers/         Services and their lifecycle
 database/main/migrations/      Schema changes
 database/main/seeds/           Required initial data
+database/main/collections/     Generated Collection artifacts; regenerate, never edit
 cli/commands/             Commands this application owns
 tests/                    Tests; never beside the source
 ```
@@ -1035,7 +1038,7 @@ A feature with a page and an API touches five places: a migration for the table,
 
 `client/routing/`, `client/layouts/`, `client/theme/`, `client/config/`, `server/config/`, the server entry points, the build scripts, and the tsconfigs are the scaffolding the template provides. It is still this application's own source — it shipped to the user and they may change it — but it is the part the template evolves, so an edit there is what a future upgrade has to reconcile.
 
-Prefer the mechanism the system already provides. Declare a page in `client/routes.ts` and add `navigation` when it needs a menu entry. Refine resources are only needed for CRUD integration. A settings page uses `access` to restrict access; a plugin page is customized through an option or an override. Before editing the shell to add a menu, check the route and its `navigation` declaration.
+Prefer the mechanism the system already provides. Declare a page in `client/routes.ts` and add `navigation` when it needs a menu entry. Refine resources add no menu entries and, with no data provider registered, load nothing; pages load data through `useApiClient` (ITAM's own pages use the hooks in `client/lib/itam/api.ts`). A settings page uses `access` to restrict access; a plugin page is customized through an option or an override. Before editing the shell to add a menu, check the route and its `navigation` declaration.
 
 When the built-in mechanism genuinely cannot express what is being asked, changing this structure is a legitimate answer — not a last resort to apologize for. Do it deliberately, and leave the next agent enough to work with:
 
@@ -1066,19 +1069,24 @@ Route paths are application-internal. Never write the deployment base path such 
 
 Use `defineSettingsRoutes()` for administrative pages, which mount under `/settings`, and `defineDevRoutes()` for development-only pages, which mount under `/dev` and are absent from a production build. Do not repeat `/settings` or `/dev` in the path. `defineDevRoutes()` is a build boundary, not a permission boundary: a page that must be restricted in production is a settings route with `access`, enforced by the server.
 
-**Declare navigation on the route.** App, Settings and Dev menus read `navigation: { title: 'navigation.orders' }`; titles resolve in the owning locale namespace. Add the translation in `client/locales/`. Refine resources remain for CRUD and do not add menu entries.
+**Declare navigation on the route.** App, Settings and Dev menus read `navigation: { title: 'navigation.orders' }`; titles resolve in the owning locale namespace. Add the translation in `client/locales/`. Refine resources do not add menu entries.
 
-Use recursive groups to organize menus; their path is optional. Pages may also have children, but must manually render `Outlet`. For examples and the exact file list, read `skills/nocobase-app-development/references/client-child-routes.md`.
+Use recursive groups to organize menus; their path is optional. Pages may also have children, but must manually render `Outlet`. For URL-addressable dialogs and drawers, declare the child in `defineAppRoutes()` in `client/routes.ts`, place the owning page's `Outlet`, then render `RouteDialog` or `RouteDrawer`. A child page of its own — a record's page, a form too long for a dialog — returns `RouteChildPage` around its `PageContainer`; only tab content renders inline, and a child route that returns a bare `PageContainer` renders below the parent's content instead of covering it. Call `useRouteOverlay()` only from a descendant rendered inside the overlay, including its footer, never from the page returning the wrapper. A record opens over the page the user is on: a dashboard or a board that shows records declares their drawer under its own route instead of linking to the list's, and a row menu's Edit opens its own dialog rather than the one stacked on the drawer. On a page with tabs the user is on the tab being shown: an overlay the page's header opens is declared under every tab and linked through the current tab (`` `${tab}/edit` ``, never a bare `edit`, which resolves beside the tabs), so it stacks on that tab and closing returns to it. Read `.agents/skills/nocobase-app-development/references/frontend/references/overlay.md` before implementing overlays or close guards.
 
 ### Components and styling
 
-Use shadcn/ui for UI. Check `client/components/ui/` first; if the primitive is not there, add it from the shadcn registry rather than writing your own:
+Use shadcn/ui for UI. The template ships only the primitives its shell and compositions use: `button`, `dialog`, `dropdown-menu`, `input`, `label`, `popover`, `spinner`, `toast` and `tooltip`. Check `client/components/ui/` first; if the primitive is not there, add it from the shadcn registry rather than writing your own. `yes n |` answers "no" when the CLI offers to overwrite a primitive that is already installed; without an answer, a non-interactive run stops at that question. Format the files it created and translate the English a few primitives carry, as `.agents/skills/nocobase-app-development/references/frontend/references/shadcn.md` lists; otherwise keep them as the CLI writes them:
 
 ```bash
-pnpm exec shadcn add card
+yes n | pnpm exec shadcn add card
+pnpm exec prettier --write client/components/ui/card.tsx
 ```
 
-Build your own components by composing these primitives, and put them in `client/components/`.
+Build your own components by composing these primitives, and put them in `client/components/`. A page below another one — a covering child page, a record's own page — leaves by `BackButton` (`client/components/back-button.tsx`) above its heading; `Breadcrumbs` replaces it only when the user asks for breadcrumbs.
+
+`PageContainer`, `PageHeader`, `RouteDialog`, `RouteDrawer`, `RouteChildPage`, `useRouteOverlay` and `BackButton` in `client/components/` come from the NocoBase UI Library, as do the authentication layout and forms in `client/extensions/nocobase-auth-ui/`; like the rest of the source, they belong to the application. `yes n | pnpm exec shadcn add @nocobase/<item>` adds another item from the library: a single component lands in `client/components/`, a complete feature in `client/extensions/nocobase-<item>/`. A table and a date field come from it too, added before the first page that needs one rather than written from scratch: `@nocobase/data-table` adds `DataTable` with `DataTableColumnHeader`, `DataTablePagination` and `DataTableViewOptions` in `client/components/data-table/`, and `@nocobase/date-picker` adds `DatePicker` and `DateRangePicker` in `client/components/date-picker.tsx`, or `@nocobase/date-time-picker` for a time as well. The CLI adds the packages an item needs to `dependencies`: move the new ones, such as `@tanstack/react-table`, to `devDependencies`, as "Adding a dependency" below explains for everything client code imports, but leave `@nocobase/i18n` in `dependencies`, where the server needs it, and put back the `^` of its range, which the CLI pins.
+
+**Look components up in the shadcn skill.** The development Skill carries the shadcn/ui skill, unchanged from shadcn 4.21.0, in `.agents/skills/nocobase-app-development/references/frontend/shadcn/`. Read `references/frontend/references/shadcn.md` first: it routes to the skill's rules and states where this application departs from them, among others `pnpm exec shadcn` instead of `npx shadcn@latest`, no `shadcn apply` or `--preset`, and create, edit and detail as `RouteDialog` or `RouteDrawer` child routes rather than a `Sheet`. `pnpm exec shadcn docs <name>` gives one primitive's documentation and examples for the Base UI version. For a whole page, start from the worked example that `references/frontend/references/example.md` indexes.
 
 Style with the semantic Tailwind tokens — `bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-primary` — so pages follow the light and dark themes. Do not hard-code colors like `bg-white` or `text-gray-900`; they break the moment someone switches theme.
 
@@ -1142,7 +1150,7 @@ At runtime, resolve `databaseManagerToken` from the container and use `database.
 
 ### User-facing text
 
-Every string a user reads goes through a translation key. `client/locales/en-US.ts` states the wording and derives the shape that other locales are checked against, so a missing key in `zh-CN.ts` is a compile error.
+Every string a user reads goes through a translation key. `client/locales/en-US.ts` states the wording and derives the shape that other locales are checked against, so a missing key in `zh-CN.ts` is a compile error. Both spread the sign-in pages' copy from `client/extensions/nocobase-auth-ui/locales/` ahead of the application's own keys in `messages`, so a new language needs a translation of that file too; `.agents/skills/nocobase-app-development/references/frontend/references/i18n.md` shows how.
 
 ```tsx
 const { t } = useTranslation();
@@ -1275,7 +1283,7 @@ Add tests for what you changed: a route's authenticated, unauthenticated, and un
 
 `pnpm nocobase --help` lists every command.
 
-For UI styling and for creating or editing theme presets, use the shared color, font, size, spacing, radius and shadow contract in `skills/itam-conventions.md` and `.agents/skills/nocobase-app-development/references/frontend/references/theme.md` (from the application root). Since template beta.49 there are two presets, `compact` (the default, the density this application was built at) and `default` (roomier); the header's 外观 menu switches mode and preset, and there is no theme settings page. ITAM's darker page background (`--background: oklch(0.97 0 0)`) is set in both preset files. Prefer its Tailwind utilities so components respond to theme changes; keep deliberate fixed-size exceptions explicit.
+For any UI work, start with `.agents/skills/nocobase-app-development/references/frontend/ui-workflow.md` (from the application root), which decides the workflow and routes to the rest: styling rules in `references/styling.md` beside it, the full token contract and theme presets in `references/theme.md`, and this application's additions in `skills/itam-conventions.md`. Since template beta.49 there are two presets, `compact` (the default, the density this application was built at) and `default` (roomier); the header's 外观 menu switches mode and preset, and there is no theme settings page. ITAM's darker page background (`--background: oklch(0.97 0 0)`) is set in both preset files. Prefer its Tailwind utilities so components respond to theme changes; keep deliberate fixed-size exceptions explicit.
 
 Application startup defaults belong in `config.yml`: `i18n.defaultLocale` for the language, and `client.app.defaultColorScheme` and `client.app.defaultTheme` for appearance. Valid browser-local choices take precedence. Which languages the application offers is not configured — its own `client/locales/` and `server/locales/` are that list. See the i18n and themes references.
 
