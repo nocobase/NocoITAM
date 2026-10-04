@@ -533,11 +533,14 @@ export function createMaintenanceService(dependencies: {
         return { depreciated: await devices.recomputeDepreciation(now) };
       // Its own task, scheduled before the daily one so the reminders that
       // run computes already flag what a new leaver still holds.
-      if (job === 'leavers')
+      if (job === 'leavers') {
+        const employment = await masterData.markDueLeavers(isoDate(now));
         return {
-          leavers: await masterData.markDueLeavers(isoDate(now)),
+          leavers: employment.left,
+          reinstated: employment.reinstated,
           recoveriesPrepared: await prepareRecoveries(),
         };
+      }
       const subscriptions = await entitlements.advanceRenewals(now);
       const released = await devices.releaseExpiredReservations(isoDate(now));
       return {
