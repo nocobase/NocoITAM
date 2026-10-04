@@ -178,11 +178,15 @@ function WorkCardView({ card }: { readonly card: WorkCard }): ReactElement {
                       {record.title}
                     </span>
                   </span>
-                  {record.date ? (
-                    <span className='shrink-0 text-xs text-muted-foreground tabular-nums'>
-                      {formatDate(record.date)}
-                    </span>
-                  ) : null}
+                  <span className='flex shrink-0 items-center gap-2 text-xs text-muted-foreground tabular-nums'>
+                    {/* Where a record stands for several things — a leaver
+                        holds a number of them — how many are the reader's
+                        own, so the row is read without being opened. */}
+                    {record.count === undefined ? null : (
+                      <span>{t('workbench.work.mine', { count: record.count })}</span>
+                    )}
+                    {record.date ? <span>{formatDate(record.date)}</span> : null}
+                  </span>
                 </button>
               </li>
             ))}
