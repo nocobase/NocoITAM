@@ -9,7 +9,7 @@ import { masterDataPath, useApi, type ItamRecord } from '@/lib/itam/api';
 import { text } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 
-import { usePersonHoldings } from './holdings.js';
+import { usePersonRecovery } from '@/lib/itam/recovery';
 
 /**
  * 标记离职: records the leave date as today, which is what makes somebody a
@@ -27,7 +27,7 @@ export function PersonActions({
   const queryClient = useQueryClient();
   const permissions = useCollectionPermissions('people', ['markLeft']);
   const [open, setOpen] = useState(false);
-  const holdings = usePersonHoldings(open ? record.id : undefined);
+  const belongings = usePersonRecovery(open ? record.id : undefined);
   const markLeft = useMutation({
     mutationFn: async () =>
       (
@@ -47,15 +47,12 @@ export function PersonActions({
     },
   });
   if (!permissions.markLeft || record.employmentStatus === 'left') return null;
-  // Everything still in the person's name, the way the workbench counts it:
-  // devices, accessories, and entitlement seats.
-  const devices = holdings.data?.devices ?? [];
-  const stock = holdings.data?.stock ?? [];
-  const seats = holdings.data?.entitlementSeats ?? [];
   // How much is at stake, not what each item is: the 归属 tab behind this
   // dialog lists them, and pressing the button is a decision about the
-  // person rather than about any one of their things.
-  const held = devices.length + stock.length + seats.length;
+  // person rather than about any one of their things. It counts what that
+  // tab counts — the same rule, so the dialog and the page agree.
+  const held = belongings.data?.items.length ?? 0;
+  const owned = belongings.data?.owned.length ?? 0;
   return (
     <>
       <Button variant='outline' onClick={() => setOpen(true)}>
@@ -66,11 +63,17 @@ export function PersonActions({
         open={open}
         onOpenChange={setOpen}
         title={t('people.markLeftTitle', { name: text(record.name) })}
-        description={
+        description={[
           held > 0
             ? t('people.markLeftHoldings', { count: held })
-            : t('people.markLeftClean')
-        }
+            : t('people.markLeftClean'),
+          // What they answer for is the other half of leaving, and it is the
+          // half no button settles — so it is worth a clause here, where the
+          // decision is being made.
+          owned > 0 ? t('people.markLeftOwned', { count: owned }) : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         busy={markLeft.isPending}
         error={markLeft.error}
         destructive

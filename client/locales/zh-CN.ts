@@ -912,6 +912,8 @@ const zhCN: AppResource = {
     markLeftHoldings_other:
       '离职日期记为今天。名下 {{count}} 项资产仍挂在他名下，待回收会进入各自负责人的待我处理。',
     markLeftClean: '离职日期记为今天。名下没有持有物。',
+    markLeftOwned_one: '另有 {{count}} 条记录由他负责，需要移交。',
+    markLeftOwned_other: '另有 {{count}} 条记录由他负责，需要移交。',
     noHoldings: '暂无持有',
     recovery: {
       title: '待回收',
