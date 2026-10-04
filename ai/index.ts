@@ -3,7 +3,10 @@ import { AIResourceRegistrar } from '@nocobase/app-plugin-ai-employee/server';
 
 import type { SettingsService } from '../server/providers/itam/settings.js';
 
-import itamEmployee, { LOGO_AVATAR_PATH } from './employees/itam.js';
+import itamEmployee, {
+  ITAM_SKILLS,
+  LOGO_AVATAR_PATH,
+} from './employees/itam.js';
 
 export { LOGO_AVATAR_PATH };
 import aggregate from './tools/itam/aggregate.js';
@@ -78,8 +81,36 @@ export class ItamAiResources extends AIResourceRegistrar {
     await aiEmployeeManager.registerEmployee(
       this.avatar ? { ...itamEmployee, avatar: this.avatar } : itamEmployee,
     );
+    await this.limitSkills(aiEmployeeManager);
     await this.orderAfterNoco(aiEmployeeManager);
     await this.disableBuiltInEmployees(aiEmployeeManager);
+  }
+
+  /**
+   * Every general skill of the plugin is open to an employee whose skill
+   * selection was never saved, and its data skills would hand the model table
+   * queries beside this application's own tools — which would go around the
+   * point of those tools, that they run as the signed-in user through the
+   * services and see only what that user may see.
+   *
+   * So the first registration writes a selection of this application's own
+   * skills. A selection the administrator has saved is theirs and is left
+   * alone; when a second skill is added later it will not reach them, which
+   * NocoCRM answers with a marker per skill, and this should too by then.
+   */
+  private async limitSkills(
+    aiEmployeeManager: AIEmployeeManager,
+  ): Promise<void> {
+    const employee = await aiEmployeeManager.getEmployee(itamEmployee.username);
+    if (!employee || employee.skillSettings?.enabledSkills !== undefined)
+      return;
+    await aiEmployeeManager.upsertEmployee({
+      ...employee,
+      skillSettings: {
+        ...employee.skillSettings,
+        enabledSkills: [...ITAM_SKILLS],
+      },
+    });
   }
 
   /**
