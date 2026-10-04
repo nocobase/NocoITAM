@@ -96,18 +96,19 @@ Rules learned while building it:
   is code: change the cron in the provider, never the plugin's tables. Test
   the service and the provider's target (`tests/logic/itam-schedules.test.ts`),
   not the clock.
-- 需要关注 groups its eleven rules into four sections (`REMINDER_GROUPS` in
-  `client/lib/itam/workbench.ts`: 人员 first — somebody who left with the
-  company's equipment is the first thing worth reading, and a leaver holds
-  devices, accessories and seats at once so the rule belongs to no asset
-  group — then 设备, **not** 资产, which is the umbrella over all five kinds
-  while every rule there is about a device; then entitlements, stock and
-  purchasing). A row does not repeat its group: inside 设备 the label is
-  保修 30 天内到期, not 保修 30 天内到期的设备 — one flat list of eleven near-identical lines gives the eye
-  nowhere to land. Only a `critical` rule colours its count: severity is a
-  property of the rule rather than of how bad today is, seven of the eleven
-  are `warning`, and a colour on most rows differentiates nothing. The sort
-  already carries severity. There is no inner frame — the card is the frame.
+- 需要关注 groups its ten rules into three sections (`REMINDER_GROUPS` in
+  `client/lib/itam/workbench.ts`: 设备 first — **not** 资产, which is the
+  umbrella over all five kinds while every rule there is about a device —
+  then entitlements, then stock and purchasing). There was a 人员 section
+  above them until 2026-10-04, holding the one rule about a person; that
+  rule became a to-do and took its section with it, since a leaver was all
+  it ever held. A row does not repeat its group: inside 设备 the label is
+  保修 30 天内到期, not 保修 30 天内到期的设备 — one flat list of ten
+  near-identical lines gives the eye nowhere to land. Only a `critical` rule
+  colours its count: severity is a property of the rule rather than of how
+  bad today is, seven of the ten are `warning` and the remaining two are
+  `info`, so a colour on most rows differentiates nothing. The sort already
+  carries severity. There is no inner frame — the card is the frame.
 - 需要关注 lists **every** rule it checks, the empty ones last and dimmed: a
   rule that vanishes at zero cannot be told from one that was never set up,
   and `0` is an answer — it says the check ran. Neither that card nor 我的待办
