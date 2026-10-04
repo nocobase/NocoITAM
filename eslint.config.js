@@ -9,6 +9,9 @@ export default createApplicationConfig({
     // upstream style rather than this application's lint rules.
     'client/extensions/nocobase-ai/**',
     'client-old/**',
+    // The NocoSolution submodule is another repository's content: this one
+    // neither lints nor reformats it.
+    'nocosolution/**',
     'public/r/**',
     'storage/**',
   ],
