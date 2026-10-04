@@ -4,6 +4,12 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { ShieldCheck } from 'lucide-react';
 import type { ReactElement } from 'react';
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
 export function SidebarFooter({
   collapsed,
 }: {
@@ -15,6 +21,9 @@ export function SidebarFooter({
   const templateName = publicConfig.get('app.displayName', 'Default Template');
   const templateVersion = publicConfig.get('app.version', '0.0.0');
   const templateLabel = `${templateName} v${templateVersion}`;
+  // Application change (ITAM): the line shows the version alone; the
+  // product name joins it on hover.
+  const versionLabel = `v${templateVersion}`;
   const brandLink = (
     <a
       className='rounded-sm font-medium text-sidebar-foreground hover:underline outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring'
@@ -30,7 +39,8 @@ export function SidebarFooter({
     <footer className='shrink-0 border-t border-sidebar-border/70'>
       <div
         className={`flex min-h-20 items-center gap-3 px-5 py-3 ${collapsed ? 'md:min-h-16 md:justify-center md:px-2' : ''}`}
-        title={templateLabel}
+        // Only the icon is left to hover in the collapsed sidebar.
+        title={collapsed ? templateLabel : undefined}
       >
         <ShieldCheck className='size-4 shrink-0 text-sidebar-foreground/80' />
         <div
@@ -51,9 +61,16 @@ export function SidebarFooter({
               {brandLink} keeps it reliable.
             </Trans>
           </div>
-          <div className='mt-1 font-mono text-xs text-sidebar-foreground/70'>
-            {templateLabel}
-          </div>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <div className='mt-1 w-fit font-mono text-xs text-sidebar-foreground/70' />
+              }
+            >
+              {versionLabel}
+            </TooltipTrigger>
+            <TooltipContent side='top'>{templateLabel}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </footer>

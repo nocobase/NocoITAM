@@ -1,6 +1,6 @@
 {
   "name": "itam",
-  "displayName": "itam",
+  "displayName": "NocoITAM",
   "version": "1.0.0-beta.22",
   "type": "module",
   "prettier": "@nocobase/dev-config/prettier",
