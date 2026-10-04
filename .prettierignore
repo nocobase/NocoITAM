@@ -21,6 +21,3 @@ database/*/collections/
 # both, but a `--ignore-path` run replaces `.gitignore` rather than adding to it, so they are named here as well.
 .agents/
 .claude/skills/
-
-# The specification is the user's document; keep its formatting as written.
-SPEC.md
