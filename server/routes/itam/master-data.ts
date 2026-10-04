@@ -18,7 +18,7 @@ import {
   masterDataServiceToken,
 } from '../../providers/index.js';
 import { ValidationError } from '../../providers/itam/errors.js';
-import { recoveryPlan } from '../../providers/itam/maintenance.js';
+import { recoveryPlan } from '../../providers/itam/recovery.js';
 import {
   errorResponse,
   parseListOptions,
@@ -256,14 +256,27 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
           const conditions = await maybeDecide(context, collection, 'read');
           if (conditions) allowed.set(collection, conditions);
         }
+        // What they had the moment they left, which is what the live list
+        // is progress against. Anything in it that is no longer held has
+        // been settled — the list stays whole so the reader sees what was
+        // done as well as what is left, and a count of five that becomes a
+        // count of two says nothing about which three.
+        const snapshot = await masterData.belongingsSnapshot(id);
+        const outstanding = new Set(
+          items.map((item) => `${item.kind}:${item.id}`),
+        );
+        const settled = (snapshot ?? []).filter(
+          (item) => !outstanding.has(`${item.kind}:${item.id}`),
+        );
         return context.json({
           data: {
-            // The page shows the plan only for somebody who has left, and
-            // that answer belongs with the plan rather than to a second
-            // request for the record.
+            // The page shows the leaving sentence only for somebody who has
+            // left, and that answer belongs with the plan rather than to a
+            // second request for the record.
             employmentStatus: person.employmentStatus ?? null,
             leaveDate: person.leaveDate ?? null,
             items,
+            settled,
             owned: await masterData.personOwnedRecords(id, allowed),
           },
         });

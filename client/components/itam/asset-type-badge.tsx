@@ -39,11 +39,15 @@ export function AssetTypeBadge({
   if (!kind) return <span className='text-muted-foreground'>—</span>;
   return (
     // The five asset types are what this application is about, so their tag
-    // wears its colour rather than the neutral fill every other outline tag
-    // has — which also keeps it off the tinted bands it sits on.
+    // carries a colour rather than the neutral fill every other tag has —
+    // which also keeps it off the tinted bands it sits on. `--info`, because
+    // the theme is monochrome apart from the four state colours and the
+    // other three claim something an asset type does not: good, watch out,
+    // wrong. Not the `outline` variant either: `styles.css` fills that one
+    // from a two-attribute selector no single utility class can outrank.
     <Badge
-      variant='outline'
-      className={cn('bg-primary/10 text-primary', className)}
+      variant='secondary'
+      className={cn('bg-info text-info-foreground', className)}
     >
       {Icon ? <Icon className='size-3' aria-hidden='true' /> : null}
       {label ?? t(`enums.appliesTo.${kind}`, { defaultValue: kind })}

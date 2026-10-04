@@ -6,7 +6,7 @@ import {
   deviceHandling,
   recoveryPlan,
   stockHandling,
-} from '../../server/providers/itam/maintenance.js';
+} from '../../server/providers/itam/recovery.js';
 
 /**
  * The preparation is a rule, not a model call: which handling applies follows

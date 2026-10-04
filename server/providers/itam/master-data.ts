@@ -33,6 +33,7 @@ import {
   type DeleteReference,
 } from './errors.js';
 import { addMonths, today } from './dates.js';
+import { recoveryPlan, type RecoveryItem } from './recovery.js';
 import type { HistoryService } from './history.js';
 
 /**
@@ -291,8 +292,15 @@ export interface MasterDataService {
   markDueLeavers(
     day: string,
   ): Promise<{ readonly left: number; readonly reinstated: number }>;
-  /** Everything a person currently holds: devices, stock, entitlement seats. */
-  personHoldings(id: string): Promise<PersonHoldings>;
+  /**
+   * Everything a person currently holds: devices, stock, entitlement seats.
+   * Takes the open connection when it runs inside a transaction — the SQLite
+   * pool holds one, so a read through the manager would wait for ever.
+   */
+  personHoldings(
+    id: string,
+    connection?: DatabaseConnection,
+  ): Promise<PersonHoldings>;
   /**
    * The records that still name this person as the one who answers for them.
    *
@@ -309,6 +317,10 @@ export interface MasterDataService {
     id: string,
     allowed: ReadonlyMap<string, DatabaseAuthorizationConditions>,
   ): Promise<readonly OwnedRecord[]>;
+  /** Writes down what is in somebody's name as they are marked left. */
+  snapshotBelongings(id: string, connection?: DatabaseConnection): Promise<void>;
+  /** What that snapshot holds, or undefined where none was taken. */
+  belongingsSnapshot(id: string): Promise<readonly RecoveryItem[] | undefined>;
   delete(
     collection: string,
     id: string,
@@ -881,12 +893,81 @@ export function createMasterDataService(
               .where('id', '=', device.id)
               .execute();
         }
+        // A leave date entered or moved into the past settles it here, so
+        // this is the moment of leaving as much as the button is.
+        if (
+          collection === 'people' &&
+          values.employmentStatus === 'left' &&
+          previous.employmentStatus !== 'left'
+        )
+          await this.snapshotBelongings(id, connection);
       });
       const updated = await findRaw(collection, id);
       return pickFields(
         updated ?? {},
         outputFields(definition.fields, conditions),
       );
+    },
+
+    /**
+     * Records what is in somebody's name the moment they are marked as
+     * having left.
+     *
+     * The list on their page is live — a device returned leaves it, because
+     * it is in stock now and the page would otherwise be saying somebody
+     * holds what they do not. So "how much of this is done" has no
+     * denominator unless the moment of leaving is written down, which is
+     * what this is: the one fact that cannot be recomputed later, because by
+     * then the things have moved.
+     *
+     * Every path that marks somebody left takes it — the button, a leave
+     * date entered or moved into the past, and the nightly job for a date
+     * that merely came round — so it exists whenever it could be needed. It
+     * is written once: a second one would reset the denominator, and the
+     * first is the fact.
+     */
+    async snapshotBelongings(id, connection) {
+      const query = connection ? connection.query : database.query();
+      const existing = await query
+        .selectFrom('historyEvents')
+        .select('id')
+        .where('subjectType', '=', 'people')
+        .where('subjectId', '=', id)
+        .where('type', '=', 'belongingsSnapshot')
+        .executeTakeFirst<{ id: string }>();
+      if (existing) return;
+      const items = recoveryPlan(
+        await this.personHoldings(id, connection),
+      ).filter(
+        (item) => item.handling !== 'none',
+      );
+      if (items.length === 0) return;
+      await history.record(
+        {
+          subjectType: 'people',
+          subjectId: id,
+          type: 'belongingsSnapshot',
+          summary: `In their name when they left: ${items.length}`,
+          payload: { items },
+        },
+        connection,
+      );
+    },
+
+    async belongingsSnapshot(id) {
+      const row = await database
+        .query()
+        .selectFrom('historyEvents')
+        .select('payload')
+        .where('subjectType', '=', 'people')
+        .where('subjectId', '=', id)
+        .where('type', '=', 'belongingsSnapshot')
+        .executeTakeFirst<Row>();
+      if (!row) return undefined;
+      const payload = decodeRow(row).payload as
+        | { items?: readonly RecoveryItem[] }
+        | undefined;
+      return payload?.items ?? [];
     },
 
     async personOwnedRecords(id, allowed) {
@@ -943,9 +1024,9 @@ export function createMasterDataService(
       return found;
     },
 
-    async personHoldings(id) {
-      const devices = await database
-        .query()
+    async personHoldings(id, connection) {
+      const read = connection ? connection.query : database.query();
+      const devices = await read
         .selectFrom('devices')
         .select([
           'id',
@@ -962,8 +1043,7 @@ export function createMasterDataService(
         .where('assigneeId', '=', id)
         .orderBy('deviceNo', 'asc')
         .execute<Row>();
-      const stock = await database
-        .query()
+      const stock = await read
         .selectFrom('stockHoldings')
         .innerJoin('stockItems', 'stockItems.id', 'stockHoldings.stockItemId')
         .select([
@@ -978,8 +1058,7 @@ export function createMasterDataService(
         .where('stockHoldings.holderType', '=', 'person')
         .where('stockHoldings.holderId', '=', id)
         .execute<Row>();
-      const entitlementSeats = await database
-        .query()
+      const entitlementSeats = await read
         .selectFrom('entitlementSeats')
         .innerJoin(
           'entitlements',
@@ -1007,8 +1086,7 @@ export function createMasterDataService(
       const installed =
         deviceIds.length === 0
           ? []
-          : await database
-              .query()
+          : await read
               .selectFrom('stockHoldings')
               .innerJoin(
                 'stockItems',
@@ -1074,6 +1152,7 @@ export function createMasterDataService(
           },
           connection,
         );
+        await this.snapshotBelongings(id, connection);
       });
       return this.personHoldings(id);
     },
@@ -1115,6 +1194,7 @@ export function createMasterDataService(
             },
             connection,
           );
+          await this.snapshotBelongings(id, connection);
         });
       }
       // The other direction, which was missing: a leave date cleared or moved

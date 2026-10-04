@@ -930,6 +930,8 @@ const zhCN: AppResource = {
       changeOwner: '移交',
       changeOwnerHint: '指定今后由谁负责 {{record}}。只有现任负责人或创建人能做这件事。',
       installed: '内含',
+      done: '已处理',
+      progress: '已处理 {{done}} / {{total}}',
       columns: {
         item: '持有资产',
         handling: '处理方式',

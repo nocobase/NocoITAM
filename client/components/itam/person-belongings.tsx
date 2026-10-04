@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowRightLeft, CornerDownRight, Undo2 } from 'lucide-react';
+import { ArrowRightLeft, Check, CornerDownRight, Undo2 } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
@@ -166,9 +166,16 @@ export function PersonBelongings({
   if (!recovery.data) return null;
   const left = recovery.data.employmentStatus === 'left';
   const owned = recovery.data.owned;
+  // Settled rows keep their place in the list: a recovery is a job of a
+  // known size, and a list that only shrinks never says what was done.
+  const done = recovery.data.settled;
+  const rows: (RecoveryItem & { readonly done?: boolean })[] = [
+    ...items,
+    ...done.map((item) => ({ ...item, done: true })),
+  ];
   // Nothing in their name at all: say so once rather than show two empty
   // headings.
-  if (items.length === 0 && owned.length === 0)
+  if (items.length === 0 && done.length === 0 && owned.length === 0)
     return <EmptyState title={t('people.noHoldings')} />;
   const mine = items.filter((item) => item.ownerId === me).length;
   const allowed: Readonly<Record<RecoveryItem['kind'], boolean>> = {
@@ -232,6 +239,18 @@ export function PersonBelongings({
               count: mine,
             },
           )}
+        </p>
+      ) : null}
+      {/* How much of it is done, against the snapshot taken when they left:
+          the live list alone cannot say, because what is settled has left
+          it. Without a snapshot — nobody has left, or they left before this
+          was written down — there is no denominator and no claim is made. */}
+      {done.length > 0 ? (
+        <p className='text-sm text-muted-foreground'>
+          {t('people.recovery.progress', {
+            done: done.length,
+            total: done.length + items.length,
+          })}
         </p>
       ) : null}
       {/* The asset lists' own table, because that is what this is — the
@@ -311,8 +330,15 @@ export function PersonBelongings({
             // for instead of offering a button that would make the record
             // disagree with the thing.
             render: (item) =>
-              item.handling === 'wait' ||
-              item.handling === 'confirmConsumed' ? (
+              // Already settled: it says so where its action was, and keeps
+              // its place so the list stays the size of the job.
+              item.done ? (
+                <span className='flex items-center gap-1 text-xs text-muted-foreground'>
+                  <Check className='size-3.5' aria-hidden='true' />
+                  {t('people.recovery.done')}
+                </span>
+              ) : item.handling === 'wait' ||
+                item.handling === 'confirmConsumed' ? (
                 <span className='text-xs text-muted-foreground'>
                   {handlingLabel(item)}
                 </span>
@@ -332,7 +358,7 @@ export function PersonBelongings({
               ) : null,
           },
         ]}
-        rows={items.map((item) => ({
+        rows={rows.map((item) => ({
           ...item,
           id: `${item.kind}-${item.id}`,
         }))}
