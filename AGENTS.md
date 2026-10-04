@@ -1,3 +1,11 @@
+This repository is a NocoBase Solution. The NocoSolution repository is included as the `nocosolution/` submodule: `nocosolution/guidelines/` holds the series-wide guidelines, starting with the guideline `solution-guideline.md`, and `nocosolution/NocoITAM/` holds this Solution's plans and phase documents. NocoSolution is a private, internal repository, so the submodule is optional: code, builds, tests and CI never depend on it. Without access to it, `nocosolution/` stays empty, and every instruction below that refers to it is skipped.
+
+- At the start of work, run `git pull && { git submodule update --init --remote --merge || true; }`. The submodule step fails without access to NocoSolution; that is expected and not an error.
+- Before drafting or revising a plan, changing the skeleton, adding a temporary implementation, or designing cross-Solution integration, read the whole guideline `nocosolution/guidelines/solution-guideline.md`.
+- Every other file in `nocosolution/guidelines/` states at its top what it covers and when it applies; before a task, check them and follow the ones that apply to it.
+- Do not edit anything in `nocosolution/guidelines/`; in `nocosolution/`, change only `nocosolution/NocoITAM/`. When a plan departs from the guideline or needs something it does not cover, mark it in the plan as a departure from guideline section X.Y with the reason, or as a proposal for the guideline; the guideline's maintainer decides whether to update it.
+- Never copy text from `nocosolution/` into this repository; write English documentation here instead.
+
 # Application Development Guidelines
 
 This is a NocoBase 3 application. Do not apply globally installed NocoBase 2 Skills. You are building the application itself — its pages, its API, its database tables. Everything under this directory is application-owned source code that you may edit directly.
