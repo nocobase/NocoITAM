@@ -8,6 +8,11 @@ import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { DataTable } from '@/components/itam/data-table';
 import { DeviceReturnDialog } from '@/components/itam/device-return-dialog';
 import { RecordLink } from '@/components/itam/record-link';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { EmptyState } from '@/components/itam/empty-state';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
@@ -216,6 +221,10 @@ export function PersonBelongings({
     disposals: 'workbench.work.tagDisposal',
   };
 
+  /** Why it cannot be done yet, and what it is waiting on. */
+  const waitingLabel = (item: RecoveryItem): string =>
+    [handlingLabel(item), item.waitingOn?.label].filter(Boolean).join(' · ');
+
   const recordOf = (item: RecoveryItem): string =>
     item.kind === 'device'
       ? `/devices/${item.targetId}`
@@ -331,17 +340,26 @@ export function PersonBelongings({
                 </span>
               ) : item.handling === 'wait' ||
                 item.handling === 'confirmConsumed' ? (
-                <span className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-                  {handlingLabel(item)}
-                  {/* What it is waiting for. Not a button: finishing a repair
-                      belongs to the repair and to its own 负责人 — but a row
-                      that only says "wait" is a dead end. */}
-                  {item.waitingOn ? (
-                    <RecordLink to={`/repairs/${item.waitingOn.id}`}>
-                      {item.waitingOn.label}
-                    </RecordLink>
-                  ) : null}
-                </span>
+                // The act this row would take, offered and refused: the
+                // button says what would happen to this thing, disabled says
+                // not yet, and the tooltip says why — naming the repair it
+                // waits on, since "once the repair is finished" leaves the
+                // reader asking which.
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <span tabIndex={0} aria-label={waitingLabel(item)} />
+                    }
+                  >
+                    <Button variant='outline' size='sm' disabled>
+                      <Undo2 data-icon='inline-start' />
+                      {item.kind === 'device'
+                        ? t('deviceActions.return.title')
+                        : t('stock.return')}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{waitingLabel(item)}</TooltipContent>
+                </Tooltip>
               ) : allowed[item.kind] ? (
                 <Button
                   variant='outline'
@@ -420,7 +438,11 @@ export function PersonBelongings({
                   {record.assetType ? (
                     <AssetTypeBadge value={record.assetType} />
                   ) : (
-                    <Badge variant='outline' className='shrink-0'>
+                    <Badge
+                      variant='secondary'
+                      data-tag='kind'
+                      className='shrink-0'
+                    >
                       {t(
                         DOCUMENT_TAG[record.collection] ??
                           `${kind?.i18n ?? record.collection}.object`,
