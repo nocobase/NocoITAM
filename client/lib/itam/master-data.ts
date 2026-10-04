@@ -62,6 +62,12 @@ export interface MasterDataCollection {
      * accessories, consumables, components) or entitlements (`entitlement`).
      */
     readonly appliesTo?: readonly ('device' | 'stock' | 'entitlement')[];
+    /**
+     * No number beside the name. A count belongs on a tab that holds one
+     * list; 归属 holds two of different kinds — what the person has and what
+     * answers to them — and a single number over both says nothing.
+     */
+    readonly countless?: boolean;
   }[];
   readonly defaultTab?: string;
 }
@@ -617,7 +623,7 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
     icon: Users,
     i18n: 'people',
     nameField: 'name',
-    extraTabs: [{ key: 'holdings', label: 'tabs.holdings' }],
+    extraTabs: [{ key: 'holdings', label: 'tabs.holdings', countless: true }],
     defaultTab: 'holdings',
     countColumns: [
       { key: 'devices', label: 'tabs.devices' },

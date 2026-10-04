@@ -25,6 +25,18 @@ export interface RecoveryItem {
   readonly targetId: string;
   readonly quantity?: number;
   readonly status?: string;
+  /**
+   * What is installed in it, for a device. A component belongs to the device
+   * and goes back inside it, so it is never a line of its own — but handing
+   * the laptop back hands these back with it.
+   */
+  readonly installed?: readonly {
+    readonly id: string;
+    /** The component's own record, which its name opens. */
+    readonly stockItemId: string;
+    readonly name: string;
+    readonly quantity: number;
+  }[];
   /** Which of the five asset types it is, for the row's own label. */
   readonly assetType:
     | 'device'

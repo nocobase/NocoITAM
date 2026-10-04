@@ -47,6 +47,8 @@ export interface PersonHoldings {
   readonly devices: readonly Row[];
   readonly stock: readonly Row[];
   readonly entitlementSeats: readonly Row[];
+  /** Components installed in those devices, each naming the device it is in. */
+  readonly installed?: readonly Row[];
 }
 
 /** A record that still names somebody, and so has to change hands. */
@@ -986,12 +988,39 @@ export function createMasterDataService(
         .where('entitlementSeats.holderId', '=', id)
         .where('entitlementSeats.releasedAt', 'is', null)
         .execute<Row>();
+      // What is installed in those devices. A component belongs to the
+      // device and goes back inside it, so it is never a line of its own to
+      // settle — but handing the laptop back hands these back with it, and
+      // somebody checking what they are taking has to see them.
+      const deviceIds = devices.map((row) => String(row.id));
+      const installed =
+        deviceIds.length === 0
+          ? []
+          : await database
+              .query()
+              .selectFrom('stockHoldings')
+              .innerJoin(
+                'stockItems',
+                'stockItems.id',
+                'stockHoldings.stockItemId',
+              )
+              .select([
+                'stockHoldings.id as id',
+                'stockHoldings.holderId as deviceId',
+                'stockHoldings.stockItemId as stockItemId',
+                'stockHoldings.quantity as quantity',
+                'stockItems.name as name',
+              ])
+              .where('stockHoldings.holderType', '=', 'device')
+              .where('stockHoldings.holderId', 'in', deviceIds)
+              .execute<Row>();
       const decode = (rows: readonly Row[]) =>
         rows.map((row) => decodeRow(row));
       return {
         devices: decode(devices),
         stock: decode(stock),
         entitlementSeats: decode(entitlementSeats),
+        installed: decode(installed),
       };
     },
 

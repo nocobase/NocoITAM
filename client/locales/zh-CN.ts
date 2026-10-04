@@ -175,7 +175,7 @@ const zhCN: AppResource = {
   tabs: {
     history: '历史',
     children: '子级',
-    holdings: '持有',
+    holdings: '归属',
     relatedAssets: '关联资产',
     devices: '设备',
     purchaseOrders: '采购单',
@@ -926,10 +926,13 @@ const zhCN: AppResource = {
       owner: '负责人：{{name}}',
       handover_one: '还负责 {{count}} 条记录，需要移交',
       handover_other: '还负责 {{count}} 条记录，需要移交',
+      responsible_one: '负责 {{count}} 条记录',
+      responsible_other: '负责 {{count}} 条记录',
       changeOwner: '移交',
       changeOwnerHint: '指定今后由谁负责 {{record}}。只有现任负责人或创建人能做这件事。',
+      installed: '内含',
       columns: {
-        item: '待回收资产',
+        item: '持有资产',
         handling: '处理方式',
       },
       groups: {

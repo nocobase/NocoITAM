@@ -129,7 +129,9 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
   const tabs: DomainTab[] = (collection.extraTabs ?? []).map((tab) => ({
     key: tab.key,
     label: tab.label,
-    countOf: (answer) => statsTabCount(answer, tab.key),
+    ...(tab.countless
+      ? {}
+      : { countOf: (answer: unknown) => statsTabCount(answer, tab.key) }),
     visible: tab.appliesTo
       ? (record, related) => {
           const kind = kindOfAppliesTo(
