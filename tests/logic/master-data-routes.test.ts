@@ -576,8 +576,10 @@ describe('master data routes', () => {
         id: expect.any(String),
         label: 'Server room',
         // Which field names them, so the page can hand it over without
-        // keeping a second copy of the map.
+        // keeping a second copy of the map, and who holds it now, so the
+        // handover row says whose it is before it is reassigned.
         field: 'ownerId',
+        ownerId: 'mia',
       },
     ]);
   });

@@ -299,7 +299,12 @@ export function PersonBelongings({
                         the tag is what tells the rows apart. */}
                   <AssetTypeBadge value={item.assetType} />
                   {item.label}
-                  {item.kind === 'device' ? (
+                  {/* A device's status is here to say whether it can be
+                        taken back. Once the row is settled it is no longer
+                        about this person — a returned device reads 在库,
+                        which is a fact about the stock — so it goes with
+                        the action it informed. */}
+                  {item.kind === 'device' && !item.done ? (
                     <DeviceStatusBadge status={item.status} />
                   ) : null}
                   {item.kind === 'stock' ? (
@@ -350,20 +355,13 @@ export function PersonBelongings({
               item.done ? (
                 <span className='flex items-center gap-1 text-xs text-muted-foreground'>
                   <Check className='size-3.5' aria-hidden='true' />
-                  {/* Which act settled it. Settled means it is no longer in
-                      their name, and that is not always a return: a device
-                      transferred to somebody else leaves the list the same
-                      way, and so does one scrapped or marked lost. Only a
-                      device now in stock was returned; for the rest the
-                      status badge beside its name says where it went, and
-                      this says no more than that it is done. */}
-                  {t(
-                    item.kind === 'seat'
-                      ? 'people.recovery.doneReclaim'
-                      : item.kind === 'stock' || item.status === 'inStock'
-                        ? 'people.recovery.doneReturn'
-                        : 'people.recovery.done',
-                  )}
+                  {/* One word for every settled row. This column answers
+                      "is there still something for me to do about this
+                      one", and the answer is the same however it left:
+                      returned, transferred to somebody else, scrapped,
+                      lost. Which of those it was is read on the record
+                      itself, a click away. */}
+                  {t('people.recovery.done')}
                 </span>
               ) : item.handling === 'wait' ||
                 item.handling === 'confirmConsumed' ? (
@@ -505,7 +503,7 @@ export function PersonBelongings({
                     {'done' in record && record.done ? (
                       <span className='flex items-center gap-1 text-xs text-muted-foreground'>
                         <Check className='size-3.5' aria-hidden='true' />
-                        {t('people.recovery.doneHandover')}
+                        {t('people.recovery.done')}
                       </span>
                     ) : (
                       <Button
