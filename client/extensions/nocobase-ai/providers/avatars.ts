@@ -1,5 +1,7 @@
 import { createAvatar } from '@dicebear/core';
 import * as nocobaseAvatars from '@nocobase/ai-employee-avatars';
+// Application change (ITAM): see the root-relative branch below.
+import { resolveAppUrl } from '@nocobase/app-client';
 
 const avatarOptions: Record<string, Record<string, unknown>> = {
   'nocobase-001-male': {
@@ -798,6 +800,12 @@ export function getAIEmployeeAvatar(
   ) {
     return seed;
   }
+  // Application change (ITAM): an avatar may be one of the application's own
+  // assets by root-relative path ("/assets/logo-mark.png"), resolved under
+  // the mount path; the employee record's avatar column is too short for a
+  // data URI and an absolute URL would tie it to one deployment. NocoCRM
+  // carries the same change.
+  if (seed?.startsWith('/')) return resolveAppUrl(seed.replace(/^\/+/, ''));
 
   const avatarSeed = seed && seed in avatarOptions ? seed : fallbackAvatar;
   const cacheKey = `${avatarSeed}:${

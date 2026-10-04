@@ -32,7 +32,7 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
 
     routes.use('*', auth.required(), authorization.middleware());
 
-    // Available means what the plugin says: a model it can use, and Ava
+    // Available means what the plugin says: a model it can use, and Noco
     // switched on at 设置 → AI 员工 (the CRM decides the same way). There is
     // no ITAM switch of its own beside those (removed 2026-09-27).
     routes.get('/status', async (context) => {

@@ -1760,8 +1760,8 @@ const messages = {
     ai: {
       title: 'AI assistant',
       description:
-        'Business notes for the assistant Ava; the model, whether she is on and her tool permissions are set under Settings → AI.',
-      businessNotes: 'Business notes (Ava reads them when a task starts)',
+        'Business notes for the assistant Noco; the model, whether it is on and its tool permissions are set under Settings → AI.',
+      businessNotes: 'Business notes (Noco reads them when a task starts)',
     },
     demo: {
       title: 'Demo data',
@@ -2065,7 +2065,7 @@ const messages = {
       configError:
         'The AI configuration could not be loaded. Check the connection and Settings → AI, then reload the page.',
       noEmployee:
-        'The AI employee Ava is not available. Enable her under Settings → AI, then reload the page.',
+        'The AI employee Noco is not available. Enable it under Settings → AI, then reload the page.',
       noModel:
         'No usable model. Configure and enable one under Settings → AI, then reload the page.',
     },
@@ -2073,7 +2073,7 @@ const messages = {
     collapse: 'Back to the side panel',
     close: 'Close',
     employee: {
-      nickname: 'Ava',
+      nickname: 'Noco',
       position: 'IT device assistant',
       bio: 'I know where every device is, who holds it, what it costs and when it expires. Ask me to plan work, find things, or explain a risk — I propose, you confirm.',
       greeting:
