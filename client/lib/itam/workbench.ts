@@ -22,10 +22,8 @@ export const REMINDER_KINDS = [
 ] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
-
-/** Where each reminder kind's list lives. */
 /**
- * 需要关注 checks eleven rules, which as one flat list is a wall of
+ * 需要关注 checks ten rules, which as one flat list is a wall of
  * near-identical lines. They read as three clusters — what is happening to
  * the assets, what is happening to the entitlements, and what is happening
  * to the goods coming in — so the card groups them and the eye has
@@ -59,6 +57,7 @@ export const REMINDER_GROUPS: readonly {
   { key: 'supply', kinds: ['lowStock', 'purchaseOverdue'] },
 ];
 
+/** Where each reminder kind's list lives. */
 export const REMINDER_ROUTES: Readonly<Record<ReminderKind, string>> = {
   warrantyExpiring: '/devices?view=warrantyExpiring',
   entitlementRenewing: '/entitlements?view=renewing',

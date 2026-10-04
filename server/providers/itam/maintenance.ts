@@ -531,8 +531,9 @@ export function createMaintenanceService(dependencies: {
     async runJob(job, now = new Date()) {
       if (job === 'monthly')
         return { depreciated: await devices.recomputeDepreciation(now) };
-      // Its own task, scheduled before the daily one so the reminders that
-      // run computes already flag what a new leaver still holds.
+      // Its own task, scheduled before the daily one: the day's employment
+      // status is settled before anything else reads it, and the recovery
+      // lists this run prepares are for the people it has just marked.
       if (job === 'leavers') {
         const employment = await masterData.markDueLeavers(isoDate(now));
         return {
