@@ -333,11 +333,12 @@ export function createStockService(
       .execute();
   };
 
-  const holderLabel = async (
+  /** The holder a movement names must exist, whichever way the goods go. */
+  const holderRow = async (
     connection: DatabaseConnection,
     holderType: HolderType,
     holderId: string,
-  ): Promise<string> => {
+  ): Promise<Row> => {
     const table =
       holderType === 'person'
         ? 'people'
@@ -351,6 +352,25 @@ export function createStockService(
       .executeTakeFirst<Row>();
     if (!target)
       throw new ValidationError(`${holderType} not found`, 'holderId');
+    return target;
+  };
+
+  /**
+   * …and, when stock is going *out*, must be able to receive it. Both rules
+   * here are about that direction: somebody who has left is given nothing
+   * new, and a disposed device is not built on. Taking goods *back* from
+   * either is the opposite act, and the very thing offboarding and a
+   * disposal exist to do — so it goes through `holderRow` alone. The rules
+   * used to sit in the lookup both paths shared, which refused 归还 on a
+   * leaver's accessories with "cannot issue to a person who has left", from
+   * the button that was trying to collect them.
+   */
+  const requireIssuable = async (
+    connection: DatabaseConnection,
+    holderType: HolderType,
+    holderId: string,
+  ): Promise<void> => {
+    const target = await holderRow(connection, holderType, holderId);
     if (holderType === 'person' && target.employmentStatus === 'left') {
       throw new BusinessRuleError(
         'Cannot issue to a person who has left',
@@ -363,9 +383,6 @@ export function createStockService(
         'DISPOSED_READ_ONLY',
       );
     }
-    return holderType === 'device'
-      ? `${String(target.deviceNo)} ${String(target.name)}`
-      : String(target.name);
   };
 
   const adjustHolding = async (
@@ -616,8 +633,9 @@ export function createStockService(
             'Consumables are not returned',
             'CONSUMABLE',
           );
-        // Validates the holder (and refuses a leaver or a disposed device).
-        await holderLabel(connection, input.holderType, input.holderId);
+        // The holder must exist, and that is all this direction asks: a
+        // person who has left is exactly who stock is taken back from.
+        await holderRow(connection, input.holderType, input.holderId);
         await adjustHolding(
           connection,
           id,
@@ -1006,8 +1024,8 @@ export function createStockService(
             `Only ${available} available`,
             'INSUFFICIENT_STOCK',
           );
-        // Validates the holder (and refuses a leaver or a disposed device).
-        await holderLabel(connection, input.holderType, input.holderId);
+        // Going out, so the holder must be able to receive it.
+        await requireIssuable(connection, input.holderType, input.holderId);
         const type =
           kind === 'consumable'
             ? 'consume'

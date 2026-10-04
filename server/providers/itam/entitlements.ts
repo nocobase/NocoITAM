@@ -410,12 +410,31 @@ export function createEntitlementService(
     return shape((await findRaw(id, within)) ?? {}, conditions);
   };
 
+  /**
+   * How a seat's holder reads. Resolving a name says nothing about whether
+   * they may be *given* a seat: reclaiming one and logging whose it was both
+   * need the name, and a leaver is who both are usually about. The rule used
+   * to live here, so reclaiming a leaver's seat logged a bare id (the caller
+   * swallowed the refusal) and changing its key failed outright.
+   */
   const holderLabel = async (
     connection: DatabaseConnection,
     holderType: SeatHolderType,
     holderId: string,
     field = 'holderId',
   ): Promise<string> => {
+    const target = await holderRow(connection, holderType, holderId, field);
+    return holderType === 'device'
+      ? `${String(target.deviceNo)} ${String(target.name)}`
+      : String(target.name);
+  };
+
+  const holderRow = async (
+    connection: DatabaseConnection,
+    holderType: SeatHolderType,
+    holderId: string,
+    field = 'holderId',
+  ): Promise<Row> => {
     const table = holderType === 'person' ? 'people' : 'devices';
     const target = await connection.query
       .selectFrom(table)
@@ -423,6 +442,17 @@ export function createEntitlementService(
       .where('id', '=', holderId)
       .executeTakeFirst<Row>();
     if (!target) throw new ValidationError(`${holderType} not found`, field);
+    return target;
+  };
+
+  /** …and a seat is only ever handed to somebody still here. */
+  const requireAssignable = async (
+    connection: DatabaseConnection,
+    holderType: SeatHolderType,
+    holderId: string,
+    field = 'holderId',
+  ): Promise<string> => {
+    const target = await holderRow(connection, holderType, holderId, field);
     if (holderType === 'person' && target.employmentStatus === 'left')
       throw new BusinessRuleError(
         'Cannot assign a seat to a person who has left',
@@ -599,7 +629,9 @@ export function createEntitlementService(
           const holderId =
             typeof seat.holderId === 'string' ? seat.holderId : null;
           const label = holderId
-            ? await holderLabel(
+            ? // A holder whose record has since been deleted leaves the id
+              // behind rather than stopping the reclaim.
+              await holderLabel(
                 connection,
                 seat.holderType as SeatHolderType,
                 holderId,
@@ -1126,7 +1158,7 @@ export function createEntitlementService(
             );
           let label = account ?? '';
           if (holderId) {
-            const holder = await holderLabel(
+            const holder = await requireAssignable(
               connection,
               holderType,
               holderId,

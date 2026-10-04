@@ -366,6 +366,114 @@ describe('stock and software entitlements', () => {
     expect(holdings).toEqual([]);
   });
 
+  /**
+   * Offboarding runs every one of these against somebody who has left, so a
+   * rule about handing things *out* must not sit in the lookup that the
+   * taking-back path shares. It did: 归还 on a leaver's accessories was
+   * refused with "cannot issue to a person who has left", reclaiming their
+   * seat logged a bare id, and changing that seat's key failed outright.
+   */
+  it('takes back from a leaver while refusing to issue to one', async () => {
+    const item = await data<{ id: string }>(
+      await post('stock', {
+        kind: 'accessory',
+        name: 'MX Keys',
+        categoryId: fixture.accessoryCategoryId,
+        modelId: fixture.accessoryModelId,
+        locationId: fixture.locationId,
+        totalQuantity: 5,
+      }),
+    );
+    const license = await data<{ id: string }>(
+      await post('entitlements', {
+        kind: 'perpetual',
+        softwareProductId: fixture.productId,
+        name: 'Figma Pro',
+        licensingModel: 'perUser',
+        seatCount: 2,
+      }),
+    );
+    // Issued and seated while they still worked here.
+    expect(
+      (
+        await post(`stock/${item.id}/issue`, {
+          holderType: 'person',
+          holderId: fixture.personId,
+          quantity: 2,
+        })
+      ).status,
+    ).toBe(200);
+    await post(`entitlements/${license.id}/assign-seats`, {
+      seats: [{ holderId: fixture.personId }],
+    });
+    const seats = await data<{ seats: { id: string }[] }>(
+      await app.request(`/api/itam/entitlements/${license.id}/seats`, manager),
+    );
+    const seatId = seats.seats[0]!.id;
+
+    await app.request(`/api/itam/master/people/${fixture.personId}`, {
+      ...json({ leaveDate: '2020-01-01' }),
+      method: 'PATCH',
+      ...manager,
+    });
+
+    // Nothing new goes to them.
+    expect(
+      (
+        await post(`stock/${item.id}/issue`, {
+          holderType: 'person',
+          holderId: fixture.personId,
+          quantity: 1,
+        })
+      ).status,
+    ).toBe(422);
+    expect(
+      (
+        await post(`entitlements/${license.id}/assign-seats`, {
+          seats: [{ holderId: fixture.personId }],
+        })
+      ).status,
+    ).toBe(422);
+
+    // What they already hold comes back, which is the point of the whole
+    // exercise.
+    const returned = await post(`stock/${item.id}/take-back`, {
+      holderType: 'person',
+      holderId: fixture.personId,
+      quantity: 2,
+    });
+    expect(returned.status).toBe(200);
+    expect((await data<{ usedQuantity: number }>(returned)).usedQuantity).toBe(
+      0,
+    );
+    // The seat's key still changes, and the log names the holder rather
+    // than falling back to their id.
+    expect(
+      (
+        await post(`entitlements/${license.id}/seat-key`, {
+          seatId,
+          productKey: 'NEW-KEY',
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await post(`entitlements/${license.id}/reclaim-seats`, {
+          seatIds: [seatId],
+        })
+      ).status,
+    ).toBe(200);
+    const log = await data<{ event?: { summary?: string } }[]>(
+      await app.request(
+        `/api/itam/entitlements/${license.id}/history`,
+        manager,
+      ),
+    );
+    expect(
+      log.some((row) => row.event?.summary?.includes('Li Na')),
+    ).toBe(true);
+  });
+
   it('manages perpetual seats and compliance', async () => {
     const created = await post('entitlements', {
       kind: 'perpetual',
