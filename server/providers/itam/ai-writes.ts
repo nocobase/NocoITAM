@@ -308,6 +308,9 @@ async function execute(
 ): Promise<Result> {
   const context: OperationContext = {
     actorId: scope.actorId,
+    // The assistant proposed it; `actorId` is the person who confirmed
+    // the card, because the write is their decision either way.
+    origin: 'agent',
     sourceType: 'aiAction',
   };
   const devices = container.resolve(deviceServiceToken);

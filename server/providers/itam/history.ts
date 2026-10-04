@@ -35,7 +35,17 @@ const BOOKKEEPING_FIELDS: ReadonlySet<string> = new Set(['updatedAt']);
  * that changes an ITAM record writes through here, inside its own
  * transaction, so history and data cannot disagree.
  */
+/**
+ * What put a line on a timeline. `actorId` says whose decision it was, which
+ * this does not replace: the assistant's writes are held until a person
+ * confirms the card, so they carry `agent` *and* that person's `actorId`.
+ * Absent on rows written before it was recorded, which read as `human`.
+ */
+export type HistoryOrigin = 'human' | 'agent' | 'import' | 'schedule';
+
 export interface HistorySource {
+  /** Defaults to `human`: a person acting on a page. */
+  readonly origin?: HistoryOrigin;
   readonly sourceType?: string;
   readonly sourceId?: string;
   /**
@@ -71,6 +81,8 @@ export interface ChangeLogInput extends HistorySource {
 }
 
 export interface HistoryEventRecord {
+  /** Null on rows written before it was recorded; read as `human`. */
+  readonly origin: HistoryOrigin | null;
   readonly id: string;
   readonly operationId: string | null;
   readonly subjectType: string;
@@ -85,6 +97,8 @@ export interface HistoryEventRecord {
 }
 
 export interface ChangeLogRecord {
+  /** Null on rows written before it was recorded; read as `human`. */
+  readonly origin: HistoryOrigin | null;
   readonly id: string;
   readonly operationId: string | null;
   readonly subjectType: string;
@@ -101,6 +115,8 @@ export interface ChangeLogRecord {
 
 /** One line of the merged timeline. */
 export interface TimelineItem {
+  /** Null on rows written before it was recorded; read as `human`. */
+  readonly origin: HistoryOrigin | null;
   readonly id: string;
   readonly createdAt: Date | string;
   readonly actorId: string | null;
@@ -224,6 +240,7 @@ export function createHistoryService(
           sourceType: event.sourceType ?? null,
           sourceId: event.sourceId ?? null,
           actorId: event.actorId ?? null,
+          origin: event.origin ?? 'human',
           operationId: operationFor(event.operationId, connection),
           createdAt: new Date(),
         })
@@ -244,6 +261,7 @@ export function createHistoryService(
           sourceType: entry.sourceType ?? null,
           sourceId: entry.sourceId ?? null,
           actorId: entry.actorId ?? null,
+          origin: entry.origin ?? 'human',
           operationId: operationFor(entry.operationId, connection),
           createdAt: new Date(),
         })
@@ -346,6 +364,7 @@ export function createHistoryService(
           id: `event:${event.id}`,
           createdAt: event.createdAt,
           actorId: event.actorId,
+          origin: event.origin,
           event,
           changes: operation && claimed.has(operation) ? own : [],
         });
@@ -357,6 +376,7 @@ export function createHistoryService(
           id: `operation:${operation}`,
           createdAt: group[0].createdAt,
           actorId: group[0].actorId,
+          origin: group[0].origin,
           event: null,
           changes: group,
         });
@@ -366,6 +386,7 @@ export function createHistoryService(
           id: `change:${change.id}`,
           createdAt: change.createdAt,
           actorId: change.actorId,
+          origin: change.origin,
           event: null,
           changes: [change],
         });
