@@ -27,6 +27,8 @@ export interface MyWorkRecord {
   readonly id: string;
   /** How the record names itself: its number, or its number and name. */
   readonly title: string;
+  /** What the title does not say on its own — a person's job. */
+  readonly subtitle?: string | null;
   /** The date that makes it a to-do, as stored. */
   readonly date: string | null;
   /** Application route of the record; the workbench opens it in the drawer. */
@@ -428,7 +430,7 @@ export function createWorkbenchService(dependencies: {
             const rows = await take(
               'people',
               peopleConditions,
-              ['id', 'name', 'leaveDate'],
+              ['id', 'name', 'leaveDate', 'position'],
               leavers,
             );
             items.push({
@@ -438,6 +440,9 @@ export function createWorkbenchService(dependencies: {
               records: rows.map((row) => ({
                 id: String(row.id),
                 title: String(row.name),
+                // A name alone says who, not what they did here; the job is
+                // what tells the reader whose work is coming their way.
+                subtitle: asText(row.position) ?? null,
                 date: asText(row.leaveDate) ?? null,
                 url: `/people/${String(row.id)}`,
                 count: mine.get(String(row.id)) ?? 0,

@@ -54,6 +54,14 @@ export interface OwnedRecord {
   readonly collection: string;
   readonly id: string;
   readonly label: string;
+  /** Which field names them: a 负责人 on most, a 申请人 on a request. */
+  readonly field: 'ownerId' | 'requesterId';
+  /**
+   * Which of the five asset types it is, where it is an asset at all: the
+   * pages tag those with their own icon, and a repair order or a purchase
+   * order is not one of them.
+   */
+  readonly assetType?: string;
 }
 
 /**
@@ -69,10 +77,28 @@ const OWNED_BY_USER: readonly {
   readonly collection: string;
   readonly field: string;
   readonly label: string;
+  /** The asset type, as a constant or as the column that holds it. */
+  readonly assetType?: { readonly value: string } | { readonly column: string };
 }[] = [
-  { collection: 'devices', field: 'ownerId', label: 'deviceNo' },
-  { collection: 'stockItems', field: 'ownerId', label: 'name' },
-  { collection: 'entitlements', field: 'ownerId', label: 'name' },
+  {
+    collection: 'devices',
+    field: 'ownerId',
+    label: 'deviceNo',
+    assetType: { value: 'device' },
+  },
+  {
+    collection: 'stockItems',
+    field: 'ownerId',
+    label: 'name',
+    // Accessory, consumable or component: the item itself says which.
+    assetType: { column: 'kind' },
+  },
+  {
+    collection: 'entitlements',
+    field: 'ownerId',
+    label: 'name',
+    assetType: { value: 'entitlement' },
+  },
   { collection: 'repairs', field: 'ownerId', label: 'repairNo' },
   { collection: 'purchaseOrders', field: 'requesterId', label: 'orderNo' },
   { collection: 'disposals', field: 'requesterId', label: 'disposalNo' },
@@ -872,10 +898,14 @@ export function createMasterDataService(
       for (const entry of OWNED_BY_USER) {
         const conditions = allowed.get(entry.collection);
         if (!conditions) continue;
+        const column =
+          entry.assetType && 'column' in entry.assetType
+            ? entry.assetType.column
+            : undefined;
         const rows = await database
           .query()
           .selectFrom(entry.collection)
-          .select(['id', entry.label])
+          .select(column ? ['id', entry.label, column] : ['id', entry.label])
           .where(entry.field, '=', userId)
           .where((eb) => compileAuthzScope(eb, conditions.scope))
           .orderBy(entry.label, 'asc')
@@ -885,6 +915,15 @@ export function createMasterDataService(
             collection: entry.collection,
             id: String(row.id),
             label: asText(row[entry.label]) ?? String(row.id),
+            field: entry.field as OwnedRecord['field'],
+            ...(entry.assetType
+              ? {
+                  assetType:
+                    'value' in entry.assetType
+                      ? entry.assetType.value
+                      : (asText(row[entry.assetType.column]) ?? undefined),
+                }
+              : {}),
           });
         }
       }

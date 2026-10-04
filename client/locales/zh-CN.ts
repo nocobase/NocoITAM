@@ -913,17 +913,23 @@ const zhCN: AppResource = {
     noHoldings: '暂无持有',
     recovery: {
       title: '待回收',
-      since: '{{name}} 已于 {{date}} 离职，以下是他名下还未归还的。',
-      left: '{{name}} 已离职，以下是他名下还未归还的。',
-      mine: '其中 {{count}} 项由你负责。',
+      since: '已于 {{date}} 离职，以下是他名下还未归还的资产。',
+      left: '已离职，以下是他名下还未归还的资产。',
+      sinceMine_one:
+        '已于 {{date}} 离职，以下是他名下还未归还的资产，其中 {{count}} 项由你负责。',
+      sinceMine_other:
+        '已于 {{date}} 离职，以下是他名下还未归还的资产，其中 {{count}} 项由你负责。',
+      leftMine_one: '已离职，以下是他名下还未归还的资产，其中 {{count}} 项由你负责。',
+      leftMine_other:
+        '已离职，以下是他名下还未归还的资产，其中 {{count}} 项由你负责。',
       you: '你',
       owner: '负责人：{{name}}',
-      accountsStay:
-        '回收席位只释放授权，不会让账号失效：还需在软件后台停用账号或更换共用密钥。',
       handover_one: '还负责 {{count}} 条记录，需要移交',
       handover_other: '还负责 {{count}} 条记录，需要移交',
+      changeOwner: '移交',
+      changeOwnerHint: '指定今后由谁负责 {{record}}。只有现任负责人或创建人能做这件事。',
       columns: {
-        item: '待回收项',
+        item: '待回收资产',
         handling: '处理方式',
       },
       groups: {
@@ -934,8 +940,7 @@ const zhCN: AppResource = {
       handling: {
         return: '归还',
         takeBack: '退回库存',
-        reclaim: '回收席位',
-        wait: '在维修商处 —— 维修单完成后再收',
+        wait: '维修完成后再收',
         confirmConsumed: '已领用 —— 确认是否还有未使用的可退回',
       },
     },
@@ -1278,7 +1283,8 @@ const zhCN: AppResource = {
     startAudit: '开始后按范围生成盘点明细快照，并通知执行人。',
     removeAttachment: '「{{name}}」将从本记录移除，并记入历史。',
     removeDisposalDevice: '{{name}} 将从本报废单的清单中移除。',
-    reclaimSeat: '收回 {{name}} 的席位，席位回到可分配。',
+    reclaimSeat:
+      '收回 {{name}} 的席位，席位回到可分配。回收只释放授权，不会让账号失效 —— 还需在软件后台停用账号或更换共用密钥。',
     runJob: '立即运行「{{job}}」，结果记入运行记录。',
     generateDemo: '按种子数据生成一批演示记录，可随时清除。',
   },

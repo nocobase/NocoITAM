@@ -565,7 +565,14 @@ describe('master data routes', () => {
       )
     ).json()) as { data: { owned: { collection: string; label: string }[] } };
     expect(recovery.data.owned).toEqual([
-      { collection: 'locations', id: expect.any(String), label: 'Server room' },
+      {
+        collection: 'locations',
+        id: expect.any(String),
+        label: 'Server room',
+        // Which field names them, so the page can hand it over without
+        // keeping a second copy of the map.
+        field: 'ownerId',
+      },
     ]);
   });
 

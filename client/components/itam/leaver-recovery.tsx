@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { DataTable } from '@/components/itam/data-table';
 import { DeviceReturnDialog } from '@/components/itam/device-return-dialog';
 import { RecordLink } from '@/components/itam/record-link';
+import { ReferenceSelect } from '@/components/itam/reference-select';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,10 +22,19 @@ import {
   useCollectionPermissions,
   useCurrentUserId,
 } from '@/lib/itam/permissions';
-import { referenceRoute, useReferenceNames } from '@/lib/itam/references';
+import { recordTarget } from '@/lib/itam/record-view';
+import {
+  referencePath,
+  referenceRoute,
+  useReferenceNames,
+} from '@/lib/itam/references';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
 import { STOCK_PATH, STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
-import { usePersonRecovery, type RecoveryItem } from '@/lib/itam/recovery';
+import {
+  usePersonRecovery,
+  type OwnedRecord,
+  type RecoveryItem,
+} from '@/lib/itam/recovery';
 
 /**
  * 待回收: what a leaver still holds, and the way to hand each item back from
@@ -67,6 +77,8 @@ export function LeaverRecovery({
     'assignSeat',
   ]);
   const [pending, setPending] = useState<RecoveryItem>();
+  const [handover, setHandover] = useState<OwnedRecord>();
+  const [nextOwner, setNextOwner] = useState<string | null>(null);
   // Its own memo: the reference goes into the names request and the page
   // context below, and a new array each render would re-register both.
   const items = useMemo(() => recovery.data?.items ?? [], [recovery.data]);
@@ -129,6 +141,21 @@ export function LeaverRecovery({
       }),
     onSuccess: settled,
   });
+  const reassign = useMutation({
+    mutationFn: async () => {
+      if (!handover) return;
+      await api.request({
+        path: `${referencePath(handover.collection)}/${handover.id}`,
+        method: 'PATCH',
+        json: { [handover.field]: nextOwner },
+      });
+    },
+    onSuccess: async () => {
+      setHandover(undefined);
+      setNextOwner(null);
+      await queryClient.invalidateQueries({ queryKey: ['itam'] });
+    },
+  });
   const reclaimSeat = useMutation({
     mutationFn: async (item: RecoveryItem) =>
       api.request({
@@ -163,6 +190,25 @@ export function LeaverRecovery({
   // Where the row's own record lives, so a reader can look at the thing
   // before handing it back: the device, the stock item it was issued from,
   // the entitlement the seat belongs to.
+  // Each handling reads as the word the page that owns the act uses: a seat
+  // is 回收 on its entitlement's own page, so it is 回收 here. One act, one
+  // name, wherever it is offered.
+  const handlingLabel = (item: RecoveryItem): string =>
+    item.handling === 'reclaim'
+      ? t('entitlements.reclaimSeat')
+      : t(`people.recovery.handling.${item.handling}`);
+
+  /**
+   * What to call a record that is not an asset. The to-do rows tag these the
+   * same way — 采购, 维修, 报废 — and the tag names the kind of work, not the
+   * document: 「采购单」 beside its own number says 单 twice.
+   */
+  const DOCUMENT_TAG: Readonly<Record<string, string>> = {
+    repairs: 'workbench.work.tagRepair',
+    purchaseOrders: 'workbench.work.tagPurchase',
+    disposals: 'workbench.work.tagDisposal',
+  };
+
   const recordOf = (item: RecoveryItem): string =>
     item.kind === 'device'
       ? `/devices/${item.targetId}`
@@ -182,13 +228,21 @@ export function LeaverRecovery({
       </CardHeader>
       <CardContent className='space-y-3'>
         <p className='text-sm text-muted-foreground'>
-          {recovery.data.leaveDate
-            ? t('people.recovery.since', {
-                name: personName,
-                date: formatDate(recovery.data.leaveDate),
-              })
-            : t('people.recovery.left', { name: personName })}
-          {mine > 0 ? ` ${t('people.recovery.mine', { count: mine })}` : ''}
+          {/* The person is a way into their record: this card is read from
+              the inbox as often as from their own page, and the rest of who
+              they are — department, the rest of what they hold — is there. */}
+          <RecordLink to={`/people/${personId}`}>{personName}</RecordLink>{' '}
+          {t(
+            `people.recovery.${recovery.data.leaveDate ? 'since' : 'left'}${
+              mine > 0 ? 'Mine' : ''
+            }`,
+            {
+              date: recovery.data.leaveDate
+                ? formatDate(recovery.data.leaveDate)
+                : '',
+              count: mine,
+            },
+          )}
         </p>
         {/* The asset lists' own table, because that is what this is — the
             five asset types in one list, each row saying which it is. The
@@ -270,7 +324,7 @@ export function LeaverRecovery({
                 item.handling === 'wait' ||
                 item.handling === 'confirmConsumed' ? (
                   <span className='text-xs text-muted-foreground'>
-                    {t(`people.recovery.handling.${item.handling}`)}
+                    {handlingLabel(item)}
                   </span>
                 ) : allowed[item.kind] ? (
                   <Button
@@ -283,7 +337,7 @@ export function LeaverRecovery({
                     }}
                   >
                     <Undo2 data-icon='inline-start' />
-                    {t(`people.recovery.handling.${item.handling}`)}
+                    {handlingLabel(item)}
                   </Button>
                 ) : null,
             },
@@ -300,31 +354,90 @@ export function LeaverRecovery({
             it, so each row is a way into that record rather than an action
             here. */}
         {owned.length > 0 ? (
-          <section className='space-y-1'>
-            <h4 className='text-xs font-medium text-muted-foreground'>
+          <section className='space-y-2'>
+            <p className='text-sm text-muted-foreground'>
               {t('people.recovery.handover', { count: owned.length })}
-            </h4>
-            <ul className='flex flex-wrap gap-x-3 gap-y-1 text-sm'>
-              {owned.map((record) => (
-                <li key={`${record.collection}-${record.id}`}>
-                  <RecordLink
-                    to={`/${referenceRoute(record.collection)}/${record.id}`}
+            </p>
+            {/* One record per line: they are things to go and settle, not a
+                set of tags. Each says what kind it is and in which seat it
+                names them, because a device's 负责人 and an order's 申请人
+                are not the same job. */}
+            <ul className='divide-y divide-border text-sm'>
+              {owned.map((record) => {
+                const to = `/${referenceRoute(record.collection)}/${record.id}`;
+                const kind = recordTarget(to);
+                return (
+                  <li
+                    key={`${record.collection}-${record.id}`}
+                    className='flex flex-wrap items-center gap-2 py-2'
                   >
-                    {record.label}
-                  </RecordLink>
-                </li>
-              ))}
+                    {/* An asset wears the same icon tag as everywhere else;
+                        a repair or an order is not an asset, so it says what
+                        kind of document it is instead. */}
+                    {record.assetType ? (
+                      <AssetTypeBadge value={record.assetType} />
+                    ) : (
+                      <Badge variant='outline' className='shrink-0'>
+                        {t(
+                          DOCUMENT_TAG[record.collection] ??
+                            `${kind?.i18n ?? record.collection}.object`,
+                        )}
+                      </Badge>
+                    )}
+                    <RecordLink to={to}>{record.label}</RecordLink>
+                    <span className='text-xs text-muted-foreground'>
+                      {t(
+                        record.field === 'requesterId'
+                          ? 'fields.requester'
+                          : 'fields.owner',
+                      )}
+                      {' · '}
+                      {personName}
+                    </span>
+                    {/* Handing it over is an ordinary edit of that one
+                        field, so it is offered here rather than only on the
+                        record — the service refuses it when this reader may
+                        not make it. */}
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => setHandover(record)}
+                    >
+                      {t('people.recovery.changeOwner')}
+                    </Button>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ) : null}
-        {/* Reclaiming a seat frees the licence, not the login: this
-            application is a register and reaches no vendor's console. */}
-        {items.some((item) => item.handling === 'reclaim') ? (
-          <p className='text-xs text-muted-foreground'>
-            {t('people.recovery.accountsStay')}
-          </p>
-        ) : null}
       </CardContent>
+      {handover ? (
+        <ConfirmDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              setHandover(undefined);
+              setNextOwner(null);
+            }
+          }}
+          title={t('people.recovery.changeOwner')}
+          description={t('people.recovery.changeOwnerHint', {
+            record: handover.label,
+          })}
+          busy={reassign.isPending}
+          error={reassign.error}
+          confirmLabel={t('people.recovery.changeOwner')}
+          confirmDisabled={!nextOwner}
+          onConfirm={() => reassign.mutate()}
+        >
+          <ReferenceSelect
+            reference={{ collection: 'users' }}
+            value={nextOwner}
+            onChange={setNextOwner}
+          />
+        </ConfirmDialog>
+      ) : null}
       {pending?.handling === 'return' ? (
         <DeviceReturnDialog
           currentLocationId={null}
@@ -354,11 +467,14 @@ export function LeaverRecovery({
         <ConfirmDialog
           open
           onOpenChange={(open) => !open && setPending(undefined)}
-          title={t('people.recovery.handling.reclaim')}
-          description={t('people.recovery.accountsStay')}
+          // The entitlement page's own confirmation, word for word.
+          title={t('entitlements.reclaimSeat')}
+          description={t('confirmations.reclaimSeat', {
+            name: pending.account ?? pending.label,
+          })}
           busy={reclaimSeat.isPending}
           error={reclaimSeat.error}
-          confirmLabel={t('people.recovery.handling.reclaim')}
+          confirmLabel={t('entitlements.reclaimSeat')}
           onConfirm={() => reclaimSeat.mutate(pending)}
         >
           <div className='text-sm font-medium'>
