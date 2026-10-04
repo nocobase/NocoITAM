@@ -1668,8 +1668,8 @@ const zhCN: AppResource = {
     ai: {
       title: 'AI 助手',
       description:
-        '给 AI 助手 Ava 的业务说明；模型、启用与否和工具权限在「设置 → AI」中配置',
-      businessNotes: '业务说明（Ava 开始任务时读取）',
+        '给 AI 助手 Noco 的业务说明；模型、启用与否和工具权限在「设置 → AI」中配置',
+      businessNotes: '业务说明（Noco 开始任务时读取）',
     },
     demo: {
       title: '演示数据',
@@ -1954,14 +1954,14 @@ const zhCN: AppResource = {
     chat: {
       loading: '正在加载 AI 配置…',
       configError: '无法加载 AI 配置，请检查网络和「设置 → AI」后刷新页面。',
-      noEmployee: '没有可用的 AI 员工 Ava，请在「设置 → AI」中启用后刷新页面。',
+      noEmployee: '没有可用的 AI 员工 Noco，请在「设置 → AI」中启用后刷新页面。',
       noModel: '没有可用的模型，请在「设置 → AI」中配置并启用模型后刷新页面。',
     },
     expand: '展开',
     collapse: '收起到侧边',
     close: '关闭',
     employee: {
-      nickname: 'Ava',
+      nickname: 'Noco',
       position: 'IT 设备助理',
       bio: '我知道每台设备在哪里、谁在用、花了多少钱、什么时候到期。让我帮你安排工作、查找记录或解释风险——我来提议，你来确认。',
       greeting:

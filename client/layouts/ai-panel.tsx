@@ -63,7 +63,7 @@ const TOOL_RENDERERS: AIToolRendererMap = Object.fromEntries(
 );
 
 /**
- * Ava's name, role, bio and greeting in the interface language. The plugin
+ * Noco's name, role, bio and greeting in the interface language. The plugin
  * keeps a code-registered employee's texts in the one language of its
  * definition (`ai/employees/itam.ts`, English; the AI employees settings
  * page shows that), so this panel swaps in the translated ones by wrapping
@@ -211,7 +211,7 @@ export function AiPanelSpacer({
 }
 
 /**
- * The chat, mounted only once the plugin has found Ava and a usable model.
+ * The chat, mounted only once the plugin has found Noco and a usable model.
  * A chat mounted earlier shows the right defaults while its own selection
  * and transport still hold the empty configuration it started with, so the
  * send button does nothing (the plugin's guide warns of this; the CRM gates

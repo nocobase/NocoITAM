@@ -1,4 +1,9 @@
 import ReactMarkdown from 'react-markdown';
+// Application change (ITAM): see the use below.
+import {
+  markdownImage,
+  safeMarkdownUrl,
+} from '../../../../components/itam/ai/markdown-safety.js';
 import remarkGfm from 'remark-gfm';
 
 export type BusinessReportChart = {
@@ -200,7 +205,15 @@ export async function renderBusinessReportMarkdownToHtml(markdown: string) {
   // root is unmounted immediately after a synchronous render.
   const { prerender } = await import('react-dom/static.browser');
   const { prelude } = await prerender(
-    <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>,
+    // Application change (ITAM): a report is the model's Markdown too, so it
+    // neither loads an image nor follows a target that needs no click.
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{ img: markdownImage }}
+      urlTransform={safeMarkdownUrl}
+    >
+      {markdown}
+    </ReactMarkdown>,
   );
   return new Response(prelude).text();
 }

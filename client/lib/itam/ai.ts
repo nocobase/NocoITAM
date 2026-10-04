@@ -7,7 +7,7 @@ export const AI_PATH = 'itam/ai';
 
 /**
  * What the AI employee plugin says about the assistant: a model it can use
- * (`configured`) and Ava switched on at 设置 → AI 员工 (`enabled`).
+ * (`configured`) and Noco switched on at 设置 → AI 员工 (`enabled`).
  */
 export interface AiStatus {
   readonly configured: boolean;
