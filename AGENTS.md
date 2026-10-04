@@ -20,10 +20,12 @@ Default is the clean application starting point. It registers product capabiliti
 
 ## This application: ITAM
 
-This application is the IT Asset Management system described in `SPEC.md`,
-built phase by phase per `docs/IMPLEMENTATION_PLAN.md`. Read both before
-adding a feature; the plan records which phase owns what and the decisions
-already taken.
+This application is the IT Asset Management system described in its
+specification, `nocosolution/NocoITAM/SPEC.md` (in the optional submodule; edit it
+with targeted replacements only, never a formatter), built phase by phase per
+`docs/IMPLEMENTATION_PLAN.md`. Read both before adding a feature; the plan
+records which phase owns what and the decisions already taken, and stands on
+its own when the submodule is unavailable.
 
 Where ITAM code lives, on top of the template layout below:
 
@@ -311,7 +313,7 @@ Rules learned while building it:
   审批中, 已批准, 已下单, 部分到货, 已完成, 已拒绝, 已取消).
 - The demo creates its own sign-ins, one per role (2026-09-27): `manager`,
   `support` and one per active demo person, listed with their passwords in
-  `SPEC.md ## 演示数据`. They go through `DemoAccounts` (`demoAccounts()` in
+  `nocosolution/NocoITAM/SPEC.md ## 演示数据`. They go through `DemoAccounts` (`demoAccounts()` in
   `server/providers/itam/index.ts`) rather than the `user` table, are tracked
   in `demoRecords` under `accounts`, and each employee account is written to
   its person's `userId` so 我的资产 has content. `manager` and `support`
@@ -811,7 +813,8 @@ Rules learned while building it:
   change names the audit that corrected it and links there
   (`statusChangeByAudit`, the way a disposal's does).
 - What IT support may reach is scoped to its own work (2026-09-27, the
-  `## 用户角色与权限` table in `SPEC.md`): it edits any purchase order,
+  `## 用户角色与权限` table in
+  `nocosolution/NocoITAM/SPEC.md`): it edits any purchase order,
   repair or disposal but deletes only the ones it raised, and completes only
   the repairs it raised — `recordsICreated`, the authorization plugin's own
   Record Access policy, which matches `createdById` and needs no code here.
