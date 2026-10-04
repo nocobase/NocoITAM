@@ -508,8 +508,11 @@ describe('master data routes', () => {
         leaveDate: '2020-01-01',
         items: [],
         // They held nothing when they left, so there is nothing settled
-        // either — and no snapshot was taken, for the same reason.
+        // either — and no snapshot was taken, for the same reason, which is
+        // why no progress is claimed.
         settled: [],
+        settledOwned: [],
+        progress: null,
         // Nobody signs in as them, so no record can name them.
         owned: [],
       },

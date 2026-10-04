@@ -10,6 +10,7 @@ import {
   compileAuthzScope,
   outputFields,
   pickFields,
+  unrestricted,
 } from './authz-filter.js';
 import {
   asText,
@@ -318,11 +319,18 @@ export interface MasterDataService {
   personOwnedRecords(
     id: string,
     allowed: ReadonlyMap<string, DatabaseAuthorizationConditions>,
+    connection?: DatabaseConnection,
   ): Promise<readonly OwnedRecord[]>;
   /** Writes down what is in somebody's name as they are marked left. */
   snapshotBelongings(id: string, connection?: DatabaseConnection): Promise<void>;
   /** What that snapshot holds, or undefined where none was taken. */
-  belongingsSnapshot(id: string): Promise<readonly RecoveryItem[] | undefined>;
+  belongingsSnapshot(id: string): Promise<
+    | {
+        readonly items: readonly RecoveryItem[];
+        readonly owned: readonly OwnedRecord[];
+      }
+    | undefined
+  >;
   delete(
     collection: string,
     id: string,
@@ -936,14 +944,28 @@ export function createMasterDataService(
       ).filter(
         (item) => item.handling !== 'none',
       );
-      if (items.length === 0) return;
+      // Both halves, because both have to be settled and the progress counts
+      // them together. Read unrestricted: this is the register writing down
+      // a fact rather than a reader asking a question, and what each reader
+      // may see of it is decided when it is read back.
+      const owned = await this.personOwnedRecords(
+        id,
+        new Map(
+          OWNED_BY_USER.map((entry) => [
+            entry.collection,
+            unrestricted(entry.collection, 'read'),
+          ]),
+        ),
+        connection,
+      );
+      if (items.length === 0 && owned.length === 0) return;
       await history.record(
         {
           subjectType: 'people',
           subjectId: id,
           type: 'belongingsSnapshot',
-          summary: `In their name when they left: ${items.length}`,
-          payload: { items },
+          summary: `In their name when they left: ${items.length + owned.length}`,
+          payload: { items, owned },
         },
         connection,
       );
@@ -962,14 +984,17 @@ export function createMasterDataService(
         .executeTakeFirst<Row>();
       if (!row) return undefined;
       const payload = decodeRow(row).payload as
-        | { items?: readonly RecoveryItem[] }
+        | {
+            items?: readonly RecoveryItem[];
+            owned?: readonly OwnedRecord[];
+          }
         | undefined;
-      return payload?.items ?? [];
+      return { items: payload?.items ?? [], owned: payload?.owned ?? [] };
     },
 
-    async personOwnedRecords(id, allowed) {
-      const person = await database
-        .query()
+    async personOwnedRecords(id, allowed, connection) {
+      const read = connection ? connection.query : database.query();
+      const person = await read
         .selectFrom('people')
         .select('userId')
         .where('id', '=', id)
@@ -988,8 +1013,7 @@ export function createMasterDataService(
         const columns = ['id', entry.label];
         if (entry.label2) columns.push(entry.label2);
         if (column) columns.push(column);
-        const rows = await database
-          .query()
+        const rows = await read
           .selectFrom(entry.collection)
           .select(columns)
           .where(entry.field, '=', userId)

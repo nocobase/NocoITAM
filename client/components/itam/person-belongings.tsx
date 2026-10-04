@@ -174,13 +174,21 @@ export function PersonBelongings({
   // Settled rows keep their place in the list: a recovery is a job of a
   // known size, and a list that only shrinks never says what was done.
   const done = recovery.data.settled;
+  // A record handed over keeps its place too, for the same reason an asset
+  // does: the list is the size of the job.
+  const handedOver = recovery.data.settledOwned;
   const rows: (RecoveryItem & { readonly done?: boolean })[] = [
     ...items,
     ...done.map((item) => ({ ...item, done: true })),
   ];
   // Nothing in their name at all: say so once rather than show two empty
   // headings.
-  if (items.length === 0 && done.length === 0 && owned.length === 0)
+  if (
+    items.length === 0 &&
+    done.length === 0 &&
+    owned.length === 0 &&
+    handedOver.length === 0
+  )
     return <EmptyState title={t('people.noHoldings')} />;
   const mine = items.filter((item) => item.ownerId === me).length;
   const allowed: Readonly<Record<RecoveryItem['kind'], boolean>> = {
@@ -251,18 +259,6 @@ export function PersonBelongings({
               count: mine,
             },
           )}
-        </p>
-      ) : null}
-      {/* How much of it is done, against the snapshot taken when they left:
-          the live list alone cannot say, because what is settled has left
-          it. Without a snapshot — nobody has left, or they left before this
-          was written down — there is no denominator and no claim is made. */}
-      {done.length > 0 ? (
-        <p className='text-sm text-muted-foreground'>
-          {t('people.recovery.progress', {
-            done: done.length,
-            total: done.length + items.length,
-          })}
         </p>
       ) : null}
       {/* The asset lists' own table, because that is what this is — the
@@ -336,7 +332,14 @@ export function PersonBelongings({
               item.done ? (
                 <span className='flex items-center gap-1 text-xs text-muted-foreground'>
                   <Check className='size-3.5' aria-hidden='true' />
-                  {t('people.recovery.done')}
+                  {/* Which act settled it: a device and a holding were
+                      returned, a seat was reclaimed. "Handled" says one of
+                      them happened without saying which. */}
+                  {t(
+                    item.handling === 'reclaim'
+                      ? 'people.recovery.doneReclaim'
+                      : 'people.recovery.doneReturn',
+                  )}
                 </span>
               ) : item.handling === 'wait' ||
                 item.handling === 'confirmConsumed' ? (
@@ -424,7 +427,10 @@ export function PersonBelongings({
                 names them, because a device's 负责人 and an order's 申请人
                 are not the same job. */}
           <ul className='divide-y divide-border text-sm'>
-            {owned.map((record) => {
+            {[
+              ...owned,
+              ...handedOver.map((record) => ({ ...record, done: true })),
+            ].map((record) => {
               const to = `/${referenceRoute(record.collection)}/${record.id}`;
               const kind = recordTarget(to);
               return (
@@ -465,16 +471,23 @@ export function PersonBelongings({
                         field, so it is offered here rather than only on the
                         record — the service refuses it when this reader may
                         not make it. */}
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => setHandover(record)}
-                  >
-                    {/* Passing it to somebody else: the record stays, the
+                  {'done' in record && record.done ? (
+                    <span className='flex items-center gap-1 text-xs text-muted-foreground'>
+                      <Check className='size-3.5' aria-hidden='true' />
+                      {t('people.recovery.doneHandover')}
+                    </span>
+                  ) : (
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => setHandover(record)}
+                    >
+                      {/* Passing it to somebody else: the record stays, the
                         name on it changes. */}
-                    <ArrowRightLeft data-icon='inline-start' />
-                    {t('people.recovery.changeOwner')}
-                  </Button>
+                      <ArrowRightLeft data-icon='inline-start' />
+                      {t('people.recovery.changeOwner')}
+                    </Button>
+                  )}
                 </li>
               );
             })}

@@ -946,7 +946,9 @@ const messages = {
       changeOwnerHint:
         'Name who answers for {{record}} from now on. Only its current owner or whoever created it may do this.',
       installed: 'Contains',
-      done: 'Settled',
+      doneReturn: 'Returned',
+      doneReclaim: 'Reclaimed',
+      doneHandover: 'Handed over',
       progress: '{{done}} of {{total}} settled',
       columns: {
         item: 'Asset held',
@@ -1425,7 +1427,7 @@ const messages = {
       activeRepairs: 'Repairs in progress',
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
-      leaverRecovery: "Recover a leaver's assets",
+      leaverRecovery: 'Offboarding',
       mine_one: '{{count}} for you',
       mine_other: '{{count}} for you',
     },

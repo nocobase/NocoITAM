@@ -10,6 +10,7 @@ import { RecordPane } from '@/components/itam/record-drawer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/itam/format';
+import { usePersonRecovery } from '@/lib/itam/recovery';
 import { useWorkCards, WORK_TONE, type CardRecord } from '@/lib/itam/my-work';
 
 /**
@@ -156,6 +157,7 @@ export default function InboxPage(): ReactElement {
               {current.card.key === 'leaverRecovery' ? (
                 <>
                   <PaneHeading
+                    personId={current.record.id}
                     kind={current.card.label}
                     tone={WORK_TONE[current.card.key]}
                     title={current.record.title}
@@ -207,7 +209,10 @@ function PaneHeading({
   title,
   subtitle,
   to,
+  personId,
 }: {
+  /** Whose recovery this is, where the heading carries its progress. */
+  readonly personId?: string;
   /** The to-do this is, wearing the colour it wears in the queue. */
   readonly kind: string;
   readonly tone: string | undefined;
@@ -226,9 +231,17 @@ function PaneHeading({
       <RecordLink to={to} className='font-heading text-base font-medium'>
         {title}
       </RecordLink>
+      {/* A dot between them: the job is about the person, not part of their
+          name, and side by side with only a gap the two read as one phrase.
+          The same dot separates the details on a row in the list. */}
       {subtitle ? (
-        <span className='text-sm text-muted-foreground'>{subtitle}</span>
+        <span className='text-sm text-muted-foreground'>· {subtitle}</span>
       ) : null}
+      {/* How much of this one is done, on the title's own line and at its
+          far end: it is about the whole of what follows rather than about
+          any row of it. Only here — the person's own page is where the
+          register is read, not where this job is worked through. */}
+      {personId ? <RecoveryProgress personId={personId} /> : null}
     </div>
   );
 }
@@ -275,6 +288,29 @@ function FilterChip({
       {label}
       <span className='tabular-nums'>{count}</span>
     </button>
+  );
+}
+
+/**
+ * 已处理 N / M for the person whose recovery is open. It reads the same
+ * query the list below it does, so it costs no second request.
+ */
+function RecoveryProgress({
+  personId,
+}: {
+  readonly personId: string;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const recovery = usePersonRecovery(personId);
+  const progress = recovery.data?.progress;
+  if (!progress) return null;
+  return (
+    // The strongest neutral the theme has: it is the one number on this
+    // line, and every grey below `--primary` here is the same grey as the
+    // muted text around it.
+    <span className='ml-auto shrink-0 rounded-md bg-primary px-2 py-0.5 text-xs font-medium tabular-nums text-primary-foreground'>
+      {t('people.recovery.progress', progress)}
+    </span>
   );
 }
 
@@ -334,12 +370,13 @@ function WorkRow({
           </span>
         ) : null}
       </span>
-      <span className='flex items-center gap-2 text-xs text-muted-foreground tabular-nums'>
+      <span className='flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
         {/* Where a record stands for several things — a leaver holds a
             number of them — how many are the reader's own. */}
         {record.count === undefined ? null : (
           <span>{t('workbench.work.mine', { count: record.count })}</span>
         )}
+        {record.count !== undefined && record.date ? <span>·</span> : null}
         {record.date ? <span>{formatDate(record.date)}</span> : null}
       </span>
     </button>
