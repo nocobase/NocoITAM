@@ -926,18 +926,13 @@ const messages = {
     noHoldings: 'Nothing held',
     recovery: {
       title: 'To recover',
-      since: 'This person left on {{date}} and still holds these assets:',
-      left: 'This person has left and still holds these assets:',
+      left: 'This person has left; this is what was in their name then:',
       // One sentence: the share that is the reader's is a clause of the same
       // statement rather than a second announcement.
-      sinceMine_one:
-        'This person left on {{date}} and still holds these assets, {{count}} of them yours to settle:',
-      sinceMine_other:
-        'This person left on {{date}} and still holds these assets, {{count}} of them yours to settle:',
       leftMine_one:
-        'This person has left and still holds these assets, {{count}} of them yours to settle:',
+        'This person has left; this is what was in their name then, {{count}} of it yours to settle:',
       leftMine_other:
-        'This person has left and still holds these assets, {{count}} of them yours to settle:',
+        'This person has left; this is what was in their name then, {{count}} of them yours to settle:',
       you: 'you',
       owner: 'owner: {{name}}',
       responsible_one: 'This person answers for {{count}} record:',

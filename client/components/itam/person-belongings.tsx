@@ -22,7 +22,6 @@ import { useApi } from '@/lib/itam/api';
 import { useAiPageContext } from '@/lib/itam/ai-context';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
-import { formatDate } from '@/lib/itam/format';
 import {
   useCollectionPermissions,
   useCurrentUserId,
@@ -248,17 +247,12 @@ export function PersonBelongings({
         <p className='text-sm text-muted-foreground'>
           {/* The sentence names nobody: the page's own title does, and in
               the queue the heading above it does. */}
-          {t(
-            `people.recovery.${recovery.data.leaveDate ? 'since' : 'left'}${
-              mine > 0 ? 'Mine' : ''
-            }`,
-            {
-              date: recovery.data.leaveDate
-                ? formatDate(recovery.data.leaveDate)
-                : '',
-              count: mine,
-            },
-          )}
+          {/* The date is on the record above; what this line is for is
+              saying that the table below is the whole of what was in their
+              name when they left, settled rows included. */}
+          {t(`people.recovery.${mine > 0 ? 'leftMine' : 'left'}`, {
+            count: mine,
+          })}
         </p>
       ) : null}
       {/* The asset lists' own table, because that is what this is — the
