@@ -337,6 +337,7 @@ const zhCN: AppResource = {
       renewalAdvanced: '下次续订日 {{from}} → {{to}}',
       left: '标记为离职',
       leftOnLeaveDate: '离职日期 {{date}} 已到，自动标记为离职',
+      recoveryPrepared: '已整理待回收清单：设备 {{devices}}、库存 {{stock}}、席位 {{seats}}',
       seatAssign: '席位分配给 {{target}}',
       seatAssigned: '获得 {{target}} 的席位',
       seatReclaim: '从 {{target}} 收回席位',

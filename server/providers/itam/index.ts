@@ -318,6 +318,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
       createMaintenanceService({
         database: container.resolve(databaseManagerToken),
         settings: container.resolve(settingsServiceToken),
+        history: container.resolve(historyServiceToken),
         devices: container.resolve(deviceServiceToken),
         entitlements: container.resolve(entitlementServiceToken),
         masterData: container.resolve(masterDataServiceToken),

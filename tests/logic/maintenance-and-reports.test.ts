@@ -343,6 +343,47 @@ describe('maintenance, reminders, workbench and reports', () => {
     );
   });
 
+  it('prepares a leaver recovery once and hands it to the owner', async () => {
+    const hr = await create('master/departments', { name: 'HR' });
+    const leaver = await create('master/people', {
+      name: 'Zhou Yi',
+      departmentId: hr.id,
+      leaveDate: '2020-01-31',
+    });
+    const device = await create('devices', {
+      modelId,
+      locationId,
+      serialNo: 'SN-PREP',
+      ownerId: manager.user,
+    });
+    await post(`devices/${device.id}/assign`, {
+      targetType: 'person',
+      targetId: leaver.id,
+    });
+    const maintenance = app.container.resolve(maintenanceServiceToken);
+    const first = await maintenance.runJob('leavers');
+    expect(first.recoveriesPrepared).toBe(1);
+
+    const events = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('historyEvents')
+      .select(['type', 'payload', 'origin'])
+      .where('subjectType', '=', 'people')
+      .where('subjectId', '=', leaver.id)
+      .where('type', '=', 'recoveryPrepared')
+      .execute<{ type: string; payload: unknown; origin: string | null }>();
+    expect(events).toHaveLength(1);
+    expect(events[0]?.origin).toBe('schedule');
+
+    // The owner is told their own part, and only theirs.
+    expect(app.notifications.some((n) => n.to.id === manager.user)).toBe(true);
+
+    // A second night does not prepare it again, because the event is both the
+    // preparation and the record that it was made.
+    expect((await maintenance.runJob('leavers')).recoveriesPrepared).toBe(0);
+  });
+
   it('answers "my work" by role and builds the reports', async () => {
     const device = await create('devices', {
       modelId,
