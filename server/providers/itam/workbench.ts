@@ -9,6 +9,10 @@ import {
 import type { ApprovalService, ApprovalSubject } from './approvals.js';
 import { compileAuthzScope } from './authz-filter.js';
 import { asText, type Row } from './collection-query.js';
+import {
+  OWNED_BY_USER,
+  RECOVERABLE_DEVICE_STATUSES,
+} from './recovery.js';
 
 /**
  * "My work" on the workbench: what waits for the signed-in user right now.
@@ -39,6 +43,13 @@ export interface MyWorkRecord {
    * them answer to the person reading. Absent where the record is the work.
    */
   readonly count?: number;
+  /**
+   * The record itself answers to the reader, where the record *is* the work —
+   * a device whose loan is overdue. The card lists everybody's, because the
+   * act is granted by permission, so each row says whether this one is the
+   * reader's rather than leaving the list looking like all of it is.
+   */
+  readonly mine?: boolean;
 }
 
 export interface MyWorkItem {
@@ -337,94 +348,158 @@ export function createWorkbenchService(dependencies: {
         });
       }
 
-      // 离职资产回收: somebody marked as left who still holds something the
-      // reader is responsible for. Scoped by the owner of the thing held, not
-      // by the grant: recovering a device belongs to its 负责人, the way
-      // chasing a loan back does. A leaver whose holdings answer to two people
-      // is a to-do for both, each seeing the part that is theirs — which is
-      // also why this replaced the `leftPersonHoldings` reminder rather than
-      // joining it: the same people on one screen as both work and risk read
-      // as two problems.
+      // 离职交接: somebody marked as left who still has anything unsettled —
+      // something they hold, or a record that still names them.
+      //
+      // Every reader who may recover sees every one of them, and the row says
+      // how much of it answers to this reader. It used to be scoped to the
+      // owner of the thing held, reasoning that recovering a device belongs
+      // to its 负责人 the way chasing a loan back does. Two things were wrong
+      // with that. Returning one thing emptied the reader's share and the
+      // whole person left their queue, at 已处理 1 / 8 — the membership rule
+      // counted the reader's part while the progress beside it counted the
+      // person's. And a leaver's own records, which no owner holds, gave
+      // nobody a to-do at all: changing the name on a purchase order is the
+      // creator's to make, and holding a device is not what makes somebody
+      // the person to do it. Recovering is granted by permission, so the
+      // owner scope was a convention, not the rule — and the one thing a
+      // convention must not do is hide work in one person's inbox while
+      // they are away.
       const peopleConditions = await decide('people', 'read');
       if (peopleConditions) {
-        // How many of each leaver's holdings are this reader's, not just
-        // which leavers have any: the row says 2 项 without being opened, and
-        // a leaver whose other four things answer to somebody else does not
-        // look like four more than it is.
+        /** Everybody's, and the reader's share of it, per person. */
+        const open = new Map<string, number>();
         const mine = new Map<string, number>();
-        const addHolders = (rows: readonly Row[], column: string): void => {
+        const add = (
+          rows: readonly Row[],
+          column: string,
+          owner = 'ownerId',
+        ): void => {
           for (const row of rows) {
             const holder = asText(row[column]);
-            if (holder) mine.set(holder, (mine.get(holder) ?? 0) + 1);
+            if (!holder) continue;
+            open.set(holder, (open.get(holder) ?? 0) + 1);
+            if (asText(row[owner]) === userId)
+              mine.set(holder, (mine.get(holder) ?? 0) + 1);
           }
         };
-        const owned = (table: string, scope: DatabaseAuthorizationConditions) =>
+        const readable = (
+          table: string,
+          scope: DatabaseAuthorizationConditions,
+        ) =>
           database
             .query()
             .selectFrom(table)
-            .where((eb) => compileAuthzScope(eb, scope.scope))
-            .where('ownerId', '=', userId);
+            .where((eb) => compileAuthzScope(eb, scope.scope));
 
         const deviceConditions = await decide('devices', 'read');
         if (deviceConditions)
-          addHolders(
-            await owned('devices', deviceConditions)
+          add(
+            await readable('devices', deviceConditions)
               .where('assigneeType', '=', 'person')
-              .select(['assigneeId'])
+              // Only the statuses offboarding has anything to say about, so
+              // the count agrees with the page it opens.
+              .where('status', 'in', [...RECOVERABLE_DEVICE_STATUSES])
+              .select(['assigneeId', 'ownerId'])
               .execute<Row>(),
             'assigneeId',
           );
 
-        // Stock and seats are held through the item and the entitlement, which
-        // is where the owner is; the holding rows themselves are reached
-        // through the parent the reader may already read.
+        // Stock and seats are held through the item and the entitlement,
+        // which is where the owner is, so the holding rows are joined back
+        // to the parent the reader may already read.
         const stockConditions = await decide('stockItems', 'read');
         if (stockConditions) {
-          const ids = (
-            await owned('stockItems', stockConditions).select(['id']).execute<Row>()
-          ).map((row) => String(row.id));
-          if (ids.length > 0)
-            addHolders(
-              await database
-                .query()
-                .selectFrom('stockHoldings')
-                .where('stockItemId', 'in', ids)
-                .where('holderType', '=', 'person')
-                .where('quantity', '>', 0)
-                .select(['holderId'])
-                .execute<Row>(),
+          const owners = new Map(
+            (
+              await readable('stockItems', stockConditions)
+                .select(['id', 'ownerId'])
+                .execute<Row>()
+            ).map((row) => [String(row.id), asText(row.ownerId)]),
+          );
+          if (owners.size > 0)
+            add(
+              (
+                await database
+                  .query()
+                  .selectFrom('stockHoldings')
+                  .where('stockItemId', 'in', [...owners.keys()])
+                  .where('holderType', '=', 'person')
+                  .where('quantity', '>', 0)
+                  .select(['holderId', 'stockItemId'])
+                  .execute<Row>()
+              ).map((row) => ({
+                ...row,
+                ownerId: owners.get(String(row.stockItemId)) ?? null,
+              })),
               'holderId',
             );
         }
 
         const entitlementConditions = await decide('entitlements', 'read');
         if (entitlementConditions) {
-          const ids = (
-            await owned('entitlements', entitlementConditions)
-              .select(['id'])
-              .execute<Row>()
-          ).map((row) => String(row.id));
-          if (ids.length > 0)
-            addHolders(
-              await database
-                .query()
-                .selectFrom('entitlementSeats')
-                .where('entitlementId', 'in', ids)
-                .where('holderType', '=', 'person')
-                .where('releasedAt', 'is', null)
-                .select(['holderId'])
-                .execute<Row>(),
+          const owners = new Map(
+            (
+              await readable('entitlements', entitlementConditions)
+                .select(['id', 'ownerId'])
+                .execute<Row>()
+            ).map((row) => [String(row.id), asText(row.ownerId)]),
+          );
+          if (owners.size > 0)
+            add(
+              (
+                await database
+                  .query()
+                  .selectFrom('entitlementSeats')
+                  .where('entitlementId', 'in', [...owners.keys()])
+                  .where('holderType', '=', 'person')
+                  .where('releasedAt', 'is', null)
+                  .select(['holderId', 'entitlementId'])
+                  .execute<Row>()
+              ).map((row) => ({
+                ...row,
+                ownerId: owners.get(String(row.entitlementId)) ?? null,
+              })),
               'holderId',
             );
         }
 
-        if (mine.size > 0) {
+        // The other half: records that still name them. They are keyed by
+        // sign-in, so a leaver with no linked account answers for none —
+        // and they count towards the person being unsettled without
+        // counting towards anybody's share, because handing one over is a
+        // decision rather than a thing in somebody's name.
+        const accounts = new Map(
+          (
+            await readable('people', peopleConditions)
+              .where('employmentStatus', '=', 'left')
+              .where('userId', 'is not', null)
+              .select(['id', 'userId'])
+              .execute<Row>()
+          ).map((row) => [String(row.userId), String(row.id)]),
+        );
+        if (accounts.size > 0) {
+          for (const entry of OWNED_BY_USER) {
+            const conditions = await decide(entry.collection, 'read');
+            if (!conditions) continue;
+            const rows = await readable(entry.collection, conditions)
+              .where(entry.field, 'in', [...accounts.keys()])
+              .select([entry.field])
+              .execute<Row>();
+            for (const row of rows) {
+              const person = accounts.get(asText(row[entry.field]) ?? '');
+              if (person) open.set(person, (open.get(person) ?? 0) + 1);
+            }
+          }
+        }
+
+        if (open.size > 0) {
           const leavers = (
             query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
           ) =>
             query
               .where('employmentStatus', '=', 'left')
-              .where('id', 'in', [...mine.keys()]);
+              .where('id', 'in', [...open.keys()]);
           const total = await count('people', peopleConditions, leavers);
           if (total > 0) {
             const rows = await take(
@@ -445,7 +520,10 @@ export function createWorkbenchService(dependencies: {
                 subtitle: asText(row.position) ?? null,
                 date: asText(row.leaveDate) ?? null,
                 url: `/people/${String(row.id)}`,
-                count: mine.get(String(row.id)) ?? 0,
+                // Nothing of theirs is this reader's: say nothing rather
+                // than 其中你负责 0 项, which is a line about the reader
+                // on a row that is not about them.
+                count: mine.get(String(row.id)) || undefined,
               })),
             });
           }
@@ -457,21 +535,43 @@ export function createWorkbenchService(dependencies: {
         // Past its date, not due on it — a loan due this afternoon is not
         // yet anybody's to chase. The same set the 借出逾期未还 reminder
         // counts (`maintenance.ts`): the reminder says how many, the card
-        // says which ones and opens them. Only the reader's own devices:
-        // chasing one back belongs to its 负责人, the way finishing a repair
-        // belongs to that repair's. Without this the card was not "mine" at
-        // all — everyone who may assign saw every overdue loan.
+        // says which ones and opens them.
+        //
+        // Everybody who may assign sees every one of them, each row saying
+        // whether it is the reader's. It was scoped to `ownerId` on the
+        // reasoning that chasing a device back belongs to its 负责人 — but
+        // taking it back is granted by permission, so that was a
+        // convention, and its cost is that a device lent by somebody on
+        // holiday is overdue in one inbox nobody is reading. The 负责人 is
+        // still who to ask; it is on the row rather than in the query.
         const dueBack = (query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>) =>
           query
             .where('status', '=', 'onLoan')
-            .where('expectedReturnDate', '<', today)
-            .where('ownerId', '=', userId);
-        const rows = await take(
-          'devices',
-          devices,
-          ['id', 'deviceNo', 'name', 'expectedReturnDate'],
-          dueBack,
+            .where('expectedReturnDate', '<', today);
+        // The reader's own first, then the longest overdue: a list that now
+        // holds everybody's starts with the part that is theirs. Two reads
+        // rather than one ordered by a case expression, which also keeps a
+        // device with no 负责人 out of a comparison against the reader.
+        const columns = [
+          'id',
+          'deviceNo',
+          'name',
+          'expectedReturnDate',
+          'ownerId',
+        ];
+        const soonest = (
+          query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
+        ) => dueBack(query).orderBy('expectedReturnDate', 'asc');
+        const ours = await take('devices', devices, columns, (query) =>
+          soonest(query).where('ownerId', '=', userId),
         );
+        const seen = new Set(ours.map((row) => String(row.id)));
+        const rows = [
+          ...ours,
+          ...(await take('devices', devices, columns, soonest)).filter(
+            (row) => !seen.has(String(row.id)),
+          ),
+        ].slice(0, MY_WORK_PREVIEW);
         items.push({
           key: 'loansDueToday',
           count: await count('devices', devices, dueBack),
@@ -481,6 +581,7 @@ export function createWorkbenchService(dependencies: {
             title: `${String(row.deviceNo)} / ${String(row.name)}`,
             date: asText(row.expectedReturnDate) ?? null,
             url: `/devices/${String(row.id)}`,
+            mine: asText(row.ownerId) === userId,
           })),
         });
       }

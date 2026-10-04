@@ -34,7 +34,11 @@ import {
   type DeleteReference,
 } from './errors.js';
 import { addMonths, today } from './dates.js';
-import { recoveryPlan, type RecoveryItem } from './recovery.js';
+import {
+  OWNED_BY_USER,
+  recoveryPlan,
+  type RecoveryItem,
+} from './recovery.js';
 import type { HistoryService } from './history.js';
 
 /**
@@ -81,40 +85,6 @@ export interface OwnedRecord {
  * record it is. The label is what the pages call the record: a number where
  * it has one, a name otherwise.
  */
-const OWNED_BY_USER: readonly {
-  readonly collection: string;
-  readonly field: string;
-  readonly label: string;
-  /** A second column joined to the first — a device reads 编号 / 名称. */
-  readonly label2?: string;
-  /** The asset type, as a constant or as the column that holds it. */
-  readonly assetType?: { readonly value: string } | { readonly column: string };
-}[] = [
-  {
-    collection: 'devices',
-    field: 'ownerId',
-    label: 'deviceNo',
-    label2: 'name',
-    assetType: { value: 'device' },
-  },
-  {
-    collection: 'stockItems',
-    field: 'ownerId',
-    label: 'name',
-    // Accessory, consumable or component: the item itself says which.
-    assetType: { column: 'kind' },
-  },
-  {
-    collection: 'entitlements',
-    field: 'ownerId',
-    label: 'name',
-    assetType: { value: 'entitlement' },
-  },
-  { collection: 'repairs', field: 'ownerId', label: 'repairNo' },
-  { collection: 'purchaseOrders', field: 'requesterId', label: 'orderNo' },
-  { collection: 'disposals', field: 'requesterId', label: 'disposalNo' },
-  { collection: 'locations', field: 'ownerId', label: 'name' },
-];
 
 /**
  * Whether somebody has left is the leave date and nothing else.

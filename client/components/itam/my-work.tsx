@@ -95,6 +95,9 @@ function WorkCardView({ card }: { readonly card: WorkCard }): ReactElement {
                         {t('workbench.work.mine', { count: record.count })}
                       </span>
                     )}
+                    {/* And where the record is the one thing, that it is
+                        theirs — the card lists everybody's. */}
+                    {record.mine ? <span>{t('workbench.work.yours')}</span> : null}
                     {record.date ? (
                       <span>{formatDate(record.date)}</span>
                     ) : null}

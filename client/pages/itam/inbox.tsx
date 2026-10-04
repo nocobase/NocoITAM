@@ -376,7 +376,11 @@ function WorkRow({
         {record.count === undefined ? null : (
           <span>{t('workbench.work.mine', { count: record.count })}</span>
         )}
-        {record.count !== undefined && record.date ? <span>·</span> : null}
+        {/* And where the record is the one thing, that it is theirs. */}
+        {record.mine ? <span>{t('workbench.work.yours')}</span> : null}
+        {(record.count !== undefined || record.mine) && record.date ? (
+          <span>·</span>
+        ) : null}
         {record.date ? <span>{formatDate(record.date)}</span> : null}
       </span>
     </button>

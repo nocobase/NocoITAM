@@ -283,9 +283,12 @@ describe('maintenance, reminders, workbench and reports', () => {
     expect(listed.map((row) => row.id)).toEqual([spare.id]);
   });
 
-  it('counts only the overdue loans on devices this reader is responsible for', async () => {
-    // 我的待办 is what is on *my* plate: chasing a device back belongs to
-    // its 负责人, the way finishing a repair belongs to that repair's.
+  it('lists every overdue loan, saying which are the reader\'s own', async () => {
+    // Taking a device back is granted by permission rather than by owning
+    // the record, so scoping the card to 负责人 was a convention — and its
+    // cost was that a device lent by somebody on holiday went overdue in
+    // one inbox nobody was reading. The 负责人 is still who to ask; the row
+    // says so instead of the query.
     const loan = async (ownerId: string, serialNo: string) => {
       const lent = await create('devices', { modelId, locationId, serialNo, ownerId });
       await post(`devices/${lent.id}/loan`, {
@@ -303,16 +306,25 @@ describe('maintenance, reminders, workbench and reports', () => {
       return lent;
     };
     const mine = await loan(manager.user, 'SN-MINE');
-    await loan('someone-else', 'SN-THEIRS');
+    const theirs = await loan('someone-else', 'SN-THEIRS');
     const work = await data<
-      { key: string; count: number; records: { id: string }[] }[]
+      {
+        key: string;
+        count: number;
+        records: { id: string; mine?: boolean }[];
+      }[]
     >(await get('workbench/my-work'));
     const loans = work.find((item) => item.key === 'loansDueToday');
-    expect(loans?.count).toBe(1);
-    expect(loans?.records.map((row) => row.id)).toEqual([mine.id]);
+    expect(loans?.count).toBe(2);
+    // The reader's own first, then the longest overdue.
+    expect(loans?.records.map((row) => row.id)).toEqual([mine.id, theirs.id]);
+    expect(loans?.records.map((row) => row.mine ?? false)).toEqual([
+      true,
+      false,
+    ]);
   });
 
-  it('makes a leaver a to-do for whoever answers for what they hold', async () => {
+  it('makes a leaver everybody\'s to-do, counting the reader\'s share', async () => {
     const support = { user: 'sam', role: 'support' as const };
     const hr = await create('master/departments', { name: 'HR' });
     // Issued to them while they still worked here: an assignment refuses
@@ -325,8 +337,8 @@ describe('maintenance, reminders, workbench and reports', () => {
       modelId,
       locationId,
       serialNo: 'SN-LEFT',
-      // The recovery belongs to the device's 负责人, so this is the whole
-      // scoping rule: Mia answers for it, Sam does not.
+      // Mia answers for it and Sam does not — which decides what each row
+      // *says*, not who sees it.
       ownerId: manager.user,
     });
     await post(`devices/${device.id}/assign`, {
@@ -353,11 +365,14 @@ describe('maintenance, reminders, workbench and reports', () => {
     // is read without being opened — one device here, not the whole of what
     // they hold.
     expect(mine?.records[0]?.count).toBe(1);
-    // Someone who may read every device, but answers for none of this
-    // leaver's, has nothing to do about them.
-    expect(
-      (await workOf(support)).find((item) => item.key === 'leaverRecovery'),
-    ).toBeUndefined();
+    // Somebody who answers for none of it still sees the person — work must
+    // not hide in one reader's inbox — and their row says nothing about a
+    // share, rather than 0 项.
+    const theirs = (await workOf(support)).find(
+      (item) => item.key === 'leaverRecovery',
+    );
+    expect(theirs?.records.map((row) => row.id)).toEqual([leaver.id]);
+    expect(theirs?.records[0]?.count).toBeUndefined();
 
     // And it is a to-do rather than a reminder: the same people must not be
     // on one screen as both work and risk.
@@ -367,6 +382,47 @@ describe('maintenance, reminders, workbench and reports', () => {
     expect(reminders.map((row) => row.kind)).not.toContain(
       'leftPersonHoldings',
     );
+  });
+
+  /**
+   * Offboarding's other half. A leaver's own records answer for nothing a
+   * holder can hand back, so while the card was scoped to "things whose
+   * 负责人 is me" a person who held nothing and owned four records was in
+   * nobody's queue at all — and changing the name on a purchase order is
+   * its creator's to do, which holding a device never made anybody.
+   */
+  it('counts a leaver who holds nothing but still has records in their name', async () => {
+    const hr = await create('master/departments', { name: 'HR' });
+    const owner = await create('master/people', {
+      name: 'Zhou Yi',
+      departmentId: hr.id,
+      // Records are keyed by sign-in, which the person record bridges to.
+      userId: 'zhou',
+    });
+    const quiet = await create('master/people', {
+      name: 'Qian Qian',
+      departmentId: hr.id,
+      userId: 'qian',
+    });
+    await create('master/locations', {
+      name: 'Server room',
+      type: 'room',
+      ownerId: 'zhou',
+    });
+    await leave(owner.id);
+    await leave(quiet.id);
+
+    const work = await data<
+      { key: string; records: { id: string; count?: number }[] }[]
+    >(await get('workbench/my-work'));
+    const leavers = work.find((item) => item.key === 'leaverRecovery');
+    // The one with a record to hand over is waiting; the one who left
+    // clean is not, so the card does not collect every past leaver.
+    expect(leavers?.records.map((row) => row.id)).toEqual([owner.id]);
+    // It counts towards the person being unsettled without counting
+    // towards anybody's share: handing a record over is a decision, not a
+    // thing in somebody's name.
+    expect(leavers?.records[0]?.count).toBeUndefined();
   });
 
   it('derives 在职状态 from the leave date and refuses it as an input', async () => {

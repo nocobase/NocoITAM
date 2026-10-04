@@ -1,4 +1,5 @@
 import { asText, type Row } from './collection-query.js';
+import { DEVICE_STATUSES } from './device-status.js';
 
 /**
  * What is to be done with what somebody holds.
@@ -16,6 +17,54 @@ import { asText, type Row } from './collection-query.js';
  * assistant still does the reading and the proposing; this is only what the
  * nightly job can say without one.
  */
+/**
+ * The records a person answers for, and the column that names them.
+ *
+ * Offboarding's other half: not what somebody holds but what still has their
+ * name on it, which no button settles — handing one over is a decision, and
+ * for a purchase order or a disposal only its requester or its creator may
+ * make it. Keyed by **sign-in**, not by person record, so a person with no
+ * linked account answers for nothing.
+ *
+ * Here rather than in master data because the 归属 tab reads it to list them
+ * and the workbench reads it to know whether a leaver is settled, and neither
+ * owns the other.
+ */
+export const OWNED_BY_USER: readonly {
+  readonly collection: string;
+  readonly field: string;
+  readonly label: string;
+  /** A second column joined to the first — a device reads 编号 / 名称. */
+  readonly label2?: string;
+  /** The asset type, as a constant or as the column that holds it. */
+  readonly assetType?: { readonly value: string } | { readonly column: string };
+}[] = [
+  {
+    collection: 'devices',
+    field: 'ownerId',
+    label: 'deviceNo',
+    label2: 'name',
+    assetType: { value: 'device' },
+  },
+  {
+    collection: 'stockItems',
+    field: 'ownerId',
+    label: 'name',
+    // Accessory, consumable or component: the item itself says which.
+    assetType: { column: 'kind' },
+  },
+  {
+    collection: 'entitlements',
+    field: 'ownerId',
+    label: 'name',
+    assetType: { value: 'entitlement' },
+  },
+  { collection: 'repairs', field: 'ownerId', label: 'repairNo' },
+  { collection: 'purchaseOrders', field: 'requesterId', label: 'orderNo' },
+  { collection: 'disposals', field: 'requesterId', label: 'disposalNo' },
+  { collection: 'locations', field: 'ownerId', label: 'name' },
+];
+
 export type RecoveryHandling =
   /** Hand it back to stock: the ordinary case. */
   | 'return'
@@ -88,6 +137,16 @@ export function deviceHandling(status: string): RecoveryHandling {
   // Lost, retired, pending disposal, disposed: not in their hands to give back.
   return 'none';
 }
+
+/**
+ * The device statuses offboarding has anything to say about, derived from
+ * the rule above so a query can ask for them without stating the rule a
+ * second time. The workbench counts a leaver's devices with this: one whose
+ * only device was scrapped months ago has nothing waiting, and a card that
+ * counted it would disagree with the page it opens.
+ */
+export const RECOVERABLE_DEVICE_STATUSES: readonly string[] =
+  DEVICE_STATUSES.filter((status) => deviceHandling(status) !== 'none');
 
 /**
  * What is to be done with a stock holding.

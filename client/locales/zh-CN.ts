@@ -1377,8 +1377,11 @@ const zhCN: AppResource = {
       activeAudits: '进行中的盘点',
       loansDueToday: '设备借出逾期未还',
       leaverRecovery: '离职交接',
-      mine_one: '{{count}} 项待你处理',
-      mine_other: '{{count}} 项待你处理',
+      // The card lists everybody's now, so this says which part of a row
+      // answers to the reader — not that only they may act on it.
+      mine_one: '你负责 {{count}} 项',
+      mine_other: '你负责 {{count}} 项',
+      yours: '你负责',
     },
     reminderGroups: {
       devices: '设备',
