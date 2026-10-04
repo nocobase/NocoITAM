@@ -262,12 +262,26 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
         // done as well as what is left, and a count of five that becomes a
         // count of two says nothing about which three.
         const snapshot = await masterData.belongingsSnapshot(id);
+        const owned = await masterData.personOwnedRecords(id, allowed);
         const outstanding = new Set(
           items.map((item) => `${item.kind}:${item.id}`),
         );
-        const settled = (snapshot ?? []).filter(
+        const settled = (snapshot?.items ?? []).filter(
           (item) => !outstanding.has(`${item.kind}:${item.id}`),
         );
+        // A record handed over leaves the list the same way a device
+        // returned does, so it counts the same. Only the collections this
+        // caller may read are counted, as only those are listed.
+        const stillOwned = new Set(
+          owned.map((record) => `${record.collection}:${record.id}`),
+        );
+        const settledOwned = (snapshot?.owned ?? []).filter(
+          (record) =>
+            allowed.has(record.collection) &&
+            !stillOwned.has(`${record.collection}:${record.id}`),
+        );
+        const done = settled.length + settledOwned.length;
+        const total = done + items.length + owned.length;
         return context.json({
           data: {
             // The page shows the leaving sentence only for somebody who has
@@ -277,7 +291,12 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
             leaveDate: person.leaveDate ?? null,
             items,
             settled,
-            owned: await masterData.personOwnedRecords(id, allowed),
+            owned,
+            settledOwned,
+            // Shown from the moment there is a snapshot, including before
+            // anything is settled: 0 / 5 is the size of the job, which is
+            // worth knowing before starting it.
+            progress: snapshot ? { done, total } : null,
           },
         });
       } catch (error) {

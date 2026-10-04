@@ -226,12 +226,11 @@ function PaneHeading({
       <RecordLink to={to} className='font-heading text-base font-medium'>
         {title}
       </RecordLink>
-      {/* A rule between them: the job is about the person, not part of
-          their name, and at a glance two words in a row read as one. */}
+      {/* A dot between them: the job is about the person, not part of their
+          name, and side by side with only a gap the two read as one phrase.
+          The same dot separates the details on a row in the list. */}
       {subtitle ? (
-        <span className='border-l border-border pl-2 text-sm text-muted-foreground'>
-          {subtitle}
-        </span>
+        <span className='text-sm text-muted-foreground'>· {subtitle}</span>
       ) : null}
     </div>
   );
@@ -338,12 +337,13 @@ function WorkRow({
           </span>
         ) : null}
       </span>
-      <span className='flex items-center gap-2 text-xs text-muted-foreground tabular-nums'>
+      <span className='flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
         {/* Where a record stands for several things — a leaver holds a
             number of them — how many are the reader's own. */}
         {record.count === undefined ? null : (
           <span>{t('workbench.work.mine', { count: record.count })}</span>
         )}
+        {record.count !== undefined && record.date ? <span>·</span> : null}
         {record.date ? <span>{formatDate(record.date)}</span> : null}
       </span>
     </button>

@@ -70,6 +70,15 @@ export interface PersonRecovery {
    */
   readonly settled: readonly RecoveryItem[];
   readonly owned: readonly OwnedRecord[];
+  /** Records that named them at leaving and name somebody else now. */
+  readonly settledOwned: readonly OwnedRecord[];
+  /**
+   * How much of the recovery is done, against the snapshot taken when they
+   * left. Null where none was taken — somebody still here, or somebody who
+   * left before the snapshot existed — because a figure with no denominator
+   * is worse than none.
+   */
+  readonly progress: { readonly done: number; readonly total: number } | null;
 }
 
 /** Which handlings a person carries out here, rather than somewhere else. */
