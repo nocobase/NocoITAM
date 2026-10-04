@@ -768,6 +768,8 @@ export function createMasterDataService(
           'assignedAt',
           'modelId',
           'categoryId',
+          // Who answers for it: the leaver's recovery is handed to them.
+          'ownerId',
         ])
         .where('assigneeType', '=', 'person')
         .where('assigneeId', '=', id)
@@ -784,6 +786,7 @@ export function createMasterDataService(
           'stockHoldings.updatedAt as updatedAt',
           'stockItems.name as name',
           'stockItems.kind as kind',
+          'stockItems.ownerId as ownerId',
         ])
         .where('stockHoldings.holderType', '=', 'person')
         .where('stockHoldings.holderId', '=', id)
@@ -803,6 +806,7 @@ export function createMasterDataService(
           'entitlementSeats.assignedAt as assignedAt',
           'entitlements.kind as kind',
           'entitlements.name as name',
+          'entitlements.ownerId as ownerId',
         ])
         .where('entitlementSeats.holderType', '=', 'person')
         .where('entitlementSeats.holderId', '=', id)
