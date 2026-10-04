@@ -21,6 +21,8 @@ import {
 } from '@nocobase/app-server/runtime';
 import { spaRootRoutes } from '@nocobase/app-server/spa';
 
+import { securityHeadersHttpMiddleware } from './security-headers.js';
+
 export function createApp(runtime: AppRuntimeContext): Application {
   const app = createAppFromRuntime(runtime);
 
@@ -37,6 +39,7 @@ export function createApp(runtime: AppRuntimeContext): Application {
   app.addServiceProvider(JobExecutorServiceProvider, {
     nodeEnv: runtime.env.NODE_ENV,
   });
+  app.addHttpMiddleware(securityHeadersHttpMiddleware);
   app.addHttpMiddleware(requestLoggingMiddleware);
   app.addHttpMiddleware(sessionHttpMiddleware);
   app.addHttpMiddleware(i18nHttpMiddleware);
