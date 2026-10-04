@@ -302,9 +302,10 @@ describe('CSV import / export and demo data', () => {
     expect(count('entitlementOverAllocated')).toBe(1);
     expect(count('lowStock')).toBe(1);
     // The demo's overdue loan is a to-do card and a notification, not a
-    // reminder, since 2026-09-28.
+    // reminder, since 2026-09-28; its leaver became a to-do the same way,
+    // scoped to whoever is responsible for what they still hold.
     expect(count('loanOverdue')).toBe(0);
-    expect(count('leftPersonHoldings')).toBe(1);
+    expect(count('leftPersonHoldings')).toBe(0);
     expect(count('auditOverdue')).toBeGreaterThanOrEqual(4);
     // The Zoom subscription the demo stopped renewing still holds a seat.
     expect(count('entitlementEnded')).toBe(1);

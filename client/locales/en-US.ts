@@ -1374,9 +1374,9 @@ const messages = {
       activeRepairs: 'Repairs in progress',
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
+      leaverRecovery: "Recover a leaver's assets",
     },
     reminderGroups: {
-      people: 'People',
       devices: 'Devices',
       entitlements: 'Entitlements',
       supply: 'Stock and purchasing',
@@ -1389,8 +1389,6 @@ const messages = {
       entitlementEnded: 'Ended subscriptions still holding seats',
       idleDevice: 'In stock over {{idleDays}} days',
       auditOverdue: 'Not audited for {{auditDays}} days',
-      leftPersonHoldings:
-        'Left, still holding devices, accessories or seats',
       entitlementOverAllocated: 'Over-allocated',
       lowStock: 'Accessories, consumables and components below minimum',
       purchaseOverdue: 'Deliveries overdue',
@@ -1403,7 +1401,6 @@ const messages = {
       entitlementEnded: 'Set not to renew, past their date',
       idleDevice: 'Available devices nobody used',
       auditOverdue: 'Non-disposed devices',
-      leftPersonHoldings: 'Devices, accessories or seats to reclaim',
       entitlementOverAllocated: 'More seats assigned than owned',
       lowStock: 'The three kinds kept as a quantity',
       purchaseOverdue:

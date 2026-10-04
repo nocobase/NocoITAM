@@ -296,6 +296,53 @@ describe('maintenance, reminders, workbench and reports', () => {
     expect(loans?.records.map((row) => row.id)).toEqual([mine.id]);
   });
 
+  it('makes a leaver a to-do for whoever answers for what they hold', async () => {
+    const support = { user: 'sam', role: 'support' as const };
+    const hr = await create('master/departments', { name: 'HR' });
+    const leaver = await create('master/people', {
+      name: 'Zhou Yi',
+      departmentId: hr.id,
+      leaveDate: '2020-01-31',
+    });
+    const device = await create('devices', {
+      modelId,
+      locationId,
+      serialNo: 'SN-LEFT',
+      // The recovery belongs to the device's 负责人, so this is the whole
+      // scoping rule: Mia answers for it, Sam does not.
+      ownerId: manager.user,
+    });
+    await post(`devices/${device.id}/assign`, {
+      targetType: 'person',
+      targetId: leaver.id,
+    });
+    await app.container.resolve(maintenanceServiceToken).runJob('leavers');
+
+    const workOf = async (who: { user: string; role: 'support' | 'manager' }) =>
+      data<{ key: string; count: number; records: { id: string }[] }[]>(
+        await get('workbench/my-work', who),
+      );
+    const mine = (await workOf(manager)).find(
+      (item) => item.key === 'leaverRecovery',
+    );
+    expect(mine?.count).toBe(1);
+    expect(mine?.records.map((row) => row.id)).toEqual([leaver.id]);
+    // Someone who may read every device, but answers for none of this
+    // leaver's, has nothing to do about them.
+    expect(
+      (await workOf(support)).find((item) => item.key === 'leaverRecovery'),
+    ).toBeUndefined();
+
+    // And it is a to-do rather than a reminder: the same people must not be
+    // on one screen as both work and risk.
+    const reminders = (await app.container
+      .resolve(maintenanceServiceToken)
+      .computeReminders()) as { kind: string }[];
+    expect(reminders.map((row) => row.kind)).not.toContain(
+      'leftPersonHoldings',
+    );
+  });
+
   it('answers "my work" by role and builds the reports', async () => {
     const device = await create('devices', {
       modelId,

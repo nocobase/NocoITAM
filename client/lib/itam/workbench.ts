@@ -16,7 +16,6 @@ export const REMINDER_KINDS = [
   'entitlementEnded',
   'idleDevice',
   'auditOverdue',
-  'leftPersonHoldings',
   'entitlementOverAllocated',
   'lowStock',
   'purchaseOverdue',
@@ -37,11 +36,6 @@ export const REMINDER_GROUPS: readonly {
   readonly key: string;
   readonly kinds: readonly ReminderKind[];
 }[] = [
-  // A leaver holds devices, accessories and seats at once, so the rule
-  // belongs to none of the asset groups — its subject is the person, and
-  // somebody who has left with the company's equipment is the first thing
-  // on this card worth reading.
-  { key: 'people', kinds: ['leftPersonHoldings'] },
   {
     // 设备, not 资产: 资产 is the umbrella over all five kinds, and every
     // rule here is about a device. The one rule the other kinds have —
@@ -73,7 +67,6 @@ export const REMINDER_ROUTES: Readonly<Record<ReminderKind, string>> = {
   entitlementEnded: '/entitlements?view=ended',
   idleDevice: '/devices?view=idle',
   auditOverdue: '/devices?view=auditOverdue',
-  leftPersonHoldings: '/people?employmentStatus=left',
   entitlementOverAllocated: '/entitlements?view=overAllocated',
   // Three kinds are counted and the link can only open one list, so it
   // opens the accessories — the kind most of them are. The card's own row
