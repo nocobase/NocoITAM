@@ -1,6 +1,8 @@
+import authUi from '../extensions/nocobase-auth-ui/locales/zh-CN.js';
 import type { AppResource } from './en-US.js';
 
 const zhCN: AppResource = {
+  ...authUi,
   home: {
     title: '开始构建你的应用',
     description: '向 AI 助手描述你的需求，逐步构建页面、数据模型和业务流程',
@@ -73,6 +75,7 @@ const zhCN: AppResource = {
     myAssets: '我的资产',
     itamSettings: '系统设置',
     breadcrumb: '面包屑',
+    back: '返回',
     brandHome: 'NocoITAM 首页',
     brandApps: 'NocoITAM 应用',
   },

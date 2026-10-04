@@ -9,6 +9,7 @@ import type { AuthorizationConfig } from '@nocobase/app-plugin-authorization/ser
 import { type AppIdentityConfig } from '@nocobase/app-server/config';
 import { type AppDatabaseConfig } from '@nocobase/app-server/database';
 import { resolveStandaloneAppRuntime } from '@nocobase/app-server/node';
+import type { AppJobsConfig } from '@nocobase/app-server/jobs';
 import {
   type CachingConfig,
   type AppDriveConfig,
@@ -76,15 +77,31 @@ describe('application config', () => {
       runtime.config.get<AppLoggingConfig>('logging')!.default,
     ).toBeUndefined();
     expect(runtime.config.get('logging.file.name')).toBe('app');
-    expect(runtime.config.get<AppQueueConfig>('queue')!.default).toBe('sync');
-    expect(runtime.config.get<AppQueueConfig>('queue')!.queues).toEqual({
-      schedule: { connection: 'database' },
+    // No default: queues run on the built-in memory configuration until one is named.
+    expect(runtime.config.get<AppQueueConfig>('queue')).toEqual({
+      memory: {
+        adapter: 'inMemory',
+        persistence: { path: runtime.paths.storage('queue') },
+      },
+      redis: {
+        adapter: 'redis',
+        connection: { host: '127.0.0.1', port: 6379, db: 0 },
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { age: 604_800 },
+      },
     });
-    expect(
-      runtime.config.get<AppQueueConfig>('queue')!.jobs?.locations,
-    ).toContain(
-      path.join(templateRootDir, 'server', 'jobs', '**', '*.{ts,js}'),
-    );
+    expect(runtime.config.get<AppJobsConfig>('jobs')).toEqual({
+      memory: {
+        adapter: 'memory',
+        persistence: { path: runtime.paths.storage('jobs') },
+      },
+      redis: {
+        adapter: 'redis',
+        connection: { host: '127.0.0.1', port: 6379, db: 0 },
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { age: 604_800 },
+      },
+    });
     expect(runtime.config.get<AppSessionConfigInput>('session')!.default).toBe(
       'memory',
     );
@@ -101,6 +118,22 @@ describe('application config', () => {
 
     expect(result.changedNamespaces).toEqual([]);
   });
+  it('lets the environment select the jobs configuration Scheduler runs on', async () => {
+    const defaults = await resolveStandaloneAppRuntime(appRuntime, {
+      rootDir: templateRootDir,
+      configPath,
+    });
+    expect(defaults.config.get('scheduler')).toEqual({});
+
+    const runtime = await resolveStandaloneAppRuntime(appRuntime, {
+      rootDir: templateRootDir,
+      configPath,
+      env: { SCHEDULER_JOBS: 'redis' },
+    });
+
+    expect(runtime.config.get('scheduler.jobs')).toBe('redis');
+  });
+
   it('loads only explicit env overrides and restores defaults on reload', async () => {
     const runtime = await resolveStandaloneAppRuntime(appRuntime, {
       rootDir: templateRootDir,
@@ -114,9 +147,7 @@ describe('application config', () => {
     });
     expect(runtime.config.get('server.port')).toBe(14001);
     expect(runtime.config.get('server.startLog')).toBe(false);
-    expect(runtime.config.get('queue.connections.redis.host')).toBe(
-      '127.0.0.1',
-    );
+    expect(runtime.config.get('queue.redis.connection.host')).toBe('127.0.0.1');
     expect(runtime.config.get('session.stores.redis.host')).toBe('127.0.0.1');
     expect(runtime.config.get('logging.console.pretty')).toBe(false);
     expect(runtime.config.get('session.cookie.secure')).toBe(true);
