@@ -25,3 +25,4 @@ database/*/collections/
 
 # macOS folder metadata.
 .DS_Store
+/nocosolution/
