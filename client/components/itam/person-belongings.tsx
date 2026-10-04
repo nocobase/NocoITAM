@@ -601,9 +601,10 @@ export function PersonBelongings({
           confirmLabel={t('entitlements.reclaimSeat')}
           onConfirm={() => reclaimSeat.mutate(pending)}
         >
-          <div className='text-sm font-medium'>
-            {[pending.label, pending.account].filter(Boolean).join(' · ')}
-          </div>
+          {/* The entitlement, and only that: the description beside it
+              already names whose seat is being taken back, so repeating
+              the account here said the same address twice. */}
+          <div className='text-sm font-medium'>{pending.label}</div>
         </ConfirmDialog>
       ) : null}
     </div>
