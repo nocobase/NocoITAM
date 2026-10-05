@@ -16,6 +16,7 @@ import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { SearchTrigger } from '@/components/itam/global-search';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
+import { useWorkScope } from '@/lib/itam/work-scope';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useItamList, useItamSettings, type ItamRecord } from '@/lib/itam/api';
 import type { DocumentKind } from '@/lib/itam/document-kinds';
@@ -206,7 +207,9 @@ function useDocumentRows(
  * loan, a leaver), the to-do's own card stands in.
  */
 function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
+  const { t } = useTranslation();
   const openRecord = useOpenRecord();
+  const scope = useWorkScope();
   const idsOf = (kind: DocumentKind) =>
     card.records
       .filter((record) => kindOf(card.key, record) === kind)
@@ -230,7 +233,19 @@ function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
         url: record.url,
         badge: <AssetTypeBadge value='device' className='shrink-0' />,
       };
-    return board && row ? { spec: board.spec, row, url: record.url } : null;
+    return board && row
+      ? {
+          spec: board.spec,
+          row,
+          url: record.url,
+          // In the team's view, which approvals are this reader's to
+          // decide; under 我负责的 every one of them is, so none says so.
+          marker:
+            card.key === 'pendingApprovals' && scope === 'all' && record.mine
+              ? t('workbench.work.awaitingYou')
+              : undefined,
+        }
+      : null;
   });
   if (entries.length > 0 && entries.every((entry) => entry !== null)) {
     const urls = new Map(
@@ -306,7 +321,11 @@ function RecordCard({
           </span>
         )}
         {record.mine ? (
-          <span className='ml-auto'>{t('workbench.work.yours')}</span>
+          <span className='ml-auto'>
+            {column === 'pendingApprovals'
+              ? t('workbench.work.awaitingYou')
+              : t('workbench.work.yours')}
+          </span>
         ) : null}
       </p>
     </button>

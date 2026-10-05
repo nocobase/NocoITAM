@@ -1771,7 +1771,13 @@ holds risks rather than to-dos), 离职交接, 待审批, 待下单, 待到货�
 待执行报废, 维修中, 借出逾期, 进行中的盘点. 待下单 (`pendingOrders`,
 2026-10-05) is the approved purchase orders nobody has placed yet, granted
 by `order` and scoped like 待到货入库: without it an approved order sat in
-已批准 with nothing on the board asking for it. The board takes the rest
+已批准 with nothing on the board asking for it. In the team view (全部) a
+待审批 card addressed to the reader says 待你审批 at the end of its bottom
+line (`MyWorkRecord.mine`, from `approvals.pendingFor` asked for the
+reader; `BoardCardEntry.marker`); under 我负责的 every card there is, so
+none says it, and the column itself is the 待我审批 filter. On the 采购 and
+报废 pages the 待我审批 toggle (a domain's `Views`) sits beside the title,
+in `PageHeader`'s `aside`, not on a row of its own. The board takes the rest
 of the page's height (`Page fill`): columns reach the bottom and scroll
 their own cards, so the sideways scrollbar sits at the foot of the page
 rather than under the shortest column (2026-10-04; they used to be as tall

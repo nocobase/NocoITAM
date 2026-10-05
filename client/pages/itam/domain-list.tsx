@@ -327,6 +327,16 @@ function DomainList({
       <PageHeader
         title={t(`${domain.i18n}.title`)}
         total={list.data?.total}
+        // A named view (待我审批) beside the title rather than on a row of
+        // its own under the header, where one button held a whole line.
+        aside={
+          Views ? (
+            <Views
+              filter={filter}
+              onFilter={(next) => setParam({ ...next, page: undefined })}
+            />
+          ) : undefined
+        }
         actions={
           <>
             <SearchToggle
@@ -438,12 +448,6 @@ function DomainList({
               page: undefined,
             })
           }
-        />
-      ) : null}
-      {Views ? (
-        <Views
-          filter={filter}
-          onFilter={(next) => setParam({ ...next, page: undefined })}
         />
       ) : null}
       {Stats ? (

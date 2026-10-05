@@ -63,6 +63,11 @@ export interface BoardCardEntry {
    * `kind` to be tagged by (an overdue loan's device).
    */
   readonly badge?: ReactNode;
+  /**
+   * At the right of the bottom line: what this card is to the reader where
+   * the list is everybody's (待你审批 on the workbench's team view).
+   */
+  readonly marker?: ReactNode;
 }
 
 /** A line's part, whether or not it carries an icon. */
@@ -191,8 +196,8 @@ export function BoardCards({
                   ))}
                 </div>
               ) : null}
-              {footer.length > 0 ? (
-                <p className='mt-2.5 flex min-w-0 items-center gap-1.5 truncate border-t border-border/50 pt-2 text-xs text-muted-foreground'>
+              {footer.length > 0 || entry.marker ? (
+                <p className='mt-2.5 flex min-w-0 items-center gap-1.5 border-t border-border/50 pt-2 text-xs text-muted-foreground'>
                   {footer.map((part, index) => (
                     // eslint-disable-next-line @eslint-react/no-array-index-key -- positional, as above
                     <Fragment key={index}>
@@ -200,6 +205,11 @@ export function BoardCards({
                       <span className='truncate'>{part}</span>
                     </Fragment>
                   ))}
+                  {entry.marker ? (
+                    <span className='ml-auto shrink-0 font-medium text-foreground'>
+                      {entry.marker}
+                    </span>
+                  ) : null}
                 </p>
               ) : null}
             </button>
