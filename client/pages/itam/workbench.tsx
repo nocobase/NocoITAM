@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowRight, Check, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { Link } from 'react-router';
 
@@ -141,7 +141,6 @@ function WorkColumn({
   readonly done: readonly DoneWorkRecord[];
 }): ReactElement {
   const { t } = useTranslation();
-  const openRecord = useOpenRecord();
   return (
     <Column
       title={card.label}
@@ -163,7 +162,7 @@ function WorkColumn({
               ))}
             </div>
           ) : null}
-          <DoneSection records={done} />
+          <DoneSection column={card.key} records={done} />
         </>
       }
     >
@@ -173,64 +172,70 @@ function WorkColumn({
         </p>
       ) : (
         <ul className='flex flex-col gap-2'>
-          {card.records.map((record) =>
-            card.key === 'leaverRecovery' ? (
-              <li key={record.url}>
-                <LeaverCard record={record} />
-              </li>
-            ) : (
-              <li key={record.url}>
-                <button
-                  type='button'
-                  onClick={() => {
-                    openRecord(record.url);
-                  }}
-                  className='w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 text-left shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
-                >
-                  <div className='flex items-center gap-2'>
-                    {/* A record whose title is only a number says what kind
-                      it is; a device or a person names itself. */}
-                    {record.tag ? (
-                      <DocumentTypeBadge
-                        kind={record.tag}
-                        className='shrink-0'
-                      />
-                    ) : null}
-                    <span className='min-w-0 truncate text-sm font-semibold'>
-                      {record.title}
-                    </span>
-                  </div>
-                  {record.subtitle ? (
-                    <p className='mt-1 truncate text-sm text-muted-foreground'>
-                      {record.subtitle}
-                    </p>
-                  ) : null}
-                  <p className='mt-2 flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
-                    {record.date ? (
-                      <span>{formatDate(record.date)}</span>
-                    ) : null}
-                    {/* Where a record stands for several things — a leaver
-                      holds a number of them — how many are the reader's own;
-                      where it is the one thing, that it is theirs. The
-                      column lists everybody's. */}
-                    {record.count === undefined ? null : (
-                      <span className='ml-auto'>
-                        {t('workbench.work.mine', { count: record.count })}
-                      </span>
-                    )}
-                    {record.mine ? (
-                      <span className='ml-auto'>
-                        {t('workbench.work.yours')}
-                      </span>
-                    ) : null}
-                  </p>
-                </button>
-              </li>
-            ),
-          )}
+          {card.records.map((record) => (
+            <li key={record.url}>
+              <RecordCard column={card.key} record={record} />
+            </li>
+          ))}
         </ul>
       )}
     </Column>
+  );
+}
+
+/**
+ * One record on the board. A finished one is drawn exactly as it was while
+ * it waited: it is the same record, and only where it sits says it is done.
+ */
+function RecordCard({
+  column,
+  record,
+}: {
+  readonly column: string;
+  readonly record: CardRecord;
+}): ReactElement {
+  const { t } = useTranslation();
+  const openRecord = useOpenRecord();
+  if (column === 'leaverRecovery') return <LeaverCard record={record} />;
+  return (
+    <button
+      type='button'
+      onClick={() => {
+        openRecord(record.url);
+      }}
+      className='w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 text-left shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+    >
+      <div className='flex items-center gap-2'>
+        {/* A record whose title is only a number says what kind
+          it is; a device or a person names itself. */}
+        {record.tag ? (
+          <DocumentTypeBadge kind={record.tag} className='shrink-0' />
+        ) : null}
+        <span className='min-w-0 truncate text-sm font-semibold'>
+          {record.title}
+        </span>
+      </div>
+      {record.subtitle ? (
+        <p className='mt-1 truncate text-sm text-muted-foreground'>
+          {record.subtitle}
+        </p>
+      ) : null}
+      <p className='mt-2 flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
+        {record.date ? <span>{formatDate(record.date)}</span> : null}
+        {/* Where a record stands for several things — a leaver
+          holds a number of them — how many are the reader's own;
+          where it is the one thing, that it is theirs. The
+          column lists everybody's. */}
+        {record.count === undefined ? null : (
+          <span className='ml-auto'>
+            {t('workbench.work.mine', { count: record.count })}
+          </span>
+        )}
+        {record.mine ? (
+          <span className='ml-auto'>{t('workbench.work.yours')}</span>
+        ) : null}
+      </p>
+    </button>
   );
 }
 
@@ -427,7 +432,7 @@ function AttentionColumn(): ReactElement {
  * A finished record whose title is only a number says what kind it is, as
  * its waiting card did; a device, a person or a stocktake names itself.
  */
-const DONE_TAG: Readonly<Record<string, DocumentKind>> = {
+const DONE_TAG: Readonly<Record<string, DocumentKind | undefined>> = {
   pendingPurchaseApprovals: 'purchaseOrders',
   pendingDisposalApprovals: 'disposals',
   awaitingReceipt: 'purchaseOrders',
@@ -443,12 +448,13 @@ const DONE_TAG: Readonly<Record<string, DocumentKind>> = {
  * there to be looked up, not read through.
  */
 function DoneSection({
+  column,
   records,
 }: {
+  readonly column: string;
   readonly records: readonly DoneWorkRecord[];
 }): ReactElement | null {
   const { t } = useTranslation();
-  const openRecord = useOpenRecord();
   const [open, setOpen] = useState(false);
   if (records.length === 0) return null;
   return (
@@ -472,29 +478,17 @@ function DoneSection({
         <ul className='flex flex-col gap-2'>
           {records.map((record) => (
             <li key={`${record.key}:${record.url}`}>
-              <button
-                type='button'
-                onClick={() => {
-                  openRecord(record.url);
+              <RecordCard
+                column={column}
+                record={{
+                  ...record,
+                  // When it was done is the date that matters now.
+                  date: record.doneAt,
+                  ...(DONE_TAG[record.key]
+                    ? { tag: DONE_TAG[record.key] }
+                    : {}),
                 }}
-                className='w-full rounded-xl border border-border/50 bg-card/60 px-3.5 py-2.5 text-left text-muted-foreground transition hover:border-border hover:bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
-              >
-                <div className='flex items-center gap-2'>
-                  {DONE_TAG[record.key] ? (
-                    <DocumentTypeBadge
-                      kind={DONE_TAG[record.key]!}
-                      className='shrink-0'
-                    />
-                  ) : null}
-                  <span className='min-w-0 truncate text-sm font-medium text-foreground/80'>
-                    {record.title}
-                  </span>
-                </div>
-                <p className='mt-1 flex items-center gap-1.5 text-xs tabular-nums'>
-                  <Check aria-hidden='true' className='size-3.5 shrink-0' />
-                  {formatDate(record.doneAt)}
-                </p>
-              </button>
+              />
             </li>
           ))}
         </ul>

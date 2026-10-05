@@ -946,8 +946,8 @@ Rules learned while building it:
   `client/lib/itam/my-work.ts` decides which records and merges the two
   kinds of approval). What was finished in the last 30 days
   (`useDoneWork`) sits at the foot of the column it was waiting in, under a
-  已完成 N toggle folded by default (`DoneSection`), rather than in a column
-  of its own: the column is for what is waiting, and a finished card is
+  已完成 N toggle folded by default (`DoneSection`), drawn as the same card
+  it was while it waited (`RecordCard`), rather than in a column of its own: the column is for what is waiting, and a finished card is
   looked up where it was. Each
   column lists up to `MY_WORK_PREVIEW` (50) records as cards that open in
   the record drawer, scrolls on its own and keeps its place when empty —
