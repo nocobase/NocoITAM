@@ -20,7 +20,6 @@ import {
   InfoCard,
   InfoSection,
   InfoRow,
-  type SummaryItem,
 } from '@/components/itam/detail-page';
 import { EmptyState } from '@/components/itam/empty-state';
 import { ExtendedFields } from '@/components/itam/extended-fields';
@@ -58,6 +57,15 @@ import { referenceRoute, useReferenceNames } from '@/lib/itam/references';
 import { STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
 
 /** Generic detail page: summary, grouped inline-editable fields, tabs. */
+
+/**
+ * 负责人 is the first row of 基本信息 on every record that has one
+ * (2026-10-05): who answers for the record is read before what it is
+ * about, and handed over in place. It used to sit at the foot of 系统, with
+ * the stamps nobody edits, which is why it went unseen.
+ */
+const OWNER_FIRST = -1000;
+
 export function DomainDetailPage({
   domain,
 }: {
@@ -207,13 +215,18 @@ export function DomainDetailPage({
     // The name is edited in the title.
     if (
       field.key === domain.nameField ||
-      // 负责人 is shown, and handed over, in the summary strip.
-      field.key === 'ownerId' ||
       field.detail === false ||
       paired.has(field.key) ||
       field.visibleWhen?.(data) === false
     )
       continue;
+    if (field.key === 'ownerId') {
+      groups.set('groups.basic', [
+        ...(groups.get('groups.basic') ?? []),
+        { ...field, group: 'groups.basic', detailOrder: OWNER_FIRST },
+      ]);
+      continue;
+    }
     const group = field.group ?? 'groups.basic';
     groups.set(group, [...(groups.get(group) ?? []), field]);
   }
@@ -340,25 +353,6 @@ export function DomainDetailPage({
     />
   );
 
-  const withOwner = (items: readonly SummaryItem[]): SummaryItem[] => {
-    const owner = domain.fields.find(
-      (field) => field.key === 'ownerId' && field.visibleWhen?.(data) !== false,
-    );
-    if (!owner) return [...items];
-    const item: SummaryItem = {
-      key: 'owner',
-      label: t(owner.label),
-      // The strip is narrow: while open, the picker gets the room a name
-      // needs instead of truncating it to an ellipsis.
-      value: (
-        <span className='[&_[data-slot=popover-trigger]]:min-w-44'>
-          {inlineField(owner)}
-        </span>
-      ),
-    };
-    return [...items.slice(0, 1), item, ...items.slice(1)];
-  };
-
   return (
     <>
       <DetailPage
@@ -443,9 +437,7 @@ export function DomainDetailPage({
           </>
         }
         summary={[
-          // 负责人 right after the first item (the status, where there is
-          // one): who answers for the record is read with where it stands.
-          ...withOwner(domain.summary?.(data, t) ?? []),
+          ...(domain.summary?.(data, t) ?? []),
           ...(domain.summaryTimestamps === false
             ? []
             : [

@@ -47,7 +47,6 @@ import {
   InfoCard,
   InfoSection,
   InfoRow,
-  type SummaryItem,
 } from '@/components/itam/detail-page';
 import { EmptyState } from '@/components/itam/empty-state';
 import { FieldLabel } from '@/components/itam/field-label';
@@ -315,52 +314,19 @@ export default function DeviceDetailPage(): ReactElement {
   for (const field of DEVICE_FIELDS) {
     // The name is the title; `detail: false` fields live in the title or
     // the summary strip (the record drawer skips them the same way).
-    // 负责人 is shown, and handed over, in the summary strip (2026-10-05).
-    if (
-      field.key === 'name' ||
-      field.key === 'ownerId' ||
-      field.detail === false
-    )
+    if (field.key === 'name' || field.detail === false) continue;
+    // 负责人 is the first row of 基本信息 (2026-10-05): who answers for the
+    // device is read before what it is, and handed over in place.
+    if (field.key === 'ownerId') {
+      groups.set('groups.basic', [
+        ...(groups.get('groups.basic') ?? []),
+        { ...field, group: 'groups.basic', detailOrder: -1000 },
+      ]);
       continue;
+    }
     const group = field.group ?? 'groups.basic';
     groups.set(group, [...(groups.get(group) ?? []), field]);
   }
-
-  // 负责人 right after the status in the strip: who answers for the device
-  // is read with where it stands, and handed over there.
-  const ownerField = DEVICE_FIELDS.find((field) => field.key === 'ownerId');
-  const withOwner = (items: readonly SummaryItem[]): SummaryItem[] =>
-    ownerField
-      ? [
-          ...items.slice(0, 1),
-          {
-            key: 'owner',
-            label: t(ownerField.label),
-            // The strip is narrow: while open, the picker gets the room a
-            // name needs instead of truncating it to an ellipsis.
-            value: (
-              <span className='[&_[data-slot=popover-trigger]]:min-w-44'>
-                <InlineField
-                  field={ownerField}
-                  value={data.ownerId}
-                  editable={editable}
-                  recordId={id}
-                  display={
-                    <FieldValue
-                      field={ownerField}
-                      value={data.ownerId}
-                      names={names}
-                      plainEnums
-                    />
-                  }
-                  onSave={(value) => saveField('ownerId', value)}
-                />
-              </span>
-            ),
-          },
-          ...items.slice(1),
-        ]
-      : [...items];
 
   const saveFields = async (input: Record<string, unknown>) => {
     try {
@@ -634,7 +600,7 @@ export default function DeviceDetailPage(): ReactElement {
             ) : null}
           </>
         }
-        summary={withOwner(summary)}
+        summary={summary}
         info={
           <InfoCard>
             {[...groups.entries()].map(([group, fields], index) => (

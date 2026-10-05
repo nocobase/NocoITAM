@@ -321,7 +321,10 @@ Rules learned while building it:
   cards. The extra orders are never received — receiving makes devices and
   stock — and the extra audits keep off the laptops, whose 400-day-old last
   count a matched count would stamp today.
-- Demo data is imported and cleared from the 演示数据 card on the settings
+- The ITAM settings page is **tabs**, one per settings document (基本设置,
+  提醒阈值, 编号规则, AI 助手, 按送货单入库, 演示数据), the open one in the
+  address as `?tab=` so a link can open it (2026-10-05).
+- Demo data is imported and cleared from the 演示数据 tab of the settings
   page (after NocoCRM's, 2026-10-05): it lists the sign-ins the import
   creates — in the language picked before importing (中文 / English,
   `DEMO_LANGUAGES`; `POST /itam/demo/generate` takes `language`, else the
@@ -332,7 +335,7 @@ Rules learned while building it:
   (`client/components/itam/demo-banner.tsx`, mounted under the header in
   `client/layouts/app-layout.tsx` — an application change to the layout)
   offers it to whoever holds the settings grant the demo endpoints require,
-  links to `/settings/itam#demo` and, dismissed, stays away in that
+  links to `/settings/itam?tab=demo` and, dismissed, stays away in that
   browser. Clearing it takes its numbers too: `numbering.rewind()` moves
   each sequence back to just past the highest number still in use (never
   forward, only under the current prefix), so on a database that held only
@@ -1260,13 +1263,13 @@ Rules learned while building it:
   summary, a change value, and the cancellation reason on the summary strip,
   where it also drops to the normal weight. A page that renders such a value
   itself must fold it too.
-- 负责人 (`ownerId`) is read and handed over in a detail page's **summary
-  strip**, right after the status, on every record that has one
-  (2026-10-05): `domain-detail.tsx` adds it to any domain whose fields
-  include `ownerId` and leaves it out of the information card, and the
-  device page does the same. It is the card's own inline editor
-  (`inlineField`), so the handover rule and the read-only cases are the
-  ones the card applied. Neither the purchase order nor the disposal has a
+- 负责人 (`ownerId`) is the **first row of 基本信息** on every detail page
+  of a record that has one (2026-10-05): `domain-detail.tsx` places it
+  there whatever group its field names (`OWNER_FIRST`), and the device page
+  does the same. It used to sit at the foot of 系统 with the stamps nobody
+  edits, and went unseen; for a day it was in the summary strip, which was
+  given back to where the record stands. It is edited in place like any
+  row, so the handover rule and the read-only cases are unchanged. Neither the purchase order nor the disposal has a
   申请信息 group any more: 部门 and 需求日期, and 申请日期, sit under
   基本信息.
 - A record has one timeline, not a history tab beside a change-log tab: the

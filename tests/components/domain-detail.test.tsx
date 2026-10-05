@@ -104,18 +104,18 @@ it('groups named procurement references and dates, without repeating summary or 
     currency: 'USD',
   };
   show(purchaseOrderDomain);
-  // No 申请信息 group: 部门 and 需求日期 read with what the order is for,
-  // and 负责人 is in the summary strip.
+  // No 申请信息 group: 负责人 heads 基本信息, and 部门 and 需求日期 read with
+  // what the order is for.
   expect(screen.queryByRole('heading', { name: 'groups.request' })).toBeNull();
   const basic = within(section('groups.basic'));
   expect(basic.getAllByRole('term').map((node) => node.textContent)).toEqual([
+    'fields.owner',
     'fields.poReason',
     'fields.description',
     'fields.department',
     'fields.neededBy',
   ]);
-  expect(basic.queryByText('Alex')).toBeNull();
-  expect(screen.getByText('Alex')).toBeVisible();
+  expect(basic.getByText('Alex')).toBeVisible();
   const purchase = within(section('groups.purchase'));
   expect(purchase.getByRole('link', { name: 'Acme Supply' })).toHaveAttribute(
     'href',
@@ -130,7 +130,7 @@ it('groups named procurement references and dates, without repeating summary or 
       .getAllByRole('term')
       .map((node) => node.textContent),
   ).toEqual(['fields.createdBy', 'fields.createdAt', 'fields.updatedAt']);
-  // An order's 负责人 is its one person-field, shown once, in the strip.
+  // An order's 负责人 is its one person-field, shown once.
   expect(screen.getAllByText('fields.owner')).toHaveLength(1);
 });
 
@@ -164,7 +164,7 @@ it('states the disposal plan while it is open and keeps its results read-only on
     executedById: 'u1',
   };
   show(disposalDomain);
-  // As on a purchase order: 负责人 is in the strip, 申请日期 in 基本信息.
+  // As on a purchase order: 负责人 and 申请日期 are in 基本信息.
   expect(screen.queryByRole('heading', { name: 'groups.request' })).toBeNull();
   expect(within(section('groups.execution')).getByText('Alex')).toBeVisible();
   expect(screen.queryByText('fields.wipeMethod')).toBeNull();
