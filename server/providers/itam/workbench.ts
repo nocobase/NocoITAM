@@ -1,5 +1,5 @@
 import type { DatabaseAuthorizationConditions } from '@nocobase/app-plugin-authorization/server';
-import { addDays, dbDateTime, today as todayIso } from './dates.js';
+import { today as todayIso } from './dates.js';
 import type { DatabaseManager } from '@nocobase/db';
 import {
   createServiceToken,
@@ -8,7 +8,6 @@ import {
 
 import type { ApprovalService, ApprovalSubject } from './approvals.js';
 import { compileAuthzScope } from './authz-filter.js';
-import { handoverCompletedAt } from './handover-completion.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
 import { OWNED_BY_USER, RECOVERABLE_DEVICE_STATUSES } from './recovery.js';
 
@@ -73,21 +72,6 @@ export interface MyWorkItem {
   readonly records: readonly MyWorkRecord[];
 }
 
-/** A to-do the reader finished lately, and when. */
-export interface DoneWorkRecord extends MyWorkRecord {
-  readonly key: MyWorkItem['key'];
-  /**
-   * When it was done: the moment of the act, or — for a leaver, whose
-   * handover is many acts by many people — the day they left.
-   */
-  readonly doneAt: string;
-}
-
-/** How far back 已完成 reaches. */
-export const DONE_WINDOW_DAYS = 30;
-/** How many it lists: the team's month can be long. */
-export const DONE_LIMIT = 100;
-
 export interface WorkbenchService {
   /**
    * The team's queue, one for everybody (2026-10-05): every card lists
@@ -105,17 +89,6 @@ export interface WorkbenchService {
     decide: Decider,
     options?: { readonly scope?: 'all' | 'mine' },
   ): Promise<readonly MyWorkItem[]>;
-  /**
-   * What was finished in the last `DONE_WINDOW_DAYS` days, newest first:
-   * each to-do's own act, read back from the history it wrote. Like the
-   * queue it is the team's by default; `scope: 'mine'` keeps the reader's
-   * own acts.
-   */
-  doneWork(
-    userId: string,
-    decide: Decider,
-    options?: { readonly scope?: 'all' | 'mine' },
-  ): Promise<readonly DoneWorkRecord[]>;
 }
 
 /**
@@ -782,253 +755,6 @@ export function createWorkbenchService(dependencies: {
         });
       }
       return items;
-    },
-
-    async doneWork(userId, decide, options) {
-      // The team's by default, like the queue; `mine` keeps the reader's
-      // own acts.
-      const mineOnly = options?.scope === 'mine';
-      const since = addDays(todayIso(), -DONE_WINDOW_DAYS);
-      const sinceAt = dbDateTime(new Date(`${since}T00:00:00`));
-      // A to-do is done by its own act, which wrote history: what it was
-      // about, and the column that names it on the row.
-      const KINDS: Readonly<
-        Record<
-          string,
-          {
-            readonly key: MyWorkItem['key'];
-            readonly collection: string;
-            readonly route: string;
-            readonly title: readonly string[];
-          }
-        >
-      > = {
-        'approval:purchaseOrders': {
-          key: 'pendingPurchaseApprovals',
-          collection: 'purchaseOrders',
-          route: '/procurement',
-          title: ['orderNo'],
-        },
-        'approval:disposals': {
-          key: 'pendingDisposalApprovals',
-          collection: 'disposals',
-          route: '/disposals',
-          title: ['disposalNo'],
-        },
-        repairCompleted: {
-          key: 'activeRepairs',
-          collection: 'repairs',
-          route: '/repairs',
-          title: ['repairNo'],
-        },
-        disposalExecuted: {
-          key: 'pendingDisposalExecution',
-          collection: 'disposals',
-          route: '/disposals',
-          title: ['disposalNo'],
-        },
-        auditCompleted: {
-          key: 'activeAudits',
-          collection: 'auditTasks',
-          route: '/audits',
-          title: ['name'],
-        },
-        orderCompleted: {
-          key: 'awaitingReceipt',
-          collection: 'purchaseOrders',
-          route: '/procurement',
-          title: ['orderNo'],
-        },
-        loanReturned: {
-          key: 'loansDueToday',
-          collection: 'devices',
-          route: '/devices',
-          title: ['deviceNo', 'name'],
-        },
-      };
-      /** The newest act per record and kind of to-do. */
-      const acts = new Map<string, { kind: string; id: string; at: string }>();
-      const note = (kind: string, id: string, at: string) => {
-        const key = `${kind}:${id}`;
-        const seen = acts.get(key);
-        if (!seen || seen.at < at) acts.set(key, { kind, id, at });
-      };
-
-      // Decided, finished, carried out: events the act wrote.
-      let events = database
-        .query()
-        .selectFrom('historyEvents')
-        .select(['subjectType', 'subjectId', 'type', 'createdAt']);
-      if (mineOnly) events = events.where('actorId', '=', userId);
-      for (const row of await events
-        .where('type', 'in', [
-          'approvalApproved',
-          'approvalRejected',
-          'repairCompleted',
-          'disposalExecuted',
-        ])
-        .where('createdAt', '>=', sinceAt)
-        .execute<Row>()) {
-        const type = String(row.type);
-        note(
-          type.startsWith('approval')
-            ? `approval:${String(row.subjectType)}`
-            : type,
-          String(row.subjectId),
-          String(row.createdAt),
-        );
-      }
-      // A count closed, an order fully received, a loan brought back: the
-      // status the act set, read from the change log, which every status
-      // change writes. Values are decoded here rather than compared in the
-      // query — a JSON value bound into a condition matches nothing.
-      const valueOf = (value: unknown): unknown => {
-        if (typeof value !== 'string') return value;
-        try {
-          return JSON.parse(value) as unknown;
-        } catch {
-          return value;
-        }
-      };
-      let changes = database
-        .query()
-        .selectFrom('changeLogs')
-        .select([
-          'subjectType',
-          'subjectId',
-          'oldValue',
-          'newValue',
-          'createdAt',
-        ]);
-      if (mineOnly) changes = changes.where('actorId', '=', userId);
-      for (const row of await changes
-        .where('action', '=', 'statusChange')
-        .where('subjectType', 'in', ['auditTasks', 'purchaseOrders', 'devices'])
-        .where('createdAt', '>=', sinceAt)
-        .execute<Row>()) {
-        const type = String(row.subjectType);
-        const to = valueOf(row.newValue);
-        const kind =
-          type === 'auditTasks' && to === 'completed'
-            ? 'auditCompleted'
-            : type === 'purchaseOrders' && to === 'completed'
-              ? 'orderCompleted'
-              : type === 'devices' && valueOf(row.oldValue) === 'onLoan'
-                ? 'loanReturned'
-                : undefined;
-        if (kind) note(kind, String(row.subjectId), String(row.createdAt));
-      }
-
-      // Each record named the way its own row names it, under the reader's
-      // read grant: a record they may no longer read is left out.
-      const done: DoneWorkRecord[] = [];
-      const byCollection = new Map<string, Set<string>>();
-      for (const act of acts.values()) {
-        const collection = KINDS[act.kind].collection;
-        byCollection.set(
-          collection,
-          (byCollection.get(collection) ?? new Set()).add(act.id),
-        );
-      }
-      const rowsOf = new Map<string, Map<string, Row>>();
-      for (const [collection, ids] of byCollection) {
-        const conditions = await decide(collection, 'read');
-        if (!conditions) continue;
-        const rows = await database
-          .query()
-          .selectFrom(collection)
-          .selectAll()
-          .where((eb) => compileAuthzScope(eb, conditions.scope))
-          .where('id', 'in', [...ids])
-          .execute<Row>();
-        rowsOf.set(
-          collection,
-          new Map(rows.map((row) => [String(row.id), row])),
-        );
-      }
-      for (const act of acts.values()) {
-        const kind = KINDS[act.kind];
-        const row = rowsOf.get(kind.collection)?.get(act.id);
-        if (!row) continue;
-        done.push({
-          key: kind.key,
-          id: act.id,
-          title: kind.title
-            .map((column) => asText(row[column]))
-            .filter(Boolean)
-            .join(' / '),
-          date: null,
-          url: `${kind.route}/${act.id}`,
-          doneAt: act.at,
-        });
-      }
-
-      // 离职交接 by the rule its card reads, inverted: somebody who left in
-      // the window with something to hand over (a snapshot was taken), and
-      // has nothing unsettled now. The team's only: a handover is many acts
-      // by many people, and once it is settled nothing records which of
-      // them was the reader's share.
-      const peopleConditions = mineOnly
-        ? undefined
-        : await decide('people', 'read');
-      if (peopleConditions) {
-        const { open } = await unsettled(userId, decide, peopleConditions);
-        const leavers = await database
-          .query()
-          .selectFrom('people')
-          .select(['id', 'name', 'position', 'leaveDate'])
-          .where((eb) => compileAuthzScope(eb, peopleConditions.scope))
-          .where('employmentStatus', '=', 'left')
-          .execute<Row>();
-        const settled = leavers.filter((row) => !open.has(String(row.id)));
-        // Dated by when the handover was finished, which the change signal
-        // records (`handover-completion.ts`); one finished before that was
-        // recorded falls back to the leave date. The window is the date's,
-        // so somebody who left two months ago and was settled yesterday is
-        // done yesterday.
-        const completedAt = await handoverCompletedAt(
-          database,
-          settled.map((row) => String(row.id)),
-        );
-        const snapped =
-          settled.length === 0
-            ? new Set<string>()
-            : new Set(
-                (
-                  await database
-                    .query()
-                    .selectFrom('historyEvents')
-                    .select(['subjectId'])
-                    .where('subjectType', '=', 'people')
-                    .where('type', '=', 'belongingsSnapshot')
-                    .where(
-                      'subjectId',
-                      'in',
-                      settled.map((row) => String(row.id)),
-                    )
-                    .execute<Row>()
-                ).map((row) => String(row.subjectId)),
-              );
-        for (const row of settled) {
-          if (!snapped.has(String(row.id))) continue;
-          const doneAt =
-            completedAt.get(String(row.id)) ?? asText(row.leaveDate) ?? '';
-          if (doneAt < since) continue;
-          done.push({
-            key: 'leaverRecovery',
-            id: String(row.id),
-            title: String(row.name),
-            subtitle: asText(row.position) ?? null,
-            date: null,
-            url: `/people/${String(row.id)}`,
-            doneAt,
-          });
-        }
-      }
-
-      return done
-        .sort((a, b) => b.doneAt.localeCompare(a.doneAt))
-        .slice(0, DONE_LIMIT);
     },
   };
 }

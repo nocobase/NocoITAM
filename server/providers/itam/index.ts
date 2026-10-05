@@ -57,10 +57,6 @@ import {
 } from './changes.js';
 import { createHistoryService, historyServiceToken } from './history.js';
 import {
-  createHandoverCompletion,
-  handoverCompletionToken,
-} from './handover-completion.js';
-import {
   createMasterDataService,
   masterDataServiceToken,
 } from './master-data.js';
@@ -226,27 +222,8 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // "The register changed": published on the realtime topic the pages
     // that show live to-dos subscribe to (`changes.ts`). The topic is
     // defined at boot; a container without realtime publishes nothing.
-    container.singleton(handoverCompletionToken, () =>
-      createHandoverCompletion({
-        database: container.resolve(databaseManagerToken),
-        history: container.resolve(historyServiceToken),
-        masterData: container.resolve(masterDataServiceToken),
-      }),
-    );
-    // A leaver's handover completing is noticed here, before the signal
-    // goes out, so the pages that refetch on it already see the date
-    // (`handover-completion.ts`).
     container.singleton(itamChangesToken, () =>
-      createItamChanges(async ({ actorId }) => {
-        try {
-          await container.resolve(handoverCompletionToken).check(actorId);
-        } catch (error) {
-          if (container.has(loggingToken))
-            container
-              .resolve(loggingToken)
-              .getLogger('itam')
-              .warn({ err: error }, 'Could not check handover completion');
-        }
+      createItamChanges(() => {
         this.changesTopic?.publish({ kind: 'changed' });
       }),
     );
@@ -521,21 +498,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
   }
 
   public override async start(): Promise<void> {
-    // Leavers already settled before anything watched for it are recorded
-    // now, marked late, so the first write afterwards does not date their
-    // handover to itself (`handover-completion.ts`).
-    if (this.app.container.has(handoverCompletionToken))
-      try {
-        await this.app.container
-          .resolve(handoverCompletionToken)
-          .check(undefined, { late: true });
-      } catch (error) {
-        if (this.app.container.has(loggingToken))
-          this.app.container
-            .resolve(loggingToken)
-            .getLogger('itam')
-            .warn({ err: error }, 'Could not check handover completion');
-      }
     if (!this.app.container.has(authorizationToken)) return;
     // Idempotent and cheap: older seeds may have just re-granted the
     // removed tickets collection and pages or the tables that became

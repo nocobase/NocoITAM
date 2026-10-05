@@ -8,11 +8,7 @@ import { masterDataPath, useApi } from './api.js';
  * itself — the two would drift, and the assistant reads the same plan.
  */
 export type RecoveryHandling =
-  | 'return'
-  | 'takeBack'
-  | 'reclaim'
-  | 'wait'
-  | 'confirmConsumed';
+  'return' | 'takeBack' | 'reclaim' | 'wait' | 'confirmConsumed';
 
 export interface RecoveryItem {
   readonly kind: 'device' | 'stock' | 'seat';
@@ -41,11 +37,7 @@ export interface RecoveryItem {
   readonly waitingOn?: { readonly id: string; readonly label: string };
   /** Which of the five asset types it is, for the row's own label. */
   readonly assetType:
-    | 'device'
-    | 'accessory'
-    | 'consumable'
-    | 'component'
-    | 'entitlement';
+    'device' | 'accessory' | 'consumable' | 'component' | 'entitlement';
 }
 
 /** A record that still names them, which only a person can hand over. */
@@ -62,6 +54,7 @@ export interface OwnedRecord {
 }
 
 export interface PersonRecovery {
+  readonly name?: string | null;
   readonly employmentStatus: string | null;
   readonly leaveDate: string | null;
   readonly items: readonly RecoveryItem[];
@@ -105,11 +98,12 @@ export const RECOVERY_ACTIONS: readonly RecoveryHandling[] = [
   'reclaim',
 ];
 
-export function usePersonRecovery(
+/** The query a person's recovery plan is read under, wherever it is read. */
+export function personRecoveryQuery(
+  api: ReturnType<typeof useApi>,
   id: string | undefined,
-): UseQueryResult<PersonRecovery> {
-  const api = useApi();
-  return useQuery({
+) {
+  return {
     queryKey: ['itam', masterDataPath('people'), 'recovery', id],
     queryFn: async () =>
       (
@@ -117,6 +111,12 @@ export function usePersonRecovery(
           path: `${masterDataPath('people')}/${id}/recovery`,
         })
       ).data,
-    enabled: Boolean(id),
-  });
+  };
+}
+
+export function usePersonRecovery(
+  id: string | undefined,
+): UseQueryResult<PersonRecovery> {
+  const api = useApi();
+  return useQuery({ ...personRecoveryQuery(api, id), enabled: Boolean(id) });
 }

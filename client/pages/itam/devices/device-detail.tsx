@@ -77,6 +77,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { useAnnounce } from '@/lib/itam/announce';
 import {
   apiErrorBody,
   masterDataPath,
@@ -166,6 +167,7 @@ export default function DeviceDetailPage(): ReactElement {
   );
   const mutations = useItamMutations<ItamRecord>(DEVICES_PATH);
   const operation = useDeviceOperation();
+  const announce = useAnnounce();
   const disposalPermissions = useCollectionPermissions('disposals', [
     'create',
     'read',
@@ -275,9 +277,22 @@ export default function DeviceDetailPage(): ReactElement {
   const disposed = status === 'disposed';
   const editable = !disposed && Boolean(permissions.update);
   const run = async (op: DeviceOperation, body?: Record<string, unknown>) => {
+    // Who held it, read before the return clears it: if they have left, the
+    // toast says how much of their handover is left.
+    const holder =
+      text(data.assigneeType) === 'person' ? text(data.assigneeId) : '';
     await operation.mutateAsync({ id, operation: op, body });
     setDialog(undefined);
     operation.reset();
+    if (op === 'return')
+      await announce(
+        t('people.recovery.toast.returned', {
+          label: [text(data.deviceNo), text(data.name)]
+            .filter(Boolean)
+            .join(' / '),
+        }),
+        [holder],
+      );
   };
 
   const fullTemplate = (

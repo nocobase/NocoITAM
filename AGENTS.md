@@ -1002,11 +1002,7 @@ Rules learned while building it:
   `client/pages/itam/workbench.tsx`) and nothing else: 需要关注 as the first
   column, then one column per kind of to-do (`useWorkCards` in
   `client/lib/itam/my-work.ts` decides which records and merges the two
-  kinds of approval). What was finished in the last 30 days
-  (`useDoneWork`) sits at the foot of the column it was waiting in, under a
-  已完成 N toggle folded by default (`DoneSection`), drawn as the same card
-  it was while it waited (`RecordCard`), rather than in a column of its own: the column is for what is waiting, and a finished card is
-  looked up where it was. Each
+  kinds of approval). Each
   column lists up to `MY_WORK_PREVIEW` (50) records as cards that open in
   the record drawer, scrolls on its own and keeps its place when empty —
   dimmed, saying 暂无待办 — because a column that vanishes at zero cannot
@@ -1024,22 +1020,23 @@ Rules learned while building it:
   `PageHeader`'s `aside` slot), opening the dialog the sidebar's 搜索 and
   ⌘K open; its end is a green sparkle 问 AI, shown when the assistant is
   available, that opens the same dialog already in ask mode.
-- A leaver's handover is dated by when it **finished**, not when they left
-  (2026-10-05, `server/providers/itam/handover-completion.ts`). It ends
-  with whichever act settles the last item, and none of them knows it was
-  the last, so the moment is noticed: every burst of writes the change
-  signal coalesces (`itamChangesToken.touched(actorId)`, which the ITAM
-  routes, confirmed AI writes and scheduled jobs already call) first runs
-  `check()`, which writes `handoverCompleted` on each leaver whose newest
-  belongings snapshot has no completion after it and who now has nothing
-  in their name (read unrestricted, like the snapshot), and only then
-  publishes, so the refetch sees it. 已完成 dates the leaver by that event
-  and applies its 30-day window to it. `start()` runs the check once with
-  `late`, so leavers settled before this existed get an event marked
-  `recordedLate` — the timeline says it was noted afterwards and the board
-  keeps their leave date — instead of the first write after a deploy
-  claiming the moment. Still no to-do table: the to-dos are the records'
-  own state, and the dates are history.
+- The board shows only what is waiting; there is no 已完成 (2026-10-05,
+  migration `202610050004_drop_handover_completed`). It had one for a
+  day — a column, then a folded list under each column, then a
+  `handoverCompleted` event to date a leaver by — and each step added a
+  rule for when a to-do counts as finished, which every new kind of to-do
+  would have needed too. What it was for is an act's own answer: a row
+  that vanishes says nothing about whether the act worked, so the act
+  says so. `useAnnounce()` (`client/lib/itam/announce.ts`) rereads
+  `['itam']` and shows a success toast — 已归还 / 已收回 / 已将 … 移交给 …,
+  and the batch versions — adding, for each person involved who has left
+  with a handover under way, 还剩 N 项 or 已全部处理完毕 from the same plan
+  their 归属 tab reads (the recovery endpoint returns the person's `name`
+  for this). The 归属 tab, the device page's return, the stock holders'
+  take-back, the entitlement's reclaim and the device page's holdings
+  lists all announce. Looking back is the record's timeline, the
+  leaver's settled rows and the reports. Still no to-do table: the to-dos
+  are the records' own state.
 - `MyWorkItem.records` comes back with the counts: a card is never
   collapsed, so lazy fetching would only make the workbench 1+N requests.
   Each kind's records are read under the decision that its **action** needs,

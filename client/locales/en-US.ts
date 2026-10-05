@@ -232,7 +232,6 @@ const messages = {
       left: 'Left',
       accountDisabledOnLeaving: 'Sign-in disabled',
       accountRestoredOnReturning: 'Sign-in enabled',
-      handoverCompleted: 'Handover completed',
       repairCreated: 'Repair created',
       repairCompleted: 'Repair completed',
       counted: 'Results recorded',
@@ -355,9 +354,6 @@ const messages = {
       accountDisabledOnLeaving: 'Sign-in {{target}} disabled on leaving',
       accountRestoredOnReturning:
         'Sign-in {{target}} enabled again on returning',
-      handoverCompleted: 'Everything from their leaving has been handled',
-      handoverCompletedLate:
-        'Everything from their leaving had been handled (noted afterwards; the time it was finished was not recorded)',
       leftOnLeaveDate: 'Leave date {{date}} reached; marked as left',
       recoveryPrepared:
         'Recovery listed: {{devices}} devices, {{stock}} stock, {{seats}} seats',
@@ -988,6 +984,23 @@ const messages = {
       installed: 'Contains',
       done: 'Settled',
       progress: '{{done}} of {{total}} settled',
+      // What an act did, said when it succeeds (`useAnnounce`); for a
+      // leaver, what is left of their handover.
+      toast: {
+        returned: 'Returned {{label}}',
+        takenBack: 'Took back {{label}}',
+        reclaimed: 'Reclaimed the seat on {{label}}',
+        reclaimedSeats_one: 'Reclaimed {{count}} seat',
+        reclaimedSeats_other: 'Reclaimed {{count}} seats',
+        handedOver: 'Handed {{label}} over to {{owner}}',
+        batchRecovered_one: 'Recovered {{count}} item',
+        batchRecovered_other: 'Recovered {{count}} items',
+        batchHandedOver_one: 'Handed {{count}} record over to {{owner}}',
+        batchHandedOver_other: 'Handed {{count}} records over to {{owner}}',
+        remaining_one: '{{count}} item of {{name}}’s handover is left',
+        remaining_other: '{{count}} items of {{name}}’s handover are left',
+        complete: 'Everything from {{name}}’s leaving has been handled',
+      },
       columns: {
         item: 'Asset held',
         handling: 'Action',
@@ -1551,8 +1564,6 @@ const messages = {
       /** Where the record itself is the one thing: a device on loan. */
       yours: 'Yours',
       leftOn: 'Left {{date}}',
-      // 已完成: a to-do finished lately, kept under the queue.
-      done: 'Done',
     },
     reminderGroups: {
       devices: 'Devices',

@@ -16,6 +16,7 @@ import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { DataTable } from '@/components/itam/data-table';
 import { DeviceReturnDialog } from '@/components/itam/device-return-dialog';
+import { useAnnounce } from '@/lib/itam/announce';
 import { RecordLink } from '@/components/itam/record-link';
 import {
   Tooltip,
@@ -121,12 +122,19 @@ export function PersonBelongings({
               []),
             ...(recovery.data?.settledOwned.map((r) => r.ownerId ?? null) ??
               []),
+            // Whoever a record is about to be handed to, so the toast can
+            // name them.
+            nextOwner,
+            batchOwner,
           ],
         },
       ],
-      [items, recovery.data],
+      [items, recovery.data, nextOwner, batchOwner],
     ),
   );
+  const announce = useAnnounce();
+  const ownerName = (id: string | null) =>
+    id ? (owners.users?.get(id) ?? id) : '';
   // Registered as page context, with no shortcut of its own: the card is
   // already the list such a shortcut would ask for, so a button here would
   // have Noco read the screen back. Asking it anything from the launcher
@@ -153,10 +161,11 @@ export function PersonBelongings({
   });
 
   // Every action ends the same way: the holding is gone, so the lists on this
-  // page, the workbench's to-do and the reminder counts all move.
-  const settled = async () => {
+  // page, the workbench's to-do and the reminder counts all move — and the
+  // toast says what was done and, for a leaver, how much is left.
+  const settled = async (title: string) => {
     setPending(undefined);
-    await queryClient.invalidateQueries({ queryKey: ['itam'] });
+    await announce(title, [personId]);
   };
   const returnDevice = useMutation({
     mutationFn: async (body: Record<string, unknown>) =>
@@ -165,7 +174,8 @@ export function PersonBelongings({
         method: 'POST',
         json: body,
       }),
-    onSuccess: settled,
+    onSuccess: () =>
+      settled(t('people.recovery.toast.returned', { label: pending?.label })),
   });
   const takeBackStock = useMutation({
     mutationFn: async (item: RecoveryItem) =>
@@ -178,7 +188,8 @@ export function PersonBelongings({
           quantity: item.quantity ?? 0,
         },
       }),
-    onSuccess: settled,
+    onSuccess: (_data, item) =>
+      settled(t('people.recovery.toast.takenBack', { label: item.label })),
   });
   const reassign = useMutation({
     mutationFn: async () => {
@@ -190,9 +201,13 @@ export function PersonBelongings({
       });
     },
     onSuccess: async () => {
+      const title = t('people.recovery.toast.handedOver', {
+        label: handover?.label,
+        owner: ownerName(nextOwner),
+      });
       setHandover(undefined);
       setNextOwner(null);
-      await queryClient.invalidateQueries({ queryKey: ['itam'] });
+      await announce(title, [personId]);
     },
   });
   const reclaimSeat = useMutation({
@@ -202,7 +217,8 @@ export function PersonBelongings({
         method: 'POST',
         json: { seatIds: [item.id] },
       }),
-    onSuccess: settled,
+    onSuccess: (_data, item) =>
+      settled(t('people.recovery.toast.reclaimed', { label: item.label })),
   });
 
   if (!recovery.data) return null;
@@ -272,9 +288,14 @@ export function PersonBelongings({
   );
   const failureOf = (error: unknown) =>
     apiErrorBody(error)?.message ?? errorMessage(error);
-  const finishBatch = async (failed: readonly BatchFailure[]) => {
+  /** `title` says what the rows that went through did, if any did. */
+  const finishBatch = async (
+    failed: readonly BatchFailure[],
+    title: string | undefined,
+  ) => {
     setBatchBusy(false);
-    await queryClient.invalidateQueries({ queryKey: ['itam'] });
+    if (title) await announce(title, [personId]);
+    else await queryClient.invalidateQueries({ queryKey: ['itam'] });
     setBatchFailed(failed);
     if (failed.length === 0) setBatch(undefined);
   };
@@ -334,7 +355,13 @@ export function PersonBelongings({
         }),
       );
     setTicked(still);
-    await finishBatch(failed);
+    const recovered = chosen.length - failed.length;
+    await finishBatch(
+      failed,
+      recovered > 0
+        ? t('people.recovery.toast.batchRecovered', { count: recovered })
+        : undefined,
+    );
   };
   /** Every ticked record to one new 负责人, each through its own endpoint. */
   const handOverChosen = async () => {
@@ -357,7 +384,16 @@ export function PersonBelongings({
         still.add(recordKey(record));
       }
     setTickedRecords(still);
-    await finishBatch(failed);
+    const handed = chosenRecords.length - failed.length;
+    await finishBatch(
+      failed,
+      handed > 0
+        ? t('people.recovery.toast.batchHandedOver', {
+            count: handed,
+            owner: ownerName(batchOwner),
+          })
+        : undefined,
+    );
   };
   const openBatch = (kind: 'recover' | 'handOver') => {
     setBatchFailed([]);
@@ -798,12 +834,11 @@ export function PersonBelongings({
                                 record.ownerId)
                               : '—'}
                           </>
+                        ) : // Still theirs: the person this page is about.
+                        record.ownerId ? (
+                          (owners.users?.get(record.ownerId) ?? record.ownerId)
                         ) : (
-                          // Still theirs: the person this page is about.
-                          (record.ownerId
-                            ? (owners.users?.get(record.ownerId) ??
-                              record.ownerId)
-                            : personName)
+                          personName
                         )}
                       </span>
                     </span>
@@ -907,52 +942,52 @@ export function PersonBelongings({
           <div className='text-sm font-medium'>{pending.label}</div>
         </ConfirmDialog>
       ) : null}
-      {batch === 'recover' ? (
-        (() => {
-          const devices = chosen.filter((item) => item.kind === 'device');
-          const summary = t('people.recovery.batch.recoverSummary', {
-            devices: devices.length,
-            stock: chosen.filter((item) => item.kind === 'stock').length,
-            seats: chosen.filter((item) => item.kind === 'seat').length,
-          });
-          const close = () => {
-            setBatch(undefined);
-            setBatchFailed([]);
-          };
-          // With devices among them it asks the return's three questions
-          // once, for every device; without, a confirmation is all it needs.
-          return devices.length > 0 ? (
-            <DeviceReturnDialog
-              currentLocationId={null}
-              busy={batchBusy}
-              error={undefined}
-              title={t('people.recovery.batch.recoverTitle', {
-                count: chosen.length,
-              })}
-              description={`${summary}${t('people.recovery.batch.recoverDevices')}`}
-              onClose={close}
-              onConfirm={(body) => void recoverChosen(body)}
-            >
-              <BatchFailures failed={batchFailed} />
-            </DeviceReturnDialog>
-          ) : (
-            <ConfirmDialog
-              open
-              onOpenChange={(open) => !open && close()}
-              title={t('people.recovery.batch.recoverTitle', {
-                count: chosen.length,
-              })}
-              description={summary}
-              busy={batchBusy}
-              confirmDisabled={chosen.length === 0}
-              confirmLabel={t('people.recovery.batch.recover')}
-              onConfirm={() => void recoverChosen()}
-            >
-              <BatchFailures failed={batchFailed} />
-            </ConfirmDialog>
-          );
-        })()
-      ) : null}
+      {batch === 'recover'
+        ? (() => {
+            const devices = chosen.filter((item) => item.kind === 'device');
+            const summary = t('people.recovery.batch.recoverSummary', {
+              devices: devices.length,
+              stock: chosen.filter((item) => item.kind === 'stock').length,
+              seats: chosen.filter((item) => item.kind === 'seat').length,
+            });
+            const close = () => {
+              setBatch(undefined);
+              setBatchFailed([]);
+            };
+            // With devices among them it asks the return's three questions
+            // once, for every device; without, a confirmation is all it needs.
+            return devices.length > 0 ? (
+              <DeviceReturnDialog
+                currentLocationId={null}
+                busy={batchBusy}
+                error={undefined}
+                title={t('people.recovery.batch.recoverTitle', {
+                  count: chosen.length,
+                })}
+                description={`${summary}${t('people.recovery.batch.recoverDevices')}`}
+                onClose={close}
+                onConfirm={(body) => void recoverChosen(body)}
+              >
+                <BatchFailures failed={batchFailed} />
+              </DeviceReturnDialog>
+            ) : (
+              <ConfirmDialog
+                open
+                onOpenChange={(open) => !open && close()}
+                title={t('people.recovery.batch.recoverTitle', {
+                  count: chosen.length,
+                })}
+                description={summary}
+                busy={batchBusy}
+                confirmDisabled={chosen.length === 0}
+                confirmLabel={t('people.recovery.batch.recover')}
+                onConfirm={() => void recoverChosen()}
+              >
+                <BatchFailures failed={batchFailed} />
+              </ConfirmDialog>
+            );
+          })()
+        : null}
       {batch === 'handOver' ? (
         <ConfirmDialog
           open

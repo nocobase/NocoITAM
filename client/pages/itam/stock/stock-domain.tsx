@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useApi, type ItamRecord } from '@/lib/itam/api';
+import { useAnnounce } from '@/lib/itam/announce';
+import { useApi, useItamRecord, type ItamRecord } from '@/lib/itam/api';
 import type { DomainConfig } from '@/lib/itam/domain';
 import { formatDate, text } from '@/lib/itam/format';
 import { useServerPage } from '@/lib/itam/paging';
@@ -437,7 +438,8 @@ export function StockHoldersTab({
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
-  const queryClient = useQueryClient();
+  const announce = useAnnounce();
+  const item = useItamRecord<ItamRecord>(STOCK_PATH, id);
   const permissions = useCollectionPermissions('stockItems', ['issue']);
   // The movement log by default; the filter narrows it to one movement
   // type, or to who holds the item now (by the holder's kind). A
@@ -498,9 +500,12 @@ export function StockHoldersTab({
           quantity: Number(holding.quantity),
         },
       }),
-    onSuccess: async () => {
+    onSuccess: async (_data, holding) => {
       setPendingTakeBack(undefined);
-      await queryClient.invalidateQueries({ queryKey: ['itam', STOCK_PATH] });
+      await announce(
+        t('people.recovery.toast.takenBack', { label: text(item.data?.name) }),
+        text(holding.holderType) === 'person' ? [text(holding.holderId)] : [],
+      );
     },
   });
   const rows = movements.data?.data ?? [];
