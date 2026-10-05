@@ -13,12 +13,14 @@ import {
 } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { FieldInput } from '@/components/itam/field-input';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
 import {
   Tooltip,
@@ -31,12 +33,17 @@ import {
   type AIFrontendToolRegistration,
 } from '@/extensions/nocobase-ai';
 import { useHiddenChat, useItamAi } from '@/lib/itam/ai-chat';
-import { useApi, useItamList, type ItamRecord } from '@/lib/itam/api';
+import {
+  useApi,
+  useItamList,
+  useItamRecord,
+  type ItamRecord,
+} from '@/lib/itam/api';
+import { ENTITLEMENT_FIELDS, ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
 import { errorMessage, text } from '@/lib/itam/format';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
 import {
-  BATCH_ITEM_TYPES,
   chatAttachmentOf,
   DOCUMENT_ACCEPT,
   splitSerials,
@@ -70,7 +77,8 @@ interface DeviceDraft {
   readonly units: readonly UnitDraft[];
   readonly locationId: string | null;
   readonly departmentId: string | null;
-  readonly ownerId: string | null;
+  /** `undefined` until chosen: the line's default owner (`defaultOwner`). */
+  readonly ownerId?: string | null;
   readonly warrantyEndDate: string;
 }
 
@@ -80,6 +88,51 @@ interface StockDraft {
   readonly source?: string;
   readonly locationId: string | null;
 }
+
+/**
+ * An entitlement line: how many seats arrived, and where they go — added to
+ * an entitlement already on the books for the product, or a new one opened
+ * on terms asked here. `undefined` means the default the line would take.
+ */
+interface EntitlementDraft {
+  readonly quantity: string;
+  readonly source?: string;
+  readonly mode?: 'join' | 'create';
+  readonly entitlementId?: string | null;
+  readonly name?: string;
+  readonly terms: Readonly<Record<string, unknown>>;
+}
+
+const ENTITLEMENT_KINDS = new Set(['perpetual', 'subscription']);
+
+/** The terms a new entitlement of each kind is opened on. */
+const TERM_KEYS: Readonly<Record<string, readonly string[]>> = {
+  perpetual: [
+    'licensingModel',
+    'maintenanceExpiryDate',
+    'productKey',
+    'reassignable',
+    'ownerId',
+  ],
+  subscription: [
+    'billingModel',
+    'billingCycle',
+    'unitPrice',
+    'expiryDate',
+    'autoRenew',
+    'ownerId',
+  ],
+};
+
+/**
+ * A required choice opens on the default the service would apply: a
+ * required select opening on nothing only invites the error it then raises.
+ */
+const TERM_DEFAULTS: Readonly<Record<string, unknown>> = {
+  licensingModel: 'perUser',
+  billingModel: 'perSeat',
+  billingCycle: 'year',
+};
 
 /** Where reading a delivery document stands. */
 interface DocumentSession {
@@ -102,6 +155,7 @@ interface ReceiptInput {
   readonly serialNos?: readonly string[];
   readonly locationId?: string;
   readonly stockItemId?: string | null;
+  readonly entitlementId?: string | null;
   readonly extra?: Readonly<Record<string, unknown>>;
 }
 
@@ -119,21 +173,22 @@ const clip = (value: unknown, length: number): string =>
   typeof value === 'string' ? value.trim().slice(0, length) : '';
 
 /**
- * The order's outstanding device and stock lines received together, in one
- * transaction (2026-10-05). A device is still a record of its own, so each
- * is a row with its own serial — pasted as a column from a spreadsheet,
- * scanned one after another, or read by the assistant from the delivery
- * document — while what every unit of a line shares (place, department,
- * keeper, warranty) is asked once. Entitlements keep their own dialog: a
- * batch of seats asks which entitlement to join and on what terms, which is
- * not a column of serials.
+ * 到货入库: every outstanding line of the order received together, in one
+ * transaction (2026-10-05) — the one way an order is received. A device is
+ * still a record of its own, so each is a row with its own serial — pasted
+ * as a column from a spreadsheet, scanned one after another, or read by the
+ * assistant from the delivery document — while what every unit of a line
+ * shares (place, department, keeper, warranty) is asked once. Stock goes
+ * into the stock item of that very model, or a new one. Seats are added to
+ * the entitlement already on the books for the product, or a new one is
+ * opened on terms asked here; joining changes no term.
  *
  * Reading a document is the assistant's work and the receiver's decision:
  * it fills the form (marking each value it filled with where in the document
  * it came from), the rules on the server check it, and nothing is received
  * until the receiver presses 入库. The run is recorded either way.
  */
-export function BatchReceiptDialog({
+export function ReceiptDialog({
   orderId,
   order,
   lines,
@@ -151,14 +206,24 @@ export function BatchReceiptDialog({
   const api = useApi();
   const queryClient = useQueryClient();
   const receiverId = useCurrentUserId() ?? null;
+  // Whoever receives answers for what arrives — when they may answer for
+  // records at all. The platform administrator holds no permission set of
+  // this application's and is offered as nobody's 负责人, so receiving as
+  // root falls back to the order's own 负责人 rather than naming root.
+  const candidates = useItamList('itam/users', { pageSize: 100 });
+  const defaultOwner =
+    receiverId &&
+    candidates.data?.data.some((user) => text(user.id) === receiverId)
+      ? receiverId
+      : text(order.ownerId) || null;
+  const ownerOf = (device: DeviceDraft): string | null =>
+    device.ownerId === undefined ? defaultOwner : device.ownerId;
   const receivable = useMemo(
-    () =>
-      lines.filter(
-        (line) =>
-          BATCH_ITEM_TYPES.has(text(line.itemType)) && outstandingOf(line) > 0,
-      ),
+    () => lines.filter((line) => outstandingOf(line) > 0),
     [lines],
   );
+  const isEntitlement = (line: ItamRecord) =>
+    ENTITLEMENT_KINDS.has(text(line.itemType));
   const modelIds = [
     ...new Set(receivable.map((line) => text(line.modelId)).filter(Boolean)),
   ];
@@ -178,12 +243,22 @@ export function BatchReceiptDialog({
       ),
     },
   ]);
+  const productIds = [
+    ...new Set(
+      receivable.map((line) => text(line.softwareProductId)).filter(Boolean),
+    ),
+  ];
+  const products = useReferenceNames([
+    { collection: 'softwareProducts', ids: productIds },
+  ]);
+  /** What a line buys, by its model's or its software product's name. */
   const modelName = (line: ItamRecord): string =>
-    text(modelById.get(text(line.modelId))?.name);
+    text(modelById.get(text(line.modelId))?.name) ||
+    (products.softwareProducts?.get(text(line.softwareProductId)) ?? '');
   // Stock of the very model a stock line buys is where its batch goes, as
   // in the single receipt dialog; without one a new record is started.
   const stockModelIds = receivable
-    .filter((line) => text(line.itemType) !== 'device')
+    .filter((line) => text(line.itemType) !== 'device' && !isEntitlement(line))
     .map((line) => text(line.modelId));
   const sameModelStock = useItamList(
     STOCK_PATH,
@@ -197,6 +272,40 @@ export function BatchReceiptDialog({
         text(item.kind) === text(line.itemType),
     );
 
+  // Seats usually join the entitlement already on the books for the
+  // product, so that is where an entitlement line starts.
+  const sameProduct = useItamList(
+    ENTITLEMENTS_PATH,
+    { filter: { softwareProductId: productIds }, pageSize: 100 },
+    { enabled: productIds.length > 0 },
+  );
+  const entitlementFor = (line: ItamRecord): ItamRecord | undefined =>
+    sameProduct.data?.data.find(
+      (item) =>
+        text(item.softwareProductId) === text(line.softwareProductId) &&
+        text(item.kind) === text(line.itemType),
+    );
+  /** How an entitlement line stands once its defaults are filled in. */
+  const seatsOf = (line: ItamRecord, draft: EntitlementDraft) => {
+    const suggested = text(entitlementFor(line)?.id) || null;
+    const canJoin = sameProduct.isPending || Boolean(suggested);
+    const mode = canJoin ? (draft.mode ?? 'join') : 'create';
+    return {
+      canJoin,
+      mode,
+      joining: mode === 'join' ? (draft.entitlementId ?? suggested) : null,
+      name: draft.name ?? modelName(line),
+      term: (key: string): unknown =>
+        key in draft.terms
+          ? draft.terms[key]
+          : key === 'ownerId'
+            ? defaultOwner
+            : key === 'unitPrice'
+              ? (line.unitPrice ?? null)
+              : (TERM_DEFAULTS[key] ?? null),
+    } as const;
+  };
+
   const [devices, setDevices] = useState<Record<string, DeviceDraft>>(() =>
     Object.fromEntries(
       receivable
@@ -209,7 +318,6 @@ export function BatchReceiptDialog({
             // The order says which department asked for it, and the person
             // receiving answers for what arrives until they say otherwise.
             departmentId: text(order.departmentId) || null,
-            ownerId: receiverId,
             warrantyEndDate: '',
           },
         ]),
@@ -218,10 +326,24 @@ export function BatchReceiptDialog({
   const [stocks, setStocks] = useState<Record<string, StockDraft>>(() =>
     Object.fromEntries(
       receivable
-        .filter((line) => text(line.itemType) !== 'device')
+        .filter(
+          (line) => text(line.itemType) !== 'device' && !isEntitlement(line),
+        )
         .map((line) => [text(line.id), { quantity: '', locationId: null }]),
     ),
   );
+  const [seats, setSeats] = useState<Record<string, EntitlementDraft>>(() =>
+    Object.fromEntries(
+      receivable
+        .filter(isEntitlement)
+        .map((line) => [text(line.id), { quantity: '', terms: {} }]),
+    ),
+  );
+  const patchSeats = (lineId: string, patch: Partial<EntitlementDraft>) =>
+    setSeats((current) => {
+      const draft = current[lineId];
+      return draft ? { ...current, [lineId]: { ...draft, ...patch } } : current;
+    });
   const patchDevice = (lineId: string, patch: Partial<DeviceDraft>) =>
     setDevices((current) => {
       const draft = current[lineId];
@@ -262,6 +384,19 @@ export function BatchReceiptDialog({
       }
       return next;
     });
+    setSeats((current) => {
+      const next = { ...current };
+      for (const planned of plan.lines) {
+        const draft = next[planned.lineId];
+        if (draft)
+          next[planned.lineId] = {
+            ...draft,
+            quantity: String(planned.quantity),
+            source: planned.sources[0] ?? '',
+          };
+      }
+      return next;
+    });
   };
 
   const receipts: ReceiptInput[] = receivable.flatMap(
@@ -281,10 +416,28 @@ export function BatchReceiptDialog({
               ...(modelName(line) ? { name: modelName(line) } : {}),
               departmentId: device.departmentId,
               warrantyEndDate: device.warrantyEndDate || null,
-              ...(device.ownerId ? { ownerId: device.ownerId } : {}),
+              ...(ownerOf(device) ? { ownerId: ownerOf(device) } : {}),
             },
           },
         ];
+      }
+      const seat = seats[lineId];
+      if (seat) {
+        const quantity = Number.parseInt(seat.quantity, 10);
+        if (!Number.isFinite(quantity) || quantity < 1) return [];
+        const plan = seatsOf(line, seat);
+        if (plan.mode === 'join')
+          return [{ lineId, quantity, entitlementId: plan.joining }];
+        // A new entitlement states its terms; empty ones are left to the
+        // service's own defaults.
+        const extra: Record<string, unknown> = {};
+        if (plan.name.trim()) extra.name = plan.name.trim();
+        for (const key of TERM_KEYS[text(line.itemType)] ?? []) {
+          const value = plan.term(key);
+          if (value !== null && value !== undefined && value !== '')
+            extra[key] = value;
+        }
+        return [{ lineId, quantity, entitlementId: null, extra }];
       }
       const stock = stocks[lineId];
       const quantity = Number.parseInt(stock?.quantity ?? '', 10);
@@ -300,7 +453,7 @@ export function BatchReceiptDialog({
               locationId: stock.locationId ?? undefined,
               extra: {
                 ...(modelName(line) ? { name: modelName(line) } : {}),
-                ...(receiverId ? { ownerId: receiverId } : {}),
+                ...(defaultOwner ? { ownerId: defaultOwner } : {}),
               },
             },
       ];
@@ -390,8 +543,19 @@ export function BatchReceiptDialog({
     const device = devices[lineId];
     if (device)
       return (
-        unitsOf(device).length > 0 && (!device.locationId || !device.ownerId)
+        unitsOf(device).length > 0 && (!device.locationId || !ownerOf(device))
       );
+    const seat = seats[lineId];
+    if (seat) {
+      const quantity = Number.parseInt(seat.quantity, 10);
+      if (!Number.isFinite(quantity) || quantity < 1) return false;
+      const plan = seatsOf(line, seat);
+      // Joining needs something to join; a subscription is dated by its
+      // next renewal, which the service refuses to open one without.
+      return plan.mode === 'join'
+        ? !plan.joining
+        : text(line.itemType) === 'subscription' && !plan.term('expiryDate');
+    }
     const stock = stocks[lineId];
     const quantity = Number.parseInt(stock?.quantity ?? '', 10);
     return (
@@ -450,6 +614,7 @@ export function BatchReceiptDialog({
         );
         const device = devices[lineId];
         const stock = stocks[lineId];
+        const seat = seats[lineId];
         return (
           <section
             key={lineId}
@@ -476,6 +641,7 @@ export function BatchReceiptDialog({
               <DeviceLine
                 lineId={lineId}
                 draft={device}
+                owner={ownerOf(device)}
                 issues={issues}
                 onChange={(patch) => patchDevice(lineId, patch)}
               />
@@ -487,15 +653,18 @@ export function BatchReceiptDialog({
                 outstanding={outstandingOf(line)}
                 onChange={(patch) => patchStock(lineId, patch)}
               />
+            ) : seat ? (
+              <EntitlementLine
+                line={line}
+                draft={seat}
+                plan={seatsOf(line, seat)}
+                outstanding={outstandingOf(line)}
+                onChange={(patch) => patchSeats(lineId, patch)}
+              />
             ) : null}
           </section>
         );
       })}
-      {lines.some((line) => !BATCH_ITEM_TYPES.has(text(line.itemType))) ? (
-        <p className='text-xs text-muted-foreground'>
-          {t('receipt.entitlementsSeparately')}
-        </p>
-      ) : null}
     </ConfirmDialog>
   );
 }
@@ -504,11 +673,13 @@ export function BatchReceiptDialog({
 function DeviceLine({
   lineId,
   draft,
+  owner,
   issues,
   onChange,
 }: {
   readonly lineId: string;
   readonly draft: DeviceDraft;
+  readonly owner: string | null;
   readonly issues: readonly ReceiptIssue[];
   readonly onChange: (patch: Partial<DeviceDraft>) => void;
 }): ReactElement {
@@ -552,7 +723,7 @@ function DeviceLine({
           <ReferenceSelect
             id={`batch-owner-${lineId}`}
             reference={{ collection: 'users' }}
-            value={draft.ownerId}
+            value={owner}
             onChange={(ownerId) => onChange({ ownerId })}
           />
         </div>
@@ -604,7 +775,8 @@ function DeviceLine({
                   placeholder={t('receipt.serialPlaceholder')}
                   aria-label={t('receipt.serialOf', { index: index + 1 })}
                   aria-invalid={problem ? true : undefined}
-                  className={cn('font-mono', problem && 'border-destructive')}
+                  data-serial=''
+                  className={cn(problem && 'border-destructive')}
                   onPaste={(event) => paste(index, event)}
                   // Typing over what the document said makes it the
                   // receiver's value: the AI mark goes with it.
@@ -739,6 +911,162 @@ function StockLine({
           onChange={(locationId) => onChange({ locationId })}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Seats of an entitlement line: added to an entitlement already on the
+ * books for the product, or a new one opened on terms asked here. The terms
+ * render from the entitlement's own field metadata, so the labels say the
+ * same as on its page; joining shows the joined record's terms, disabled —
+ * adding seats changes none of them, and a renewal is the entitlement's own
+ * act.
+ */
+function EntitlementLine({
+  line,
+  draft,
+  plan,
+  outstanding,
+  onChange,
+}: {
+  readonly line: ItamRecord;
+  readonly draft: EntitlementDraft;
+  readonly plan: {
+    readonly canJoin: boolean;
+    readonly mode: 'join' | 'create';
+    readonly joining: string | null;
+    readonly name: string;
+    readonly term: (key: string) => unknown;
+  };
+  readonly outstanding: number;
+  readonly onChange: (patch: Partial<EntitlementDraft>) => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  const lineId = text(line.id);
+  const kind = text(line.itemType);
+  const joined = useItamRecord(ENTITLEMENTS_PATH, plan.joining ?? undefined);
+  const fields = (TERM_KEYS[kind] ?? []).flatMap((key) => {
+    const field = ENTITLEMENT_FIELDS.find((entry) => entry.key === key);
+    return field && (!field.visibleWhen || field.visibleWhen({ kind }))
+      ? [field]
+      : [];
+  });
+  return (
+    <div className='grid gap-3'>
+      <div className='grid gap-3 sm:grid-cols-2'>
+        <div className='grid gap-1.5'>
+          <Label htmlFor={`batch-seats-${lineId}`}>
+            {t('receipt.quantityThisTime')}
+          </Label>
+          <div className='flex items-center gap-2'>
+            <Input
+              id={`batch-seats-${lineId}`}
+              type='number'
+              min={0}
+              max={outstanding}
+              value={draft.quantity}
+              onChange={(event) =>
+                onChange({ quantity: event.target.value, source: undefined })
+              }
+            />
+            {draft.source !== undefined ? (
+              <AiMark source={draft.source} />
+            ) : null}
+          </div>
+        </div>
+        <div className='grid gap-1.5'>
+          <Label>{t('procurement.seatTarget')}</Label>
+          <RadioGroup
+            value={plan.mode}
+            onValueChange={(value: unknown) => {
+              if (value === 'join' || value === 'create')
+                onChange({ mode: value });
+            }}
+            className='flex min-h-9 flex-wrap items-center gap-x-6 gap-y-2'
+          >
+            {(['join', 'create'] as const).map((value) => (
+              <Label
+                key={value}
+                htmlFor={`batch-seat-${lineId}-${value}`}
+                className={cn(
+                  'flex items-center gap-2 font-normal',
+                  value === 'join' && !plan.canJoin && 'text-muted-foreground',
+                )}
+              >
+                <RadioGroupItem
+                  value={value}
+                  id={`batch-seat-${lineId}-${value}`}
+                  disabled={value === 'join' && !plan.canJoin}
+                />
+                {t(
+                  value === 'join'
+                    ? 'procurement.joinEntitlement'
+                    : 'procurement.newEntitlement',
+                )}
+              </Label>
+            ))}
+          </RadioGroup>
+        </div>
+      </div>
+      {plan.mode === 'join' ? (
+        <div className='grid gap-1.5'>
+          <Label htmlFor={`batch-entitlement-${lineId}`}>
+            {t('procurement.existingEntitlement')}
+            <span className='text-destructive'> *</span>
+          </Label>
+          <ReferenceSelect
+            id={`batch-entitlement-${lineId}`}
+            reference={{
+              collection: 'entitlements',
+              filter: {
+                kind,
+                softwareProductId: text(line.softwareProductId),
+              },
+            }}
+            value={plan.joining}
+            onChange={(entitlementId) => onChange({ entitlementId })}
+          />
+        </div>
+      ) : (
+        <div className='grid gap-1.5'>
+          <Label htmlFor={`batch-entitlement-name-${lineId}`}>
+            {t('fields.name')}
+          </Label>
+          <Input
+            id={`batch-entitlement-name-${lineId}`}
+            value={plan.name}
+            onChange={(event) => onChange({ name: event.target.value })}
+          />
+        </div>
+      )}
+      {plan.mode === 'create' || joined.data ? (
+        <div className='grid gap-3 sm:grid-cols-2'>
+          {fields.map((field) => (
+            <div key={field.key} className='grid gap-1.5'>
+              <Label htmlFor={`batch-term-${lineId}-${field.key}`}>
+                {t(field.label)}
+                {plan.mode === 'create' && field.requiredWhen?.({ kind }) ? (
+                  <span className='text-destructive'> *</span>
+                ) : null}
+              </Label>
+              <FieldInput
+                id={`batch-term-${lineId}-${field.key}`}
+                field={field}
+                value={
+                  plan.mode === 'create'
+                    ? plan.term(field.key)
+                    : (joined.data?.[field.key] ?? null)
+                }
+                disabled={plan.mode === 'join'}
+                onChange={(value) =>
+                  onChange({ terms: { ...draft.terms, [field.key]: value } })
+                }
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1232,7 +1560,8 @@ function focusNext(current: HTMLInputElement): void {
   // move waits for it to be rendered.
   requestAnimationFrame(() => {
     const inputs = [
-      ...(section?.querySelectorAll<HTMLInputElement>('input.font-mono') ?? []),
+      ...(section?.querySelectorAll<HTMLInputElement>('input[data-serial]') ??
+        []),
     ];
     inputs[inputs.indexOf(current) + 1]?.focus();
   });

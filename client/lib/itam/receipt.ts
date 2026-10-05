@@ -6,17 +6,8 @@ import type { AIChatAttachment } from '@/extensions/nocobase-ai';
  * and `receipt-runs.ts`) and the few rules the form needs to agree with it.
  */
 
-/** What the batch form receives: one record per device, or a quantity. */
-export const BATCH_ITEM_TYPES: ReadonlySet<string> = new Set([
-  'device',
-  'accessory',
-  'consumable',
-  'component',
-]);
-
 export type ReceiptIssueCode =
   | 'unmatched'
-  | 'notReceivable'
   | 'matchConflict'
   | 'shortDelivery'
   | 'serialCount'

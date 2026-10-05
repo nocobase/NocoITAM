@@ -20,6 +20,7 @@ interface Order {
   readonly id: string;
   readonly laptopLine: string;
   readonly mouseLine: string;
+  readonly seatLine: string;
   readonly locationId: string;
 }
 
@@ -85,6 +86,15 @@ describe('receiving in batch and by delivery document', () => {
       manufacturerId,
       code: '910-0057',
     });
+    const software = await created('master/categories', {
+      name: 'Test Design',
+      appliesTo: 'entitlement',
+    });
+    const productId = await created('master/softwareProducts', {
+      name: 'Test Sketcher',
+      categoryId: software,
+      deliveryMethod: 'saas',
+    });
     const id = await created('purchase-orders', {
       reason: 'newHire',
       vendorId,
@@ -97,6 +107,11 @@ describe('receiving in batch and by delivery document', () => {
           lines: [
             { itemType: 'device', modelId: laptopModel, quantity: 3 },
             { itemType: 'accessory', modelId: mouseModel, quantity: 5 },
+            {
+              itemType: 'perpetual',
+              softwareProductId: productId,
+              quantity: 4,
+            },
           ],
         }),
         ...manager,
@@ -116,6 +131,7 @@ describe('receiving in batch and by delivery document', () => {
       id,
       laptopLine: lines.find((line) => line.itemType === 'device')!.id,
       mouseLine: lines.find((line) => line.itemType === 'accessory')!.id,
+      seatLine: lines.find((line) => line.itemType === 'perpetual')!.id,
       locationId,
     };
   });
@@ -192,6 +208,30 @@ describe('receiving in batch and by delivery document', () => {
       'human',
       'human',
     ]);
+  });
+
+  it('receives seats in the same batch, opening a new entitlement on the terms given', async () => {
+    const response = await post(`purchase-orders/${order.id}/receive-batch`, {
+      receipts: [
+        laptops(['S1']),
+        {
+          lineId: order.seatLine,
+          quantity: 3,
+          entitlementId: null,
+          extra: { name: 'Sketcher seats', licensingModel: 'perUser' },
+        },
+      ],
+    });
+    expect(response.status).toBe(200);
+    const entitlement = await query()
+      .selectFrom('entitlements')
+      .select(['name', 'seatCount', 'kind'])
+      .executeTakeFirst<{ name: string; seatCount: number; kind: string }>();
+    expect(entitlement).toEqual({
+      name: 'Sketcher seats',
+      seatCount: 3,
+      kind: 'perpetual',
+    });
   });
 
   it('says what would stop a batch, and refuses all of it rather than part', async () => {

@@ -544,7 +544,7 @@ const zhCN: AppResource = {
     orderKey: '文件内单号',
     item: '物品',
     subtotal: '小计',
-    received: '已到货',
+    received: '到货入库',
     orderNo: '采购单号',
     period: '期限',
     paymentTerms: '付款方式',
@@ -1245,11 +1245,10 @@ const zhCN: AppResource = {
     users: '用户',
   },
   receipt: {
-    batch: '批量入库',
     fromDocument: '按送货单入库',
-    title: '批量入库',
+    title: '到货入库',
     description:
-      '一次收多行到货。设备每台一行，可从 Excel 粘贴一列序列号，或用扫码枪逐个扫入。',
+      '这张单子到了什么就收什么。设备每台一行，可从 Excel 粘贴一列序列号，或用扫码枪逐个扫入；授权加到已有授权或新建一份。',
     context: '按送货单入库',
     confirm_one: '入库 {{count}} 件',
     confirm_other: '入库 {{count}} 件',
@@ -1265,8 +1264,7 @@ const zhCN: AppResource = {
     quantityThisTime: '本次数量',
     joinStock: '加入库存「{{name}}」',
     newStock: '新建库存记录的位置',
-    nothing: '这张采购单没有待到货的设备或库存。授权请在明细里逐行入库。',
-    entitlementsSeparately: '授权不在这里收，请在明细里逐行入库。',
+    nothing: '这张采购单已全部到货。',
     aiFilled: 'AI 按送货单填写',
     aiFilledFrom: 'AI 按送货单填写：{{source}}',
     documentChecks: '单据核对',
@@ -1286,7 +1284,6 @@ const zhCN: AppResource = {
     issues: {
       unmatched:
         '「{{description}}」没有对上采购单的行（{{source}}），这一行没有填入。',
-      notReceivable: '「{{description}}」是授权，请在明细里逐行入库。',
       matchConflict:
         '「{{description}}」按料号对到了这一行，与 AI 的判断不同，以料号为准。',
       shortDelivery: '「{{line}}」未到 {{expected}}，单据上只有 {{actual}}。',

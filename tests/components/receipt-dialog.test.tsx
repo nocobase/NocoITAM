@@ -1,10 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-import { BatchReceiptDialog } from '../../client/pages/itam/procurement/batch-receipt.js';
+import { ReceiptDialog } from '../../client/pages/itam/procurement/receipt-dialog.js';
 
 const state = vi.hoisted(() => ({
   requests: [] as { path: string; json?: unknown }[],
+  // The accounts that may answer for records; the reader is `mia`.
+  owners: ['mia'] as string[],
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -24,17 +26,21 @@ vi.mock('../../client/lib/itam/api.js', () => ({
       return Promise.resolve({ data: {} });
     },
   }),
+  useItamRecord: () => ({ data: undefined }),
   // The line's model, so the devices are named after it; no stock of the
-  // mice's model yet, so they start a new record.
+  // mice's model yet, so they start a new record, and no entitlement of the
+  // product, so seats open a new one.
   useItamList: (path: string) => ({
     data: {
       data:
-        path === 'itam/master/models'
-          ? [
-              { id: 'm1', name: 'Test Book 14', code: 'TB14' },
-              { id: 'm2', name: 'Test Mouse', code: 'TM' },
-            ]
-          : [],
+        path === 'itam/users'
+          ? state.owners.map((id) => ({ id }))
+          : path === 'itam/master/models'
+            ? [
+                { id: 'm1', name: 'Test Book 14', code: 'TB14' },
+                { id: 'm2', name: 'Test Mouse', code: 'TM' },
+              ]
+            : [],
     },
   }),
 }));
@@ -106,19 +112,18 @@ const lines = [
 
 beforeEach(() => {
   state.requests = [];
+  state.owners = ['mia'];
 });
 
 it('turns a pasted column of serials into one device each and receives every line at once', () => {
   render(
-    <BatchReceiptDialog
+    <ReceiptDialog
       orderId='po1'
       order={{ id: 'po1', orderNo: 'PO-1', departmentId: 'dept1' }}
       lines={lines}
       onClose={vi.fn()}
     />,
   );
-  // Entitlements keep their own dialog.
-  expect(screen.getByText('receipt.entitlementsSeparately')).toBeVisible();
   expect(screen.queryByText('Test Book 14')).toBeVisible();
 
   fireEvent.click(screen.getByRole('button', { name: 'receipt.addUnit' }));
@@ -135,7 +140,7 @@ it('turns a pasted column of serials into one device each and receives every lin
   // The place every unit of the line goes, and where the new stock record
   // of mice is kept.
   fireEvent.click(screen.getByTestId('batch-location-l1'));
-  fireEvent.change(screen.getByLabelText('receipt.quantityThisTime'), {
+  fireEvent.change(screen.getAllByLabelText('receipt.quantityThisTime')[0]!, {
     target: { value: '4' },
   });
   fireEvent.click(screen.getByTestId('batch-stock-location-l2'));
@@ -172,7 +177,7 @@ it('turns a pasted column of serials into one device each and receives every lin
 
 it('offers nothing to receive until a line has something in it', () => {
   render(
-    <BatchReceiptDialog
+    <ReceiptDialog
       orderId='po1'
       order={{ id: 'po1' }}
       lines={lines}
@@ -186,7 +191,7 @@ it('offers nothing to receive until a line has something in it', () => {
 
 it('takes a scanner’s Enter or Tab as the end of a code, and does not receive the row left waiting', () => {
   render(
-    <BatchReceiptDialog
+    <ReceiptDialog
       orderId='po1'
       order={{ id: 'po1' }}
       lines={lines}
@@ -217,4 +222,40 @@ it('takes a scanner’s Enter or Tab as the end of a code, and does not receive 
     (receipt?.json as { receipts: { serialNos?: string[] }[] }).receipts[0]
       ?.serialNos,
   ).toEqual(['S1', 'S2']);
+});
+
+it('receives seats in the same form, and a new subscription waits for its renewal date', () => {
+  render(
+    <ReceiptDialog
+      orderId='po1'
+      order={{ id: 'po1' }}
+      lines={lines}
+      onClose={vi.fn()}
+    />,
+  );
+  // No entitlement of the product is on the books: a new one is the only
+  // answer, and joining is not offered.
+  expect(
+    screen.getByRole('radio', { name: 'procurement.joinEntitlement' }),
+  ).toHaveAttribute('aria-disabled', 'true');
+  fireEvent.change(screen.getAllByLabelText('receipt.quantityThisTime')[1]!, {
+    target: { value: '5' },
+  });
+  expect(
+    screen.getByRole('button', { name: 'receipt.confirm:5' }),
+  ).toBeDisabled();
+});
+
+it('names the order’s 负责人 when the receiver may not answer for records', () => {
+  // Receiving as the platform administrator, who is nobody's 负责人.
+  state.owners = ['wujing'];
+  render(
+    <ReceiptDialog
+      orderId='po1'
+      order={{ id: 'po1', ownerId: 'wujing' }}
+      lines={lines}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(screen.getByTestId('batch-owner-l1')).toHaveTextContent('wujing');
 });

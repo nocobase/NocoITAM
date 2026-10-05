@@ -1285,11 +1285,10 @@ const messages = {
     users: 'users',
   },
   receipt: {
-    batch: 'Receive in batch',
     fromDocument: 'Receive from delivery note',
-    title: 'Receive in batch',
+    title: 'Receive',
     description:
-      'Receive several lines at once. One row per device: paste a column of serial numbers from a spreadsheet, or scan them one after another.',
+      'Receive whatever of this order arrived. One row per device: paste a column of serial numbers from a spreadsheet, or scan them one after another; seats join an entitlement on the books or open a new one.',
     context: 'Receiving by delivery document',
     confirm_one: 'Receive {{count}} item',
     confirm_other: 'Receive {{count}} items',
@@ -1305,10 +1304,7 @@ const messages = {
     quantityThisTime: 'Quantity this time',
     joinStock: 'Added to stock “{{name}}”',
     newStock: 'Location of the new stock record',
-    nothing:
-      'Nothing on this order is waiting to arrive as devices or stock. Receive entitlements line by line.',
-    entitlementsSeparately:
-      'Entitlements are not received here: receive them line by line.',
+    nothing: 'Everything on this order has arrived.',
     aiFilled: 'Filled by AI from the delivery note',
     aiFilledFrom: 'Filled by AI from the delivery note: {{source}}',
     documentChecks: 'Delivery note checks',
@@ -1329,8 +1325,6 @@ const messages = {
     issues: {
       unmatched:
         '“{{description}}” matches no line of the order ({{source}}) and was left out.',
-      notReceivable:
-        '“{{description}}” is an entitlement: receive it on its line.',
       matchConflict:
         '“{{description}}” was matched to this line by its part number, not as AI suggested.',
       shortDelivery:

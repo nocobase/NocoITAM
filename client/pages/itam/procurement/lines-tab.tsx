@@ -1,5 +1,4 @@
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
-import { FieldInput } from '@/components/itam/field-input';
 import { EntitlementKindBadge } from '@/components/itam/status-badge';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -22,12 +21,10 @@ import {
 } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
-import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -44,20 +41,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import {
-  useApi,
-  useItamList,
-  useItamRecord,
-  type ItamRecord,
-} from '@/lib/itam/api';
+import { useApi, type ItamRecord } from '@/lib/itam/api';
 import { errorMessage, formatMoney, text } from '@/lib/itam/format';
 import {
   useCollectionPermissions,
   useCurrentUserId,
 } from '@/lib/itam/permissions';
-import { ENTITLEMENTS_PATH, ENTITLEMENT_FIELDS } from '@/lib/itam/entitlements';
-import { STOCK_PATH } from '@/lib/itam/stock';
 import {
   LINE_ITEM_TYPES,
   PURCHASE_ORDERS_PATH,
@@ -68,9 +57,9 @@ import type { AIFrontendToolRegistration } from '@/extensions/nocobase-ai';
 import { useAiPageContext } from '@/lib/itam/ai-context';
 import { cn } from '@/lib/utils';
 import { useReferenceNames, type ReferenceNames } from '@/lib/itam/references';
-import { BATCH_ITEM_TYPES, DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
+import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 
-import { BatchReceiptDialog } from './batch-receipt';
+import { ReceiptDialog } from './receipt-dialog';
 
 export interface LineDraft {
   readonly key: string;
@@ -139,8 +128,7 @@ export function PurchaseOrderLinesCard({
   });
   // The lines under edit; the table is in read mode until it has them.
   const [drafts, setDrafts] = useState<LineDraft[]>();
-  const [receiving, setReceiving] = useState<ItamRecord>();
-  // The batch form, opened empty or on a delivery document already picked.
+  // 到货入库, opened empty or on a delivery document already picked.
   const [batch, setBatch] = useState<{ readonly file?: File }>();
   const documentInputRef = useRef<HTMLInputElement>(null);
   // The lines as the assistant sees them, and the one thing it may do to
@@ -295,14 +283,10 @@ export function PurchaseOrderLinesCard({
     EDITABLE.has(status) &&
     raisedBy(record, currentUserId);
   const canReceive = Boolean(permissions.receive) && RECEIVABLE.has(status);
-  // Devices and stock still to arrive are what the batch form receives.
+  // Whether anything is still to arrive.
   const batchable =
     canReceive &&
-    rows.some(
-      (row) =>
-        BATCH_ITEM_TYPES.has(text(row.itemType)) &&
-        Number(row.receivedQuantity) < Number(row.quantity),
-    );
+    rows.some((row) => Number(row.receivedQuantity) < Number(row.quantity));
   const draftOf = (row: ItamRecord): LineDraft => ({
     key: text(row.id),
     id: text(row.id),
@@ -421,7 +405,7 @@ export function PurchaseOrderLinesCard({
               ) : null}
               <Button size='sm' variant='outline' onClick={() => setBatch({})}>
                 <Truck data-icon='inline-start' />
-                {t('receipt.batch')}
+                {t('procurement.receive')}
               </Button>
             </div>
           ) : null}
@@ -588,22 +572,7 @@ export function PurchaseOrderLinesCard({
                       <TableCell className='text-right tabular-nums'>
                         <ReceivedCell row={row} />
                       </TableCell>
-                      <TableCell>
-                        <div className='flex items-center justify-end gap-1'>
-                          {canReceive &&
-                          Number(row.receivedQuantity) <
-                            Number(row.quantity) ? (
-                            <Button
-                              size='sm'
-                              variant='outline'
-                              onClick={() => setReceiving(row)}
-                            >
-                              <Truck data-icon='inline-start' />
-                              {t('procurement.receive')}
-                            </Button>
-                          ) : null}
-                        </div>
-                      </TableCell>
+                      <TableCell />
                     </TableRow>
                   ))}
               {drafts?.length === 0 ||
@@ -666,20 +635,12 @@ export function PurchaseOrderLinesCard({
         {/* Past the draft, a change to the lines states why: the approval was
           given for what the order said then. */}
         {batch ? (
-          <BatchReceiptDialog
+          <ReceiptDialog
             orderId={id}
             order={record}
             lines={rows}
             initialFile={batch.file}
             onClose={() => setBatch(undefined)}
-          />
-        ) : null}
-        {receiving ? (
-          <ReceiveDialog
-            orderId={id}
-            order={record}
-            line={receiving}
-            onClose={() => setReceiving(undefined)}
           />
         ) : null}
       </CardContent>
@@ -987,612 +948,5 @@ export function LineEditor({
         </div>
       </TableCell>
     </TableRow>
-  );
-}
-
-function ReceiveDialog({
-  orderId,
-  order,
-  line,
-  onClose,
-}: {
-  readonly orderId: string;
-  /** The order: what a received device inherits from it. */
-  readonly order: ItamRecord;
-  readonly line: ItamRecord;
-  readonly onClose: () => void;
-}): ReactElement {
-  const { t } = useTranslation();
-  const api = useApi();
-  const queryClient = useQueryClient();
-  // Someone answers for every record this creates, and the person
-  // receiving it is that someone until they say otherwise.
-  const receiverId = useCurrentUserId();
-  const remaining = Number(line.quantity) - Number(line.receivedQuantity);
-  const itemType = text(line.itemType) as LineItemType;
-  const [quantity, setQuantity] = useState(remaining);
-  const [locationId, setLocationId] = useState<string | null>(null);
-  const [stockItemId, setStockItemId] = useState<string | null>(null);
-  // Joining an existing item or starting a new one are different acts, so
-  // the dialog asks which rather than inferring it from an empty picker.
-  const [stockMode, setStockMode] = useState<'join' | 'create'>();
-  const [entitlementId, setEntitlementId] = useState<string | null>(null);
-  const [seatMode, setSeatMode] = useState<'join' | 'create'>();
-  // The terms a new entitlement is opened on, held as a record and rendered
-  // from the entitlement's own field metadata: the labels, options and
-  // controls then say the same thing here as on its page.
-  const [terms, setTerms] = useState<Record<string, unknown>>({});
-  /**
-   * A term's starting value: the receiver, the line's own price, and for
-   * the required choices the same default the service would apply — a
-   * required select opening on 无 only invites the error it then raises.
-   */
-  const TERM_DEFAULTS: Readonly<Record<string, unknown>> = {
-    licensingModel: 'perUser',
-    billingModel: 'perSeat',
-    billingCycle: 'year',
-  };
-  const termValue = (key: string) =>
-    key in terms
-      ? terms[key]
-      : key === 'ownerId'
-        ? receiverId
-        : key === 'unitPrice'
-          ? (line.unitPrice ?? null)
-          : (TERM_DEFAULTS[key] ?? null);
-  const isStock =
-    itemType === 'accessory' ||
-    itemType === 'consumable' ||
-    itemType === 'component';
-  const isEntitlement = itemType === 'perpetual' || itemType === 'subscription';
-  // A device, and a stock item started here, are named after their model
-  // unless the receiver says otherwise:
-  // the same name the service would fall back to, shown so it can be edited
-  // rather than discovered afterwards. `undefined` means untouched.
-  const lineNames = useReferenceNames([
-    { collection: 'models', ids: [text(line.modelId) || null] },
-    {
-      collection: 'softwareProducts',
-      ids: [text(line.softwareProductId) || null],
-    },
-  ]);
-  const modelName = lineNames.models?.get(text(line.modelId)) ?? '';
-  const productName =
-    lineNames.softwareProducts?.get(text(line.softwareProductId)) ?? '';
-  const [name, setName] = useState<string | undefined>(undefined);
-  const shownName = name ?? (isEntitlement ? productName : modelName) ?? '';
-  // What a new entitlement of this kind is opened on. The seat count comes
-  // from the receipt, the name has its own input above, and the product,
-  // category and maker follow the line — the rest is asked here.
-  const termKeys =
-    itemType === 'perpetual'
-      ? [
-          'licensingModel',
-          'maintenanceExpiryDate',
-          'productKey',
-          'reassignable',
-          'ownerId',
-        ]
-      : [
-          'billingModel',
-          'billingCycle',
-          'unitPrice',
-          'expiryDate',
-          'autoRenew',
-          'ownerId',
-        ];
-  const termFields = termKeys.flatMap((key) => {
-    const field = ENTITLEMENT_FIELDS.find((entry) => entry.key === key);
-    return field ? [field] : [];
-  });
-  // A device is received one at a time: each one is its own record, with
-  // its own serial, place and keeper. What the order already settled — the
-  // model, the vendor, that it is owned — is shown but not asked again.
-  const [serialNo, setSerialNo] = useState('');
-  const [departmentId, setDepartmentId] = useState<string | null>(() =>
-    order.departmentId ? text(order.departmentId) : null,
-  );
-  // Left empty on purpose: the model states its own 保修月数, and an empty
-  // field is what lets the service work the date out from the purchase date
-  // and that term instead of a guess overwriting it.
-  const [warrantyEndDate, setWarrantyEndDate] = useState('');
-  const [minimumQuantity, setMinimumQuantity] = useState('');
-  const [ownerId, setOwnerId] = useState<string | null>(receiverId ?? null);
-  // Stock of this very model is where this batch belongs unless the
-  // receiver says otherwise, so it starts chosen and can be cleared.
-  const sameModelStock = useItamList(
-    STOCK_PATH,
-    {
-      pageSize: 1,
-      filter: { kind: itemType, modelId: text(line.modelId) },
-    },
-    { enabled: isStock && Boolean(line.modelId) },
-  );
-  const suggestedStockId = text(sameModelStock.data?.data[0]?.id) || null;
-  // Stock of this very model is where a batch usually belongs, so that is
-  // the mode it opens in — and the only stock it may join. With no such
-  // item there is nothing to add to, so a new record is the only answer
-  // and the other option is not offered.
-  const canJoinStock = sameModelStock.isPending || Boolean(suggestedStockId);
-  const mode = canJoinStock ? (stockMode ?? 'join') : 'create';
-  const joining = mode === 'join' ? (stockItemId ?? suggestedStockId) : null;
-  // Joining an existing item puts the goods where that item already is.
-  const joinedItem = useItamRecord(STOCK_PATH, joining ?? undefined);
-  const joinedLocationId = text(joinedItem.data?.locationId) || null;
-  // Creating a second item for the same model in the same place is almost
-  // always a slip: the two would split one stock between them, and nothing
-  // downstream could tell which one to issue from. Said, not blocked —
-  // two boxes of the same thing kept apart is somebody's real answer.
-  const twin = useItamList(
-    STOCK_PATH,
-    {
-      pageSize: 1,
-      filter: {
-        kind: itemType,
-        modelId: text(line.modelId),
-        locationId: locationId ?? '',
-      },
-    },
-    {
-      enabled:
-        isStock &&
-        mode === 'create' &&
-        Boolean(line.modelId) &&
-        Boolean(locationId),
-    },
-  );
-  const twinName = text(twin.data?.data[0]?.name);
-  // The same choice for an entitlement: a further batch usually adds seats
-  // to the one already on the books for that product.
-  const sameProductEntitlement = useItamList(
-    ENTITLEMENTS_PATH,
-    {
-      pageSize: 1,
-      filter: {
-        kind: itemType,
-        softwareProductId: text(line.softwareProductId),
-      },
-    },
-    { enabled: isEntitlement && Boolean(line.softwareProductId) },
-  );
-  const suggestedEntitlementId =
-    text(sameProductEntitlement.data?.data[0]?.id) || null;
-  const canJoinEntitlement =
-    sameProductEntitlement.isPending || Boolean(suggestedEntitlementId);
-  const entitlementMode = canJoinEntitlement ? (seatMode ?? 'join') : 'create';
-  const joiningEntitlement =
-    entitlementMode === 'join'
-      ? (entitlementId ?? suggestedEntitlementId)
-      : null;
-  // What the seats will inherit, read from the record they join: shown so
-  // the receiver sees the terms before adding to them, and not editable —
-  // changing them is the entitlement's own page's business.
-  const joinedEntitlement = useItamRecord(
-    ENTITLEMENTS_PATH,
-    joiningEntitlement ?? undefined,
-  );
-  const receive = useMutation({
-    mutationFn: async () => {
-      const extra: Record<string, unknown> = {};
-      if (isEntitlement && entitlementMode === 'create') {
-        if (shownName) extra.name = shownName;
-        for (const field of termFields) {
-          const value = termValue(field.key);
-          if (value !== null && value !== undefined && value !== '')
-            extra[field.key] = value;
-        }
-      }
-      if (isStock && mode === 'create') {
-        if (shownName.trim()) extra.name = shownName.trim();
-        if (minimumQuantity.trim())
-          extra.minimumQuantity = Number(minimumQuantity);
-        if (ownerId) extra.ownerId = ownerId;
-      }
-      if (itemType === 'device') {
-        if (shownName.trim()) extra.name = shownName.trim();
-        extra.departmentId = departmentId;
-        extra.warrantyEndDate = warrantyEndDate || null;
-        if (ownerId) extra.ownerId = ownerId;
-      }
-      return api.request({
-        path: `${PURCHASE_ORDERS_PATH}/${orderId}/receive`,
-        method: 'POST',
-        json: {
-          lineId: line.id,
-          quantity: itemType === 'device' ? 1 : quantity,
-          ...(itemType === 'device'
-            ? {
-                serialNos: serialNo.trim() ? [serialNo.trim()] : [],
-                locationId: locationId ?? undefined,
-              }
-            : {}),
-          ...(isEntitlement ? { entitlementId: joiningEntitlement } : {}),
-          ...(isStock
-            ? { stockItemId: joining, locationId: locationId ?? undefined }
-            : {}),
-          ...(Object.keys(extra).length > 0 ? { extra } : {}),
-        },
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['itam'] });
-      onClose();
-    },
-  });
-  const needsLocation =
-    (itemType === 'device' || (isStock && mode === 'create')) && !locationId;
-  // Joining needs something to join.
-  const needsStockItem = isStock && mode === 'join' && !joining;
-  const needsEntitlement =
-    isEntitlement && entitlementMode === 'join' && !joiningEntitlement;
-  // A subscription is dated by its next renewal; the service refuses one
-  // without it, so the button says no before the request does.
-  const needsRenewalDate =
-    itemType === 'subscription' &&
-    entitlementMode === 'create' &&
-    !terms.expiryDate;
-  return (
-    <ConfirmDialog
-      open
-      onOpenChange={(open) => !open && onClose()}
-      title={t('procurement.receiveTitle', {
-        item: modelName || productName || t(`enums.lineItemType.${itemType}`),
-      })}
-      description={t('procurement.remaining', { count: remaining })}
-      busy={receive.isPending}
-      error={receive.error}
-      // A device is received one at a time, so only the others state how
-      // many; what they may not do is exceed what is left on the line.
-      disabled={
-        needsLocation ||
-        needsStockItem ||
-        needsEntitlement ||
-        needsRenewalDate ||
-        (itemType === 'device' && !ownerId) ||
-        (itemType !== 'device' && (quantity < 1 || quantity > remaining))
-      }
-      confirmLabel={t('procurement.receive')}
-      onConfirm={() => receive.mutate()}
-    >
-      {itemType === 'device' ? (
-        <>
-          {/* What the order settled: shown so the record being created is
-              legible, disabled because this is not where it changes. */}
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-model'>{t('fields.model')}</Label>
-            <ReferenceSelect
-              id='receive-model'
-              reference={{ collection: 'models' }}
-              value={line.modelId ? text(line.modelId) : null}
-              onChange={() => undefined}
-              disabled
-            />
-          </div>
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-serial'>{t('fields.serialNo')}</Label>
-            <Input
-              id='receive-serial'
-              value={serialNo}
-              onChange={(event) => setSerialNo(event.target.value)}
-            />
-          </div>
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-name'>{t('fields.name')}</Label>
-            <Input
-              id='receive-name'
-              value={shownName}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </div>
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-location'>
-              {t('fields.location')} <span className='text-destructive'>*</span>
-            </Label>
-            <ReferenceSelect
-              id='receive-location'
-              reference={{ collection: 'locations' }}
-              value={locationId}
-              onChange={setLocationId}
-            />
-          </div>
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-department'>
-              {t('fields.owningDepartment')}
-            </Label>
-            <ReferenceSelect
-              id='receive-department'
-              reference={{ collection: 'departments' }}
-              value={departmentId}
-              onChange={setDepartmentId}
-            />
-          </div>
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-ownership'>{t('fields.ownership')}</Label>
-            <Input
-              id='receive-ownership'
-              value={t('enums.ownership.owned')}
-              readOnly
-              disabled
-            />
-          </div>
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-vendor'>{t('fields.vendor')}</Label>
-            <ReferenceSelect
-              id='receive-vendor'
-              reference={{ collection: 'vendors' }}
-              value={order.vendorId ? text(order.vendorId) : null}
-              onChange={() => undefined}
-              disabled
-            />
-          </div>
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-warranty'>
-              {t('fields.warrantyEndDate')}
-            </Label>
-            <Input
-              id='receive-warranty'
-              type='date'
-              max='9999-12-31'
-              value={warrantyEndDate}
-              onChange={(event) => setWarrantyEndDate(event.target.value)}
-            />
-          </div>
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-owner'>
-              {t('fields.owner')} <span className='text-destructive'>*</span>
-            </Label>
-            <ReferenceSelect
-              id='receive-owner'
-              reference={{ collection: 'users' }}
-              value={ownerId}
-              onChange={setOwnerId}
-            />
-          </div>
-        </>
-      ) : null}
-      {isStock ? (
-        <>
-          <div className='grid gap-1.5'>
-            <Label>{t('procurement.stockTarget')}</Label>
-            <RadioGroup
-              value={mode}
-              onValueChange={(value: unknown) => {
-                if (value === 'join' || value === 'create') setStockMode(value);
-              }}
-              className='flex flex-wrap gap-x-6 gap-y-2'
-            >
-              {(['join', 'create'] as const).map((value) => (
-                <Label
-                  key={value}
-                  htmlFor={`receive-mode-${value}`}
-                  className={cn(
-                    'flex items-center gap-2 font-normal',
-                    value === 'join' &&
-                      !canJoinStock &&
-                      'text-muted-foreground',
-                  )}
-                >
-                  <RadioGroupItem
-                    value={value}
-                    id={`receive-mode-${value}`}
-                    disabled={value === 'join' && !canJoinStock}
-                  />
-                  {t(
-                    value === 'join'
-                      ? 'procurement.joinStockItem'
-                      : 'procurement.newStockItem',
-                  )}
-                </Label>
-              ))}
-            </RadioGroup>
-          </div>
-          {mode === 'join' ? (
-            <div className='grid gap-1.5'>
-              <Label htmlFor='receive-stock'>
-                {t('procurement.existingStockItem')}{' '}
-                <span className='text-destructive'>*</span>
-              </Label>
-              <ReferenceSelect
-                id='receive-stock'
-                reference={{
-                  collection: 'stockItems',
-                  // Only stock of this line's model: a batch of docks does
-                  // not join the keyboards.
-                  filter: { kind: itemType, modelId: text(line.modelId) },
-                }}
-                value={joining}
-                onChange={setStockItemId}
-              />
-            </div>
-          ) : null}
-          <div className='grid gap-1.5'>
-            <Label htmlFor='receive-location'>
-              {t('fields.location')}
-              {mode === 'join' ? null : (
-                <span className='text-destructive'> *</span>
-              )}
-            </Label>
-            {/* Where it goes is the item's own place once it joins one. */}
-            <ReferenceSelect
-              id='receive-location'
-              reference={{ collection: 'locations' }}
-              value={mode === 'join' ? joinedLocationId : locationId}
-              onChange={setLocationId}
-              disabled={mode === 'join'}
-            />
-            {mode === 'create' && twinName ? (
-              <p className='text-xs text-warning-foreground'>
-                {t('procurement.stockTwin', { name: twinName })}
-              </p>
-            ) : null}
-          </div>
-          {/* A new item is a record of its own: it needs what the stock page
-              would have asked for. Joining one needs none of it. */}
-          {mode === 'create' ? (
-            <>
-              <div className='grid gap-1.5'>
-                <Label htmlFor='receive-stock-name'>{t('fields.name')}</Label>
-                <Input
-                  id='receive-stock-name'
-                  value={shownName}
-                  onChange={(event) => setName(event.target.value)}
-                />
-              </div>
-              <div className='grid gap-1.5'>
-                <Label htmlFor='receive-minimum'>
-                  {t('fields.minimumQuantity')}
-                </Label>
-                <Input
-                  id='receive-minimum'
-                  type='number'
-                  min={0}
-                  value={minimumQuantity}
-                  placeholder={t('stock.minimumFromSettings')}
-                  onChange={(event) => setMinimumQuantity(event.target.value)}
-                />
-              </div>
-              <div className='grid gap-1.5'>
-                <Label htmlFor='receive-stock-owner'>{t('fields.owner')}</Label>
-                <ReferenceSelect
-                  id='receive-stock-owner'
-                  reference={{ collection: 'users' }}
-                  value={ownerId}
-                  onChange={setOwnerId}
-                />
-              </div>
-            </>
-          ) : null}
-        </>
-      ) : null}
-      {isEntitlement ? (
-        <>
-          <div className='grid gap-1.5'>
-            <Label>{t('procurement.seatTarget')}</Label>
-            <RadioGroup
-              value={entitlementMode}
-              onValueChange={(value: unknown) => {
-                if (value === 'join' || value === 'create') setSeatMode(value);
-              }}
-              className='flex flex-wrap gap-x-6 gap-y-2'
-            >
-              {(['join', 'create'] as const).map((value) => (
-                <Label
-                  key={value}
-                  htmlFor={`receive-seat-${value}`}
-                  className={cn(
-                    'flex items-center gap-2 font-normal',
-                    value === 'join' &&
-                      !canJoinEntitlement &&
-                      'text-muted-foreground',
-                  )}
-                >
-                  <RadioGroupItem
-                    value={value}
-                    id={`receive-seat-${value}`}
-                    disabled={value === 'join' && !canJoinEntitlement}
-                  />
-                  {t(
-                    value === 'join'
-                      ? 'procurement.joinEntitlement'
-                      : 'procurement.newEntitlement',
-                  )}
-                </Label>
-              ))}
-            </RadioGroup>
-          </div>
-          {entitlementMode === 'join' ? (
-            <div className='grid gap-1.5'>
-              <Label htmlFor='receive-entitlement'>
-                {t('procurement.existingEntitlement')}{' '}
-                <span className='text-destructive'>*</span>
-              </Label>
-              <ReferenceSelect
-                id='receive-entitlement'
-                reference={{
-                  collection: 'entitlements',
-                  filter: {
-                    kind: itemType,
-                    softwareProductId: text(line.softwareProductId),
-                  },
-                }}
-                value={joiningEntitlement}
-                onChange={setEntitlementId}
-              />
-            </div>
-          ) : (
-            <div className='grid gap-1.5'>
-              <Label htmlFor='receive-name'>{t('fields.name')}</Label>
-              <Input
-                id='receive-name'
-                value={shownName}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
-          )}
-          {/* The terms: asked for when opening an entitlement, shown as
-              they stand when adding seats to one. Adding seats changes
-              none of them — renewing is its own act, on its own page. */}
-          {entitlementMode === 'create' || joinedEntitlement.data ? (
-            // One field per row: the dialog is a column of questions, and a
-            // two-up grid put unrelated answers side by side.
-            <div className='grid gap-3'>
-              {termFields
-                .filter(
-                  (field) =>
-                    !field.visibleWhen || field.visibleWhen({ kind: itemType }),
-                )
-                .map((field) => (
-                  <div key={field.key} className='grid gap-1.5'>
-                    <Label htmlFor={`receive-term-${field.key}`}>
-                      {t(field.label)}
-                      {entitlementMode === 'create' &&
-                      field.requiredWhen?.({ kind: itemType }) ? (
-                        <span className='text-destructive'> *</span>
-                      ) : null}
-                    </Label>
-                    <FieldInput
-                      id={`receive-term-${field.key}`}
-                      field={field}
-                      value={
-                        entitlementMode === 'create'
-                          ? termValue(field.key)
-                          : (joinedEntitlement.data?.[field.key] ?? null)
-                      }
-                      disabled={entitlementMode === 'join'}
-                      onChange={(value) =>
-                        setTerms((current) => ({
-                          ...current,
-                          [field.key]: value,
-                        }))
-                      }
-                    />
-                  </div>
-                ))}
-            </div>
-          ) : null}
-        </>
-      ) : null}
-      {itemType !== 'device' ? (
-        <div className='grid gap-1.5'>
-          <Label htmlFor='receive-quantity'>{t('fields.quantity')}</Label>
-          <Input
-            id='receive-quantity'
-            type='number'
-            min={1}
-            max={remaining}
-            value={quantity}
-            // What is left is the ceiling: less may arrive, never more.
-            onChange={(event) =>
-              setQuantity(
-                Math.min(
-                  remaining,
-                  Math.max(1, Number(event.target.value) || 1),
-                ),
-              )
-            }
-          />
-        </div>
-      ) : null}
-    </ConfirmDialog>
   );
 }

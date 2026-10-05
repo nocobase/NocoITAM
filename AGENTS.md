@@ -815,56 +815,54 @@ Rules learned while building it:
   「入库确认」 step went on 2026-09-26 (migration
   `202609260001_drop_pending_receipt` moves the rows that were in it), so
   `DEVICE_STATUSES` starts at `inStock` and there is no `confirmReceipt`
-  transition. Each device is its own record: on a line's own 入库 the
-  dialog receives one and asks for the serial, name, place (required),
-  owning department (the order's, by default), warranty end, notes and
-  keeper, and shows the model, the vendor and that it is owned as fixed —
-  the order settled those. Accessories, consumables and components are a
-  quantity into a stock item: the dialog starts on the stock item of that
-  very model — and only that model's, because a batch of docks does not
-  join the keyboards; with no such item there is nothing to add to, so
-  「加入已有库存记录」 is disabled and a new record is the only answer. It
-  shows that item's own place read-only while it is joined and
-  asks for one (with a name, water level, note and keeper) when it is not,
-  and offers the outstanding quantity, which may be lowered but not raised.
-  An entitlement asks the same two-way question — 加入已有授权 /
-  创建新授权, starting on the one already on the books for that product —
-  and adds its seats there or opens a new one. **Joining changes no term**:
-  a renewal is its own act on the entitlement's page, so the dialog asks
-  for the terms (授权方式, 维保到期, 共用密钥, 可重新分配 for a perpetual;
-  计费方式, 计费周期, 单价, 到期日期, 自动续订 for a subscription, each
-  rendered one per row from `ENTITLEMENT_FIELDS` so the labels match its
-  page). Joining shows those same fields filled from the record being
-  joined and disabled, so the receiver sees what the seats inherit before
-  adding to them; a batch on different terms is what 「创建新记录」 is for. What the order already answers is never asked
-  again: the name starts at the model's or product's own name, the price at
-  the line's, the keeper at the receiver, and `startDate` / `currency` come
+  transition. An order is received in **one** form, 到货入库 on its lines
+  card (2026-10-05; there is no per-line 入库 any more), covering every
+  line still to arrive. Each device is its own record: a row per unit with
+  its serial, while the place (required), owning department (the order's,
+  by default), warranty end and keeper are asked once per line, and the
+  model, vendor and ownership are the order's. Accessories, consumables and
+  components are a quantity into the stock item of that very model — only
+  that model's, because a batch of docks does not join the keyboards — or,
+  with none, a new record at a place asked for. An entitlement line asks
+  加入已有授权 / 创建新授权, starting on the one already on the books for
+  that product, and adds its seats there or opens a new one. **Joining
+  changes no term**: a renewal is its own act on the entitlement's page, so
+  the form asks for the terms only when opening one (授权方式, 维保到期,
+  共用密钥, 可重新分配 for a perpetual; 计费方式, 计费周期, 单价, 到期日期,
+  自动续订 for a subscription, rendered from `ENTITLEMENT_FIELDS` so the
+  labels match its page), and shows the joined record's terms disabled, so
+  the receiver sees what the seats inherit. What the order already answers
+  is never asked again: the name starts at the model's or product's own
+  name, the price at the line's, the keeper at the receiver, and
+  `startDate` / `currency` come
   from the order itself. Nothing a receipt creates carries a note. There is no service line type — it was the one that
   produced nothing (removed 2026-09-26,
   `202609260002_drop_service_lines`), and a line carries no free text
   either (`202609260004_drop_line_description`): a line is its model or its
   software product, and the pickers show each one's category and maker
   beside the name.
-- Receiving **in batch** (2026-10-05, `BatchReceiptDialog` in
-  `client/pages/itam/procurement/batch-receipt.tsx`, `POST
+- Receiving is **one batch** (2026-10-05, `ReceiptDialog` in
+  `client/pages/itam/procurement/receipt-dialog.tsx`, `POST
   /itam/purchase-orders/:id/receive-batch`, `receiveBatch` in
-  `procurement.ts`): every outstanding device and stock line of the order in
-  one form and one transaction. A device is still a record of its own, so
-  each is a row with its own serial — a column pasted from a spreadsheet
-  splits into rows, a scanner's Enter moves to the next — while what every
-  unit of a line shares (place, department, keeper, warranty) is asked once.
-  Entitlements keep their own dialog. The rules decide before anything is
-  written (`checkBatch` in `server/providers/itam/receipt-plan.ts`, asked
-  live through `POST /:id/receipt-check`): more than a line has left, a
-  serial twice in the batch or already on the books, or a device without the
-  serial its category requires refuses the **whole** batch
-  (`RECEIPT_ISSUES`), because half a delivery on the books is wrong in a way
-  nobody sees. This replaced "a device is received one at a time", which
-  made twenty laptops twenty dialogs.
+  `procurement.ts`): every line of the order in one form and one
+  transaction. A device row's serial can be a column pasted from a
+  spreadsheet, which splits into rows, or scanned: a scanner in keyboard
+  mode ends each code with Enter or Tab, either of which moves to the next
+  row, and a row added for the next scan is not received while it is still
+  empty. The rules decide before anything is written (`checkBatch` in
+  `server/providers/itam/receipt-plan.ts`, asked live through `POST
+  /:id/receipt-check`): more than a line has left, a serial twice in the
+  batch or already on the books, or a device without the serial its
+  category requires refuses the **whole** batch (`RECEIPT_ISSUES`), because
+  half a delivery on the books is wrong in a way nobody sees. This replaced
+  the per-line dialog, which received one device at a time and made twenty
+  laptops twenty dialogs. The order's 入库记录 tab lists its devices in a
+  table of their own — number and name, serial, status, place, arrival —
+  and every row there opens its record in the drawer.
 - Receiving **by delivery document** is the first work the assistant
   carries rather than answers (2026-10-05, the NocoITAM plan's first
   vertical; offboarding stays rules and people). 按送货单入库 on the order's
-  lines card picks the file and opens the batch form already reading it:
+  lines card picks the file and opens 到货入库 already reading it:
   the file is kept as the order's attachment, a run is started
   (`receiptRuns`, `202610050003_receipt_runs`, `receipt-runs.ts`), and the
   assistant reads it in the `receipt` unseen chat under the `receiving`

@@ -81,7 +81,7 @@ describe('receipt plan', () => {
     expect(codes(plan.issues)).toEqual(['matchConflict', 'shortDelivery']);
   });
 
-  it('takes the assistant’s match when no code decides, and leaves the rest out', () => {
+  it('takes the assistant’s match when no code decides, and lists what it could not match', () => {
     const plan = planReceipt(
       {
         deliveryNo: ' DN-001 ',
@@ -99,15 +99,13 @@ describe('receipt plan', () => {
       LINES,
     );
     expect(plan.header.deliveryNo).toBe('DN-001');
+    // Seats are planned like any quantity.
     expect(plan.lines.map((line) => [line.lineId, line.quantity])).toEqual([
       ['line-mouse', 10],
+      ['line-figma', 5],
     ]);
     expect(plan.lines[0]?.matchedBy).toEqual(['assistant']);
-    expect(codes(plan.issues)).toEqual([
-      'notReceivable',
-      'unmatched',
-      'unmatched',
-    ]);
+    expect(codes(plan.issues)).toEqual(['unmatched', 'unmatched']);
   });
 
   it('keeps one unit per device even where the document lists fewer serials', () => {

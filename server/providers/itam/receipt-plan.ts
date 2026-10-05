@@ -6,8 +6,8 @@
  *
  * - a row whose part code is a line's model code goes to that line, whatever
  *   the assistant guessed — a rule match beats a judgement;
- * - only what the batch form receives is planned (devices and stock);
- *   entitlements are received one line at a time, on their own dialog;
+ * - every kind of line is planned: a device line by its units, the rest by
+ *   a quantity (a subscription's seats are as much a count as a box of mice);
  * - quantities are checked against what the line still has outstanding, and
  *   serials against each other and against the register.
  *
@@ -66,7 +66,6 @@ export interface PlannedLine {
 
 export type ReceiptIssueCode =
   | 'unmatched'
-  | 'notReceivable'
   | 'matchConflict'
   | 'shortDelivery'
   | 'serialCount'
@@ -116,14 +115,6 @@ const issue = (
   code: ReceiptIssueCode,
   details: Omit<ReceiptIssue, 'code' | 'blocking'> = {},
 ): ReceiptIssue => ({ code, blocking: BLOCKING.has(code), ...details });
-
-/** The lines the batch form receives: one record per device, or a quantity. */
-export const BATCH_ITEM_TYPES: ReadonlySet<string> = new Set([
-  'device',
-  'accessory',
-  'consumable',
-  'component',
-]);
 
 /**
  * A part code as it compares: case, spaces and the punctuation vendors put
@@ -176,12 +167,6 @@ export function planReceipt(
       issues.push(issue('unmatched', { description, source }));
       continue;
     }
-    if (!BATCH_ITEM_TYPES.has(line.itemType)) {
-      issues.push(
-        issue('notReceivable', { lineId: line.id, description, source }),
-      );
-      continue;
-    }
     const serials = clean(row.serialNos);
     const quantity = Math.max(
       Number.isFinite(row.quantity) ? Math.floor(row.quantity) : 0,
@@ -223,7 +208,6 @@ export function planReceipt(
   });
   for (const line of lines)
     if (
-      BATCH_ITEM_TYPES.has(line.itemType) &&
       line.outstanding > 0 &&
       planned.has(line.id) &&
       (planned.get(line.id)?.quantity ?? 0) < line.outstanding

@@ -31,6 +31,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useApi, useItamList, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
+import { useOpenRecord } from '@/lib/itam/record-drawer';
 import type { DomainConfig } from '@/lib/itam/domain';
 import {
   addDays,
@@ -577,6 +578,7 @@ export function PurchaseOrderGeneratedTab(): ReactElement {
       ).data,
   });
   const generated = receipts.data?.generated ?? [];
+  const openRecord = useOpenRecord();
   const collectionOf = (type: string) =>
     type === 'device'
       ? 'devices'
@@ -675,27 +677,37 @@ export function PurchaseOrderGeneratedTab(): ReactElement {
                   <TableBody>
                     {pageRows.map((row) => {
                       const collection = collectionOf(row.type);
+                      // Stock has a page per kind: an accessory, a
+                      // consumable and a component are not read in the
+                      // same place.
+                      const route =
+                        (row.kind
+                          ? STOCK_ROUTES[row.kind as StockKind]
+                          : undefined) ?? referenceRoute(collection);
                       const quantity = (receiptsOf.get(row.id) ?? []).reduce(
                         (sum, receipt) => sum + Number(receipt.quantity ?? 0),
                         0,
                       );
                       const last = arrivedAt(row.id);
                       return (
-                        <TableRow key={`${row.type}:${row.id}`}>
+                        <TableRow
+                          key={`${row.type}:${row.id}`}
+                          className={route ? 'cursor-pointer' : undefined}
+                          // The whole row opens the record, as a list's
+                          // rows do; the name stays a link of its own.
+                          onClick={
+                            route
+                              ? () => openRecord(`/${route}/${row.id}`)
+                              : undefined
+                          }
+                        >
                           <TableCell className='w-px whitespace-nowrap'>
                             <AssetTypeBadge value={assetTypeOf(row)} />
                           </TableCell>
                           <TableCell>
                             <ReferenceLink
                               collection={collection}
-                              // Stock has a page per kind: an accessory, a
-                              // consumable and a component are not read in
-                              // the same place.
-                              route={
-                                (row.kind
-                                  ? STOCK_ROUTES[row.kind as StockKind]
-                                  : undefined) ?? referenceRoute(collection)
-                              }
+                              route={route}
                               id={row.id}
                               names={names[collection]}
                             />
@@ -743,6 +755,7 @@ function GeneratedDevices({
   readonly arrivedAt: (id: string) => string | undefined;
 }): ReactElement {
   const { t } = useTranslation();
+  const openRecord = useOpenRecord();
   const list = useItamList(DEVICES_PATH, { ids, pageSize: ids.length });
   const rows = new Map(
     (list.data?.data ?? []).map((device) => [text(device.id), device]),
@@ -778,7 +791,11 @@ function GeneratedDevices({
                 const device = rows.get(id);
                 const last = arrivedAt(id);
                 return (
-                  <TableRow key={id}>
+                  <TableRow
+                    key={id}
+                    className='cursor-pointer'
+                    onClick={() => openRecord(`/devices/${id}`)}
+                  >
                     <TableCell>
                       <RecordLink
                         to={`/devices/${id}`}
@@ -787,9 +804,7 @@ function GeneratedDevices({
                         {device ? deviceLabel(device) : '…'}
                       </RecordLink>
                     </TableCell>
-                    <TableCell className='font-mono text-sm'>
-                      {text(device?.serialNo) || '—'}
-                    </TableCell>
+                    <TableCell>{text(device?.serialNo) || '—'}</TableCell>
                     <TableCell className='w-px whitespace-nowrap'>
                       <DeviceStatusBadge status={device?.status} />
                     </TableCell>
