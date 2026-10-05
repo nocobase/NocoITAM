@@ -707,7 +707,13 @@ Rules learned while building it:
   is proposed from stock — a device in stock and unreserved, the person's
   own location first, then the longest warranty; a stock item with enough
   on hand; an entitlement with a free seat (an ended subscription offers
-  none) — and what stock cannot cover is the shortfall.
+  none, and a subscription seat is proposed under the person's e-mail as
+  its account — with no e-mail it cannot be assigned from the card) —
+  and what an **open 新员工配备 order** for their department and joining
+  day still has to deliver counts as `onOrder` (the plan lists those
+  `orders`), so asking again never orders the same laptop twice; what is
+  left is the shortfall. 全部执行 carries on past a refused item and
+  names each refusal, and its toast counts what went through.
   `GET /itam/master/people/:id/onboarding` returns it; it writes nothing.
   The 归属 tab of an active person whose 入职日期 is ahead or within the
   last 30 days opens on 入职配备 (`OnboardingPlanCard`): the kit, 已配备
@@ -730,7 +736,11 @@ Rules learned while building it:
   purchase order for the shortfall, asking for the vendor, which is why
   that step is Noco's and not a button (`itemType` on each plan line says
   what the line would be bought as). The 入职配备 card's green shortcut
-  (让 Noco 准备) sends the plan as page context. The kits are no longer
+  (让 Noco 准备) sends the plan as page context. A seat proposed to a
+  person always names them as holder: the seat card shows 持有人 even when
+  empty (`always` on the card's row), since an account-only subscription
+  seat looked complete on the card while it belonged to nobody (found
+  testing 2026-10-05). The kits are no longer
   listed in the seeded AI business notes, which point to 入职配置.
 - A leaver's **sign-in goes with them** (2026-10-05,
   `server/providers/itam/leaver-accounts.ts`): marking somebody as left

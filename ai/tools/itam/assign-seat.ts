@@ -9,7 +9,7 @@ const tool: ToolsOptions = writeTool(
     about:
       'Gives a seat of an entitlement to a person or device once the user confirms.',
   },
-  'Assign ONE seat of an entitlement. Perpetual: holderId (and holderType person or device). Subscription: account, optionally holderId. Check free seats first.',
+  'Assign ONE seat of an entitlement. Perpetual: holderId (and holderType person or device). Subscription: account, and holderType person with holderId whenever the seat is for a person (onboarding always is) — without holderId the seat belongs to nobody in the register. Check free seats first.',
 );
 
 export default tool;

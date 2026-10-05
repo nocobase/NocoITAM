@@ -9,6 +9,9 @@ export interface PlanThing {
   readonly label: string;
   readonly state?: 'assigned' | 'reserved';
   readonly quantity?: number;
+  /** A subscription seat: held under an account, the person's e-mail. */
+  readonly needsAccount?: boolean;
+  readonly account?: string;
 }
 
 export interface OnboardingPlanLine {
@@ -24,6 +27,8 @@ export interface OnboardingPlanLine {
   readonly prepared: readonly PlanThing[];
   readonly preparedCount: number;
   readonly proposals: readonly PlanThing[];
+  /** Still to arrive on an open 新员工配备 order for them. */
+  readonly onOrder: number;
   readonly shortfall: number;
 }
 
@@ -40,6 +45,12 @@ export interface OnboardingPlan {
   readonly prepared: number;
   readonly required: number;
   readonly hasDevice: boolean;
+  /** Open 新员工配备 orders for them. */
+  readonly orders: readonly {
+    readonly id: string;
+    readonly orderNo: string;
+    readonly status: string;
+  }[];
 }
 
 /** A person's 入职配备 plan: their kit, what they have, what stock would add. */
