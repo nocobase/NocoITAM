@@ -635,6 +635,18 @@ Rules learned while building it:
   count beside its name. 我的待办's 离职交接 pane renders this component
   alone, not the whole person page: the queue asks what to do, and the rest
   of a person record is not it.
+- A leaver's 归属 tab opens on their **sign-in**, when the person record
+  links one (2026-10-05): leaving marks a person, not an account, so it
+  still signs in until somebody disables it. The recovery endpoint reads it
+  through `userAdministrationServiceToken.get()` and returns `account` —
+  name, username, whether it is disabled (`disabledAt`), and whether this
+  reader may disable it (an `authorize` on `{ type: 'user', id }` /
+  `disable`, the users plugin's own check). Still enabled, the tab shows an
+  `Alert` linking to 设置 → 用户 for a reader who may, and naming the
+  platform administrator for one who may not — the users page is root's in
+  this application, so both IT roles see the second. Disabled, it shrinks
+  to a settled line. The offboarding skill says the same and never claims
+  the account is disabled on the assistant's own word.
 - Every row is read from the **live record**, and the snapshot is only the
   denominator (`belongingsSnapshot`, a history event written on every
   transition into `left` — the button, an update whose date derives it, and

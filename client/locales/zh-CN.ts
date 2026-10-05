@@ -917,6 +917,11 @@ const zhCN: AppResource = {
     recovery: {
       title: '待回收',
       left: '以下是该人员离职时持有的资产快照：',
+      accountActiveTitle: '登录账号仍可使用',
+      accountActive: '{{account}} 还能登录 ITAM，离职不会自动停用它。',
+      accountDisable: '去停用',
+      accountAskAdmin: '请平台管理员在 设置 → 用户 中停用。',
+      accountDisabled: '登录账号 {{account}} 已停用',
       leftMine_one:
         '以下是该人员离职时持有的资产快照，其中未处理的 {{count}} 项由你负责：',
       leftMine_other:

@@ -926,6 +926,13 @@ const messages = {
     recovery: {
       title: 'To recover',
       left: "This is what was in this person's name when they left:",
+      accountActiveTitle: 'Their sign-in still works',
+      accountActive:
+        '{{account}} can still sign in to ITAM; leaving does not disable it.',
+      accountDisable: 'Disable it',
+      accountAskAdmin:
+        'Ask a platform administrator to disable it under Settings → Users.',
+      accountDisabled: 'Sign-in {{account}} is disabled',
       // One sentence: the share that is the reader's is a clause of the same
       // statement rather than a second announcement. The clause says
       // "unsettled" out loud, because the sentence it hangs off introduces

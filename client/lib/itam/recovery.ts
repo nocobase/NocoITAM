@@ -81,6 +81,17 @@ export interface PersonRecovery {
    * is worse than none.
    */
   readonly progress: { readonly done: number; readonly total: number } | null;
+  /**
+   * The sign-in they had, if any, and whether it still signs in. Leaving
+   * does not disable it, so the page reminds the reader until it is done.
+   * `canDisable` says whether this reader may — the users page is root's.
+   */
+  readonly account?: {
+    readonly name: string;
+    readonly username: string | null;
+    readonly disabled: boolean;
+    readonly canDisable: boolean;
+  } | null;
 }
 
 /** Which handlings a person carries out here, rather than somewhere else. */

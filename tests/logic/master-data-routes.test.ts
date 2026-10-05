@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { userAdministrationServiceToken } from '@nocobase/app-plugin-authentication';
 import { auditRoutes } from '../../server/routes/itam/audits.js';
 import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
@@ -524,8 +525,10 @@ describe('master data routes', () => {
         settled: [],
         settledOwned: [],
         progress: null,
-        // Nobody signs in as them, so no record can name them.
+        // Nobody signs in as them, so no record can name them — and there
+        // is no sign-in to remind anybody to disable.
         owned: [],
+        account: null,
       },
     });
     expect(
@@ -544,6 +547,70 @@ describe('master data routes', () => {
       (await app.request('/api/itam/master/people/999999/recovery', manager))
         .status,
     ).toBe(404);
+  });
+
+  /**
+   * Leaving marks a person, not an account: a leaver's sign-in still works
+   * until somebody disables it. The recovery says which sign-in it is,
+   * whether it still works, and whether this reader may disable it — the
+   * page reminds them, or names who can.
+   */
+  it('reports whether a leaver can still sign in', async () => {
+    const manager = { user: 'mia', role: 'manager' } as const;
+    let disabledAt: Date | null = null;
+    app.container.instance(userAdministrationServiceToken, {
+      get: async (id: string) =>
+        id === 'zhou'
+          ? {
+              id,
+              name: 'Zhou Yi',
+              username: 'zhou.yi',
+              email: 'zhou@example.com',
+              emailVerified: true,
+              disabledAt,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+          : undefined,
+    } as never);
+    const department = (await (
+      await app.request('/api/itam/master/departments', {
+        ...json({ name: 'IT' }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+    const person = (await (
+      await app.request('/api/itam/master/people', {
+        ...json({
+          name: 'Zhou Yi',
+          departmentId: department.data.id,
+          leaveDate: '2020-01-01',
+          userId: 'zhou',
+        }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+    const accountOf = async () =>
+      (
+        (await (
+          await app.request(
+            `/api/itam/master/people/${person.data.id}/recovery`,
+            manager,
+          )
+        ).json()) as { data: { account: unknown } }
+      ).data.account;
+
+    expect(await accountOf()).toEqual({
+      name: 'Zhou Yi',
+      username: 'zhou.yi',
+      disabled: false,
+      // The asset manager administers the register, not the platform's
+      // accounts — the users page is root's — so the page names who can
+      // rather than offering a page this reader cannot open.
+      canDisable: false,
+    });
+    disabledAt = new Date();
+    expect(await accountOf()).toMatchObject({ disabled: true });
   });
 
   /**
