@@ -3,10 +3,7 @@ import { userAdministrationServiceToken } from '@nocobase/app-plugin-authenticat
 
 import { reconcileGrants } from './reconcile-grants.js';
 import type { Application } from '@nocobase/app-server/application';
-import {
-  authorizationToken,
-  type DatabaseScope,
-} from '@nocobase/app-plugin-authorization/server';
+import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
 import { notificationServiceToken } from '@nocobase/app-plugin-notification/server';
 import type { AppI18nConfig } from '@nocobase/app-server/i18n';
 import { loggingToken } from '@nocobase/app-server/logging';
@@ -17,7 +14,6 @@ import {
 } from '@nocobase/service-provider';
 
 import { registerAiBridge } from './ai-bridge.js';
-import { auditsIRunScope } from './record-access.js';
 import { approvalServiceToken, createApprovalService } from './approvals.js';
 import { auditServiceToken, createAuditService } from './audits.js';
 import { deviceServiceToken, createDeviceService } from './devices.js';
@@ -441,7 +437,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
   public override boot(): Promise<void> {
     if (!this.app.container.has(authorizationToken)) return Promise.resolve();
     const authz = this.app.container.resolve(authorizationToken);
-    const database = this.app.container.resolve(databaseManagerToken);
 
     // Registration is the opt-in for granting on a collection. Since beta.43
     // a Collection owns only read / create / update / delete; this
@@ -482,18 +477,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
     });
     authz.ui.place(ITAM_SETTINGS_RESOURCE, {
       section: `${ITAM_RESOURCE_SECTION}.admin`,
-    });
-
-    // "Audits I run": the tasks whose executors include the signed-in user.
-    // The scope is built in `record-access.ts`, where it is unit tested —
-    // the route tests' authorization double grants by role and never
-    // evaluates a Record Access policy.
-    authz.recordAccess.define({
-      key: 'itam.myAudits',
-      title: 'Audits I run',
-      collections: ['main.auditTasks'],
-      resolve: ({ principal }): Promise<DatabaseScope> =>
-        auditsIRunScope(database, principal.id),
     });
 
     // The ITAM assistant and its tools (`ai/`), registered with the AI

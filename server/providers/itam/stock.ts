@@ -701,7 +701,7 @@ export function createStockService(
    * predicate the `lowStock` reminder counts, for all three kinds. It
    * compares two columns minus a third, which neither a filter parameter
    * nor `whereRef` can state, so the ids are resolved first and the list
-   * filters on them (as `itam.myAudits` does for its JSON column). Empty
+   * filters on them. Empty
    * means no row: `''` is nobody's id.
    */
   const lowStockIds = async (): Promise<readonly string[]> => {
