@@ -41,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useApi, type ItamRecord } from '@/lib/itam/api';
+import { apiErrorBody, useApi, type ItamRecord } from '@/lib/itam/api';
 import { errorMessage, formatMoney, text } from '@/lib/itam/format';
 import {
   useCollectionPermissions,
@@ -53,11 +53,17 @@ import {
   raisedBy,
   type LineItemType,
 } from '@/lib/itam/procurement';
-import type { AIFrontendToolRegistration } from '@/extensions/nocobase-ai';
+import {
+  useAI,
+  type AIChatAttachment,
+  type AIFrontendToolRegistration,
+} from '@/extensions/nocobase-ai';
+import { useService } from '@nocobase/app-client';
+import { clientFileRepositoryManagerToken } from '@nocobase/app-plugin-file/client';
 import { useAiPageContext } from '@/lib/itam/ai-context';
 import { cn } from '@/lib/utils';
 import { useReferenceNames, type ReferenceNames } from '@/lib/itam/references';
-import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
+import { chatAttachmentOf, DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 
 import { ReceiptDialog } from './receipt-dialog';
 
@@ -202,7 +208,18 @@ export function PurchaseOrderLinesCard({
               receivedQuantity: 0,
             };
           });
-          setDrafts((current) => [...(current ?? []), ...added]);
+          // The blank row 编辑 opens an empty order on is a place to start
+          // typing, not a line: left in place it is an incomplete line that
+          // keeps 保存 from being offered, so added lines take its place.
+          setDrafts((current) => [
+            ...(current ?? []).filter(
+              (line) =>
+                line.id !== undefined ||
+                line.modelId !== null ||
+                line.softwareProductId !== null,
+            ),
+            ...added,
+          ]);
           return { added: added.length };
         },
       },
@@ -414,15 +431,7 @@ export function PurchaseOrderLinesCard({
               {drafts ? (
                 <>
                   {aiAvailable ? (
-                    <AiShortcut
-                      onClick={() =>
-                        ask(t('ai.prompts.parseDocument'), {
-                          autoSend: false,
-                        })
-                      }
-                    >
-                      {t('ai.parseDocument')}
-                    </AiShortcut>
+                    <ParseDocumentShortcut orderId={id} ask={ask} />
                   ) : null}
                   <Button
                     size='sm'
@@ -948,5 +957,101 @@ export function LineEditor({
         </div>
       </TableCell>
     </TableRow>
+  );
+}
+
+/**
+ * 解析单据: the document is kept on the order, read as text on the server
+ * and put in the message itself (2026-10-05). A file attached to the chat
+ * is parsed for its own request only, and the turn resumes once
+ * `addDraftLines` is approved, after which the assistant said it could not
+ * open the file. A picture, which is not text, is still attached, for a
+ * model that reads images. Its own component, so the card only reaches the
+ * file and assistant services while the shortcut is on screen.
+ */
+function ParseDocumentShortcut({
+  orderId,
+  ask,
+}: {
+  readonly orderId: string;
+  readonly ask: (
+    prompt: string,
+    options?: { readonly attachments?: readonly AIChatAttachment[] },
+  ) => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const files = useService(clientFileRepositoryManagerToken);
+  const aiService = useAI();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [parsing, setParsing] = useState<string>();
+  const [failure, setFailure] = useState<string>();
+  const parse = async (file: File) => {
+    setParsing(file.name);
+    setFailure(undefined);
+    try {
+      const { record: stored } = await files
+        .repository('itamAttachments')
+        .uploadOne({ file });
+      const fileId = text(stored.id);
+      await api.request({
+        path: `itam/attachments/purchaseOrders/${orderId}`,
+        method: 'POST',
+        json: { fileIds: [fileId] },
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['itam', 'attachments'],
+      });
+      const { data } = await api.request<{ data: { text: string | null } }>({
+        path: `${PURCHASE_ORDERS_PATH}/${orderId}/document-text`,
+        method: 'POST',
+        json: { fileId },
+      });
+      const prompt = t('ai.prompts.parseDocumentFile', { file: file.name });
+      if (data.text)
+        ask(
+          `${prompt}\n\n<document filename="${file.name.replace(/"/g, "'")}">\n${data.text}\n</document>`,
+        );
+      else
+        ask(prompt, {
+          attachments: [
+            chatAttachmentOf(await aiService.uploadFile(file), file),
+          ],
+        });
+    } catch (error) {
+      setFailure(apiErrorBody(error)?.message ?? errorMessage(error));
+    } finally {
+      setParsing(undefined);
+    }
+  };
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type='file'
+        accept={DOCUMENT_ACCEPT}
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = '';
+          if (file) void parse(file);
+        }}
+      />
+      {/* The picker opens from the click itself; the chat opens on the
+          document once it has been read. */}
+      <AiShortcut
+        disabled={parsing !== undefined}
+        title={failure}
+        className={failure ? 'text-destructive' : undefined}
+        onClick={() => inputRef.current?.click()}
+      >
+        {parsing !== undefined
+          ? t('procurement.readingDocument', { file: parsing })
+          : failure
+            ? t('procurement.readDocumentFailed')
+            : t('ai.parseDocument')}
+      </AiShortcut>
+    </>
   );
 }

@@ -912,7 +912,13 @@ Rules learned while building it:
   second — and Excel, Word and PDF go through the plugin's own loader
   (`loadByWorker`), so any model reads them. Only a picture is attached,
   for a model that reads images; that is configuration, not code. Do not add
-  an OCR library for them.
+  an OCR library for them. 解析单据 on a draft's lines reads its document the
+  same way (2026-10-05): the shortcut picks the file, keeps it on the order,
+  asks `POST /itam/purchase-orders/:id/document-text` (only a file linked to
+  that order, under `update`) and opens the chat with the text in the
+  message, because the panel's own attachment was gone once `addDraftLines`
+  was approved. Lines it adds take the place of the blank row an empty order
+  opens on, which otherwise kept 保存 from being offered.
 - An approved purchase order states what it asks for: its request fields
   (事由, 说明, 部门, 需求日期, 供应商, 币种) go read-only once it reaches
   `approved` (`SETTLED_STATUSES` / `SETTLED_EDITABLE` in `procurement.ts`,

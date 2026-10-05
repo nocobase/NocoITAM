@@ -8,6 +8,7 @@ import {
   defineApiRoutes,
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
+import { databaseManagerToken } from '@nocobase/db';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -15,6 +16,7 @@ import {
   approvalServiceToken,
   historyServiceToken,
   procurementServiceToken,
+  documentReaderToken,
   receiptRunServiceToken,
 } from '../../providers/index.js';
 import { RecordNotFoundError } from '../../providers/itam/errors.js';
@@ -132,6 +134,8 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
     const approvals = app.container.resolve(approvalServiceToken);
     const history = app.container.resolve(historyServiceToken);
     const receiptRuns = app.container.resolve(receiptRunServiceToken);
+    const readDocument = app.container.resolve(documentReaderToken);
+    const database = app.container.resolve(databaseManagerToken);
     /** The order must be one the caller's grant reaches, not merely exist. */
     const visible = async (
       orderId: string,
@@ -348,6 +352,35 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
                 .strict()
                 .parse(body).lines,
             );
+          },
+        );
+        // 解析单据: the text of a document attached to this order — a
+        // quote, an invoice, a delivery note — for the assistant to fill the
+        // draft's lines from. The page puts it in the message itself: a file
+        // attached to the chat is parsed for its own request only, and the
+        // turn resumes once the page tool is approved, after which the
+        // assistant no longer had it. Only a file linked to this order is
+        // read, under the grant that edits its lines.
+        operation(
+          'document-text',
+          'update',
+          async (_context, orderId, body, conditions) => {
+            await visible(orderId, conditions);
+            const { fileId } = z.object({ fileId: id }).strict().parse(body);
+            const linked = await database
+              .query()
+              .selectFrom('attachmentLinks')
+              .select('id')
+              .where('ownerType', '=', 'purchaseOrders')
+              .where('ownerId', '=', orderId)
+              .where('fileId', '=', fileId)
+              .executeTakeFirst();
+            if (!linked) throw new RecordNotFoundError('itamFiles', fileId);
+            const document = await readDocument(fileId).catch(() => undefined);
+            return {
+              text: document?.text ?? null,
+              truncated: document?.truncated ?? false,
+            };
           },
         );
         // Receiving by delivery document: a run is started when the

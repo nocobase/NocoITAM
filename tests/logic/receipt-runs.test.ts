@@ -423,6 +423,48 @@ describe('receiving in batch and by delivery document', () => {
     );
   });
 
+  it('reads a document attached to the order as text for 解析单据, and no other', async () => {
+    const quote = '品名,料号,数量,单价\nTest Book 14,TB14/A,2,5299\n';
+    const now = new Date().toISOString().slice(0, -1);
+    for (const fileId of ['file-quote', 'file-elsewhere'])
+      await query()
+        .insertInto('itamFiles')
+        .values({
+          id: fileId,
+          disk: 'local',
+          key: `objects/${fileId}.csv`,
+          filename: 'quote.csv',
+          ext: 'csv',
+          mimeType: 'text/csv',
+          size: quote.length,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .execute();
+    await query()
+      .insertInto('attachmentLinks')
+      .values({
+        id: 'link-quote',
+        fileId: 'file-quote',
+        ownerType: 'purchaseOrders',
+        ownerId: order.id,
+        createdAt: new Date(),
+      })
+      .execute();
+    app.container.instance(driveManagerToken, {
+      // eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix -- the drive manager's own method
+      use: () => ({ getBytes: async () => new TextEncoder().encode(quote) }),
+    } as never);
+    const read = (fileId: string, who: Record<string, string> = manager) =>
+      post(`purchase-orders/${order.id}/document-text`, { fileId }, who);
+    expect(
+      await data<{ text: string | null }>(await read('file-quote')),
+    ).toEqual({ text: quote.trim(), truncated: false });
+    // A file that is not this order's is not read through it.
+    expect((await read('file-elsewhere')).status).toBe(404);
+    expect((await read('file-quote', employee)).status).toBe(403);
+  });
+
   it('closes a run the receiver let go of or the assistant could not read', async () => {
     const start = async () =>
       data<{ id: string }>(

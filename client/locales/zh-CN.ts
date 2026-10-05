@@ -1371,6 +1371,8 @@ const zhCN: AppResource = {
     decidedBy: '{{user}} 于 {{date}} 审批',
     arrivedAt: '到货入库时间',
     nothingGenerated: '尚无入库记录',
+    readingDocument: '正在读取「{{file}}」…',
+    readDocumentFailed: '读取失败，点此重试',
     generatedDevices: '设备',
     generatedOthers: '库存与授权',
   },
@@ -2321,8 +2323,8 @@ const zhCN: AppResource = {
         '请按「按送货单入库」技能读附件里的送货单「{{file}}」，把每一行货物对到采购单 {{orderNo}} 的行上，读完调用一次 prefillReceipt，再用一两句纯文本（不用 Markdown）说明结果。',
       globalSearch:
         '帮我找：「{{text}}」。如果问的是某一类记录，用 ITAM 查询工具查出来，再用 presentRecords 交给搜索框（列表、记录 id、几个字说明是什么），然后只回复一句话，说明按什么条件匹配的，不要列出记录，也不要提搜索框，搜索框会显示记录。如果问的是别的，直接简短回答。',
-      parseDocument:
-        '请读取我附上或粘贴的送货单 / 报价单 / 发票：逐行匹配型号或软件产品，把明细加入当前采购单草稿（数量、单价按单据填写）。对不上的行列出来问我，不要猜。',
+      parseDocumentFile:
+        '请读取下面的单据「{{file}}」（报价单、发票或送货单）：逐行匹配型号或软件产品，用 addDraftLines 把明细加入当前采购单草稿（数量、单价按单据填写）。对不上的行列出来问我，不要猜。',
       reportInsight:
         '请解读屏幕上的这张报表：三到五句话，先说最重要的数字和变化，指出异常，最后给一条建议。',
       groupDifferences:

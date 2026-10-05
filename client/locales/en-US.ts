@@ -1415,6 +1415,8 @@ const messages = {
     decidedBy: 'Decided by {{user}} on {{date}}',
     arrivedAt: 'Received',
     nothingGenerated: 'Nothing received yet',
+    readingDocument: 'Reading “{{file}}”…',
+    readDocumentFailed: 'Could not read it; try again',
     generatedDevices: 'Devices',
     generatedOthers: 'Stock and entitlements',
   },
@@ -2452,8 +2454,8 @@ const messages = {
         'Following the receiving skill, read the attached delivery document “{{file}}”, match each goods row to a line of purchase order {{orderNo}}, call prefillReceipt once with what you read, then say in a sentence or two of plain text (no Markdown) how it went.',
       globalSearch:
         'Find what I am asking for: "{{text}}". If it asks for records of one kind, look them up with the ITAM read tools and hand them over with presentRecords (the list, their ids and a few words saying what they are), then reply with one sentence saying how you matched them, and nothing else — do not list the records or mention the search box, which shows them. If it asks for anything else, answer it directly and briefly.',
-      parseDocument:
-        'Read the delivery note / quote / invoice I attach or paste: match each line to a model or software product and add the lines to this purchase order draft (quantity and unit price as the document states). List the lines you could not match and ask me; do not guess.',
+      parseDocumentFile:
+        'Read the document “{{file}}” below (a quote, invoice or delivery note): match each line to a model or software product and add the lines to this purchase order draft with addDraftLines (quantity and unit price as the document states). List the lines you could not match and ask me; do not guess.',
       reportInsight:
         'Interpret the report on screen: three to five sentences, the most important number and change first, any anomaly, then one recommendation.',
       groupDifferences:

@@ -233,3 +233,30 @@ it('lets the assistant add lines to the draft under edit, not save them', async 
     unitPrice: '900',
   });
 });
+
+it('lets added lines take the place of the blank row an empty order opens on', async () => {
+  state.rows = [];
+  render(
+    <PurchaseOrderLinesCard
+      record={{ id: 'po1', status: state.status, ownerId: 'mia' }}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'actions.edit' }));
+  // An empty order opens on one blank row to start typing in.
+  expect(
+    screen.getAllByRole('button', { name: 'actions.delete' }),
+  ).toHaveLength(1);
+  const tool = state.tools.find((entry) => entry.name === 'addDraftLines');
+  await act(async () => {
+    await tool?.execute({
+      lines: [
+        { itemType: 'device', modelId: 'm1', quantity: 3, unitPrice: 5299 },
+      ],
+    });
+  });
+  // The blank row is gone, so nothing incomplete stands in the way of 保存.
+  expect(
+    screen.getAllByRole('button', { name: 'actions.delete' }),
+  ).toHaveLength(1);
+  expect(screen.getByRole('button', { name: 'actions.save' })).toBeEnabled();
+});
