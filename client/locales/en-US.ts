@@ -1425,8 +1425,12 @@ const messages = {
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
       leaverRecovery: 'Offboarding',
-      mine_one: '{{count}} for you',
-      mine_other: '{{count}} for you',
+      // The card lists everybody's now, so this says which part of a row
+      // answers to the reader — not that only they may act on it.
+      mine_one: '{{count}} yours',
+      mine_other: '{{count}} yours',
+      /** Where the record itself is the one thing: a device on loan. */
+      yours: 'Yours',
     },
     reminderGroups: {
       devices: 'Devices',

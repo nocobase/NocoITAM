@@ -541,17 +541,67 @@ Rules learned while building it:
   `client/lib/itam/procurement.ts`, and `DomainConfig.editable` takes the
   reader's id for it. A rule the page states and the service does not
   enforce is not a rule.
-- Every 我的待办 card is scoped to the reader by the rule its own service
-  already enforces, never by the grant alone — a to-do nobody in particular
-  owns is not a to-do. 待我审批 by the approval's named approver,
-  进行中的维修 by `repairs.ownerId`, 进行中的盘点 by `executorIds` /
-  creator, 设备借出逾期未还 by `devices.ownerId` (chasing a device back
-  belongs to its 负责人), 待验收到货 by `raisedTheOrder` — the requester the
-  order names or whoever wrote it for them, and 待执行的报废 by the same
-  rule on the disposal. A card may be **narrower** than the operation's own
-  rule but never wider: an approver may also carry out a disposal
-  (`NOT_INVOLVED`), which is a permission rather than their work. A purchase
-  order and a disposal
+- A 我的待办 card is scoped by the rule its own operation enforces, and a
+  card may be **narrower** than that rule but never wider: an approver may
+  also carry out a disposal (`NOT_INVOLVED`), which is a permission rather
+  than their work. Five of the seven are addressed to one person by the
+  service itself, so the card can only be that person's — 待我审批 by the
+  approval's named approver (`NOT_APPROVER`), 进行中的维修 by
+  `repairs.ownerId` (`requireOwner`, which binds root too), 进行中的盘点 by
+  `executorIds` / creator (IT support cannot even **read** another task —
+  `itam.myAudits` is a Record Access policy), 待验收到货 by
+  `raisedTheOrder` and 待执行的报废 by the same rule on its disposal.
+  Showing those to anybody else would be a row with a button that refuses.
+- The other two — 离职交接 and 设备借出逾期未还 — are **everybody's**
+  (2026-10-04), because their act is granted by permission rather than by
+  ownership: narrowing them to the thing's `ownerId` was a convention, and
+  a convention must not hide work in the inbox of somebody on holiday. Each
+  half still asks for **its own act** rather than for `read`, which is the
+  weaker test: devices for `return`, stock holdings for `issue` (the grant
+  that moves a quantity either way), seats for `assignSeat` and a record to
+  hand over for `update`. An employee is kept out by their scopes alone
+  (`itam.myPerson`, `itam.assetsIHold` match no leaver's row), but a
+  permission set with people and devices and no 归还 would otherwise have
+  seen a card whose every button refuses. Each
+  row carries the reader's share instead: `MyWorkRecord.count` where the
+  record stands for several (a leaver's holdings — absent, not `0`, when
+  none is theirs), `MyWorkRecord.mine` where the record *is* the one thing
+  (an overdue loan), and the loans preview reads the reader's own first so
+  a list of everybody's opens on the part that is theirs. The 负责人 is
+  still who to ask; it is on the row rather than in the query. Membership
+  for a leaver is **anything unsettled** — a device in a status
+  `RECOVERABLE_DEVICE_STATUSES` covers (derived from `deviceHandling`, so
+  the count agrees with the page it opens), a stock holding, an unreleased
+  seat, or a record still naming them through `OWNED_BY_USER`. A record
+  counts only while it is **still open**, by that entry's `open` statuses
+  (2026-10-05): a purchase order completed two years ago names whoever
+  raised it as a fact about what happened, and listing it grew the handover
+  half with every document somebody ever filed. An asset declares no `open`
+  — a device's 负责人 must be somebody who is here for as long as the
+  register holds it. A stocktake is in the list too, through `list: true`
+  on `auditTasks.executorIds`: it names several people, so it is matched by
+  reading and filtering (a JSON array answers neither `=` nor `in`, the
+  same reason `auditsIRunScope` reads) and the row carries `owners`, the
+  whole list, because handing it over **replaces that one name and keeps
+  the rest**. The write still goes through the collection's own endpoint —
+  a purchase order's reassignment has to meet `requireRequester`, so
+  nothing may route around it — which is why the list travels to the client
+  rather than the swap happening in a route of its own. Somebody leaving
+  mid-count otherwise stalled the task invisibly: IT support reads only the
+  tasks naming them, so nobody but the asset manager could see that it had
+  stalled. That last
+  one closed the hole the owner scope left: a leaver who held nothing and
+  owned four records was in nobody's queue, while changing the name on a
+  purchase order is its creator's to do and holding a device never made
+  anybody that. The owner scope also disagreed with the progress beside it
+  — returning one thing emptied the reader's share and the whole person
+  left their queue at 已处理 1 / 8.
+- `OWNED_BY_USER` and the recovery handlings live in
+  `server/providers/itam/recovery.ts`, which is the shared home for
+  offboarding knowledge: the 归属 tab lists from it, master data snapshots
+  from it, the nightly job notifies from it and the workbench decides
+  membership from it, and none of those owns the others. A purchase order
+  and a disposal
   have **no 负责人 of their own and need none**: 申请人 is that person, and
   reusing it keeps one notion of whose record it is instead of two. Handing
   the request over hands its card over with it.
@@ -723,9 +773,12 @@ Rules learned while building it:
   the same devices on one screen, once as work and once as risk, read as two
   problems. 设备借出逾期未还 was both, so the `loanOverdue` **reminder** went
   (2026-09-28, migration `202609280006_drop_loan_overdue_reminder`): the card
-  answers "which ones" live, from the same query, scoped to the device's
-  负责人, while a stored row was a staler second answer that 需要关注 had to
-  be told to hide. The daily job still **notifies** the borrower and the
+  answers "which ones" live, from the same query, while a stored row was a
+  staler second answer that 需要关注 had to be told to hide. The card has
+  listed everybody's since 2026-10-04, which is also what makes dropping
+  that reminder whole — while it was scoped to the device's 负责人, nobody
+  held the overdue loans as a set, and the 人员 reminder section went the
+  same way when 离职交接 became a to-do. The daily job still **notifies** the borrower and the
   owner — `notifyOverdueLoans` in `maintenance.ts` runs that query and sends,
   writing no row. What made a notification once-only was never the reminders
   table but the key the notification plugin deduplicates on

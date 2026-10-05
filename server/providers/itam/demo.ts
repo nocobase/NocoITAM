@@ -212,9 +212,12 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairFault: 'Battery swollen; replace battery',
     auditName: 'Q3 count · 3F',
     auditNotes: 'Quarterly count',
+    leaverAuditName: 'Q3 count · warehouse',
+    leaverAuditNotes: 'Warehouse stock, run by IT support',
     disposalDescription: 'Cracked panel',
     disposalEndOfLife: 'Past its replacement date; sold to the recycler',
     disposalPrinter: 'Out of warranty and jamming; scrap it',
+    leaverDisposal: 'Battery swollen and out of warranty; scrap it',
     disposalApproval: 'Approved: end of life',
     memoryOrder: 'Memory upgrade kits for R&D',
     headsetOrder: 'Headsets for the sales floor',
@@ -242,9 +245,12 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairFault: '电池鼓包，需更换电池',
     auditName: '三季度盘点 · 3 楼',
     auditNotes: '季度例行盘点',
+    leaverAuditName: '三季度盘点 · 仓库',
+    leaverAuditNotes: '仓库库存，由 IT 支持执行',
     disposalDescription: '屏幕碎裂',
     disposalEndOfLife: '已过更换周期，出售给回收商',
     disposalPrinter: '已过保且频繁卡纸，申请销毁',
+    leaverDisposal: '电池鼓包且已过保，申请报废',
     disposalApproval: '同意报废：已到使用年限',
     memoryOrder: '研发部内存条补货',
     headsetOrder: '销售部耳机采购',
@@ -2165,6 +2171,71 @@ export function createDemoService(dependencies: {
           context,
           all('auditTasks', 'count'),
         );
+
+      // A stocktake the leaver is running, and a disposal they raised.
+      // Offboarding is not only equipment: a count named to somebody who has
+      // gone is stalled until another name is on it, and so is a scrapping
+      // nobody can submit. The demo gives the handover half one of each
+      // beside the laptops they answer for.
+      const leaverAudit = await track(
+        'auditTasks',
+        await audits.create(
+          {
+            name: texts.leaverAuditName,
+            scope: { locationIds: [String(warehouse.id)] },
+            plannedStart: daysFromNow(-2),
+            plannedEnd: daysFromNow(12),
+            executorIds: [leaverUserId],
+            notes: texts.leaverAuditNotes,
+          },
+          context,
+          all('auditTasks', 'create'),
+        ),
+      );
+      await audits.start(
+        String(leaverAudit.id),
+        context,
+        all('auditTasks', 'start'),
+      );
+      const swollenLaptop = await device({
+        modelId: latitude.id,
+        serialNo: '7YQ2K75',
+        name: 'SG-LT-009',
+        locationId: warehouse.id,
+        departmentId: sales.id,
+        vendorId: reseller.id,
+        purchaseDate: daysFromNow(-1480),
+        purchasePrice: 8999,
+        warrantyEndDate: daysFromNow(-120),
+        attributes: {
+          os: 'Windows 11 23H2',
+          cpu: 'Intel Core i5-1335U',
+          memory: '16 GB',
+          storage: '512 GB',
+          macAddress: 'b0:4f:13:20:03:03',
+          hostname: 'SG-LT-009',
+          screenSize: '14',
+        },
+      });
+      await track(
+        'disposals',
+        await disposals.create(
+          {
+            method: 'scrap',
+            reason: 'damaged',
+            description: texts.leaverDisposal,
+            deviceIds: [String(swollenLaptop.id)],
+            recipientVendorId: String(recycler.id),
+            dataWipe: 'done',
+            wipeMethod: 'software',
+            // Raised by the leaver and never submitted: a request nobody
+            // else may file or withdraw until it is handed over.
+            requesterId: leaverUserId,
+          },
+          context,
+          all('disposals', 'create'),
+        ),
+      );
 
       // A disposal draft for the last monitor.
       await track(

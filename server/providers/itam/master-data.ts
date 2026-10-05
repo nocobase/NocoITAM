@@ -34,7 +34,12 @@ import {
   type DeleteReference,
 } from './errors.js';
 import { addMonths, today } from './dates.js';
-import { recoveryPlan, type RecoveryItem } from './recovery.js';
+import {
+  namesIn,
+  OWNED_BY_USER,
+  recoveryPlan,
+  type RecoveryItem,
+} from './recovery.js';
 import type { HistoryService } from './history.js';
 
 /**
@@ -60,10 +65,21 @@ export interface OwnedRecord {
   readonly collection: string;
   readonly id: string;
   readonly label: string;
-  /** Which field names them: a 负责人 on most, a 申请人 on a request. */
-  readonly field: 'ownerId' | 'requesterId';
+  /**
+   * Which field names them: a 负责人 on most, a 申请人 on a request, and the
+   * executors on a stocktake, which names several.
+   */
+  readonly field: 'ownerId' | 'requesterId' | 'executorIds';
   /** Who that field names **now**, which is somebody else once handed over. */
   readonly ownerId?: string | null;
+  /**
+   * Every name the field holds, where it holds a list. Handing one of those
+   * over replaces this one name and keeps the rest, and the write still goes
+   * through that collection's own endpoint — a purchase order's reassignment
+   * has to meet `requireRequester`, so nothing may route around it — which
+   * means the caller needs the list it is editing.
+   */
+  readonly owners?: readonly string[];
   /**
    * Which of the five asset types it is, where it is an asset at all: the
    * pages tag those with their own icon, and a repair order or a purchase
@@ -81,40 +97,6 @@ export interface OwnedRecord {
  * record it is. The label is what the pages call the record: a number where
  * it has one, a name otherwise.
  */
-const OWNED_BY_USER: readonly {
-  readonly collection: string;
-  readonly field: string;
-  readonly label: string;
-  /** A second column joined to the first — a device reads 编号 / 名称. */
-  readonly label2?: string;
-  /** The asset type, as a constant or as the column that holds it. */
-  readonly assetType?: { readonly value: string } | { readonly column: string };
-}[] = [
-  {
-    collection: 'devices',
-    field: 'ownerId',
-    label: 'deviceNo',
-    label2: 'name',
-    assetType: { value: 'device' },
-  },
-  {
-    collection: 'stockItems',
-    field: 'ownerId',
-    label: 'name',
-    // Accessory, consumable or component: the item itself says which.
-    assetType: { column: 'kind' },
-  },
-  {
-    collection: 'entitlements',
-    field: 'ownerId',
-    label: 'name',
-    assetType: { value: 'entitlement' },
-  },
-  { collection: 'repairs', field: 'ownerId', label: 'repairNo' },
-  { collection: 'purchaseOrders', field: 'requesterId', label: 'orderNo' },
-  { collection: 'disposals', field: 'requesterId', label: 'disposalNo' },
-  { collection: 'locations', field: 'ownerId', label: 'name' },
-];
 
 /**
  * Whether somebody has left is the leave date and nothing else.
@@ -1112,13 +1094,25 @@ export function createMasterDataService(
         const columns = ['id', entry.label, entry.field];
         if (entry.label2) columns.push(entry.label2);
         if (column) columns.push(column);
-        const rows = await read
+        let query = read
           .selectFrom(entry.collection)
           .select(columns)
-          .where(entry.field, '=', userId)
           .where((eb) => compileAuthzScope(eb, conditions.scope))
-          .orderBy(entry.label, 'asc')
-          .execute<Row>();
+          .orderBy(entry.label, 'asc');
+        // Only what is still waiting: a document that has been completed,
+        // cancelled or carried out names whoever raised it as a fact about
+        // what happened, not as a job for somebody else.
+        if (entry.open)
+          query = query.where(entry.open.column, 'in', [
+            ...entry.open.values,
+          ]);
+        // A list of names answers neither `=` nor `in`, so it is read and
+        // filtered; a single one is compared in the query.
+        const rows = entry.list
+          ? (await query.execute<Row>()).filter((row) =>
+              namesIn(row[entry.field]).includes(userId),
+            )
+          : await query.where(entry.field, '=', userId).execute<Row>();
         for (const row of rows) {
           found.push({
             collection: entry.collection,
@@ -1130,7 +1124,14 @@ export function createMasterDataService(
               .filter(Boolean)
               .join(' / '),
             field: entry.field as OwnedRecord['field'],
-            ownerId: asText(row[entry.field]) ?? null,
+            // Who answers for it now. A list names several, and the row is
+            // about this one leaving, so it reads as the person it still
+            // names rather than as whoever else is on it.
+            ownerId: entry.list
+              ? (namesIn(row[entry.field]).find((name) => name === userId) ??
+                null)
+              : (asText(row[entry.field]) ?? null),
+            ...(entry.list ? { owners: namesIn(row[entry.field]) } : {}),
             ...(entry.assetType
               ? {
                   assetType:

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { auditRoutes } from '../../server/routes/itam/audits.js';
 import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
@@ -12,6 +13,8 @@ describe('master data routes', () => {
     app = await createTestApp();
     await app.mount(masterDataRoutes);
     await app.mount(entitlementRoutes);
+    // A stocktake is one of the records a leaver answers for.
+    await app.mount(auditRoutes);
   });
 
   afterEach(async () => {
@@ -533,6 +536,127 @@ describe('master data routes', () => {
       (await app.request('/api/itam/master/people/999999/recovery', manager))
         .status,
     ).toBe(404);
+  });
+
+  /**
+   * A stocktake names several people, and somebody leaving mid-count stalls
+   * it until another name is on it — so it is listed like any other record
+   * that still names them, matched by reading the list rather than by a
+   * comparison a JSON array cannot answer. Handing it over replaces that one
+   * name: the colleagues counting alongside them keep the task.
+   */
+  it('lists a stocktake the leaver runs, and hands over only their name', async () => {
+    const manager = { user: 'mia', role: 'manager' } as const;
+    const department = (await (
+      await app.request('/api/itam/master/departments', {
+        ...json({ name: 'IT' }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+    const person = (await (
+      await app.request('/api/itam/master/people', {
+        ...json({
+          name: 'Zhou Yi',
+          departmentId: department.data.id,
+          leaveDate: '2020-01-01',
+          userId: 'mia',
+        }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+    const task = (await (
+      await app.request('/api/itam/audits', {
+        ...json({
+          name: 'Warehouse count',
+          // A scope has to narrow by something; the department is to hand.
+          scope: { departmentIds: [department.data.id] },
+          plannedStart: '2026-10-01',
+          plannedEnd: '2026-10-20',
+          // Two executors: the one who left, and a colleague who stays.
+          executorIds: ['mia', 'sam'],
+        }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+
+    const recoveryOf = async () =>
+      (
+        (await (
+          await app.request(
+            `/api/itam/master/people/${person.data.id}/recovery`,
+            manager,
+          )
+        ).json()) as {
+          data: {
+            owned: {
+              collection: string;
+              field: string;
+              ownerId?: string;
+              owners?: string[];
+            }[];
+          };
+        }
+      ).data.owned;
+    expect(await recoveryOf()).toEqual([
+      {
+        collection: 'auditTasks',
+        id: task.data.id,
+        label: 'Warehouse count',
+        field: 'executorIds',
+        // The name this row is about, and the whole list to write back.
+        ownerId: 'mia',
+        owners: ['mia', 'sam'],
+      },
+    ]);
+
+    // A task that has been called off still names them, and that is
+    // history rather than a handover: only what is still open is listed.
+    // Without this every document somebody ever filed came back as work.
+    const closed = (await (
+      await app.request('/api/itam/audits', {
+        ...json({
+          name: 'Last year',
+          scope: { departmentIds: [department.data.id] },
+          plannedStart: '2026-10-01',
+          plannedEnd: '2026-10-20',
+          executorIds: ['mia'],
+        }),
+        ...manager,
+      })
+    ).json()) as { data: { id: string } };
+    // A task that has not started is deleted rather than called off, so it
+    // has to be running before it can be closed.
+    expect(
+      (
+        await app.request(`/api/itam/audits/${closed.data.id}/start`, {
+          ...json({}),
+          ...manager,
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await app.request(`/api/itam/audits/${closed.data.id}/cancel`, {
+          ...json({ reason: 'Superseded' }),
+          ...manager,
+        })
+      ).status,
+    ).toBe(200);
+    expect((await recoveryOf()).map((row) => row.id)).toEqual([task.data.id]);
+
+    // The handover the page performs: this one name swapped, the colleague
+    // kept. It goes through the collection's own endpoint, so every rule
+    // that endpoint enforces still applies.
+    expect(
+      (
+        await app.request(`/api/itam/audits/${task.data.id}`, {
+          ...json({ executorIds: ['sam', 'lee'] }),
+          method: 'PATCH',
+          ...manager,
+        })
+      ).status,
+    ).toBe(200);
+    expect(await recoveryOf()).toEqual([]);
   });
 
   /**

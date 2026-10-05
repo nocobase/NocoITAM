@@ -1,4 +1,5 @@
 import { asText, type Row } from './collection-query.js';
+import { DEVICE_STATUSES } from './device-status.js';
 
 /**
  * What is to be done with what somebody holds.
@@ -16,6 +17,124 @@ import { asText, type Row } from './collection-query.js';
  * assistant still does the reading and the proposing; this is only what the
  * nightly job can say without one.
  */
+/**
+ * The records a person answers for, and the column that names them.
+ *
+ * Offboarding's other half: not what somebody holds but what still has their
+ * name on it, which no button settles — handing one over is a decision, and
+ * for a purchase order or a disposal only its requester or its creator may
+ * make it. Keyed by **sign-in**, not by person record, so a person with no
+ * linked account answers for nothing.
+ *
+ * Here rather than in master data because the 归属 tab reads it to list them
+ * and the workbench reads it to know whether a leaver is settled, and neither
+ * owns the other.
+ */
+export const OWNED_BY_USER: readonly {
+  readonly collection: string;
+  readonly field: string;
+  readonly label: string;
+  /** A second column joined to the first — a device reads 编号 / 名称. */
+  readonly label2?: string;
+  /** The asset type, as a constant or as the column that holds it. */
+  readonly assetType?: { readonly value: string } | { readonly column: string };
+  /**
+   * The field holds a **list** of sign-ins rather than one, so it is matched
+   * by reading and filtering rather than by a comparison — a JSON array
+   * answers neither `=` nor `in` — and handing it over replaces this one
+   * name in the list instead of overwriting it.
+   */
+  readonly list?: true;
+  /**
+   * A document is only waiting while it is still open: the statuses of the
+   * ones that are, by the column that holds them. A purchase order completed
+   * two years ago still names whoever raised it, and that is history rather
+   * than a handover — without this the list of what somebody answers for
+   * grew with every document they ever filed. An asset has no such notion
+   * and declares none: a device's 负责人 must be somebody who is here for as
+   * long as the register holds it.
+   */
+  readonly open?: {
+    readonly column: string;
+    readonly values: readonly string[];
+  };
+}[] = [
+  {
+    collection: 'devices',
+    field: 'ownerId',
+    label: 'deviceNo',
+    label2: 'name',
+    assetType: { value: 'device' },
+  },
+  {
+    collection: 'stockItems',
+    field: 'ownerId',
+    label: 'name',
+    // Accessory, consumable or component: the item itself says which.
+    assetType: { column: 'kind' },
+  },
+  {
+    collection: 'entitlements',
+    field: 'ownerId',
+    label: 'name',
+    assetType: { value: 'entitlement' },
+  },
+  {
+    collection: 'repairs',
+    field: 'ownerId',
+    label: 'repairNo',
+    // A repair has no status of its own; `result` is `inProgress` until it
+    // is finished, which is what 进行中的维修 counts.
+    open: { column: 'result', values: ['inProgress'] },
+  },
+  {
+    collection: 'purchaseOrders',
+    field: 'requesterId',
+    label: 'orderNo',
+    // A rejected order is asked again rather than filed away, so it is
+    // still open; completed and cancelled are not.
+    open: {
+      column: 'status',
+      values: [
+        'draft',
+        'pendingApproval',
+        'approved',
+        'rejected',
+        'ordered',
+        'partiallyReceived',
+      ],
+    },
+  },
+  {
+    collection: 'disposals',
+    field: 'requesterId',
+    label: 'disposalNo',
+    // Same reading: rejected is resubmitted, executed is done.
+    open: {
+      column: 'status',
+      values: ['draft', 'pendingApproval', 'approved', 'rejected'],
+    },
+  },
+  {
+    // A stocktake is run by the people it names, so somebody leaving
+    // mid-count stalls it until another name is on it — and IT support
+    // reads only the tasks naming them, so nobody but the asset manager can
+    // even see that it stalled.
+    collection: 'auditTasks',
+    field: 'executorIds',
+    label: 'name',
+    list: true,
+    // Open until it is finished or called off; a task left on
+    // `pendingDifferences` is the most stalled of all, since resolving one
+    // is the executors' own step.
+    open: {
+      column: 'status',
+      values: ['notStarted', 'inProgress', 'pendingDifferences'],
+    },
+  },
+  { collection: 'locations', field: 'ownerId', label: 'name' },
+];
+
 export type RecoveryHandling =
   /** Hand it back to stock: the ordinary case. */
   | 'return'
@@ -88,6 +207,33 @@ export function deviceHandling(status: string): RecoveryHandling {
   // Lost, retired, pending disposal, disposed: not in their hands to give back.
   return 'none';
 }
+
+/**
+ * The sign-ins a list field names. The query layer decodes a JSON column,
+ * but a row written before that was fixed still holds the string, so both
+ * are read — the same tolerance `auditsIRunScope` applies.
+ */
+export function namesIn(value: unknown): string[] {
+  let decoded = value;
+  if (typeof decoded === 'string') {
+    try {
+      decoded = JSON.parse(decoded) as unknown;
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(decoded) ? decoded.map((id) => String(id)) : [];
+}
+
+/**
+ * The device statuses offboarding has anything to say about, derived from
+ * the rule above so a query can ask for them without stating the rule a
+ * second time. The workbench counts a leaver's devices with this: one whose
+ * only device was scrapped months ago has nothing waiting, and a card that
+ * counted it would disagree with the page it opens.
+ */
+export const RECOVERABLE_DEVICE_STATUSES: readonly string[] =
+  DEVICE_STATUSES.filter((status) => deviceHandling(status) !== 'none');
 
 /**
  * What is to be done with a stock holding.

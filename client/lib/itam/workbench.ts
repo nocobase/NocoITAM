@@ -95,6 +95,13 @@ export interface MyWorkRecord {
    * answer to the person reading. Absent where the record is itself the work.
    */
   readonly count?: number;
+  /**
+   * The record itself answers to the reader, where the record *is* the work —
+   * a device whose loan is overdue. The card lists everybody's, because the
+   * act is granted by permission rather than by ownership, so each row says
+   * whether this one is the reader's.
+   */
+  readonly mine?: boolean;
 }
 
 export interface MyWorkItem {
