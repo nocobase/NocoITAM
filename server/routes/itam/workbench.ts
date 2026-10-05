@@ -133,8 +133,15 @@ export const workbenchRoutes: AppApiRouteContribution<Application> =
 
     routes.get('/my-work', async (context) => {
       try {
+        // `?scope=mine` narrows the team's queue to the reader's part.
+        const scope =
+          new URL(context.req.url).searchParams.get('scope') === 'mine'
+            ? 'mine'
+            : 'all';
         return context.json({
-          data: await workbench.myWork(principalId(context), decider(context)),
+          data: await workbench.myWork(principalId(context), decider(context), {
+            scope,
+          }),
         });
       } catch (error) {
         return errorResponse(context, error);

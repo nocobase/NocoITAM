@@ -589,7 +589,26 @@ Rules learned while building it:
   `client/lib/itam/procurement.ts`, and `DomainConfig.editable` takes the
   reader's id for it. A rule the page states and the service does not
   enforce is not a rule.
-- A 我的待办 card is scoped by the rule its own operation enforces, and a
+- 待办 (it was 我的待办) is **one queue for the whole team** (2026-10-05):
+  `GET /itam/workbench/my-work` lists everybody's records on every card,
+  so work addressed to somebody away is still seen, and `?scope=mine`
+  (the 全部 / 我负责的 switch on the workbench and the inbox,
+  `client/lib/itam/work-scope.ts`, remembered per browser) narrows each
+  card back to the reader's part by the rules below. A row's buttons keep
+  their own rules either way — another person's approval is still only
+  theirs to decide — so 待审批 (no longer 待我审批) links to every pending
+  request in the team view. The sidebar entry carries no count. The
+  queue is **live**: every successful write through `/api/itam`
+  (`server/itam-changes.ts`, an application-wide HTTP middleware
+  registered in `server/app.ts`), every confirmed AI write and every
+  scheduled job calls `itamChangesToken.touched()`, which publishes one
+  data-free event on the public realtime topic `itam:changes`
+  (`server/providers/itam/changes.ts`, debounced); `useLiveWork()`, mounted
+  by the app layout, then invalidates `['itam', WORKBENCH_PATH]` — also
+  when the connection reopens, since missed events are not replayed. A
+  new way of writing outside those three paths must call `touched()`
+  itself.
+- With 我负责的, a card is scoped by the rule its own operation enforces, and a
   card may be **narrower** than that rule but never wider: an approver may
   also carry out a disposal (`NOT_INVOLVED`), which is a permission rather
   than their work. Five of the seven are addressed to one person by the
@@ -601,7 +620,7 @@ Rules learned while building it:
   people who count), 待验收到货 by
   `raisedTheOrder` and 待执行的报废 by the same rule on its disposal.
   Showing those to anybody else would be a row with a button that refuses.
-- The other two — 离职交接 and 设备借出逾期未还 — are **everybody's**
+- The other two — 离职交接 and 借出逾期 — are **everybody's**
   (2026-10-04), because their act is granted by permission rather than by
   ownership: narrowing them to the thing's `ownerId` was a convention, and
   a convention must not hide work in the inbox of somebody on holiday. Each
@@ -939,7 +958,7 @@ Rules learned while building it:
   负责人 finishes one, and a to-do nobody can act on is not a to-do.
 - A to-do card and a 需要关注 reminder must not describe the same records:
   the same devices on one screen, once as work and once as risk, read as two
-  problems. 设备借出逾期未还 was both, so the `loanOverdue` **reminder** went
+  problems. 借出逾期 (then 设备借出逾期未还) was both, so the `loanOverdue` **reminder** went
   (2026-09-28, migration `202609280006_drop_loan_overdue_reminder`): the card
   answers "which ones" live, from the same query, while a stored row was a
   staler second answer that 需要关注 had to be told to hide. The card has

@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import type { ActorScope } from './ai-bridge.js';
 import { unrestricted } from './authz-filter.js';
+import { itamChangesToken } from './changes.js';
 import type { Row } from './collection-query.js';
 import {
   ASSIGNEE_TYPES,
@@ -297,7 +298,12 @@ export async function runWrite(
   raw: unknown,
 ): Promise<Result> {
   try {
-    return await execute(container, scope, tool, raw);
+    const result = await execute(container, scope, tool, raw);
+    // Written outside the ITAM routes, so the pages showing live to-dos are
+    // told here rather than by the route middleware.
+    if (container.has(itamChangesToken))
+      container.resolve(itamChangesToken).touched();
+    return result;
   } catch (error) {
     return refuse(error);
   }

@@ -21,6 +21,7 @@ import {
 } from '@nocobase/app-server/runtime';
 import { spaRootRoutes } from '@nocobase/app-server/spa';
 
+import { itamChangesHttpMiddleware } from './itam-changes.js';
 import { securityHeadersHttpMiddleware } from './security-headers.js';
 
 export function createApp(runtime: AppRuntimeContext): Application {
@@ -43,6 +44,9 @@ export function createApp(runtime: AppRuntimeContext): Application {
   app.addHttpMiddleware(requestLoggingMiddleware);
   app.addHttpMiddleware(sessionHttpMiddleware);
   app.addHttpMiddleware(i18nHttpMiddleware);
+  // Application change (ITAM): signals the pages showing live to-dos after
+  // every successful ITAM write (`server/itam-changes.ts`).
+  app.addHttpMiddleware(itamChangesHttpMiddleware);
   app.addRoutes(healthCheckApiRoutes);
   app.addRuntimeContributions(runtime);
   app.addRoutes(spaRootRoutes);

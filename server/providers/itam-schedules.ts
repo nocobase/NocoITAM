@@ -7,6 +7,7 @@ import {
   maintenanceServiceToken,
   type MaintenanceJob,
 } from './itam/maintenance.js';
+import { itamChangesToken } from './itam/changes.js';
 import { settingsServiceToken } from './itam/settings.js';
 
 /** What each task is called on 设置 → 自动化 → 定时任务, in the deployment's language. */
@@ -90,6 +91,10 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
           const summary = await container
             .resolve(maintenanceServiceToken)
             .runJob(config.job);
+          // A leaver marked at 01:50 or a loan now overdue reaches pages
+          // left open overnight.
+          if (container.has(itamChangesToken))
+            container.resolve(itamChangesToken).touched();
           return {
             state: 'completed',
             outcome: 'succeeded',

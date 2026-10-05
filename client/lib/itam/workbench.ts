@@ -3,6 +3,7 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { ApiClient } from '@nocobase/app-client';
 
 import { useApi, type ItamRecord } from './api.js';
+import { useWorkScope } from './work-scope.js';
 
 /** Workbench, reminders, maintenance jobs and reports. */
 export const WORKBENCH_PATH = 'itam/workbench';
@@ -153,12 +154,15 @@ export interface ReportResult {
 
 export function useMyWork(): UseQueryResult<readonly MyWorkItem[]> {
   const api = useApi();
+  // The team's queue, or the reader's part of it (`work-scope.ts`).
+  const scope = useWorkScope();
   return useQuery({
-    queryKey: ['itam', WORKBENCH_PATH, 'my-work'],
+    queryKey: ['itam', WORKBENCH_PATH, 'my-work', scope],
     queryFn: async () =>
       (
         await api.request<{ data: MyWorkItem[] }>({
           path: `${WORKBENCH_PATH}/my-work`,
+          query: { scope },
         })
       ).data,
   });

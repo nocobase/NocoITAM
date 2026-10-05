@@ -207,17 +207,18 @@ describe('repairs, audits and disposals', () => {
         dataWipe: 'notRequired',
       }),
     );
-    const work = async (who: typeof manager) =>
+    // 我负责的: the reader's part of the team's queue.
+    const work = async (who: typeof manager, scope = 'mine') =>
       data<{ key: string; count: number; records: { title: string }[] }[]>(
-        await app.request('/api/itam/workbench/my-work', who),
+        await app.request(`/api/itam/workbench/my-work?scope=${scope}`, who),
       );
     const pending = async (who: typeof manager) =>
-      (await work(who)).find(
-        (item) => item.key === 'pendingDisposalExecution',
-      );
+      (await work(who)).find((item) => item.key === 'pendingDisposalExecution');
     // Only once it is approved: a draft is not waiting to be carried out.
     expect((await pending(manager))?.count).toBe(0);
-    await post(`disposals/${disposal.id}/submit`, { approverId: approver.user });
+    await post(`disposals/${disposal.id}/submit`, {
+      approverId: approver.user,
+    });
     await post(
       `disposals/${disposal.id}/decide`,
       { decision: 'approved' },
@@ -230,6 +231,12 @@ describe('repairs, audits and disposals', () => {
       disposal.disposalNo,
     ]);
     expect((await pending(approver))?.count).toBe(0);
+    // The team's queue, everybody's default, lists it for the approver too.
+    expect(
+      (await work(approver, 'all')).find(
+        (item) => item.key === 'pendingDisposalExecution',
+      )?.count,
+    ).toBe(1);
   });
 
   /**
@@ -247,7 +254,9 @@ describe('repairs, audits and disposals', () => {
         dataWipe: 'notRequired',
       }),
     );
-    await post(`disposals/${disposal.id}/submit`, { approverId: approver.user });
+    await post(`disposals/${disposal.id}/submit`, {
+      approverId: approver.user,
+    });
     const patch = (body: Record<string, unknown>) =>
       app.request(`/api/itam/disposals/${disposal.id}`, {
         method: 'PATCH',
@@ -552,7 +561,7 @@ describe('repairs, audits and disposals', () => {
    * executors who count. It read the creator until 2026-10-05, which a
    * handed-over task left on the old organiser's list for ever.
    */
-  it('gives a stocktake an owner, and puts it on that owner\'s to-do', async () => {
+  it("gives a stocktake an owner, and puts it on that owner's to-do", async () => {
     await createDevice();
     const created = await post('audits', {
       name: 'Owned count',
@@ -569,7 +578,7 @@ describe('repairs, audits and disposals', () => {
     const active = async (who: typeof manager) =>
       (
         await data<{ key: string; records: { id: string }[] }[]>(
-          await app.request('/api/itam/workbench/my-work', who),
+          await app.request('/api/itam/workbench/my-work?scope=mine', who),
         )
       ).find((item) => item.key === 'activeAudits')?.records ?? [];
     expect((await active(manager)).map((row) => row.id)).toEqual([task.id]);

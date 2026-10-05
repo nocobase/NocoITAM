@@ -8,6 +8,10 @@ import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
 import { notificationServiceToken } from '@nocobase/app-plugin-notification/server';
 import type { AppI18nConfig } from '@nocobase/app-server/i18n';
 import { loggingToken } from '@nocobase/app-server/logging';
+import {
+  realtimeServiceToken,
+  type RealtimePublicTopic,
+} from '@nocobase/app-server/realtime';
 import { databaseManagerToken } from '@nocobase/db';
 import {
   ServiceProvider,
@@ -44,6 +48,12 @@ import {
   stockServiceToken,
   stockMovementEvents,
 } from './stock.js';
+import {
+  createItamChanges,
+  ITAM_CHANGES_TOPIC,
+  itamChangesToken,
+  type ItamChangesEvent,
+} from './changes.js';
 import { createHistoryService, historyServiceToken } from './history.js';
 import {
   createMasterDataService,
@@ -179,6 +189,7 @@ function demoAccounts(container: ServiceContainer): DemoAccounts {
  */
 export default class ItamProvider extends ServiceProvider<Application> {
   public readonly name: string = 'itam/core';
+  private changesTopic: RealtimePublicTopic<ItamChangesEvent> | undefined;
 
   public override register(): void {
     const container = this.app.container;
@@ -200,6 +211,14 @@ export default class ItamProvider extends ServiceProvider<Application> {
           container.resolve(databaseManagerToken),
         ),
       }),
+    );
+    // "The register changed": published on the realtime topic the pages
+    // that show live to-dos subscribe to (`changes.ts`). The topic is
+    // defined at boot; a container without realtime publishes nothing.
+    container.singleton(itamChangesToken, () =>
+      createItamChanges(() =>
+        this.changesTopic?.publish({ kind: 'changed' }),
+      ),
     );
     // The notification plugin is resolved per send so registration order
     // does not matter and a test container without it stays silent.
@@ -465,6 +484,13 @@ export default class ItamProvider extends ServiceProvider<Application> {
   }
 
   public override boot(): Promise<void> {
+    // Defined before any page subscribes, which a topic must be.
+    if (this.app.container.has(realtimeServiceToken))
+      this.changesTopic ??= this.app.container
+        .resolve(realtimeServiceToken)
+        .defineTopic<ItamChangesEvent, 'public'>(ITAM_CHANGES_TOPIC, {
+          audience: 'public',
+        });
     if (!this.app.container.has(authorizationToken)) return Promise.resolve();
     const authz = this.app.container.resolve(authorizationToken);
 
