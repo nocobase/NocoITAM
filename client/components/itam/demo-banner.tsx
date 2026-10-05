@@ -12,7 +12,7 @@ import { useApi } from '@/lib/itam/api';
  * The strip above every page that offers the demo dataset (after NocoCRM's
  * DemoBanner): shown only to whoever may import it — the settings grant the
  * demo endpoints require — and only while none is imported. It links to the
- * 演示数据 card on the settings page and goes by itself once the import is
+ * 演示数据 tab of the settings page and goes by itself once the import is
  * done; dismissed, it stays away in this browser. The dismissal is a
  * convenience, so blocked or cleared storage only means it shows again.
  */
@@ -68,7 +68,7 @@ export function DemoBanner(): ReactElement | null {
       </p>
       {/* A link drawn as a button: it goes to another page. */}
       <Link
-        to='/settings/itam#demo'
+        to='/settings/itam?tab=demo'
         className={buttonVariants({ size: 'sm', className: 'shrink-0' })}
       >
         {t('settings.demo.bannerAction')}

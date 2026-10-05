@@ -133,7 +133,7 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
   {
     key: 'departmentId',
     // With what the order is for, after 事由 and 说明 (2026-10-05): the
-    // 申请信息 group went once 负责人 moved to the summary strip.
+    // 申请信息 group went once 负责人 moved to the top of 基本信息.
     detailOrder: 20,
     label: 'fields.department',
     type: 'reference',
@@ -218,7 +218,7 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     // domain).
     reference: { collection: 'users' },
     required: true,
-    // Shown and handed over in the summary strip, not the information card.
+    // The detail page puts it first in 基本信息.
     group: 'groups.basic',
     detailOrder: -10,
   },

@@ -1,7 +1,8 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Database, Save, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
+import { useSearchParams } from 'react-router';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { Page, PageHeader } from '@/components/itam/page-header';
@@ -24,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import {
   apiErrorBody,
@@ -37,28 +39,68 @@ import { ReceiptAgentCard } from './receipt-agent-card';
 
 type SettingsKey = keyof ItamSettings;
 
+/** The page's tabs, in reading order, by the address's `?tab=`. */
+const TABS = [
+  'general',
+  'thresholds',
+  'numbering',
+  'ai',
+  'receiptAgent',
+  'demo',
+] as const;
+type Tab = (typeof TABS)[number];
+
 /**
- * ITAM configuration: one card per settings document, saved as a whole.
+ * ITAM configuration: one tab per settings document, saved as a whole
+ * (2026-10-05; they were cards on one long page). The tab is in the
+ * address, so a link can open one — the demo banner opens 演示数据.
  * Business options and field templates live on the master data they belong
  * to (categories carry field templates); this page holds the documents.
  */
 export default function ItamSettingsPage(): ReactElement {
   const { t } = useTranslation();
   const settings = useItamSettings();
+  const [params, setParams] = useSearchParams();
+  const requested = params.get('tab');
+  const tab: Tab = TABS.includes(requested as Tab)
+    ? (requested as Tab)
+    : 'general';
   return (
     <Page>
       <PageHeader
         title={t('settings.pageTitle')}
         description={t('settings.description')}
       />
+      <Tabs
+        value={tab}
+        onValueChange={(next) =>
+          setParams({ tab: String(next) }, { replace: true })
+        }
+      >
+        <TabsList variant='line'>
+          {TABS.map((key) => (
+            <TabsTrigger key={key} value={key}>
+              {t(`settings.${key}.title`)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       {settings.data ? (
-        <div className='grid gap-6 lg:grid-cols-2'>
-          <GeneralCard value={settings.data.general} />
-          <ThresholdsCard value={settings.data.thresholds} />
-          <NumberingCard value={settings.data.numbering} />
-          <AiCard value={settings.data.ai} />
-          <ReceiptAgentCard />
-          <DemoCard />
+        // One document at a time, at a readable width.
+        <div className='max-w-4xl'>
+          {tab === 'general' ? (
+            <GeneralCard value={settings.data.general} />
+          ) : tab === 'thresholds' ? (
+            <ThresholdsCard value={settings.data.thresholds} />
+          ) : tab === 'numbering' ? (
+            <NumberingCard value={settings.data.numbering} />
+          ) : tab === 'ai' ? (
+            <AiCard value={settings.data.ai} />
+          ) : tab === 'receiptAgent' ? (
+            <ReceiptAgentCard />
+          ) : (
+            <DemoCard />
+          )}
         </div>
       ) : null}
     </Page>
@@ -367,7 +409,7 @@ interface DemoSummary {
  * tab): what it is, the sign-ins it creates — those of the language picked
  * before an import, those of the import present after — when it was
  * imported and how big it is. The banner above every page links here
- * (`#demo`) while nothing is imported.
+ * (`?tab=demo`) while nothing is imported.
  */
 function DemoCard(): ReactElement {
   const { t, i18n } = useTranslation();
@@ -409,14 +451,8 @@ function DemoCard(): ReactElement {
       ? demo.accounts
       : demo.accountsByLanguage[language]
     : [];
-  // Scrolled to when the banner's link brings the reader here.
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (demo && window.location.hash === '#demo')
-      ref.current?.scrollIntoView({ block: 'start' });
-  }, [demo]);
   return (
-    <Card id='demo' ref={ref} className='lg:col-span-2'>
+    <Card>
       <CardHeader>
         <CardTitle>{t('settings.demo.title')}</CardTitle>
         <p className='text-sm text-muted-foreground'>
