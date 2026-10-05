@@ -9,7 +9,7 @@ import {
   UserX,
 } from 'lucide-react';
 import { Link } from 'react-router';
-import { useMemo, useState, type ReactElement } from 'react';
+import { useMemo, useState, type ReactElement, type ReactNode } from 'react';
 
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
@@ -27,10 +27,12 @@ import { EmptyState } from '@/components/itam/empty-state';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { useApi } from '@/lib/itam/api';
+import { apiErrorBody, useApi } from '@/lib/itam/api';
 import { useAiPageContext } from '@/lib/itam/ai-context';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
+import { errorMessage } from '@/lib/itam/format';
 import { isDocumentKind } from '@/lib/itam/document-kinds';
 import { ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
 import {
@@ -91,6 +93,18 @@ export function PersonBelongings({
   const [pending, setPending] = useState<RecoveryItem>();
   const [handover, setHandover] = useState<OwnedRecord>();
   const [nextOwner, setNextOwner] = useState<string | null>(null);
+  // 批量: what the reader has ticked in each list, by row key, and the run
+  // in progress. A batch is the row's own act performed once per ticked row,
+  // through the same endpoint, so each one meets the rules it would alone —
+  // and one that fails stays ticked with its reason, while the rest settle.
+  const [ticked, setTicked] = useState<ReadonlySet<string>>(() => new Set());
+  const [tickedRecords, setTickedRecords] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const [batch, setBatch] = useState<'recover' | 'handOver'>();
+  const [batchOwner, setBatchOwner] = useState<string | null>(null);
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [batchFailed, setBatchFailed] = useState<readonly BatchFailure[]>([]);
   // Its own memo: the reference goes into the names request and the page
   // context below, and a new array each render would re-register both.
   const items = useMemo(() => recovery.data?.items ?? [], [recovery.data]);
@@ -236,6 +250,121 @@ export function PersonBelongings({
     seat: Boolean(seatPermissions.assignSeat),
   };
 
+  const itemKey = (item: RecoveryItem) => `${item.kind}-${item.id}`;
+  const recordKey = (record: OwnedRecord) =>
+    `${record.collection}-${record.id}`;
+  /**
+   * Whether the row's own button would act now — which is what ticking it
+   * batches. A device at the repair shop waits, a consumable is confirmed
+   * rather than taken back, a settled row is done, and a kind this reader
+   * may not act on is not theirs to batch either.
+   */
+  const actionable = (item: RecoveryItem & { readonly done?: boolean }) =>
+    !item.done &&
+    allowed[item.kind] &&
+    (item.handling === 'return' ||
+      item.handling === 'takeBack' ||
+      item.handling === 'reclaim');
+  const selectable = rows.filter(actionable);
+  const chosen = selectable.filter((item) => ticked.has(itemKey(item)));
+  const chosenRecords = owned.filter((record) =>
+    tickedRecords.has(recordKey(record)),
+  );
+  const failureOf = (error: unknown) =>
+    apiErrorBody(error)?.message ?? errorMessage(error);
+  const finishBatch = async (failed: readonly BatchFailure[]) => {
+    setBatchBusy(false);
+    await queryClient.invalidateQueries({ queryKey: ['itam'] });
+    setBatchFailed(failed);
+    if (failed.length === 0) setBatch(undefined);
+  };
+  /** Every ticked row, each through its own act; a device takes `body`. */
+  const recoverChosen = async (body?: Record<string, unknown>) => {
+    setBatchBusy(true);
+    const failed: BatchFailure[] = [];
+    const still = new Set<string>();
+    const attempt = async (
+      items: readonly RecoveryItem[],
+      run: () => Promise<unknown>,
+    ) => {
+      try {
+        await run();
+      } catch (error) {
+        for (const item of items) {
+          failed.push({
+            key: itemKey(item),
+            label: item.label,
+            message: failureOf(error),
+          });
+          still.add(itemKey(item));
+        }
+      }
+    };
+    for (const item of chosen.filter((row) => row.kind === 'device'))
+      await attempt([item], () =>
+        api.request({
+          path: `${DEVICES_PATH}/${item.targetId}/return`,
+          method: 'POST',
+          json: body ?? {},
+        }),
+      );
+    for (const item of chosen.filter((row) => row.kind === 'stock'))
+      await attempt([item], () =>
+        api.request({
+          path: `${STOCK_PATH}/${item.targetId}/take-back`,
+          method: 'POST',
+          json: {
+            holderType: 'person',
+            holderId: personId,
+            quantity: item.quantity ?? 0,
+          },
+        }),
+      );
+    // Seats go back one request per entitlement, the way its own page
+    // reclaims several at once.
+    const seats = new Map<string, RecoveryItem[]>();
+    for (const item of chosen.filter((row) => row.kind === 'seat'))
+      seats.set(item.targetId, [...(seats.get(item.targetId) ?? []), item]);
+    for (const [entitlementId, held] of seats)
+      await attempt(held, () =>
+        api.request({
+          path: `${ENTITLEMENTS_PATH}/${entitlementId}/reclaim-seats`,
+          method: 'POST',
+          json: { seatIds: held.map((item) => item.id) },
+        }),
+      );
+    setTicked(still);
+    await finishBatch(failed);
+  };
+  /** Every ticked record to one new 负责人, each through its own endpoint. */
+  const handOverChosen = async () => {
+    setBatchBusy(true);
+    const failed: BatchFailure[] = [];
+    const still = new Set<string>();
+    for (const record of chosenRecords)
+      try {
+        await api.request({
+          path: `${referencePath(record.collection)}/${record.id}`,
+          method: 'PATCH',
+          json: { [record.field]: batchOwner },
+        });
+      } catch (error) {
+        failed.push({
+          key: recordKey(record),
+          label: record.label,
+          message: failureOf(error),
+        });
+        still.add(recordKey(record));
+      }
+    setTickedRecords(still);
+    await finishBatch(failed);
+  };
+  const openBatch = (kind: 'recover' | 'handOver') => {
+    setBatchFailed([]);
+    setBatchOwner(null);
+    setBatch(kind);
+  };
+
   const act = (item: RecoveryItem) => {
     setPending(item);
     returnDevice.reset();
@@ -327,12 +456,68 @@ export function PersonBelongings({
           })}
         </p>
       ) : null}
+      {/* What is ticked, and the one act that takes it all back. It shows
+          only while something is ticked: a toolbar with nothing to act on
+          is a row of disabled buttons. */}
+      {chosen.length > 0 ? (
+        <BatchBar
+          count={t('people.recovery.batch.selected', { count: chosen.length })}
+          action={t('people.recovery.batch.recover')}
+          icon={<Undo2 data-icon='inline-start' />}
+          onAct={() => openBatch('recover')}
+          onClear={() => setTicked(new Set())}
+        />
+      ) : null}
       {/* The asset lists' own table, because that is what this is — the
             five asset types in one list, each row saying which it is. The
             devices, the stock and the seats stay in that order; a heading
             per group would split five rows into three tables. */}
       <DataTable
         columns={[
+          // Ticking, first, and only where something can be ticked: a row
+          // waiting on a repair, a consumable to confirm and a settled row
+          // have no box, the way they have no button.
+          ...(selectable.length > 0
+            ? [
+                {
+                  key: 'select',
+                  header: (
+                    <Checkbox
+                      aria-label={t('people.recovery.batch.selectAll')}
+                      checked={chosen.length === selectable.length}
+                      indeterminate={
+                        chosen.length > 0 && chosen.length < selectable.length
+                      }
+                      onCheckedChange={(checked) =>
+                        setTicked(
+                          checked
+                            ? new Set(selectable.map(itemKey))
+                            : new Set(),
+                        )
+                      }
+                    />
+                  ),
+                  className: 'w-px',
+                  render: (item: (typeof rows)[number]) =>
+                    actionable(item) ? (
+                      <Checkbox
+                        aria-label={t('people.recovery.batch.select')}
+                        checked={ticked.has(itemKey(item))}
+                        // The row opens its record; ticking must not.
+                        onClick={(event) => event.stopPropagation()}
+                        onCheckedChange={(checked) =>
+                          setTicked((current) => {
+                            const next = new Set(current);
+                            if (checked) next.add(itemKey(item));
+                            else next.delete(itemKey(item));
+                            return next;
+                          })
+                        }
+                      />
+                    ) : null,
+                },
+              ]
+            : []),
           {
             key: 'item',
             header: t('people.recovery.columns.item'),
@@ -496,7 +681,24 @@ export function PersonBelongings({
             so each row offers it. */}
       {owned.length > 0 || (left && handedOver.length > 0) ? (
         <section className='space-y-2 pt-3'>
-          <p className='text-sm text-muted-foreground'>
+          <p className='flex items-center gap-2 text-sm text-muted-foreground'>
+            {/* Ticking every record still to hand over, in front of the line
+                that introduces them, where the table above keeps its own. */}
+            {owned.length > 0 ? (
+              <Checkbox
+                aria-label={t('people.recovery.batch.selectAll')}
+                checked={chosenRecords.length === owned.length}
+                indeterminate={
+                  chosenRecords.length > 0 &&
+                  chosenRecords.length < owned.length
+                }
+                onCheckedChange={(checked) =>
+                  setTickedRecords(
+                    checked ? new Set(owned.map(recordKey)) : new Set(),
+                  )
+                }
+              />
+            ) : null}
             {/* Before they leave, how many records name them now. After,
                 the snapshot of what they answered for — handed-over rows
                 included, the way the holdings above keep their settled ones,
@@ -506,6 +708,17 @@ export function PersonBelongings({
               ? t('people.recovery.responsibleLeft')
               : t('people.recovery.responsible', { count: owned.length })}
           </p>
+          {chosenRecords.length > 0 ? (
+            <BatchBar
+              count={t('people.recovery.batch.selectedRecords', {
+                count: chosenRecords.length,
+              })}
+              action={t('people.recovery.batch.handOver')}
+              icon={<ArrowRightLeft data-icon='inline-start' />}
+              onAct={() => openBatch('handOver')}
+              onClear={() => setTickedRecords(new Set())}
+            />
+          ) : null}
           {/* One record per line: they are things to go and settle, not a
                 set of tags. Each says what kind it is and in which seat it
                 names them: the 负责人, or one of a stocktake's 执行人. */}
@@ -523,6 +736,27 @@ export function PersonBelongings({
                     key={`${record.collection}-${record.id}`}
                     className='flex items-center gap-3 py-2'
                   >
+                    {/* A box where the 移交 button is offered; a handed-over
+                        row keeps the column's width without one, so the
+                        names stay in line. */}
+                    {owned.length > 0 ? (
+                      'done' in record && record.done ? (
+                        <span className='size-4 shrink-0' aria-hidden='true' />
+                      ) : (
+                        <Checkbox
+                          aria-label={t('people.recovery.batch.select')}
+                          checked={tickedRecords.has(recordKey(record))}
+                          onCheckedChange={(checked) =>
+                            setTickedRecords((current) => {
+                              const next = new Set(current);
+                              if (checked) next.add(recordKey(record));
+                              else next.delete(recordKey(record));
+                              return next;
+                            })
+                          }
+                        />
+                      )
+                    ) : null}
                     <span className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
                       {/* An asset wears the same icon tag as everywhere
                           else; a repair or an order is not an asset, so it
@@ -673,6 +907,139 @@ export function PersonBelongings({
           <div className='text-sm font-medium'>{pending.label}</div>
         </ConfirmDialog>
       ) : null}
+      {batch === 'recover' ? (
+        (() => {
+          const devices = chosen.filter((item) => item.kind === 'device');
+          const summary = t('people.recovery.batch.recoverSummary', {
+            devices: devices.length,
+            stock: chosen.filter((item) => item.kind === 'stock').length,
+            seats: chosen.filter((item) => item.kind === 'seat').length,
+          });
+          const close = () => {
+            setBatch(undefined);
+            setBatchFailed([]);
+          };
+          // With devices among them it asks the return's three questions
+          // once, for every device; without, a confirmation is all it needs.
+          return devices.length > 0 ? (
+            <DeviceReturnDialog
+              currentLocationId={null}
+              busy={batchBusy}
+              error={undefined}
+              title={t('people.recovery.batch.recoverTitle', {
+                count: chosen.length,
+              })}
+              description={`${summary}${t('people.recovery.batch.recoverDevices')}`}
+              onClose={close}
+              onConfirm={(body) => void recoverChosen(body)}
+            >
+              <BatchFailures failed={batchFailed} />
+            </DeviceReturnDialog>
+          ) : (
+            <ConfirmDialog
+              open
+              onOpenChange={(open) => !open && close()}
+              title={t('people.recovery.batch.recoverTitle', {
+                count: chosen.length,
+              })}
+              description={summary}
+              busy={batchBusy}
+              confirmDisabled={chosen.length === 0}
+              confirmLabel={t('people.recovery.batch.recover')}
+              onConfirm={() => void recoverChosen()}
+            >
+              <BatchFailures failed={batchFailed} />
+            </ConfirmDialog>
+          );
+        })()
+      ) : null}
+      {batch === 'handOver' ? (
+        <ConfirmDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              setBatch(undefined);
+              setBatchFailed([]);
+            }
+          }}
+          title={t('people.recovery.batch.handOverTitle', {
+            count: chosenRecords.length,
+          })}
+          description={t('people.recovery.batch.handOverHint')}
+          busy={batchBusy}
+          confirmDisabled={!batchOwner || chosenRecords.length === 0}
+          confirmLabel={t('people.recovery.batch.handOver')}
+          onConfirm={() => void handOverChosen()}
+        >
+          <ReferenceSelect
+            reference={{ collection: 'users' }}
+            value={batchOwner}
+            onChange={setBatchOwner}
+          />
+          <BatchFailures failed={batchFailed} />
+        </ConfirmDialog>
+      ) : null}
+    </div>
+  );
+}
+
+/** A row a batch could not settle: its key, its name and the reason. */
+interface BatchFailure {
+  readonly key: string;
+  readonly label: string;
+  readonly message: string;
+}
+
+/** What is ticked, and the one act that applies to all of it. */
+function BatchBar({
+  count,
+  action,
+  icon,
+  onAct,
+  onClear,
+}: {
+  readonly count: string;
+  readonly action: string;
+  readonly icon: ReactNode;
+  readonly onAct: () => void;
+  readonly onClear: () => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  return (
+    <div className='flex flex-wrap items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm'>
+      <span className='font-medium'>{count}</span>
+      <Button size='sm' onClick={onAct}>
+        {icon}
+        {action}
+      </Button>
+      <Button size='sm' variant='ghost' onClick={onClear}>
+        {t('people.recovery.batch.clear')}
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * The rows a batch could not settle, each with the service's own reason.
+ * They stay ticked, so pressing again retries exactly those.
+ */
+function BatchFailures({
+  failed,
+}: {
+  readonly failed: readonly BatchFailure[];
+}): ReactElement | null {
+  const { t } = useTranslation();
+  if (failed.length === 0) return null;
+  return (
+    <div className='space-y-1 text-sm text-destructive'>
+      <p>{t('people.recovery.batch.failed', { count: failed.length })}</p>
+      <ul className='list-disc space-y-0.5 pl-5'>
+        {failed.map((item) => (
+          <li key={item.key}>
+            {item.label} — {item.message}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

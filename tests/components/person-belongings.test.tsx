@@ -5,17 +5,29 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { PersonBelongings } from '../../client/components/itam/person-belongings.js';
 import { TooltipProvider } from '../../client/components/ui/tooltip.js';
 
+interface Request {
+  readonly path: string;
+  readonly method?: string;
+  readonly json?: unknown;
+}
+
 const state = vi.hoisted(() => ({
-  requests: [] as { path: string; json?: unknown }[],
+  requests: [] as Request[],
+  /** A request whose path contains this fails, the way a refusal would. */
+  failOn: undefined as string | undefined,
+  recovery: undefined as unknown,
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock('../../client/lib/itam/api.js', () => ({
+vi.mock('../../client/lib/itam/api.js', async (original) => ({
+  ...(await original<object>()),
   useApi: () => ({
-    request: async (request: { path: string; json?: unknown }) => {
+    request: async (request: Request) => {
       state.requests.push(request);
+      if (state.failOn && request.path.includes(state.failOn))
+        throw new Error('Not allowed');
       return {};
     },
   }),
@@ -43,34 +55,23 @@ vi.mock('../../client/lib/itam/record-drawer.js', async (original) => ({
   ...(await original<object>()),
   useOpenRecord: () => () => undefined,
 }));
-// One seat in their name: a device, a stock holding and a seat may share an
-// id, so the table keys rows by kind — which is what once leaked into the
-// id the seat's own action sent.
+// The pickers fetch their own options; choosing one is what matters here.
+vi.mock('../../client/components/itam/reference-select.js', () => ({
+  ReferenceSelect: ({
+    value,
+    onChange,
+  }: {
+    value: string | null;
+    onChange: (value: string | null) => void;
+  }) => (
+    <button type='button' onClick={() => onChange('sam')}>
+      {value ?? 'pick'}
+    </button>
+  ),
+}));
 vi.mock('../../client/lib/itam/recovery.js', async (original) => ({
   ...(await original<object>()),
-  usePersonRecovery: () => ({
-    data: {
-      employmentStatus: 'left',
-      leaveDate: '2026-10-01',
-      items: [
-        {
-          kind: 'seat',
-          id: 'c6543b22',
-          label: 'Figma Organization',
-          handling: 'reclaim',
-          ownerId: 'mia',
-          account: 'chen.jie@example.com',
-          targetId: 'figma',
-          assetType: 'entitlement',
-        },
-      ],
-      settled: [],
-      owned: [],
-      settledOwned: [],
-      progress: null,
-      account: null,
-    },
-  }),
+  usePersonRecovery: () => ({ data: state.recovery }),
 }));
 vi.mock('@tanstack/react-query', async (original) => ({
   ...(await original<object>()),
@@ -90,11 +91,27 @@ vi.mock('@tanstack/react-query', async (original) => ({
   }),
 }));
 
-beforeEach(() => {
-  state.requests = [];
+const seat = (id: string) => ({
+  kind: 'seat',
+  id,
+  label: 'Figma Organization',
+  handling: 'reclaim',
+  ownerId: 'mia',
+  targetId: 'figma',
+  assetType: 'entitlement',
 });
-
-it("reclaims a seat by the seat's own id, not the row's key", async () => {
+const recovery = (overrides: Record<string, unknown>) => ({
+  employmentStatus: 'left',
+  leaveDate: '2026-10-01',
+  items: [],
+  settled: [],
+  owned: [],
+  settledOwned: [],
+  progress: null,
+  account: null,
+  ...overrides,
+});
+const show = () =>
   render(
     <MemoryRouter>
       <TooltipProvider>
@@ -102,6 +119,20 @@ it("reclaims a seat by the seat's own id, not the row's key", async () => {
       </TooltipProvider>
     </MemoryRouter>,
   );
+/** Lets the batch's sequential requests run. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+beforeEach(() => {
+  state.requests = [];
+  state.failOn = undefined;
+  state.recovery = recovery({});
+});
+
+it("reclaims a seat by the seat's own id, not the row's key", async () => {
+  // A device, a stock holding and a seat may share an id, so the table keys
+  // rows by kind — which once leaked into the id this action sent.
+  state.recovery = recovery({ items: [seat('c6543b22')] });
+  show();
   const row = screen.getByText('Figma Organization').closest('tr')!;
   fireEvent.click(
     within(row).getByRole('button', { name: /entitlements\.reclaimSeat/ }),
@@ -114,6 +145,159 @@ it("reclaims a seat by the seat's own id, not the row's key", async () => {
     expect.objectContaining({
       path: expect.stringContaining('/figma/reclaim-seats'),
       json: { seatIds: ['c6543b22'] },
+    }),
+  ]);
+});
+
+it('takes everything ticked back at once, each its own way', async () => {
+  state.recovery = recovery({
+    items: [
+      {
+        kind: 'stock',
+        id: 'h1',
+        label: 'Dell dock',
+        handling: 'takeBack',
+        ownerId: 'mia',
+        targetId: 'dock',
+        quantity: 1,
+        assetType: 'accessory',
+      },
+      seat('s1'),
+      seat('s2'),
+      // Waiting on a repair: no box, as it has no button.
+      {
+        kind: 'device',
+        id: 'd1',
+        label: 'SG-LT-006',
+        handling: 'wait',
+        status: 'inRepair',
+        ownerId: 'mia',
+        targetId: 'd1',
+        assetType: 'device',
+      },
+    ],
+  });
+  show();
+  expect(
+    screen.getAllByRole('checkbox', { name: 'people.recovery.batch.select' }),
+  ).toHaveLength(3);
+  fireEvent.click(
+    screen.getAllByRole('checkbox', {
+      name: 'people.recovery.batch.selectAll',
+    })[0]!,
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: /people\.recovery\.batch\.recover/ }),
+  );
+  const dialog = await screen.findByRole('dialog');
+  fireEvent.click(
+    within(dialog).getByRole('button', {
+      name: /people\.recovery\.batch\.recover/,
+    }),
+  );
+  await settle();
+  expect(state.requests).toEqual([
+    expect.objectContaining({
+      path: expect.stringContaining('/dock/take-back'),
+      json: { holderType: 'person', holderId: 'p1', quantity: 1 },
+    }),
+    // Both seats of one entitlement in one request, as its own page does.
+    expect.objectContaining({
+      path: expect.stringContaining('/figma/reclaim-seats'),
+      json: { seatIds: ['s1', 's2'] },
+    }),
+  ]);
+});
+
+it('keeps what failed ticked, with the reason, and settles the rest', async () => {
+  state.recovery = recovery({
+    items: [
+      {
+        kind: 'stock',
+        id: 'h1',
+        label: 'Dell dock',
+        handling: 'takeBack',
+        ownerId: 'mia',
+        targetId: 'dock',
+        quantity: 1,
+        assetType: 'accessory',
+      },
+      seat('s1'),
+    ],
+  });
+  state.failOn = 'reclaim-seats';
+  show();
+  fireEvent.click(
+    screen.getAllByRole('checkbox', {
+      name: 'people.recovery.batch.selectAll',
+    })[0]!,
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: /people\.recovery\.batch\.recover/ }),
+  );
+  const dialog = await screen.findByRole('dialog');
+  fireEvent.click(
+    within(dialog).getByRole('button', {
+      name: /people\.recovery\.batch\.recover/,
+    }),
+  );
+  await settle();
+  // The dialog stays open on what failed, naming it.
+  expect(within(dialog).getByText(/Figma Organization — Not allowed/)).toBeVisible();
+  // Only the failed seat is still ticked. The open dialog hides the table
+  // from the accessibility tree, so the boxes are looked up behind it.
+  const boxes = screen.getAllByRole('checkbox', {
+    name: 'people.recovery.batch.select',
+    hidden: true,
+  });
+  expect(boxes.filter((box) => box.getAttribute('aria-checked') === 'true'))
+    .toHaveLength(1);
+});
+
+it('hands every ticked record to one new owner', async () => {
+  state.recovery = recovery({
+    owned: [
+      {
+        collection: 'repairs',
+        id: 'r1',
+        label: 'RP-000012',
+        field: 'ownerId',
+        ownerId: 'chen',
+      },
+      {
+        collection: 'purchaseOrders',
+        id: 'po1',
+        label: 'PO-000018',
+        field: 'ownerId',
+        ownerId: 'chen',
+      },
+    ],
+  });
+  show();
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'people.recovery.batch.selectAll' }),
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: /people\.recovery\.batch\.handOver/ }),
+  );
+  const dialog = await screen.findByRole('dialog');
+  fireEvent.click(within(dialog).getByRole('button', { name: 'pick' }));
+  fireEvent.click(
+    within(dialog).getByRole('button', {
+      name: /people\.recovery\.batch\.handOver/,
+    }),
+  );
+  await settle();
+  expect(state.requests).toEqual([
+    expect.objectContaining({
+      path: expect.stringContaining('/r1'),
+      method: 'PATCH',
+      json: { ownerId: 'sam' },
+    }),
+    expect.objectContaining({
+      path: expect.stringContaining('/po1'),
+      method: 'PATCH',
+      json: { ownerId: 'sam' },
     }),
   ]);
 });
