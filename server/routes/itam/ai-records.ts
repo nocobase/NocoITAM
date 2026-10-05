@@ -359,7 +359,7 @@ export async function runRecordTool(
   const result = await executeRecordTool(container, scope, tool, raw);
   // Written outside the ITAM routes, as `runWrite`'s are.
   if (container.has(itamChangesToken))
-    container.resolve(itamChangesToken).touched();
+    container.resolve(itamChangesToken).touched(scope.actorId);
   return result;
 }
 

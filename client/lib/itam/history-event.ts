@@ -54,6 +54,12 @@ export function describeEvent(
       defaultValue: row.summary,
       date: label('leaveDate'),
     });
+  // A handover finished before anything watched for it: recorded at the
+  // first start-up since, so its time is not when it was finished.
+  if (row.type === 'handoverCompleted' && payload.recordedLate === true)
+    return t('history.summaries.handoverCompletedLate', {
+      defaultValue: row.summary,
+    });
   // The renewal date the scheduler rolled forward: two dates, no enum.
   if (row.type === 'renewalAdvanced')
     return t('history.summaries.renewalAdvanced', {

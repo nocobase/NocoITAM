@@ -232,6 +232,7 @@ const messages = {
       left: 'Left',
       accountDisabledOnLeaving: 'Sign-in disabled',
       accountRestoredOnReturning: 'Sign-in enabled',
+      handoverCompleted: 'Handover completed',
       repairCreated: 'Repair created',
       repairCompleted: 'Repair completed',
       counted: 'Results recorded',
@@ -352,7 +353,11 @@ const messages = {
       renewalAdvanced: 'Next renewal {{from}} → {{to}}',
       left: 'Marked as left',
       accountDisabledOnLeaving: 'Sign-in {{target}} disabled on leaving',
-      accountRestoredOnReturning: 'Sign-in {{target}} enabled again on returning',
+      accountRestoredOnReturning:
+        'Sign-in {{target}} enabled again on returning',
+      handoverCompleted: 'Everything from their leaving has been handled',
+      handoverCompletedLate:
+        'Everything from their leaving had been handled (noted afterwards; the time it was finished was not recorded)',
       leftOnLeaveDate: 'Leave date {{date}} reached; marked as left',
       recoveryPrepared:
         'Recovery listed: {{devices}} devices, {{stock}} stock, {{seats}} seats',
@@ -972,7 +977,8 @@ const messages = {
         recoverDevices: ' Devices go back as set below.',
         handOverTitle_one: 'Hand over {{count}} record',
         handOverTitle_other: 'Hand over {{count}} records',
-        handOverHint: 'Every selected record will name this person as its owner.',
+        handOverHint:
+          'Every selected record will name this person as its owner.',
         failed_one: '{{count}} could not be done:',
         failed_other: '{{count}} could not be done:',
       },
@@ -1488,7 +1494,8 @@ const messages = {
     openConversation: 'Open the conversation',
     failed: 'AI could not finish. Open the conversation to see why.',
     hint: 'Search devices, people, orders and reference data by name, number or serial.',
-    askHint: 'Ask in your own words, e.g. laptops in repair or on loan, or who in R&D has no monitor.',
+    askHint:
+      'Ask in your own words, e.g. laptops in repair or on loan, or who in R&D has no monitor.',
     searchTab: 'Search',
     followUpDraft: 'About “{{question}}”: ',
     showAll: 'Show all',
@@ -1554,9 +1561,12 @@ const messages = {
     },
     reminders: {
       warrantyExpiring: 'Warranty ends within {{warrantyDays}} days',
-      entitlementRenewing: 'Subscriptions auto-renewing within {{subscriptionExpiryDays}} days',
-      entitlementEnding: 'Subscriptions ending within {{subscriptionExpiryDays}} days',
-      entitlementMaintenance: 'Perpetual maintenance ending within {{maintenanceExpiryDays}} days',
+      entitlementRenewing:
+        'Subscriptions auto-renewing within {{subscriptionExpiryDays}} days',
+      entitlementEnding:
+        'Subscriptions ending within {{subscriptionExpiryDays}} days',
+      entitlementMaintenance:
+        'Perpetual maintenance ending within {{maintenanceExpiryDays}} days',
       entitlementEnded: 'Ended subscriptions still holding seats',
       idleDevice: 'In stock over {{idleDays}} days',
       auditOverdue: 'Not audited for {{auditDays}} days',
@@ -1566,9 +1576,12 @@ const messages = {
     },
     reminderCaptions: {
       warrantyExpiring: 'Devices in use',
-      entitlementRenewing: 'You will be charged; cancel now if you do not want it (monthly ones excluded)',
-      entitlementEnding: 'Not set to renew, so access stops; renew now to keep it',
-      entitlementMaintenance: 'The licence never expires — support and updates do',
+      entitlementRenewing:
+        'You will be charged; cancel now if you do not want it (monthly ones excluded)',
+      entitlementEnding:
+        'Not set to renew, so access stops; renew now to keep it',
+      entitlementMaintenance:
+        'The licence never expires — support and updates do',
       entitlementEnded: 'Set not to renew, past their date',
       idleDevice: 'Available devices nobody used',
       auditOverdue: 'Non-disposed devices',

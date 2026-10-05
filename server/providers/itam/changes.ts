@@ -27,30 +27,47 @@ export interface ItamChangesEvent {
  * it stops, and a long one still goes out at least every `maxWait`.
  */
 export interface ItamChanges {
-  touched(): void;
+  /**
+   * Something was written. `actorId` is who wrote it, where that is known;
+   * the burst carries the last one named, for what is recorded because of
+   * it (a leaver's handover completing).
+   */
+  touched(actorId?: string): void;
+}
+
+/** One coalesced burst of writes, as handed to the publisher. */
+export interface ItamChangesBurst {
+  readonly actorId?: string;
 }
 
 export const itamChangesToken: ServiceToken<ItamChanges> =
   createServiceToken<ItamChanges>('itam/changes');
 
 export function createItamChanges(
-  publish: () => void,
+  publish: (burst: ItamChangesBurst) => void | Promise<void>,
   { wait = 400, maxWait = 3000 }: { wait?: number; maxWait?: number } = {},
 ): ItamChanges {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let firstAt: number | undefined;
+  let actorId: string | undefined;
   const flush = () => {
+    const burst = actorId ? { actorId } : {};
     timer = undefined;
     firstAt = undefined;
-    try {
-      publish();
-    } catch (error) {
-      // A missed signal costs a page a refresh, never the write itself.
+    actorId = undefined;
+    // A missed signal costs a page a refresh, never the write itself.
+    const failed = (error: unknown) => {
       console.error('Failed to publish the ITAM change signal.', error);
+    };
+    try {
+      void Promise.resolve(publish(burst)).catch(failed);
+    } catch (error) {
+      failed(error);
     }
   };
   return {
-    touched() {
+    touched(actor) {
+      if (actor) actorId = actor;
       const now = Date.now();
       firstAt ??= now;
       if (timer) clearTimeout(timer);

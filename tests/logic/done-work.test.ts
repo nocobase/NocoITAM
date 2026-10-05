@@ -1,7 +1,10 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { today } from '../../server/providers/itam/dates.js';
+import { databaseManagerToken } from '@nocobase/db';
+
+import { addDays, today } from '../../server/providers/itam/dates.js';
+import { handoverCompletionToken } from '../../server/providers/itam/handover-completion.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { repairRoutes } from '../../server/routes/itam/repairs.js';
@@ -160,6 +163,68 @@ describe('finished to-dos', () => {
         (row) => row.key === 'leaverRecovery',
       ),
     ).toBe(false);
+  });
+
+  it('dates a leaver by when their handover was finished, not when they left', async () => {
+    const held = await device();
+    const leaver = await person();
+    await post(`devices/${held.id}/assign`, {
+      targetType: 'person',
+      targetId: leaver.id,
+    });
+    // Left 40 days ago, outside the 30-day window by their leave date.
+    await app.request(`/api/itam/master/people/${leaver.id}`, {
+      ...json({ leaveDate: addDays(today(), -40) }),
+      method: 'PATCH',
+      ...manager,
+    });
+    const completion = app.container.resolve(handoverCompletionToken);
+    // Nothing to record while the laptop is still out.
+    await completion.check('mia');
+    await post(`devices/${held.id}/return`, {});
+    // What the change signal runs after the return.
+    await completion.check('mia');
+    // Run again, it records nothing twice.
+    await completion.check('mia');
+
+    const done = (await doneOf()).filter((row) => row.key === 'leaverRecovery');
+    expect(done).toHaveLength(1);
+    expect(done[0]?.doneAt.slice(0, 10)).toBe(today());
+    const completed = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('historyEvents')
+      .select(['actorId'])
+      .where('subjectType', '=', 'people')
+      .where('subjectId', '=', leaver.id)
+      .where('type', '=', 'handoverCompleted')
+      .execute<{ actorId: string | null }>();
+    // Once, and by whoever settled the last item.
+    expect(completed).toEqual([{ actorId: 'mia' }]);
+  });
+
+  it('keeps the leave date for a handover finished before anything watched', async () => {
+    const held = await device();
+    const leaver = await person();
+    await post(`devices/${held.id}/assign`, {
+      targetType: 'person',
+      targetId: leaver.id,
+    });
+    const left = addDays(today(), -10);
+    await app.request(`/api/itam/master/people/${leaver.id}`, {
+      ...json({ leaveDate: left }),
+      method: 'PATCH',
+      ...manager,
+    });
+    await post(`devices/${held.id}/return`, {});
+    const completion = app.container.resolve(handoverCompletionToken);
+    // The start-up pass finds it settled already, at a moment nobody knows.
+    await completion.check(undefined, { late: true });
+    // Nor does the next write claim the moment for itself.
+    await completion.check('mia');
+    expect(
+      (await doneOf()).find((row) => row.key === 'leaverRecovery')?.doneAt,
+    ).toBe(left);
   });
 
   it("carries a leaver's progress against what they held when they left", async () => {
