@@ -164,9 +164,10 @@ export const whenStraightLine = (
 
 /**
  * The login user responsible for the record. Every business record has one
- * (it defaults to the creator and drives "records I own" access); it sits
- * first in the 系统 group, editable there, and is never asked for on
- * creation.
+ * (it defaults to the creator and drives "records I own" access). A detail
+ * page shows it in the summary strip, right after the status, and hands it
+ * over there (2026-10-05) — never in the information card; it is never
+ * asked for on creation. The group only places it in lists and exports.
  */
 export const OWNER_FIELD: FieldDefinition = {
   key: 'ownerId',

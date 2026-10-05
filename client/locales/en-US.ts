@@ -410,7 +410,6 @@ const messages = {
     seats: 'Seats',
     billing: 'Billing',
     compliance: 'Compliance',
-    request: 'Request',
     handling: 'Handling',
     progress: 'Progress',
     execution: 'Execution',
