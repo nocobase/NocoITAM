@@ -94,7 +94,10 @@ describe('master data routes', () => {
     ).toEqual(['update', 'create']);
     expect(changeLog.data[0]?.changes[0]?.field).toBe('supportPhone');
 
-    const forbiddenUpdate = await app.request(
+    // IT support keeps the reference data as well as using it, and may not
+    // destroy any of it: deleting is one of the two things the role does
+    // not do (the other is deciding a request).
+    const supportUpdate = await app.request(
       `/api/itam/master/manufacturers/${data.id}`,
       {
         ...json({ supportPhone: '1' }),
@@ -103,7 +106,12 @@ describe('master data routes', () => {
         role: 'support',
       },
     );
-    expect(forbiddenUpdate.status).toBe(403);
+    expect(supportUpdate.status).toBe(200);
+    const supportDelete = await app.request(
+      `/api/itam/master/manufacturers/${data.id}`,
+      { method: 'DELETE', user: 'sam', role: 'support' },
+    );
+    expect(supportDelete.status).toBe(403);
 
     const deleted = await app.request(
       `/api/itam/master/manufacturers/${data.id}`,

@@ -122,45 +122,30 @@ const recordAccessOf = (policy: unknown): string => {
  */
 const all = { fields: '*', recordAccess: ['allRecords'] } as const;
 const readAll = all;
-const readFields = (output: readonly string[]) =>
-  ({ fields: output, recordAccess: ['allRecords'] }) as const;
 const write = (input: readonly string[]) =>
   ({ fields: input, recordAccess: ['allRecords'] }) as const;
 
+/**
+ * IT Support is the Asset Manager minus the two things that are not about
+ * the job (2026-10-05): **deciding** a request and **destroying** a record.
+ *
+ * The roles used to differ in a dozen places — cost fields, product keys,
+ * master-data writes, people, the settings, the reports page, and a record
+ * scope on each delete — and keeping two lists in step meant every new
+ * field and every new page had to be added twice, which is how a role ends
+ * up with a grant nobody meant to give it. Derived, the difference is the
+ * code: support does the work, the manager approves it and clears it away.
+ */
+const minusApprovalAndDeletion = (grants: readonly Grant[]): Grant[] =>
+  grants.flatMap((grant) => {
+    const actions = grant.actions.filter(
+      (entry) => entry.action !== 'delete' && entry.action !== 'approve',
+    );
+    return actions.length > 0 ? [{ ...grant, actions }] : [];
+  });
+
 function itSupportGrants(): Grant[] {
-  const poOut = without(PO_FIELDS, ['estimatedTotal']);
-  return [
-    db('purchaseOrders', {
-      read: readFields(poOut),
-      create: write(without(PO_FIELDS, SYSTEM)),
-      update: write(without(PO_FIELDS, SYSTEM)),
-      // The order belongs to the side that raised it: IT support deletes
-      // its own drafts, not a colleague's.
-      delete: { fields: '*', recordAccess: ['recordsICreated'] },
-      submit: readFields(poOut),
-      order: readFields(poOut),
-      receive: readFields(poOut),
-      export: readFields(poOut),
-    }),
-    db('purchaseOrderLines', {
-      read: readFields([
-        'id',
-        'purchaseOrderId',
-        'itemType',
-        'modelId',
-        'softwareProductId',
-        'description',
-        'quantity',
-        'receivedQuantity',
-        'sort',
-        'createdAt',
-        'updatedAt',
-      ]),
-    }),
-    db('purchaseReceipts', { read: readAll }),
-    db('approvals', { read: readAll }),
-    db('attachmentLinks', { read: readAll, create: all, delete: all }),
-  ];
+  return minusApprovalAndDeletion(managerGrants());
 }
 
 function managerGrants(): Grant[] {

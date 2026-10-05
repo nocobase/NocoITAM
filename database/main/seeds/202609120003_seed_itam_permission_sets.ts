@@ -19,14 +19,6 @@ import { defineSeed, type SeedDefinition } from '@nocobase/db';
 const IT_SUPPORT = 'itam-it-support';
 const ASSET_MANAGER = 'itam-asset-manager';
 
-const DEVICE_COST_FIELDS = ['purchasePrice', 'bookValue', 'depreciatedAmount'];
-const DEVICE_FINANCE_FIELDS = [
-  ...DEVICE_COST_FIELDS,
-  'currency',
-  'depreciationMethod',
-  'usefulLifeMonths',
-  'residualRate',
-];
 const DEVICE_FIELDS = [
   'id',
   'deviceNo',
@@ -218,56 +210,27 @@ const recordAccessOf = (policy: unknown): string => {
 const all = { fields: '*', recordAccess: ['allRecords'] } as const;
 const readAll = all;
 
+/**
+ * IT Support is the Asset Manager minus the two things that are not about
+ * the job (2026-10-05): **deciding** a request and **destroying** a record.
+ *
+ * The roles used to differ in a dozen places — cost fields, product keys,
+ * master-data writes, people, the settings, the reports page, and a record
+ * scope on each delete — and keeping two lists in step meant every new
+ * field and every new page had to be added twice, which is how a role ends
+ * up with a grant nobody meant to give it. Derived, the difference is the
+ * code: support does the work, the manager approves it and clears it away.
+ */
+const minusApprovalAndDeletion = (grants: readonly Grant[]): Grant[] =>
+  grants.flatMap((grant) => {
+    const actions = grant.actions.filter(
+      (entry) => entry.action !== 'delete' && entry.action !== 'approve',
+    );
+    return actions.length > 0 ? [{ ...grant, actions }] : [];
+  });
+
 function itSupportGrants(): Grant[] {
-  const deviceReadable = without(DEVICE_FIELDS, DEVICE_COST_FIELDS);
-  return [
-    ...IT_PAGES.map(page),
-    ...MASTER_DATA.map((collection) => db(collection, { read: readAll })),
-    ...SYSTEM_READ.map((collection) => db(collection, { read: readAll })),
-    db('devices', {
-      read: {
-        fields: deviceReadable,
-        recordAccess: ['allRecords'],
-      },
-      create: {
-        fields: without(DEVICE_FIELDS, [
-          ...DEVICE_SYSTEM_FIELDS,
-          ...DEVICE_COST_FIELDS,
-        ]),
-      },
-      update: {
-        fields: without(DEVICE_FIELDS, [
-          ...DEVICE_SYSTEM_FIELDS,
-          ...DEVICE_FINANCE_FIELDS,
-        ]),
-        recordAccess: ['allRecords'],
-      },
-      assign: {
-        fields: deviceReadable,
-        recordAccess: ['allRecords'],
-      },
-      return: {
-        fields: deviceReadable,
-        recordAccess: ['allRecords'],
-      },
-      transfer: {
-        fields: deviceReadable,
-        recordAccess: ['allRecords'],
-      },
-      loan: {
-        fields: deviceReadable,
-        recordAccess: ['allRecords'],
-      },
-      reserve: {
-        fields: deviceReadable,
-        recordAccess: ['allRecords'],
-      },
-      export: {
-        fields: deviceReadable,
-        recordAccess: ['allRecords'],
-      },
-    }),
-  ];
+  return minusApprovalAndDeletion(assetManagerGrants());
 }
 
 function assetManagerGrants(): Grant[] {

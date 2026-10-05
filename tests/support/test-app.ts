@@ -32,10 +32,15 @@ const ROLE_GRANTS: Readonly<
   Record<TestRole, (resource: string, action: string) => boolean>
 > = {
   employee: () => false,
-  support: (_resource, action) => action === 'read',
+  // IT support is the asset manager minus deciding a request and
+  // destroying a record, as the seeds derive it (`minusApprovalAndDeletion`).
+  // It used to grant only `read`, which never matched the seeded role.
+  support: (_resource, action) => action !== 'approve' && action !== 'delete',
   manager: () => true,
   // A manager's grants whose reads leave out each collection's cost fields
-  // (`costFields` in `collections.ts`), as IT support's seeded reads do.
+  // (`costFields` in `collections.ts`): no seeded role reads that way since
+  // IT support was given the costs (2026-10-05), but a permission set an
+  // administrator writes may, and the narrowing is still the routes' job.
   noCost: () => true,
 };
 
