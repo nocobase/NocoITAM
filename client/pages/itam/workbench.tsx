@@ -1,14 +1,13 @@
 import { useAuthentication } from '@nocobase/app-plugin-authentication/client';
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowRight, Laptop } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 
 import { AiQuickEntries } from '@/components/itam/ai/quick-entries';
 import { MyWork } from '@/components/itam/my-work';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useItamSettings } from '@/lib/itam/api';
 import {
@@ -17,7 +16,6 @@ import {
   text,
   todayIso,
 } from '@/lib/itam/format';
-import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { cn } from '@/lib/utils';
 import {
   REMINDER_GROUPS,
@@ -32,38 +30,11 @@ import {
  * The workbench answers "what do I do today, and what needs watching". The
  * IT view: a greeting with what waits, four key numbers for this month, my
  * work beside the reminders, then where the devices stand and what expires
- * in the next 90 days. Everything deeper lives in the reports. A user
- * without device-wide read (an employee) gets their own entry points.
+ * in the next 90 days. Everything deeper lives in the reports. Only IT
+ * signs in (2026-10-05), so there is no other view.
  */
 export default function WorkbenchPage(): ReactElement {
-  const permissions = useCollectionPermissions('reminders', ['read']);
-  const isIt = permissions.read;
-  if (isIt === undefined) return <Page>{null}</Page>;
-  return isIt ? <ItWorkbench /> : <EmployeeWorkbench />;
-}
-
-function EmployeeWorkbench(): ReactElement {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  return (
-    <Page>
-      <Greeting />
-      <section className='grid gap-6 @3xl:grid-cols-2'>
-        <MyWork />
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('workbench.quickActions')}</CardTitle>
-          </CardHeader>
-          <CardContent className='flex flex-wrap gap-2'>
-            <Button onClick={() => void navigate('/my-assets')}>
-              <Laptop data-icon='inline-start' />
-              {t('employee.myAssets')}
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-    </Page>
-  );
+  return <ItWorkbench />;
 }
 
 /** 早上好，Mia — and today's date with how many things wait. */

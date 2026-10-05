@@ -7,7 +7,7 @@ import type { Row } from './collection-query.js';
  * convention every ITAM table follows. `parentId` points at its own
  * collection, and three fields name their collection through a type field
  * beside them (`TYPED_REFERENCES`). `user` is the authentication plugin's
- * account table (owners, requesters, executors).
+ * account table (owners, executors).
  */
 export const REFERENCE_FIELDS: Readonly<Record<string, string>> = {
   modelId: 'models',
@@ -26,7 +26,6 @@ export const REFERENCE_FIELDS: Readonly<Record<string, string>> = {
   managerId: 'people',
   ownerId: 'user',
   createdById: 'user',
-  requesterId: 'user',
   executedById: 'user',
   userId: 'user',
   executorIds: 'user',

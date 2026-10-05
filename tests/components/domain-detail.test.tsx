@@ -33,7 +33,7 @@ vi.mock('../../client/lib/itam/api.js', () => ({
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCollectionPermissions: () => ({ update: state.allowed, delete: false }),
   // A purchase order is edited by the side that raised it, so the page has
-  // to know who is reading; these records name 'u1' as their requester.
+  // to know who is reading; these records name 'u1' as their 负责人.
   useCurrentUserId: () => 'u1',
 }));
 vi.mock('@tanstack/react-query', () => ({
@@ -96,7 +96,7 @@ it('groups named procurement references and dates, without repeating summary or 
     id: 'record',
     orderNo: 'PO-001',
     status: 'draft',
-    requesterId: 'u1',
+    ownerId: 'u1',
     vendorId: 'v1',
     reason: 'other',
     description: 'New desks',
@@ -107,7 +107,7 @@ it('groups named procurement references and dates, without repeating summary or 
   const request = within(section('groups.request'));
   expect(request.getByText('Alex')).toBeVisible();
   expect(request.getAllByRole('term').map((node) => node.textContent)).toEqual([
-    'fields.requester',
+    'fields.owner',
     'fields.department',
     'fields.neededBy',
   ]);
@@ -125,8 +125,8 @@ it('groups named procurement references and dates, without repeating summary or 
       .getAllByRole('term')
       .map((node) => node.textContent),
   ).toEqual(['fields.createdBy', 'fields.createdAt', 'fields.updatedAt']);
-  // An order belongs to its requester; it carries no owner of its own.
-  expect(screen.queryByText('fields.owner')).toBeNull();
+  // An order's 负责人 is its one person-field, under 申请信息.
+  expect(screen.getAllByText('fields.owner')).toHaveLength(1);
 });
 
 it('states the disposal plan while it is open and keeps its results read-only once executed', () => {
@@ -187,7 +187,7 @@ it('shows a cancelled order reason without edit controls', () => {
     id: 'record',
     orderNo: 'PO-002',
     status: 'cancelled',
-    requesterId: 'u1',
+    ownerId: 'u1',
     cancelReason: 'Budget cut',
   };
   show(purchaseOrderDomain);
@@ -237,7 +237,7 @@ it('keeps an order someone else raised read-only', () => {
     id: 'record',
     orderNo: 'PO-003',
     status: 'draft',
-    requesterId: 'u2',
+    ownerId: 'u2',
     createdById: 'u2',
     description: 'Someone else asked for this',
   };

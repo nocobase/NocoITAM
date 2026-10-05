@@ -411,41 +411,6 @@ describe('devices', () => {
     expect(((await list.json()) as { total: number }).total).toBe(3);
   });
 
-  it("lists only the reader's own devices under view=mine", async () => {
-    // 我的资产 is everyone's page, and the two IT roles read every device,
-    // so the narrowing is the view rather than a record-access grant only
-    // the employee role carries.
-    await app.request(`/api/itam/master/people/${fixture.personId}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ userId: manager.user }),
-      ...manager,
-    });
-    const mine = await createDevice();
-    await post(`/${mine.id}/assign`, {
-      targetType: 'person',
-      targetId: fixture.personId,
-    });
-    const theirs = await createDevice();
-    await post(`/${theirs.id}/assign`, {
-      targetType: 'person',
-      targetId: fixture.otherPersonId,
-    });
-    const all = await app.request('/api/itam/devices', manager);
-    expect(((await all.json()) as { data: { id: string }[] }).data.length).toBe(
-      2,
-    );
-    const listed = await app.request(
-      '/api/itam/devices?filter[view]=mine',
-      manager,
-    );
-    expect(
-      ((await listed.json()) as { data: { id: string }[] }).data.map(
-        (row) => row.id,
-      ),
-    ).toEqual([mine.id]);
-  });
-
   it('reports statistics', async () => {
     await createDevice();
     const device = await createDevice();

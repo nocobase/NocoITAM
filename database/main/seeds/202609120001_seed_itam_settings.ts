@@ -53,7 +53,7 @@ const BUSINESS_NOTES: Readonly<Record<string, string>> = {
 - 手机使用满 3 年更换；显示器用到坏为止。
 
 ## 采购与审批
-- 采购单、报废单都要审批，提交时由申请人指定审批人，一般是 IT 资产经理。
+- 采购单、报废单都要审批，提交时由负责人指定审批人，一般是 IT 资产经理。
 - 软件先回收闲置和离职人员的席位，再考虑加购；订阅加购前先看续订日期，能在续订时一起调整就不单独加。
 - 单价 1 万元以上的设备、年费 5 万元以上的订阅，采购单说明里写清理由和替代方案。
 
@@ -79,7 +79,7 @@ const BUSINESS_NOTES: Readonly<Record<string, string>> = {
 - Replace phones after 3 years; monitors are used until they fail.
 
 ## Purchasing and approval
-- Purchase orders and disposals both need approval; the requester names the approver on submission, usually the IT Asset Manager.
+- Purchase orders and disposals both need approval; the owner names the approver on submission, usually the IT Asset Manager.
 - For software, reclaim idle seats and leavers' seats before buying more; before adding seats to a subscription, check its renewal date and adjust at renewal where possible.
 - For a device over 10,000 or a subscription over 50,000 a year, the purchase order's description states the reason and the alternatives.
 

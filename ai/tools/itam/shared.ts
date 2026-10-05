@@ -103,7 +103,7 @@ const SUMMARY_FIELDS = [
   'departmentId',
   'assigneeType',
   'assigneeId',
-  'requesterId',
+  'ownerId',
   'vendorId',
   'deviceId',
   'entitlementId',

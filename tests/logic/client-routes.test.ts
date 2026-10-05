@@ -55,7 +55,7 @@ describe('app client routes', () => {
     // Every menu entry checks a page grant named after its route, and the
     // permission sets decide which a role holds; a detail page or tab is
     // reached through the list that already checked, so it skips. This list
-    // is the one the seeds' IT_PAGES / EMPLOYEE_PAGES are written against.
+    // is the one the seeds' IT_PAGES are written against.
     const pages = pageAuthorizations(resolved.routes);
     expect(
       pages
@@ -63,7 +63,6 @@ describe('app client routes', () => {
         .map((page) => page.authorizedAs),
     ).toEqual([
       'workbench',
-      'my-assets',
       'inbox',
       'notifications',
       'devices',

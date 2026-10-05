@@ -18,11 +18,13 @@ import { DEVICE_STATUSES } from './device-status.js';
  * nightly job can say without one.
  */
 /**
- * The records a person answers for, and the column that names them.
+ * The records a person answers for, and the column that names them: the
+ * 负责人 (`ownerId`) everywhere but on a stocktake, which names its
+ * executors.
  *
  * Offboarding's other half: not what somebody holds but what still has their
  * name on it, which no button settles — handing one over is a decision, and
- * for a purchase order or a disposal only its requester or its creator may
+ * for a purchase order or a disposal only its 负责人 or its creator may
  * make it. Keyed by **sign-in**, not by person record, so a person with no
  * linked account answers for nothing.
  *
@@ -89,7 +91,7 @@ export const OWNED_BY_USER: readonly {
   },
   {
     collection: 'purchaseOrders',
-    field: 'requesterId',
+    field: 'ownerId',
     label: 'orderNo',
     // A rejected order is asked again rather than filed away, so it is
     // still open; completed and cancelled are not.
@@ -107,7 +109,7 @@ export const OWNED_BY_USER: readonly {
   },
   {
     collection: 'disposals',
-    field: 'requesterId',
+    field: 'ownerId',
     label: 'disposalNo',
     // Same reading: rejected is resubmitted, executed is done.
     open: {

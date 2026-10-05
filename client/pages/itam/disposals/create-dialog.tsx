@@ -48,19 +48,19 @@ export function DisposalCreateDialog({
   // Needed to submit right away, not to save a draft.
   const [approverId, setApproverId] = useState<string | null>(null);
   const currentUserId = useCurrentUserId();
-  // Whoever is filing it is the requester until they name someone else. The
+  // Whoever is filing it is its 负责人 until they name someone else. The
   // signed-in id arrives after the first render, so it is read here rather
   // than stored: untouched means the filer, and clearing the field means
   // empty — which the required check then refuses.
   const valueOf = (key: string): unknown =>
-    key === 'requesterId' && !(key in values) ? currentUserId : values[key];
+    key === 'ownerId' && !(key in values) ? currentUserId : values[key];
   const create = useMutation({
     mutationFn: async (submit: boolean) => {
       const created = (
         await api.request<{ data: ItamRecord }>({
           path: DISPOSALS_PATH,
           method: 'POST',
-          json: { ...values, requesterId: valueOf('requesterId'), deviceIds },
+          json: { ...values, ownerId: valueOf('ownerId'), deviceIds },
         })
       ).data;
       if (submit)

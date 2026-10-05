@@ -9,7 +9,7 @@ const PO_FIELDS = [
   'orderNo',
   'reason',
   'description',
-  'requesterId',
+  'ownerId',
   'departmentId',
   'neededBy',
   'vendorId',
@@ -183,10 +183,6 @@ function managerGrants(): Grant[] {
   ];
 }
 
-function employeeGrants(): Grant[] {
-  return [db('attachmentLinks', { read: readAll })];
-}
-
 const seed: SeedDefinition = defineSeed({
   name: '202609130002_seed_itam_p3_grants',
 
@@ -197,7 +193,6 @@ const seed: SeedDefinition = defineSeed({
     if (!(await client.schema.hasTable('authorization_permission_sets')))
       return;
     const additions: readonly [string, Grant[]][] = [
-      ['itam-employee', splitOperations(employeeGrants())],
       ['itam-it-support', splitOperations(itSupportGrants())],
       ['itam-asset-manager', splitOperations(managerGrants())],
     ];

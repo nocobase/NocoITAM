@@ -76,7 +76,6 @@ const zhCN: AppResource = {
     locations: '位置',
     departments: '部门',
     people: '人员',
-    myAssets: '我的资产',
     itamSettings: '系统设置',
     breadcrumb: '面包屑',
     back: '返回',
@@ -532,7 +531,6 @@ const zhCN: AppResource = {
     receivedAt: '实际到货日期',
     poReason: '事由',
     reason: '原因',
-    requester: '申请人',
     requesterUserId: '关联登录用户',
     estimatedTotal: '总金额',
     itemType: '物品类型',
@@ -1233,7 +1231,7 @@ const zhCN: AppResource = {
     selectProduct: '请选择软件产品…',
     withdraw: '撤回',
     decide: '审批',
-    decideDescription: '批准或拒绝该申请。申请人不能审批自己提交的申请',
+    decideDescription: '批准或拒绝该申请',
     approve: '批准',
     reject: '拒绝',
     comment: '审批意见',
@@ -1247,7 +1245,7 @@ const zhCN: AppResource = {
     myApproval: '待我审批',
     anyApprover: '未指定（任何审批人）',
     noApprovalNeeded: '无需审批',
-    approverHint: '只有选中的人能审批，申请人不能审批自己的申请。',
+    approverHint: '只有选中的人能审批。',
     lineReceived: '已有到货的明细不能删除',
     linesTotal_one: '合计 {{count}} 条明细',
     linesTotal_other: '合计 {{count}} 条明细',
@@ -1266,7 +1264,7 @@ const zhCN: AppResource = {
     existingStockItem: '库存记录',
     existingEntitlement: '授权',
     noApprovals: '尚未提交审批',
-    requestedBy: '申请人 {{user}}',
+    requestedBy: '提交人 {{user}}',
     decidedBy: '{{user}} 于 {{date}} 审批',
     arrivedAt: '到货入库时间',
     nothingGenerated: '尚无入库记录',
@@ -1362,7 +1360,6 @@ const zhCN: AppResource = {
       bookValue: '账面价值',
       bookValueCaption: '当前账面价值合计',
     },
-    quickActions: '快捷操作',
     nothingToAttend: '暂无需要关注的事项',
     work: {
       pendingApprovals: '待我审批',
@@ -1612,7 +1609,7 @@ const zhCN: AppResource = {
       'No pending approval': '没有待处理的审批',
       'Nothing to sign for': '没有需要签收的内容',
       'Only an unregistered item is registered': '只有未登记的明细才能登记',
-      'Only the requester can withdraw': '只有申请人可以撤回',
+      'Only the requester can withdraw': '只有提交人可以撤回',
       'Order cannot be edited in this status': '当前状态不能编辑采购单',
       'Quantity is below what was received': '数量低于已到货数量',
       'Repair is already completed': '维修已完成',
@@ -1625,10 +1622,12 @@ const zhCN: AppResource = {
       'The finding was already decided': '该发现项已处理',
       'The holder does not hold that many': '持有人没有这么多数量',
       'The item has no device': '该明细没有关联设备',
-      'Only the requester or the approver can cancel this order':
-        '只有申请人或审批人可以取消这张采购单',
-      'Only the requester can submit or withdraw this request':
-        '只有申请人或创建人可以提交和撤回',
+      'Only the owner or the approver can cancel this order':
+        '只有负责人或审批人可以取消这张采购单',
+      'Only the owner or the approver can carry out this disposal':
+        '只有负责人或审批人可以执行这张报废单',
+      'Only the owner can submit or withdraw this request':
+        '只有负责人或创建人可以提交和撤回',
       'The requester cannot approve their own request':
         '申请人不能审批自己的申请',
       'The scope is fixed once the task started': '任务开始后范围不可修改',
@@ -1822,12 +1821,6 @@ const zhCN: AppResource = {
     noAssets: '尚未添加设备',
     noneForDevice: '这台设备没有报废单',
     approverForSubmit: '提交审批时必填；只保存草稿可以不选。',
-  },
-  employee: {
-    myAssets: '我的资产',
-    myAssetsDescription: '分配给你的资产',
-    noAssets: '暂无分配给你的资产',
-    requestAsset: '申请资产',
   },
   reports: {
     unassigned: '未指定',

@@ -32,7 +32,7 @@ const disposalSchema = z.object({
   method: z.enum(DISPOSAL_METHODS),
   reason: z.enum(DISPOSAL_REASONS),
   description: z.string().max(20000).nullable().optional(),
-  requesterId: id.optional(),
+  ownerId: id.optional(),
   requestedAt: date.nullable().optional(),
   currency: z.string().trim().max(8).nullable().optional(),
   // How it is to be carried out: stated with the request, corrected while
@@ -85,7 +85,7 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
       },
       createSchema: disposalSchema,
       relationInputs: ['deviceIds'],
-      // 申请人 stays editable while the request is open, the way the rest
+      // 负责人 stays editable while the request is open, the way the rest
       // of it does; `update` already refuses anything past
       // draft / rejected, and the approval settles it.
       updateSchema: disposalSchema.omit({ deviceIds: true }).partial(),

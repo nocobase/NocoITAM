@@ -81,7 +81,7 @@ export interface LineDraft {
 }
 
 /**
- * What was approved is what arrives: the lines are the requester's to shape
+ * What was approved is what arrives: the lines are its 负责人's to shape
  * only while nothing has been decided. A rejected order is open again, the
  * way a draft is — resubmitting one that cannot change asks the approver to
  * reconsider the very same thing. Past that, wrong lines mean cancelling the
@@ -282,8 +282,8 @@ export function PurchaseOrderLinesCard({
     },
   });
 
-  // Editing an order is the requester's, like submitting it; the service
-  // refuses everyone else ('NOT_REQUESTER').
+  // Editing an order is its 负责人's, like submitting it; the service
+  // refuses everyone else ('NOT_OWNER').
   const canEdit =
     Boolean(permissions.update) &&
     EDITABLE.has(status) &&

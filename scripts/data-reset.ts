@@ -166,7 +166,9 @@ async function main(): Promise<void> {
     // database that already ran it — which is the whole point of this
     // command. Assignments name a set by key and survive the rewrite.
     // (`reconcile-grants.ts` is the other path, for a real upgrade, where
-    // an administrator's own edits have to be kept.)
+    // an administrator's own edits have to be kept.) The Employee set is no
+    // longer seeded (2026-10-05) and is listed only so an older database
+    // loses it here too.
     const sets = ['itam-employee', 'itam-it-support', 'itam-asset-manager'];
     await database
       .query()

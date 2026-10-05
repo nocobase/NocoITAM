@@ -61,7 +61,7 @@ export interface DisposalInput extends Row {
   readonly method: (typeof DISPOSAL_METHODS)[number];
   readonly reason: (typeof DISPOSAL_REASONS)[number];
   readonly description?: string | null;
-  readonly requesterId?: string;
+  readonly ownerId?: string;
   readonly requestedAt?: string | null;
   readonly currency?: string | null;
   readonly deviceIds?: readonly string[];
@@ -364,7 +364,7 @@ export function createDisposalService(dependencies: {
         id,
         disposalNo: await numbering.next('disposal', { connection }),
         description: input.description ?? null,
-        requesterId: input.requesterId ?? context.actorId,
+        ownerId: input.ownerId ?? context.actorId,
         requestedAt: input.requestedAt ?? today(),
         status: 'draft',
         deviceCount: 0,
@@ -481,20 +481,19 @@ export function createDisposalService(dependencies: {
   };
 
   /**
-   * Asking for approval, and taking the request back, belong to the side
-   * that asked: the person named as the requester, or whoever raised it for
-   * them. Holding `submit` is not enough — the permission set that grants it
+   * Asking for approval, and taking the request back, belong to the
+   * disposal's 负责人, or to whoever wrote it before handing it over. Holding `submit` is not enough — the permission set that grants it
    * also grants `approve`, so without this an approver could submit or
    * withdraw instead of deciding (the same rule as a purchase order).
    */
-  const requireRequester = (disposal: Row, context: OperationContext) => {
+  const requireOwner = (disposal: Row, context: OperationContext) => {
     if (
-      context.actorId !== asText(disposal.requesterId) &&
+      context.actorId !== asText(disposal.ownerId) &&
       context.actorId !== asText(disposal.createdById)
     )
       throw new BusinessRuleError(
-        'Only the requester can submit or withdraw this request',
-        'NOT_REQUESTER',
+        'Only the owner can submit or withdraw this request',
+        'NOT_OWNER',
       );
   };
 
@@ -642,7 +641,7 @@ export function createDisposalService(dependencies: {
         conditions,
         async (connection, disposal) => {
           records.requireStatus(disposal, ['draft', 'rejected'], 'submit');
-          requireRequester(disposal, context);
+          requireOwner(disposal, context);
           await recomputeTotals(connection, id);
           const refreshed = (await records.findRaw(id, connection)) ?? disposal;
           if (Number(refreshed.deviceCount) === 0)
@@ -695,7 +694,7 @@ export function createDisposalService(dependencies: {
     withdraw: (id, context, conditions) =>
       records.mutate(id, conditions, async (connection, disposal) => {
         records.requireStatus(disposal, ['pendingApproval'], 'withdraw');
-        requireRequester(disposal, context);
+        requireOwner(disposal, context);
         await approvals.withdraw('disposal', id, context, connection);
         // Taking the request back makes it a draft again, the way a
         // purchase order's withdrawal does; the timeline says it was
@@ -704,7 +703,7 @@ export function createDisposalService(dependencies: {
       }),
 
     async decide(id, decision, comment, context, conditions) {
-      let requesterId: string | undefined;
+      let submitterId: string | undefined;
       let title = '';
       const row = await records.mutate(
         id,
@@ -723,7 +722,7 @@ export function createDisposalService(dependencies: {
             context,
             connection,
           );
-          requesterId = String(pending.requestedById);
+          submitterId = String(pending.requestedById);
           title = `${String(disposal.disposalNo)} ${String(disposal.method)}`;
           await records.setStatus(
             connection,
@@ -738,7 +737,7 @@ export function createDisposalService(dependencies: {
       );
       await notifier.notify({
         key: `disposal:${id}:${decision}:${String(row.updatedAt)}`,
-        to: [requesterId],
+        to: [submitterId],
         actorId: context.actorId,
         title: {
           key:
@@ -761,7 +760,7 @@ export function createDisposalService(dependencies: {
         // Carrying it out is for the people the request went through: the
         // side that raised it, and whoever was asked to decide or decided.
         if (
-          context.actorId !== asText(disposal.requesterId) &&
+          context.actorId !== asText(disposal.ownerId) &&
           context.actorId !== asText(disposal.createdById)
         ) {
           const trail = await approvals.forSubject('disposal', id, connection);
@@ -773,7 +772,7 @@ export function createDisposalService(dependencies: {
           );
           if (!asked)
             throw new BusinessRuleError(
-              'Only the requester or the approver can carry out this disposal',
+              'Only the owner or the approver can carry out this disposal',
               'NOT_INVOLVED',
             );
         }

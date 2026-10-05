@@ -265,9 +265,7 @@ Rules learned while building it:
   `assigneeType`, `holderType` and the allocation subject / target types,
   the `devices` collection in permission grants, history and reminders.
   Only umbrella names keep "asset": the 资产 navigation group
-  (`assetsGroup`) and the employee's 我的资产 page, which is a navigation
-  entry of its own — the employee side of this application is that one
-  page, and a group of one is a menu step to nothing. Category `appliesTo` values are `device` /
+  (`assetsGroup`). Category `appliesTo` values are `device` /
   `accessory` / `consumable` / `component` / `entitlement`; the labels
   (设备 … 授权) live in the locales.
 - The application is unreleased, so seeds are edited in place to the data
@@ -314,16 +312,17 @@ Rules learned while building it:
   Purchase orders cover every status the list can show (2026-09-27: draft,
   审批中, 已批准, 已下单, 部分到货, 已完成, 已拒绝, 已取消).
 - The demo creates its own sign-ins, one per role (2026-09-27): `manager`,
-  `support` and one per active demo person, listed with their passwords in
+  `support` and the leaver, who is IT support — the other demo people are
+  employees and have none (2026-10-05) — listed with their passwords in
   `nocosolution/NocoITAM/SPEC.md ## 演示数据`. They go through `DemoAccounts` (`demoAccounts()` in
   `server/providers/itam/index.ts`) rather than the `user` table, are tracked
-  in `demoRecords` under `accounts`, and each employee account is written to
-  its person's `userId` so 我的资产 has content. `manager` and `support`
-  get a person record in IT and a laptop each, for the same reason, and
-  so does the account that generated the demo (a laptop, a monitor and a
-  phone) — usually the
+  in `demoRecords` under `accounts`, and the leaver's account is written to
+  their person's `userId`, because the records they answer for name the
+  account. `manager` and `support` get a person record in IT and a laptop
+  each, and so does the account that generated the demo (a laptop, a
+  monitor and a phone) — usually the
   application's first one, which belongs to no permission set of this
-  application's and is nobody's employee. That person record is
+  application's and has no person record. That person record is
   tracked like any other demo record and removed with it; the account
   itself is not the demo's and stays. The requests are addressed
   to `manager`, not to whatever `otherUser` finds. Two traps: the users
@@ -356,9 +355,29 @@ Rules learned while building it:
   `202609190004_drop_tickets`): the application is an asset register, and
   requests reach IT through an external ITSM or directly on the asset.
   Repairs, disposals and purchase orders are created from the device, list
-  or their own pages; employees have only 我的资产. Do not reintroduce a
+  or their own pages. Do not reintroduce a
   `tickets` collection or employee request pages without a new decision in
   `docs/IMPLEMENTATION_PLAN.md`.
+- Only IT signs in (2026-10-05). Employees are people in the register —
+  they hold devices, seats and stock, they leave, their equipment is
+  recovered — but not accounts: there is no Employee permission set, no
+  我的资产 page, no `itam.assetsIHold` / `itam.myPerson` record access and
+  no `filter[view]=mine` on the device list. An IT person has both a person
+  record and an account, joined by `people.userId`; an employee's
+  `userId` is empty. So every field that names a user names somebody in IT:
+  `/itam/users` offers the accounts assigned a permission set that grants a
+  business operation of this application (`itam.<collection>`), less
+  leavers — not `root`, which holds none, and not a role name or a
+  department — while a lookup by `ids` still answers for anybody. A
+  purchase order and a disposal therefore name a 负责人 (`ownerId`,
+  renamed from `requesterId` by `202610050001_request_owner`), the IT
+  person who follows the request through; whoever it is for is its
+  department and its description, and the department no longer follows the
+  person picked. `reconcile-grants.ts` deletes the stored Employee set with
+  its assignments (`REMOVED_SETS`), strips the `my-assets` page grant and
+  renames `requesterId` in saved field lists (`RENAMED_FIELDS`). Do not
+  reintroduce employee sign-in or self-service pages without a new
+  decision in `docs/IMPLEMENTATION_PLAN.md`.
 - There is no contract module either (removed 2026-09-25, migration
   `202609250006_drop_contracts`): signed terms live in the legal or
   contract system, and what the register needs from them is on its own
@@ -445,20 +464,14 @@ Rules learned while building it:
   `page:<route name>/access` and skips everything else — a detail page and
   its tabs are reached through the list that already checked, and the
   sign-in pages are public. Which pages a role reaches is part of what the
-  role is: an employee holds `workbench` and `my-assets` and nothing else,
-  so signing in shows those two entries instead of the whole application
-  with empty lists behind it. Every role holds `my-assets`, because
-  everybody is issued equipment — and that page therefore asks for
-  `filter[view]=mine` rather than leaning on the employee's
-  `itam.assetsIHold` grant, which the two IT roles do not carry (the route
-  resolves the reader's person through `people.userId`). The seeds have carried these grants since they were written
-  (`IT_PAGES` / `EMPLOYEE_PAGES`); nothing read them until now, so a
+  role is: IT support holds no 报表, so it has no entry for it rather than a
+  page of refusals. The seeds have carried these grants since they were
+  written (`IT_PAGES`); nothing read them until then, so a
   database seeded earlier is missing whichever pages arrived later —
   `ADDED_PAGES` in `reconcile-grants.ts` tops the seeded sets up at
   start-up, because a seed creates a set once and never touches it again.
-  `WITHDRAWN_COLLECTIONS` is the other direction, for a grant a role should
-  no longer carry (the employee's reads of every stock item and every
-  entitlement went that way). A page's route name is the identifier stored
+  `WITHDRAWN_PAGES` is the other direction, for a page a role should no
+  longer reach. A page's route name is the identifier stored
   grants reference, so renaming one migrates data;
   `tests/logic/client-routes.test.ts` pins the list. A page grant decides
   what is offered, never what is allowed — every endpoint still enforces its
@@ -529,15 +542,15 @@ Rules learned while building it:
   create or update response with. The test double mirrors the empty output of
   a write decision, so a route that decides without `decideWith` returns an
   empty record in tests.
-- A request belongs to the side that raised it: the person it names as
-  requester, or whoever wrote it for them. A purchase order's `update`,
-  `setLines`, `submit` and `withdraw` all call `requireRequester`
-  (`NOT_REQUESTER`), and a disposal's `submit` and `withdraw` do the same.
+- A request belongs to its 负责人, or to whoever wrote it before handing it
+  over. A purchase order's `update`, `setLines`, `submit` and `withdraw`
+  all call `requireOwner` (`NOT_OWNER`, the repair's rule name), and a
+  disposal's `submit` and `withdraw` do the same.
   Holding the grant is not enough: the permission set that grants `update`
   and `submit` also grants `approve`, so without the check an approver could
   rewrite or file a request instead of deciding it. Receiving, ordering and
   cancelling stay with the grant — they are the buyer's steps, not the
-  requester's. The pages hide what the service refuses: `raisedBy()` in
+  负责人's. The pages hide what the service refuses: `raisedBy()` in
   `client/lib/itam/procurement.ts`, and `DomainConfig.editable` takes the
   reader's id for it. A rule the page states and the service does not
   enforce is not a rule.
@@ -559,10 +572,8 @@ Rules learned while building it:
   half still asks for **its own act** rather than for `read`, which is the
   weaker test: devices for `return`, stock holdings for `issue` (the grant
   that moves a quantity either way), seats for `assignSeat` and a record to
-  hand over for `update`. An employee is kept out by their scopes alone
-  (`itam.myPerson`, `itam.assetsIHold` match no leaver's row), but a
-  permission set with people and devices and no 归还 would otherwise have
-  seen a card whose every button refuses. Each
+  hand over for `update`: a permission set with people and devices and no
+  归还 would otherwise have seen a card whose every button refuses. Each
   row carries the reader's share instead: `MyWorkRecord.count` where the
   record stands for several (a leaver's holdings — absent, not `0`, when
   none is theirs), `MyWorkRecord.mine` where the record *is* the one thing
@@ -600,22 +611,23 @@ Rules learned while building it:
   `server/providers/itam/recovery.ts`, which is the shared home for
   offboarding knowledge: the 归属 tab lists from it, master data snapshots
   from it, the nightly job notifies from it and the workbench decides
-  membership from it, and none of those owns the others. A purchase order
-  and a disposal
-  have **no 负责人 of their own and need none**: 申请人 is that person, and
-  reusing it keeps one notion of whose record it is instead of two. Handing
-  the request over hands its card over with it.
-- 申请人 is asked for when a purchase order or a disposal is created
-  (starting at whoever files it — IT raises requests for a department) and
-  stays editable while the record still is, so a request is **handed over**
-  rather than cancelled and asked again; the approval settles it with
-  everything else it was given for (`readonlyWhen: settled` /
-  `approvedDisposal`, matching the services' `SETTLED_EDITABLE`). Only the
-  current requester or the creator may reassign it, because `update` itself
-  goes through `requireRequester`. Neither document has a 负责人: both had
-  one and both dropped it (`202609250008_drop_purchase_order_owner`,
-  `202609190003_drop_disposal_owner`) because it only ever held a copy of
-  the requester. A repair's owner exists for a different reason — there the
+  membership from it, and none of those owns the others. Every record in it
+  names its person through `ownerId` except a stocktake, which names its
+  executors; handing a purchase order or a disposal over hands its card
+  over with it.
+- A purchase order's and a disposal's 负责人 is asked for when it is
+  created (starting at whoever files it) and stays editable while the
+  record still is, so a request is **handed over** rather than cancelled
+  and asked again; the approval settles it with everything else it was
+  given for (`readonlyWhen: settled` / `approvedDisposal`, matching the
+  services' `SETTLED_EDITABLE`). Only the current 负责人 or the creator may
+  reassign it, because `update` itself goes through `requireOwner`. It is
+  the one person-field either document has: each once carried a 负责人
+  beside a 申请人 and dropped it (`202609250008_drop_purchase_order_owner`,
+  `202609190003_drop_disposal_owner`) because it only held a copy, and
+  when employees stopped signing in the 申请人 became the 负责人
+  (`202610050001_request_owner`) — whoever the request is for is its
+  department and description. A repair's owner came the other way: its
   only person-field was the immutable `createdById` and `complete` was
   granted by it, so the record could not be handed over at all.
 - A request that was rejected (or, for a disposal, withdrawn) is being asked
@@ -730,8 +742,8 @@ Rules learned while building it:
   the date, the proceeds (any method may bring something in), the cost with
   its currency and what became of the data.
 - A disposal states how it will be carried out when it is created — 接收方
-  (供应商 / 名称), 数据清除, 清除方式 — beside who is asking for it
-  (申请人, required, starting at whoever is filing it) and what is being
+  (供应商 / 名称), 数据清除, 清除方式 — beside who follows it through
+  (负责人, required, starting at whoever is filing it) and what is being
   scrapped (报废设备, straight after 报废原因). They are ordinary fields of an
   open disposal, not lifecycle ones: `update` already refuses anything past
   `draft` / `withdrawn` / `rejected`, so they change only while the request
@@ -762,7 +774,7 @@ Rules learned while building it:
   period; they are read on the reports page, which has the period, the
   filters, the export and Ava. The workbench answers "what must I do"; the
   reports answer "how are we doing". `MyWork` renders `null` when nothing
-  is waiting, rather than a row of empty boxes — an employee has no cards.
+  is waiting, rather than a row of empty boxes.
 - `MyWorkItem.records` comes back with the counts: a card is never
   collapsed, so lazy fetching would only make the workbench 1+N requests.
   Each kind's records are read under the decision that its **action** needs,
@@ -822,8 +834,9 @@ Rules learned while building it:
   seeded database reconcile on every start-up.
 - Who may hold an operation is read from the permission sets, never from a
   role name: `holdersOf()` in `server/routes/itam/users.ts` backs both
-  `/itam/users/approvers` and `/itam/users/repair-owners`, so "everybody but
-  an employee" follows the grants. Asked with `ids`, such an endpoint is a
+  `/itam/users/approvers` and `/itam/users/repair-owners`, and the same
+  reading of the sets (`assignedTo()`) decides who `/itam/users` offers at
+  all. Asked with `ids`, such an endpoint is a
   **name lookup** instead and answers regardless — the owner a record already
   holds must read back even when they are not a candidate now (`root`
   belongs to no permission set of this application's).
@@ -890,8 +903,8 @@ Rules learned while building it:
   `root` is unrestricted — the authorization core permits every request from
   whoever holds it without resolving a grant — so a second "may do
   everything" would only be another copy to keep in step. The seeds create
-  `itam-employee` / `itam-it-support` / `itam-asset-manager` and nothing
-  else, and this application's own settings belong to the Asset Manager
+  `itam-it-support` / `itam-asset-manager` and nothing else (the
+  `itam-employee` set went on 2026-10-05), and this application's own settings belong to the Asset Manager
   (the settings item `settings:itam.settings`, read + update — a resource
   type of its own, `itam.settings` / `general`, before template beta.49),
   since nobody else but root could change them. Routes refuse it with
@@ -1044,8 +1057,7 @@ Rules learned while building it:
   page reads as a narrow screen in the drawer; keep new detail-page
   breakpoints on the container. `client/lib/itam/record-view.ts` only says which
   links are records, so a new collection with a detail page needs an entry
-  there and nothing else. 我的资产 opens its cards the same way, so an
-  employee reads a device without leaving the page they came from.
+  there and nothing else.
 - The master-data collections have no pages of their own (2026-09-28): they
   render through `DomainListPage` / `DomainDetailPage` like every other
   collection, with `masterDomain(name)`
@@ -1068,7 +1080,7 @@ Rules learned while building it:
   `client/layouts/app-layout.tsx` turns on, so the settings and dev menus
   keep folding. In the icon-only sidebar the heading gives way to a thin
   rule. Since nothing marks where an unfolded group ends, every page sits
-  either above the groups (工作台 and 我的资产, both about the reader) or
+  either above the groups (工作台, about the reader) or
   inside one (收件箱, 资产, 业务, 主数据); an ungrouped entry placed after
   a group reads as part of it. 业务 holds 采购, 维修, 盘点, 报废 and 报表.
   Route names are what stored page grants reference, so regrouping changes

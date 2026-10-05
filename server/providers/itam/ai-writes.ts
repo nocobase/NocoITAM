@@ -447,7 +447,7 @@ async function execute(
       // A draft the confirming user raised; submitting it for approval
       // names an approver, which stays a step on the order's own page.
       const created = await procurement.create(
-        { ...order, requesterId: scope.actorId },
+        { ...order, ownerId: scope.actorId },
         context,
         await decide('purchaseOrders', 'create'),
       );
@@ -486,7 +486,7 @@ async function execute(
       const created = await container
         .resolve(disposalServiceToken)
         .create(
-          { ...input, requesterId: scope.actorId },
+          { ...input, ownerId: scope.actorId },
           context,
           await decide('disposals', 'create'),
         );

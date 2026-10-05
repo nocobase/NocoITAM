@@ -415,12 +415,12 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.basic',
   },
   {
-    key: 'requesterId',
+    key: 'ownerId',
     detailOrder: -10,
-    label: 'fields.requester',
+    label: 'fields.owner',
     type: 'reference',
     reference: { collection: 'users' },
-    // A disposal is always someone's request; the create dialog starts it
+    // A disposal is always somebody in IT's to follow through; the create dialog starts it
     // at whoever is filing it and will not let it be emptied. It stays
     // changeable while the request is open, so it can be handed over; the
     // decision settles it along with everything else it was given for.
@@ -547,9 +547,9 @@ export const DISPOSAL_CREATE_FIELDS: readonly string[] = [
   // The devices are asked for here, between the reason and the rest: what
   // is being scrapped reads with why (the create dialog renders them).
   'description',
-  // Who it is for; left empty, the service files it under whoever is
-  // signed in.
-  'requesterId',
+  // Who follows it through; left empty, the service files it under
+  // whoever is signed in.
+  'ownerId',
   'requestedAt',
   // How it will be carried out: where the devices go and what happens to
   // the data on them. The execution confirms these rather than asking again

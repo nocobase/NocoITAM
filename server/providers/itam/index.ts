@@ -5,7 +5,6 @@ import { reconcileGrants } from './reconcile-grants.js';
 import type { Application } from '@nocobase/app-server/application';
 import {
   authorizationToken,
-  condition,
   type DatabaseScope,
 } from '@nocobase/app-plugin-authorization/server';
 import { notificationServiceToken } from '@nocobase/app-plugin-notification/server';
@@ -485,33 +484,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
       section: `${ITAM_RESOURCE_SECTION}.admin`,
     });
 
-    // "Records held by me": the devices whose assignee is the person linked to
-    // the signed-in user. Employees read their own holdings through this.
-    // A record access names the collections it applies to and returns a
-    // scope: `false` denies every row, a node filters them.
-    authz.recordAccess.define({
-      key: 'itam.assetsIHold',
-      title: 'Devices I hold',
-      collections: ['main.devices'],
-      async resolve({ principal }): Promise<DatabaseScope> {
-        const person = await database
-          .query()
-          .selectFrom('people')
-          .select('id')
-          .where('userId', '=', principal.id)
-          .executeTakeFirst<{ id: string }>();
-        if (!person) return false;
-        return {
-          kind: 'group',
-          logic: 'and',
-          items: [
-            condition('assigneeType', '$eq', 'person'),
-            condition('assigneeId', '$eq', person.id),
-          ],
-        };
-      },
-    });
-
     // "Audits I run": the tasks whose executors include the signed-in user.
     // The scope is built in `record-access.ts`, where it is unit tested —
     // the route tests' authorization double grants by role and never
@@ -522,15 +494,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
       collections: ['main.auditTasks'],
       resolve: ({ principal }): Promise<DatabaseScope> =>
         auditsIRunScope(database, principal.id),
-    });
-
-    // "My own person record" for the employee side.
-    authz.recordAccess.define({
-      key: 'itam.myPerson',
-      title: 'My person record',
-      collections: ['main.people'],
-      resolve: ({ principal }): DatabaseScope =>
-        condition('userId', '$eq', principal.id),
     });
 
     // The ITAM assistant and its tools (`ai/`), registered with the AI
