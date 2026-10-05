@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Check, ExternalLink } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
@@ -13,6 +13,7 @@ import { formatDate } from '@/lib/itam/format';
 import { usePersonRecovery } from '@/lib/itam/recovery';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { useWorkCards, WORK_TONE, type CardRecord } from '@/lib/itam/my-work';
+import { useDoneWork } from '@/lib/itam/workbench';
 
 /**
  * 我的待办: the work waiting on this reader, as a queue beside the thing
@@ -29,6 +30,9 @@ import { useWorkCards, WORK_TONE, type CardRecord } from '@/lib/itam/my-work';
  * Narrow, the two halves come one at a time: the list, then the record opened
  * from it, with 返回 back to the list.
  */
+/** The filter that shows only what the reader finished lately. */
+const DONE_VIEW = 'done';
+
 export default function InboxPage(): ReactElement {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -60,12 +64,44 @@ export default function InboxPage(): ReactElement {
   // the day its own to-do turns on — submitted, due, expected back, left —
   // so soonest first is "what has waited longest or is furthest past due",
   // which is the order a queue is worked in. A record without one goes last.
-  const rows = cards
-    .filter((card) => kind === undefined || card.key === kind)
-    .flatMap((card) => card.records.map((record) => ({ card, record })))
+  const pending = cards
+    .flatMap((card) =>
+      card.records.map((record) => ({
+        card: { key: card.key, label: card.label },
+        record,
+        doneAt: undefined as string | undefined,
+      })),
+    )
     .sort((a, b) =>
       (a.record.date ?? '9999').localeCompare(b.record.date ?? '9999'),
     );
+  // What the reader finished lately stays, under the queue and dimmed, the
+  // way a settled row stays in a leaver's 归属: a list that only shrinks
+  // never says what was done. Newest first; one that is waiting again — an
+  // order rejected and resubmitted to the same approver — reads as waiting.
+  const waiting = new Set(pending.map((row) => row.record.url));
+  const done = (useDoneWork().data ?? [])
+    .filter((record) => !waiting.has(record.url))
+    .map((record) => {
+      // The two approval queues are one card, as they are on the strip.
+      const key =
+        record.key === 'pendingPurchaseApprovals' ||
+        record.key === 'pendingDisposalApprovals'
+          ? 'pendingApprovals'
+          : record.key;
+      return {
+        card: { key, label: t(`workbench.work.${key}`) },
+        record,
+        doneAt: record.doneAt,
+      };
+    });
+  const rows = [...pending, ...done].filter((row) =>
+    kind === undefined
+      ? true
+      : kind === DONE_VIEW
+        ? row.doneAt !== undefined
+        : row.card.key === kind,
+  );
   const current = rows.find((row) => row.record.url === chosen) ?? rows[0];
   const total = cards.reduce((sum, card) => sum + card.count, 0);
 
@@ -88,7 +124,7 @@ export default function InboxPage(): ReactElement {
             and stop it being ordered by urgency across them, while the same
             words up here both say what is waiting and narrow the list to
             it. The counts are each whole queue's. */}
-        {cards.length > 0 ? (
+        {cards.length > 0 || done.length > 0 ? (
           <div className='flex flex-wrap gap-1'>
             <FilterChip
               label={t('common.all')}
@@ -105,6 +141,16 @@ export default function InboxPage(): ReactElement {
                 onClick={() => choose({ view: card.key, open: undefined })}
               />
             ))}
+            {/* Last, after the work: what is done is read after what is
+                waiting. */}
+            {done.length > 0 ? (
+              <FilterChip
+                label={t('workbench.work.done')}
+                count={done.length}
+                active={kind === DONE_VIEW}
+                onClick={() => choose({ view: DONE_VIEW, open: undefined })}
+              />
+            ) : null}
           </div>
         ) : null}
         {!current ? (
@@ -121,15 +167,16 @@ export default function InboxPage(): ReactElement {
               }`}
             >
               <ul className='@3xl:overflow-y-auto'>
-                {rows.map(({ card, record }) => (
+                {rows.map(({ card, record, doneAt }) => (
                   <li
-                    key={record.url}
+                    key={`${card.key}:${record.url}`}
                     className='border-b border-border last:border-b-0'
                   >
                     <WorkRow
                       kind={card.label}
                       tone={WORK_TONE[card.key]}
                       record={record}
+                      doneAt={doneAt}
                       chosen={record.url === current.record.url}
                       onChoose={() => {
                         choose({ open: record.url });
@@ -336,6 +383,7 @@ function WorkRow({
   kind,
   tone,
   record,
+  doneAt,
   chosen,
   onChoose,
 }: {
@@ -344,6 +392,8 @@ function WorkRow({
   /** That to-do's own colour, so the eye sorts the queue without reading. */
   readonly tone: string | undefined;
   readonly record: CardRecord;
+  /** When it was done, for a to-do finished lately; absent while waiting. */
+  readonly doneAt?: string;
   readonly chosen: boolean;
   readonly onChoose: () => void;
 }): ReactElement {
@@ -355,7 +405,7 @@ function WorkRow({
       onClick={onChoose}
       className={`flex w-full flex-col gap-0.5 px-4 py-3 text-left text-sm transition-colors hover:bg-muted/50 ${
         chosen ? 'bg-muted shadow-[inset_2px_0_0_var(--primary)]' : ''
-      }`}
+      } ${doneAt ? 'text-muted-foreground' : ''}`}
     >
       <span className='flex min-w-0 items-center gap-2'>
         {/* One tag, naming the to-do rather than the record's own kind: in
@@ -374,19 +424,30 @@ function WorkRow({
           </span>
         ) : null}
       </span>
-      <span className='flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
-        {/* Where a record stands for several things — a leaver holds a
-            number of them — how many are the reader's own. */}
-        {record.count === undefined ? null : (
-          <span>{t('workbench.work.mine', { count: record.count })}</span>
-        )}
-        {/* And where the record is the one thing, that it is theirs. */}
-        {record.mine ? <span>{t('workbench.work.yours')}</span> : null}
-        {(record.count !== undefined || record.mine) && record.date ? (
+      {doneAt ? (
+        // Done: when, and nothing about shares — there is no work left on
+        // it to divide.
+        <span className='flex items-center gap-1 text-xs text-muted-foreground tabular-nums'>
+          <Check className='size-3.5' aria-hidden='true' />
+          {t('workbench.work.done')}
           <span>·</span>
-        ) : null}
-        {record.date ? <span>{formatDate(record.date)}</span> : null}
-      </span>
+          <span>{formatDate(doneAt)}</span>
+        </span>
+      ) : (
+        <span className='flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
+          {/* Where a record stands for several things — a leaver holds a
+            number of them — how many are the reader's own. */}
+          {record.count === undefined ? null : (
+            <span>{t('workbench.work.mine', { count: record.count })}</span>
+          )}
+          {/* And where the record is the one thing, that it is theirs. */}
+          {record.mine ? <span>{t('workbench.work.yours')}</span> : null}
+          {(record.count !== undefined || record.mine) && record.date ? (
+            <span>·</span>
+          ) : null}
+          {record.date ? <span>{formatDate(record.date)}</span> : null}
+        </span>
+      )}
     </button>
   );
 }

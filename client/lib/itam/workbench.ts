@@ -168,6 +168,36 @@ export function useMyWork(): UseQueryResult<readonly MyWorkItem[]> {
   });
 }
 
+/** A to-do the reader finished lately, and when (`doneWork` on the server). */
+export interface DoneWorkRecord extends MyWorkRecord {
+  readonly key: MyWorkItem['key'];
+  /** The moment of the act, or a leaver's leave date. */
+  readonly doneAt: string;
+}
+
+/**
+ * What was finished in the last 30 days, newest first — the team's, or the
+ * reader's own acts, by the same scope as the queue (`work-scope.ts`).
+ * Under `['itam', WORKBENCH_PATH]` like the to-dos themselves, so finishing
+ * one — or the realtime signal — refetches both, and it moves from the
+ * queue to 已完成 instead of vanishing.
+ */
+export function useDoneWork(): UseQueryResult<readonly DoneWorkRecord[]> {
+  const api = useApi();
+  const scope = useWorkScope();
+  return useQuery({
+    // Its own slot: `my-work`'s next key segment is the scope.
+    queryKey: ['itam', WORKBENCH_PATH, 'done-work', scope],
+    queryFn: async () =>
+      (
+        await api.request<{ data: DoneWorkRecord[] }>({
+          path: `${WORKBENCH_PATH}/my-work/done`,
+          query: { scope },
+        })
+      ).data,
+  });
+}
+
 export function useReminders(
   enabled: boolean,
 ): UseQueryResult<readonly ReminderSummary[]> {

@@ -1,5 +1,5 @@
 import type { DatabaseAuthorizationConditions } from '@nocobase/app-plugin-authorization/server';
-import { today as todayIso } from './dates.js';
+import { addDays, dbDateTime, today as todayIso } from './dates.js';
 import type { DatabaseManager } from '@nocobase/db';
 import {
   createServiceToken,
@@ -66,6 +66,21 @@ export interface MyWorkItem {
   readonly records: readonly MyWorkRecord[];
 }
 
+/** A to-do the reader finished lately, and when. */
+export interface DoneWorkRecord extends MyWorkRecord {
+  readonly key: MyWorkItem['key'];
+  /**
+   * When it was done: the moment of the act, or — for a leaver, whose
+   * handover is many acts by many people — the day they left.
+   */
+  readonly doneAt: string;
+}
+
+/** How far back 已完成 reaches. */
+export const DONE_WINDOW_DAYS = 30;
+/** How many it lists: the team's month can be long. */
+export const DONE_LIMIT = 100;
+
 export interface WorkbenchService {
   /**
    * The team's queue, one for everybody (2026-10-05): every card lists
@@ -83,6 +98,17 @@ export interface WorkbenchService {
     decide: Decider,
     options?: { readonly scope?: 'all' | 'mine' },
   ): Promise<readonly MyWorkItem[]>;
+  /**
+   * What was finished in the last `DONE_WINDOW_DAYS` days, newest first:
+   * each to-do's own act, read back from the history it wrote. Like the
+   * queue it is the team's by default; `scope: 'mine'` keeps the reader's
+   * own acts.
+   */
+  doneWork(
+    userId: string,
+    decide: Decider,
+    options?: { readonly scope?: 'all' | 'mine' },
+  ): Promise<readonly DoneWorkRecord[]>;
 }
 
 /** How many records a card lists before it says "see all". */
@@ -128,6 +154,174 @@ export function createWorkbenchService(dependencies: {
       .select((eb) => [eb.fn.countAll().as('total')])
       .executeTakeFirst<{ total: number | string }>();
     return Number(row?.total ?? 0);
+  };
+
+  /**
+   * Who has left with something still unsettled — a device in a status
+   * offboarding acts on, a stock holding, an unreleased seat, or an open
+   * record still naming them — counted per person, everybody's and the
+   * reader's share. 离职交接 lists the people in it; its 已完成 is the
+   * people who left lately and are not in it, so the two read one rule.
+   */
+  const unsettled = async (
+    userId: string,
+    decide: Decider,
+    peopleConditions: DatabaseAuthorizationConditions,
+  ): Promise<{
+    readonly open: Map<string, number>;
+    readonly mine: Map<string, number>;
+  }> => {
+    /** Everybody's, and the reader's share of it, per person. */
+    const open = new Map<string, number>();
+    const mine = new Map<string, number>();
+    const add = (
+      rows: readonly Row[],
+      column: string,
+      owner = 'ownerId',
+    ): void => {
+      for (const row of rows) {
+        const holder = asText(row[column]);
+        if (!holder) continue;
+        open.set(holder, (open.get(holder) ?? 0) + 1);
+        if (asText(row[owner]) === userId)
+          mine.set(holder, (mine.get(holder) ?? 0) + 1);
+      }
+    };
+    const readable = (
+      table: string,
+      scope: DatabaseAuthorizationConditions,
+    ) =>
+      database
+        .query()
+        .selectFrom(table)
+        .where((eb) => compileAuthzScope(eb, scope.scope));
+
+    // Each half counts only when the reader may carry out its own act,
+    // not merely read it: a to-do nobody can act on is not a to-do, and
+    // reading is the weaker test — a permission set with people and
+    // devices but no 归还 would see a card of buttons that refuse.
+    const deviceConditions =
+      (await decide('devices', 'return')) &&
+      (await decide('devices', 'read'));
+    if (deviceConditions)
+      add(
+        await readable('devices', deviceConditions)
+          .where('assigneeType', '=', 'person')
+          // Only the statuses offboarding has anything to say about, so
+          // the count agrees with the page it opens.
+          .where('status', 'in', [...RECOVERABLE_DEVICE_STATUSES])
+          .select(['assigneeId', 'ownerId'])
+          .execute<Row>(),
+        'assigneeId',
+      );
+
+    // Stock and seats are held through the item and the entitlement,
+    // which is where the owner is, so the holding rows are joined back
+    // to the parent the reader may already read.
+    // Taking stock back is authorized as `issue`, the grant that moves a
+    // quantity between stock and a holder either way.
+    const stockConditions =
+      (await decide('stockItems', 'issue')) &&
+      (await decide('stockItems', 'read'));
+    if (stockConditions) {
+      const owners = new Map(
+        (
+          await readable('stockItems', stockConditions)
+            .select(['id', 'ownerId'])
+            .execute<Row>()
+        ).map((row) => [String(row.id), asText(row.ownerId)]),
+      );
+      if (owners.size > 0)
+        add(
+          (
+            await database
+              .query()
+              .selectFrom('stockHoldings')
+              .where('stockItemId', 'in', [...owners.keys()])
+              .where('holderType', '=', 'person')
+              .where('quantity', '>', 0)
+              .select(['holderId', 'stockItemId'])
+              .execute<Row>()
+          ).map((row) => ({
+            ...row,
+            ownerId: owners.get(String(row.stockItemId)) ?? null,
+          })),
+          'holderId',
+        );
+    }
+
+    const entitlementConditions =
+      (await decide('entitlements', 'assignSeat')) &&
+      (await decide('entitlements', 'read'));
+    if (entitlementConditions) {
+      const owners = new Map(
+        (
+          await readable('entitlements', entitlementConditions)
+            .select(['id', 'ownerId'])
+            .execute<Row>()
+        ).map((row) => [String(row.id), asText(row.ownerId)]),
+      );
+      if (owners.size > 0)
+        add(
+          (
+            await database
+              .query()
+              .selectFrom('entitlementSeats')
+              .where('entitlementId', 'in', [...owners.keys()])
+              .where('holderType', '=', 'person')
+              .where('releasedAt', 'is', null)
+              .select(['holderId', 'entitlementId'])
+              .execute<Row>()
+          ).map((row) => ({
+            ...row,
+            ownerId: owners.get(String(row.entitlementId)) ?? null,
+          })),
+          'holderId',
+        );
+    }
+
+    // The other half: records that still name them. They are keyed by
+    // sign-in, so a leaver with no linked account answers for none —
+    // and they count towards the person being unsettled without
+    // counting towards anybody's share, because handing one over is a
+    // decision rather than a thing in somebody's name.
+    const accounts = new Map(
+      (
+        await readable('people', peopleConditions)
+          .where('employmentStatus', '=', 'left')
+          .where('userId', 'is not', null)
+          .select(['id', 'userId'])
+          .execute<Row>()
+      ).map((row) => [String(row.userId), String(row.id)]),
+    );
+    if (accounts.size > 0) {
+      for (const entry of OWNED_BY_USER) {
+        // Handing one over is a plain `update` of the field that names
+        // them — which the service may still refuse on a purchase order
+        // or a disposal, where only its 负责人 or the creator may
+        // make it. That is the button's answer, not the row's.
+        const conditions =
+          (await decide(entry.collection, 'update')) &&
+          (await decide(entry.collection, 'read'));
+        if (!conditions) continue;
+        let query = readable(entry.collection, conditions).select([
+          entry.field,
+        ]);
+        // Only what is still waiting.
+        if (entry.open)
+          query = query.where(entry.open.column, 'in', [
+            ...entry.open.values,
+          ]);
+        const rows = await query
+          .where(entry.field, 'in', [...accounts.keys()])
+          .execute<Row>();
+        for (const row of rows) {
+          const person = accounts.get(asText(row[entry.field]) ?? '');
+          if (person) open.set(person, (open.get(person) ?? 0) + 1);
+        }
+      }
+    }
+    return { open, mine };
   };
 
   return {
@@ -390,156 +584,11 @@ export function createWorkbenchService(dependencies: {
       // they are away.
       const peopleConditions = await decide('people', 'read');
       if (peopleConditions) {
-        /** Everybody's, and the reader's share of it, per person. */
-        const open = new Map<string, number>();
-        const mine = new Map<string, number>();
-        const add = (
-          rows: readonly Row[],
-          column: string,
-          owner = 'ownerId',
-        ): void => {
-          for (const row of rows) {
-            const holder = asText(row[column]);
-            if (!holder) continue;
-            open.set(holder, (open.get(holder) ?? 0) + 1);
-            if (asText(row[owner]) === userId)
-              mine.set(holder, (mine.get(holder) ?? 0) + 1);
-          }
-        };
-        const readable = (
-          table: string,
-          scope: DatabaseAuthorizationConditions,
-        ) =>
-          database
-            .query()
-            .selectFrom(table)
-            .where((eb) => compileAuthzScope(eb, scope.scope));
-
-        // Each half counts only when the reader may carry out its own act,
-        // not merely read it: a to-do nobody can act on is not a to-do, and
-        // reading is the weaker test — a permission set with people and
-        // devices but no 归还 would see a card of buttons that refuse.
-        const deviceConditions =
-          (await decide('devices', 'return')) &&
-          (await decide('devices', 'read'));
-        if (deviceConditions)
-          add(
-            await readable('devices', deviceConditions)
-              .where('assigneeType', '=', 'person')
-              // Only the statuses offboarding has anything to say about, so
-              // the count agrees with the page it opens.
-              .where('status', 'in', [...RECOVERABLE_DEVICE_STATUSES])
-              .select(['assigneeId', 'ownerId'])
-              .execute<Row>(),
-            'assigneeId',
-          );
-
-        // Stock and seats are held through the item and the entitlement,
-        // which is where the owner is, so the holding rows are joined back
-        // to the parent the reader may already read.
-        // Taking stock back is authorized as `issue`, the grant that moves a
-        // quantity between stock and a holder either way.
-        const stockConditions =
-          (await decide('stockItems', 'issue')) &&
-          (await decide('stockItems', 'read'));
-        if (stockConditions) {
-          const owners = new Map(
-            (
-              await readable('stockItems', stockConditions)
-                .select(['id', 'ownerId'])
-                .execute<Row>()
-            ).map((row) => [String(row.id), asText(row.ownerId)]),
-          );
-          if (owners.size > 0)
-            add(
-              (
-                await database
-                  .query()
-                  .selectFrom('stockHoldings')
-                  .where('stockItemId', 'in', [...owners.keys()])
-                  .where('holderType', '=', 'person')
-                  .where('quantity', '>', 0)
-                  .select(['holderId', 'stockItemId'])
-                  .execute<Row>()
-              ).map((row) => ({
-                ...row,
-                ownerId: owners.get(String(row.stockItemId)) ?? null,
-              })),
-              'holderId',
-            );
-        }
-
-        const entitlementConditions =
-          (await decide('entitlements', 'assignSeat')) &&
-          (await decide('entitlements', 'read'));
-        if (entitlementConditions) {
-          const owners = new Map(
-            (
-              await readable('entitlements', entitlementConditions)
-                .select(['id', 'ownerId'])
-                .execute<Row>()
-            ).map((row) => [String(row.id), asText(row.ownerId)]),
-          );
-          if (owners.size > 0)
-            add(
-              (
-                await database
-                  .query()
-                  .selectFrom('entitlementSeats')
-                  .where('entitlementId', 'in', [...owners.keys()])
-                  .where('holderType', '=', 'person')
-                  .where('releasedAt', 'is', null)
-                  .select(['holderId', 'entitlementId'])
-                  .execute<Row>()
-              ).map((row) => ({
-                ...row,
-                ownerId: owners.get(String(row.entitlementId)) ?? null,
-              })),
-              'holderId',
-            );
-        }
-
-        // The other half: records that still name them. They are keyed by
-        // sign-in, so a leaver with no linked account answers for none —
-        // and they count towards the person being unsettled without
-        // counting towards anybody's share, because handing one over is a
-        // decision rather than a thing in somebody's name.
-        const accounts = new Map(
-          (
-            await readable('people', peopleConditions)
-              .where('employmentStatus', '=', 'left')
-              .where('userId', 'is not', null)
-              .select(['id', 'userId'])
-              .execute<Row>()
-          ).map((row) => [String(row.userId), String(row.id)]),
+        const { open, mine } = await unsettled(
+          userId,
+          decide,
+          peopleConditions,
         );
-        if (accounts.size > 0) {
-          for (const entry of OWNED_BY_USER) {
-            // Handing one over is a plain `update` of the field that names
-            // them — which the service may still refuse on a purchase order
-            // or a disposal, where only its 负责人 or the creator may
-            // make it. That is the button's answer, not the row's.
-            const conditions =
-              (await decide(entry.collection, 'update')) &&
-              (await decide(entry.collection, 'read'));
-            if (!conditions) continue;
-            let query = readable(entry.collection, conditions).select([
-              entry.field,
-            ]);
-            // Only what is still waiting.
-            if (entry.open)
-              query = query.where(entry.open.column, 'in', [
-                ...entry.open.values,
-              ]);
-            const rows = await query
-              .where(entry.field, 'in', [...accounts.keys()])
-              .execute<Row>();
-            for (const row of rows) {
-              const person = accounts.get(asText(row[entry.field]) ?? '');
-              if (person) open.set(person, (open.get(person) ?? 0) + 1);
-            }
-          }
-        }
 
         // Narrowed to the reader: only a leaver holding something they own.
         if (reader !== null)
@@ -646,6 +695,236 @@ export function createWorkbenchService(dependencies: {
         });
       }
       return items;
+    },
+
+    async doneWork(userId, decide, options) {
+      // The team's by default, like the queue; `mine` keeps the reader's
+      // own acts.
+      const mineOnly = options?.scope === 'mine';
+      const since = addDays(todayIso(), -DONE_WINDOW_DAYS);
+      const sinceAt = dbDateTime(new Date(`${since}T00:00:00`));
+      // A to-do is done by its own act, which wrote history: what it was
+      // about, and the column that names it on the row.
+      const KINDS: Readonly<
+        Record<
+          string,
+          {
+            readonly key: MyWorkItem['key'];
+            readonly collection: string;
+            readonly route: string;
+            readonly title: readonly string[];
+          }
+        >
+      > = {
+        'approval:purchaseOrders': {
+          key: 'pendingPurchaseApprovals',
+          collection: 'purchaseOrders',
+          route: '/procurement',
+          title: ['orderNo'],
+        },
+        'approval:disposals': {
+          key: 'pendingDisposalApprovals',
+          collection: 'disposals',
+          route: '/disposals',
+          title: ['disposalNo'],
+        },
+        repairCompleted: {
+          key: 'activeRepairs',
+          collection: 'repairs',
+          route: '/repairs',
+          title: ['repairNo'],
+        },
+        disposalExecuted: {
+          key: 'pendingDisposalExecution',
+          collection: 'disposals',
+          route: '/disposals',
+          title: ['disposalNo'],
+        },
+        auditCompleted: {
+          key: 'activeAudits',
+          collection: 'auditTasks',
+          route: '/audits',
+          title: ['name'],
+        },
+        orderCompleted: {
+          key: 'awaitingReceipt',
+          collection: 'purchaseOrders',
+          route: '/procurement',
+          title: ['orderNo'],
+        },
+        loanReturned: {
+          key: 'loansDueToday',
+          collection: 'devices',
+          route: '/devices',
+          title: ['deviceNo', 'name'],
+        },
+      };
+      /** The newest act per record and kind of to-do. */
+      const acts = new Map<string, { kind: string; id: string; at: string }>();
+      const note = (kind: string, id: string, at: string) => {
+        const key = `${kind}:${id}`;
+        const seen = acts.get(key);
+        if (!seen || seen.at < at) acts.set(key, { kind, id, at });
+      };
+
+      // Decided, finished, carried out: events the act wrote.
+      let events = database
+        .query()
+        .selectFrom('historyEvents')
+        .select(['subjectType', 'subjectId', 'type', 'createdAt']);
+      if (mineOnly) events = events.where('actorId', '=', userId);
+      for (const row of await events
+        .where('type', 'in', [
+          'approvalApproved',
+          'approvalRejected',
+          'repairCompleted',
+          'disposalExecuted',
+        ])
+        .where('createdAt', '>=', sinceAt)
+        .execute<Row>()) {
+        const type = String(row.type);
+        note(
+          type.startsWith('approval')
+            ? `approval:${String(row.subjectType)}`
+            : type,
+          String(row.subjectId),
+          String(row.createdAt),
+        );
+      }
+      // A count closed, an order fully received, a loan brought back: the
+      // status the act set, read from the change log, which every status
+      // change writes. Values are decoded here rather than compared in the
+      // query — a JSON value bound into a condition matches nothing.
+      const valueOf = (value: unknown): unknown => {
+        if (typeof value !== 'string') return value;
+        try {
+          return JSON.parse(value) as unknown;
+        } catch {
+          return value;
+        }
+      };
+      let changes = database
+        .query()
+        .selectFrom('changeLogs')
+        .select(['subjectType', 'subjectId', 'oldValue', 'newValue', 'createdAt']);
+      if (mineOnly) changes = changes.where('actorId', '=', userId);
+      for (const row of await changes
+        .where('action', '=', 'statusChange')
+        .where('subjectType', 'in', ['auditTasks', 'purchaseOrders', 'devices'])
+        .where('createdAt', '>=', sinceAt)
+        .execute<Row>()) {
+        const type = String(row.subjectType);
+        const to = valueOf(row.newValue);
+        const kind =
+          type === 'auditTasks' && to === 'completed'
+            ? 'auditCompleted'
+            : type === 'purchaseOrders' && to === 'completed'
+              ? 'orderCompleted'
+              : type === 'devices' && valueOf(row.oldValue) === 'onLoan'
+                ? 'loanReturned'
+                : undefined;
+        if (kind) note(kind, String(row.subjectId), String(row.createdAt));
+      }
+
+      // Each record named the way its own row names it, under the reader's
+      // read grant: a record they may no longer read is left out.
+      const done: DoneWorkRecord[] = [];
+      const byCollection = new Map<string, Set<string>>();
+      for (const act of acts.values()) {
+        const collection = KINDS[act.kind].collection;
+        byCollection.set(
+          collection,
+          (byCollection.get(collection) ?? new Set()).add(act.id),
+        );
+      }
+      const rowsOf = new Map<string, Map<string, Row>>();
+      for (const [collection, ids] of byCollection) {
+        const conditions = await decide(collection, 'read');
+        if (!conditions) continue;
+        const rows = await database
+          .query()
+          .selectFrom(collection)
+          .selectAll()
+          .where((eb) => compileAuthzScope(eb, conditions.scope))
+          .where('id', 'in', [...ids])
+          .execute<Row>();
+        rowsOf.set(
+          collection,
+          new Map(rows.map((row) => [String(row.id), row])),
+        );
+      }
+      for (const act of acts.values()) {
+        const kind = KINDS[act.kind];
+        const row = rowsOf.get(kind.collection)?.get(act.id);
+        if (!row) continue;
+        done.push({
+          key: kind.key,
+          id: act.id,
+          title: kind.title
+            .map((column) => asText(row[column]))
+            .filter(Boolean)
+            .join(' / '),
+          date: null,
+          url: `${kind.route}/${act.id}`,
+          doneAt: act.at,
+        });
+      }
+
+      // 离职交接 by the rule its card reads, inverted: somebody who left in
+      // the window with something to hand over (a snapshot was taken), and
+      // has nothing unsettled now. The team's only: a handover is many acts
+      // by many people, and once it is settled nothing records which of
+      // them was the reader's share.
+      const peopleConditions = mineOnly
+        ? undefined
+        : await decide('people', 'read');
+      if (peopleConditions) {
+        const { open } = await unsettled(userId, decide, peopleConditions);
+        const leavers = await database
+          .query()
+          .selectFrom('people')
+          .select(['id', 'name', 'position', 'leaveDate'])
+          .where((eb) => compileAuthzScope(eb, peopleConditions.scope))
+          .where('employmentStatus', '=', 'left')
+          .where('leaveDate', '>=', since)
+          .execute<Row>();
+        const settled = leavers.filter((row) => !open.has(String(row.id)));
+        const snapped =
+          settled.length === 0
+            ? new Set<string>()
+            : new Set(
+                (
+                  await database
+                    .query()
+                    .selectFrom('historyEvents')
+                    .select(['subjectId'])
+                    .where('subjectType', '=', 'people')
+                    .where('type', '=', 'belongingsSnapshot')
+                    .where(
+                      'subjectId',
+                      'in',
+                      settled.map((row) => String(row.id)),
+                    )
+                    .execute<Row>()
+                ).map((row) => String(row.subjectId)),
+              );
+        for (const row of settled) {
+          if (!snapped.has(String(row.id))) continue;
+          done.push({
+            key: 'leaverRecovery',
+            id: String(row.id),
+            title: String(row.name),
+            subtitle: asText(row.position) ?? null,
+            date: null,
+            url: `/people/${String(row.id)}`,
+            doneAt: String(row.leaveDate),
+          });
+        }
+      }
+
+      return done
+        .sort((a, b) => b.doneAt.localeCompare(a.doneAt))
+        .slice(0, DONE_LIMIT);
     },
   };
 }
