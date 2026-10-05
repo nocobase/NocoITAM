@@ -341,7 +341,9 @@ Rules learned while building it:
 - The demo creates its own sign-ins (2026-10-05, replacing the role
   accounts `manager` and `support`): the IT staff as people with names —
   two asset managers, 孙强 `sunqiang` and 吴静 `wujing`, and IT support
-  周宇 `zhouyu` — and the leaver 陈杰 `chenjie`, who is IT support too; each
+  周宇 `zhouyu` — and the leaver 陈杰 `chenjie`, who is IT support too and
+  leaves on the day of the import (marked left last, the way 标记离职 does,
+  so his handover snapshot is whole and his sign-in is disabled); each
   password is the username and 123. The other demo people are employees and
   have none. They are listed in `nocosolution/NocoITAM/SPEC.md ## 演示数据`
   and go through `DemoAccounts` (`demoAccounts()` in

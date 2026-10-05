@@ -173,7 +173,9 @@ export function demoAccountsIn(
           {
             username: leaver.mail.replaceAll('.', ''),
             name: leaver.name,
-            role: 'itam-it-support',
+            // IT support who leaves on import, which disables the sign-in:
+            // listed so the account behind their records is not a mystery.
+            role: 'leaver',
             password: `${leaver.mail.replaceAll('.', '')}123`,
           },
         ]
@@ -376,16 +378,17 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
 };
 
 /**
- * The person the demo sets up to leave — it does not mark them left; that
- * is the one act worth performing by hand, see where this is used.
+ * The person who leaves in the demo, on the day it is imported (2026-10-05:
+ * until then the demo only set them up and left 标记离职 to be done by hand,
+ * so the 离职交接 to-do was empty until somebody thought to).
  *
  * They are IT, and so they sign in: leaving is only half a
  * story while the register has nothing of theirs to hand over. A salesperson
  * answers for none of its records, so the one who leaves is the IT support
  * engineer — their devices, their repairs and the orders they raised all
  * need somebody else's name on them, which is the part of offboarding no
- * return button settles. Their account stays enabled, which is the point the
- * assistant makes about seats: this register cannot disable a sign-in.
+ * return button settles. Leaving disables their sign-in, as it does for
+ * anybody (`leaver-accounts.ts`).
  */
 const LEAVER_INDEX = 3;
 
@@ -2957,6 +2960,16 @@ export function createDemoService(dependencies: {
           .where('purchaseOrderId', '=', String(row.id))
           .execute();
       }
+
+      // 陈杰 leaves today, last, once everything he holds and answers for
+      // is in place: marking him left the way 标记离职 does takes the
+      // snapshot his handover is measured against and disables his sign-in,
+      // so the 离职交接 to-do opens on a whole handover with nothing done.
+      await masterData.markPersonLeft(
+        String(chenJie.id),
+        writerId,
+        unrestricted('people', 'update'),
+      );
 
       await dependencies.refreshReminders();
       return this.status();

@@ -2035,6 +2035,7 @@ const messages = {
       roles: {
         'itam-asset-manager': 'IT asset manager',
         'itam-it-support': 'IT support',
+        leaver: 'IT support (leaves on import; sign-in disabled)',
       },
       banner:
         'No demo data yet. Import a sample company to try purchasing, assignment, repairs, stocktakes and offboarding with realistic records.',
