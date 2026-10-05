@@ -4,12 +4,17 @@ import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
+import { SearchTrigger } from '@/components/itam/global-search';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useItamSettings } from '@/lib/itam/api';
 import { formatDate } from '@/lib/itam/format';
-import { useWorkCards, type WorkCard } from '@/lib/itam/my-work';
+import {
+  useWorkCards,
+  type CardRecord,
+  type WorkCard,
+} from '@/lib/itam/my-work';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
 import { cn } from '@/lib/utils';
 import {
@@ -38,7 +43,11 @@ export default function WorkbenchPage(): ReactElement {
   const loading = useMyWork().isLoading;
   return (
     <Page fill>
-      <PageHeader title={t('workbench.title')} actions={<WorkScopeToggle />} />
+      <PageHeader
+        title={t('workbench.title')}
+        aside={<SearchTrigger />}
+        actions={<WorkScopeToggle />}
+      />
       {/* The board takes the rest of the page's height, so each column
           scrolls its own cards and the sideways scrollbar sits at the foot
           of the page — as the status boards do. */}
@@ -128,51 +137,148 @@ function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
         </p>
       ) : (
         <ul className='flex flex-col gap-2'>
-          {card.records.map((record) => (
-            <li key={record.url}>
-              <button
-                type='button'
-                onClick={() => {
-                  openRecord(record.url);
-                }}
-                className='w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 text-left shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
-              >
-                <div className='flex items-center gap-2'>
-                  {/* A record whose title is only a number says what kind
+          {card.records.map((record) =>
+            card.key === 'leaverRecovery' ? (
+              <li key={record.url}>
+                <LeaverCard record={record} />
+              </li>
+            ) : (
+              <li key={record.url}>
+                <button
+                  type='button'
+                  onClick={() => {
+                    openRecord(record.url);
+                  }}
+                  className='w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 text-left shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                >
+                  <div className='flex items-center gap-2'>
+                    {/* A record whose title is only a number says what kind
                       it is; a device or a person names itself. */}
-                  {record.tag ? (
-                    <DocumentTypeBadge kind={record.tag} className='shrink-0' />
+                    {record.tag ? (
+                      <DocumentTypeBadge
+                        kind={record.tag}
+                        className='shrink-0'
+                      />
+                    ) : null}
+                    <span className='min-w-0 truncate text-sm font-semibold'>
+                      {record.title}
+                    </span>
+                  </div>
+                  {record.subtitle ? (
+                    <p className='mt-1 truncate text-sm text-muted-foreground'>
+                      {record.subtitle}
+                    </p>
                   ) : null}
-                  <span className='min-w-0 truncate text-sm font-semibold'>
-                    {record.title}
-                  </span>
-                </div>
-                {record.subtitle ? (
-                  <p className='mt-1 truncate text-sm text-muted-foreground'>
-                    {record.subtitle}
-                  </p>
-                ) : null}
-                <p className='mt-2 flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
-                  {record.date ? <span>{formatDate(record.date)}</span> : null}
-                  {/* Where a record stands for several things — a leaver
+                  <p className='mt-2 flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
+                    {record.date ? (
+                      <span>{formatDate(record.date)}</span>
+                    ) : null}
+                    {/* Where a record stands for several things — a leaver
                       holds a number of them — how many are the reader's own;
                       where it is the one thing, that it is theirs. The
                       column lists everybody's. */}
-                  {record.count === undefined ? null : (
-                    <span className='ml-auto'>
-                      {t('workbench.work.mine', { count: record.count })}
-                    </span>
-                  )}
-                  {record.mine ? (
-                    <span className='ml-auto'>{t('workbench.work.yours')}</span>
-                  ) : null}
-                </p>
-              </button>
-            </li>
-          ))}
+                    {record.count === undefined ? null : (
+                      <span className='ml-auto'>
+                        {t('workbench.work.mine', { count: record.count })}
+                      </span>
+                    )}
+                    {record.mine ? (
+                      <span className='ml-auto'>
+                        {t('workbench.work.yours')}
+                      </span>
+                    ) : null}
+                  </p>
+                </button>
+              </li>
+            ),
+          )}
         </ul>
       )}
     </Column>
+  );
+}
+
+/**
+ * A leaver's card. A person is not a document, so it reads as one: who they
+ * are and when they left, then how far their handover has got — the bar is
+ * the thing a column of leavers is scanned for, since each of them is a job
+ * of several parts and the name alone says nothing about which ones are
+ * nearly done. The reader's own share sits beside it, as on every card.
+ */
+function LeaverCard({ record }: { readonly record: CardRecord }): ReactElement {
+  const { t } = useTranslation();
+  const openRecord = useOpenRecord();
+  const progress = record.progress;
+  const ratio =
+    progress && progress.total > 0 ? progress.done / progress.total : 0;
+  return (
+    <button
+      type='button'
+      onClick={() => {
+        openRecord(record.url);
+      }}
+      className='w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 text-left shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+    >
+      <div className='flex items-center gap-2.5'>
+        {/* Avatars are not tags: a plain disc with the first letter. */}
+        <span
+          aria-hidden='true'
+          className='flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground'
+        >
+          {Array.from(record.title)[0] ?? ''}
+        </span>
+        <div className='min-w-0 flex-1'>
+          <span className='block truncate text-sm font-semibold'>
+            {record.title}
+          </span>
+          {/* The job gives way before the date: when they left is what
+              says how long this has been waiting. */}
+          <p className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+            {record.subtitle ? (
+              <span className='min-w-0 truncate'>{record.subtitle}</span>
+            ) : null}
+            {record.subtitle && record.date ? (
+              <span aria-hidden='true'>·</span>
+            ) : null}
+            {record.date ? (
+              <span className='shrink-0 tabular-nums'>
+                {t('workbench.work.leftOn', { date: formatDate(record.date) })}
+              </span>
+            ) : null}
+          </p>
+        </div>
+      </div>
+      {progress || record.count !== undefined ? (
+        <div className='mt-3'>
+          {progress ? (
+            <div
+              aria-hidden='true'
+              className='h-1.5 overflow-hidden rounded-full bg-muted'
+            >
+              <div
+                className='h-full rounded-full bg-primary transition-[width]'
+                style={{ width: `${Math.round(ratio * 100)}%` }}
+              />
+            </div>
+          ) : null}
+          <p className='mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
+            {progress ? (
+              <span>
+                {t('people.recovery.progress', {
+                  done: progress.done,
+                  total: progress.total,
+                })}
+              </span>
+            ) : null}
+            {record.count === undefined ? null : (
+              <span className='ml-auto'>
+                {t('workbench.work.mine', { count: record.count })}
+              </span>
+            )}
+          </p>
+        </div>
+      ) : null}
+    </button>
   );
 }
 

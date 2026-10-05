@@ -953,6 +953,14 @@ Rules learned while building it:
   stand is the 概览 report and what expires is 保修与到期 (twelve months),
   read with a period and filters. The workbench answers "what must I do";
   the reports answer "how are we doing".
+  A 离职交接 card is a person rather than a document (2026-10-05): name,
+  job and leave date, then a bar of 已处理 N / M — `MyWorkRecord.progress`,
+  counted against the newest belongings snapshot exactly as the 归属 tab
+  counts it (`handoverProgress` in `workbench.ts`), restricted to the
+  kinds the reader may act on. The workbench's header also carries the
+  global search as a field beside the title (`SearchTrigger`, through
+  `PageHeader`'s `aside` slot), opening the dialog the sidebar's 搜索 and
+  ⌘K open.
 - `MyWorkItem.records` comes back with the counts: a card is never
   collapsed, so lazy fetching would only make the workbench 1+N requests.
   Each kind's records are read under the decision that its **action** needs,

@@ -1435,6 +1435,7 @@ const zhCN: AppResource = {
       mine_one: '你负责 {{count}} 项',
       mine_other: '你负责 {{count}} 项',
       yours: '你负责',
+      leftOn: '{{date}} 离职',
       // 已完成: a to-do finished lately, kept under the queue.
       done: '已完成',
     },

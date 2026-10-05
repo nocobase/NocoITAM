@@ -41,6 +41,7 @@ import {
   type FoundRecordSet,
 } from '@/lib/itam/search';
 import { readSearchTurn, type SearchTurn } from '@/lib/itam/search-turn';
+import { cn } from '@/lib/utils';
 
 /** The shortcut as the reader's keyboard labels it. */
 const SHORTCUT =
@@ -599,6 +600,41 @@ export function SearchNavButton({
       >
         {SHORTCUT}
       </kbd>
+    </button>
+  );
+}
+
+/**
+ * The same search drawn as a search field, for a page that wants it in
+ * reach beside its title — the workbench, where most work starts by
+ * looking something up. It is a button, not an input: typing happens in the
+ * dialog it opens, which is the one the sidebar's 搜索 and ⌘K open.
+ */
+export function SearchTrigger({
+  className,
+}: {
+  readonly className?: string;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const search = useGlobalSearch();
+  if (!search) return null;
+  return (
+    <button
+      type='button'
+      aria-label={t('navigation.search')}
+      onClick={() => {
+        search.setOpen(true);
+      }}
+      className={cn(
+        'flex h-8 w-72 max-w-full items-center gap-2 rounded-lg border border-input bg-background px-2.5 text-sm text-muted-foreground shadow-xs transition-colors outline-none hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+        className,
+      )}
+    >
+      <Search aria-hidden='true' className='size-4 shrink-0' />
+      <span className='min-w-0 flex-1 truncate text-left'>
+        {t('search.placeholder')}
+      </span>
+      <kbd className='shrink-0 font-sans text-xs'>{SHORTCUT}</kbd>
     </button>
   );
 }

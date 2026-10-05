@@ -8,7 +8,7 @@ import {
 
 import type { ApprovalService, ApprovalSubject } from './approvals.js';
 import { compileAuthzScope } from './authz-filter.js';
-import { asText, type Row } from './collection-query.js';
+import { asText, decodeRow, type Row } from './collection-query.js';
 import { OWNED_BY_USER, RECOVERABLE_DEVICE_STATUSES } from './recovery.js';
 
 /**
@@ -47,6 +47,12 @@ export interface MyWorkRecord {
    * reader's rather than leaving the list looking like all of it is.
    */
   readonly mine?: boolean;
+  /**
+   * How far a leaver's handover has got: of what was in their name when they
+   * left, how much is settled — the same count their 归属 tab reads. Absent
+   * when nothing was written down at leaving.
+   */
+  readonly progress?: { readonly done: number; readonly total: number };
 }
 
 export interface MyWorkItem {
@@ -173,27 +179,46 @@ export function createWorkbenchService(dependencies: {
   ): Promise<{
     readonly open: Map<string, number>;
     readonly mine: Map<string, number>;
+    /**
+     * What is still unsettled, per person, keyed the way their belongings
+     * snapshot keys it (`device:<id>`, `ownerId` records as
+     * `<collection>:<id>`), so progress can be read against the snapshot.
+     */
+    readonly keys: Map<string, Set<string>>;
+    /**
+     * The kinds and collections that were looked at: one the reader may not
+     * act on was never counted, so its snapshot entries are neither done
+     * nor waiting from this reader's side.
+     */
+    readonly checked: Set<string>;
   }> => {
     /** Everybody's, and the reader's share of it, per person. */
     const open = new Map<string, number>();
     const mine = new Map<string, number>();
+    const keys = new Map<string, Set<string>>();
+    const checked = new Set<string>();
+    const note = (holder: string, key: string): void => {
+      open.set(holder, (open.get(holder) ?? 0) + 1);
+      const held = keys.get(holder) ?? new Set<string>();
+      held.add(key);
+      keys.set(holder, held);
+    };
     const add = (
       rows: readonly Row[],
       column: string,
+      kind: 'device' | 'stock' | 'seat',
       owner = 'ownerId',
     ): void => {
+      checked.add(kind);
       for (const row of rows) {
         const holder = asText(row[column]);
         if (!holder) continue;
-        open.set(holder, (open.get(holder) ?? 0) + 1);
+        note(holder, `${kind}:${String(row.id)}`);
         if (asText(row[owner]) === userId)
           mine.set(holder, (mine.get(holder) ?? 0) + 1);
       }
     };
-    const readable = (
-      table: string,
-      scope: DatabaseAuthorizationConditions,
-    ) =>
+    const readable = (table: string, scope: DatabaseAuthorizationConditions) =>
       database
         .query()
         .selectFrom(table)
@@ -204,8 +229,7 @@ export function createWorkbenchService(dependencies: {
     // reading is the weaker test — a permission set with people and
     // devices but no 归还 would see a card of buttons that refuse.
     const deviceConditions =
-      (await decide('devices', 'return')) &&
-      (await decide('devices', 'read'));
+      (await decide('devices', 'return')) && (await decide('devices', 'read'));
     if (deviceConditions)
       add(
         await readable('devices', deviceConditions)
@@ -213,9 +237,10 @@ export function createWorkbenchService(dependencies: {
           // Only the statuses offboarding has anything to say about, so
           // the count agrees with the page it opens.
           .where('status', 'in', [...RECOVERABLE_DEVICE_STATUSES])
-          .select(['assigneeId', 'ownerId'])
+          .select(['id', 'assigneeId', 'ownerId'])
           .execute<Row>(),
         'assigneeId',
+        'device',
       );
 
     // Stock and seats are held through the item and the entitlement,
@@ -243,13 +268,14 @@ export function createWorkbenchService(dependencies: {
               .where('stockItemId', 'in', [...owners.keys()])
               .where('holderType', '=', 'person')
               .where('quantity', '>', 0)
-              .select(['holderId', 'stockItemId'])
+              .select(['id', 'holderId', 'stockItemId'])
               .execute<Row>()
           ).map((row) => ({
             ...row,
             ownerId: owners.get(String(row.stockItemId)) ?? null,
           })),
           'holderId',
+          'stock',
         );
     }
 
@@ -273,13 +299,14 @@ export function createWorkbenchService(dependencies: {
               .where('entitlementId', 'in', [...owners.keys()])
               .where('holderType', '=', 'person')
               .where('releasedAt', 'is', null)
-              .select(['holderId', 'entitlementId'])
+              .select(['id', 'holderId', 'entitlementId'])
               .execute<Row>()
           ).map((row) => ({
             ...row,
             ownerId: owners.get(String(row.entitlementId)) ?? null,
           })),
           'holderId',
+          'seat',
         );
     }
 
@@ -307,24 +334,73 @@ export function createWorkbenchService(dependencies: {
           (await decide(entry.collection, 'update')) &&
           (await decide(entry.collection, 'read'));
         if (!conditions) continue;
+        checked.add(entry.collection);
         let query = readable(entry.collection, conditions).select([
+          'id',
           entry.field,
         ]);
         // Only what is still waiting.
         if (entry.open)
-          query = query.where(entry.open.column, 'in', [
-            ...entry.open.values,
-          ]);
+          query = query.where(entry.open.column, 'in', [...entry.open.values]);
         const rows = await query
           .where(entry.field, 'in', [...accounts.keys()])
           .execute<Row>();
         for (const row of rows) {
           const person = accounts.get(asText(row[entry.field]) ?? '');
-          if (person) open.set(person, (open.get(person) ?? 0) + 1);
+          if (person) note(person, `${entry.collection}:${String(row.id)}`);
         }
       }
     }
-    return { open, mine };
+    return { open, mine, keys, checked };
+  };
+
+  /**
+   * 已处理 N / M for each leaver, counted the way their 归属 tab counts it:
+   * of what their newest belongings snapshot wrote down at leaving, what is
+   * no longer outstanding is done, and what is outstanding now is still to
+   * do — including anything that came into their name afterwards. A leaver
+   * with no snapshot has no denominator, so has no progress.
+   */
+  const handoverProgress = async (
+    people: readonly string[],
+    keys: ReadonlyMap<string, ReadonlySet<string>>,
+    checked: ReadonlySet<string>,
+  ): Promise<Map<string, { done: number; total: number }>> => {
+    const progress = new Map<string, { done: number; total: number }>();
+    if (people.length === 0) return progress;
+    const rows = await database
+      .query()
+      .selectFrom('historyEvents')
+      .select(['subjectId', 'payload'])
+      .where('subjectType', '=', 'people')
+      .where('type', '=', 'belongingsSnapshot')
+      .where('subjectId', 'in', [...people])
+      // Newest first, so the first one seen per person is the one that
+      // counts: somebody may have left, come back and left again.
+      .orderBy('createdAt', 'desc')
+      .execute<Row>();
+    for (const row of rows) {
+      const person = String(row.subjectId);
+      if (progress.has(person)) continue;
+      const payload = decodeRow(row).payload as
+        | {
+            readonly items?: readonly { kind: string; id: string }[];
+            readonly owned?: readonly { collection: string; id: string }[];
+          }
+        | undefined;
+      const outstanding = keys.get(person) ?? new Set<string>();
+      const snapshot = [
+        ...(payload?.items ?? [])
+          .filter((item) => checked.has(item.kind))
+          .map((item) => `${item.kind}:${item.id}`),
+        ...(payload?.owned ?? [])
+          .filter((record) => checked.has(record.collection))
+          .map((record) => `${record.collection}:${record.id}`),
+      ];
+      const done = snapshot.filter((key) => !outstanding.has(key)).length;
+      progress.set(person, { done, total: done + outstanding.size });
+    }
+    return progress;
   };
 
   return {
@@ -587,7 +663,7 @@ export function createWorkbenchService(dependencies: {
       // they are away.
       const peopleConditions = await decide('people', 'read');
       if (peopleConditions) {
-        const { open, mine } = await unsettled(
+        const { open, mine, keys, checked } = await unsettled(
           userId,
           decide,
           peopleConditions,
@@ -617,6 +693,11 @@ export function createWorkbenchService(dependencies: {
                 leavers,
               )
             : [];
+        const progress = await handoverProgress(
+          rows.map((row) => String(row.id)),
+          keys,
+          checked,
+        );
         items.push({
           key: 'leaverRecovery',
           count: total,
@@ -633,6 +714,7 @@ export function createWorkbenchService(dependencies: {
             // 其中你负责 0 项, which is a line about the reader on a row
             // that is not about them.
             count: mine.get(String(row.id)) || undefined,
+            progress: progress.get(String(row.id)),
           })),
         });
       }
@@ -810,7 +892,13 @@ export function createWorkbenchService(dependencies: {
       let changes = database
         .query()
         .selectFrom('changeLogs')
-        .select(['subjectType', 'subjectId', 'oldValue', 'newValue', 'createdAt']);
+        .select([
+          'subjectType',
+          'subjectId',
+          'oldValue',
+          'newValue',
+          'createdAt',
+        ]);
       if (mineOnly) changes = changes.where('actorId', '=', userId);
       for (const row of await changes
         .where('action', '=', 'statusChange')
