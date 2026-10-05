@@ -306,7 +306,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     printerReplaceOrder: 'Replacement printer for the third floor',
     mouseOrder: 'Mouse stock',
     ssdOrder: 'Spare SSDs',
-    desktopOrder: 'Desktop refresh for sales',
+    desktopOrder: 'Three new sales desks, everything they need',
     serverOrder: 'Two more file servers',
     serverRejection: 'Size the virtual capacity first, then ask again',
     headsetRestockOrder: 'Headset stock',
@@ -360,7 +360,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     printerReplaceOrder: '3 楼打印机更换',
     mouseOrder: '鼠标补货',
     ssdOrder: '固态硬盘备件',
-    desktopOrder: '销售部台式机更换',
+    desktopOrder: '销售部新增三个工位，整套配齐',
     serverOrder: '新增两台文件服务器',
     serverRejection: '先评估虚拟化资源，再决定是否采购',
     headsetRestockOrder: '耳机补货',
@@ -2447,12 +2447,34 @@ export function createDemoService(dependencies: {
         lines: [line('component', ssdModel, 10, 899)],
         stage: 'ordered',
       });
+      // Placed and waiting for delivery, with one line of every kind an
+      // order can carry — a device, an accessory, a consumable, a
+      // component, a perpetual licence and a subscription — so receiving it
+      // (by hand or from a delivery note) shows every way goods arrive.
+      const software = (
+        itemType: 'perpetual' | 'subscription',
+        product: Row,
+        quantity: number,
+        unitPrice: number,
+      ): LineInput => ({
+        itemType,
+        softwareProductId: String(product.id),
+        quantity,
+        unitPrice,
+      });
       await queuedOrder({
         description: texts.desktopOrder,
-        reason: 'batchReplacement',
+        reason: 'newHire',
         departmentId: sales.id,
         neededInDays: 12,
-        lines: [line('device', optiplex, 5, 5299)],
+        lines: [
+          line('device', optiplex, 3, 5299),
+          line('accessory', mxKeys, 3, 799),
+          line('consumable', hpToner, 4, 629),
+          line('component', ramModel, 2, 899),
+          software('perpetual', office, 3, 2450),
+          software('subscription', zoom, 3, 1080),
+        ],
         stage: 'ordered',
       });
       await queuedOrder({

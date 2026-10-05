@@ -373,6 +373,25 @@ describe('CSV import / export and demo data', () => {
     expect(holdingCounts.accessories?.[liNa!.id]).toBe(1);
     expect(holdingCounts.entitlements?.[liNa!.id]).toBe(2);
 
+    // One placed order carries every kind of line, so receiving it shows
+    // every way goods arrive; it is PO-000020 on a fresh import.
+    const placed = await data<{ id: string; orderNo: string }[]>(
+      await get('purchase-orders?filter[status]=ordered&pageSize=50'),
+    );
+    const mixed = placed.find((order) => order.orderNo === 'PO-000020');
+    expect(mixed).toBeDefined();
+    const mixedLines = await data<{ itemType: string }[]>(
+      await get(`purchase-orders/${mixed!.id}/lines`),
+    );
+    expect(mixedLines.map((line) => line.itemType).sort()).toEqual([
+      'accessory',
+      'component',
+      'consumable',
+      'device',
+      'perpetual',
+      'subscription',
+    ]);
+
     const cleared = await data<{ generated: boolean }>(
       await post('demo/clear'),
     );

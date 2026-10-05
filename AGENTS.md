@@ -318,7 +318,10 @@ Rules learned while building it:
   审批中, 已批准, 已下单, 部分到货, 已完成, 已拒绝, 已取消), most of them two or
   three deep, and audit tasks every status of theirs (2026-10-05:
   `queuedOrder` and `auditTask` in `demo.ts`), so each board column holds
-  cards. The extra orders are never received — receiving makes devices and
+  cards. One placed order — PO-000020 on a fresh import — carries a line of
+  every kind (desktops, keyboards, toner, memory, a perpetual licence and a
+  subscription), so receiving it, by hand or from a delivery note, shows
+  every way goods arrive. The extra orders are never received — receiving makes devices and
   stock — and the extra audits keep off the laptops, whose 400-day-old last
   count a matched count would stamp today.
 - The ITAM settings page is **tabs**, one per settings document (基本设置,
