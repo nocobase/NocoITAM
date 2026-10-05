@@ -63,6 +63,11 @@ export interface BoardCardEntry {
    * `kind` to be tagged by (an overdue loan's device).
    */
   readonly badge?: ReactNode;
+  /**
+   * At the right of the bottom line: what this card is to the reader where
+   * the list is everybody's (待你审批 on the workbench's team view).
+   */
+  readonly marker?: ReactNode;
 }
 
 /** A line's part, whether or not it carries an icon. */
@@ -191,15 +196,40 @@ export function BoardCards({
                   ))}
                 </div>
               ) : null}
-              {footer.length > 0 ? (
-                <p className='mt-2.5 flex min-w-0 items-center gap-1.5 truncate border-t border-border/50 pt-2 text-xs text-muted-foreground'>
+              {footer.length > 0 || entry.marker ? (
+                <p className='mt-2.5 flex min-w-0 items-center gap-1.5 border-t border-border/50 pt-2 text-xs text-muted-foreground'>
+                  {/* Who comes first and is the one that gives way: a long
+                      name is cut short, while the time and the marker after
+                      it always read whole. */}
                   {footer.map((part, index) => (
                     // eslint-disable-next-line @eslint-react/no-array-index-key -- positional, as above
                     <Fragment key={index}>
-                      {index > 0 ? <span aria-hidden='true'>·</span> : null}
-                      <span className='truncate'>{part}</span>
+                      {index > 0 ? (
+                        <span aria-hidden='true' className='shrink-0'>
+                          ·
+                        </span>
+                      ) : null}
+                      <span
+                        className={
+                          index === 0 ? 'min-w-0 truncate' : 'shrink-0'
+                        }
+                      >
+                        {part}
+                      </span>
                     </Fragment>
                   ))}
+                  {entry.marker ? (
+                    <>
+                      {footer.length > 0 ? (
+                        <span aria-hidden='true' className='shrink-0'>
+                          ·
+                        </span>
+                      ) : null}
+                      <span className='shrink-0 font-medium text-foreground'>
+                        {entry.marker}
+                      </span>
+                    </>
+                  ) : null}
                 </p>
               ) : null}
             </button>

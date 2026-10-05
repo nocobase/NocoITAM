@@ -871,8 +871,17 @@ describe('procurement', () => {
         title: order.orderNo,
         date: '2026-12-01',
         url: `/procurement/${order.id}`,
+        mine: true,
       },
     ]);
+    // In the team's view each approval says whether it waits on the reader
+    // (待你审批): the approver's does, the requester's view of it does not.
+    const teamRecord = async (who: typeof manager) =>
+      (await work(who, 'all')).find(
+        (item) => item.key === 'pendingPurchaseApprovals',
+      )?.records[0] as { mine?: boolean } | undefined;
+    expect((await teamRecord(approver))?.mine).toBe(true);
+    expect((await teamRecord(manager))?.mine).toBe(false);
   });
 
   it('lists an approved order as 待下单 until it is placed', async () => {

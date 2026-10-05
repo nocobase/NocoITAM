@@ -426,6 +426,14 @@ export function createWorkbenchService(dependencies: {
       const approvalConditions = await decide('approvals', 'read');
       if (approvalConditions) {
         const pending = await approvals.pendingFor(reader, approvalConditions);
+        // Which of them wait on this reader: in the team's view each card
+        // says so (待你审批), since only the named approver can decide.
+        const awaitingReader = new Set(
+          (reader === null
+            ? await approvals.pendingFor(userId, approvalConditions)
+            : pending
+          ).map((row) => `${String(row.subjectType)}:${String(row.subjectId)}`),
+        );
         // An approval names its subject in the singular (`ApprovalSubject`),
         // which is not the collection the grant is asked for.
         const waiting: readonly {
@@ -491,6 +499,7 @@ export function createWorkbenchService(dependencies: {
                   title: String(row[no]),
                   date: asText(row[date]) ?? null,
                   url: `${entry.route}/${id}`,
+                  mine: awaitingReader.has(`${entry.subjectType}:${id}`),
                 },
               ];
             }),

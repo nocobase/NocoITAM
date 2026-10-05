@@ -1510,6 +1510,7 @@ const zhCN: AppResource = {
       mine_one: '你负责 {{count}} 项',
       mine_other: '你负责 {{count}} 项',
       yours: '你负责',
+      awaitingYou: '待你审批',
       leftOn: '{{date}} 离职',
       lentTo: '借给 {{name}}',
       dueBack: '预计 {{date}} 归还',

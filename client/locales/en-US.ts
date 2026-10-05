@@ -1564,6 +1564,7 @@ const messages = {
       mine_other: '{{count}} yours',
       /** Where the record itself is the one thing: a device on loan. */
       yours: 'Yours',
+      awaitingYou: 'Awaiting you',
       leftOn: 'Left {{date}}',
       lentTo: 'Lent to {{name}}',
       dueBack: 'Due back {{date}}',
