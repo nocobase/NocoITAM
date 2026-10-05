@@ -71,7 +71,7 @@ import {
 import { i18nToken } from '@nocobase/app-server/i18n';
 import { createItamNotifier, itamNotifierToken } from './notifier.js';
 import { createNumberingService, numberingServiceToken } from './numbering.js';
-import { createDocumentReader } from './document-text.js';
+import { createDocumentReader, documentReaderToken } from './document-text.js';
 import {
   createReceiptRunService,
   receiptRunServiceToken,
@@ -98,6 +98,7 @@ export {
   itamNotifierToken,
   maintenanceServiceToken,
   procurementServiceToken,
+  documentReaderToken,
   receiptRunServiceToken,
   reportServiceToken,
   entitlementServiceToken,
@@ -317,19 +318,22 @@ export default class ItamProvider extends ServiceProvider<Application> {
         receiptRuns: container.resolve(receiptRunServiceToken),
       }),
     );
+    container.singleton(documentReaderToken, () =>
+      createDocumentReader({
+        database: container.resolve(databaseManagerToken),
+        // Resolved when a document is read: a container without disks
+        // (the tests') reads none.
+        readBytes: () =>
+          container.has(driveManagerToken)
+            ? (disk, key) =>
+                container.resolve(driveManagerToken).use(disk).getBytes(key)
+            : undefined,
+      }),
+    );
     container.singleton(receiptRunServiceToken, () =>
       createReceiptRunService({
         database: container.resolve(databaseManagerToken),
-        readDocument: createDocumentReader({
-          database: container.resolve(databaseManagerToken),
-          // Resolved when a document is read: a container without disks
-          // (the tests') reads none.
-          readBytes: () =>
-            container.has(driveManagerToken)
-              ? (disk, key) =>
-                  container.resolve(driveManagerToken).use(disk).getBytes(key)
-              : undefined,
-        }),
+        readDocument: container.resolve(documentReaderToken),
       }),
     );
     container.singleton(repairServiceToken, () =>

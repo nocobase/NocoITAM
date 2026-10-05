@@ -4,9 +4,14 @@ import path from 'node:path';
 
 import { loadByWorker } from '@nocobase/ai-employee';
 import type { DatabaseManager } from '@nocobase/db';
+import {
+  createServiceToken,
+  type ServiceToken,
+} from '@nocobase/service-provider';
 
 /**
- * A delivery document as text, read on the server when the run starts.
+ * A document as text, read on the server: a delivery note when a receipt
+ * run starts, a quote or invoice when 解析单据 fills an order's lines.
  *
  * The AI plugin parses a file attached to a message into that one request
  * only: once the conversation resumes — which it does as soon as the page
@@ -31,6 +36,13 @@ export interface DocumentText {
 export type ReadDocument = (
   fileId: string,
 ) => Promise<DocumentText | undefined>;
+
+/**
+ * The reader as a service: receiving by delivery document and 解析单据 both
+ * give the assistant a document this way.
+ */
+export const documentReaderToken: ServiceToken<ReadDocument> =
+  createServiceToken<ReadDocument>('itam/document-reader');
 
 /** Reads a stored file's bytes (the file plugin's disk). */
 export type ReadBytes = (disk: string, key: string) => Promise<Uint8Array>;

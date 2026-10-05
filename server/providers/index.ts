@@ -15,6 +15,7 @@ export {
   importServiceToken,
   maintenanceServiceToken,
   procurementServiceToken,
+  documentReaderToken,
   receiptRunServiceToken,
   reportServiceToken,
   entitlementServiceToken,

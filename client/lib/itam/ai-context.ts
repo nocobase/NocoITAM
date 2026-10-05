@@ -2,6 +2,7 @@ import type { RefCallback } from 'react';
 
 import {
   useAIPageElementHandle,
+  type AIChatAttachment,
   type AIFrontendToolRegistration,
 } from '@/extensions/nocobase-ai';
 
@@ -27,7 +28,10 @@ export function useAiPageContext(descriptor: {
   readonly available: boolean;
   readonly ask: (
     prompt: string,
-    options?: { readonly autoSend?: boolean },
+    options?: {
+      readonly autoSend?: boolean;
+      readonly attachments?: readonly AIChatAttachment[];
+    },
   ) => void;
 } {
   const ai = useItamAi();

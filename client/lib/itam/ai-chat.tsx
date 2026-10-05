@@ -44,6 +44,8 @@ export interface ItamAi {
     options?: {
       readonly autoSend?: boolean;
       readonly workContext?: readonly AIWorkContextItem[];
+      /** Files already uploaded (`AIService.uploadFile`), sent with it. */
+      readonly attachments?: readonly AIChatAttachment[];
     },
   ) => void;
   /** Opens the panel on a conversation that already exists. */
@@ -178,6 +180,9 @@ export function ItamAiProvider({
               user: prompt,
               workContext: options?.workContext
                 ? [...options.workContext]
+                : undefined,
+              attachments: options?.attachments
+                ? [...options.attachments]
                 : undefined,
             },
             autoSend: options?.autoSend ?? true,

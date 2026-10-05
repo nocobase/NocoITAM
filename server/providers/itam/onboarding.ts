@@ -92,12 +92,8 @@ export const onboardingServiceToken: ServiceToken<OnboardingService> =
 const STOCK_KINDS = new Set(['accessory', 'consumable', 'component']);
 
 const same = (a: unknown, b: unknown): boolean =>
-  String(a ?? '')
-    .trim()
-    .toLowerCase() ===
-  String(b ?? '')
-    .trim()
-    .toLowerCase();
+  (asText(a) ?? '').trim().toLowerCase() ===
+  (asText(b) ?? '').trim().toLowerCase();
 
 export function createOnboardingService(
   database: DatabaseManager,

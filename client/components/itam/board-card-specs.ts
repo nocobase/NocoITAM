@@ -11,7 +11,10 @@ import {
   Wrench,
 } from 'lucide-react';
 
+import { createElement } from 'react';
+
 import type { BoardCardSpec } from '@/components/itam/board-cards';
+import { OverdueBadge } from '@/components/itam/overdue-badge';
 import { formatDate, text } from '@/lib/itam/format';
 import {
   AUDIT_TASK_FIELDS,
@@ -38,6 +41,15 @@ export const PURCHASE_ORDER_CARD: BoardCardSpec = {
     lines: [
       { part: 'estimatedTotal', icon: Banknote },
       { part: 'vendorId', icon: Store },
+      // Last, on a line of its own: 逾期 N 天 while an order still waits on
+      // goods past the date the vendor gave (2026-10-05) — beside the number
+      // it squeezed the number out, and first it would have pushed the
+      // amount into the muted lines. The same card is the purchase board's
+      // and the workbench's 待验收到货 column's, so both say it.
+      (record) =>
+        ['ordered', 'partiallyReceived'].includes(text(record.status))
+          ? createElement(OverdueBadge, { date: record.expectedAt })
+          : null,
     ],
     // When it was raised, to the minute: orders raised the same day are
     // otherwise indistinguishable on a card.

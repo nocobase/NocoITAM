@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 
@@ -39,6 +39,7 @@ import {
   REMINDER_ROUTES,
   useMyWork,
   useReminders,
+  type ReminderSummary,
 } from '@/lib/itam/workbench';
 
 /**
@@ -451,23 +452,28 @@ function AttentionColumn(): ReactElement {
   const settings = useItamSettings();
   const thresholds = settings.data?.thresholds;
   const reminders = useReminders(true);
-  const byKind = new Map(
-    (reminders.data ?? []).map((entry) => [entry.kind, entry]),
-  );
   const rank = { critical: 0, warning: 1, info: 2 } as const;
-  const groups = REMINDER_GROUPS.map((group) => ({
-    key: group.key,
-    rows: group.kinds
-      .flatMap((kind) => {
-        const entry = byKind.get(kind);
-        return entry ? [entry] : [];
-      })
-      .sort(
-        (a, b) =>
-          Number(b.count > 0) - Number(a.count > 0) ||
-          rank[a.severity] - rank[b.severity],
-      ),
-  })).filter((group) => group.rows.length > 0);
+  // The groups give the order a rule keeps among equals; a card no longer
+  // shows its group, since its own sentence says what it is about.
+  const order = new Map(
+    REMINDER_GROUPS.flatMap((group) => group.kinds).map((kind, index) => [
+      kind,
+      index,
+    ]),
+  );
+  const entries = reminders.data ?? [];
+  // Worst first, then the biggest: a card per rule that found something.
+  const found = entries
+    .filter((entry) => entry.count > 0)
+    .sort(
+      (a, b) =>
+        rank[a.severity] - rank[b.severity] ||
+        b.count - a.count ||
+        (order.get(a.kind) ?? 0) - (order.get(b.kind) ?? 0),
+    );
+  // The rules that found nothing are still listed — "0" says the check ran
+  // — but as one line, not a card each.
+  const clear = entries.filter((entry) => entry.count === 0);
 
   const label = (kind: string) =>
     t(`workbench.reminders.${kind}`, {
@@ -482,57 +488,91 @@ function AttentionColumn(): ReactElement {
     <Column title={t('workbench.attention')} attention>
       {reminders.isLoading ? (
         <Skeleton className='h-24 w-full rounded-lg' />
-      ) : groups.length === 0 ? (
-        <p className='mx-1 rounded-xl border border-dashed border-border py-5 text-center text-xs text-muted-foreground'>
-          {t('workbench.nothingToAttend')}
-        </p>
       ) : (
-        groups.map((group) => (
-          <section
-            key={group.key}
-            className='rounded-xl border border-border/50 bg-card px-2 py-2 shadow-xs'
-          >
-            <h3 className='mb-1 px-1.5 text-xs font-medium tracking-wide text-muted-foreground'>
-              {t(`workbench.reminderGroups.${group.key}`)}
-            </h3>
-            {/* The number carries the severity, so there is one signal per
-                row instead of a coloured dot beside a grey count. */}
-            <ul className='text-sm'>
-              {group.rows.map((entry) => (
-                <li key={entry.kind}>
-                  <Link
-                    to={REMINDER_ROUTES[entry.kind]}
-                    title={t(`workbench.reminderCaptions.${entry.kind}`, {
-                      subscriptionExpiryDays:
-                        thresholds?.subscriptionExpiryDays ?? 7,
-                      maintenanceExpiryDays:
-                        thresholds?.maintenanceExpiryDays ?? 30,
-                    })}
-                    className={cn(
-                      'flex items-baseline justify-between gap-3 rounded-md px-1.5 py-1.5 hover:bg-muted',
-                      entry.count === 0 && 'text-muted-foreground',
-                    )}
-                  >
-                    <span className='min-w-0 truncate'>
-                      {label(entry.kind)}
-                    </span>
-                    <span
-                      className={cn(
-                        'shrink-0 tabular-nums',
-                        entry.count === 0
-                          ? 'text-muted-foreground/50'
-                          : cn('font-medium', SEVERITY_TEXT[entry.severity]),
-                      )}
-                    >
-                      {entry.count}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
+        <>
+          {found.map((entry) => (
+            <Link
+              key={entry.kind}
+              to={REMINDER_ROUTES[entry.kind]}
+              title={t(`workbench.reminderCaptions.${entry.kind}`, {
+                subscriptionExpiryDays: thresholds?.subscriptionExpiryDays ?? 7,
+                maintenanceExpiryDays: thresholds?.maintenanceExpiryDays ?? 30,
+              })}
+              // A risk card: the number large, what it counts beside it, and
+              // the first few records it found, so a card says what is at
+              // risk without being opened (2026-10-05). Only a critical rule
+              // is red; severity is the rule's, not today's.
+              className={cn(
+                'block w-full rounded-xl border bg-card px-3.5 py-3 shadow-xs transition hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                entry.severity === 'critical'
+                  ? 'border-destructive/40 hover:border-destructive/60'
+                  : 'border-border/50 hover:border-border',
+              )}
+            >
+              <span className='flex items-baseline gap-2'>
+                <span
+                  className={cn(
+                    'text-2xl leading-none font-semibold tabular-nums',
+                    SEVERITY_TEXT[entry.severity],
+                  )}
+                >
+                  {entry.count}
+                </span>
+                <span className='min-w-0 text-sm'>{label(entry.kind)}</span>
+              </span>
+              <PreviewLine entry={entry} />
+            </Link>
+          ))}
+          {clear.length > 0 ? (
+            <p
+              className='flex items-center gap-1.5 px-1.5 text-xs text-muted-foreground'
+              title={clear.map((entry) => label(entry.kind)).join('\n')}
+            >
+              <Check aria-hidden='true' className='size-3.5 shrink-0' />
+              {found.length === 0
+                ? t('workbench.nothingToAttend')
+                : t('workbench.attentionClear', { count: clear.length })}
+            </p>
+          ) : null}
+        </>
       )}
     </Column>
+  );
+}
+
+/**
+ * Under a risk card's number: the records it found, by name — with the date
+ * a dated rule turns on, or used against total where that is the point —
+ * and how many more.
+ */
+function PreviewLine({
+  entry,
+}: {
+  readonly entry: ReminderSummary;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  if (entry.preview.length === 0) return null;
+  const first = entry.preview[0];
+  const names = entry.preview.map((item) =>
+    item.figures
+      ? `${item.label} ${item.figures[0]}/${item.figures[1]}`
+      : item.label,
+  );
+  const more = entry.count - entry.preview.length;
+  return (
+    <span className='mt-2 block text-xs text-muted-foreground'>
+      {first?.date ? (
+        <span className='block'>
+          {/* 最早 only when there are several to be soonest among. */}
+          {entry.count > 1
+            ? t('workbench.attentionSoonest', { date: formatDate(first.date) })
+            : formatDate(first.date)}
+        </span>
+      ) : null}
+      <span className='line-clamp-2'>
+        {names.join(' · ')}
+        {more > 0 ? ` · ${t('workbench.attentionMore', { count: more })}` : ''}
+      </span>
+    </span>
   );
 }

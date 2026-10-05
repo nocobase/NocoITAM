@@ -1447,6 +1447,8 @@ const messages = {
     approverHint: 'Only the person chosen can decide.',
     linesTotal_one: '{{count}} line',
     linesTotal_other: '{{count}} lines',
+    overdueDays_one: '{{count}} day overdue',
+    overdueDays_other: '{{count}} days overdue',
     noLines: 'No lines yet',
     receive: 'Receive',
     receiveTitle: 'Receive: {{item}}',
@@ -1467,6 +1469,8 @@ const messages = {
     decidedBy: 'Decided by {{user}} on {{date}}',
     arrivedAt: 'Received',
     nothingGenerated: 'Nothing received yet',
+    readingDocument: 'Reading “{{file}}”…',
+    readDocumentFailed: 'Could not read it; try again',
     generatedDevices: 'Devices',
     generatedOthers: 'Stock and entitlements',
   },
@@ -1539,6 +1543,7 @@ const messages = {
   },
   search: {
     label: 'Search the register',
+    trigger: 'Search',
     placeholder: 'Search devices, people, orders, models…',
     askPlaceholder:
       'Ask AI, e.g. which MacBooks have a warranty ending next month',
@@ -1582,6 +1587,11 @@ const messages = {
     scope: { label: 'Whose to-dos to show', all: 'All', mine: 'Mine' },
     seeAll: 'See all',
     nothingPending: 'Nothing waiting',
+    attentionClear_one: 'The other {{count}} check is clear',
+    attentionClear_other: 'The other {{count}} checks are clear',
+    attentionSoonest: 'Soonest {{date}}',
+    attentionMore_one: '{{count}} more',
+    attentionMore_other: '{{count}} more',
     attention: 'Needs attention',
     stats: {
       devices: 'Devices',
@@ -1640,8 +1650,9 @@ const messages = {
       idleDevice: 'In stock over {{idleDays}} days',
       auditOverdue: 'Not audited for {{auditDays}} days',
       entitlementOverAllocated: 'Over-allocated',
-      lowStock: 'Accessories, consumables and components below minimum',
-      purchaseOverdue: 'Deliveries overdue',
+      lowAccessories: 'Accessories below minimum',
+      lowConsumables: 'Consumables below minimum',
+      lowComponents: 'Components below minimum',
     },
     reminderCaptions: {
       warrantyExpiring: 'Devices in use',
@@ -1655,9 +1666,9 @@ const messages = {
       idleDevice: 'Available devices nobody used',
       auditOverdue: 'Non-disposed devices',
       entitlementOverAllocated: 'More seats assigned than owned',
-      lowStock: 'The three kinds kept as a quantity',
-      purchaseOverdue:
-        'Ordered, past the expected delivery date and not all received',
+      lowAccessories: 'Available quantity below its minimum',
+      lowConsumables: 'Available quantity below its minimum',
+      lowComponents: 'Available quantity below its minimum',
     },
   },
   data: {
@@ -2506,8 +2517,8 @@ const messages = {
         'Following the receiving skill, read the attached delivery document “{{file}}”, match each goods row to a line of purchase order {{orderNo}}, call prefillReceipt once with what you read, then say in a sentence or two of plain text (no Markdown) how it went.',
       globalSearch:
         'Find what I am asking for: "{{text}}". If it asks for records of one kind, look them up with the ITAM read tools and hand them over with presentRecords (the list, their ids and a few words saying what they are), then reply with one sentence saying how you matched them, and nothing else — do not list the records or mention the search box, which shows them. If it asks for anything else, answer it directly and briefly.',
-      parseDocument:
-        'Read the delivery note / quote / invoice I attach or paste: match each line to a model or software product and add the lines to this purchase order draft (quantity and unit price as the document states). List the lines you could not match and ask me; do not guess.',
+      parseDocumentFile:
+        'Read the document “{{file}}” below (a quote, invoice or delivery note): match each line to a model or software product and add the lines to this purchase order draft with addDraftLines (quantity and unit price as the document states). List the lines you could not match and ask me; do not guess.',
       reportInsight:
         'Interpret the report on screen: three to five sentences, the most important number and change first, any anomaly, then one recommendation.',
       groupDifferences:

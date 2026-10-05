@@ -2,6 +2,7 @@ import { CollapsibleText } from '@/components/itam/collapsible-text';
 import type { SummaryItem } from '@/components/itam/detail-page';
 import { DeviceDisposalSummary } from '@/components/itam/device-disposal-summary';
 import { DeviceRelation } from '@/components/itam/device-relation';
+import { OverdueBadge } from '@/components/itam/overdue-badge';
 import { RecordApprover } from '@/components/itam/record-approver';
 import {
   DeviceStatusBadge,
@@ -147,7 +148,17 @@ export const RECORD_SUMMARIES: Readonly<Record<string, RecordSummary>> = {
       {
         key: 'status',
         label: t('fields.status'),
-        value: <PurchaseOrderStatusBadge status={record.status} />,
+        // An order still waiting on goods past the date the vendor gave says
+        // so beside its status (2026-10-05) — the 采购到货逾期 reminder it
+        // replaces only ever said it on the workbench.
+        value: (
+          <span className='inline-flex items-center gap-1.5'>
+            <PurchaseOrderStatusBadge status={record.status} />
+            {['ordered', 'partiallyReceived'].includes(text(record.status)) ? (
+              <OverdueBadge date={record.expectedAt} />
+            ) : null}
+          </span>
+        ),
       },
       // Beside the status it belongs to: who was asked while it waits, and
       // who decided it afterwards. A draft has been asked of nobody — and a

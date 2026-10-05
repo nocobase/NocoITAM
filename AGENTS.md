@@ -103,24 +103,24 @@ Rules learned while building it:
   released reservations, overdue loans notified), not these counts. Test
   the service and the provider's target (`tests/logic/itam-schedules.test.ts`),
   not the clock.
-- 需要关注 groups its ten rules into three sections (`REMINDER_GROUPS` in
-  `client/lib/itam/workbench.ts`: 设备 first — **not** 资产, which is the
-  umbrella over all five kinds while every rule there is about a device —
-  then entitlements, then stock and purchasing). There was a 人员 section
-  above them until 2026-10-04, holding the one rule about a person; that
-  rule became a to-do and took its section with it, since a leaver was all
-  it ever held. A row does not repeat its group: inside 设备 the label is
-  保修 30 天内到期, not 保修 30 天内到期的设备 — one flat list of ten
-  near-identical lines gives the eye nowhere to land. Only a `critical` rule
-  colours its count: severity is a property of the rule rather than of how
-  bad today is, seven of the ten are `warning` and the remaining two are
-  `info`, so a colour on most rows differentiates nothing. The sort already
-  carries severity. There is no inner frame — the card is the frame.
-- 需要关注 lists **every** rule it checks, the empty ones last and dimmed: a
-  rule that vanishes at zero cannot be told from one that was never set up,
-  and `0` is an answer — it says the check ran. Neither that card nor 我的待办
-  carries a count beside its heading: every row has its own number, and a sum
-  of unrelated rules is not something anybody acts on.
+- 需要关注 is a column of **risk cards** (2026-10-05, the workbench board's
+  first column): one card per rule that found something — its count large,
+  its sentence beside it, and the first few records it found by name
+  (`ReminderSummary.preview`, up to three, soonest first for a dated rule,
+  used/total for 超量使用 and 低于水位) — worst first, then the biggest.
+  The rules at zero are one line, 其余 N 项都是 0, with their names on hover:
+  `0` is still an answer, it says the check ran, but it does not need a card.
+  Only a `critical` rule is red: severity is the rule's, not today's.
+  `REMINDER_GROUPS` (设备, 授权, 库存 — **not** 资产, the umbrella over all
+  five kinds) now only orders rules among equals. There are eleven rules:
+  低于水位 is three (`lowAccessories`, `lowConsumables`, `lowComponents`),
+  each opening its own page, since a cable, a toner and a spare SSD are
+  three different errands; 采购到货逾期 is not a rule any more — an overdue
+  order is a 待验收到货 to-do, and its card, the purchase board and its
+  summary strip say 逾期 N 天 (`OverdueBadge`, `daysOverdue` in
+  `client/lib/itam/format.ts`). Neither 需要关注 nor 待办 carries a count
+  beside its heading: a sum of unrelated rules is not something anybody acts
+  on.
 - An entitlement's dates are three reminders, not one (2026-09-28): a
   subscription that will **charge** (`entitlementRenewing`, auto-renew on,
   monthly ones excluded — twelve notices a year that the same bill is coming
@@ -944,7 +944,13 @@ Rules learned while building it:
   second — and Excel, Word and PDF go through the plugin's own loader
   (`loadByWorker`), so any model reads them. Only a picture is attached,
   for a model that reads images; that is configuration, not code. Do not add
-  an OCR library for them.
+  an OCR library for them. 解析单据 on a draft's lines reads its document the
+  same way (2026-10-05): the shortcut picks the file, keeps it on the order,
+  asks `POST /itam/purchase-orders/:id/document-text` (only a file linked to
+  that order, under `update`) and opens the chat with the text in the
+  message, because the panel's own attachment was gone once `addDraftLines`
+  was approved. Lines it adds take the place of the blank row an empty order
+  opens on, which otherwise kept 保存 from being offered.
 - An approved purchase order states what it asks for: its request fields
   (事由, 说明, 部门, 需求日期, 供应商, 币种) go read-only once it reaches
   `approved` (`SETTLED_STATUSES` / `SETTLED_EDITABLE` in `procurement.ts`,

@@ -1400,6 +1400,8 @@ const zhCN: AppResource = {
     lineReceived: '已有到货的明细不能删除',
     linesTotal_one: '合计 {{count}} 条明细',
     linesTotal_other: '合计 {{count}} 条明细',
+    overdueDays_one: '逾期 {{count}} 天',
+    overdueDays_other: '逾期 {{count}} 天',
     noLines: '暂无明细',
     receive: '到货入库',
     receiveTitle: '到货入库：{{item}}',
@@ -1419,6 +1421,8 @@ const zhCN: AppResource = {
     decidedBy: '{{user}} 于 {{date}} 审批',
     arrivedAt: '到货入库时间',
     nothingGenerated: '尚无入库记录',
+    readingDocument: '正在读取「{{file}}」…',
+    readDocumentFailed: '读取失败，点此重试',
     generatedDevices: '设备',
     generatedOthers: '库存与授权',
   },
@@ -1483,6 +1487,7 @@ const zhCN: AppResource = {
   },
   search: {
     label: '搜索台账',
+    trigger: '搜索',
     placeholder: '搜索设备、人员、采购单、型号…',
     askPlaceholder: '问 AI，例如：哪些 MacBook 的保修下个月到期',
     askLabel: '问 AI',
@@ -1525,6 +1530,11 @@ const zhCN: AppResource = {
     scope: { label: '显示谁的待办', all: '全部', mine: '我负责的' },
     seeAll: '查看全部',
     nothingPending: '暂无待办',
+    attentionClear_one: '其余 {{count}} 项都是 0',
+    attentionClear_other: '其余 {{count}} 项都是 0',
+    attentionSoonest: '最早 {{date}}',
+    attentionMore_one: '另 {{count}} 个',
+    attentionMore_other: '另 {{count}} 个',
     attention: '需要关注',
     stats: {
       devices: '在管设备',
@@ -1580,8 +1590,9 @@ const zhCN: AppResource = {
       idleDevice: '库存中超过 {{idleDays}} 天',
       auditOverdue: '超过 {{auditDays}} 天未盘点',
       entitlementOverAllocated: '超量使用',
-      lowStock: '低于水位的配件、耗材与组件',
-      purchaseOverdue: '采购到货逾期',
+      lowAccessories: '低于水位的配件',
+      lowConsumables: '低于水位的耗材',
+      lowComponents: '低于水位的组件',
     },
     reminderCaptions: {
       warrantyExpiring: '在用设备',
@@ -1592,8 +1603,9 @@ const zhCN: AppResource = {
       idleDevice: '长期无人使用的可用设备',
       auditOverdue: '未报废的设备',
       entitlementOverAllocated: '已分配席位多于授权数',
-      lowStock: '按数量管理的三类资产',
-      purchaseOverdue: '已下单，过了预计到货日期仍未全部到货',
+      lowAccessories: '可用数量低于最低库存水位',
+      lowConsumables: '可用数量低于最低库存水位',
+      lowComponents: '可用数量低于最低库存水位',
     },
   },
   data: {
@@ -2371,8 +2383,8 @@ const zhCN: AppResource = {
         '请按「按送货单入库」技能读附件里的送货单「{{file}}」，把每一行货物对到采购单 {{orderNo}} 的行上，读完调用一次 prefillReceipt，再用一两句纯文本（不用 Markdown）说明结果。',
       globalSearch:
         '帮我找：「{{text}}」。如果问的是某一类记录，用 ITAM 查询工具查出来，再用 presentRecords 交给搜索框（列表、记录 id、几个字说明是什么），然后只回复一句话，说明按什么条件匹配的，不要列出记录，也不要提搜索框，搜索框会显示记录。如果问的是别的，直接简短回答。',
-      parseDocument:
-        '请读取我附上或粘贴的送货单 / 报价单 / 发票：逐行匹配型号或软件产品，把明细加入当前采购单草稿（数量、单价按单据填写）。对不上的行列出来问我，不要猜。',
+      parseDocumentFile:
+        '请读取下面的单据「{{file}}」（报价单、发票或送货单）：逐行匹配型号或软件产品，用 addDraftLines 把明细加入当前采购单草稿（数量、单价按单据填写）。对不上的行列出来问我，不要猜。',
       reportInsight:
         '请解读屏幕上的这张报表：三到五句话，先说最重要的数字和变化，指出异常，最后给一条建议。',
       groupDifferences:

@@ -194,7 +194,7 @@ describe('maintenance, reminders, workbench and reports', () => {
     const count = (kind: string) =>
       reminders.find((entry) => entry.kind === kind)?.count;
     expect(count('warrantyExpiring')).toBe(1);
-    expect(count('lowStock')).toBe(1);
+    expect(count('lowAccessories')).toBe(1);
     expect(count('auditOverdue')).toBe(1);
     // An overdue loan is no longer a reminder — the workbench's
     // 借出逾期 card answers it live, from the same query — but the
@@ -274,8 +274,14 @@ describe('maintenance, reminders, workbench and reports', () => {
     const reminders = await app.container
       .resolve(maintenanceServiceToken)
       .reminderCounts();
-    // The accessory the fixture stocks is below its level too.
-    expect(reminders.find((entry) => entry.kind === 'lowStock')?.count).toBe(2);
+    // A rule of its own (2026-10-05): the fixture's accessory, below its
+    // level too, counts under 低于水位的配件 instead.
+    expect(
+      reminders.find((entry) => entry.kind === 'lowComponents')?.count,
+    ).toBe(1);
+    expect(
+      reminders.find((entry) => entry.kind === 'lowAccessories')?.count,
+    ).toBe(1);
 
     // And the named view lists it: 低于水位 compares columns, so it cannot
     // be a filter parameter.
@@ -291,7 +297,7 @@ describe('maintenance, reminders, workbench and reports', () => {
         await data<{ kind: string; count: number }[]>(
           await get('workbench/reminders'),
         )
-      ).find((entry) => entry.kind === 'lowStock')?.count;
+      ).find((entry) => entry.kind === 'lowAccessories')?.count;
     // The fixture's accessory is already below its level.
     expect(await lowStock()).toBe(1);
     const category = await create('master/categories', {
@@ -315,6 +321,18 @@ describe('maintenance, reminders, workbench and reports', () => {
     });
     // Read again at once: nothing recomputed in between, and it counts.
     expect(await lowStock()).toBe(2);
+    // And the card can name what it found, with available against minimum.
+    const accessories = (
+      await data<
+        {
+          kind: string;
+          preview: { label: string; figures?: [number, number] }[];
+        }[]
+      >(await get('workbench/reminders'))
+    ).find((entry) => entry.kind === 'lowAccessories');
+    expect(accessories?.preview).toContainEqual(
+      expect.objectContaining({ label: 'USB-C cable', figures: [1, 5] }),
+    );
   });
 
   it("lists every overdue loan, saying which are the reader's own", async () => {

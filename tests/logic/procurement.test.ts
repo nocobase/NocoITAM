@@ -235,13 +235,13 @@ describe('procurement', () => {
       expectedAt: '2026-09-20',
     });
     expect((await data<{ status: string }>(ordered)).status).toBe('ordered');
-    // Past the expected date and nothing received: the workbench flags it.
+    // Past the expected date and nothing received: not a 需要关注 rule any
+    // more (2026-10-05) — the order is a 待验收到货 to-do already, and its
+    // card and summary strip say 逾期 N 天.
     const overdue = await app.container
       .resolve(maintenanceServiceToken)
       .reminderCounts();
-    expect(
-      overdue.find((entry) => entry.kind === 'purchaseOverdue')?.count,
-    ).toBe(1);
+    expect(overdue.map((entry) => entry.kind)).not.toContain('purchaseOverdue');
 
     const lineRows = await data<{ id: string; itemType: string }[]>(
       await app.request(`/api/itam/purchase-orders/${order.id}/lines`, manager),
