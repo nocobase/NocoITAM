@@ -188,6 +188,9 @@ export const AUDIT_FIELDS: readonly FieldDefinition[] = [
     type: 'date',
     form: false,
     group: 'groups.system',
+    // Leaves a place between 创建人 and 创建时间 for a record's own
+    // dates — a device's 最近盘点时间 sits there.
+    detailOrder: 2,
   },
   {
     key: 'updatedAt',
@@ -196,6 +199,7 @@ export const AUDIT_FIELDS: readonly FieldDefinition[] = [
     form: false,
     column: true,
     group: 'groups.system',
+    detailOrder: 3,
   },
 ];
 

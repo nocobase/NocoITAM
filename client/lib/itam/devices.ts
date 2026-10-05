@@ -342,8 +342,9 @@ export const DEVICE_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.lastAuditedAt',
     type: 'date',
     form: false,
-    // Ahead of the responsible user, so 负责人 sits right above 创建人.
-    detailOrder: -2,
+    // Between 创建人 and 创建时间: 负责人 leads 系统 as on every record, and
+    // the last count is a date beside the record's other dates.
+    detailOrder: 1,
     group: 'groups.system',
   },
   OWNER_FIELD,
