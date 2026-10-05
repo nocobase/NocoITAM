@@ -595,7 +595,7 @@ Rules learned while building it:
   same reason `auditsIRunScope` reads) and the row carries `owners`, the
   whole list, because handing it over **replaces that one name and keeps
   the rest**. The write still goes through the collection's own endpoint —
-  a purchase order's reassignment has to meet `requireRequester`, so
+  a purchase order's reassignment has to meet its own `requireOwner`, so
   nothing may route around it — which is why the list travels to the client
   rather than the swap happening in a route of its own. Somebody leaving
   mid-count otherwise stalled the task invisibly: IT support reads only the
@@ -640,12 +640,13 @@ Rules learned while building it:
   record, a click away. The share clause names the unsettled rows out loud —
   其中未处理的 N 项由你负责 — because the sentence it hangs off introduces
   the whole snapshot while the count has always covered only what is left.
-- Somebody who has left is not offered as a 负责人 or an 申请人:
-  `leftUserIds()` in `server/routes/itam/users.ts` drops them from
-  `/itam/users` and from `holdersOf`. Asked with `ids` the endpoint is a
-  **name lookup** instead and answers regardless, like the approver lookup —
-  a record already naming them must still read back, or the row that needs
-  handing over cannot show whose it is.
+- Somebody who has left is not offered as a 负责人: `leftUserIds()` in
+  `server/routes/itam/users.ts` drops them from every picker, beside the
+  rule that a picker offers only accounts holding an `itam.*` operation.
+  Asked with `ids` the endpoint is a **name lookup** instead and answers
+  regardless, like the approver lookup — a record already naming them must
+  still read back, or the row that needs handing over cannot show whose it
+  is.
 - Resolving a holder's **name** is not checking whether they may **receive**
   something (2026-10-05). The two were one function, so the rule about
   handing things out refused the taking back that shares the lookup: 归还 on
