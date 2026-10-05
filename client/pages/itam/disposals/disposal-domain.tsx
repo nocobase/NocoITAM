@@ -38,6 +38,7 @@ import {
   DISPOSALS_PATH,
   DISPOSAL_CREATE_FIELDS,
   DISPOSAL_FIELDS,
+  DISPOSAL_STATUS_DOT,
   WIPE_METHODS,
 } from '@/lib/itam/operations';
 import {
@@ -80,6 +81,7 @@ export const disposalDomain: DomainConfig = {
     route: 'disposals',
     fields: DISPOSAL_FIELDS,
     nameField: 'disposalNo',
+    dots: DISPOSAL_STATUS_DOT,
     statuses: ['draft', 'pendingApproval', 'approved', 'executed', 'rejected'],
     card: {
       meta: 'bookValueTotal',

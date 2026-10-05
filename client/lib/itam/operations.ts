@@ -337,12 +337,28 @@ export const AUDIT_STATUS_TONE: Readonly<Record<string, string>> = {
   completed: 'bg-primary text-primary-foreground',
   cancelled: 'bg-muted text-muted-foreground',
 };
+/** `AUDIT_STATUS_TONE` as a board column's dot; keep the two in step. */
+export const AUDIT_STATUS_DOT: Readonly<Record<string, string>> = {
+  notStarted: 'bg-primary/40',
+  inProgress: 'bg-info-foreground',
+  pendingDifferences: 'bg-warning-foreground',
+  completed: 'bg-primary',
+  cancelled: 'bg-muted-foreground/50',
+};
 export const DISPOSAL_STATUS_TONE: Readonly<Record<string, string>> = {
   draft: 'bg-muted text-muted-foreground',
   pendingApproval: 'bg-warning text-warning-foreground',
   approved: 'bg-primary/10 text-primary',
   rejected: 'bg-destructive/10 text-destructive',
   executed: 'bg-primary text-primary-foreground',
+};
+/** `DISPOSAL_STATUS_TONE` as a board column's dot; keep the two in step. */
+export const DISPOSAL_STATUS_DOT: Readonly<Record<string, string>> = {
+  draft: 'bg-muted-foreground',
+  pendingApproval: 'bg-warning-foreground',
+  approved: 'bg-primary/40',
+  rejected: 'bg-destructive',
+  executed: 'bg-primary',
 };
 export const DATA_WIPE_OPTIONS = ['wiped', 'notWiped', 'notRequired'] as const;
 export const WIPE_METHODS = ['format', 'erase', 'physicalDestruction'] as const;

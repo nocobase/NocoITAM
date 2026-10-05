@@ -24,6 +24,7 @@ import type { DomainConfig } from '@/lib/itam/domain';
 import { errorMessage, formatDate, text } from '@/lib/itam/format';
 import {
   AUDITS_PATH,
+  AUDIT_STATUS_DOT,
   AUDIT_TASK_FIELDS,
   type AuditScope,
 } from '@/lib/itam/operations';
@@ -71,6 +72,7 @@ export const auditDomain: DomainConfig = {
     route: 'audits',
     fields: AUDIT_TASK_FIELDS,
     nameField: 'name',
+    dots: AUDIT_STATUS_DOT,
     statuses: [
       'notStarted',
       'inProgress',

@@ -55,9 +55,10 @@ export function PageHeader({
  * Standard page container so every page shares the same spacing. It is a
  * size container too: the assistant panel narrows the page while the
  * window stays wide, so a page's own splits use `@3xl:`-style breakpoints
- * (its width), not `lg:` (the window's). `fill` makes it as tall as the
- * window, so its last child can take the rest of the height (`flex-1`): a
- * board's columns reach the bottom and scroll their own cards.
+ * (its width), not `lg:` (the window's). `fill` makes it as tall and as
+ * wide as the window, so its last child can take the rest of the height
+ * (`flex-1`): a board's columns reach the bottom and scroll their own
+ * cards, and as many of them as fit are on screen.
  */
 export function Page({
   children,
@@ -68,7 +69,10 @@ export function Page({
 }): ReactElement {
   return (
     <section
-      className={`@container mx-auto w-full max-w-7xl space-y-6 p-6 ${fill ? 'flex h-full flex-col' : ''}`}
+      // A filled page is a board: it takes the window's whole width, since
+      // every column more on screen is a status the reader need not scroll
+      // to, where a form or a table reads best at a measured width.
+      className={`@container mx-auto w-full space-y-6 p-6 ${fill ? 'flex h-full flex-col' : 'max-w-7xl'}`}
     >
       {children}
     </section>

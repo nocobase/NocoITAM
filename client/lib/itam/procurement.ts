@@ -42,6 +42,22 @@ export const PO_STATUS_TONE: Readonly<Record<string, string>> = {
   cancelled: 'bg-muted text-muted-foreground',
 };
 
+/**
+ * The same statuses as a dot, for a board column's heading: the strong side
+ * of each tag above, and the primary ones told apart by depth as their tags
+ * are. Keep the two in step.
+ */
+export const PO_STATUS_DOT: Readonly<Record<string, string>> = {
+  draft: 'bg-muted-foreground',
+  pendingApproval: 'bg-warning-foreground',
+  approved: 'bg-primary/40',
+  rejected: 'bg-destructive',
+  ordered: 'bg-primary/70',
+  partiallyReceived: 'bg-info-foreground',
+  completed: 'bg-primary',
+  cancelled: 'bg-muted-foreground/50',
+};
+
 export const LINE_ITEM_TYPES = [
   'device',
   'accessory',

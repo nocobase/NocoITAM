@@ -38,6 +38,11 @@ export interface StatusBoardConfig {
   readonly nameField: string;
   /** The columns, in the order work moves through them. */
   readonly statuses: readonly string[];
+  /**
+   * Each status's colour as a dot before its column's name: the colour its
+   * tag has everywhere else, without a row of tags in the headings.
+   */
+  readonly dots?: Readonly<Record<string, string>>;
   readonly card: {
     /** Beside the heading, right-aligned: an amount, a progress. */
     readonly meta?: CardPart;
@@ -136,23 +141,35 @@ export function createStatusBoard(
       <section
         aria-label={statusLabel}
         // A tint of the foreground rather than `bg-muted`: the page itself is
-        // grey, and muted is the same grey, so the column vanished.
-        className='flex w-[16rem] shrink-0 flex-col rounded-xl bg-foreground/[0.04]'
+        // grey, and muted is the same grey, so the column vanished. A light
+        // one, since a column is mostly empty and a dark slab weighs on the
+        // cards it is meant to hold.
+        // At least 15rem, sharing what room is left up to 22rem: a board of
+        // five statuses on a wide screen fills it instead of stopping short.
+        className='flex max-w-[22rem] min-w-[15rem] flex-1 basis-[15rem] flex-col rounded-2xl bg-foreground/[0.025]'
       >
         {/* The heading is the status's name, not its coloured tag: a row of
             differently coloured tags read as noise, and the order of the
             columns already says where each one stands. */}
-        <header className='flex h-10 shrink-0 items-center gap-2 px-3'>
-          <span className='truncate text-sm font-medium'>{statusLabel}</span>
-          <span className='text-xs text-muted-foreground tabular-nums'>
-            {list.data ? total : ''}
-          </span>
+        <header className='flex h-11 shrink-0 items-center gap-2 px-3.5'>
+          {config.dots?.[status] ? (
+            <span
+              aria-hidden='true'
+              className={`size-2 shrink-0 rounded-full ${config.dots[status]}`}
+            />
+          ) : null}
+          <span className='truncate text-sm font-semibold'>{statusLabel}</span>
+          {list.data ? (
+            <span className='rounded-full bg-background px-1.5 text-xs leading-5 font-medium text-muted-foreground tabular-nums ring-1 ring-border/60'>
+              {total}
+            </span>
+          ) : null}
         </header>
         <div className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2'>
           {list.isLoading ? (
             <Skeleton className='h-24 w-full rounded-lg' />
           ) : rows.length === 0 ? (
-            <p className='py-4 text-center text-xs text-muted-foreground'>
+            <p className='mx-1 rounded-xl border border-dashed border-border py-5 text-center text-xs text-muted-foreground'>
               {t('common.empty')}
             </p>
           ) : (
@@ -169,23 +186,23 @@ export function createStatusBoard(
                   <li key={String(row.id)}>
                     <button
                       type='button'
-                      className='w-full rounded-lg border border-border/60 bg-card p-3 text-left shadow-xs transition hover:border-foreground/20 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                      className='w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 text-left shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
                       onClick={() =>
                         void navigate(`/${config.route}/${row.id}`)
                       }
                     >
                       <div className='flex items-baseline justify-between gap-2'>
-                        <span className='min-w-0 truncate text-sm font-medium'>
+                        <span className='min-w-0 truncate text-sm font-semibold'>
                           {text(row[config.nameField])}
                         </span>
                         {meta ? (
-                          <span className='shrink-0 text-sm text-muted-foreground tabular-nums'>
+                          <span className='shrink-0 text-sm font-medium tabular-nums'>
                             {meta}
                           </span>
                         ) : null}
                       </div>
                       {lines.length > 0 ? (
-                        <div className='mt-1 space-y-0.5 text-sm'>
+                        <div className='mt-1.5 space-y-0.5 text-sm'>
                           {lines.map((line, index) => (
                             <p
                               // Lines are positional: the config's order.
@@ -203,7 +220,7 @@ export function createStatusBoard(
                         </div>
                       ) : null}
                       {footer.length > 0 ? (
-                        <p className='mt-2 flex min-w-0 items-center gap-1.5 truncate text-xs text-muted-foreground'>
+                        <p className='mt-2.5 flex min-w-0 items-center gap-1.5 truncate border-t border-border/50 pt-2 text-xs text-muted-foreground'>
                           {footer.map((part, index) => (
                             // eslint-disable-next-line @eslint-react/no-array-index-key -- positional, as above
                             <Fragment key={index}>

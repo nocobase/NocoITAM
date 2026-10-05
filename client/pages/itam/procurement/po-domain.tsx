@@ -43,6 +43,7 @@ import {
 import {
   PO_CREATE_FIELDS,
   PO_FIELDS,
+  PO_STATUS_DOT,
   PURCHASE_ORDERS_PATH,
   raisedBy,
 } from '@/lib/itam/procurement';
@@ -89,6 +90,7 @@ export const purchaseOrderDomain: DomainConfig = {
     route: 'procurement',
     fields: PO_FIELDS,
     nameField: 'orderNo',
+    dots: PO_STATUS_DOT,
     statuses: [
       'draft',
       'pendingApproval',
