@@ -84,16 +84,23 @@ Rules learned while building it:
   (`runJob('leavers' | 'daily' | 'monthly')`) and is scheduled through the
   scheduler plugin (2026-09-28): `server/providers/itam-schedules.ts`
   registers the `app.itam.maintenance` target and defines
-  `itam.mark-leavers` (01:50, before the daily run so its reminders see the
-  new leavers), `itam.daily-maintenance` (02:00) and
+  `itam.mark-leavers` (01:50, before the daily run), `itam.daily-maintenance`
+  (02:00) and
   `itam.monthly-depreciation` (1st, 03:00) in the ITAM time zone,
   so each execution — status, reason, counts — shows at 设置 → 自动化 → 定时任务
   (page grant `scheduler.schedules`, both IT roles') and can be
   disabled there. The target runs the job inside `start()` and returns
   `completed` / `failed`; there is no application run log (`jobRuns` dropped
   by `202609280001_drop_job_runs`) and no manual run, because the plugin
-  offers none — saving 提醒阈值 recomputes the reminders instead. A schedule
-  is code: change the cron in the provider, never the plugin's tables. Test
+  offers none. A schedule
+  is code: change the cron in the provider, never the plugin's tables. 需要关注
+  is **live** (2026-10-05): `reminderCounts()` / `reminders(kind)` in
+  `maintenance.ts` run the rules (`collect`) when asked, so the workbench
+  says what is true when it is read rather than what was true at 02:00, and
+  refreshes with the change signal like the to-dos. Nothing writes the
+  `reminders` table any more; it stays only as the Collection 需要关注's
+  `read` is granted through. The daily job reports what it did (renewals,
+  released reservations, overdue loans notified), not these counts. Test
   the service and the provider's target (`tests/logic/itam-schedules.test.ts`),
   not the clock.
 - 需要关注 groups its ten rules into three sections (`REMINDER_GROUPS` in
@@ -1058,8 +1065,9 @@ Rules learned while building it:
   listed everybody's since 2026-10-04, which is also what makes dropping
   that reminder whole — while it was scoped to the device's 负责人, nobody
   held the overdue loans as a set, and the 人员 reminder section went the
-  same way when 离职交接 became a to-do. The daily job still **notifies** the borrower and the
-  owner — `notifyOverdueLoans` in `maintenance.ts` runs that query and sends,
+  same way when 离职交接 became a to-do. The daily job still **notifies** the
+  device's 负责人 — only them since 2026-10-05, since a borrower is a person
+  in the register, not an account — `notifyOverdueLoans` in `maintenance.ts` runs that query and sends,
   writing no row. What made a notification once-only was never the reminders
   table but the key the notification plugin deduplicates on
   (`loanOverdue:<device>:<date>`), so a rule may leave the reminder layer
