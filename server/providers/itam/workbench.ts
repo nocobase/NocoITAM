@@ -111,8 +111,11 @@ export interface WorkbenchService {
   ): Promise<readonly DoneWorkRecord[]>;
 }
 
-/** How many records a card lists before it says "see all". */
-export const MY_WORK_PREVIEW = 5;
+/**
+ * How many records a to-do column lists before it says "see all": a
+ * board column lists its work rather than a preview of it (2026-10-05).
+ */
+export const MY_WORK_PREVIEW = 50;
 
 export const workbenchServiceToken: ServiceToken<WorkbenchService> =
   createServiceToken<WorkbenchService>('itam/workbench-service');
@@ -594,43 +597,44 @@ export function createWorkbenchService(dependencies: {
         if (reader !== null)
           for (const person of [...open.keys()])
             if (!mine.has(person)) open.delete(person);
-        if (open.size > 0) {
-          const leavers = (
-            query: ReturnType<
-              ReturnType<DatabaseManager['query']>['selectFrom']
-            >,
-          ) =>
-            query
-              .where('employmentStatus', '=', 'left')
-              .where('id', 'in', [...open.keys()]);
-          const total = await count('people', peopleConditions, leavers);
-          if (total > 0) {
-            const rows = await take(
-              'people',
-              peopleConditions,
-              ['id', 'name', 'leaveDate', 'position'],
-              leavers,
-            );
-            items.push({
-              key: 'leaverRecovery',
-              count: total,
-              url: '/people?employmentStatus=left',
-              records: rows.map((row) => ({
-                id: String(row.id),
-                title: String(row.name),
-                // A name alone says who, not what they did here; the job is
-                // what tells the reader whose work is coming their way.
-                subtitle: asText(row.position) ?? null,
-                date: asText(row.leaveDate) ?? null,
-                url: `/people/${String(row.id)}`,
-                // Nothing of theirs is this reader's: say nothing rather
-                // than 其中你负责 0 项, which is a line about the reader
-                // on a row that is not about them.
-                count: mine.get(String(row.id)) || undefined,
-              })),
-            });
-          }
-        }
+        // Always a card, even when nobody is leaving: the board keeps an
+        // empty column in its place (2026-10-05), and a card that vanished at
+        // zero could not be told from one this reader does not have.
+        const leavers = (
+          query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
+        ) =>
+          query
+            .where('employmentStatus', '=', 'left')
+            .where('id', 'in', [...open.keys()]);
+        const total =
+          open.size > 0 ? await count('people', peopleConditions, leavers) : 0;
+        const rows =
+          total > 0
+            ? await take(
+                'people',
+                peopleConditions,
+                ['id', 'name', 'leaveDate', 'position'],
+                leavers,
+              )
+            : [];
+        items.push({
+          key: 'leaverRecovery',
+          count: total,
+          url: '/people?employmentStatus=left',
+          records: rows.map((row) => ({
+            id: String(row.id),
+            title: String(row.name),
+            // A name alone says who, not what they did here; the job is
+            // what tells the reader whose work is coming their way.
+            subtitle: asText(row.position) ?? null,
+            date: asText(row.leaveDate) ?? null,
+            url: `/people/${String(row.id)}`,
+            // Nothing of theirs is this reader's: say nothing rather than
+            // 其中你负责 0 项, which is a line about the reader on a row
+            // that is not about them.
+            count: mine.get(String(row.id)) || undefined,
+          })),
+        });
       }
 
       const devices = await decide('devices', 'read');

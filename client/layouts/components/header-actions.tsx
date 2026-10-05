@@ -9,6 +9,8 @@ import {
   TooltipProvider,
 } from '@/components/ui/tooltip';
 
+import { NotificationBell } from '@/components/itam/notification-bell';
+
 import { ThemeSettings } from '../../theme/index.js';
 import { UserMenu } from './user-menu.js';
 
@@ -19,9 +21,12 @@ const ACTION_LINK_CLASS =
 export function HeaderActions({
   showSettings,
   showDev,
+  showNotifications = false,
 }: {
   readonly showSettings: boolean;
   readonly showDev: boolean;
+  /** Application change (ITAM): only the app layout shows 通知. */
+  readonly showNotifications?: boolean;
 }): ReactElement {
   const { t } = useTranslation();
 
@@ -46,6 +51,11 @@ export function HeaderActions({
               })}
             </TooltipContent>
           </Tooltip>
+        ) : null}
+        {/* Application change (ITAM): 通知 lives here since it left the
+          sidebar with the 待办 page (2026-10-05). */}
+        {showNotifications ? (
+          <NotificationBell className={ACTION_LINK_CLASS} />
         ) : null}
         {showSettings ? (
           <Tooltip>

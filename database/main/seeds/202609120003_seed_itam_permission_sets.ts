@@ -91,8 +91,6 @@ const SYSTEM_READ = ['historyEvents', 'changeLogs', 'allocations', 'reminders'];
  */
 const IT_PAGES = [
   'workbench',
-  'inbox',
-  'notifications',
   'devices',
   'accessories',
   'consumables',

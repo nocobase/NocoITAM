@@ -1437,15 +1437,8 @@ const messages = {
     showAll: 'Show all',
   },
   workbench: {
-    greeting: {
-      morning: 'Good morning, {{name}}',
-      afternoon: 'Good afternoon, {{name}}',
-      evening: 'Good evening, {{name}}',
-    },
     today_one: '{{date}} · {{count}} thing waits for you',
     today_other: '{{date}} · {{count}} things wait for you',
-    todayClear: '{{date}} · nothing waits for you',
-    deviceStatus: 'Devices by status',
     expiring: {
       title: 'Expiring in the next {{days}} days',
       warranty: 'warranty',
@@ -1460,6 +1453,7 @@ const messages = {
     scope: { label: 'Whose to-dos to show', all: 'All', mine: 'Mine' },
     seeAll: 'See all',
     nothingPending: 'Nothing waiting',
+    nothingDone: 'Nothing finished in the last 30 days',
     attention: 'Needs attention',
     stats: {
       devices: 'Devices',

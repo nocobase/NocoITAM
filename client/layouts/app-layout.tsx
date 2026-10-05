@@ -175,6 +175,7 @@ export function AppLayout({
                     navigationPages(settingsNavigation.items).length > 0
                   }
                   showDev={import.meta.env.DEV}
+                  showNotifications
                 />
               </LayoutHeader>
               <AiPanelSpacer className='relative flex min-w-0 flex-1 flex-col overflow-hidden'>

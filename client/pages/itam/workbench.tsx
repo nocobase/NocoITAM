@@ -1,135 +1,198 @@
-import { useAuthentication } from '@nocobase/app-plugin-authentication/client';
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowRight } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { ArrowRight, Check } from 'lucide-react';
+import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 
-import { AiQuickEntries } from '@/components/itam/ai/quick-entries';
-import { MyWork } from '@/components/itam/my-work';
+import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { Page, PageHeader } from '@/components/itam/page-header';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useItamSettings } from '@/lib/itam/api';
-import {
-  addDays,
-  formatDate,
-  text,
-  todayIso,
-} from '@/lib/itam/format';
+import { formatDate } from '@/lib/itam/format';
+import { useWorkCards, type WorkCard } from '@/lib/itam/my-work';
+import { useOpenRecord } from '@/lib/itam/record-drawer';
 import { cn } from '@/lib/utils';
 import {
   REMINDER_GROUPS,
   REMINDER_ROUTES,
+  useDoneWork,
   useMyWork,
   useReminders,
-  useReport,
-  type ReportSection,
 } from '@/lib/itam/workbench';
 
 /**
- * The workbench answers "what do I do today, and what needs watching". The
- * IT view: a greeting with what waits, four key numbers for this month, my
- * work beside the reminders, then where the devices stand and what expires
- * in the next 90 days. Everything deeper lives in the reports. Only IT
- * signs in (2026-10-05), so there is no other view.
+ * The workbench is the team's to-do board (2026-10-05): 需要关注 on the left,
+ * then one column per kind of to-do, each listing its records as cards that
+ * open in the record drawer. It answers "what is waiting" and nothing else —
+ * where the devices stand and what expires are the reports' to say, with a
+ * period and filters. 全部 / 我负责的 narrows every column to the reader's
+ * part; the board stays live (`useLiveWork` in the app layout).
+ *
+ * A column with nothing in it stays where it is, dimmed, saying 暂无待办: a
+ * column that disappears at zero cannot be told from one the reader does
+ * not have, and a board whose columns move is one the eye has to search.
  */
 export default function WorkbenchPage(): ReactElement {
-  return <ItWorkbench />;
-}
-
-/** 早上好，Mia — and today's date with how many things wait. */
-function Greeting({
-  actions,
-}: {
-  readonly actions?: ReactElement;
-}): ReactElement {
-  const { t, i18n } = useTranslation();
-  const { session } = useAuthentication();
-  const work = useMyWork();
-  const pending = (work.data ?? []).reduce((sum, item) => sum + item.count, 0);
-  // Read once per mount: the greeting and the date need not tick.
-  const [now] = useState(() => new Date());
-  const hour = now.getHours();
-  const part = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-  const name = text(session?.user?.name);
-  const date = new Intl.DateTimeFormat(i18n.language, {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
-  }).format(now);
-  return (
-    <PageHeader
-      title={
-        name ? t(`workbench.greeting.${part}`, { name }) : t('workbench.title')
-      }
-      description={
-        work.data
-          ? pending > 0
-            ? t('workbench.today', { date, count: pending })
-            : t('workbench.todayClear', { date })
-          : date
-      }
-      actions={actions}
-    />
-  );
-}
-
-function ItWorkbench(): ReactElement {
   const { t } = useTranslation();
-  // Still the 概览 report, now only for the 设备状态 card: the numbers this
-  // page used to head with are read on the reports page, with a period.
-  const overview = useReport('overview', {});
-  const section = (key: string): ReportSection | undefined =>
-    overview.data?.sections.find((entry) => entry.key === key);
-
+  const cards = useWorkCards();
+  const loading = useMyWork().isLoading;
   return (
-    <Page>
-      <Greeting
-        actions={
-          <AiQuickEntries
-            entries={[
-              { key: 'planToday', prompt: t('ai.prompts.planToday') },
-              { key: 'inspectRisks', prompt: t('ai.prompts.inspectRisks') },
-              { key: 'costAnalysis', prompt: t('ai.prompts.costAnalysis') },
-            ]}
-          />
-        }
-      />
-      {/* The to-dos are the strip: what must be done, one card per kind,
-          each listing the records behind it. The numbers that used to sit
-          here (在管设备, 账面价值, 本月采购, 授权合规) are the 概览 report,
-          which is where they are read with a period and filters. */}
-      <MyWork />
-      <div className='grid gap-6 @3xl:grid-cols-2'>
-        <Attention />
-        <DeviceStatus section={section('byStatus')} />
-        <ExpiringSoon />
+    <Page fill>
+      <PageHeader title={t('workbench.title')} actions={<WorkScopeToggle />} />
+      {/* The board takes the rest of the page's height, so each column
+          scrolls its own cards and the sideways scrollbar sits at the foot
+          of the page — as the status boards do. */}
+      <div className='-mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
+        <AttentionColumn />
+        {loading ? (
+          <Column title={t('workbench.myWork')}>
+            <Skeleton className='h-24 w-full rounded-lg' />
+          </Column>
+        ) : (
+          cards.map((card) => <WorkColumn key={card.key} card={card} />)
+        )}
+        <DoneColumn waiting={cards.flatMap((card) => card.records)} />
       </div>
     </Page>
   );
 }
 
+/** One column: a heading with an optional count, then what it holds. */
+function Column({
+  title,
+  count,
+  dimmed = false,
+  footer,
+  children,
+}: {
+  readonly title: string;
+  readonly count?: number;
+  readonly dimmed?: boolean;
+  readonly footer?: ReactNode;
+  readonly children: ReactNode;
+}): ReactElement {
+  return (
+    <section
+      aria-label={title}
+      // The status boards' column: a tint of the foreground, since the page
+      // is the muted grey, at least 15rem and sharing the room up to 22rem.
+      className={cn(
+        'flex max-w-[22rem] min-w-[15rem] flex-1 basis-[15rem] flex-col rounded-2xl bg-foreground/[0.025]',
+        dimmed && 'opacity-60',
+      )}
+    >
+      <header className='flex h-11 shrink-0 items-center gap-2 px-3.5'>
+        <span className='truncate text-sm font-semibold'>{title}</span>
+        {count === undefined ? null : (
+          <span className='rounded-full bg-background px-1.5 text-xs leading-5 font-medium text-muted-foreground tabular-nums ring-1 ring-border/60'>
+            {count}
+          </span>
+        )}
+      </header>
+      <div className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2'>
+        {children}
+        {footer}
+      </div>
+    </section>
+  );
+}
+
+function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
+  const { t } = useTranslation();
+  const openRecord = useOpenRecord();
+  return (
+    <Column
+      title={card.label}
+      count={card.count}
+      dimmed={card.count === 0}
+      footer={
+        card.links.length > 0 ? (
+          <div className='flex flex-col gap-1 px-1.5'>
+            {card.links.map((link) => (
+              <Link
+                key={link.url}
+                to={link.url}
+                className='flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground'
+              >
+                {link.label}
+                <ArrowRight aria-hidden='true' className='size-3' />
+              </Link>
+            ))}
+          </div>
+        ) : null
+      }
+    >
+      {card.count === 0 ? (
+        <p className='mx-1 rounded-xl border border-dashed border-border py-5 text-center text-xs text-muted-foreground'>
+          {t('workbench.nothingPending')}
+        </p>
+      ) : (
+        <ul className='flex flex-col gap-2'>
+          {card.records.map((record) => (
+            <li key={record.url}>
+              <button
+                type='button'
+                onClick={() => {
+                  openRecord(record.url);
+                }}
+                className='w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 text-left shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+              >
+                <div className='flex items-center gap-2'>
+                  {/* A record whose title is only a number says what kind
+                      it is; a device or a person names itself. */}
+                  {record.tag ? (
+                    <DocumentTypeBadge kind={record.tag} className='shrink-0' />
+                  ) : null}
+                  <span className='min-w-0 truncate text-sm font-semibold'>
+                    {record.title}
+                  </span>
+                </div>
+                {record.subtitle ? (
+                  <p className='mt-1 truncate text-sm text-muted-foreground'>
+                    {record.subtitle}
+                  </p>
+                ) : null}
+                <p className='mt-2 flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
+                  {record.date ? <span>{formatDate(record.date)}</span> : null}
+                  {/* Where a record stands for several things — a leaver
+                      holds a number of them — how many are the reader's own;
+                      where it is the one thing, that it is theirs. The
+                      column lists everybody's. */}
+                  {record.count === undefined ? null : (
+                    <span className='ml-auto'>
+                      {t('workbench.work.mine', { count: record.count })}
+                    </span>
+                  )}
+                  {record.mine ? (
+                    <span className='ml-auto'>{t('workbench.work.yours')}</span>
+                  ) : null}
+                </p>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Column>
+  );
+}
+
 /**
- * Only the two critical rules colour their count. Severity is a property of
- * the rule rather than of how bad today is, and seven of eleven are
- * `warning` — a colour on most rows differentiates nothing. The order
- * already carries severity; the colour is kept for the exception.
+ * Only the critical rules colour their count. Severity is a property of the
+ * rule rather than of how bad today is, and most rules are `warning` — a
+ * colour on most rows differentiates nothing. The order already carries
+ * severity; the colour is kept for the exception.
  */
 const SEVERITY_TEXT: Readonly<Record<string, string>> = {
   critical: 'text-destructive',
 };
 
 /**
- * The rule-layer reminders as one row each, worst first.
- *
- * Two cards, not one: `patterns` selects the kinds that describe a shape
- * across several records — a vendor's last three orders, a batch's repairs
- * — and the rest are limits one record passed. Reading "保修 30 天内到期 4"
- * and "供应商连续延迟交货 1" in the same list makes both look like items on
- * a chore list, when the second is something to think about rather than
- * something to clear.
+ * 需要关注, the board's first column: the rule-layer reminders, one row each,
+ * grouped. Every rule stays listed, the empty ones last **within their
+ * group** and dimmed: a rule that vanishes at zero cannot be told from one
+ * that was never set up, and "0" is an answer — it says the check ran.
  */
-function Attention(): ReactElement | null {
+function AttentionColumn(): ReactElement {
   const { t } = useTranslation();
   const settings = useItamSettings();
   const thresholds = settings.data?.thresholds;
@@ -137,9 +200,6 @@ function Attention(): ReactElement | null {
   const byKind = new Map(
     (reminders.data ?? []).map((entry) => [entry.kind, entry]),
   );
-  // Every rule stays listed, the empty ones last **within their group**: a
-  // rule that vanishes at zero cannot be told from one that was never set
-  // up, and "0" is an answer — it says the check ran.
   const rank = { critical: 0, warning: 1, info: 2 } as const;
   const groups = REMINDER_GROUPS.map((group) => ({
     key: group.key,
@@ -165,235 +225,124 @@ function Attention(): ReactElement | null {
     });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('workbench.attention')}</CardTitle>
-      </CardHeader>
-      <CardContent className='space-y-4'>
-        {reminders.data && groups.length === 0 ? (
-          <p className='text-sm text-muted-foreground'>
-            {t('workbench.nothingToAttend')}
-          </p>
-        ) : (
-          groups.map((group) => (
-            <section key={group.key}>
-              <h3 className='mb-1 text-xs font-medium tracking-wide text-muted-foreground'>
-                {t(`workbench.reminderGroups.${group.key}`)}
-              </h3>
-              {/* No inner frame: the card is the frame. The number carries
-                  the severity, so there is one signal per row instead of a
-                  coloured dot beside a grey count. */}
-              <ul className='-mx-2 text-sm'>
-                {group.rows.map((entry) => (
-                  <li key={entry.kind}>
-                    <Link
-                      to={REMINDER_ROUTES[entry.kind]}
-                      title={t(`workbench.reminderCaptions.${entry.kind}`, {
-                        subscriptionExpiryDays:
-                          thresholds?.subscriptionExpiryDays ?? 7,
-                        maintenanceExpiryDays:
-                          thresholds?.maintenanceExpiryDays ?? 30,
-                      })}
+    <Column title={t('workbench.attention')}>
+      {reminders.isLoading ? (
+        <Skeleton className='h-24 w-full rounded-lg' />
+      ) : groups.length === 0 ? (
+        <p className='mx-1 rounded-xl border border-dashed border-border py-5 text-center text-xs text-muted-foreground'>
+          {t('workbench.nothingToAttend')}
+        </p>
+      ) : (
+        groups.map((group) => (
+          <section
+            key={group.key}
+            className='rounded-xl border border-border/50 bg-card px-2 py-2 shadow-xs'
+          >
+            <h3 className='mb-1 px-1.5 text-xs font-medium tracking-wide text-muted-foreground'>
+              {t(`workbench.reminderGroups.${group.key}`)}
+            </h3>
+            {/* The number carries the severity, so there is one signal per
+                row instead of a coloured dot beside a grey count. */}
+            <ul className='text-sm'>
+              {group.rows.map((entry) => (
+                <li key={entry.kind}>
+                  <Link
+                    to={REMINDER_ROUTES[entry.kind]}
+                    title={t(`workbench.reminderCaptions.${entry.kind}`, {
+                      subscriptionExpiryDays:
+                        thresholds?.subscriptionExpiryDays ?? 7,
+                      maintenanceExpiryDays:
+                        thresholds?.maintenanceExpiryDays ?? 30,
+                    })}
+                    className={cn(
+                      'flex items-baseline justify-between gap-3 rounded-md px-1.5 py-1.5 hover:bg-muted',
+                      entry.count === 0 && 'text-muted-foreground',
+                    )}
+                  >
+                    <span className='min-w-0 truncate'>
+                      {label(entry.kind)}
+                    </span>
+                    <span
                       className={cn(
-                        'flex items-baseline justify-between gap-3 rounded-md px-2 py-1.5 hover:bg-muted',
-                        entry.count === 0 && 'text-muted-foreground',
+                        'shrink-0 tabular-nums',
+                        entry.count === 0
+                          ? 'text-muted-foreground/50'
+                          : cn('font-medium', SEVERITY_TEXT[entry.severity]),
                       )}
                     >
-                      <span className='min-w-0 truncate'>
-                        {label(entry.kind)}
-                      </span>
-                      <span
-                        className={cn(
-                          'shrink-0 tabular-nums',
-                          entry.count === 0
-                            ? 'text-muted-foreground/50'
-                            : cn(
-                                'font-medium',
-                                SEVERITY_TEXT[entry.severity],
-                              ),
-                        )}
-                      >
-                        {entry.count}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-const STATUS_COLORS: Readonly<Record<string, string>> = {
-  inUse: 'var(--chart-2)',
-  inStock: 'var(--chart-3)',
-  onLoan: 'var(--chart-4)',
-  inRepair: 'var(--chart-1)',
-  pendingDisposal: 'var(--chart-5)',
-};
-
-/** Where the devices stand: one bar split by status, each part a link. */
-function DeviceStatus({
-  section,
-}: {
-  readonly section?: ReportSection;
-}): ReactElement {
-  const { t } = useTranslation();
-  const rows = (section?.rows ?? [])
-    .map((row) => ({ status: text(row.status), count: Number(row.count ?? 0) }))
-    .filter((row) => row.count > 0 && row.status !== 'disposed');
-  const total = rows.reduce((sum, row) => sum + row.count, 0);
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('workbench.deviceStatus')}</CardTitle>
-      </CardHeader>
-      <CardContent className='space-y-3'>
-        {total === 0 ? (
-          <p className='text-sm text-muted-foreground'>{t('reports.noRows')}</p>
-        ) : (
-          <>
-            <div
-              className='flex h-3 overflow-hidden rounded-full bg-muted'
-              role='img'
-              aria-label={rows
-                .map(
-                  (row) =>
-                    `${t(`enums.deviceStatus.${row.status}`)} ${row.count}`,
-                )
-                .join('，')}
-            >
-              {rows.map((row) => (
-                <div
-                  key={row.status}
-                  style={{
-                    width: `${(row.count / total) * 100}%`,
-                    background:
-                      STATUS_COLORS[row.status] ?? 'var(--muted-foreground)',
-                  }}
-                />
-              ))}
-            </div>
-            <ul className='grid grid-cols-2 gap-x-4 gap-y-1 text-sm'>
-              {rows.map((row) => (
-                <li key={row.status}>
-                  <Link
-                    to={`/devices?status=${row.status}`}
-                    className='flex items-center justify-between gap-2 rounded-md px-1 py-0.5 hover:bg-muted'
-                  >
-                    <span className='flex items-center gap-2'>
-                      <span
-                        aria-hidden='true'
-                        className='size-2 rounded-full'
-                        style={{
-                          background:
-                            STATUS_COLORS[row.status] ??
-                            'var(--muted-foreground)',
-                        }}
-                      />
-                      {t(`enums.deviceStatus.${row.status}`, {
-                        defaultValue: row.status,
-                      })}
-                    </span>
-                    <span className='tabular-nums text-muted-foreground'>
-                      {row.count}
+                      {entry.count}
                     </span>
                   </Link>
                 </li>
               ))}
             </ul>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          </section>
+        ))
+      )}
+    </Column>
   );
 }
 
-const HORIZON_DAYS = 90;
-
-/** Warranties and entitlements ending in the next 90 days, soonest first. */
-function ExpiringSoon(): ReactElement {
+/**
+ * 已完成, the board's last column: what was finished in the last 30 days,
+ * newest first (`doneWork` on the server), so a to-do settled on the board
+ * moves here instead of vanishing. One that is waiting again — an order
+ * rejected and resubmitted — reads as waiting, not as done.
+ */
+function DoneColumn({
+  waiting,
+}: {
+  readonly waiting: readonly { readonly url: string }[];
+}): ReactElement {
   const { t } = useTranslation();
-  const expiry = useReport('expiry', {});
-  const today = todayIso();
-  const until = addDays(today, HORIZON_DAYS);
-  const within = (date: unknown) => {
-    const value = text(date).slice(0, 10);
-    return value >= today && value <= until ? value : undefined;
-  };
-  const rows = [
-    ...(
-      expiry.data?.sections.find((entry) => entry.key === 'warranty')?.rows ??
-      []
-    ).map((row) => ({
-      key: `device:${text(row.id)}`,
-      to: `/devices/${text(row.id)}`,
-      name: [text(row.deviceNo), text(row.name)].filter(Boolean).join(' / '),
-      what: t('workbench.expiring.warranty'),
-      date: within(row.warrantyEndDate),
-    })),
-    ...(
-      expiry.data?.sections.find((entry) => entry.key === 'entitlements')
-        ?.rows ?? []
-    ).map((row) => ({
-      key: `entitlement:${text(row.id)}`,
-      to: `/entitlements/${text(row.id)}`,
-      name: text(row.name),
-      what: t('workbench.expiring.entitlement'),
-      date: within(row.expiryDate),
-    })),
-  ]
-    .filter((row) => row.date !== undefined)
-    .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
-  const shown = rows.slice(0, 6);
+  const openRecord = useOpenRecord();
+  const pending = new Set(waiting.map((record) => record.url));
+  const done = (useDoneWork().data ?? []).filter(
+    (record) => !pending.has(record.url),
+  );
+  // The two approval queues are one column, so they are one kind here too.
+  const kindOf = (key: string) =>
+    key === 'pendingPurchaseApprovals' || key === 'pendingDisposalApprovals'
+      ? 'pendingApprovals'
+      : key;
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          {t('workbench.expiring.title', { days: HORIZON_DAYS })}
-          <Badge variant='secondary' className='tabular-nums'>
-            {rows.length}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className='space-y-2'>
-        {expiry.data && rows.length === 0 ? (
-          <p className='text-sm text-muted-foreground'>
-            {t('workbench.expiring.none', { days: HORIZON_DAYS })}
-          </p>
-        ) : (
-          <ul className='divide-y divide-border rounded-lg border border-border bg-card text-sm'>
-            {shown.map((row) => (
-              <li key={row.key}>
-                <Link
-                  to={row.to}
-                  className='flex items-center justify-between gap-3 px-3 py-2 hover:bg-muted'
-                >
-                  <span className='min-w-0 truncate'>
-                    {row.name}
-                    <span className='text-muted-foreground'> · {row.what}</span>
+    <Column
+      title={t('workbench.work.done')}
+      count={done.length}
+      dimmed={done.length === 0}
+    >
+      {done.length === 0 ? (
+        <p className='mx-1 rounded-xl border border-dashed border-border py-5 text-center text-xs text-muted-foreground'>
+          {t('workbench.nothingDone')}
+        </p>
+      ) : (
+        <ul className='flex flex-col gap-2'>
+          {done.map((record) => (
+            <li key={`${record.key}:${record.url}`}>
+              <button
+                type='button'
+                onClick={() => {
+                  openRecord(record.url);
+                }}
+                className='w-full rounded-xl border border-border/50 bg-card/60 px-3.5 py-3 text-left text-muted-foreground transition hover:border-border hover:bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+              >
+                <span className='block truncate text-sm font-medium text-foreground/80'>
+                  {record.title}
+                </span>
+                <p className='mt-2 flex items-center gap-1.5 text-xs tabular-nums'>
+                  <Check aria-hidden='true' className='size-3.5 shrink-0' />
+                  <span className='truncate'>
+                    {t(`workbench.work.${kindOf(record.key)}`)}
                   </span>
-                  <span className='shrink-0 tabular-nums text-muted-foreground'>
-                    {formatDate(row.date)}
+                  <span className='ml-auto shrink-0'>
+                    {formatDate(record.doneAt)}
                   </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-        {rows.length > 0 ? (
-          <Link
-            to='/reports?report=expiry'
-            className='inline-flex items-center text-sm text-link underline-offset-4 hover:underline'
-          >
-            {t('workbench.expiring.all', { count: rows.length })}
-            <ArrowRight className='ml-1 size-4' aria-hidden='true' />
-          </Link>
-        ) : null}
-      </CardContent>
-    </Card>
+                </p>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Column>
   );
 }
