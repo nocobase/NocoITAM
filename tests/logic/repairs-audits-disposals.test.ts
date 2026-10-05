@@ -305,6 +305,24 @@ describe('repairs, audits and disposals', () => {
       result: 'repaired',
     });
     expect(byFormerOwner.status).toBe(422);
+
+    // Finished, it keeps the 负责人 who saw it through: that is history now,
+    // as it is for a closed order or stocktake.
+    const reassigned = await app.request(`/api/itam/repairs/${repair.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ownerId: manager.user }),
+      ...approver,
+    });
+    expect(reassigned.status).toBe(422);
+    // Its other corrections stay open.
+    const corrected = await app.request(`/api/itam/repairs/${repair.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ notes: 'Fan replaced' }),
+      ...approver,
+    });
+    expect(corrected.status).toBe(200);
   });
 
   it('lists the disposals a device is on, newest first, for its page', async () => {

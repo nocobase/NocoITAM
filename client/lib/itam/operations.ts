@@ -127,6 +127,8 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     reference: { collection: 'repairOwners' },
     required: true,
     column: true,
+    // Fixed once the repair is finished: who saw it through is history.
+    readonlyWhen: (record) => record.result !== 'inProgress',
     group: 'groups.system',
     detailOrder: -1,
   },
