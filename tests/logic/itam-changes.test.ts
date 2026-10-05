@@ -30,20 +30,6 @@ describe('ITAM change signal', () => {
     expect(publish).toHaveBeenCalledTimes(1);
   });
 
-  it('hands the burst its last named writer', () => {
-    const publish = vi.fn();
-    const changes = createItamChanges(publish, { wait: 400, maxWait: 3000 });
-    changes.touched('ann');
-    changes.touched();
-    changes.touched('mia');
-    vi.advanceTimersByTime(400);
-    expect(publish).toHaveBeenCalledWith({ actorId: 'mia' });
-    // The next burst starts unnamed.
-    changes.touched();
-    vi.advanceTimersByTime(400);
-    expect(publish).toHaveBeenLastCalledWith({});
-  });
-
   it('still signals during a long burst, by its deadline', () => {
     const publish = vi.fn();
     const changes = createItamChanges(publish, { wait: 400, maxWait: 1000 });

@@ -223,9 +223,9 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // that show live to-dos subscribe to (`changes.ts`). The topic is
     // defined at boot; a container without realtime publishes nothing.
     container.singleton(itamChangesToken, () =>
-      createItamChanges(() => {
-        this.changesTopic?.publish({ kind: 'changed' });
-      }),
+      createItamChanges(() =>
+        this.changesTopic?.publish({ kind: 'changed' }),
+      ),
     );
     // The notification plugin is resolved per send so registration order
     // does not matter and a test container without it stays silent.
