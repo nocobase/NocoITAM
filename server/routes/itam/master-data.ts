@@ -35,6 +35,7 @@ import {
 
 import { CREATE_DEFAULTS, masterDataSchema } from './master-data-schemas.js';
 import { userAdministrationServiceToken } from '@nocobase/app-plugin-authentication';
+import { leaverAccountsToken } from '../../providers/itam/leaver-accounts.js';
 
 /**
  * Generic CRUD for the master-data collections at
@@ -294,6 +295,8 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
           readonly name: string;
           readonly username: string | null;
           readonly disabled: boolean;
+          /** Disabled by leaving, rather than by somebody's hand. */
+          readonly disabledOnLeaving: boolean;
           readonly canDisable: boolean;
         } | null = null;
         const userId =
@@ -309,6 +312,11 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
               name: user.name,
               username: user.username ?? null,
               disabled: user.disabledAt !== null,
+              disabledOnLeaving: app.container.has(leaverAccountsToken)
+                ? await app.container
+                    .resolve(leaverAccountsToken)
+                    .disabledOnLeaving(id)
+                : false,
               canDisable:
                 (
                   await context.get('authz').authorize({

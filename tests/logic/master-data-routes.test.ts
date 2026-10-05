@@ -604,6 +604,8 @@ describe('master data routes', () => {
       name: 'Zhou Yi',
       username: 'zhou.yi',
       disabled: false,
+      // Nothing disabled it: no users plugin is registered here to do it.
+      disabledOnLeaving: false,
       // The asset manager administers the register, not the platform's
       // accounts — the users page is root's — so the page names who can
       // rather than offering a page this reader cannot open.

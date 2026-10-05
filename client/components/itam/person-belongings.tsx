@@ -270,19 +270,22 @@ export function PersonBelongings({
 
   return (
     <div ref={contextRef} className='space-y-3'>
-      {/* First, because it is the one thing here that is not equipment and
-          the one that stays open longest unnoticed: their sign-in. Leaving
-          marks a person, not an account, so it still works until somebody
-          disables it — the reminder says so, offers the way there to a
-          reader who may, and names who can to one who may not. Once it is
-          done it says that instead, the way a settled row does. */}
+      {/* First, because it is the one thing here that is not equipment:
+          their sign-in. Leaving disables it, so this is usually a settled
+          line saying so. When it could not — the platform's last
+          administrator, the reader's own account, or somebody who left
+          before it did this — it reminds the reader, offers the way there
+          to one who may, and names who can to one who may not. */}
       {left && account ? (
         account.disabled ? (
           <p className='flex items-center gap-1 text-xs text-muted-foreground'>
             <Check className='size-3.5' aria-hidden='true' />
-            {t('people.recovery.accountDisabled', {
-              account: account.username ?? account.name,
-            })}
+            {t(
+              account.disabledOnLeaving
+                ? 'people.recovery.accountDisabledOnLeaving'
+                : 'people.recovery.accountDisabled',
+              { account: account.username ?? account.name },
+            )}
           </p>
         ) : (
           <Alert>
