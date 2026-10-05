@@ -4,6 +4,7 @@ import { ArrowRightLeft, Check, CornerDownRight, Undo2 } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
+import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { DataTable } from '@/components/itam/data-table';
 import { DeviceReturnDialog } from '@/components/itam/device-return-dialog';
@@ -21,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { useApi } from '@/lib/itam/api';
 import { useAiPageContext } from '@/lib/itam/ai-context';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
+import { isDocumentKind } from '@/lib/itam/document-kinds';
 import { ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
 import {
   useCollectionPermissions,
@@ -255,17 +257,6 @@ export function PersonBelongings({
         ? t('stock.return')
         : t(`people.recovery.handling.${item.handling}`);
 
-  /**
-   * What to call a record that is not an asset. The to-do rows tag these the
-   * same way — 采购, 维修, 报废 — and the tag names the kind of work, not the
-   * document: 「采购单」 beside its own number says 单 twice.
-   */
-  const DOCUMENT_TAG: Readonly<Record<string, string>> = {
-    repairs: 'workbench.work.tagRepair',
-    purchaseOrders: 'workbench.work.tagPurchase',
-    disposals: 'workbench.work.tagDisposal',
-  };
-
   /** Why it cannot be done yet, and what it is waiting on. */
   const waitingLabel = (item: RecoveryItem): string =>
     [handlingLabel(item), item.waitingOn?.label].filter(Boolean).join(' · ');
@@ -489,16 +480,20 @@ export function PersonBelongings({
                         kind of document it is instead. */}
                     {record.assetType ? (
                       <AssetTypeBadge value={record.assetType} />
+                    ) : isDocumentKind(record.collection) ? (
+                      // A work document wears its kind with the icon of its
+                      // own navigation entry, as the to-do rows do.
+                      <DocumentTypeBadge
+                        kind={record.collection}
+                        className='shrink-0'
+                      />
                     ) : (
                       <Badge
                         variant='secondary'
                         data-tag='kind'
                         className='shrink-0'
                       >
-                        {t(
-                          DOCUMENT_TAG[record.collection] ??
-                            `${kind?.i18n ?? record.collection}.object`,
-                        )}
+                        {t(`${kind?.i18n ?? record.collection}.object`)}
                       </Badge>
                     )}
                     <RecordLink to={to} className='font-medium'>

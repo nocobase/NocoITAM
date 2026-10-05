@@ -1393,6 +1393,7 @@ const zhCN: AppResource = {
       tagPurchase: '采购',
       tagDisposal: '报废',
       tagRepair: '维修',
+      tagAudit: '盘点',
       pendingPurchaseApprovals: '待我审批的采购单',
       pendingDisposalApprovals: '待我审批的报废单',
       awaitingReceipt: '待验收到货',
