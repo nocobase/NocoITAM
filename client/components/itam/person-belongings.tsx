@@ -293,11 +293,16 @@ export function PersonBelongings({
     failed: readonly BatchFailure[],
     title: string | undefined,
   ) => {
+    // The dialog closes (or shows what failed) before the toast is worked
+    // out: announcing rereads the register, and a dialog left open meanwhile
+    // re-rendered on the now empty selection — 收回 0 项, and without its
+    // devices a plain confirmation in place of the return dialog — a second
+    // dialog after the one that had just succeeded.
     setBatchBusy(false);
-    if (title) await announce(title, [personId]);
-    else await queryClient.invalidateQueries({ queryKey: ['itam'] });
     setBatchFailed(failed);
     if (failed.length === 0) setBatch(undefined);
+    if (title) await announce(title, [personId]);
+    else await queryClient.invalidateQueries({ queryKey: ['itam'] });
   };
   /** Every ticked row, each through its own act; a device takes `body`. */
   const recoverChosen = async (body?: Record<string, unknown>) => {

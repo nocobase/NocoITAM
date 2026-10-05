@@ -19,6 +19,8 @@ const state = vi.hoisted(() => ({
   /** What the plan reads after the act, for the toast. */
   after: undefined as unknown,
   toasts: [] as { title?: unknown; description?: unknown }[],
+  /** Holds the toast's reread of the plan until the test lets it go. */
+  gate: undefined as Promise<void> | undefined,
 }));
 vi.mock('@nocobase/app-client', async (original) => ({
   ...(await original<object>()),
@@ -90,7 +92,10 @@ vi.mock('@tanstack/react-query', async (original) => ({
   ...(await original<object>()),
   useQueryClient: () => ({
     invalidateQueries: async () => undefined,
-    fetchQuery: async () => state.after,
+    fetchQuery: async () => {
+      await state.gate;
+      return state.after;
+    },
   }),
   // Runs the mutation straight away, so the request it makes is what the
   // test reads.
@@ -147,6 +152,7 @@ beforeEach(() => {
   state.recovery = recovery({});
   state.after = undefined;
   state.toasts = [];
+  state.gate = undefined;
 });
 
 it('says what an act did, and how much of the handover is left', async () => {
@@ -258,6 +264,38 @@ it('takes everything ticked back at once, each its own way', async () => {
   ]);
 });
 
+it('closes the batch before the toast, rather than showing it again emptied', async () => {
+  state.recovery = recovery({ items: [seat('s1'), seat('s2')] });
+  state.after = recovery({ name: 'Chen Jie', progress: { done: 2, total: 2 } });
+  let release = () => undefined as void;
+  state.gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  show();
+  fireEvent.click(
+    screen.getAllByRole('checkbox', {
+      name: 'people.recovery.batch.selectAll',
+    })[0]!,
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: /people\.recovery\.batch\.recover/ }),
+  );
+  fireEvent.click(
+    within(await screen.findByRole('dialog')).getByRole('button', {
+      name: /people\.recovery\.batch\.recover/,
+    }),
+  );
+  await settle();
+  // The toast is still being worked out, and no dialog is left behind —
+  // it used to stay open on the emptied selection, as 收回 0 项.
+  expect(state.toasts).toEqual([]);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  release();
+  await settle();
+  await settle();
+  expect(state.toasts).toHaveLength(1);
+});
+
 it('keeps what failed ticked, with the reason, and settles the rest', async () => {
   state.recovery = recovery({
     items: [
@@ -292,15 +330,18 @@ it('keeps what failed ticked, with the reason, and settles the rest', async () =
   );
   await settle();
   // The dialog stays open on what failed, naming it.
-  expect(within(dialog).getByText(/Figma Organization — Not allowed/)).toBeVisible();
+  expect(
+    within(dialog).getByText(/Figma Organization — Not allowed/),
+  ).toBeVisible();
   // Only the failed seat is still ticked. The open dialog hides the table
   // from the accessibility tree, so the boxes are looked up behind it.
   const boxes = screen.getAllByRole('checkbox', {
     name: 'people.recovery.batch.select',
     hidden: true,
   });
-  expect(boxes.filter((box) => box.getAttribute('aria-checked') === 'true'))
-    .toHaveLength(1);
+  expect(
+    boxes.filter((box) => box.getAttribute('aria-checked') === 'true'),
+  ).toHaveLength(1);
 });
 
 it('hands every ticked record to one new owner', async () => {
