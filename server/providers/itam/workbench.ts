@@ -10,7 +10,6 @@ import type { ApprovalService, ApprovalSubject } from './approvals.js';
 import { compileAuthzScope } from './authz-filter.js';
 import { asText, type Row } from './collection-query.js';
 import {
-  namesIn,
   OWNED_BY_USER,
   RECOVERABLE_DEVICE_STATUSES,
 } from './recovery.js';
@@ -80,7 +79,11 @@ export const MY_WORK_PREVIEW = 5;
 export const workbenchServiceToken: ServiceToken<WorkbenchService> =
   createServiceToken<WorkbenchService>('itam/workbench-service');
 
-/** An audit task is mine when I raised it or am named to run it. */
+/**
+ * An audit task is mine when I answer for it or am named to run it. Its
+ * 负责人 took the place its creator held (2026-10-05): the creator is
+ * stamped once, so a task handed over stayed on the old organiser's list.
+ */
 function isMine(row: Row, userId: string): boolean {
   const executors =
     typeof row.executorIds === 'string'
@@ -88,7 +91,7 @@ function isMine(row: Row, userId: string): boolean {
       : Array.isArray(row.executorIds)
         ? (row.executorIds as string[])
         : [];
-  return row.createdById === userId || executors.includes(userId);
+  return row.ownerId === userId || executors.includes(userId);
 }
 
 export function createWorkbenchService(dependencies: {
@@ -326,7 +329,7 @@ export function createWorkbenchService(dependencies: {
         const rows = await database
           .query()
           .selectFrom('auditTasks')
-          .select(['id', 'name', 'plannedEnd', 'executorIds', 'createdById'])
+          .select(['id', 'name', 'plannedEnd', 'executorIds', 'ownerId'])
           .where((eb) => compileAuthzScope(eb, audits.scope))
           .where('status', 'in', ['inProgress', 'pendingDifferences'])
           .orderBy('plannedEnd', 'asc')
@@ -500,24 +503,17 @@ export function createWorkbenchService(dependencies: {
             let query = readable(entry.collection, conditions).select([
               entry.field,
             ]);
-            // Only what is still waiting, and a list of names is read and
-            // filtered because a JSON array answers neither `=` nor `in`.
+            // Only what is still waiting.
             if (entry.open)
               query = query.where(entry.open.column, 'in', [
                 ...entry.open.values,
               ]);
-            const rows = entry.list
-              ? await query.execute<Row>()
-              : await query
-                  .where(entry.field, 'in', [...accounts.keys()])
-                  .execute<Row>();
+            const rows = await query
+              .where(entry.field, 'in', [...accounts.keys()])
+              .execute<Row>();
             for (const row of rows) {
-              for (const name of entry.list
-                ? namesIn(row[entry.field])
-                : [asText(row[entry.field]) ?? '']) {
-                const person = accounts.get(name);
-                if (person) open.set(person, (open.get(person) ?? 0) + 1);
-              }
+              const person = accounts.get(asText(row[entry.field]) ?? '');
+              if (person) open.set(person, (open.get(person) ?? 0) + 1);
             }
           }
         }

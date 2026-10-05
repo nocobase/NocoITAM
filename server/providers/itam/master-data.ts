@@ -35,7 +35,6 @@ import {
 } from './errors.js';
 import { addMonths, today } from './dates.js';
 import {
-  namesIn,
   OWNED_BY_USER,
   recoveryPlan,
   type RecoveryItem,
@@ -65,21 +64,10 @@ export interface OwnedRecord {
   readonly collection: string;
   readonly id: string;
   readonly label: string;
-  /**
-   * Which field names them: the 负责人 on every record but a stocktake,
-   * which names its executors, several of them.
-   */
-  readonly field: 'ownerId' | 'executorIds';
+  /** Which field names them: the 负责人, on every record that names one. */
+  readonly field: 'ownerId';
   /** Who that field names **now**, which is somebody else once handed over. */
   readonly ownerId?: string | null;
-  /**
-   * Every name the field holds, where it holds a list. Handing one of those
-   * over replaces this one name and keeps the rest, and the write still goes
-   * through that collection's own endpoint — a purchase order's reassignment
-   * has to meet `requireRequester`, so nothing may route around it — which
-   * means the caller needs the list it is editing.
-   */
-  readonly owners?: readonly string[];
   /**
    * Which of the five asset types it is, where it is an asset at all: the
    * pages tag those with their own icon, and a repair order or a purchase
@@ -1096,13 +1084,9 @@ export function createMasterDataService(
           query = query.where(entry.open.column, 'in', [
             ...entry.open.values,
           ]);
-        // A list of names answers neither `=` nor `in`, so it is read and
-        // filtered; a single one is compared in the query.
-        const rows = entry.list
-          ? (await query.execute<Row>()).filter((row) =>
-              namesIn(row[entry.field]).includes(userId),
-            )
-          : await query.where(entry.field, '=', userId).execute<Row>();
+        const rows = await query
+          .where(entry.field, '=', userId)
+          .execute<Row>();
         for (const row of rows) {
           found.push({
             collection: entry.collection,
@@ -1114,14 +1098,7 @@ export function createMasterDataService(
               .filter(Boolean)
               .join(' / '),
             field: entry.field as OwnedRecord['field'],
-            // Who answers for it now. A list names several, and the row is
-            // about this one leaving, so it reads as the person it still
-            // names rather than as whoever else is on it.
-            ownerId: entry.list
-              ? (namesIn(row[entry.field]).find((name) => name === userId) ??
-                null)
-              : (asText(row[entry.field]) ?? null),
-            ...(entry.list ? { owners: namesIn(row[entry.field]) } : {}),
+            ownerId: asText(row[entry.field]) ?? null,
             ...(entry.assetType
               ? {
                   assetType:

@@ -547,13 +547,14 @@ describe('master data routes', () => {
   });
 
   /**
-   * A stocktake names several people, and somebody leaving mid-count stalls
-   * it until another name is on it — so it is listed like any other record
-   * that still names them, matched by reading the list rather than by a
-   * comparison a JSON array cannot answer. Handing it over replaces that one
-   * name: the colleagues counting alongside them keep the task.
+   * A stocktake is handed over by its 负责人, like every other record that
+   * still names somebody. Being one of its executors is not answering for
+   * it: the people who count come and go while it runs, and the owner, who
+   * is still here, is who notices when one of them leaves — so a task the
+   * leaver only counts on is not theirs to hand over. A closed task keeps
+   * the owner it had.
    */
-  it('lists a stocktake the leaver runs, and hands over only their name', async () => {
+  it('lists a stocktake the leaver answers for, not one they only count on', async () => {
     const manager = { user: 'mia', role: 'manager' } as const;
     const department = (await (
       await app.request('/api/itam/master/departments', {
@@ -572,20 +573,34 @@ describe('master data routes', () => {
         ...manager,
       })
     ).json()) as { data: { id: string } };
-    const task = (await (
-      await app.request('/api/itam/audits', {
-        ...json({
-          name: 'Warehouse count',
-          // A scope has to narrow by something; the department is to hand.
-          scope: { departmentIds: [department.data.id] },
-          plannedStart: '2026-10-01',
-          plannedEnd: '2026-10-20',
-          // Two executors: the one who left, and a colleague who stays.
-          executorIds: ['mia', 'sam'],
-        }),
-        ...manager,
-      })
-    ).json()) as { data: { id: string } };
+    const task = async (name: string, ownerId: string, executorIds: string[]) =>
+      (
+        (await (
+          await app.request('/api/itam/audits', {
+            ...json({
+              name,
+              scope: { departmentIds: [department.data.id] },
+              plannedStart: '2026-10-01',
+              plannedEnd: '2026-10-20',
+              ownerId,
+              executorIds,
+            }),
+            ...manager,
+          })
+        ).json()) as { data: { id: string } }
+      ).data;
+    const theirs = await task('Warehouse count', 'mia', ['mia', 'sam']);
+    // Counted on by the leaver, answered for by somebody who stays.
+    await task('Floor count', 'sam', ['mia']);
+    const closed = await task('Last year', 'mia', ['mia']);
+    await app.request(`/api/itam/audits/${closed.id}/start`, {
+      ...json({}),
+      ...manager,
+    });
+    await app.request(`/api/itam/audits/${closed.id}/cancel`, {
+      ...json({ reason: 'Superseded' }),
+      ...manager,
+    });
 
     const recoveryOf = async () =>
       (
@@ -595,70 +610,24 @@ describe('master data routes', () => {
             manager,
           )
         ).json()) as {
-          data: {
-            owned: {
-              collection: string;
-              field: string;
-              ownerId?: string;
-              owners?: string[];
-            }[];
-          };
+          data: { owned: { collection: string; id: string }[] };
         }
       ).data.owned;
     expect(await recoveryOf()).toEqual([
       {
         collection: 'auditTasks',
-        id: task.data.id,
+        id: theirs.id,
         label: 'Warehouse count',
-        field: 'executorIds',
-        // The name this row is about, and the whole list to write back.
+        field: 'ownerId',
         ownerId: 'mia',
-        owners: ['mia', 'sam'],
       },
     ]);
 
-    // A task that has been called off still names them, and that is
-    // history rather than a handover: only what is still open is listed.
-    // Without this every document somebody ever filed came back as work.
-    const closed = (await (
-      await app.request('/api/itam/audits', {
-        ...json({
-          name: 'Last year',
-          scope: { departmentIds: [department.data.id] },
-          plannedStart: '2026-10-01',
-          plannedEnd: '2026-10-20',
-          executorIds: ['mia'],
-        }),
-        ...manager,
-      })
-    ).json()) as { data: { id: string } };
-    // A task that has not started is deleted rather than called off, so it
-    // has to be running before it can be closed.
+    // Handed over the way every record is: the field set to somebody else.
     expect(
       (
-        await app.request(`/api/itam/audits/${closed.data.id}/start`, {
-          ...json({}),
-          ...manager,
-        })
-      ).status,
-    ).toBe(200);
-    expect(
-      (
-        await app.request(`/api/itam/audits/${closed.data.id}/cancel`, {
-          ...json({ reason: 'Superseded' }),
-          ...manager,
-        })
-      ).status,
-    ).toBe(200);
-    expect((await recoveryOf()).map((row) => row.id)).toEqual([task.data.id]);
-
-    // The handover the page performs: this one name swapped, the colleague
-    // kept. It goes through the collection's own endpoint, so every rule
-    // that endpoint enforces still applies.
-    expect(
-      (
-        await app.request(`/api/itam/audits/${task.data.id}`, {
-          ...json({ executorIds: ['sam', 'lee'] }),
+        await app.request(`/api/itam/audits/${theirs.id}`, {
+          ...json({ ownerId: 'sam' }),
           method: 'PATCH',
           ...manager,
         })

@@ -1,5 +1,6 @@
 import {
   AUDIT_FIELDS,
+  OWNER_FIELD,
   type FieldDefinition,
   type FieldOption,
 } from './fields.js';
@@ -282,6 +283,12 @@ export const AUDIT_TASK_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.basic',
     detailOrder: -8,
   },
+  // Who answers for the task, beside the executors who count (2026-10-05):
+  // first in 系统, above 创建人, where every record keeps its 负责人. The
+  // create dialog asks for it, starting at the reader, and it is anybody's
+  // to hand over while the task is open — the page's own rule is only that
+  // it is not finished or called off. A column too, as a repair's is.
+  { ...OWNER_FIELD, column: true },
   ...AUDIT_FIELDS,
 ];
 

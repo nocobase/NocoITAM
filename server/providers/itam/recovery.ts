@@ -41,8 +41,7 @@ export const OPEN_DISPOSAL_STATUSES: readonly string[] = [
 
 /**
  * The records a person answers for, and the column that names them: the
- * 负责人 (`ownerId`) everywhere but on a stocktake, which names its
- * executors.
+ * 负责人 (`ownerId`), on every one of them since a stocktake gained one.
  *
  * Offboarding's other half: not what somebody holds but what still has their
  * name on it, which no button settles — handing one over is a decision, made
@@ -62,13 +61,6 @@ export const OWNED_BY_USER: readonly {
   readonly label2?: string;
   /** The asset type, as a constant or as the column that holds it. */
   readonly assetType?: { readonly value: string } | { readonly column: string };
-  /**
-   * The field holds a **list** of sign-ins rather than one, so it is matched
-   * by reading and filtering rather than by a comparison — a JSON array
-   * answers neither `=` nor `in` — and handing it over replaces this one
-   * name in the list instead of overwriting it.
-   */
-  readonly list?: true;
   /**
    * A document is only waiting while it is still open: the statuses of the
    * ones that are, by the column that holds them. A purchase order completed
@@ -124,15 +116,13 @@ export const OWNED_BY_USER: readonly {
     open: { column: 'status', values: OPEN_DISPOSAL_STATUSES },
   },
   {
-    // A stocktake is run by the people it names, so somebody leaving
-    // mid-count stalls it until another name is on it.
+    // By its 负责人, like every other record, not by its executors: the
+    // people who count come and go while it runs, and the one who answers
+    // for it is who has to notice when one of them leaves (2026-10-05).
     collection: 'auditTasks',
-    field: 'executorIds',
+    field: 'ownerId',
     label: 'name',
-    list: true,
-    // Open until it is finished or called off; a task left on
-    // `pendingDifferences` is the most stalled of all, since resolving one
-    // is the executors' own step.
+    // Open until it is finished or called off.
     open: {
       column: 'status',
       values: ['notStarted', 'inProgress', 'pendingDifferences'],
@@ -212,23 +202,6 @@ export function deviceHandling(status: string): RecoveryHandling {
   if (status === 'inUse' || status === 'onLoan') return 'return';
   // Lost, retired, pending disposal, disposed: not in their hands to give back.
   return 'none';
-}
-
-/**
- * The sign-ins a list field names. The query layer decodes a JSON column,
- * but a row written before that was fixed still holds the string, so both
- * are read.
- */
-export function namesIn(value: unknown): string[] {
-  let decoded = value;
-  if (typeof decoded === 'string') {
-    try {
-      decoded = JSON.parse(decoded) as unknown;
-    } catch {
-      return [];
-    }
-  }
-  return Array.isArray(decoded) ? decoded.map((id) => String(id)) : [];
 }
 
 /**

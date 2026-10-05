@@ -582,8 +582,8 @@ Rules learned while building it:
   service itself, so the card can only be that person's — 待我审批 by the
   approval's named approver (`NOT_APPROVER`), 进行中的维修 by
   `repairs.ownerId` (`requireOwner`, which binds root too), 进行中的盘点 by
-  `executorIds` / creator (a stocktake is run by the people it names),
-  待验收到货 by
+  its 负责人 or its `executorIds` (the one who answers for it, and the
+  people who count), 待验收到货 by
   `raisedTheOrder` and 待执行的报废 by the same rule on its disposal.
   Showing those to anybody else would be a row with a button that refuses.
 - The other two — 离职交接 and 设备借出逾期未还 — are **everybody's**
@@ -610,16 +610,14 @@ Rules learned while building it:
   raised it as a fact about what happened, and listing it grew the handover
   half with every document somebody ever filed. An asset declares no `open`
   — a device's 负责人 must be somebody who is here for as long as the
-  register holds it. A stocktake is in the list too, through `list: true`
-  on `auditTasks.executorIds`: it names several people, so it is matched by
-  reading and filtering (a JSON array answers neither `=` nor `in`, the
-  same reason `auditsIRunScope` reads) and the row carries `owners`, the
-  whole list, because handing it over **replaces that one name and keeps
-  the rest**. The write still goes through the collection's own endpoint —
-  a purchase order's reassignment has to meet its own `requireOwner`, so
-  nothing may route around it — which is why the list travels to the client
-  rather than the swap happening in a route of its own. Somebody leaving
-  mid-count otherwise stalled the task with nobody named to finish it. That last
+  register holds it. A stocktake is in the list by its 负责人 like every
+  other record, not by its executors (2026-10-05): it went in on 2026-10-04
+  through its `executorIds` list, which needed a list match and a handover
+  that swapped one name in the array, and that machinery went when the
+  stocktake got its owner back — the people who count come and go while a
+  count runs, and the owner, who is still here, is who notices when one of
+  them leaves. A task the leaver only counts on is not theirs to hand over.
+  That last
   one closed the hole the owner scope left: a leaver who held nothing and
   owned four records was in nobody's queue, while changing the name on a
   purchase order is its creator's to do and holding a device never made
@@ -707,9 +705,18 @@ Rules learned while building it:
   offboarding knowledge: the 归属 tab lists from it, master data snapshots
   from it, the nightly job notifies from it and the workbench decides
   membership from it, and none of those owns the others. Every record in it
-  names its person through `ownerId` except a stocktake, which names its
-  executors; handing a purchase order or a disposal over hands its card
-  over with it.
+  names its person through `ownerId`; handing a purchase order, a disposal
+  or a stocktake over hands its card over with it.
+- A stocktake has a 负责人 again (2026-10-05, `202610050002_audit_owner`),
+  beside the executors who count. It lost the field on 2026-09-27
+  (`202609270002_drop_audit_owner`) because it was nearly always the
+  creator and nothing on a stocktake was ever handed over; offboarding made
+  the second half false, and the creator — stamped once — could not be
+  handed over at all. It starts at whoever creates the task (the create
+  dialog asks, starting at the reader), is editable while the task is open
+  (the page's rule is only that it is not finished or called off), and is
+  what 进行中的盘点 and the leaver's handover list read. Existing rows took
+  their creator.
 - A purchase order's and a disposal's 负责人 is asked for when it is
   created (starting at whoever files it) and is anybody's to hand over
   while the request is open, so a request is **handed over** rather than
@@ -993,8 +1000,8 @@ Rules learned while building it:
   that still names it to `allRecords`, in both shapes a scope is stored in
   (a Collection action's `recordAccess`, a composite operation's `scopes`),
   because a scope nobody registers resolves to nothing. The 进行中的盘点
-  to-do never depended on it, being scoped by `executorIds` in the
-  workbench itself. A policy this application retires goes into that set.
+  to-do never depended on it, being scoped by the task's 负责人 and
+  `executorIds` in the workbench itself. A policy this application retires goes into that set.
   The test double mirrors the derivation (`support` in
   `tests/support/test-app.ts` is every action but `approve` and `delete`);
   it used to grant only `read`, which never matched the seeded role.

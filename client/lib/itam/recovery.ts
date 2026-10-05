@@ -53,20 +53,10 @@ export interface OwnedRecord {
   readonly collection: string;
   readonly id: string;
   readonly label: string;
-  /**
-   * Which field names them: the 负责人 on every record but a stocktake,
-   * which names its executors, several of them.
-   */
-  readonly field: 'ownerId' | 'executorIds';
+  /** Which field names them: the 负责人, on every record that names one. */
+  readonly field: 'ownerId';
   /** Who that field names now, which is somebody else once handed over. */
   readonly ownerId?: string | null;
-  /**
-   * Every name the field holds, where it holds a list. The handover writes
-   * through that collection's own endpoint — a purchase order's has to meet
-   * `requireRequester`, so nothing routes around it — so the list to write
-   * back is computed here, with this one name replaced and the rest kept.
-   */
-  readonly owners?: readonly string[];
   /** Which asset type it is, where it is an asset at all. */
   readonly assetType?: string;
 }

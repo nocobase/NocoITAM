@@ -141,6 +141,8 @@ const ADDED_FIELDS: ReadonlyMap<string, readonly string[]> = new Map([
   // A repair names its 负责人 since 2026-09-28; before that it had only a
   // creator, so a stored policy states a list without it.
   ['main.repairs', ['ownerId']],
+  // And a stocktake since 2026-10-05 (`202610050002_audit_owner`).
+  ['main.auditTasks', ['ownerId']],
 ]);
 
 /**

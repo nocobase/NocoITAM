@@ -9,6 +9,7 @@ import { AttachmentsTab } from '@/components/itam/attachments-tab';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
 import { MultiReferenceInput } from '@/components/itam/multi-reference';
+import { ReferenceSelect } from '@/components/itam/reference-select';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +29,10 @@ import {
   AUDIT_TASK_FIELDS,
   type AuditScope,
 } from '@/lib/itam/operations';
-import { useCollectionPermissions } from '@/lib/itam/permissions';
+import {
+  useCollectionPermissions,
+  useCurrentUserId,
+} from '@/lib/itam/permissions';
 import { useReferenceNames } from '@/lib/itam/references';
 import { useConfirm } from '@/lib/itam/use-confirm';
 
@@ -314,6 +318,11 @@ function AuditCreateDialog({
   const [notes, setNotes] = useState('');
   const [scope, setScope] = useState<Required<AuditScope>>(() => scopeOf({}));
   const [executorIds, setExecutorIds] = useState<readonly string[]>([]);
+  // Whoever is creating the task answers for it unless they name somebody
+  // else, the way a repair's and a request's 负责人 start.
+  const currentUserId = useCurrentUserId();
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+  const owner = ownerId ?? currentUserId ?? null;
   const narrowed = scopeNarrowed(scope);
   return (
     <ConfirmDialog
@@ -331,6 +340,7 @@ function AuditCreateDialog({
         !plannedStart ||
         !plannedEnd ||
         !narrowed ||
+        !owner ||
         executorIds.length === 0
       }
       confirmLabel={t('actions.create')}
@@ -341,6 +351,7 @@ function AuditCreateDialog({
             plannedStart,
             plannedEnd,
             scope: scopeValue(scope),
+            ownerId: owner,
             executorIds,
             notes: notes || null,
           })
@@ -397,6 +408,17 @@ function AuditCreateDialog({
         </legend>
         <ScopeInputs value={scope} onChange={setScope} enabled={open} />
       </fieldset>
+      <div className='grid gap-1.5'>
+        <Label htmlFor='audit-owner'>
+          {t('fields.owner')} <span className='text-destructive'>*</span>
+        </Label>
+        <ReferenceSelect
+          id='audit-owner'
+          reference={{ collection: 'users' }}
+          value={owner}
+          onChange={setOwnerId}
+        />
+      </div>
       <div className='grid gap-1.5'>
         <Label htmlFor='audit-executors'>
           {t('fields.executors')} <span className='text-destructive'>*</span>

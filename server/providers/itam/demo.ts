@@ -2391,6 +2391,9 @@ export function createDemoService(dependencies: {
             plannedStart: daysFromNow(-2),
             plannedEnd: daysFromNow(12),
             executorIds: [leaverUserId],
+            // And answers for it, so leaving hands it over like any other
+            // record that still names them.
+            ownerId: leaverUserId,
             notes: texts.leaverAuditNotes,
           },
           context,
