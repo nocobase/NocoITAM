@@ -1440,6 +1440,7 @@ const messages = {
       tagPurchase: 'Purchase',
       tagDisposal: 'Disposal',
       tagRepair: 'Repair',
+      tagAudit: 'Audit',
       pendingPurchaseApprovals: 'Purchase orders waiting for me',
       pendingDisposalApprovals: 'Disposals waiting for me',
       awaitingReceipt: 'Orders awaiting receipt',

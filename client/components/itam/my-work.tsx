@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
 
+import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate } from '@/lib/itam/format';
@@ -76,9 +77,10 @@ function WorkCardView({ card }: { readonly card: WorkCard }): ReactElement {
                 >
                   <span className='flex min-w-0 items-center gap-2'>
                     {record.tag ? (
-                      <Badge variant='outline' className='shrink-0'>
-                        {record.tag}
-                      </Badge>
+                      <DocumentTypeBadge
+                        kind={record.tag}
+                        className='shrink-0'
+                      />
                     ) : null}
                     {/* The record's own name reads as a way into it — the
                         application's green, not a status colour. */}

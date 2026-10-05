@@ -1,5 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 
+import type { DocumentKind } from './document-kinds.js';
 import {
   MY_WORK_PREVIEW,
   useMyWork,
@@ -7,9 +8,13 @@ import {
   type MyWorkRecord,
 } from './workbench.js';
 
-/** A record on a card, with the kind tag the merged approval card needs. */
+/**
+ * A record on a card, with the kind tag the merged approval card needs. The
+ * kind, not its label: the tag carries the icon of that kind's own
+ * navigation entry, which a translated string could not say.
+ */
 export interface CardRecord extends MyWorkRecord {
-  readonly tag?: string;
+  readonly tag?: DocumentKind;
 }
 
 /**
@@ -65,16 +70,18 @@ export function useWorkCards(): readonly WorkCard[] {
   const purchase = find('pendingPurchaseApprovals');
   const disposal = find('pendingDisposalApprovals');
   if (purchase || disposal) {
-    const tagged = (item: MyWorkItem | undefined, tag: string): CardRecord[] =>
-      (item?.records ?? []).map((record) => ({ ...record, tag: t(tag) }));
+    const tagged = (
+      item: MyWorkItem | undefined,
+      tag: DocumentKind,
+    ): CardRecord[] => (item?.records ?? []).map((record) => ({ ...record, tag }));
     cards.push({
       key: 'pendingApprovals',
       label: t('workbench.work.pendingApprovals'),
       count: (purchase?.count ?? 0) + (disposal?.count ?? 0),
       // Oldest first across both kinds: what has waited longest comes first.
       records: [
-        ...tagged(purchase, 'workbench.work.tagPurchase'),
-        ...tagged(disposal, 'workbench.work.tagDisposal'),
+        ...tagged(purchase, 'purchaseOrders'),
+        ...tagged(disposal, 'disposals'),
       ]
         .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
         .slice(0, MY_WORK_PREVIEW),
@@ -89,10 +96,10 @@ export function useWorkCards(): readonly WorkCard[] {
   // A record whose title is only a number says nothing about what it is, so
   // it carries a tag; a device (编号 / 名称) and an audit task (its name)
   // name themselves and take none.
-  const TAGGED: Readonly<Record<string, string>> = {
-    awaitingReceipt: 'workbench.work.tagPurchase',
-    activeRepairs: 'workbench.work.tagRepair',
-    pendingDisposalExecution: 'workbench.work.tagDisposal',
+  const TAGGED: Readonly<Record<string, DocumentKind>> = {
+    awaitingReceipt: 'purchaseOrders',
+    activeRepairs: 'repairs',
+    pendingDisposalExecution: 'disposals',
   };
   for (const key of [
     // First after the approvals: somebody has left with the company's
@@ -113,7 +120,7 @@ export function useWorkCards(): readonly WorkCard[] {
       label: t(`workbench.work.${key}`),
       count: item.count,
       records: tag
-        ? item.records.map((record) => ({ ...record, tag: t(tag) }))
+        ? item.records.map((record) => ({ ...record, tag }))
         : item.records,
       links:
         item.count > MY_WORK_PREVIEW
