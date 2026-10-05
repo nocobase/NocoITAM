@@ -196,7 +196,7 @@ describe('maintenance, reminders, workbench and reports', () => {
     expect(count('lowStock')).toBe(1);
     expect(count('auditOverdue')).toBe(1);
     // An overdue loan is no longer a reminder — the workbench's
-    // 设备借出逾期未还 card answers it live, from the same query — but the
+    // 借出逾期 card answers it live, from the same query — but the
     // daily job still tells the borrower and the device's 负责人, straight
     // from that query and writing no row (2026-09-28).
     expect(count('loanOverdue')).toBeUndefined();

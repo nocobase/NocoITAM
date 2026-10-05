@@ -9,10 +9,7 @@ import {
 import type { ApprovalService, ApprovalSubject } from './approvals.js';
 import { compileAuthzScope } from './authz-filter.js';
 import { asText, type Row } from './collection-query.js';
-import {
-  OWNED_BY_USER,
-  RECOVERABLE_DEVICE_STATUSES,
-} from './recovery.js';
+import { OWNED_BY_USER, RECOVERABLE_DEVICE_STATUSES } from './recovery.js';
 
 /**
  * "My work" on the workbench: what waits for the signed-in user right now.
@@ -70,7 +67,22 @@ export interface MyWorkItem {
 }
 
 export interface WorkbenchService {
-  myWork(userId: string, decide: Decider): Promise<readonly MyWorkItem[]>;
+  /**
+   * The team's queue, one for everybody (2026-10-05): every card lists
+   * everyone's records, so whatever waits is seen by the whole of IT
+   * rather than only in the inbox of whoever it is addressed to — somebody
+   * away no longer hides work. `scope: 'mine'` narrows each card back to
+   * what is the reader's: the approvals that name them, the orders and
+   * disposals they own or wrote, their repairs and stocktakes, the loans of
+   * devices they own and the leavers holding something they own. A row's
+   * buttons follow their own rules either way — another person's approval
+   * is still theirs to decide.
+   */
+  myWork(
+    userId: string,
+    decide: Decider,
+    options?: { readonly scope?: 'all' | 'mine' },
+  ): Promise<readonly MyWorkItem[]>;
 }
 
 /** How many records a card lists before it says "see all". */
@@ -119,8 +131,22 @@ export function createWorkbenchService(dependencies: {
   };
 
   return {
-    async myWork(userId, decide) {
+    async myWork(userId, decide, { scope = 'all' } = {}) {
       const today = todayIso();
+      const everyone = scope === 'all';
+      // Whose records a card lists: everybody's, or the reader's own.
+      const reader = everyone ? null : userId;
+      const raisedBy = (
+        query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
+      ) =>
+        reader === null
+          ? query
+          : query.where((eb) =>
+              eb.or([
+                eb('ownerId', '=', reader),
+                eb('createdById', '=', reader),
+              ]),
+            );
       const items: MyWorkItem[] = [];
       // Each to-do carries the first few records behind it: the card shows
       // them straight away, so a count never says something is waiting
@@ -150,7 +176,7 @@ export function createWorkbenchService(dependencies: {
       // with the kind it is.
       const approvalConditions = await decide('approvals', 'read');
       if (approvalConditions) {
-        const pending = await approvals.pendingFor(userId, approvalConditions);
+        const pending = await approvals.pendingFor(reader, approvalConditions);
         // An approval names its subject in the singular (`ApprovalSubject`),
         // which is not the collection the grant is asked for.
         const waiting: readonly {
@@ -166,7 +192,9 @@ export function createWorkbenchService(dependencies: {
             subjectType: 'purchaseOrder',
             collection: 'purchaseOrders',
             route: '/procurement',
-            url: '/procurement?view=myApproval',
+            url: everyone
+              ? '/procurement?status=pendingApproval'
+              : '/procurement?view=myApproval',
             columns: ['id', 'orderNo', 'neededBy'],
           },
           {
@@ -174,7 +202,9 @@ export function createWorkbenchService(dependencies: {
             subjectType: 'disposal',
             collection: 'disposals',
             route: '/disposals',
-            url: '/disposals?view=myApproval',
+            url: everyone
+              ? '/disposals?status=pendingApproval'
+              : '/disposals?view=myApproval',
             columns: ['id', 'disposalNo', 'requestedAt'],
           },
         ];
@@ -225,15 +255,12 @@ export function createWorkbenchService(dependencies: {
         // uses for everything else on the order (`raisedTheOrder` in
         // `procurement.ts`: its 负责人, or whoever wrote it before handing it
         // over). Handing the order over hands this card over with it.
-        const awaiting = (query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>) =>
-          query
-            .where('status', 'in', ['ordered', 'partiallyReceived'])
-            .where((eb) =>
-              eb.or([
-                eb('ownerId', '=', userId),
-                eb('createdById', '=', userId),
-              ]),
-            );
+        const awaiting = (
+          query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
+        ) =>
+          raisedBy(
+            query.where('status', 'in', ['ordered', 'partiallyReceived']),
+          );
         const rows = await take(
           'purchaseOrders',
           orders,
@@ -262,15 +289,7 @@ export function createWorkbenchService(dependencies: {
       if (disposals && (await decide('disposals', 'execute'))) {
         const toExecute = (
           query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
-        ) =>
-          query
-            .where('status', '=', 'approved')
-            .where((eb) =>
-              eb.or([
-                eb('ownerId', '=', userId),
-                eb('createdById', '=', userId),
-              ]),
-            );
+        ) => raisedBy(query.where('status', '=', 'approved'));
         const rows = await take(
           'disposals',
           disposals,
@@ -298,10 +317,12 @@ export function createWorkbenchService(dependencies: {
       if (repairs) {
         const open = (
           query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
-        ) =>
-          query
-            .where('result', '=', 'inProgress')
-            .where('ownerId', '=', userId);
+        ) => {
+          const inProgress = query.where('result', '=', 'inProgress');
+          return reader === null
+            ? inProgress
+            : inProgress.where('ownerId', '=', reader);
+        };
         const rows = await take(
           'repairs',
           repairs,
@@ -334,7 +355,9 @@ export function createWorkbenchService(dependencies: {
           .where('status', 'in', ['inProgress', 'pendingDifferences'])
           .orderBy('plannedEnd', 'asc')
           .execute<Row>();
-        const mine = rows.filter((row) => isMine(row, userId));
+        const mine = rows.filter(
+          (row) => reader === null || isMine(row, reader),
+        );
         items.push({
           key: 'activeAudits',
           count: mine.length,
@@ -518,9 +541,15 @@ export function createWorkbenchService(dependencies: {
           }
         }
 
+        // Narrowed to the reader: only a leaver holding something they own.
+        if (reader !== null)
+          for (const person of [...open.keys()])
+            if (!mine.has(person)) open.delete(person);
         if (open.size > 0) {
           const leavers = (
-            query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
+            query: ReturnType<
+              ReturnType<DatabaseManager['query']>['selectFrom']
+            >,
           ) =>
             query
               .where('employmentStatus', '=', 'left')
@@ -558,9 +587,9 @@ export function createWorkbenchService(dependencies: {
       const devices = await decide('devices', 'read');
       if (devices && (await decide('devices', 'assign'))) {
         // Past its date, not due on it — a loan due this afternoon is not
-        // yet anybody's to chase. The same set the 借出逾期未还 reminder
-        // counts (`maintenance.ts`): the reminder says how many, the card
-        // says which ones and opens them.
+        // yet anybody's to chase. The same set the nightly job notifies
+        // about (`notifyOverdueLoans` in `maintenance.ts`); there is no
+        // reminder for it, so this card is the one place that lists them.
         //
         // Everybody who may assign sees every one of them, each row saying
         // whether it is the reader's. It was scoped to `ownerId` on the
@@ -569,10 +598,16 @@ export function createWorkbenchService(dependencies: {
         // convention, and its cost is that a device lent by somebody on
         // holiday is overdue in one inbox nobody is reading. The 负责人 is
         // still who to ask; it is on the row rather than in the query.
-        const dueBack = (query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>) =>
-          query
+        const dueBack = (
+          query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
+        ) => {
+          const overdue = query
             .where('status', '=', 'onLoan')
             .where('expectedReturnDate', '<', today);
+          return reader === null
+            ? overdue
+            : overdue.where('ownerId', '=', reader);
+        };
         // The reader's own first, then the longest overdue: a list that now
         // holds everybody's starts with the part that is theirs. Two reads
         // rather than one ordered by a case expression, which also keeps a

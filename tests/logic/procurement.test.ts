@@ -821,7 +821,7 @@ describe('procurement', () => {
     });
     await post(`purchase-orders/${order.id}/submit`, { approverId: 'ann' });
 
-    const work = async (who: typeof manager) =>
+    const work = async (who: typeof manager, scope = 'mine') =>
       data<
         {
           key: string;
@@ -829,7 +829,7 @@ describe('procurement', () => {
           url: string;
           records: { id: string; title: string; date: string | null }[];
         }[]
-      >(await app.request('/api/itam/workbench/my-work', who));
+      >(await app.request(`/api/itam/workbench/my-work?scope=${scope}`, who));
     const forApprover = await work(approver);
     // One row per kind: a single row counting both would send an approver
     // with disposals waiting to an empty purchase order list.
@@ -845,6 +845,13 @@ describe('procurement', () => {
         (item) => item.key === 'pendingPurchaseApprovals',
       )?.count,
     ).toBe(0);
+    // The team's queue, everybody's default, lists the approval addressed
+    // to someone else too, linking to every pending order.
+    expect(
+      (await work(manager, 'all')).find(
+        (item) => item.key === 'pendingPurchaseApprovals',
+      ),
+    ).toMatchObject({ count: 1, url: '/procurement?status=pendingApproval' });
 
     // 待验收到货 is the orders this reader raised, by the same rule the
     // service uses for everything the requesting side owns — a purchase

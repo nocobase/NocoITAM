@@ -11,6 +11,7 @@ import {
 } from '@/components/itam/global-search';
 import { DemoBanner } from '@/components/itam/demo-banner';
 import { RecordDrawerProvider } from '@/components/itam/record-drawer';
+import { useLiveWork } from '@/lib/itam/live-work';
 
 import { AiPanelSpacer, ItamAiShell } from './ai-panel.js';
 import { RouteTreeProvider } from '../routing/route-context.js';
@@ -53,6 +54,8 @@ export function AppLayout({
   const settingsNavigation = useRouteNavigation(
     useClientApplication().runtime.settingsRouteTree,
   );
+  // Application change (ITAM): to-dos stay current while a page is open.
+  useLiveWork();
 
   return (
     // The shell owns the business route tree used by its pages and navigation.

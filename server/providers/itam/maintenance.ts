@@ -99,7 +99,7 @@ export function createMaintenanceService(dependencies: {
   /**
    * Tells the borrower and the device's 负责人 that a loan is past its date.
    *
-   * It is not a reminder and writes no row: the workbench's 设备借出逾期未还
+   * It is not a reminder and writes no row: the workbench's 借出逾期
    * card answers "which ones" live, from this same query, so a stored copy
    * would be a staler second answer (decided 2026-09-28). What made the
    * notification once-only was never the reminders table but the key the

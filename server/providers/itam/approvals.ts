@@ -51,9 +51,9 @@ export interface ApprovalService {
     options: ListOptions,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<ListResult>;
-  /** Approvals the caller may decide now. */
+  /** Approvals the caller may decide now; `null` asks for every pending one. */
   pendingFor(
-    userId: string,
+    userId: string | null,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<readonly Row[]>;
   forSubject(
@@ -118,6 +118,9 @@ export function createApprovalService(
         // request decidable only from the record page, with 待我审批
         // reporting nothing waiting. An approval that names nobody is
         // anybody's but its own requester's.
+        // Without a reader, every pending approval (the administrator's
+        // view of everybody's queue).
+        if (userId === null) return true;
         return approvers.length === 0
           ? row.requestedById !== userId
           : approvers.includes(userId);

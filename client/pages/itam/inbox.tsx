@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/itam/format';
 import { usePersonRecovery } from '@/lib/itam/recovery';
+import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { useWorkCards, WORK_TONE, type CardRecord } from '@/lib/itam/my-work';
 
 /**
@@ -71,14 +72,17 @@ export default function InboxPage(): ReactElement {
   return (
     <Page>
       <section className='@container space-y-3'>
-        <h2 className='font-heading text-base leading-snug font-medium'>
-          {t('workbench.myWork')}
-          {total > 0 ? (
-            <span className='ml-2 text-base font-normal text-muted-foreground tabular-nums'>
-              {total}
-            </span>
-          ) : null}
-        </h2>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <h2 className='font-heading text-base leading-snug font-medium'>
+            {t('workbench.myWork')}
+            {total > 0 ? (
+              <span className='ml-2 text-base font-normal text-muted-foreground tabular-nums'>
+                {total}
+              </span>
+            ) : null}
+          </h2>
+          <WorkScopeToggle />
+        </div>
         {/* The to-dos as a filter across the top rather than as headings
             over the rows: headings cut a queue of eight into six segments
             and stop it being ordered by urgency across them, while the same

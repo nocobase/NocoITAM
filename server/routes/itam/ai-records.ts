@@ -13,6 +13,7 @@ import {
 } from '../../providers/index.js';
 import type { ActorScope } from '../../providers/itam/ai-bridge.js';
 import { refuse, type AiWriteFailure } from '../../providers/itam/ai-writes.js';
+import { itamChangesToken } from '../../providers/itam/changes.js';
 import { MASTER_DATA_COLLECTIONS } from '../../providers/itam/collections.js';
 import type { OperationContext } from '../../providers/itam/devices.js';
 import { seatsRequired } from '../../providers/itam/entitlements.js';
@@ -350,6 +351,19 @@ export async function screenRecord(
 
 /** Runs one confirmed call as the user; a refusal is thrown. */
 export async function runRecordTool(
+  container: ServiceContainer,
+  scope: ActorScope,
+  tool: AiRecordTool,
+  raw: unknown,
+): Promise<Row> {
+  const result = await executeRecordTool(container, scope, tool, raw);
+  // Written outside the ITAM routes, as `runWrite`'s are.
+  if (container.has(itamChangesToken))
+    container.resolve(itamChangesToken).touched();
+  return result;
+}
+
+async function executeRecordTool(
   container: ServiceContainer,
   scope: ActorScope,
   tool: AiRecordTool,

@@ -9,10 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate } from '@/lib/itam/format';
 import { useWorkCards, type WorkCard } from '@/lib/itam/my-work';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
+import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 
 /**
- * "My to-dos": the workbench's top strip. One card per kind of thing waiting
- * on the signed-in user, each listing the first few records behind it rather
+ * 待办: the workbench's top strip. One card per kind of thing waiting —
+ * the team's, or with 我负责的 the reader's part — each listing the first few records behind it rather
  * than only a count — a number says something is waiting without saying
  * what. A record opens in the record drawer, so dealing with one does not
  * cost the reader the workbench.
@@ -20,17 +21,19 @@ import { useOpenRecord } from '@/lib/itam/record-drawer';
 export function MyWork(): ReactElement | null {
   const { t } = useTranslation();
   const cards = useWorkCards();
-  // Nothing is waiting on this reader at all (an employee, whose work is
-  // their own assets): the strip says nothing rather than showing a heading
-  // over a row of empty boxes.
+  // A reader with no kind of to-do at all — no grant any card is shown
+  // under — gets no strip rather than a heading over nothing.
   if (cards.length === 0) return null;
   return (
     <section className='space-y-3'>
       {/* No total beside the heading: each card carries its own number, and
           a sum of unrelated queues is not a thing anybody acts on. */}
-      <h2 className='font-heading text-base leading-snug font-medium'>
-        {t('workbench.myWork')}
-      </h2>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
+        <h2 className='font-heading text-base leading-snug font-medium'>
+          {t('workbench.myWork')}
+        </h2>
+        <WorkScopeToggle />
+      </div>
       {/* Three to a row at full width, by the page's own room rather than
           the window's — the assistant panel narrows the page while the
           window stays wide. */}
@@ -99,7 +102,9 @@ function WorkCardView({ card }: { readonly card: WorkCard }): ReactElement {
                     )}
                     {/* And where the record is the one thing, that it is
                         theirs — the card lists everybody's. */}
-                    {record.mine ? <span>{t('workbench.work.yours')}</span> : null}
+                    {record.mine ? (
+                      <span>{t('workbench.work.yours')}</span>
+                    ) : null}
                     {record.date ? (
                       <span>{formatDate(record.date)}</span>
                     ) : null}
