@@ -132,20 +132,22 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
   },
   {
     key: 'departmentId',
-    detailOrder: -8,
+    // With what the order is for, after 事由 and 说明 (2026-10-05): the
+    // 申请信息 group went once 负责人 moved to the summary strip.
+    detailOrder: 20,
     label: 'fields.department',
     type: 'reference',
     reference: { collection: 'departments' },
-    group: 'groups.request',
+    group: 'groups.basic',
     readonlyWhen: settled,
   },
   {
     key: 'neededBy',
-    detailOrder: -7,
+    detailOrder: 21,
     label: 'fields.neededBy',
     type: 'date',
     column: true,
-    group: 'groups.request',
+    group: 'groups.basic',
     readonlyWhen: settled,
   },
   {
@@ -216,7 +218,8 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     // domain).
     reference: { collection: 'users' },
     required: true,
-    group: 'groups.request',
+    // Shown and handed over in the summary strip, not the information card.
+    group: 'groups.basic',
     detailOrder: -10,
   },
   ...AUDIT_FIELDS,

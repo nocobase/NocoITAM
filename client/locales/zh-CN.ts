@@ -402,7 +402,6 @@ const zhCN: AppResource = {
     seats: '席位',
     billing: '计费',
     compliance: '合规',
-    request: '申请信息',
     handling: '处理',
     progress: '进度',
     execution: '执行',

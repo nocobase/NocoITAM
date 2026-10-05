@@ -448,17 +448,20 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
     // A disposal is always somebody in IT's to follow through; the create
     // dialog starts it at whoever is filing it and will not let it be
     // emptied. Anybody may hand it over while it is open, waiting for a
-    // decision included (`handover` on the domain).
+    // decision included (`handover` on the domain). Shown and handed over
+    // in the summary strip, not the information card.
     required: true,
-    group: 'groups.request',
+    group: 'groups.basic',
   },
   {
     key: 'requestedAt',
-    detailOrder: -9,
+    // After 报废方式, 报废原因 and 说明 (2026-10-05): the 申请信息 group went
+    // once 负责人 moved to the summary strip, as on a purchase order.
+    detailOrder: 20,
     label: 'fields.requestedAt',
     type: 'date',
     readonlyWhen: approvedDisposal,
-    group: 'groups.request',
+    group: 'groups.basic',
   },
   {
     key: 'currency',

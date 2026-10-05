@@ -1241,6 +1241,15 @@ Rules learned while building it:
   summary, a change value, and the cancellation reason on the summary strip,
   where it also drops to the normal weight. A page that renders such a value
   itself must fold it too.
+- 负责人 (`ownerId`) is read and handed over in a detail page's **summary
+  strip**, right after the status, on every record that has one
+  (2026-10-05): `domain-detail.tsx` adds it to any domain whose fields
+  include `ownerId` and leaves it out of the information card, and the
+  device page does the same. It is the card's own inline editor
+  (`inlineField`), so the handover rule and the read-only cases are the
+  ones the card applied. Neither the purchase order nor the disposal has a
+  申请信息 group any more: 部门 and 需求日期, and 申请日期, sit under
+  基本信息.
 - A record has one timeline, not a history tab beside a change-log tab: the
   events and the field changes of the same operation are one line, folded
   together by the `operationId` both writers stamp

@@ -20,6 +20,7 @@ import {
   InfoCard,
   InfoSection,
   InfoRow,
+  type SummaryItem,
 } from '@/components/itam/detail-page';
 import { EmptyState } from '@/components/itam/empty-state';
 import { ExtendedFields } from '@/components/itam/extended-fields';
@@ -206,6 +207,8 @@ export function DomainDetailPage({
     // The name is edited in the title.
     if (
       field.key === domain.nameField ||
+      // 负责人 is shown, and handed over, in the summary strip.
+      field.key === 'ownerId' ||
       field.detail === false ||
       paired.has(field.key) ||
       field.visibleWhen?.(data) === false
@@ -230,6 +233,131 @@ export function DomainDetailPage({
   const editable =
     Boolean(permissions.update) &&
     (domain.editable?.(data, currentUserId) ?? true);
+
+  // One field's inline editor: the information card renders its rows with
+  // it, and the summary strip renders 负责人 with it (2026-10-05), so both
+  // follow the same rules and save the same way.
+  const inlineField = (field: FieldDefinition): ReactElement => (
+    <InlineField
+      // Dependent constraints resolved against this record,
+      // so a field required for it (a perpetual
+      // entitlement's licensing model) offers no empty
+      // choice the server would then refuse.
+      field={resolveFormField(field, data)}
+      // A field that edits two halves at once passes the
+      // pair: an amount with its currency, a reference
+      // that may be free text, an answer with the choice
+      // it calls for.
+      value={
+        field.currencyField
+          ? {
+              amount: data[field.key],
+              currency: data[field.currencyField],
+            }
+          : field.alternateField
+            ? {
+                vendorId: data[field.key],
+                name: data[field.alternateField],
+              }
+            : field.dependent
+              ? {
+                  value: data[field.key],
+                  dependent: data[field.dependent.key],
+                }
+              : data[field.key]
+      }
+      editable={
+        // The 负责人 of an open request is anybody's to
+        // hand over, ahead of the record's own rule.
+        (Boolean(permissions.update) &&
+          domain.handover?.field === field.key &&
+          domain.handover.open(data)) ||
+        (editable &&
+          (field.form !== false ||
+            Boolean(domain.fieldEditor?.(field, data))) &&
+          !field.readonlyWhen?.(data))
+      }
+      renderInput={domain.fieldEditor?.(field, data)}
+      recordId={id}
+      display={
+        // `min-w-0` on the items, or a value with no
+        // spaces in it — an e-mail, a URL — keeps this
+        // box at its own width and spills out of the
+        // card: a flex item's `min-width: auto` is its
+        // content, and the breaking inside never gets a
+        // narrower box to break into.
+        <span className='inline-flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 *:min-w-0'>
+          {domain.fieldDisplay?.(field, data) ?? (
+            <FieldValue
+              field={field}
+              value={data[field.key]}
+              names={names}
+              currency={currency}
+              plainEnums
+              routeFor={(collection) =>
+                collection === 'stockItems' && data.relatedAssetType
+                  ? (STOCK_ROUTES[data.relatedAssetType as StockKind] ??
+                    referenceRoute(collection))
+                  : referenceRoute(collection)
+              }
+            />
+          )}
+        </span>
+      }
+      onSave={async (value) => {
+        const pair = (value ?? {}) as {
+          amount?: unknown;
+          currency?: unknown;
+          vendorId?: unknown;
+          name?: unknown;
+          value?: unknown;
+          dependent?: unknown;
+        };
+        const input = field.currencyField
+          ? {
+              [field.key]: pair.amount ?? null,
+              [field.currencyField]: pair.currency ?? null,
+            }
+          : field.alternateField
+            ? {
+                [field.key]: pair.vendorId ?? null,
+                [field.alternateField]: pair.name || null,
+              }
+            : field.dependent
+              ? {
+                  [field.key]: pair.value ?? null,
+                  [field.dependent.key]: pair.dependent ?? null,
+                }
+              : { [field.key]: value };
+        try {
+          await mutations.update.mutateAsync({ id, input });
+        } catch (error) {
+          throw new Error(apiErrorBody(error)?.message ?? errorMessage(error), {
+            cause: error,
+          });
+        }
+      }}
+    />
+  );
+
+  const withOwner = (items: readonly SummaryItem[]): SummaryItem[] => {
+    const owner = domain.fields.find(
+      (field) => field.key === 'ownerId' && field.visibleWhen?.(data) !== false,
+    );
+    if (!owner) return [...items];
+    const item: SummaryItem = {
+      key: 'owner',
+      label: t(owner.label),
+      // The strip is narrow: while open, the picker gets the room a name
+      // needs instead of truncating it to an ellipsis.
+      value: (
+        <span className='[&_[data-slot=popover-trigger]]:min-w-44'>
+          {inlineField(owner)}
+        </span>
+      ),
+    };
+    return [...items.slice(0, 1), item, ...items.slice(1)];
+  };
 
   return (
     <>
@@ -315,7 +443,9 @@ export function DomainDetailPage({
           </>
         }
         summary={[
-          ...(domain.summary?.(data, t) ?? []),
+          // 负责人 right after the first item (the status, where there is
+          // one): who answers for the record is read with where it stands.
+          ...withOwner(domain.summary?.(data, t) ?? []),
           ...(domain.summaryTimestamps === false
             ? []
             : [
@@ -382,111 +512,7 @@ export function DomainDetailPage({
                           />
                         }
                       >
-                        <InlineField
-                          // Dependent constraints resolved against this record,
-                          // so a field required for it (a perpetual
-                          // entitlement's licensing model) offers no empty
-                          // choice the server would then refuse.
-                          field={resolveFormField(field, data)}
-                          // A field that edits two halves at once passes the
-                          // pair: an amount with its currency, a reference
-                          // that may be free text, an answer with the choice
-                          // it calls for.
-                          value={
-                            field.currencyField
-                              ? {
-                                  amount: data[field.key],
-                                  currency: data[field.currencyField],
-                                }
-                              : field.alternateField
-                                ? {
-                                    vendorId: data[field.key],
-                                    name: data[field.alternateField],
-                                  }
-                                : field.dependent
-                                  ? {
-                                      value: data[field.key],
-                                      dependent: data[field.dependent.key],
-                                    }
-                                  : data[field.key]
-                          }
-                          editable={
-                            // The 负责人 of an open request is anybody's to
-                            // hand over, ahead of the record's own rule.
-                            (Boolean(permissions.update) &&
-                              domain.handover?.field === field.key &&
-                              domain.handover.open(data)) ||
-                            (editable &&
-                              (field.form !== false ||
-                                Boolean(domain.fieldEditor?.(field, data))) &&
-                              !field.readonlyWhen?.(data))
-                          }
-                          renderInput={domain.fieldEditor?.(field, data)}
-                          recordId={id}
-                          display={
-                            // `min-w-0` on the items, or a value with no
-                            // spaces in it — an e-mail, a URL — keeps this
-                            // box at its own width and spills out of the
-                            // card: a flex item's `min-width: auto` is its
-                            // content, and the breaking inside never gets a
-                            // narrower box to break into.
-                            <span className='inline-flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 *:min-w-0'>
-                              {domain.fieldDisplay?.(field, data) ?? (
-                                <FieldValue
-                                  field={field}
-                                  value={data[field.key]}
-                                  names={names}
-                                  currency={currency}
-                                  plainEnums
-                                  routeFor={(collection) =>
-                                    collection === 'stockItems' &&
-                                    data.relatedAssetType
-                                      ? (STOCK_ROUTES[
-                                          data.relatedAssetType as StockKind
-                                        ] ?? referenceRoute(collection))
-                                      : referenceRoute(collection)
-                                  }
-                                />
-                              )}
-                            </span>
-                          }
-                          onSave={async (value) => {
-                            const pair = (value ?? {}) as {
-                              amount?: unknown;
-                              currency?: unknown;
-                              vendorId?: unknown;
-                              name?: unknown;
-                              value?: unknown;
-                              dependent?: unknown;
-                            };
-                            const input = field.currencyField
-                              ? {
-                                  [field.key]: pair.amount ?? null,
-                                  [field.currencyField]: pair.currency ?? null,
-                                }
-                              : field.alternateField
-                                ? {
-                                    [field.key]: pair.vendorId ?? null,
-                                    [field.alternateField]: pair.name || null,
-                                  }
-                                : field.dependent
-                                  ? {
-                                      [field.key]: pair.value ?? null,
-                                      [field.dependent.key]:
-                                        pair.dependent ?? null,
-                                    }
-                                  : { [field.key]: value };
-                            try {
-                              await mutations.update.mutateAsync({ id, input });
-                            } catch (error) {
-                              throw new Error(
-                                apiErrorBody(error)?.message ??
-                                  errorMessage(error),
-                                { cause: error },
-                              );
-                            }
-                          }}
-                        />
+                        {inlineField(field)}
                       </InfoRow>
                     ))}
                 </InfoSection>
