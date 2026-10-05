@@ -1,5 +1,6 @@
 import {
   AUDIT_FIELDS,
+  OWNER_FIELD,
   type FieldDefinition,
   type FieldOption,
 } from './fields.js';
@@ -264,21 +265,6 @@ export const AUDIT_TASK_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.progress',
   },
   {
-    // Who answers for the task; the executors below are who count
-    // (2026-10-05). Starts at whoever creates it — the list's create dialog
-    // seeds a declared `ownerId` from the signed-in user — and is anybody's
-    // to hand over while the task is open, since the page's own rule is
-    // only that it is not finished or called off.
-    key: 'ownerId',
-    label: 'fields.owner',
-    type: 'reference',
-    reference: { collection: 'users' },
-    required: true,
-    column: true,
-    group: 'groups.basic',
-    detailOrder: -10,
-  },
-  {
     key: 'executorIds',
     label: 'fields.executors',
     type: 'text',
@@ -297,6 +283,12 @@ export const AUDIT_TASK_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.basic',
     detailOrder: -8,
   },
+  // Who answers for the task, beside the executors who count (2026-10-05):
+  // first in 系统, above 创建人, where every record keeps its 负责人. The
+  // create dialog asks for it, starting at the reader, and it is anybody's
+  // to hand over while the task is open — the page's own rule is only that
+  // it is not finished or called off. A column too, as a repair's is.
+  { ...OWNER_FIELD, column: true },
   ...AUDIT_FIELDS,
 ];
 
