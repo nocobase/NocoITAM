@@ -203,6 +203,8 @@ it('says whom an overdue device is lent to and when it was due back', () => {
   expect(within(loans).getByText('workbench.work.dueBack')).toBeTruthy();
 });
 
+const LONG_NAME = 'Maximiliana Alexandrovna Konstantinopolskaya-Wellington';
+
 it('marks, in the team view, the approvals that wait on the reader', () => {
   state.items = [
     {
@@ -217,7 +219,12 @@ it('marks, in the team view, the approvals that wait on the reader', () => {
   ];
   state.rows = {
     'itam/purchase-orders': [
-      { id: 'po-a', orderNo: 'PO-000001' },
+      {
+        id: 'po-a',
+        orderNo: 'PO-000001',
+        ownerId: LONG_NAME,
+        createdAt: '2026-10-05T21:13:00.000',
+      },
       { id: 'po-b', orderNo: 'PO-000002' },
     ],
   };
@@ -228,6 +235,16 @@ it('marks, in the team view, the approvals that wait on the reader', () => {
     within(approvals).getAllByText('workbench.work.awaitingYou'),
   ).toHaveLength(1);
   const mine = within(approvals).getByText('PO-000001').closest('button')!;
-  expect(within(mine).getByText('workbench.work.awaitingYou')).toBeTruthy();
+  const marker = within(mine).getByText('workbench.work.awaitingYou');
+  // After the time, on the bottom line, and never the part that is cut.
+  const footer = marker.closest('p')!;
+  expect(footer.textContent).toMatch(
+    /2026-10-05 21:13.*workbench\.work\.awaitingYou/,
+  );
+  expect(marker.className).toContain('shrink-0');
+  // A long name is what gives way.
+  expect(
+    within(footer).getByText(LONG_NAME).closest('.truncate'),
+  ).not.toBeNull();
   state.rows = {};
 });

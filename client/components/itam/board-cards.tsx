@@ -198,17 +198,37 @@ export function BoardCards({
               ) : null}
               {footer.length > 0 || entry.marker ? (
                 <p className='mt-2.5 flex min-w-0 items-center gap-1.5 border-t border-border/50 pt-2 text-xs text-muted-foreground'>
+                  {/* Who comes first and is the one that gives way: a long
+                      name is cut short, while the time and the marker after
+                      it always read whole. */}
                   {footer.map((part, index) => (
                     // eslint-disable-next-line @eslint-react/no-array-index-key -- positional, as above
                     <Fragment key={index}>
-                      {index > 0 ? <span aria-hidden='true'>·</span> : null}
-                      <span className='truncate'>{part}</span>
+                      {index > 0 ? (
+                        <span aria-hidden='true' className='shrink-0'>
+                          ·
+                        </span>
+                      ) : null}
+                      <span
+                        className={
+                          index === 0 ? 'min-w-0 truncate' : 'shrink-0'
+                        }
+                      >
+                        {part}
+                      </span>
                     </Fragment>
                   ))}
                   {entry.marker ? (
-                    <span className='ml-auto shrink-0 font-medium text-foreground'>
-                      {entry.marker}
-                    </span>
+                    <>
+                      {footer.length > 0 ? (
+                        <span aria-hidden='true' className='shrink-0'>
+                          ·
+                        </span>
+                      ) : null}
+                      <span className='shrink-0 font-medium text-foreground'>
+                        {entry.marker}
+                      </span>
+                    </>
                   ) : null}
                 </p>
               ) : null}
