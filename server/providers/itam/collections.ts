@@ -194,6 +194,26 @@ export const MASTER_DATA_COLLECTIONS: readonly ItamCollectionDefinition[] = [
     defaultSort: 'sort',
   },
   {
+    // 入职配置: what a new joiner in a department and position is given
+    // (2026-10-05). `items` is a JSON list of { modelId | categoryId |
+    // softwareProductId, quantity }.
+    name: 'onboardingKits',
+    title: 'Onboarding kits',
+    actions: crud,
+    fields: [
+      'id',
+      'name',
+      'departmentId',
+      'position',
+      'items',
+      'notes',
+      ...audit,
+    ],
+    attributes: { identifier: 'id', creator: 'createdById' },
+    searchFields: ['name', 'position'],
+    defaultSort: 'name',
+  },
+  {
     name: 'people',
     title: 'People',
     actions: [...crud, 'markLeft'],

@@ -126,6 +126,34 @@ const schemas: Readonly<
     managerId: optionalId,
     sort: z.number().int().optional(),
   }),
+  onboardingKits: z.object({
+    name: text,
+    departmentId: z.string().min(1).max(64),
+    // Empty for the department's default kit.
+    position: optionalText,
+    items: z
+      .array(
+        z
+          .object({
+            modelId: z.string().min(1).max(64).optional(),
+            categoryId: z.string().min(1).max(64).optional(),
+            softwareProductId: z.string().min(1).max(64).optional(),
+            quantity: z.number().int().min(1).max(100),
+          })
+          .strict()
+          // Each item is exactly one thing: a model, any model of a
+          // category, or a software product.
+          .refine(
+            (item) =>
+              [item.modelId, item.categoryId, item.softwareProductId].filter(
+                Boolean,
+              ).length === 1,
+            { message: 'An item is one model, one category or one product' },
+          ),
+      )
+      .max(50),
+    notes: optionalLong,
+  }),
   people: z.object({
     name: text,
     employeeNo: optionalText,
@@ -162,6 +190,7 @@ export const CREATE_DEFAULTS: Readonly<
     depreciationMethod: 'none',
     sort: 0,
   },
+  onboardingKits: { items: [] },
   locations: { sort: 0 },
   departments: { sort: 0 },
 };

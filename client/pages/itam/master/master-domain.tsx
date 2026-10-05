@@ -16,6 +16,7 @@ import {
   CategoryKindCell,
   CategoryKindValue,
   CategoryTemplate,
+  OnboardingKitItems,
   MasterActions,
   MasterTree,
   OnHandCell,
@@ -202,7 +203,12 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
     Actions: ({ record }) => (
       <MasterActions collection={collection} record={record} />
     ),
-    Aside: collection.name === 'categories' ? CategoryTemplate : undefined,
+    Aside:
+      collection.name === 'categories'
+        ? CategoryTemplate
+        : collection.name === 'onboardingKits'
+          ? OnboardingKitItems
+          : undefined,
   };
 }
 

@@ -36,6 +36,7 @@ import {
 import { CREATE_DEFAULTS, masterDataSchema } from './master-data-schemas.js';
 import { userAdministrationServiceToken } from '@nocobase/app-plugin-authentication';
 import { leaverAccountsToken } from '../../providers/itam/leaver-accounts.js';
+import { onboardingServiceToken } from '../../providers/itam/onboarding.js';
 
 /**
  * Generic CRUD for the master-data collections at
@@ -238,6 +239,29 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
      * decision, like the holdings beside it; each action the page then offers
      * is authorized by its own endpoint.
      */
+    // 入职配备: the kit that applies to this person, what they already have
+    // and what stock would make up the rest. Read under the people grant;
+    // every proposal is carried out by its own operation, which checks its
+    // own grant.
+    routes.get('/people/:id/onboarding', async (context) => {
+      try {
+        const conditions = await decideCollection(context, 'people', 'read');
+        const id = context.req.param('id');
+        const person = await masterData.get('people', id, conditions);
+        if (!person) {
+          return context.json(
+            { code: 'NOT_FOUND', message: 'Record not found' },
+            404,
+          );
+        }
+        return context.json({
+          data: await app.container.resolve(onboardingServiceToken).plan(id),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
     routes.get('/people/:id/recovery', async (context) => {
       try {
         const conditions = await decideCollection(context, 'people', 'read');

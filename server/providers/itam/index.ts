@@ -57,6 +57,10 @@ import {
 } from './changes.js';
 import { createHistoryService, historyServiceToken } from './history.js';
 import {
+  createOnboardingService,
+  onboardingServiceToken,
+} from './onboarding.js';
+import {
   createMasterDataService,
   masterDataServiceToken,
 } from './master-data.js';
@@ -387,6 +391,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
       createWorkbenchService({
         database: container.resolve(databaseManagerToken),
         approvals: container.resolve(approvalServiceToken),
+        onboarding: container.resolve(onboardingServiceToken),
       }),
     );
     container.singleton(reportServiceToken, () =>
@@ -496,6 +501,11 @@ export default class ItamProvider extends ServiceProvider<Application> {
         container.resolve(historyServiceToken),
         container.resolve(leaverAccountsToken),
       ),
+    );
+    // 入职配备: a joiner's kit, what they have and what stock would make
+    // up the rest (`onboarding.ts`).
+    container.singleton(onboardingServiceToken, () =>
+      createOnboardingService(container.resolve(databaseManagerToken)),
     );
   }
 

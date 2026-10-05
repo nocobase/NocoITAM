@@ -5,6 +5,7 @@ import {
   FolderTree,
   MapPin,
   Package,
+  PackageCheck,
   Store,
   Users,
 } from 'lucide-react';
@@ -614,6 +615,45 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         column: true,
         group: 'groups.basic',
       },
+      ...AUDIT_FIELDS,
+    ],
+  },
+  {
+    // 入职配置 (2026-10-05): what a new joiner in a department and position
+    // is given. Its items are edited beside the information card
+    // (`KitItems`), the way a category's field template is.
+    name: 'onboardingKits',
+    route: 'onboarding-kits',
+    icon: PackageCheck,
+    i18n: 'onboardingKits',
+    nameField: 'name',
+    fields: [
+      {
+        key: 'name',
+        label: 'fields.name',
+        type: 'text',
+        required: true,
+        column: true,
+        group: 'groups.basic',
+      },
+      {
+        key: 'departmentId',
+        label: 'fields.department',
+        type: 'reference',
+        required: true,
+        reference: { collection: 'departments' },
+        column: true,
+        group: 'groups.basic',
+      },
+      {
+        key: 'position',
+        label: 'fields.position',
+        type: 'text',
+        column: true,
+        group: 'groups.basic',
+        placeholder: 'onboardingKits.positionPlaceholder',
+      },
+      notes,
       ...AUDIT_FIELDS,
     ],
   },

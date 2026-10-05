@@ -444,6 +444,39 @@ describe('ITAM seeds', () => {
     );
   });
 
+  it('gives a set stored before 入职配置 its grant and page', async () => {
+    const stored = [
+      { key: 'itam-it-support', grants: [] },
+      { key: 'itam-asset-manager', grants: [] },
+    ];
+    const updated = new Map<string, unknown[]>();
+    await reconcileGrants({
+      list: async () => stored,
+      update: async (key: string, set: { grants: unknown[] }) => {
+        updated.set(key, set.grants);
+      },
+    } as never);
+    const kitGrant = (key: string) =>
+      (
+        updated.get(key) as
+          | { resource: { id: string }; actions: { action: string }[] }[]
+          | undefined
+      )?.find((grant) => grant.resource.id === 'main.onboardingKits');
+    // IT support keeps them; only the manager may delete one.
+    expect(kitGrant('itam-it-support')?.actions.map((a) => a.action)).toEqual([
+      'read',
+      'create',
+      'update',
+    ]);
+    expect(kitGrant('itam-asset-manager')?.actions.map((a) => a.action)).toEqual(
+      ['read', 'create', 'update', 'delete'],
+    );
+    expect(updated.get('itam-it-support')).toContainEqual({
+      resource: { type: 'page', id: 'onboarding-kits' },
+      actions: [{ action: 'access' }],
+    });
+  });
+
   it('strips operations and resources the application no longer declares', async () => {
     const grant = (actions: readonly string[], id = 'itam.entitlements') => ({
       resource: { type: 'composite', id },

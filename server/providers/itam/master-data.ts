@@ -363,6 +363,7 @@ const REFERENCES: Readonly<
   departments: [
     { collection: 'departments', field: 'parentId' },
     { collection: 'people', field: 'departmentId' },
+    { collection: 'onboardingKits', field: 'departmentId' },
     { collection: 'devices', field: 'departmentId' },
     { collection: 'purchaseOrders', field: 'departmentId' },
   ],
@@ -412,6 +413,11 @@ const UNIQUE_SCOPES: Readonly<
   categories: [{ field: 'name', within: 'parentId' }],
   locations: [{ field: 'name', within: 'parentId' }],
   departments: [{ field: 'name', within: 'parentId' }],
+  // One kit per department and position, the empty position being the
+  // department's default. Scoped the other way round because an empty
+  // value is skipped: the department, which is always given, is what must
+  // be unique for a position, empty included.
+  onboardingKits: [{ field: 'departmentId', within: 'position' }],
 };
 
 const TREE_COLLECTIONS = new Set(['locations', 'departments', 'categories']);
@@ -419,6 +425,7 @@ const PATH_COLLECTIONS = new Set(['locations', 'departments']);
 const JSON_FIELDS: Readonly<Record<string, readonly string[]>> = {
   vendors: ['types'],
   categories: ['fieldTemplate'],
+  onboardingKits: ['items'],
 };
 
 export function createMasterDataService(

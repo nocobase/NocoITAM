@@ -81,6 +81,8 @@ const MASTER_DATA = [
   'locations',
   'departments',
   'people',
+  // 入职配置 (2026-10-05).
+  'onboardingKits',
 ];
 const SYSTEM_READ = ['historyEvents', 'changeLogs', 'allocations', 'reminders'];
 
@@ -109,6 +111,7 @@ const IT_PAGES = [
   'locations',
   'departments',
   'people',
+  'onboarding-kits',
 ];
 /**
  * 报表 reads costs across the register, which is the Asset Manager's, and

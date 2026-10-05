@@ -453,6 +453,8 @@ const IT_PAGES: readonly string[] = [
   'locations',
   'departments',
   'people',
+  // 入职配置 (2026-10-05).
+  'onboarding-kits',
 ];
 /**
  * Both IT roles reach the same pages since IT support became the Asset
@@ -473,6 +475,33 @@ const IT_ROLE_PAGES: readonly string[] = [
 const ADDED_PAGES: ReadonlyMap<string, readonly string[]> = new Map([
   ['itam-it-support', IT_ROLE_PAGES],
   ['itam-asset-manager', IT_ROLE_PAGES],
+]);
+
+/**
+ * Whole collections a role gained after its set was seeded. The seeds grant
+ * them now, but a seed writes a set once and never again, so a collection
+ * added later — 入职配置 (`onboardingKits`, 2026-10-05) — reaches a set
+ * stored before that only through here. IT support is the manager minus
+ * deleting, as everywhere.
+ */
+const everything = {
+  type: 'database',
+  fields: '*',
+  recordAccess: ['allRecords'],
+} as unknown as PermissionGrantAction['policy'];
+const KIT_ACTIONS = ['read', 'create', 'update'];
+const ADDED_COLLECTIONS: ReadonlyMap<
+  string,
+  readonly {
+    readonly collection: string;
+    readonly actions: readonly string[];
+  }[]
+> = new Map([
+  ['itam-it-support', [{ collection: 'onboardingKits', actions: KIT_ACTIONS }]],
+  [
+    'itam-asset-manager',
+    [{ collection: 'onboardingKits', actions: [...KIT_ACTIONS, 'delete'] }],
+  ],
 ]);
 
 export async function reconcileGrants(
@@ -524,6 +553,23 @@ export async function reconcileGrants(
         .filter((grant) => grant.resource.type === 'page')
         .map((grant) => grant.resource.id),
     );
+    const collections = new Set(
+      grants
+        .filter((grant) => grant.resource.type === 'database.collection')
+        .map((grant) => grant.resource.id),
+    );
+    for (const added of ADDED_COLLECTIONS.get(set.key) ?? []) {
+      const id = `main.${added.collection}`;
+      if (collections.has(id)) continue;
+      grants.push({
+        resource: { type: 'database.collection', id },
+        actions: added.actions.map((action) => ({
+          action,
+          policy: everything,
+        })),
+      });
+      changed = true;
+    }
     for (const id of ADDED_PAGES.get(set.key) ?? []) {
       if (held.has(id)) continue;
       grants.push({
