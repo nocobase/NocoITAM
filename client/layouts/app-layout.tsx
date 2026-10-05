@@ -9,6 +9,7 @@ import {
   GlobalSearchProvider,
   SearchNavButton,
 } from '@/components/itam/global-search';
+import { DemoBanner } from '@/components/itam/demo-banner';
 import { RecordDrawerProvider } from '@/components/itam/record-drawer';
 
 import { AiPanelSpacer, ItamAiShell } from './ai-panel.js';
@@ -174,6 +175,10 @@ export function AppLayout({
                 />
               </LayoutHeader>
               <AiPanelSpacer className='relative flex min-w-0 flex-1 flex-col overflow-hidden'>
+                {/* Application change (ITAM): the demo-data banner, under the
+                  header and above the page, offered to whoever may import
+                  it while none is (after NocoCRM's). */}
+                <DemoBanner />
                 <main className='relative min-w-0 flex-1 overflow-hidden'>
                   {/* main only positions; the page scrolls in here, so a child page layer laid over main is neither
               moved by the page's scrolling nor stretched by its height. */}

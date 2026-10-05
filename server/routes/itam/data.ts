@@ -13,6 +13,8 @@ import { databaseManagerToken } from '@nocobase/db';
 import { z } from 'zod';
 
 import { demoServiceToken, importServiceToken } from '../../providers/index.js';
+import { DEMO_LANGUAGES } from '../../providers/itam/demo.js';
+import { ValidationError } from '../../providers/itam/errors.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
 import { findItamCollection } from '../../providers/itam/collections.js';
 import { toCsv } from '../../providers/itam/csv.js';
@@ -180,8 +182,10 @@ export const dataRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
       }
     });
 
-    // Demo data: administrators generate or clear it from the settings page.
+    // Demo data: administrators import or clear it from the settings page,
+    // in the language they pick there.
     const admin = requireGrant(ITAM_SETTINGS_RESOURCE, 'update');
+    const demoInput = z.object({ language: z.enum(DEMO_LANGUAGES).optional() });
     routes.get('/demo', admin, async (context) => {
       try {
         return context.json({ data: await demo.status() });
@@ -191,8 +195,11 @@ export const dataRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
     });
     routes.post('/demo/generate', admin, async (context) => {
       try {
+        const input = demoInput.safeParse(await readJsonObject(context));
+        if (!input.success)
+          throw new ValidationError('Unknown demo language', 'language');
         return context.json({
-          data: await demo.generate(principalId(context)),
+          data: await demo.generate(principalId(context), input.data.language),
         });
       } catch (error) {
         return errorResponse(context, error);

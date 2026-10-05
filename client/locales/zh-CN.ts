@@ -1287,7 +1287,6 @@ const zhCN: AppResource = {
     reclaimSeat:
       '收回 {{name}} 的席位，席位回到可分配。回收只释放授权，不会让账号失效 —— 还需在软件后台停用账号或更换共用密钥。',
     runJob: '立即运行「{{job}}」，结果记入运行记录。',
-    generateDemo: '按种子数据生成一批演示记录，可随时清除。',
   },
   attachments: {
     optional: '附件（可选）',
@@ -1755,12 +1754,36 @@ const zhCN: AppResource = {
     demo: {
       title: '演示数据',
       description:
-        '生成一家带有刻意问题（逾期借用、超配授权、盘点差异、已离职仍持有电脑）的小公司来体验系统。清除只删除生成的数据',
-      generate: '生成演示数据',
-      generating: '生成中…',
+        '一家虚构的公司，有中文和英文两版：设备、库存、授权、采购、维修、盘点和报废，并刻意带着几个问题（逾期借用、超配授权、盘点差异、已离职仍持有电脑），日期以导入当天为基准。清除只删除导入的数据。',
+      generate: '导入演示数据',
+      generating: '导入中…',
+      generateTitle: '导入演示数据？',
+      generateDescription:
+        '记录写入当前数据库，日期以今天为基准；同时创建下面列出的演示账号。已有的数据不会被改动，之后可以在这里清除。',
+      generated: '演示数据已导入',
       clear: '清除演示数据',
-      clearDescription: '删除所有生成的记录，你自己创建的记录保留',
-      none: '当前没有演示数据',
+      clearTitle: '清除演示数据？',
+      clearDescription:
+        '导入时创建的记录和演示账号都会删除，包括之后对它们做的修改。你自己创建的记录保留。',
+      cleared: '演示数据已清除',
+      none: '尚未导入演示数据',
+      present: '演示数据于 {{date}} 导入，共 {{count}} 条记录',
+      language: '演示数据语言',
+      languages: { 'zh-CN': '中文', 'en-US': 'English' },
+      accounts: '演示账号',
+      accountsHint: '导入后可以用这些账号登录，体验不同角色看到的系统。',
+      username: '用户名',
+      name: '姓名',
+      role: '角色',
+      password: '密码',
+      roles: {
+        'itam-asset-manager': 'IT 资产经理',
+        'itam-it-support': 'IT 支持',
+      },
+      banner:
+        '还没有演示数据。导入一家示例公司，用真实感的记录体验采购、分配、维修、盘点和离职交接。',
+      bannerAction: '导入演示数据',
+      bannerDismiss: '不再显示',
     },
     emptyTitle: '暂无可用设置',
     emptyDescription: '没有已启用的插件提供你有权访问的设置页面。',

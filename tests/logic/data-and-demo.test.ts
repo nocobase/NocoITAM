@@ -274,6 +274,20 @@ describe('CSV import / export and demo data', () => {
     expect(after.map((order) => order.id)).toContain(partial.rows[2]?.id);
   });
 
+  it('generates the demo in the language asked for', async () => {
+    expect((await post('demo/generate', { language: 'fr-FR' })).status).toBe(
+      400,
+    );
+    const summary = await data<{ language: string | null }>(
+      await post('demo/generate', { language: 'zh-CN' }),
+    );
+    expect(summary.language).toBe('zh-CN');
+    const people = await data<{ name: string }[]>(
+      await get('master/people?pageSize=50'),
+    );
+    expect(people.map((person) => person.name)).toContain('陈杰');
+  });
+
   it('generates the demo chain with its problem records and clears it without a trace', async () => {
     const generated = await post('demo/generate');
     expect(generated.status).toBe(200);
@@ -283,6 +297,24 @@ describe('CSV import / export and demo data', () => {
     }>(generated);
     expect(summary.generated).toBe(true);
     expect(summary.counts.devices).toBeGreaterThanOrEqual(12);
+    // Without a language it follows the deployment's (en-US in tests), and
+    // the status says when and how much; this harness creates no sign-ins.
+    const status = await data<{
+      records: number;
+      createdAt: string | null;
+      language: string | null;
+      accounts: unknown[];
+      accountsByLanguage: Record<string, { username: string }[]>;
+    }>(await get('demo'));
+    expect(status.language).toBe('en-US');
+    expect(status.records).toBe(
+      Object.values(summary.counts).reduce((sum, n) => sum + n, 0),
+    );
+    expect(status.createdAt).not.toBeNull();
+    expect(status.accounts).toEqual([]);
+    expect(
+      status.accountsByLanguage['zh-CN']?.map((account) => account.username),
+    ).toEqual(['sunqiang', 'wujing', 'zhouyu', 'chenjie']);
     const laptops = await data<{ attributes: Record<string, unknown> }[]>(
       await get('devices?q=SG-LT-00&pageSize=5'),
     );

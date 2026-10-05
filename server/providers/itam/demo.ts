@@ -30,14 +30,39 @@ import { addDays, isoDate } from './dates.js';
  * through the services, every id is tracked in `demoRecords`, and dates are
  * offsets from the day it runs. No notification leaves the system.
  */
+/** The languages the demo is written in: the same company, translated. */
+export const DEMO_LANGUAGES = ['zh-CN', 'en-US'] as const;
+export type DemoLanguage = (typeof DEMO_LANGUAGES)[number];
+
+/** A sign-in the demo creates, as the settings page lists it. */
+export interface DemoAccountSummary {
+  readonly username: string;
+  readonly name: string;
+  /** The permission set it is given, which names its role. */
+  readonly role: string;
+  readonly password: string;
+}
+
 export interface DemoSummary {
   readonly generated: boolean;
   readonly counts: Readonly<Record<string, number>>;
+  /** Records the demo created, accounts included. */
+  readonly records: number;
+  /** When it was generated, or null when there is none. */
+  readonly createdAt: string | null;
+  /** The language it was generated in, read back from its people. */
+  readonly language: DemoLanguage | null;
+  /** The sign-ins of the demo present, or of each language before there is one. */
+  readonly accounts: readonly DemoAccountSummary[];
+  readonly accountsByLanguage: Readonly<
+    Record<DemoLanguage, readonly DemoAccountSummary[]>
+  >;
 }
 
 export interface DemoService {
   status(): Promise<DemoSummary>;
-  generate(actorId: string): Promise<DemoSummary>;
+  /** Without a language, the demo follows the deployment's default locale. */
+  generate(actorId: string, language?: DemoLanguage): Promise<DemoSummary>;
   clear(actorId: string): Promise<DemoSummary>;
 }
 
@@ -122,6 +147,38 @@ const STAFF_PEOPLE: Readonly<
     zhouyu: { name: '周宇', position: 'IT 支持工程师' },
   },
 };
+
+/**
+ * The sign-ins the demo creates in a language, as the settings page lists
+ * them: the staff, then the leaver, who is IT support. Names follow the
+ * language; usernames and passwords do not.
+ */
+export function demoAccountsIn(
+  language: DemoLanguage,
+): readonly DemoAccountSummary[] {
+  const staffNames = STAFF_PEOPLE[language] ?? STAFF_PEOPLE['en-US'] ?? {};
+  const leaver = (PERSON_NAMES[language] ?? PERSON_NAMES['en-US'] ?? [])[
+    LEAVER_INDEX
+  ];
+  return [
+    ...DEMO_STAFF_ACCOUNTS.map((spec) => ({
+      username: spec.username,
+      name: staffNames[spec.username]?.name ?? spec.name,
+      role: spec.permissionSet,
+      password: spec.password,
+    })),
+    ...(leaver
+      ? [
+          {
+            username: leaver.mail.replaceAll('.', ''),
+            name: leaver.name,
+            role: 'itam-it-support',
+            password: `${leaver.mail.replaceAll('.', '')}123`,
+          },
+        ]
+      : []),
+  ];
+}
 
 /**
  * Every username the demo owns. `pnpm data:reset` wipes `demoRecords` with
@@ -401,13 +458,64 @@ export function createDemoService(dependencies: {
     return result;
   };
 
+  const accountsByLanguage = Object.fromEntries(
+    DEMO_LANGUAGES.map((language) => [language, demoAccountsIn(language)]),
+  ) as Record<DemoLanguage, readonly DemoAccountSummary[]>;
+
   return {
     async status() {
       const result = await counts();
-      return { generated: Object.keys(result).length > 0, counts: result };
+      const generated = Object.keys(result).length > 0;
+      if (!generated)
+        return {
+          generated,
+          counts: result,
+          records: 0,
+          createdAt: null,
+          language: null,
+          accounts: [],
+          accountsByLanguage,
+        };
+      const first = await database
+        .query()
+        .selectFrom('demoRecords')
+        .select('createdAt')
+        .orderBy('createdAt', 'asc')
+        .executeTakeFirst<{ createdAt: unknown }>();
+      // The language is not stored: the demo's people say it, since each
+      // language names them differently.
+      const names = new Set(
+        (
+          await database
+            .query()
+            .selectFrom('people')
+            .innerJoin('demoRecords', 'demoRecords.recordId', 'people.id')
+            .select('people.name')
+            .execute<{ name: string }>()
+        ).map((row) => row.name),
+      );
+      const language =
+        DEMO_LANGUAGES.find((candidate) =>
+          (PERSON_NAMES[candidate] ?? []).some((entry) =>
+            names.has(entry.name),
+          ),
+        ) ?? null;
+      return {
+        generated,
+        counts: result,
+        records: Object.values(result).reduce((sum, n) => sum + n, 0),
+        createdAt: asText(first?.createdAt) ?? null,
+        language,
+        // Only when it created sign-ins: a harness without the accounts
+        // plugins generates none.
+        accounts:
+          language && result.accounts ? accountsByLanguage[language] : [],
+        accountsByLanguage,
+      };
     },
 
-    async generate(actorId) {
+    async generate(actorId, language) {
+      const locale = language ?? dependencies.locale?.() ?? 'en-US';
       if ((await this.status()).generated)
         throw new BusinessRuleError(
           'Demo data already exists; clear it first',
@@ -438,9 +546,7 @@ export function createDemoService(dependencies: {
         await track('accounts', { id });
         return id;
       };
-      const staffNames =
-        STAFF_PEOPLE[dependencies.locale?.() ?? 'en-US'] ??
-        STAFF_PEOPLE['en-US'];
+      const staffNames = STAFF_PEOPLE[locale] ?? STAFF_PEOPLE['en-US'];
       const staffUserIds = await Promise.all(
         DEMO_STAFF_ACCOUNTS.map((spec) =>
           account({
@@ -496,9 +602,7 @@ export function createDemoService(dependencies: {
       // Master data
       // Vendors are fictional companies; their names read in the
       // deployment's language and keep the demo marker.
-      const vendorNames =
-        VENDOR_NAMES[dependencies.locale?.() ?? 'en-US'] ??
-        VENDOR_NAMES['en-US'];
+      const vendorNames = VENDOR_NAMES[locale] ?? VENDOR_NAMES['en-US'];
       const reseller = await md('vendors', {
         name: vendorNames.reseller.name,
         types: ['equipment', 'softwareReseller'],
@@ -597,10 +701,8 @@ export function createDemoService(dependencies: {
       const people = [] as Row[];
       // Names read in the deployment's language; the e-mail keeps the
       // romanised form so it stays a valid address.
-      const personNames =
-        PERSON_NAMES[dependencies.locale?.() ?? 'en-US'] ??
-        PERSON_NAMES['en-US'];
-      const texts = TEXTS[dependencies.locale?.() ?? 'en-US'] ?? TEXTS['en-US'];
+      const personNames = PERSON_NAMES[locale] ?? PERSON_NAMES['en-US'];
+      const texts = TEXTS[locale] ?? TEXTS['en-US'];
       const itDept = await seededIn('departments', 'dept-it');
       // The leaver is IT support; the rest are the two business teams.
       const departmentsByIndex = [rnd, rnd, sales, itDept, rnd, sales];
@@ -2944,7 +3046,7 @@ export function createDemoService(dependencies: {
       for (const userId of byCollection.get('accounts') ?? [])
         await dependencies.accounts?.remove(userId, actorId);
       await dependencies.refreshReminders();
-      return { generated: false, counts: {} };
+      return this.status();
     },
   };
 }
