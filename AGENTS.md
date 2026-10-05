@@ -1733,8 +1733,21 @@ and reports do; `DetailPage` already had its own container.
 per status in the order work moves, each paging on its own with the
 server's total in its header, cards that open the record. A card has no
 labels: its heading and a right-aligned figure (`meta`), a line or two of
-what it is about (`lines`), and who / when in small muted text (`footer`),
-each a field key or a function of the record. The board takes the rest
+what it is about (`lines`, each optionally with an icon that says what the
+value is — such a line is a size smaller), and who / when in small muted
+text (`footer`), each a field key or a function of the record. A
+document's card is one spec (`client/components/itam/board-card-specs.ts`,
+drawn by `BoardCards` in `board-cards.tsx`), shared by its board and the
+workbench's columns, which read the full rows by id — so a purchase
+order, a stocktake or a disposal looks the same in both (2026-10-05). Each card is
+its number, then two or three icon lines — a purchase order's amount and
+vendor; a disposal's book value, then its method and device count on one line; a repair's
+device, fault and expected return (`REPAIR_CARD`, which only the
+workbench draws, repairs having no board) — then its 负责人 with the time
+it was raised to the minute; a stocktake keeps its progress, period and
+differences. On the workbench a card also carries its kind's tag
+(`BoardCardEntry.badge`), since a column there can mix kinds; the boards,
+one kind each, do not. The board takes the rest
 of the page's height (`Page fill`): columns reach the bottom and scroll
 their own cards, so the sideways scrollbar sits at the foot of the page
 rather than under the shortest column (2026-10-04; they used to be as tall

@@ -7,6 +7,8 @@ import type { MyWorkItem } from '../../client/lib/itam/workbench.js';
 
 const state = vi.hoisted(() => ({
   items: [] as MyWorkItem[],
+  /** Full rows per list path, as the board cards read them; none by default. */
+  rows: {} as Record<string, Record<string, unknown>[]>,
   opened: vi.fn(),
 }));
 vi.mock('@nocobase/i18n/client', () => ({
@@ -24,6 +26,21 @@ vi.mock('../../client/lib/itam/api.js', async () => ({
     '../../client/lib/itam/api.js',
   )),
   useItamSettings: () => ({ data: undefined }),
+  useItamList: (path: string, query: { ids?: readonly string[] }) => ({
+    data: state.rows[path]
+      ? {
+          data: state.rows[path].filter((row) =>
+            (query.ids ?? []).includes(String(row.id)),
+          ),
+        }
+      : undefined,
+  }),
+}));
+vi.mock('../../client/lib/itam/references.js', async () => ({
+  ...(await vi.importActual<Record<string, unknown>>(
+    '../../client/lib/itam/references.js',
+  )),
+  useReferenceNames: () => ({}),
 }));
 vi.mock('../../client/lib/itam/record-drawer.js', () => ({
   useOpenRecord: () => state.opened,
@@ -105,4 +122,35 @@ it('shows both kinds of approval in one column, each tagged', () => {
       .getAllByText(/^(PO|DP)-/)
       .map((node) => node.textContent),
   ).toEqual(['DP-000001', 'DP-000002', 'PO-000019']);
+});
+
+it('draws a purchase order with the card of its board, and opens it in the drawer', () => {
+  state.opened.mockClear();
+  state.items = [
+    {
+      key: 'awaitingReceipt',
+      count: 1,
+      url: '/procurement?view=awaitingReceipt',
+      records: [record('po-1', '2026-09-26', '/procurement/po-1')],
+    },
+  ];
+  state.rows = {
+    'itam/purchase-orders': [
+      {
+        id: 'po-1',
+        orderNo: 'PO-000020',
+        estimatedTotal: 2990,
+        currency: 'CNY',
+        createdAt: '2026-10-05T21:13:00.000',
+      },
+    ],
+  };
+  show();
+  const receipts = column('workbench.work.awaitingReceipt');
+  // The board's card: the order's number and amount, not the to-do's title.
+  expect(within(receipts).getByText('PO-000020')).toBeTruthy();
+  expect(within(receipts).getByText(/2,990\.00/)).toBeTruthy();
+  fireEvent.click(within(receipts).getByText('PO-000020'));
+  expect(state.opened).toHaveBeenCalledWith('/procurement/po-1');
+  state.rows = {};
 });

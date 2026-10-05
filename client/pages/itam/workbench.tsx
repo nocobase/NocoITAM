@@ -3,12 +3,26 @@ import { ArrowRight } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 
+import {
+  AUDIT_CARD,
+  DISPOSAL_CARD,
+  PURCHASE_ORDER_CARD,
+  REPAIR_CARD,
+} from '@/components/itam/board-card-specs';
+import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { SearchTrigger } from '@/components/itam/global-search';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useItamSettings } from '@/lib/itam/api';
+import { useItamList, useItamSettings, type ItamRecord } from '@/lib/itam/api';
+import type { DocumentKind } from '@/lib/itam/document-kinds';
+import {
+  AUDITS_PATH,
+  DISPOSALS_PATH,
+  REPAIRS_PATH,
+} from '@/lib/itam/operations';
+import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
 import { formatDate } from '@/lib/itam/format';
 import {
   useWorkCards,
@@ -133,15 +147,106 @@ function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
           {t('workbench.nothingPending')}
         </p>
       ) : (
-        <ul className='flex flex-col gap-2'>
-          {card.records.map((record) => (
-            <li key={record.url}>
-              <RecordCard column={card.key} record={record} />
-            </li>
-          ))}
-        </ul>
+        <ColumnCards card={card} />
       )}
     </Column>
+  );
+}
+
+/**
+ * The documents that have a board of their own, and the card it draws them
+ * with: on the workbench they read exactly as on their page (2026-10-05).
+ */
+const DOCUMENT_BOARDS: Partial<
+  Record<DocumentKind, { readonly path: string; readonly spec: BoardCardSpec }>
+> = {
+  purchaseOrders: { path: PURCHASE_ORDERS_PATH, spec: PURCHASE_ORDER_CARD },
+  disposals: { path: DISPOSALS_PATH, spec: DISPOSAL_CARD },
+  auditTasks: { path: AUDITS_PATH, spec: AUDIT_CARD },
+  repairs: { path: REPAIRS_PATH, spec: REPAIR_CARD },
+};
+
+/** Which document a row is: its tag, or — a stocktake names itself — its column. */
+function kindOf(column: string, record: CardRecord): DocumentKind | undefined {
+  return record.tag ?? (column === 'activeAudits' ? 'auditTasks' : undefined);
+}
+
+/** The full rows of one kind of document, by id, keyed `kind:id`. */
+function useDocumentRows(
+  kind: DocumentKind,
+  ids: readonly string[],
+): readonly (readonly [string, ItamRecord])[] {
+  const list = useItamList<ItamRecord>(
+    DOCUMENT_BOARDS[kind]?.path ?? '',
+    { ids, page: 1, pageSize: Math.max(ids.length, 1) },
+    { enabled: ids.length > 0 && Boolean(DOCUMENT_BOARDS[kind]) },
+  );
+  return ids.length === 0
+    ? []
+    : (list.data?.data ?? []).map((row) => [`${kind}:${String(row.id)}`, row]);
+}
+
+/**
+ * A column's records. A purchase order, a disposal or a stocktake is drawn
+ * by its board's own card, from its full row — the to-do carries only its
+ * number and date, so the rows are read by id, one request per kind. Until
+ * they arrive, and for everything without a board of its own (a repair, a
+ * loan, a leaver), the to-do's own card stands in.
+ */
+function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
+  const openRecord = useOpenRecord();
+  const idsOf = (kind: DocumentKind) =>
+    card.records
+      .filter((record) => kindOf(card.key, record) === kind)
+      .map((record) => record.id);
+  const rows = new Map<string, ItamRecord>([
+    ...useDocumentRows('purchaseOrders', idsOf('purchaseOrders')),
+    ...useDocumentRows('disposals', idsOf('disposals')),
+    ...useDocumentRows('auditTasks', idsOf('auditTasks')),
+    ...useDocumentRows('repairs', idsOf('repairs')),
+  ]);
+  const entries = card.records.map((record) => {
+    const kind = kindOf(card.key, record);
+    const board = kind ? DOCUMENT_BOARDS[kind] : undefined;
+    const row = kind ? rows.get(`${kind}:${record.id}`) : undefined;
+    return board && row
+      ? {
+          spec: board.spec,
+          row,
+          url: record.url,
+          // The board's card, with the kind it is: a column on the
+          // workbench may hold several, and a number alone does not say.
+          badge: record.tag ? (
+            <DocumentTypeBadge kind={record.tag} className='shrink-0' />
+          ) : undefined,
+        }
+      : null;
+  });
+  if (entries.length > 0 && entries.every((entry) => entry !== null)) {
+    const urls = new Map(
+      entries.map((entry) => [
+        `${entry.spec.nameField}:${String(entry.row.id)}`,
+        entry.url,
+      ]),
+    );
+    return (
+      <BoardCards
+        entries={entries}
+        onOpen={({ spec, row }) => {
+          const url = urls.get(`${spec.nameField}:${String(row.id)}`);
+          if (url) openRecord(url);
+        }}
+      />
+    );
+  }
+  return (
+    <ul className='flex flex-col gap-2'>
+      {card.records.map((record) => (
+        <li key={record.url}>
+          <RecordCard column={card.key} record={record} />
+        </li>
+      ))}
+    </ul>
   );
 }
 

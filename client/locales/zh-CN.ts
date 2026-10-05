@@ -2345,6 +2345,7 @@ const zhCN: AppResource = {
     differences_other: '{{count}} 处差异',
     expected_one: '应盘 {{count}} 台',
     expected_other: '应盘 {{count}} 台',
+    expectedReturn: '预计 {{date}} 返回',
   },
   dataTable: {
     noResults: '暂无数据。',

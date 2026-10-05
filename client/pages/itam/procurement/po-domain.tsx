@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { PURCHASE_ORDER_CARD } from '@/components/itam/board-card-specs';
 import { createStatusBoard } from '@/components/itam/status-board';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Send, ShoppingCart, Undo2, X } from 'lucide-react';
@@ -93,8 +94,7 @@ export const purchaseOrderDomain: DomainConfig = {
   Board: createStatusBoard({
     path: PURCHASE_ORDERS_PATH,
     route: 'procurement',
-    fields: PO_FIELDS,
-    nameField: 'orderNo',
+    ...PURCHASE_ORDER_CARD,
     dots: PO_STATUS_DOT,
     statuses: [
       'draft',
@@ -106,13 +106,6 @@ export const purchaseOrderDomain: DomainConfig = {
       'rejected',
       'cancelled',
     ],
-    card: {
-      meta: 'estimatedTotal',
-      lines: ['vendorId', 'reason'],
-      // When it was raised, to the minute: orders raised the same day are
-      // otherwise indistinguishable on a card.
-      footer: ['ownerId', (record) => formatDate(record.createdAt, true)],
-    },
     defaultSort: 'createdAt',
   }),
   nameField: 'orderNo',

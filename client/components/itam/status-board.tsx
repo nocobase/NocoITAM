@@ -1,41 +1,20 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import {
-  Fragment,
-  useState,
-  type ComponentType,
-  type ReactElement,
-  type ReactNode,
-} from 'react';
+import { useState, type ComponentType, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
-import { FieldValue } from '@/components/itam/cells';
+import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useItamList, useItamSettings, type ItamRecord } from '@/lib/itam/api';
-import type { FieldDefinition } from '@/lib/itam/fields';
-import { text } from '@/lib/itam/format';
-import { useReferenceNames } from '@/lib/itam/references';
+import { useItamList, type ItamRecord } from '@/lib/itam/api';
 
 /** Cards a column reads at first, and how many each 加载更多 adds. */
 const PAGE = 20;
 
-type Translate = (key: string, options?: Record<string, unknown>) => string;
-
-/**
- * One piece of a card: a field key, shown as its value alone (the card has
- * no labels), or a function for a value made of several fields.
- */
-export type CardPart =
-  string | ((record: ItamRecord, t: Translate) => ReactNode | null | undefined);
-
-export interface StatusBoardConfig {
+export interface StatusBoardConfig extends BoardCardSpec {
   /** API path of the list, e.g. `itam/purchase-orders`. */
   readonly path: string;
   /** Route segment a card opens, e.g. `procurement`. */
   readonly route: string;
-  readonly fields: readonly FieldDefinition[];
-  /** The field a card is headed by (its number or name). */
-  readonly nameField: string;
   /** The columns, in the order work moves through them. */
   readonly statuses: readonly string[];
   /**
@@ -43,22 +22,11 @@ export interface StatusBoardConfig {
    * tag has everywhere else, without a row of tags in the headings.
    */
   readonly dots?: Readonly<Record<string, string>>;
-  readonly card: {
-    /** Beside the heading, right-aligned: an amount, a progress. */
-    readonly meta?: CardPart;
-    /** Under the heading, one line each: what the record is about. */
-    readonly lines?: readonly CardPart[];
-    /** Small and muted at the bottom: who and when. */
-    readonly footer?: readonly CardPart[];
-  };
   readonly statusField?: string;
   readonly defaultSort?: string;
 }
 
 type Filter = Readonly<Record<string, string | undefined>>;
-
-const blank = (value: unknown): boolean =>
-  value === null || value === undefined || value === '';
 
 /**
  * A board of a domain's records, one column per status in the order work
@@ -76,15 +44,6 @@ export function createStatusBoard(
   const statusField = config.statusField ?? 'status';
   const fieldOf = (key: string) =>
     config.fields.find((field) => field.key === key);
-  const parts = [
-    config.card.meta,
-    ...(config.card.lines ?? []),
-    ...(config.card.footer ?? []),
-  ];
-  const referenceFields = parts.flatMap((part) => {
-    const field = typeof part === 'string' ? fieldOf(part) : undefined;
-    return field?.type === 'reference' && field.reference ? [field] : [];
-  });
 
   function StatusColumn({
     status,
@@ -97,7 +56,6 @@ export function createStatusBoard(
   }): ReactElement {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const settings = useItamSettings();
     const [pageSize, setPageSize] = useState(PAGE);
     const list = useItamList<ItamRecord>(config.path, {
       page: 1,
@@ -114,29 +72,6 @@ export function createStatusBoard(
       statusDefinition?.options?.find((option) => option.value === status)
         ?.label ?? status,
     );
-    const names = useReferenceNames(
-      referenceFields.map((field) => ({
-        collection: field.reference!.collection,
-        ids: rows.map((row) => row[field.key] as string | null),
-      })),
-    );
-    const render = (part: CardPart, row: ItamRecord): ReactNode => {
-      if (typeof part === 'function') return part(row, t);
-      const field = fieldOf(part);
-      if (!field || blank(row[part])) return null;
-      return (
-        <FieldValue
-          field={field}
-          value={row[part]}
-          names={names}
-          // Plain names: the whole card is the link.
-          routeFor={() => ''}
-          currency={text(row.currency) || settings.data?.general.currency}
-          treeShow='leaf'
-          plainEnums
-        />
-      );
-    };
     return (
       <section
         aria-label={statusLabel}
@@ -173,70 +108,10 @@ export function createStatusBoard(
               {t('common.empty')}
             </p>
           ) : (
-            <ul className='flex flex-col gap-2'>
-              {rows.map((row) => {
-                const meta = config.card.meta && render(config.card.meta, row);
-                const lines = (config.card.lines ?? [])
-                  .map((part) => render(part, row))
-                  .filter((node) => !blank(node));
-                const footer = (config.card.footer ?? [])
-                  .map((part) => render(part, row))
-                  .filter((node) => !blank(node));
-                return (
-                  <li key={String(row.id)}>
-                    <button
-                      type='button'
-                      className='w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 text-left shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
-                      onClick={() =>
-                        void navigate(`/${config.route}/${row.id}`)
-                      }
-                    >
-                      <div className='flex items-baseline justify-between gap-2'>
-                        <span className='min-w-0 truncate text-sm font-semibold'>
-                          {text(row[config.nameField])}
-                        </span>
-                        {meta ? (
-                          <span className='shrink-0 text-sm font-medium tabular-nums'>
-                            {meta}
-                          </span>
-                        ) : null}
-                      </div>
-                      {lines.length > 0 ? (
-                        <div className='mt-1.5 space-y-0.5 text-sm'>
-                          {lines.map((line, index) => (
-                            <p
-                              // Lines are positional: the config's order.
-                              // eslint-disable-next-line @eslint-react/no-array-index-key -- see above
-                              key={index}
-                              className={
-                                index === 0
-                                  ? 'truncate'
-                                  : 'truncate text-muted-foreground'
-                              }
-                            >
-                              {line}
-                            </p>
-                          ))}
-                        </div>
-                      ) : null}
-                      {footer.length > 0 ? (
-                        <p className='mt-2.5 flex min-w-0 items-center gap-1.5 truncate border-t border-border/50 pt-2 text-xs text-muted-foreground'>
-                          {footer.map((part, index) => (
-                            // eslint-disable-next-line @eslint-react/no-array-index-key -- positional, as above
-                            <Fragment key={index}>
-                              {index > 0 ? (
-                                <span aria-hidden='true'>·</span>
-                              ) : null}
-                              <span className='truncate'>{part}</span>
-                            </Fragment>
-                          ))}
-                        </p>
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            <BoardCards
+              entries={rows.map((row) => ({ spec: config, row }))}
+              onOpen={({ row }) => void navigate(`/${config.route}/${row.id}`)}
+            />
           )}
           {rows.length < total ? (
             <Button
