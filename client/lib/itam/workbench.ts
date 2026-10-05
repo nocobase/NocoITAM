@@ -18,8 +18,9 @@ export const REMINDER_KINDS = [
   'idleDevice',
   'auditOverdue',
   'entitlementOverAllocated',
-  'lowStock',
-  'purchaseOverdue',
+  'lowAccessories',
+  'lowConsumables',
+  'lowComponents',
 ] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
@@ -55,7 +56,12 @@ export const REMINDER_GROUPS: readonly {
       'entitlementOverAllocated',
     ],
   },
-  { key: 'supply', kinds: ['lowStock', 'purchaseOverdue'] },
+  // 采购到货逾期 left (2026-10-05): an overdue order is a 待验收到货 to-do,
+  // tagged 逾期 N 天, and one set of records is not both work and risk.
+  {
+    key: 'supply',
+    kinds: ['lowAccessories', 'lowConsumables', 'lowComponents'],
+  },
 ];
 
 /** Where each reminder kind's list lives. */
@@ -68,17 +74,27 @@ export const REMINDER_ROUTES: Readonly<Record<ReminderKind, string>> = {
   idleDevice: '/devices?view=idle',
   auditOverdue: '/devices?view=auditOverdue',
   entitlementOverAllocated: '/entitlements?view=overAllocated',
-  // Three kinds are counted and the link can only open one list, so it
-  // opens the accessories — the kind most of them are. The card's own row
-  // says how many in total.
-  lowStock: '/accessories?view=lowStock',
-  purchaseOverdue: '/procurement?view=overdue',
+  lowAccessories: '/accessories?view=lowStock',
+  lowConsumables: '/consumables?view=lowStock',
+  lowComponents: '/components?view=lowStock',
 };
+
+/** A record a 需要关注 rule found, as its card names it. */
+export interface ReminderPreview {
+  readonly subjectType: string;
+  readonly subjectId: string;
+  readonly label: string;
+  readonly date?: string | null;
+  /** Used against total, where that is the point (超量, 低于水位). */
+  readonly figures?: readonly [number, number];
+}
 
 export interface ReminderSummary {
   readonly kind: ReminderKind;
   readonly count: number;
   readonly severity: 'info' | 'warning' | 'critical';
+  /** The first few records, soonest first where the rule turns on a date. */
+  readonly preview: readonly ReminderPreview[];
 }
 
 /** One record behind a to-do, listed on its card. */

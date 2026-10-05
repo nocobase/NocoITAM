@@ -33,14 +33,35 @@ export const REMINDER_KINDS = [
   'idleDevice',
   'auditOverdue',
   'entitlementOverAllocated',
-  'lowStock',
-  'purchaseOverdue',
+  // One rule per kind kept as a quantity (2026-10-05): each opens its own
+  // page, and "below its level" means a different errand for a cable, a
+  // toner and a spare SSD.
+  'lowAccessories',
+  'lowConsumables',
+  'lowComponents',
 ] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
+
+/**
+ * One record a rule found, as 需要关注's card names it: the record and the
+ * figure that says why — the date it turns on, or used against total.
+ */
+export interface ReminderPreview {
+  readonly subjectType: string;
+  readonly subjectId: string;
+  readonly label: string;
+  readonly date?: string | null;
+  readonly figures?: readonly [number, number];
+}
 
 export interface ReminderSummary {
   readonly kind: ReminderKind;
   readonly count: number;
+  /**
+   * The first few records, soonest first where the rule turns on a date, so
+   * a card says what is at risk without being opened (2026-10-05).
+   */
+  readonly preview: readonly ReminderPreview[];
   readonly severity: 'info' | 'warning' | 'critical';
 }
 
@@ -68,6 +89,14 @@ export const maintenanceServiceToken: ServiceToken<MaintenanceService> =
   createServiceToken<MaintenanceService>('itam/maintenance-service');
 
 const DAY = 86_400_000;
+/** The 低于水位 rule each kind of stock item falls under. */
+const LOW_STOCK_KIND: Readonly<Record<string, ReminderKind>> = {
+  accessory: 'lowAccessories',
+  consumable: 'lowConsumables',
+  component: 'lowComponents',
+};
+/** How many records a 需要关注 card names before it says "另 N 个". */
+const REMINDER_PREVIEW = 3;
 const addDays = (date: Date, days: number): Date =>
   new Date(date.getTime() + days * DAY);
 
@@ -417,7 +446,7 @@ export function createMaintenanceService(dependencies: {
       const minimum = Number(item.minimumQuantity ?? 0);
       if (minimum > 0 && available < minimum)
         rows.push({
-          kind: 'lowStock',
+          kind: LOW_STOCK_KIND[String(item.kind)] ?? 'lowAccessories',
           subjectType: 'stockItems',
           subjectId: String(item.id),
           severity: 'warning',
@@ -425,27 +454,31 @@ export function createMaintenanceService(dependencies: {
         });
     }
 
-    // Ordered, not all here, and past the date the vendor gave.
-    const lateOrders = await query
-      .selectFrom('purchaseOrders')
-      .select(['id', 'orderNo', 'expectedAt', 'vendorId'])
-      .where('status', 'in', ['ordered', 'partiallyReceived'])
-      .where('expectedAt', '<', today)
-      .execute<Row>();
-    for (const order of lateOrders)
-      rows.push({
-        kind: 'purchaseOverdue',
-        subjectType: 'purchaseOrders',
-        subjectId: String(order.id),
-        severity: 'warning',
-        data: {
-          orderNo: order.orderNo,
-          date: order.expectedAt,
-          vendorId: order.vendorId,
-        },
-      });
-
     return rows;
+  };
+
+  /** How a found record reads on 需要关注's card. */
+  const previewOf = (row: ReminderRow): ReminderPreview => {
+    const data = row.data;
+    const label =
+      // A device by its name (SG-LT-001), its number when it has none: a
+      // card has room for a few names, not for 编号 / 名称 pairs.
+      row.subjectType === 'devices'
+        ? (asText(data.name) ?? asText(data.deviceNo) ?? row.subjectId)
+        : (asText(data.name) ?? row.subjectId);
+    const figures: readonly [number, number] | undefined =
+      row.kind === 'entitlementOverAllocated'
+        ? [Number(data.assignedCount ?? 0), Number(data.seatCount ?? 0)]
+        : Object.values(LOW_STOCK_KIND).includes(row.kind)
+          ? [Number(data.available ?? 0), Number(data.minimum ?? 0)]
+          : undefined;
+    return {
+      subjectType: row.subjectType,
+      subjectId: row.subjectId,
+      label,
+      ...(data.date === undefined ? {} : { date: asText(data.date) ?? null }),
+      ...(figures ? { figures } : {}),
+    };
   };
 
   const severityOf = (
@@ -480,11 +513,21 @@ export function createMaintenanceService(dependencies: {
 
     async reminderCounts(now = new Date()) {
       const rows = await collect(now);
-      return REMINDER_KINDS.map((kind) => ({
-        kind,
-        count: rows.filter((row) => row.kind === kind).length,
-        severity: severityOf(kind, rows),
-      }));
+      return REMINDER_KINDS.map((kind) => {
+        const found = rows
+          .filter((row) => row.kind === kind)
+          .sort((a, b) =>
+            (asText(a.data.date) ?? '').localeCompare(
+              asText(b.data.date) ?? '',
+            ),
+          );
+        return {
+          kind,
+          count: found.length,
+          severity: severityOf(kind, rows),
+          preview: found.slice(0, REMINDER_PREVIEW).map(previewOf),
+        };
+      });
     },
 
     async reminders(kind, now = new Date()) {

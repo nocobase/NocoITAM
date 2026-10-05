@@ -97,3 +97,14 @@ function localIso(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+/** Whole days from `date` (YYYY-MM-DD) to today; negative when ahead. */
+export function daysOverdue(date: unknown): number {
+  const due = text(date).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return 0;
+  const [y1, m1, d1] = due.split('-').map(Number);
+  const [y2, m2, d2] = todayIso().split('-').map(Number);
+  const from = Date.UTC(y1 ?? 1970, (m1 ?? 1) - 1, d1 ?? 1);
+  const to = Date.UTC(y2 ?? 1970, (m2 ?? 1) - 1, d2 ?? 1);
+  return Math.round((to - from) / 86_400_000);
+}

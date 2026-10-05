@@ -1395,6 +1395,8 @@ const messages = {
     approverHint: 'Only the person chosen can decide.',
     linesTotal_one: '{{count}} line',
     linesTotal_other: '{{count}} lines',
+    overdueDays_one: '{{count}} day overdue',
+    overdueDays_other: '{{count}} days overdue',
     noLines: 'No lines yet',
     receive: 'Receive',
     receiveTitle: 'Receive: {{item}}',
@@ -1489,6 +1491,7 @@ const messages = {
   },
   search: {
     label: 'Search the register',
+    trigger: 'Search',
     placeholder: 'Search devices, people, orders, models…',
     askPlaceholder:
       'Ask AI, e.g. which MacBooks have a warranty ending next month',
@@ -1532,6 +1535,11 @@ const messages = {
     scope: { label: 'Whose to-dos to show', all: 'All', mine: 'Mine' },
     seeAll: 'See all',
     nothingPending: 'Nothing waiting',
+    attentionClear_one: 'The other {{count}} check is clear',
+    attentionClear_other: 'The other {{count}} checks are clear',
+    attentionSoonest: 'Soonest {{date}}',
+    attentionMore_one: '{{count}} more',
+    attentionMore_other: '{{count}} more',
     attention: 'Needs attention',
     stats: {
       devices: 'Devices',
@@ -1588,8 +1596,9 @@ const messages = {
       idleDevice: 'In stock over {{idleDays}} days',
       auditOverdue: 'Not audited for {{auditDays}} days',
       entitlementOverAllocated: 'Over-allocated',
-      lowStock: 'Accessories, consumables and components below minimum',
-      purchaseOverdue: 'Deliveries overdue',
+      lowAccessories: 'Accessories below minimum',
+      lowConsumables: 'Consumables below minimum',
+      lowComponents: 'Components below minimum',
     },
     reminderCaptions: {
       warrantyExpiring: 'Devices in use',
@@ -1603,9 +1612,9 @@ const messages = {
       idleDevice: 'Available devices nobody used',
       auditOverdue: 'Non-disposed devices',
       entitlementOverAllocated: 'More seats assigned than owned',
-      lowStock: 'The three kinds kept as a quantity',
-      purchaseOverdue:
-        'Ordered, past the expected delivery date and not all received',
+      lowAccessories: 'Available quantity below its minimum',
+      lowConsumables: 'Available quantity below its minimum',
+      lowComponents: 'Available quantity below its minimum',
     },
   },
   data: {
