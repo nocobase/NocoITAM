@@ -456,10 +456,13 @@ export function PersonBelongings({
               ) : null,
           },
         ]}
-        rows={rows.map((item) => ({
-          ...item,
-          id: `${item.kind}-${item.id}`,
-        }))}
+        rows={rows}
+        // A device, a stock holding and a seat are different tables, so
+        // their ids may meet; the kind keeps the rows apart. Keyed here, not
+        // by rewriting `id`, which the row's own action sends: reclaiming a
+        // seat sent `seat-<id>` and the service answered that no such seat
+        // existed.
+        rowKey={(item) => `${item.kind}-${item.id}`}
         // What is inside a device, in a band of its own across the row: a
         // component is not another thing to settle beside the laptop, and
         // the status, the owner and the handling on that row are the
@@ -489,15 +492,19 @@ export function PersonBelongings({
       />
       {/* The other half of offboarding, and the half no button settles:
             the records that still name them. Changing who answers for one is
-            a decision, and only its current owner or its creator may make
-            it, so each row is a way into that record rather than an action
-            here. */}
-      {owned.length > 0 ? (
+            a decision, made by anybody who may update it while it is open,
+            so each row offers it. */}
+      {owned.length > 0 || (left && handedOver.length > 0) ? (
         <section className='space-y-2 pt-3'>
           <p className='text-sm text-muted-foreground'>
-            {/* The same line whether or not they have left: what the
-                records need is a new name on them either way. */}
-            {t('people.recovery.responsible', { count: owned.length })}
+            {/* Before they leave, how many records name them now. After,
+                the snapshot of what they answered for — handed-over rows
+                included, the way the holdings above keep their settled ones,
+                so the section stays once everything is handed over instead
+                of vanishing with the work. */}
+            {left
+              ? t('people.recovery.responsibleLeft')
+              : t('people.recovery.responsible', { count: owned.length })}
           </p>
           {/* One record per line: they are things to go and settle, not a
                 set of tags. Each says what kind it is and in which seat it
