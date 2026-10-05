@@ -97,6 +97,16 @@ const SHOWN: Readonly<Record<string, readonly Shown[]>> = {
       date: true,
     },
   ],
+  itam_reserve_device: [
+    { key: 'deviceId', label: 'fields.device', ref: 'devices' },
+    {
+      key: 'reservedForId',
+      label: 'devices.reservedFor',
+      ref: (args: Data) =>
+        TARGET_COLLECTIONS[text(args.reservedForType) || 'person'] ?? 'people',
+    },
+    { key: 'reservedUntil', label: 'fields.reservedUntil', date: true },
+  ],
   itam_transfer_device: [
     { key: 'deviceId', label: 'fields.device', ref: 'devices' },
     { key: 'targetId', label: 'fields.assignee', ref: target },

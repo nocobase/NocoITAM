@@ -18,6 +18,8 @@ export interface OnboardingPlanLine {
     readonly name: string;
   };
   readonly kind: 'device' | 'stock' | 'entitlement';
+  /** A shortfall's purchase line type; null when nothing says. */
+  readonly itemType: string | null;
   readonly required: number;
   readonly prepared: readonly PlanThing[];
   readonly preparedCount: number;

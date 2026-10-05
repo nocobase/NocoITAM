@@ -16,6 +16,13 @@ vi.mock('@nocobase/i18n/client', () => ({
 vi.mock('../../client/lib/itam/onboarding.js', () => ({
   useOnboardingPlan: () => ({ data: state.plan }),
 }));
+vi.mock('../../client/lib/itam/ai-context.js', () => ({
+  useAiPageContext: () => ({
+    ref: () => undefined,
+    available: false,
+    ask: () => undefined,
+  }),
+}));
 vi.mock('../../client/lib/itam/announce.js', () => ({
   useAnnounce: () => async () => undefined,
 }));
@@ -53,6 +60,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
     {
       target: { type: 'model', id: 'm1', name: 'MacBook Pro 14' },
       kind: 'device',
+      itemType: 'device',
       required: 1,
       prepared: [],
       preparedCount: 0,
@@ -62,6 +70,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
     {
       target: { type: 'model', id: 'm2', name: 'MX Keys' },
       kind: 'stock',
+      itemType: 'accessory',
       required: 1,
       prepared: [],
       preparedCount: 0,
@@ -71,6 +80,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
     {
       target: { type: 'softwareProduct', id: 'sp1', name: 'Figma' },
       kind: 'entitlement',
+      itemType: null,
       required: 1,
       prepared: [],
       preparedCount: 0,
@@ -83,7 +93,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
 const show = () =>
   render(
     <MemoryRouter>
-      <OnboardingPlanCard personId='p1' />
+      <OnboardingPlanCard personId='p1' personName='Sun Hao' />
     </MemoryRouter>,
   );
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));

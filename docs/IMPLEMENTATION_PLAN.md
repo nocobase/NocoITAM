@@ -2507,6 +2507,19 @@ PO-000088），按单号写的测试说明和截图对不上。现在清除时�
 - **下一步**：入职 skill，Noco 读这份计算结果、向人说明、按确认卡片逐步预留和分配，
   缺口生成「新员工配备」采购单；业务说明里的配置文字届时改为指向入职配置。
 
+### 2026-10-05 入职配备（第二步）：入职 skill
+
+- **`onboarding` 技能**：Noco 用 `itam_onboarding_plan` 读系统算好的方案，先说结论（配置、
+  已配备、建议、缺口），再按类提出动作：入职前 `itam_reserve_device` 预留到入职日（新增
+  的写工具，按 `reserve` 授权，需确认），入职后 `itam_assign_device`，配件
+  `itam_issue_stock`，软件 `itam_assign_seat`；只提方案里的建议，不另挑设备。
+- **缺口起草采购单**由 Noco 用 `itam_create_purchase_order` 做：采购单必须有供应商，卡片上
+  没法问，所以不做成按钮；方案每行带 `itemType` 说明该按什么类型采购，软件看不出永久还是
+  订阅时问用户。
+- **入口**：入职配备卡片上的「让 Noco 准备」，带上方案作为页面上下文。
+- **业务说明**种子不再列各部门配置，改为指向 主数据 → 入职配置；已有部署里存着的业务说明
+  不动，由管理员改。
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

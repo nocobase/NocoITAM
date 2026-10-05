@@ -30,21 +30,20 @@ function resolveLocale(context: SeedContext): string {
 
 /**
  * The assistant's business notes (系统设置 → AI 助手 → 业务说明): the rules
- * Ava reads through `itam_business_context` before planning — onboarding
- * kits, replace-or-repair, purchasing, offboarding and naming. Written in
+ * Ava reads through `itam_business_context` before planning — onboarding,
+ * replace-or-repair, purchasing, offboarding and naming. The onboarding kits
+ * themselves are data since 2026-10-05 (入职配置), so the notes point there
+ * rather than list them. Written in
  * the deployment's language like the other seeded data, and naming the
  * seeded departments, models and software products, so the demo's
  * onboarding and repair questions have something to go by. The
  * administrator rewrites them for the company.
  */
 const BUSINESS_NOTES: Readonly<Record<string, string>> = {
-  'zh-CN': `## 入职标准配置（按部门；先用库存，库存没有再提采购）
-- 研发、质量：MacBook Pro 14 M3、U2723QE 显示器、WD22TB4 扩展坞、MX Keys 键盘、MX Master 3S 鼠标；软件：IntelliJ IDEA Ultimate、Microsoft 365、Zoom Workplace
-- IT 运维：ThinkPad T14 Gen 5、U2723QE 显示器、WD22TB4 扩展坞；软件：Microsoft 365、Zoom Workplace
-- 产品部：MacBook Pro 14 M3、U2723QE 显示器、MX Master 3S 鼠标；软件：Figma、Microsoft 365、Zoom Workplace
-- 市场部：MacBook Air 13 M3、MX Master 3S 鼠标；软件：Adobe Creative Cloud、Figma、Microsoft 365
-- 销售部、客户成功部：MacBook Air 13 M3、Zone Vibe 100 耳机、iPhone 15；软件：Microsoft 365、Zoom Workplace
-- 人力资源部、财务部、行政部：ThinkPad T14 Gen 5 或 Latitude 5440、MX Keys 键盘、MX Master 3S 鼠标；软件：Microsoft 365
+  'zh-CN': `## 入职
+- 入职标准配置按部门和职位维护在 主数据 → 入职配置，入职配备以它为准，这里不再重复列出。
+- 先用库存，库存没有再提采购；入职前预留，入职当天分配。
+- 分配席位后，记得在软件后台给新人开通账号。
 
 ## 更换还是维修
 - 保修期内一律走厂商保修，不自费维修。
@@ -64,13 +63,10 @@ const BUSINESS_NOTES: Readonly<Record<string, string>> = {
 
 ## 命名习惯
 - 设备名称用「地点代码-类型-序号」：新加坡总部为 SG，日本分公司为 JP；笔记本 LT、台式机 DT、显示器 MN、手机 PH，例如 SG-LT-001。`,
-  'en-US': `## Onboarding kits (by department; use stock first, raise a purchase only for what is missing)
-- R&D, QA: MacBook Pro 14 M3, U2723QE monitor, WD22TB4 dock, MX Keys keyboard, MX Master 3S mouse; software: IntelliJ IDEA Ultimate, Microsoft 365, Zoom Workplace
-- IT Operations: ThinkPad T14 Gen 5, U2723QE monitor, WD22TB4 dock; software: Microsoft 365, Zoom Workplace
-- Product: MacBook Pro 14 M3, U2723QE monitor, MX Master 3S mouse; software: Figma, Microsoft 365, Zoom Workplace
-- Marketing: MacBook Air 13 M3, MX Master 3S mouse; software: Adobe Creative Cloud, Figma, Microsoft 365
-- Sales, Customer Success: MacBook Air 13 M3, Zone Vibe 100 headset, iPhone 15; software: Microsoft 365, Zoom Workplace
-- HR, Finance, Administration: ThinkPad T14 Gen 5 or Latitude 5440, MX Keys keyboard, MX Master 3S mouse; software: Microsoft 365
+  'en-US': `## Onboarding
+- The standard kits are kept by department and position in Master data → Onboarding kits; onboarding follows them, so they are not repeated here.
+- Use stock first and raise a purchase only for what is missing; reserve before the first day, assign on it.
+- After assigning a seat, open the new joiner's account in the software's own admin console.
 
 ## Replace or repair
 - Under warranty, always use the vendor's warranty; never pay for the repair.

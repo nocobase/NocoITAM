@@ -37,7 +37,12 @@ export default function PersonHoldingsTab(): ReactElement {
     hireDate >= addDays(todayIso(), -30);
   return (
     <div className='space-y-4'>
-      {joining ? <OnboardingPlanCard personId={id} /> : null}
+      {joining ? (
+        <OnboardingPlanCard
+          personId={id}
+          personName={text(person.data?.name)}
+        />
+      ) : null}
       <PersonBelongings personId={id} personName={text(person.data?.name)} />
     </div>
   );

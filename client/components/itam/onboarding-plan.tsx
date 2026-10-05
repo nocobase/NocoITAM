@@ -2,9 +2,11 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { AppWindow, Check, Package, PackageCheck } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
+import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAiPageContext } from '@/lib/itam/ai-context';
 import { useAnnounce } from '@/lib/itam/announce';
 import { apiErrorBody, useApi } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
@@ -31,8 +33,10 @@ import { RecordLink } from './record-link.js';
  */
 export function OnboardingPlanCard({
   personId,
+  personName,
 }: {
   readonly personId: string;
+  readonly personName: string;
 }): ReactElement | null {
   const { t } = useTranslation();
   const api = useApi();
@@ -41,6 +45,19 @@ export function OnboardingPlanCard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const data = plan.data;
+  // The plan goes along as page context, so Noco presents and carries out
+  // this very plan (the onboarding skill) — and drafts the purchase order
+  // for the shortfall, which needs a vendor the card does not ask for.
+  const {
+    ref: contextRef,
+    available: aiAvailable,
+    ask,
+  } = useAiPageContext({
+    id: 'itam-onboarding',
+    title: t('onboarding.title'),
+    kind: 'onboarding',
+    getContext: () => ({ personId, name: personName, plan: data }),
+  });
   if (!data) return null;
   const started = !data.hireDate || data.hireDate <= todayIso();
 
@@ -138,6 +155,16 @@ export function OnboardingPlanCard({
               </span>
             ) : null}
           </div>
+          <span ref={contextRef} hidden />
+          {aiAvailable && data.kit ? (
+            <AiShortcut
+              onClick={() =>
+                ask(t('ai.prompts.onboarding', { name: personName }))
+              }
+            >
+              {t('onboarding.askAi')}
+            </AiShortcut>
+          ) : null}
           {proposals.length > 0 ? (
             <Button
               size='sm'

@@ -88,12 +88,12 @@ describe('ITAM seeds', () => {
       businessNotes: string;
       builtInEmployeesDisabled: boolean;
     };
-    // Written in the deployment's language; either version names the
-    // seeded models and software.
+    // Written in the deployment's language. The kits are data now
+    // (入职配置), so the notes point there instead of listing them again.
     expect(ai.builtInEmployeesDisabled).toBe(true);
     expect(ai.businessNotes.startsWith('## ')).toBe(true);
-    expect(ai.businessNotes).toContain('MacBook Pro 14 M3');
-    expect(ai.businessNotes).toContain('IntelliJ IDEA Ultimate');
+    expect(ai.businessNotes).toContain('Onboarding kits');
+    expect(ai.businessNotes).not.toContain('MacBook Pro 14 M3');
   });
 
   it('creates the ITAM permission sets when the authorization tables exist', async () => {

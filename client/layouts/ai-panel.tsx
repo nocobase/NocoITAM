@@ -52,6 +52,7 @@ const TOOL_RENDERERS: AIToolRendererMap = Object.fromEntries(
     'itam_loan_device',
     'itam_return_devices',
     'itam_transfer_device',
+    'itam_reserve_device',
     'itam_correct_device_status',
     'itam_assign_seat',
     'itam_reclaim_seats',

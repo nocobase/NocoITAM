@@ -108,6 +108,19 @@ export const AI_WRITE_SCHEMAS = {
     deviceId: id,
     ...target,
   }),
+  // 入职配备 before the first day: held for a joiner until they arrive.
+  itam_reserve_device: z.object({
+    title,
+    deviceId: id,
+    reservedForType: z
+      .enum(ASSIGNEE_TYPES)
+      .default('person')
+      .describe('Who it is held for; a person unless stated otherwise.'),
+    reservedForId: id.describe('The person id (or location / device id).'),
+    reservedUntil: date.describe(
+      'Held until this day; for a joiner, their joining date.',
+    ),
+  }),
   itam_correct_device_status: z.object({
     title,
     deviceId: id,
@@ -176,6 +189,7 @@ const PERMISSIONS: Readonly<
   itam_loan_device: [['devices', 'loan']],
   itam_return_devices: [['devices', 'return']],
   itam_transfer_device: [['devices', 'transfer']],
+  itam_reserve_device: [['devices', 'reserve']],
   itam_correct_device_status: [['devices', 'correctStatus']],
   itam_assign_seat: [['entitlements', 'assignSeat']],
   itam_reclaim_seats: [['entitlements', 'assignSeat']],
@@ -235,6 +249,7 @@ const DEVICE_OPERATIONS: Partial<Record<AiWriteTool, DeviceOperation>> = {
   itam_loan_device: 'loan',
   itam_transfer_device: 'transfer',
   itam_return_devices: 'return',
+  itam_reserve_device: 'reserve',
 };
 
 export async function screenWrite(
@@ -345,6 +360,21 @@ async function execute(
           { targetType: args.targetType, targetId: args.targetId },
           context,
           await decide('devices', 'assign'),
+        ),
+      );
+    }
+    case 'itam_reserve_device': {
+      const args = AI_WRITE_SCHEMAS[tool].parse(raw);
+      return device(
+        await devices.reserve(
+          args.deviceId,
+          {
+            reservedForType: args.reservedForType,
+            reservedForId: args.reservedForId,
+            reservedUntil: args.reservedUntil,
+          },
+          context,
+          await decide('devices', 'reserve'),
         ),
       );
     }
