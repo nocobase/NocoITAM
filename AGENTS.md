@@ -691,6 +691,38 @@ Rules learned while building it:
   count beside its name. 我的待办's 离职交接 pane renders this component
   alone, not the whole person page: the queue asks what to do, and the rest
   of a person record is not it.
+- 入职 is the mirror of 离职, with one difference (2026-10-05): what a
+  leaver must hand back is a fact in the register, while what a joiner
+  should get is a rule. The rule is **data**, 入职配置 (`onboardingKits`,
+  migration `202610050005_onboarding_kits`, master data page
+  `onboarding-kits`): one kit per department and position — the empty
+  position being the department's default, and a department with no kit
+  taking its parent's — whose `items` are a JSON list of { modelId |
+  categoryId | softwareProductId, quantity }, edited beside the kit's
+  information card (`KitItems`). One per department and position is
+  enforced by scoping the department within the position
+  (`UNIQUE_SCOPES`), since an empty value is skipped. The arithmetic is
+  **deterministic**, `server/providers/itam/onboarding.ts`: what the person
+  holds or has reserved counts first, each thing towards one item; the rest
+  is proposed from stock — a device in stock and unreserved, the person's
+  own location first, then the longest warranty; a stock item with enough
+  on hand; an entitlement with a free seat (an ended subscription offers
+  none) — and what stock cannot cover is the shortfall.
+  `GET /itam/master/people/:id/onboarding` returns it; it writes nothing.
+  The 归属 tab of an active person whose 入职日期 is ahead or within the
+  last 30 days opens on 入职配备 (`OnboardingPlanCard`): the kit, 已配备
+  N / M, and one button per proposal through the operation that already
+  exists — 预留 until the joining day while they have not started, 分配
+  once they have, 领用, 分配席位 — with 全部执行 running them in order.
+  The workbench's 待入职 (`pendingOnboarding`, right after 离职交接) lists
+  people joining within 14 days, or in the 7 since, whose kit is not all in
+  hand (with no kit, while no device is held or reserved), granted by
+  `reserve`; nobody owns a joiner's preparation, so under 我负责的 it is
+  empty. The seeds write a kit per department (the ones the AI business
+  notes describe) and a designer's in Product; the demo adds two joiners.
+  Choosing which device is the service's, never the model's: the AI side
+  (an onboarding skill presenting this plan and executing it through the
+  write tools) is the next step, not part of this one.
 - A leaver's **sign-in goes with them** (2026-10-05,
   `server/providers/itam/leaver-accounts.ts`): marking somebody as left
   marks a person, not an account, so a sign-in the person record links went

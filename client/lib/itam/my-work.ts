@@ -85,6 +85,7 @@ export function useWorkCards(): readonly WorkCard[] {
     // equipment, which was the one `critical` rule while this was a reminder.
     // A person names themselves, so these records take no tag.
     'leaverRecovery',
+    'pendingOnboarding',
     'pendingOrders',
     'awaitingReceipt',
     'pendingDisposalExecution',

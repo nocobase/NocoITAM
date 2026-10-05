@@ -414,6 +414,25 @@ const PERSON_NAMES: Readonly<
   ],
 };
 
+/**
+ * Two people joining in the coming days with nothing prepared yet, so 待入职
+ * and 入职配备 have someone to show (2026-10-05): one in R&D, who takes the
+ * department's default kit, and a designer in Product, whose position has a
+ * kit of its own.
+ */
+const JOINER_NAMES: Readonly<
+  Record<string, readonly { name: string; mail: string; position: string }[]>
+> = {
+  'en-US': [
+    { name: 'Sun Hao', mail: 'sun.hao', position: 'Frontend Engineer' },
+    { name: 'Lin Xue', mail: 'lin.xue', position: 'Designer' },
+  ],
+  'zh-CN': [
+    { name: '孙浩', mail: 'sun.hao', position: '前端工程师' },
+    { name: '林雪', mail: 'lin.xue', position: '设计师' },
+  ],
+};
+
 export function createDemoService(dependencies: {
   database: DatabaseManager;
   masterData: MasterDataService;
@@ -772,6 +791,24 @@ export function createDemoService(dependencies: {
             ...(staffUserIds[index] ? { userId: staffUserIds[index] } : {}),
           }),
         );
+      }
+
+      // 待入职: joining in five and nine days, nothing reserved yet.
+      const productDept = await seededIn('departments', 'dept-product');
+      for (const [index, entry] of (
+        JOINER_NAMES[locale] ??
+        JOINER_NAMES['en-US'] ??
+        []
+      ).entries()) {
+        await md('people', {
+          name: entry.name,
+          employeeNo: `EMP-${String(index + 301).padStart(3, '0')}`,
+          email: `${entry.mail}@northbridge.example`,
+          position: entry.position,
+          departmentId: index === 0 ? rnd.id : productDept.id,
+          locationId: floor3.id,
+          hireDate: daysFromNow(index === 0 ? 5 : 9),
+        });
       }
 
       // What the leaver answers for. Returning equipment is only half of

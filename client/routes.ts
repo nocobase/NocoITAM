@@ -24,6 +24,7 @@ import {
   MonitorSmartphone,
   Mouse,
   Package,
+  PackageCheck,
   Printer,
   Recycle,
   ShoppingCart,
@@ -510,6 +511,14 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
               loader: () => import('./pages/itam/people/holdings-tab.js'),
             },
           ],
+        }),
+        // 入职配置 (2026-10-05): the standard kit per department and position.
+        master({
+          file: 'onboarding-kits',
+          title: 'navigation.onboardingKits',
+          icon: PackageCheck,
+          list: () => import('./pages/itam/master/onboarding-kits.js'),
+          detail: () => import('./pages/itam/master/onboarding-kits-detail.js'),
         }),
       ],
     },

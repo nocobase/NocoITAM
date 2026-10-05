@@ -1,5 +1,5 @@
 import type { DatabaseAuthorizationConditions } from '@nocobase/app-plugin-authorization/server';
-import { today as todayIso } from './dates.js';
+import { addDays, today as todayIso } from './dates.js';
 import type { DatabaseManager } from '@nocobase/db';
 import {
   createServiceToken,
@@ -11,6 +11,7 @@ import { compileAuthzScope } from './authz-filter.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
 import { OWNED_BY_USER, RECOVERABLE_DEVICE_STATUSES } from './recovery.js';
 import { nameOf, referenceNames } from './reference-names.js';
+import type { OnboardingService } from './onboarding.js';
 
 /**
  * "My work" on the workbench: what waits for the signed-in user right now.
@@ -61,6 +62,7 @@ export interface MyWorkItem {
     | 'pendingPurchaseApprovals'
     | 'pendingDisposalApprovals'
     | 'pendingOrders'
+    | 'pendingOnboarding'
     | 'awaitingReceipt'
     | 'pendingDisposalExecution'
     | 'activeRepairs'
@@ -120,8 +122,10 @@ function isMine(row: Row, userId: string): boolean {
 export function createWorkbenchService(dependencies: {
   database: DatabaseManager;
   approvals: ApprovalService;
+  /** For 待入职; a container without it shows no such column. */
+  onboarding?: OnboardingService;
 }): WorkbenchService {
-  const { database, approvals } = dependencies;
+  const { database, approvals, onboarding } = dependencies;
 
   const count = async (
     table: string,
@@ -728,6 +732,67 @@ export function createWorkbenchService(dependencies: {
             count: mine.get(String(row.id)) || undefined,
             progress: progress.get(String(row.id)),
           })),
+        });
+      }
+
+      // 待入职: somebody joining within the fortnight — or in the week since,
+      // so a first day without a laptop does not drop off — whose kit is not
+      // yet in hand (2026-10-05). Ready means every item of their kit is
+      // held or reserved for them; with no kit for their department, any
+      // device held or reserved. Nobody owns a joiner's preparation, so
+      // under 我负责的 the column is empty: it is everybody's, like the
+      // reservations it asks for, and granted by `reserve`.
+      if (
+        onboarding &&
+        peopleConditions &&
+        (await decide('devices', 'reserve'))
+      ) {
+        const now = todayIso();
+        const joiners =
+          reader === null
+            ? await take(
+                'people',
+                peopleConditions,
+                ['id', 'name', 'position', 'hireDate'],
+                (query) =>
+                  query
+                    // `!=` alone would also drop an empty status.
+                    .where((eb) =>
+                      eb.or([
+                        eb('employmentStatus', 'is', null),
+                        eb('employmentStatus', '!=', 'left'),
+                      ]),
+                    )
+                    .where('hireDate', '>=', addDays(now, -7))
+                    .where('hireDate', '<=', addDays(now, 14))
+                    .orderBy('hireDate', 'asc'),
+              )
+            : [];
+        const waiting: MyWorkRecord[] = [];
+        for (const row of joiners) {
+          const plan = await onboarding.plan(String(row.id));
+          if (!plan) continue;
+          const ready =
+            plan.required > 0
+              ? plan.prepared >= plan.required
+              : plan.hasDevice;
+          if (ready) continue;
+          waiting.push({
+            id: String(row.id),
+            title: String(row.name),
+            subtitle: asText(row.position) ?? null,
+            date: asText(row.hireDate) ?? null,
+            url: `/people/${String(row.id)}`,
+            ...(plan.required > 0
+              ? { progress: { done: plan.prepared, total: plan.required } }
+              : {}),
+          });
+        }
+        items.push({
+          key: 'pendingOnboarding',
+          count: waiting.length,
+          url: '/people',
+          records: waiting,
         });
       }
 

@@ -58,7 +58,8 @@ export default function WorkbenchPage(): ReactElement {
   const cards = useWorkCards();
   const loading = useMyWork().isLoading;
   const leavers = cards.find((card) => card.key === 'leaverRecovery');
-  const rest = cards.filter((card) => card !== leavers);
+  const joiners = cards.find((card) => card.key === 'pendingOnboarding');
+  const rest = cards.filter((card) => card !== leavers && card !== joiners);
   return (
     <Page fill>
       <PageHeader
@@ -75,6 +76,7 @@ export default function WorkbenchPage(): ReactElement {
             `critical`, and each is a job of several parts. */}
         <AttentionColumn />
         {leavers ? <WorkColumn card={leavers} /> : null}
+        {joiners ? <WorkColumn card={joiners} /> : null}
         {loading ? (
           <Column title={t('workbench.myWork')}>
             <Skeleton className='h-24 w-full rounded-lg' />
@@ -286,6 +288,8 @@ function RecordCard({
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
   if (column === 'leaverRecovery') return <LeaverCard record={record} />;
+  if (column === 'pendingOnboarding')
+    return <LeaverCard record={record} joining />;
   return (
     <button
       type='button'
@@ -339,7 +343,14 @@ function RecordCard({
  * of several parts and the name alone says nothing about which ones are
  * nearly done. The reader's own share sits beside it, as on every card.
  */
-function LeaverCard({ record }: { readonly record: CardRecord }): ReactElement {
+function LeaverCard({
+  record,
+  joining = false,
+}: {
+  readonly record: CardRecord;
+  /** 待入职 rather than 离职交接: the date joins, and progress is 已配备. */
+  readonly joining?: boolean;
+}): ReactElement {
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
   const progress = record.progress;
@@ -375,7 +386,9 @@ function LeaverCard({ record }: { readonly record: CardRecord }): ReactElement {
           </div>
           {record.date ? (
             <p className='text-xs text-muted-foreground tabular-nums'>
-              {t('workbench.work.leftOn', { date: formatDate(record.date) })}
+              {t(joining ? 'workbench.work.joinsOn' : 'workbench.work.leftOn', {
+                date: formatDate(record.date),
+              })}
             </p>
           ) : null}
         </div>
@@ -396,10 +409,13 @@ function LeaverCard({ record }: { readonly record: CardRecord }): ReactElement {
           <p className='mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
             {progress ? (
               <span>
-                {t('people.recovery.progress', {
-                  done: progress.done,
-                  total: progress.total,
-                })}
+                {t(
+                  joining ? 'onboarding.progress' : 'people.recovery.progress',
+                  {
+                    done: progress.done,
+                    total: progress.total,
+                  },
+                )}
               </span>
             ) : null}
             {record.count === undefined ? null : (
