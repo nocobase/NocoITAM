@@ -163,17 +163,7 @@ export function PersonBelongings({
       await api.request({
         path: `${referencePath(handover.collection)}/${handover.id}`,
         method: 'PATCH',
-        // A field naming several people — a stocktake's executors — is
-        // handed over by replacing this one name, not by overwriting the
-        // list: the colleagues counting alongside them keep the task.
-        json: {
-          [handover.field]: handover.owners
-            ? [
-                ...handover.owners.filter((name) => name !== handover.ownerId),
-                ...(nextOwner ? [nextOwner] : []),
-              ].filter((name, index, all) => all.indexOf(name) === index)
-            : nextOwner,
-        },
+        json: { [handover.field]: nextOwner },
       });
     },
     onSuccess: async () => {
@@ -500,11 +490,7 @@ export function PersonBelongings({
                       {record.label}
                     </RecordLink>
                     <span className='text-xs text-muted-foreground'>
-                      {t(
-                        record.field === 'executorIds'
-                          ? 'fields.executors'
-                          : 'fields.owner',
-                      )}
+                      {t('fields.owner')}
                       {' · '}
                       {/* Whoever that field names now: once it is handed over
                         that is somebody else, and the leaver's name there

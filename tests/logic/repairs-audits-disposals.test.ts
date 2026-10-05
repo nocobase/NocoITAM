@@ -523,6 +523,46 @@ describe('repairs, audits and disposals', () => {
     });
   });
 
+  /**
+   * A stocktake answers to its 负责人, which starts at whoever creates it and
+   * moves when it is handed over — and 进行中的盘点 follows that, beside the
+   * executors who count. It read the creator until 2026-10-05, which a
+   * handed-over task left on the old organiser's list for ever.
+   */
+  it('gives a stocktake an owner, and puts it on that owner\'s to-do', async () => {
+    await createDevice();
+    const created = await post('audits', {
+      name: 'Owned count',
+      scope: { locationIds: [fixture.locationId] },
+      plannedStart: '2026-09-01',
+      plannedEnd: '2026-09-30',
+      executorIds: ['sam'],
+    });
+    const task = await data<{ id: string; ownerId: string }>(created);
+    // Not named, so whoever created it.
+    expect(task.ownerId).toBe(manager.user);
+    await post(`audits/${task.id}/start`);
+
+    const active = async (who: typeof manager) =>
+      (
+        await data<{ key: string; records: { id: string }[] }[]>(
+          await app.request('/api/itam/workbench/my-work', who),
+        )
+      ).find((item) => item.key === 'activeAudits')?.records ?? [];
+    expect((await active(manager)).map((row) => row.id)).toEqual([task.id]);
+    expect(await active(approver)).toEqual([]);
+
+    // Handed over: it leaves the creator's list and joins the new owner's.
+    await app.request(`/api/itam/audits/${task.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ownerId: approver.user }),
+      ...manager,
+    });
+    expect(await active(manager)).toEqual([]);
+    expect((await active(approver)).map((row) => row.id)).toEqual([task.id]);
+  });
+
   it('runs an audit: snapshot, count, differences, resolution, last-audited stamps', async () => {
     const a1 = await createDevice();
     const a2 = await createDevice();

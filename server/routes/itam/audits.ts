@@ -43,6 +43,8 @@ export const taskSchema = z.object({
   plannedStart: date,
   plannedEnd: date,
   executorIds: z.array(id).min(1).max(50),
+  // Starts at whoever creates the task when not named; required once set.
+  ownerId: id.optional(),
   notes: z.string().max(20000).nullable().optional(),
 });
 

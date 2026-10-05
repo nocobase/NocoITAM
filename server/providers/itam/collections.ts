@@ -519,6 +519,7 @@ export const AUDIT_TASKS_COLLECTION: ItamCollectionDefinition = {
     'plannedStart',
     'plannedEnd',
     'executorIds',
+    'ownerId',
     'status',
     'expectedCount',
     'countedCount',
@@ -529,10 +530,10 @@ export const AUDIT_TASKS_COLLECTION: ItamCollectionDefinition = {
     'completedAt',
     ...audit,
   ],
-  // No owner of its own: whoever created the task organised it.
+  // Its 负责人 answers for it (2026-10-05); the executors are who count.
   attributes: {
     identifier: 'id',
-    owner: 'createdById',
+    owner: 'ownerId',
     creator: 'createdById',
   },
   searchFields: ['name'],

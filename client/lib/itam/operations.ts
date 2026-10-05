@@ -264,6 +264,21 @@ export const AUDIT_TASK_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.progress',
   },
   {
+    // Who answers for the task; the executors below are who count
+    // (2026-10-05). Starts at whoever creates it — the list's create dialog
+    // seeds a declared `ownerId` from the signed-in user — and is anybody's
+    // to hand over while the task is open, since the page's own rule is
+    // only that it is not finished or called off.
+    key: 'ownerId',
+    label: 'fields.owner',
+    type: 'reference',
+    reference: { collection: 'users' },
+    required: true,
+    column: true,
+    group: 'groups.basic',
+    detailOrder: -10,
+  },
+  {
     key: 'executorIds',
     label: 'fields.executors',
     type: 'text',

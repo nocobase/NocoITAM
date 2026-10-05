@@ -30,6 +30,7 @@ const AUDIT_INPUT = [
   'plannedStart',
   'plannedEnd',
   'executorIds',
+  'ownerId',
   'notes',
 ];
 const DISPOSAL_INPUT = [

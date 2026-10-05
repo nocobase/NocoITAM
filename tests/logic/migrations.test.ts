@@ -2,6 +2,7 @@
 import addRepairNo from '../../database/main/migrations/202609190002_add_repair_no.js';
 import compositeGrants from '../../database/main/migrations/202609280007_composite_grants.js';
 import requestOwner from '../../database/main/migrations/202610050001_request_owner.js';
+import auditOwner from '../../database/main/migrations/202610050002_audit_owner.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -130,6 +131,47 @@ describe('ITAM migrations', () => {
         .where('key', '=', 'repair')
         .executeTakeFirst<{ nextValue: number }>(),
     ).toMatchObject({ nextValue: 3 });
+  });
+
+  it('gives every stocktake its creator as 负责人', async () => {
+    db = await createTestDatabase();
+    const client = await schemaClient(db.database);
+    const connection = db.database.connection();
+    const context = {
+      connection,
+      query: connection.query,
+      builder: connection.builder,
+    };
+    await auditOwner.down!(context);
+    expect(await client.schema.hasColumn('audit_tasks', 'owner_id')).toBe(
+      false,
+    );
+    const now = new Date();
+    await connection.query
+      .insertInto('auditTasks')
+      .values({
+        id: 'task',
+        name: 'Warehouse',
+        scope: {},
+        plannedStart: '2026-10-01',
+        plannedEnd: '2026-10-20',
+        executorIds: ['sam'],
+        status: 'inProgress',
+        createdById: 'mia',
+        createdAt: now,
+        updatedAt: now,
+      })
+      .execute();
+
+    await auditOwner.up(context);
+    // The creator, not an executor: who organised it is who answered for it
+    // while the field was gone.
+    expect(
+      await connection.query
+        .selectFrom('auditTasks')
+        .select('ownerId')
+        .executeTakeFirst(),
+    ).toEqual({ ownerId: 'mia' });
   });
 
   it("moves a request's requester to its owner, with the recorded changes", async () => {
@@ -325,7 +367,7 @@ describe('ITAM migrations', () => {
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(84);
+    expect(rolledBack.rolledBack.length).toBe(85);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

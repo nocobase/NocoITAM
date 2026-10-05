@@ -78,6 +78,11 @@ export interface AuditTaskInput extends Row {
   readonly plannedStart: string;
   readonly plannedEnd: string;
   readonly executorIds: readonly string[];
+  /**
+   * Who answers for the task, beside the people who count. Starts at
+   * whoever creates it when not named.
+   */
+  readonly ownerId?: string | null;
   readonly notes?: string | null;
 }
 
@@ -406,6 +411,7 @@ export function createAuditService(dependencies: {
             plannedStart: input.plannedStart,
             plannedEnd: input.plannedEnd,
             executorIds: input.executorIds,
+            ownerId: input.ownerId ?? context.actorId,
             status: 'notStarted',
             expectedCount: expected,
             countedCount: 0,
