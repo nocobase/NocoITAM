@@ -1750,14 +1750,17 @@ its number, then two or three icon lines — a purchase order's amount and
 vendor; a disposal's book value, then its method and device count on one line; a repair's
 device, fault and expected return (`REPAIR_CARD`, which only the
 workbench draws, repairs having no board) — then its 负责人 with the time
-it was raised to the minute; a stocktake keeps its progress, period and
-differences. A card carries its kind's tag (`BoardCardSpec.kind`: 采购 / 报废 / 维修;
-a stocktake names itself) on its board and on the workbench alike. An
+it was raised to the minute; a stocktake's lines are its period, how far
+the count has got (已盘 N / M 台, or 应盘 M 台 before it starts) and its
+differences. A card carries its kind's tag (`BoardCardSpec.kind`: 采购 / 报废 / 维修 /
+盘点) on its board and on the workbench alike, a stocktake included even
+though its name says what it is: every document card reads the same way. An
 overdue loan is drawn from its to-do (`LOAN_CARD`, the 设备 tag through
 `BoardCardEntry.badge`): the device, 借给 whom — the server returns the
 borrower's name as the record's `subtitle` — and when it was due back.
 The workbench's columns run 需要关注 (on a warning-tinted ground, since it
-holds risks rather than to-dos), 离职交接, then the rest. The board takes the rest
+holds risks rather than to-dos), 离职交接, 待审批, 待到货入库, 进行中的维修,
+借出逾期, 待执行报废, 进行中的盘点. The board takes the rest
 of the page's height (`Page fill`): columns reach the bottom and scroll
 their own cards, so the sideways scrollbar sits at the foot of the page
 rather than under the shortest column (2026-10-04; they used to be as tall

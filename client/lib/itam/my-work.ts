@@ -73,7 +73,8 @@ export function useWorkCards(): readonly WorkCard[] {
     const tagged = (
       item: MyWorkItem | undefined,
       tag: DocumentKind,
-    ): CardRecord[] => (item?.records ?? []).map((record) => ({ ...record, tag }));
+    ): CardRecord[] =>
+      (item?.records ?? []).map((record) => ({ ...record, tag }));
     cards.push({
       key: 'pendingApprovals',
       label: t('workbench.work.pendingApprovals'),
@@ -107,10 +108,10 @@ export function useWorkCards(): readonly WorkCard[] {
     // A person names themselves, so these records take no tag.
     'leaverRecovery',
     'awaitingReceipt',
-    'pendingDisposalExecution',
     'activeRepairs',
-    'activeAudits',
     'loansDueToday',
+    'pendingDisposalExecution',
+    'activeAudits',
   ]) {
     const item = find(key);
     if (!item) continue;

@@ -2348,6 +2348,7 @@ const zhCN: AppResource = {
     expected_one: '应盘 {{count}} 台',
     expected_other: '应盘 {{count}} 台',
     expectedReturn: '预计 {{date}} 返回',
+    counted: '已盘 {{counted}} / {{expected}} 台',
   },
   dataTable: {
     noResults: '暂无数据。',

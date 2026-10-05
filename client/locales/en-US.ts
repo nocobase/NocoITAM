@@ -2479,6 +2479,7 @@ const messages = {
     expected_one: '{{count}} device to count',
     expected_other: '{{count}} devices to count',
     expectedReturn: 'Back by {{date}}',
+    counted: '{{counted}} of {{expected}} counted',
   },
   dataTable: {
     noResults: 'No results.',
