@@ -1328,8 +1328,6 @@ const messages = {
     reclaimSeat:
       'The seat held by {{name}} is taken back and can be assigned again. Reclaiming frees the licence, not the login — the account still has to be disabled, or the shared key changed, in the vendor console.',
     runJob: 'Run "{{job}}" now; the result is recorded in the run log.',
-    generateDemo:
-      'Demo records are generated from the seed data and can be cleared at any time.',
   },
   attachments: {
     optional: 'Attachments (optional)',
@@ -1854,13 +1852,37 @@ const messages = {
     demo: {
       title: 'Demo data',
       description:
-        'Generate a small company with deliberate problems (overdue loans, an over-allocated entitlement, an audit difference, a left employee still holding a laptop) to explore the system. Clearing removes only what was generated.',
-      generate: 'Generate demo data',
-      generating: 'Generating…',
+        'A fictional company, in Chinese or in English: devices, stock, entitlements, purchasing, repairs, stocktakes and disposals, with a few deliberate problems (overdue loans, an over-allocated entitlement, an audit difference, a leaver still holding a laptop), dated relative to the day it is imported. Clearing removes only what the import created.',
+      generate: 'Import demo data',
+      generating: 'Importing…',
+      generateTitle: 'Import the demo data?',
+      generateDescription:
+        'The records are added to the current database, dated relative to today, together with the demo accounts listed below. Nothing existing is changed, and the import can be removed again from here.',
+      generated: 'Demo data imported',
       clear: 'Clear demo data',
+      clearTitle: 'Clear the demo data?',
       clearDescription:
-        'Removes every generated record. Records you created yourself stay.',
-      none: 'No demo data present',
+        'Every record the import created is deleted with the demo accounts, including changes made to them since. Records you created yourself stay.',
+      cleared: 'Demo data cleared',
+      none: 'No demo data has been imported.',
+      present: 'Demo data imported on {{date}}: {{count}} records.',
+      language: 'Demo data language',
+      languages: { 'zh-CN': '中文', 'en-US': 'English' },
+      accounts: 'Demo accounts',
+      accountsHint:
+        'Once imported, sign in as any of these to see the system as that role.',
+      username: 'Username',
+      name: 'Name',
+      role: 'Role',
+      password: 'Password',
+      roles: {
+        'itam-asset-manager': 'IT asset manager',
+        'itam-it-support': 'IT support',
+      },
+      banner:
+        'No demo data yet. Import a sample company to try purchasing, assignment, repairs, stocktakes and offboarding with realistic records.',
+      bannerAction: 'Import demo data',
+      bannerDismiss: 'Dismiss',
     },
     emptyTitle: 'No settings available',
     emptyDescription:

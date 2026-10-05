@@ -318,6 +318,19 @@ Rules learned while building it:
   cards. The extra orders are never received — receiving makes devices and
   stock — and the extra audits keep off the laptops, whose 400-day-old last
   count a matched count would stamp today.
+- Demo data is imported and cleared from the 演示数据 card on the settings
+  page (after NocoCRM's, 2026-10-05): it lists the sign-ins the import
+  creates — in the language picked before importing (中文 / English,
+  `DEMO_LANGUAGES`; `POST /itam/demo/generate` takes `language`, else the
+  deployment's locale), those of the import present after — and says when
+  it was imported and how many records it holds. The language is not
+  stored: `status()` reads it back from the demo's people, whose names
+  differ per language. While nothing is imported, `DemoBanner`
+  (`client/components/itam/demo-banner.tsx`, mounted under the header in
+  `client/layouts/app-layout.tsx` — an application change to the layout)
+  offers it to whoever holds the settings grant the demo endpoints require,
+  links to `/settings/itam#demo` and, dismissed, stays away in that
+  browser.
 - The demo creates its own sign-ins (2026-10-05, replacing the role
   accounts `manager` and `support`): the IT staff as people with names —
   two asset managers, 孙强 `sunqiang` and 吴静 `wujing`, and IT support
