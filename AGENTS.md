@@ -595,7 +595,7 @@ Rules learned while building it:
   same reason `auditsIRunScope` reads) and the row carries `owners`, the
   whole list, because handing it over **replaces that one name and keeps
   the rest**. The write still goes through the collection's own endpoint —
-  a purchase order's reassignment has to meet `requireRequester`, so
+  a purchase order's reassignment has to meet its own `requireOwner`, so
   nothing may route around it — which is why the list travels to the client
   rather than the swap happening in a route of its own. Somebody leaving
   mid-count otherwise stalled the task invisibly: IT support reads only the
@@ -607,6 +607,82 @@ Rules learned while building it:
   anybody that. The owner scope also disagreed with the progress beside it
   — returning one thing emptied the reader's share and the whole person
   left their queue at 已处理 1 / 8.
+- A person's 归属 tab **is** the recovery table, for everybody (2026-10-04,
+  `client/components/itam/person-belongings.tsx`, the route child
+  `holdings`). It was three plain lists — devices, stock, seats — with
+  nothing to do to any of them, and a 待回收 card above once the person had
+  left. The card was the better shape and nothing about it was really about
+  leaving: taking a device back from whoever holds it is the same act either
+  way, and it was offered only on each device's own page. So the card is the
+  tab and leaving adds a line rather than a second list. The tab carries no
+  count beside its name. 我的待办's 离职交接 pane renders this component
+  alone, not the whole person page: the queue asks what to do, and the rest
+  of a person record is not it.
+- Every row is read from the **live record**, and the snapshot is only the
+  denominator (`belongingsSnapshot`, a history event written on every
+  transition into `left` — the button, an update whose date derives it, and
+  the nightly `markDueLeavers`). It stores identities, never fields: a
+  returned device is in stock and a stored copy of its status would be a
+  staler second answer, so `belongingsSnapshot(id)` rebuilds each row from
+  the record and falls back to the payload only for one since deleted.
+  Progress is the snapshot's size, which is why the list keeps settled rows
+  instead of shrinking — a count of five that becomes a count of two says
+  nothing about which three. Settled means **no longer in their name**,
+  which correctly covers a transfer, a scrapping and a device marked lost.
+- A settled row says 已处理 and nothing else (2026-10-04): not 已归还 /
+  已回收 / 已移交, because the column answers one question — is there still
+  something for me to do about this one — and the answer is the same however
+  it left. It also drops the device status and the 负责人 that the open rows
+  carry: both exist to say whether the thing can be taken back and who to
+  tell, and a settled row has neither question, while reading them live made
+  them drift (a returned device assigned to a colleague changed the 负责人 on
+  a row about somebody who left weeks ago). Which act it was is read on the
+  record, a click away. The share clause names the unsettled rows out loud —
+  其中未处理的 N 项由你负责 — because the sentence it hangs off introduces
+  the whole snapshot while the count has always covered only what is left.
+- Somebody who has left is not offered as a 负责人: `leftUserIds()` in
+  `server/routes/itam/users.ts` drops them from every picker, beside the
+  rule that a picker offers only accounts holding an `itam.*` operation.
+  Asked with `ids` the endpoint is a **name lookup** instead and answers
+  regardless, like the approver lookup — a record already naming them must
+  still read back, or the row that needs handing over cannot show whose it
+  is.
+- Resolving a holder's **name** is not checking whether they may **receive**
+  something (2026-10-05). The two were one function, so the rule about
+  handing things out refused the taking back that shares the lookup: 归还 on
+  a leaver's accessories was refused with "cannot issue to a person who has
+  left", from the button trying to collect them; reclaiming their seat logged
+  a bare id because the caller swallowed the same refusal to get a label; and
+  changing that seat's key failed outright. Stock has `holderRow` (the holder
+  must exist, whichever way the goods go) beside `requireIssuable`, and seats
+  have `holderLabel` beside `requireAssignable`. Devices were always right —
+  `assertTarget` is reached only by assign, loan, transfer and reserve.
+- `maybeDecide()` in `server/routes/itam/http.ts` answers `undefined` instead
+  of refusing, for a route that reads several collections and must leave out
+  the ones this caller cannot read rather than refuse the whole answer (the
+  recovery endpoint does this per owned collection).
+- 收件箱 is one flat queue (`client/pages/itam/inbox.tsx`): the filters are
+  at the top rather than as segment headings, the list is date-ordered across
+  every kind, and the record opens in a `RecordPane` beside it. Each row
+  carries its to-do's own tone (`WORK_TONE` in `client/lib/itam/my-work.ts`,
+  which both this page and the workbench strip read, so which records are
+  waiting and how the two kinds of approval merge is decided once). Both the
+  view and the open record are in the URL (`?view=&open=`), so a row is a
+  link.
+- An asset-type tag is outlined, not filled: the contract
+  `[data-slot='badge'][data-tag='kind']` in `client/styles.css` gives it a
+  border and no background, which is what tells it apart from a status tag
+  beside it. Two traps found writing it: a single utility class loses to the
+  two-attribute selector already there, and this theme is **monochrome** —
+  `--primary` / `--secondary` / `--muted` / `--accent` all carry zero chroma,
+  so `bg-primary/10` is grey. Only `--info` / `--success` / `--warning` /
+  `--destructive` have colour.
+- A value with no spaces in it — an e-mail address, a serial — needs
+  `wrap-anywhere` **and** a `min-w-0` on every flex ancestor: `break-words`
+  does not break it and a flex child refuses to shrink below its content
+  without the one, so it spills past the card.
+  `client/components/itam/collapsible-text.tsx` carries the first and
+  `domain-detail.tsx` the second (`inline-flex min-w-0 … *:min-w-0`).
 - `OWNED_BY_USER` and the recovery handlings live in
   `server/providers/itam/recovery.ts`, which is the shared home for
   offboarding knowledge: the 归属 tab lists from it, master data snapshots
