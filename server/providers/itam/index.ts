@@ -406,8 +406,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
         audits: container.resolve(auditServiceToken),
         disposals: container.resolve(disposalServiceToken),
         numbering: container.resolve(numberingServiceToken),
-        refreshReminders: () =>
-          container.resolve(maintenanceServiceToken).computeReminders(),
         // Who stands in as the colleague deciding the demo's requests:
         // another account that may approve purchase orders, else any other
         // account. The demo falls back to a stand-in id when it is alone.

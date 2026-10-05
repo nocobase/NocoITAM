@@ -424,8 +424,6 @@ export function createDemoService(dependencies: {
   repairs: RepairService;
   audits: AuditService;
   disposals: DisposalService;
-  /** Recomputes workbench reminders so the problem records show up at once. */
-  refreshReminders: () => Promise<unknown>;
   /** The deployment's default locale; demo names follow it where they read as prose. */
   locale?: () => string;
   /**
@@ -2993,7 +2991,6 @@ export function createDemoService(dependencies: {
         unrestricted('people', 'update'),
       );
 
-      await dependencies.refreshReminders();
       return this.status();
     },
 
@@ -3088,7 +3085,6 @@ export function createDemoService(dependencies: {
       // account also ends its sessions and permission-set assignments.
       for (const userId of byCollection.get('accounts') ?? [])
         await dependencies.accounts?.remove(userId, actorId);
-      await dependencies.refreshReminders();
       return this.status();
     },
   };

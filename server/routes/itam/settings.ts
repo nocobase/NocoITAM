@@ -12,10 +12,7 @@ import { Hono } from 'hono';
 
 import { resourceIdOf } from '../../providers/itam/authz-resources.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
-import {
-  maintenanceServiceToken,
-  settingsServiceToken,
-} from '../../providers/index.js';
+import { settingsServiceToken } from '../../providers/index.js';
 import {
   DEFAULT_ITAM_SETTINGS,
   type ItamSettingsKey,
@@ -118,12 +115,8 @@ export const settingsRoutes: AppApiRouteContribution<Application> =
             value as never,
             principalId(context),
           );
-          // New thresholds show on the workbench at once rather than after
-          // the next daily run (which used to need a manual 重新计算提醒).
-          if (key === 'thresholds')
-            await app.container
-              .resolve(maintenanceServiceToken)
-              .computeReminders();
+          // New thresholds show on the workbench at once: 需要关注 is
+          // computed when read, so there is nothing to recompute here.
           return context.json({ data: saved });
         } catch (error) {
           return errorResponse(context, error);

@@ -186,10 +186,11 @@ describe('maintenance, reminders, workbench and reports', () => {
           .markDueLeavers('2999-12-31')
       ).left,
     ).toBe(1);
-    const reminders = run.reminders as {
-      kind: string;
-      count: number;
-    }[];
+    // The job reports what it did; 需要关注 is read live.
+    expect(run.reminders).toBeUndefined();
+    const reminders = await app.container
+      .resolve(maintenanceServiceToken)
+      .reminderCounts();
     const count = (kind: string) =>
       reminders.find((entry) => entry.kind === kind)?.count;
     expect(count('warrantyExpiring')).toBe(1);
@@ -197,13 +198,12 @@ describe('maintenance, reminders, workbench and reports', () => {
     expect(count('auditOverdue')).toBe(1);
     // An overdue loan is no longer a reminder — the workbench's
     // 借出逾期 card answers it live, from the same query — but the
-    // daily job still tells the borrower and the device's 负责人, straight
-    // from that query and writing no row (2026-09-28).
+    // daily job still tells the device's 负责人, straight from that query
+    // and writing no row (2026-09-28) — and only them since 2026-10-05: the
+    // borrower is a person in the register, not somebody who signs in.
     expect(count('loanOverdue')).toBeUndefined();
     expect(run.loansOverdue).toBe(1);
-    expect(app.notifications.map((n) => n.to.id).sort()).toEqual(
-      [employee.user, manager.user].sort(),
-    );
+    expect(app.notifications.map((n) => n.to.id)).toEqual([manager.user]);
     // An audit 100 days ago satisfies the global 365-day threshold, but not
     // a category whose own cycle is 90 days.
     await app.container
@@ -213,7 +213,7 @@ describe('maintenance, reminders, workbench and reports', () => {
       .set({ lastAuditedAt: new Date(Date.now() - 100 * 86_400_000) })
       .where('id', '=', warranty.id)
       .execute();
-    const freshlyAudited = await maintenance.computeReminders();
+    const freshlyAudited = await maintenance.reminderCounts();
     expect(
       freshlyAudited.find((entry) => entry.kind === 'auditOverdue')?.count ?? 0,
     ).toBe(0);
@@ -222,7 +222,7 @@ describe('maintenance, reminders, workbench and reports', () => {
       method: 'PATCH',
       ...manager,
     });
-    const shortCycle = await maintenance.computeReminders();
+    const shortCycle = await maintenance.reminderCounts();
     expect(
       shortCycle.find((entry) => entry.kind === 'auditOverdue')?.count,
     ).toBe(1);
@@ -254,7 +254,9 @@ describe('maintenance, reminders, workbench and reports', () => {
       name: 'SSD',
       appliesTo: 'component',
     });
-    const maker = await create('master/manufacturers', { name: 'Test Samsung' });
+    const maker = await create('master/manufacturers', {
+      name: 'Test Samsung',
+    });
     const componentModel = await create('master/models', {
       name: '1TB NVMe',
       categoryId: componentCategory.id,
@@ -271,7 +273,7 @@ describe('maintenance, reminders, workbench and reports', () => {
     });
     const reminders = await app.container
       .resolve(maintenanceServiceToken)
-      .computeReminders();
+      .reminderCounts();
     // The accessory the fixture stocks is below its level too.
     expect(reminders.find((entry) => entry.kind === 'lowStock')?.count).toBe(2);
 
@@ -283,14 +285,51 @@ describe('maintenance, reminders, workbench and reports', () => {
     expect(listed.map((row) => row.id)).toEqual([spare.id]);
   });
 
-  it('lists every overdue loan, saying which are the reader\'s own', async () => {
+  it('answers 需要关注 live, without waiting for the daily job', async () => {
+    const lowStock = async () =>
+      (
+        await data<{ kind: string; count: number }[]>(
+          await get('workbench/reminders'),
+        )
+      ).find((entry) => entry.kind === 'lowStock')?.count;
+    // The fixture's accessory is already below its level.
+    expect(await lowStock()).toBe(1);
+    const category = await create('master/categories', {
+      name: 'Cables',
+      appliesTo: 'accessory',
+    });
+    const maker = await create('master/manufacturers', { name: 'Test Anker' });
+    const model = await create('master/models', {
+      name: 'USB-C cable',
+      categoryId: category.id,
+      manufacturerId: maker.id,
+    });
+    await create('stock', {
+      kind: 'accessory',
+      name: 'USB-C cable',
+      categoryId: category.id,
+      modelId: model.id,
+      locationId,
+      totalQuantity: 1,
+      minimumQuantity: 5,
+    });
+    // Read again at once: nothing recomputed in between, and it counts.
+    expect(await lowStock()).toBe(2);
+  });
+
+  it("lists every overdue loan, saying which are the reader's own", async () => {
     // Taking a device back is granted by permission rather than by owning
     // the record, so scoping the card to 负责人 was a convention — and its
     // cost was that a device lent by somebody on holiday went overdue in
     // one inbox nobody was reading. The 负责人 is still who to ask; the row
     // says so instead of the query.
     const loan = async (ownerId: string, serialNo: string) => {
-      const lent = await create('devices', { modelId, locationId, serialNo, ownerId });
+      const lent = await create('devices', {
+        modelId,
+        locationId,
+        serialNo,
+        ownerId,
+      });
       await post(`devices/${lent.id}/loan`, {
         targetType: 'person',
         targetId: personId,
@@ -324,7 +363,7 @@ describe('maintenance, reminders, workbench and reports', () => {
     ]);
   });
 
-  it('makes a leaver everybody\'s to-do, counting the reader\'s share', async () => {
+  it("makes a leaver everybody's to-do, counting the reader's share", async () => {
     // Another IT person: somebody who may carry the recovery out and
     // answers for none of it. Not the double's `support` role, which grants
     // only `read` — and a card whose buttons would all refuse is not a
@@ -382,7 +421,7 @@ describe('maintenance, reminders, workbench and reports', () => {
     // on one screen as both work and risk.
     const reminders = (await app.container
       .resolve(maintenanceServiceToken)
-      .computeReminders()) as { kind: string }[];
+      .reminderCounts()) as { kind: string }[];
     expect(reminders.map((row) => row.kind)).not.toContain(
       'leftPersonHoldings',
     );
@@ -461,10 +500,11 @@ describe('maintenance, reminders, workbench and reports', () => {
 
     // Setting it directly is refused rather than ignored, so a caller is told
     // the field is not theirs instead of watching the value not stick.
-    const direct = await app.request(
-      `/api/itam/master/people/${person.id}`,
-      { ...json({ employmentStatus: 'left' }), method: 'PATCH', ...manager },
-    );
+    const direct = await app.request(`/api/itam/master/people/${person.id}`, {
+      ...json({ employmentStatus: 'left' }),
+      method: 'PATCH',
+      ...manager,
+    });
     expect(direct.status).toBe(400);
     expect(await statusOf()).toBe('active');
   });

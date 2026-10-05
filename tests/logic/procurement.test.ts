@@ -238,7 +238,7 @@ describe('procurement', () => {
     // Past the expected date and nothing received: the workbench flags it.
     const overdue = await app.container
       .resolve(maintenanceServiceToken)
-      .computeReminders();
+      .reminderCounts();
     expect(
       overdue.find((entry) => entry.kind === 'purchaseOverdue')?.count,
     ).toBe(1);

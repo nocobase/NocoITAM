@@ -6,7 +6,7 @@ import {
 } from '@nocobase/service-provider';
 
 import type { DeviceService } from './devices.js';
-import { asText, decodeRow, type Row } from './collection-query.js';
+import { asText, type Row } from './collection-query.js';
 import { recoveryPlan } from './recovery.js';
 import type { SettingsService } from './settings.js';
 import { endedWhere, expiringWhere } from './entitlements.js';
@@ -38,7 +38,6 @@ export const REMINDER_KINDS = [
 ] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
-
 export interface ReminderSummary {
   readonly kind: ReminderKind;
   readonly count: number;
@@ -54,12 +53,15 @@ export interface MaintenanceService {
     job: MaintenanceJob,
     now?: Date,
   ): Promise<Readonly<Record<string, unknown>>>;
-  /** Recomputes every reminder from the current data. */
-  computeReminders(now?: Date): Promise<readonly ReminderSummary[]>;
-  /** Open reminders grouped by kind (for the workbench). */
-  reminderCounts(): Promise<readonly ReminderSummary[]>;
-  /** Open reminders of one kind with their subjects. */
-  reminders(kind: ReminderKind): Promise<readonly Row[]>;
+  /**
+   * Every rule's count, computed from the current data. The reminders are
+   * live (2026-10-05): nothing is stored, so 需要关注 says what is true when
+   * it is read rather than what was true at 02:00. The daily job reports
+   * what it did, not these counts.
+   */
+  reminderCounts(now?: Date): Promise<readonly ReminderSummary[]>;
+  /** The records one rule finds now, with what it found about each. */
+  reminders(kind: ReminderKind, now?: Date): Promise<readonly Row[]>;
 }
 
 export const maintenanceServiceToken: ServiceToken<MaintenanceService> =
@@ -97,7 +99,10 @@ export function createMaintenanceService(dependencies: {
   } = dependencies;
 
   /**
-   * Tells the borrower and the device's 负责人 that a loan is past its date.
+   * Tells the device's 负责人 that a loan is past its date. Only them
+   * (2026-10-05): the borrower is a person in the register, and only IT
+   * signs in, so a borrower almost never has an account to be told on —
+   * chasing the device back is the 负责人's.
    *
    * It is not a reminder and writes no row: the workbench's 借出逾期
    * card answers "which ones" live, from this same query, so a stored copy
@@ -111,21 +116,15 @@ export function createMaintenanceService(dependencies: {
     const overdue = await database
       .query()
       .selectFrom('devices')
-      .select(['id', 'deviceNo', 'expectedReturnDate', 'assigneeId', 'ownerId'])
+      .select(['id', 'deviceNo', 'expectedReturnDate', 'ownerId'])
       .where('status', '=', 'onLoan')
       .where('expectedReturnDate', '<', today)
       .execute<Row>();
     for (const device of overdue) {
-      const holder = await database
-        .query()
-        .selectFrom('people')
-        .select('userId')
-        .where('id', '=', asText(device.assigneeId) ?? '')
-        .executeTakeFirst<{ userId: string | null }>();
       const date = asText(device.expectedReturnDate) ?? '';
       await notifier.notify({
         key: `loanOverdue:${String(device.id)}:${date}`,
-        to: [holder?.userId, asText(device.ownerId)],
+        to: [asText(device.ownerId)],
         title: {
           key: 'notifications.loanOverdue',
           params: { deviceNo: String(device.deviceNo) },
@@ -449,9 +448,11 @@ export function createMaintenanceService(dependencies: {
     return rows;
   };
 
-  const severityOf = (kind: ReminderKind, rows: readonly Row[]) =>
-    (rows.find((row) => row.kind === kind)
-      ?.severity as ReminderSummary['severity']) ?? 'info';
+  const severityOf = (
+    kind: ReminderKind,
+    rows: readonly ReminderRow[],
+  ): ReminderSummary['severity'] =>
+    rows.find((row) => row.kind === kind)?.severity ?? 'info';
 
   return {
     async runJob(job, now = new Date()) {
@@ -474,77 +475,11 @@ export function createMaintenanceService(dependencies: {
         subscriptions,
         reservationsReleased: released.length,
         loansOverdue: await notifyOverdueLoans(now),
-        reminders: await this.computeReminders(now),
       };
     },
 
-    async computeReminders(now = new Date()) {
+    async reminderCounts(now = new Date()) {
       const rows = await collect(now);
-      const existing = await database
-        .query()
-        .selectFrom('reminders')
-        .selectAll()
-        .execute<Row>();
-      const keyOf = (row: Row) =>
-        `${String(row.kind)}:${String(row.subjectType)}:${String(row.subjectId)}`;
-      const current = new Map(existing.map((row) => [keyOf(row), row]));
-      const seen = new Set<string>();
-      await database.transaction(async (connection) => {
-        for (const row of rows) {
-          const key = keyOf(row as unknown as Row);
-          seen.add(key);
-          const found = current.get(key);
-          if (found) {
-            await connection.query
-              .updateTable('reminders')
-              .set({
-                severity: row.severity,
-                data: row.data,
-                computedAt: now,
-                resolvedAt: null,
-              })
-              .where('id', '=', String(found.id))
-              .execute();
-          } else {
-            await connection.query
-              .insertInto('reminders')
-              .values({
-                id: crypto.randomUUID(),
-                kind: row.kind,
-                subjectType: row.subjectType,
-                subjectId: row.subjectId,
-                severity: row.severity,
-                data: row.data,
-                computedAt: now,
-                resolvedAt: null,
-              })
-              .execute();
-          }
-        }
-        for (const [key, row] of current) {
-          if (!seen.has(key) && !row.resolvedAt) {
-            await connection.query
-              .updateTable('reminders')
-              .set({ resolvedAt: now })
-              .where('id', '=', String(row.id))
-              .execute();
-          }
-        }
-      });
-      return REMINDER_KINDS.map((kind) => ({
-        kind,
-        count: rows.filter((row) => row.kind === kind).length,
-        severity: severityOf(kind, rows as unknown as Row[]),
-      }));
-    },
-
-    async reminderCounts() {
-      const rows = await database
-        .query()
-        .selectFrom('reminders')
-        .select(['kind', 'severity'])
-        .where('resolvedAt', 'is', null)
-        .execute<Row>();
       return REMINDER_KINDS.map((kind) => ({
         kind,
         count: rows.filter((row) => row.kind === kind).length,
@@ -552,16 +487,14 @@ export function createMaintenanceService(dependencies: {
       }));
     },
 
-    async reminders(kind) {
-      const rows = await database
-        .query()
-        .selectFrom('reminders')
-        .selectAll()
-        .where('kind', '=', kind)
-        .where('resolvedAt', 'is', null)
-        .orderBy('computedAt', 'desc')
-        .execute<Row>();
-      return rows.map((row) => decodeRow(row, { jsonFields: ['data'] }));
+    async reminders(kind, now = new Date()) {
+      return (await collect(now))
+        .filter((row) => row.kind === kind)
+        .map((row) => ({
+          ...row,
+          id: `${row.kind}:${row.subjectType}:${row.subjectId}`,
+          computedAt: now,
+        }));
     },
   };
 }

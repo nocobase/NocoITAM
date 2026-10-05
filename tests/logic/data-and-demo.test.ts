@@ -335,7 +335,7 @@ describe('CSV import / export and demo data', () => {
 
     const reminders = await app.container
       .resolve(maintenanceServiceToken)
-      .computeReminders();
+      .reminderCounts();
     const count = (kind: string) =>
       reminders.find((entry) => entry.kind === kind)?.count ?? 0;
     expect(count('warrantyExpiring')).toBeGreaterThanOrEqual(4);
