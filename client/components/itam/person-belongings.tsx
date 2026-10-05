@@ -161,7 +161,17 @@ export function PersonBelongings({
       await api.request({
         path: `${referencePath(handover.collection)}/${handover.id}`,
         method: 'PATCH',
-        json: { [handover.field]: nextOwner },
+        // A field naming several people — a stocktake's executors — is
+        // handed over by replacing this one name, not by overwriting the
+        // list: the colleagues counting alongside them keep the task.
+        json: {
+          [handover.field]: handover.owners
+            ? [
+                ...handover.owners.filter((name) => name !== handover.ownerId),
+                ...(nextOwner ? [nextOwner] : []),
+              ].filter((name, index, all) => all.indexOf(name) === index)
+            : nextOwner,
+        },
       });
     },
     onSuccess: async () => {

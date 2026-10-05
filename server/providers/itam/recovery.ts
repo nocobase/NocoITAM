@@ -38,6 +38,26 @@ export const OWNED_BY_USER: readonly {
   readonly label2?: string;
   /** The asset type, as a constant or as the column that holds it. */
   readonly assetType?: { readonly value: string } | { readonly column: string };
+  /**
+   * The field holds a **list** of sign-ins rather than one, so it is matched
+   * by reading and filtering rather than by a comparison — a JSON array
+   * answers neither `=` nor `in` — and handing it over replaces this one
+   * name in the list instead of overwriting it.
+   */
+  readonly list?: true;
+  /**
+   * A document is only waiting while it is still open: the statuses of the
+   * ones that are, by the column that holds them. A purchase order completed
+   * two years ago still names whoever raised it, and that is history rather
+   * than a handover — without this the list of what somebody answers for
+   * grew with every document they ever filed. An asset has no such notion
+   * and declares none: a device's 负责人 must be somebody who is here for as
+   * long as the register holds it.
+   */
+  readonly open?: {
+    readonly column: string;
+    readonly values: readonly string[];
+  };
 }[] = [
   {
     collection: 'devices',
@@ -59,9 +79,59 @@ export const OWNED_BY_USER: readonly {
     label: 'name',
     assetType: { value: 'entitlement' },
   },
-  { collection: 'repairs', field: 'ownerId', label: 'repairNo' },
-  { collection: 'purchaseOrders', field: 'requesterId', label: 'orderNo' },
-  { collection: 'disposals', field: 'requesterId', label: 'disposalNo' },
+  {
+    collection: 'repairs',
+    field: 'ownerId',
+    label: 'repairNo',
+    // A repair has no status of its own; `result` is `inProgress` until it
+    // is finished, which is what 进行中的维修 counts.
+    open: { column: 'result', values: ['inProgress'] },
+  },
+  {
+    collection: 'purchaseOrders',
+    field: 'requesterId',
+    label: 'orderNo',
+    // A rejected order is asked again rather than filed away, so it is
+    // still open; completed and cancelled are not.
+    open: {
+      column: 'status',
+      values: [
+        'draft',
+        'pendingApproval',
+        'approved',
+        'rejected',
+        'ordered',
+        'partiallyReceived',
+      ],
+    },
+  },
+  {
+    collection: 'disposals',
+    field: 'requesterId',
+    label: 'disposalNo',
+    // Same reading: rejected is resubmitted, executed is done.
+    open: {
+      column: 'status',
+      values: ['draft', 'pendingApproval', 'approved', 'rejected'],
+    },
+  },
+  {
+    // A stocktake is run by the people it names, so somebody leaving
+    // mid-count stalls it until another name is on it — and IT support
+    // reads only the tasks naming them, so nobody but the asset manager can
+    // even see that it stalled.
+    collection: 'auditTasks',
+    field: 'executorIds',
+    label: 'name',
+    list: true,
+    // Open until it is finished or called off; a task left on
+    // `pendingDifferences` is the most stalled of all, since resolving one
+    // is the executors' own step.
+    open: {
+      column: 'status',
+      values: ['notStarted', 'inProgress', 'pendingDifferences'],
+    },
+  },
   { collection: 'locations', field: 'ownerId', label: 'name' },
 ];
 
@@ -136,6 +206,23 @@ export function deviceHandling(status: string): RecoveryHandling {
   if (status === 'inUse' || status === 'onLoan') return 'return';
   // Lost, retired, pending disposal, disposed: not in their hands to give back.
   return 'none';
+}
+
+/**
+ * The sign-ins a list field names. The query layer decodes a JSON column,
+ * but a row written before that was fixed still holds the string, so both
+ * are read — the same tolerance `auditsIRunScope` applies.
+ */
+export function namesIn(value: unknown): string[] {
+  let decoded = value;
+  if (typeof decoded === 'string') {
+    try {
+      decoded = JSON.parse(decoded) as unknown;
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(decoded) ? decoded.map((id) => String(id)) : [];
 }
 
 /**

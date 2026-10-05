@@ -572,7 +572,24 @@ Rules learned while building it:
   for a leaver is **anything unsettled** — a device in a status
   `RECOVERABLE_DEVICE_STATUSES` covers (derived from `deviceHandling`, so
   the count agrees with the page it opens), a stock holding, an unreleased
-  seat, or a record still naming them through `OWNED_BY_USER`. That last
+  seat, or a record still naming them through `OWNED_BY_USER`. A record
+  counts only while it is **still open**, by that entry's `open` statuses
+  (2026-10-05): a purchase order completed two years ago names whoever
+  raised it as a fact about what happened, and listing it grew the handover
+  half with every document somebody ever filed. An asset declares no `open`
+  — a device's 负责人 must be somebody who is here for as long as the
+  register holds it. A stocktake is in the list too, through `list: true`
+  on `auditTasks.executorIds`: it names several people, so it is matched by
+  reading and filtering (a JSON array answers neither `=` nor `in`, the
+  same reason `auditsIRunScope` reads) and the row carries `owners`, the
+  whole list, because handing it over **replaces that one name and keeps
+  the rest**. The write still goes through the collection's own endpoint —
+  a purchase order's reassignment has to meet `requireRequester`, so
+  nothing may route around it — which is why the list travels to the client
+  rather than the swap happening in a route of its own. Somebody leaving
+  mid-count otherwise stalled the task invisibly: IT support reads only the
+  tasks naming them, so nobody but the asset manager could see that it had
+  stalled. That last
   one closed the hole the owner scope left: a leaver who held nothing and
   owned four records was in nobody's queue, while changing the name on a
   purchase order is its creator's to do and holding a device never made

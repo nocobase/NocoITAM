@@ -18,7 +18,10 @@ import {
   masterDataServiceToken,
 } from '../../providers/index.js';
 import { ValidationError } from '../../providers/itam/errors.js';
-import { recoveryPlan } from '../../providers/itam/recovery.js';
+import {
+  OWNED_BY_USER,
+  recoveryPlan,
+} from '../../providers/itam/recovery.js';
 import {
   errorResponse,
   parseListOptions,
@@ -43,15 +46,14 @@ import { CREATE_DEFAULTS, masterDataSchema } from './master-data-schemas.js';
  * person's recovery reads to say what has to change hands. The service holds
  * the field each one names them in; this is only which decisions to take.
  */
-const OWNED_COLLECTIONS = [
-  'devices',
-  'stockItems',
-  'entitlements',
-  'repairs',
-  'purchaseOrders',
-  'disposals',
-  'locations',
-] as const;
+/**
+ * Derived rather than listed: `OWNED_BY_USER` is what offboarding reads, and
+ * a second copy here would have to be remembered — the stocktake added on
+ * 2026-10-05 would have been listed but never decided.
+ */
+const OWNED_COLLECTIONS: readonly string[] = [
+  ...new Set(OWNED_BY_USER.map((entry): string => entry.collection)),
+];
 
 const COLLECTION_NAMES = new Set(
   MASTER_DATA_COLLECTIONS.map((collection) => collection.name),

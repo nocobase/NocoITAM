@@ -10,6 +10,7 @@ import type { ApprovalService, ApprovalSubject } from './approvals.js';
 import { compileAuthzScope } from './authz-filter.js';
 import { asText, type Row } from './collection-query.js';
 import {
+  namesIn,
   OWNED_BY_USER,
   RECOVERABLE_DEVICE_STATUSES,
 } from './recovery.js';
@@ -500,13 +501,27 @@ export function createWorkbenchService(dependencies: {
               (await decide(entry.collection, 'update')) &&
               (await decide(entry.collection, 'read'));
             if (!conditions) continue;
-            const rows = await readable(entry.collection, conditions)
-              .where(entry.field, 'in', [...accounts.keys()])
-              .select([entry.field])
-              .execute<Row>();
+            let query = readable(entry.collection, conditions).select([
+              entry.field,
+            ]);
+            // Only what is still waiting, and a list of names is read and
+            // filtered because a JSON array answers neither `=` nor `in`.
+            if (entry.open)
+              query = query.where(entry.open.column, 'in', [
+                ...entry.open.values,
+              ]);
+            const rows = entry.list
+              ? await query.execute<Row>()
+              : await query
+                  .where(entry.field, 'in', [...accounts.keys()])
+                  .execute<Row>();
             for (const row of rows) {
-              const person = accounts.get(asText(row[entry.field]) ?? '');
-              if (person) open.set(person, (open.get(person) ?? 0) + 1);
+              for (const name of entry.list
+                ? namesIn(row[entry.field])
+                : [asText(row[entry.field]) ?? '']) {
+                const person = accounts.get(name);
+                if (person) open.set(person, (open.get(person) ?? 0) + 1);
+              }
             }
           }
         }
