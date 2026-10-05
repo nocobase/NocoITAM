@@ -392,7 +392,13 @@ export function createWorkbenchService(dependencies: {
             .selectFrom(table)
             .where((eb) => compileAuthzScope(eb, scope.scope));
 
-        const deviceConditions = await decide('devices', 'read');
+        // Each half counts only when the reader may carry out its own act,
+        // not merely read it: a to-do nobody can act on is not a to-do, and
+        // reading is the weaker test — a permission set with people and
+        // devices but no 归还 would see a card of buttons that refuse.
+        const deviceConditions =
+          (await decide('devices', 'return')) &&
+          (await decide('devices', 'read'));
         if (deviceConditions)
           add(
             await readable('devices', deviceConditions)
@@ -408,7 +414,11 @@ export function createWorkbenchService(dependencies: {
         // Stock and seats are held through the item and the entitlement,
         // which is where the owner is, so the holding rows are joined back
         // to the parent the reader may already read.
-        const stockConditions = await decide('stockItems', 'read');
+        // Taking stock back is authorized as `issue`, the grant that moves a
+        // quantity between stock and a holder either way.
+        const stockConditions =
+          (await decide('stockItems', 'issue')) &&
+          (await decide('stockItems', 'read'));
         if (stockConditions) {
           const owners = new Map(
             (
@@ -436,7 +446,9 @@ export function createWorkbenchService(dependencies: {
             );
         }
 
-        const entitlementConditions = await decide('entitlements', 'read');
+        const entitlementConditions =
+          (await decide('entitlements', 'assignSeat')) &&
+          (await decide('entitlements', 'read'));
         if (entitlementConditions) {
           const owners = new Map(
             (
@@ -480,7 +492,13 @@ export function createWorkbenchService(dependencies: {
         );
         if (accounts.size > 0) {
           for (const entry of OWNED_BY_USER) {
-            const conditions = await decide(entry.collection, 'read');
+            // Handing one over is a plain `update` of the field that names
+            // them — which the service may still refuse on a purchase order
+            // or a disposal, where only the requester or the creator may
+            // make it. That is the button's answer, not the row's.
+            const conditions =
+              (await decide(entry.collection, 'update')) &&
+              (await decide(entry.collection, 'read'));
             if (!conditions) continue;
             const rows = await readable(entry.collection, conditions)
               .where(entry.field, 'in', [...accounts.keys()])

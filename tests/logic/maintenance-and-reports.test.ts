@@ -325,7 +325,11 @@ describe('maintenance, reminders, workbench and reports', () => {
   });
 
   it('makes a leaver everybody\'s to-do, counting the reader\'s share', async () => {
-    const support = { user: 'sam', role: 'support' as const };
+    // Another IT person: somebody who may carry the recovery out and
+    // answers for none of it. Not the double's `support` role, which grants
+    // only `read` — and a card whose buttons would all refuse is not a
+    // to-do, so each half now asks for its own act.
+    const colleague = { user: 'sam', role: 'manager' as const };
     const hr = await create('master/departments', { name: 'HR' });
     // Issued to them while they still worked here: an assignment refuses
     // somebody who has already left, which is the order this happens in.
@@ -368,7 +372,7 @@ describe('maintenance, reminders, workbench and reports', () => {
     // Somebody who answers for none of it still sees the person — work must
     // not hide in one reader's inbox — and their row says nothing about a
     // share, rather than 0 项.
-    const theirs = (await workOf(support)).find(
+    const theirs = (await workOf(colleague)).find(
       (item) => item.key === 'leaverRecovery',
     );
     expect(theirs?.records.map((row) => row.id)).toEqual([leaver.id]);

@@ -556,6 +556,13 @@ Rules learned while building it:
   (2026-10-04), because their act is granted by permission rather than by
   ownership: narrowing them to the thing's `ownerId` was a convention, and
   a convention must not hide work in the inbox of somebody on holiday. Each
+  half still asks for **its own act** rather than for `read`, which is the
+  weaker test: devices for `return`, stock holdings for `issue` (the grant
+  that moves a quantity either way), seats for `assignSeat` and a record to
+  hand over for `update`. An employee is kept out by their scopes alone
+  (`itam.myPerson`, `itam.assetsIHold` match no leaver's row), but a
+  permission set with people and devices and no 归还 would otherwise have
+  seen a card whose every button refuses. Each
   row carries the reader's share instead: `MyWorkRecord.count` where the
   record stands for several (a leaver's holdings — absent, not `0`, when
   none is theirs), `MyWorkRecord.mine` where the record *is* the one thing
