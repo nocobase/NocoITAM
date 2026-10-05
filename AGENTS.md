@@ -592,7 +592,7 @@ Rules learned while building it:
 - 待办 (it was 我的待办) is **one queue for the whole team** (2026-10-05):
   `GET /itam/workbench/my-work` lists everybody's records on every card,
   so work addressed to somebody away is still seen, and `?scope=mine`
-  (the 全部 / 我负责的 switch on the workbench and the inbox,
+  (the 全部 / 我负责的 switch in the workbench's header,
   `client/lib/itam/work-scope.ts`, remembered per browser) narrows each
   card back to the reader's part by the rules below. A row's buttons keep
   their own rules either way — another person's approval is still only
@@ -753,14 +753,13 @@ Rules learned while building it:
   of refusing, for a route that reads several collections and must leave out
   the ones this caller cannot read rather than refuse the whole answer (the
   recovery endpoint does this per owned collection).
-- 收件箱 is one flat queue (`client/pages/itam/inbox.tsx`): the filters are
-  at the top rather than as segment headings, the list is date-ordered across
-  every kind, and the record opens in a `RecordPane` beside it. Each row
-  carries its to-do's own tone (`WORK_TONE` in `client/lib/itam/my-work.ts`,
-  which both this page and the workbench strip read, so which records are
-  waiting and how the two kinds of approval merge is decided once). Both the
-  view and the open record are in the URL (`?view=&open=`), so a row is a
-  link.
+- There is no 收件箱 / 待办 page any more (2026-10-05): the to-dos are the
+  workbench's board, and 通知 opens from a bell in the header
+  (`client/components/itam/notification-bell.tsx`, a dot while anything is
+  unread, shown by `HeaderActions` only in the app layout). The `/notifications`
+  route stays, without a menu entry, so it checks no page grant;
+  `reconcile-grants.ts` strips the stored `inbox` and `notifications` page
+  grants (`STALE_PAGES`).
 - An asset-type tag is outlined, not filled: the contract
   `[data-slot='badge'][data-tag='kind']` in `client/styles.css` gives it a
   border and no background, which is what tells it apart from a status tag
@@ -941,15 +940,19 @@ Rules learned while building it:
   before these were request fields refuses the form with a bare "Not
   allowed", so `reconcile-grants.ts` adds them to the stored policies
   (`ADDED_FIELDS`, which covers `read` as well as the writes) — the seeds cannot, they only add whole resources.
-- 我的待办 **is** the workbench's top strip (2026-09-28): one card per kind
-  of thing waiting, each listing the first few records behind it — a count
-  alone says something is waiting without saying what — and each record
-  opening in the record drawer. The numbers that used to head the page
-  (在管设备, 账面价值, 本月采购, 授权合规) were the 概览 report without a
-  period; they are read on the reports page, which has the period, the
-  filters, the export and Ava. The workbench answers "what must I do"; the
-  reports answer "how are we doing". `MyWork` renders `null` when nothing
-  is waiting, rather than a row of empty boxes.
+- The workbench **is** the to-do board (2026-10-05,
+  `client/pages/itam/workbench.tsx`) and nothing else: 需要关注 as the first
+  column, then one column per kind of to-do (`useWorkCards` in
+  `client/lib/itam/my-work.ts` decides which records and merges the two
+  kinds of approval), then 已完成 (`useDoneWork`, the last 30 days). Each
+  column lists up to `MY_WORK_PREVIEW` (50) records as cards that open in
+  the record drawer, scrolls on its own and keeps its place when empty —
+  dimmed, saying 暂无待办 — because a column that vanishes at zero cannot
+  be told from one the reader does not have. There is no greeting, no AI
+  shortcut and no device-status or 90-day expiry card: where the devices
+  stand is the 概览 report and what expires is 保修与到期 (twelve months),
+  read with a period and filters. The workbench answers "what must I do";
+  the reports answer "how are we doing".
 - `MyWorkItem.records` comes back with the counts: a card is never
   collapsed, so lazy fetching would only make the workbench 1+N requests.
   Each kind's records are read under the decision that its **action** needs,
@@ -1318,8 +1321,8 @@ Rules learned while building it:
   `client/layouts/app-layout.tsx` turns on, so the settings and dev menus
   keep folding. In the icon-only sidebar the heading gives way to a thin
   rule. Since nothing marks where an unfolded group ends, every page sits
-  either above the groups (工作台, about the reader) or
-  inside one (收件箱, 资产, 业务, 主数据); an ungrouped entry placed after
+  either above the groups (工作台) or
+  inside one (资产, 业务, 主数据); an ungrouped entry placed after
   a group reads as part of it. 业务 holds 采购, 维修, 盘点, 报废 and 报表.
   Route names are what stored page grants reference, so regrouping changes
   no grant — `tests/logic/client-routes.test.ts` pins only their order.

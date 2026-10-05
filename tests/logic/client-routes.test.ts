@@ -63,8 +63,6 @@ describe('app client routes', () => {
         .map((page) => page.authorizedAs),
     ).toEqual([
       'workbench',
-      'inbox',
-      'notifications',
       'devices',
       'accessories',
       'consumables',

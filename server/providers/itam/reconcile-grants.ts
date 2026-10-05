@@ -57,6 +57,10 @@ const STALE_PAGES = new Set([
   'ai-actions',
   // 我的资产, which went with the employee role (2026-10-05).
   'my-assets',
+  // 待办 became the workbench's board and 通知 moved to the header, with no
+  // menu entry to check a page grant (2026-10-05).
+  'inbox',
+  'notifications',
 ]);
 
 /**
@@ -431,8 +435,6 @@ export function normalizeGrantFields(grant: PermissionGrant): {
  */
 const IT_PAGES: readonly string[] = [
   'workbench',
-  'inbox',
-  'notifications',
   'devices',
   'accessories',
   'consumables',

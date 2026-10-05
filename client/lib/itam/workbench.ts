@@ -112,8 +112,11 @@ export interface MyWorkItem {
   readonly records: readonly MyWorkRecord[];
 }
 
-/** How many records a card lists before it says "see all". */
-export const MY_WORK_PREVIEW = 5;
+/**
+ * How many records a to-do column lists before it says "see all": a
+ * board column lists its work rather than a preview of it (2026-10-05).
+ */
+export const MY_WORK_PREVIEW = 50;
 
 export const REPORT_NAMES = [
   'overview',

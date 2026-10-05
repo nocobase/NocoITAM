@@ -1386,15 +1386,8 @@ const zhCN: AppResource = {
     showAll: '显示全部',
   },
   workbench: {
-    greeting: {
-      morning: '早上好，{{name}}',
-      afternoon: '下午好，{{name}}',
-      evening: '晚上好，{{name}}',
-    },
     today_one: '{{date}} · 有 {{count}} 件事等你处理',
     today_other: '{{date}} · 有 {{count}} 件事等你处理',
-    todayClear: '{{date}} · 暂无待办',
-    deviceStatus: '设备状态',
     expiring: {
       title: '未来 {{days}} 天到期',
       warranty: '保修',
@@ -1409,6 +1402,7 @@ const zhCN: AppResource = {
     scope: { label: '显示谁的待办', all: '全部', mine: '我负责的' },
     seeAll: '查看全部',
     nothingPending: '暂无待办',
+    nothingDone: '最近 30 天没有完成的待办',
     attention: '需要关注',
     stats: {
       devices: '在管设备',

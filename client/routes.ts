@@ -18,9 +18,6 @@ import {
   Factory,
   KeyRound,
   LayoutDashboard,
-  Bell,
-  Inbox,
-  ListTodo,
   Laptop,
   Map,
   MapPin,
@@ -205,32 +202,15 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       navigation: { title: 'navigation.workbench', icon: LayoutDashboard },
       componentLoader: () => import('./pages/itam/workbench.js'),
     },
+    // 通知 has no menu entry: it opens from the bell in the header
+    // (2026-10-05), and 待办 is the workbench's board rather than a page of
+    // its own. Without `navigation` the page checks no page grant
+    // (`withPageGrants`), like a detail page.
     {
-      // Right after the overview: what waits on this reader, in the two
-      // halves the series names — what they have to do, and what they have
-      // been told. They are two pages rather than one with tabs, because
-      // each is read at its own moment and deserves its own address.
-      name: 'inbox-group',
-      navigation: { title: 'navigation.inboxGroup', icon: Inbox },
-      children: [
-        {
-          name: 'inbox',
-          path: '/inbox',
-          auth: 'required',
-          navigation: { title: 'navigation.inbox', icon: ListTodo },
-          componentLoader: () => import('./pages/itam/inbox.js'),
-        },
-        {
-          // The first place the in-app notifications the register sends can
-          // be read at all: the plugin registers only a development page of
-          // its own.
-          name: 'notifications',
-          path: '/notifications',
-          auth: 'required',
-          navigation: { title: 'navigation.notifications', icon: Bell },
-          componentLoader: () => import('./pages/itam/notifications.js'),
-        },
-      ],
+      name: 'notifications',
+      path: '/notifications',
+      auth: 'required',
+      componentLoader: () => import('./pages/itam/notifications.js'),
     },
     {
       name: 'devices-group',
