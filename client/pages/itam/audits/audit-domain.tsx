@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { AUDIT_CARD } from '@/components/itam/board-card-specs';
 import { createStatusBoard } from '@/components/itam/status-board';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FilePlus2, Flag, Play, X } from 'lucide-react';
@@ -22,7 +23,7 @@ import {
   type ItamRecord,
 } from '@/lib/itam/api';
 import type { DomainConfig } from '@/lib/itam/domain';
-import { errorMessage, formatDate, text } from '@/lib/itam/format';
+import { errorMessage, text } from '@/lib/itam/format';
 import {
   AUDITS_PATH,
   AUDIT_STATUS_DOT,
@@ -74,8 +75,7 @@ export const auditDomain: DomainConfig = {
   Board: createStatusBoard({
     path: AUDITS_PATH,
     route: 'audits',
-    fields: AUDIT_TASK_FIELDS,
-    nameField: 'name',
+    ...AUDIT_CARD,
     dots: AUDIT_STATUS_DOT,
     statuses: [
       'notStarted',
@@ -84,30 +84,6 @@ export const auditDomain: DomainConfig = {
       'completed',
       'cancelled',
     ],
-    card: {
-      // Counted out of expected: how far the count has got.
-      meta: (record) =>
-        record.status === 'notStarted'
-          ? null
-          : `${Number(record.countedCount ?? 0)} / ${Number(record.expectedCount ?? 0)}`,
-      lines: [
-        (record, t) =>
-          t('board.period', {
-            from: formatDate(record.plannedStart),
-            to: formatDate(record.plannedEnd),
-          }),
-        (record, t) =>
-          Number(record.differenceCount ?? 0) > 0
-            ? t('board.differences', {
-                count: Number(record.differenceCount),
-              })
-            : null,
-      ],
-      footer: [
-        (record, t) =>
-          t('board.expected', { count: Number(record.expectedCount ?? 0) }),
-      ],
-    },
     defaultSort: 'plannedStart',
   }),
   nameField: 'name',

@@ -3,12 +3,28 @@ import { ArrowRight } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 
+import {
+  AUDIT_CARD,
+  DISPOSAL_CARD,
+  PURCHASE_ORDER_CARD,
+  LOAN_CARD,
+  REPAIR_CARD,
+} from '@/components/itam/board-card-specs';
+import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
+import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { SearchTrigger } from '@/components/itam/global-search';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useItamSettings } from '@/lib/itam/api';
+import { useItamList, useItamSettings, type ItamRecord } from '@/lib/itam/api';
+import type { DocumentKind } from '@/lib/itam/document-kinds';
+import {
+  AUDITS_PATH,
+  DISPOSALS_PATH,
+  REPAIRS_PATH,
+} from '@/lib/itam/operations';
+import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
 import { formatDate } from '@/lib/itam/format';
 import {
   useWorkCards,
@@ -40,6 +56,8 @@ export default function WorkbenchPage(): ReactElement {
   const { t } = useTranslation();
   const cards = useWorkCards();
   const loading = useMyWork().isLoading;
+  const leavers = cards.find((card) => card.key === 'leaverRecovery');
+  const rest = cards.filter((card) => card !== leavers);
   return (
     <Page fill>
       <PageHeader
@@ -51,13 +69,17 @@ export default function WorkbenchPage(): ReactElement {
           scrolls its own cards and the sideways scrollbar sits at the foot
           of the page — as the status boards do. */}
       <div className='-mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
+        {/* 需要关注 leads the board, then 离职交接 (2026-10-05): somebody has
+            left with the company's equipment, the one to-do that was ever
+            `critical`, and each is a job of several parts. */}
         <AttentionColumn />
+        {leavers ? <WorkColumn card={leavers} /> : null}
         {loading ? (
           <Column title={t('workbench.myWork')}>
             <Skeleton className='h-24 w-full rounded-lg' />
           </Column>
         ) : (
-          cards.map((card) => <WorkColumn key={card.key} card={card} />)
+          rest.map((card) => <WorkColumn key={card.key} card={card} />)
         )}
       </div>
     </Page>
@@ -69,12 +91,15 @@ function Column({
   title,
   count,
   dimmed = false,
+  attention = false,
   footer,
   children,
 }: {
   readonly title: string;
   readonly count?: number;
   readonly dimmed?: boolean;
+  /** 需要关注: risks rather than to-dos, so it is told apart by its ground. */
+  readonly attention?: boolean;
   readonly footer?: ReactNode;
   readonly children: ReactNode;
 }): ReactElement {
@@ -84,7 +109,8 @@ function Column({
       // The status boards' column: a tint of the foreground, since the page
       // is the muted grey, at least 15rem and sharing the room up to 22rem.
       className={cn(
-        'flex max-w-[22rem] min-w-[15rem] flex-1 basis-[15rem] flex-col rounded-2xl bg-foreground/[0.025]',
+        'flex max-w-[22rem] min-w-[15rem] flex-1 basis-[15rem] flex-col rounded-2xl',
+        attention ? 'bg-warning/50' : 'bg-foreground/[0.025]',
         dimmed && 'opacity-60',
       )}
     >
@@ -133,15 +159,104 @@ function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
           {t('workbench.nothingPending')}
         </p>
       ) : (
-        <ul className='flex flex-col gap-2'>
-          {card.records.map((record) => (
-            <li key={record.url}>
-              <RecordCard column={card.key} record={record} />
-            </li>
-          ))}
-        </ul>
+        <ColumnCards card={card} />
       )}
     </Column>
+  );
+}
+
+/**
+ * The documents that have a board of their own, and the card it draws them
+ * with: on the workbench they read exactly as on their page (2026-10-05).
+ */
+const DOCUMENT_BOARDS: Partial<
+  Record<DocumentKind, { readonly path: string; readonly spec: BoardCardSpec }>
+> = {
+  purchaseOrders: { path: PURCHASE_ORDERS_PATH, spec: PURCHASE_ORDER_CARD },
+  disposals: { path: DISPOSALS_PATH, spec: DISPOSAL_CARD },
+  auditTasks: { path: AUDITS_PATH, spec: AUDIT_CARD },
+  repairs: { path: REPAIRS_PATH, spec: REPAIR_CARD },
+};
+
+/** Which document a row is: its tag, or — a stocktake names itself — its column. */
+function kindOf(column: string, record: CardRecord): DocumentKind | undefined {
+  return record.tag ?? (column === 'activeAudits' ? 'auditTasks' : undefined);
+}
+
+/** The full rows of one kind of document, by id, keyed `kind:id`. */
+function useDocumentRows(
+  kind: DocumentKind,
+  ids: readonly string[],
+): readonly (readonly [string, ItamRecord])[] {
+  const list = useItamList<ItamRecord>(
+    DOCUMENT_BOARDS[kind]?.path ?? '',
+    { ids, page: 1, pageSize: Math.max(ids.length, 1) },
+    { enabled: ids.length > 0 && Boolean(DOCUMENT_BOARDS[kind]) },
+  );
+  return ids.length === 0
+    ? []
+    : (list.data?.data ?? []).map((row) => [`${kind}:${String(row.id)}`, row]);
+}
+
+/**
+ * A column's records. A purchase order, a disposal or a stocktake is drawn
+ * by its board's own card, from its full row — the to-do carries only its
+ * number and date, so the rows are read by id, one request per kind. Until
+ * they arrive, and for everything without a board of its own (a repair, a
+ * loan, a leaver), the to-do's own card stands in.
+ */
+function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
+  const openRecord = useOpenRecord();
+  const idsOf = (kind: DocumentKind) =>
+    card.records
+      .filter((record) => kindOf(card.key, record) === kind)
+      .map((record) => record.id);
+  const rows = new Map<string, ItamRecord>([
+    ...useDocumentRows('purchaseOrders', idsOf('purchaseOrders')),
+    ...useDocumentRows('disposals', idsOf('disposals')),
+    ...useDocumentRows('auditTasks', idsOf('auditTasks')),
+    ...useDocumentRows('repairs', idsOf('repairs')),
+  ]);
+  const entries = card.records.map((record) => {
+    const kind = kindOf(card.key, record);
+    const board = kind ? DOCUMENT_BOARDS[kind] : undefined;
+    const row = kind ? rows.get(`${kind}:${record.id}`) : undefined;
+    // An overdue loan is a device, not a document: the to-do itself carries
+    // what its card says (the borrower, the date it was due back).
+    if (card.key === 'loansDueToday')
+      return {
+        spec: LOAN_CARD,
+        row: { ...record },
+        url: record.url,
+        badge: <AssetTypeBadge value='device' className='shrink-0' />,
+      };
+    return board && row ? { spec: board.spec, row, url: record.url } : null;
+  });
+  if (entries.length > 0 && entries.every((entry) => entry !== null)) {
+    const urls = new Map(
+      entries.map((entry) => [
+        `${entry.spec.nameField}:${String(entry.row.id)}`,
+        entry.url,
+      ]),
+    );
+    return (
+      <BoardCards
+        entries={entries}
+        onOpen={({ spec, row }) => {
+          const url = urls.get(`${spec.nameField}:${String(row.id)}`);
+          if (url) openRecord(url);
+        }}
+      />
+    );
+  }
+  return (
+    <ul className='flex flex-col gap-2'>
+      {card.records.map((record) => (
+        <li key={record.url}>
+          <RecordCard column={card.key} record={record} />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -329,7 +444,7 @@ function AttentionColumn(): ReactElement {
     });
 
   return (
-    <Column title={t('workbench.attention')}>
+    <Column title={t('workbench.attention')} attention>
       {reminders.isLoading ? (
         <Skeleton className='h-24 w-full rounded-lg' />
       ) : groups.length === 0 ? (

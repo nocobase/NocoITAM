@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { DISPOSAL_CARD } from '@/components/itam/board-card-specs';
 import { createStatusBoard } from '@/components/itam/status-board';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Plus, Recycle, Send, Trash2, Undo2 } from 'lucide-react';
@@ -79,20 +80,9 @@ export const disposalDomain: DomainConfig = {
   Board: createStatusBoard({
     path: DISPOSALS_PATH,
     route: 'disposals',
-    fields: DISPOSAL_FIELDS,
-    nameField: 'disposalNo',
+    ...DISPOSAL_CARD,
     dots: DISPOSAL_STATUS_DOT,
     statuses: ['draft', 'pendingApproval', 'approved', 'executed', 'rejected'],
-    card: {
-      meta: 'bookValueTotal',
-      lines: [
-        'method',
-        (record, t) =>
-          t('board.deviceCount', { count: Number(record.deviceCount ?? 0) }),
-      ],
-      // The day it was raised; a board needs no time of day.
-      footer: ['ownerId', (record) => formatDate(record.createdAt)],
-    },
     defaultSort: 'createdAt',
   }),
   nameField: 'disposalNo',

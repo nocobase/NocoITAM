@@ -1146,7 +1146,7 @@ const zhCN: AppResource = {
     returnExpected: '，预计 {{date}} 归还',
     disposedOn: '{{date}} 已执行',
     assignedTo: '分配给',
-    loanedTo: '借出给',
+    loanedTo: '借给',
     reservedFor: '预留给',
     reservedUntilSuffix: '，截止 {{date}}',
     unassigned: '未分配',
@@ -1498,8 +1498,8 @@ const zhCN: AppResource = {
       tagAudit: '盘点',
       pendingPurchaseApprovals: '待审批的采购单',
       pendingDisposalApprovals: '待审批的报废单',
-      awaitingReceipt: '待验收到货',
-      pendingDisposalExecution: '待执行的报废',
+      awaitingReceipt: '待到货入库',
+      pendingDisposalExecution: '待执行报废',
       activeRepairs: '进行中的维修',
       activeAudits: '进行中的盘点',
       loansDueToday: '借出逾期',
@@ -1510,6 +1510,8 @@ const zhCN: AppResource = {
       mine_other: '你负责 {{count}} 项',
       yours: '你负责',
       leftOn: '{{date}} 离职',
+      lentTo: '借给 {{name}}',
+      dueBack: '预计 {{date}} 归还',
     },
     reminderGroups: {
       devices: '设备',
@@ -1966,7 +1968,7 @@ const zhCN: AppResource = {
       return: '回到原状态',
       returnTo: '回到{{status}}',
       assignedTo: '分配给 {{holder}}',
-      lentTo: '借出给 {{holder}}，预计 {{date}} 归还',
+      lentTo: '借给 {{holder}}，预计 {{date}} 归还',
       reservedFor: '预留给 {{holder}}，至 {{date}}',
       disposeEnds: '转待报废会结束「{{relation}}」，设备不再可分配',
       disposeHint: '转待报废后设备不再可分配，等待报废',
@@ -2324,7 +2326,7 @@ const zhCN: AppResource = {
       groupDifferences:
         '请分析这次盘点的未处理差异：按最可能的原因分组（工位调整、使用人记录错误、在修、离职未还、真丢失、账外设备等），列出每组的设备，并给出处理建议。',
       planToday:
-        '请安排我今天的工作：读取我的待审批、待验收到货、进行中的盘点和提醒，按紧急程度排序，并提出我可以立即执行的动作。',
+        '请安排我今天的工作：读取我的待审批、待到货入库、进行中的盘点和提醒，按紧急程度排序，并提出我可以立即执行的动作。',
       inspectRisks:
         '请做一次资产风险巡检：结合提醒和报表列出风险（保修到期、闲置设备、超期未盘点、离职人员仍持有、授权超量、已结束仍占席位的订阅、库存低于水位、借出逾期），逐项量化，并给出下一步建议。',
       costAnalysis:
@@ -2345,6 +2347,7 @@ const zhCN: AppResource = {
     differences_other: '{{count}} 处差异',
     expected_one: '应盘 {{count}} 台',
     expected_other: '应盘 {{count}} 台',
+    expectedReturn: '预计 {{date}} 返回',
   },
   dataTable: {
     noResults: '暂无数据。',

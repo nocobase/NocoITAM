@@ -387,7 +387,7 @@ export function warrantyState(
   return { state: 'active', daysLeft };
 }
 
-/** The label of a device's holder relation: 分配给 / 借出给 / 预留给, or 分配对象. */
+/** The label of a device's holder relation: 分配给 / 借给 / 预留给, or 分配对象. */
 export function deviceRelationLabel(
   device: ItamRecord,
   t: (key: string) => string,
