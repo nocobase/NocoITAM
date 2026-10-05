@@ -17,29 +17,6 @@ export interface CardRecord extends MyWorkRecord {
   readonly tag?: DocumentKind;
 }
 
-/**
- * A tone per to-do, for the tag each row carries in 我的待办.
- *
- * One flat queue mixes seven kinds of work, and the tag is what tells them
- * apart; colour is what lets the eye do it without reading. It stands for
- * **which** to-do, never for how bad one is — the reminder counts are the
- * other way round, where only `critical` is coloured because severity is
- * the thing being said. Each tone is a token of the theme, so the presets
- * and dark mode carry them.
- */
-export const WORK_TONE: Readonly<Record<string, string>> = {
-  // The firmest of them: somebody is waiting on this reader to decide.
-  pendingApprovals: 'bg-primary text-primary-foreground',
-  // A person left with the company's equipment: the one that was `critical`
-  // while it was a reminder.
-  leaverRecovery: 'bg-destructive/10 text-destructive',
-  awaitingReceipt: 'bg-primary/10 text-primary',
-  pendingDisposalExecution: 'bg-accent text-accent-foreground',
-  activeRepairs: 'bg-warning text-warning-foreground',
-  activeAudits: 'bg-success text-success-foreground',
-  loansDueToday: 'bg-destructive text-destructive-foreground',
-};
-
 export interface WorkCard {
   readonly key: string;
   readonly label: string;
