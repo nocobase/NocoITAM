@@ -1551,6 +1551,7 @@ const messages = {
       tagAudit: 'Audit',
       pendingPurchaseApprovals: 'Purchase orders waiting for approval',
       pendingDisposalApprovals: 'Disposals waiting for approval',
+      pendingOrders: 'Orders to place',
       awaitingReceipt: 'Orders awaiting receipt',
       pendingDisposalExecution: 'Disposals to carry out',
       activeRepairs: 'Repairs in progress',

@@ -118,7 +118,7 @@ export const DISPOSAL_CARD: BoardCardSpec = {
 
 /**
  * A repair has no board of its own; this is how it reads on the
- * workbench's 进行中的维修 column, in the same shape as the others.
+ * workbench's 维修中 column, in the same shape as the others.
  */
 export const REPAIR_CARD: BoardCardSpec = {
   fields: REPAIR_FIELDS,

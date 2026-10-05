@@ -875,6 +875,63 @@ describe('procurement', () => {
     ]);
   });
 
+  it('lists an approved order as 待下单 until it is placed', async () => {
+    const order = await data<{ id: string; orderNo: string }>(
+      await post('purchase-orders', {
+        reason: 'newHire',
+        vendorId: fixture.vendorId,
+        departmentId: fixture.departmentId,
+        neededBy: '2026-12-01',
+      }),
+    );
+    await app.request(`/api/itam/purchase-orders/${order.id}/lines`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        lines: [{ itemType: 'device', modelId: fixture.modelId, quantity: 1 }],
+      }),
+      ...manager,
+    });
+    await post(`purchase-orders/${order.id}/submit`, { approverId: 'ann' });
+    const card = async (who: typeof manager, key: string, scope = 'mine') =>
+      (
+        await data<{ key: string; count: number; records: unknown[] }[]>(
+          await app.request(`/api/itam/workbench/my-work?scope=${scope}`, who),
+        )
+      ).find((item) => item.key === key);
+
+    // Waiting for its decision, nothing to place yet.
+    expect((await card(manager, 'pendingOrders'))?.count).toBe(0);
+    await post(
+      `purchase-orders/${order.id}/decide`,
+      { decision: 'approved' },
+      approver,
+    );
+    // Approved: the order's own side is to place it — not the approver.
+    expect(await card(manager, 'pendingOrders')).toMatchObject({
+      count: 1,
+      records: [
+        {
+          id: order.id,
+          title: order.orderNo,
+          date: '2026-12-01',
+          url: `/procurement/${order.id}`,
+        },
+      ],
+    });
+    expect((await card(approver, 'pendingOrders'))?.count).toBe(0);
+    // The team's view lists it for everybody who may place it.
+    expect((await card(approver, 'pendingOrders', 'all'))?.count).toBe(1);
+
+    // Placed: it leaves 待下单 for 待到货入库.
+    await post(`purchase-orders/${order.id}/order`, {
+      orderedAt: '2026-10-05',
+      expectedAt: '2026-10-12',
+    });
+    expect((await card(manager, 'pendingOrders'))?.count).toBe(0);
+    expect((await card(manager, 'awaitingReceipt'))?.count).toBe(1);
+  });
+
   it('lets the requester approve their own order', async () => {
     // A deployment with one Asset Manager has nobody else who may approve,
     // so naming yourself is allowed (2026-09-27).

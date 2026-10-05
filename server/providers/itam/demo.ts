@@ -1829,7 +1829,7 @@ export function createDemoService(dependencies: {
         if (entry.type === 'device') await track('devices', { id: entry.id });
 
       // A repair in progress on the expired laptop, IT support's: a repair
-      // belongs to its 负责人, so the 进行中的维修 card has something to show
+      // belongs to its 负责人, so the 维修中 card has something to show
       // when you sign in as `zhouyu`. The finished ones below are his too.
       await track(
         'repairs',

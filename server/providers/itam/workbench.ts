@@ -60,6 +60,7 @@ export interface MyWorkItem {
   readonly key:
     | 'pendingPurchaseApprovals'
     | 'pendingDisposalApprovals'
+    | 'pendingOrders'
     | 'awaitingReceipt'
     | 'pendingDisposalExecution'
     | 'activeRepairs'
@@ -498,6 +499,33 @@ export function createWorkbenchService(dependencies: {
       }
 
       const orders = await decide('purchaseOrders', 'read');
+      // 待下单: approved, and nobody has placed it yet. Without this an
+      // approved order sat in 已批准 with nothing on the board asking for
+      // it — 待审批 ends at the decision and 待到货入库 starts at 已下单
+      // (2026-10-05). Whose it is follows the same rule as 待到货入库.
+      if (orders && (await decide('purchaseOrders', 'order'))) {
+        const toPlace = (
+          query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
+        ) => raisedBy(query.where('status', '=', 'approved'));
+        const rows = await take(
+          'purchaseOrders',
+          orders,
+          ['id', 'orderNo', 'neededBy'],
+          // The one needed soonest first.
+          (query) => toPlace(query).orderBy('neededBy', 'asc'),
+        );
+        items.push({
+          key: 'pendingOrders',
+          count: await count('purchaseOrders', orders, toPlace),
+          url: '/procurement?status=approved',
+          records: rows.map((row) => ({
+            id: String(row.id),
+            title: String(row.orderNo),
+            date: asText(row.neededBy) ?? null,
+            url: `/procurement/${String(row.id)}`,
+          })),
+        });
+      }
       if (orders && (await decide('purchaseOrders', 'receive'))) {
         // The orders that are this reader's, by the same rule the service
         // uses for everything else on the order (`raisedTheOrder` in

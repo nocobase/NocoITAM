@@ -628,7 +628,7 @@ Rules learned while building it:
   also carry out a disposal (`NOT_INVOLVED`), which is a permission rather
   than their work. Five of the seven are addressed to one person by the
   service itself, so the card can only be that person's — 待我审批 by the
-  approval's named approver (`NOT_APPROVER`), 进行中的维修 by
+  approval's named approver (`NOT_APPROVER`), 维修中 by
   `repairs.ownerId` (a supervisor may also close one, but it is the
   负责人's work), 进行中的盘点 by
   its 负责人 or its `executorIds` (the one who answers for it, and the
@@ -1046,7 +1046,7 @@ Rules learned while building it:
 - `MyWorkItem.records` comes back with the counts: a card is never
   collapsed, so lazy fetching would only make the workbench 1+N requests.
   Each kind's records are read under the decision that its **action** needs,
-  which is not always `read`: 进行中的维修 is scoped by `complete` and by
+  which is not always `read`: 维修中 is scoped by `complete` and by
   `repairs.ownerId`, because every IT reader reads every repair and only its
   负责人 finishes one, and a to-do nobody can act on is not a to-do.
 - A to-do card and a 需要关注 reminder must not describe the same records:
@@ -1759,8 +1759,11 @@ overdue loan is drawn from its to-do (`LOAN_CARD`, the 设备 tag through
 `BoardCardEntry.badge`): the device, 借给 whom — the server returns the
 borrower's name as the record's `subtitle` — and when it was due back.
 The workbench's columns run 需要关注 (on a warning-tinted ground, since it
-holds risks rather than to-dos), 离职交接, 待审批, 待到货入库, 进行中的维修,
-借出逾期, 待执行报废, 进行中的盘点. The board takes the rest
+holds risks rather than to-dos), 离职交接, 待审批, 待下单, 待到货入库,
+待执行报废, 维修中, 借出逾期, 进行中的盘点. 待下单 (`pendingOrders`,
+2026-10-05) is the approved purchase orders nobody has placed yet, granted
+by `order` and scoped like 待到货入库: without it an approved order sat in
+已批准 with nothing on the board asking for it. The board takes the rest
 of the page's height (`Page fill`): columns reach the bottom and scroll
 their own cards, so the sideways scrollbar sits at the foot of the page
 rather than under the shortest column (2026-10-04; they used to be as tall

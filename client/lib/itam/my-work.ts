@@ -98,6 +98,7 @@ export function useWorkCards(): readonly WorkCard[] {
   // it carries a tag; a device (编号 / 名称) and an audit task (its name)
   // name themselves and take none.
   const TAGGED: Readonly<Record<string, DocumentKind>> = {
+    pendingOrders: 'purchaseOrders',
     awaitingReceipt: 'purchaseOrders',
     activeRepairs: 'repairs',
     pendingDisposalExecution: 'disposals',
@@ -107,10 +108,11 @@ export function useWorkCards(): readonly WorkCard[] {
     // equipment, which was the one `critical` rule while this was a reminder.
     // A person names themselves, so these records take no tag.
     'leaverRecovery',
+    'pendingOrders',
     'awaitingReceipt',
+    'pendingDisposalExecution',
     'activeRepairs',
     'loansDueToday',
-    'pendingDisposalExecution',
     'activeAudits',
   ]) {
     const item = find(key);
