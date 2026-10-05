@@ -853,6 +853,7 @@ const messages = {
     title: 'Onboarding',
     joins: 'Joins {{date}}',
     noKit: 'No onboarding kit applies to this person’s department and position.',
+    askAi: 'Have Noco prepare',
     progress: '{{done}} of {{total}} prepared',
     shortfallTotal_one: '{{count}} item to buy',
     shortfallTotal_other: '{{count}} items to buy',
@@ -2432,6 +2433,7 @@ const messages = {
       itam_aggregate: 'Statistics',
       itam_check_availability: 'Check availability',
       itam_match_model: 'Match model or product',
+      itam_onboarding_plan: 'Read onboarding plan',
       loadFrontendTool: 'Load page tool',
       executeFrontendTool: 'Run page tool',
       chartGenerator: 'Draw chart',
@@ -2445,6 +2447,7 @@ const messages = {
         itam_loan_device: 'Lend a device',
         itam_return_devices: 'Return devices',
         itam_transfer_device: 'Transfer a device',
+        itam_reserve_device: 'Reserve a device',
         itam_correct_device_status: 'Correct a device status',
         itam_assign_seat: 'Assign a seat',
         itam_reclaim_seats: 'Reclaim seats',
@@ -2521,6 +2524,8 @@ const messages = {
         'Read the document “{{file}}” below (a quote, invoice or delivery note): match each line to a model or software product and add the lines to this purchase order draft with addDraftLines (quantity and unit price as the document states). List the lines you could not match and ask me; do not guess.',
       reportInsight:
         'Interpret the report on screen: three to five sentences, the most important number and change first, any anomaly, then one recommendation.',
+      onboarding:
+        "Prepare {{name}}'s onboarding using the onboarding skill: say which kit applies, what is prepared and what is missing, propose the page's reservations, issues and seat assignments by kind for me to confirm, draft one new-hire purchase order for what stock cannot cover (ask me for the vendor), and finish with what has to be done outside the system.",
       groupDifferences:
         'Analyse the open differences of this audit: group them by their most likely cause (moved desk, wrong holder record, in repair, leaver not returned, truly lost, unregistered device…), list the devices in each group, and say how to handle each.',
       planToday:

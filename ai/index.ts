@@ -22,8 +22,10 @@ import getRecord from './tools/itam/get-record.js';
 import issueStock from './tools/itam/issue-stock.js';
 import loanDevice from './tools/itam/loan-device.js';
 import matchModel from './tools/itam/match-model.js';
+import onboardingPlan from './tools/itam/onboarding-plan.js';
 import receivePurchaseLine from './tools/itam/receive-purchase-line.js';
 import reclaimSeats from './tools/itam/reclaim-seats.js';
+import reserveDevice from './tools/itam/reserve-device.js';
 import returnDevices from './tools/itam/return-devices.js';
 import searchRecords from './tools/itam/search-records.js';
 import stockIn from './tools/itam/stock-in.js';
@@ -38,10 +40,12 @@ export const ITAM_TOOLS = [
   aggregate,
   checkAvailability,
   matchModel,
+  onboardingPlan,
   assignDevice,
   loanDevice,
   returnDevices,
   transferDevice,
+  reserveDevice,
   correctDeviceStatus,
   assignSeat,
   reclaimSeats,

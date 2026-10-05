@@ -9,6 +9,9 @@ import returnDevices from '../../ai/tools/itam/return-devices.js';
 import createRecord from '../../ai/tools/itam/create-record.js';
 import issueStock from '../../ai/tools/itam/issue-stock.js';
 import stockIn from '../../ai/tools/itam/stock-in.js';
+import onboardingPlan from '../../ai/tools/itam/onboarding-plan.js';
+import reserveDevice from '../../ai/tools/itam/reserve-device.js';
+import { addDays, today } from '../../server/providers/itam/dates.js';
 import { aiRoutes } from '../../server/routes/itam/ai.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
@@ -173,6 +176,49 @@ describe('AI write tools, inspection and tools', () => {
         items: [{ deviceId: a2.id }],
       }),
     ).rejects.toThrow();
+  });
+
+  it('reads a joiner’s onboarding plan and reserves what it proposes', async () => {
+    const laptop = await create('devices', {
+      modelId: 'model-macbook-pro-14-m3',
+      locationId,
+      serialNo: 'SN-JOIN-1',
+    });
+    const joiner = await create('master/people', {
+      name: 'Sun Hao',
+      departmentId: 'dept-rd',
+      position: 'Frontend Engineer',
+      hireDate: addDays(today(), 5),
+    });
+    type Plan = {
+      plan: {
+        kit: { id: string } | null;
+        lines: {
+          target: { id: string };
+          preparedCount: number;
+          proposals: { type: string; id: string }[];
+        }[];
+      };
+    };
+    const macbook = async () =>
+      (
+        (await invoke(onboardingPlan, manager.user, { personId: joiner.id }))
+          .content as unknown as Plan
+      ).plan.lines.find((line) => line.target.id === 'model-macbook-pro-14-m3');
+    // The plan, not the model, says which laptop.
+    expect((await macbook())?.proposals).toEqual([
+      expect.objectContaining({ type: 'device', id: laptop.id }),
+    ]);
+    // Reserving is held for confirmation like every write.
+    expect(reserveDevice.defaultPermission).toBe('ASK');
+    const reserved = await invoke(reserveDevice, manager.user, {
+      title: 'Reserve for Sun Hao',
+      deviceId: laptop.id,
+      reservedForId: joiner.id,
+      reservedUntil: addDays(today(), 5),
+    });
+    expect(reserved.status).toBe('success');
+    expect((await macbook())?.preparedCount).toBe(1);
   });
 
   it('reads records with names and the ids the write tools take', async () => {
@@ -455,8 +501,12 @@ describe('ITAM AI resources', () => {
       'itam_return_devices',
       'itam_create_purchase_order',
       'itam_create_disposal',
+      'itam_reserve_device',
     ])
       expect(byName.get(name)?.defaultPermission).toBe('ASK');
+    expect(byName.get('itam_onboarding_plan')?.defaultPermission).toBe(
+      'ALLOW',
+    );
     expect(byName.get('itam_search_records')?.defaultPermission).toBe('ALLOW');
   });
 });

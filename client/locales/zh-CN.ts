@@ -846,6 +846,7 @@ const zhCN: AppResource = {
     title: '入职配备',
     joins: '{{date}} 入职',
     noKit: '该人员的部门和职位没有适用的入职配置。',
+    askAi: '让 Noco 准备',
     progress: '已配备 {{done}} / {{total}}',
     shortfallTotal_one: '缺 {{count}} 项需采购',
     shortfallTotal_other: '缺 {{count}} 项需采购',
@@ -2300,6 +2301,7 @@ const zhCN: AppResource = {
       itam_aggregate: '统计',
       itam_check_availability: '查询可用库存',
       itam_match_model: '匹配型号或软件',
+      itam_onboarding_plan: '读取入职配备',
       loadFrontendTool: '加载页面工具',
       executeFrontendTool: '执行页面工具',
       chartGenerator: '生成图表',
@@ -2313,6 +2315,7 @@ const zhCN: AppResource = {
         itam_loan_device: '借出设备',
         itam_return_devices: '归还设备',
         itam_transfer_device: '调拨设备',
+        itam_reserve_device: '预留设备',
         itam_correct_device_status: '更正设备状态',
         itam_assign_seat: '分配席位',
         itam_reclaim_seats: '收回席位',
@@ -2387,6 +2390,8 @@ const zhCN: AppResource = {
         '请读取下面的单据「{{file}}」（报价单、发票或送货单）：逐行匹配型号或软件产品，用 addDraftLines 把明细加入当前采购单草稿（数量、单价按单据填写）。对不上的行列出来问我，不要猜。',
       reportInsight:
         '请解读屏幕上的这张报表：三到五句话，先说最重要的数字和变化，指出异常，最后给一条建议。',
+      onboarding:
+        '请按「入职配备」技能为 {{name}} 准备入职：先说明适用的入职配置、已配备和还缺什么，把页面上建议的预留、领用和席位分配逐类提出来由我确认，库存不够的缺口起草一张新员工配备采购单（供应商问我），最后说明系统外还要做的事。',
       groupDifferences:
         '请分析这次盘点的未处理差异：按最可能的原因分组（工位调整、使用人记录错误、在修、离职未还、真丢失、账外设备等），列出每组的设备，并给出处理建议。',
       planToday:

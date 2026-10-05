@@ -56,6 +56,13 @@ export interface OnboardingPlanLine {
     readonly name: string;
   };
   readonly kind: KitItemKind;
+  /**
+   * What a purchase line for the shortfall would be: the category's kind for
+   * a model or category (device, accessory, consumable, component), and for
+   * software the kind of an entitlement already on the books for it
+   * (perpetual or subscription) — null when there is none to go by.
+   */
+  readonly itemType: string | null;
   readonly required: number;
   readonly prepared: readonly PlanThing[];
   readonly preparedCount: number;
@@ -330,6 +337,11 @@ export function createOnboardingService(
             missing -= 1;
           }
         }
+        const existing = await q()
+          .selectFrom('entitlements')
+          .select(['kind'])
+          .where('softwareProductId', '=', productId)
+          .executeTakeFirst<Row>();
         lines.push({
           target: {
             type: 'softwareProduct',
@@ -337,6 +349,7 @@ export function createOnboardingService(
             name: String(product.name),
           },
           kind: 'entitlement',
+          itemType: asText(existing?.kind) ?? null,
           required,
           prepared,
           preparedCount: prepared.length,
@@ -501,6 +514,7 @@ export function createOnboardingService(
           name: String(target.name),
         },
         kind,
+        itemType: appliesTo || null,
         required,
         prepared,
         preparedCount,

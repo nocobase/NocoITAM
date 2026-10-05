@@ -26,7 +26,7 @@ export const LOGO_AVATAR_PATH = '/assets/logo-mark.png';
  * people can read and change without a release, which is what makes it a
  * deliverable of its own rather than prose buried in these instructions.
  */
-export const ITAM_SKILLS = ['offboarding', 'receiving'] as const;
+export const ITAM_SKILLS = ['offboarding', 'onboarding', 'receiving'] as const;
 
 const employee: AIEmployeeOptions = defineAIEmployee({
   username: 'itam',
@@ -46,10 +46,12 @@ const employee: AIEmployeeOptions = defineAIEmployee({
     { name: 'itam_aggregate', autoCall: true },
     { name: 'itam_check_availability', autoCall: true },
     { name: 'itam_match_model', autoCall: true },
+    { name: 'itam_onboarding_plan', autoCall: true },
     { name: 'itam_assign_device', autoCall: true },
     { name: 'itam_loan_device', autoCall: true },
     { name: 'itam_return_devices', autoCall: true },
     { name: 'itam_transfer_device', autoCall: true },
+    { name: 'itam_reserve_device', autoCall: true },
     { name: 'itam_correct_device_status', autoCall: true },
     { name: 'itam_assign_seat', autoCall: true },
     { name: 'itam_reclaim_seats', autoCall: true },

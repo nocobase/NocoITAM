@@ -720,9 +720,18 @@ Rules learned while building it:
   `reserve`; nobody owns a joiner's preparation, so under 我负责的 it is
   empty. The seeds write a kit per department (the ones the AI business
   notes describe) and a designer's in Product; the demo adds two joiners.
-  Choosing which device is the service's, never the model's: the AI side
-  (an onboarding skill presenting this plan and executing it through the
-  write tools) is the next step, not part of this one.
+  Choosing which device is the service's, never the model's. The AI side
+  is the `onboarding` skill (`ai/skills/onboarding/SKILL.md`): Noco reads
+  the plan through `itam_onboarding_plan` (ALLOW, under the user's people
+  grant), explains it, proposes exactly its proposals through the write
+  tools — `itam_reserve_device` (ASK, granted by `reserve`, until the
+  joining day) before they start, `itam_assign_device` after,
+  `itam_issue_stock`, `itam_assign_seat` — and drafts one 新员工配备
+  purchase order for the shortfall, asking for the vendor, which is why
+  that step is Noco's and not a button (`itemType` on each plan line says
+  what the line would be bought as). The 入职配备 card's green shortcut
+  (让 Noco 准备) sends the plan as page context. The kits are no longer
+  listed in the seeded AI business notes, which point to 入职配置.
 - A leaver's **sign-in goes with them** (2026-10-05,
   `server/providers/itam/leaver-accounts.ts`): marking somebody as left
   marks a person, not an account, so a sign-in the person record links went
