@@ -2,7 +2,7 @@ import {
   Banknote,
   CalendarClock,
   Laptop,
-  Recycle,
+  MonitorX,
   Store,
   Wrench,
 } from 'lucide-react';
@@ -91,7 +91,7 @@ export const DISPOSAL_CARD: BoardCardSpec = {
           ]
             .filter(Boolean)
             .join(' · '),
-        icon: Recycle,
+        icon: MonitorX,
       },
     ],
     footer: ['ownerId', (record) => formatDate(record.createdAt, true)],
@@ -108,7 +108,9 @@ export const REPAIR_CARD: BoardCardSpec = {
   card: {
     lines: [
       { part: 'deviceId', icon: Laptop },
-      { part: 'faultDescription', icon: Wrench },
+      // As plain text, so it truncates to its line: the field's own
+      // renderer folds long text behind 展开, which a card has no room for.
+      { part: (record) => text(record.faultDescription), icon: Wrench },
       {
         part: (record, t) =>
           record.expectedReturnAt

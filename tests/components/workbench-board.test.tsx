@@ -154,3 +154,31 @@ it('draws a purchase order with the card of its board, and opens it in the drawe
   expect(state.opened).toHaveBeenCalledWith('/procurement/po-1');
   state.rows = {};
 });
+
+it('keeps a long fault description to one truncated line on a repair card', () => {
+  const fault = '屏幕闪烁，'.repeat(80);
+  state.items = [
+    {
+      key: 'activeRepairs',
+      count: 1,
+      url: '/repairs?result=inProgress',
+      records: [
+        { ...record('rp-1', '2026-10-09', '/repairs/rp-1'), tag: 'repairs' },
+      ],
+    },
+  ];
+  state.rows = {
+    'itam/repairs': [
+      { id: 'rp-1', repairNo: 'RP-000001', faultDescription: fault },
+    ],
+  };
+  show();
+  const repairs = column('workbench.work.activeRepairs');
+  const line = within(repairs).getByText(fault);
+  // One line, cut by CSS, with nothing to unfold.
+  expect(line.className).toContain('truncate');
+  expect(
+    within(repairs).queryByRole('button', { name: /expand|展开/i }),
+  ).toBeNull();
+  state.rows = {};
+});
