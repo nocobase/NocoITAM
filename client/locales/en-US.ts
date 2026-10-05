@@ -1403,6 +1403,8 @@ const messages = {
     decidedBy: 'Decided by {{user}} on {{date}}',
     arrivedAt: 'Received',
     nothingGenerated: 'Nothing received yet',
+    generatedDevices: 'Devices',
+    generatedOthers: 'Stock and entitlements',
   },
   image: {
     upload: 'Upload picture',

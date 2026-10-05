@@ -53,7 +53,17 @@ interface UnitDraft {
   readonly key: string;
   readonly serialNo: string;
   readonly source?: string;
+  /**
+   * Added by a scan rather than by 添加一台: the row waiting for the next
+   * code. Left empty it is no device — the scan after the last one never
+   * came — so it is not received.
+   */
+  readonly awaiting?: boolean;
 }
+
+/** The units a line receives: every row but one still waiting for a scan. */
+const unitsOf = (draft: DeviceDraft): readonly UnitDraft[] =>
+  draft.units.filter((unit) => !(unit.awaiting && !unit.serialNo.trim()));
 
 /** A device line: one row per unit, and what every unit of it shares. */
 interface DeviceDraft {
@@ -259,12 +269,13 @@ export function BatchReceiptDialog({
       const lineId = text(line.id);
       const device = devices[lineId];
       if (device) {
-        if (device.units.length === 0) return [];
+        const units = unitsOf(device);
+        if (units.length === 0) return [];
         return [
           {
             lineId,
-            quantity: device.units.length,
-            serialNos: device.units.map((unit) => unit.serialNo.trim()),
+            quantity: units.length,
+            serialNos: units.map((unit) => unit.serialNo.trim()),
             locationId: device.locationId ?? undefined,
             extra: {
               ...(modelName(line) ? { name: modelName(line) } : {}),
@@ -378,7 +389,9 @@ export function BatchReceiptDialog({
     const lineId = text(line.id);
     const device = devices[lineId];
     if (device)
-      return device.units.length > 0 && (!device.locationId || !device.ownerId);
+      return (
+        unitsOf(device).length > 0 && (!device.locationId || !device.ownerId)
+      );
     const stock = stocks[lineId];
     const quantity = Number.parseInt(stock?.quantity ?? '', 10);
     return (
@@ -450,7 +463,7 @@ export function BatchReceiptDialog({
               <span className='text-xs text-muted-foreground tabular-nums'>
                 {t('receipt.outstanding', { count: outstandingOf(line) })}
                 {device
-                  ? ` · ${t('receipt.units', { count: device.units.length })}`
+                  ? ` · ${t('receipt.units', { count: unitsOf(device).length })}`
                   : null}
               </span>
             </header>
@@ -604,18 +617,23 @@ function DeviceLine({
                       ),
                     )
                   }
-                  // A scanner ends each code with Enter: the next row is
-                  // where the next scan goes.
+                  // A scanner in keyboard mode types the code and ends it
+                  // with Enter — or Tab, as some are set up: the next row
+                  // is where the next scan goes. Shift+Tab still leaves.
                   onKeyDown={(event) => {
                     if (
-                      event.key !== 'Enter' ||
+                      (event.key !== 'Enter' &&
+                        (event.key !== 'Tab' || event.shiftKey)) ||
                       event.nativeEvent.isComposing ||
                       !unit.serialNo.trim()
                     )
                       return;
                     event.preventDefault();
                     if (index === draft.units.length - 1)
-                      setUnits([...draft.units, newUnit()]);
+                      setUnits([
+                        ...draft.units,
+                        { ...newUnit(), awaiting: true },
+                      ]);
                     focusNext(event.currentTarget);
                   }}
                 />

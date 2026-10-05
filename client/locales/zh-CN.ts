@@ -1355,6 +1355,8 @@ const zhCN: AppResource = {
     decidedBy: '{{user}} 于 {{date}} 审批',
     arrivedAt: '到货入库时间',
     nothingGenerated: '尚无入库记录',
+    generatedDevices: '设备',
+    generatedOthers: '库存与授权',
   },
   image: {
     upload: '上传图片',

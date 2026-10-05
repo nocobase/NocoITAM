@@ -183,3 +183,38 @@ it('offers nothing to receive until a line has something in it', () => {
     screen.getByRole('button', { name: 'receipt.confirm:0' }),
   ).toBeDisabled();
 });
+
+it('takes a scanner’s Enter or Tab as the end of a code, and does not receive the row left waiting', () => {
+  render(
+    <BatchReceiptDialog
+      orderId='po1'
+      order={{ id: 'po1' }}
+      lines={lines}
+      onClose={vi.fn()}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'receipt.addUnit' }));
+  const scan = (code: string, key: 'Enter' | 'Tab') => {
+    const inputs = screen.getAllByRole('textbox', { name: 'receipt.serialOf' });
+    const input = inputs.at(-1)!;
+    fireEvent.change(input, { target: { value: code } });
+    fireEvent.keyDown(input, { key });
+  };
+  scan('S1', 'Enter');
+  scan('S2', 'Tab');
+  // A row waits for a third scan that never comes.
+  expect(
+    screen
+      .getAllByRole('textbox', { name: 'receipt.serialOf' })
+      .map((input) => (input as HTMLInputElement).value),
+  ).toEqual(['S1', 'S2', '']);
+  fireEvent.click(screen.getByTestId('batch-location-l1'));
+  fireEvent.click(screen.getByRole('button', { name: 'receipt.confirm:2' }));
+  const receipt = state.requests.find((request) =>
+    request.path.endsWith('/receive-batch'),
+  );
+  expect(
+    (receipt?.json as { receipts: { serialNos?: string[] }[] }).receipts[0]
+      ?.serialNos,
+  ).toEqual(['S1', 'S2']);
+});

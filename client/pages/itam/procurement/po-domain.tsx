@@ -8,6 +8,8 @@ import { useParams } from 'react-router';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { AttachmentsTab } from '@/components/itam/attachments-tab';
 import { ReferenceLink } from '@/components/itam/cells';
+import { RecordLink } from '@/components/itam/record-link';
+import { DeviceStatusBadge } from '@/components/itam/status-badge';
 
 import { PurchaseOrderLinesCard } from './lines-tab.js';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
@@ -27,10 +29,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { useApi, type ItamRecord } from '@/lib/itam/api';
+import { useApi, useItamList, type ItamRecord } from '@/lib/itam/api';
+import { DEVICES_PATH } from '@/lib/itam/device-api';
 import type { DomainConfig } from '@/lib/itam/domain';
 import {
   addDays,
+  deviceLabel,
   formatDate,
   formatMoney,
   text,
@@ -620,67 +624,177 @@ export function PurchaseOrderGeneratedTab(): ReactElement {
     const key = text(receipt.generatedId);
     if (key) receiptsOf.set(key, [...(receiptsOf.get(key) ?? []), receipt]);
   }
+  const arrivedAt = (id: string) =>
+    (receiptsOf.get(id) ?? [])
+      .map((receipt) => text(receipt.createdAt))
+      .sort()
+      .at(-1);
+  const devices = generated.filter((row) => row.type === 'device');
+  const others = generated.filter((row) => row.type !== 'device');
   return (
-    <Paged rows={generated}>
-      {(pageRows) => (
+    <div className='space-y-4'>
+      {devices.length > 0 ? (
+        <section className='space-y-2'>
+          {others.length > 0 ? (
+            <h3 className='text-sm font-medium'>
+              {t('procurement.generatedDevices')}
+            </h3>
+          ) : null}
+          <GeneratedDevices
+            ids={devices.map((row) => row.id)}
+            arrivedAt={arrivedAt}
+          />
+        </section>
+      ) : null}
+      {others.length > 0 ? (
+        <section className='space-y-2'>
+          {devices.length > 0 ? (
+            <h3 className='text-sm font-medium'>
+              {t('procurement.generatedOthers')}
+            </h3>
+          ) : null}
+          <Paged rows={others}>
+            {(pageRows) => (
+              <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className='w-px whitespace-nowrap'>
+                        {t('fields.appliesTo')}
+                      </TableHead>
+                      <TableHead>{t('fields.name')}</TableHead>
+                      <TableHead>{t('procurement.modelOrProduct')}</TableHead>
+                      <TableHead className='w-px whitespace-nowrap text-right'>
+                        {t('fields.quantity')}
+                      </TableHead>
+                      <TableHead className='w-px whitespace-nowrap'>
+                        {t('procurement.arrivedAt')}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pageRows.map((row) => {
+                      const collection = collectionOf(row.type);
+                      const quantity = (receiptsOf.get(row.id) ?? []).reduce(
+                        (sum, receipt) => sum + Number(receipt.quantity ?? 0),
+                        0,
+                      );
+                      const last = arrivedAt(row.id);
+                      return (
+                        <TableRow key={`${row.type}:${row.id}`}>
+                          <TableCell className='w-px whitespace-nowrap'>
+                            <AssetTypeBadge value={assetTypeOf(row)} />
+                          </TableCell>
+                          <TableCell>
+                            <ReferenceLink
+                              collection={collection}
+                              // Stock has a page per kind: an accessory, a
+                              // consumable and a component are not read in
+                              // the same place.
+                              route={
+                                (row.kind
+                                  ? STOCK_ROUTES[row.kind as StockKind]
+                                  : undefined) ?? referenceRoute(collection)
+                              }
+                              id={row.id}
+                              names={names[collection]}
+                            />
+                          </TableCell>
+                          <TableCell className='text-muted-foreground'>
+                            {(row.modelId
+                              ? names.models?.get(row.modelId)
+                              : row.softwareProductId
+                                ? names.softwareProducts?.get(
+                                    row.softwareProductId,
+                                  )
+                                : undefined) ?? '—'}
+                          </TableCell>
+                          <TableCell className='text-right tabular-nums'>
+                            {quantity || '—'}
+                          </TableCell>
+                          <TableCell className='whitespace-nowrap tabular-nums text-muted-foreground'>
+                            {last ? formatDate(last, true) : '—'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Paged>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The devices an order brought in, as a receiver checks a delivery: each
+ * by its number and name, its serial, and where it stands now — its status
+ * and place, read live from the device. The model is in the name and every
+ * row is one device, so neither has a column of its own (2026-10-05).
+ */
+function GeneratedDevices({
+  ids,
+  arrivedAt,
+}: {
+  readonly ids: readonly string[];
+  readonly arrivedAt: (id: string) => string | undefined;
+}): ReactElement {
+  const { t } = useTranslation();
+  const list = useItamList(DEVICES_PATH, { ids, pageSize: ids.length });
+  const rows = new Map(
+    (list.data?.data ?? []).map((device) => [text(device.id), device]),
+  );
+  const places = useReferenceNames([
+    {
+      collection: 'locations',
+      ids: [...rows.values()].map(
+        (device) => (device.locationId as string | null) ?? null,
+      ),
+    },
+  ]);
+  return (
+    <Paged rows={ids}>
+      {(pageIds) => (
         <div className='overflow-x-auto rounded-lg border border-border bg-card'>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>{t('devices.noAndName')}</TableHead>
+                <TableHead>{t('fields.serialNo')}</TableHead>
                 <TableHead className='w-px whitespace-nowrap'>
-                  {t('fields.appliesTo')}
+                  {t('fields.status')}
                 </TableHead>
-                <TableHead>{t('fields.name')}</TableHead>
-                <TableHead>{t('procurement.modelOrProduct')}</TableHead>
-                <TableHead className='w-px whitespace-nowrap text-right'>
-                  {t('fields.quantity')}
-                </TableHead>
+                <TableHead>{t('fields.location')}</TableHead>
                 <TableHead className='w-px whitespace-nowrap'>
                   {t('procurement.arrivedAt')}
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pageRows.map((row) => {
-                const collection = collectionOf(row.type);
-                const mine = receiptsOf.get(row.id) ?? [];
-                const quantity = mine.reduce(
-                  (sum, receipt) => sum + Number(receipt.quantity ?? 0),
-                  0,
-                );
-                const last = mine
-                  .map((receipt) => text(receipt.createdAt))
-                  .sort()
-                  .at(-1);
+              {pageIds.map((id) => {
+                const device = rows.get(id);
+                const last = arrivedAt(id);
                 return (
-                  <TableRow key={`${row.type}:${row.id}`}>
-                    <TableCell className='w-px whitespace-nowrap'>
-                      <AssetTypeBadge value={assetTypeOf(row)} />
-                    </TableCell>
+                  <TableRow key={id}>
                     <TableCell>
-                      <ReferenceLink
-                        collection={collection}
-                        // Stock has a page per kind: an accessory, a
-                        // consumable and a component are not read in the
-                        // same place.
-                        route={
-                          (row.kind
-                            ? STOCK_ROUTES[row.kind as StockKind]
-                            : undefined) ?? referenceRoute(collection)
-                        }
-                        id={row.id}
-                        names={names[collection]}
-                      />
+                      <RecordLink
+                        to={`/devices/${id}`}
+                        className='font-medium text-foreground hover:underline'
+                      >
+                        {device ? deviceLabel(device) : '…'}
+                      </RecordLink>
+                    </TableCell>
+                    <TableCell className='font-mono text-sm'>
+                      {text(device?.serialNo) || '—'}
+                    </TableCell>
+                    <TableCell className='w-px whitespace-nowrap'>
+                      <DeviceStatusBadge status={device?.status} />
                     </TableCell>
                     <TableCell className='text-muted-foreground'>
-                      {(row.modelId
-                        ? names.models?.get(row.modelId)
-                        : row.softwareProductId
-                          ? names.softwareProducts?.get(row.softwareProductId)
-                          : undefined) ?? '—'}
-                    </TableCell>
-                    <TableCell className='text-right tabular-nums'>
-                      {quantity || '—'}
+                      {places.locations?.get(text(device?.locationId)) ?? '—'}
                     </TableCell>
                     <TableCell className='whitespace-nowrap tabular-nums text-muted-foreground'>
                       {last ? formatDate(last, true) : '—'}
