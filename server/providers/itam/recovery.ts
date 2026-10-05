@@ -119,9 +119,7 @@ export const OWNED_BY_USER: readonly {
   },
   {
     // A stocktake is run by the people it names, so somebody leaving
-    // mid-count stalls it until another name is on it — and IT support
-    // reads only the tasks naming them, so nobody but the asset manager can
-    // even see that it stalled.
+    // mid-count stalls it until another name is on it.
     collection: 'auditTasks',
     field: 'executorIds',
     label: 'name',
@@ -213,7 +211,7 @@ export function deviceHandling(status: string): RecoveryHandling {
 /**
  * The sign-ins a list field names. The query layer decodes a JSON column,
  * but a row written before that was fixed still holds the string, so both
- * are read — the same tolerance `auditsIRunScope` applies.
+ * are read.
  */
 export function namesIn(value: unknown): string[] {
   let decoded = value;

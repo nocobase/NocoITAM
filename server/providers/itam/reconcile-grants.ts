@@ -276,6 +276,81 @@ function unscopeOperations(grant: PermissionGrant): {
 }
 
 /**
+ * Record Access policies this application no longer registers. A stored
+ * grant naming one would refer to a scope nobody resolves, so it is read as
+ * every record — which is what the one set that ever wrote it now grants.
+ *
+ * `itam.myAudits` narrowed IT support to the stocktakes naming them; it went
+ * on 2026-10-05, when IT support became the Asset Manager minus approving
+ * and deleting and so reads every stocktake. The 进行中的盘点 to-do never
+ * depended on it — the workbench scopes that by `executorIds` itself.
+ */
+const RETIRED_RECORD_ACCESS: ReadonlySet<string> = new Set(['itam.myAudits']);
+
+/**
+ * Rewrites a retired record scope to `allRecords`, in both shapes a grant
+ * stores one: a Collection action's `recordAccess` list, and a composite
+ * operation's `scopes` map.
+ */
+function retireRecordAccess(grant: PermissionGrant): {
+  grant: PermissionGrant;
+  changed: boolean;
+} {
+  let changed = false;
+  const actions = grant.actions.map((entry) => {
+    const policy = entry.policy as
+      | { recordAccess?: unknown; scopes?: Record<string, unknown> }
+      | undefined;
+    if (typeof policy !== 'object' || policy === null) return entry;
+    if (Array.isArray(policy.recordAccess)) {
+      const scopes = policy.recordAccess as unknown[];
+      if (!scopes.some((scope) => RETIRED_RECORD_ACCESS.has(String(scope))))
+        return entry;
+      changed = true;
+      return {
+        ...entry,
+        policy: {
+          ...policy,
+          recordAccess: [
+            ...new Set(
+              scopes.map((scope) =>
+                RETIRED_RECORD_ACCESS.has(String(scope)) ? 'allRecords' : scope,
+              ),
+            ),
+          ],
+        } as unknown as PermissionGrantAction['policy'],
+      };
+    }
+    if (policy.scopes && typeof policy.scopes === 'object') {
+      const scopes = policy.scopes;
+      if (
+        !Object.values(scopes).some((scope) =>
+          RETIRED_RECORD_ACCESS.has(String(scope)),
+        )
+      )
+        return entry;
+      changed = true;
+      return {
+        ...entry,
+        policy: {
+          ...policy,
+          scopes: Object.fromEntries(
+            Object.entries(scopes).map(([key, scope]) => [
+              key,
+              RETIRED_RECORD_ACCESS.has(String(scope)) ? 'allRecords' : scope,
+            ]),
+          ),
+        } as unknown as PermissionGrantAction['policy'],
+      };
+    }
+    return entry;
+  });
+  return changed
+    ? { grant: { ...grant, actions }, changed }
+    : { grant, changed };
+}
+
+/**
  * Adds the fields above to a stored policy that states an explicit list.
  * A field added to a Collection after a grant was written is missing from
  * every list an administrator already has, and seeds only ever create a set
@@ -414,7 +489,9 @@ export async function reconcileGrants(
       if (widened.changed) changed = true;
       const unscoped = unscopeOperations(widened.grant);
       if (unscoped.changed) changed = true;
-      const renamed = renameFields(unscoped.grant);
+      const retired = retireRecordAccess(unscoped.grant);
+      if (retired.changed) changed = true;
+      const renamed = renameFields(retired.grant);
       if (renamed.changed) changed = true;
       const grant = renamed.grant;
       if (

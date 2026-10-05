@@ -364,6 +364,86 @@ describe('ITAM seeds', () => {
     ]);
   });
 
+  /**
+   * `itam.myAudits` narrowed IT support to the stocktakes naming them and is
+   * no longer registered, so a stored grant naming it would point at a scope
+   * nobody resolves. Both shapes a grant stores a scope in are rewritten to
+   * every record, which is what IT support now holds; any other scope is
+   * left alone.
+   */
+  it('retires the myAudits record scope in both stored shapes', async () => {
+    const stored = [
+      {
+        key: 'itam-it-support',
+        grants: [
+          {
+            resource: { type: 'database.collection', id: 'main.auditTasks' },
+            actions: [
+              {
+                action: 'read',
+                policy: {
+                  type: 'database',
+                  fields: '*',
+                  recordAccess: ['itam.myAudits'],
+                },
+              },
+            ],
+          },
+          {
+            resource: { type: 'composite', id: 'itam.auditTasks' },
+            actions: [
+              {
+                action: 'count',
+                policy: {
+                  type: 'composite',
+                  scopes: { auditTasks: 'itam.myAudits' },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const updated: { key: string; grants: unknown }[] = [];
+    await reconcileGrants({
+      list: async () => stored,
+      update: async (key: string, set: { grants: unknown }) => {
+        updated.push({ key, grants: set.grants });
+      },
+    } as never);
+    const json = JSON.stringify(updated);
+    expect(json).not.toContain('itam.myAudits');
+    expect(updated[0]?.grants).toEqual(
+      expect.arrayContaining([
+        {
+          resource: { type: 'database.collection', id: 'main.auditTasks' },
+          actions: [
+            {
+              action: 'read',
+              policy: {
+                type: 'database',
+                fields: '*',
+                recordAccess: ['allRecords'],
+              },
+            },
+          ],
+        },
+        {
+          resource: { type: 'composite', id: 'itam.auditTasks' },
+          actions: [
+            {
+              action: 'count',
+              policy: {
+                type: 'composite',
+                scopes: { auditTasks: 'allRecords' },
+              },
+            },
+          ],
+        },
+      ]),
+    );
+  });
+
   it('strips operations and resources the application no longer declares', async () => {
     const grant = (actions: readonly string[], id = 'itam.entitlements') => ({
       resource: { type: 'composite', id },

@@ -2343,9 +2343,12 @@ IT 支持的 `complete` 授权又是 `recordsICreated`，结果是**维修单没
   `ADDED_PAGES` 给两个角色同一份页面清单。
 - **不是角色差别的规则不变。** 维修单、采购单、报废单只有负责人能完成或改负责人
   （`requireOwner`），审批只有被点名的人能决定。删除设备仍只有 root。
-- **`itam.myAudits` 暂不删。** 种子不再引用它，但已存的权限集可能还写着它；
-  等一次能把它剥掉的 reconcile 再删。进行中的盘点这个待办按 `executorIds` 在
-  工作台里自己收窄，从来不依赖它。
+- **`itam.myAudits` 删除。** 种子不再引用它，`record-access.ts` 和它的单元测试
+  一并删掉；已存的权限集里对它的引用由 `reconcile-grants.ts` 的
+  `RETIRED_RECORD_ACCESS` 在启动时改写成 `allRecords`（集合授权的
+  `recordAccess` 和复合授权的 `scopes` 两种形状都处理），也就是 IT 支持现在
+  本来就有的范围。进行中的盘点这个待办按 `executorIds` 在工作台里自己收窄，
+  从来不依赖它。
 - **已有数据库**跑 `pnpm --silent data:reset --demo` 让种子重写两个权限集，再从
   运行中的应用重新生成演示账号（重置脚本只删不建）。
 

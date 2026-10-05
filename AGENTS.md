@@ -970,11 +970,14 @@ Rules learned while building it:
   give it. Deleting a device stays with root. The service rules that bind
   **everyone** are not role differences and are unaffected: only a repair's
   or a request's 负责人 completes or reassigns it (`requireOwner`), and only
-  the named approver decides. `itam.myAudits`
-  (`server/providers/itam/record-access.ts`) is still registered but no
-  seed grants it any more — a stored set may still name it, so removing it
-  waits for a reconciliation that strips it; the 进行中的盘点 to-do never
-  depended on it, being scoped by `executorIds` in the workbench itself.
+  the named approver decides. The `itam.myAudits` Record Access policy that
+  narrowed IT support to the stocktakes naming them is gone with it;
+  `RETIRED_RECORD_ACCESS` in `reconcile-grants.ts` rewrites a stored grant
+  that still names it to `allRecords`, in both shapes a scope is stored in
+  (a Collection action's `recordAccess`, a composite operation's `scopes`),
+  because a scope nobody registers resolves to nothing. The 进行中的盘点
+  to-do never depended on it, being scoped by `executorIds` in the
+  workbench itself. A policy this application retires goes into that set.
   The test double mirrors the derivation (`support` in
   `tests/support/test-app.ts` is every action but `approve` and `delete`);
   it used to grant only `read`, which never matched the seeded role.
