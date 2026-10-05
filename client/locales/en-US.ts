@@ -929,7 +929,7 @@ const messages = {
     noHoldings: 'Nothing held',
     recovery: {
       title: 'To recover',
-      left: "This is what was in this person's name when they left:",
+      left: 'What was in their name when they left:',
       accountActiveTitle: 'Their sign-in still works',
       accountActive:
         '{{account}} can still sign in to ITAM and needs disabling by hand.',
@@ -946,13 +946,14 @@ const messages = {
       // only what is left — a reader taking "of them" at its word would be
       // looking for a number that is not there.
       leftMine_one:
-        "This is what was in this person's name when they left, {{count}} unsettled item in your name:",
+        'What was in their name when they left, {{count}} unsettled item in your name:',
       leftMine_other:
-        "This is what was in this person's name when they left, {{count}} unsettled items in your name:",
+        'What was in their name when they left, {{count}} unsettled items in your name:',
       you: 'you',
       owner: 'owner: {{name}}',
       responsible_one: 'This person answers for {{count}} record:',
       responsible_other: 'This person answers for {{count}} records:',
+      responsibleLeft: 'What they answered for when they left:',
       changeOwner: 'Hand over',
       changeOwnerHint:
         'Name who answers for {{record}} from now on. Only its current owner or whoever created it may do this.',

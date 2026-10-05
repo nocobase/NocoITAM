@@ -44,6 +44,14 @@ export interface DataTableProps<T extends { readonly id: string }> {
    * the owner on the row above are the device's.
    */
   readonly subRow?: (row: T) => ReactNode;
+  /**
+   * What tells two rows apart, where `id` alone does not — a table mixing
+   * kinds of record whose ids may meet. Defaults to `id`. Give a key here
+   * rather than rewriting `id`: the row is handed back to `onRowClick` and
+   * to a column's actions, and an action that sends `id` must send the
+   * record's own.
+   */
+  readonly rowKey?: (row: T) => string;
 }
 
 /** Server-paged table with sorting and the three data states. */
@@ -59,6 +67,7 @@ export function DataTable<T extends { readonly id: string }>({
   pagination,
   rowActions,
   subRow,
+  rowKey = (row) => row.id,
 }: DataTableProps<T>): ReactElement {
   const { t } = useTranslation();
   if (error) {
@@ -132,7 +141,7 @@ export function DataTable<T extends { readonly id: string }>({
             {rows?.map((row) => {
               const band = subRow?.(row);
               return (
-                <Fragment key={row.id}>
+                <Fragment key={rowKey(row)}>
                   <TableRow
                     className={cn(
                       onRowClick && 'cursor-pointer',
