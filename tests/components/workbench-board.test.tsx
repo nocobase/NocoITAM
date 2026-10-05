@@ -75,7 +75,6 @@ it('lays the to-dos out as columns, 需要关注 first, and opens a record in th
     'workbench.attention',
     'workbench.work.awaitingReceipt',
     'workbench.work.loansDueToday',
-    'workbench.work.done',
   ]);
   // An empty column stays, dimmed, and says so.
   const loans = column('workbench.work.loansDueToday');
@@ -115,7 +114,7 @@ it('shows both kinds of approval in one column, each tagged', () => {
   ).toEqual(['DP-000001', 'DP-000002', 'PO-000019']);
 });
 
-it('keeps what was finished lately in its own column, unless it waits again', () => {
+it('folds what was finished lately under its own column, unless it waits again', () => {
   state.items = [
     {
       key: 'activeRepairs',
@@ -137,7 +136,18 @@ it('keeps what was finished lately in its own column, unless it waits again', ()
     },
   ];
   show();
-  const done = column('workbench.work.done');
-  expect(within(done).getByText('RP-000001')).toBeTruthy();
-  expect(within(done).queryByText('RP-000002')).toBeNull();
+  const repairs = column('workbench.work.activeRepairs');
+  // Folded by default: the count, not the cards.
+  const toggle = within(repairs).getByRole('button', {
+    name: /workbench\.work\.done/,
+  });
+  expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  expect(within(repairs).queryByText('RP-000001')).toBeNull();
+  fireEvent.click(toggle);
+  // The same card as a waiting one, tagged as a repair; the one waiting
+  // again is not listed twice.
+  expect(within(repairs).getByText('RP-000001')).toBeTruthy();
+  expect(within(repairs).getAllByText('RP-000002')).toHaveLength(1);
+  fireEvent.click(within(repairs).getByText('RP-000001'));
+  expect(state.opened).toHaveBeenCalledWith('/repairs/r1');
 });

@@ -996,7 +996,11 @@ Rules learned while building it:
   `client/pages/itam/workbench.tsx`) and nothing else: 需要关注 as the first
   column, then one column per kind of to-do (`useWorkCards` in
   `client/lib/itam/my-work.ts` decides which records and merges the two
-  kinds of approval), then 已完成 (`useDoneWork`, the last 30 days). Each
+  kinds of approval). What was finished in the last 30 days
+  (`useDoneWork`) sits at the foot of the column it was waiting in, under a
+  已完成 N toggle folded by default (`DoneSection`), drawn as the same card
+  it was while it waited (`RecordCard`), rather than in a column of its own: the column is for what is waiting, and a finished card is
+  looked up where it was. Each
   column lists up to `MY_WORK_PREVIEW` (50) records as cards that open in
   the record drawer, scrolls on its own and keeps its place when empty —
   dimmed, saying 暂无待办 — because a column that vanishes at zero cannot
@@ -1005,6 +1009,15 @@ Rules learned while building it:
   stand is the 概览 report and what expires is 保修与到期 (twelve months),
   read with a period and filters. The workbench answers "what must I do";
   the reports answer "how are we doing".
+  A 离职交接 card is a person rather than a document (2026-10-05): name
+  with the job right after it, the leave date under them, then a bar of 已处理 N / M — `MyWorkRecord.progress`,
+  counted against the newest belongings snapshot exactly as the 归属 tab
+  counts it (`handoverProgress` in `workbench.ts`), restricted to the
+  kinds the reader may act on. The workbench's header also carries the
+  global search as a field beside the title (`SearchTrigger`, through
+  `PageHeader`'s `aside` slot), opening the dialog the sidebar's 搜索 and
+  ⌘K open; its end is a green sparkle 问 AI, shown when the assistant is
+  available, that opens the same dialog already in ask mode.
 - `MyWorkItem.records` comes back with the counts: a card is never
   collapsed, so lazy fetching would only make the workbench 1+N requests.
   Each kind's records are read under the decision that its **action** needs,

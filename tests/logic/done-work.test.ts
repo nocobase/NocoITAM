@@ -161,4 +161,35 @@ describe('finished to-dos', () => {
       ),
     ).toBe(false);
   });
+
+  it("carries a leaver's progress against what they held when they left", async () => {
+    const laptop = await device();
+    const monitor = await device();
+    const leaver = await person();
+    for (const held of [laptop, monitor])
+      await post(`devices/${held.id}/assign`, {
+        targetType: 'person',
+        targetId: leaver.id,
+      });
+    await app.request(`/api/itam/master/people/${leaver.id}`, {
+      ...json({ leaveDate: today() }),
+      method: 'PATCH',
+      ...manager,
+    });
+    const progressOf = async () =>
+      (
+        await data<
+          {
+            key: string;
+            records: { id: string; progress?: unknown }[];
+          }[]
+        >(await app.request('/api/itam/workbench/my-work', manager))
+      )
+        .find((item) => item.key === 'leaverRecovery')
+        ?.records.find((record) => record.id === leaver.id)?.progress;
+    // 0 / 2 is the size of the job, before any of it is done.
+    expect(await progressOf()).toEqual({ done: 0, total: 2 });
+    await post(`devices/${laptop.id}/return`, {});
+    expect(await progressOf()).toEqual({ done: 1, total: 2 });
+  });
 });

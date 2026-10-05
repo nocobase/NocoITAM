@@ -103,6 +103,11 @@ export interface MyWorkRecord {
    * whether this one is the reader's.
    */
   readonly mine?: boolean;
+  /**
+   * How far a leaver's handover has got, against what was in their name when
+   * they left — the count their 归属 tab reads.
+   */
+  readonly progress?: { readonly done: number; readonly total: number };
 }
 
 export interface MyWorkItem {

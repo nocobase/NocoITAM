@@ -6,6 +6,8 @@ export interface PageHeaderProps {
   readonly title: ReactNode;
   /** Server-side total shown beside the title. */
   readonly total?: number;
+  /** Beside the title, before the actions: a control about the page as a whole. */
+  readonly aside?: ReactNode;
   readonly description?: ReactNode;
   readonly actions?: ReactNode;
   readonly breadcrumb?: ReactNode;
@@ -15,6 +17,7 @@ export interface PageHeaderProps {
 export function PageHeader({
   title,
   total,
+  aside,
   description,
   actions,
   breadcrumb,
@@ -37,6 +40,7 @@ export function PageHeader({
               {total}
             </Badge>
           ) : null}
+          {aside ? <div className='ml-2 min-w-0'>{aside}</div> : null}
         </div>
         {description ? (
           <p className='text-sm text-muted-foreground'>{description}</p>

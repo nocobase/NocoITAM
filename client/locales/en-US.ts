@@ -1511,7 +1511,6 @@ const messages = {
     scope: { label: 'Whose to-dos to show', all: 'All', mine: 'Mine' },
     seeAll: 'See all',
     nothingPending: 'Nothing waiting',
-    nothingDone: 'Nothing finished in the last 30 days',
     attention: 'Needs attention',
     stats: {
       devices: 'Devices',
@@ -1545,6 +1544,7 @@ const messages = {
       mine_other: '{{count}} yours',
       /** Where the record itself is the one thing: a device on loan. */
       yours: 'Yours',
+      leftOn: 'Left {{date}}',
       // 已完成: a to-do finished lately, kept under the queue.
       done: 'Done',
     },
