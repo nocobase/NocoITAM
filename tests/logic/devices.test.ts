@@ -117,6 +117,24 @@ describe('devices', () => {
     ).toBe(200);
   });
 
+  it('finds a device by its model name, not only its own fields', async () => {
+    // Devices are named by asset tag (SG-LT-001) while people search for
+    // "MacBook", which is the model's name.
+    const device = await createDevice({ name: 'SG-LT-001' });
+    const list = async (q: string) =>
+      (
+        (await (
+          await app.request(
+            `/api/itam/devices?q=${encodeURIComponent(q)}`,
+            manager,
+          )
+        ).json()) as { data: { id: string }[] }
+      ).data.map((row) => row.id);
+    expect(await list('MacBook')).toEqual([device.id]);
+    expect(await list('SG-LT')).toEqual([device.id]);
+    expect(await list('ThinkPad')).toEqual([]);
+  });
+
   it('creates a device with generated number and category defaults', async () => {
     const device = await createDevice({
       purchaseDate: '2026-01-15',

@@ -17,6 +17,17 @@ export interface ItamCollectionDefinition {
   readonly attributes?: Readonly<Record<string, string>>;
   /** Fields a full-text search matches against. */
   readonly searchFields: readonly string[];
+  /**
+   * References a full-text search also matches through: a record whose
+   * `field` points at a row of `collection` whose `column` matches. A
+   * device is named SG-LT-001 while what people type is "MacBook", which is
+   * its model's name (added 2026-10-05).
+   */
+  readonly searchByReference?: readonly {
+    readonly field: string;
+    readonly collection: string;
+    readonly column: string;
+  }[];
   /** Field used as the default sort. */
   readonly defaultSort: string;
   /**
@@ -272,6 +283,9 @@ export const DEVICES_COLLECTION: ItamCollectionDefinition = {
   costFields: DEVICE_COST_FIELDS,
   attributes: { identifier: 'id', owner: 'ownerId', creator: 'createdById' },
   searchFields: ['deviceNo', 'serialNo', 'name'],
+  searchByReference: [
+    { field: 'modelId', collection: 'models', column: 'name' },
+  ],
   defaultSort: 'deviceNo',
 };
 
@@ -302,6 +316,9 @@ export const STOCK_ITEMS_COLLECTION: ItamCollectionDefinition = {
   costFields: STOCK_COST_FIELDS,
   attributes: { identifier: 'id', owner: 'ownerId', creator: 'createdById' },
   searchFields: ['name'],
+  searchByReference: [
+    { field: 'modelId', collection: 'models', column: 'name' },
+  ],
   defaultSort: 'name',
 };
 
@@ -362,6 +379,13 @@ export const ENTITLEMENTS_COLLECTION: ItamCollectionDefinition = {
   sensitiveFields: ENTITLEMENT_SENSITIVE_FIELDS,
   attributes: { identifier: 'id', owner: 'ownerId', creator: 'createdById' },
   searchFields: ['name'],
+  searchByReference: [
+    {
+      field: 'softwareProductId',
+      collection: 'softwareProducts',
+      column: 'name',
+    },
+  ],
   defaultSort: 'name',
 };
 

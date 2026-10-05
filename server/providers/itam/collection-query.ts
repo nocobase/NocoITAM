@@ -93,13 +93,26 @@ export function applyListFilters(
         : next.where(col(field), '=', value);
   }
   const q = options.q?.trim();
-  if (q && definition.searchFields.length > 0) {
+  const throughReferences = definition.searchByReference ?? [];
+  if (q && definition.searchFields.length + throughReferences.length > 0) {
     next = next.where((eb) =>
-      eb.or(
-        definition.searchFields.map((field) =>
+      eb.or([
+        ...definition.searchFields.map((field) =>
           eb(col(field), 'like', `%${q}%`),
         ),
-      ),
+        // A match on the referenced record's name, e.g. a device by its
+        // model: what the record points at, not a column of its own.
+        ...throughReferences.map((reference) =>
+          eb(
+            col(reference.field),
+            'in',
+            eb
+              .selectFrom(reference.collection)
+              .select('id')
+              .where(reference.column, 'like', `%${q}%`),
+          ),
+        ),
+      ]),
     );
   }
   return next;
