@@ -12,24 +12,6 @@ import { defineSeed, type SeedDefinition } from '@nocobase/db';
  * 2026-09-28.
  * (The ticket grants this seed once added went with the ticket module.)
  */
-const REPAIR_FIELDS = [
-  'id',
-  'deviceId',
-  'method',
-  'vendorId',
-  'faultDescription',
-  'sentAt',
-  'expectedReturnAt',
-  'actualReturnAt',
-  'result',
-  'cost',
-  'currency',
-  'notes',
-  'ownerId',
-  'createdById',
-  'createdAt',
-  'updatedAt',
-];
 const REPAIR_INPUT = [
   'deviceId',
   'method',
@@ -50,30 +32,6 @@ const AUDIT_INPUT = [
   'executorIds',
   'notes',
 ];
-const DISPOSAL_FIELDS = [
-  'id',
-  'disposalNo',
-  'method',
-  'reason',
-  'description',
-  'ownerId',
-  'requestedAt',
-  'status',
-  'deviceCount',
-  'bookValueTotal',
-  'disposedAt',
-  'proceeds',
-  'expenses',
-  'currency',
-  'recipientVendorId',
-  'recipientName',
-  'dataWipe',
-  'wipeMethod',
-  'executedById',
-  'createdById',
-  'createdAt',
-  'updatedAt',
-];
 const DISPOSAL_INPUT = [
   'method',
   'reason',
@@ -88,10 +46,6 @@ const DISPOSAL_INPUT = [
   'dataWipe',
   'wipeMethod',
 ];
-const DISPOSAL_COST = ['bookValueTotal', 'proceeds', 'expenses'];
-const without = (fields: readonly string[], excluded: readonly string[]) =>
-  fields.filter((field) => !excluded.includes(field));
-
 interface Grant {
   readonly resource: { readonly type: string; readonly id: string };
   readonly actions: readonly {
@@ -175,67 +129,29 @@ const recordAccessOf = (policy: unknown): string => {
  */
 const all = { fields: '*', recordAccess: ['allRecords'] } as const;
 const readAll = all;
-const readFields = (output: readonly string[]) =>
-  ({ fields: output, recordAccess: ['allRecords'] }) as const;
 const write = (input: readonly string[]) =>
   ({ fields: input, recordAccess: ['allRecords'] }) as const;
 /**
- * Scoped variants. `recordsICreated` is the authorization plugin's own
- * policy (it matches `createdById`); `itam.myAudits` is this application's,
- * for the tasks whose `executorIds` name the reader.
+ * IT Support is the Asset Manager minus the two things that are not about
+ * the job (2026-10-05): **deciding** a request and **destroying** a record.
+ *
+ * The roles used to differ in a dozen places — cost fields, product keys,
+ * master-data writes, people, the settings, the reports page, and a record
+ * scope on each delete — and keeping two lists in step meant every new
+ * field and every new page had to be added twice, which is how a role ends
+ * up with a grant nobody meant to give it. Derived, the difference is the
+ * code: support does the work, the manager approves it and clears it away.
  */
-const mine = (scope: string) =>
-  ({ fields: '*', recordAccess: [scope] }) as const;
+const minusApprovalAndDeletion = (grants: readonly Grant[]): Grant[] =>
+  grants.flatMap((grant) => {
+    const actions = grant.actions.filter(
+      (entry) => entry.action !== 'delete' && entry.action !== 'approve',
+    );
+    return actions.length > 0 ? [{ ...grant, actions }] : [];
+  });
 
 function itSupportGrants(): Grant[] {
-  const repairOut = without(REPAIR_FIELDS, ['cost']);
-  const disposalOut = without(DISPOSAL_FIELDS, DISPOSAL_COST);
-  return [
-    db('repairs', {
-      read: readFields(repairOut),
-      create: write(without(REPAIR_INPUT, ['cost', 'currency'])),
-      update: write(without(REPAIR_INPUT, ['cost', 'currency'])),
-      // A request belongs to the side that raised it: IT support closes and
-      // deletes its own repair orders, not a colleague's.
-      // Neither is limited to the records this reader created: the service
-      // checks the repair's 负责人, which is the point of having one — a
-      // repair can be handed over, its creator cannot.
-      delete: write(repairOut),
-      complete: write(repairOut),
-    }),
-    // An audit task is run by the people it names. IT support may raise one
-    // and edit it, but reads and runs only the tasks it executes, and
-    // deletes only the ones it raised.
-    db('auditTasks', {
-      read: mine('itam.myAudits'),
-      create: write(AUDIT_INPUT),
-      update: write(AUDIT_INPUT),
-      delete: mine('recordsICreated'),
-      start: mine('itam.myAudits'),
-      count: mine('itam.myAudits'),
-      finish: mine('itam.myAudits'),
-      resolve: mine('itam.myAudits'),
-      cancel: mine('itam.myAudits'),
-      export: mine('itam.myAudits'),
-    }),
-    db('auditItems', { read: readAll }),
-    db('disposals', {
-      read: readFields(disposalOut),
-      create: write(DISPOSAL_INPUT),
-      update: write(DISPOSAL_INPUT),
-      delete: mine('recordsICreated'),
-      submit: readFields(disposalOut),
-    }),
-    db('disposalDevices', {
-      read: readFields([
-        'id',
-        'disposalId',
-        'deviceId',
-        'statusBefore',
-        'createdAt',
-      ]),
-    }),
-  ];
+  return minusApprovalAndDeletion(managerGrants());
 }
 
 function managerGrants(): Grant[] {

@@ -375,19 +375,22 @@ const IT_PAGES: readonly string[] = [
   'departments',
   'people',
 ];
-const ADDED_PAGES: ReadonlyMap<string, readonly string[]> = new Map([
-  ['itam-it-support', IT_PAGES],
-  ['itam-asset-manager', [...IT_PAGES, 'reports', 'scheduler.schedules']],
-]);
-
 /**
- * Pages a seeded set should no longer carry. 报表 reads costs across the
- * whole register, so it went to the Asset Manager alone on 2026-09-27; the
- * grant had been stored for IT support all along and started mattering the
- * day page grants began being read.
+ * Both IT roles reach the same pages since IT support became the Asset
+ * Manager minus approving and deleting (2026-10-05). 报表 went to the
+ * Asset Manager alone on 2026-09-27, because it reads costs across the
+ * register and IT support could not read costs; once it could, keeping the
+ * page from it guarded nothing. A set seeded in between lacks 报表 and
+ * 定时任务, which this tops up.
  */
-const WITHDRAWN_PAGES: ReadonlyMap<string, ReadonlySet<string>> = new Map([
-  ['itam-it-support', new Set(['reports'])],
+const IT_ROLE_PAGES: readonly string[] = [
+  ...IT_PAGES,
+  'reports',
+  'scheduler.schedules',
+];
+const ADDED_PAGES: ReadonlyMap<string, readonly string[]> = new Map([
+  ['itam-it-support', IT_ROLE_PAGES],
+  ['itam-asset-manager', IT_ROLE_PAGES],
 ]);
 
 export async function reconcileGrants(
@@ -401,7 +404,6 @@ export async function reconcileGrants(
       continue;
     }
     let changed = false;
-    const withdrawnPages = WITHDRAWN_PAGES.get(set.key);
     const grants = set.grants.flatMap((entry) => {
       const normalized = normalizeGrantFields(entry);
       if (normalized.changed) changed = true;
@@ -415,9 +417,7 @@ export async function reconcileGrants(
       if (
         (grant.resource.type === 'database.collection' &&
           STALE_COLLECTIONS.has(grant.resource.id)) ||
-        (grant.resource.type === 'page' &&
-          (STALE_PAGES.has(grant.resource.id) ||
-            withdrawnPages?.has(grant.resource.id)))
+        (grant.resource.type === 'page' && STALE_PAGES.has(grant.resource.id))
       ) {
         changed = true;
         return [];

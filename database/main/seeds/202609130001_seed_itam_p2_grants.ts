@@ -56,7 +56,6 @@ const ENTITLEMENT_FIELDS = [
   'createdAt',
   'updatedAt',
 ];
-const ENTITLEMENT_COST_FIELDS = ['unitPrice', 'annualCost'];
 const SYSTEM_FIELDS = [
   'id',
   'createdById',
@@ -156,40 +155,30 @@ const recordAccessOf = (policy: unknown): string => {
  */
 const all = { fields: '*', recordAccess: ['allRecords'] } as const;
 const readAll = all;
-const readFields = (output: readonly string[]) =>
-  ({ fields: output, recordAccess: ['allRecords'] }) as const;
 const write = (input: readonly string[]) =>
   ({ fields: input, recordAccess: ['allRecords'] }) as const;
 
+/**
+ * IT Support is the Asset Manager minus the two things that are not about
+ * the job (2026-10-05): **deciding** a request and **destroying** a record.
+ *
+ * The roles used to differ in a dozen places — cost fields, product keys,
+ * master-data writes, people, the settings, the reports page, and a record
+ * scope on each delete — and keeping two lists in step meant every new
+ * field and every new page had to be added twice, which is how a role ends
+ * up with a grant nobody meant to give it. Derived, the difference is the
+ * code: support does the work, the manager approves it and clears it away.
+ */
+const minusApprovalAndDeletion = (grants: readonly Grant[]): Grant[] =>
+  grants.flatMap((grant) => {
+    const actions = grant.actions.filter(
+      (entry) => entry.action !== 'delete' && entry.action !== 'approve',
+    );
+    return actions.length > 0 ? [{ ...grant, actions }] : [];
+  });
+
 function itSupportGrants(): Grant[] {
-  const stockOut = without(STOCK_FIELDS, ['unitPrice']);
-  const entitlementOut = without(ENTITLEMENT_FIELDS, [
-    'productKey',
-    ...ENTITLEMENT_COST_FIELDS,
-  ]);
-  return [
-    db('stockItems', {
-      read: readFields(stockOut),
-      create: write(without(STOCK_FIELDS, [...SYSTEM_FIELDS, 'unitPrice'])),
-      update: write(
-        without(STOCK_FIELDS, [
-          ...SYSTEM_FIELDS,
-          'unitPrice',
-          'kind',
-          'totalQuantity',
-        ]),
-      ),
-      issue: readFields(stockOut),
-      stockIn: readFields(stockOut),
-      export: readFields(stockOut),
-    }),
-    db('entitlements', {
-      read: readFields(entitlementOut),
-      assignSeat: readFields(entitlementOut),
-      export: readFields(entitlementOut),
-    }),
-    ...READ_ONLY.map((collection) => db(collection, { read: readAll })),
-  ];
+  return minusApprovalAndDeletion(managerGrants());
 }
 
 function managerGrants(): Grant[] {

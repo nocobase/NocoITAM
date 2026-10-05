@@ -88,7 +88,7 @@ Rules learned while building it:
   new leavers), `itam.daily-maintenance` (02:00) and
   `itam.monthly-depreciation` (1st, 03:00) in the ITAM time zone,
   so each execution — status, reason, counts — shows at 设置 → 自动化 → 定时任务
-  (page grant `scheduler.schedules`, the Asset Manager's) and can be
+  (page grant `scheduler.schedules`, both IT roles') and can be
   disabled there. The target runs the job inside `start()` and returns
   `completed` / `failed`; there is no application run log (`jobRuns` dropped
   by `202609280001_drop_job_runs`) and no manual run, because the plugin
@@ -561,8 +561,8 @@ Rules learned while building it:
   service itself, so the card can only be that person's — 待我审批 by the
   approval's named approver (`NOT_APPROVER`), 进行中的维修 by
   `repairs.ownerId` (`requireOwner`, which binds root too), 进行中的盘点 by
-  `executorIds` / creator (IT support cannot even **read** another task —
-  `itam.myAudits` is a Record Access policy), 待验收到货 by
+  `executorIds` / creator (a stocktake is run by the people it names),
+  待验收到货 by
   `raisedTheOrder` and 待执行的报废 by the same rule on its disposal.
   Showing those to anybody else would be a row with a button that refuses.
 - The other two — 离职交接 and 设备借出逾期未还 — are **everybody's**
@@ -598,9 +598,7 @@ Rules learned while building it:
   a purchase order's reassignment has to meet its own `requireOwner`, so
   nothing may route around it — which is why the list travels to the client
   rather than the swap happening in a route of its own. Somebody leaving
-  mid-count otherwise stalled the task invisibly: IT support reads only the
-  tasks naming them, so nobody but the asset manager could see that it had
-  stalled. That last
+  mid-count otherwise stalled the task with nobody named to finish it. That last
   one closed the hole the owner scope left: a leaver who held nothing and
   owned four records was in nobody's queue, while changing the name on a
   purchase order is its creator's to do and holding a device never made
@@ -854,9 +852,9 @@ Rules learned while building it:
 - `MyWorkItem.records` comes back with the counts: a card is never
   collapsed, so lazy fetching would only make the workbench 1+N requests.
   Each kind's records are read under the decision that its **action** needs,
-  which is not always `read`: 进行中的维修 is scoped by `complete`, because
-  IT support reads every repair and finishes only the ones it raised, and a
-  to-do nobody can act on is not a to-do.
+  which is not always `read`: 进行中的维修 is scoped by `complete` and by
+  `repairs.ownerId`, because every IT reader reads every repair and only its
+  负责人 finishes one, and a to-do nobody can act on is not a to-do.
 - A to-do card and a 需要关注 reminder must not describe the same records:
   the same devices on one screen, once as work and once as risk, read as two
   problems. 设备借出逾期未还 was both, so the `loanOverdue` **reminder** went
@@ -956,34 +954,39 @@ Rules learned while building it:
   beside `sourceType` / `sourceId` (`HistorySource`), so a device's status
   change names the audit that corrected it and links there
   (`statusChangeByAudit`, the way a disposal's does).
-- What IT support may reach is scoped to its own work (2026-09-27, the
-  `## 用户角色与权限` table in
-  `nocosolution/NocoITAM/SPEC.md`): it edits any purchase order,
-  repair or disposal but deletes only the ones it raised, and completes only
-  the repairs it raised — `recordsICreated`, the authorization plugin's own
-  Record Access policy, which matches `createdById` and needs no code here.
-  An audit task is different: it is run by the people it names, so
-  `itam.myAudits` (`server/providers/itam/record-access.ts`) resolves the
-  tasks whose `executorIds` hold the reader, and IT support reads, starts,
-  counts, finishes, resolves, cancels and exports only those while raising
-  and editing any. That rule resolves ids with a query and expands them to
-  an `or` of `$eq`, because `executorIds` is JSON and a scope may use
-  neither a JSON operator nor `$in`; it returns a condition matching no row
-  rather than `false`, which would refuse the action and show the reader
-  "Not allowed" instead of an empty list. 报表 is the Asset Manager's alone,
-  since it reads costs across the register. Deleting a device stays with
-  root. The route tests' authorization double grants by role and never
-  evaluates a Record Access policy, so a rule like this is unit tested
-  (`tests/logic/record-access.test.ts`) rather than covered by a route test.
+- IT support is the Asset Manager **minus approving and deleting**
+  (2026-10-05): every grant seed derives `itSupportGrants()` from the
+  manager's through `minusApprovalAndDeletion`, so the difference between
+  the roles is the code rather than two lists kept in step. Support does the
+  work — reads the costs, sees the product keys, keeps the master data and
+  the people (marking a leaver included), reaches 报表 and 定时任务 and the
+  application settings — and the manager decides the requests and clears
+  records away. Until then the roles differed in a dozen places (cost
+  fields, keys, master-data writes, people, settings, reports, and a
+  `recordsICreated` scope on each delete), and every new field or page had
+  to be added twice; that is how a role ends up with a grant nobody meant to
+  give it. Deleting a device stays with root. The service rules that bind
+  **everyone** are not role differences and are unaffected: only a repair's
+  or a request's 负责人 completes or reassigns it (`requireOwner`), and only
+  the named approver decides. `itam.myAudits`
+  (`server/providers/itam/record-access.ts`) is still registered but no
+  seed grants it any more — a stored set may still name it, so removing it
+  waits for a reconciliation that strips it; the 进行中的盘点 to-do never
+  depended on it, being scoped by `executorIds` in the workbench itself.
+  The test double mirrors the derivation (`support` in
+  `tests/support/test-app.ts` is every action but `approve` and `delete`);
+  it used to grant only `read`, which never matched the seeded role.
 - This application issues no grants to the platform's administrator set.
   `root` is unrestricted — the authorization core permits every request from
   whoever holds it without resolving a grant — so a second "may do
   everything" would only be another copy to keep in step. The seeds create
   `itam-it-support` / `itam-asset-manager` and nothing else (the
-  `itam-employee` set went on 2026-10-05), and this application's own settings belong to the Asset Manager
-  (the settings item `settings:itam.settings`, read + update — a resource
-  type of its own, `itam.settings` / `general`, before template beta.49),
-  since nobody else but root could change them. Routes refuse it with
+  `itam-employee` set went on 2026-10-05), and this application's own
+  settings belong to both IT roles (the settings item
+  `settings:itam.settings`, read + update — a resource type of its own,
+  `itam.settings` / `general`, before template beta.49); they were the Asset
+  Manager's alone until IT support became the manager minus approving and
+  deleting. Routes refuse it with
   `requireGrant` (`server/routes/itam/http.ts`), which calls the context's
   `require`: the plugin's `guard` middleware is gone. Deleting a device likewise stays with root.
 - Notifications take one message per channel: ITAM sends

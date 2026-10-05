@@ -2326,6 +2326,29 @@ IT 支持的 `complete` 授权又是 `recordsICreated`，结果是**维修单没
   人员不再建账号。
 
 
+### 2026-10-05 IT 支持 = 资产经理 − 审批 − 删除
+
+两个 IT 角色原来在十几处不同：成本字段、产品密钥、主数据增改、人员增改和标记
+离职、应用设置、报表和定时任务页面，以及每个删除授权上的 `recordsICreated`
+记录范围。每加一个字段或页面都要在两份清单里各写一次，角色就是这样拿到没人
+打算给它的授权的。
+
+- **差别就是代码。** 每个授权种子的 `itSupportGrants()` 都由经理的授权经
+  `minusApprovalAndDeletion` 推导：去掉 `approve` 和 `delete`，其余一样。支持
+  干活，经理审批和清除记录。
+- **支持现在能看到钱和密钥。** 采购单上的单价支持本来就看得见，只有设备自己的
+  `purchasePrice` 看不见，同一笔钱在两处说法不一；`viewKey` 一并放开。报表页
+  在 2026-09-27 收给经理，理由是它跨台账读成本，支持能读成本之后这个理由不成立，
+  所以放回来。`reconcile-grants.ts` 的 `WITHDRAWN_PAGES` 随之删除，
+  `ADDED_PAGES` 给两个角色同一份页面清单。
+- **不是角色差别的规则不变。** 维修单、采购单、报废单只有负责人能完成或改负责人
+  （`requireOwner`），审批只有被点名的人能决定。删除设备仍只有 root。
+- **`itam.myAudits` 暂不删。** 种子不再引用它，但已存的权限集可能还写着它；
+  等一次能把它剥掉的 reconcile 再删。进行中的盘点这个待办按 `executorIds` 在
+  工作台里自己收窄，从来不依赖它。
+- **已有数据库**跑 `pnpm --silent data:reset --demo` 让种子重写两个权限集，再从
+  运行中的应用重新生成演示账号（重置脚本只删不建）。
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became
