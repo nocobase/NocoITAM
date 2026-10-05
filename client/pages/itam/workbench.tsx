@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowRight, Check } from 'lucide-react';
-import type { ReactElement, ReactNode } from 'react';
+import { ArrowRight, Check, ChevronRight } from 'lucide-react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { Link } from 'react-router';
 
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
@@ -9,6 +9,7 @@ import { Page, PageHeader } from '@/components/itam/page-header';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useItamSettings } from '@/lib/itam/api';
+import type { DocumentKind } from '@/lib/itam/document-kinds';
 import { formatDate } from '@/lib/itam/format';
 import {
   useWorkCards,
@@ -23,6 +24,7 @@ import {
   useDoneWork,
   useMyWork,
   useReminders,
+  type DoneWorkRecord,
 } from '@/lib/itam/workbench';
 
 /**
@@ -37,10 +39,30 @@ import {
  * column that disappears at zero cannot be told from one the reader does
  * not have, and a board whose columns move is one the eye has to search.
  */
+/** The two approval queues are one column, so their finished ones are too. */
+function columnOf(key: string): string {
+  return key === 'pendingPurchaseApprovals' ||
+    key === 'pendingDisposalApprovals'
+    ? 'pendingApprovals'
+    : key;
+}
+
 export default function WorkbenchPage(): ReactElement {
   const { t } = useTranslation();
   const cards = useWorkCards();
   const loading = useMyWork().isLoading;
+  // What was finished lately sits at the foot of the column it was waiting
+  // in. One that is waiting again — an order rejected and resubmitted —
+  // reads as waiting, not as done.
+  const waiting = new Set(
+    cards.flatMap((card) => card.records.map((record) => record.url)),
+  );
+  const doneByColumn = new Map<string, DoneWorkRecord[]>();
+  for (const record of useDoneWork().data ?? []) {
+    if (waiting.has(record.url)) continue;
+    const column = columnOf(record.key);
+    doneByColumn.set(column, [...(doneByColumn.get(column) ?? []), record]);
+  }
   return (
     <Page fill>
       <PageHeader
@@ -58,9 +80,14 @@ export default function WorkbenchPage(): ReactElement {
             <Skeleton className='h-24 w-full rounded-lg' />
           </Column>
         ) : (
-          cards.map((card) => <WorkColumn key={card.key} card={card} />)
+          cards.map((card) => (
+            <WorkColumn
+              key={card.key}
+              card={card}
+              done={doneByColumn.get(card.key) ?? []}
+            />
+          ))
         )}
-        <DoneColumn waiting={cards.flatMap((card) => card.records)} />
       </div>
     </Page>
   );
@@ -106,7 +133,13 @@ function Column({
   );
 }
 
-function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
+function WorkColumn({
+  card,
+  done,
+}: {
+  readonly card: WorkCard;
+  readonly done: readonly DoneWorkRecord[];
+}): ReactElement {
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
   return (
@@ -115,20 +148,23 @@ function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
       count={card.count}
       dimmed={card.count === 0}
       footer={
-        card.links.length > 0 ? (
-          <div className='flex flex-col gap-1 px-1.5'>
-            {card.links.map((link) => (
-              <Link
-                key={link.url}
-                to={link.url}
-                className='flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground'
-              >
-                {link.label}
-                <ArrowRight aria-hidden='true' className='size-3' />
-              </Link>
-            ))}
-          </div>
-        ) : null
+        <>
+          {card.links.length > 0 ? (
+            <div className='flex flex-col gap-1 px-1.5'>
+              {card.links.map((link) => (
+                <Link
+                  key={link.url}
+                  to={link.url}
+                  className='flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground'
+                >
+                  {link.label}
+                  <ArrowRight aria-hidden='true' className='size-3' />
+                </Link>
+              ))}
+            </div>
+          ) : null}
+          <DoneSection records={done} />
+        </>
       }
     >
       {card.count === 0 ? (
@@ -228,24 +264,22 @@ function LeaverCard({ record }: { readonly record: CardRecord }): ReactElement {
           {Array.from(record.title)[0] ?? ''}
         </span>
         <div className='min-w-0 flex-1'>
-          <span className='block truncate text-sm font-semibold'>
-            {record.title}
-          </span>
-          {/* The job gives way before the date: when they left is what
-              says how long this has been waiting. */}
-          <p className='flex items-center gap-1.5 text-xs text-muted-foreground'>
+          {/* The job right after the name, and giving way first. */}
+          <div className='flex min-w-0 items-baseline gap-1.5'>
+            <span className='max-w-full shrink-0 truncate text-sm font-semibold'>
+              {record.title}
+            </span>
             {record.subtitle ? (
-              <span className='min-w-0 truncate'>{record.subtitle}</span>
-            ) : null}
-            {record.subtitle && record.date ? (
-              <span aria-hidden='true'>·</span>
-            ) : null}
-            {record.date ? (
-              <span className='shrink-0 tabular-nums'>
-                {t('workbench.work.leftOn', { date: formatDate(record.date) })}
+              <span className='min-w-0 truncate text-xs text-muted-foreground'>
+                {record.subtitle}
               </span>
             ) : null}
-          </p>
+          </div>
+          {record.date ? (
+            <p className='text-xs text-muted-foreground tabular-nums'>
+              {t('workbench.work.leftOn', { date: formatDate(record.date) })}
+            </p>
+          ) : null}
         </div>
       </div>
       {progress || record.count !== undefined ? (
@@ -390,65 +424,81 @@ function AttentionColumn(): ReactElement {
 }
 
 /**
- * 已完成, the board's last column: what was finished in the last 30 days,
- * newest first (`doneWork` on the server), so a to-do settled on the board
- * moves here instead of vanishing. One that is waiting again — an order
- * rejected and resubmitted — reads as waiting, not as done.
+ * A finished record whose title is only a number says what kind it is, as
+ * its waiting card did; a device, a person or a stocktake names itself.
  */
-function DoneColumn({
-  waiting,
+const DONE_TAG: Readonly<Record<string, DocumentKind>> = {
+  pendingPurchaseApprovals: 'purchaseOrders',
+  pendingDisposalApprovals: 'disposals',
+  awaitingReceipt: 'purchaseOrders',
+  pendingDisposalExecution: 'disposals',
+  activeRepairs: 'repairs',
+};
+
+/**
+ * 已完成 at the foot of a column: what was finished there in the last 30
+ * days, newest first (`doneWork` on the server), so a to-do settled on the
+ * board stays in sight where it was instead of vanishing. Folded by
+ * default — the column is for what is waiting, and the finished ones are
+ * there to be looked up, not read through.
+ */
+function DoneSection({
+  records,
 }: {
-  readonly waiting: readonly { readonly url: string }[];
-}): ReactElement {
+  readonly records: readonly DoneWorkRecord[];
+}): ReactElement | null {
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
-  const pending = new Set(waiting.map((record) => record.url));
-  const done = (useDoneWork().data ?? []).filter(
-    (record) => !pending.has(record.url),
-  );
-  // The two approval queues are one column, so they are one kind here too.
-  const kindOf = (key: string) =>
-    key === 'pendingPurchaseApprovals' || key === 'pendingDisposalApprovals'
-      ? 'pendingApprovals'
-      : key;
+  const [open, setOpen] = useState(false);
+  if (records.length === 0) return null;
   return (
-    <Column
-      title={t('workbench.work.done')}
-      count={done.length}
-      dimmed={done.length === 0}
-    >
-      {done.length === 0 ? (
-        <p className='mx-1 rounded-xl border border-dashed border-border py-5 text-center text-xs text-muted-foreground'>
-          {t('workbench.nothingDone')}
-        </p>
-      ) : (
+    <div className='flex flex-col gap-2'>
+      <button
+        type='button'
+        aria-expanded={open}
+        onClick={() => {
+          setOpen(!open);
+        }}
+        className='flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring'
+      >
+        <ChevronRight
+          aria-hidden='true'
+          className={cn('size-3.5 transition-transform', open && 'rotate-90')}
+        />
+        {t('workbench.work.done')}
+        <span className='tabular-nums'>{records.length}</span>
+      </button>
+      {open ? (
         <ul className='flex flex-col gap-2'>
-          {done.map((record) => (
+          {records.map((record) => (
             <li key={`${record.key}:${record.url}`}>
               <button
                 type='button'
                 onClick={() => {
                   openRecord(record.url);
                 }}
-                className='w-full rounded-xl border border-border/50 bg-card/60 px-3.5 py-3 text-left text-muted-foreground transition hover:border-border hover:bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                className='w-full rounded-xl border border-border/50 bg-card/60 px-3.5 py-2.5 text-left text-muted-foreground transition hover:border-border hover:bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
               >
-                <span className='block truncate text-sm font-medium text-foreground/80'>
-                  {record.title}
-                </span>
-                <p className='mt-2 flex items-center gap-1.5 text-xs tabular-nums'>
+                <div className='flex items-center gap-2'>
+                  {DONE_TAG[record.key] ? (
+                    <DocumentTypeBadge
+                      kind={DONE_TAG[record.key]!}
+                      className='shrink-0'
+                    />
+                  ) : null}
+                  <span className='min-w-0 truncate text-sm font-medium text-foreground/80'>
+                    {record.title}
+                  </span>
+                </div>
+                <p className='mt-1 flex items-center gap-1.5 text-xs tabular-nums'>
                   <Check aria-hidden='true' className='size-3.5 shrink-0' />
-                  <span className='truncate'>
-                    {t(`workbench.work.${kindOf(record.key)}`)}
-                  </span>
-                  <span className='ml-auto shrink-0'>
-                    {formatDate(record.doneAt)}
-                  </span>
+                  {formatDate(record.doneAt)}
                 </p>
               </button>
             </li>
           ))}
         </ul>
-      )}
-    </Column>
+      ) : null}
+    </div>
   );
 }

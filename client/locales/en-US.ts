@@ -1453,7 +1453,6 @@ const messages = {
     scope: { label: 'Whose to-dos to show', all: 'All', mine: 'Mine' },
     seeAll: 'See all',
     nothingPending: 'Nothing waiting',
-    nothingDone: 'Nothing finished in the last 30 days',
     attention: 'Needs attention',
     stats: {
       devices: 'Devices',

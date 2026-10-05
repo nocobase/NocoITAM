@@ -1402,7 +1402,6 @@ const zhCN: AppResource = {
     scope: { label: '显示谁的待办', all: '全部', mine: '我负责的' },
     seeAll: '查看全部',
     nothingPending: '暂无待办',
-    nothingDone: '最近 30 天没有完成的待办',
     attention: '需要关注',
     stats: {
       devices: '在管设备',
