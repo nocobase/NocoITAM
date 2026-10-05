@@ -30,6 +30,7 @@ import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
 import type { StockService } from './stock.js';
 import { today } from './dates.js';
+import { OPEN_DISPOSAL_STATUSES } from './recovery.js';
 
 /**
  * Disposal records: draft → pendingApproval → approved → executed, with
@@ -182,6 +183,20 @@ const OPEN_STATUSES = ['draft', 'pendingApproval', 'approved'] as const;
  * a purchase order's delivery dates.
  */
 const EDITABLE_STATUSES = new Set(['draft', 'rejected', 'approved']);
+/**
+ * Whether a write only hands the record over — changes who answers for it
+ * and nothing else. Anyone who may update the record may do that while it is
+ * open (2026-10-05), whoever they are and whatever else the status would
+ * refuse: handing a request over is not editing what it asks for, and a
+ * request whose 负责人 had left was stuck, since only its owner or its
+ * creator could touch it and in the ordinary case both were the person who
+ * had gone.
+ */
+const onlyHandsOver = (input: object): boolean => {
+  const keys = Object.keys(input);
+  return keys.length === 1 && keys[0] === 'ownerId';
+};
+
 const SETTLED_EDITABLE = new Set([
   'recipientVendorId',
   'recipientName',
@@ -536,13 +551,19 @@ export function createDisposalService(dependencies: {
         );
       assertInputFields(input, conditions.fieldAccess?.input ?? '*');
       return records.mutate(id, conditions, async (connection, disposal) => {
-        if (!EDITABLE_STATUSES.has(String(disposal.status)))
+        if (onlyHandsOver(input)) {
+          if (!OPEN_DISPOSAL_STATUSES.includes(String(disposal.status)))
+            throw new BusinessRuleError(
+              'A closed disposal keeps the 负责人 it had',
+              'INVALID_STATUS',
+            );
+        } else if (!EDITABLE_STATUSES.has(String(disposal.status)))
           throw new BusinessRuleError(
             'Disposal cannot be edited in this status',
             'INVALID_STATUS',
           );
         const settled =
-          String(disposal.status) === 'approved'
+          String(disposal.status) === 'approved' && !onlyHandsOver(input)
             ? Object.keys(input).filter((field) => !SETTLED_EDITABLE.has(field))
             : [];
         if (settled.length > 0)

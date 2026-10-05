@@ -420,12 +420,11 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.owner',
     type: 'reference',
     reference: { collection: 'users' },
-    // A disposal is always somebody in IT's to follow through; the create dialog starts it
-    // at whoever is filing it and will not let it be emptied. It stays
-    // changeable while the request is open, so it can be handed over; the
-    // decision settles it along with everything else it was given for.
+    // A disposal is always somebody in IT's to follow through; the create
+    // dialog starts it at whoever is filing it and will not let it be
+    // emptied. Anybody may hand it over while it is open, waiting for a
+    // decision included (`handover` on the domain).
     required: true,
-    readonlyWhen: approvedDisposal,
     group: 'groups.request',
   },
   {

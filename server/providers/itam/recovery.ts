@@ -18,15 +18,37 @@ import { DEVICE_STATUSES } from './device-status.js';
  * nightly job can say without one.
  */
 /**
+ * The statuses in which a request is still open — not completed, cancelled
+ * or carried out. A rejected one is asked again rather than filed away, so
+ * it is open too. Two things read these: what a leaver still answers for
+ * (below), and handing a request over, which anyone who may update it may
+ * do while it is open (2026-10-05).
+ */
+export const OPEN_PURCHASE_ORDER_STATUSES: readonly string[] = [
+  'draft',
+  'pendingApproval',
+  'approved',
+  'rejected',
+  'ordered',
+  'partiallyReceived',
+];
+export const OPEN_DISPOSAL_STATUSES: readonly string[] = [
+  'draft',
+  'pendingApproval',
+  'approved',
+  'rejected',
+];
+
+/**
  * The records a person answers for, and the column that names them: the
  * 负责人 (`ownerId`) everywhere but on a stocktake, which names its
  * executors.
  *
  * Offboarding's other half: not what somebody holds but what still has their
- * name on it, which no button settles — handing one over is a decision, and
- * for a purchase order or a disposal only its 负责人 or its creator may
- * make it. Keyed by **sign-in**, not by person record, so a person with no
- * linked account answers for nothing.
+ * name on it, which no button settles — handing one over is a decision, made
+ * by anyone who may update that record while it is open. Keyed by
+ * **sign-in**, not by person record, so a person with no linked account
+ * answers for nothing.
  *
  * Here rather than in master data because the 归属 tab reads it to list them
  * and the workbench reads it to know whether a leaver is settled, and neither
@@ -93,29 +115,13 @@ export const OWNED_BY_USER: readonly {
     collection: 'purchaseOrders',
     field: 'ownerId',
     label: 'orderNo',
-    // A rejected order is asked again rather than filed away, so it is
-    // still open; completed and cancelled are not.
-    open: {
-      column: 'status',
-      values: [
-        'draft',
-        'pendingApproval',
-        'approved',
-        'rejected',
-        'ordered',
-        'partiallyReceived',
-      ],
-    },
+    open: { column: 'status', values: OPEN_PURCHASE_ORDER_STATUSES },
   },
   {
     collection: 'disposals',
     field: 'ownerId',
     label: 'disposalNo',
-    // Same reading: rejected is resubmitted, executed is done.
-    open: {
-      column: 'status',
-      values: ['draft', 'pendingApproval', 'approved', 'rejected'],
-    },
+    open: { column: 'status', values: OPEN_DISPOSAL_STATUSES },
   },
   {
     // A stocktake is run by the people it names, so somebody leaving
