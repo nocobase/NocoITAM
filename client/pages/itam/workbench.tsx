@@ -515,16 +515,16 @@ function AttentionColumn(): ReactElement {
                     : 'border-border/50 hover:border-border',
                 )}
               >
-                <span className='flex items-baseline gap-2'>
+                <span className='flex items-baseline gap-1.5'>
                   <span
                     className={cn(
-                      'text-base leading-none font-semibold tabular-nums',
+                      'text-sm leading-none font-semibold tabular-nums',
                       SEVERITY_TEXT[entry.severity],
                     )}
                   >
                     {entry.count}
                   </span>
-                  <span className='min-w-0 text-sm leading-tight'>
+                  <span className='min-w-0 text-xs leading-tight font-medium'>
                     {label(entry.kind)}
                   </span>
                 </span>
