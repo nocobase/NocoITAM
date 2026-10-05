@@ -41,7 +41,7 @@ import { useReferenceNames } from '@/lib/itam/references';
 function useReturnLabel(device: ItamRecord | undefined): {
   /** The "return" option, naming where the device goes back to. */
   readonly label: string;
-  /** The relation disposal ends, if any: 分配给 / 借出给 / 预留给 … */
+  /** The relation disposal ends, if any: 分配给 / 借给 / 预留给 … */
   readonly relation?: string;
 } {
   const { t } = useTranslation();
