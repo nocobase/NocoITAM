@@ -34,6 +34,8 @@ import {
 } from './http.js';
 
 import { CREATE_DEFAULTS, masterDataSchema } from './master-data-schemas.js';
+import { userAdministrationServiceToken } from '@nocobase/app-plugin-authentication';
+import { leaverAccountsToken } from '../../providers/itam/leaver-accounts.js';
 
 /**
  * Generic CRUD for the master-data collections at
@@ -284,6 +286,46 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
         );
         const done = settled.length + settledOwned.length;
         const total = done + items.length + owned.length;
+        // The sign-in they had, and whether it still signs in. Leaving does
+        // not end it — the register marks a person, not an account — so the
+        // page says so, and says once it is done. Whether this reader may
+        // disable it decides whether the page offers the way there or names
+        // who can: the users page is root's in this application.
+        let account: {
+          readonly name: string;
+          readonly username: string | null;
+          readonly disabled: boolean;
+          /** Disabled by leaving, rather than by somebody's hand. */
+          readonly disabledOnLeaving: boolean;
+          readonly canDisable: boolean;
+        } | null = null;
+        const userId =
+          typeof person.userId === 'string' && person.userId
+            ? person.userId
+            : null;
+        if (userId && app.container.has(userAdministrationServiceToken)) {
+          const user = await app.container
+            .resolve(userAdministrationServiceToken)
+            .get(userId);
+          if (user)
+            account = {
+              name: user.name,
+              username: user.username ?? null,
+              disabled: user.disabledAt !== null,
+              disabledOnLeaving: app.container.has(leaverAccountsToken)
+                ? await app.container
+                    .resolve(leaverAccountsToken)
+                    .disabledOnLeaving(id)
+                : false,
+              canDisable:
+                (
+                  await context.get('authz').authorize({
+                    resource: { type: 'user', id: userId },
+                    action: 'disable',
+                  })
+                ).effect !== 'deny',
+            };
+        }
         return context.json({
           data: {
             // The page shows the leaving sentence only for somebody who has
@@ -299,6 +341,7 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
             // anything is settled: 0 / 5 is the size of the job, which is
             // worth knowing before starting it.
             progress: snapshot ? { done, total } : null,
+            account,
           },
         });
       } catch (error) {

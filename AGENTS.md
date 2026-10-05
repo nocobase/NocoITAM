@@ -649,6 +649,32 @@ Rules learned while building it:
   count beside its name. 我的待办's 离职交接 pane renders this component
   alone, not the whole person page: the queue asks what to do, and the rest
   of a person record is not it.
+- A leaver's **sign-in goes with them** (2026-10-05,
+  `server/providers/itam/leaver-accounts.ts`): marking somebody as left
+  marks a person, not an account, so a sign-in the person record links went
+  on working until somebody remembered it. It is disabled, and its sessions
+  revoked, at the moment the person becomes 已离职 — 标记离职, a leave date
+  entered in the past, or the nightly job reaching it — and re-enabled when
+  the leave is undone, but only if leaving is what disabled it (the
+  `accountDisabledOnLeaving` / `accountRestoredOnReturning` events on the
+  person are how it knows; an account an administrator disabled for a
+  reason of their own stays disabled). It goes through the users plugin's
+  **management** service, never the account service beneath it, because
+  only the management layer asks authorization whether the account may go —
+  `assertSubjectRemovable` refuses the last active holder of the root set
+  (`requireActiveAssignment`), so marking an administrator as left can never
+  lock the platform out. It never disables the reader's own sign-in, which
+  they could not then undo. And it runs after the transaction that changed
+  the person committed — `createMasterDataService` takes it as `leavers` and
+  calls it after each of the three — because the users plugin opens a
+  transaction of its own and SQLite has one connection. The recovery
+  endpoint returns `account` (name, username, `disabled`,
+  `disabledOnLeaving`, and `canDisable` from an `authorize` on
+  `{ type: 'user', id }` / `disable`); the 归属 tab opens on it — a settled
+  line when leaving disabled it, an `Alert` linking to 设置 → 用户 (or
+  naming the platform administrator, for a reader who may not) when it did
+  not: the last administrator, the reader's own account, or somebody who
+  left before this existed. The offboarding skill says the same.
 - Every row is read from the **live record**, and the snapshot is only the
   denominator (`belongingsSnapshot`, a history event written on every
   transition into `left` — the button, an update whose date derives it, and

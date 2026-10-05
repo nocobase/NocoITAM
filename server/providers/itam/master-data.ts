@@ -34,6 +34,7 @@ import {
   type DeleteReference,
 } from './errors.js';
 import { addMonths, today } from './dates.js';
+import type { LeaverAccounts } from './leaver-accounts.js';
 import {
   OWNED_BY_USER,
   recoveryPlan,
@@ -423,6 +424,12 @@ const JSON_FIELDS: Readonly<Record<string, readonly string[]>> = {
 export function createMasterDataService(
   database: DatabaseManager,
   history: HistoryService,
+  /**
+   * What becomes of a leaver's sign-in, told after the change that made
+   * them leave (or come back) has committed — never inside it, since the
+   * users plugin opens a transaction of its own (`leaver-accounts.ts`).
+   */
+  leavers?: LeaverAccounts,
 ): MasterDataService {
   const definitions = new Map(
     MASTER_DATA_COLLECTIONS.map((definition) => [definition.name, definition]),
@@ -874,6 +881,18 @@ export function createMasterDataService(
         )
           await this.snapshotBelongings(id, connection);
       });
+      if (collection === 'people' && 'employmentStatus' in values) {
+        if (
+          values.employmentStatus === 'left' &&
+          previous.employmentStatus !== 'left'
+        )
+          await leavers?.left(id, actorId);
+        else if (
+          values.employmentStatus !== 'left' &&
+          previous.employmentStatus === 'left'
+        )
+          await leavers?.returned(id, actorId);
+      }
       const updated = await findRaw(collection, id);
       return pickFields(
         updated ?? {},
@@ -1257,6 +1276,7 @@ export function createMasterDataService(
         );
         await this.snapshotBelongings(id, connection);
       });
+      await leavers?.left(id, actorId);
       return this.personHoldings(id);
     },
 
@@ -1299,6 +1319,7 @@ export function createMasterDataService(
           );
           await this.snapshotBelongings(id, connection);
         });
+        await leavers?.left(id);
       }
       // The other direction, which was missing: a leave date cleared or moved
       // out again leaves somebody marked as left for ever, and extending a
@@ -1329,6 +1350,7 @@ export function createMasterDataService(
             connection,
           );
         });
+        await leavers?.returned(id);
       }
       return { left: due.length, reinstated: reinstated.length };
     },

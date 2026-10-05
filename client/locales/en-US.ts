@@ -230,6 +230,8 @@ const messages = {
       signed: 'Signed',
       statusChange: 'Status changed',
       left: 'Left',
+      accountDisabledOnLeaving: 'Sign-in disabled',
+      accountRestoredOnReturning: 'Sign-in enabled',
       repairCreated: 'Repair created',
       repairCompleted: 'Repair completed',
       counted: 'Results recorded',
@@ -347,6 +349,8 @@ const messages = {
         '{{from}} → {{to}}: approved without review, approval is switched off',
       renewalAdvanced: 'Next renewal {{from}} → {{to}}',
       left: 'Marked as left',
+      accountDisabledOnLeaving: 'Sign-in {{target}} disabled on leaving',
+      accountRestoredOnReturning: 'Sign-in {{target}} enabled again on returning',
       leftOnLeaveDate: 'Leave date {{date}} reached; marked as left',
       recoveryPrepared:
         'Recovery listed: {{devices}} devices, {{stock}} stock, {{seats}} seats',
@@ -926,6 +930,15 @@ const messages = {
     recovery: {
       title: 'To recover',
       left: "This is what was in this person's name when they left:",
+      accountActiveTitle: 'Their sign-in still works',
+      accountActive:
+        '{{account}} can still sign in to ITAM and needs disabling by hand.',
+      accountDisable: 'Disable it',
+      accountAskAdmin:
+        'Ask a platform administrator to disable it under Settings → Users.',
+      accountDisabled: 'Sign-in {{account}} is disabled',
+      accountDisabledOnLeaving:
+        'Sign-in {{account}} was disabled automatically on leaving',
       // One sentence: the share that is the reader's is a clause of the same
       // statement rather than a second announcement. The clause says
       // "unsettled" out loud, because the sentence it hangs off introduces

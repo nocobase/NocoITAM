@@ -1,5 +1,6 @@
 import { aiManagerToken } from '@nocobase/app-plugin-ai-employee/server';
 import { userAdministrationServiceToken } from '@nocobase/app-plugin-authentication';
+import { userManagementServiceToken } from '@nocobase/app-plugin-users/server/tokens';
 
 import { reconcileGrants } from './reconcile-grants.js';
 import type { Application } from '@nocobase/app-server/application';
@@ -59,6 +60,10 @@ import { createRepairService, repairServiceToken } from './repairs.js';
 import { createReportService, reportServiceToken } from './reports.js';
 import { createSettingsService, settingsServiceToken } from './settings.js';
 import { createWorkbenchService, workbenchServiceToken } from './workbench.js';
+import {
+  createLeaverAccounts,
+  leaverAccountsToken,
+} from './leaver-accounts.js';
 
 export {
   approvalServiceToken,
@@ -416,10 +421,35 @@ export default class ItamProvider extends ServiceProvider<Application> {
           'en-US',
       }),
     );
+    container.singleton(leaverAccountsToken, () =>
+      createLeaverAccounts({
+        database: container.resolve(databaseManagerToken),
+        history: container.resolve(historyServiceToken),
+        // Resolved when a leaver is marked, not now: the users and
+        // authentication plugins register their services after this
+        // provider, and a test application has neither.
+        management: () =>
+          container.has(userManagementServiceToken)
+            ? container.resolve(userManagementServiceToken)
+            : undefined,
+        accounts: () =>
+          container.has(userAdministrationServiceToken)
+            ? container.resolve(userAdministrationServiceToken)
+            : undefined,
+        log: (message, error) => {
+          if (container.has(loggingToken))
+            container
+              .resolve(loggingToken)
+              .getLogger('itam')
+              .warn({ err: error }, message);
+        },
+      }),
+    );
     container.singleton(masterDataServiceToken, () =>
       createMasterDataService(
         container.resolve(databaseManagerToken),
         container.resolve(historyServiceToken),
+        container.resolve(leaverAccountsToken),
       ),
     );
   }

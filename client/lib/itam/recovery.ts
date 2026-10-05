@@ -81,6 +81,21 @@ export interface PersonRecovery {
    * is worse than none.
    */
   readonly progress: { readonly done: number; readonly total: number } | null;
+  /**
+   * The sign-in they had, if any, and whether it still signs in. Leaving
+   * disables it (`leaver-accounts.ts`) unless the platform refuses — the
+   * last administrator — or it is the reader's own, so the page says it was
+   * done, or reminds the reader when it was not. `canDisable` says whether
+   * this reader may — the users page is root's.
+   */
+  readonly account?: {
+    readonly name: string;
+    readonly username: string | null;
+    readonly disabled: boolean;
+    /** Disabled by leaving, rather than by somebody's hand. */
+    readonly disabledOnLeaving: boolean;
+    readonly canDisable: boolean;
+  } | null;
 }
 
 /** Which handlings a person carries out here, rather than somewhere else. */

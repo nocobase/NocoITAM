@@ -6,7 +6,9 @@ import {
   Check,
   CornerDownRight,
   Undo2,
+  UserX,
 } from 'lucide-react';
+import { Link } from 'react-router';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
@@ -23,6 +25,7 @@ import {
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { EmptyState } from '@/components/itam/empty-state';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/lib/itam/api';
@@ -190,6 +193,7 @@ export function PersonBelongings({
 
   if (!recovery.data) return null;
   const left = recovery.data.employmentStatus === 'left';
+  const account = recovery.data.account;
   const owned = recovery.data.owned;
   // Settled rows keep their place in the list: a recovery is a job of a
   // known size, and a list that only shrinks never says what was done.
@@ -266,6 +270,47 @@ export function PersonBelongings({
 
   return (
     <div ref={contextRef} className='space-y-3'>
+      {/* First, because it is the one thing here that is not equipment:
+          their sign-in. Leaving disables it, so this is usually a settled
+          line saying so. When it could not — the platform's last
+          administrator, the reader's own account, or somebody who left
+          before it did this — it reminds the reader, offers the way there
+          to one who may, and names who can to one who may not. */}
+      {left && account ? (
+        account.disabled ? (
+          <p className='flex items-center gap-1 text-xs text-muted-foreground'>
+            <Check className='size-3.5' aria-hidden='true' />
+            {t(
+              account.disabledOnLeaving
+                ? 'people.recovery.accountDisabledOnLeaving'
+                : 'people.recovery.accountDisabled',
+              { account: account.username ?? account.name },
+            )}
+          </p>
+        ) : (
+          <Alert>
+            <UserX />
+            <AlertTitle>{t('people.recovery.accountActiveTitle')}</AlertTitle>
+            <AlertDescription>
+              <span>
+                {t('people.recovery.accountActive', {
+                  account: account.username ?? account.name,
+                })}{' '}
+                {account.canDisable ? (
+                  <Link
+                    to='/settings/users'
+                    className='font-medium text-success-foreground hover:underline'
+                  >
+                    {t('people.recovery.accountDisable')}
+                  </Link>
+                ) : (
+                  t('people.recovery.accountAskAdmin')
+                )}
+              </span>
+            </AlertDescription>
+          </Alert>
+        )
+      ) : null}
       {/* Only a leaver gets a sentence: for everybody else the table is
             what they hold, and saying so in prose first adds nothing. */}
       {left ? (
