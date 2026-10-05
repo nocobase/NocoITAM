@@ -8,6 +8,7 @@ import {
 
 import type { ApprovalService, ApprovalSubject } from './approvals.js';
 import { compileAuthzScope } from './authz-filter.js';
+import { handoverCompletedAt } from './handover-completion.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
 import { OWNED_BY_USER, RECOVERABLE_DEVICE_STATUSES } from './recovery.js';
 
@@ -978,9 +979,17 @@ export function createWorkbenchService(dependencies: {
           .select(['id', 'name', 'position', 'leaveDate'])
           .where((eb) => compileAuthzScope(eb, peopleConditions.scope))
           .where('employmentStatus', '=', 'left')
-          .where('leaveDate', '>=', since)
           .execute<Row>();
         const settled = leavers.filter((row) => !open.has(String(row.id)));
+        // Dated by when the handover was finished, which the change signal
+        // records (`handover-completion.ts`); one finished before that was
+        // recorded falls back to the leave date. The window is the date's,
+        // so somebody who left two months ago and was settled yesterday is
+        // done yesterday.
+        const completedAt = await handoverCompletedAt(
+          database,
+          settled.map((row) => String(row.id)),
+        );
         const snapped =
           settled.length === 0
             ? new Set<string>()
@@ -1002,6 +1011,9 @@ export function createWorkbenchService(dependencies: {
               );
         for (const row of settled) {
           if (!snapped.has(String(row.id))) continue;
+          const doneAt =
+            completedAt.get(String(row.id)) ?? asText(row.leaveDate) ?? '';
+          if (doneAt < since) continue;
           done.push({
             key: 'leaverRecovery',
             id: String(row.id),
@@ -1009,7 +1021,7 @@ export function createWorkbenchService(dependencies: {
             subtitle: asText(row.position) ?? null,
             date: null,
             url: `/people/${String(row.id)}`,
-            doneAt: String(row.leaveDate),
+            doneAt,
           });
         }
       }

@@ -227,6 +227,7 @@ const zhCN: AppResource = {
       left: '离职',
       accountDisabledOnLeaving: '停用账号',
       accountRestoredOnReturning: '启用账号',
+      handoverCompleted: '交接完成',
       repairCreated: '创建维修单',
       repairCompleted: '维修完成',
       counted: '录入盘点结果',
@@ -346,8 +347,12 @@ const zhCN: AppResource = {
       left: '标记为离职',
       accountDisabledOnLeaving: '登录账号 {{target}} 随离职停用',
       accountRestoredOnReturning: '登录账号 {{target}} 随恢复在职重新启用',
+      handoverCompleted: '离职交接全部处理完毕',
+      handoverCompletedLate:
+        '离职交接已全部处理完毕（完成时间未记录，此处为补记）',
       leftOnLeaveDate: '离职日期 {{date}} 已到，自动标记为离职',
-      recoveryPrepared: '已整理待回收清单：设备 {{devices}}、库存 {{stock}}、席位 {{seats}}',
+      recoveryPrepared:
+        '已整理待回收清单：设备 {{devices}}、库存 {{stock}}、席位 {{seats}}',
       seatAssign: '席位分配给 {{target}}',
       seatAssigned: '获得 {{target}} 的席位',
       seatReclaim: '从 {{target}} 收回席位',
@@ -929,7 +934,8 @@ const zhCN: AppResource = {
       accountDisabled: '登录账号 {{account}} 已停用',
       accountDisabledOnLeaving: '登录账号 {{account}} 已随离职自动停用',
       leftMine_one: '离职时持有的资产快照，其中未处理的 {{count}} 项由你负责：',
-      leftMine_other: '离职时持有的资产快照，其中未处理的 {{count}} 项由你负责：',
+      leftMine_other:
+        '离职时持有的资产快照，其中未处理的 {{count}} 项由你负责：',
       you: '你',
       owner: '负责人：{{name}}',
       responsible_one: '该人员是 {{count}} 条记录的负责人：',
@@ -957,7 +963,8 @@ const zhCN: AppResource = {
         failed_other: '{{count}} 项没能完成：',
       },
       changeOwner: '移交',
-      changeOwnerHint: '指定今后由谁负责 {{record}}。只有现任负责人或创建人能做这件事。',
+      changeOwnerHint:
+        '指定今后由谁负责 {{record}}。只有现任负责人或创建人能做这件事。',
       installed: '内含',
       done: '已处理',
       progress: '已处理 {{done}} / {{total}}',
@@ -1434,7 +1441,8 @@ const zhCN: AppResource = {
     openConversation: '在对话中查看',
     failed: 'AI 没能完成，打开对话查看原因。',
     hint: '按名称、编号或序列号搜索设备、人员、采购单和主数据。',
-    askHint: '用自己的话问，例如：维修中或借出中的笔记本，研发部谁还没有显示器。',
+    askHint:
+      '用自己的话问，例如：维修中或借出中的笔记本，研发部谁还没有显示器。',
     searchTab: '搜索',
     followUpDraft: '关于「{{question}}」：',
     showAll: '显示全部',
@@ -1501,7 +1509,8 @@ const zhCN: AppResource = {
       warrantyExpiring: '保修 {{warrantyDays}} 天内到期',
       entitlementRenewing: '{{subscriptionExpiryDays}} 天内自动续订的订阅',
       entitlementEnding: '{{subscriptionExpiryDays}} 天内到期的订阅',
-      entitlementMaintenance: '{{maintenanceExpiryDays}} 天内维保到期的永久授权',
+      entitlementMaintenance:
+        '{{maintenanceExpiryDays}} 天内维保到期的永久授权',
       entitlementEnded: '已结束仍占席位的订阅',
       idleDevice: '库存中超过 {{idleDays}} 天',
       auditOverdue: '超过 {{auditDays}} 天未盘点',
@@ -1753,8 +1762,10 @@ const zhCN: AppResource = {
       'Only the owner or a supervisor can complete this repair':
         '只有负责人、资产经理或管理员可以完成这张维修单',
       'A closed order keeps the owner it had': '已结束的采购单不能再更换负责人',
-      'A closed disposal keeps the owner it had': '已结束的报废单不能再更换负责人',
-      'A finished repair keeps the owner it had': '已完成的维修单不能再更换负责人',
+      'A closed disposal keeps the owner it had':
+        '已结束的报废单不能再更换负责人',
+      'A finished repair keeps the owner it had':
+        '已完成的维修单不能再更换负责人',
       'The requester cannot approve their own request':
         '申请人不能审批自己的申请',
       'The scope is fixed once the task started': '任务开始后范围不可修改',
@@ -1853,7 +1864,8 @@ const zhCN: AppResource = {
       subscriptionExpiryDays: '订阅续订或到期前这么多天开始提醒',
       idleDays: '设备在库超过这么多天算闲置',
       auditDays: '设备超过这么多天没盘点过就提醒',
-      idleSeatRatio: '未分配席位占总席位超过这个比例，这份授权算闲置（0.3 即三成）',
+      idleSeatRatio:
+        '未分配席位占总席位超过这个比例，这份授权算闲置（0.3 即三成）',
       defaultStockMinimum: '新建库存记录时默认填的最低水位',
     },
     pageTitle: '系统设置',
@@ -2185,7 +2197,8 @@ const zhCN: AppResource = {
     chat: {
       loading: '正在加载 AI 配置…',
       configError: '无法加载 AI 配置，请检查网络和「设置 → AI」后刷新页面。',
-      noEmployee: '没有可用的 AI 员工 Noco，请在「设置 → AI」中启用后刷新页面。',
+      noEmployee:
+        '没有可用的 AI 员工 Noco，请在「设置 → AI」中启用后刷新页面。',
       noModel: '没有可用的模型，请在「设置 → AI」中配置并启用模型后刷新页面。',
     },
     expand: '展开',

@@ -32,7 +32,18 @@ export const itamChangesHttpMiddleware = defineHttpMiddleware<Application>({
         !app.container.has(itamChangesToken)
       )
         return;
-      app.container.resolve(itamChangesToken).touched();
+      // Who wrote it, for what is recorded because of it; a route that
+      // authenticated nobody leaves it unnamed.
+      let actorId: string | undefined;
+      try {
+        actorId = (
+          context.get('authz' as never) as
+            { identity?: { principal?: { id?: string } } } | undefined
+        )?.identity?.principal?.id;
+      } catch {
+        actorId = undefined;
+      }
+      app.container.resolve(itamChangesToken).touched(actorId);
     });
   },
 });

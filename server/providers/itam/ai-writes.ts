@@ -302,7 +302,7 @@ export async function runWrite(
     // Written outside the ITAM routes, so the pages showing live to-dos are
     // told here rather than by the route middleware.
     if (container.has(itamChangesToken))
-      container.resolve(itamChangesToken).touched();
+      container.resolve(itamChangesToken).touched(scope.actorId);
     return result;
   } catch (error) {
     return refuse(error);

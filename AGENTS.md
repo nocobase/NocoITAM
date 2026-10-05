@@ -1018,6 +1018,22 @@ Rules learned while building it:
   `PageHeader`'s `aside` slot), opening the dialog the sidebar's 搜索 and
   ⌘K open; its end is a green sparkle 问 AI, shown when the assistant is
   available, that opens the same dialog already in ask mode.
+- A leaver's handover is dated by when it **finished**, not when they left
+  (2026-10-05, `server/providers/itam/handover-completion.ts`). It ends
+  with whichever act settles the last item, and none of them knows it was
+  the last, so the moment is noticed: every burst of writes the change
+  signal coalesces (`itamChangesToken.touched(actorId)`, which the ITAM
+  routes, confirmed AI writes and scheduled jobs already call) first runs
+  `check()`, which writes `handoverCompleted` on each leaver whose newest
+  belongings snapshot has no completion after it and who now has nothing
+  in their name (read unrestricted, like the snapshot), and only then
+  publishes, so the refetch sees it. 已完成 dates the leaver by that event
+  and applies its 30-day window to it. `start()` runs the check once with
+  `late`, so leavers settled before this existed get an event marked
+  `recordedLate` — the timeline says it was noted afterwards and the board
+  keeps their leave date — instead of the first write after a deploy
+  claiming the moment. Still no to-do table: the to-dos are the records'
+  own state, and the dates are history.
 - `MyWorkItem.records` comes back with the counts: a card is never
   collapsed, so lazy fetching would only make the workbench 1+N requests.
   Each kind's records are read under the decision that its **action** needs,
