@@ -318,21 +318,24 @@ Rules learned while building it:
   cards. The extra orders are never received — receiving makes devices and
   stock — and the extra audits keep off the laptops, whose 400-day-old last
   count a matched count would stamp today.
-- The demo creates its own sign-ins, one per role (2026-09-27): `manager`,
-  `support` and the leaver, who is IT support — the other demo people are
-  employees and have none (2026-10-05) — listed with their passwords in
-  `nocosolution/NocoITAM/SPEC.md ## 演示数据`. They go through `DemoAccounts` (`demoAccounts()` in
+- The demo creates its own sign-ins (2026-10-05, replacing the role
+  accounts `manager` and `support`): the IT staff as people with names —
+  two asset managers, 孙强 `sunqiang` and 吴静 `wujing`, and IT support
+  周宇 `zhouyu` — and the leaver 陈杰 `chenjie`, who is IT support too; each
+  password is the username and 123. The other demo people are employees and
+  have none. They are listed in `nocosolution/NocoITAM/SPEC.md ## 演示数据`
+  and go through `DemoAccounts` (`demoAccounts()` in
   `server/providers/itam/index.ts`) rather than the `user` table, are tracked
-  in `demoRecords` under `accounts`, and the leaver's account is written to
-  their person's `userId`, because the records they answer for name the
-  account. `manager` and `support` get a person record in IT and a laptop
-  each, and so does the account that generated the demo (a laptop, a
-  monitor and a phone) — usually the
-  application's first one, which belongs to no permission set of this
-  application's and has no person record. That person record is
-  tracked like any other demo record and removed with it; the account
-  itself is not the demo's and stays. The requests are addressed
-  to `manager`, not to whatever `otherUser` finds. Two traps: the users
+  in `demoRecords` under `accounts`, and each is written to its person's
+  `userId` — the staff have a person record in IT, named as their account
+  is in the deployment's language — because the records they answer for
+  name the account. 孙强 and 周宇 have a laptop each, 吴静 a laptop, a
+  monitor and a phone. The account that generated the demo is the system
+  administrator and no employee: it gets no person record and holds
+  nothing, though some records still answer to it. `demoAccountUsernames()`
+  keeps the retired `manager` / `support` so a reset still removes them.
+  The requests are addressed to 孙强, not to whatever `otherUser` finds.
+  Two traps: the users
   plugin's `remove` refuses without deletion hooks (so the authentication
   plugin's is used, after revoking the assignment), and that one is a soft
   delete which keeps the username and e-mail — the rows are purged

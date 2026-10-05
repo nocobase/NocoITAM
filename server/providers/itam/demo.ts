@@ -66,54 +66,60 @@ export interface DemoAccounts {
 }
 
 /**
- * The two staff sign-ins the demo always creates, one per role, so each can
- * be tried without an administrator handing out accounts first. Employees
- * do not sign in (2026-10-05); of the people in `PERSON_NAMES` below only
- * the leaver, who is IT support, has an account. Passwords are deliberately
- * memorable: this is demonstration data, and clearing it removes them.
+ * The IT staff the demo signs in as: two asset managers and one IT support
+ * engineer, each a person in IT with their own account (2026-10-05). They
+ * are people with names, not role accounts — `manager` and `support` went —
+ * so the trail of every request reads as a colleague. With the leaver, who
+ * is IT support too, they are the only people with accounts; the rest are
+ * employees, who do not sign in. The account that generated the demo is
+ * the system administrator and no employee: it gets no person record.
+ * A password is the username and 123: this is demonstration data, and
+ * clearing it removes the accounts.
  */
 export const DEMO_STAFF_ACCOUNTS: readonly DemoAccountSpec[] = [
   {
-    username: 'manager',
-    name: 'Manager',
-    email: 'manager@northbridge.example',
-    password: 'manager123',
+    username: 'sunqiang',
+    name: 'Sun Qiang',
+    email: 'sun.qiang@northbridge.example',
+    password: 'sunqiang123',
     permissionSet: 'itam-asset-manager',
   },
   {
-    username: 'support',
-    name: 'Support',
-    email: 'support@northbridge.example',
-    password: 'support123',
+    username: 'wujing',
+    name: 'Wu Jing',
+    email: 'wu.jing@northbridge.example',
+    password: 'wujing123',
+    permissionSet: 'itam-asset-manager',
+  },
+  {
+    username: 'zhouyu',
+    name: 'Zhou Yu',
+    email: 'zhou.yu@northbridge.example',
+    password: 'zhouyu123',
     permissionSet: 'itam-it-support',
   },
 ];
 
-/** The leaver's sign-in uses this. */
-export const DEMO_LEAVER_PASSWORD = 'employee123';
+/** The role accounts the demo created until 2026-10-05, removed by name. */
+const RETIRED_DEMO_USERNAMES = ['manager', 'support'] as const;
 
 /**
- * The person record behind each staff sign-in, by locale. The two IT roles
- * hold equipment like anyone else, and a sign-in with no person record
- * reads as holding nothing.
+ * Each staff sign-in's name and position by locale: the account and the
+ * person record behind it carry the same name, as the leaver's do.
  */
 const STAFF_PEOPLE: Readonly<
   Record<string, Readonly<Record<string, { name: string; position: string }>>>
 > = {
   'en-US': {
-    manager: { name: 'Sun Qiang', position: 'IT Asset Manager' },
-    support: { name: 'Zhou Yu', position: 'IT Support Engineer' },
+    sunqiang: { name: 'Sun Qiang', position: 'IT Asset Manager' },
+    wujing: { name: 'Wu Jing', position: 'IT Asset Manager' },
+    zhouyu: { name: 'Zhou Yu', position: 'IT Support Engineer' },
   },
   'zh-CN': {
-    manager: { name: '孙强', position: 'IT 资产经理' },
-    support: { name: '周宇', position: 'IT 支持工程师' },
+    sunqiang: { name: '孙强', position: 'IT 资产经理' },
+    wujing: { name: '吴静', position: 'IT 资产经理' },
+    zhouyu: { name: '周宇', position: 'IT 支持工程师' },
   },
-};
-
-/** The position given to the account that generated the demo. */
-const ADMIN_POSITIONS: Readonly<Record<string, string>> = {
-  'en-US': 'System Administrator',
-  'zh-CN': '系统管理员',
 };
 
 /**
@@ -124,6 +130,8 @@ const ADMIN_POSITIONS: Readonly<Record<string, string>> = {
 export function demoAccountUsernames(): readonly string[] {
   return [
     ...DEMO_STAFF_ACCOUNTS.map((spec) => spec.username),
+    // A database generated before 2026-10-05 still holds these.
+    ...RETIRED_DEMO_USERNAMES,
     ...(PERSON_NAMES['en-US'] ?? []).map((entry) =>
       entry.mail.replaceAll('.', ''),
     ),
@@ -430,15 +438,23 @@ export function createDemoService(dependencies: {
         await track('accounts', { id });
         return id;
       };
+      const staffNames =
+        STAFF_PEOPLE[dependencies.locale?.() ?? 'en-US'] ??
+        STAFF_PEOPLE['en-US'];
       const staffUserIds = await Promise.all(
-        DEMO_STAFF_ACCOUNTS.map((spec) => account(spec)),
+        DEMO_STAFF_ACCOUNTS.map((spec) =>
+          account({
+            ...spec,
+            name: staffNames[spec.username]?.name ?? spec.name,
+          }),
+        ),
       );
-      const [managerUserId, supportUserId] = staffUserIds;
-      // Who decides the demo's requests. The manager account holds `approve`,
-      // so the approval trail reads as a colleague and the order left waiting
-      // can actually be decided by signing in as them. Without the accounts
-      // plugins the demo falls back to any other real account, then to a
-      // stand-in id whose request nobody can decide.
+      const [managerUserId, , supportUserId] = staffUserIds;
+      // Who decides the demo's requests: the first asset manager, who holds
+      // `approve`, so the approval trail reads as a colleague and the order
+      // left waiting can actually be decided by signing in as them. Without
+      // the accounts plugins the demo falls back to any other real account,
+      // then to a stand-in id whose request nobody can decide.
       const approverId =
         managerUserId ??
         (await dependencies.otherUser?.(actorId)) ??
@@ -589,7 +605,7 @@ export function createDemoService(dependencies: {
                 username: entry.mail.replaceAll('.', ''),
                 name: entry.name,
                 email: `${entry.mail}@northbridge.example`,
-                password: DEMO_LEAVER_PASSWORD,
+                password: `${entry.mail.replaceAll('.', '')}123`,
                 permissionSet: 'itam-it-support',
               })
             : undefined;
@@ -616,12 +632,9 @@ export function createDemoService(dependencies: {
         Row,
       ];
 
-      // The two staff sign-ins get a person record of their own, in IT, so
-      // the equipment they are issued has somebody to be assigned to.
+      // The staff sign-ins get a person record of their own, in IT, so the
+      // equipment they are issued has somebody to be assigned to.
       const itDepartment = itDept;
-      const staffNames =
-        STAFF_PEOPLE[dependencies.locale?.() ?? 'en-US'] ??
-        STAFF_PEOPLE['en-US'];
       const staff = new Map<string, Row>();
       for (const [index, spec] of DEMO_STAFF_ACCOUNTS.entries()) {
         const entry = staffNames[spec.username];
@@ -643,36 +656,6 @@ export function createDemoService(dependencies: {
           }),
         );
       }
-
-      // Whoever generated the demo holds equipment too — usually the
-      // application's first account, which has no person record of its own.
-      // Skipped when that account is one of the staff sign-ins above, or
-      // already has a person record.
-      const adminPerson = await (async (): Promise<Row | undefined> => {
-        if (staffUserIds.includes(actorId)) return undefined;
-        const existing = await database
-          .query()
-          .selectFrom('people')
-          .select('id')
-          .where('userId', '=', actorId)
-          .executeTakeFirst();
-        if (existing) return undefined;
-        const account = await dependencies.accounts?.describe(actorId);
-        if (!account) return undefined;
-        return md('people', {
-          name: account.name,
-          employeeNo: 'EMP-200',
-          email: account.email,
-          phone: '138 0013 0200',
-          position:
-            ADMIN_POSITIONS[dependencies.locale?.() ?? 'en-US'] ??
-            ADMIN_POSITIONS['en-US'],
-          departmentId: itDepartment.id,
-          locationId: floor3.id,
-          hireDate: daysFromNow(-1100),
-          userId: actorId,
-        });
-      })();
 
       // What the leaver answers for. Returning equipment is only half of
       // offboarding: the records naming them as 负责人 keep naming
@@ -934,12 +917,14 @@ export function createDemoService(dependencies: {
         },
       });
 
-      // The two IT staff hold equipment of their own, like everybody.
+      // The IT staff hold equipment of their own, like everybody: a laptop
+      // each for the first manager and IT support, and the second manager
+      // the desk below.
       const staffLaptops = new Map<string, Row>();
-      for (const [index, spec] of DEMO_STAFF_ACCOUNTS.entries()) {
-        if (!staff.has(spec.username)) continue;
+      for (const [index, username] of ['sunqiang', 'zhouyu'].entries()) {
+        if (!staff.has(username)) continue;
         staffLaptops.set(
-          spec.username,
+          username,
           await device({
             modelId: index === 0 ? mbp.id : thinkpad.id,
             serialNo: index === 0 ? 'C02XK1A05MD6T' : 'PF4ZTQ07',
@@ -977,9 +962,10 @@ export function createDemoService(dependencies: {
 
       // A laptop, a monitor and a phone: a real desk rather than a single
       // row.
-      const adminDevices: Row[] = [];
-      if (adminPerson) {
-        adminDevices.push(
+      const deskOwner = staff.get('wujing');
+      const deskDevices: Row[] = [];
+      if (deskOwner) {
+        deskDevices.push(
           await device({
             modelId: mbp.id,
             serialNo: 'C02XK1A06MD6T',
@@ -1069,7 +1055,8 @@ export function createDemoService(dependencies: {
       await assign(mobile.id, zhaoMin.id);
       for (const [username, laptop] of staffLaptops)
         await assign(laptop.id, staff.get(username)!.id);
-      for (const owned of adminDevices) await assign(owned.id, adminPerson!.id);
+      if (deskOwner)
+        for (const owned of deskDevices) await assign(owned.id, deskOwner.id);
       // Shared equipment lives at its location rather than with a person.
       const assignTo = (deviceId: unknown, locationId: unknown) =>
         devices.assign(
@@ -1724,7 +1711,7 @@ export function createDemoService(dependencies: {
 
       // A repair in progress on the expired laptop, this one IT support's:
       // a repair belongs to its 负责人, so the 进行中的维修 card has
-      // something to show when you sign in as `support`, and the other one
+      // something to show when you sign in as `zhouyu`, and the other one
       // below stays with the account that generated the demo — each role
       // sees its own work rather than one of them seeing an empty card.
       await track(
