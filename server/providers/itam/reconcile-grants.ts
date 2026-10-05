@@ -387,6 +387,9 @@ const IT_ROLE_PAGES: readonly string[] = [
   ...IT_PAGES,
   'reports',
   'scheduler.schedules',
+  // Granted by its own seed (`202609130004_seed_itam_p5_grants`), which
+  // used to give it to the Asset Manager alone.
+  'itam-settings',
 ];
 const ADDED_PAGES: ReadonlyMap<string, readonly string[]> = new Map([
   ['itam-it-support', IT_ROLE_PAGES],
