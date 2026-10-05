@@ -607,8 +607,11 @@ export function SearchNavButton({
 /**
  * The same search drawn as a search field, for a page that wants it in
  * reach beside its title — the workbench, where most work starts by
- * looking something up. It is a button, not an input: typing happens in the
- * dialog it opens, which is the one the sidebar's 搜索 and ⌘K open.
+ * looking something up. It is buttons, not an input: typing happens in the
+ * dialog they open, which is the one the sidebar's 搜索 and ⌘K open. The
+ * field's end is that dialog's other mode, 问 AI, in the green-with-a-
+ * sparkle every AI shortcut wears, and only where the assistant is
+ * available — the same condition the dialog's own switch has.
  */
 export function SearchTrigger({
   className,
@@ -617,25 +620,49 @@ export function SearchTrigger({
 }): ReactElement | null {
   const { t } = useTranslation();
   const search = useGlobalSearch();
+  const ai = useItamAi();
   if (!search) return null;
+  const openIn = (mode: Mode) => {
+    search.setMode(mode);
+    search.setOpen(true);
+  };
   return (
-    <button
-      type='button'
-      aria-label={t('navigation.search')}
-      onClick={() => {
-        search.setOpen(true);
-      }}
+    <div
       className={cn(
-        'flex h-8 w-72 max-w-full items-center gap-2 rounded-lg border border-input bg-background px-2.5 text-sm text-muted-foreground shadow-xs transition-colors outline-none hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+        'flex h-8 w-80 max-w-full items-center rounded-lg border border-input bg-background text-sm shadow-xs',
         className,
       )}
     >
-      <Search aria-hidden='true' className='size-4 shrink-0' />
-      <span className='min-w-0 flex-1 truncate text-left'>
-        {t('search.placeholder')}
-      </span>
-      <kbd className='shrink-0 font-sans text-xs'>{SHORTCUT}</kbd>
-    </button>
+      <button
+        type='button'
+        aria-label={t('navigation.search')}
+        onClick={() => {
+          openIn('search');
+        }}
+        className='flex h-full min-w-0 flex-1 items-center gap-2 rounded-l-lg px-2.5 text-muted-foreground transition-colors outline-none hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring'
+      >
+        <Search aria-hidden='true' className='size-4 shrink-0' />
+        <span className='min-w-0 flex-1 truncate text-left'>
+          {t('search.placeholder')}
+        </span>
+        <kbd className='shrink-0 font-sans text-xs'>{SHORTCUT}</kbd>
+      </button>
+      {ai?.available ? (
+        <>
+          <span aria-hidden='true' className='h-4 w-px shrink-0 bg-border' />
+          <button
+            type='button'
+            onClick={() => {
+              openIn('ask');
+            }}
+            className='flex h-full shrink-0 items-center gap-1 rounded-r-lg px-2.5 text-xs font-medium whitespace-nowrap text-success-foreground transition-colors outline-none hover:bg-success focus-visible:ring-2 focus-visible:ring-ring'
+          >
+            <Sparkles aria-hidden='true' className='size-3.5 shrink-0' />
+            {t('search.askAi')}
+          </button>
+        </>
+      ) : null}
+    </div>
   );
 }
 

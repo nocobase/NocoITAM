@@ -960,7 +960,8 @@ Rules learned while building it:
   kinds the reader may act on. The workbench's header also carries the
   global search as a field beside the title (`SearchTrigger`, through
   `PageHeader`'s `aside` slot), opening the dialog the sidebar's 搜索 and
-  ⌘K open.
+  ⌘K open; its end is a green sparkle 问 AI, shown when the assistant is
+  available, that opens the same dialog already in ask mode.
 - `MyWorkItem.records` comes back with the counts: a card is never
   collapsed, so lazy fetching would only make the workbench 1+N requests.
   Each kind's records are read under the decision that its **action** needs,
