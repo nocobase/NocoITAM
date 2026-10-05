@@ -7,8 +7,10 @@ import {
   AUDIT_CARD,
   DISPOSAL_CARD,
   PURCHASE_ORDER_CARD,
+  LOAN_CARD,
   REPAIR_CARD,
 } from '@/components/itam/board-card-specs';
+import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { SearchTrigger } from '@/components/itam/global-search';
@@ -54,6 +56,8 @@ export default function WorkbenchPage(): ReactElement {
   const { t } = useTranslation();
   const cards = useWorkCards();
   const loading = useMyWork().isLoading;
+  const leavers = cards.find((card) => card.key === 'leaverRecovery');
+  const rest = cards.filter((card) => card !== leavers);
   return (
     <Page fill>
       <PageHeader
@@ -65,13 +69,17 @@ export default function WorkbenchPage(): ReactElement {
           scrolls its own cards and the sideways scrollbar sits at the foot
           of the page — as the status boards do. */}
       <div className='-mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
+        {/* 需要关注 leads the board, then 离职交接 (2026-10-05): somebody has
+            left with the company's equipment, the one to-do that was ever
+            `critical`, and each is a job of several parts. */}
         <AttentionColumn />
+        {leavers ? <WorkColumn card={leavers} /> : null}
         {loading ? (
           <Column title={t('workbench.myWork')}>
             <Skeleton className='h-24 w-full rounded-lg' />
           </Column>
         ) : (
-          cards.map((card) => <WorkColumn key={card.key} card={card} />)
+          rest.map((card) => <WorkColumn key={card.key} card={card} />)
         )}
       </div>
     </Page>
@@ -83,12 +91,15 @@ function Column({
   title,
   count,
   dimmed = false,
+  attention = false,
   footer,
   children,
 }: {
   readonly title: string;
   readonly count?: number;
   readonly dimmed?: boolean;
+  /** 需要关注: risks rather than to-dos, so it is told apart by its ground. */
+  readonly attention?: boolean;
   readonly footer?: ReactNode;
   readonly children: ReactNode;
 }): ReactElement {
@@ -98,7 +109,8 @@ function Column({
       // The status boards' column: a tint of the foreground, since the page
       // is the muted grey, at least 15rem and sharing the room up to 22rem.
       className={cn(
-        'flex max-w-[22rem] min-w-[15rem] flex-1 basis-[15rem] flex-col rounded-2xl bg-foreground/[0.025]',
+        'flex max-w-[22rem] min-w-[15rem] flex-1 basis-[15rem] flex-col rounded-2xl',
+        attention ? 'bg-warning/50' : 'bg-foreground/[0.025]',
         dimmed && 'opacity-60',
       )}
     >
@@ -209,18 +221,16 @@ function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
     const kind = kindOf(card.key, record);
     const board = kind ? DOCUMENT_BOARDS[kind] : undefined;
     const row = kind ? rows.get(`${kind}:${record.id}`) : undefined;
-    return board && row
-      ? {
-          spec: board.spec,
-          row,
-          url: record.url,
-          // The board's card, with the kind it is: a column on the
-          // workbench may hold several, and a number alone does not say.
-          badge: record.tag ? (
-            <DocumentTypeBadge kind={record.tag} className='shrink-0' />
-          ) : undefined,
-        }
-      : null;
+    // An overdue loan is a device, not a document: the to-do itself carries
+    // what its card says (the borrower, the date it was due back).
+    if (card.key === 'loansDueToday')
+      return {
+        spec: LOAN_CARD,
+        row: { ...record },
+        url: record.url,
+        badge: <AssetTypeBadge value='device' className='shrink-0' />,
+      };
+    return board && row ? { spec: board.spec, row, url: record.url } : null;
   });
   if (entries.length > 0 && entries.every((entry) => entry !== null)) {
     const urls = new Map(
@@ -434,7 +444,7 @@ function AttentionColumn(): ReactElement {
     });
 
   return (
-    <Column title={t('workbench.attention')}>
+    <Column title={t('workbench.attention')} attention>
       {reminders.isLoading ? (
         <Skeleton className='h-24 w-full rounded-lg' />
       ) : groups.length === 0 ? (

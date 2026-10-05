@@ -2760,7 +2760,7 @@ export function createDemoService(dependencies: {
       );
 
       // Approved and waiting to be carried out, which is the state the
-      // 待执行的报废 card reads. Without one the card is always empty and
+      // 待执行报废 card reads. Without one the card is always empty and
       // the demo shows only half of the disposal's life.
       const brokenMonitor = await device({
         modelId: u2723.id,

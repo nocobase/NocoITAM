@@ -10,6 +10,7 @@ import type { ApprovalService, ApprovalSubject } from './approvals.js';
 import { compileAuthzScope } from './authz-filter.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
 import { OWNED_BY_USER, RECOVERABLE_DEVICE_STATUSES } from './recovery.js';
+import { nameOf, referenceNames } from './reference-names.js';
 
 /**
  * "My work" on the workbench: what waits for the signed-in user right now.
@@ -529,7 +530,7 @@ export function createWorkbenchService(dependencies: {
 
       // An approved disposal is waiting to be carried out, and it is its
       // 负责人's to carry out — or whoever wrote it before handing it over,
-      // the same rule 待验收到货 goes by. The service also lets the approver
+      // the same rule 待到货入库 goes by. The service also lets the approver
       // execute it (`NOT_INVOLVED`), but that is a permission, not their
       // work; the card stays narrower than the rule, never wider.
       const disposals = await decide('disposals', 'read');
@@ -727,6 +728,8 @@ export function createWorkbenchService(dependencies: {
           'name',
           'expectedReturnDate',
           'ownerId',
+          'assigneeType',
+          'assigneeId',
         ];
         const soonest = (
           query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>,
@@ -741,6 +744,14 @@ export function createWorkbenchService(dependencies: {
             (row) => !seen.has(String(row.id)),
           ),
         ].slice(0, MY_WORK_PREVIEW);
+        // Who has it: the card says whom to chase, not only what.
+        const borrowers = await referenceNames(
+          database,
+          rows.map((row) => ({
+            assigneeType: row.assigneeType,
+            assigneeId: row.assigneeId,
+          })),
+        );
         items.push({
           key: 'loansDueToday',
           count: await count('devices', devices, dueBack),
@@ -748,6 +759,11 @@ export function createWorkbenchService(dependencies: {
           records: rows.map((row) => ({
             id: String(row.id),
             title: `${String(row.deviceNo)} / ${String(row.name)}`,
+            // The borrower's name, as data: the card words it.
+            subtitle:
+              asText(
+                nameOf(borrowers, row, 'assigneeId') as string | undefined,
+              ) ?? null,
             date: asText(row.expectedReturnDate) ?? null,
             url: `/devices/${String(row.id)}`,
             mine: asText(row.ownerId) === userId,

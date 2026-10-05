@@ -3,7 +3,9 @@ import type { LucideIcon } from 'lucide-react';
 import { Fragment, type ReactElement, type ReactNode } from 'react';
 
 import { FieldValue } from '@/components/itam/cells';
+import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { useItamSettings, type ItamRecord } from '@/lib/itam/api';
+import type { DocumentKind } from '@/lib/itam/document-kinds';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { text } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
@@ -34,6 +36,12 @@ export interface BoardCardSpec {
   readonly fields: readonly FieldDefinition[];
   /** The field a card is headed by (its number or name). */
   readonly nameField: string;
+  /**
+   * The document kind a card is tagged with before its heading, on its
+   * board and on the workbench alike. A record that names itself (a
+   * stocktake) has none.
+   */
+  readonly kind?: DocumentKind;
   readonly card: {
     /** Beside the heading, right-aligned: an amount, a progress. */
     readonly meta?: CardPart;
@@ -52,8 +60,8 @@ export interface BoardCardEntry {
   readonly spec: BoardCardSpec;
   readonly row: ItamRecord;
   /**
-   * Before the heading: what kind of document it is, where a list mixes
-   * kinds (the workbench). A board holds one kind and passes none.
+   * Before the heading, for a record that is not a document and so has no
+   * `kind` to be tagged by (an overdue loan's device).
    */
   readonly badge?: ReactNode;
 }
@@ -144,6 +152,9 @@ export function BoardCards({
             >
               <div className='flex items-center justify-between gap-2'>
                 <span className='flex min-w-0 items-center gap-2'>
+                  {spec.kind ? (
+                    <DocumentTypeBadge kind={spec.kind} className='shrink-0' />
+                  ) : null}
                   {entry.badge}
                   <span className='min-w-0 truncate text-sm font-semibold'>
                     {text(row[spec.nameField])}

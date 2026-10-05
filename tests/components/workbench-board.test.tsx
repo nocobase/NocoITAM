@@ -182,3 +182,23 @@ it('keeps a long fault description to one truncated line on a repair card', () =
   ).toBeNull();
   state.rows = {};
 });
+
+it('says whom an overdue device is lent to and when it was due back', () => {
+  state.items = [
+    {
+      key: 'loansDueToday',
+      count: 1,
+      url: '/devices?status=onLoan',
+      records: [
+        {
+          ...record('DE-000005 / MacBook', '2026-09-28', '/devices/d5'),
+          subtitle: 'Zhao Min',
+        },
+      ],
+    },
+  ];
+  show();
+  const loans = column('workbench.work.loansDueToday');
+  expect(within(loans).getByText('workbench.work.lentTo')).toBeTruthy();
+  expect(within(loans).getByText('workbench.work.dueBack')).toBeTruthy();
+});

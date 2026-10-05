@@ -1564,6 +1564,8 @@ const messages = {
       /** Where the record itself is the one thing: a device on loan. */
       yours: 'Yours',
       leftOn: 'Left {{date}}',
+      lentTo: 'Lent to {{name}}',
+      dueBack: 'Due back {{date}}',
     },
     reminderGroups: {
       devices: 'Devices',

@@ -4,6 +4,7 @@ import {
   Laptop,
   MonitorX,
   Store,
+  User,
   Wrench,
 } from 'lucide-react';
 
@@ -26,6 +27,7 @@ import { PO_FIELDS } from '@/lib/itam/procurement';
 export const PURCHASE_ORDER_CARD: BoardCardSpec = {
   fields: PO_FIELDS,
   nameField: 'orderNo',
+  kind: 'purchaseOrders',
   card: {
     // The amount under the number, then who it is bought from — each with
     // its icon, since a figure and a company name say little on their own.
@@ -72,6 +74,7 @@ export const AUDIT_CARD: BoardCardSpec = {
 export const DISPOSAL_CARD: BoardCardSpec = {
   fields: DISPOSAL_FIELDS,
   nameField: 'disposalNo',
+  kind: 'disposals',
   card: {
     // The same shape as a purchase order's: what it is worth, then how it
     // goes and how much of it there is, each line with its icon.
@@ -105,6 +108,7 @@ export const DISPOSAL_CARD: BoardCardSpec = {
 export const REPAIR_CARD: BoardCardSpec = {
   fields: REPAIR_FIELDS,
   nameField: 'repairNo',
+  kind: 'repairs',
   card: {
     lines: [
       { part: 'deviceId', icon: Laptop },
@@ -122,5 +126,34 @@ export const REPAIR_CARD: BoardCardSpec = {
       },
     ],
     footer: ['ownerId', (record) => formatDate(record.createdAt, true)],
+  },
+};
+
+/**
+ * An overdue loan on the workbench, drawn from the to-do itself: the device
+ * as its heading, then whom it is lent to and when it was due back.
+ */
+export const LOAN_CARD: BoardCardSpec = {
+  fields: [],
+  nameField: 'title',
+  card: {
+    lines: [
+      {
+        part: (record, t) =>
+          record.subtitle
+            ? t('workbench.work.lentTo', { name: text(record.subtitle) })
+            : null,
+        icon: User,
+      },
+      {
+        part: (record, t) =>
+          record.date
+            ? t('workbench.work.dueBack', { date: formatDate(record.date) })
+            : null,
+        icon: CalendarClock,
+      },
+    ],
+    // That it is the reader's own: the column lists everybody's.
+    footer: [(record, t) => (record.mine ? t('workbench.work.yours') : null)],
   },
 };
