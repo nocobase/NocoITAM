@@ -26,7 +26,9 @@ export function WorkScopeToggle(): ReactElement {
           role='radio'
           aria-checked={scope === value}
           size='sm'
-          variant={scope === value ? 'secondary' : 'ghost'}
+          // The chosen one filled: a light tint was too faint to tell which
+          // of the two was on.
+          variant={scope === value ? 'default' : 'ghost'}
           className='h-7 px-2.5'
           onClick={() => setWorkScope(value)}
         >

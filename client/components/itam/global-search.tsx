@@ -641,9 +641,11 @@ export function SearchTrigger({
         }}
         className='flex h-full min-w-0 flex-1 items-center gap-2 rounded-l-lg px-2.5 text-muted-foreground transition-colors outline-none hover:bg-muted/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring'
       >
-        <Search aria-hidden='true' className='size-4 shrink-0' />
-        <span className='min-w-0 flex-1 truncate text-left'>
-          {t('search.placeholder')}
+        {/* Just 搜索, at 问 AI's size beside it: the box says what it does,
+            and the dialog it opens says what can be found. */}
+        <Search aria-hidden='true' className='size-3.5 shrink-0' />
+        <span className='min-w-0 flex-1 truncate text-left text-xs'>
+          {t('search.trigger')}
         </span>
         <kbd className='shrink-0 font-sans text-xs'>{SHORTCUT}</kbd>
       </button>
