@@ -312,7 +312,12 @@ Rules learned while building it:
   colleague and the order left `pendingApproval` can actually be decided;
   with a single account it keeps a stand-in id and that order cannot.
   Purchase orders cover every status the list can show (2026-09-27: draft,
-  审批中, 已批准, 已下单, 部分到货, 已完成, 已拒绝, 已取消).
+  审批中, 已批准, 已下单, 部分到货, 已完成, 已拒绝, 已取消), most of them two or
+  three deep, and audit tasks every status of theirs (2026-10-05:
+  `queuedOrder` and `auditTask` in `demo.ts`), so each board column holds
+  cards. The extra orders are never received — receiving makes devices and
+  stock — and the extra audits keep off the laptops, whose 400-day-old last
+  count a matched count would stamp today.
 - The demo creates its own sign-ins, one per role (2026-09-27): `manager`,
   `support` and the leaver, who is IT support — the other demo people are
   employees and have none (2026-10-05) — listed with their passwords in
@@ -1546,9 +1551,17 @@ each a field key or a function of the record. The board takes the rest
 of the page's height (`Page fill`): columns reach the bottom and scroll
 their own cards, so the sideways scrollbar sits at the foot of the page
 rather than under the shortest column (2026-10-04; they used to be as tall
-as their cards). A column is a tint of the foreground, because `bg-muted`
-is the page's own grey, and its heading is the status's name and count
-without the coloured tag. `?layout=table`
+as their cards). A column is a light tint of the foreground, because
+`bg-muted` is the page's own grey, and its heading is a dot in the
+status's colour, its name and its count in a small pill — not the coloured
+tag, whose row read as noise. The dots are their own maps beside the tag
+tones (`PO_STATUS_DOT`, `AUDIT_STATUS_DOT`, `DISPOSAL_STATUS_DOT`, a
+domain's `dots`), since a tag's light fill is no colour for a dot; keep
+each in step with its tone map. A board page
+drops `Page`'s width limit, and its columns share the width between 15 and
+22rem, so as many statuses as fit are on screen and a short board fills
+the row; a card's number and figure are its strongest text, its who / when
+sits under a hairline (2026-10-05). `?layout=table`
 is the list. A named view (`filter.view`: 待我审批, 到货逾期) decides the
 statuses itself, so it always reads as the list. Status changes stay the
 record's own actions — cards are not dragged, because each step asks for

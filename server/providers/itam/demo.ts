@@ -5,14 +5,18 @@ import {
 } from '@nocobase/service-provider';
 
 import type { DeviceService, OperationContext } from './devices.js';
-import type { AuditService } from './audits.js';
+import type { AuditService, CountInput } from './audits.js';
 import { unrestricted } from './authz-filter.js';
 import { asText, type Row } from './collection-query.js';
 import type { DisposalService } from './disposals.js';
 import { BusinessRuleError } from './errors.js';
 import type { EntitlementService } from './entitlements.js';
 import type { MasterDataService } from './master-data.js';
-import type { ProcurementService } from './procurement.js';
+import type {
+  LineInput,
+  LineItemType,
+  ProcurementService,
+} from './procurement.js';
 import type { RepairService } from './repairs.js';
 import type { StockService } from './stock.js';
 import { addDays, isoDate } from './dates.js';
@@ -226,6 +230,27 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     internRejection: 'Not in this quarter’s budget; raise it again in Q1',
     extraDockOrder: 'Second batch of docking stations',
     extraDockCancel: 'Covered by the stock already on hand',
+    itSpareOrder: 'Spare laptops for IT',
+    salesPhoneOrder: 'Phones for the new sales hires',
+    airOrder: 'MacBook Air for the R&D hires',
+    switchOrder: 'Second core switch for the server room',
+    printerReplaceOrder: 'Replacement printer for the third floor',
+    mouseOrder: 'Mouse stock',
+    ssdOrder: 'Spare SSDs',
+    desktopOrder: 'Desktop refresh for sales',
+    serverOrder: 'Two more file servers',
+    serverRejection: 'Size the virtual capacity first, then ask again',
+    headsetRestockOrder: 'Headset stock',
+    headsetCancel: 'The vendor is out of stock; buy next quarter',
+    q4AuditName: 'Q4 count · 3F',
+    q4AuditNotes: 'Quarterly count',
+    japanAuditName: 'Annual count · Japan office',
+    japanAuditNotes: 'Counted on the next visit',
+    diffAuditName: 'Q3 count · desktops and phones',
+    serverRoomAuditName: 'Q2 count · server room',
+    monitorAuditName: 'Q2 count · monitors',
+    spotAuditName: 'Spot check · warehouse',
+    spotAuditCancel: 'Covered by the Q3 warehouse count',
   },
   'zh-CN': {
     onboardingBatch: '新员工入职配备',
@@ -259,6 +284,27 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     internRejection: '本季度预算已用完，下季度再提',
     extraDockOrder: '扩展坞第二批',
     extraDockCancel: '现有库存已够用，无需再采购',
+    itSpareOrder: 'IT 备用笔记本',
+    salesPhoneOrder: '销售新员工手机',
+    airOrder: '研发新员工 MacBook Air',
+    switchOrder: '机房第二台核心交换机',
+    printerReplaceOrder: '3 楼打印机更换',
+    mouseOrder: '鼠标补货',
+    ssdOrder: '固态硬盘备件',
+    desktopOrder: '销售部台式机更换',
+    serverOrder: '新增两台文件服务器',
+    serverRejection: '先评估虚拟化资源，再决定是否采购',
+    headsetRestockOrder: '耳机补货',
+    headsetCancel: '供应商缺货，改到下季度采购',
+    q4AuditName: '四季度盘点 · 3 楼',
+    q4AuditNotes: '季度例行盘点',
+    japanAuditName: '年度盘点 · 日本办公室',
+    japanAuditNotes: '下次出差时清点',
+    diffAuditName: '三季度盘点 · 台式机与手机',
+    serverRoomAuditName: '二季度盘点 · 机房',
+    monitorAuditName: '二季度盘点 · 显示器',
+    spotAuditName: '临时抽盘 · 仓库',
+    spotAuditCancel: '已并入三季度仓库盘点',
   },
 };
 
@@ -518,6 +564,7 @@ export function createDemoService(dependencies: {
       const floor3 = await seededIn('locations', 'loc-hq-floor-3');
       const warehouse = await seededIn('locations', 'loc-hq-warehouse');
       const serverRoom = await seededIn('locations', 'loc-hq-server-room');
+      const japan = await seededIn('locations', 'loc-japan');
       const rnd = await seededIn('departments', 'dept-rd');
       const sales = await seededIn('departments', 'dept-sales');
       const people = [] as Row[];
@@ -2145,6 +2192,177 @@ export function createDemoService(dependencies: {
         all('purchaseOrders', 'cancel'),
       );
 
+      // More orders across the board (2026-10-05), so each column of the
+      // procurement board holds a few and reads as a working queue rather
+      // than a card per status. None is received: receiving creates devices
+      // and stock, which the rest of the demo accounts for one by one.
+      const queuedOrder = async (order: {
+        readonly description: string;
+        readonly reason: string;
+        readonly departmentId: unknown;
+        readonly neededInDays: number;
+        readonly lines: readonly LineInput[];
+        readonly stage:
+          | 'draft'
+          | 'pendingApproval'
+          | 'approved'
+          | 'ordered'
+          | 'rejected'
+          | 'cancelled';
+        /** The rejection's comment, or the cancellation's reason. */
+        readonly why?: string;
+      }): Promise<void> => {
+        const created = await track(
+          'purchaseOrders',
+          await procurement.create(
+            {
+              reason: order.reason,
+              description: order.description,
+              neededBy: daysFromNow(order.neededInDays),
+              vendorId: reseller.id,
+              departmentId: order.departmentId,
+            },
+            context,
+            all('purchaseOrders', 'create'),
+          ),
+        );
+        const id = String(created.id);
+        await procurement.setLines(
+          id,
+          order.lines,
+          context,
+          all('purchaseOrders', 'update'),
+        );
+        if (order.stage === 'draft') return;
+        await procurement.submit(
+          id,
+          approverId,
+          context,
+          all('purchaseOrders', 'submit'),
+        );
+        if (order.stage === 'pendingApproval') return;
+        if (
+          (await procurement.get(id, all('purchaseOrders', 'read')))?.status ===
+          'pendingApproval'
+        )
+          await procurement.decide(
+            id,
+            order.stage === 'rejected' ? 'rejected' : 'approved',
+            order.stage === 'rejected' ? (order.why ?? '') : texts.approval,
+            { actorId: approverId, sourceType: 'demo' },
+            all('purchaseOrders', 'approve'),
+          );
+        if (order.stage === 'rejected' || order.stage === 'approved') return;
+        if (order.stage === 'cancelled') {
+          await procurement.cancel(
+            id,
+            order.why ?? '',
+            context,
+            all('purchaseOrders', 'cancel'),
+          );
+          return;
+        }
+        await procurement.markOrdered(
+          id,
+          { orderedAt: daysFromNow(-3), expectedAt: daysFromNow(4) },
+          context,
+          all('purchaseOrders', 'order'),
+        );
+      };
+      const line = (
+        itemType: LineItemType,
+        model: Row,
+        quantity: number,
+        unitPrice: number,
+      ): LineInput => ({
+        itemType,
+        modelId: String(model.id),
+        quantity,
+        unitPrice,
+      });
+      await queuedOrder({
+        description: texts.itSpareOrder,
+        reason: 'batchReplacement',
+        departmentId: itDept.id,
+        neededInDays: 45,
+        lines: [line('device', thinkpad, 2, 9999)],
+        stage: 'draft',
+      });
+      await queuedOrder({
+        description: texts.salesPhoneOrder,
+        reason: 'newHire',
+        departmentId: sales.id,
+        neededInDays: 20,
+        lines: [line('device', iphone, 3, 5999)],
+        stage: 'draft',
+      });
+      await queuedOrder({
+        description: texts.airOrder,
+        reason: 'newHire',
+        departmentId: rnd.id,
+        neededInDays: 14,
+        lines: [line('device', air, 4, 8999)],
+        stage: 'pendingApproval',
+      });
+      await queuedOrder({
+        description: texts.switchOrder,
+        reason: 'project',
+        departmentId: itDept.id,
+        neededInDays: 30,
+        lines: [line('device', catalyst, 1, 23000)],
+        stage: 'pendingApproval',
+      });
+      await queuedOrder({
+        description: texts.printerReplaceOrder,
+        reason: 'faultReplacement',
+        departmentId: itDept.id,
+        neededInDays: 7,
+        lines: [line('device', laserjet, 1, 2899)],
+        stage: 'approved',
+      });
+      await queuedOrder({
+        description: texts.mouseOrder,
+        reason: 'stockReplenishment',
+        departmentId: rnd.id,
+        neededInDays: 10,
+        lines: [line('accessory', mxMaster, 20, 599)],
+        stage: 'approved',
+      });
+      await queuedOrder({
+        description: texts.ssdOrder,
+        reason: 'stockReplenishment',
+        departmentId: itDept.id,
+        neededInDays: 5,
+        lines: [line('component', ssdModel, 10, 899)],
+        stage: 'ordered',
+      });
+      await queuedOrder({
+        description: texts.desktopOrder,
+        reason: 'batchReplacement',
+        departmentId: sales.id,
+        neededInDays: 12,
+        lines: [line('device', optiplex, 5, 5299)],
+        stage: 'ordered',
+      });
+      await queuedOrder({
+        description: texts.serverOrder,
+        reason: 'project',
+        departmentId: itDept.id,
+        neededInDays: 60,
+        lines: [line('device', poweredge, 2, 68000)],
+        stage: 'rejected',
+        why: texts.serverRejection,
+      });
+      await queuedOrder({
+        description: texts.headsetRestockOrder,
+        reason: 'stockReplenishment',
+        departmentId: sales.id,
+        neededInDays: 15,
+        lines: [line('accessory', zoneVibe, 15, 399)],
+        stage: 'cancelled',
+        why: texts.headsetCancel,
+      });
+
       // An audit in progress over the third floor.
       const audit = await track(
         'auditTasks',
@@ -2196,6 +2414,154 @@ export function createDemoService(dependencies: {
         String(leaverAudit.id),
         context,
         all('auditTasks', 'start'),
+      );
+
+      // Audits in every other state (2026-10-05), so each column of the
+      // audits board holds one. Their scopes keep off the laptops, whose
+      // last count the demo dates 400 days back for the reminder: counting a
+      // device matched stamps it audited today.
+      const auditTask = async (task: {
+        readonly name: string;
+        readonly notes?: string;
+        readonly scope: Row;
+        readonly startIn: number;
+        readonly endIn: number;
+      }): Promise<string> =>
+        String(
+          (
+            await track(
+              'auditTasks',
+              await audits.create(
+                {
+                  name: task.name,
+                  scope: task.scope,
+                  plannedStart: daysFromNow(task.startIn),
+                  plannedEnd: daysFromNow(task.endIn),
+                  executorIds: [actorId],
+                  notes: task.notes ?? null,
+                },
+                context,
+                all('auditTasks', 'create'),
+              ),
+            )
+          ).id,
+        );
+      const itemOf = async (taskId: string, deviceId: unknown) =>
+        String(
+          (await audits.items(taskId)).find(
+            (item) => item.deviceId === String(deviceId),
+          )?.id,
+        );
+      const countIn = (taskId: string, entries: readonly CountInput[]) =>
+        audits.count(taskId, entries, context, all('auditTasks', 'count'));
+      // Two planned for later.
+      await auditTask({
+        name: texts.q4AuditName,
+        notes: texts.q4AuditNotes,
+        scope: { locationIds: [String(floor3.id)] },
+        startIn: 20,
+        endIn: 30,
+      });
+      await auditTask({
+        name: texts.japanAuditName,
+        notes: texts.japanAuditNotes,
+        scope: { locationIds: [String(japan.id)] },
+        startIn: 40,
+        endIn: 55,
+      });
+      // One finished with differences to settle: a phone found elsewhere,
+      // and the printer nobody counted, which finishing marks not found.
+      const diffAudit = await auditTask({
+        name: texts.diffAuditName,
+        scope: {
+          deviceIds: [deskPc.id, mobile.id, officePrinter.id].map(String),
+        },
+        startIn: -6,
+        endIn: -1,
+      });
+      await audits.start(diffAudit, context, all('auditTasks', 'start'));
+      await countIn(diffAudit, [
+        { itemId: await itemOf(diffAudit, deskPc.id), result: 'matched' },
+        {
+          itemId: await itemOf(diffAudit, mobile.id),
+          result: 'mismatch',
+          actualLocationId: String(serverRoom.id),
+        },
+      ]);
+      await audits.finish(diffAudit, context, all('auditTasks', 'finish'));
+      // Two completed last quarter: one all matched, one whose difference
+      // was looked at and left as it was.
+      const roomAudit = await auditTask({
+        name: texts.serverRoomAuditName,
+        scope: { locationIds: [String(serverRoom.id)] },
+        startIn: -100,
+        endIn: -90,
+      });
+      await audits.start(roomAudit, context, all('auditTasks', 'start'));
+      await countIn(
+        roomAudit,
+        (await audits.items(roomAudit)).map((item) => ({
+          itemId: String(item.id),
+          result: 'matched',
+        })),
+      );
+      await audits.finish(roomAudit, context, all('auditTasks', 'finish'));
+      const monitorAudit = await auditTask({
+        name: texts.monitorAuditName,
+        scope: { deviceIds: monitors.map((row) => String(row.id)) },
+        startIn: -95,
+        endIn: -88,
+      });
+      await audits.start(monitorAudit, context, all('auditTasks', 'start'));
+      const monitorItems = await audits.items(monitorAudit);
+      await countIn(
+        monitorAudit,
+        monitorItems.map((item, index) =>
+          index === 0
+            ? {
+                itemId: String(item.id),
+                result: 'mismatch',
+                actualLocationId: String(serverRoom.id),
+              }
+            : { itemId: String(item.id), result: 'matched' },
+        ),
+      );
+      await audits.finish(monitorAudit, context, all('auditTasks', 'finish'));
+      await audits.resolve(
+        monitorAudit,
+        [{ itemId: String(monitorItems[0]?.id), resolution: 'markVerified' }],
+        context,
+        all('auditTasks', 'resolve'),
+      );
+      // The service stamps the start and the completion today; these two
+      // ran last quarter, so their dates are moved back to it.
+      for (const [taskId, startedDaysAgo, completedDaysAgo] of [
+        [roomAudit, 99, 92],
+        [monitorAudit, 94, 89],
+      ] as const)
+        await database
+          .query()
+          .updateTable('auditTasks')
+          .set({
+            startedAt: new Date(Date.now() - startedDaysAgo * DAY),
+            completedAt: new Date(Date.now() - completedDaysAgo * DAY),
+          })
+          .where('id', '=', taskId)
+          .execute();
+      // And one called off part way: a task not yet started is deleted
+      // rather than cancelled, so this one was started first.
+      const spotAudit = await auditTask({
+        name: texts.spotAuditName,
+        scope: { locationIds: [String(warehouse.id)] },
+        startIn: -4,
+        endIn: -3,
+      });
+      await audits.start(spotAudit, context, all('auditTasks', 'start'));
+      await audits.cancel(
+        spotAudit,
+        texts.spotAuditCancel,
+        context,
+        all('auditTasks', 'cancel'),
       );
       const swollenLaptop = await device({
         modelId: latitude.id,
