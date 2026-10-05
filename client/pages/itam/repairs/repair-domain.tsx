@@ -36,10 +36,8 @@ export const repairDomain: DomainConfig = {
   nameField: 'repairNo',
   defaultSort: 'createdAt',
   // A record made by mistake goes; the device comes back from repair.
-  // Deleting undoes the repair, so it belongs to the 负责人 who would
-  // have finished it; the service refuses anyone else (`NOT_OWNER`).
-  deletable: (record, currentUserId) =>
-    text(record.ownerId) === currentUserId,
+  // Who may delete is the grant's alone — the asset manager's and root's —
+  // so the page offers it wherever `delete` is held.
   // Beside 完成维修 in the header; deletion goes in the "more" menu.
   deleteInMenu: true,
   tabs: [{ key: 'attachments', label: 'tabs.attachments' }],
@@ -56,16 +54,21 @@ function RepairActions({
   readonly record: ItamRecord;
 }): ReactElement | null {
   const { t } = useTranslation();
-  const permissions = useCollectionPermissions('repairs', ['complete']);
+  const permissions = useCollectionPermissions('repairs', [
+    'complete',
+    'delete',
+  ]);
   const currentUserId = useCurrentUserId();
   const [completing, setCompleting] = useState(false);
-  // Finishing a repair belongs to its 负责人; the service refuses anyone
-  // else (`NOT_OWNER`), and a rule the page states and the service does not
-  // enforce is not a rule — nor the other way round.
+  // Finishing a repair belongs to its 负责人, or to whoever supervises
+  // repairs — holds `delete` on them, the asset manager and root. The
+  // service refuses anyone else (`NOT_OWNER`), and a rule the page states
+  // and the service does not enforce is not a rule — nor the other way
+  // round.
   if (
     !permissions.complete ||
     record.result !== 'inProgress' ||
-    text(record.ownerId) !== currentUserId
+    (text(record.ownerId) !== currentUserId && !permissions.delete)
   )
     return null;
   return (

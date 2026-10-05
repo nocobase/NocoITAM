@@ -595,7 +595,8 @@ Rules learned while building it:
   than their work. Five of the seven are addressed to one person by the
   service itself, so the card can only be that person's — 待我审批 by the
   approval's named approver (`NOT_APPROVER`), 进行中的维修 by
-  `repairs.ownerId` (`requireOwner`, which binds root too), 进行中的盘点 by
+  `repairs.ownerId` (a supervisor may also close one, but it is the
+  负责人's work), 进行中的盘点 by
   its 负责人 or its `executorIds` (the one who answers for it, and the
   people who count), 待验收到货 by
   `raisedTheOrder` and 待执行的报废 by the same rule on its disposal.
@@ -975,14 +976,19 @@ Rules learned while building it:
   approval left it decidable from the record page alone, while 待我审批 and
   the list's 待我审批 view both reported nothing waiting.
 - A repair belongs to its 负责人 (`ownerId`, 2026-09-28, migration
-  `202609280005_repair_owner`): it starts at whoever files the repair, may be
-  reassigned, and **only that person may complete or delete it**
-  (`requireOwner` → `NOT_OWNER`; deleting takes the device back out of
-  维修中, so it is an undo, not a colleague's errand). The rule lives in the
-  service and binds everyone, root included — to take a repair over, change
-  its owner first, which needs only `update`. That is why the `complete` and
-  `delete` grants are no longer `recordsICreated`: a record-level scope
-  cannot express "may be handed over". `reconcile-grants.ts` strips that
+  `202609280005_repair_owner`): it starts at whoever files the repair and
+  may be reassigned. **Its 负责人 completes it — or a supervisor**
+  (2026-10-05): whoever may clear a repair away, i.e. holds `delete` on
+  repairs (the asset manager and root), may also close one somebody else
+  follows, so a repair whose 负责人 is away or has left is not stuck until
+  it is handed over. The route decides it (`maybeDecide(…, 'repairs',
+  'delete')`) and passes `supervises` to `complete`; `requireOwner` refuses
+  anyone else with `NOT_OWNER`. IT support holds `complete` and not
+  `delete`, so it finishes only its own. **Deleting is the grant's alone**:
+  only the same supervisors hold `delete`, so the owner check that used to
+  sit there would only refuse what the grant allowed. That is why the
+  `complete` and `delete` grants are no longer `recordsICreated`: a
+  record-level scope cannot express "may be handed over". `reconcile-grants.ts` strips that
   stale scope from saved sets through `UNSCOPED_OPERATIONS` /
   `UNSCOPED_ACTIONS`, dropping only a scope that **narrows** — `allRecords`
   is what the seeds themselves write, and rewriting it would make a freshly

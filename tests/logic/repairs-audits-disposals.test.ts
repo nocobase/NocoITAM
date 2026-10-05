@@ -264,47 +264,52 @@ describe('repairs, audits and disposals', () => {
     expect((await patch({ description: 'rewritten' })).status).toBe(422);
   });
 
-  it('gives a repair an owner, and lets only them finish or delete it', async () => {
-    const device = await createDevice();
-    const repair = await data<{ id: string; ownerId: string }>(
-      await post('repairs', {
-        deviceId: device.id,
-        method: 'internal',
-        expectedReturnAt: '2030-01-01',
-        faultDescription: 'Fan rattles',
-      }),
-    );
+  /**
+   * A repair is its 负责人's to finish, or a supervisor's: whoever may clear
+   * a repair away — `delete`, the asset manager's and root's — may also close
+   * one somebody else follows, so a repair whose 负责人 is away is not stuck.
+   * IT support holds `complete` and not `delete`, so it finishes only its
+   * own; deleting is the grant's alone.
+   */
+  it('lets its 负责人 finish a repair, and a supervisor any of them', async () => {
+    const support = { user: 'sam', role: 'support' as const };
+    const repairOf = async () =>
+      data<{ id: string; ownerId: string }>(
+        await post('repairs', {
+          deviceId: (await createDevice()).id,
+          method: 'internal',
+          expectedReturnAt: '2030-01-01',
+          faultDescription: 'Fan rattles',
+        }),
+      );
+    const finish = (id: string, who: typeof manager | typeof support) =>
+      post(`repairs/${id}/complete`, { result: 'repaired' }, who);
+    const remove = (id: string, who: typeof manager | typeof support) =>
+      app.request(`/api/itam/repairs/${id}`, { method: 'DELETE', ...who });
+
+    const repair = await repairOf();
     // Nobody is asked on creation: it is whoever files it, until handed over.
     expect(repair.ownerId).toBe(manager.user);
 
-    // A colleague who holds the grant still cannot act on it.
-    const byOther = await post(`repairs/${repair.id}/complete`, {
-      result: 'repaired',
-    }, approver);
-    expect(byOther.status).toBe(422);
-    expect(await byOther.json()).toMatchObject({ rule: 'NOT_OWNER' });
-    const deletedByOther = await app.request(`/api/itam/repairs/${repair.id}`, {
-      method: 'DELETE',
-      ...approver,
-    });
-    expect(deletedByOther.status).toBe(422);
+    // IT support holds the grant to finish, but this one is not theirs …
+    const byColleague = await finish(repair.id, support);
+    expect(byColleague.status).toBe(422);
+    expect(await byColleague.json()).toMatchObject({ rule: 'NOT_OWNER' });
+    // … and deleting is not theirs at all.
+    expect((await remove(repair.id, support)).status).toBe(403);
 
-    // Handing it over moves both rights with it — which the creator, stamped
-    // once and never changed, could never do.
+    // Handed over, it is: the right moves with the name.
     await app.request(`/api/itam/repairs/${repair.id}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ownerId: approver.user }),
+      body: JSON.stringify({ ownerId: support.user }),
       ...manager,
     });
-    const byOwner = await post(`repairs/${repair.id}/complete`, {
-      result: 'repaired',
-    }, approver);
-    expect(byOwner.status).toBe(200);
-    const byFormerOwner = await post(`repairs/${repair.id}/complete`, {
-      result: 'repaired',
-    });
-    expect(byFormerOwner.status).toBe(422);
+    expect((await finish(repair.id, support)).status).toBe(200);
+
+    // A supervisor closes one somebody else follows, and clears one away.
+    expect((await finish((await repairOf()).id, approver)).status).toBe(200);
+    expect((await remove((await repairOf()).id, approver)).status).toBe(200);
 
     // Finished, it keeps the 负责人 who saw it through: that is history now,
     // as it is for a closed order or stocktake.
@@ -312,7 +317,7 @@ describe('repairs, audits and disposals', () => {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ ownerId: manager.user }),
-      ...approver,
+      ...manager,
     });
     expect(reassigned.status).toBe(422);
     // Its other corrections stay open.
@@ -320,7 +325,7 @@ describe('repairs, audits and disposals', () => {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ notes: 'Fan replaced' }),
-      ...approver,
+      ...manager,
     });
     expect(corrected.status).toBe(200);
   });

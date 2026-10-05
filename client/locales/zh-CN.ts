@@ -1689,6 +1689,13 @@ const zhCN: AppResource = {
         '只有负责人或审批人可以执行这张报废单',
       'Only the owner can submit or withdraw this request':
         '只有负责人或创建人可以提交和撤回',
+      'Only the owner can edit, submit or withdraw this request':
+        '只有负责人或创建人可以编辑、提交和撤回',
+      'Only the owner or a supervisor can complete this repair':
+        '只有负责人、资产经理或管理员可以完成这张维修单',
+      'A closed order keeps the owner it had': '已结束的采购单不能再更换负责人',
+      'A closed disposal keeps the owner it had': '已结束的报废单不能再更换负责人',
+      'A finished repair keeps the owner it had': '已完成的维修单不能再更换负责人',
       'The requester cannot approve their own request':
         '申请人不能审批自己的申请',
       'The scope is fixed once the task started': '任务开始后范围不可修改',

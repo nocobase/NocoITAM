@@ -18,6 +18,7 @@ import {
   REPAIR_RESULTS,
 } from '../../providers/itam/repairs.js';
 import { createCrudRoutes } from './crud-routes.js';
+import { maybeDecide } from './http.js';
 
 /** `/api/itam/repairs`: CRUD filtered by device / vendor, plus completion. */
 const id = z.string().min(1).max(64);
@@ -69,7 +70,7 @@ export const repairRoutes: AppApiRouteContribution<Application> =
         operation(
           'complete',
           'complete',
-          (context, repairId, body, conditions) =>
+          async (context, repairId, body, conditions) =>
             repairs.complete(
               repairId,
               z
@@ -91,6 +92,13 @@ export const repairRoutes: AppApiRouteContribution<Application> =
                 .parse(body),
               operationContext(context),
               conditions,
+              // Whoever may delete repairs supervises them, and may close
+              // one somebody else follows.
+              {
+                supervises: Boolean(
+                  await maybeDecide(context, 'repairs', 'delete'),
+                ),
+              },
             ),
         );
       },

@@ -1782,6 +1782,16 @@ const messages = {
         'Only the owner or the approver can carry out this disposal',
       'Only the owner can submit or withdraw this request':
         'Only the owner can submit or withdraw this request',
+      'Only the owner can edit, submit or withdraw this request':
+        'Only the owner can edit, submit or withdraw this request',
+      'Only the owner or a supervisor can complete this repair':
+        'Only the owner or a supervisor can complete this repair',
+      'A closed order keeps the owner it had':
+        'A closed order keeps the owner it had',
+      'A closed disposal keeps the owner it had':
+        'A closed disposal keeps the owner it had',
+      'A finished repair keeps the owner it had':
+        'A finished repair keeps the owner it had',
       'The requester cannot approve their own request':
         'The requester cannot approve their own request',
       'The scope is fixed once the task started':
