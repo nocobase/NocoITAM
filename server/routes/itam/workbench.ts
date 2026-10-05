@@ -148,6 +148,27 @@ export const workbenchRoutes: AppApiRouteContribution<Application> =
       }
     });
 
+    // What the reader finished lately, so 我的待办 does not lose a to-do the
+    // moment it is done. Each to-do's own act, read back from history.
+    routes.get('/my-work/done', async (context) => {
+      try {
+        return context.json({
+          data: await workbench.doneWork(
+            principalId(context),
+            decider(context),
+            {
+              scope:
+                new URL(context.req.url).searchParams.get('scope') === 'mine'
+                  ? 'mine'
+                  : 'all',
+            },
+          ),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
     routes.get('/reminders', async (context) => {
       try {
         await decideCollection(context, 'reminders', 'read');

@@ -1493,6 +1493,8 @@ const messages = {
       mine_other: '{{count}} yours',
       /** Where the record itself is the one thing: a device on loan. */
       yours: 'Yours',
+      // 已完成: a to-do finished lately, kept under the queue.
+      done: 'Done',
     },
     reminderGroups: {
       devices: 'Devices',
