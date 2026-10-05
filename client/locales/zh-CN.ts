@@ -320,6 +320,8 @@ const zhCN: AppResource = {
       unregisteredFound: '{{target}}',
       audited: '在「{{target}}」中盘点：{{result}}',
       received: '{{quantity}} × {{target}}',
+      receivedFromDocument:
+        '{{quantity}} × {{target}}，按送货单「{{document}}」',
       repairCreated: '维修方式：{{method}}',
       repairCompleted: '维修结果：{{result}}',
       created: '创建，状态为{{to}}',
@@ -1242,6 +1244,60 @@ const zhCN: AppResource = {
     disposalDevices: '报废清单',
     users: '用户',
   },
+  receipt: {
+    batch: '批量入库',
+    fromDocument: '按送货单入库',
+    title: '批量入库',
+    description:
+      '一次收多行到货。设备每台一行，可从 Excel 粘贴一列序列号，或用扫码枪逐个扫入。',
+    context: '按送货单入库',
+    confirm_one: '入库 {{count}} 件',
+    confirm_other: '入库 {{count}} 件',
+    outstanding_one: '未到 {{count}}',
+    outstanding_other: '未到 {{count}}',
+    units_one: '本次 {{count}} 台',
+    units_other: '本次 {{count}} 台',
+    serialPlaceholder: '序列号',
+    serialOf: '第 {{index}} 台的序列号',
+    addUnit: '添加一台',
+    pasteHint:
+      '从 Excel 复制一列序列号粘贴到任意一行，会自动拆成多台；扫码枪扫完一个会跳到下一行。',
+    quantityThisTime: '本次数量',
+    joinStock: '加入库存「{{name}}」',
+    newStock: '新建库存记录的位置',
+    nothing: '这张采购单没有待到货的设备或库存。授权请在明细里逐行入库。',
+    entitlementsSeparately: '授权不在这里收，请在明细里逐行入库。',
+    aiFilled: 'AI 按送货单填写',
+    aiFilledFrom: 'AI 按送货单填写：{{source}}',
+    documentChecks: '单据核对',
+    document: {
+      prompt: '交给 AI 读送货单，自动填好下面的表格',
+      choose: '选择送货单',
+      hint: '支持 Excel、CSV、Word 和文字版 PDF；照片和扫描件需要能看图的模型。',
+      uploading: '正在上传「{{file}}」…',
+      reading: 'AI 正在读「{{file}}」…',
+      done: '已按「{{file}}」填好，请核对后入库。',
+      failed: '没能读取「{{file}}」。',
+      again: '换一份送货单',
+      noRows: '没有读到货物行。',
+      imageUnsupported: '当前模型可能看不了图片，请上传 Excel 或文字版 PDF。',
+      number: '送货单 {{no}}',
+    },
+    issues: {
+      unmatched:
+        '「{{description}}」没有对上采购单的行（{{source}}），这一行没有填入。',
+      notReceivable: '「{{description}}」是授权，请在明细里逐行入库。',
+      matchConflict:
+        '「{{description}}」按料号对到了这一行，与 AI 的判断不同，以料号为准。',
+      shortDelivery: '「{{line}}」未到 {{expected}}，单据上只有 {{actual}}。',
+      serialCount:
+        '「{{description}}」数量 {{expected}}，单据上只有 {{actual}} 个序列号。',
+      overReceipt: '超出未到数量：最多 {{expected}}，本次 {{actual}}。',
+      duplicateInBatch: '序列号 {{serial}} 在本次入库中出现了不止一次。',
+      duplicateInRegister: '序列号 {{serial}} 已在台账中。',
+      serialRequired: '这一类设备每台都必须填序列号。',
+    },
+  },
   procurement: {
     saveDraft: '保存草稿',
     title: '采购',
@@ -1544,6 +1600,14 @@ const zhCN: AppResource = {
   },
   serverErrors: {
     messages: {
+      'Nothing to receive': '没有要入库的内容',
+      'Some lines of this batch cannot be received':
+        '这一批有不能入库的行，请先处理标出的问题',
+      'Only whoever started this run may continue it':
+        '只有发起这次读取的人可以继续',
+      'This run has no plan': '这次读取还没有结果',
+      'Only an order that has been placed can be received':
+        '只有已下单的采购单才能入库',
       'A note is required when marking a device lost': '标记丢失时必须填写说明',
       'Purchase details follow the purchase order':
         '采购单到货的设备，供应商、采购价格和采购日期随采购单，不可改',
@@ -1736,6 +1800,43 @@ const zhCN: AppResource = {
   },
   settings: {
     title: '设置',
+    receiptAgent: {
+      title: '按送货单入库',
+      description:
+        'AI 读供应商的送货单，把货物对到采购单的行上、填好收货表格，由收货人核对后入库。这里是它能做到哪一步，以及它做得怎么样。',
+      boundary: '边界',
+      action: '动作',
+      policy: '由谁来做',
+      actions: {
+        read: '读取送货单，对到采购单行，填好收货表格',
+        receive: '入库（写入台账）',
+        differences: '处理差异：少发、错发、对不上的行',
+      },
+      policies: { auto: '自动', human: '人' },
+      boundaryNote:
+        '这一版的边界由系统强制：读取单据的对话只能用只读工具，收货表格不会自己保存，超量、重复序列号由规则拦下。',
+      performance: '采纳情况',
+      runs_one:
+        '共读取 {{count}} 次：已入库 {{saved}}，放弃 {{discarded}}，失败 {{failed}}',
+      runs_other:
+        '共读取 {{count}} 次：已入库 {{saved}}，放弃 {{discarded}}，失败 {{failed}}',
+      kept: '原样采纳 {{share}}%（采纳 {{accepted}}，修改 {{changed}}，删除 {{removed}}，人工补充 {{added}}）',
+      noProposals: '还没有 AI 填写的值被入库',
+      none: '还没有读取过送货单。',
+      recent: '最近的读取',
+      order: '采购单',
+      document: '单据',
+      startedBy: '发起人',
+      result: '结果',
+      statuses: {
+        reading: '读取中',
+        drafted: '待入库',
+        saved: '已入库',
+        discarded: '已放弃',
+        failed: '失败',
+      },
+      serialsKept: '序列号采纳 {{kept}}/{{total}}',
+    },
     thresholds: {
       warrantyDays: '保修到期提前天数',
       maintenanceExpiryDays: '永久授权维保到期提前天数',
@@ -2189,6 +2290,8 @@ const zhCN: AppResource = {
       lifecycleInfo: '生命周期与更换',
     },
     prompts: {
+      readDeliveryDocument:
+        '请按「按送货单入库」技能读附件里的送货单「{{file}}」，把每一行货物对到采购单 {{orderNo}} 的行上，读完调用一次 prefillReceipt，再用一两句纯文本（不用 Markdown）说明结果。',
       globalSearch:
         '帮我找：「{{text}}」。如果问的是某一类记录，用 ITAM 查询工具查出来，再用 presentRecords 交给搜索框（列表、记录 id、几个字说明是什么），然后只回复一句话，说明按什么条件匹配的，不要列出记录，也不要提搜索框，搜索框会显示记录。如果问的是别的，直接简短回答。',
       parseDocument:

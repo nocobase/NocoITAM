@@ -81,6 +81,11 @@ export type AIEmployeeTask = {
     system?: string;
     user?: string;
     workContext?: AIWorkContextItem[];
+    // Application change (ITAM): files already uploaded (`AIService.uploadFile`)
+    // that go with the task's message, the way a file attached in the
+    // composer does. Receiving by delivery document hands the document over
+    // this way; without it a task could only send text.
+    attachments?: AIChatAttachment[];
   };
   autoSend?: boolean;
   skillSettings?: {

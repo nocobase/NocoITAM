@@ -68,6 +68,9 @@ import type { AIFrontendToolRegistration } from '@/extensions/nocobase-ai';
 import { useAiPageContext } from '@/lib/itam/ai-context';
 import { cn } from '@/lib/utils';
 import { useReferenceNames, type ReferenceNames } from '@/lib/itam/references';
+import { BATCH_ITEM_TYPES, DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
+
+import { BatchReceiptDialog } from './batch-receipt';
 
 export interface LineDraft {
   readonly key: string;
@@ -137,6 +140,9 @@ export function PurchaseOrderLinesCard({
   // The lines under edit; the table is in read mode until it has them.
   const [drafts, setDrafts] = useState<LineDraft[]>();
   const [receiving, setReceiving] = useState<ItamRecord>();
+  // The batch form, opened empty or on a delivery document already picked.
+  const [batch, setBatch] = useState<{ readonly file?: File }>();
+  const documentInputRef = useRef<HTMLInputElement>(null);
   // The lines as the assistant sees them, and the one thing it may do to
   // them: add lines to the draft under edit (ALLOW — nothing is saved until
   // the user presses 保存). The tool reads the draft through a ref so it
@@ -289,6 +295,14 @@ export function PurchaseOrderLinesCard({
     EDITABLE.has(status) &&
     raisedBy(record, currentUserId);
   const canReceive = Boolean(permissions.receive) && RECEIVABLE.has(status);
+  // Devices and stock still to arrive are what the batch form receives.
+  const batchable =
+    canReceive &&
+    rows.some(
+      (row) =>
+        BATCH_ITEM_TYPES.has(text(row.itemType)) &&
+        Number(row.receivedQuantity) < Number(row.quantity),
+    );
   const draftOf = (row: ItamRecord): LineDraft => ({
     key: text(row.id),
     id: text(row.id),
@@ -383,6 +397,34 @@ export function PurchaseOrderLinesCard({
           <h2 className='font-heading text-sm font-semibold'>
             {t('tabs.lines')}
           </h2>
+          {batchable && !drafts ? (
+            <div className='flex flex-wrap items-center justify-end gap-3'>
+              {aiAvailable ? (
+                <>
+                  <input
+                    ref={documentInputRef}
+                    type='file'
+                    accept={DOCUMENT_ACCEPT}
+                    hidden
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = '';
+                      if (file) setBatch({ file });
+                    }}
+                  />
+                  {/* The picker opens from the click itself; the form opens
+                      on the document already being read. */}
+                  <AiShortcut onClick={() => documentInputRef.current?.click()}>
+                    {t('receipt.fromDocument')}
+                  </AiShortcut>
+                </>
+              ) : null}
+              <Button size='sm' variant='outline' onClick={() => setBatch({})}>
+                <Truck data-icon='inline-start' />
+                {t('receipt.batch')}
+              </Button>
+            </div>
+          ) : null}
           {canEdit ? (
             <div className='flex flex-wrap items-center justify-end gap-2'>
               {drafts ? (
@@ -623,6 +665,15 @@ export function PurchaseOrderLinesCard({
         </div>
         {/* Past the draft, a change to the lines states why: the approval was
           given for what the order said then. */}
+        {batch ? (
+          <BatchReceiptDialog
+            orderId={id}
+            order={record}
+            lines={rows}
+            initialFile={batch.file}
+            onClose={() => setBatch(undefined)}
+          />
+        ) : null}
         {receiving ? (
           <ReceiveDialog
             orderId={id}

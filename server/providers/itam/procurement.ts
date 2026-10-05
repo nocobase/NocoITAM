@@ -35,6 +35,7 @@ import type { ItamNotifier } from './notifier.js';
 import type { EntitlementService } from './entitlements.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
+import type { ReceiptRunService } from './receipt-runs.js';
 import type { StockService } from './stock.js';
 import { addMonths, today } from './dates.js';
 import { OPEN_PURCHASE_ORDER_STATUSES } from './recovery.js';
@@ -93,6 +94,11 @@ export interface ReceiveInput {
   /** Entitlements: the record to add the seats to (or created). */
   readonly entitlementId?: string | null;
   readonly extra?: Row;
+}
+
+export interface ReceiveBatchInput {
+  readonly runId?: string | null;
+  readonly receipts: readonly ReceiveInput[];
 }
 
 export interface ProcurementService {
@@ -163,6 +169,17 @@ export interface ProcurementService {
   receive(
     id: string,
     input: ReceiveInput,
+    context: OperationContext,
+    conditions: DatabaseAuthorizationConditions,
+  ): Promise<Row>;
+  /**
+   * Receives several lines at once, in one transaction: the batch receiving
+   * form, filled by hand or prepared by the assistant from a delivery
+   * document (`runId`, whose run it closes).
+   */
+  receiveBatch(
+    id: string,
+    input: ReceiveBatchInput,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Row>;
@@ -271,6 +288,7 @@ export function createProcurementService(deps: {
   devices: DeviceService;
   stock: StockService;
   entitlements: EntitlementService;
+  receiptRuns: ReceiptRunService;
 }): ProcurementService {
   const {
     database,
@@ -282,6 +300,7 @@ export function createProcurementService(deps: {
     devices,
     stock,
     entitlements,
+    receiptRuns,
   } = deps;
   const definition = PURCHASE_ORDERS_COLLECTION;
 
@@ -428,6 +447,353 @@ export function createProcurementService(deps: {
       await fn(connection, order);
     });
     return shape((await findRaw(id)) ?? {}, conditions);
+  };
+
+  /**
+   * Receives one line inside the caller's transaction: the devices, stock or
+   * seats it brings, its receipts, its count and its timeline line. The
+   * order's status is settled once afterwards (`settleWithin`), so a batch
+   * of several lines moves it once.
+   */
+  const receiveWithin = async (
+    connection: DatabaseConnection,
+    id: string,
+    order: Row,
+    input: ReceiveInput,
+    context: OperationContext,
+    document?: { readonly runId: string; readonly name: string },
+  ): Promise<void> => {
+    const line = await connection.query
+      .selectFrom('purchaseOrderLines')
+      .selectAll()
+      .where('id', '=', input.lineId)
+      .where('purchaseOrderId', '=', id)
+      .executeTakeFirst<Row>();
+    if (!line)
+      throw new RecordNotFoundError('purchaseOrderLines', input.lineId);
+    if (!Number.isInteger(input.quantity) || input.quantity < 1)
+      throw new ValidationError(
+        'quantity must be a positive integer',
+        'quantity',
+      );
+    const remaining = Number(line.quantity) - Number(line.receivedQuantity);
+    if (input.quantity > remaining)
+      throw new BusinessRuleError(
+        `Only ${remaining} left to receive on this line`,
+        'OVER_RECEIPT',
+      );
+    const source: OperationContext = {
+      ...context,
+      sourceType: 'purchaseOrder',
+      sourceId: id,
+    };
+    const generated: { type: string; id: string }[] = [];
+    const itemType = String(line.itemType) as LineItemType;
+    // `extra` answers the receipt dialog's own questions and nothing
+    // else: it is spread over what the order settled, so a key beyond
+    // them would rewrite the status, price, vendor or seat count.
+    const allowed = RECEIVE_EXTRA[itemType];
+    const stray = Object.keys(input.extra ?? {}).filter(
+      (key) => !allowed.includes(key),
+    );
+    if (stray.length > 0)
+      throw new ValidationError(
+        `Not a receipt field: ${stray.join(', ')}`,
+        'extra',
+      );
+
+    if (itemType === 'device') {
+      const serials = (input.serialNos ?? []).map((serial) => serial.trim());
+      if (!input.locationId)
+        throw new ValidationError(
+          'locationId is required to receive devices',
+          'locationId',
+        );
+      for (let index = 0; index < input.quantity; index += 1) {
+        const device = await devices.createWithin(
+          connection,
+          {
+            modelId: String(line.modelId),
+            locationId: input.locationId,
+            serialNo: serials[index] ?? null,
+            // Receiving is the check: what arrived and was accepted is
+            // in stock. There is no second confirmation step (the
+            // 待入库 status went with it on 2026-09-26).
+            status: 'inStock',
+            purchaseOrderId: id,
+            vendorId: order.vendorId ?? null,
+            purchaseDate: order.orderedAt ?? today(),
+            purchasePrice: line.unitPrice ?? null,
+            currency: order.currency ?? null,
+            // The order says which department asked for it; a line no
+            // longer carries a target of its own.
+            departmentId: order.departmentId ?? null,
+            ...(input.extra ?? {}),
+          },
+          source,
+        );
+        generated.push({ type: 'device', id: String(device.id) });
+      }
+    } else if (
+      itemType === 'accessory' ||
+      itemType === 'consumable' ||
+      itemType === 'component'
+    ) {
+      let stockItemId = input.stockItemId ?? null;
+      if (stockItemId) {
+        await stock.stockInWithin(
+          connection,
+          stockItemId,
+          {
+            quantity: input.quantity,
+            purchaseOrderId: id,
+            notes: input.notes,
+          },
+          source,
+        );
+      } else {
+        if (!input.locationId)
+          throw new ValidationError(
+            'locationId is required to create a stock item',
+            'locationId',
+          );
+        const model = await connection.query
+          .selectFrom('models')
+          .selectAll()
+          .where('id', '=', String(line.modelId))
+          .executeTakeFirst<Row>();
+        if (!model) throw new ValidationError('Model not found', 'modelId');
+        const item = await stock.createWithin(
+          connection,
+          {
+            kind: itemType,
+            name: String(input.extra?.name ?? model.name),
+            categoryId: String(input.extra?.categoryId ?? model.categoryId),
+            modelId: model.id,
+            manufacturerId: model.manufacturerId,
+            locationId: input.locationId,
+            totalQuantity: input.quantity,
+            // What the receiving form states about a new item: its
+            // water level, a note, and who answers for it. Each is left
+            // to the service's own default when it says nothing.
+            ...(input.extra?.minimumQuantity !== undefined
+              ? { minimumQuantity: Number(input.extra.minimumQuantity) }
+              : {}),
+            ...(input.extra?.notes === undefined
+              ? {}
+              : { notes: str(input.extra.notes) || null }),
+            ...(str(input.extra?.ownerId)
+              ? { ownerId: str(input.extra?.ownerId) }
+              : {}),
+          },
+          source,
+        );
+        stockItemId = String(item.id);
+      }
+      generated.push({ type: 'stockItem', id: stockItemId });
+    } else if (
+      (itemType === 'perpetual' || itemType === 'subscription') &&
+      input.entitlementId
+    ) {
+      // A further batch of an entitlement already on the books: seats
+      // are added (a renewal may also move the expiry) and the receipt
+      // is the purchase record.
+      const existing = await connection.query
+        .selectFrom('entitlements')
+        .select(['id', 'kind', 'softwareProductId'])
+        .where('id', '=', input.entitlementId)
+        .executeTakeFirst<Row>();
+      if (!existing)
+        throw new ValidationError('Entitlement not found', 'entitlementId');
+      if (
+        existing.kind !== itemType ||
+        existing.softwareProductId !== line.softwareProductId
+      )
+        throw new ValidationError(
+          'The entitlement does not match the line',
+          'entitlementId',
+        );
+      await entitlements.receiveWithin(
+        connection,
+        String(existing.id),
+        {
+          quantity: input.quantity,
+          expiryDate: str(input.extra?.expiryDate) || null,
+        },
+        source,
+      );
+      generated.push({ type: 'entitlement', id: String(existing.id) });
+    } else if (itemType === 'perpetual') {
+      const entitlement = await entitlements.createWithin(
+        connection,
+        {
+          kind: 'perpetual',
+          softwareProductId: String(line.softwareProductId),
+          name: str(input.extra?.name) || 'Entitlement',
+          licensingModel: str(input.extra?.licensingModel) || 'perUser',
+          seatCount: input.quantity,
+          maintenanceExpiryDate: input.extra?.maintenanceExpiryDate ?? null,
+          // When it was bought and in what money are the order's to
+          // answer, not the receiver's: asking again only invites a
+          // different answer.
+          startDate: order.orderedAt ?? null,
+          currency: order.currency ?? null,
+          ...(input.extra ?? {}),
+        },
+        source,
+      );
+      generated.push({ type: 'entitlement', id: String(entitlement.id) });
+    } else if (itemType === 'subscription') {
+      const entitlement = await entitlements.createWithin(
+        connection,
+        {
+          kind: 'subscription',
+          softwareProductId: String(line.softwareProductId),
+          name: str(input.extra?.name) || 'Subscription',
+          billingModel: str(input.extra?.billingModel) || 'perSeat',
+          seatCount: input.quantity,
+          billingCycle: str(input.extra?.billingCycle) || 'year',
+          unitPrice: line.unitPrice ?? null,
+          currency: order.currency ?? null,
+          // The first term starts when it arrives.
+          startDate: str(input.extra?.startDate) || today(),
+          expiryDate: str(input.extra?.expiryDate) || addMonths(today(), 12),
+          ...(input.extra ?? {}),
+        },
+        source,
+      );
+      generated.push({ type: 'entitlement', id: String(entitlement.id) });
+    }
+
+    for (const record of generated.length > 0
+      ? generated
+      : [{ type: null, id: null }]) {
+      await connection.query
+        .insertInto('purchaseReceipts')
+        .values({
+          id: crypto.randomUUID(),
+          purchaseOrderId: id,
+          lineId: input.lineId,
+          quantity: generated.length > 1 ? 1 : input.quantity,
+          generatedType: record.type,
+          generatedId: record.id,
+          notes: input.notes ?? null,
+          actorId: context.actorId,
+          createdAt: new Date(),
+        })
+        .execute();
+    }
+    await connection.query
+      .updateTable('purchaseOrderLines')
+      .set({
+        receivedQuantity: Number(line.receivedQuantity) + input.quantity,
+        updatedAt: new Date(),
+      })
+      .where('id', '=', input.lineId)
+      .execute();
+    // What arrived, by the name a reader knows it by: its model or
+    // software product.
+    const itemName =
+      (line.modelId
+        ? asText(
+            (
+              await connection.query
+                .selectFrom('models')
+                .select('name')
+                .where('id', '=', asText(line.modelId) ?? '')
+                .executeTakeFirst<{ name: string }>()
+            )?.name,
+          )
+        : line.softwareProductId
+          ? asText(
+              (
+                await connection.query
+                  .selectFrom('softwareProducts')
+                  .select('name')
+                  .where('id', '=', asText(line.softwareProductId) ?? '')
+                  .executeTakeFirst<{ name: string }>()
+              )?.name,
+            )
+          : undefined) ||
+      // A stock line names the item it went into.
+      asText(
+        (
+          await connection.query
+            .selectFrom('stockItems')
+            .select('name')
+            .where(
+              'id',
+              '=',
+              String(
+                generated.find((entry) => entry.type === 'stockItem')?.id ?? '',
+              ),
+            )
+            .executeTakeFirst<{ name: string }>()
+        )?.name,
+      ) ||
+      String(line.itemType);
+    await history.record(
+      {
+        subjectType: 'purchaseOrders',
+        subjectId: id,
+        type: 'received',
+        summary: `Received ${input.quantity} × ${itemName}`,
+        payload: {
+          lineId: input.lineId,
+          quantity: input.quantity,
+          targetLabel: itemName,
+          generated,
+          // A batch prepared from a delivery document names it, so the
+          // timeline says where the serials and quantities came from.
+          ...(document
+            ? { runId: document.runId, document: document.name }
+            : {}),
+        },
+        ...context,
+      },
+      connection,
+    );
+  };
+
+  /** Moves the order on by what its lines have now received. */
+  const settleWithin = async (
+    connection: DatabaseConnection,
+    id: string,
+    order: Row,
+    context: OperationContext,
+  ): Promise<void> => {
+    const lines = await connection.query
+      .selectFrom('purchaseOrderLines')
+      .select(['quantity', 'receivedQuantity', 'unitPrice'])
+      .where('purchaseOrderId', '=', id)
+      .execute<{
+        quantity: number;
+        receivedQuantity: number;
+        unitPrice: unknown;
+      }>();
+    const complete = lines.every(
+      (row) => Number(row.receivedQuantity) >= Number(row.quantity),
+    );
+    const current = (await findRaw(id, connection)) ?? order;
+    if (complete) {
+      await setStatus(
+        connection,
+        current,
+        'completed',
+        context,
+        'All lines received',
+        {},
+        { receivedAt: today() },
+      );
+    } else if (current.status !== 'partiallyReceived') {
+      await setStatus(
+        connection,
+        current,
+        'partiallyReceived',
+        context,
+        'Partially received',
+      );
+    }
   };
 
   return {
@@ -905,328 +1271,65 @@ export function createProcurementService(deps: {
     receive: (id, input, context, conditions) =>
       mutate(id, conditions, async (connection, order) => {
         requireStatus(order, ['ordered', 'partiallyReceived'], 'receive');
-        const line = await connection.query
-          .selectFrom('purchaseOrderLines')
-          .selectAll()
-          .where('id', '=', input.lineId)
-          .where('purchaseOrderId', '=', id)
-          .executeTakeFirst<Row>();
-        if (!line)
-          throw new RecordNotFoundError('purchaseOrderLines', input.lineId);
-        if (!Number.isInteger(input.quantity) || input.quantity < 1)
-          throw new ValidationError(
-            'quantity must be a positive integer',
-            'quantity',
-          );
-        const remaining = Number(line.quantity) - Number(line.receivedQuantity);
-        if (input.quantity > remaining)
+        await receiveWithin(connection, id, order, input, context);
+        await settleWithin(connection, id, order, context);
+      }),
+
+    receiveBatch: (id, input, context, conditions) =>
+      mutate(id, conditions, async (connection, order) => {
+        requireStatus(order, ['ordered', 'partiallyReceived'], 'receive');
+        if (input.receipts.length === 0)
+          throw new ValidationError('Nothing to receive', 'receipts');
+        const batch = input.receipts.map((receipt) => ({
+          lineId: receipt.lineId,
+          quantity: receipt.quantity,
+          serialNos: receipt.serialNos,
+        }));
+        // The rules decide before anything is written: a batch that would
+        // receive more than is left, or a serial twice, is refused whole —
+        // half a delivery on the books is wrong in a way nobody sees.
+        const blocking = (
+          await receiptRuns.check(id, batch, connection)
+        ).filter((entry) => entry.blocking);
+        if (blocking.length > 0)
           throw new BusinessRuleError(
-            `Only ${remaining} left to receive on this line`,
-            'OVER_RECEIPT',
+            'Some lines of this batch cannot be received',
+            'RECEIPT_ISSUES',
           );
-        const source: OperationContext = {
-          ...context,
-          sourceType: 'purchaseOrder',
-          sourceId: id,
-        };
-        const generated: { type: string; id: string }[] = [];
-        const itemType = String(line.itemType) as LineItemType;
-        // `extra` answers the receipt dialog's own questions and nothing
-        // else: it is spread over what the order settled, so a key beyond
-        // them would rewrite the status, price, vendor or seat count.
-        const allowed = RECEIVE_EXTRA[itemType];
-        const stray = Object.keys(input.extra ?? {}).filter(
-          (key) => !allowed.includes(key),
-        );
-        if (stray.length > 0)
-          throw new ValidationError(
-            `Not a receipt field: ${stray.join(', ')}`,
-            'extra',
-          );
-
-        if (itemType === 'device') {
-          const serials = (input.serialNos ?? []).map((serial) =>
-            serial.trim(),
-          );
-          if (!input.locationId)
-            throw new ValidationError(
-              'locationId is required to receive devices',
-              'locationId',
-            );
-          for (let index = 0; index < input.quantity; index += 1) {
-            const device = await devices.createWithin(
+        // A batch the assistant prepared closes its run in the same
+        // transaction, so the run says saved exactly when the goods are in.
+        const plan = input.runId
+          ? await receiptRuns.finishWithin(
               connection,
-              {
-                modelId: String(line.modelId),
-                locationId: input.locationId,
-                serialNo: serials[index] ?? null,
-                // Receiving is the check: what arrived and was accepted is
-                // in stock. There is no second confirmation step (the
-                // 待入库 status went with it on 2026-09-26).
-                status: 'inStock',
-                purchaseOrderId: id,
-                vendorId: order.vendorId ?? null,
-                purchaseDate: order.orderedAt ?? today(),
-                purchasePrice: line.unitPrice ?? null,
-                currency: order.currency ?? null,
-                // The order says which department asked for it; a line no
-                // longer carries a target of its own.
-                departmentId: order.departmentId ?? null,
-                ...(input.extra ?? {}),
-              },
-              source,
-            );
-            generated.push({ type: 'device', id: String(device.id) });
-          }
-        } else if (
-          itemType === 'accessory' ||
-          itemType === 'consumable' ||
-          itemType === 'component'
-        ) {
-          let stockItemId = input.stockItemId ?? null;
-          if (stockItemId) {
-            await stock.stockInWithin(
-              connection,
-              stockItemId,
-              {
-                quantity: input.quantity,
-                purchaseOrderId: id,
-                notes: input.notes,
-              },
-              source,
-            );
-          } else {
-            if (!input.locationId)
-              throw new ValidationError(
-                'locationId is required to create a stock item',
-                'locationId',
-              );
-            const model = await connection.query
-              .selectFrom('models')
-              .selectAll()
-              .where('id', '=', String(line.modelId))
-              .executeTakeFirst<Row>();
-            if (!model) throw new ValidationError('Model not found', 'modelId');
-            const item = await stock.createWithin(
-              connection,
-              {
-                kind: itemType,
-                name: String(input.extra?.name ?? model.name),
-                categoryId: String(input.extra?.categoryId ?? model.categoryId),
-                modelId: model.id,
-                manufacturerId: model.manufacturerId,
-                locationId: input.locationId,
-                totalQuantity: input.quantity,
-                // What the receiving form states about a new item: its
-                // water level, a note, and who answers for it. Each is left
-                // to the service's own default when it says nothing.
-                ...(input.extra?.minimumQuantity !== undefined
-                  ? { minimumQuantity: Number(input.extra.minimumQuantity) }
-                  : {}),
-                ...(input.extra?.notes === undefined
-                  ? {}
-                  : { notes: str(input.extra.notes) || null }),
-                ...(str(input.extra?.ownerId)
-                  ? { ownerId: str(input.extra?.ownerId) }
-                  : {}),
-              },
-              source,
-            );
-            stockItemId = String(item.id);
-          }
-          generated.push({ type: 'stockItem', id: stockItemId });
-        } else if (
-          (itemType === 'perpetual' || itemType === 'subscription') &&
-          input.entitlementId
-        ) {
-          // A further batch of an entitlement already on the books: seats
-          // are added (a renewal may also move the expiry) and the receipt
-          // is the purchase record.
-          const existing = await connection.query
-            .selectFrom('entitlements')
-            .select(['id', 'kind', 'softwareProductId'])
-            .where('id', '=', input.entitlementId)
-            .executeTakeFirst<Row>();
-          if (!existing)
-            throw new ValidationError('Entitlement not found', 'entitlementId');
-          if (
-            existing.kind !== itemType ||
-            existing.softwareProductId !== line.softwareProductId
-          )
-            throw new ValidationError(
-              'The entitlement does not match the line',
-              'entitlementId',
-            );
-          await entitlements.receiveWithin(
+              id,
+              input.runId,
+              batch,
+              context,
+            )
+          : undefined;
+        const run = input.runId
+          ? await connection.query
+              .selectFrom('receiptRuns')
+              .select(['id', 'documentName'])
+              .where('id', '=', input.runId)
+              .executeTakeFirst<{ id: string; documentName: string }>()
+          : undefined;
+        const planned = new Set(plan?.lines.map((line) => line.lineId));
+        for (const receipt of input.receipts)
+          await receiveWithin(
             connection,
-            String(existing.id),
-            {
-              quantity: input.quantity,
-              expiryDate: str(input.extra?.expiryDate) || null,
-            },
-            source,
+            id,
+            order,
+            receipt,
+            // What the assistant proposed and a person confirmed reads as
+            // the assistant's, under that person's name; a line the
+            // receiver added by hand is theirs.
+            planned.has(receipt.lineId)
+              ? { ...context, origin: 'agent' }
+              : context,
+            run ? { runId: run.id, name: run.documentName } : undefined,
           );
-          generated.push({ type: 'entitlement', id: String(existing.id) });
-        } else if (itemType === 'perpetual') {
-          const entitlement = await entitlements.createWithin(
-            connection,
-            {
-              kind: 'perpetual',
-              softwareProductId: String(line.softwareProductId),
-              name: str(input.extra?.name) || 'Entitlement',
-              licensingModel: str(input.extra?.licensingModel) || 'perUser',
-              seatCount: input.quantity,
-              maintenanceExpiryDate: input.extra?.maintenanceExpiryDate ?? null,
-              // When it was bought and in what money are the order's to
-              // answer, not the receiver's: asking again only invites a
-              // different answer.
-              startDate: order.orderedAt ?? null,
-              currency: order.currency ?? null,
-              ...(input.extra ?? {}),
-            },
-            source,
-          );
-          generated.push({ type: 'entitlement', id: String(entitlement.id) });
-        } else if (itemType === 'subscription') {
-          const entitlement = await entitlements.createWithin(
-            connection,
-            {
-              kind: 'subscription',
-              softwareProductId: String(line.softwareProductId),
-              name: str(input.extra?.name) || 'Subscription',
-              billingModel: str(input.extra?.billingModel) || 'perSeat',
-              seatCount: input.quantity,
-              billingCycle: str(input.extra?.billingCycle) || 'year',
-              unitPrice: line.unitPrice ?? null,
-              currency: order.currency ?? null,
-              // The first term starts when it arrives.
-              startDate: str(input.extra?.startDate) || today(),
-              expiryDate:
-                str(input.extra?.expiryDate) || addMonths(today(), 12),
-              ...(input.extra ?? {}),
-            },
-            source,
-          );
-          generated.push({ type: 'entitlement', id: String(entitlement.id) });
-        }
-
-        for (const record of generated.length > 0
-          ? generated
-          : [{ type: null, id: null }]) {
-          await connection.query
-            .insertInto('purchaseReceipts')
-            .values({
-              id: crypto.randomUUID(),
-              purchaseOrderId: id,
-              lineId: input.lineId,
-              quantity: generated.length > 1 ? 1 : input.quantity,
-              generatedType: record.type,
-              generatedId: record.id,
-              notes: input.notes ?? null,
-              actorId: context.actorId,
-              createdAt: new Date(),
-            })
-            .execute();
-        }
-        await connection.query
-          .updateTable('purchaseOrderLines')
-          .set({
-            receivedQuantity: Number(line.receivedQuantity) + input.quantity,
-            updatedAt: new Date(),
-          })
-          .where('id', '=', input.lineId)
-          .execute();
-        // What arrived, by the name a reader knows it by: its model or
-        // software product.
-        const itemName =
-          (line.modelId
-            ? asText(
-                (
-                  await connection.query
-                    .selectFrom('models')
-                    .select('name')
-                    .where('id', '=', asText(line.modelId) ?? '')
-                    .executeTakeFirst<{ name: string }>()
-                )?.name,
-              )
-            : line.softwareProductId
-              ? asText(
-                  (
-                    await connection.query
-                      .selectFrom('softwareProducts')
-                      .select('name')
-                      .where('id', '=', asText(line.softwareProductId) ?? '')
-                      .executeTakeFirst<{ name: string }>()
-                  )?.name,
-                )
-              : undefined) ||
-          // A stock line names the item it went into.
-          asText(
-            (
-              await connection.query
-                .selectFrom('stockItems')
-                .select('name')
-                .where(
-                  'id',
-                  '=',
-                  String(
-                    generated.find((entry) => entry.type === 'stockItem')?.id ??
-                      '',
-                  ),
-                )
-                .executeTakeFirst<{ name: string }>()
-            )?.name,
-          ) ||
-          String(line.itemType);
-        await history.record(
-          {
-            subjectType: 'purchaseOrders',
-            subjectId: id,
-            type: 'received',
-            summary: `Received ${input.quantity} × ${itemName}`,
-            payload: {
-              lineId: input.lineId,
-              quantity: input.quantity,
-              targetLabel: itemName,
-              generated,
-            },
-            ...context,
-          },
-          connection,
-        );
-
-        const lines = await connection.query
-          .selectFrom('purchaseOrderLines')
-          .select(['quantity', 'receivedQuantity', 'unitPrice'])
-          .where('purchaseOrderId', '=', id)
-          .execute<{
-            quantity: number;
-            receivedQuantity: number;
-            unitPrice: unknown;
-          }>();
-        const complete = lines.every(
-          (row) => Number(row.receivedQuantity) >= Number(row.quantity),
-        );
-        const current = (await findRaw(id, connection)) ?? order;
-        if (complete) {
-          await setStatus(
-            connection,
-            current,
-            'completed',
-            context,
-            'All lines received',
-            {},
-            { receivedAt: today() },
-          );
-        } else if (current.status !== 'partiallyReceived') {
-          await setStatus(
-            connection,
-            current,
-            'partiallyReceived',
-            context,
-            'Partially received',
-          );
-        }
+        await settleWithin(connection, id, order, context);
       }),
 
     cancel: (id, reason, context, conditions) =>

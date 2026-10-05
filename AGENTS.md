@@ -236,7 +236,10 @@ Rules learned while building it:
   page registered `ALLOW`); and, as in the CRM, sending a new message first
   declines every card still waiting (`declinePendingApprovals` in
   `chat-provider.tsx`), because the plugin's own handling of a message over
-  a pending call leaves a DeepSeek conversation unable to continue. It is
+  a pending call leaves a DeepSeek conversation unable to continue; and a
+  task may carry files already uploaded (`AIEmployeeTask.message.attachments`,
+  `types.ts` and `triggerTask` in `chat-provider.tsx`), which receiving by
+  delivery document hands its document over with. It is
   lint-ignored and upgraded by three-way
   merge, which keeps those, never rewritten. Application code imports it
   through `@/extensions/nocobase-ai`.
@@ -812,8 +815,8 @@ Rules learned while building it:
   「入库确认」 step went on 2026-09-26 (migration
   `202609260001_drop_pending_receipt` moves the rows that were in it), so
   `DEVICE_STATUSES` starts at `inStock` and there is no `confirmReceipt`
-  transition. A device is received **one at a time**, because each one is
-  its own record: the dialog asks for the serial, name, place (required),
+  transition. Each device is its own record: on a line's own 入库 the
+  dialog receives one and asks for the serial, name, place (required),
   owning department (the order's, by default), warranty end, notes and
   keeper, and shows the model, the vendor and that it is owned as fixed —
   the order settled those. Accessories, consumables and components are a
@@ -842,6 +845,57 @@ Rules learned while building it:
   either (`202609260004_drop_line_description`): a line is its model or its
   software product, and the pickers show each one's category and maker
   beside the name.
+- Receiving **in batch** (2026-10-05, `BatchReceiptDialog` in
+  `client/pages/itam/procurement/batch-receipt.tsx`, `POST
+  /itam/purchase-orders/:id/receive-batch`, `receiveBatch` in
+  `procurement.ts`): every outstanding device and stock line of the order in
+  one form and one transaction. A device is still a record of its own, so
+  each is a row with its own serial — a column pasted from a spreadsheet
+  splits into rows, a scanner's Enter moves to the next — while what every
+  unit of a line shares (place, department, keeper, warranty) is asked once.
+  Entitlements keep their own dialog. The rules decide before anything is
+  written (`checkBatch` in `server/providers/itam/receipt-plan.ts`, asked
+  live through `POST /:id/receipt-check`): more than a line has left, a
+  serial twice in the batch or already on the books, or a device without the
+  serial its category requires refuses the **whole** batch
+  (`RECEIPT_ISSUES`), because half a delivery on the books is wrong in a way
+  nobody sees. This replaced "a device is received one at a time", which
+  made twenty laptops twenty dialogs.
+- Receiving **by delivery document** is the first work the assistant
+  carries rather than answers (2026-10-05, the NocoITAM plan's first
+  vertical; offboarding stays rules and people). 按送货单入库 on the order's
+  lines card picks the file and opens the batch form already reading it:
+  the file is kept as the order's attachment, a run is started
+  (`receiptRuns`, `202610050003_receipt_runs`, `receipt-runs.ts`), and the
+  assistant reads it in the `receipt` unseen chat under the `receiving`
+  skill (`ai/skills/receiving/SKILL.md`) with `skillSettings.tools` limited
+  to a read tool — the plugin enforces that list on the server — handing its
+  reading back through its one page tool, `prefillReceipt`. The server's
+  rules turn that into the plan the form opens on (`planReceipt`): a row
+  whose part code is a line's model `code` goes there whatever the
+  assistant guessed (`matchConflict` says when they differ), entitlements
+  and unmatched rows are listed, never forced onto a line. Every value it
+  filled carries a sparkle naming where in the document it came from, and
+  loses it once the receiver types over it. Nothing is received until the
+  receiver presses 入库; that batch closes the run (`saved`, with `final`
+  and per-field `stats`: kept / changed / removed / added), its `received`
+  events read `origin: 'agent'` under the receiver's name and name the
+  document. A run belongs to whoever started it (`NOT_RUN_ACTOR`); closing
+  the form discards it, a turn that handed nothing over fails it, and its
+  conversation is deleted either way — the run is the record. 设置 shows
+  the boundary, the acceptance counts and the latest runs (`GET
+  /itam/ai/receipt-runs`, the settings grant). The server reads the
+  document as text when the run starts (`document-text.ts`, kept in
+  `receiptRuns.documentText`) and the page puts it in the message itself:
+  the plugin parses an attached file into its own request only, and the turn
+  resumes as soon as the page tool is approved, after which the model said it
+  could not open the file. CSV and plain text are decoded as they are — the
+  plugin's CSV loader takes the first line for the column names, so a
+  delivery note's header block above its table lost every column past the
+  second — and Excel, Word and PDF go through the plugin's own loader
+  (`loadByWorker`), so any model reads them. Only a picture is attached,
+  for a model that reads images; that is configuration, not code. Do not add
+  an OCR library for them.
 - An approved purchase order states what it asks for: its request fields
   (事由, 说明, 部门, 需求日期, 供应商, 币种) go read-only once it reaches
   `approved` (`SETTLED_STATUSES` / `SETTLED_EDITABLE` in `procurement.ts`,
@@ -1285,12 +1339,13 @@ Rules learned while building it:
   segmented 搜索 | 问 AI switch (the pages' own tabs; the box itself does not
   change colour) asks a question, and the answer comes **in the dialog, not
   in the side panel** — the way Slack, Glean and Rovo put an AI answer at
-  the top of the results. It runs in the search's own chat: `SearchChat` in
-  `client/layouts/ai-panel.tsx` mounts a second, windowless
-  `AIChatProvider` with the same employee (sending, tool calls and their
+  the top of the results. It runs in the search's own chat: `HiddenChat` in
+  `client/layouts/ai-panel.tsx` mounts a windowless `AIChatProvider` per
+  unseen chat (`search`, and `receipt` for receiving by delivery document)
+  with the same employee (sending, tool calls and their
   automatic approval all live in the provider), so asking neither opens the
   panel nor replaces the conversation in it; `ChatStateBridge` publishes its
-  messages and status to `useItamSearchChat()`, and `readSearchTurn`
+  messages and status to `useHiddenChat(name)`, and `readSearchTurn`
   (`client/lib/itam/search-turn.ts`, unit tested) reads the step under way,
   the words after the last tool call, a write waiting for confirmation or a
   failure — treating the quiet moments between steps (a page tool approving

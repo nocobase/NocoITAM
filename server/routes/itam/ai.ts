@@ -13,10 +13,17 @@ import { z } from 'zod';
 
 import { aiManagerToken } from '@nocobase/app-plugin-ai-employee/server';
 
+import { receiptRunServiceToken } from '../../providers/index.js';
 import { scopeFor } from '../../providers/itam/ai-bridge.js';
+import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
 import { screenWrite } from '../../providers/itam/ai-writes.js';
 import { AI_RECORD_TOOLS, screenRecord } from './ai-records.js';
-import { errorResponse, principalId, readJsonObject } from './http.js';
+import {
+  errorResponse,
+  principalId,
+  readJsonObject,
+  requireGrant,
+} from './http.js';
 
 /**
  * `/api/itam/ai`: whether the assistant is available, and the pre-check the
@@ -57,6 +64,29 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
         return errorResponse(context, error);
       }
     });
+
+    // What the assistant has done reading delivery documents: every run by
+    // how it ended, what the receivers kept of its proposals field by field
+    // — the record the trust ladder reads (guideline 3.5) — and the latest
+    // runs, each naming who started it. Shown on the settings page, so it
+    // takes the settings grant.
+    routes.get(
+      '/receipt-runs',
+      requireGrant(ITAM_SETTINGS_RESOURCE, 'update'),
+      async (context) => {
+        try {
+          const runs = app.container.resolve(receiptRunServiceToken);
+          return context.json({
+            data: {
+              summary: await runs.summary(),
+              recent: await runs.recent(10),
+            },
+          });
+        } catch (error) {
+          return errorResponse(context, error);
+        }
+      },
+    );
 
     // Whether the signed-in user could run a write tool's call as it
     // stands, asked by its card before confirmation is offered: the

@@ -33,6 +33,8 @@ import {
 } from '@/lib/itam/api';
 import { errorMessage, formatDate } from '@/lib/itam/format';
 
+import { ReceiptAgentCard } from './receipt-agent-card';
+
 type SettingsKey = keyof ItamSettings;
 
 /**
@@ -55,6 +57,7 @@ export default function ItamSettingsPage(): ReactElement {
           <ThresholdsCard value={settings.data.thresholds} />
           <NumberingCard value={settings.data.numbering} />
           <AiCard value={settings.data.ai} />
+          <ReceiptAgentCard />
           <DemoCard />
         </div>
       ) : null}

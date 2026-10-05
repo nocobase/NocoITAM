@@ -326,6 +326,8 @@ const messages = {
       unregisteredFound: '{{target}}',
       audited: 'Audited in {{target}}: {{result}}',
       received: '{{quantity}} × {{target}}',
+      receivedFromDocument:
+        '{{quantity}} × {{target}}, from delivery document “{{document}}”',
       repairCreated: 'Method: {{method}}',
       repairCompleted: 'Result: {{result}}',
       created: 'Created as {{to}}',
@@ -1282,6 +1284,66 @@ const messages = {
     disposalDevices: 'disposal devices',
     users: 'users',
   },
+  receipt: {
+    batch: 'Receive in batch',
+    fromDocument: 'Receive from delivery note',
+    title: 'Receive in batch',
+    description:
+      'Receive several lines at once. One row per device: paste a column of serial numbers from a spreadsheet, or scan them one after another.',
+    context: 'Receiving by delivery document',
+    confirm_one: 'Receive {{count}} item',
+    confirm_other: 'Receive {{count}} items',
+    outstanding_one: '{{count}} outstanding',
+    outstanding_other: '{{count}} outstanding',
+    units_one: '{{count}} device this time',
+    units_other: '{{count}} devices this time',
+    serialPlaceholder: 'Serial number',
+    serialOf: 'Serial number of device {{index}}',
+    addUnit: 'Add a device',
+    pasteHint:
+      'Paste a column of serial numbers into any row and it becomes one row per device; a scanner moves to the next row after each scan.',
+    quantityThisTime: 'Quantity this time',
+    joinStock: 'Added to stock “{{name}}”',
+    newStock: 'Location of the new stock record',
+    nothing:
+      'Nothing on this order is waiting to arrive as devices or stock. Receive entitlements line by line.',
+    entitlementsSeparately:
+      'Entitlements are not received here: receive them line by line.',
+    aiFilled: 'Filled by AI from the delivery note',
+    aiFilledFrom: 'Filled by AI from the delivery note: {{source}}',
+    documentChecks: 'Delivery note checks',
+    document: {
+      prompt: 'Let AI read the delivery note and fill in the form below',
+      choose: 'Choose delivery note',
+      hint: 'Excel, CSV, Word and text PDFs work with any model; photos and scans need a model that reads images.',
+      uploading: 'Uploading “{{file}}”…',
+      reading: 'AI is reading “{{file}}”…',
+      done: 'Filled in from “{{file}}”. Check it, then receive.',
+      failed: 'Could not read “{{file}}”.',
+      again: 'Use another delivery note',
+      noRows: 'No goods rows were read.',
+      imageUnsupported:
+        'The current model may not read images: upload an Excel file or a text PDF.',
+      number: 'Delivery note {{no}}',
+    },
+    issues: {
+      unmatched:
+        '“{{description}}” matches no line of the order ({{source}}) and was left out.',
+      notReceivable:
+        '“{{description}}” is an entitlement: receive it on its line.',
+      matchConflict:
+        '“{{description}}” was matched to this line by its part number, not as AI suggested.',
+      shortDelivery:
+        '“{{line}}” has {{expected}} outstanding; the delivery note has {{actual}}.',
+      serialCount:
+        '“{{description}}” has quantity {{expected}} but {{actual}} serial numbers.',
+      overReceipt:
+        'More than is outstanding: at most {{expected}}, {{actual}} this time.',
+      duplicateInBatch: 'Serial number {{serial}} appears more than once.',
+      duplicateInRegister: 'Serial number {{serial}} is already on the books.',
+      serialRequired: 'Every device of this category needs a serial number.',
+    },
+  },
   procurement: {
     saveDraft: 'Save draft',
     title: 'Procurement',
@@ -1602,6 +1664,14 @@ const messages = {
   },
   serverErrors: {
     messages: {
+      'Nothing to receive': 'Nothing to receive',
+      'Some lines of this batch cannot be received':
+        'Some lines of this batch cannot be received',
+      'Only whoever started this run may continue it':
+        'Only whoever started this run may continue it',
+      'This run has no plan': 'This run has no plan',
+      'Only an order that has been placed can be received':
+        'Only an order that has been placed can be received',
       'A note is required when marking a device lost':
         'A note is required when marking a device lost',
       'Purchase details follow the purchase order':
@@ -1836,6 +1906,43 @@ const messages = {
   },
   settings: {
     title: 'Settings',
+    receiptAgent: {
+      title: 'Receiving from delivery notes',
+      description:
+        'AI reads the vendor’s delivery note, matches the goods to the order’s lines and fills in the receiving form; the receiver checks it and receives. This is how far it may go, and how well it does.',
+      boundary: 'Boundary',
+      action: 'Action',
+      policy: 'Who does it',
+      actions: {
+        read: 'Read the delivery note, match it to order lines, fill in the form',
+        receive: 'Receive (write to the register)',
+        differences: 'Settle differences: short, wrong or unmatched rows',
+      },
+      policies: { auto: 'Automatic', human: 'A person' },
+      boundaryNote:
+        'This boundary is enforced by the system: the conversation that reads a document has read-only tools, the form never saves itself, and over-receipts and duplicate serials are stopped by the rules.',
+      performance: 'Acceptance',
+      runs_one:
+        '{{count}} document read: {{saved}} received, {{discarded}} discarded, {{failed}} failed',
+      runs_other:
+        '{{count}} documents read: {{saved}} received, {{discarded}} discarded, {{failed}} failed',
+      kept: '{{share}}% kept as proposed ({{accepted}} kept, {{changed}} changed, {{removed}} removed, {{added}} added by hand)',
+      noProposals: 'No value filled by AI has been received yet',
+      none: 'No delivery note has been read yet.',
+      recent: 'Latest runs',
+      order: 'Purchase order',
+      document: 'Document',
+      startedBy: 'Started by',
+      result: 'Result',
+      statuses: {
+        reading: 'Reading',
+        drafted: 'Waiting to receive',
+        saved: 'Received',
+        discarded: 'Discarded',
+        failed: 'Failed',
+      },
+      serialsKept: '{{kept}}/{{total}} serials kept',
+    },
     thresholds: {
       warrantyDays: 'Warranty expiry notice',
       maintenanceExpiryDays: 'Perpetual maintenance expiry notice (days)',
@@ -2317,6 +2424,8 @@ const messages = {
       lifecycleInfo: 'Lifecycle & replacement',
     },
     prompts: {
+      readDeliveryDocument:
+        'Following the receiving skill, read the attached delivery document “{{file}}”, match each goods row to a line of purchase order {{orderNo}}, call prefillReceipt once with what you read, then say in a sentence or two of plain text (no Markdown) how it went.',
       globalSearch:
         'Find what I am asking for: "{{text}}". If it asks for records of one kind, look them up with the ITAM read tools and hand them over with presentRecords (the list, their ids and a few words saying what they are), then reply with one sentence saying how you matched them, and nothing else — do not list the records or mention the search box, which shows them. If it asks for anything else, answer it directly and briefly.',
       parseDocument:

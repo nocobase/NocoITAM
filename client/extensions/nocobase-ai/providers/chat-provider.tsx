@@ -695,7 +695,12 @@ export function AIChatProvider({
 
       removeChatRuntime(AI_DRAFT_CONVERSATION_ID);
       invalidateConversationHistory();
-      setConversationAttachments(AI_DRAFT_CONVERSATION_ID, []);
+      // Application change (ITAM): a task's own attachments go with its
+      // message (`AIEmployeeTask.message.attachments`).
+      setConversationAttachments(
+        AI_DRAFT_CONVERSATION_ID,
+        task?.message?.attachments ?? [],
+      );
       setConversationWorkContext(AI_DRAFT_CONVERSATION_ID, workContext);
       dispatch({ type: 'select-employee', username: employee.username });
       dispatch({ type: 'start-new-conversation' });

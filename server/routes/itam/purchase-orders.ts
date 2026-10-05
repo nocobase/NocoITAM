@@ -15,14 +15,21 @@ import {
   approvalServiceToken,
   historyServiceToken,
   procurementServiceToken,
+  receiptRunServiceToken,
 } from '../../providers/index.js';
+import { RecordNotFoundError } from '../../providers/itam/errors.js';
 import { outputFields, pickFields } from '../../providers/itam/authz-filter.js';
 import {
   LINE_ITEM_TYPES,
   PO_REASONS,
 } from '../../providers/itam/procurement.js';
 import { createCrudRoutes } from './crud-routes.js';
-import { decideCollection, errorResponse, principalId } from './http.js';
+import {
+  decideCollection,
+  errorResponse,
+  principalId,
+  readJsonObject,
+} from './http.js';
 
 /** `/api/itam/purchase-orders`: lines, the approval steps, ordering and receiving. */
 const id = z.string().min(1).max(64);
@@ -51,6 +58,55 @@ const lineSchema = z.object({
   unitPrice: z.number().min(0).nullable().optional(),
 });
 
+const receiveSchema = z
+  .object({
+    lineId: id,
+    quantity: z.number().int().min(1).max(10000),
+    notes: z.string().max(2000).nullable().optional(),
+    serialNos: z.array(z.string().max(128)).optional(),
+    locationId: id.optional(),
+    stockItemId: id.nullable().optional(),
+    entitlementId: id.nullable().optional(),
+    extra: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+
+const batchLineSchema = z
+  .object({
+    lineId: id,
+    quantity: z.number().int().min(0).max(10000),
+    serialNos: z.array(z.string().max(128)).max(10000).optional(),
+  })
+  .strict();
+
+/**
+ * What the assistant read from a delivery document (`prefillReceipt`). Held
+ * loosely where a document may say nothing, and bounded so a run cannot
+ * store an arbitrary payload.
+ */
+const draftSchema = z
+  .object({
+    deliveryNo: z.string().max(128).nullable().optional(),
+    deliveryDate: z.string().max(32).nullable().optional(),
+    vendorName: z.string().max(255).nullable().optional(),
+    notes: z.string().max(2000).nullable().optional(),
+    rows: z
+      .array(
+        z
+          .object({
+            lineId: z.string().max(64).nullable(),
+            description: z.string().max(500),
+            partCode: z.string().max(128).nullable().optional(),
+            quantity: z.number().min(0).max(10000),
+            serialNos: z.array(z.string().max(128)).max(10000).optional(),
+            source: z.string().max(200).nullable().optional(),
+          })
+          .strict(),
+      )
+      .max(500),
+  })
+  .strict();
+
 /**
  * A line as the caller may read it. Lines are a collection of their own, so
  * reading the order does not open them: a role without cost access reads
@@ -75,6 +131,15 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
     const procurement = app.container.resolve(procurementServiceToken);
     const approvals = app.container.resolve(approvalServiceToken);
     const history = app.container.resolve(historyServiceToken);
+    const receiptRuns = app.container.resolve(receiptRunServiceToken);
+    /** The order must be one the caller's grant reaches, not merely exist. */
+    const visible = async (
+      orderId: string,
+      conditions: DatabaseAuthorizationConditions,
+    ) => {
+      if (!(await procurement.get(orderId, conditions)))
+        throw new RecordNotFoundError('purchaseOrders', orderId);
+    };
 
     const routes = createCrudRoutes({
       collection: 'purchaseOrders',
@@ -244,23 +309,110 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
         operation('receive', 'receive', (context, orderId, body, conditions) =>
           procurement.receive(
             orderId,
-            z
-              .object({
-                lineId: id,
-                quantity: z.number().int().min(1).max(10000),
-                notes: z.string().max(2000).nullable().optional(),
-                serialNos: z.array(z.string().max(128)).optional(),
-                locationId: id.optional(),
-                stockItemId: id.nullable().optional(),
-                entitlementId: id.nullable().optional(),
-                extra: z.record(z.string(), z.unknown()).optional(),
-              })
-              .strict()
-              .parse(body),
+            receiveSchema.parse(body),
             operationContext(context),
             conditions,
           ),
         );
+        // The batch receiving form: several lines in one transaction, filled
+        // by hand or prepared from a delivery document (`runId`).
+        operation(
+          'receive-batch',
+          'receive',
+          (context, orderId, body, conditions) =>
+            procurement.receiveBatch(
+              orderId,
+              z
+                .object({
+                  runId: id.nullable().optional(),
+                  receipts: z.array(receiveSchema).min(1).max(200),
+                })
+                .strict()
+                .parse(body),
+              operationContext(context),
+              conditions,
+            ),
+        );
+        // What the batch form would run into as it stands — over-receipt,
+        // a serial twice or already on the books, a missing required
+        // serial — asked while it is edited, before 入库 is offered.
+        operation(
+          'receipt-check',
+          'receive',
+          async (_context, orderId, body, conditions) => {
+            await visible(orderId, conditions);
+            return receiptRuns.check(
+              orderId,
+              z
+                .object({ lines: z.array(batchLineSchema).max(200) })
+                .strict()
+                .parse(body).lines,
+            );
+          },
+        );
+        // Receiving by delivery document: a run is started when the
+        // receiver hands the assistant the document, and it is theirs —
+        // the service refuses anybody else's hand on it.
+        operation(
+          'receipt-runs',
+          'receive',
+          async (context, orderId, body, conditions) => {
+            await visible(orderId, conditions);
+            return receiptRuns.start(
+              orderId,
+              z
+                .object({
+                  fileId: id.nullable().optional(),
+                  documentName: z.string().trim().min(1).max(255),
+                })
+                .strict()
+                .parse(body),
+              operationContext(context),
+            );
+          },
+        );
+        routes.post('/:id/receipt-runs/:runId/:step', async (context) => {
+          try {
+            const orderId = context.req.param('id');
+            const runId = context.req.param('runId');
+            const step = z
+              .enum(['draft', 'fail', 'discard'])
+              .parse(context.req.param('step'));
+            await visible(orderId, await decide(context, 'receive'));
+            const body =
+              context.req.header('content-length') === '0' ||
+              !context.req.header('content-type')
+                ? {}
+                : await readJsonObject(context);
+            const actor = operationContext(context);
+            if (step === 'draft')
+              return context.json({
+                data: await receiptRuns.draft(
+                  orderId,
+                  runId,
+                  draftSchema.parse(body),
+                  actor,
+                ),
+              });
+            if (step === 'fail')
+              return context.json({
+                data: await receiptRuns.fail(
+                  orderId,
+                  runId,
+                  z
+                    .object({ reason: z.string().trim().min(1).max(2000) })
+                    .strict()
+                    .parse(body).reason,
+                  actor,
+                ),
+              });
+            return context.json({
+              data: await receiptRuns.discard(orderId, runId, actor),
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
         operation('cancel', 'update', (context, orderId, body, conditions) =>
           procurement.cancel(
             orderId,

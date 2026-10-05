@@ -34,6 +34,7 @@ import {
   createAIChatController,
   ItamAiProvider,
   useItamAi,
+  type HiddenChatName,
 } from '@/lib/itam/ai-chat';
 import { cn } from '@/lib/utils';
 
@@ -118,7 +119,8 @@ export function ItamAiShell({ children }: PropsWithChildren): ReactElement {
       <ItamAiProvider controller={controller}>
         {children}
         <AiSidePanel />
-        <SearchChat />
+        <HiddenChat name='search' />
+        <HiddenChat name='receipt' />
       </ItamAiProvider>
     </NocoBaseAIRootProvider>
   );
@@ -273,14 +275,18 @@ function ConfiguredChat({
 }
 
 /**
- * The search's own chat: the same employee in a second conversation nobody
- * sees, so the search's 问 AI neither opens the panel nor replaces what is
- * in it. Mounted on the same conditions as the panel's chat, for the same
- * reason (`ConfiguredChat`), and without a window: sending, tool calls and
- * their automatic approval all happen in the provider. Its progress reaches
- * the search through `ChatStateBridge`.
+ * A chat nobody sees: the same employee in a conversation of its own, so the
+ * search's 问 AI and receiving by delivery document neither open the panel
+ * nor replace what is in it. Mounted on the same conditions as the panel's
+ * chat, for the same reason (`ConfiguredChat`), and without a window:
+ * sending, tool calls and their automatic approval all happen in the
+ * provider. Its progress reaches the page through `ChatStateBridge`.
  */
-function SearchChat(): ReactElement | null {
+function HiddenChat({
+  name,
+}: {
+  readonly name: HiddenChatName;
+}): ReactElement | null {
   const ai = useItamAi();
   const {
     configurationStatus,
@@ -298,30 +304,38 @@ function SearchChat(): ReactElement | null {
     return null;
   return (
     <AIChatProvider
-      id='itam-search'
-      controller={ai.search.controller}
+      id={`itam-${name}`}
+      controller={ai[name].controller}
       defaultEmployee='itam'
     >
-      <ChatStateBridge />
+      <ChatStateBridge name={name} />
     </AIChatProvider>
   );
 }
 
-/** Publishes the search chat's progress for the search (`useItamSearchChat`). */
-function ChatStateBridge(): null {
+/** Publishes an unseen chat's progress for its page (`useHiddenChat`). */
+function ChatStateBridge({ name }: { readonly name: HiddenChatName }): null {
   const ai = useItamAi();
   const { messages } = useAIChatMessages();
   const { status, error } = useAIChatStatus();
   const { activeConversationId, removeConversation } = useAIChatBase();
   useEffect(() => {
-    ai?.search.state.set({
+    ai?.[name].state.set({
       status,
       messages,
       error,
       conversationId: activeConversationId,
       removeConversation,
     });
-  }, [ai, status, messages, error, activeConversationId, removeConversation]);
+  }, [
+    ai,
+    name,
+    status,
+    messages,
+    error,
+    activeConversationId,
+    removeConversation,
+  ]);
   return null;
 }
 

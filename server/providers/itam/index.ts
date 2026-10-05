@@ -8,6 +8,7 @@ import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
 import { notificationServiceToken } from '@nocobase/app-plugin-notification/server';
 import type { AppI18nConfig } from '@nocobase/app-server/i18n';
 import { loggingToken } from '@nocobase/app-server/logging';
+import { driveManagerToken } from '@nocobase/app-server/drive';
 import {
   realtimeServiceToken,
   type RealtimePublicTopic,
@@ -66,6 +67,11 @@ import {
 import { i18nToken } from '@nocobase/app-server/i18n';
 import { createItamNotifier, itamNotifierToken } from './notifier.js';
 import { createNumberingService, numberingServiceToken } from './numbering.js';
+import { createDocumentReader } from './document-text.js';
+import {
+  createReceiptRunService,
+  receiptRunServiceToken,
+} from './receipt-runs.js';
 import { createRepairService, repairServiceToken } from './repairs.js';
 import { createReportService, reportServiceToken } from './reports.js';
 import { createSettingsService, settingsServiceToken } from './settings.js';
@@ -88,6 +94,7 @@ export {
   itamNotifierToken,
   maintenanceServiceToken,
   procurementServiceToken,
+  receiptRunServiceToken,
   reportServiceToken,
   entitlementServiceToken,
   stockServiceToken,
@@ -303,6 +310,22 @@ export default class ItamProvider extends ServiceProvider<Application> {
         devices: container.resolve(deviceServiceToken),
         stock: container.resolve(stockServiceToken),
         entitlements: container.resolve(entitlementServiceToken),
+        receiptRuns: container.resolve(receiptRunServiceToken),
+      }),
+    );
+    container.singleton(receiptRunServiceToken, () =>
+      createReceiptRunService({
+        database: container.resolve(databaseManagerToken),
+        readDocument: createDocumentReader({
+          database: container.resolve(databaseManagerToken),
+          // Resolved when a document is read: a container without disks
+          // (the tests') reads none.
+          readBytes: () =>
+            container.has(driveManagerToken)
+              ? (disk, key) =>
+                  container.resolve(driveManagerToken).use(disk).getBytes(key)
+              : undefined,
+        }),
       }),
     );
     container.singleton(repairServiceToken, () =>
@@ -551,7 +574,9 @@ export default class ItamProvider extends ServiceProvider<Application> {
           // path; with a public origin configured it is absolutised, so the
           // plugin's own settings pages — which render it outside this
           // application — show it too. NocoCRM does the same.
-          const identity = this.app.config.get<{ publicOrigin?: string }>('app');
+          const identity = this.app.config.get<{ publicOrigin?: string }>(
+            'app',
+          );
           const origin = (identity?.publicOrigin ?? '')
             .toString()
             .trim()

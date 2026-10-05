@@ -10,8 +10,10 @@ import {
 
 import {
   createAIChatController,
+  type AIChatAttachment,
   type AIChatController,
   type AIChatMessage,
+  type AIEmployeeTask,
   type AIWorkContextItem,
 } from '@/extensions/nocobase-ai';
 
@@ -49,18 +51,38 @@ export interface ItamAi {
   /** The conversation the panel is asked to open, until it has. */
   readonly pendingConversation: Store<string | undefined>;
   /**
-   * The search's own chat (`SearchChat` in the shell): a second, unseen
+   * The search's own chat (`HiddenChat` in the shell): a second, unseen
    * conversation with the same employee, so asking from the search neither
    * opens the panel nor replaces the conversation in it.
    */
-  readonly search: {
-    readonly controller: AIChatController;
-    readonly state: Store<ChatState>;
-    readonly ask: (
-      prompt: string,
-      workContext: readonly AIWorkContextItem[],
-    ) => void;
-  };
+  readonly search: HiddenChat;
+  /**
+   * Receiving by delivery document has one of its own, for the same reason:
+   * the assistant reads the document while the receiving form stays open.
+   */
+  readonly receipt: HiddenChat;
+}
+
+/** Which unseen chat (`ItamAi.search`, `ItamAi.receipt`). */
+export type HiddenChatName = 'search' | 'receipt';
+
+/** A conversation with the employee that no window shows. */
+export interface HiddenChat {
+  readonly controller: AIChatController;
+  readonly state: Store<ChatState>;
+  readonly ask: (
+    prompt: string,
+    workContext: readonly AIWorkContextItem[],
+    options?: {
+      /** Files already uploaded, sent with the message. */
+      readonly attachments?: readonly AIChatAttachment[];
+      /**
+       * The skills and tools this conversation may use. The plugin enforces
+       * the tool list on the server, so it is a boundary, not a request.
+       */
+      readonly skillSettings?: AIEmployeeTask['skillSettings'];
+    },
+  ) => void;
 }
 
 /** Where a chat stands, as its bridge publishes it. */
@@ -98,6 +120,30 @@ function createStore<T>(initial: T): Store<T> {
 
 const IDLE: ChatState = { status: 'ready', messages: [] };
 
+function createHiddenChat(): HiddenChat {
+  const controller = createAIChatController();
+  return {
+    controller,
+    state: createStore<ChatState>(IDLE),
+    ask: (prompt, workContext, options) =>
+      controller.triggerTask({
+        aiEmployee: 'itam',
+        task: {
+          message: {
+            user: prompt,
+            workContext: [...workContext],
+            attachments: options?.attachments
+              ? [...options.attachments]
+              : undefined,
+          },
+          skillSettings: options?.skillSettings,
+          autoSend: true,
+        },
+        open: false,
+      }),
+  };
+}
+
 const ItamAiContext = createContext<ItamAi | undefined>(undefined);
 
 export function ItamAiProvider({
@@ -109,22 +155,8 @@ export function ItamAiProvider({
   const [pendingConversation] = useState(() =>
     createStore<string | undefined>(undefined),
   );
-  const [search] = useState(() => {
-    const searchController = createAIChatController();
-    return {
-      controller: searchController,
-      state: createStore<ChatState>(IDLE),
-      ask: (prompt: string, workContext: readonly AIWorkContextItem[]) =>
-        searchController.triggerTask({
-          aiEmployee: 'itam',
-          task: {
-            message: { user: prompt, workContext: [...workContext] },
-            autoSend: true,
-          },
-          open: false,
-        }),
-    };
-  });
+  const [search] = useState(createHiddenChat);
+  const [receipt] = useState(createHiddenChat);
   const value = useMemo<ItamAi>(
     () => ({
       available: Boolean(status.data?.configured && status.data.enabled),
@@ -133,6 +165,7 @@ export function ItamAiProvider({
       setExpanded,
       pendingConversation,
       search,
+      receipt,
       toggle: () => controller.setOpen(!controller.getSnapshot().open),
       // Open first: the chat mounts inside the panel, and the controller
       // holds the task until that chat binds to it.
@@ -159,7 +192,7 @@ export function ItamAiProvider({
         controller.open();
       },
     }),
-    [controller, status.data, expanded, pendingConversation, search],
+    [controller, status.data, expanded, pendingConversation, search, receipt],
   );
   return (
     <ItamAiContext.Provider value={value}>{children}</ItamAiContext.Provider>
@@ -172,15 +205,19 @@ export function useItamAi(): ItamAi | undefined {
   return useContext(ItamAiContext);
 }
 
-/** The search's chat as it stands; idle outside the shell. */
+/** An unseen chat as it stands; idle outside the shell. */
 // eslint-disable-next-line react-refresh/only-export-components -- the hook and its provider ship together
-export function useItamSearchChat(): ChatState {
+export function useHiddenChat(name: HiddenChatName): ChatState {
   const ai = useContext(ItamAiContext);
   return useSyncExternalStore(
-    ai?.search.state.subscribe ?? noSubscription,
-    ai?.search.state.get ?? idle,
+    ai?.[name].state.subscribe ?? noSubscription,
+    ai?.[name].state.get ?? idle,
   );
 }
+
+/** The search's chat as it stands; idle outside the shell. */
+// eslint-disable-next-line react-refresh/only-export-components -- the hook and its provider ship together
+export const useItamSearchChat = (): ChatState => useHiddenChat('search');
 
 const noSubscription = () => () => undefined;
 const idle = () => IDLE;

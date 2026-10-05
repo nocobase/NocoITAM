@@ -100,7 +100,7 @@ const GlobalSearchContext = createContext<GlobalSearch | undefined>(undefined);
  * - **Search** answers as it is typed, without a model: matches grouped by
  *   the list they belong to, the first few each, opening in the record
  *   drawer; a group's last row opens its list searched for the same words.
- * - **Ask AI** sends the sentence to the search's own chat (`SearchChat` in
+ * - **Ask AI** sends the sentence to the search's own chat (`HiddenChat` in
  *   the shell, a second conversation nobody sees: the side panel neither
  *   opens nor loses what it holds), with this search as page context and
  *   one frontend tool, `presentRecords`, which hands the records the AI

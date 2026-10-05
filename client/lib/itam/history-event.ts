@@ -146,10 +146,17 @@ export function describeEvent(
         : row.summary;
     case 'received':
       return label('targetLabel')
-        ? t('history.summaries.received', {
-            quantity: count('quantity'),
-            target: label('targetLabel'),
-          })
+        ? t(
+            // A batch prepared from a delivery document names it.
+            label('document')
+              ? 'history.summaries.receivedFromDocument'
+              : 'history.summaries.received',
+            {
+              quantity: count('quantity'),
+              target: label('targetLabel'),
+              document: label('document'),
+            },
+          )
         : row.summary;
     default:
       break;
