@@ -554,7 +554,7 @@ export function createDisposalService(dependencies: {
         if (onlyHandsOver(input)) {
           if (!OPEN_DISPOSAL_STATUSES.includes(String(disposal.status)))
             throw new BusinessRuleError(
-              'A closed disposal keeps the 负责人 it had',
+              'A closed disposal keeps the owner it had',
               'INVALID_STATUS',
             );
         } else if (!EDITABLE_STATUSES.has(String(disposal.status)))

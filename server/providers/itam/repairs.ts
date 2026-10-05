@@ -116,6 +116,11 @@ export interface RepairService {
     input: CompleteRepairInput,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
+    /**
+     * The caller supervises repairs — holds `delete` on them, which is the
+     * asset manager and root — and so may close one somebody else follows.
+     */
+    options?: { readonly supervises?: boolean },
   ): Promise<Row>;
   /** Repairs of one device, newest first. */
   forDevice(deviceId: string): Promise<readonly Row[]>;
@@ -143,10 +148,22 @@ export function createRepairService(dependencies: {
    * one is what makes a repair handed over rather than stuck
    * with whoever happened to file it.
    */
-  const requireOwner = (repair: Row, context: OperationContext) => {
-    if (asText(repair.ownerId) !== context.actorId)
+  /**
+   * Finishing a repair is its 负责人's, or a supervisor's (2026-10-05): the
+   * people who may clear a repair away — the asset manager and root, who
+   * hold `delete` on repairs — may also close one somebody else follows,
+   * so a repair whose 负责人 is away or has left is not stuck until it is
+   * handed over. IT support holds `complete` and not `delete`, so for them
+   * it is still their own repairs only.
+   */
+  const requireOwner = (
+    repair: Row,
+    context: OperationContext,
+    supervises = false,
+  ) => {
+    if (!supervises && asText(repair.ownerId) !== context.actorId)
       throw new BusinessRuleError(
-        'Only the owner can complete or delete this repair',
+        'Only the owner or a supervisor can complete this repair',
         'NOT_OWNER',
       );
   };
@@ -300,7 +317,7 @@ export function createRepairService(dependencies: {
         // there is nothing left on it for them to do.
         if ('ownerId' in input && repair.result !== 'inProgress')
           throw new BusinessRuleError(
-            'A finished repair keeps the 负责人 it had',
+            'A finished repair keeps the owner it had',
             'INVALID_STATUS',
           );
         await connection.query
@@ -324,10 +341,11 @@ export function createRepairService(dependencies: {
 
     async delete(id, context, conditions) {
       await database.transaction(async (connection) => {
+        // Deleting undoes the repair — the device comes back out of 维修中.
+        // Who may is the grant's alone: `delete` is the asset manager's and
+        // root's, the same people who may close a repair they do not follow,
+        // so an owner check here would only refuse what the grant allowed.
         const repair = await records.load(id, conditions, connection);
-        // Deleting undoes the repair — the device comes back out of 维修中
-        // — so it is not a colleague's to undo.
-        requireOwner(repair, context);
         await connection.query
           .deleteFrom('repairs')
           .where('id', '=', id)
@@ -369,12 +387,12 @@ export function createRepairService(dependencies: {
       });
     },
 
-    async complete(id, input, context, conditions) {
+    async complete(id, input, context, conditions, options) {
       const row = await records.mutate(
         id,
         conditions,
         async (connection, repair) => {
-          requireOwner(repair, context);
+          requireOwner(repair, context, options?.supervises);
           if (repair.result !== 'inProgress')
             throw new BusinessRuleError(
               'Repair is already completed',

@@ -528,7 +528,7 @@ export function createProcurementService(deps: {
         if (onlyHandsOver(input)) {
           if (!OPEN_PURCHASE_ORDER_STATUSES.includes(String(order.status)))
             throw new BusinessRuleError(
-              'A closed order keeps the 负责人 it had',
+              'A closed order keeps the owner it had',
               'INVALID_STATUS',
             );
         } else {
