@@ -1,6 +1,12 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowRightLeft, Check, CornerDownRight, Undo2 } from 'lucide-react';
+import {
+  ArrowRight,
+  ArrowRightLeft,
+  Check,
+  CornerDownRight,
+  Undo2,
+} from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
@@ -463,48 +469,65 @@ export function PersonBelongings({
                 return (
                   <li
                     key={`${record.collection}-${record.id}`}
-                    className='flex flex-wrap items-center gap-2 py-2'
+                    className='flex items-center gap-3 py-2'
                   >
-                    {/* An asset wears the same icon tag as everywhere else;
-                        a repair or an order is not an asset, so it says what
-                        kind of document it is instead. */}
-                    {record.assetType ? (
-                      <AssetTypeBadge value={record.assetType} />
-                    ) : isDocumentKind(record.collection) ? (
-                      // A work document wears its kind with the icon of its
-                      // own navigation entry, as the to-do rows do.
-                      <DocumentTypeBadge
-                        kind={record.collection}
-                        className='shrink-0'
-                      />
-                    ) : (
-                      <Badge
-                        variant='secondary'
-                        data-tag='kind'
-                        className='shrink-0'
-                      >
-                        {t(`${kind?.i18n ?? record.collection}.object`)}
-                      </Badge>
-                    )}
-                    <RecordLink to={to} className='font-medium'>
-                      {record.label}
-                    </RecordLink>
-                    <span className='text-xs text-muted-foreground'>
-                      {t('fields.owner')}
-                      {' · '}
-                      {/* Whoever that field names now: once it is handed over
-                        that is somebody else, and the leaver's name there
-                        would be last week's answer. */}
-                      {record.ownerId
-                        ? (owners.users?.get(record.ownerId) ?? record.ownerId)
-                        : personName}
+                    <span className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
+                      {/* An asset wears the same icon tag as everywhere
+                          else; a repair or an order is not an asset, so it
+                          says what kind of document it is instead. */}
+                      {record.assetType ? (
+                        <AssetTypeBadge value={record.assetType} />
+                      ) : isDocumentKind(record.collection) ? (
+                        // A work document wears its kind with the icon of
+                        // its own navigation entry, as the to-do rows do.
+                        <DocumentTypeBadge
+                          kind={record.collection}
+                          className='shrink-0'
+                        />
+                      ) : (
+                        <Badge
+                          variant='secondary'
+                          data-tag='kind'
+                          className='shrink-0'
+                        >
+                          {t(`${kind?.i18n ?? record.collection}.object`)}
+                        </Badge>
+                      )}
+                      <RecordLink to={to} className='font-medium'>
+                        {record.label}
+                      </RecordLink>
+                      <span className='inline-flex items-center gap-1 text-xs text-muted-foreground'>
+                        {t('fields.owner')}
+                        {' · '}
+                        {'done' in record && record.done ? (
+                          // Handed over: from them to whoever it names now,
+                          // so the row says where it went rather than only
+                          // that it left — the new name alone would read as
+                          // if it had always been theirs.
+                          <>
+                            {personName}
+                            <ArrowRight className='size-3' aria-hidden='true' />
+                            {record.ownerId
+                              ? (owners.users?.get(record.ownerId) ??
+                                record.ownerId)
+                              : '—'}
+                          </>
+                        ) : (
+                          // Still theirs: the person this page is about.
+                          (record.ownerId
+                            ? (owners.users?.get(record.ownerId) ??
+                              record.ownerId)
+                            : personName)
+                        )}
+                      </span>
                     </span>
-                    {/* Handing it over is an ordinary edit of that one
-                        field, so it is offered here rather than only on the
-                        record — the service refuses it when this reader may
-                        not make it. */}
+                    {/* The act, at the far right of every row, the way the
+                        holdings table above keeps its 操作 column. Handing
+                        it over is an ordinary edit of that one field, so it
+                        is offered here rather than only on the record — the
+                        service refuses it when this reader may not make it. */}
                     {'done' in record && record.done ? (
-                      <span className='flex items-center gap-1 text-xs text-muted-foreground'>
+                      <span className='flex shrink-0 items-center gap-1 text-xs text-muted-foreground'>
                         <Check className='size-3.5' aria-hidden='true' />
                         {t('people.recovery.done')}
                       </span>
@@ -512,10 +535,11 @@ export function PersonBelongings({
                       <Button
                         variant='outline'
                         size='sm'
+                        className='shrink-0'
                         onClick={() => setHandover(record)}
                       >
-                        {/* Passing it to somebody else: the record stays, the
-                        name on it changes. */}
+                        {/* Passing it to somebody else: the record stays,
+                            the name on it changes. */}
                         <ArrowRightLeft data-icon='inline-start' />
                         {t('people.recovery.changeOwner')}
                       </Button>

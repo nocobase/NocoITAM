@@ -294,6 +294,15 @@ export function createRepairService(dependencies: {
           if (input.result === 'inProgress')
             throw new ValidationError('Invalid repair result', 'result');
         }
+        // Who saw it through is part of what happened once it is finished,
+        // the way a closed order or stocktake keeps its 负责人: handing a
+        // finished repair to somebody else would rewrite its history, and
+        // there is nothing left on it for them to do.
+        if ('ownerId' in input && repair.result !== 'inProgress')
+          throw new BusinessRuleError(
+            'A finished repair keeps the 负责人 it had',
+            'INVALID_STATUS',
+          );
         await connection.query
           .updateTable('repairs')
           .set({ ...input, updatedAt: new Date() })
