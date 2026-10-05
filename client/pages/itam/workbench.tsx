@@ -490,39 +490,48 @@ function AttentionColumn(): ReactElement {
         <Skeleton className='h-24 w-full rounded-lg' />
       ) : (
         <>
-          {found.map((entry) => (
-            <Link
-              key={entry.kind}
-              to={REMINDER_ROUTES[entry.kind]}
-              title={t(`workbench.reminderCaptions.${entry.kind}`, {
-                subscriptionExpiryDays: thresholds?.subscriptionExpiryDays ?? 7,
-                maintenanceExpiryDays: thresholds?.maintenanceExpiryDays ?? 30,
-              })}
-              // A risk card: the number large, what it counts beside it, and
-              // the first few records it found, so a card says what is at
-              // risk without being opened (2026-10-05). Only a critical rule
-              // is red; severity is the rule's, not today's.
-              className={cn(
-                'block w-full rounded-xl border bg-card px-3.5 py-3 shadow-xs transition hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                entry.severity === 'critical'
-                  ? 'border-destructive/40 hover:border-destructive/60'
-                  : 'border-border/50 hover:border-border',
-              )}
-            >
-              <span className='flex items-baseline gap-2'>
-                <span
-                  className={cn(
-                    'text-2xl leading-none font-semibold tabular-nums',
-                    SEVERITY_TEXT[entry.severity],
-                  )}
-                >
-                  {entry.count}
+          {/* Closer together than the to-do cards: eleven rules share the
+              column, and a risk card is a line to scan, not a record. */}
+          <div className='flex flex-col gap-1.5'>
+            {found.map((entry) => (
+              <Link
+                key={entry.kind}
+                to={REMINDER_ROUTES[entry.kind]}
+                title={t(`workbench.reminderCaptions.${entry.kind}`, {
+                  subscriptionExpiryDays:
+                    thresholds?.subscriptionExpiryDays ?? 7,
+                  maintenanceExpiryDays:
+                    thresholds?.maintenanceExpiryDays ?? 30,
+                })}
+                // A risk card: the number, what it counts beside it, and the
+                // first few records it found on one line, so a card says what
+                // is at risk without being opened (2026-10-05). Compact: eleven
+                // rules share one column. Only a critical rule is red; severity
+                // is the rule's, not today's.
+                className={cn(
+                  'block w-full rounded-lg border bg-card px-2.5 py-1.5 shadow-xs transition hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                  entry.severity === 'critical'
+                    ? 'border-destructive/40 hover:border-destructive/60'
+                    : 'border-border/50 hover:border-border',
+                )}
+              >
+                <span className='flex items-baseline gap-2'>
+                  <span
+                    className={cn(
+                      'text-base leading-none font-semibold tabular-nums',
+                      SEVERITY_TEXT[entry.severity],
+                    )}
+                  >
+                    {entry.count}
+                  </span>
+                  <span className='min-w-0 text-sm leading-tight'>
+                    {label(entry.kind)}
+                  </span>
                 </span>
-                <span className='min-w-0 text-sm'>{label(entry.kind)}</span>
-              </span>
-              <PreviewLine entry={entry} />
-            </Link>
-          ))}
+                <PreviewLine entry={entry} />
+              </Link>
+            ))}
+          </div>
           {clear.length > 0 ? (
             <p
               className='flex items-center gap-1.5 px-1.5 text-xs text-muted-foreground'
@@ -559,20 +568,23 @@ function PreviewLine({
       : item.label,
   );
   const more = entry.count - entry.preview.length;
+  // 最早 only when there are several to be soonest among.
+  const date = first?.date
+    ? entry.count > 1
+      ? t('workbench.attentionSoonest', { date: formatDate(first.date) })
+      : formatDate(first.date)
+    : undefined;
+  // One line: the names give way to the edge, and how many more stays.
   return (
-    <span className='mt-2 block text-xs text-muted-foreground'>
-      {first?.date ? (
-        <span className='block'>
-          {/* 最早 only when there are several to be soonest among. */}
-          {entry.count > 1
-            ? t('workbench.attentionSoonest', { date: formatDate(first.date) })
-            : formatDate(first.date)}
+    <span className='mt-0.5 flex min-w-0 gap-1 text-xs text-muted-foreground'>
+      <span className='min-w-0 truncate'>
+        {[date, ...names].filter(Boolean).join(' · ')}
+      </span>
+      {more > 0 ? (
+        <span className='shrink-0'>
+          · {t('workbench.attentionMore', { count: more })}
         </span>
       ) : null}
-      <span className='line-clamp-2'>
-        {names.join(' · ')}
-        {more > 0 ? ` · ${t('workbench.attentionMore', { count: more })}` : ''}
-      </span>
     </span>
   );
 }
