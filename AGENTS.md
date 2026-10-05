@@ -331,8 +331,9 @@ Rules learned while building it:
   is in the deployment's language — because the records they answer for
   name the account. 孙强 and 周宇 have a laptop each, 吴静 a laptop, a
   monitor and a phone. The account that generated the demo is the system
-  administrator and no employee: it gets no person record and holds
-  nothing, though some records still answer to it. `demoAccountUsernames()`
+  administrator and no employee: it gets no person record, holds nothing
+  and answers for no record — the demo is written as 吴静 (`writerId`), who
+  raises the requests 孙强 decides; repairs and audits are 周宇's. `demoAccountUsernames()`
   keeps the retired `manager` / `support` so a reset still removes them.
   The requests are addressed to 孙强, not to whatever `otherUser` finds.
   Two traps: the users

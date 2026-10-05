@@ -72,7 +72,8 @@ export interface DemoAccounts {
  * so the trail of every request reads as a colleague. With the leaver, who
  * is IT support too, they are the only people with accounts; the rest are
  * employees, who do not sign in. The account that generated the demo is
- * the system administrator and no employee: it gets no person record.
+ * the system administrator and no employee: it gets no person record and
+ * answers for no record — the demo is written as 吴静 (`writerId`).
  * A password is the username and 123: this is demonstration data, and
  * clearing it removes the accounts.
  */
@@ -412,7 +413,6 @@ export function createDemoService(dependencies: {
           'Demo data already exists; clear it first',
           'DEMO_EXISTS',
         );
-      const context: OperationContext = { actorId, sourceType: 'demo' };
       const all = (collection: string, action: string) =>
         unrestricted(collection, action);
       const track = async (collection: string, row: Row): Promise<Row> => {
@@ -449,7 +449,7 @@ export function createDemoService(dependencies: {
           }),
         ),
       );
-      const [managerUserId, , supportUserId] = staffUserIds;
+      const [managerUserId, deskManagerUserId, supportUserId] = staffUserIds;
       // Who decides the demo's requests: the first asset manager, who holds
       // `approve`, so the approval trail reads as a colleague and the order
       // left waiting can actually be decided by signing in as them. Without
@@ -459,6 +459,17 @@ export function createDemoService(dependencies: {
         managerUserId ??
         (await dependencies.otherUser?.(actorId)) ??
         'demo-approver';
+      // Who writes the demo: the second asset manager, so the records read
+      // as the IT team's work — she raises the requests the first manager
+      // decides, and is the creator, requester or 负责人 wherever a service
+      // takes the actor for one. The account that generated the demo is the
+      // system administrator and answers for nothing (2026-10-05); it only
+      // stands in when the accounts plugins are missing (tests, a reset).
+      const writerId = deskManagerUserId ?? actorId;
+      const context: OperationContext = {
+        actorId: writerId,
+        sourceType: 'demo',
+      };
       // The route schemas add these defaults; the service expects them
       // present. 在职状态 is not among them — the service derives it from the
       // leave date, and stating it is refused.
@@ -477,7 +488,7 @@ export function createDemoService(dependencies: {
           await masterData.create(
             collection,
             { ...MASTER_DEFAULTS[collection], ...input },
-            actorId,
+            writerId,
             all(collection, 'create'),
           ),
         );
@@ -662,7 +673,7 @@ export function createDemoService(dependencies: {
       // them until somebody takes them over, and nothing but a person can do
       // that. The demo gives them a few so the handover half has something
       // to show.
-      const leaverUserId = asText(chenJie.userId) ?? actorId;
+      const leaverUserId = asText(chenJie.userId) ?? writerId;
 
       // Devices: a batch of laptops bought together (same warranty), monitors, and problem records.
       const device = async (input: Row) =>
@@ -709,8 +720,8 @@ export function createDemoService(dependencies: {
           }),
         );
       }
-      // The laptop the leaver holds answers to IT support, not to the
-      // account that generated the demo: a leaver's things belong to more
+      // The laptop the leaver holds answers to IT support, not to 吴静, who
+      // writes the demo: a leaver's things belong to more
       // than one person, which is the whole reason the recovery lists every
       // item and counts only the reader's own.
       const expiredLaptop = await device({
@@ -719,7 +730,7 @@ export function createDemoService(dependencies: {
         name: 'SG-LT-006',
         departmentId: sales.id,
         vendorId: reseller.id,
-        ownerId: supportUserId ?? actorId,
+        ownerId: supportUserId ?? writerId,
         purchaseDate: daysFromNow(-1500),
         purchasePrice: 8999,
         warrantyEndDate: daysFromNow(-100),
@@ -1044,10 +1055,10 @@ export function createDemoService(dependencies: {
       await assign(airs[0].id, zhaoMin.id);
       await assign(thinkpads[0].id, liuYang.id);
       await assign(expiredLaptop.id, chenJie.id);
-      // A second thing in the leaver's hands, this one answering to the
-      // account that generated the demo: their laptop is at the repair shop
-      // and answers to IT support, so without this the person reading the
-      // recovery has nothing on it they can actually hand back.
+      // A second thing in the leaver's hands, this one answering to 吴静,
+      // who writes the demo: their laptop is at the repair shop and answers
+      // to IT support, so without this somebody signed in as an asset
+      // manager has nothing on the recovery they can actually hand back.
       await assign(airs[1].id, chenJie.id);
       await assign(monitors[0].id, liNa.id);
       await assign(monitors[1].id, zhaoMin.id);
@@ -1530,7 +1541,7 @@ export function createDemoService(dependencies: {
             currency: 'USD',
             expiryDate: daysFromNow(5),
             autoRenew: true,
-            ownerId: actorId,
+            ownerId: managerUserId ?? writerId,
           },
           context,
           all('entitlements', 'create'),
@@ -1549,7 +1560,7 @@ export function createDemoService(dependencies: {
             currency: 'USD',
             expiryDate: daysFromNow(6),
             autoRenew: false,
-            ownerId: actorId,
+            ownerId: managerUserId ?? writerId,
           },
           context,
           all('entitlements', 'create'),
@@ -1569,7 +1580,7 @@ export function createDemoService(dependencies: {
             currency: 'USD',
             expiryDate: daysFromNow(25),
             autoRenew: true,
-            ownerId: actorId,
+            ownerId: managerUserId ?? writerId,
           },
           context,
           all('entitlements', 'create'),
@@ -1612,7 +1623,7 @@ export function createDemoService(dependencies: {
             currency: 'USD',
             expiryDate: daysFromNow(-10),
             autoRenew: false,
-            ownerId: actorId,
+            ownerId: managerUserId ?? writerId,
           },
           context,
           all('entitlements', 'create'),
@@ -1699,7 +1710,7 @@ export function createDemoService(dependencies: {
             extra: {
               name: `SG-LT-03${index}`,
               warrantyEndDate: daysFromNow(1075),
-              ownerId: actorId,
+              ownerId: writerId,
             },
           },
           context,
@@ -1709,11 +1720,9 @@ export function createDemoService(dependencies: {
       for (const entry of generated)
         if (entry.type === 'device') await track('devices', { id: entry.id });
 
-      // A repair in progress on the expired laptop, this one IT support's:
-      // a repair belongs to its 负责人, so the 进行中的维修 card has
-      // something to show when you sign in as `zhouyu`, and the other one
-      // below stays with the account that generated the demo — each role
-      // sees its own work rather than one of them seeing an empty card.
+      // A repair in progress on the expired laptop, IT support's: a repair
+      // belongs to its 负责人, so the 进行中的维修 card has something to show
+      // when you sign in as `zhouyu`. The finished ones below are his too.
       await track(
         'repairs',
         await repairs.create(
@@ -1786,6 +1795,12 @@ export function createDemoService(dependencies: {
           notes: texts.repairNotes,
         },
       ];
+      // Finished repairs are IT support's work: 周宇 is their 负责人, and only
+      // a repair's 负责人 may complete it, so he completes them too.
+      const supportContext: OperationContext = {
+        actorId: supportUserId ?? writerId,
+        sourceType: 'demo',
+      };
       for (const entry of finishedRepairs) {
         const repair = await track(
           'repairs',
@@ -1797,6 +1812,7 @@ export function createDemoService(dependencies: {
               faultDescription: entry.fault,
               sentAt: daysFromNow(entry.sentDays),
               expectedReturnAt: daysFromNow(entry.returnDays),
+              ownerId: supportUserId ?? writerId,
             },
             context,
             all('repairs', 'create'),
@@ -1811,7 +1827,7 @@ export function createDemoService(dependencies: {
             cost: entry.cost,
             notes: entry.notes ?? null,
           },
-          context,
+          supportContext,
           all('repairs', 'complete'),
         );
       }
@@ -2359,7 +2375,7 @@ export function createDemoService(dependencies: {
             scope: { locationIds: [String(floor3.id)] },
             plannedStart: daysFromNow(-3),
             plannedEnd: daysFromNow(10),
-            executorIds: [actorId],
+            executorIds: [supportUserId ?? writerId],
             notes: texts.auditNotes,
           },
           context,
@@ -2427,7 +2443,7 @@ export function createDemoService(dependencies: {
                   scope: task.scope,
                   plannedStart: daysFromNow(task.startIn),
                   plannedEnd: daysFromNow(task.endIn),
-                  executorIds: [actorId],
+                  executorIds: [supportUserId ?? writerId],
                   notes: task.notes ?? null,
                 },
                 context,
