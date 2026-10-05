@@ -1551,6 +1551,7 @@ const messages = {
       tagAudit: 'Audit',
       pendingPurchaseApprovals: 'Purchase orders waiting for approval',
       pendingDisposalApprovals: 'Disposals waiting for approval',
+      pendingOrders: 'Orders to place',
       awaitingReceipt: 'Orders awaiting receipt',
       pendingDisposalExecution: 'Disposals to carry out',
       activeRepairs: 'Repairs in progress',
@@ -2479,6 +2480,7 @@ const messages = {
     expected_one: '{{count}} device to count',
     expected_other: '{{count}} devices to count',
     expectedReturn: 'Back by {{date}}',
+    counted: '{{counted}} of {{expected}} counted',
   },
   dataTable: {
     noResults: 'No results.',

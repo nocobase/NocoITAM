@@ -1,9 +1,12 @@
 import {
   Banknote,
   CalendarClock,
+  CalendarRange,
+  ClipboardCheck,
   Laptop,
   MonitorX,
   Store,
+  TriangleAlert,
   User,
   Wrench,
 } from 'lucide-react';
@@ -45,29 +48,41 @@ export const PURCHASE_ORDER_CARD: BoardCardSpec = {
 export const AUDIT_CARD: BoardCardSpec = {
   fields: AUDIT_TASK_FIELDS,
   nameField: 'name',
+  kind: 'auditTasks',
   card: {
-    // Counted out of expected: how far the count has got.
-    meta: (record) =>
-      record.status === 'notStarted'
-        ? null
-        : `${Number(record.countedCount ?? 0)} / ${Number(record.expectedCount ?? 0)}`,
+    // The same shape as the others: the name alone on its line, then the
+    // period, how far the count has got and what it found, each with its
+    // icon, then who answers for it and when it was raised.
     lines: [
-      (record, t) =>
-        t('board.period', {
-          from: formatDate(record.plannedStart),
-          to: formatDate(record.plannedEnd),
-        }),
-      (record, t) =>
-        Number(record.differenceCount ?? 0) > 0
-          ? t('board.differences', {
-              count: Number(record.differenceCount),
-            })
-          : null,
+      {
+        part: (record, t) =>
+          t('board.period', {
+            from: formatDate(record.plannedStart),
+            to: formatDate(record.plannedEnd),
+          }),
+        icon: CalendarRange,
+      },
+      {
+        part: (record, t) =>
+          record.status === 'notStarted'
+            ? t('board.expected', { count: Number(record.expectedCount ?? 0) })
+            : t('board.counted', {
+                counted: Number(record.countedCount ?? 0),
+                expected: Number(record.expectedCount ?? 0),
+              }),
+        icon: ClipboardCheck,
+      },
+      {
+        part: (record, t) =>
+          Number(record.differenceCount ?? 0) > 0
+            ? t('board.differences', {
+                count: Number(record.differenceCount),
+              })
+            : null,
+        icon: TriangleAlert,
+      },
     ],
-    footer: [
-      (record, t) =>
-        t('board.expected', { count: Number(record.expectedCount ?? 0) }),
-    ],
+    footer: ['ownerId', (record) => formatDate(record.createdAt, true)],
   },
 };
 
@@ -103,7 +118,7 @@ export const DISPOSAL_CARD: BoardCardSpec = {
 
 /**
  * A repair has no board of its own; this is how it reads on the
- * workbench's 进行中的维修 column, in the same shape as the others.
+ * workbench's 维修中 column, in the same shape as the others.
  */
 export const REPAIR_CARD: BoardCardSpec = {
   fields: REPAIR_FIELDS,

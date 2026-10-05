@@ -38,8 +38,7 @@ export interface BoardCardSpec {
   readonly nameField: string;
   /**
    * The document kind a card is tagged with before its heading, on its
-   * board and on the workbench alike. A record that names itself (a
-   * stocktake) has none.
+   * board and on the workbench alike.
    */
   readonly kind?: DocumentKind;
   readonly card: {

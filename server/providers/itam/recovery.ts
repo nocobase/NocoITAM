@@ -100,7 +100,7 @@ export const OWNED_BY_USER: readonly {
     field: 'ownerId',
     label: 'repairNo',
     // A repair has no status of its own; `result` is `inProgress` until it
-    // is finished, which is what 进行中的维修 counts.
+    // is finished, which is what 维修中 counts.
     open: { column: 'result', values: ['inProgress'] },
   },
   {
