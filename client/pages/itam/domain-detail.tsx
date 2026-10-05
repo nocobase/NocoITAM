@@ -411,10 +411,15 @@ export function DomainDetailPage({
                                   : data[field.key]
                           }
                           editable={
-                            editable &&
-                            (field.form !== false ||
-                              Boolean(domain.fieldEditor?.(field, data))) &&
-                            !field.readonlyWhen?.(data)
+                            // The 负责人 of an open request is anybody's to
+                            // hand over, ahead of the record's own rule.
+                            (Boolean(permissions.update) &&
+                              domain.handover?.field === field.key &&
+                              domain.handover.open(data)) ||
+                            (editable &&
+                              (field.form !== false ||
+                                Boolean(domain.fieldEditor?.(field, data))) &&
+                              !field.readonlyWhen?.(data))
                           }
                           renderInput={domain.fieldEditor?.(field, data)}
                           recordId={id}

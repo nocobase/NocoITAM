@@ -69,6 +69,20 @@ export const purchaseOrderDomain: DomainConfig = {
     ['draft', 'rejected', 'approved', 'ordered', 'partiallyReceived'].includes(
       text(record.status),
     ),
+  // Anyone may hand an open order over (`OPEN_PURCHASE_ORDER_STATUSES` in
+  // `recovery.ts`), including while it waits for a decision.
+  handover: {
+    field: 'ownerId',
+    open: (record) =>
+      [
+        'draft',
+        'pendingApproval',
+        'approved',
+        'rejected',
+        'ordered',
+        'partiallyReceived',
+      ].includes(text(record.status)),
+  },
   // Opens on a board by status; the list is one click away.
   Board: createStatusBoard({
     path: PURCHASE_ORDERS_PATH,

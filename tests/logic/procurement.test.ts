@@ -625,6 +625,58 @@ describe('procurement', () => {
     expect(written?.id).toEqual(expect.any(String));
   });
 
+  /**
+   * Anybody may hand an open order over — the one write the owner rule does
+   * not cover. Handing a request over is not editing what it asks for, and an
+   * order whose 负责人 had left was stuck: only its owner or its creator could
+   * touch it, and both were usually the person who had gone. Every other
+   * field stays the owner's, and a closed order keeps the 负责人 it had.
+   */
+  it('lets anybody hand an open order over, and nothing else', async () => {
+    const order = await data<{ id: string }>(
+      await post('purchase-orders', {
+        reason: 'other',
+        vendorId: fixture.vendorId,
+        departmentId: fixture.departmentId,
+      }),
+    );
+    await app.request(`/api/itam/purchase-orders/${order.id}/lines`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        lines: [{ itemType: 'device', modelId: fixture.modelId, quantity: 1 }],
+      }),
+      ...manager,
+    });
+    await post(`purchase-orders/${order.id}/submit`, { approverId: 'ann' });
+    const patch = (body: Record<string, unknown>) =>
+      app.request(`/api/itam/purchase-orders/${order.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+        ...approver,
+      });
+
+    // Waiting for a decision, and not Ann's: she may still hand it over…
+    const handed = await patch({ ownerId: 'ann' });
+    expect(handed.status).toBe(200);
+    expect((await data<{ ownerId: string }>(handed)).ownerId).toBe('ann');
+    // …but a write that touches anything else is an edit, and an edit of a
+    // request waiting for a decision is refused whoever makes it.
+    expect((await patch({ ownerId: 'mia', description: 'x' })).status).toBe(
+      422,
+    );
+
+    // A closed order keeps the 负责人 it had: that is history now.
+    await post(
+      `purchase-orders/${order.id}/decide`,
+      { decision: 'approved', comment: 'ok' },
+      approver,
+    );
+    await post(`purchase-orders/${order.id}/cancel`, { reason: 'not needed' });
+    expect((await patch({ ownerId: 'mia' })).status).toBe(422);
+  });
+
   it('supports withdraw, reject and cancel', async () => {
     const order = await data<{ id: string }>(
       await post('purchase-orders', {

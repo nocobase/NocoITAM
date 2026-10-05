@@ -193,13 +193,13 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     type: 'reference',
     // The person in IT who follows the order through; who it is for is its
     // department and its description, since employees do not sign in
-    // (2026-10-05). Asked for on creation (starting at the filer) and
-    // changeable while the order is still its 负责人's to shape, so a
-    // request can be handed over instead of cancelled and asked again. Once
-    // approved it is settled with the rest of what the order asks for.
+    // (2026-10-05). Asked for on creation (starting at the filer), and
+    // anybody's to hand over while the order is open — approved and waiting
+    // included — so a request is handed over instead of cancelled and asked
+    // again, and one whose 负责人 has left is not stuck (`handover` on the
+    // domain).
     reference: { collection: 'users' },
     required: true,
-    readonlyWhen: settled,
     group: 'groups.request',
     detailOrder: -10,
   },

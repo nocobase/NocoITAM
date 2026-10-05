@@ -550,7 +550,18 @@ Rules learned while building it:
   disposal's `submit` and `withdraw` do the same.
   Holding the grant is not enough: the permission set that grants `update`
   and `submit` also grants `approve`, so without the check an approver could
-  rewrite or file a request instead of deciding it. Receiving, ordering and
+  rewrite or file a request instead of deciding it. The one write it does
+  not cover is **handing the request over**: a write of `ownerId` and
+  nothing else (`onlyHandsOver`) is taken from anybody who may update the
+  record, in any open status — waiting for a decision and approved
+  included — and refused once it is closed (2026-10-05). Handing a request
+  over is not editing what it asks for, and a request whose 负责人 had left
+  was stuck: only its owner or its creator could touch it, and in the
+  ordinary case both were the person who had gone. The open statuses are
+  `OPEN_PURCHASE_ORDER_STATUSES` / `OPEN_DISPOSAL_STATUSES` in
+  `recovery.ts`, which the leaver's handover list reads too; the pages
+  offer the field through `DomainConfig.handover`, ahead of the record's
+  own `editable` and the field's `readonlyWhen`. Receiving, ordering and
   cancelling stay with the grant — they are the buyer's steps, not the
   负责人's. The pages hide what the service refuses: `raisedBy()` in
   `client/lib/itam/procurement.ts`, and `DomainConfig.editable` takes the
@@ -692,12 +703,10 @@ Rules learned while building it:
   executors; handing a purchase order or a disposal over hands its card
   over with it.
 - A purchase order's and a disposal's 负责人 is asked for when it is
-  created (starting at whoever files it) and stays editable while the
-  record still is, so a request is **handed over** rather than cancelled
-  and asked again; the approval settles it with everything else it was
-  given for (`readonlyWhen: settled` / `approvedDisposal`, matching the
-  services' `SETTLED_EDITABLE`). Only the current 负责人 or the creator may
-  reassign it, because `update` itself goes through `requireOwner`. It is
+  created (starting at whoever files it) and is anybody's to hand over
+  while the request is open, so a request is **handed over** rather than
+  cancelled and asked again — the approval does not settle it, since who
+  follows a request through is not part of what was approved. It is
   the one person-field either document has: each once carried a 负责人
   beside a 申请人 and dropped it (`202609250008_drop_purchase_order_owner`,
   `202609190003_drop_disposal_owner`) because it only held a copy, and

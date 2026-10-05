@@ -229,9 +229,11 @@ it('keeps a draft read-only without update permission', () => {
   expect(screen.queryByTitle('common.doubleClickToEdit')).toBeNull();
 });
 
-it('keeps an order someone else raised read-only', () => {
+it('keeps an order someone else raised read-only, all but its 负责人', () => {
   // The grant is not the whole rule: editing a purchase order belongs to the
-  // person it names, the way submitting and withdrawing do.
+  // person it names, the way submitting and withdrawing do. Handing it over
+  // is the exception — anybody may, while it is open — so the 负责人 is the
+  // one field offered.
   state.allowed = true;
   state.record = {
     id: 'record',
@@ -242,5 +244,7 @@ it('keeps an order someone else raised read-only', () => {
     description: 'Someone else asked for this',
   };
   show(purchaseOrderDomain);
-  expect(screen.queryByTitle('common.doubleClickToEdit')).toBeNull();
+  const editable = screen.queryAllByTitle('common.doubleClickToEdit');
+  expect(editable).toHaveLength(1);
+  expect(editable[0]?.textContent).not.toContain('Someone else asked for this');
 });

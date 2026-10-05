@@ -226,6 +226,18 @@ export interface DomainConfig {
     currentUserId: string | undefined,
   ) => boolean;
   /**
+   * The field naming who answers for the record, which anyone who may update
+   * it may change while it is open — even where `editable` says the record
+   * is not theirs to edit, and whatever `readonlyWhen` the field has
+   * (2026-10-05). Handing a request over is not editing what it asks for,
+   * and the service takes a write of this one field on its own terms
+   * (`onlyHandsOver` in `procurement.ts` / `disposals.ts`).
+   */
+  readonly handover?: {
+    readonly field: string;
+    readonly open: (record: ItamRecord) => boolean;
+  };
+  /**
    * Whether a record may be deleted in its current state and — where the
    * record belongs to one person, as a repair belongs to its 负责人 — by
    * this reader. The grant still decides.

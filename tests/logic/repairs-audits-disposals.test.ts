@@ -232,6 +232,38 @@ describe('repairs, audits and disposals', () => {
     expect((await pending(approver))?.count).toBe(0);
   });
 
+  /**
+   * A disposal waiting for a decision is not editable at all, but it is
+   * still somebody's to follow through — so its 负责人 may be handed over by
+   * anybody who may update it, the same as an order's.
+   */
+  it('lets anybody hand over a disposal waiting for a decision', async () => {
+    const device = await createDevice();
+    const disposal = await data<{ id: string }>(
+      await post('disposals', {
+        method: 'scrap',
+        reason: 'damaged',
+        deviceIds: [device.id],
+        dataWipe: 'notRequired',
+      }),
+    );
+    await post(`disposals/${disposal.id}/submit`, { approverId: approver.user });
+    const patch = (body: Record<string, unknown>) =>
+      app.request(`/api/itam/disposals/${disposal.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+        ...approver,
+      });
+    const handed = await patch({ ownerId: approver.user });
+    expect(handed.status).toBe(200);
+    expect((await data<{ ownerId: string }>(handed)).ownerId).toBe(
+      approver.user,
+    );
+    // Anything else is still an edit, which waiting for a decision refuses.
+    expect((await patch({ description: 'rewritten' })).status).toBe(422);
+  });
+
   it('gives a repair an owner, and lets only them finish or delete it', async () => {
     const device = await createDevice();
     const repair = await data<{ id: string; ownerId: string }>(

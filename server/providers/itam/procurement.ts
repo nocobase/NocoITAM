@@ -37,6 +37,7 @@ import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
 import type { StockService } from './stock.js';
 import { addMonths, today } from './dates.js';
+import { OPEN_PURCHASE_ORDER_STATUSES } from './recovery.js';
 
 /**
  * Purchase orders: request → approval → order → receipt → stock-in. Receiving
@@ -212,6 +213,20 @@ const EDITABLE_STATUSES = new Set([
 /** Where an order is still its 负责人's to shape: nothing decided yet. */
 const UNDECIDED_STATUSES = new Set(['draft', 'rejected']);
 /**
+ * Whether a write only hands the record over — changes who answers for it
+ * and nothing else. Anyone who may update the record may do that while it is
+ * open (2026-10-05), whoever they are and whatever else the status would
+ * refuse: handing a request over is not editing what it asks for, and a
+ * request whose 负责人 had left was stuck, since only its owner or its
+ * creator could touch it and in the ordinary case both were the person who
+ * had gone.
+ */
+const onlyHandsOver = (input: object): boolean => {
+  const keys = Object.keys(input);
+  return keys.length === 1 && keys[0] === 'ownerId';
+};
+
+/**
  * Where the request itself is settled: the approval was given for what the
  * order said then, so what it asks for stops changing. What still moves is
  * the delivery — `expectedAt` by hand, `orderedAt` and `receivedAt` through
@@ -385,7 +400,7 @@ export function createProcurementService(deps: {
   const requireOwner = (order: Row, context: OperationContext) => {
     if (!raisedTheOrder(order, context))
       throw new BusinessRuleError(
-        'Only the owner can submit or withdraw this request',
+        'Only the owner can edit, submit or withdraw this request',
         'NOT_OWNER',
       );
   };
@@ -510,15 +525,24 @@ export function createProcurementService(deps: {
         );
       assertInputFields(input, conditions.fieldAccess?.input ?? '*');
       return mutate(id, conditions, async (connection, order) => {
-        if (!EDITABLE_STATUSES.has(String(order.status)))
-          throw new BusinessRuleError(
-            'Order cannot be edited in this status',
-            'INVALID_STATUS',
-          );
-        requireOwner(order, context);
-        const settled = SETTLED_STATUSES.has(String(order.status))
-          ? Object.keys(input).filter((field) => !SETTLED_EDITABLE.has(field))
-          : [];
+        if (onlyHandsOver(input)) {
+          if (!OPEN_PURCHASE_ORDER_STATUSES.includes(String(order.status)))
+            throw new BusinessRuleError(
+              'A closed order keeps the 负责人 it had',
+              'INVALID_STATUS',
+            );
+        } else {
+          if (!EDITABLE_STATUSES.has(String(order.status)))
+            throw new BusinessRuleError(
+              'Order cannot be edited in this status',
+              'INVALID_STATUS',
+            );
+          requireOwner(order, context);
+        }
+        const settled =
+          SETTLED_STATUSES.has(String(order.status)) && !onlyHandsOver(input)
+            ? Object.keys(input).filter((field) => !SETTLED_EDITABLE.has(field))
+            : [];
         if (settled.length > 0)
           throw new ValidationError(
             `An approved order states what it asks for: ${settled.join(', ')}`,

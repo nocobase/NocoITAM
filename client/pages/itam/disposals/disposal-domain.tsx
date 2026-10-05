@@ -65,6 +65,15 @@ export const disposalDomain: DomainConfig = {
       : undefined,
   editable: (record) =>
     ['draft', 'rejected', 'approved'].includes(text(record.status)),
+  // Anyone may hand an open disposal over (`OPEN_DISPOSAL_STATUSES` in
+  // `recovery.ts`), including while it waits for a decision.
+  handover: {
+    field: 'ownerId',
+    open: (record) =>
+      ['draft', 'pendingApproval', 'approved', 'rejected'].includes(
+        text(record.status),
+      ),
+  },
   // Opens on a board by status; the list is one click away.
   Board: createStatusBoard({
     path: DISPOSALS_PATH,
