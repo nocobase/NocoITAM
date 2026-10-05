@@ -109,8 +109,9 @@ export const purchaseOrderDomain: DomainConfig = {
     card: {
       meta: 'estimatedTotal',
       lines: ['vendorId', 'reason'],
-      // The day it was raised; a board needs no time of day.
-      footer: ['ownerId', (record) => formatDate(record.createdAt)],
+      // When it was raised, to the minute: orders raised the same day are
+      // otherwise indistinguishable on a card.
+      footer: ['ownerId', (record) => formatDate(record.createdAt, true)],
     },
     defaultSort: 'createdAt',
   }),
