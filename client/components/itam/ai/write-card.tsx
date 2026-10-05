@@ -73,6 +73,11 @@ interface Shown {
   readonly percent?: boolean;
   /** The page's own definition, when the row comes from one. */
   readonly field?: FieldDefinition;
+  /**
+   * Shown even when empty, as —: an absence the user must see before
+   * confirming (a seat with nobody as its holder).
+   */
+  readonly always?: boolean;
 }
 
 const TARGET_COLLECTIONS: Readonly<Record<string, string>> = {
@@ -126,6 +131,9 @@ const SHOWN: Readonly<Record<string, readonly Shown[]>> = {
       key: 'holderId',
       label: 'ai.write.holder',
       ref: (args) => (args.holderType === 'device' ? 'devices' : 'people'),
+      // A subscription seat may be held by an account alone; when it is
+      // meant for somebody, an empty holder is the mistake to catch here.
+      always: true,
     },
     { key: 'account', label: 'fields.account' },
   ],
@@ -789,6 +797,8 @@ export function ItamWriteCard({
     : shownSource;
   const valueOf = (shown: Shown): string => {
     const value = source[shown.key];
+    if (shown.always && (value === null || value === undefined || value === ''))
+      return '—';
     if (Array.isArray(value))
       return value
         .map((entry) =>
@@ -812,6 +822,7 @@ export function ItamWriteCard({
   };
   const rows = fieldsOf(tool, args).filter((shown) => {
     const value = source[shown.key];
+    if (shown.always) return true;
     return Array.isArray(value)
       ? value.length > 0
       : typeof value === 'boolean' || text(value) !== '';

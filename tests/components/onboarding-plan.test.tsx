@@ -8,6 +8,8 @@ import type { OnboardingPlan } from '../../client/lib/itam/onboarding.js';
 const state = vi.hoisted(() => ({
   plan: undefined as unknown,
   requests: [] as { path: string; method?: string; json?: unknown }[],
+  /** A request whose path contains this is refused. */
+  failOn: undefined as string | undefined,
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -35,6 +37,8 @@ vi.mock('../../client/lib/itam/api.js', async (original) => ({
       json?: unknown;
     }) => {
       state.requests.push(request);
+      if (state.failOn && request.path.includes(state.failOn))
+        throw new Error('Not enough in stock');
       return {};
     },
   }),
@@ -56,6 +60,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
   prepared: 0,
   required: 3,
   hasDevice: false,
+  orders: [],
   lines: [
     {
       target: { type: 'model', id: 'm1', name: 'MacBook Pro 14' },
@@ -65,6 +70,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
       prepared: [],
       preparedCount: 0,
       proposals: [{ type: 'device', id: 'd1', label: 'DE-000001 / Mac' }],
+      onOrder: 0,
       shortfall: 0,
     },
     {
@@ -75,6 +81,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
       prepared: [],
       preparedCount: 0,
       proposals: [{ type: 'stock', id: 's1', label: 'MX Keys', quantity: 1 }],
+      onOrder: 0,
       shortfall: 0,
     },
     {
@@ -85,6 +92,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
       prepared: [],
       preparedCount: 0,
       proposals: [],
+      onOrder: 0,
       shortfall: 1,
     },
   ],
@@ -100,6 +108,7 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 beforeEach(() => {
   state.requests = [];
+  state.failOn = undefined;
 });
 
 it('reserves a device until the joining date, before they start', async () => {
@@ -137,4 +146,57 @@ it('assigns once they have started, and does everything in order', async () => {
     holderId: 'p1',
     quantity: 1,
   });
+});
+
+it('carries on past a refused item, and gives a subscription seat its account', async () => {
+  const base = plan('2020-01-10');
+  state.plan = {
+    ...base,
+    lines: [
+      ...base.lines,
+      {
+        target: { type: 'softwareProduct', id: 'sp2', name: 'Zoom' },
+        kind: 'entitlement',
+        itemType: 'subscription',
+        required: 1,
+        prepared: [],
+        preparedCount: 0,
+        proposals: [
+          {
+            type: 'seat',
+            id: 'e1',
+            label: 'Zoom Pro',
+            needsAccount: true,
+            account: 'sun.hao@example.com',
+          },
+        ],
+        onOrder: 0,
+        shortfall: 0,
+      },
+    ],
+  };
+  state.failOn = '/issue';
+  show();
+  fireEvent.click(screen.getByRole('button', { name: 'onboarding.runAll' }));
+  await settle();
+  await settle();
+  await settle();
+  // The stock issue was refused; the device before it and the seat after
+  // it still went through.
+  expect(state.requests.map((request) => request.path)).toEqual([
+    'itam/devices/d1/assign',
+    'itam/stock/s1/issue',
+    'itam/entitlements/e1/assign-seats',
+  ]);
+  expect(state.requests[2]?.json).toEqual({
+    seats: [
+      {
+        holderType: 'person',
+        holderId: 'p1',
+        account: 'sun.hao@example.com',
+      },
+    ],
+  });
+  // The refusal is named.
+  expect(screen.getByText(/MX Keys — Not enough in stock/)).toBeTruthy();
 });

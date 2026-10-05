@@ -53,9 +53,7 @@ describe('onboarding', () => {
         prepared: { id: string; state?: string }[];
         proposals: { type: string; id: string }[];
       }[];
-    }>(
-      await app.request(`/api/itam/master/people/${id}/onboarding`, manager),
-    );
+    }>(await app.request(`/api/itam/master/people/${id}/onboarding`, manager));
 
   beforeEach(async () => {
     app = await createTestApp({ seeds: true });
@@ -100,11 +98,10 @@ describe('onboarding', () => {
     const before = await plan(joiner.id);
     expect(before.kit?.id).toBe('kit-rd');
     const macbook = () =>
-      plan(joiner.id).then(
-        (current) =>
-          current.lines.find(
-            (line) => line.target.id === 'model-macbook-pro-14-m3',
-          )!,
+      plan(joiner.id).then((current) =>
+        current.lines.find(
+          (line) => line.target.id === 'model-macbook-pro-14-m3',
+        )!,
       );
     expect((await macbook()).proposals).toEqual([
       expect.objectContaining({ type: 'device', id: laptop.id }),
@@ -119,9 +116,89 @@ describe('onboarding', () => {
     expect(reserved.status).toBe(200);
     const line = await macbook();
     expect(line.preparedCount).toBe(1);
-    expect(line.prepared[0]).toMatchObject({ id: laptop.id, state: 'reserved' });
+    expect(line.prepared[0]).toMatchObject({
+      id: laptop.id,
+      state: 'reserved',
+    });
     expect(line.proposals).toEqual([]);
     expect((await plan(joiner.id)).prepared).toBe(before.prepared + 1);
+  });
+
+  it('counts what an open new-hire order already brings, and seats under their e-mail', async () => {
+    const joiner = await create('master/people', {
+      name: 'Lin Xue',
+      departmentId: 'dept-product',
+      position: 'Designer',
+      email: 'lin.xue@example.com',
+      locationId,
+      hireDate: addDays(today(), 9),
+    });
+    const before = await data<{
+      lines: {
+        target: { id: string };
+        shortfall: number;
+        onOrder: number;
+        proposals: { account?: string; needsAccount?: boolean }[];
+      }[];
+    }>(
+      await app.request(
+        `/api/itam/master/people/${joiner.id}/onboarding`,
+        manager,
+      ),
+    );
+    const macbook = before.lines.find(
+      (line) => line.target.id === 'model-macbook-pro-14-m3',
+    )!;
+    // Nothing in stock: a shortfall, nothing on order yet.
+    expect(macbook).toMatchObject({ shortfall: 1, onOrder: 0 });
+
+    // A draft 新员工配备 order for their department and joining day.
+    const { procurementServiceToken } =
+      await import('../../server/providers/itam/procurement.js');
+    const { databaseManagerToken } = await import('@nocobase/db');
+    const vendor = await create('master/vendors', {
+      name: 'Kit Vendor',
+      types: ['equipment'],
+    });
+    const order = await app.container.resolve(procurementServiceToken).create(
+      {
+        reason: 'newHire',
+        vendorId: vendor.id,
+        departmentId: 'dept-product',
+        neededBy: addDays(today(), 9),
+      },
+      { actorId: 'mia' },
+      { scope: true } as never,
+    );
+    await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .insertInto('purchaseOrderLines')
+      .values({
+        id: 'line-mac',
+        purchaseOrderId: String(order.id),
+        itemType: 'device',
+        modelId: 'model-macbook-pro-14-m3',
+        quantity: 1,
+        receivedQuantity: 0,
+        sort: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .execute();
+    const after = await data<{
+      orders: { id: string }[];
+      lines: { target: { id: string }; shortfall: number; onOrder: number }[];
+    }>(
+      await app.request(
+        `/api/itam/master/people/${joiner.id}/onboarding`,
+        manager,
+      ),
+    );
+    expect(after.orders.map((entry) => entry.id)).toEqual([String(order.id)]);
+    expect(
+      after.lines.find((line) => line.target.id === 'model-macbook-pro-14-m3'),
+    ).toMatchObject({ shortfall: 0, onOrder: 1 });
   });
 
   it('lists a joiner as 待入职 for the team until their kit is in hand', async () => {

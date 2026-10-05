@@ -95,7 +95,16 @@ export function OnboardingPlanCard({
       await api.request({
         path: `${ENTITLEMENTS_PATH}/${thing.id}/assign-seats`,
         method: 'POST',
-        json: { seats: [{ holderType: 'person', holderId: personId }] },
+        json: {
+          seats: [
+            {
+              holderType: 'person',
+              holderId: personId,
+              // A subscription seat is held under an account: their e-mail.
+              ...(thing.account ? { account: thing.account } : {}),
+            },
+          ],
+        },
       });
   };
   const titleFor = (thing: PlanThing) =>
@@ -109,23 +118,38 @@ export function OnboardingPlanCard({
             count: thing.quantity ?? 1,
           })
         : t('onboarding.done.seat', { label: thing.label });
-  const run = async (things: readonly PlanThing[], title: string) => {
+  /**
+   * Runs each proposal in turn; one that is refused does not stop the rest,
+   * and is named with the service's reason. The toast counts what went
+   * through, not what was asked.
+   */
+  const run = async (
+    things: readonly PlanThing[],
+    title: (done: number) => string,
+  ) => {
     setBusy(true);
     setError(undefined);
     let done = 0;
-    try {
-      for (const thing of things) {
+    const failed: string[] = [];
+    for (const thing of things) {
+      try {
         await carryOut(thing);
         done += 1;
+      } catch (caught) {
+        failed.push(
+          `${thing.label} — ${apiErrorBody(caught)?.message ?? errorMessage(caught)}`,
+        );
       }
-    } catch (caught) {
-      setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
-    } finally {
-      setBusy(false);
-      if (done > 0) await announce(title, []);
     }
+    setBusy(false);
+    if (failed.length > 0) setError(failed.join('\n'));
+    if (done > 0) await announce(title(done), []);
   };
-  const proposals = data.lines.flatMap((line) => line.proposals);
+  /** A seat that needs an account it has none for waits for a person. */
+  const runnable = (thing: PlanThing) => !thing.needsAccount || thing.account;
+  const proposals = data.lines
+    .flatMap((line) => line.proposals)
+    .filter(runnable);
   const shortfall = data.lines.reduce((sum, line) => sum + line.shortfall, 0);
   const ratio = data.required > 0 ? data.prepared / data.required : 0;
 
@@ -170,9 +194,8 @@ export function OnboardingPlanCard({
               size='sm'
               disabled={busy}
               onClick={() =>
-                void run(
-                  proposals,
-                  t('onboarding.done.all', { count: proposals.length }),
+                void run(proposals, (done) =>
+                  t('onboarding.done.all', { count: done }),
                 )
               }
             >
@@ -209,6 +232,21 @@ export function OnboardingPlanCard({
                     {t('onboarding.shortfallTotal', { count: shortfall })}
                   </span>
                 ) : null}
+                {/* What is already being bought for them, and where. */}
+                {data.orders.map((order) => (
+                  <RecordLink
+                    key={order.id}
+                    to={`/procurement/${order.id}`}
+                    className='hover:text-foreground'
+                  >
+                    {t('onboarding.order', {
+                      orderNo: order.orderNo,
+                      status: t(`enums.poStatus.${order.status}`, {
+                        defaultValue: order.status,
+                      }),
+                    })}
+                  </RecordLink>
+                ))}
               </p>
             </div>
             <ul className='divide-y divide-border/60'>
@@ -218,13 +256,17 @@ export function OnboardingPlanCard({
                   line={line}
                   busy={busy}
                   started={started}
-                  onRun={(thing) => void run([thing], titleFor(thing))}
+                  onRun={(thing) => void run([thing], () => titleFor(thing))}
                 />
               ))}
             </ul>
           </>
         )}
-        {error ? <p className='text-sm text-destructive'>{error}</p> : null}
+        {error ? (
+          <p className='text-sm whitespace-pre-line text-destructive'>
+            {error}
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -274,7 +316,12 @@ function PlanLine({
             key={`o:${thing.type}:${thing.id}`}
             size='sm'
             variant='outline'
-            disabled={busy}
+            disabled={busy || (thing.needsAccount && !thing.account)}
+            title={
+              thing.needsAccount && !thing.account
+                ? t('onboarding.needsAccount')
+                : undefined
+            }
             onClick={() => onRun(thing)}
           >
             {thing.type === 'device'
@@ -289,6 +336,11 @@ function PlanLine({
                 : t('onboarding.seat', { label: thing.label })}
           </Button>
         ))}
+        {line.onOrder > 0 ? (
+          <span className='text-xs text-muted-foreground'>
+            {t('onboarding.onOrder', { count: line.onOrder })}
+          </span>
+        ) : null}
         {line.shortfall > 0 ? (
           <span className='text-xs text-destructive'>
             {t('onboarding.shortfall', { count: line.shortfall })}

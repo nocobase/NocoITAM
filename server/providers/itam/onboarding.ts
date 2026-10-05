@@ -47,6 +47,13 @@ export interface PlanThing {
   readonly state?: 'assigned' | 'reserved';
   /** Stock: how many. */
   readonly quantity?: number;
+  /**
+   * A subscription seat is held under an account: the person's e-mail is
+   * proposed for it, and with no e-mail the seat cannot be assigned from
+   * here (`needsAccount` without `account`).
+   */
+  readonly needsAccount?: boolean;
+  readonly account?: string;
 }
 
 export interface OnboardingPlanLine {
@@ -67,8 +74,20 @@ export interface OnboardingPlanLine {
   readonly prepared: readonly PlanThing[];
   readonly preparedCount: number;
   readonly proposals: readonly PlanThing[];
-  /** What neither they nor stock can cover: to be bought. */
+  /**
+   * Already being bought for them: still to be received on an open
+   * 新员工配备 order for their department and joining day.
+   */
+  readonly onOrder: number;
+  /** What neither they, stock nor an open order covers: to be bought. */
   readonly shortfall: number;
+}
+
+/** An open 新员工配备 order raised for this joiner. */
+export interface PlanOrder {
+  readonly id: string;
+  readonly orderNo: string;
+  readonly status: string;
 }
 
 export interface OnboardingPlan {
@@ -82,7 +101,18 @@ export interface OnboardingPlan {
   readonly required: number;
   /** Whether they already hold or have reserved any device at all. */
   readonly hasDevice: boolean;
+  /** Open 新员工配备 orders for them, whose lines count as on order. */
+  readonly orders: readonly PlanOrder[];
 }
+
+/** Purchase order statuses still on their way to arriving. */
+const OPEN_ORDER_STATUSES = [
+  'draft',
+  'pendingApproval',
+  'approved',
+  'ordered',
+  'partiallyReceived',
+];
 
 export interface OnboardingService {
   /** The kit for a department and position, walking up the departments. */
@@ -163,7 +193,14 @@ export function createOnboardingService(
   const plan: OnboardingService['plan'] = async (personId) => {
     const person = await q()
       .selectFrom('people')
-      .select(['id', 'departmentId', 'position', 'locationId', 'hireDate'])
+      .select([
+        'id',
+        'departmentId',
+        'position',
+        'locationId',
+        'hireDate',
+        'email',
+      ])
       .where('id', '=', personId)
       .executeTakeFirst<Row>();
     if (!person) return null;
@@ -172,6 +209,49 @@ export function createOnboardingService(
       asText(person.position) ?? null,
     );
     const locationId = asText(person.locationId) ?? null;
+
+    // What is already being bought for them: the open 新员工配备 orders for
+    // their department needed by their joining day, and what of each line
+    // has not arrived yet. Counted against the shortfall, so asking again
+    // does not order the same laptop twice.
+    const hireDate = asText(person.hireDate);
+    const departmentId = asText(person.departmentId);
+    const orders =
+      hireDate && departmentId
+        ? await q()
+            .selectFrom('purchaseOrders')
+            .select(['id', 'orderNo', 'status'])
+            .where('reason', '=', 'newHire')
+            .where('departmentId', '=', departmentId)
+            .where('neededBy', '=', hireDate)
+            .where('status', 'in', OPEN_ORDER_STATUSES)
+            .execute<Row>()
+        : [];
+    const onOrder = new Map<string, number>();
+    if (orders.length > 0)
+      for (const line of await q()
+        .selectFrom('purchaseOrderLines')
+        .select(['modelId', 'softwareProductId', 'quantity', 'receivedQuantity'])
+        .where(
+          'purchaseOrderId',
+          'in',
+          orders.map((order) => String(order.id)),
+        )
+        .execute<Row>()) {
+        const key = asText(line.modelId)
+          ? `model:${String(line.modelId)}`
+          : `product:${String(asText(line.softwareProductId) ?? '')}`;
+        const left =
+          (Number(line.quantity) || 0) - (Number(line.receivedQuantity) || 0);
+        if (left > 0) onOrder.set(key, (onOrder.get(key) ?? 0) + left);
+      }
+    /** Takes up to `wanted` of what is on order under `key`. */
+    const takeOnOrder = (key: string, wanted: number): number => {
+      const have = onOrder.get(key) ?? 0;
+      const take = Math.min(have, Math.max(0, wanted));
+      onOrder.set(key, have - take);
+      return take;
+    };
 
     // What they have now: devices assigned or reserved to them, stock they
     // hold, seats they hold.
@@ -329,10 +409,14 @@ export function createOnboardingService(
                 : Number(entitlement.seatCount) - Number(held?.count ?? 0);
             if (free <= 0) continue;
             // One person holds one seat of a product.
+            const email = asText(person.email);
             proposals.push({
               type: 'seat',
               id: String(entitlement.id),
               label: String(entitlement.name),
+              ...(asText(entitlement.kind) === 'subscription'
+                ? { needsAccount: true, ...(email ? { account: email } : {}) }
+                : {}),
             });
             missing -= 1;
           }
@@ -354,7 +438,13 @@ export function createOnboardingService(
           prepared,
           preparedCount: prepared.length,
           proposals,
-          shortfall: Math.max(0, missing),
+          ...(() => {
+            const ordered = takeOnOrder(`product:${productId}`, missing);
+            return {
+              onOrder: ordered,
+              shortfall: Math.max(0, missing - ordered),
+            };
+          })(),
         });
         continue;
       }
@@ -519,7 +609,17 @@ export function createOnboardingService(
         prepared,
         preparedCount,
         proposals,
-        shortfall: Math.max(0, missing),
+        // Only a model can be on an order line; a category item is bought
+        // as some model, which a person picks.
+        ...(() => {
+          const ordered = modelId
+            ? takeOnOrder(`model:${modelId}`, missing)
+            : 0;
+          return {
+            onOrder: ordered,
+            shortfall: Math.max(0, missing - ordered),
+          };
+        })(),
       });
     }
 
@@ -534,6 +634,11 @@ export function createOnboardingService(
       ),
       required: lines.reduce((sum, line) => sum + line.required, 0),
       hasDevice: devices.length > 0,
+      orders: orders.map((order) => ({
+        id: String(order.id),
+        orderNo: String(order.orderNo),
+        status: String(order.status),
+      })),
     };
   };
 
