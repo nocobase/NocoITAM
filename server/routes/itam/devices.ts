@@ -9,7 +9,6 @@ import {
   defineApiRoutes,
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
-import { databaseManagerToken } from '@nocobase/db';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -33,7 +32,6 @@ import {
   parseListOptions,
   historyKind,
   operationContextOf,
-  principalId,
   readJsonObject,
   decideFor,
   type ItamContext,
@@ -89,7 +87,6 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
     const authorization = app.container.resolve(authorizationToken);
     const devices = app.container.resolve(deviceServiceToken);
     const history = app.container.resolve(historyServiceToken);
-    const database = app.container.resolve(databaseManagerToken);
 
     routes.use('*', auth.required(), authorization.middleware());
 
@@ -104,44 +101,11 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
     const operationContext = (context: ItamContext): OperationContext =>
       operationContextOf(context);
 
-    // 我的资产 asks for `view=mine`. An employee's record access already
-    // narrows the list to what they hold, but IT support and the Asset
-    // Manager read every device, so the page has to say whose it wants
-    // rather than leave the filtering to a grant only one role carries.
-    // Which person the reader is lives in `people.userId`; nobody's account
-    // linked to a person holds nothing.
-    const myDevices = async (context: ItamContext) => {
-      const person = await database
-        .query()
-        .selectFrom('people')
-        .select('id')
-        .where('userId', '=', principalId(context))
-        .executeTakeFirst<{ id: string }>();
-      return person
-        ? { assigneeType: 'person', assigneeId: String(person.id) }
-        : undefined;
-    };
-
     routes.get('/', async (context) => {
       try {
         const conditions = await decide(context, 'read');
-        const options = parseListOptions(context);
-        if (options.filter?.view !== 'mine')
-          return context.json(await devices.list(options, conditions));
-        const { view: _view, ...filter } = options.filter;
-        const mine = await myDevices(context);
-        if (!mine)
-          return context.json({
-            data: [],
-            total: 0,
-            page: options.page ?? 1,
-            pageSize: options.pageSize ?? 20,
-          });
         return context.json(
-          await devices.list(
-            { ...options, filter: { ...filter, ...mine } },
-            conditions,
-          ),
+          await devices.list(parseListOptions(context), conditions),
         );
       } catch (error) {
         return errorResponse(context, error);

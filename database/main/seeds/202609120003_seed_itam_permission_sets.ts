@@ -1,8 +1,9 @@
 import { defineSeed, type SeedDefinition } from '@nocobase/db';
 
 /**
- * The ITAM roles from the specification as Permission Sets: Employee,
- * IT Support and IT Asset Manager.
+ * The ITAM roles from the specification as Permission Sets: IT Support and
+ * IT Asset Manager. Only IT signs in (2026-10-05); the employees are people
+ * in the register, not accounts, so there is no Employee set.
  *
  * There is no administrator role of this application's own. The platform's
  * `root` set is unrestricted — the authorization core permits every request
@@ -15,7 +16,6 @@ import { defineSeed, type SeedDefinition } from '@nocobase/db';
  * are spelled out here rather than imported: a seed is history and must not
  * change meaning when the runtime registry evolves.
  */
-const EMPLOYEE = 'itam-employee';
 const IT_SUPPORT = 'itam-it-support';
 const ASSET_MANAGER = 'itam-asset-manager';
 
@@ -119,8 +119,6 @@ const IT_PAGES = [
   'locations',
   'departments',
   'people',
-  // Everyone holds assets, including the people who administer them.
-  'my-assets',
 ];
 /**
  * 报表 reads costs across the register, which is the Asset Manager's, and
@@ -128,13 +126,6 @@ const IT_PAGES = [
  * page), beside the application settings the role already owns.
  */
 const MANAGER_PAGES = [...IT_PAGES, 'reports', 'scheduler.schedules'];
-/** An employee's whole application: the workbench and what they hold. */
-const EMPLOYEE_PAGES = [
-  'workbench',
-  'inbox',
-  'notifications',
-  'my-assets',
-];
 
 interface Grant {
   readonly resource: { readonly type: string; readonly id: string };
@@ -226,33 +217,6 @@ const recordAccessOf = (policy: unknown): string => {
  */
 const all = { fields: '*', recordAccess: ['allRecords'] } as const;
 const readAll = all;
-
-/**
- * An employee reads what they hold and nothing else. The master data here is
- * only what 我的资产 and a device's own page print instead of an id — a
- * model, category, maker, place and department name — not a list they can
- * reach. There is no stock or entitlement grant: 我的资产 lists devices, and
- * an employee has no page that shows what is in the store room.
- */
-function employeeGrants(): Grant[] {
-  return [
-    ...EMPLOYEE_PAGES.map(page),
-    db('devices', {
-      read: {
-        fields: without(DEVICE_FIELDS, DEVICE_FINANCE_FIELDS),
-        recordAccess: ['itam.assetsIHold'],
-      },
-    }),
-    db('people', {
-      read: { fields: '*', recordAccess: ['itam.myPerson'] },
-    }),
-    db('models', { read: readAll }),
-    db('categories', { read: readAll }),
-    db('manufacturers', { read: readAll }),
-    db('locations', { read: readAll }),
-    db('departments', { read: readAll }),
-  ];
-}
 
 function itSupportGrants(): Grant[] {
   const deviceReadable = without(DEVICE_FIELDS, DEVICE_COST_FIELDS);
@@ -357,7 +321,6 @@ const seed: SeedDefinition = defineSeed({
     const now = new Date();
 
     const sets: readonly [string, string, Grant[]][] = [
-      [EMPLOYEE, 'Employee', splitOperations(employeeGrants())],
       [IT_SUPPORT, 'IT Support', splitOperations(itSupportGrants())],
       [
         ASSET_MANAGER,

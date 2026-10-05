@@ -14,7 +14,6 @@ const PHASES: Readonly<Record<string, string>> = {
   audits: 'P4',
   disposals: 'P4',
   reports: 'P5',
-  'my-assets': 'P1',
 };
 
 export default function ComingSoonPage(): ReactElement {

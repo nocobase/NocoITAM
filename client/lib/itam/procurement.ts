@@ -188,12 +188,13 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.purchase',
   },
   {
-    key: 'requesterId',
-    label: 'fields.requester',
+    key: 'ownerId',
+    label: 'fields.owner',
     type: 'reference',
-    // Who wants this, which is not always who filed it — IT raises orders
-    // for a department. Asked for on creation (starting at the filer) and
-    // changeable while the order is still the requester's to shape, so a
+    // The person in IT who follows the order through; who it is for is its
+    // department and its description, since employees do not sign in
+    // (2026-10-05). Asked for on creation (starting at the filer) and
+    // changeable while the order is still its 负责人's to shape, so a
     // request can be handed over instead of cancelled and asked again. Once
     // approved it is settled with the rest of what the order asks for.
     reference: { collection: 'users' },
@@ -207,10 +208,9 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
 // A request states when it is needed; when the goods are expected is the
 // vendor's answer, so 标记已下单 fills it, not the person writing the request.
 /**
- * Whether this reader raised the order: the person it names as requester,
- * or whoever wrote it for them. Asking for approval, taking the request
- * back and editing it are all theirs — the service refuses everyone else
- * with `NOT_REQUESTER`.
+ * Whether the order is this reader's: its 负责人, or whoever wrote it before
+ * handing it over. Asking for approval, taking the request back and editing
+ * it are all theirs — the service refuses everyone else with `NOT_OWNER`.
  */
 export function raisedBy(
   record: Readonly<Record<string, unknown>>,
@@ -218,17 +218,16 @@ export function raisedBy(
 ): boolean {
   if (currentUserId === undefined) return false;
   return (
-    record.requesterId === currentUserId || record.createdById === currentUserId
+    record.ownerId === currentUserId || record.createdById === currentUserId
   );
 }
 
 export const PO_CREATE_FIELDS: readonly string[] = [
   'reason',
   'description',
-  // Who it is for, and the department that follows from them (the create
-  // dialog derives it; both stay editable). Left empty, the service files
-  // the order under whoever is signed in.
-  'requesterId',
+  // Who follows it through, and the department it is for. Left empty, the
+  // service files the order under whoever is signed in.
+  'ownerId',
   'departmentId',
   'neededBy',
   'vendorId',

@@ -80,7 +80,7 @@ export const disposalDomain: DomainConfig = {
           t('board.deviceCount', { count: Number(record.deviceCount ?? 0) }),
       ],
       // The day it was raised; a board needs no time of day.
-      footer: ['requesterId', (record) => formatDate(record.createdAt)],
+      footer: ['ownerId', (record) => formatDate(record.createdAt)],
     },
     defaultSort: 'createdAt',
   }),
@@ -226,7 +226,7 @@ function DisposalActions({
   const askedIds = Array.isArray(asked?.approverIds)
     ? (asked.approverIds as string[])
     : [];
-  // Either nobody was named or it is this reader. The requester may be the
+  // Either nobody was named or it is this reader. The 负责人 may be the
   // one named — a deployment with a single Asset Manager has nobody else to
   // ask (2026-09-27), so the page no longer hides what the service allows.
   const mayDecide =
@@ -242,12 +242,12 @@ function DisposalActions({
         (entry.approverIds as unknown[]).includes(currentUserId)),
   );
   const buttons: ReactElement[] = [];
-  // Asking for approval, and taking the request back, belong to the side
-  // that asked: the person it names, or whoever raised it for them. The
-  // service refuses everyone else ('NOT_REQUESTER').
+  // Asking for approval, and taking the request back, belong to its 负责人,
+  // or to whoever wrote it before handing it over. The service refuses
+  // everyone else ('NOT_OWNER').
   const mine =
     currentUserId !== undefined &&
-    (text(record.requesterId) === currentUserId ||
+    (text(record.ownerId) === currentUserId ||
       text(record.createdById) === currentUserId);
   // An empty disposal has nothing to approve, so the service refuses it
   // ('NO_DEVICES'); the button says so before it is pressed, the way the

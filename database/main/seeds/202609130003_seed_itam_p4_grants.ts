@@ -56,7 +56,7 @@ const DISPOSAL_FIELDS = [
   'method',
   'reason',
   'description',
-  'requesterId',
+  'ownerId',
   'requestedAt',
   'status',
   'deviceCount',
@@ -78,7 +78,7 @@ const DISPOSAL_INPUT = [
   'method',
   'reason',
   'description',
-  'requesterId',
+  'ownerId',
   'requestedAt',
   'currency',
   // How it is to be carried out: stated with the request, confirmed by the

@@ -45,7 +45,7 @@ vi.mock('../../client/lib/itam/api.js', () => ({
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCollectionPermissions: () => ({ update: true, receive: true }),
   // Editing belongs to the side that raised the order; every record here
-  // names this reader as its requester.
+  // names this reader as its 负责人.
   useCurrentUserId: () => 'mia',
 }));
 vi.mock('../../client/lib/itam/references.js', () => ({
@@ -99,7 +99,7 @@ beforeEach(() => {
 it('reads as a document: every line, and what the order comes to', () => {
   render(
     <PurchaseOrderLinesCard
-      record={{ id: 'po1', status: state.status, requesterId: 'mia' }}
+      record={{ id: 'po1', status: state.status, ownerId: 'mia' }}
     />,
   );
   const rows = screen.getAllByRole('row');
@@ -115,7 +115,7 @@ it('reads as a document: every line, and what the order comes to', () => {
 it('edits every line at once and saves them as one set', () => {
   render(
     <PurchaseOrderLinesCard
-      record={{ id: 'po1', status: state.status, requesterId: 'mia' }}
+      record={{ id: 'po1', status: state.status, ownerId: 'mia' }}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'actions.edit' }));
@@ -144,7 +144,7 @@ it('freezes the lines once the order has been approved', () => {
   state.status = 'ordered';
   render(
     <PurchaseOrderLinesCard
-      record={{ id: 'po1', status: state.status, requesterId: 'mia' }}
+      record={{ id: 'po1', status: state.status, ownerId: 'mia' }}
     />,
   );
   expect(screen.queryByRole('button', { name: 'actions.edit' })).toBeNull();
@@ -153,7 +153,7 @@ it('freezes the lines once the order has been approved', () => {
 it('refuses to remove a line that has receipts', () => {
   render(
     <PurchaseOrderLinesCard
-      record={{ id: 'po1', status: state.status, requesterId: 'mia' }}
+      record={{ id: 'po1', status: state.status, ownerId: 'mia' }}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'actions.edit' }));
@@ -177,7 +177,7 @@ it('prices the first line of an order that has none yet', () => {
         id: 'po1',
         status: 'draft',
         estimatedTotal: 0,
-        requesterId: 'mia',
+        ownerId: 'mia',
       }}
     />,
   );
@@ -190,7 +190,7 @@ it('leaves the price out for a reader the order shows no money to', () => {
   state.rows = [];
   render(
     <PurchaseOrderLinesCard
-      record={{ id: 'po1', status: 'draft', requesterId: 'mia' }}
+      record={{ id: 'po1', status: 'draft', ownerId: 'mia' }}
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'actions.edit' }));
@@ -201,7 +201,7 @@ it('leaves the price out for a reader the order shows no money to', () => {
 it('lets the assistant add lines to the draft under edit, not save them', async () => {
   render(
     <PurchaseOrderLinesCard
-      record={{ id: 'po1', status: state.status, requesterId: 'mia' }}
+      record={{ id: 'po1', status: state.status, ownerId: 'mia' }}
     />,
   );
   const tool = state.tools.find((entry) => entry.name === 'addDraftLines');

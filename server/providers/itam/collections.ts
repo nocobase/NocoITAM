@@ -386,7 +386,7 @@ export const PURCHASE_ORDERS_COLLECTION: ItamCollectionDefinition = {
     'orderNo',
     'reason',
     'description',
-    'requesterId',
+    'ownerId',
     'departmentId',
     'neededBy',
     'vendorId',
@@ -400,11 +400,11 @@ export const PURCHASE_ORDERS_COLLECTION: ItamCollectionDefinition = {
     ...audit,
   ],
   costFields: PURCHASE_ORDER_COST_FIELDS,
-  // An order belongs to the person who asked for it; it carries no separate
-  // owner (dropped 2026-09-25).
+  // An order belongs to its 负责人, the person in IT who follows it through
+  // (the requester's field, renamed 2026-10-05).
   attributes: {
     identifier: 'id',
-    owner: 'requesterId',
+    owner: 'ownerId',
     creator: 'createdById',
   },
   searchFields: ['orderNo', 'description'],
@@ -540,7 +540,7 @@ export const DISPOSALS_COLLECTION: ItamCollectionDefinition = {
     'method',
     'reason',
     'description',
-    'requesterId',
+    'ownerId',
     'requestedAt',
     'status',
     'deviceCount',
@@ -557,10 +557,10 @@ export const DISPOSALS_COLLECTION: ItamCollectionDefinition = {
     ...audit,
   ],
   costFields: DISPOSAL_COST_FIELDS,
-  // The requester (a user) is who a disposal belongs to for row-level rules.
+  // Its 负责人 (a user) is who a disposal belongs to for row-level rules.
   attributes: {
     identifier: 'id',
-    owner: 'requesterId',
+    owner: 'ownerId',
     creator: 'createdById',
   },
   searchFields: ['disposalNo', 'description'],

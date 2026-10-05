@@ -139,8 +139,8 @@ export function createRepairService(dependencies: {
   /**
    * A repair belongs to its 负责人 (2026-09-28): the one named person who
    * finishes it, and the one who may take it back by deleting it. Holding
-   * the grant is not enough — everybody but an employee may own a repair,
-   * and naming one is what makes a repair handed over rather than stuck
+   * the grant is not enough — everybody in IT may own a repair, and naming
+   * one is what makes a repair handed over rather than stuck
    * with whoever happened to file it.
    */
   const requireOwner = (repair: Row, context: OperationContext) => {

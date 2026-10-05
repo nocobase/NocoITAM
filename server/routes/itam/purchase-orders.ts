@@ -28,14 +28,13 @@ import { decideCollection, errorResponse, principalId } from './http.js';
 const id = z.string().min(1).max(64);
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-// The vendor it goes to is stated when the request is written; the
-// department it is for follows the requester when there is one and is left
-// open otherwise. The update schema is this one partial, so an order made
+// The vendor it goes to is stated when the request is written, and so is
+// the department it is for, when it is for one. The update schema is this one partial, so an order made
 // before the vendor was required keeps what it has until it is edited.
 const orderSchema = z.object({
   reason: z.enum(PO_REASONS),
   description: z.string().max(20000).nullable().optional(),
-  requesterId: id.optional(),
+  ownerId: id.optional(),
   departmentId: id.nullable().optional(),
   neededBy: date.nullable().optional(),
   vendorId: id,
@@ -108,7 +107,7 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
         );
       },
       createSchema: orderSchema,
-      // 申请人 is editable like the rest of what the order asks for: the
+      // 负责人 is editable like the rest of what the order asks for: the
       // service freezes it with them once the order is approved
       // (`SETTLED_EDITABLE`), and until then a request may be handed over
       // rather than cancelled and asked again.

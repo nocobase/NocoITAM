@@ -469,8 +469,7 @@ export function PersonBelongings({
           </p>
           {/* One record per line: they are things to go and settle, not a
                 set of tags. Each says what kind it is and in which seat it
-                names them, because a device's 负责人 and an order's 申请人
-                are not the same job. */}
+                names them: the 负责人, or one of a stocktake's 执行人. */}
           <ul className='divide-y divide-border text-sm'>
             {[
               ...owned,
@@ -507,8 +506,8 @@ export function PersonBelongings({
                     </RecordLink>
                     <span className='text-xs text-muted-foreground'>
                       {t(
-                        record.field === 'requesterId'
-                          ? 'fields.requester'
+                        record.field === 'executorIds'
+                          ? 'fields.executors'
                           : 'fields.owner',
                       )}
                       {' · '}

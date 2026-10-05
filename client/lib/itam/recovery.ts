@@ -54,10 +54,10 @@ export interface OwnedRecord {
   readonly id: string;
   readonly label: string;
   /**
-   * Which field names them: a 负责人 on most, a 申请人 on a request, and the
-   * executors on a stocktake, which names several.
+   * Which field names them: the 负责人 on every record but a stocktake,
+   * which names its executors, several of them.
    */
-  readonly field: 'ownerId' | 'requesterId' | 'executorIds';
+  readonly field: 'ownerId' | 'executorIds';
   /** Who that field names now, which is somebody else once handed over. */
   readonly ownerId?: string | null;
   /**

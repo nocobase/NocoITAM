@@ -69,13 +69,6 @@ export const purchaseOrderDomain: DomainConfig = {
     ['draft', 'rejected', 'approved', 'ordered', 'partiallyReceived'].includes(
       text(record.status),
     ),
-  // The department a request belongs to is the requester's, until someone
-  // says otherwise: `/itam/users` carries it, so choosing a person fills it
-  // in and it stays editable (and clearable).
-  derive: (change) =>
-    change.key === 'requesterId'
-      ? { departmentId: change.record?.departmentId ?? null }
-      : undefined,
   // Opens on a board by status; the list is one click away.
   Board: createStatusBoard({
     path: PURCHASE_ORDERS_PATH,
@@ -96,7 +89,7 @@ export const purchaseOrderDomain: DomainConfig = {
       meta: 'estimatedTotal',
       lines: ['vendorId', 'reason'],
       // The day it was raised; a board needs no time of day.
-      footer: ['requesterId', (record) => formatDate(record.createdAt)],
+      footer: ['ownerId', (record) => formatDate(record.createdAt)],
     },
     defaultSort: 'createdAt',
   }),
@@ -282,7 +275,7 @@ function PurchaseOrderActions({
   const askedIds = Array.isArray(asked?.approverIds)
     ? (asked.approverIds as string[])
     : [];
-  // The requester may be the person named — a deployment with a single
+  // The 负责人 may be the person named — a deployment with a single
   // Asset Manager has nobody else to ask (2026-09-27), so the page no
   // longer hides what the service allows.
   const mayDecide =
@@ -291,9 +284,9 @@ function PurchaseOrderActions({
     (askedIds.length === 0 ||
       (currentUserId !== undefined && askedIds.includes(currentUserId)));
   const buttons: ReactElement[] = [];
-  // Asking for approval, and taking the request back, belong to the side
-  // that asked: the person it names, or whoever raised it for them. The
-  // service refuses everyone else ('NOT_REQUESTER').
+  // Asking for approval, and taking the request back, belong to its 负责人,
+  // or to whoever wrote it before handing it over. The service refuses
+  // everyone else ('NOT_OWNER').
   const mine = raisedBy(record, currentUserId);
   if (
     permissions.submit &&

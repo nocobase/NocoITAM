@@ -195,15 +195,8 @@ export function PurchaseOrderCreateDialog({
               // Once created, the header is the order's; a retry only
               // finishes the lines and the submission.
               disabled={Boolean(created)}
-              onChange={(value, record) =>
-                setValues((current) => ({
-                  ...current,
-                  [field.key]: value,
-                  // The department follows the requester until changed.
-                  ...(field.key === 'requesterId'
-                    ? { departmentId: record?.departmentId ?? null }
-                    : {}),
-                }))
+              onChange={(value) =>
+                setValues((current) => ({ ...current, [field.key]: value }))
               }
             />
           </div>

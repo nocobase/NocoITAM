@@ -143,7 +143,6 @@ describe('ITAM seeds', () => {
     const keys = rows.map((row) => row.key).sort();
     expect(keys).toEqual([
       'itam-asset-manager',
-      'itam-employee',
       'itam-it-support',
       'system-administrator',
     ]);
@@ -165,18 +164,6 @@ describe('ITAM seeds', () => {
       ),
     ).toBe(true);
 
-    const employee = rows.find((row) => row.key === 'itam-employee');
-    const employeeGrants = employee?.grants ?? [];
-    const deviceRead = employeeGrants.find(
-      (grant) => grant.resource.id === 'main.devices',
-    )?.actions[0];
-    expect(deviceRead?.policy?.recordAccess).toEqual(['itam.assetsIHold']);
-    // One list per action since beta.43, not `{ input, output }`: the plugin
-    // drops a policy whose `fields` it does not recognise, which silently
-    // grants nothing.
-    expect(deviceRead?.policy?.fields).not.toContain('purchasePrice');
-    expect(deviceRead?.policy?.fields).toContain('deviceNo');
-
     // The seeds grant nothing the application no longer has — no tickets,
     // contracts or bills — so a data reset leaves nothing for the startup
     // step to strip. The merged entitlements collection is granted directly.
@@ -186,29 +173,6 @@ describe('ITAM seeds', () => {
           .map((grant) => grant.resource.id)
           .filter((id) => /ticket|contract|Bills/.test(id)),
       ).toEqual([]);
-    // An employee reads what they hold and the names their own device page
-    // prints — not the store room, and not the software the company owns.
-    expect(
-      employeeGrants
-        .filter((grant) => grant.resource.type === 'database.collection')
-        .map((grant) => grant.resource.id)
-        .sort(),
-    ).toEqual([
-      'main.attachmentLinks',
-      'main.categories',
-      'main.departments',
-      'main.devices',
-      'main.locations',
-      'main.manufacturers',
-      'main.models',
-      'main.people',
-    ]);
-    // Their whole application is two pages.
-    expect(
-      employeeGrants
-        .filter((grant) => grant.resource.type === 'page')
-        .map((grant) => grant.resource.id),
-    ).toEqual(['workbench', 'inbox', 'notifications', 'my-assets']);
     const updated: string[] = [];
     await reconcileGrants({
       list: async () => rows,
@@ -235,6 +199,91 @@ describe('ITAM seeds', () => {
         ?.actions.map((action) => action.action)
         .sort(),
     ).toEqual(['read', 'update']);
+  });
+
+  it("removes the Employee set and renames a request's requester in stored lists", async () => {
+    const stored = [
+      {
+        key: 'itam-employee',
+        grants: [
+          {
+            resource: { type: 'page', id: 'my-assets' },
+            actions: [{ action: 'access' }],
+          },
+        ],
+      },
+      {
+        key: 'custom',
+        grants: [
+          {
+            resource: { type: 'page', id: 'my-assets' },
+            actions: [{ action: 'access' }],
+          },
+          {
+            resource: { type: 'database.collection', id: 'main.disposals' },
+            actions: [
+              {
+                action: 'read',
+                policy: {
+                  type: 'database',
+                  fields: ['id', 'requesterId', 'status'],
+                  recordAccess: ['allRecords'],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const revoked: string[] = [];
+    const deleted: string[] = [];
+    const updated: { key: string; grants: unknown }[] = [];
+    await reconcileGrants({
+      list: async () => stored,
+      listAssignments: async (key: string) =>
+        key === 'itam-employee'
+          ? [
+              {
+                id: 'a1',
+                permissionSet: key,
+                subject: { type: 'user', id: 'u' },
+              },
+            ]
+          : [],
+      revoke: async (id: string) => {
+        revoked.push(id);
+      },
+      delete: async (key: string) => {
+        deleted.push(key);
+      },
+      update: async (key: string, set: { grants: unknown }) => {
+        updated.push({ key, grants: set.grants });
+      },
+    } as never);
+    expect(revoked).toEqual(['a1']);
+    expect(deleted).toEqual(['itam-employee']);
+    // 我的资产 went with the role, and 申请人 became 负责人.
+    expect(updated).toEqual([
+      {
+        key: 'custom',
+        grants: [
+          {
+            resource: { type: 'database.collection', id: 'main.disposals' },
+            actions: [
+              {
+                action: 'read',
+                policy: {
+                  type: 'database',
+                  // The disposal's data-wipe answer is topped up as well.
+                  fields: ['id', 'ownerId', 'status', 'dataWipe', 'wipeMethod'],
+                  recordAccess: ['allRecords'],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
   });
 
   it('rewrites a Collection grant written in the pre-beta.43 field shape', async () => {

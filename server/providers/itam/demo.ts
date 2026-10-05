@@ -62,9 +62,10 @@ export interface DemoAccounts {
 }
 
 /**
- * The two staff sign-ins the demo always creates. Employees get one each
- * from `PERSON_NAMES` below, so every role can be tried without an
- * administrator handing out accounts first. Passwords are deliberately
+ * The two staff sign-ins the demo always creates, one per role, so each can
+ * be tried without an administrator handing out accounts first. Employees
+ * do not sign in (2026-10-05); of the people in `PERSON_NAMES` below only
+ * the leaver, who is IT support, has an account. Passwords are deliberately
  * memorable: this is demonstration data, and clearing it removes them.
  */
 export const DEMO_STAFF_ACCOUNTS: readonly DemoAccountSpec[] = [
@@ -84,13 +85,13 @@ export const DEMO_STAFF_ACCOUNTS: readonly DemoAccountSpec[] = [
   },
 ];
 
-/** Every demo employee signs in with this. */
-export const DEMO_EMPLOYEE_PASSWORD = 'employee123';
+/** The leaver's sign-in uses this. */
+export const DEMO_LEAVER_PASSWORD = 'employee123';
 
 /**
  * The person record behind each staff sign-in, by locale. The two IT roles
- * hold equipment like anyone else, so 我的资产 has to have something in it
- * for them; a sign-in with no person record reads as holding nothing.
+ * hold equipment like anyone else, and a sign-in with no person record
+ * reads as holding nothing.
  */
 const STAFF_PEOPLE: Readonly<
   Record<string, Readonly<Record<string, { name: string; position: string }>>>
@@ -265,7 +266,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
  * The person the demo sets up to leave — it does not mark them left; that
  * is the one act worth performing by hand, see where this is used.
  *
- * They are IT, and they sign in like everybody else: leaving is only half a
+ * They are IT, and so they sign in: leaving is only half a
  * story while the register has nothing of theirs to hand over. A salesperson
  * answers for none of its records, so the one who leaves is the IT support
  * engineer — their devices, their repairs and the orders they raised all
@@ -530,21 +531,21 @@ export function createDemoService(dependencies: {
       // The leaver is IT support; the rest are the two business teams.
       const departmentsByIndex = [rnd, rnd, sales, itDept, rnd, sales];
       for (const [index, entry] of personNames.entries()) {
-        // Everybody signs in, so 我的资产 can be read as each of them — the
-        // leaver included, because a person who has left still owns the
-        // records that name them and those point at a sign-in. The username
-        // is the romanised mailbox, which does not move with the locale the
-        // display names follow.
-        const userId = await account({
-          username: entry.mail.replaceAll('.', ''),
-          name: entry.name,
-          email: `${entry.mail}@northbridge.example`,
-          password: DEMO_EMPLOYEE_PASSWORD,
-          // The leaver is IT: what they answer for is what makes offboarding
-          // more than handing equipment back.
-          permissionSet:
-            index === LEAVER_INDEX ? 'itam-it-support' : 'itam-employee',
-        });
+        // Only the leaver signs in: they are IT, and a person who has left
+        // still owns the records that name them, which point at a sign-in.
+        // The others are employees, who are people in the register and not
+        // accounts (2026-10-05). The username is the romanised mailbox,
+        // which does not move with the locale the display names follow.
+        const userId =
+          index === LEAVER_INDEX
+            ? await account({
+                username: entry.mail.replaceAll('.', ''),
+                name: entry.name,
+                email: `${entry.mail}@northbridge.example`,
+                password: DEMO_LEAVER_PASSWORD,
+                permissionSet: 'itam-it-support',
+              })
+            : undefined;
         people.push(
           await md('people', {
             name: entry.name,
@@ -597,9 +598,9 @@ export function createDemoService(dependencies: {
       }
 
       // Whoever generated the demo holds equipment too — usually the
-      // application's first account, which is nobody's employee and would
-      // otherwise read 我的资产 as an empty page. Skipped when that account
-      // is one of the staff sign-ins above, or already has a person record.
+      // application's first account, which has no person record of its own.
+      // Skipped when that account is one of the staff sign-ins above, or
+      // already has a person record.
       const adminPerson = await (async (): Promise<Row | undefined> => {
         if (staffUserIds.includes(actorId)) return undefined;
         const existing = await database
@@ -627,7 +628,7 @@ export function createDemoService(dependencies: {
       })();
 
       // What the leaver answers for. Returning equipment is only half of
-      // offboarding: the records naming them as 负责人 or 申请人 keep naming
+      // offboarding: the records naming them as 负责人 keep naming
       // them until somebody takes them over, and nothing but a person can do
       // that. The demo gives them a few so the handover half has something
       // to show.
@@ -886,8 +887,7 @@ export function createDemoService(dependencies: {
         },
       });
 
-      // The two IT staff hold equipment of their own, so 我的资产 is not an
-      // empty page when the demo is read as one of them.
+      // The two IT staff hold equipment of their own, like everybody.
       const staffLaptops = new Map<string, Row>();
       for (const [index, spec] of DEMO_STAFF_ACCOUNTS.entries()) {
         if (!staff.has(spec.username)) continue;
@@ -928,8 +928,8 @@ export function createDemoService(dependencies: {
         );
       }
 
-      // A laptop, a monitor and a phone: enough for 我的资产 to read as a
-      // real desk rather than a single row.
+      // A laptop, a monitor and a phone: a real desk rather than a single
+      // row.
       const adminDevices: Row[] = [];
       if (adminPerson) {
         adminDevices.push(
@@ -1813,7 +1813,7 @@ export function createDemoService(dependencies: {
             departmentId: rnd.id,
             // The leaver raised it and never submitted it: a draft nobody
             // owns is a request that quietly stops existing.
-            requesterId: leaverUserId,
+            ownerId: leaverUserId,
           },
           context,
           all('purchaseOrders', 'create'),
@@ -2230,7 +2230,7 @@ export function createDemoService(dependencies: {
             wipeMethod: 'software',
             // Raised by the leaver and never submitted: a request nobody
             // else may file or withdraw until it is handed over.
-            requesterId: leaverUserId,
+            ownerId: leaverUserId,
           },
           context,
           all('disposals', 'create'),

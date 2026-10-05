@@ -55,7 +55,17 @@ const STALE_PAGES = new Set([
   'contracts',
   // The AI action center, replaced by the AI employee plugin's write tools.
   'ai-actions',
+  // 我的资产, which went with the employee role (2026-10-05).
+  'my-assets',
 ]);
+
+/**
+ * Permission sets the application no longer has. Employees stopped signing
+ * in on 2026-10-05: the register is IT's own, so the Employee set and its
+ * assignments go, and whoever held it keeps their account with no ITAM
+ * access. Only a set the seeds created is removed, by its key.
+ */
+const REMOVED_SETS: readonly string[] = ['itam-employee'];
 
 /**
  * The field allowlist a stored database policy carries.
@@ -132,6 +142,57 @@ const ADDED_FIELDS: ReadonlyMap<string, readonly string[]> = new Map([
   // creator, so a stored policy states a list without it.
   ['main.repairs', ['ownerId']],
 ]);
+
+/**
+ * Fields renamed since a stored policy was written, per Collection. A
+ * purchase order's and a disposal's 申请人 became their 负责人 on
+ * 2026-10-05 (`202610050001_request_owner`), so a list naming
+ * `requesterId` would grant a column that no longer exists and withhold the
+ * one that replaced it.
+ */
+const RENAMED_FIELDS: ReadonlyMap<
+  string,
+  ReadonlyMap<string, string>
+> = new Map([
+  ['main.purchaseOrders', new Map([['requesterId', 'ownerId']])],
+  ['main.disposals', new Map([['requesterId', 'ownerId']])],
+]);
+
+/** Renames the fields above in every list a stored policy states. */
+function renameFields(grant: PermissionGrant): {
+  grant: PermissionGrant;
+  changed: boolean;
+} {
+  const renamed =
+    grant.resource.type === 'database.collection'
+      ? RENAMED_FIELDS.get(grant.resource.id)
+      : undefined;
+  if (!renamed) return { grant, changed: false };
+  let changed = false;
+  const actions = grant.actions.map((entry) => {
+    const policy = entry.policy as Record<string, unknown> | undefined;
+    if (typeof policy !== 'object' || policy === null) return entry;
+    if (!Array.isArray(policy.fields)) return entry;
+    const stated = (policy.fields as unknown[]).filter(
+      (field): field is string => typeof field === 'string',
+    );
+    if (!stated.some((field) => renamed.has(field))) return entry;
+    changed = true;
+    const fields = [
+      ...new Set(stated.map((field) => renamed.get(field) ?? field)),
+    ];
+    return {
+      ...entry,
+      policy: {
+        ...policy,
+        fields,
+      } as unknown as PermissionGrantAction['policy'],
+    };
+  });
+  return changed
+    ? { grant: { ...grant, actions }, changed }
+    : { grant, changed };
+}
 
 /**
  * Operations whose stored grant must no longer narrow by record, because the
@@ -281,30 +342,6 @@ export function normalizeGrantFields(grant: PermissionGrant): {
 }
 
 /**
- * Grants a seeded set should no longer carry, by set key. Seeds only ever
- * add, so a change of mind about what a role reads has to be applied here.
- *
- * The employee set is the only entry (2026-09-27): it read every stock item
- * and every entitlement — `allRecords`, not what the reader holds — for
- * pages an employee cannot open, since 我的资产 lists devices and the rest
- * of the asset menu belongs to IT.
- */
-const WITHDRAWN_COLLECTIONS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
-  [
-    [
-      'itam-employee',
-      new Set([
-        'main.stockItems',
-        'main.stockHoldings',
-        'main.entitlements',
-        'main.entitlementSeats',
-        'main.softwareProducts',
-      ]),
-    ],
-  ],
-);
-
-/**
  * The menu each seeded role has. Every menu entry began checking its page
  * grant on 2026-09-27; before that the grants were stored and never read, so
  * a database seeded earlier is missing whichever pages arrived after its
@@ -337,10 +374,8 @@ const IT_PAGES: readonly string[] = [
   'locations',
   'departments',
   'people',
-  'my-assets',
 ];
 const ADDED_PAGES: ReadonlyMap<string, readonly string[]> = new Map([
-  ['itam-employee', ['workbench', 'inbox', 'notifications', 'my-assets']],
   ['itam-it-support', IT_PAGES],
   ['itam-asset-manager', [...IT_PAGES, 'reports', 'scheduler.schedules']],
 ]);
@@ -359,8 +394,13 @@ export async function reconcileGrants(
   permissionSets: PermissionSetsApi,
 ): Promise<void> {
   for (const set of await permissionSets.list()) {
+    if (REMOVED_SETS.includes(set.key)) {
+      for (const assignment of await permissionSets.listAssignments(set.key))
+        await permissionSets.revoke(assignment.id);
+      await permissionSets.delete(set.key);
+      continue;
+    }
     let changed = false;
-    const withdrawn = WITHDRAWN_COLLECTIONS.get(set.key);
     const withdrawnPages = WITHDRAWN_PAGES.get(set.key);
     const grants = set.grants.flatMap((entry) => {
       const normalized = normalizeGrantFields(entry);
@@ -369,11 +409,12 @@ export async function reconcileGrants(
       if (widened.changed) changed = true;
       const unscoped = unscopeOperations(widened.grant);
       if (unscoped.changed) changed = true;
-      const grant = unscoped.grant;
+      const renamed = renameFields(unscoped.grant);
+      if (renamed.changed) changed = true;
+      const grant = renamed.grant;
       if (
         (grant.resource.type === 'database.collection' &&
-          (STALE_COLLECTIONS.has(grant.resource.id) ||
-            withdrawn?.has(grant.resource.id))) ||
+          STALE_COLLECTIONS.has(grant.resource.id)) ||
         (grant.resource.type === 'page' &&
           (STALE_PAGES.has(grant.resource.id) ||
             withdrawnPages?.has(grant.resource.id)))

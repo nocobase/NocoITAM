@@ -161,16 +161,6 @@ const readFields = (output: readonly string[]) =>
 const write = (input: readonly string[]) =>
   ({ fields: input, recordAccess: ['allRecords'] }) as const;
 
-/**
- * An employee gets nothing here (2026-09-27). They used to read every stock
- * item and every entitlement — `allRecords`, not what they hold — for pages
- * they cannot open: 我的资产 lists devices, and the accessory, consumable,
- * component and 授权 pages belong to the IT menu.
- */
-function employeeGrants(): Grant[] {
-  return [];
-}
-
 function itSupportGrants(): Grant[] {
   const stockOut = without(STOCK_FIELDS, ['unitPrice']);
   const entitlementOut = without(ENTITLEMENT_FIELDS, [
@@ -239,7 +229,6 @@ const seed: SeedDefinition = defineSeed({
     if (!(await client.schema.hasTable('authorization_permission_sets')))
       return;
     const additions: readonly [string, Grant[]][] = [
-      ['itam-employee', splitOperations(employeeGrants())],
       ['itam-it-support', splitOperations(itSupportGrants())],
       ['itam-asset-manager', splitOperations(managerGrants())],
     ];

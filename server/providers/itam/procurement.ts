@@ -209,7 +209,7 @@ const EDITABLE_STATUSES = new Set([
   'ordered',
   'partiallyReceived',
 ]);
-/** Where an order is still the requester's to shape: nothing decided yet. */
+/** Where an order is still its 负责人's to shape: nothing decided yet. */
 const UNDECIDED_STATUSES = new Set(['draft', 'rejected']);
 /**
  * Where the request itself is settled: the approval was given for what the
@@ -368,25 +368,25 @@ export function createProcurementService(deps: {
   };
 
   /**
-   * The order belongs to the side that raised it: the person it names as
-   * requester, or whoever wrote it for them. Editing it, asking for
-   * approval and taking the request back are all theirs. Holding the grant
+   * The order belongs to its 负责人, or to whoever wrote it before handing it
+   * over. Editing it, asking for approval and taking the request back are
+   * all theirs. Holding the grant
    * is not enough — the permission set that grants `update` and `submit`
    * also grants `approve`, so without this an approver could rewrite or
    * file a request instead of deciding it. The page hides these actions
    * from everyone else; this is what makes that true. Receiving, ordering
    * and cancelling stay with the grant: they are the buyer's steps, not the
-   * requester's.
+   * 负责人's.
    */
   const raisedTheOrder = (order: Row, context: OperationContext) =>
-    context.actorId === asText(order.requesterId) ||
+    context.actorId === asText(order.ownerId) ||
     context.actorId === asText(order.createdById);
 
-  const requireRequester = (order: Row, context: OperationContext) => {
+  const requireOwner = (order: Row, context: OperationContext) => {
     if (!raisedTheOrder(order, context))
       throw new BusinessRuleError(
-        'Only the requester can submit or withdraw this request',
-        'NOT_REQUESTER',
+        'Only the owner can submit or withdraw this request',
+        'NOT_OWNER',
       );
   };
 
@@ -463,10 +463,8 @@ export function createProcurementService(deps: {
       const id = crypto.randomUUID();
       await database.transaction(async (connection) => {
         const orderNo = await numbering.next('purchaseOrder', { connection });
-        const requesterId =
-          typeof input.requesterId === 'string'
-            ? input.requesterId
-            : context.actorId;
+        const ownerId =
+          typeof input.ownerId === 'string' ? input.ownerId : context.actorId;
         const now = new Date();
         await connection.query
           .insertInto('purchaseOrders')
@@ -474,7 +472,7 @@ export function createProcurementService(deps: {
             ...input,
             id,
             orderNo,
-            requesterId,
+            ownerId,
             status: 'draft',
             estimatedTotal: 0,
             currency:
@@ -517,7 +515,7 @@ export function createProcurementService(deps: {
             'Order cannot be edited in this status',
             'INVALID_STATUS',
           );
-        requireRequester(order, context);
+        requireOwner(order, context);
         const settled = SETTLED_STATUSES.has(String(order.status))
           ? Object.keys(input).filter((field) => !SETTLED_EDITABLE.has(field))
           : [];
@@ -626,7 +624,7 @@ export function createProcurementService(deps: {
             'Lines change only before the order is approved',
             'INVALID_STATUS',
           );
-        requireRequester(order, context);
+        requireOwner(order, context);
         const existing = await connection.query
           .selectFrom('purchaseOrderLines')
           .selectAll()
@@ -765,7 +763,7 @@ export function createProcurementService(deps: {
       let title = '';
       const row = await mutate(id, conditions, async (connection, order) => {
         requireStatus(order, ['draft', 'rejected'], 'submit');
-        requireRequester(order, context);
+        requireOwner(order, context);
         const lines = await recomputeTotals(connection, id);
         if (lines.length === 0)
           throw new BusinessRuleError(
@@ -812,16 +810,16 @@ export function createProcurementService(deps: {
     withdraw: (id, context, conditions) =>
       mutate(id, conditions, async (connection, order) => {
         requireStatus(order, ['pendingApproval'], 'withdraw');
-        requireRequester(order, context);
+        requireOwner(order, context);
         await approvals.withdraw('purchaseOrder', id, context, connection);
         await setStatus(connection, order, 'draft', context, null);
       }),
 
     async decide(id, decision, comment, context, conditions) {
-      let requesterId = '';
+      let ownerId = '';
       let title = '';
       const row = await mutate(id, conditions, async (connection, order) => {
-        requesterId = asText(order.requesterId) ?? '';
+        ownerId = asText(order.ownerId) ?? '';
         title = `${String(order.orderNo)} ${String(order.reason)}`;
         requireStatus(order, ['pendingApproval'], 'decide');
         const pending = (
@@ -846,7 +844,7 @@ export function createProcurementService(deps: {
       });
       await notifier.notify({
         key: `purchaseOrder:${id}:${decision}:${String(row.updatedAt)}`,
-        to: [requesterId],
+        to: [ownerId],
         actorId: context.actorId,
         title: {
           key:
@@ -1221,7 +1219,7 @@ export function createProcurementService(deps: {
           throw new ValidationError('A reason is required', 'reason');
         // Calling the order off is for the people it went through: the side
         // that raised it, and whoever was asked to decide or decided. A
-        // draft has no approval, so it is the requester's alone.
+        // draft has no approval, so it is its 负责人's alone.
         if (!raisedTheOrder(order, context)) {
           const trail = await approvals.forSubject(
             'purchaseOrder',
@@ -1236,7 +1234,7 @@ export function createProcurementService(deps: {
           );
           if (!asked)
             throw new BusinessRuleError(
-              'Only the requester or the approver can cancel this order',
+              'Only the owner or the approver can cancel this order',
               'NOT_INVOLVED',
             );
         }

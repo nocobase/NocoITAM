@@ -77,7 +77,6 @@ const messages = {
     locations: 'Locations',
     departments: 'Departments',
     people: 'People',
-    myAssets: 'My assets',
     itamSettings: 'System settings',
     breadcrumb: 'Breadcrumb',
     back: 'Back',
@@ -540,7 +539,6 @@ const messages = {
     receivedAt: 'Received on',
     poReason: 'Reason',
     reason: 'Reason',
-    requester: 'Requester',
     requesterUserId: 'Linked login user',
     estimatedTotal: 'Total',
     itemType: 'Item type',
@@ -1270,8 +1268,7 @@ const messages = {
     lineReceived: 'A line with receipts cannot be removed',
     withdraw: 'Withdraw',
     decide: 'Decide',
-    decideDescription:
-      'Approve or reject this request. The requester cannot decide their own request.',
+    decideDescription: 'Approve or reject this request.',
     approve: 'Approve',
     reject: 'Reject',
     comment: 'Comment',
@@ -1285,8 +1282,7 @@ const messages = {
     myApproval: 'Waiting for me',
     anyApprover: 'Anyone who may approve',
     noApprovalNeeded: 'No approval needed',
-    approverHint:
-      'Only the person chosen can decide; nobody approves their own request.',
+    approverHint: 'Only the person chosen can decide.',
     linesTotal_one: '{{count}} line',
     linesTotal_other: '{{count}} lines',
     noLines: 'No lines yet',
@@ -1305,7 +1301,7 @@ const messages = {
     existingStockItem: 'Stock item',
     existingEntitlement: 'Entitlement',
     noApprovals: 'Not submitted yet',
-    requestedBy: 'Requested by {{user}}',
+    requestedBy: 'Submitted by {{user}}',
     decidedBy: 'Decided by {{user}} on {{date}}',
     arrivedAt: 'Received',
     nothingGenerated: 'Nothing received yet',
@@ -1410,7 +1406,6 @@ const messages = {
       bookValue: 'Book value',
       bookValueCaption: 'Sum of current book values',
     },
-    quickActions: 'Quick actions',
     nothingToAttend: 'Nothing needs attention right now',
     work: {
       pendingApprovals: 'Waiting for my approval',
@@ -1715,10 +1710,12 @@ const messages = {
       'The holder does not hold that many':
         'The holder does not hold that many',
       'The item has no device': 'The item has no device',
-      'Only the requester or the approver can cancel this order':
-        'Only the requester or the approver can cancel this order',
-      'Only the requester can submit or withdraw this request':
-        'Only the requester can submit or withdraw this request',
+      'Only the owner or the approver can cancel this order':
+        'Only the owner or the approver can cancel this order',
+      'Only the owner or the approver can carry out this disposal':
+        'Only the owner or the approver can carry out this disposal',
+      'Only the owner can submit or withdraw this request':
+        'Only the owner can submit or withdraw this request',
       'The requester cannot approve their own request':
         'The requester cannot approve their own request',
       'The scope is fixed once the task started':
@@ -1932,12 +1929,6 @@ const messages = {
     noneForDevice: 'This device has never been on a disposal',
     approverForSubmit:
       'Needed to submit for approval; a draft can be saved without one.',
-  },
-  employee: {
-    myAssets: 'My assets',
-    myAssetsDescription: 'The devices assigned to you.',
-    noAssets: 'No devices assigned to you',
-    requestAsset: 'Request an asset',
   },
   reports: {
     unassigned: 'Not set',

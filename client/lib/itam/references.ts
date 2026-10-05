@@ -21,13 +21,14 @@ const DOMAIN_PATHS: Readonly<Record<string, { path: string; route: string }>> =
     repairs: { path: 'itam/repairs', route: 'repairs' },
     auditTasks: { path: 'itam/audits', route: 'audits' },
     disposals: { path: 'itam/disposals', route: 'disposals' },
-    // Users have a directory but no page of their own.
+    // Users have a directory but no page of their own. Picking from it
+    // offers the people in IT; a name lookup answers for anybody.
     users: { path: 'itam/users', route: '' },
     // Not a collection: the people who may approve a kind of request, which
     // a submitter picks from (`filter.subject` says which kind).
     approvers: { path: 'itam/users/approvers', route: '' },
     // Likewise: the people a repair may be made the responsibility of,
-    // which is whoever may finish one — everybody but an employee.
+    // which is whoever may finish one.
     repairOwners: { path: 'itam/users/repair-owners', route: '' },
   };
 

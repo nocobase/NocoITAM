@@ -138,11 +138,10 @@ const domainRoute = (
  * Page authorization arrived with template beta.43: an App page with no rule
  * of its own checks a page grant named after its route. Every page this
  * application puts in a menu takes that rule, because which pages a role
- * reaches is part of what the role *is*: an employee holds `workbench` and
- * `my-assets` and nothing else, so signing in shows those two entries rather
- * than the whole application with empty lists behind it (2026-09-27; the
- * permission sets have carried these grants since they were written, and
- * until now nothing checked them).
+ * reaches is part of what the role *is*: IT support has no 报表, so signing
+ * in as IT support shows no entry for it rather than a page of refusals
+ * (2026-09-27; the permission sets have carried these grants since they
+ * were written, and until then nothing checked them).
  *
  * What is not a menu entry is skipped: a detail page and its tabs are
  * reached through the list that already checked, the sign-in pages are
@@ -205,17 +204,6 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       auth: 'required',
       navigation: { title: 'navigation.workbench', icon: LayoutDashboard },
       componentLoader: () => import('./pages/itam/workbench.js'),
-    },
-    // What a person holds is their own entry, not a group of one: the
-    // employee side of this application is that single page. It sits with
-    // the workbench above the groups — both are about the reader — and an
-    // ungrouped entry after a group would read as part of it.
-    {
-      name: 'my-assets',
-      path: '/my-assets',
-      auth: 'required',
-      navigation: { title: 'navigation.myAssets', icon: Laptop },
-      componentLoader: () => import('./pages/itam/employee/my-assets.js'),
     },
     {
       // Right after the overview: what waits on this reader, in the two

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import addRepairNo from '../../database/main/migrations/202609190002_add_repair_no.js';
 import compositeGrants from '../../database/main/migrations/202609280007_composite_grants.js';
+import requestOwner from '../../database/main/migrations/202610050001_request_owner.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -131,6 +132,85 @@ describe('ITAM migrations', () => {
     ).toMatchObject({ nextValue: 3 });
   });
 
+  it("moves a request's requester to its owner, with the recorded changes", async () => {
+    db = await createTestDatabase();
+    const client = await schemaClient(db.database);
+    const connection = db.database.connection();
+    const context = {
+      connection,
+      query: connection.query,
+      builder: connection.builder,
+    };
+    await requestOwner.down!(context);
+    expect(await client.schema.hasColumn('purchase_orders', 'owner_id')).toBe(
+      false,
+    );
+    const now = new Date();
+    await connection.query
+      .insertInto('purchaseOrders')
+      .values({
+        id: 'po',
+        orderNo: 'PO-1',
+        reason: 'other',
+        requesterId: 'mia',
+        status: 'draft',
+        createdAt: now,
+        updatedAt: now,
+      })
+      .execute();
+    await connection.query
+      .insertInto('disposals')
+      .values({
+        id: 'dp',
+        disposalNo: 'DP-1',
+        method: 'scrap',
+        reason: 'other',
+        requesterId: 'sam',
+        status: 'draft',
+        createdAt: now,
+        updatedAt: now,
+      })
+      .execute();
+    await connection.query
+      .insertInto('changeLogs')
+      .values({
+        id: 'change',
+        subjectType: 'purchaseOrders',
+        subjectId: 'po',
+        action: 'update',
+        field: 'requesterId',
+        createdAt: now,
+      })
+      .execute();
+
+    await requestOwner.up(context);
+    expect(
+      await connection.query
+        .selectFrom('purchaseOrders')
+        .select('ownerId')
+        .executeTakeFirst(),
+    ).toEqual({ ownerId: 'mia' });
+    expect(
+      await connection.query
+        .selectFrom('disposals')
+        .select('ownerId')
+        .executeTakeFirst(),
+    ).toEqual({ ownerId: 'sam' });
+    expect(
+      await connection.query
+        .selectFrom('changeLogs')
+        .select('field')
+        .where('id', '=', 'change')
+        .executeTakeFirst(),
+    ).toEqual({ field: 'ownerId' });
+    expect(
+      await client.schema.hasColumn('purchase_orders', 'requester_id'),
+    ).toBe(false);
+    expect(await client.schema.hasColumn('disposals', 'requester_id')).toBe(
+      false,
+    );
+  });
+
   it('moves stored operation and settings grants to composites and back', async () => {
     db = await createTestDatabase();
     const connection = db.database.connection();
@@ -245,7 +325,7 @@ describe('ITAM migrations', () => {
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(83);
+    expect(rolledBack.rolledBack.length).toBe(84);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

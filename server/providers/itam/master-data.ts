@@ -66,10 +66,10 @@ export interface OwnedRecord {
   readonly id: string;
   readonly label: string;
   /**
-   * Which field names them: a 负责人 on most, a 申请人 on a request, and the
-   * executors on a stocktake, which names several.
+   * Which field names them: the 负责人 on every record but a stocktake,
+   * which names its executors, several of them.
    */
-  readonly field: 'ownerId' | 'requesterId' | 'executorIds';
+  readonly field: 'ownerId' | 'executorIds';
   /** Who that field names **now**, which is somebody else once handed over. */
   readonly ownerId?: string | null;
   /**
@@ -87,16 +87,6 @@ export interface OwnedRecord {
    */
   readonly assetType?: string;
 }
-
-/**
- * Every collection whose records name whoever answers for them, and the
- * field that does the naming.
- *
- * 申请人 is that person for a purchase order and a disposal — neither has a
- * 负责人 of its own, and reusing the requester keeps one notion of whose
- * record it is. The label is what the pages call the record: a number where
- * it has one, a name otherwise.
- */
 
 /**
  * Whether somebody has left is the leave date and nothing else.
@@ -331,8 +321,8 @@ export const masterDataServiceToken: ServiceToken<MasterDataService> =
  * blocks deletion. A person is only blocked by what is still open (an
  * unreleased seat, a holding, a device assigned to them)
  * and allocation history that name them — a leaver is marked as left, not
- * deleted. Purchase orders and disposals name their requester by user or
- * person id, so they cannot be matched and do not block.
+ * deleted. Purchase orders and disposals name their 负责人 by user id,
+ * which is not a person id, so they cannot be matched and do not block.
  */
 const REFERENCES: Readonly<
   Record<

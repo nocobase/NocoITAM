@@ -218,19 +218,16 @@ export function createWorkbenchService(dependencies: {
 
       const orders = await decide('purchaseOrders', 'read');
       if (orders && (await decide('purchaseOrders', 'receive'))) {
-        // The orders this reader raised, by the same rule the service uses
-        // for everything else that belongs to the requesting side
-        // (`raisedTheOrder` in `procurement.ts`: the requester it names, or
-        // whoever wrote it for them). A purchase order has no 负责人 of its
-        // own and does not need one — that field existed twice and was
-        // dropped twice for holding a copy of the requester. Handing the
-        // request over hands this card over with it.
+        // The orders that are this reader's, by the same rule the service
+        // uses for everything else on the order (`raisedTheOrder` in
+        // `procurement.ts`: its 负责人, or whoever wrote it before handing it
+        // over). Handing the order over hands this card over with it.
         const awaiting = (query: ReturnType<ReturnType<DatabaseManager['query']>['selectFrom']>) =>
           query
             .where('status', 'in', ['ordered', 'partiallyReceived'])
             .where((eb) =>
               eb.or([
-                eb('requesterId', '=', userId),
+                eb('ownerId', '=', userId),
                 eb('createdById', '=', userId),
               ]),
             );
@@ -253,12 +250,11 @@ export function createWorkbenchService(dependencies: {
         });
       }
 
-      // An approved disposal is waiting to be carried out, and it is the
-      // requesting side's to carry out — the requester it names, or whoever
-      // wrote it for them, the same rule 待验收到货 goes by. The service
-      // also lets the approver execute it (`NOT_INVOLVED`), but that is a
-      // permission, not their work; the card stays narrower than the rule,
-      // never wider. A disposal needs no 负责人: 申请人 is that person.
+      // An approved disposal is waiting to be carried out, and it is its
+      // 负责人's to carry out — or whoever wrote it before handing it over,
+      // the same rule 待验收到货 goes by. The service also lets the approver
+      // execute it (`NOT_INVOLVED`), but that is a permission, not their
+      // work; the card stays narrower than the rule, never wider.
       const disposals = await decide('disposals', 'read');
       if (disposals && (await decide('disposals', 'execute'))) {
         const toExecute = (
@@ -268,7 +264,7 @@ export function createWorkbenchService(dependencies: {
             .where('status', '=', 'approved')
             .where((eb) =>
               eb.or([
-                eb('requesterId', '=', userId),
+                eb('ownerId', '=', userId),
                 eb('createdById', '=', userId),
               ]),
             );
@@ -495,7 +491,7 @@ export function createWorkbenchService(dependencies: {
           for (const entry of OWNED_BY_USER) {
             // Handing one over is a plain `update` of the field that names
             // them — which the service may still refuse on a purchase order
-            // or a disposal, where only the requester or the creator may
+            // or a disposal, where only its 负责人 or the creator may
             // make it. That is the button's answer, not the row's.
             const conditions =
               (await decide(entry.collection, 'update')) &&
