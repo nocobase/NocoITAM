@@ -11,6 +11,7 @@ import { asText, type Row } from './collection-query.js';
 import type { DisposalService } from './disposals.js';
 import { BusinessRuleError } from './errors.js';
 import type { EntitlementService } from './entitlements.js';
+import type { NumberingService } from './numbering.js';
 import type { MasterDataService } from './master-data.js';
 import type {
   LineInput,
@@ -433,6 +434,8 @@ export function createDemoService(dependencies: {
   otherUser?: (actorId: string) => Promise<string | undefined>;
   /** Creates and removes the demo's own sign-ins; absent in a bare harness. */
   accounts?: DemoAccounts;
+  /** Rewinds the number sequences once the demo's records are gone. */
+  numbering?: NumberingService;
 }): DemoService {
   const {
     database,
@@ -3039,6 +3042,11 @@ export function createDemoService(dependencies: {
           .deleteFrom('demoRecords')
           .where('recordId', 'in', allIds.length ? allIds : ['__none__'])
           .execute();
+        // The numbers the demo took go with its records: importing it again
+        // starts where the remaining data ends (PO-000001 on a database that
+        // held only the demo), so the demo reads the same every time instead
+        // of climbing with each import.
+        await dependencies.numbering?.rewind({ connection });
       });
       // The sign-ins go last, once the people that referenced them are gone,
       // and through the users plugin rather than the table: removing an

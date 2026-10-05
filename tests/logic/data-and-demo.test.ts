@@ -1,7 +1,10 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { maintenanceServiceToken } from '../../server/providers/index.js';
+import {
+  maintenanceServiceToken,
+  numberingServiceToken,
+} from '../../server/providers/index.js';
 import { parseCsv, toCsv } from '../../server/providers/itam/csv.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { dataRoutes } from '../../server/routes/itam/data.js';
@@ -380,5 +383,10 @@ describe('CSV import / export and demo data', () => {
     expect(
       ((await (await get('master/models')).json()) as { total: number }).total,
     ).toBe(20);
+    // Its numbers went with it: importing again numbers from the start, so
+    // the demo reads the same every time.
+    const numbering = app.container.resolve(numberingServiceToken);
+    expect(await numbering.next('purchaseOrder')).toBe('PO-000001');
+    expect(await numbering.next('device')).toBe('DE-000001');
   });
 });

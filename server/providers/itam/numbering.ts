@@ -19,7 +19,26 @@ export interface NumberingService {
     },
   ): Promise<string>;
   format(kind: NumberingKind, value: number): Promise<string>;
+  /**
+   * Moves every sequence back to just past the highest number still in use
+   * (never forward, never below the rule's start). For clearing the demo:
+   * its records go and their numbers with them, so importing again starts
+   * where the remaining data ends instead of after every number the demo
+   * ever took. A number freed this way is handed out again, which is only
+   * right where the records that held it are gone for good.
+   */
+  rewind(options?: { readonly connection?: DatabaseConnection }): Promise<void>;
 }
+
+/** Where each kind's numbers are stored. */
+const NUMBERED: Readonly<
+  Record<NumberingKind, { readonly table: string; readonly column: string }>
+> = {
+  device: { table: 'devices', column: 'deviceNo' },
+  purchaseOrder: { table: 'purchaseOrders', column: 'orderNo' },
+  disposal: { table: 'disposals', column: 'disposalNo' },
+  repair: { table: 'repairs', column: 'repairNo' },
+};
 
 export const numberingServiceToken: ServiceToken<NumberingService> =
   createServiceToken<NumberingService>('itam/numbering-service');
@@ -35,6 +54,46 @@ export function createNumberingService(
 
   return {
     format,
+    async rewind(options = {}) {
+      const query = options.connection
+        ? options.connection.query
+        : database.query();
+      const rules = await settings.get('numbering', options.connection);
+      for (const [kind, { table, column }] of Object.entries(NUMBERED) as [
+        NumberingKind,
+        (typeof NUMBERED)[NumberingKind],
+      ][]) {
+        const rule = rules[kind];
+        const current = await query
+          .selectFrom('numberSequences')
+          .select('nextValue')
+          .where('key', '=', kind)
+          .executeTakeFirst();
+        if (!current) continue;
+        // Only numbers under the current prefix compete for the sequence;
+        // one written under an earlier prefix can never collide with it.
+        const rows = await query
+          .selectFrom(table)
+          .select(column)
+          .where(column, 'like', `${rule.prefix}%`)
+          .execute<Record<string, unknown>>();
+        let highest = rule.start - 1;
+        for (const row of rows) {
+          const value = row[column];
+          if (typeof value !== 'string' || !value.startsWith(rule.prefix))
+            continue;
+          const digits = value.slice(rule.prefix.length);
+          if (/^\d+$/.test(digits)) highest = Math.max(highest, Number(digits));
+        }
+        const next = Math.min(Number(current.nextValue), highest + 1);
+        if (next !== Number(current.nextValue))
+          await query
+            .updateTable('numberSequences')
+            .set({ nextValue: next, updatedAt: new Date() })
+            .where('key', '=', kind)
+            .execute();
+      }
+    },
     async next(kind, options = {}) {
       const rule = (await settings.get('numbering', options.connection))[kind];
       // One sequence per kind: a sequence per category under the same

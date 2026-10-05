@@ -333,7 +333,11 @@ Rules learned while building it:
   `client/layouts/app-layout.tsx` — an application change to the layout)
   offers it to whoever holds the settings grant the demo endpoints require,
   links to `/settings/itam#demo` and, dismissed, stays away in that
-  browser.
+  browser. Clearing it takes its numbers too: `numbering.rewind()` moves
+  each sequence back to just past the highest number still in use (never
+  forward, only under the current prefix), so on a database that held only
+  the demo the next import starts at PO-000001 again rather than climbing
+  with every import. Real numbers are otherwise never reused.
 - The demo creates its own sign-ins (2026-10-05, replacing the role
   accounts `manager` and `support`): the IT staff as people with names —
   two asset managers, 孙强 `sunqiang` and 吴静 `wujing`, and IT support
