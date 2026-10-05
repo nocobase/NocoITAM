@@ -11,6 +11,7 @@ import { asText, type Row } from './collection-query.js';
 import type { DisposalService } from './disposals.js';
 import { BusinessRuleError } from './errors.js';
 import type { EntitlementService } from './entitlements.js';
+import type { NumberingService } from './numbering.js';
 import type { MasterDataService } from './master-data.js';
 import type {
   LineInput,
@@ -172,7 +173,9 @@ export function demoAccountsIn(
           {
             username: leaver.mail.replaceAll('.', ''),
             name: leaver.name,
-            role: 'itam-it-support',
+            // IT support who leaves on import, which disables the sign-in:
+            // listed so the account behind their records is not a mystery.
+            role: 'leaver',
             password: `${leaver.mail.replaceAll('.', '')}123`,
           },
         ]
@@ -375,16 +378,17 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
 };
 
 /**
- * The person the demo sets up to leave — it does not mark them left; that
- * is the one act worth performing by hand, see where this is used.
+ * The person who leaves in the demo, on the day it is imported (2026-10-05:
+ * until then the demo only set them up and left 标记离职 to be done by hand,
+ * so the 离职交接 to-do was empty until somebody thought to).
  *
  * They are IT, and so they sign in: leaving is only half a
  * story while the register has nothing of theirs to hand over. A salesperson
  * answers for none of its records, so the one who leaves is the IT support
  * engineer — their devices, their repairs and the orders they raised all
  * need somebody else's name on them, which is the part of offboarding no
- * return button settles. Their account stays enabled, which is the point the
- * assistant makes about seats: this register cannot disable a sign-in.
+ * return button settles. Leaving disables their sign-in, as it does for
+ * anybody (`leaver-accounts.ts`).
  */
 const LEAVER_INDEX = 3;
 
@@ -433,6 +437,8 @@ export function createDemoService(dependencies: {
   otherUser?: (actorId: string) => Promise<string | undefined>;
   /** Creates and removes the demo's own sign-ins; absent in a bare harness. */
   accounts?: DemoAccounts;
+  /** Rewinds the number sequences once the demo's records are gone. */
+  numbering?: NumberingService;
 }): DemoService {
   const {
     database,
@@ -2955,6 +2961,16 @@ export function createDemoService(dependencies: {
           .execute();
       }
 
+      // 陈杰 leaves today, last, once everything he holds and answers for
+      // is in place: marking him left the way 标记离职 does takes the
+      // snapshot his handover is measured against and disables his sign-in,
+      // so the 离职交接 to-do opens on a whole handover with nothing done.
+      await masterData.markPersonLeft(
+        String(chenJie.id),
+        writerId,
+        unrestricted('people', 'update'),
+      );
+
       await dependencies.refreshReminders();
       return this.status();
     },
@@ -3039,6 +3055,11 @@ export function createDemoService(dependencies: {
           .deleteFrom('demoRecords')
           .where('recordId', 'in', allIds.length ? allIds : ['__none__'])
           .execute();
+        // The numbers the demo took go with its records: importing it again
+        // starts where the remaining data ends (PO-000001 on a database that
+        // held only the demo), so the demo reads the same every time instead
+        // of climbing with each import.
+        await dependencies.numbering?.rewind({ connection });
       });
       // The sign-ins go last, once the people that referenced them are gone,
       // and through the users plugin rather than the table: removing an

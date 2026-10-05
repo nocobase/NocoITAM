@@ -1,8 +1,12 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { maintenanceServiceToken } from '../../server/providers/index.js';
+import {
+  maintenanceServiceToken,
+  numberingServiceToken,
+} from '../../server/providers/index.js';
 import { parseCsv, toCsv } from '../../server/providers/itam/csv.js';
+import { today } from '../../server/providers/itam/dates.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { dataRoutes } from '../../server/routes/itam/data.js';
 import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
@@ -282,10 +286,15 @@ describe('CSV import / export and demo data', () => {
       await post('demo/generate', { language: 'zh-CN' }),
     );
     expect(summary.language).toBe('zh-CN');
-    const people = await data<{ name: string }[]>(
-      await get('master/people?pageSize=50'),
-    );
-    expect(people.map((person) => person.name)).toContain('陈杰');
+    const people = await data<
+      { name: string; employmentStatus: string; leaveDate: string | null }[]
+    >(await get('master/people?pageSize=50'));
+    // 陈杰 leaves on the day the demo is imported, so the 离职交接 to-do
+    // has a whole handover to show.
+    expect(people.find((person) => person.name === '陈杰')).toMatchObject({
+      employmentStatus: 'left',
+      leaveDate: today(),
+    });
   });
 
   it('generates the demo chain with its problem records and clears it without a trace', async () => {
@@ -380,5 +389,10 @@ describe('CSV import / export and demo data', () => {
     expect(
       ((await (await get('master/models')).json()) as { total: number }).total,
     ).toBe(20);
+    // Its numbers went with it: importing again numbers from the start, so
+    // the demo reads the same every time.
+    const numbering = app.container.resolve(numberingServiceToken);
+    expect(await numbering.next('purchaseOrder')).toBe('PO-000001');
+    expect(await numbering.next('device')).toBe('DE-000001');
   });
 });

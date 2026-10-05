@@ -1935,6 +1935,7 @@ const zhCN: AppResource = {
       roles: {
         'itam-asset-manager': 'IT 资产经理',
         'itam-it-support': 'IT 支持',
+        leaver: 'IT 支持（导入当天离职，登录已停用）',
       },
       banner:
         '还没有演示数据。导入一家示例公司，用真实感的记录体验采购、分配、维修、盘点和离职交接。',

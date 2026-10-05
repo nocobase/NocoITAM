@@ -36,6 +36,46 @@ describe('numbering and settings services', () => {
     expect(await numbering.next('device')).toBe('DE-000001');
   });
 
+  it('rewinds a sequence to just past the highest number still in use', async () => {
+    const numbering = app.container.resolve(numberingServiceToken);
+    for (let index = 0; index < 5; index += 1)
+      await numbering.next('purchaseOrder');
+    const now = new Date();
+    // PO-000002 is all that is left of the five; a number under another
+    // prefix does not count.
+    for (const orderNo of ['PO-000002', 'OLD-000009'])
+      await app.db.database
+        .query()
+        .insertInto('purchaseOrders')
+        .values({
+          id: orderNo,
+          orderNo,
+          reason: 'newHire',
+          status: 'draft',
+          createdAt: now,
+          updatedAt: now,
+        })
+        .execute();
+    await numbering.rewind();
+    expect(await numbering.next('purchaseOrder')).toBe('PO-000003');
+    // Never forward: a record numbered past the sequence (written by hand
+    // or imported) does not pull the sequence after it.
+    await app.db.database
+      .query()
+      .insertInto('purchaseOrders')
+      .values({
+        id: 'PO-000040',
+        orderNo: 'PO-000040',
+        reason: 'newHire',
+        status: 'draft',
+        createdAt: now,
+        updatedAt: now,
+      })
+      .execute();
+    await numbering.rewind();
+    expect(await numbering.next('purchaseOrder')).toBe('PO-000004');
+  });
+
   it('merges stored settings over defaults and persists updates', async () => {
     const settings = app.container.resolve(settingsServiceToken);
     const defaults = await settings.get('thresholds');

@@ -405,6 +405,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         repairs: container.resolve(repairServiceToken),
         audits: container.resolve(auditServiceToken),
         disposals: container.resolve(disposalServiceToken),
+        numbering: container.resolve(numberingServiceToken),
         refreshReminders: () =>
           container.resolve(maintenanceServiceToken).computeReminders(),
         // Who stands in as the colleague deciding the demo's requests:
