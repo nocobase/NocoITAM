@@ -33,6 +33,11 @@ export interface ReferenceTarget {
   readonly filter?: Readonly<Record<string, string>>;
   /** Translation key shown under the options when `filter` hides some. */
   readonly filterHint?: string;
+  /**
+   * Users only: show each as its sign-in — the username beside the name in
+   * the picker, and on the page whether the account is enabled.
+   */
+  readonly account?: boolean;
 }
 
 /** The follow-up choice of a cascading field; see `dependent` below. */

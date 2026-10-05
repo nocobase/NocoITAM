@@ -25,6 +25,7 @@ import { isTreeReference } from '@/lib/itam/tree';
 
 import { RecordLink } from './record-link.js';
 import { TreePath } from './tree-path.js';
+import { UserAccount } from './user-account.js';
 
 export function EnumBadge({
   field,
@@ -168,6 +169,9 @@ export function FieldValue({
         return (
           <TreePath collection={collection} nodeId={value} show={treeShow} />
         );
+      // A sign-in reads as one: its username and whether it is enabled.
+      if (field.reference?.account && value)
+        return <UserAccount id={text(value)} />;
       return (
         <ReferenceLink
           collection={collection}

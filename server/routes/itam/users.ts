@@ -20,8 +20,10 @@ const APPROVAL_SUBJECTS: Readonly<Record<string, string>> = {
 /**
  * `/api/itam/users`: the people a record may name — its 负责人, an audit's
  * executors — and a name directory for the user ids records already carry.
- * Any signed-in user may ask; it exposes id and name only, never account
- * details. `/api/itam/users/approvers` narrows the candidates to the people
+ * Any signed-in user may ask; it exposes the id, the name, the username and
+ * whether the account is disabled — what a person's 关联登录用户 shows, so
+ * the sign-in reads as the one it is (2026-10-05) — never the e-mail or
+ * anything else of the account. `/api/itam/users/approvers` narrows the candidates to the people
  * who may approve a kind of request, so the submitter picks one rather than
  * guessing.
  */
@@ -56,9 +58,7 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
         .where('userId', 'in', [...userIds])
         .execute<{ userId: string | null }>();
       return new Set(
-        rows
-          .map((row) => row.userId)
-          .filter((id): id is string => id !== null),
+        rows.map((row) => row.userId).filter((id): id is string => id !== null),
       );
     };
 
@@ -137,7 +137,12 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
       });
       const data = page.items
         .filter((user) => ids.length > 0 || !user.disabledAt)
-        .map((user) => ({ id: user.id, name: user.name }));
+        .map((user) => ({
+          id: user.id,
+          name: user.name,
+          username: user.username ?? null,
+          disabled: Boolean(user.disabledAt),
+        }));
       return context.json({
         data,
         total: page.total - (page.items.length - data.length),

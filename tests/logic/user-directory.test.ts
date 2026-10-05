@@ -18,10 +18,10 @@ import {
 
 const USERS = [
   { id: 'root', name: 'Administrator' },
-  { id: 'mia', name: 'Mia' },
+  { id: 'mia', name: 'Mia', username: 'mia', disabledAt: null },
   { id: 'sam', name: 'Sam' },
   { id: 'lee', name: 'Lee' },
-  { id: 'eve', name: 'Eve' },
+  { id: 'eve', name: 'Eve', username: 'eve', disabledAt: new Date() },
 ];
 
 /** The sets the seeds create, plus one an administrator made by hand. */
@@ -136,6 +136,21 @@ describe('user directory', () => {
     // whose set holds no ITAM operation; not a leaver.
     expect(await names('/api/itam/users')).toEqual(['Mia', 'Sam']);
     expect(await names('/api/itam/users?q=sa')).toEqual(['Sam']);
+  });
+
+  it('says which sign-in a user is, and whether it is disabled', async () => {
+    // A person's 关联登录用户 reads as the account it is: two people of a
+    // name are told apart by username, and a disabled one says so.
+    const response = await root.request('/api/itam/users?ids=mia,eve');
+    const users = (
+      (await response.json()) as {
+        data: { id: string; username: string | null; disabled: boolean }[];
+      }
+    ).data;
+    expect(users).toEqual([
+      { id: 'mia', name: 'Mia', username: 'mia', disabled: false },
+      { id: 'eve', name: 'Eve', username: 'eve', disabled: true },
+    ]);
   });
 
   it('still resolves the name of anybody a record already names', async () => {

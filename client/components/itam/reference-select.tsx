@@ -221,6 +221,13 @@ export function ReferenceSelect({
                   >
                     {referenceLabel(reference.collection, row)}
                   </span>
+                  {reference.account && row.username ? (
+                    // A sign-in is told apart by its username, as two
+                    // people may share a name.
+                    <span className='shrink-0 font-mono text-xs text-muted-foreground'>
+                      {text(row.username)}
+                    </span>
+                  ) : null}
                   {classified && classifierOf(row) ? (
                     <span className='shrink-0 text-xs text-muted-foreground'>
                       {classifierOf(row)}

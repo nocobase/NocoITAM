@@ -1326,6 +1326,10 @@ const zhCN: AppResource = {
     download: '下载',
   },
 
+  users: {
+    enabled: '启用',
+    disabled: '已停用',
+  },
   search: {
     label: '搜索台账',
     placeholder: '搜索设备、人员、采购单、型号…',

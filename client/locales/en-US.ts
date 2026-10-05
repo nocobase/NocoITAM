@@ -1372,6 +1372,10 @@ const messages = {
     download: 'Download',
   },
 
+  users: {
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+  },
   search: {
     label: 'Search the register',
     placeholder: 'Search devices, people, orders, models…',

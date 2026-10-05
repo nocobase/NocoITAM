@@ -651,7 +651,7 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         key: 'userId',
         label: 'fields.linkedUser',
         type: 'reference',
-        reference: { collection: 'users' },
+        reference: { collection: 'users', account: true },
         group: 'groups.basic',
       },
       {
