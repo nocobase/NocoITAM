@@ -52,6 +52,7 @@ const messages = {
     collapse: 'Collapse navigation',
     label: 'Application navigation',
     workbench: 'Workbench',
+    search: 'Search',
     inboxGroup: 'Inbox',
     inbox: 'My to-dos',
     notifications: 'Notifications',
@@ -1371,6 +1372,33 @@ const messages = {
     download: 'Download',
   },
 
+  search: {
+    label: 'Search the register',
+    placeholder: 'Search devices, people, orders, models…',
+    askPlaceholder:
+      'Ask AI, e.g. which MacBooks have a warranty ending next month',
+    askLabel: 'Ask AI',
+    askAi: 'Ask AI',
+    askAbout: 'Ask AI: {{q}}',
+    noResults: 'Nothing matches “{{q}}”',
+    showAllIn: 'All {{count}} in {{list}}',
+    context: 'Search',
+    found: 'Found by AI · {{count}}',
+    foundTitled: 'Found by AI: {{title}} · {{count}}',
+    answerTitle: 'AI',
+    followUp: 'Ask a follow-up',
+    closeAnswer: 'Close the answer',
+    working: 'AI is looking…',
+    workingStep: 'AI is looking… {{step}}',
+    needsDecision: 'AI proposed a change that needs your confirmation.',
+    openConversation: 'Open the conversation',
+    failed: 'AI could not finish. Open the conversation to see why.',
+    hint: 'Search devices, people, orders and reference data by name, number or serial.',
+    askHint: 'Ask in your own words, e.g. laptops in repair or on loan, or who in R&D has no monitor.',
+    searchTab: 'Search',
+    followUpDraft: 'About “{{question}}”: ',
+    showAll: 'Show all',
+  },
   workbench: {
     greeting: {
       morning: 'Good morning, {{name}}',
@@ -2128,10 +2156,6 @@ const messages = {
       greeting:
         'Hi! Ask me about devices, software entitlements, repairs or people — or tell me what needs to happen ("onboard Li Na next Monday") and I\'ll propose the actions for you to confirm.',
     },
-    listContext: '{{collection}} list',
-    filterPlaceholder: 'Describe what you are looking for…',
-    filterLabel: 'Describe a filter',
-    filter: 'Filter',
     reportInsight: 'Interpret this report',
     parseDocument: 'Parse a document',
     groupDifferences: 'Explain the differences',
@@ -2224,8 +2248,8 @@ const messages = {
       lifecycleInfo: 'Lifecycle & replacement',
     },
     prompts: {
-      filterList:
-        'Filter the list on screen by this description: "{{text}}", and say in one sentence what you filtered.',
+      globalSearch:
+        'Find what I am asking for: "{{text}}". If it asks for records of one kind, look them up with the ITAM read tools and hand them over with presentRecords (the list, their ids and a few words saying what they are), then reply with one sentence saying how you matched them, and nothing else — do not list the records or mention the search box, which shows them. If it asks for anything else, answer it directly and briefly.',
       parseDocument:
         'Read the delivery note / quote / invoice I attach or paste: match each line to a model or software product and add the lines to this purchase order draft (quantity and unit price as the document states). List the lines you could not match and ask me; do not guess.',
       reportInsight:

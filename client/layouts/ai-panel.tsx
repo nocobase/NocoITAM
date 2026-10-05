@@ -1,7 +1,9 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { Maximize2, PanelRight, X } from 'lucide-react';
 import {
+  useEffect,
   useMemo,
+  useSyncExternalStore,
   type PropsWithChildren,
   type ReactElement,
   type ReactNode,
@@ -20,7 +22,10 @@ import {
   NocoBaseAIRootProvider,
   NocoBaseAIService,
   useAI,
+  useAIChatBase,
   useAIChatControllerState,
+  useAIChatMessages,
+  useAIChatStatus,
   type AIEmployee,
   type AIService,
   type AIToolRendererMap,
@@ -113,6 +118,7 @@ export function ItamAiShell({ children }: PropsWithChildren): ReactElement {
       <ItamAiProvider controller={controller}>
         {children}
         <AiSidePanel />
+        <SearchChat />
       </ItamAiProvider>
     </NocoBaseAIRootProvider>
   );
@@ -255,6 +261,7 @@ function ConfiguredChat({
     return notice(modelConfigurationError?.message ?? t('ai.chat.noModel'));
   return (
     <AIChatProvider id='itam' controller={controller} defaultEmployee='itam'>
+      <PendingConversation />
       <AIChatWindow
         className='h-full'
         enableAttachments
@@ -264,3 +271,79 @@ function ConfiguredChat({
     </AIChatProvider>
   );
 }
+
+/**
+ * The search's own chat: the same employee in a second conversation nobody
+ * sees, so the search's 问 AI neither opens the panel nor replaces what is
+ * in it. Mounted on the same conditions as the panel's chat, for the same
+ * reason (`ConfiguredChat`), and without a window: sending, tool calls and
+ * their automatic approval all happen in the provider. Its progress reaches
+ * the search through `ChatStateBridge`.
+ */
+function SearchChat(): ReactElement | null {
+  const ai = useItamAi();
+  const {
+    configurationStatus,
+    employees,
+    hasEnabledModels,
+    modelConfigurationError,
+  } = useAI();
+  if (
+    !ai?.available ||
+    configurationStatus !== 'ready' ||
+    !employees.some((employee) => employee.username === 'itam') ||
+    modelConfigurationError ||
+    !hasEnabledModels
+  )
+    return null;
+  return (
+    <AIChatProvider
+      id='itam-search'
+      controller={ai.search.controller}
+      defaultEmployee='itam'
+    >
+      <ChatStateBridge />
+    </AIChatProvider>
+  );
+}
+
+/** Publishes the search chat's progress for the search (`useItamSearchChat`). */
+function ChatStateBridge(): null {
+  const ai = useItamAi();
+  const { messages } = useAIChatMessages();
+  const { status, error } = useAIChatStatus();
+  const { activeConversationId, removeConversation } = useAIChatBase();
+  useEffect(() => {
+    ai?.search.state.set({
+      status,
+      messages,
+      error,
+      conversationId: activeConversationId,
+      removeConversation,
+    });
+  }, [ai, status, messages, error, activeConversationId, removeConversation]);
+  return null;
+}
+
+/**
+ * Opens the conversation a page asked for (`openConversation`) once the
+ * panel's chat is mounted: one the search kept because Noco proposed a
+ * change only that conversation can confirm.
+ */
+function PendingConversation(): null {
+  const ai = useItamAi();
+  const { selectConversation } = useAIChatBase();
+  const pending = useSyncExternalStore(
+    ai?.pendingConversation.subscribe ?? noSubscription,
+    ai?.pendingConversation.get ?? nothing,
+  );
+  useEffect(() => {
+    if (!pending) return;
+    selectConversation(pending);
+    ai?.pendingConversation.set(undefined);
+  }, [ai, pending, selectConversation]);
+  return null;
+}
+
+const noSubscription = () => () => undefined;
+const nothing = () => undefined;

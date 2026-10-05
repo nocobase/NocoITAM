@@ -162,9 +162,11 @@ Rules learned while building it:
   `202609270005_drop_ai_actions`). A page asks Ava about itself through
   `useAiPageContext` (`client/lib/itam/ai-context.ts`): the element registers
   as page context and `ask()` sends it as the message's `workContext`, so its
-  data goes along and its frontend tools (`applyFilter` on the device list,
-  `addDraftLines` on purchase order lines — ALLOW, they change only what is
-  on screen) become Ava's to call. There are no embedded capabilities of our
+  data goes along and its frontend tools (`presentRecords` on the
+  global search, `addDraftLines` on purchase order lines — ALLOW, they
+  change only what is on screen) become Ava's to call. The device list's
+  own natural-language filter (`applyFilter`) went on 2026-10-05: asking
+  Noco from the global search does the same for every list. There are no embedded capabilities of our
   own any more (`202609270006_drop_ai_embedded`). Write refs in effects and
   give frontend tools as typed object literals: the React Compiler lint
   refuses a ref read during render, and cannot see that
@@ -1153,6 +1155,56 @@ Rules learned while building it:
   are still the route children `master()` declares in `client/routes.ts`,
   and their history tab is `client/pages/itam/record-history-tab.tsx`,
   which reads the collection from the route's first segment.
+- One search over every list (2026-10-05, after InvGate's), opened from
+  搜索 in the sidebar, right under 工作台: `SearchNavButton` in
+  `client/components/itam/global-search.tsx`, drawn by
+  `client/layouts/app-layout.tsx` beside the route tree because it opens a
+  dialog rather than a page (an "Application change (ITAM)" there). Its
+  state lives in
+  `GlobalSearchProvider` around the whole shell, not in the dialog
+  (`GlobalSearchDialog`, mounted inside the record drawer's provider so a
+  result opens in the drawer): closing the dialog while Noco works loses
+  nothing, and Noco's page tool is registered there for as long as the
+  shell is up. As it is typed it asks `GET /itam/workbench/search`, which
+  reads each group in `SEARCH_GROUPS` (`server/routes/itam/workbench.ts`;
+  the client's `SEARCH_PAGES` in `client/lib/itam/search.ts` keys the same
+  groups to their pages) under the caller's own `read` through
+  `maybeDecide`, skipping what they may not read, and answers the first
+  five of each with the total; no model takes part. A group's last row
+  opens its list searched for the same words. The 问 AI side of the box's
+  segmented 搜索 | 问 AI switch (the pages' own tabs; the box itself does not
+  change colour) asks a question, and the answer comes **in the dialog, not
+  in the side panel** — the way Slack, Glean and Rovo put an AI answer at
+  the top of the results. It runs in the search's own chat: `SearchChat` in
+  `client/layouts/ai-panel.tsx` mounts a second, windowless
+  `AIChatProvider` with the same employee (sending, tool calls and their
+  automatic approval all live in the provider), so asking neither opens the
+  panel nor replaces the conversation in it; `ChatStateBridge` publishes its
+  messages and status to `useItamSearchChat()`, and `readSearchTurn`
+  (`client/lib/itam/search-turn.ts`, unit tested) reads the step under way,
+  the words after the last tool call, a write waiting for confirmation or a
+  failure — treating the quiet moments between steps (a page tool approving
+  itself, a result not yet answered) as still working. The records come
+  through the search's one frontend tool, `presentRecords`, and
+  `SearchAnswer` (`client/components/itam/ai/search-answer.tsx`) only draws
+  what the provider keeps. A search answer is not a chat the reader meant to
+  keep: once complete it is kept in the provider and its conversation is
+  deleted at once; 继续追问 opens a **new** conversation in the panel with the
+  question drafted (`search.followUpDraft`) and the search as page context,
+  whose `lastAnswer` carries the question, the answer and the records — as
+  in Rovo, an answer becomes a chat only when followed up. A turn that ended
+  on a change to confirm, or failed, keeps its conversation, and 在对话中查看
+  opens it in the panel (`openConversation`, selected by
+  `PendingConversation` once the panel's chat mounts). One interrupted by
+  closing the page stays in the history. Keyword search also matches
+  through references (`searchByReference` in `collections.ts`: a device or
+  stock item by its model's name, an entitlement by its product's), because
+  a device is named by its asset tag while people type "MacBook" — which
+  also fixed the lists' own search boxes. It is still a conversation — the
+  decision that nothing AI runs outside one stands. A list reads the found
+  ids from `?ids=` with `?found=` naming them: it shows them as a table,
+  under `FoundRecords`, whose 显示全部 clears both, and exports them alone.
+  A new list page reads `foundIds()` the same way.
 - The application's sidebar does not fold (2026-10-04): a group without a
   page of its own reads as a small heading with its pages always listed
   under it — `groupsAsHeadings` on `NavigationTree`, which only

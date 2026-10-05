@@ -11,7 +11,7 @@ import { DataTable, type DataTableColumn } from '@/components/itam/data-table';
 import { EmptyState } from '@/components/itam/empty-state';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
-import { NaturalLanguageFilter } from '@/components/itam/ai/natural-language-filter';
+import { FoundRecords } from '@/components/itam/found-records';
 import { ImportExport } from '@/components/itam/import-export';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
@@ -29,6 +29,7 @@ import type { FieldDefinition } from '@/lib/itam/fields';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 import { useReferenceNames } from '@/lib/itam/references';
 import { isTreeReference } from '@/lib/itam/tree';
+import { FOUND_IDS, FOUND_TITLE, foundIds } from '@/lib/itam/search';
 
 /** Stat-card names for the views the workbench links to. */
 const VIEW_LABELS: Readonly<Record<string, string>> = {
@@ -58,6 +59,8 @@ function DevicesList(): ReactElement {
   const categoryId = params.get('categoryId') ?? undefined;
   const locationId = params.get('locationId') ?? undefined;
   const departmentId = params.get('departmentId') ?? undefined;
+  // The devices Noco found for a question asked on the workbench.
+  const found = foundIds(params);
 
   const setParam = (updates: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params);
@@ -75,6 +78,7 @@ function DevicesList(): ReactElement {
     sort: sortField,
     order: sortOrder,
     filter: { view, status, categoryId, locationId, departmentId },
+    ids: found,
   });
   const mutations = useItamMutations<ItamRecord>(DEVICES_PATH);
   const currentUserId = useCurrentUserId();
@@ -200,9 +204,20 @@ function DevicesList(): ReactElement {
               collection='devices'
               exportQuery={{
                 q,
+                // Exporting the devices Noco found exports those devices.
+                ids: found?.join(','),
                 ...Object.fromEntries(
                   [...params.entries()]
-                    .filter(([key]) => !['page', 'pageSize', 'q'].includes(key))
+                    .filter(
+                      ([key]) =>
+                        ![
+                          'page',
+                          'pageSize',
+                          'q',
+                          FOUND_IDS,
+                          FOUND_TITLE,
+                        ].includes(key),
+                    )
                     .map(([key, value]) => [
                       ['sort', 'order'].includes(key) ? key : `filter[${key}]`,
                       value,
@@ -210,17 +225,6 @@ function DevicesList(): ReactElement {
                 ),
               }}
               columns={columns.map((field) => field.key)}
-            />
-            <NaturalLanguageFilter
-              collection='devices'
-              fields={DEVICE_FIELDS}
-              filter={Object.fromEntries(params)}
-              onApply={(filter) => {
-                const next = new URLSearchParams();
-                for (const [key, value] of Object.entries(filter))
-                  next.set(key, value);
-                setParams(next, { replace: true });
-              }}
             />
             <Button onClick={() => setCreating(true)}>
               <Plus data-icon='inline-start' />
@@ -257,6 +261,19 @@ function DevicesList(): ReactElement {
           />
         }
       />
+      {found ? (
+        <FoundRecords
+          title={params.get(FOUND_TITLE)}
+          count={found.length}
+          onClear={() =>
+            setParam({
+              [FOUND_IDS]: undefined,
+              [FOUND_TITLE]: undefined,
+              page: undefined,
+            })
+          }
+        />
+      ) : null}
       {view ? (
         // A workbench link lands here with a view; show it so it can be cleared.
         <div className='flex items-center gap-2 text-sm'>

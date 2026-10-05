@@ -51,6 +51,7 @@ const zhCN: AppResource = {
     collapse: '收起导航',
     label: '应用导航',
     workbench: '工作台',
+    search: '搜索',
     inboxGroup: '收件箱',
     inbox: '我的待办',
     notifications: '通知',
@@ -1325,6 +1326,32 @@ const zhCN: AppResource = {
     download: '下载',
   },
 
+  search: {
+    label: '搜索台账',
+    placeholder: '搜索设备、人员、采购单、型号…',
+    askPlaceholder: '问 AI，例如：哪些 MacBook 的保修下个月到期',
+    askLabel: '问 AI',
+    askAi: '问 AI',
+    askAbout: '问 AI：{{q}}',
+    noResults: '没有与「{{q}}」匹配的记录',
+    showAllIn: '在{{list}}中查看全部 {{count}} 条',
+    context: '全局搜索',
+    found: 'AI 找到的记录 · {{count}} 条',
+    foundTitled: 'AI 找到的记录：{{title}} · {{count}} 条',
+    answerTitle: 'AI',
+    followUp: '继续追问',
+    closeAnswer: '关闭回答',
+    working: 'AI 正在查找…',
+    workingStep: 'AI 正在查找…{{step}}',
+    needsDecision: 'AI 提出了一项需要你确认的操作。',
+    openConversation: '在对话中查看',
+    failed: 'AI 没能完成，打开对话查看原因。',
+    hint: '按名称、编号或序列号搜索设备、人员、采购单和主数据。',
+    askHint: '用自己的话问，例如：维修中或借出中的笔记本，研发部谁还没有显示器。',
+    searchTab: '搜索',
+    followUpDraft: '关于「{{question}}」：',
+    showAll: '显示全部',
+  },
   workbench: {
     greeting: {
       morning: '早上好，{{name}}',
@@ -2010,10 +2037,6 @@ const zhCN: AppResource = {
       greeting:
         '你好！可以问我设备、软件授权、维修或人员的情况，也可以直接告诉我要做什么（例如「下周一给李娜配齐入职设备」），我会提出动作供你确认。',
     },
-    listContext: '{{collection}}列表',
-    filterPlaceholder: '描述你要找的设备…',
-    filterLabel: '用自然语言筛选',
-    filter: '筛选',
     reportInsight: 'AI 报表解读',
     parseDocument: '解析单据',
     groupDifferences: '分析盘点差异',
@@ -2104,8 +2127,8 @@ const zhCN: AppResource = {
       lifecycleInfo: '生命周期与更换',
     },
     prompts: {
-      filterList:
-        '请按这句话筛选屏幕上的列表：「{{text}}」，并用一句话说明筛了什么。',
+      globalSearch:
+        '帮我找：「{{text}}」。如果问的是某一类记录，用 ITAM 查询工具查出来，再用 presentRecords 交给搜索框（列表、记录 id、几个字说明是什么），然后只回复一句话，说明按什么条件匹配的，不要列出记录，也不要提搜索框，搜索框会显示记录。如果问的是别的，直接简短回答。',
       parseDocument:
         '请读取我附上或粘贴的送货单 / 报价单 / 发票：逐行匹配型号或软件产品，把明细加入当前采购单草稿（数量、单价按单据填写）。对不上的行列出来问我，不要猜。',
       reportInsight:

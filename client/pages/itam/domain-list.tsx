@@ -16,6 +16,7 @@ import { FieldValue } from '@/components/itam/cells';
 import { DataTable, type DataTableColumn } from '@/components/itam/data-table';
 import { DeleteDialog } from '@/components/itam/delete-dialog';
 import { EmptyState } from '@/components/itam/empty-state';
+import { FoundRecords } from '@/components/itam/found-records';
 import { ImportExport } from '@/components/itam/import-export';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
@@ -48,6 +49,7 @@ import {
   useCurrentUserId,
 } from '@/lib/itam/permissions';
 import { useReferenceNames } from '@/lib/itam/references';
+import { FOUND_IDS, FOUND_TITLE, foundIds } from '@/lib/itam/search';
 
 /** Generic list page for a business collection described by a DomainConfig. */
 export function DomainListPage({
@@ -96,6 +98,8 @@ function DomainList({
     'order',
     'layout',
     'new',
+    FOUND_IDS,
+    FOUND_TITLE,
   ]);
   // Another page can open the create form with values filled in:
   // `?new=1&init.deviceId=…`; a list of ids arrives comma-separated.
@@ -131,14 +135,19 @@ function DomainList({
   // A domain with a board opens on it (?layout=table for the list). A named
   // view (待我审批, 到货逾期) decides the statuses itself, so it reads as a
   // list: every column would otherwise show the same records.
-  const boardable = Boolean(domain.Board) && !filter.view;
+  // The records Noco found for a question on the workbench read as a
+  // table, whatever the page's own layout: a board or a tree of three
+  // records would scatter them across columns and branches.
+  const found = foundIds(params);
+  const boardable = Boolean(domain.Board) && !filter.view && !found;
   // A tree is its own view: it carries search, filters and counts itself,
   // and the list request only answers the total in the header.
-  const layout = domain.Tree
-    ? 'tree'
-    : boardable && params.get('layout') !== 'table'
-      ? 'board'
-      : 'table';
+  const layout =
+    domain.Tree && !found
+      ? 'tree'
+      : boardable && params.get('layout') !== 'table'
+        ? 'board'
+        : 'table';
   const [treeExpanded, setTreeExpanded] = useState(true);
 
   const list = useItamList<ItamRecord>(
@@ -150,6 +159,7 @@ function DomainList({
       sort: sortField,
       order: sortOrder,
       filter,
+      ids: found,
     },
     { enabled: layout !== 'board' },
   );
@@ -329,6 +339,8 @@ function DomainList({
                 q,
                 sort: sortField,
                 order: sortOrder,
+                // Exporting the records Noco found exports those records.
+                ids: found?.join(','),
                 ...Object.fromEntries(
                   Object.entries(filter).map(([key, value]) => [
                     `filter[${key}]`,
@@ -342,7 +354,7 @@ function DomainList({
                   : columns.map((field) => field.key)
               }
             />
-            {domain.Tree ? (
+            {layout === 'tree' ? (
               <Button
                 variant='outline'
                 onClick={() => setTreeExpanded((current) => !current)}
@@ -415,6 +427,19 @@ function DomainList({
           ) : undefined
         }
       />
+      {found ? (
+        <FoundRecords
+          title={params.get(FOUND_TITLE)}
+          count={found.length}
+          onClear={() =>
+            setParam({
+              [FOUND_IDS]: undefined,
+              [FOUND_TITLE]: undefined,
+              page: undefined,
+            })
+          }
+        />
+      ) : null}
       {Views ? (
         <Views
           filter={filter}
