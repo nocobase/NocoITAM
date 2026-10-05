@@ -515,6 +515,7 @@ describe('master data routes', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       data: {
+        name: 'Nobody',
         // A date in the past, so the status follows it.
         employmentStatus: 'left',
         leaveDate: '2020-01-01',

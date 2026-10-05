@@ -1,11 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  CalendarX,
-  SlidersHorizontal,
-  Undo2,
-  UserPlus,
-} from 'lucide-react';
+import { CalendarX, SlidersHorizontal, Undo2, UserPlus } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 import { useParams } from 'react-router';
 
@@ -20,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useAnnounce } from '@/lib/itam/announce';
 import { useApi, useItamRecord, type ItamRecord } from '@/lib/itam/api';
 import type { DomainConfig } from '@/lib/itam/domain';
 import {
@@ -415,6 +411,7 @@ export default function EntitlementSeatsTab(): ReactElement {
         }>({ path: `${ENTITLEMENTS_PATH}/${id}/seats` })
       ).data,
   });
+  const announce = useAnnounce();
   const reclaim = useMutation({
     mutationFn: async (seatId: string) =>
       api.request({
@@ -422,8 +419,17 @@ export default function EntitlementSeatsTab(): ReactElement {
         method: 'POST',
         json: { seatIds: [seatId] },
       }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['itam', ENTITLEMENTS_PATH] }),
+    onSuccess: async (_data, seatId) => {
+      const seat = (seats.data?.seats ?? []).find(
+        (row) => text(row.id) === seatId,
+      );
+      await announce(
+        t('people.recovery.toast.reclaimed', {
+          label: text(record.data?.name),
+        }),
+        seat && text(seat.holderType) === 'person' ? [text(seat.holderId)] : [],
+      );
+    },
   });
   const confirm = useConfirm();
   // A seat's own key, set where it is read.

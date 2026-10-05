@@ -16,6 +16,19 @@ const state = vi.hoisted(() => ({
   /** A request whose path contains this fails, the way a refusal would. */
   failOn: undefined as string | undefined,
   recovery: undefined as unknown,
+  /** What the plan reads after the act, for the toast. */
+  after: undefined as unknown,
+  toasts: [] as { title?: unknown; description?: unknown }[],
+}));
+vi.mock('@nocobase/app-client', async (original) => ({
+  ...(await original<object>()),
+  useToaster: () => ({
+    show: (toast: { title?: unknown; description?: unknown }) => {
+      state.toasts.push(toast);
+      return 'toast';
+    },
+    close: () => undefined,
+  }),
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -75,15 +88,21 @@ vi.mock('../../client/lib/itam/recovery.js', async (original) => ({
 }));
 vi.mock('@tanstack/react-query', async (original) => ({
   ...(await original<object>()),
-  useQueryClient: () => ({ invalidateQueries: async () => undefined }),
+  useQueryClient: () => ({
+    invalidateQueries: async () => undefined,
+    fetchQuery: async () => state.after,
+  }),
   // Runs the mutation straight away, so the request it makes is what the
   // test reads.
   useMutation: ({
     mutationFn,
+    onSuccess,
   }: {
     mutationFn: (input: unknown) => Promise<unknown>;
+    onSuccess?: (data: unknown, input: unknown) => unknown;
   }) => ({
-    mutate: (input: unknown) => void mutationFn(input),
+    mutate: (input: unknown) =>
+      void mutationFn(input).then((data) => onSuccess?.(data, input)),
     mutateAsync: mutationFn,
     reset: () => undefined,
     isPending: false,
@@ -126,6 +145,36 @@ beforeEach(() => {
   state.requests = [];
   state.failOn = undefined;
   state.recovery = recovery({});
+  state.after = undefined;
+  state.toasts = [];
+});
+
+it('says what an act did, and how much of the handover is left', async () => {
+  state.recovery = recovery({ items: [seat('s1'), seat('s2')] });
+  // After the reclaim, one seat is still out.
+  state.after = recovery({
+    name: 'Chen Jie',
+    items: [seat('s2')],
+    progress: { done: 1, total: 2 },
+  });
+  show();
+  const row = screen.getAllByText('Figma Organization')[0]!.closest('tr')!;
+  fireEvent.click(
+    within(row).getByRole('button', { name: /entitlements\.reclaimSeat/ }),
+  );
+  const dialog = await screen.findByRole('dialog');
+  fireEvent.click(
+    within(dialog).getByRole('button', { name: /entitlements\.reclaimSeat/ }),
+  );
+  await settle();
+  await settle();
+  expect(state.toasts).toEqual([
+    {
+      type: 'success',
+      title: 'people.recovery.toast.reclaimed',
+      description: 'people.recovery.toast.remaining',
+    },
+  ]);
 });
 
 it("reclaims a seat by the seat's own id, not the row's key", async () => {

@@ -227,7 +227,6 @@ const zhCN: AppResource = {
       left: '离职',
       accountDisabledOnLeaving: '停用账号',
       accountRestoredOnReturning: '启用账号',
-      handoverCompleted: '交接完成',
       repairCreated: '创建维修单',
       repairCompleted: '维修完成',
       counted: '录入盘点结果',
@@ -347,9 +346,6 @@ const zhCN: AppResource = {
       left: '标记为离职',
       accountDisabledOnLeaving: '登录账号 {{target}} 随离职停用',
       accountRestoredOnReturning: '登录账号 {{target}} 随恢复在职重新启用',
-      handoverCompleted: '离职交接全部处理完毕',
-      handoverCompletedLate:
-        '离职交接已全部处理完毕（完成时间未记录，此处为补记）',
       leftOnLeaveDate: '离职日期 {{date}} 已到，自动标记为离职',
       recoveryPrepared:
         '已整理待回收清单：设备 {{devices}}、库存 {{stock}}、席位 {{seats}}',
@@ -968,6 +964,23 @@ const zhCN: AppResource = {
       installed: '内含',
       done: '已处理',
       progress: '已处理 {{done}} / {{total}}',
+      // What an act did, said when it succeeds (`useAnnounce`); for a
+      // leaver, what is left of their handover.
+      toast: {
+        returned: '已归还 {{label}}',
+        takenBack: '已收回 {{label}}',
+        reclaimed: '已收回 {{label}} 的席位',
+        reclaimedSeats_one: '已收回 {{count}} 个席位',
+        reclaimedSeats_other: '已收回 {{count}} 个席位',
+        handedOver: '已将 {{label}} 移交给 {{owner}}',
+        batchRecovered_one: '已收回 {{count}} 项',
+        batchRecovered_other: '已收回 {{count}} 项',
+        batchHandedOver_one: '已将 {{count}} 条记录移交给 {{owner}}',
+        batchHandedOver_other: '已将 {{count}} 条记录移交给 {{owner}}',
+        remaining_one: '{{name}}的离职交接还剩 {{count}} 项',
+        remaining_other: '{{name}}的离职交接还剩 {{count}} 项',
+        complete: '{{name}}的离职交接已全部处理完毕',
+      },
       columns: {
         item: '持有资产',
         handling: '操作',
@@ -1497,8 +1510,6 @@ const zhCN: AppResource = {
       mine_other: '你负责 {{count}} 项',
       yours: '你负责',
       leftOn: '{{date}} 离职',
-      // 已完成: a to-do finished lately, kept under the queue.
-      done: '已完成',
     },
     reminderGroups: {
       devices: '设备',

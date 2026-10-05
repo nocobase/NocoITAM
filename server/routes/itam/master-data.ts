@@ -331,6 +331,9 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
             // The page shows the leaving sentence only for somebody who has
             // left, and that answer belongs with the plan rather than to a
             // second request for the record.
+            // Named, so an act on one of their things elsewhere — a device's
+            // own page — can say whose handover it moved.
+            name: typeof person.name === 'string' ? person.name : null,
             employmentStatus: person.employmentStatus ?? null,
             leaveDate: person.leaveDate ?? null,
             items,

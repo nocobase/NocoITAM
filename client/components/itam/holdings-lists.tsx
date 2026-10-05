@@ -1,8 +1,9 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Undo2 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
+import { useAnnounce } from '@/lib/itam/announce';
 import { useApi, type ItamRecord } from '@/lib/itam/api';
 import { formatDate, text } from '@/lib/itam/format';
 import { usePagedRows } from '@/lib/itam/paging';
@@ -37,7 +38,7 @@ export function StockHoldingsList({
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
-  const queryClient = useQueryClient();
+  const announce = useAnnounce();
   const openRecord = useOpenRecord();
   const permissions = useCollectionPermissions(
     'stockItems',
@@ -52,9 +53,12 @@ export function StockHoldingsList({
         method: 'POST',
         json: { holderType, holderId, quantity: Number(holding.quantity) },
       }),
-    onSuccess: async () => {
+    onSuccess: async (_data, holding) => {
       setPending(undefined);
-      await queryClient.invalidateQueries({ queryKey: ['itam', STOCK_PATH] });
+      await announce(
+        t('people.recovery.toast.takenBack', { label: text(holding.name) }),
+        holderType === 'person' ? [holderId] : [],
+      );
     },
   });
   const holdings = useStockHoldings(holderType, holderId, kind);
@@ -202,7 +206,7 @@ export function EntitlementSeatsList({
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
-  const queryClient = useQueryClient();
+  const announce = useAnnounce();
   const openRecord = useOpenRecord();
   const seats = useEntitlementSeats(holderType, holderId);
   const permissions = useCollectionPermissions('entitlements', ['assignSeat']);
@@ -214,11 +218,12 @@ export function EntitlementSeatsList({
         method: 'POST',
         json: { seatIds: [text(seat.id)] },
       }),
-    onSuccess: async () => {
+    onSuccess: async (_data, seat) => {
       setPending(undefined);
-      await queryClient.invalidateQueries({
-        queryKey: ['itam', ENTITLEMENTS_PATH],
-      });
+      await announce(
+        t('people.recovery.toast.reclaimed', { label: text(seat.name) }),
+        holderType === 'person' ? [holderId] : [],
+      );
     },
   });
   const rows = seats.data ?? [];
