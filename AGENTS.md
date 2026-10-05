@@ -675,6 +675,21 @@ Rules learned while building it:
   naming the platform administrator, for a reader who may not) when it did
   not: the last administrator, the reader's own account, or somebody who
   left before this existed. The offboarding skill says the same.
+- The 归属 tab takes things back **in batches** (2026-10-05): a box on
+  every row whose own button would act now — not a device at the repair
+  shop, a consumable to confirm or a settled row — and on every record
+  still to hand over, with a select-all in front of each list. Ticking shows
+  a bar with the one act (批量收回 / 批量移交). A batch is the row's own act
+  performed once per ticked row, through the same endpoint, so each meets
+  the rules it would alone: devices take the return dialog's answers once
+  for all of them (`DeviceReturnDialog` takes a `title`, `description` and
+  lead-in for this), stock is taken back in full, seats go one request per
+  entitlement, and records are each PATCHed to the one new owner. A row
+  that fails stays ticked with the service's reason in the dialog, while
+  the rest settle; pressing again retries exactly those. This is the
+  application's first multi-select — `DataTable` gained `rowKey` for it,
+  after the tab's earlier rewrite of `id` into a key leaked into the seat
+  reclaim's request.
 - Every row is read from the **live record**, and the snapshot is only the
   denominator (`belongingsSnapshot`, a history event written on every
   transition into `left` — the button, an update whose date derives it, and

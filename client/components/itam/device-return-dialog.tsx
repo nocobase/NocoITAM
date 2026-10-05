@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
@@ -29,12 +29,24 @@ export function DeviceReturnDialog({
   error,
   onClose,
   onConfirm,
+  title,
+  description,
+  children,
 }: {
   readonly currentLocationId: string | null;
   readonly busy: boolean;
   readonly error: unknown;
   readonly onClose: () => void;
   readonly onConfirm: (body: Record<string, unknown>) => void;
+  /**
+   * For taking several things back at once — a leaver's devices with their
+   * stock and seats — where the same three answers apply to every device
+   * and the dialog says what else goes with them (`children`, above the
+   * questions).
+   */
+  readonly title?: string;
+  readonly description?: string;
+  readonly children?: ReactNode;
 }): ReactElement {
   const { t } = useTranslation();
   const [nextStatus, setNextStatus] = useState<string>('inStock');
@@ -51,8 +63,8 @@ export function DeviceReturnDialog({
     <ConfirmDialog
       open
       onOpenChange={(open) => !open && onClose()}
-      title={t('deviceActions.return.title')}
-      description={t('deviceActions.return.descriptionOne')}
+      title={title ?? t('deviceActions.return.title')}
+      description={description ?? t('deviceActions.return.descriptionOne')}
       busy={busy}
       error={error}
       confirmLabel={t('deviceActions.return.confirm')}
@@ -64,6 +76,7 @@ export function DeviceReturnDialog({
         })
       }
     >
+      {children}
       <div className='grid gap-1.5'>
         <Label htmlFor='return-status'>
           {t('deviceActions.return.nextStatus')}
