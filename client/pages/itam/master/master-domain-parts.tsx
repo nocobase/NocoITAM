@@ -1,13 +1,15 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState, type ReactElement } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
+import { EmptyState } from '@/components/itam/empty-state';
 import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
 import { MasterDataTree } from '@/components/itam/master-data-tree';
 import { PeopleStatCards } from '@/components/itam/people-stats';
+import { RecordPane } from '@/components/itam/record-drawer';
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,6 +22,7 @@ import {
   type ItamRecord,
 } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
+import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
 import type { DomainTreeProps } from '@/lib/itam/domain';
 import { errorMessage, text } from '@/lib/itam/format';
 import type { MasterDataCollection } from '@/lib/itam/master-data';
@@ -56,6 +59,8 @@ export function MasterTree({
 }: DomainTreeProps & {
   readonly collection: MasterDataCollection;
 }): ReactElement {
+  if (collection.name === 'categories')
+    return <CategoryPanes collection={collection} {...props} />;
   return (
     <MasterDataTree
       collection={collection}
@@ -65,6 +70,124 @@ export function MasterTree({
       rowActions={props.rowActions}
     />
   );
+}
+
+/**
+ * Categories read as two panes (2026-10-06): the tree in a narrow column —
+ * names only, since the kind and the count are on the record — and the
+ * clicked category's own detail page beside it, where it is read and
+ * edited without a drawer over the tree. The category is named in the
+ * address (`?selected=`), so a refresh or a link keeps it open; leaving
+ * it from inside (its 返回, or deleting it) clears the pane.
+ */
+function CategoryPanes({
+  collection,
+  ...props
+}: DomainTreeProps & {
+  readonly collection: MasterDataCollection;
+}): ReactElement {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const selected = params.get('selected') ?? undefined;
+  // The same list the tree reads (shared query): once the open category
+  // is gone — deleted from its row — the pane empties instead of showing a
+  // record that no longer exists.
+  const nodes = useItamList<ItamRecord>(masterDataPath(collection.name), {
+    pageSize: 200,
+    sort: 'sort',
+  }).data?.data;
+  const gone =
+    selected !== undefined &&
+    nodes !== undefined &&
+    !nodes.some((node) => node.id === selected);
+  const select = (id: string | undefined) =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (id) next.set('selected', id);
+        else next.delete('selected');
+        return next;
+      },
+      { replace: true },
+    );
+  useEffect(() => {
+    if (gone) select(undefined);
+  });
+  return (
+    // As tall as the page leaves (`treeFills`): each pane scrolls on its
+    // own, so a long tree never pushes the record out of view.
+    <div className='grid min-h-80 flex-1 gap-4 @xl:grid-cols-[minmax(13rem,17rem)_minmax(0,1fr)] @xl:grid-rows-[minmax(0,1fr)]'>
+      <div className='min-h-0 overflow-y-auto'>
+        <MasterDataTree
+          collection={collection}
+          compact
+          expandAll={props.expandAll}
+          search={props.search}
+          filter={props.filter}
+          // Editing is the pane's; a row keeps only its delete.
+          rowActions={
+            props.onDelete
+              ? (row) => (
+                  <Button
+                    variant='ghost'
+                    size='icon-sm'
+                    className='text-muted-foreground hover:text-destructive'
+                    aria-label={t('actions.deleteObject', {
+                      object: t('categories.object'),
+                    })}
+                    title={t('actions.delete')}
+                    onClick={() => props.onDelete?.(row)}
+                  >
+                    <Trash2 />
+                  </Button>
+                )
+              : undefined
+          }
+          selectedId={selected}
+          onSelect={select}
+        />
+      </div>
+      {selected ? (
+        <section className='min-h-0 min-w-0 overflow-y-auto rounded-lg border border-border bg-card'>
+          {/* The tree beside says where it sits: no breadcrumb here. */}
+          <HideBreadcrumbContext.Provider value>
+            <RecordPane
+              key={selected}
+              to={`/${collection.route}/${selected}`}
+              // Following a link to another category inside the pane (its
+              // breadcrumb's parent) moves the tree's selection with it.
+              toolbar={<FollowRecord selected={selected} onSelect={select} />}
+              onLeave={(path) => {
+                // Back to the list is this page: the pane empties. Anywhere
+                // else, the page moves there.
+                if (path.split('?')[0] === `/${collection.route}`)
+                  select(undefined);
+                else void navigate(path);
+              }}
+            />
+          </HideBreadcrumbContext.Provider>
+        </section>
+      ) : (
+        <EmptyState title={t('categories.pickToEdit')} />
+      )}
+    </div>
+  );
+}
+
+/** Inside the pane's router: reports the record the pane has moved to. */
+function FollowRecord({
+  selected,
+  onSelect,
+}: {
+  readonly selected: string;
+  readonly onSelect: (id: string) => void;
+}): null {
+  const id = useLocation().pathname.split('/')[2];
+  useEffect(() => {
+    if (id && id !== selected) onSelect(id);
+  }, [id, selected, onSelect]);
+  return null;
 }
 
 /** One column of `/itam/master/:collection/counts`. */
