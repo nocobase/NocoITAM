@@ -891,7 +891,7 @@ const messages = {
       notStarted: {
         disabled: 'Onboarding suggestions are switched off in the settings',
         unavailable: 'Noco is not available: check Settings → AI',
-        notJoiner: 'Noco chooses only for joiners starting within two weeks',
+        notJoiner: 'Noco chooses only for joiners not yet equipped',
         noOwner: 'Give them an onboarding owner first',
         nothingToChoose:
           'Nothing to choose: every item has one candidate or none',
@@ -2247,7 +2247,7 @@ const messages = {
       businessNotes: 'Business notes (Noco reads them when a task starts)',
       onboardingAdvice: 'Onboarding suggestions',
       onboardingAdviceHint:
-        'When a joiner is within two weeks of starting, Noco chooses devices, accessories and seats from stock for them in the background, as their onboarding owner, with a reason for each; the owner confirms or changes them. Off, it prepares them only in a conversation.',
+        'Once a joiner is entered, Noco chooses devices, accessories and seats from stock for them in the background, as their onboarding owner, with a reason for each; the owner confirms or changes them. Off, it prepares them only in a conversation.',
     },
     demo: {
       title: 'Demo data',

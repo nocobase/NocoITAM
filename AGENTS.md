@@ -854,7 +854,8 @@ Rules learned while building it:
   latest finished run) is **held back** from every other joiner's
   candidates and proposals (`heldForOthers`), or two joiners of one
   department were both offered the laptop it had just chosen for the first. Runs are queued one at a time and start when a
-  joiner 入职准备 lists has an owner, Noco has a choice (some item
+  joiner not yet equipped has an owner — however far off their first day,
+  not only once 入职准备 lists them (2026-10-06) — Noco has a choice (some item
   with more candidates than it needs) and the last run was not asked the
   same question (`inputs`: joining day, department, position, owner, kit):
   after a person is saved (`personSaved` on the master-data service), by

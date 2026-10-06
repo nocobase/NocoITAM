@@ -882,7 +882,7 @@ const zhCN: AppResource = {
       notStarted: {
         disabled: '入职建议已在设置中关闭',
         unavailable: 'Noco 现在不可用：请检查 设置 → AI',
-        notJoiner: '只为两周内入职的新人挑选',
+        notJoiner: '只为还没配齐的新人挑选',
         noOwner: '先给他指定入职负责人',
         nothingToChoose: '没有可挑的：每一项的候选都只有一个或没有',
         running: 'Noco 正在挑选',
@@ -2114,7 +2114,7 @@ const zhCN: AppResource = {
       businessNotes: '业务说明（Noco 开始任务时读取）',
       onboardingAdvice: '入职建议',
       onboardingAdviceHint:
-        '新人进入入职窗口（两周内入职）后，Noco 以入职负责人的身份在后台从库存里为他挑选设备、配件和授权并写明理由，由入职负责人确认或更换。关闭后只在对话中准备。',
+        '录入新人后，Noco 以入职负责人的身份在后台从库存里为他挑选设备、配件和授权并写明理由，由入职负责人确认或更换。关闭后只在对话中准备。',
     },
     demo: {
       title: '演示数据',

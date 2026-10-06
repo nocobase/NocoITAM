@@ -14,7 +14,6 @@ import {
 import { z } from 'zod';
 
 import { asText, type Row } from './collection-query.js';
-import { addDays, today } from './dates.js';
 import type { ItamNotifier } from './notifier.js';
 import {
   isJoiner,
@@ -458,14 +457,13 @@ export function createOnboardingAdvisor(deps: {
       .where('id', '=', personId)
       .executeTakeFirst<Row>();
     const hireDate = asText(person?.hireDate);
-    const now = today();
-    // The joiners 入职准备 lists: entered around their first day, starting
-    // within the fortnight or started, and not yet equipped.
+    // Joiners — entered around their first day — not yet equipped, however
+    // far off that day is (2026-10-06: it waited for the fortnight 入职准备
+    // lists, which left the owner of a joiner a month out nothing to ask).
     if (
       !person ||
       asText(person.employmentStatus) === 'left' ||
       !hireDate ||
-      hireDate > addDays(now, 14) ||
       !isJoiner(hireDate, person.createdAt) ||
       asText(person.onboardingCompletedAt)
     )
@@ -533,7 +531,6 @@ export function createOnboardingAdvisor(deps: {
   return {
     consider,
     async nightly() {
-      const now = today();
       const joiners = (
         await q()
           .selectFrom('people')
@@ -544,7 +541,7 @@ export function createOnboardingAdvisor(deps: {
               eb('employmentStatus', '!=', 'left'),
             ]),
           )
-          .where('hireDate', '<=', addDays(now, 14))
+          .where('hireDate', 'is not', null)
           .where('onboardingOwnerId', 'is not', null)
           .where('onboardingCompletedAt', 'is', null)
           .execute<Row>()

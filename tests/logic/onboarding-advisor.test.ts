@@ -239,23 +239,19 @@ describe('onboarding advisor', () => {
     });
     await laptop('C02ADV0022', '2029-01-01');
 
-    // Out of the window, or nobody to run as.
-    const later = await joiner({ hireDate: addDays(today(), 30) });
-    expect(await advisor.consider(later.id, 'nightly')).toMatchObject({
+    // Not a joiner: entered two months after starting.
+    const staff = await joiner({ hireDate: addDays(today(), -60) });
+    expect(await advisor.consider(staff.id, 'nightly')).toMatchObject({
       reason: 'notJoiner',
     });
+    // A joiner a month out is chosen for too; one with nobody to run as
+    // is not.
+    const later = await joiner({ hireDate: addDays(today(), 30) });
     await app.container
       .resolve(databaseManagerToken)
       .query()
       .updateTable('people')
       .set({ onboardingOwnerId: null })
-      .where('id', '=', later.id)
-      .execute();
-    await app.container
-      .resolve(databaseManagerToken)
-      .query()
-      .updateTable('people')
-      .set({ hireDate: addDays(today(), 3) })
       .where('id', '=', later.id)
       .execute();
     expect(await advisor.consider(later.id, 'nightly')).toMatchObject({
@@ -307,7 +303,8 @@ describe('onboarding advisor', () => {
   it('records a failed run, which the nightly pass retries and a save does not', async () => {
     await laptop('C02ADV0031', '2030-01-01');
     const second = await laptop('C02ADV0032', '2029-01-01');
-    const person = await joiner();
+    // Six weeks out: the nightly pass takes every joiner not yet equipped.
+    const person = await joiner({ hireDate: addDays(today(), 40) });
     answer = () => {
       throw new Error('PROVIDER_ERROR: rate limited');
     };
