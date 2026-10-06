@@ -1492,11 +1492,10 @@ const zhCN: AppResource = {
       uploading: '正在上传…',
       nothing: 'AI 没有整理出采购单，请补充内容后再试。',
       filled: 'AI 已按原文填好采购单，请核对后保存。',
-      reviewHint: '标「请核对」的是 AI 不确定的地方。',
+      reviewHint: 'AI 不确定这一项，请核对',
       check: '请核对',
-      vendorNotFound:
-        '原文的供应商「{{name}}」不在供应商列表里，请选择，或先在主数据里新建。',
-      departmentNotFound: '原文的部门「{{name}}」没有对上，请选择。',
+      vendorNotFound: '原文：{{name}}，不在供应商列表里',
+      departmentNotFound: '原文：{{name}}，没有对上部门',
       unmatched_one:
         '有 {{count}} 行没有对上型号或软件产品：选一个已有的，或新建后加入明细。',
       unmatched_other:

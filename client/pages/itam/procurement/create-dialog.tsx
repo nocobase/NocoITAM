@@ -6,8 +6,9 @@ import { useMemo, useState, type DragEvent, type ReactElement } from 'react';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
+import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
-import { ReviewHint, ReviewMark } from '@/components/itam/review-mark';
+import { ReviewMark } from '@/components/itam/review-mark';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -21,10 +22,13 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useApi,
   useItamList,
+  useItamMutations,
   useItamSettings,
   type ItamRecord,
 } from '@/lib/itam/api';
 import { formatMoney, text } from '@/lib/itam/format';
+import { masterDataByName } from '@/lib/itam/master-data';
+import { useCollectionPermissions } from '@/lib/itam/permissions';
 import {
   PO_CREATE_FIELDS,
   PO_FIELDS,
@@ -44,7 +48,7 @@ import {
   purchaseLinePayload,
   type PurchaseLineDraft,
 } from '@/lib/itam/purchase-lines';
-import { useReferenceNames } from '@/lib/itam/references';
+import { referencePath, useReferenceNames } from '@/lib/itam/references';
 import {
   usePurchaseOrderCapture,
   type CaptureForm,
@@ -58,6 +62,10 @@ type DialogLine = PurchaseLineDraft & { readonly uncertain?: boolean };
 
 const HEADER_FIELDS = PO_CREATE_FIELDS.map((key) =>
   PO_FIELDS.find((field) => field.key === key)!,
+);
+
+const VENDOR_FIELDS = masterDataByName('vendors')!.fields.filter(
+  (field) => field.form !== false,
 );
 
 /**
@@ -99,6 +107,20 @@ export function PurchaseOrderCreateDialog({
   // Header fields the assistant filled without being sure; a field leaves
   // the set when somebody changes it.
   const [review, setReview] = useState<ReadonlySet<string>>(() => new Set());
+  const unmark = (key: string) =>
+    setReview((keys) => {
+      if (!keys.has(key)) return keys;
+      const next = new Set(keys);
+      next.delete(key);
+      return next;
+    });
+  // A vendor the books lack is created from the vendor field, or from the
+  // note under it naming the one the text gave, without leaving the dialog.
+  const [creatingVendor, setCreatingVendor] = useState<string>();
+  const vendors = useItamMutations(referencePath('vendors'));
+  const mayCreateVendor = useCollectionPermissions('vendors', [
+    'create',
+  ]).create;
   const names = useReferenceNames(
     useMemo(
       () => [
@@ -329,11 +351,6 @@ export function PurchaseOrderCreateDialog({
               }
             >
               <div className='grid min-w-0 gap-3'>
-                {/* Before the fields it explains, not beside them. */}
-                {result &&
-                (review.size > 0 || lines.some((line) => line.uncertain)) ? (
-                  <ReviewHint />
-                ) : null}
                 <div className='grid gap-3 sm:grid-cols-2'>
                   {HEADER_FIELDS.map((field) => (
                     <div
@@ -369,13 +386,33 @@ export function PurchaseOrderCreateDialog({
                             ...values,
                             [field.key]: value,
                           }));
-                          setReview((keys) => {
-                            if (!keys.has(field.key)) return keys;
-                            const next = new Set(keys);
-                            next.delete(field.key);
-                            return next;
-                          });
+                          unmark(field.key);
                         }}
+                        onCreate={
+                          field.key === 'vendorId' && mayCreateVendor
+                            ? (name) =>
+                                setCreatingVendor(
+                                  name || text(result?.vendorName),
+                                )
+                            : undefined
+                        }
+                        createLabel={t('vendors.new')}
+                      />
+                      <UnplacedNote
+                        field={field.key}
+                        name={
+                          field.key === 'vendorId' && !values.vendorId
+                            ? result?.vendorName
+                            : field.key === 'departmentId' &&
+                                !values.departmentId
+                              ? result?.departmentName
+                              : null
+                        }
+                        onCreate={
+                          mayCreateVendor && !created
+                            ? setCreatingVendor
+                            : undefined
+                        }
                       />
                     </div>
                   ))}
@@ -533,9 +570,75 @@ export function PurchaseOrderCreateDialog({
                 </aside>
               ) : null}
             </div>
+            <RecordFormDialog
+              key={creatingVendor ?? 'vendor-closed'}
+              open={creatingVendor !== undefined}
+              onOpenChange={(next) => {
+                if (next) return;
+                vendors.create.reset();
+                setCreatingVendor(undefined);
+              }}
+              title={t('vendors.new')}
+              fields={VENDOR_FIELDS}
+              initial={{ name: creatingVendor ?? '' }}
+              submitting={vendors.create.isPending}
+              error={vendors.create.error}
+              onSubmit={async (payload) => {
+                const vendor = await vendors.create.mutateAsync(payload);
+                setValues((values) => ({
+                  ...values,
+                  vendorId: text(vendor.id),
+                }));
+                unmark('vendorId');
+                setCreatingVendor(undefined);
+              }}
+            />
           </>
         )}
       </div>
     </ConfirmDialog>
+  );
+}
+
+/**
+ * Under the vendor or department field, while it is still empty: what the
+ * text called it, which matched nothing on the books — said where it is
+ * chosen rather than in the column beside the form (2026-10-06). A vendor
+ * may be created from here; a department is the organisation's and is only
+ * chosen.
+ */
+function UnplacedNote({
+  field,
+  name,
+  onCreate,
+}: {
+  readonly field: string;
+  readonly name: string | null | undefined;
+  readonly onCreate?: (name: string) => void;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  if (!name) return null;
+  const vendor = field === 'vendorId';
+  return (
+    <p className='text-xs text-warning-foreground wrap-anywhere'>
+      {t(
+        vendor
+          ? 'procurement.capture.vendorNotFound'
+          : 'procurement.capture.departmentNotFound',
+        { name },
+      )}
+      {vendor && onCreate ? (
+        <>
+          {' · '}
+          <button
+            type='button'
+            className='text-info-foreground hover:underline'
+            onClick={() => onCreate(name)}
+          >
+            {t('vendors.new')}
+          </button>
+        </>
+      ) : null}
+    </p>
   );
 }

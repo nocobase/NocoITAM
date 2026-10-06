@@ -1557,12 +1557,10 @@ const messages = {
         'The AI did not organise a purchase order. Add to the text and try again.',
       filled:
         'The AI filled in the order from the text. Check it before saving.',
-      reviewHint: 'Fields marked "Check" are the ones the AI was not sure of.',
+      reviewHint: 'The AI was not sure of this one. Check it.',
       check: 'Check',
-      vendorNotFound:
-        'The vendor "{{name}}" is not on the vendor list. Choose one, or add it in master data first.',
-      departmentNotFound:
-        'The department "{{name}}" did not match one. Choose it.',
+      vendorNotFound: 'The text says {{name}}, which is not on the vendor list',
+      departmentNotFound: 'The text says {{name}}, which matched no department',
       unmatched_one:
         '{{count}} item matched no model or software product: pick one that exists, or create it, to add it to the lines.',
       unmatched_other:

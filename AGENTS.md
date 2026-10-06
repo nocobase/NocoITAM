@@ -1111,9 +1111,15 @@ Rules learned while building it:
   part code decides by the model's `code`, an id the assistant gives must
   exist, and anything else matches only by an identical name (a model with
   or without its maker in front; a vendor or department identical or the
-  only one containing it). What matches nothing is listed above the form and
-  never put on a line — an M4 must not become the M3 the books hold. A field
-  or line the assistant was unsure of carries 请核对 (`ReviewMark`) until it
+  only one containing it). What matches nothing is never put on a line — an
+  M4 must not become the M3 the books hold. A vendor or department the text
+  named but the books lack is said **under its own field** while that field
+  is empty (`UnplacedNote` in `create-dialog.tsx`, 2026-10-06), where a
+  vendor can also be created (创建供应商, from the note or the foot of the
+  vendor list, `FieldInput`'s `onCreate`); a department is only chosen. The
+  lines it could not place stay in the column beside the form. A field or
+  line the assistant was unsure of carries 请核对 (`ReviewMark`, whose
+  tooltip says what it means — there is no sentence above the form) until it
   is changed. Adjusting happens in the dialog, not the side panel, which a
   modal dialog leaves out of reach: each instruction is a new unseen turn
   with the material, the form as it stands (page context) and the request.

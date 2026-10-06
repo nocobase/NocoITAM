@@ -36,6 +36,9 @@ export interface FieldInputProps {
   readonly onBlur?: () => void;
   /** A selection control closed its list (or lost focus) without a change. */
   readonly onDismiss?: () => void;
+  /** A reference's list ends in 创建… for a record the books lack. */
+  readonly onCreate?: (search: string) => void;
+  readonly createLabel?: string;
 }
 
 /** One editable control per field type; forms and inline editing share it. */
@@ -49,6 +52,8 @@ export function FieldInput({
   id,
   onBlur,
   onDismiss,
+  onCreate,
+  createLabel,
 }: FieldInputProps): ReactElement {
   const { t } = useTranslation();
   const inputId = id ?? `field-${field.key}`;
@@ -475,6 +480,8 @@ export function FieldInput({
           onOpenChange={(open) => {
             if (!open) onDismiss?.();
           }}
+          onCreate={onCreate}
+          createLabel={createLabel}
         />
       );
     }

@@ -4,7 +4,6 @@ import { Globe, Sparkles } from 'lucide-react';
 import { Fragment, useMemo, useState, type ReactElement } from 'react';
 
 import { CollapsibleText } from '@/components/itam/collapsible-text';
-import { ReviewHint } from '@/components/itam/review-mark';
 import {
   initialFormValues,
   RecordFormDialog,
@@ -199,11 +198,7 @@ function MasterCreateForm({
         columns={2}
         prelude={
           result && current === 'form' ? (
-            <CapturePrelude
-              collection={collection}
-              result={result}
-              reviewing={marks.size > 0}
-            />
+            <CapturePrelude collection={collection} result={result} />
           ) : undefined
         }
         // The category's fields stand apart from the model's own, under
@@ -544,24 +539,21 @@ function CaptureNotes({
 }
 
 /**
- * Above the form AI 整理 filled: what 请核对 means, and the records the
- * books already hold for it — both read before checking the fields, not in
- * the column beside them.
+ * Above the form AI 整理 filled: the records the books already hold for it,
+ * read before checking the fields, not in the column beside them. What
+ * 请核对 means is the mark's own tooltip.
  */
 function CapturePrelude({
   collection,
   result,
-  reviewing,
 }: {
   readonly collection: MasterCaptureCollection;
   readonly result: MasterCapture;
-  readonly reviewing: boolean;
 }): ReactElement | null {
   const { t } = useTranslation();
   const route = masterDataByName(collection)!.route;
   const similar = result.similar ?? [];
-  if (!reviewing && result.duplicates.length === 0 && similar.length === 0)
-    return null;
+  if (result.duplicates.length === 0 && similar.length === 0) return null;
   // The label and its records on one line, the records as links.
   const line = (
     label: string,
@@ -585,24 +577,15 @@ function CapturePrelude({
       ))}
     </p>
   );
-  const found = result.duplicates.length > 0 || similar.length > 0;
-  // One box for everything to read before checking the fields; it warns
-  // only when the books may already hold the record.
+  // One box for the records the books may already hold.
   return (
-    <div
-      className={
-        found
-          ? 'grid gap-1.5 rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm'
-          : 'grid gap-1.5 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm'
-      }
-    >
+    <div className='grid gap-1.5 rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm'>
       {result.duplicates.length > 0
         ? line(t(`masterCapture.duplicates.${collection}`), result.duplicates)
         : null}
       {similar.length > 0
         ? line(t(`masterCapture.similar.${collection}`), similar)
         : null}
-      {reviewing ? <ReviewHint /> : null}
     </div>
   );
 }

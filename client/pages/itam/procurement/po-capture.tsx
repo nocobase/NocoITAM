@@ -171,18 +171,6 @@ export function CaptureNotice({
           )}
         </span>
       </p>
-      {result.vendorName ? (
-        <p className='pl-6 text-warning-foreground'>
-          {t('procurement.capture.vendorNotFound', { name: result.vendorName })}
-        </p>
-      ) : null}
-      {result.departmentName ? (
-        <p className='pl-6 text-warning-foreground'>
-          {t('procurement.capture.departmentNotFound', {
-            name: result.departmentName,
-          })}
-        </p>
-      ) : null}
       {result.unmatched.length > 0 ? (
         <div className='grid gap-1.5 pl-6'>
           <p className='text-warning-foreground'>

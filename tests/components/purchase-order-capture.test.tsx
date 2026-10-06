@@ -69,10 +69,15 @@ vi.mock('../../client/lib/itam/api.js', () => ({
       });
     },
   }),
+  apiErrorBody: () => undefined,
   useItamList: () => ({ data: { data: [] } }),
+  useItamMutations: () => ({
+    create: { mutateAsync: vi.fn(), reset: vi.fn(), isPending: false },
+  }),
   useItamSettings: () => ({ data: { general: { currency: 'CNY' } } }),
 }));
 vi.mock('../../client/lib/itam/references.js', () => ({
+  referencePath: (collection: string) => `itam/master/${collection}`,
   useReferenceNames: () => ({}),
 }));
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
@@ -239,10 +244,10 @@ it('opens on AI 整理 and fills the form from what the assistant read', async (
   expect(
     screen.getByRole('button', { name: 'procurement.saveDraft' }),
   ).toBeVisible();
-  // The vendor and the line the assistant was not sure of.
-  // Plus the sample in the hint above the form.
-  expect(screen.getAllByText('procurement.capture.check')).toHaveLength(3);
-  expect(screen.getByText('procurement.capture.reviewHint')).toBeVisible();
+  // The vendor and the line the assistant was not sure of; what the mark
+  // means is its tooltip, not a sentence above the form.
+  expect(screen.getAllByText('procurement.capture.check')).toHaveLength(2);
+  expect(screen.queryByText('procurement.capture.reviewHint')).toBeNull();
   expect(screen.getByText('procurement.capture.unmatched:1')).toBeVisible();
   expect(screen.getByText(/Testbook Pro 14 \(T4\) × 10/)).toBeVisible();
   expect(
