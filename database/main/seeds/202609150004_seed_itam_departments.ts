@@ -89,6 +89,56 @@ const NAMES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
 const localizedName = (department: DepartmentSeed, locale: string): string =>
   NAMES[locale]?.[department.id] ?? department.name;
 
+/**
+ * Each department's starting positions (2026-10-06): a person's 职位 is
+ * chosen from them, and a position's own 入职配置 is attached to one. They
+ * are spelled as the demo's people and the designer kit spell theirs, so
+ * neither adds a near-duplicate.
+ */
+const POSITIONS: Readonly<
+  Record<string, Readonly<Record<string, readonly string[]>>>
+> = {
+  'en-US': {
+    'dept-tech': ['Technical Director', 'Architect'],
+    'dept-rd': [
+      'Frontend Engineer',
+      'Backend Engineer',
+      'QA Engineer',
+      'Mobile Engineer',
+    ],
+    'dept-it': ['IT administrator', 'IT Support Engineer', 'IT Asset Manager'],
+    'dept-qa': ['QA Engineer', 'QA Manager'],
+    'dept-product': ['Product Manager', 'Designer'],
+    'dept-sales': [
+      'Sales Manager',
+      'Presales Consultant',
+      'Sales Representative',
+    ],
+    'dept-marketing': ['Marketing Manager', 'Content Marketer'],
+    'dept-customer': ['Customer Success Manager', 'Support Specialist'],
+    'dept-hr': ['Recruiter', 'HR Business Partner'],
+    'dept-finance': ['Finance Manager', 'Accountant'],
+    'dept-admin': ['Office Administrator', 'Receptionist'],
+  },
+  'zh-CN': {
+    'dept-tech': ['技术总监', '架构师'],
+    'dept-rd': ['前端工程师', '后端工程师', '测试工程师', '移动端工程师'],
+    'dept-it': ['IT 管理员', 'IT 支持工程师', 'IT 资产经理'],
+    'dept-qa': ['测试工程师', '质量经理'],
+    'dept-product': ['产品经理', '设计师'],
+    'dept-sales': ['销售经理', '售前顾问', '销售代表'],
+    'dept-marketing': ['市场经理', '内容运营'],
+    'dept-customer': ['客户成功经理', '技术支持'],
+    'dept-hr': ['招聘专员', 'HRBP'],
+    'dept-finance': ['财务经理', '会计'],
+    'dept-admin': ['行政专员', '前台'],
+  },
+};
+
+const localizedPositions = (id: string, locale: string): string[] => [
+  ...(POSITIONS[locale]?.[id] ?? POSITIONS['en-US']?.[id] ?? []),
+];
+
 const seed: SeedDefinition = defineSeed({
   name: '202609150004_seed_itam_departments',
 
@@ -121,6 +171,8 @@ const seed: SeedDefinition = defineSeed({
           path: `${parent ? parent.path : '/'}${department.id}/`,
           managerId: null,
           sort: department.sort,
+          // The query layer encodes a JSON field itself.
+          positions: localizedPositions(department.id, locale),
           createdById: null,
           createdAt: now,
           updatedAt: now,
