@@ -1344,7 +1344,9 @@ Rules learned while building it:
 - 负责人 (`ownerId`) is the **first row of 基本信息** on every detail page
   of a record that has one (2026-10-05): `domain-detail.tsx` places it
   there whatever group its field names (`OWNER_FIRST`), and the device page
-  does the same. It used to sit at the foot of 系统 with the stamps nobody
+  does the same — and puts 状态 right under it, as its tag and not edited
+  there (2026-10-06), so the device's summary strip carries only what it is
+  caught up in: its disposal and who has it (分配给 / 借给 / 预留给). It used to sit at the foot of 系统 with the stamps nobody
   edits, and went unseen; for a day it was in the summary strip, which was
   given back to where the record stands. It is edited in place like any
   row, so the handover rule and the read-only cases are unchanged. Neither the purchase order nor the disposal has a

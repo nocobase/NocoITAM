@@ -160,7 +160,8 @@ export const DEVICE_FIELDS: readonly FieldDefinition[] = [
   },
   {
     key: 'status',
-    // Title / summary strip, not a row of the information card.
+    // The device page shows it under 负责人 in 基本信息, as a tag; other
+    // detail views leave it out.
     detail: false,
     label: 'fields.status',
     type: 'select',
