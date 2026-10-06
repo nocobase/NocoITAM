@@ -1211,6 +1211,11 @@ const zhCN: AppResource = {
       expired: '已过保',
       unknown: '未填写',
     },
+    replacement: {
+      overdue: '已过更换期 {{days}} 天',
+      soon: '{{days}} 天后到更换期',
+      later: '剩余 {{days}} 天',
+    },
     stats: {
       available: '可分配',
       availableCaption:

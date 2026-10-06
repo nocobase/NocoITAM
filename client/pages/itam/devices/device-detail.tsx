@@ -54,7 +54,7 @@ import { InlineField } from '@/components/itam/inline-field';
 import { RepairCompleteButton } from '@/components/itam/repair-complete';
 import { RepairCreateDialog } from '@/components/itam/repair-create-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
-import { WarrantyDate } from '@/components/itam/warranty-date';
+import { ReplacementDate, WarrantyDate } from '@/components/itam/warranty-date';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -647,6 +647,10 @@ export default function DeviceDetailPage(): ReactElement {
                             <span className='inline-flex flex-wrap items-baseline gap-x-3'>
                               {field.key === 'warrantyEndDate' ? (
                                 <WarrantyDate value={data.warrantyEndDate} />
+                              ) : field.key === 'plannedReplacementDate' ? (
+                                <ReplacementDate
+                                  value={data.plannedReplacementDate}
+                                />
                               ) : (
                                 <FieldValue
                                   field={field}

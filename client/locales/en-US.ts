@@ -1239,6 +1239,11 @@ const messages = {
       expired: 'Expired',
       unknown: 'Not recorded',
     },
+    replacement: {
+      overdue: '{{days}} days past replacement',
+      soon: 'Due for replacement in {{days}} days',
+      later: '{{days}} days left',
+    },
     stats: {
       available: 'Available',
       availableCaption:
