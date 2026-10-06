@@ -4,6 +4,7 @@ import {
   ChevronsUpDown,
   Columns3,
   List,
+  MoreHorizontal,
   Plus,
   Trash2,
 } from 'lucide-react';
@@ -23,6 +24,12 @@ import { MasterDataFilters } from '@/components/itam/master-data-filters';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   apiErrorBody,
   useApi,
@@ -264,22 +271,35 @@ function DomainList({
       entry,
     );
   }
-  // A row's one action is deleting it, as an icon rather than a menu of
-  // one: editing is the record's own page, where every field edits in
-  // place, so a 编辑 dialog here only repeated it (2026-10-06).
+  // A row's menu holds deleting it and nothing else: editing is the
+  // record's own page, where every field edits in place, so a 编辑 dialog
+  // here only repeated it (2026-10-06). The menu stays a menu, so the row
+  // ends the same way on every list.
   const rowActions = permissions.delete
     ? (row: ItamRecord) =>
         (domain.deletable?.(row, currentUserId) ?? true) ? (
-          <Button
-            variant='ghost'
-            size='icon-sm'
-            className='text-muted-foreground hover:text-destructive'
-            aria-label={t('actions.deleteObject', { object: objectLabel })}
-            title={t('actions.deleteObject', { object: objectLabel })}
-            onClick={() => setDeleting(row)}
-          >
-            <Trash2 />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant='ghost'
+                  size='icon-sm'
+                  aria-label={t('common.actions')}
+                />
+              }
+            >
+              <MoreHorizontal />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem
+                variant='destructive'
+                onClick={() => setDeleting(row)}
+              >
+                <Trash2 />
+                {t('actions.deleteObject', { object: objectLabel })}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null
     : undefined;
 
