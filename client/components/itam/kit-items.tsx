@@ -263,15 +263,21 @@ export function KitItems({
                   }
                 >
                   <SelectTrigger
-                    className='w-24 shrink-0'
+                    className='w-auto shrink-0'
                     aria-label={t('onboardingKits.assetType')}
                   >
-                    <SelectValue placeholder={t('onboardingKits.assetType')} />
+                    {/* The type as its tag, icon included, the way a purchase
+                        order line and the read view show it. */}
+                    <SelectValue placeholder={t('onboardingKits.assetType')}>
+                      {rowKind(row) ? (
+                        <AssetTypeBadge value={rowKind(row)} />
+                      ) : null}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {KINDS.map((kind) => (
                       <SelectItem key={kind} value={kind}>
-                        {t(`enums.appliesTo.${kind}`)}
+                        <AssetTypeBadge value={kind} />
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -310,6 +316,23 @@ export function KitItems({
                     })
                   }
                 />
+                {/* A row adds the next one below it, as purchase order
+                    lines do. */}
+                <Button
+                  size='icon'
+                  variant='ghost'
+                  aria-label={t('onboardingKits.addItem')}
+                  title={t('onboardingKits.addItem')}
+                  onClick={() =>
+                    setRows((current) => [
+                      ...current.slice(0, index + 1),
+                      { type: 'model', id: null, quantity: 1, kind: 'device' },
+                      ...current.slice(index + 1),
+                    ])
+                  }
+                >
+                  <Plus />
+                </Button>
                 <Button
                   size='icon'
                   variant='ghost'
@@ -324,19 +347,21 @@ export function KitItems({
                 </Button>
               </div>
             ))}
-            <Button
-              size='sm'
-              variant='outline'
-              onClick={() =>
-                setRows((current) => [
-                  ...current,
-                  { type: 'model', id: null, quantity: 1, kind: 'device' },
-                ])
-              }
-            >
-              <Plus data-icon='inline-start' />
-              {t('onboardingKits.addItem')}
-            </Button>
+            {/* Only the way to the first row: after that, each row adds. */}
+            {rows.length === 0 ? (
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={() =>
+                  setRows([
+                    { type: 'model', id: null, quantity: 1, kind: 'device' },
+                  ])
+                }
+              >
+                <Plus data-icon='inline-start' />
+                {t('onboardingKits.addItem')}
+              </Button>
+            ) : null}
             {error ? <p className='text-sm text-destructive'>{error}</p> : null}
             <div className='flex justify-end gap-2 border-t border-border/60 pt-3'>
               <Button

@@ -1,23 +1,24 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, X } from 'lucide-react';
+import { CornerLeftUp, Plus, X } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
+  apiErrorBody,
+  masterDataPath,
+  useApi,
+  useItamRecord,
+  type ItamRecord,
+} from '@/lib/itam/api';
 import { errorMessage } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { samePosition } from '@/lib/itam/positions';
 
+import { ConfirmDialog } from './confirm-dialog.js';
 import { KitItems } from './kit-items.js';
 import { RecordLink } from './record-link.js';
 
@@ -70,6 +71,10 @@ export function DepartmentKits({
         })
       ).data,
   });
+  // Only a department under another can fall back to its parent's kit.
+  const department = useItamRecord<ItamRecord>(departmentsPath, departmentId);
+  const hasParent = Boolean(department.data?.parentId);
+  const [confirmingInherit, setConfirmingInherit] = useState(false);
   const kits = useCollectionPermissions('onboardingKits', [
     'create',
     'update',
@@ -148,6 +153,20 @@ export function DepartmentKits({
 
   return (
     <div className='space-y-4'>
+      {/* Falling back deletes this department's own kit: asked first. */}
+      <ConfirmDialog
+        open={confirmingInherit}
+        onOpenChange={setConfirmingInherit}
+        title={t('departmentKits.inheritConfirmTitle')}
+        description={t('departmentKits.removeDefaultHint')}
+        confirmLabel={t('departmentKits.removeDefault')}
+        busy={busy}
+        onConfirm={() => {
+          const id = String(data.defaultKit?.id);
+          setConfirmingInherit(false);
+          void run(() => deleteKit(id));
+        }}
+      />
       {/* 部门默认配置: the department's own, or the one it takes from above. */}
       {data.defaultKit ? (
         <KitItems
@@ -157,18 +176,18 @@ export function DepartmentKits({
           editable={Boolean(kits.update)}
           onSave={(items) => saveItems(String(data.defaultKit?.id), items)}
           actions={
-            kits.delete ? (
+            // A top-level department has nothing above it to take a kit
+            // from, so it keeps its own.
+            kits.delete && hasParent ? (
               <Button
                 size='sm'
                 variant='ghost'
                 className='text-muted-foreground'
                 disabled={busy}
                 title={t('departmentKits.removeDefaultHint')}
-                onClick={() =>
-                  void run(() => deleteKit(String(data.defaultKit?.id)))
-                }
+                onClick={() => setConfirmingInherit(true)}
               >
-                <Trash2 data-icon='inline-start' />
+                <CornerLeftUp data-icon='inline-start' />
                 {t('departmentKits.removeDefault')}
               </Button>
             ) : null
@@ -254,42 +273,26 @@ export function DepartmentKits({
                           })}
                         </span>
                       </span>
-                      <Select
-                        items={[
-                          {
-                            value: 'default',
-                            label: t('departmentKits.useDefault'),
-                          },
-                          {
-                            value: 'custom',
-                            label: t('departmentKits.useCustom'),
-                          },
-                        ]}
-                        value={custom ? 'custom' : 'default'}
-                        disabled={busy || !canSwitch}
-                        onValueChange={(next) => {
-                          if (next === 'custom' && !custom)
-                            void run(() =>
-                              createKit(position.name, baseItems),
-                            );
-                          if (next === 'default' && position.kit)
-                            void run(() =>
-                              deleteKit(String(position.kit?.id)),
-                            );
-                        }}
-                      >
-                        <SelectTrigger className='w-40 shrink-0'>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value='default'>
-                            {t('departmentKits.useDefault')}
-                          </SelectItem>
-                          <SelectItem value='custom'>
-                            {t('departmentKits.useCustom')}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {/* Off: the position takes the department's kit.
+                          On: it has its own, starting as a copy of that one;
+                          switching off again deletes it. */}
+                      <label className='flex shrink-0 items-center gap-2 text-xs text-muted-foreground'>
+                        <Switch
+                          checked={custom}
+                          disabled={busy || !canSwitch}
+                          onCheckedChange={(next) => {
+                            if (next && !custom)
+                              void run(() =>
+                                createKit(position.name, baseItems),
+                              );
+                            if (!next && position.kit)
+                              void run(() =>
+                                deleteKit(String(position.kit?.id)),
+                              );
+                          }}
+                        />
+                        {t('departmentKits.useCustom')}
+                      </label>
                       {departments.update ? (
                         <Button
                           size='icon'
@@ -307,8 +310,7 @@ export function DepartmentKits({
                             void run(() =>
                               setPositions(
                                 names.filter(
-                                  (name) =>
-                                    !samePosition(name, position.name),
+                                  (name) => !samePosition(name, position.name),
                                 ),
                               ),
                             )

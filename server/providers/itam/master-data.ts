@@ -421,7 +421,6 @@ const REFERENCES: Readonly<
 };
 
 const UNIQUE_FIELDS: Readonly<Record<string, readonly string[]>> = {
-  departments: ['code'],
   manufacturers: ['name'],
   vendors: ['name'],
   softwareProducts: ['name'],

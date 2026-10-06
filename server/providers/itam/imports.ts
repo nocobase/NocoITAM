@@ -207,8 +207,6 @@ export const IMPORT_SPECS: Readonly<Record<string, ImportSpec>> = {
     fields: [
       text('name', true),
       ref('parentId', 'departments', false, ['parent']),
-      text('code'),
-      text('costCenter'),
       ref('managerId', 'people', false, ['manager']),
     ],
     match: ['name'],

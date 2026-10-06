@@ -738,7 +738,16 @@ Rules learned while building it:
   (`POSITION_IN_USE`), while removing one takes its kit with it. The old
   `onboarding-kits` page grant is stripped (`STALE_PAGES`). Each kit row is
   chosen by asset type (设备 … 授权) and then a model of that type or, for 授权,
-  a software product, and shows its asset-type tag first (`KitItems`). One per department and position is
+  a software product, and shows its asset-type tag first (`KitItems`; the
+  picker shows the tags too, and each row adds the next below it — the
+  添加物品 button is only for an empty list). A position's own kit is a
+  自定义配置 switch, off by default; 改为沿用上级部门 shows only under a
+  parent and asks first, since it deletes the department's kit. A department
+  has no code or cost center (dropped 2026-10-06,
+  `202610060006_drop_department_code_cost_center`: nothing read them; an HR
+  or finance sync would be the decision to bring them back), and
+  `RENAMED_FIELDS` in `reconcile-grants.ts` maps a dropped field to `null`
+  to strip it from saved field lists. One per department and position is
   enforced by scoping the department within the position
   (`UNIQUE_SCOPES`), since an empty value is skipped. The arithmetic is
   **deterministic**, `server/providers/itam/onboarding.ts`: what the person

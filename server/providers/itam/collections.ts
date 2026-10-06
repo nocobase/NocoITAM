@@ -183,9 +183,7 @@ export const MASTER_DATA_COLLECTIONS: readonly ItamCollectionDefinition[] = [
       'id',
       'name',
       'parentId',
-      'code',
       'path',
-      'costCenter',
       'managerId',
       'sort',
       // The positions a person in it is given (2026-10-06).
@@ -193,7 +191,7 @@ export const MASTER_DATA_COLLECTIONS: readonly ItamCollectionDefinition[] = [
       ...audit,
     ],
     attributes: { identifier: 'id', creator: 'createdById' },
-    searchFields: ['name', 'code'],
+    searchFields: ['name'],
     defaultSort: 'sort',
   },
   {
