@@ -887,6 +887,7 @@ const messages = {
         'Nothing short: stock, orders on their way and returns cover it.',
       empty: 'No joiners waiting to be equipped.',
       fromStock: 'Stock: {{label}}',
+      fromSeats: 'Free seat: {{label}}',
     },
     progress: '{{done}} of {{total}} prepared',
     shortfallTotal_one: '{{count}} item to buy',

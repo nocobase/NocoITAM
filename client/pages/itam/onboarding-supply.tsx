@@ -227,7 +227,13 @@ function SupplyLine({
         ))}
         {line.proposals.map((thing) => (
           <Badge key={`s:${thing.type}:${thing.id}`} variant='outline'>
-            {t('onboarding.supply.fromStock', { label: thing.label })}
+            {/* A seat is not stock: it is a free seat of an entitlement. */}
+            {t(
+              thing.type === 'seat'
+                ? 'onboarding.supply.fromSeats'
+                : 'onboarding.supply.fromStock',
+              { label: thing.label },
+            )}
           </Badge>
         ))}
         <LineOutlook line={line} />

@@ -876,6 +876,7 @@ const zhCN: AppResource = {
       noShortages: '没有缺口：库存、在途采购和离职归还够用。',
       empty: '没有待配齐的新人。',
       fromStock: '库存 {{label}}',
+      fromSeats: '空闲席位 {{label}}',
     },
     progress: '已配备 {{done}} / {{total}}',
     shortfallTotal_one: '缺 {{count}} 项需采购',
