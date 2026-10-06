@@ -117,7 +117,7 @@ Rules learned while building it:
   each opening its own page, since a cable, a toner and a spare SSD are
   three different errands; 采购到货逾期 is not a rule any more — an overdue
   order is a 待验收到货 to-do, and its card, the purchase board and its
-  summary strip say 逾期 N 天 (`OverdueBadge`, `daysOverdue` in
+  summary strip say 到货逾期 N 天 (`OverdueBadge`, `daysOverdue` in
   `client/lib/itam/format.ts`). Neither 需要关注 nor 待办 carries a count
   beside its heading: a sum of unrelated rules is not something anybody acts
   on.

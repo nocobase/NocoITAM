@@ -41,14 +41,19 @@ export const PURCHASE_ORDER_CARD: BoardCardSpec = {
     lines: [
       { part: 'estimatedTotal', icon: Banknote },
       { part: 'vendorId', icon: Store },
-      // Last, on a line of its own: 逾期 N 天 while an order still waits on
+      // Last, on a line of its own: 到货逾期 N 天 while an order still waits on
       // goods past the date the vendor gave (2026-10-05) — beside the number
       // it squeezed the number out, and first it would have pushed the
       // amount into the muted lines. The same card is the purchase board's
       // and the workbench's 待验收到货 column's, so both say it.
       (record) =>
         ['ordered', 'partiallyReceived'].includes(text(record.status))
-          ? createElement(OverdueBadge, { date: record.expectedAt })
+          ? // A tag is taller than a text line: without the room above it
+            // the tag pressed against the vendor's name.
+            createElement(OverdueBadge, {
+              date: record.expectedAt,
+              className: 'mt-1',
+            })
           : null,
     ],
     // When it was raised, to the minute: orders raised the same day are

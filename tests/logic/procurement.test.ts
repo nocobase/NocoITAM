@@ -237,7 +237,7 @@ describe('procurement', () => {
     expect((await data<{ status: string }>(ordered)).status).toBe('ordered');
     // Past the expected date and nothing received: not a 需要关注 rule any
     // more (2026-10-05) — the order is a 待验收到货 to-do already, and its
-    // card and summary strip say 逾期 N 天.
+    // card and summary strip say 到货逾期 N 天.
     const overdue = await app.container
       .resolve(maintenanceServiceToken)
       .reminderCounts();
