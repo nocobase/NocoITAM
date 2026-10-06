@@ -153,3 +153,20 @@ it('describes each collection for the generic pages', () => {
   // One object per collection, so the pages see stable slot components.
   expect(masterDomain('models')).toBe(models);
 });
+
+it("fills a new sub-category's asset type from the parent chosen", () => {
+  const derive = masterDomain('categories').derive!;
+  expect(
+    derive(
+      {
+        key: 'parentId',
+        value: 'cat-laptop',
+        record: { id: 'cat-laptop', appliesTo: 'device' },
+      },
+      {},
+    ),
+  ).toEqual({ appliesTo: 'device' });
+  // Clearing the parent leaves the type for the reader to choose.
+  expect(derive({ key: 'parentId', value: null }, {})).toBeUndefined();
+  expect(derive({ key: 'name', value: 'X' }, {})).toBeUndefined();
+});

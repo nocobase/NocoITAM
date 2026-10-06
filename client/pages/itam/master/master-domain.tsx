@@ -206,6 +206,17 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
     Actions: ({ record }) => (
       <MasterActions collection={collection} record={record} />
     ),
+    // A sub-category takes its parent's asset type (the service does the
+    // same on save): the field turns read-only once a parent is chosen, so
+    // the form fills it rather than leaving a required field nobody can
+    // answer.
+    derive:
+      collection.name === 'categories'
+        ? ({ key, value, record }) =>
+            key === 'parentId' && value && record?.appliesTo
+              ? { appliesTo: record.appliesTo }
+              : undefined
+        : undefined,
     // A model or a software product is created with AI 整理 beside the form
     // (2026-10-06): the maker and the model are typed, the rest looked up.
     Create: isMasterCaptureCollection(collection.name)
