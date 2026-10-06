@@ -18,6 +18,8 @@ export interface ConfirmDialogProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly title: ReactNode;
+  /** Beside the title, at the right of its row (the purchase order's tabs). */
+  readonly titleAside?: ReactNode;
   readonly description?: ReactNode;
   readonly children?: ReactNode;
   readonly busy?: boolean;
@@ -46,6 +48,7 @@ export function ConfirmDialog({
   open,
   onOpenChange,
   title,
+  titleAside,
   description,
   children,
   busy,
@@ -79,7 +82,15 @@ export function ConfirmDialog({
         )}
       >
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          {titleAside ? (
+            // Clear of the close button in the corner.
+            <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pr-9'>
+              <DialogTitle>{title}</DialogTitle>
+              {titleAside}
+            </div>
+          ) : (
+            <DialogTitle>{title}</DialogTitle>
+          )}
           {description ? (
             <DialogDescription>{description}</DialogDescription>
           ) : null}

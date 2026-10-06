@@ -265,6 +265,24 @@ export function PurchaseOrderCreateDialog({
       }}
       size='wide'
       title={t('procurement.new')}
+      titleAside={
+        capture.available ? (
+          <Tabs
+            value={current}
+            onValueChange={(value) => setTab(value as 'ai' | 'form')}
+          >
+            <TabsList>
+              <TabsTrigger value='ai' className='text-success-foreground'>
+                <Sparkles data-icon='inline-start' />
+                {t('procurement.capture.aiTab')}
+              </TabsTrigger>
+              <TabsTrigger value='form'>
+                {t('procurement.capture.formTab')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : undefined
+      }
       description={
         created
           ? t('procurement.createdAsDraft', { no: text(created.orderNo) })
@@ -284,22 +302,6 @@ export function PurchaseOrderCreateDialog({
       onSecondary={() => save.mutate(false)}
     >
       <div ref={contextRef} className='grid gap-3'>
-        {capture.available ? (
-          <Tabs
-            value={current}
-            onValueChange={(value) => setTab(value as 'ai' | 'form')}
-          >
-            <TabsList>
-              <TabsTrigger value='ai' className='text-success-foreground'>
-                <Sparkles data-icon='inline-start' />
-                {t('procurement.capture.aiTab')}
-              </TabsTrigger>
-              <TabsTrigger value='form'>
-                {t('procurement.capture.formTab')}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        ) : null}
         {current === 'ai' ? (
           <CapturePane
             capture={capture}
