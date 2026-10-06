@@ -1570,8 +1570,10 @@ Rules learned while building it:
   new devices start with** (2026-10-06, migration
   `202610060004_model_attributes`, `models.attributes`). Every template field
   shows on the model page and in the create dialog (right after the
-  specification once a category is chosen), and AI 整理 fills them, each held
-  to its type by `/capture/match` (a select only to one of its options).
+  specification once a category is chosen, together under 扩展字段 on a
+  tinted ground — `section` on `RecordFormDialog`), and AI 整理 fills them,
+  each held to its type by `/capture/match` (a select only to one of its
+  options); its specification leaves out what a field already holds.
   Creating a device copies the model's values into the device's own
   `attributes`, with whatever the caller states winning
   (`buildCreateValues` in `devices.ts`, so the page, batches, receiving, CSV

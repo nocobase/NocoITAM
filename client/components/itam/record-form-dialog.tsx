@@ -76,6 +76,15 @@ export interface RecordFormDialogProps {
   readonly aside?: ReactNode;
   /** The form element, e.g. to register it as the assistant's page context. */
   readonly contentRef?: (element: HTMLElement | null) => void;
+  /**
+   * A run of fields set apart under a heading on a tinted ground — a
+   * model's extended fields, which come from its category rather than the
+   * model's own definition.
+   */
+  readonly section?: {
+    readonly title: string;
+    readonly keys: ReadonlySet<string>;
+  };
 }
 
 /** A form's starting values: what it was given, else each field's default. */
@@ -119,6 +128,7 @@ export function RecordFormDialog({
   replacement,
   aside,
   contentRef,
+  section,
 }: RecordFormDialogProps): ReactElement {
   const [files, setFiles] = useState<readonly FileRecord[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -197,87 +207,105 @@ export function RecordFormDialog({
     await onSubmit(payload, files);
   };
 
+  const renderField = (field: FieldDefinition): ReactNode => {
+    if (field.visibleWhen && !field.visibleWhen(values)) return null;
+    // A currency edited with its amount has no row of its own.
+    if (currencyFields.has(field.key)) return null;
+    const id = `form-${field.key}`;
+    const message = fieldErrors.get(field.key);
+    if (field.currencyField) {
+      const currencyKey = field.currencyField;
+      return (
+        <div key={field.key} className='grid gap-1.5'>
+          <Label htmlFor={id}>
+            {t(field.label)}
+            {field.required ? (
+              <span className='text-destructive'> *</span>
+            ) : null}
+            {marks?.has(field.key) ? <ReviewMark /> : null}
+          </Label>
+          <FieldInput
+            id={id}
+            field={field}
+            value={{
+              amount: values[field.key] ?? null,
+              currency: values[currencyKey] ?? null,
+            }}
+            onChange={(value) => {
+              const pair = (value ?? {}) as {
+                amount?: unknown;
+                currency?: unknown;
+              };
+              setValues(field.key, (current) => ({
+                ...current,
+                [field.key]: pair.amount ?? null,
+                [currencyKey]: pair.currency ?? null,
+              }));
+            }}
+            disabled={submitting || Boolean(field.readonlyWhen?.(values))}
+          />
+          {message ? (
+            <p className='text-xs text-destructive'>{message}</p>
+          ) : null}
+        </div>
+      );
+    }
+    return (
+      <div key={field.key} className='grid gap-1.5'>
+        <Label htmlFor={id}>
+          <FieldLabel
+            label={t(field.label)}
+            hint={
+              field.readonlyHint && field.readonlyWhen?.(values)
+                ? field.readonlyHint
+                : undefined
+            }
+          >
+            {field.required ? (
+              <span className='text-destructive'>*</span>
+            ) : null}
+            {marks?.has(field.key) ? <ReviewMark /> : null}
+          </FieldLabel>
+        </Label>
+        <FieldInput
+          id={id}
+          field={field}
+          value={values[field.key]}
+          onChange={(value, record) =>
+            setValues(field.key, (current) => {
+              const next = changeFormField(field, value, current);
+              return {
+                ...next,
+                ...derive?.({ key: field.key, value, record }, next),
+              };
+            })
+          }
+          disabled={submitting || Boolean(field.readonlyWhen?.(values))}
+          excludeId={recordId}
+        />
+        {message ? <p className='text-xs text-destructive'>{message}</p> : null}
+      </div>
+    );
+  };
+  // The fields in order; a section's are gathered where its first one
+  // stands.
+  const sectionFields = section
+    ? resolved.filter((field) => section.keys.has(field.key))
+    : [];
   const fieldsGrid = (
     <div className='grid min-w-0 gap-4'>
       {resolved.map((field) => {
-        if (field.visibleWhen && !field.visibleWhen(values)) return null;
-        // A currency edited with its amount has no row of its own.
-        if (currencyFields.has(field.key)) return null;
-        const id = `form-${field.key}`;
-        const message = fieldErrors.get(field.key);
-        if (field.currencyField) {
-          const currencyKey = field.currencyField;
-          return (
-            <div key={field.key} className='grid gap-1.5'>
-              <Label htmlFor={id}>
-                {t(field.label)}
-                {field.required ? (
-                  <span className='text-destructive'> *</span>
-                ) : null}
-                {marks?.has(field.key) ? <ReviewMark /> : null}
-              </Label>
-              <FieldInput
-                id={id}
-                field={field}
-                value={{
-                  amount: values[field.key] ?? null,
-                  currency: values[currencyKey] ?? null,
-                }}
-                onChange={(value) => {
-                  const pair = (value ?? {}) as {
-                    amount?: unknown;
-                    currency?: unknown;
-                  };
-                  setValues(field.key, (current) => ({
-                    ...current,
-                    [field.key]: pair.amount ?? null,
-                    [currencyKey]: pair.currency ?? null,
-                  }));
-                }}
-                disabled={submitting || Boolean(field.readonlyWhen?.(values))}
-              />
-              {message ? (
-                <p className='text-xs text-destructive'>{message}</p>
-              ) : null}
-            </div>
-          );
-        }
+        if (!section?.keys.has(field.key)) return renderField(field);
+        if (field !== sectionFields[0]) return null;
         return (
-          <div key={field.key} className='grid gap-1.5'>
-            <Label htmlFor={id}>
-              <FieldLabel
-                label={t(field.label)}
-                hint={
-                  field.readonlyHint && field.readonlyWhen?.(values)
-                    ? field.readonlyHint
-                    : undefined
-                }
-              >
-                {field.required ? (
-                  <span className='text-destructive'>*</span>
-                ) : null}
-                {marks?.has(field.key) ? <ReviewMark /> : null}
-              </FieldLabel>
-            </Label>
-            <FieldInput
-              id={id}
-              field={field}
-              value={values[field.key]}
-              onChange={(value, record) =>
-                setValues(field.key, (current) => {
-                  const next = changeFormField(field, value, current);
-                  return {
-                    ...next,
-                    ...derive?.({ key: field.key, value, record }, next),
-                  };
-                })
-              }
-              disabled={submitting || Boolean(field.readonlyWhen?.(values))}
-              excludeId={recordId}
-            />
-            {message ? (
-              <p className='text-xs text-destructive'>{message}</p>
-            ) : null}
+          <div
+            key={`section:${section.title}`}
+            role='group'
+            aria-label={section.title}
+            className='grid min-w-0 gap-4 rounded-lg bg-muted/60 p-3'
+          >
+            <p className='-mb-1 text-sm font-medium'>{section.title}</p>
+            {sectionFields.map(renderField)}
           </div>
         );
       })}

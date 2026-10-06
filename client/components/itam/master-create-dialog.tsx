@@ -194,6 +194,16 @@ function MasterCreateForm({
             : undefined
         }
         fields={formFields}
+        // The category's fields stand apart from the model's own, under
+        // 扩展字段, so the reader sees which came from the category.
+        section={
+          shared.length > 0
+            ? {
+                title: t('groups.extended'),
+                keys: new Set(shared.map((field) => attributeKey(field.key))),
+              }
+            : undefined
+        }
         values={values}
         onValuesChange={(next, key) => {
           setValues(next);
