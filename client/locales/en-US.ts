@@ -1593,8 +1593,6 @@ const messages = {
     scope: { label: 'Whose to-dos to show', all: 'All', mine: 'Mine' },
     seeAll: 'See all',
     nothingPending: 'Nothing waiting',
-    attentionClear_one: 'The other {{count}} check is clear',
-    attentionClear_other: 'The other {{count}} checks are clear',
     attentionSoonest: 'Soonest {{date}}',
     attentionMore_one: '{{count}} more',
     attentionMore_other: '{{count}} more',
@@ -1610,7 +1608,6 @@ const messages = {
       bookValue: 'Book value',
       bookValueCaption: 'Sum of current book values',
     },
-    nothingToAttend: 'Nothing needs attention right now',
     work: {
       pendingApprovals: 'Waiting for approval',
       tagPurchase: 'Purchase',

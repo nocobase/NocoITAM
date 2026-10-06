@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 
@@ -62,10 +62,7 @@ export default function WorkbenchPage(): ReactElement {
   const rest = cards.filter((card) => card !== leavers && card !== joiners);
   return (
     <Page fill>
-      <PageHeader
-        title={t('workbench.title')}
-        actions={<WorkScopeToggle />}
-      />
+      <PageHeader title={t('workbench.title')} actions={<WorkScopeToggle />} />
       {/* The board takes the rest of the page's height, so each column
           scrolls its own cards and the sideways scrollbar sits at the foot
           of the page — as the status boards do. */}
@@ -470,8 +467,14 @@ function AttentionColumn(): ReactElement {
         (order.get(a.kind) ?? 0) - (order.get(b.kind) ?? 0),
     );
   // The rules that found nothing are still listed — "0" says the check ran
-  // — but as one line, not a card each.
-  const clear = entries.filter((entry) => entry.count === 0);
+  // — after the cards, in the same order.
+  const clear = entries
+    .filter((entry) => entry.count === 0)
+    .sort(
+      (a, b) =>
+        rank[a.severity] - rank[b.severity] ||
+        (order.get(a.kind) ?? 0) - (order.get(b.kind) ?? 0),
+    );
 
   const label = (kind: string) =>
     t(`workbench.reminders.${kind}`, {
@@ -513,16 +516,19 @@ function AttentionColumn(): ReactElement {
                     : 'border-border/50 hover:border-border',
                 )}
               >
-                <span className='flex items-baseline gap-1.5'>
+                {/* The number is what the eye looks for, the sentence what
+                    it means: a larger, bolder figure beside a quieter line,
+                    rather than two pieces of text of the same weight. */}
+                <span className='flex items-baseline gap-2'>
                   <span
                     className={cn(
-                      'text-sm leading-none font-semibold tabular-nums',
+                      'text-base leading-none font-semibold tabular-nums',
                       SEVERITY_TEXT[entry.severity],
                     )}
                   >
                     {entry.count}
                   </span>
-                  <span className='min-w-0 text-xs leading-tight font-medium'>
+                  <span className='min-w-0 text-xs leading-tight text-muted-foreground'>
                     {label(entry.kind)}
                   </span>
                 </span>
@@ -530,16 +536,27 @@ function AttentionColumn(): ReactElement {
               </Link>
             ))}
           </div>
+          {/* The rules that found nothing come last, each on its own line
+              and dimmed rather than folded into a count (2026-10-06): "0"
+              says the check ran, and a folded line hid which checks those
+              were. They are plain rows, not cards — there is nothing behind
+              a zero to open. */}
           {clear.length > 0 ? (
-            <p
-              className='flex items-center gap-1.5 px-1.5 text-xs text-muted-foreground'
-              title={clear.map((entry) => label(entry.kind)).join('\n')}
-            >
-              <Check aria-hidden='true' className='size-3.5 shrink-0' />
-              {found.length === 0
-                ? t('workbench.nothingToAttend')
-                : t('workbench.attentionClear', { count: clear.length })}
-            </p>
+            <ul className='flex flex-col gap-1 px-2.5 pt-1'>
+              {clear.map((entry) => (
+                <li
+                  key={entry.kind}
+                  className='flex items-baseline gap-2 text-muted-foreground/70'
+                >
+                  <span className='w-[1ch] text-sm leading-none tabular-nums'>
+                    0
+                  </span>
+                  <span className='min-w-0 text-xs leading-tight'>
+                    {label(entry.kind)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           ) : null}
         </>
       )}
@@ -574,7 +591,7 @@ function PreviewLine({
     : undefined;
   // One line: the names give way to the edge, and how many more stays.
   return (
-    <span className='mt-0.5 flex min-w-0 gap-1 text-xs text-muted-foreground'>
+    <span className='mt-0.5 flex min-w-0 gap-1 text-xs text-muted-foreground/70'>
       <span className='min-w-0 truncate'>
         {[date, ...names].filter(Boolean).join(' · ')}
       </span>

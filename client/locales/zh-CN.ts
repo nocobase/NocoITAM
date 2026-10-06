@@ -1536,8 +1536,6 @@ const zhCN: AppResource = {
     scope: { label: '显示谁的待办', all: '全部', mine: '我负责的' },
     seeAll: '查看全部',
     nothingPending: '暂无待办',
-    attentionClear_one: '其余 {{count}} 项都是 0',
-    attentionClear_other: '其余 {{count}} 项都是 0',
     attentionSoonest: '最早 {{date}}',
     attentionMore_one: '另 {{count}} 个',
     attentionMore_other: '另 {{count}} 个',
@@ -1553,7 +1551,6 @@ const zhCN: AppResource = {
       bookValue: '账面价值',
       bookValueCaption: '当前账面价值合计',
     },
-    nothingToAttend: '暂无需要关注的事项',
     work: {
       pendingApprovals: '待审批',
       tagPurchase: '采购',

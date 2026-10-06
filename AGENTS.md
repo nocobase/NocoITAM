@@ -104,12 +104,14 @@ Rules learned while building it:
   the service and the provider's target (`tests/logic/itam-schedules.test.ts`),
   not the clock.
 - 需要关注 is a column of **risk cards** (2026-10-05, the workbench board's
-  first column): one card per rule that found something — its count large,
-  its sentence beside it, and the first few records it found by name
+  first column): one card per rule that found something — its count large
+  and bold, its sentence beside it in a quieter grey, and, lighter still,
+  the first few records it found by name
   (`ReminderSummary.preview`, up to three, soonest first for a dated rule,
   used/total for 超量使用 and 低于水位) — worst first, then the biggest.
-  The rules at zero are one line, 其余 N 项都是 0, with their names on hover:
-  `0` is still an answer, it says the check ran, but it does not need a card.
+  The rules at zero come last, each a dimmed row of its own — `0` and the
+  sentence, not a card (2026-10-06): `0` is still an answer, it says the
+  check ran, and folding them into 其余 N 项都是 0 hid which checks those were.
   Only a `critical` rule is red: severity is the rule's, not today's.
   `REMINDER_GROUPS` (设备, 授权, 库存 — **not** 资产, the umbrella over all
   five kinds) now only orders rules among equals. There are eleven rules:
