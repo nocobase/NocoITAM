@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { userAdministrationServiceToken } from '@nocobase/app-plugin-authentication';
+import { addDays, today } from '../../server/providers/itam/dates.js';
 import { auditRoutes } from '../../server/routes/itam/audits.js';
 import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
@@ -731,8 +732,14 @@ describe('master data routes', () => {
         ...manager,
       })
     ).json()) as { data: { id: string } };
-    await app.request('/api/itam/master/locations', {
-      ...json({ name: 'Server room', type: 'room', ownerId: 'mia' }),
+    // A joiner they were getting equipped: theirs to hand over.
+    await app.request('/api/itam/master/people', {
+      ...json({
+        name: 'New Joiner',
+        departmentId: department.data.id,
+        hireDate: addDays(today(), 5),
+        onboardingOwnerId: 'mia',
+      }),
       ...manager,
     });
     const recovery = (await (
@@ -743,13 +750,13 @@ describe('master data routes', () => {
     ).json()) as { data: { owned: { collection: string; label: string }[] } };
     expect(recovery.data.owned).toEqual([
       {
-        collection: 'locations',
+        collection: 'people',
         id: expect.any(String),
-        label: 'Server room',
+        label: 'New Joiner',
         // Which field names them, so the page can hand it over without
         // keeping a second copy of the map, and who holds it now, so the
         // handover row says whose it is before it is reassigned.
-        field: 'ownerId',
+        field: 'onboardingOwnerId',
         ownerId: 'mia',
       },
     ]);

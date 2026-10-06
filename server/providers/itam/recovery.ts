@@ -134,7 +134,6 @@ export const OWNED_BY_USER: readonly {
       values: ['notStarted', 'inProgress', 'pendingDifferences'],
     },
   },
-  { collection: 'locations', field: 'ownerId', label: 'name' },
   {
     // 入职负责人 (2026-10-06): an active joiner whose joining day is ahead
     // or within the last month.
