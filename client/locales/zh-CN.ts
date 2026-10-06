@@ -962,10 +962,8 @@ const zhCN: AppResource = {
       softwareProducts: '写上厂商和产品名，AI 联网查询补全其余信息，核对后保存',
     },
     placeholder: {
-      models:
-        '制造商和型号，例如：Dell OptiPlex 7010 SFF\n知道的其他信息也可以写上：料号、规格、报价单上的一行……',
-      softwareProducts:
-        '厂商和产品名，例如：Figma 专业版\n知道的其他信息也可以写上……',
+      models: '制造商和型号，例如：Dell OptiPlex 7010 SFF',
+      softwareProducts: '厂商和产品名，例如：Figma 专业版',
     },
     material: '已知信息',
     willSearch: 'AI 会联网搜索规格和日期',
