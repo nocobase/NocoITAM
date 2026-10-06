@@ -92,9 +92,7 @@ export function PositionSelect({
           json: { positions: [...positions, name] },
         });
       await queryClient.invalidateQueries({ queryKey: ['itam', path] });
-      onChange(
-        positions.find((known) => samePosition(known, name)) ?? name,
-      );
+      onChange(positions.find((known) => samePosition(known, name)) ?? name);
       setAdding(false);
       setDraft('');
     } catch (caught) {
@@ -193,8 +191,12 @@ export function PositionSelect({
           <>
             {names.length > 0 ? <SelectSeparator /> : null}
             <SelectItem value={NEW}>
-              <Plus className='size-3.5' aria-hidden='true' />
-              {t('positions.addToDepartment')}
+              {/* Centred together: the item's text box lays its children
+                  out in a row without centring them. */}
+              <span className='flex items-center gap-1.5'>
+                <Plus className='size-3.5' aria-hidden='true' />
+                {t('positions.addToDepartment')}
+              </span>
             </SelectItem>
           </>
         ) : null}

@@ -161,17 +161,27 @@ const ADDED_FIELDS: ReadonlyMap<string, readonly string[]> = new Map([
  * purchase order's and a disposal's 申请人 became their 负责人 on
  * 2026-10-05 (`202610050001_request_owner`), so a list naming
  * `requesterId` would grant a column that no longer exists and withhold the
- * one that replaced it.
+ * one that replaced it. A field renamed to `null` was dropped: a
+ * department's code and cost center went on 2026-10-06
+ * (`202610060006_drop_department_code_cost_center`), and a list still naming
+ * them would name columns that are not there.
  */
 const RENAMED_FIELDS: ReadonlyMap<
   string,
-  ReadonlyMap<string, string>
+  ReadonlyMap<string, string | null>
 > = new Map([
   ['main.purchaseOrders', new Map([['requesterId', 'ownerId']])],
   ['main.disposals', new Map([['requesterId', 'ownerId']])],
+  [
+    'main.departments',
+    new Map<string, string | null>([
+      ['code', null],
+      ['costCenter', null],
+    ]),
+  ],
 ]);
 
-/** Renames the fields above in every list a stored policy states. */
+/** Renames (or drops) the fields above in every list a stored policy states. */
 function renameFields(grant: PermissionGrant): {
   grant: PermissionGrant;
   changed: boolean;
@@ -192,7 +202,13 @@ function renameFields(grant: PermissionGrant): {
     if (!stated.some((field) => renamed.has(field))) return entry;
     changed = true;
     const fields = [
-      ...new Set(stated.map((field) => renamed.get(field) ?? field)),
+      ...new Set(
+        stated.flatMap((field) => {
+          if (!renamed.has(field)) return [field];
+          const next = renamed.get(field);
+          return next ? [next] : [];
+        }),
+      ),
     ];
     return {
       ...entry,
@@ -312,8 +328,7 @@ function retireRecordAccess(grant: PermissionGrant): {
   let changed = false;
   const actions = grant.actions.map((entry) => {
     const policy = entry.policy as
-      | { recordAccess?: unknown; scopes?: Record<string, unknown> }
-      | undefined;
+      { recordAccess?: unknown; scopes?: Record<string, unknown> } | undefined;
     if (typeof policy !== 'object' || policy === null) return entry;
     if (Array.isArray(policy.recordAccess)) {
       const scopes = policy.recordAccess as unknown[];

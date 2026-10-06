@@ -363,13 +363,23 @@ describe('ITAM migrations', () => {
     ).rejects.toThrow();
   });
 
+  it('leaves a department without its code or cost center', async () => {
+    db = await createTestDatabase();
+    const client = await schemaClient(db.database);
+    expect(await client.schema.hasColumn('departments', 'code')).toBe(false);
+    expect(await client.schema.hasColumn('departments', 'cost_center')).toBe(
+      false,
+    );
+    expect(await client.schema.hasColumn('departments', 'name')).toBe(true);
+  });
+
   it('is applied once and rolls back cleanly', async () => {
     db = await createTestDatabase();
     const again = await db.migrator.latest();
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(93);
+    expect(rolledBack.rolledBack.length).toBe(94);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

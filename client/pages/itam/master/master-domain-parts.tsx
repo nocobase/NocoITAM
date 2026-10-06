@@ -424,8 +424,6 @@ export function NewChildAction({
                     collection.nameField,
                     'parentId',
                     'sort',
-                    'code',
-                    'costCenter',
                     'address',
                     'type',
                     'notes',

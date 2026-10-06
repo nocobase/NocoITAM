@@ -1,4 +1,3 @@
-
 import {
   defineSeed,
   type SeedContext,
@@ -34,45 +33,40 @@ function resolveLocale(context: SeedContext): string {
   return process.env.APP_DEFAULT_LOCALE?.trim() || 'en-US';
 }
 
-
 interface DepartmentSeed {
   readonly id: string;
   readonly name: string;
-  readonly code: string;
   readonly parentId?: string;
   readonly sort: number;
 }
 
 const DEPARTMENTS: readonly DepartmentSeed[] = [
-  { id: 'dept-tech', name: 'Technology', code: 'TECH', sort: 10 },
+  { id: 'dept-tech', name: 'Technology', sort: 10 },
   {
     id: 'dept-rd',
     name: 'Research & Development',
-    code: 'RD',
     parentId: 'dept-tech',
     sort: 10,
   },
   {
     id: 'dept-it',
     name: 'IT Operations',
-    code: 'IT',
     parentId: 'dept-tech',
     sort: 20,
   },
   {
     id: 'dept-qa',
     name: 'Quality Assurance',
-    code: 'QA',
     parentId: 'dept-tech',
     sort: 30,
   },
-  { id: 'dept-product', name: 'Product', code: 'PROD', sort: 20 },
-  { id: 'dept-sales', name: 'Sales', code: 'SALES', sort: 30 },
-  { id: 'dept-marketing', name: 'Marketing', code: 'MKT', sort: 40 },
-  { id: 'dept-customer', name: 'Customer Success', code: 'CS', sort: 50 },
-  { id: 'dept-hr', name: 'Human Resources', code: 'HR', sort: 60 },
-  { id: 'dept-finance', name: 'Finance', code: 'FIN', sort: 70 },
-  { id: 'dept-admin', name: 'Administration', code: 'ADMIN', sort: 80 },
+  { id: 'dept-product', name: 'Product', sort: 20 },
+  { id: 'dept-sales', name: 'Sales', sort: 30 },
+  { id: 'dept-marketing', name: 'Marketing', sort: 40 },
+  { id: 'dept-customer', name: 'Customer Success', sort: 50 },
+  { id: 'dept-hr', name: 'Human Resources', sort: 60 },
+  { id: 'dept-finance', name: 'Finance', sort: 70 },
+  { id: 'dept-admin', name: 'Administration', sort: 80 },
 ];
 
 /** Department names by id for locales other than English. */
@@ -124,9 +118,7 @@ const seed: SeedDefinition = defineSeed({
           id: department.id,
           name: localizedName(department, locale),
           parentId: department.parentId ?? null,
-          code: department.code,
           path: `${parent ? parent.path : '/'}${department.id}/`,
-          costCenter: null,
           managerId: null,
           sort: department.sort,
           createdById: null,

@@ -122,8 +122,6 @@ const schemas: Readonly<
   departments: z.object({
     name: text,
     parentId: optionalId,
-    code: optionalText,
-    costCenter: optionalText,
     managerId: optionalId,
     sort: z.number().int().optional(),
     // The positions a person in it is given; each name once, ignoring case.

@@ -461,7 +461,6 @@ const messages = {
     locationType: 'Type',
     parentDepartment: 'Parent department',
     code: 'Code',
-    costCenter: 'Cost center',
     employeeNo: 'Employee no.',
     owningDepartment: 'Owning department',
     department: 'Department',
@@ -920,6 +919,7 @@ const messages = {
     positionKitName: '{{department}} · {{position}}',
     setDefault: 'Set a default for this department',
     removeDefault: 'Take the parent department’s',
+    inheritConfirmTitle: 'Use the parent department’s kit instead?',
     removeDefaultHint:
       'Delete this department’s default kit and take its parent’s',
     inherits:
@@ -931,7 +931,6 @@ const messages = {
     noPositions: 'No positions yet.',
     holders_one: '{{count}} person',
     holders_other: '{{count}} people',
-    useDefault: 'Department default',
     useCustom: 'Own kit',
     positionKit: 'Kit for {{position}}',
     addPosition: 'Add position',
