@@ -8,7 +8,15 @@ const state = vi.hoisted(() => ({
   saved: [] as { lines: unknown[]; reason?: string }[],
   rows: undefined as unknown[] | undefined,
   aiAvailable: false,
-  asked: [] as string[],
+  // What 解析单据 was given, and the hook's callbacks to play its reading.
+  organised: [] as string[],
+  capture: {} as {
+    onFill?: (capture: unknown) => void;
+    form?: () => {
+      lines: unknown[];
+      existingLines?: unknown[];
+    };
+  },
   // The frontend tools the card hands the assistant.
   tools: [] as {
     name: string;
@@ -42,24 +50,30 @@ vi.mock('@nocobase/i18n/client', () => ({
   }),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({
-  apiErrorBody: () => undefined,
-  // 解析单据 asks for the document's text.
-  useApi: () => ({
-    request: () => Promise.resolve({ data: { text: 'ThinkPad T14 x 2' } }),
-  }),
+  useApi: () => ({ request: vi.fn() }),
 }));
-vi.mock('@nocobase/app-client', async (original) => ({
-  ...(await original<object>()),
-  // The file repository 解析单据 keeps the document with.
-  useService: () => ({
-    repository: () => ({
-      uploadOne: () => Promise.resolve({ record: { id: 'f1' } }),
-    }),
-  }),
-}));
-vi.mock('../../client/extensions/nocobase-ai/index.js', async (original) => ({
-  ...(await original<object>()),
-  useAI: () => ({}),
+// 解析单据 is AI 整理's reading (tested on its own); here, what the card
+// does with what it hands back.
+vi.mock('../../client/lib/itam/use-purchase-capture.js', () => ({
+  usePurchaseOrderCapture: (options: typeof state.capture) => {
+    state.capture = options;
+    return {
+      available: state.aiAvailable,
+      busy: false,
+      mode: undefined,
+      phase: undefined,
+      failure: undefined,
+      turns: [],
+      summary: 'Read the quote.',
+      fileId: undefined,
+      organise: (_pasted: string, file: File) =>
+        state.organised.push(file.name),
+      adjust: vi.fn(),
+      release: vi.fn(),
+      place: vi.fn(),
+      contextRef: () => undefined,
+    };
+  },
 }));
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCollectionPermissions: () => ({ update: true, receive: true }),
@@ -78,7 +92,7 @@ vi.mock('../../client/lib/itam/ai-context.js', () => ({
     return {
       ref: () => undefined,
       available: state.aiAvailable,
-      ask: (prompt: string) => state.asked.push(prompt),
+      ask: () => undefined,
     };
   },
 }));
@@ -118,7 +132,8 @@ beforeEach(() => {
   state.saved = [];
   state.rows = undefined;
   state.aiAvailable = false;
-  state.asked = [];
+  state.organised = [];
+  state.capture = {};
 });
 
 it('reads as a document: every line, and what the order comes to', () => {
@@ -286,7 +301,33 @@ it('lets added lines take the place of the blank row an empty order opens on', a
   expect(screen.getByRole('button', { name: 'actions.save' })).toBeEnabled();
 });
 
-it('reads a document into the lines without pressing 编辑 first', async () => {
+const reading = (lines: number) => ({
+  values: {},
+  vendorName: null,
+  departmentName: null,
+  uncertain: [],
+  lines: Array.from({ length: lines }, () => ({
+    itemType: 'device',
+    modelId: 'm1',
+    softwareProductId: null,
+    quantity: 2,
+    unitPrice: 900,
+    uncertain: true,
+    description: 'MacBook Pro 14',
+  })),
+  unmatched: [
+    {
+      description: 'Dell WD25TB4',
+      partCode: null,
+      quantity: 5,
+      unitPrice: 1899,
+      source: null,
+      itemType: null,
+    },
+  ],
+});
+
+it('reads a document into the lines the way AI 整理 does, without pressing 编辑 first', () => {
   state.aiAvailable = true;
   render(
     <PurchaseOrderLinesCard
@@ -299,21 +340,33 @@ it('reads a document into the lines without pressing 编辑 first', async () => 
   ).toBeVisible();
   expect(screen.queryByRole('button', { name: 'actions.save' })).toBeNull();
   const input = document.querySelector<HTMLInputElement>('input[type=file]')!;
-  await act(async () => {
-    fireEvent.change(input, {
-      target: { files: [new File(['quote'], 'quote.txt')] },
-    });
+  fireEvent.change(input, {
+    target: { files: [new File(['quote'], 'quote.pdf')] },
   });
-  // Choosing the file opened the editor, and the text went to the assistant.
+  // Choosing the file opened the editor and started the reading.
+  expect(state.organised).toEqual(['quote.pdf']);
   expect(screen.getByRole('button', { name: 'actions.save' })).toBeVisible();
-  expect(state.asked[0]).toContain('ThinkPad T14 x 2');
-  const tool = state.tools.find((entry) => entry.name === 'addDraftLines');
-  await act(async () => {
-    await tool?.execute({
-      lines: [{ itemType: 'device', modelId: 'm1', quantity: 2 }],
-    });
-  });
+
+  act(() => state.capture.onFill?.(reading(1)));
+  // Added to the two lines the order had, marked where it was unsure, and
+  // the line it could not place listed to pick or create.
   expect(
     screen.getAllByRole('button', { name: 'actions.delete' }),
   ).toHaveLength(3);
+  expect(screen.getAllByText('procurement.capture.check')).toHaveLength(1);
+  expect(screen.getByText('procurement.capture.unmatched:1')).toBeVisible();
+  expect(screen.getByText(/Dell WD25TB4 × 5/)).toBeVisible();
+  // The assistant reads its own lines apart from the order's.
+  expect(state.capture.form?.().lines).toHaveLength(1);
+  expect(state.capture.form?.().existingLines).toHaveLength(2);
+
+  // An adjustment hands its lines back whole: they replace the ones it
+  // added, not the order's own.
+  act(() => state.capture.onFill?.(reading(2)));
+  expect(
+    screen.getAllByRole('button', { name: 'actions.delete' }),
+  ).toHaveLength(4);
+
+  fireEvent.click(screen.getByRole('button', { name: 'actions.save' }));
+  expect(state.saved[0]?.lines).toHaveLength(4);
 });

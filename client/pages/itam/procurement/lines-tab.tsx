@@ -43,7 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { apiErrorBody, useApi, type ItamRecord } from '@/lib/itam/api';
+import { useApi, type ItamRecord } from '@/lib/itam/api';
 import { errorMessage, formatMoney, text } from '@/lib/itam/format';
 import {
   useCollectionPermissions,
@@ -55,18 +55,21 @@ import {
   raisedBy,
   type LineItemType,
 } from '@/lib/itam/procurement';
-import {
-  useAI,
-  type AIChatAttachment,
-  type AIFrontendToolRegistration,
-} from '@/extensions/nocobase-ai';
-import { useService } from '@nocobase/app-client';
-import { clientFileRepositoryManagerToken } from '@nocobase/app-plugin-file/client';
+import { type AIFrontendToolRegistration } from '@/extensions/nocobase-ai';
 import { useAiPageContext } from '@/lib/itam/ai-context';
+import {
+  blankLine as isBlankLine,
+  captureLine,
+  captureLines,
+  keyedUnmatched,
+  type PurchaseCapture,
+} from '@/lib/itam/purchase-capture';
+import { usePurchaseOrderCapture } from '@/lib/itam/use-purchase-capture';
 import { cn } from '@/lib/utils';
 import { useReferenceNames, type ReferenceNames } from '@/lib/itam/references';
-import { chatAttachmentOf, DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
+import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 
+import { CaptureNotice } from './po-capture';
 import { ReceiptDialog } from './receipt-dialog';
 
 export interface LineDraft {
@@ -78,6 +81,8 @@ export interface LineDraft {
   readonly quantity: number;
   readonly unitPrice: string;
   readonly receivedQuantity: number;
+  /** 解析单据 was not sure of its item: 请核对 until it is changed. */
+  readonly uncertain?: boolean;
 }
 
 /**
@@ -228,11 +233,7 @@ export function PurchaseOrderLinesCard({
     ],
     [setDrafts],
   );
-  const {
-    ref: contextRef,
-    available: aiAvailable,
-    ask,
-  } = useAiPageContext({
+  const { ref: contextRef, available: aiAvailable } = useAiPageContext({
     id: 'itam-purchase-order-lines',
     title: t('tabs.lines'),
     kind: 'purchaseOrderLines',
@@ -258,6 +259,97 @@ export function PurchaseOrderLinesCard({
   });
   const status = text(order.data?.status);
   const rows = lines.data ?? [];
+
+  // 解析单据 (2026-10-06): the AI 整理 reading, lines only. What it read
+  // joins the lines under edit, marked 请核对 where it was unsure; what it
+  // could not place is listed above them to pick or create.
+  const [captured, setCaptured] = useState<PurchaseCapture>();
+  const [parsingFile, setParsingFile] = useState<string>();
+  const parseInputRef = useRef<HTMLInputElement>(null);
+  // The rows the last reading added: an adjustment hands its lines back
+  // whole, so these are what it replaces.
+  const addedRef = useRef<ReadonlySet<string>>(new Set());
+  const { contextRef: captureRef, ...capture } = usePurchaseOrderCapture({
+    orderId: id,
+    form: () => {
+      const current = draftsRef.current ?? [];
+      const plain = (line: LineDraft) => ({
+        itemType: line.itemType,
+        modelId: line.modelId,
+        softwareProductId: line.softwareProductId,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice === '' ? null : Number(line.unitPrice),
+      });
+      return {
+        header: {
+          reason: record.reason ?? null,
+          description: record.description ?? null,
+          vendorId: record.vendorId ?? null,
+          currency: record.currency ?? null,
+        },
+        lines: current
+          .filter((line) => addedRef.current.has(line.key))
+          .map(plain),
+        existingLines: current
+          .filter(
+            (line) => !addedRef.current.has(line.key) && !isBlankLine(line),
+          )
+          .map(plain),
+      };
+    },
+    onFill: (next) => {
+      const added = captureLines(next);
+      const replaced = addedRef.current;
+      addedRef.current = new Set(added.map((line) => line.key));
+      setDrafts((current) => {
+        const kept = (current ?? []).filter(
+          (line) => !replaced.has(line.key) && !isBlankLine(line),
+        );
+        const all = [...kept, ...added];
+        return all.length > 0 ? all : [blankLine()];
+      });
+      // A line the first reading could not place is still unplaced after
+      // an adjustment, which hands back only what is on the form.
+      setCaptured((previous) => ({
+        ...next,
+        unmatched: keyedUnmatched(
+          previous
+            ? [
+                ...previous.unmatched,
+                ...next.unmatched.filter(
+                  (line) =>
+                    !previous.unmatched.some(
+                      (known) => known.description === line.description,
+                    ),
+                ),
+              ]
+            : next.unmatched,
+        ),
+      }));
+    },
+  });
+  const failedOrganise = capture.mode === 'organise' && capture.failure;
+  const parseFailure = failedOrganise ? capture.failure : undefined;
+  const parse = (file: File) => {
+    // The editor opens on the lines as saved, before the reading starts,
+    // so what it hands back has somewhere to go.
+    if (!draftsRef.current) {
+      save.reset();
+      const opened = rows.length > 0 ? rows.map(draftOf) : [blankLine()];
+      draftsRef.current = opened;
+      setDrafts(opened);
+    }
+    // A second document adds to what the first one added.
+    addedRef.current = new Set();
+    setCaptured(undefined);
+    setParsingFile(file.name);
+    capture.organise('', file);
+  };
+  const endCapture = () => {
+    setCaptured(undefined);
+    addedRef.current = new Set();
+    capture.release();
+  };
   const names = useReferenceNames([
     {
       collection: 'models',
@@ -292,6 +384,7 @@ export function PurchaseOrderLinesCard({
         queryKey: ['itam', PURCHASE_ORDERS_PATH],
       });
       setDrafts(undefined);
+      endCapture();
     },
   });
 
@@ -321,7 +414,9 @@ export function PurchaseOrderLinesCard({
   });
   const patchDraft = (key: string, line: LineDraft) =>
     setDrafts((current) =>
-      current?.map((row) => (row.key === key ? line : row)),
+      current?.map((row) =>
+        row.key === key ? { ...line, uncertain: false } : row,
+      ),
     );
   /** Adds a blank line after `key`, or at the end when it names none. */
   const insertAfter = (key?: string) =>
@@ -390,12 +485,14 @@ export function PurchaseOrderLinesCard({
   // Nothing to save until something changed, as the extended-field card does.
   const dirty =
     drafts !== undefined &&
-    JSON.stringify(drafts.map(({ key: _key, ...line }) => line)) !==
+    JSON.stringify(
+      drafts.map(({ key: _key, uncertain: _uncertain, ...line }) => line),
+    ) !==
       JSON.stringify(rows.map(draftOf).map(({ key: _key, ...line }) => line));
 
   return (
     <Card ref={contextRef} className='@container py-0'>
-      <CardContent className='space-y-3 p-4'>
+      <CardContent ref={captureRef} className='space-y-3 p-4'>
         <div className='flex min-h-9 items-center justify-between gap-3 border-b border-border/60 pb-2'>
           <h2 className='font-heading text-sm font-semibold'>
             {t('tabs.lines')}
@@ -433,21 +530,35 @@ export function PurchaseOrderLinesCard({
               {/* Offered whether or not the lines are being edited: it opens
                   the editor itself, since the lines it reads are added there
                   for the reader to save (2026-10-06). */}
-              {aiAvailable ? (
-                <ParseDocumentShortcut
-                  orderId={id}
-                  ask={ask}
-                  onStart={() => {
-                    if (draftsRef.current) return;
-                    save.reset();
-                    const opened =
-                      rows.length > 0 ? rows.map(draftOf) : [blankLine()];
-                    // Set at once rather than after the render, so the page
-                    // tool finds the editor open however soon it is called.
-                    draftsRef.current = opened;
-                    setDrafts(opened);
-                  }}
-                />
+              {capture.available ? (
+                <>
+                  <input
+                    ref={parseInputRef}
+                    type='file'
+                    accept={DOCUMENT_ACCEPT}
+                    hidden
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = '';
+                      if (file) parse(file);
+                    }}
+                  />
+                  {/* The picker opens from the click itself. */}
+                  <AiShortcut
+                    disabled={capture.busy}
+                    title={parseFailure}
+                    className={parseFailure ? 'text-destructive' : undefined}
+                    onClick={() => parseInputRef.current?.click()}
+                  >
+                    {capture.busy && capture.mode === 'organise'
+                      ? t('procurement.readingDocument', {
+                          file: parsingFile,
+                        })
+                      : parseFailure
+                        ? t('procurement.readDocumentFailed')
+                        : t('ai.parseDocument')}
+                  </AiShortcut>
+                </>
               ) : null}
               {drafts ? (
                 <>
@@ -457,6 +568,7 @@ export function PurchaseOrderLinesCard({
                     disabled={save.isPending}
                     onClick={() => {
                       setDrafts(undefined);
+                      endCapture();
                       save.reset();
                     }}
                   >
@@ -492,6 +604,39 @@ export function PurchaseOrderLinesCard({
         </div>
         {save.error ? (
           <p className='text-sm text-destructive'>{errorMessage(save.error)}</p>
+        ) : null}
+        {/* What 解析单据 said, the lines it could not place — each with
+            its picker and 创建型号 — and where to adjust, as in AI 整理. */}
+        {captured && drafts ? (
+          <CaptureNotice
+            capture={capture}
+            result={captured}
+            currency={text(record.currency) || null}
+            priced={priced}
+            onPlace={async (line, pick) => {
+              const placed = await capture.place(line, pick);
+              if (!placed)
+                throw new Error(t('procurement.capture.stillUnmatched'));
+              const added = captureLine(placed);
+              addedRef.current = new Set([...addedRef.current, added.key]);
+              setDrafts((current) => [
+                ...(current ?? []).filter((row) => !isBlankLine(row)),
+                added,
+              ]);
+              setCaptured((previous) =>
+                previous
+                  ? {
+                      ...previous,
+                      unmatched: previous.unmatched.filter(
+                        (row) => row.key !== line.key,
+                      ),
+                    }
+                  : previous,
+              );
+            }}
+          />
+        ) : failedOrganise ? (
+          <p className='text-sm text-destructive'>{parseFailure}</p>
         ) : null}
         <div className='overflow-x-auto rounded-lg border border-border bg-card'>
           <Table>
@@ -534,6 +679,7 @@ export function PurchaseOrderLinesCard({
                       key={line.key}
                       draft={line}
                       priced={priced}
+                      review={line.uncertain}
                       busy={save.isPending}
                       dragging={dragKey === line.key}
                       dropBefore={dropAt === index}
@@ -1024,105 +1170,5 @@ export function LineEditor({
         </div>
       </TableCell>
     </TableRow>
-  );
-}
-
-/**
- * 解析单据: the document is kept on the order, read as text on the server
- * and put in the message itself (2026-10-05). A file attached to the chat
- * is parsed for its own request only, and the turn resumes once
- * `addDraftLines` is approved, after which the assistant said it could not
- * open the file. A picture, which is not text, is still attached, for a
- * model that reads images. Its own component, so the card only reaches the
- * file and assistant services while the shortcut is on screen.
- */
-function ParseDocumentShortcut({
-  orderId,
-  ask,
-  onStart,
-}: {
-  readonly orderId: string;
-  readonly ask: (
-    prompt: string,
-    options?: { readonly attachments?: readonly AIChatAttachment[] },
-  ) => void;
-  /** A file was chosen: open the lines for editing if they are not. */
-  readonly onStart: () => void;
-}): ReactElement {
-  const { t } = useTranslation();
-  const api = useApi();
-  const queryClient = useQueryClient();
-  const files = useService(clientFileRepositoryManagerToken);
-  const aiService = useAI();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [parsing, setParsing] = useState<string>();
-  const [failure, setFailure] = useState<string>();
-  const parse = async (file: File) => {
-    onStart();
-    setParsing(file.name);
-    setFailure(undefined);
-    try {
-      const { record: stored } = await files
-        .repository('itamAttachments')
-        .uploadOne({ file });
-      const fileId = text(stored.id);
-      await api.request({
-        path: `itam/attachments/purchaseOrders/${orderId}`,
-        method: 'POST',
-        json: { fileIds: [fileId] },
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ['itam', 'attachments'],
-      });
-      const { data } = await api.request<{ data: { text: string | null } }>({
-        path: `${PURCHASE_ORDERS_PATH}/${orderId}/document-text`,
-        method: 'POST',
-        json: { fileId },
-      });
-      const prompt = t('ai.prompts.parseDocumentFile', { file: file.name });
-      if (data.text)
-        ask(
-          `${prompt}\n\n<document filename="${file.name.replace(/"/g, "'")}">\n${data.text}\n</document>`,
-        );
-      else
-        ask(prompt, {
-          attachments: [
-            chatAttachmentOf(await aiService.uploadFile(file), file),
-          ],
-        });
-    } catch (error) {
-      setFailure(apiErrorBody(error)?.message ?? errorMessage(error));
-    } finally {
-      setParsing(undefined);
-    }
-  };
-  return (
-    <>
-      <input
-        ref={inputRef}
-        type='file'
-        accept={DOCUMENT_ACCEPT}
-        hidden
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          event.target.value = '';
-          if (file) void parse(file);
-        }}
-      />
-      {/* The picker opens from the click itself; the chat opens on the
-          document once it has been read. */}
-      <AiShortcut
-        disabled={parsing !== undefined}
-        title={failure}
-        className={failure ? 'text-destructive' : undefined}
-        onClick={() => inputRef.current?.click()}
-      >
-        {parsing !== undefined
-          ? t('procurement.readingDocument', { file: parsing })
-          : failure
-            ? t('procurement.readDocumentFailed')
-            : t('ai.parseDocument')}
-      </AiShortcut>
-    </>
   );
 }

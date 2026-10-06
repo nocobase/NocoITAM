@@ -1,6 +1,7 @@
 import { useService } from '@nocobase/app-client';
 import { clientFileRepositoryManagerToken } from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
@@ -23,6 +24,8 @@ import { readSearchTurn } from './search-turn.js';
 export interface CaptureForm {
   readonly header: Readonly<Record<string, unknown>>;
   readonly lines: readonly Readonly<Record<string, unknown>>[];
+  /** Reading into a draft: the lines it already had, not to be repeated. */
+  readonly existingLines?: readonly Readonly<Record<string, unknown>>[];
 }
 
 type Mode = 'organise' | 'adjust';
@@ -99,17 +102,25 @@ export interface PurchaseOrderCapture extends PurchaseOrderCaptureState {
  * dialog takes it. An adjustment is the same: a new turn with the material,
  * the form as it stands and what to change. The conversation is deleted once
  * its turn is over; nothing is saved until the requester saves the order.
+ *
+ * With `orderId` it is 解析单据 on a draft's lines (2026-10-06): the same
+ * reading, matching and placing, but only lines, added to the ones the order
+ * has, and the document is kept on that order as soon as it is picked.
  */
 export function usePurchaseOrderCapture({
   form,
   onFill,
+  orderId,
 }: {
   /** The form as it stands, read when the assistant asks for the context. */
   readonly form: () => CaptureForm;
   readonly onFill: (capture: PurchaseCapture) => void;
+  /** The draft whose lines a document is read into. */
+  readonly orderId?: string;
 }): PurchaseOrderCapture {
   const { t } = useTranslation();
   const api = useApi();
+  const queryClient = useQueryClient();
   const ai = useItamAi();
   const aiService = useAI();
   const files = useService(clientFileRepositoryManagerToken);
@@ -132,8 +143,9 @@ export function usePurchaseOrderCapture({
       {
         name: 'fillPurchaseOrder',
         title: 'Fill the new purchase order form',
-        description:
-          "Hand the purchase order you organised to the new purchase order form on screen, which the user checks and saves. Call it once, with the whole order. reason: one of the page context reasons (value). description: what is being bought, for whom and why, close to the material's own words. neededBy: YYYY-MM-DD, only when the material gives a date. vendorName and departmentName as the material writes them (they are matched to the records by the form); vendorId only when the page context form already names that vendor. lines: one per item, with description (the item as written), partCode when one is printed, quantity, unitPrice per unit when stated (not the line total), itemType for software (perpetual or subscription), and modelId or softwareProductId only when itam_match_model found that very model or product — another generation, size or edition is not it. uncertain: the header fields (reason, description, neededBy, vendor, department) you filled but are not sure of; a line's uncertain when you are not sure of its item.",
+        description: orderId
+          ? "Hand the lines you read from the document to the purchase order on screen, which the user checks and saves. Call it once, with every line the document lists; the order's header is set already, so give lines only — no reason, description, vendor or department — and none of the page context's existingLines. lines: one per item, with description (the item as written), partCode when one is printed, quantity, unitPrice per unit when stated (not the line total), itemType for software (perpetual or subscription), and modelId or softwareProductId only when itam_match_model found that very model or product — another generation, size or edition is not it; uncertain when you are not sure of its item."
+          : "Hand the purchase order you organised to the new purchase order form on screen, which the user checks and saves. Call it once, with the whole order. reason: one of the page context reasons (value). description: what is being bought, for whom and why, close to the material's own words. neededBy: YYYY-MM-DD, only when the material gives a date. vendorName and departmentName as the material writes them (they are matched to the records by the form); vendorId only when the page context form already names that vendor. lines: one per item, with description (the item as written), partCode when one is printed, quantity, unitPrice per unit when stated (not the line total), itemType for software (perpetual or subscription), and modelId or softwareProductId only when itam_match_model found that very model or product — another generation, size or edition is not it. uncertain: the header fields (reason, description, neededBy, vendor, department) you filled but are not sure of; a line's uncertain when you are not sure of its item.",
         permission: 'ALLOW',
         inputSchema: {
           type: 'object',
@@ -189,10 +201,14 @@ export function usePurchaseOrderCapture({
         },
       },
     ],
-    [api],
+    [api, orderId],
   );
   const { ref: contextRef, context } = useAIPageElementHandle({
-    id: 'itam-purchase-order-capture',
+    // Its own id when reading into a draft: an order's page may sit in the
+    // record drawer over the list whose create dialog registers the other.
+    id: orderId
+      ? 'itam-purchase-order-lines-capture'
+      : 'itam-purchase-order-capture',
     title: t('procurement.capture.context'),
     kind: 'purchaseOrderDraft',
     getContext: () => ({
@@ -292,6 +308,9 @@ export function usePurchaseOrderCapture({
     });
   };
 
+  const organisePrompt = t(
+    orderId ? 'ai.prompts.captureLines' : 'ai.prompts.capturePurchaseOrder',
+  );
   const organise = (pasted: string, file?: File) => {
     if (!ai?.available) return;
     const known = materialRef.current;
@@ -302,7 +321,7 @@ export function usePurchaseOrderCapture({
         : { pasted, attachments: [] };
       materialRef.current = next;
       if (!file) setFileId(undefined);
-      ask('organise', t('ai.prompts.capturePurchaseOrder'), next);
+      ask('organise', organisePrompt, next);
       return;
     }
     setSession({ mode: 'organise', phase: 'uploading' });
@@ -312,10 +331,24 @@ export function usePurchaseOrderCapture({
           .repository('itamAttachments')
           .uploadOne({ file });
         const id = text(record.id);
+        // A draft keeps the document at once, and its text is read as one
+        // of its own attachments; a new order takes it once it is saved.
+        if (orderId) {
+          await api.request({
+            path: `itam/attachments/purchaseOrders/${orderId}`,
+            method: 'POST',
+            json: { fileIds: [id] },
+          });
+          await queryClient.invalidateQueries({
+            queryKey: ['itam', 'attachments'],
+          });
+        }
         const { data } = await api.request<{
           data: { text: string | null };
         }>({
-          path: `${PURCHASE_ORDERS_PATH}/capture/document-text`,
+          path: orderId
+            ? `${PURCHASE_ORDERS_PATH}/${orderId}/document-text`
+            : `${PURCHASE_ORDERS_PATH}/capture/document-text`,
           method: 'POST',
           json: { fileId: id },
         });
@@ -334,7 +367,7 @@ export function usePurchaseOrderCapture({
         };
         materialRef.current = next;
         setFileId(id);
-        ask('organise', t('ai.prompts.capturePurchaseOrder'), next);
+        ask('organise', organisePrompt, next);
       } catch (error) {
         setSession({
           mode: 'organise',
@@ -354,7 +387,9 @@ export function usePurchaseOrderCapture({
     ]);
     ask(
       'adjust',
-      t('ai.prompts.adjustPurchaseOrder', { instruction: said }),
+      t(orderId ? 'ai.prompts.adjustLines' : 'ai.prompts.adjustPurchaseOrder', {
+        instruction: said,
+      }),
       materialRef.current,
     );
   };

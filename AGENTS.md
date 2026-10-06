@@ -1094,13 +1094,20 @@ Rules learned while building it:
   second — and Excel, Word and PDF go through the plugin's own loader
   (`loadByWorker`), so any model reads them. Only a picture is attached,
   for a model that reads images; that is configuration, not code. Do not add
-  an OCR library for them. 解析单据 on a draft's lines reads its document the
-  same way (2026-10-05): the shortcut picks the file, keeps it on the order,
-  asks `POST /itam/purchase-orders/:id/document-text` (only a file linked to
-  that order, under `update`) and opens the chat with the text in the
-  message, because the panel's own attachment was gone once `addDraftLines`
-  was approved. Lines it adds take the place of the blank row an empty order
-  opens on, which otherwise kept 保存 from being offered.
+  an OCR library for them. 解析单据 on a draft's lines is **AI 整理, lines
+  only** (2026-10-06; until then it opened the side panel and Noco placed
+  lines through `addDraftLines`, unchecked by the server's matching): the
+  shortcut sits beside 编辑 and opens the editor itself, keeps the file on
+  the order, reads it through `POST /itam/purchase-orders/:id/document-text`
+  (only a file linked to that order, under `update`) and runs
+  `usePurchaseOrderCapture` with `orderId` — its own page-context id, the
+  `captureLines` / `adjustLines` prompts, and `/capture/match`, which takes
+  `create` or `update`. What it read joins the lines under edit (请核对 where
+  it was unsure), in place of the blank row an empty order opens on; what it
+  could not place is listed above them with its picker and 创建型号 (the
+  same `CaptureNotice`), and an adjustment replaces only the lines it
+  added — the order's own go to the assistant as `existingLines`.
+  `addDraftLines` stays for the side panel.
 - 新建采购单 opens on **AI 整理** whenever the assistant is available
   (2026-10-06, after NocoCRM's lead and opportunity capture), with 表单录入
   beside it; without the assistant there are no tabs. The requester pastes

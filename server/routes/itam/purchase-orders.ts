@@ -230,7 +230,11 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
         // `capture` is never read as an order id.
         routes.post('/capture/match', async (context) => {
           try {
-            await decide(context, 'create');
+            // Organising a new order is a create; reading a document into a
+            // draft's lines (解析单据) is an update of that draft.
+            await decide(context, 'create').catch(() =>
+              decide(context, 'update'),
+            );
             const input = captureSchema.parse(await readJsonObject(context));
             return context.json({
               data: await matchPurchaseCapture(database, input),
