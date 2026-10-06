@@ -47,6 +47,8 @@ export interface TreeViewProps {
   readonly defaultCollapsed?: boolean;
   /** Rendered at the end of each row, e.g. an actions menu. */
   readonly rowActions?: (id: string) => ReactNode;
+  /** Without its own card, for trees grouped inside one (categories). */
+  readonly bare?: boolean;
 }
 
 interface Built {
@@ -67,6 +69,7 @@ export function TreeView({
   onMove,
   defaultCollapsed = false,
   rowActions,
+  bare = false,
 }: TreeViewProps): ReactElement {
   const roots = useMemo(() => build(nodes), [nodes]);
   const parents = useMemo(() => {
@@ -146,7 +149,7 @@ export function TreeView({
         <li key={item.node.id}>
           <div
             className={cn(
-              'relative flex items-center gap-1 rounded-md py-1 pr-2 text-sm hover:bg-muted',
+              'relative flex items-center gap-1 rounded-md py-1 pr-2 pl-1 text-sm hover:bg-muted',
               selectedId === item.node.id && 'bg-muted',
               dragging === item.node.id && 'opacity-40',
               mark === 'inside' && 'bg-primary/10 ring-1 ring-primary/40',
@@ -155,7 +158,6 @@ export function TreeView({
               mark === 'after' &&
                 'after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-primary',
             )}
-            style={{ paddingLeft: `${depth * 1.25 + 0.25}rem` }}
             draggable={Boolean(onMove)}
             onDragStart={(event) => {
               event.dataTransfer.effectAllowed = 'move';
@@ -190,9 +192,9 @@ export function TreeView({
               type='button'
               className={cn(
                 'flex size-5 items-center justify-center rounded text-muted-foreground',
-                // A leaf keeps no room for an arrow it does not have, so its
-                // name starts where a sibling's arrow would.
-                !hasChildren && 'hidden',
+                // A leaf keeps the arrow's room, so siblings' names line up
+                // whether or not they have children of their own.
+                !hasChildren && 'invisible',
               )}
               aria-label={isCollapsed ? 'expand' : 'collapse'}
               onClick={() =>
@@ -254,14 +256,23 @@ export function TreeView({
             ) : null}
           </div>
           {hasChildren && !isCollapsed ? (
-            <ul>{render(item.children, depth + 1)}</ul>
+            // Children sit one step in, along a guide line that drops from
+            // their parent's arrow, so what belongs to what reads at a
+            // glance rather than from an indent the width of the arrow.
+            <ul className='ml-[0.875rem] border-l border-border pl-2'>
+              {render(item.children, depth + 1)}
+            </ul>
           ) : null}
         </li>
       );
     });
 
   return (
-    <ul className='rounded-lg border border-border bg-card p-2'>
+    <ul
+      className={
+        bare ? undefined : 'rounded-lg border border-border bg-card p-2'
+      }
+    >
       {render(roots, 0)}
     </ul>
   );

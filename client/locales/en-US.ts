@@ -985,6 +985,7 @@ const messages = {
     object: 'category',
     new: 'New category',
     newChild: 'New sub-category',
+    noneOfKind: 'No categories of this type yet',
     pickToEdit: 'Click a category on the left to see and edit its details here',
     appliesToInherited: 'Inherited from the parent',
     appliesToFromCategory: 'Set by the category',

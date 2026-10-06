@@ -1597,9 +1597,16 @@ Rules learned while building it:
   in `domain-list.tsx`), followed when the pane moves to its parent and
   cleared when it is deleted or left; with nothing chosen the pane says to
   pick one. The pane leaves out the breadcrumb (`HideBreadcrumbContext`),
-  which the tree beside it already states; the drawer keeps it. No tree
-  draws a drag handle any more: the whole row drags, and a leaf keeps no
-  room for an arrow it does not have.
+  which the tree beside it already states; the drawer keeps it. The left
+  column is grouped by asset type (设备, 配件, 耗材, 组件, 授权, each under
+  its tag, an empty one saying so): a top-level category chooses its type
+  and its subtree inherits it, so each tree falls in one group, and a drag
+  stays inside its group. The service orders all top-level categories
+  together, so a group's drop position is translated to the whole order
+  (`groupedMove` in `client/lib/itam/tree-move.ts`). No tree draws a drag
+  handle any more — the whole row drags — and every level indents along a
+  guide line that drops from its parent's arrow, every row keeping the
+  arrow's room so siblings line up (2026-10-06).
 - Base UI drops a **nested** dialog's backdrop, reasoning that the dialog it
   is nested in already dims the page. The record drawer is such a parent and
   its backdrop sits *behind* the drawer panel, so a dialog opened inside the

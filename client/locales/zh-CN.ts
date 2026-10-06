@@ -966,6 +966,7 @@ const zhCN: AppResource = {
     object: '分类',
     new: '创建分类',
     newChild: '创建子分类',
+    noneOfKind: '暂无这一类的分类',
     pickToEdit: '点击左侧的分类，在这里查看和编辑它的详情',
     appliesToInherited: '继承上级分类',
     appliesToFromCategory: '随分类',

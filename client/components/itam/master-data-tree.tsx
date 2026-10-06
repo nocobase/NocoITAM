@@ -16,9 +16,19 @@ import { STOCK_PATH } from '@/lib/itam/stock';
 import { errorMessage, text } from '@/lib/itam/format';
 import type { MasterDataCollection } from '@/lib/itam/master-data';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
+import { groupedMove } from '@/lib/itam/tree-move';
 
 import { EmptyState } from './empty-state.js';
 import { TreeView } from './tree-view.js';
+
+/** The five asset types, in the order the application lists them. */
+const APPLIES_TO = [
+  'device',
+  'accessory',
+  'consumable',
+  'component',
+  'entitlement',
+] as const;
 
 const COUNT_FIELD: Readonly<Record<string, string>> = {
   locations: 'locationId',
@@ -211,43 +221,88 @@ export function MasterDataTree({
       }),
     [visibleRows, collection.nameField, kindField, compact, t],
   );
+  const tree = (treeNodes: typeof nodes, group?: string) => (
+    <TreeView
+      bare={group !== undefined}
+      key={`${group ?? ''}-${expandAll === false && !filtering ? 'collapsed' : 'expanded'}-${filtering ? needle : ''}`}
+      defaultCollapsed={expandAll === false && !filtering}
+      nodes={treeNodes}
+      counts={compact ? undefined : mergedCounts}
+      countLabel={(node) => {
+        const applies = isCategories
+          ? text(rows.find((row) => row.id === node.id)?.appliesTo)
+          : 'device';
+        return t(
+          applies === 'device'
+            ? 'tabs.devices'
+            : applies === 'entitlement'
+              ? 'entitlements.object'
+              : 'tabs.stock',
+        );
+      }}
+      selectedId={selectedId}
+      onSelect={onSelect ?? ((id) => openRecord(`/${collection.route}/${id}`))}
+      onMove={
+        permissions.update
+          ? (next) =>
+              move.mutate(
+                group
+                  ? groupedMove(
+                      allRows,
+                      next,
+                      (row) => text(row.appliesTo) === group,
+                    )
+                  : next,
+              )
+          : undefined
+      }
+      rowActions={
+        rowActions
+          ? (id) => {
+              const row = byId.get(id);
+              return row ? rowActions(row) : null;
+            }
+          : undefined
+      }
+    />
+  );
+  // The categories page groups the tree by what a category applies to: a
+  // top-level category chooses its asset type and its subtree inherits it,
+  // so every tree falls in exactly one group, and a node can only be
+  // dragged within its own (the service refuses another type's parent).
+  const grouped = isCategories && compact;
   if (list.data && list.data.total === 0)
     return <EmptyState title={t(`${collection.i18n}.empty`)} />;
   if (list.data && filtering && visibleRows.length === 0)
     return <EmptyState title={t('common.noResults')} />;
   return (
     <div className='space-y-2'>
-      <TreeView
-        key={`${expandAll === false && !filtering ? 'collapsed' : 'expanded'}-${filtering ? needle : ''}`}
-        defaultCollapsed={expandAll === false && !filtering}
-        nodes={nodes}
-        counts={compact ? undefined : mergedCounts}
-        countLabel={(node) => {
-          const applies = isCategories
-            ? text(rows.find((row) => row.id === node.id)?.appliesTo)
-            : 'device';
-          return t(
-            applies === 'device'
-              ? 'tabs.devices'
-              : applies === 'entitlement'
-                ? 'entitlements.object'
-                : 'tabs.stock',
-          );
-        }}
-        selectedId={selectedId}
-        onSelect={
-          onSelect ?? ((id) => openRecord(`/${collection.route}/${id}`))
-        }
-        onMove={permissions.update ? (next) => move.mutate(next) : undefined}
-        rowActions={
-          rowActions
-            ? (id) => {
-                const row = byId.get(id);
-                return row ? rowActions(row) : null;
-              }
-            : undefined
-        }
-      />
+      {grouped ? (
+        <div className='space-y-3 rounded-lg border border-border bg-card p-2'>
+          {APPLIES_TO.map((kind) => {
+            const kindNodes = nodes.filter(
+              (node) => text(byId.get(node.id)?.appliesTo) === kind,
+            );
+            if (filtering && kindNodes.length === 0) return null;
+            return (
+              <section key={kind} className='space-y-1'>
+                <h3 className='px-1 pt-1'>
+                  <AssetTypeBadge value={kind} />
+                </h3>
+                {kindNodes.length > 0 ? (
+                  tree(kindNodes, kind)
+                ) : (
+                  <p className='px-2 py-1 text-xs text-muted-foreground'>
+                    {t('categories.noneOfKind')}
+                  </p>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+        tree(nodes)
+      )}
       {move.error ? (
         <p className='text-sm text-destructive'>
           {apiErrorBody(move.error)?.message ?? errorMessage(move.error)}
