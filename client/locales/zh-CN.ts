@@ -1543,6 +1543,10 @@ const zhCN: AppResource = {
   users: {
     enabled: '启用',
     disabled: '已停用',
+    roles: {
+      'itam-asset-manager': 'IT 资产经理',
+      'itam-it-support': 'IT 支持',
+    },
   },
   search: {
     label: '搜索台账',

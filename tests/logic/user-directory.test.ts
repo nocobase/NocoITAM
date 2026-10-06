@@ -28,6 +28,7 @@ const USERS = [
 const SETS = [
   {
     key: 'itam-asset-manager',
+    title: 'IT Asset Manager',
     grants: [
       {
         resource: { type: 'composite', id: 'itam.devices' },
@@ -37,6 +38,7 @@ const SETS = [
   },
   {
     key: 'itam-it-support',
+    title: 'IT Support',
     grants: [
       {
         resource: { type: 'composite', id: 'itam.repairs' },
@@ -47,6 +49,7 @@ const SETS = [
   // Reads one Collection and holds no operation of this application's.
   {
     key: 'auditors',
+    title: { key: 'Auditors', ns: 'custom' },
     grants: [
       {
         resource: { type: 'database.collection', id: 'main.devices' },
@@ -58,7 +61,7 @@ const SETS = [
 
 const ASSIGNMENTS: Readonly<Record<string, readonly string[]>> = {
   'itam-asset-manager': ['mia'],
-  'itam-it-support': ['sam', 'lee'],
+  'itam-it-support': ['mia', 'sam', 'lee'],
   auditors: ['eve'],
 };
 
@@ -148,9 +151,46 @@ describe('user directory', () => {
       }
     ).data;
     expect(users).toEqual([
-      { id: 'mia', name: 'Mia', username: 'mia', disabled: false },
-      { id: 'eve', name: 'Eve', username: 'eve', disabled: true },
+      expect.objectContaining({
+        id: 'mia',
+        name: 'Mia',
+        username: 'mia',
+        disabled: false,
+      }),
+      expect.objectContaining({
+        id: 'eve',
+        name: 'Eve',
+        username: 'eve',
+        disabled: true,
+      }),
     ]);
+  });
+
+  it('names the permission sets each person holds', async () => {
+    // A picker reads 负责人 and approvers with their roles; only the sets
+    // that grant an ITAM operation count, so Eve's auditors set is not one.
+    const roles = async (path: string) =>
+      Object.fromEntries(
+        (
+          (await (await root.request(path)).json()) as {
+            data: { id: string; roles: { key: string; title: string }[] }[];
+          }
+        ).data.map((user) => [user.id, user.roles]),
+      );
+    const manager = { key: 'itam-asset-manager', title: 'IT Asset Manager' };
+    const support = { key: 'itam-it-support', title: 'IT Support' };
+    expect(await roles('/api/itam/users')).toEqual({
+      mia: [manager, support],
+      sam: [support],
+    });
+    expect(await roles('/api/itam/users?ids=eve,root')).toEqual({
+      eve: [],
+      root: [],
+    });
+    expect(await roles('/api/itam/users/repair-owners')).toEqual({
+      mia: [manager, support],
+      sam: [support],
+    });
   });
 
   it('still resolves the name of anybody a record already names', async () => {

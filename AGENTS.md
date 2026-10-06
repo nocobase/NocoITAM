@@ -1268,6 +1268,13 @@ Rules learned while building it:
   **name lookup** instead and answers regardless — the owner a record already
   holds must read back even when they are not a candidate now (`root`
   belongs to no permission set of this application's).
+  Every person a picker offers reads with the permission sets they hold
+  (2026-10-06): the three endpoints return `roles` — the key and title of
+  each set granting an `itam.*` operation — and `ReferenceSelect` shows
+  them beside the name (`userRolesLabel` in `client/lib/itam/user-roles.ts`,
+  which translates this application's two sets through `users.roles.*` and
+  reads any other by its stored title), since picking a 负责人 or an
+  approver is picking a role as much as a person.
 - 待我审批 is one component, `createMyApprovalView` in
   `client/components/itam/my-approval-view.tsx`, given a collection, a list
   path and a label; purchase orders and disposals both mount it as their

@@ -1606,6 +1606,10 @@ const messages = {
   users: {
     enabled: 'Enabled',
     disabled: 'Disabled',
+    roles: {
+      'itam-asset-manager': 'IT Asset Manager',
+      'itam-it-support': 'IT Support',
+    },
   },
   search: {
     label: 'Search the register',

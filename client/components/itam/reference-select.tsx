@@ -27,6 +27,7 @@ import {
   useReferenceNames,
 } from '@/lib/itam/references';
 import { treePathLabel } from '@/lib/itam/tree';
+import { userRolesLabel } from '@/lib/itam/user-roles';
 import { cn } from '@/lib/utils';
 
 export interface ReferenceSelectProps {
@@ -226,6 +227,13 @@ export function ReferenceSelect({
                     // people may share a name.
                     <span className='shrink-0 font-mono text-xs text-muted-foreground'>
                       {text(row.username)}
+                    </span>
+                  ) : null}
+                  {userRolesLabel(reference.collection, row, t) ? (
+                    // Who a person is in IT — the permission sets they hold —
+                    // since picking a 负责人 or an approver picks a role too.
+                    <span className='shrink-0 text-xs text-muted-foreground'>
+                      {userRolesLabel(reference.collection, row, t)}
                     </span>
                   ) : null}
                   {classified && classifierOf(row) ? (

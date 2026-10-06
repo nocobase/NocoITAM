@@ -62,29 +62,58 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
       );
     };
 
+    type Grant = {
+      resource: { type: string; id: string };
+      actions: readonly { action: string }[];
+    };
+    /** A permission set as a picker names it: its key and its title. */
+    type Role = { key: string; title: string };
+    type Holder = { id: string; name: string; roles?: Role[] };
+    const isItamGrant = (grant: Grant) =>
+      grant.resource.type === 'composite' &&
+      grant.resource.id.startsWith('itam.');
+
     /**
      * The accounts assigned a permission set that grants anything matching
-     * `granted`, as user ids. Assignments to a group or a role other than a
-     * user are not expanded: this application's sets are assigned to users.
+     * `granted`, each with the titles of those sets. Assignments to a group
+     * or a role other than a user are not expanded: this application's sets
+     * are assigned to users.
      */
     const assignedTo = async (
-      granted: (grant: {
-        resource: { type: string; id: string };
-        actions: readonly { action: string }[];
-      }) => boolean,
-    ): Promise<Set<string>> => {
-      const ids = new Set<string>();
-      if (!app.container.has(authorizationToken)) return ids;
+      granted: (grant: Grant) => boolean,
+    ): Promise<Map<string, Role[]>> => {
+      const holders = new Map<string, Role[]>();
+      if (!app.container.has(authorizationToken)) return holders;
       const permissionSets =
         app.container.resolve(authorizationToken).permissionSets;
       for (const set of await permissionSets.list()) {
         if (!set.grants.some(granted)) continue;
+        // A title is plain text or a translation descriptor; the picker
+        // translates this application's own sets by key either way.
+        const title =
+          typeof set.title === 'string'
+            ? set.title
+            : (set.title?.key ?? set.key);
         for (const assignment of await permissionSets.listAssignments(set.key))
-          if (assignment.subject.type === 'user')
-            ids.add(String(assignment.subject.id));
+          if (assignment.subject.type === 'user') {
+            const id = String(assignment.subject.id);
+            holders.set(id, [
+              ...(holders.get(id) ?? []),
+              { key: set.key, title },
+            ]);
+          }
       }
-      return ids;
+      return holders;
     };
+
+    /**
+     * Which of this application's permission sets each account holds, so a
+     * picker reads 孙强 · IT 资产经理 rather than a bare name: choosing a
+     * 负责人 or an approver is choosing a role as much as a person
+     * (2026-10-06). Only the sets granting an `itam.*` operation count —
+     * those are what make somebody a candidate at all.
+     */
+    const rolesOf = () => assignedTo(isItamGrant);
 
     /**
      * Who a record may name, or the names of the ids a record already holds.
@@ -118,15 +147,11 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
         100,
       );
       const empty = { data: [], total: 0, page: 1, pageSize };
+      const roles = await rolesOf();
       let candidates: string[] = ids;
       if (ids.length === 0) {
-        const staff = await assignedTo(
-          (grant) =>
-            grant.resource.type === 'composite' &&
-            grant.resource.id.startsWith('itam.'),
-        );
-        const left = await leftUserIds([...staff]);
-        candidates = [...staff].filter((id) => !left.has(id));
+        const left = await leftUserIds([...roles.keys()]);
+        candidates = [...roles.keys()].filter((id) => !left.has(id));
         if (candidates.length === 0) return context.json(empty);
       }
       const page = await users.list({
@@ -142,6 +167,7 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
           name: user.name,
           username: user.username ?? null,
           disabled: Boolean(user.disabledAt),
+          roles: roles.get(user.id) ?? [],
         }));
       return context.json({
         data,
@@ -162,7 +188,7 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
       resource: string,
       action: string,
       q: string,
-    ): Promise<{ id: string; name: string }[]> => {
+    ): Promise<Holder[]> => {
       if (!app.container.has(userAdministrationServiceToken)) return [];
       const ids = await assignedTo(
         (grant) =>
@@ -171,17 +197,25 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
           grant.actions.some((entry) => entry.action === action),
       );
       if (ids.size === 0) return [];
+      const roles = await rolesOf();
       const users = app.container.resolve(userAdministrationServiceToken);
-      const page = await users.list({ userIds: [...ids], pageSize: 100 });
+      const page = await users.list({
+        userIds: [...ids.keys()],
+        pageSize: 100,
+      });
       const needle = q.trim().toLowerCase();
       const left = await leftUserIds(page.items.map((user) => user.id));
       return page.items
         .filter((user) => !user.disabledAt)
         .filter((user) => !left.has(user.id))
         .filter((user) => !needle || user.name.toLowerCase().includes(needle))
-        .map((user) => ({ id: user.id, name: user.name }));
+        .map((user) => ({
+          id: user.id,
+          name: user.name,
+          roles: roles.get(user.id) ?? [],
+        }));
     };
-    const listed = (data: { id: string; name: string }[]) => ({
+    const listed = (data: Holder[]) => ({
       data,
       total: data.length,
       page: 1,
