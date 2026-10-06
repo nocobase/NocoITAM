@@ -1,6 +1,13 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Package, PackageCheck, Sparkles } from 'lucide-react';
+import {
+  Check,
+  Package,
+  PackageCheck,
+  Sparkles,
+  Truck,
+  Undo2,
+} from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
@@ -507,16 +514,7 @@ function PlanLine({
               </span>
             );
           })}
-          {line.onOrder > 0 ? (
-            <span className='text-xs text-muted-foreground'>
-              {t('onboarding.onOrder', { count: line.onOrder })}
-            </span>
-          ) : null}
-          {line.shortfall > 0 ? (
-            <span className='text-xs text-destructive'>
-              {t('onboarding.shortfall', { count: line.shortfall })}
-            </span>
-          ) : null}
+          <LineOutlook line={line} />
           {/* Something they will not be given — their own monitor, another
               laptop — is marked rather than left outstanding for ever. */}
           {line.preparedCount < line.required ? (
@@ -552,6 +550,74 @@ function PlanLine({
         </ul>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * What a line expects rather than has in stock (2026-10-06): an open order
+ * or somebody leaving, each with the day it can be handed over — nothing to
+ * press, since it is not here yet — and what is still short, with the last
+ * day to order it. Shared by the card and 入职供需.
+ */
+export function LineOutlook({
+  line,
+}: {
+  readonly line: OnboardingPlanLine;
+}): ReactElement {
+  const { t } = useTranslation();
+  const today = todayIso();
+  return (
+    <>
+      {line.planned.map((thing) => {
+        const supply = thing.supply;
+        if (!supply) return null;
+        const key = `l:${supply.kind}:${thing.id}`;
+        if (supply.kind === 'return')
+          return (
+            <Badge key={key} variant='outline'>
+              <Undo2 className='size-3' />
+              {t('onboarding.planned.return', {
+                name: supply.fromName ?? '',
+                label: thing.label,
+                date: formatDate(supply.availableOn),
+              })}
+            </Badge>
+          );
+        const count = thing.quantity ?? 1;
+        return (
+          <RecordLink key={key} to={`/procurement/${supply.orderId ?? ''}`}>
+            <Badge variant='outline'>
+              <Truck className='size-3' />
+              {supply.availableOn
+                ? t('onboarding.planned.order', {
+                    orderNo: supply.orderNo ?? '',
+                    date: formatDate(supply.availableOn),
+                    count,
+                  })
+                : t('onboarding.planned.orderOpen', {
+                    orderNo: supply.orderNo ?? '',
+                    status: t(`enums.poStatus.${supply.orderStatus ?? ''}`, {
+                      defaultValue: supply.orderStatus ?? '',
+                    }),
+                    count,
+                  })}
+            </Badge>
+          </RecordLink>
+        );
+      })}
+      {line.shortfall > 0 ? (
+        <span className='text-xs text-destructive'>
+          {t('onboarding.shortfall', { count: line.shortfall })}
+          {line.orderBy
+            ? ` · ${
+                line.orderBy < today
+                  ? t('onboarding.orderNow')
+                  : t('onboarding.orderBy', { date: formatDate(line.orderBy) })
+              }`
+            : null}
+        </span>
+      ) : null}
+    </>
   );
 }
 

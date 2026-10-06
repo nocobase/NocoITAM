@@ -578,6 +578,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
       createOnboardingService(
         container.resolve(databaseManagerToken),
         container.resolve(historyServiceToken),
+        container.resolve(settingsServiceToken),
       ),
     );
     // Noco choosing a joiner's equipment when their 入职负责人 asks, in the

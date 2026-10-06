@@ -201,6 +201,202 @@ describe('onboarding', () => {
     ).toMatchObject({ shortfall: 0, onOrder: 1 });
   });
 
+  it('shares stock, placed orders and what leavers hand back among joiners, earliest first', async () => {
+    const { procurementServiceToken } =
+      await import('../../server/providers/itam/procurement.js');
+    const { databaseManagerToken } = await import('@nocobase/db');
+    const db = app.container.resolve(databaseManagerToken).query();
+    const MAC = 'model-macbook-pro-14-m3';
+    type Line = {
+      target: { id: string };
+      proposals: { id: string }[];
+      planned: {
+        id: string;
+        supply: {
+          kind: string;
+          availableOn: string | null;
+          fromName?: string;
+          orderNo?: string;
+        };
+      }[];
+      onOrder: number;
+      returning: number;
+      shortfall: number;
+      orderBy: string | null;
+    };
+    const macbook = async (id: string) =>
+      (
+        await data<{ lines: Line[] }>(
+          await app.request(
+            `/api/itam/master/people/${id}/onboarding`,
+            manager,
+          ),
+        )
+      ).lines.find((line) => line.target.id === MAC)!;
+
+    // One laptop in stock.
+    const stocked = await create('devices', {
+      modelId: MAC,
+      serialNo: 'C02SHARE001',
+      locationId,
+      warrantyEndDate: '2030-01-01',
+    });
+    // Somebody leaving in eight days with a laptop in good order: back and
+    // made ready three days later.
+    const leaver = await person('Lee Leaving', 'dept-rd', null, '2022-01-01');
+    const returning = await create('devices', {
+      modelId: MAC,
+      serialNo: 'C02SHARE002',
+      locationId,
+      warrantyEndDate: '2030-01-01',
+    });
+    expect(
+      (
+        await post(`devices/${returning.id}/assign`, {
+          targetType: 'person',
+          targetId: leaver.id,
+        })
+      ).status,
+    ).toBe(200);
+    await app.request(`/api/itam/master/people/${leaver.id}`, {
+      ...json({ leaveDate: addDays(today(), 8) }),
+      method: 'PATCH',
+      ...manager,
+    });
+    // A replenishment order already placed, one laptop due in twelve days.
+    const vendor = await create('master/vendors', {
+      name: 'Share Vendor',
+      types: ['equipment'],
+    });
+    const order = await app.container
+      .resolve(procurementServiceToken)
+      .create(
+        { reason: 'stockReplenishment', vendorId: vendor.id },
+        { actorId: 'mia' },
+        { scope: true } as never,
+      );
+    await db
+      .insertInto('purchaseOrderLines')
+      .values({
+        id: 'line-share',
+        purchaseOrderId: String(order.id),
+        itemType: 'device',
+        modelId: MAC,
+        quantity: 1,
+        receivedQuantity: 0,
+        sort: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .execute();
+    await db
+      .updateTable('purchaseOrders')
+      .set({ status: 'ordered', expectedAt: addDays(today(), 12) })
+      .where('id', '=', String(order.id))
+      .execute();
+
+    // Entered in this order, joining in another: the earliest first day
+    // goes first, whoever was entered first.
+    const joining = (name: string, days: number) =>
+      person(name, 'dept-rd', null, addDays(today(), days));
+    const last = await joining('Dan Last', 30);
+    const third = await joining('Bo Third', 20);
+    const second = await joining('Cy Second', 9);
+    const first = await joining('Al First', 5);
+
+    // The first gets the laptop in stock, and nobody else is offered it.
+    expect((await macbook(first.id)).proposals).toEqual([
+      expect.objectContaining({ id: stocked.id }),
+    ]);
+    // Nothing arrives by the second's first day: the order is made ready
+    // on day 15 and the leaver's laptop on day 11. A shortfall, to order
+    // ten days ahead (three to make it ready, seven to arrive).
+    expect(await macbook(second.id)).toMatchObject({
+      proposals: [],
+      planned: [],
+      shortfall: 1,
+      orderBy: addDays(today(), 9 - 10),
+    });
+    // The order before what comes back: certain before uncertain.
+    expect(await macbook(third.id)).toMatchObject({
+      proposals: [],
+      planned: [
+        {
+          id: String(order.id),
+          supply: { kind: 'order', availableOn: addDays(today(), 15) },
+        },
+      ],
+      onOrder: 1,
+      shortfall: 0,
+      orderBy: null,
+    });
+    expect(await macbook(last.id)).toMatchObject({
+      planned: [
+        {
+          id: returning.id,
+          supply: {
+            kind: 'return',
+            availableOn: addDays(today(), 11),
+            fromName: 'Lee Leaving',
+          },
+        },
+      ],
+      returning: 1,
+      shortfall: 0,
+    });
+
+    // Reserved for the first, the laptop leaves stock; the plans stay the
+    // same, since it was already theirs.
+    await post(`devices/${stocked.id}/reserve`, {
+      reservedForType: 'person',
+      reservedForId: first.id,
+      reservedUntil: addDays(today(), 5),
+    });
+    expect((await macbook(second.id)).shortfall).toBe(1);
+    // Due for replacement before it is back, the leaver's laptop is not
+    // handed on.
+    await db
+      .updateTable('devices')
+      .set({ plannedReplacementDate: addDays(today(), 10) })
+      .where('id', '=', returning.id)
+      .execute();
+    expect(await macbook(last.id)).toMatchObject({ planned: [], shortfall: 1 });
+
+    // 入职供需: everybody still being equipped, earliest first, and what is
+    // short across them, the earliest last order day first.
+    const supply = await data<{
+      joiners: { id: string }[];
+      shortages: {
+        key: string;
+        quantity: number;
+        orderBy: string | null;
+        people: { id: string }[];
+      }[];
+    }>(await app.request('/api/itam/workbench/onboarding-supply', manager));
+    expect(supply.joiners.map((joiner) => joiner.id)).toEqual([
+      first.id,
+      second.id,
+      third.id,
+      last.id,
+    ]);
+    expect(
+      supply.shortages.find((entry) => entry.key === `model:${MAC}`),
+    ).toMatchObject({
+      quantity: 2,
+      orderBy: addDays(today(), 9 - 10),
+      people: [{ id: second.id }, { id: last.id }],
+    });
+    // Not for a reader the 入职准备 column is not for.
+    expect(
+      (
+        await app.request('/api/itam/workbench/onboarding-supply', {
+          user: 'eve',
+          role: 'employee',
+        })
+      ).status,
+    ).toBe(403);
+  });
+
   it('lists a joiner as 入职准备 for the team until their kit is in hand', async () => {
     const joiner = await person('Lin Xue', 'dept-product', 'Designer');
     // However far off the first day: two months out is listed too, after.

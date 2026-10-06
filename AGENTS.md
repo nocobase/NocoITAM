@@ -774,7 +774,27 @@ Rules learned while building it:
   and what an **open 新员工配备 order** for their department and joining
   day still has to deliver counts as `onOrder` (the plan lists those
   `orders`), so asking again never orders the same laptop twice; what is
-  left is the shortfall. 全部执行 carries on past a refused item and
+  left is the shortfall. **Every joiner is worked out together**
+  (2026-10-06, `allocate`; `plan(id)` is one joiner's slice of it,
+  `plans()` all of them): earliest first day first, then whoever was
+  entered first, each taking from shared pools, so two joiners are never
+  proposed the same laptop, the last mouse or the last seat. What stock
+  cannot cover is **planned** (`OnboardingPlanLine.planned`, each with a
+  `supply` saying where from and from when, and no button): first an order
+  bought for them, then any other order placed (`ordered` /
+  `partiallyReceived`, so it has an `expectedAt`) whose goods are made ready
+  by the joining day, then the devices and seats of people with a leave date
+  (from that date, a device plus `onboardingPrepDays`, and not one due for
+  replacement or out of warranty by then). A joiner already started counts
+  only on what is here today. A shortfall carries `orderBy`, the joining day
+  less the preparation days (devices) and `purchaseLeadDays` — both in
+  提醒阈值, 3 and 7 by default. Nothing is held by a plan: it is recomputed
+  on every reading and only a reservation commits. Devices in repair are not
+  counted. 入职供需 (`/onboarding-supply`, linked under the workbench's
+  入职准备 column, no menu entry and no page grant; `GET
+  /itam/workbench/onboarding-supply`, people `read` and devices `reserve`)
+  lists every joiner still being equipped with their lines and, above them,
+  what is short across all of them with the earliest last order day. 全部执行 carries on past a refused item and
   names each refusal, and its toast counts what went through.
   `GET /itam/master/people/:id/onboarding` returns it; it writes nothing.
   The 归属 tab of an active person whose 入职日期 is ahead or within the

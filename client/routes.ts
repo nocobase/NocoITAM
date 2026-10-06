@@ -206,6 +206,15 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
     // (2026-10-05), and 待办 is the workbench's board rather than a page of
     // its own. Without `navigation` the page checks no page grant
     // (`withPageGrants`), like a detail page.
+    // 入职供需 (2026-10-06): opened from the workbench's 入职准备 column, so
+    // no menu entry and no page grant; its endpoint answers only a reader
+    // that column is for.
+    {
+      name: 'onboarding-supply',
+      path: '/onboarding-supply',
+      auth: 'required',
+      componentLoader: () => import('./pages/itam/onboarding-supply.js'),
+    },
     {
       name: 'notifications',
       path: '/notifications',

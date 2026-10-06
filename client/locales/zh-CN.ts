@@ -856,9 +856,27 @@ const zhCN: AppResource = {
     askAi: '让 Noco 准备',
     needsAccount: '订阅席位需要账号：先给这个人填写邮箱，或到授权页分配',
     change: '更换',
-    onOrder_one: '采购中 ×{{count}}',
-    onOrder_other: '采购中 ×{{count}}',
     order: '{{orderNo}} {{status}}',
+    // 库存以外的来源：在途采购单和离职人员归还的，写明哪天起能用。
+    planned: {
+      order_one: '{{orderNo}} 在途，{{date}} 起可用',
+      order_other: '{{orderNo}} 在途 ×{{count}}，{{date}} 起可用',
+      orderOpen_one: '{{orderNo}} {{status}}',
+      orderOpen_other: '{{orderNo}} {{status}} ×{{count}}',
+      return: '{{name}} 归还的 {{label}}，{{date}} 起可用',
+    },
+    orderBy: '最晚 {{date}} 下单',
+    orderNow: '应尽快下单',
+    supply: {
+      title: '入职供需',
+      description:
+        '所有还没配齐的新人按入职日期统一分配：先用库存，再算已下单的采购，最后是离职人员归还的设备和席位。只是计划，预留了才算定下。',
+      link: '入职供需',
+      shortages: '需要采购',
+      noShortages: '没有缺口：库存、在途采购和离职归还够用。',
+      empty: '没有待配齐的新人。',
+      fromStock: '库存 {{label}}',
+    },
     progress: '已配备 {{done}} / {{total}}',
     shortfallTotal_one: '缺 {{count}} 项需采购',
     shortfallTotal_other: '缺 {{count}} 项需采购',
@@ -2078,6 +2096,8 @@ const zhCN: AppResource = {
       description: '规则层与统计使用的天数和比例',
       idleSeatRatio: '席位闲置比例',
       defaultStockMinimum: '库存水位默认值',
+      onboardingPrepDays: '新人设备准备天数',
+      purchaseLeadDays: '采购周期天数',
     },
     // 光看名字说不清这个数字管的是什么，所以每一项都配一句话。
     thresholdHints: {
@@ -2089,6 +2109,9 @@ const zhCN: AppResource = {
       idleSeatRatio:
         '未分配席位占总席位超过这个比例，这份授权算闲置（0.3 即三成）',
       defaultStockMinimum: '新建库存记录时默认填的最低水位',
+      onboardingPrepDays:
+        '设备归还或到货后，清数据、装系统、贴标签要的天数；入职供需按它判断来不来得及',
+      purchaseLeadDays: '从下单到到货的天数；入职缺口的最晚下单日按它倒推',
     },
     pageTitle: '系统设置',
     description: '资产管理系统的编号规则、提醒阈值与自动化',

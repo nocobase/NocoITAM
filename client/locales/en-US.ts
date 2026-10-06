@@ -865,9 +865,29 @@ const messages = {
     needsAccount:
       'A subscription seat needs an account: give this person an e-mail, or assign it on the entitlement',
     change: 'Change',
-    onOrder_one: 'On order ×{{count}}',
-    onOrder_other: 'On order ×{{count}}',
     order: '{{orderNo}} {{status}}',
+    // Sources other than stock: an open order, or somebody leaving, with
+    // the day it can be handed over.
+    planned: {
+      order_one: '{{orderNo}} on its way, ready {{date}}',
+      order_other: '{{orderNo}} on its way ×{{count}}, ready {{date}}',
+      orderOpen_one: '{{orderNo}} {{status}}',
+      orderOpen_other: '{{orderNo}} {{status}} ×{{count}}',
+      return: '{{label}} back from {{name}}, ready {{date}}',
+    },
+    orderBy: 'order by {{date}}',
+    orderNow: 'order now',
+    supply: {
+      title: 'Onboarding supply',
+      description:
+        'Every joiner not yet equipped, worked out together by joining day: stock first, then purchases already placed, then the devices and seats people leaving hand back. A plan only: a reservation is what commits it.',
+      link: 'Onboarding supply',
+      shortages: 'To buy',
+      noShortages:
+        'Nothing short: stock, orders on their way and returns cover it.',
+      empty: 'No joiners waiting to be equipped.',
+      fromStock: 'Stock: {{label}}',
+    },
     progress: '{{done}} of {{total}} prepared',
     shortfallTotal_one: '{{count}} item to buy',
     shortfallTotal_other: '{{count}} items to buy',
@@ -2206,6 +2226,8 @@ const messages = {
       description: 'Days and ratios the rule layer and the statistics use.',
       idleSeatRatio: 'Idle seat ratio',
       defaultStockMinimum: 'Default stock minimum',
+      onboardingPrepDays: 'Days to ready a joiner’s device',
+      purchaseLeadDays: 'Purchase lead time (days)',
     },
     // A threshold's name rarely says what the number decides, so each one
     // gets a line.
@@ -2220,6 +2242,10 @@ const messages = {
       idleSeatRatio:
         'An entitlement is idle when this share of its seats is unassigned (0.3 is a third)',
       defaultStockMinimum: 'The water level a new stock record starts at',
+      onboardingPrepDays:
+        'Days to wipe, install and label a device once it is back or has arrived; onboarding supply counts it in time only with these to spare',
+      purchaseLeadDays:
+        'Days from ordering to arrival; a joiner’s shortage is to be ordered this long before it must be made ready',
     },
     pageTitle: 'System settings',
     description:

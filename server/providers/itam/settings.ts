@@ -25,6 +25,13 @@ export interface ItamSettings {
     readonly auditDays: number;
     readonly idleSeatRatio: number;
     readonly defaultStockMinimum: number;
+    /**
+     * Days to make a device ready for a joiner once it is back or has
+     * arrived — wiped, installed, labelled (`onboarding.ts`, 2026-10-06).
+     */
+    readonly onboardingPrepDays: number;
+    /** Days from ordering to arrival, for a shortfall's last order day. */
+    readonly purchaseLeadDays: number;
   };
   readonly numbering: Readonly<Record<NumberingKind, NumberingRule>>;
   readonly ai: {
@@ -77,6 +84,8 @@ export const DEFAULT_ITAM_SETTINGS: ItamSettings = {
     auditDays: 365,
     idleSeatRatio: 0.3,
     defaultStockMinimum: 5,
+    onboardingPrepDays: 3,
+    purchaseLeadDays: 7,
   },
   numbering: {
     device: { prefix: 'DE-', width: 6, start: 1 },

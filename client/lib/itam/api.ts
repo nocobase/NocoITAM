@@ -230,6 +230,8 @@ export interface ItamSettings {
     auditDays: number;
     idleSeatRatio: number;
     defaultStockMinimum: number;
+    onboardingPrepDays: number;
+    purchaseLeadDays: number;
     /** The two cross-record patterns' windows and counts. */
   };
   readonly numbering: Record<
