@@ -122,11 +122,86 @@ export {
  * deleting the row.
  */
 function demoAccounts(container: ServiceContainer): DemoAccounts {
+  /**
+   * Deletes a demo account's row and everything that still refers to it:
+   * its sessions and credentials, the AI plugin's conversations and usage
+   * (an account that talked to Noco cannot go before them), and any
+   * Permission Set assignment. Only ever for the demo's own sign-ins.
+   */
+  const purge = async (userId: string): Promise<void> => {
+    const permissionSets = container.resolve(authorizationToken).permissionSets;
+    for (const assignment of await permissionSets.listAssignments())
+      if (
+        assignment.subject.type === 'user' &&
+        String(assignment.subject.id) === userId
+      )
+        await permissionSets.revoke(assignment.id);
+    const database = container.resolve(databaseManagerToken);
+    // The AI plugin's tables first, each on its own: they exist only where
+    // the plugin is installed, and a statement that fails inside a
+    // transaction would abort the rest of it on some databases.
+    const query = database.query();
+    const sessions = await query
+      .selectFrom('aiConversations')
+      .select('sessionId')
+      .where('userId', '=', userId)
+      .execute<{ sessionId: string }>()
+      .catch(() => []);
+    const sessionIds = sessions.map((row) => row.sessionId);
+    if (sessionIds.length > 0)
+      for (const table of ['aiToolMessages', 'aiMessages'] as const)
+        await query
+          .deleteFrom(table)
+          .where('sessionId', 'in', sessionIds)
+          .execute()
+          .catch(() => undefined);
+    for (const table of [
+      'aiUsageEvents',
+      'aiConversations',
+      'usersAiEmployees',
+    ] as const)
+      await query
+        .deleteFrom(table)
+        .where('userId', '=', userId)
+        .execute()
+        .catch(() => undefined);
+    await database.transaction(async (connection) => {
+      for (const table of ['session', 'account'] as const)
+        await connection.query
+          .deleteFrom(table)
+          .where('userId', '=', userId)
+          .execute();
+      await connection.query
+        .deleteFrom('user')
+        .where('id', '=', userId)
+        .execute();
+    });
+  };
+
   return {
     async create(spec) {
       const users = container.resolve(userAdministrationServiceToken);
       const permissionSets =
         container.resolve(authorizationToken).permissionSets;
+      // An account deleted on the Users page is only marked deleted: its row
+      // keeps the username and e-mail, the listing below no longer finds it,
+      // and creating the account again collides with it ("A user with this
+      // email already exists", found 2026-10-06). A deleted row holding one
+      // of the demo's own identities is the demo's leftover, so it goes.
+      const leftovers = await container
+        .resolve(databaseManagerToken)
+        .query()
+        .selectFrom('user')
+        .select('id')
+        .where('deletedAt', 'is not', null)
+        .where((eb) =>
+          eb.or([
+            eb('username', '=', spec.username),
+            eb('email', '=', spec.email),
+          ]),
+        )
+        .execute<{ id: string }>();
+      for (const leftover of leftovers) await purge(String(leftover.id));
       // An account left over from a demo that was wiped another way (a
       // `pnpm data:reset`, which empties the table the demo tracks them in)
       // is taken over rather than refused: same name, password and Permission
@@ -167,7 +242,8 @@ function demoAccounts(container: ServiceContainer): DemoAccounts {
       // The users plugin's own `remove` refuses when the application
       // configured no deletion hooks, and this application configures none,
       // so the demo revokes the assignment itself and then deletes the
-      // account through the authentication plugin, which owns the row.
+      // account through the authentication plugin, which owns the row —
+      // ending its sessions the way a deletion on the Users page does.
       const permissionSets =
         container.resolve(authorizationToken).permissionSets;
       for (const assignment of await permissionSets.listAssignments())
@@ -183,18 +259,7 @@ function demoAccounts(container: ServiceContainer): DemoAccounts {
       // and e-mail, so regenerating the demo would collide with the account
       // it just cleared. These accounts belong to the demo and nothing
       // refers to them afterwards, so the rows go too.
-      const database = container.resolve(databaseManagerToken);
-      await database.transaction(async (connection) => {
-        for (const table of ['session', 'account'] as const)
-          await connection.query
-            .deleteFrom(table)
-            .where('userId', '=', userId)
-            .execute();
-        await connection.query
-          .deleteFrom('user')
-          .where('id', '=', userId)
-          .execute();
-      });
+      await purge(userId);
     },
   };
 }
