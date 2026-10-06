@@ -342,10 +342,16 @@ describe('onboarding', () => {
       data<{ positions: string[] | null }>(
         await app.request(`/api/itam/master/departments/${id}`, manager),
       );
-    // Seeded: the designer kit's position is Product's.
-    expect((await department('dept-product')).positions).toContain(
+    // Seeded: every department starts with positions, spelled as the
+    // designer kit spells its own, so the kit adds no second Designer.
+    expect((await department('dept-product')).positions).toEqual([
+      'Product Manager',
       'Designer',
-    );
+    ]);
+    expect((await department('dept-hr')).positions).toEqual([
+      'Recruiter',
+      'HR Business Partner',
+    ]);
     // A person saved with a position the department lacks adds it.
     const joiner = await person('New Role', 'dept-product', 'Researcher');
     expect((await department('dept-product')).positions).toContain(
