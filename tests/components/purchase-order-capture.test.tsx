@@ -252,7 +252,7 @@ it('opens on AI 整理 and fills the form from what the assistant read', async (
   expect(screen.getByText(/procurement\.linesTotal:1\b/)).toBeVisible();
   const picker = screen
     .getAllByRole('button', { name: 'procurement.selectModel' })
-    .find((button) => button.dataset.search === 'Testbook Pro 14 (T4)');
+    .find((button) => button.dataset.search === 'Testbook Pro 14 T4');
   expect(picker).toBeDefined();
   await act(async () => {
     fireEvent.click(picker!);

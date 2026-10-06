@@ -11,7 +11,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { errorMessage, formatMoney, text } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
-import type { PurchaseCapture } from '@/lib/itam/purchase-capture';
+import {
+  pickerSearch,
+  type PurchaseCapture,
+} from '@/lib/itam/purchase-capture';
 import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 import type { PurchaseOrderCaptureState } from '@/lib/itam/use-purchase-capture';
 
@@ -300,9 +303,10 @@ interface UnmatchedPickerProps {
 
 /**
  * Places a line AI 整理 could not: pick the record it is — the search starts
- * at the document's own wording, since a different spelling of the same
- * model is the common case — or, for whoever may create one, 新建 it from the
- * same list, starting at that name and part code. Either way the line moves
+ * at the document's own wording without its configuration, since a
+ * different spelling of the same model is the common case — or, for whoever
+ * may create one, 新建 it from the same list, starting at that name and part
+ * code. Either way the line moves
  * into the order's lines.
  */
 function UnmatchedPicker({
@@ -330,7 +334,7 @@ function UnmatchedPicker({
         reference={{ collection }}
         value={null}
         disabled={placing}
-        initialSearch={line.description}
+        initialSearch={pickerSearch(line.description)}
         placeholder={t(
           software ? 'procurement.selectProduct' : 'procurement.selectModel',
         )}
