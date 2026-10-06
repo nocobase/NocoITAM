@@ -505,7 +505,8 @@ related-targets.ts`). Trees are tree-only: rows carry kind, updated time,
   umbrella word. Existing development databases need the changed seeds'
   checksums re-baselined; the device number field is labelled 编号. Seed
   `202609150005_seed_itam_vendors_people` adds four role-named vendors and
-  a first employee (黎晓, EMP-001); the demo keeps its own vendors and
+  a first employee (黎晓, EMP-001; James Walker in an English deployment,
+  since 2026-10-06, rather than the name romanised); the demo keeps its own vendors and
   people since it marks one as a leaver. Software
   entitlements: a unified 授权 page under the 资产 menu (the 软件 group is gone; `/entitlements`, `GET
 /itam/entitlements` unions licenses as `perpetual` and subscriptions as

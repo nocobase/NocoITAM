@@ -53,6 +53,16 @@ describe('ITAM seeds', () => {
       .select('id')
       .execute();
     expect(categories.length).toBeGreaterThan(20);
+    // An English deployment's first employee has an English name.
+    const person = await query
+      .selectFrom('people')
+      .select(['name', 'email'])
+      .where('id', '=', 'person-li-xiao')
+      .executeTakeFirstOrThrow();
+    expect(person).toEqual({
+      name: 'James Walker',
+      email: 'james.walker@example.com',
+    });
 
     const second = await seeder.run();
     expect(second.executed).toEqual([]);

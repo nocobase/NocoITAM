@@ -67,11 +67,13 @@ const VENDORS: readonly VendorSeed[] = [
 ];
 
 const PEOPLE: readonly PersonSeed[] = [
+  // The id keeps the name it was first seeded under: a database that ran
+  // this seed already holds it, and nobody reads an id.
   {
     id: 'person-li-xiao',
-    name: 'Li Xiao',
+    name: 'James Walker',
     employeeNo: 'EMP-001',
-    email: 'li.xiao@example.com',
+    email: 'james.walker@example.com',
     departmentId: 'dept-it',
     locationId: 'loc-hq-floor-3',
     position: 'IT administrator',
@@ -86,6 +88,7 @@ const NAMES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     'vendor-repair': '维修服务商',
     'vendor-recycler': '回收商',
     'person-li-xiao': '黎晓',
+    'email:person-li-xiao': 'li.xiao@example.com',
     'position:person-li-xiao': 'IT 管理员',
   },
 };
@@ -156,7 +159,7 @@ const seed: SeedDefinition = defineSeed({
           id: person.id,
           name: localized(person.id, person.name, locale),
           employeeNo: person.employeeNo,
-          email: person.email,
+          email: localized(`email:${person.id}`, person.email, locale),
           phone: null,
           departmentId: person.departmentId,
           position: localized(`position:${person.id}`, person.position, locale),
