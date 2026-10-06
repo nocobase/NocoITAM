@@ -1,8 +1,14 @@
 import type { FileRecord } from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
-import { useState, type FormEvent, type ReactElement } from 'react';
+import {
+  useState,
+  type FormEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
 import { FieldLabel } from '@/components/itam/field-label';
+import { ReviewMark } from '@/components/itam/review-mark';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -50,6 +56,46 @@ export interface RecordFormDialogProps {
     change: { key: string; value: unknown; record?: ItamRecord },
     values: Readonly<Record<string, unknown>>,
   ) => Record<string, unknown> | undefined;
+  /**
+   * The values, when the caller holds them — AI 整理 fills the form from
+   * outside (`initialFormValues` gives the starting point). `key` is the
+   * field the reader changed.
+   */
+  readonly values?: Readonly<Record<string, unknown>>;
+  readonly onValuesChange?: (
+    values: Record<string, unknown>,
+    key: string,
+  ) => void;
+  /** Fields that carry 请核对 beside their label. */
+  readonly marks?: ReadonlySet<string>;
+  /** Beside the title: AI 整理 / 表单录入. */
+  readonly titleAside?: ReactNode;
+  /** Shown instead of the fields, with only 取消 below (the AI 整理 tab). */
+  readonly replacement?: ReactNode;
+  /** A column beside the fields (what AI 整理 said), widening the dialog. */
+  readonly aside?: ReactNode;
+  /** The form element, e.g. to register it as the assistant's page context. */
+  readonly contentRef?: (element: HTMLElement | null) => void;
+}
+
+/** A form's starting values: what it was given, else each field's default. */
+// eslint-disable-next-line react-refresh/only-export-components -- the dialog's own helper
+export function initialFormValues(
+  fields: readonly FieldDefinition[],
+  initial?: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...initial };
+  for (const field of fields.filter((entry) => entry.form !== false)) {
+    next[field.key] =
+      initial?.[field.key] ??
+      field.defaultValue ??
+      (field.type === 'multiselect'
+        ? []
+        : field.type === 'boolean'
+          ? false
+          : null);
+  }
+  return next;
 }
 
 /** Create / edit dialog driven by field definitions. */
@@ -66,6 +112,13 @@ export function RecordFormDialog({
   recordId,
   derive,
   attachments,
+  values: heldValues,
+  onValuesChange,
+  marks,
+  titleAside,
+  replacement,
+  aside,
+  contentRef,
 }: RecordFormDialogProps): ReactElement {
   const [files, setFiles] = useState<readonly FileRecord[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -73,20 +126,19 @@ export function RecordFormDialog({
   const editable = fields.filter((field) => field.form !== false);
   // Mount the dialog with a `key` that changes per record so this initial
   // state is computed fresh for every create / edit session.
-  const [values, setValues] = useState<Record<string, unknown>>(() => {
-    const next: Record<string, unknown> = { ...initial };
-    for (const field of editable) {
-      next[field.key] =
-        initial?.[field.key] ??
-        field.defaultValue ??
-        (field.type === 'multiselect'
-          ? []
-          : field.type === 'boolean'
-            ? false
-            : null);
-    }
-    return next;
-  });
+  const [ownValues, setOwnValues] = useState<Record<string, unknown>>(() =>
+    initialFormValues(fields, initial),
+  );
+  const values: Record<string, unknown> = heldValues
+    ? { ...heldValues }
+    : ownValues;
+  const setValues = (
+    key: string,
+    update: (current: Record<string, unknown>) => Record<string, unknown>,
+  ) => {
+    if (heldValues) onValuesChange?.(update({ ...heldValues }), key);
+    else setOwnValues(update);
+  };
 
   const currencyFields = new Set(
     fields.map((field) => field.currencyField).filter(Boolean),
@@ -124,7 +176,7 @@ export function RecordFormDialog({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (missing) return;
+    if (missing || replacement) return;
     const payload: Record<string, unknown> = {};
     // Editing (a recordId is set) sends only what changed; creating sends
     // every value, including presets passed through `initial`.
@@ -145,106 +197,138 @@ export function RecordFormDialog({
     await onSubmit(payload, files);
   };
 
+  const fieldsGrid = (
+    <div className='grid min-w-0 gap-4'>
+      {resolved.map((field) => {
+        if (field.visibleWhen && !field.visibleWhen(values)) return null;
+        // A currency edited with its amount has no row of its own.
+        if (currencyFields.has(field.key)) return null;
+        const id = `form-${field.key}`;
+        const message = fieldErrors.get(field.key);
+        if (field.currencyField) {
+          const currencyKey = field.currencyField;
+          return (
+            <div key={field.key} className='grid gap-1.5'>
+              <Label htmlFor={id}>
+                {t(field.label)}
+                {field.required ? (
+                  <span className='text-destructive'> *</span>
+                ) : null}
+                {marks?.has(field.key) ? <ReviewMark /> : null}
+              </Label>
+              <FieldInput
+                id={id}
+                field={field}
+                value={{
+                  amount: values[field.key] ?? null,
+                  currency: values[currencyKey] ?? null,
+                }}
+                onChange={(value) => {
+                  const pair = (value ?? {}) as {
+                    amount?: unknown;
+                    currency?: unknown;
+                  };
+                  setValues(field.key, (current) => ({
+                    ...current,
+                    [field.key]: pair.amount ?? null,
+                    [currencyKey]: pair.currency ?? null,
+                  }));
+                }}
+                disabled={submitting || Boolean(field.readonlyWhen?.(values))}
+              />
+              {message ? (
+                <p className='text-xs text-destructive'>{message}</p>
+              ) : null}
+            </div>
+          );
+        }
+        return (
+          <div key={field.key} className='grid gap-1.5'>
+            <Label htmlFor={id}>
+              <FieldLabel
+                label={t(field.label)}
+                hint={
+                  field.readonlyHint && field.readonlyWhen?.(values)
+                    ? field.readonlyHint
+                    : undefined
+                }
+              >
+                {field.required ? (
+                  <span className='text-destructive'>*</span>
+                ) : null}
+                {marks?.has(field.key) ? <ReviewMark /> : null}
+              </FieldLabel>
+            </Label>
+            <FieldInput
+              id={id}
+              field={field}
+              value={values[field.key]}
+              onChange={(value, record) =>
+                setValues(field.key, (current) => {
+                  const next = changeFormField(field, value, current);
+                  return {
+                    ...next,
+                    ...derive?.({ key: field.key, value, record }, next),
+                  };
+                })
+              }
+              disabled={submitting || Boolean(field.readonlyWhen?.(values))}
+              excludeId={recordId}
+            />
+            {message ? (
+              <p className='text-xs text-destructive'>{message}</p>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => (!submitting ? onOpenChange(next) : undefined)}
     >
-      <DialogContent className='max-h-[90svh] overflow-y-auto sm:max-w-lg'>
-        <form onSubmit={(event) => void submit(event)} className='space-y-4'>
+      <DialogContent
+        className={
+          aside && !replacement
+            ? 'max-h-[90svh] overflow-y-auto sm:max-w-3xl'
+            : 'max-h-[90svh] overflow-y-auto sm:max-w-lg'
+        }
+      >
+        <form
+          ref={contentRef}
+          onSubmit={(event) => void submit(event)}
+          className='space-y-4'
+        >
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
+            {titleAside ? (
+              // As in ConfirmDialog: right after the title, clear of the
+              // close button when it wraps.
+              <div className='flex flex-wrap items-center gap-x-3 gap-y-2 pr-9'>
+                <DialogTitle>{title}</DialogTitle>
+                {titleAside}
+              </div>
+            ) : (
+              <DialogTitle>{title}</DialogTitle>
+            )}
             {description ? (
               <DialogDescription>{description}</DialogDescription>
             ) : null}
           </DialogHeader>
-          <div className='grid gap-4'>
-            {resolved.map((field) => {
-              if (field.visibleWhen && !field.visibleWhen(values)) return null;
-              // A currency edited with its amount has no row of its own.
-              if (currencyFields.has(field.key)) return null;
-              const id = `form-${field.key}`;
-              const message = fieldErrors.get(field.key);
-              if (field.currencyField) {
-                const currencyKey = field.currencyField;
-                return (
-                  <div key={field.key} className='grid gap-1.5'>
-                    <Label htmlFor={id}>
-                      {t(field.label)}
-                      {field.required ? (
-                        <span className='text-destructive'> *</span>
-                      ) : null}
-                    </Label>
-                    <FieldInput
-                      id={id}
-                      field={field}
-                      value={{
-                        amount: values[field.key] ?? null,
-                        currency: values[currencyKey] ?? null,
-                      }}
-                      onChange={(value) => {
-                        const pair = (value ?? {}) as {
-                          amount?: unknown;
-                          currency?: unknown;
-                        };
-                        setValues((current) => ({
-                          ...current,
-                          [field.key]: pair.amount ?? null,
-                          [currencyKey]: pair.currency ?? null,
-                        }));
-                      }}
-                      disabled={
-                        submitting || Boolean(field.readonlyWhen?.(values))
-                      }
-                    />
-                    {message ? (
-                      <p className='text-xs text-destructive'>{message}</p>
-                    ) : null}
-                  </div>
-                );
+          {replacement ?? (
+            <div
+              className={
+                aside
+                  ? 'grid gap-4 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start'
+                  : 'grid'
               }
-              return (
-                <div key={field.key} className='grid gap-1.5'>
-                  <Label htmlFor={id}>
-                    <FieldLabel
-                      label={t(field.label)}
-                      hint={
-                        field.readonlyHint && field.readonlyWhen?.(values)
-                          ? field.readonlyHint
-                          : undefined
-                      }
-                    >
-                      {field.required ? (
-                        <span className='text-destructive'>*</span>
-                      ) : null}
-                    </FieldLabel>
-                  </Label>
-                  <FieldInput
-                    id={id}
-                    field={field}
-                    value={values[field.key]}
-                    onChange={(value, record) =>
-                      setValues((current) => {
-                        const next = changeFormField(field, value, current);
-                        return {
-                          ...next,
-                          ...derive?.({ key: field.key, value, record }, next),
-                        };
-                      })
-                    }
-                    disabled={
-                      submitting || Boolean(field.readonlyWhen?.(values))
-                    }
-                    excludeId={recordId}
-                  />
-                  {message ? (
-                    <p className='text-xs text-destructive'>{message}</p>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-          {attachments && !recordId ? (
+            >
+              {fieldsGrid}
+              {aside}
+            </div>
+          )}
+          {attachments && !recordId && !replacement ? (
             <AttachmentsUpload
               value={files}
               onChange={setFiles}
@@ -263,9 +347,14 @@ export function RecordFormDialog({
             >
               {t('actions.cancel')}
             </Button>
-            <Button type='submit' disabled={submitting || missing || uploading}>
-              {t('actions.save')}
-            </Button>
+            {replacement ? null : (
+              <Button
+                type='submit'
+                disabled={submitting || missing || uploading}
+              >
+                {t('actions.save')}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

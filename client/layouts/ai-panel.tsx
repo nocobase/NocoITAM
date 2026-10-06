@@ -128,6 +128,7 @@ export function ItamAiShell({ children }: PropsWithChildren): ReactElement {
         <HiddenChat name='search' />
         <HiddenChat name='receipt' />
         <HiddenChat name='capture' />
+        <HiddenChat name='master' />
       </ItamAiProvider>
     </NocoBaseAIRootProvider>
   );

@@ -41,6 +41,12 @@ import { userAdministrationServiceToken } from '@nocobase/app-plugin-authenticat
 import { leaverAccountsToken } from '../../providers/itam/leaver-accounts.js';
 import { onboardingServiceToken } from '../../providers/itam/onboarding.js';
 import { onboardingAdvisorToken } from '../../providers/itam/onboarding-advisor.js';
+import {
+  MASTER_CAPTURE_COLLECTIONS,
+  matchMasterCapture,
+  type MasterCaptureCollection,
+} from '../../providers/itam/master-capture.js';
+import { databaseManagerToken } from '@nocobase/db';
 
 /**
  * Generic CRUD for the master-data collections at
@@ -65,6 +71,27 @@ const OWNED_COLLECTIONS: readonly string[] = [
 const COLLECTION_NAMES = new Set(
   MASTER_DATA_COLLECTIONS.map((collection) => collection.name),
 );
+
+/** What AI 整理 hands back for a new model or software product. */
+const masterCaptureSchema = z.object({
+  name: z.string().nullish(),
+  code: z.string().nullish(),
+  manufacturerName: z.string().nullish(),
+  categoryId: z.string().nullish(),
+  specification: z.string().nullish(),
+  warrantyMonths: z.number().nullish(),
+  releaseDate: z.string().nullish(),
+  eolDate: z.string().nullish(),
+  eosDate: z.string().nullish(),
+  deliveryMethod: z.string().nullish(),
+  description: z.string().nullish(),
+  website: z.string().nullish(),
+  uncertain: z.array(z.string()).max(50).nullish(),
+  sources: z
+    .array(z.object({ title: z.string().nullish(), url: z.string().nullish() }))
+    .max(50)
+    .nullish(),
+});
 
 const moveSchema = z.object({
   parentId: z.string().min(1).nullable(),
@@ -419,6 +446,32 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
             context.req.param('id'),
             principalId(context),
             conditions,
+          ),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // AI 整理 in 新建型号 / 新建软件产品: the assistant's reading, checked
+    // against the master data before the dialog takes it. Asks for
+    // `create`, the grant the dialog itself needs; writes nothing.
+    routes.post('/:collection/capture/match', async (context) => {
+      const collection = context.req.param('collection');
+      try {
+        if (
+          !MASTER_CAPTURE_COLLECTIONS.includes(
+            collection as MasterCaptureCollection,
+          )
+        )
+          throw new ValidationError('Unknown collection');
+        await decideFor(context, collection, 'create');
+        const input = masterCaptureSchema.parse(await readJsonObject(context));
+        return context.json({
+          data: await matchMasterCapture(
+            app.container.resolve(databaseManagerToken),
+            collection as MasterCaptureCollection,
+            input,
           ),
         });
       } catch (error) {

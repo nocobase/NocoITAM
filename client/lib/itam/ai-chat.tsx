@@ -68,10 +68,16 @@ export interface ItamAi {
    * reads what was pasted while the dialog stays open, and fills it.
    */
   readonly capture: HiddenChat;
+  /**
+   * 新建型号 / 新建软件产品's AI 整理, which searches the web; a chat of its
+   * own so it can run while a purchase order's capture, which it may have
+   * been opened from, keeps its own.
+   */
+  readonly master: HiddenChat;
 }
 
-/** Which unseen chat (`ItamAi.search`, `ItamAi.receipt`, `ItamAi.capture`). */
-export type HiddenChatName = 'search' | 'receipt' | 'capture';
+/** Which unseen chat (`ItamAi.search`, `.receipt`, `.capture`, `.master`). */
+export type HiddenChatName = 'search' | 'receipt' | 'capture' | 'master';
 
 /** A conversation with the employee that no window shows. */
 export interface HiddenChat {
@@ -88,6 +94,9 @@ export interface HiddenChat {
        * the tool list on the server, so it is a boundary, not a request.
        */
       readonly skillSettings?: AIEmployeeTask['skillSettings'];
+      /** Search the web for this turn, with a model that can. */
+      readonly webSearch?: boolean;
+      readonly model?: AIEmployeeTask['model'];
     },
   ) => void;
 }
@@ -144,6 +153,8 @@ function createHiddenChat(): HiddenChat {
               : undefined,
           },
           skillSettings: options?.skillSettings,
+          webSearch: options?.webSearch,
+          model: options?.model,
           autoSend: true,
         },
         open: false,
@@ -165,6 +176,7 @@ export function ItamAiProvider({
   const [search] = useState(createHiddenChat);
   const [receipt] = useState(createHiddenChat);
   const [capture] = useState(createHiddenChat);
+  const [master] = useState(createHiddenChat);
   const value = useMemo<ItamAi>(
     () => ({
       available: Boolean(status.data?.configured && status.data.enabled),
@@ -175,6 +187,7 @@ export function ItamAiProvider({
       search,
       receipt,
       capture,
+      master,
       toggle: () => controller.setOpen(!controller.getSnapshot().open),
       // Open first: the chat mounts inside the panel, and the controller
       // holds the task until that chat binds to it.
@@ -212,6 +225,7 @@ export function ItamAiProvider({
       search,
       receipt,
       capture,
+      master,
     ],
   );
   return (

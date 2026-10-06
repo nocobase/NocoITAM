@@ -1088,6 +1088,29 @@ Rules learned while building it:
   split every report. A line row's own model and product pickers offer the
   same 创建… entry, narrowing a new model's category to the line's kind,
   since `setLines` refuses a model of another kind.
+- 创建型号 and 创建软件产品 open on **AI 整理** too (2026-10-06,
+  `MasterCreateDialog` in `client/components/itam/master-create-dialog.tsx`,
+  the master domain's `Create` and `QuickCreateDialog` alike): the reader
+  types the maker and the model, and the assistant **searches the web** for
+  the rest — the one capture that does. It runs in the `master` unseen chat
+  with no tool of the register's (`skillSettings.tools: []`), the task's
+  `webSearch` on and its `model` set to the first configured model that can
+  search (`supportWebSearch`); with none, it reads from what the model knows
+  and the dialog says so. It hands its reading back through `fillModel` /
+  `fillSoftwareProduct` (`client/lib/itam/use-master-capture.ts`), which the
+  server checks first (`POST /itam/master/:collection/capture/match`,
+  `server/providers/itam/master-capture.ts`, under `create`): the category
+  must exist and be of the record's kind, the maker is matched by name like
+  a vendor and **never created** — the dialog offers 新建制造商 with the name
+  — values a field would refuse are dropped (a date that does not exist, a
+  non-http website), and records of the same part code or name are listed
+  beside the form. Only dates a page states are filled; the prompt forbids
+  estimating them. The pages it cites are listed (links only). The form is
+  `RecordFormDialog`, which takes its values from outside for this
+  (`values` / `onValuesChange`, `initialFormValues`), plus `marks`
+  (请核对), `titleAside`, `replacement` and `aside`. A dialog opened from
+  the aside renders as a sibling of the form, never inside it: a submit in
+  a portal still bubbles to the form around it in React's tree.
 - An approved purchase order states what it asks for: its request fields
   (事由, 说明, 部门, 需求日期, 供应商, 币种) go read-only once it reaches
   `approved` (`SETTLED_STATUSES` / `SETTLED_EDITABLE` in `procurement.ts`,
@@ -1574,7 +1597,8 @@ Rules learned while building it:
   in the side panel** — the way Slack, Glean and Rovo put an AI answer at
   the top of the results. It runs in the search's own chat: `HiddenChat` in
   `client/layouts/ai-panel.tsx` mounts a windowless `AIChatProvider` per
-  unseen chat (`search`, and `receipt` for receiving by delivery document)
+  unseen chat (`search`, `receipt` for receiving by delivery document,
+  `capture` and `master` for AI 整理)
   with the same employee (sending, tool calls and their
   automatic approval all live in the provider), so asking neither opens the
   panel nor replaces the conversation in it; `ChatStateBridge` publishes its

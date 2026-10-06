@@ -1,4 +1,6 @@
+import { MasterCreateDialog } from '@/components/itam/master-create-dialog';
 import { masterDataPath, type ItamRecord } from '@/lib/itam/api';
+import { isMasterCaptureCollection } from '@/lib/itam/master-capture';
 import type {
   DomainConfig,
   DomainListColumn,
@@ -203,6 +205,14 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
     Actions: ({ record }) => (
       <MasterActions collection={collection} record={record} />
     ),
+    // A model or a software product is created with AI 整理 beside the form
+    // (2026-10-06): the maker and the model are typed, the rest looked up.
+    Create: isMasterCaptureCollection(collection.name)
+      ? ((name) =>
+          function CreateWithCapture(props) {
+            return <MasterCreateDialog collection={name} {...props} />;
+          })(collection.name)
+      : undefined,
     Aside:
       collection.name === 'categories'
         ? CategoryTemplate

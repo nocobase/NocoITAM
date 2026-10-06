@@ -107,7 +107,7 @@ const clip = (value: string | null | undefined, limit: number): string =>
  * The one record a name means: the same name, else the only one whose name
  * contains it or is contained in it. Two candidates are no answer.
  */
-function byName<T extends { readonly id: string; readonly name: string }>(
+export function byName<T extends { readonly id: string; readonly name: string }>(
   rows: readonly T[],
   name: string,
 ): T | undefined {
