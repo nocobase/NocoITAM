@@ -80,7 +80,8 @@ const device = {
   id: 'd1',
   categoryId: 'cat-monitor',
   modelId: 'm1',
-  attributes: { resolution: '2560×1440', assetLabel: 'X-1' },
+  // A copy of the model's size, written before the field moved to the model.
+  attributes: { screenSize: '27', resolution: '2560×1440', assetLabel: 'X-1' },
 };
 
 it('shows what the device reads from its model and what it states itself', async () => {
@@ -105,15 +106,22 @@ it('shows what the device reads from its model and what it states itself', async
       screen.getByRole('button', { name: 'extendedFields.useModel' }),
     );
   });
-  expect(onSave).toHaveBeenLastCalledWith({ assetLabel: 'X-1' });
+  expect(onSave).toHaveBeenLastCalledWith({
+    screenSize: '27',
+    assetLabel: 'X-1',
+  });
 
-  // Typing the model's own value is no value of the device's either.
+  // Typing the model's own value is no value of the device's either, and
+  // drops the copy it held.
   await act(async () => {
     fireEvent.blur(screen.getByLabelText('edit-screenSize'), {
       target: { value: '27' },
     });
   });
-  expect(onSave).toHaveBeenLastCalledWith(device.attributes);
+  expect(onSave).toHaveBeenLastCalledWith({
+    resolution: '2560×1440',
+    assetLabel: 'X-1',
+  });
   // Another value is.
   await act(async () => {
     fireEvent.blur(screen.getByLabelText('edit-screenSize'), {

@@ -121,7 +121,12 @@ function ExtendedFieldRow({
     required: entry.required,
     options: entry.options?.map((option) => ({ value: option, label: option })),
   };
-  const stated = !isBlank(own[entry.key]);
+  // A value the same as the model's says nothing of its own: it reads as
+  // the model's (devices entered before the field moved to the model carry
+  // such copies).
+  const stated =
+    !isBlank(own[entry.key]) &&
+    !(fromModel && sameValue(own[entry.key], inherited));
   const value = stated ? own[entry.key] : fromModel ? inherited : undefined;
   const without = () => {
     const next = { ...own };
@@ -189,9 +194,7 @@ function ExtendedFieldRow({
         onSave={(next) =>
           // Nothing, or the model's own value, is no value of the record's:
           // it goes on reading the model.
-          fromModel &&
-          (isBlank(next) ||
-            (!isBlank(inherited) && String(next) === String(inherited)))
+          fromModel && (isBlank(next) || sameValue(next, inherited))
             ? onSave(without())
             : onSave({ ...own, [entry.key]: next })
         }
@@ -199,3 +202,7 @@ function ExtendedFieldRow({
     </InfoRow>
   );
 }
+
+/** The same answer, however it was typed: `14` and `'14'` are one value. */
+const sameValue = (value: unknown, model: unknown): boolean =>
+  !isBlank(model) && String(value) === String(model);
