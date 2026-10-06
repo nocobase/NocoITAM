@@ -873,6 +873,25 @@ const messages = {
     seat: 'Assign a {{label}} seat',
     runAll_one: 'Do all ({{count}})',
     runAll_other: 'Do all ({{count}})',
+    advice: {
+      none: 'Noco has not chosen for them yet; it can go through the stock.',
+      running: 'Noco is choosing from the stock…',
+      ready: 'Chosen by Noco ({{date}})',
+      failed: 'Noco could not choose this time.',
+      conversation: 'See how',
+      first: 'Have Noco choose',
+      again: 'Suggest again',
+      notStarted: {
+        disabled: 'Onboarding suggestions are switched off in the settings',
+        unavailable: 'Noco is not available: check Settings → AI',
+        notJoiner: 'Noco chooses only for joiners starting within two weeks',
+        noOwner: 'Give them an onboarding owner first',
+        nothingToChoose:
+          'Nothing to choose: every item has one candidate or none',
+        running: 'Noco is already choosing',
+        current: 'Noco has already chosen on what is known now',
+      },
+    },
     state: { assigned: 'assigned', reserved: 'reserved' },
     done: {
       reserved: 'Reserved {{label}}',
@@ -1663,7 +1682,7 @@ const messages = {
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
       leaverRecovery: 'Offboarding',
-      pendingOnboarding: 'Joining soon',
+      pendingOnboarding: 'Onboarding prep',
       // The card lists everybody's now, so this says which part of a row
       // answers to the reader — not that only they may act on it.
       mine_one: '{{count}} yours',
@@ -2126,8 +2145,11 @@ const messages = {
     ai: {
       title: 'AI assistant',
       description:
-        'Business notes for the assistant Noco; the model, whether it is on and its tool permissions are set under Settings → AI.',
+        'Business notes for the assistant Noco, and what it does in the background; the model, whether it is on and its tool permissions are set under Settings → AI.',
       businessNotes: 'Business notes (Noco reads them when a task starts)',
+      onboardingAdvice: 'Onboarding suggestions',
+      onboardingAdviceHint:
+        'When a joiner is within two weeks of starting, Noco chooses devices, accessories and seats from stock for them in the background, as their onboarding owner, with a reason for each; the owner confirms or changes them. Off, it prepares them only in a conversation.',
     },
     demo: {
       title: 'Demo data',

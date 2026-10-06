@@ -12,6 +12,8 @@ const zhCN: AppServerResource = {
     loanOverdueBody: '预计归还日期 {{date}}',
     leaverRecovery: '待回收：{{name}} 的资产',
     leaverRecoveryBody: '其中 {{count}} 项由你负责',
+    onboardingAdvice: 'Noco 已为 {{name}} 挑好入职配备',
+    onboardingAdviceBody: '{{count}} 项建议等你确认或更换',
   },
 };
 

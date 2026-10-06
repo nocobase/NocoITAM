@@ -1,5 +1,12 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { AppWindow, Check, Package, PackageCheck } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import {
+  AppWindow,
+  Check,
+  Package,
+  PackageCheck,
+  Sparkles,
+} from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
@@ -7,18 +14,22 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAiPageContext } from '@/lib/itam/ai-context';
+import { useItamAi } from '@/lib/itam/ai-chat';
 import { useAnnounce } from '@/lib/itam/announce';
-import { apiErrorBody, useApi } from '@/lib/itam/api';
+import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
 import { errorMessage, formatDate, text, todayIso } from '@/lib/itam/format';
 import {
   useOnboardingPlan,
+  type OnboardingPlan,
   type OnboardingPlanLine,
   type PlanThing,
 } from '@/lib/itam/onboarding';
+import { useCurrentUserId } from '@/lib/itam/permissions';
 import { STOCK_PATH } from '@/lib/itam/stock';
 
+import { CollapsibleText } from './collapsible-text.js';
 import { RecordLink } from './record-link.js';
 import { ReferenceSelect } from './reference-select.js';
 
@@ -31,13 +42,21 @@ import { ReferenceSelect } from './reference-select.js';
  * the reader's own grants, and 全部执行 runs them in order. A device is
  * reserved until the joining date while they have not started, and
  * assigned once they have. What stock cannot cover is the shortfall.
+ *
+ * Which device of several is Noco's to suggest (2026-10-06): it chooses in
+ * the background as the joiner's 入职负责人 (`onboarding-advisor.ts`), its
+ * picks come first with the reason beneath, and the strip under the heading
+ * says how that run went. The buttons stay the person's.
  */
 export function OnboardingPlanCard({
   personId,
   personName,
+  ownerId,
 }: {
   readonly personId: string;
   readonly personName: string;
+  /** The joiner's 入职负责人, who alone may ask Noco again. */
+  readonly ownerId?: string;
 }): ReactElement | null {
   const { t } = useTranslation();
   const api = useApi();
@@ -210,6 +229,15 @@ export function OnboardingPlanCard({
           ) : null}
         </div>
 
+        {data.kit ? (
+          <AdviceStrip
+            personId={personId}
+            plan={data}
+            ownerId={ownerId}
+            aiAvailable={aiAvailable}
+          />
+        ) : null}
+
         {!data.kit ? (
           <p className='text-sm text-muted-foreground'>
             {t('onboarding.noKit')}
@@ -305,117 +333,243 @@ function PlanLine({
   // The proposal whose device is being chosen again, if any.
   const [changing, setChanging] = useState<string>();
   const Icon = line.kind === 'entitlement' ? AppWindow : Package;
+  // Noco's reasons, for the picks still standing: one replaced by 更换 is
+  // the person's choice now, and its reason no longer applies.
+  const reasons = line.proposals.filter(
+    (thing) => thing.reason && effective(thing) === thing,
+  );
   return (
-    <li className='flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2 text-sm'>
-      <span className='flex min-w-0 flex-1 items-center gap-2'>
-        <Icon
-          aria-hidden='true'
-          className='size-4 shrink-0 text-muted-foreground'
-        />
-        <span className='truncate'>{line.target.name}</span>
-        {line.target.type === 'category' ? (
-          <span className='shrink-0 text-xs text-muted-foreground'>
-            {t('onboardingKits.anyModel')}
+    <li className='py-2 text-sm'>
+      <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
+        <span className='flex min-w-0 flex-1 items-center gap-2'>
+          <Icon
+            aria-hidden='true'
+            className='size-4 shrink-0 text-muted-foreground'
+          />
+          <span className='truncate'>{line.target.name}</span>
+          {line.target.type === 'category' ? (
+            <span className='shrink-0 text-xs text-muted-foreground'>
+              {t('onboardingKits.anyModel')}
+            </span>
+          ) : null}
+          <span className='shrink-0 text-muted-foreground tabular-nums'>
+            ×{line.required}
           </span>
-        ) : null}
-        <span className='shrink-0 text-muted-foreground tabular-nums'>
-          ×{line.required}
         </span>
-      </span>
-      <span className='flex flex-wrap items-center justify-end gap-1.5'>
-        {line.prepared.map((thing) => (
-          <Badge key={`p:${thing.type}:${thing.id}`} variant='secondary'>
-            <Check className='size-3' />
-            {thing.type === 'device'
-              ? `${thing.label} · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
-              : thing.label}
-          </Badge>
-        ))}
-        {line.proposals.map((original) => {
-          const thing = effective(original);
-          if (changing === original.id)
+        <span className='flex flex-wrap items-center justify-end gap-1.5'>
+          {line.prepared.map((thing) => (
+            <Badge key={`p:${thing.type}:${thing.id}`} variant='secondary'>
+              <Check className='size-3' />
+              {thing.type === 'device'
+                ? `${thing.label} · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
+                : thing.label}
+            </Badge>
+          ))}
+          {line.proposals.map((original) => {
+            const thing = effective(original);
+            if (changing === original.id)
+              return (
+                // 更换: any device of this model (or category) that is in
+                // stock and held for nobody.
+                <span key={`c:${original.id}`} className='w-56'>
+                  <ReferenceSelect
+                    reference={{
+                      collection: 'devices',
+                      filter: {
+                        view: 'available',
+                        ...(line.target.type === 'model'
+                          ? { modelId: line.target.id }
+                          : { categoryId: line.target.id }),
+                      },
+                    }}
+                    value={thing.id}
+                    defaultOpen
+                    onOpenChange={(open) => {
+                      if (!open) setChanging(undefined);
+                    }}
+                    onChange={(id, record) => {
+                      if (id && record)
+                        onChoose(original, {
+                          type: 'device',
+                          id,
+                          label: `${text(record.deviceNo)} / ${text(record.name)}`,
+                        });
+                      setChanging(undefined);
+                    }}
+                  />
+                </span>
+              );
             return (
-              // 更换: any device of this model (or category) that is in
-              // stock and held for nobody.
-              <span key={`c:${original.id}`} className='w-56'>
-                <ReferenceSelect
-                  reference={{
-                    collection: 'devices',
-                    filter: {
-                      view: 'available',
-                      ...(line.target.type === 'model'
-                        ? { modelId: line.target.id }
-                        : { categoryId: line.target.id }),
-                    },
-                  }}
-                  value={thing.id}
-                  defaultOpen
-                  onOpenChange={(open) => {
-                    if (!open) setChanging(undefined);
-                  }}
-                  onChange={(id, record) => {
-                    if (id && record)
-                      onChoose(original, {
-                        type: 'device',
-                        id,
-                        label: `${text(record.deviceNo)} / ${text(record.name)}`,
-                      });
-                    setChanging(undefined);
-                  }}
-                />
-              </span>
-            );
-          return (
-            <span
-              key={`o:${original.type}:${original.id}`}
-              className='inline-flex items-center gap-1'
-            >
-              <Button
-                size='sm'
-                variant='outline'
-                disabled={busy || (thing.needsAccount && !thing.account)}
-                title={
-                  thing.needsAccount && !thing.account
-                    ? t('onboarding.needsAccount')
-                    : undefined
-                }
-                onClick={() => onRun(thing)}
+              <span
+                key={`o:${original.type}:${original.id}`}
+                className='inline-flex items-center gap-1'
               >
-                {thing.type === 'device'
-                  ? t(started ? 'onboarding.assign' : 'onboarding.reserve', {
-                      label: thing.label,
-                    })
-                  : thing.type === 'stock'
-                    ? t('onboarding.issue', {
-                        label: thing.label,
-                        count: thing.quantity ?? 1,
-                      })
-                    : t('onboarding.seat', { label: thing.label })}
-              </Button>
-              {thing.type === 'device' ? (
                 <Button
                   size='sm'
-                  variant='ghost'
-                  disabled={busy}
-                  onClick={() => setChanging(original.id)}
+                  variant='outline'
+                  disabled={busy || (thing.needsAccount && !thing.account)}
+                  title={
+                    thing.needsAccount && !thing.account
+                      ? t('onboarding.needsAccount')
+                      : undefined
+                  }
+                  onClick={() => onRun(thing)}
                 >
-                  {t('onboarding.change')}
+                  {thing.type === 'device'
+                    ? t(started ? 'onboarding.assign' : 'onboarding.reserve', {
+                        label: thing.label,
+                      })
+                    : thing.type === 'stock'
+                      ? t('onboarding.issue', {
+                          label: thing.label,
+                          count: thing.quantity ?? 1,
+                        })
+                      : t('onboarding.seat', { label: thing.label })}
                 </Button>
-              ) : null}
+                {thing.type === 'device' ? (
+                  <Button
+                    size='sm'
+                    variant='ghost'
+                    disabled={busy}
+                    onClick={() => setChanging(original.id)}
+                  >
+                    {t('onboarding.change')}
+                  </Button>
+                ) : null}
+              </span>
+            );
+          })}
+          {line.onOrder > 0 ? (
+            <span className='text-xs text-muted-foreground'>
+              {t('onboarding.onOrder', { count: line.onOrder })}
             </span>
-          );
-        })}
-        {line.onOrder > 0 ? (
-          <span className='text-xs text-muted-foreground'>
-            {t('onboarding.onOrder', { count: line.onOrder })}
-          </span>
-        ) : null}
-        {line.shortfall > 0 ? (
-          <span className='text-xs text-destructive'>
-            {t('onboarding.shortfall', { count: line.shortfall })}
-          </span>
-        ) : null}
-      </span>
+          ) : null}
+          {line.shortfall > 0 ? (
+            <span className='text-xs text-destructive'>
+              {t('onboarding.shortfall', { count: line.shortfall })}
+            </span>
+          ) : null}
+        </span>
+      </div>
+      {reasons.length > 0 ? (
+        <ul className='mt-1 space-y-0.5 pl-6'>
+          {reasons.map((thing) => (
+            <li
+              key={`r:${thing.id}`}
+              className='flex gap-1.5 text-xs text-muted-foreground'
+            >
+              <Sparkles
+                aria-hidden='true'
+                className='mt-0.5 size-3 shrink-0 text-success-foreground'
+              />
+              <span className='min-w-0'>
+                {reasons.length > 1 ? `${thing.label}：` : null}
+                <CollapsibleText text={thing.reason ?? ''} lines={2} />
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </li>
+  );
+}
+
+/**
+ * How Noco's background choice stands: choosing, chosen (with its summary
+ * and the conversation it ran in, which is the 入职负责人's), or failed.
+ * The 入职负责人 may ask again, since the run is made as them.
+ */
+function AdviceStrip({
+  personId,
+  plan,
+  ownerId,
+  aiAvailable,
+}: {
+  readonly personId: string;
+  readonly plan: OnboardingPlan;
+  readonly ownerId?: string;
+  readonly aiAvailable: boolean;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const api = useApi();
+  const ai = useItamAi();
+  const me = useCurrentUserId();
+  const announce = useAnnounce();
+  const advice = plan.advice;
+  const isOwner = Boolean(me) && me === ownerId;
+  const advise = useMutation({
+    mutationFn: async () =>
+      (
+        await api.request<{
+          data: { started: boolean; reason?: string };
+        }>({
+          path: `${masterDataPath('people')}/${personId}/onboarding/advise`,
+          method: 'POST',
+        })
+      ).data,
+    onSuccess: async (result) => {
+      if (!result.started)
+        await announce(
+          t(`onboarding.advice.notStarted.${result.reason ?? 'unavailable'}`),
+          [],
+        );
+    },
+  });
+  // Nothing to say: Noco has not run and the reader cannot ask it to.
+  if (!advice && !(isOwner && aiAvailable)) return null;
+  const again =
+    isOwner && aiAvailable && advice?.status !== 'running' ? (
+      <AiShortcut
+        className='text-xs'
+        disabled={advise.isPending}
+        onClick={() => advise.mutate()}
+      >
+        {t(advice ? 'onboarding.advice.again' : 'onboarding.advice.first')}
+      </AiShortcut>
+    ) : null;
+  return (
+    <div className='flex flex-wrap items-start gap-x-3 gap-y-1 rounded-md bg-success/50 px-3 py-2 text-xs'>
+      <span className='flex min-w-0 flex-1 gap-1.5'>
+        <Sparkles
+          aria-hidden='true'
+          className='mt-0.5 size-3.5 shrink-0 text-success-foreground'
+        />
+        <span className='min-w-0 text-muted-foreground'>
+          {!advice ? (
+            t('onboarding.advice.none')
+          ) : advice.status === 'running' ? (
+            t('onboarding.advice.running')
+          ) : advice.status === 'failed' ? (
+            <span className='text-destructive'>
+              {t('onboarding.advice.failed')}
+              {advice.failure ? ` ${advice.failure}` : null}
+            </span>
+          ) : (
+            <>
+              <span className='font-medium text-foreground'>
+                {t('onboarding.advice.ready', {
+                  date: formatDate(advice.finishedAt ?? advice.createdAt),
+                })}
+              </span>{' '}
+              {advice.summary ? (
+                <CollapsibleText text={advice.summary} lines={3} />
+              ) : null}
+            </>
+          )}
+        </span>
+      </span>
+      <span className='flex shrink-0 items-center gap-3'>
+        {advice?.sessionId && ai && me === advice.actorId ? (
+          <button
+            type='button'
+            className='text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
+            onClick={() => ai.openConversation(advice.sessionId ?? '')}
+          >
+            {t('onboarding.advice.conversation')}
+          </button>
+        ) : null}
+        {again}
+      </span>
+    </div>
   );
 }

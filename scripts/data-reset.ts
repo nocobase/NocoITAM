@@ -40,6 +40,8 @@ import appRuntime from '../server/runtime.js';
  * developer stays signed in with the same roles.
  */
 const ITAM_TABLES = [
+  'onboardingRuns',
+  'receiptRuns',
   'reminders',
   'demoRecords',
   'attachmentLinks',

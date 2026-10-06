@@ -26,6 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
   apiErrorBody,
@@ -376,6 +377,23 @@ function AiCard({
           value={draft.businessNotes}
           onChange={(event) =>
             setDraft({ ...draft, businessNotes: event.target.value })
+          }
+        />
+      </div>
+      <div className='flex items-start justify-between gap-4'>
+        <div className='grid gap-1'>
+          <Label htmlFor='ai-onboarding-advice'>
+            {t('settings.ai.onboardingAdvice')}
+          </Label>
+          <p className='text-xs text-muted-foreground'>
+            {t('settings.ai.onboardingAdviceHint')}
+          </p>
+        </div>
+        <Switch
+          id='ai-onboarding-advice'
+          checked={draft.onboardingAdvice !== false}
+          onCheckedChange={(checked) =>
+            setDraft({ ...draft, onboardingAdvice: checked })
           }
         />
       </div>

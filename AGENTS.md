@@ -197,11 +197,14 @@ Rules learned while building it:
   The header button shows the NocoBase AI chat mark, which the Registry copy
   exports for it (`NocoBaseAIChatIcon`, marked "Application change (ITAM)";
   the unused floating launcher keeps its own two such edits). Nothing AI
-  runs outside a conversation any more (step 3, 2026-09-27, migration
-  `202609270008_drop_ai_findings`): no findings, no inspection, no instant
-  check, no direct model calls. Whether the assistant is available is the
+  ran outside a conversation from step 3 (2026-09-27, migration
+  `202609270008_drop_ai_findings`: no findings, no inspection, no instant
+  check, no direct model calls) until the onboarding advisor (2026-10-06,
+  below), which is the one exception: an unattended run, as a named person,
+  writing only its own suggestions. Whether the assistant is available is the
   plugin's to say — `/itam/ai/status` reports a usable model and Ava enabled
-  at 设置 → AI; ITAM's settings keep only the business notes (the web
+  at 设置 → AI; ITAM's settings keep the business notes and the
+  入职建议 switch (the web
   search switch went with `202609270009_drop_ai_web_search`: web search is
   the plugin's, per conversation). The rule-layer reminders stay: they need no model. The
   chat (`AIChatProvider`) mounts inside the panel only once `useAI()`
@@ -725,14 +728,14 @@ Rules learned while building it:
   N / M, and one button per proposal through the operation that already
   exists — 预留 until the joining day while they have not started, 分配
   once they have, 领用, 分配席位 — with 全部执行 running them in order.
-  The workbench's 待入职 (`pendingOnboarding`, right after 离职交接) lists
+  The workbench's 入职准备 (`pendingOnboarding`, right after 离职交接) lists
   people joining within 14 days, or in the 7 since, whose kit is not all in
   hand (with no kit, while no device is held or reserved), granted by
   `reserve`. A joiner has a **入职负责人** (`people.onboardingOwnerId`,
   2026-10-06, migration `202610060001_person_onboarding_owner`): the IT
   person who gets them equipped, starting at whoever enters the person
   (people entered before stay empty), editable beside 入职日期. Under
-  我负责的, 待入职 is the joiners whose 入职负责人 the reader is; and a
+  我负责的, 入职准备 is the joiners whose 入职负责人 the reader is; and a
   leaving IT person's handover list includes the active joiners they own
   whose joining day is ahead or within 30 days (`OWNED_BY_USER`'s new
   `since` condition), not every person they ever entered. Each proposed
@@ -756,6 +759,47 @@ Rules learned while building it:
   seat looked complete on the card while it belonged to nobody (found
   testing 2026-10-05). The kits are no longer
   listed in the seeded AI business notes, which point to 入职配置.
+- **Noco chooses a joiner's equipment in the background** (2026-10-06,
+  `server/providers/itam/onboarding-advisor.ts`, migration
+  `202610060002_onboarding_runs`), reversing "nothing AI runs outside a
+  conversation" for this one job. The rule picks among identical laptops by
+  place and warranty; Noco also weighs repairs, the replacement date, notes
+  and the business notes, and says why. A run is the AI employee driven from
+  the server (`createNocoAgentRunner`): a conversation owned by the joiner's
+  **入职负责人**, a fixed agent (`createAgent`, not `createAIEmployee`) run
+  as that person with this job's instructions (`PROMPTS`) as its whole
+  system prompt, no tool and no skill, and one `invoke` with a Zod
+  `responseFormat`; the message is the joiner, the kit, the business notes
+  and each item's candidates as JSON. Found running it against the real
+  model (2026-10-06): as the employee, Noco's own prompt sent it to the
+  business context — which also lists the user's open work — and to skills,
+  so it summarised the workbench, answered about the other joiners and
+  models nobody had in stock, or spent the run guessing skill names with
+  `getSkill`, which no allowlist removes; and the user message must be
+  `{ type: 'text', content }`, the chat's shape — a bare string is stored
+  and reaches the model as nothing. An answer that keeps no valid pick is
+  recorded as `failed`, not as chosen. It
+  writes only its `onboardingRuns` row: per kit item (`OnboardingPlanLine.key`,
+  `<target type>:<target id>`) the picks and a reason each, held by
+  `validAdvice` to that item's own candidates and to as many as it needs.
+  `plan()` puts a pick first **while it is still free** (marked
+  `source: 'noco'` with its `reason`) and otherwise falls back to the rule,
+  so a pick taken since needs no clean-up; `plan(id, { candidates: true })`
+  is what the run is shown. Runs are queued one at a time and start when a
+  joiner in the 入职准备 window has an owner, Noco has a choice (some item
+  with more candidates than it needs) and the last run was not asked the
+  same question (`inputs`: joining day, department, position, owner, kit):
+  after a person is saved (`personSaved` on the master-data service), by
+  the nightly `itam.onboarding-advice` task (02:30, after the daily run
+  frees lapsed reservations; it also retries a failed run) and by 重新建议
+  on the card, which only the 入职负责人 may press because the run is made
+  as them (`POST /itam/master/people/:id/onboarding/advise`, `NOT_OWNER`).
+  The owner is notified when a run they did not ask for found something.
+  The card shows the run under its heading — choosing, chosen with
+  Noco's summary and 查看过程 (the conversation, the owner's), or failed —
+  and each pick's reason under its item; the buttons stay the person's.
+  `ai.onboardingAdvice` in ITAM's settings (入职建议, on by default) switches
+  it off; no usable model or Noco disabled starts nothing.
 - A leaver's **sign-in goes with them** (2026-10-05,
   `server/providers/itam/leaver-accounts.ts`): marking somebody as left
   marks a person, not an account, so a sign-in the person record links went

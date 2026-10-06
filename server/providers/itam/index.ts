@@ -61,6 +61,11 @@ import {
   onboardingServiceToken,
 } from './onboarding.js';
 import {
+  createNocoAgentRunner,
+  createOnboardingAdvisor,
+  onboardingAdvisorToken,
+} from './onboarding-advisor.js';
+import {
   createMasterDataService,
   masterDataServiceToken,
 } from './master-data.js';
@@ -500,12 +505,53 @@ export default class ItamProvider extends ServiceProvider<Application> {
         container.resolve(databaseManagerToken),
         container.resolve(historyServiceToken),
         container.resolve(leaverAccountsToken),
+        // Resolved per save: the advisor reads master data's own tables
+        // through the plan, and is never a reason for a save to fail.
+        (id) => {
+          void container
+            .resolve(onboardingAdvisorToken)
+            .consider(id, 'change')
+            .catch((error: unknown) => {
+              if (container.has(loggingToken))
+                container
+                  .resolve(loggingToken)
+                  .getLogger('itam')
+                  .warn({ err: error }, 'Onboarding advice could not start');
+            });
+        },
       ),
     );
     // 入职配备: a joiner's kit, what they have and what stock would make
     // up the rest (`onboarding.ts`).
     container.singleton(onboardingServiceToken, () =>
       createOnboardingService(container.resolve(databaseManagerToken)),
+    );
+    // Noco choosing a joiner's equipment in the background, as their
+    // 入职负责人 (`onboarding-advisor.ts`).
+    container.singleton(onboardingAdvisorToken, () =>
+      createOnboardingAdvisor({
+        database: container.resolve(databaseManagerToken),
+        onboarding: container.resolve(onboardingServiceToken),
+        settings: container.resolve(settingsServiceToken),
+        notifier: container.resolve(itamNotifierToken),
+        runner: createNocoAgentRunner(container, () =>
+          container.has(loggingToken)
+            ? container.resolve(loggingToken).getLogger('itam')
+            : undefined,
+        ),
+        locale: () =>
+          process.env.APP_DEFAULT_LOCALE ??
+          this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??
+          'en-US',
+        touched: () => container.resolve(itamChangesToken).touched(),
+        log: (message, error) => {
+          if (container.has(loggingToken))
+            container
+              .resolve(loggingToken)
+              .getLogger('itam')
+              .warn({ err: error }, message);
+        },
+      }),
     );
   }
 

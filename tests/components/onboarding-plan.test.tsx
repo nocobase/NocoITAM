@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
@@ -10,6 +11,9 @@ const state = vi.hoisted(() => ({
   requests: [] as { path: string; method?: string; json?: unknown }[],
   /** A request whose path contains this is refused. */
   failOn: undefined as string | undefined,
+  me: 'u1' as string | undefined,
+  aiAvailable: false,
+  opened: [] as string[],
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -21,9 +25,17 @@ vi.mock('../../client/lib/itam/onboarding.js', () => ({
 vi.mock('../../client/lib/itam/ai-context.js', () => ({
   useAiPageContext: () => ({
     ref: () => undefined,
-    available: false,
+    available: state.aiAvailable,
     ask: () => undefined,
   }),
+}));
+vi.mock('../../client/lib/itam/ai-chat.js', () => ({
+  useItamAi: () => ({
+    openConversation: (id: string) => state.opened.push(id),
+  }),
+}));
+vi.mock('../../client/lib/itam/permissions.js', () => ({
+  useCurrentUserId: () => state.me,
 }));
 vi.mock('../../client/lib/itam/announce.js', () => ({
   useAnnounce: () => async () => undefined,
@@ -39,7 +51,9 @@ vi.mock('../../client/lib/itam/api.js', async (original) => ({
       state.requests.push(request);
       if (state.failOn && request.path.includes(state.failOn))
         throw new Error('Not enough in stock');
-      return {};
+      return request.path.endsWith('/advise')
+        ? { data: { started: true, runId: 'r2' } }
+        : {};
     },
   }),
 }));
@@ -78,8 +92,11 @@ const plan = (hireDate: string): OnboardingPlan => ({
   required: 3,
   hasDevice: false,
   orders: [],
+  advice: null,
   lines: [
     {
+      key: 'model:m1',
+      missing: 1,
       target: { type: 'model', id: 'm1', name: 'MacBook Pro 14' },
       kind: 'device',
       itemType: 'device',
@@ -91,6 +108,8 @@ const plan = (hireDate: string): OnboardingPlan => ({
       shortfall: 0,
     },
     {
+      key: 'model:m2',
+      missing: 1,
       target: { type: 'model', id: 'm2', name: 'MX Keys' },
       kind: 'stock',
       itemType: 'accessory',
@@ -102,6 +121,8 @@ const plan = (hireDate: string): OnboardingPlan => ({
       shortfall: 0,
     },
     {
+      key: 'softwareProduct:sp1',
+      missing: 1,
       target: { type: 'softwareProduct', id: 'sp1', name: 'Figma' },
       kind: 'entitlement',
       itemType: null,
@@ -115,18 +136,61 @@ const plan = (hireDate: string): OnboardingPlan => ({
   ],
 });
 
-const show = () =>
+const show = (ownerId = 'u1') =>
   render(
-    <MemoryRouter>
-      <OnboardingPlanCard personId='p1' personName='Sun Hao' />
-    </MemoryRouter>,
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter>
+        <OnboardingPlanCard
+          personId='p1'
+          personName='Sun Hao'
+          ownerId={ownerId}
+        />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 beforeEach(() => {
   state.requests = [];
   state.failOn = undefined;
+  state.me = 'u1';
+  state.aiAvailable = false;
+  state.opened = [];
 });
+
+/** The plan with Noco's pick on the laptop, from a run made as `u1`. */
+const advised = (): OnboardingPlan => {
+  const base = plan('2099-01-10');
+  return {
+    ...base,
+    advice: {
+      runId: 'r1',
+      status: 'ready',
+      summary: 'Chose the laptop with no repairs.',
+      failure: null,
+      sessionId: 's1',
+      actorId: 'u1',
+      createdAt: '2099-01-01T08:00:00.000',
+      finishedAt: '2099-01-01T08:01:00.000',
+    },
+    lines: base.lines.map((line) =>
+      line.key === 'model:m1'
+        ? {
+            ...line,
+            proposals: [
+              {
+                type: 'device',
+                id: 'd1',
+                label: 'DE-000001 / Mac',
+                source: 'noco',
+                reason: 'Never repaired, same office',
+              },
+            ],
+          }
+        : line,
+    ),
+  };
+};
 
 it('reserves a device until the joining date, before they start', async () => {
   state.plan = plan('2099-01-10');
@@ -172,6 +236,8 @@ it('carries on past a refused item, and gives a subscription seat its account', 
     lines: [
       ...base.lines,
       {
+        key: 'softwareProduct:sp2',
+        missing: 1,
         target: { type: 'softwareProduct', id: 'sp2', name: 'Zoom' },
         kind: 'entitlement',
         itemType: 'subscription',
@@ -234,4 +300,48 @@ it('reserves the device the person chose instead of the proposed one', async () 
   await settle();
   await settle();
   expect(state.requests[0]?.path).toBe('itam/devices/d2/reserve');
+});
+
+it('shows Noco’s reason under its pick, and the run under the heading', async () => {
+  state.plan = advised();
+  state.aiAvailable = true;
+  show();
+  expect(screen.getByText('Never repaired, same office')).toBeTruthy();
+  expect(screen.getByText('onboarding.advice.ready')).toBeTruthy();
+  expect(screen.getByText('Chose the laptop with no repairs.')).toBeTruthy();
+  // The conversation is the owner's, who ran it.
+  fireEvent.click(
+    screen.getByRole('button', { name: 'onboarding.advice.conversation' }),
+  );
+  expect(state.opened).toEqual(['s1']);
+  // The 入职负责人 may ask again.
+  fireEvent.click(
+    screen.getByRole('button', { name: 'onboarding.advice.again' }),
+  );
+  await settle();
+  expect(state.requests).toEqual([
+    expect.objectContaining({
+      path: 'itam/master/people/p1/onboarding/advise',
+      method: 'POST',
+    }),
+  ]);
+  // A pick replaced by 更换 is the person's choice, and its reason goes.
+  fireEvent.click(screen.getByRole('button', { name: 'onboarding.change' }));
+  fireEvent.click(screen.getByRole('button', { name: 'pick another' }));
+  expect(screen.queryByText('Never repaired, same office')).toBeNull();
+});
+
+it('lets nobody but the onboarding owner ask again', () => {
+  state.plan = advised();
+  state.aiAvailable = true;
+  state.me = 'u2';
+  show();
+  expect(screen.getByText('Never repaired, same office')).toBeTruthy();
+  expect(
+    screen.queryByRole('button', { name: 'onboarding.advice.again' }),
+  ).toBeNull();
+  // Nor open the conversation, which is not theirs.
+  expect(
+    screen.queryByRole('button', { name: 'onboarding.advice.conversation' }),
+  ).toBeNull();
 });

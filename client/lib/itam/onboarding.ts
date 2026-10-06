@@ -12,9 +12,25 @@ export interface PlanThing {
   /** A subscription seat: held under an account, the person's e-mail. */
   readonly needsAccount?: boolean;
   readonly account?: string;
+  /** Chosen by Noco in the background, with the reason it gave. */
+  readonly source?: 'noco';
+  readonly reason?: string;
+}
+
+/** Noco's latest background run for the joiner. */
+export interface PlanAdvice {
+  readonly runId: string;
+  readonly status: 'running' | 'ready' | 'failed';
+  readonly summary: string | null;
+  readonly failure: string | null;
+  readonly sessionId: string | null;
+  readonly actorId: string;
+  readonly createdAt: string;
+  readonly finishedAt: string | null;
 }
 
 export interface OnboardingPlanLine {
+  readonly key: string;
   readonly target: {
     readonly type: 'model' | 'category' | 'softwareProduct';
     readonly id: string;
@@ -27,6 +43,7 @@ export interface OnboardingPlanLine {
   readonly prepared: readonly PlanThing[];
   readonly preparedCount: number;
   readonly proposals: readonly PlanThing[];
+  readonly missing: number;
   /** Still to arrive on an open 新员工配备 order for them. */
   readonly onOrder: number;
   readonly shortfall: number;
@@ -51,6 +68,7 @@ export interface OnboardingPlan {
     readonly orderNo: string;
     readonly status: string;
   }[];
+  readonly advice: PlanAdvice | null;
 }
 
 /** A person's 入职配备 plan: their kit, what they have, what stock would add. */
@@ -68,5 +86,9 @@ export function useOnboardingPlan(
         })
       ).data,
     enabled: enabled && Boolean(personId),
+    // While Noco is choosing, look again until it has; the run's end also
+    // reaches open pages through the change signal.
+    refetchInterval: (query) =>
+      query.state.data?.advice?.status === 'running' ? 5_000 : false,
   });
 }
