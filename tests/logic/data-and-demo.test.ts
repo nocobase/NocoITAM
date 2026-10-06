@@ -339,6 +339,22 @@ describe('CSV import / export and demo data', () => {
     }>(generated);
     expect(summary.generated).toBe(true);
     expect(summary.counts.devices).toBeGreaterThanOrEqual(12);
+    // Every department has a default 入职配置, 技术部 included, which the
+    // seeds leave without one.
+    const kits = (await (
+      await get('master/onboardingKits?pageSize=200')
+    ).json()) as {
+      data: { departmentId: string; position: string | null }[];
+    };
+    const withDefault = new Set(
+      kits.data.filter((kit) => !kit.position).map((kit) => kit.departmentId),
+    );
+    const departments = (await (
+      await get('master/departments?pageSize=200')
+    ).json()) as { data: { id: string }[] };
+    expect(departments.data.length).toBeGreaterThan(0);
+    for (const department of departments.data)
+      expect(withDefault).toContain(department.id);
     // Without a language it follows the deployment's (en-US in tests), and
     // the status says when and how much; this harness creates no sign-ins.
     const status = await data<{
@@ -449,6 +465,21 @@ describe('CSV import / export and demo data', () => {
     expect(
       ((await (await get('master/people')).json()) as { total: number }).total,
     ).toBe(1);
+    // The default kit the demo added for 技术部 went with it; the seeded
+    // ones stay.
+    const kitsAfter = (await (
+      await get('master/onboardingKits?pageSize=200')
+    ).json()) as { data: { departmentId: string; position: string | null }[] };
+    expect(
+      kitsAfter.data.some(
+        (kit) => kit.departmentId === 'dept-tech' && !kit.position,
+      ),
+    ).toBe(false);
+    expect(
+      kitsAfter.data.some(
+        (kit) => kit.departmentId === 'dept-rd' && !kit.position,
+      ),
+    ).toBe(true);
     // Seeded models survive: the demo only borrowed them.
     expect(
       ((await (await get('master/models')).json()) as { total: number }).total,

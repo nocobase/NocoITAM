@@ -22,6 +22,16 @@
       ],
       "port": 13003,
       "url": "http://127.0.0.1:13003"
+    },
+    {
+      "name": "pos",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/pearlc/Projects/nocoitam-pos && APP_SERVER_PORT=13012 exec pnpm dev"
+      ],
+      "port": 13012,
+      "url": "http://127.0.0.1:13012"
     }
   ]
 }

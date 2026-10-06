@@ -236,6 +236,7 @@ const ORDER: readonly string[] = [
   'stockItems',
   'devices',
   'people',
+  'onboardingKits',
   'softwareProducts',
   'models',
   'departments',
@@ -286,6 +287,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairScreen: 'Cracked screen; replace the panel',
     repairNotes: 'Replaced under warranty',
     repairFault: 'Battery swollen; replace battery',
+    defaultKit: '{name} standard kit',
     spareKeyboard: 'Keyboard drops keys now and then; repaired twice',
     spareDeadPixel: 'One dead pixel in the lower right corner',
     auditName: 'Q3 count · 3F',
@@ -341,6 +343,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairPanel: '面板出现竖线',
     repairScreen: '屏幕碎裂，更换面板',
     repairNotes: '保内更换',
+    defaultKit: '{name}标准配置',
     spareKeyboard: '键盘偶发失灵，已两次返修',
     spareDeadPixel: '屏幕右下角有一个坏点',
     repairFault: '电池鼓包，需更换电池',
@@ -3065,6 +3068,72 @@ export function createDemoService(dependencies: {
         writerId,
         unrestricted('people', 'update'),
       );
+
+      // Every department has a default 入职配置 (2026-10-06): the seeds give
+      // one to each department but 技术部, and one deleted while trying the
+      // department page stays deleted, since a seed never runs twice. A
+      // department without one gets one here — engineering's for the
+      // engineering departments, else its nearest parent's, else a plain
+      // office kit — tracked like the rest of the demo, so clearing it takes
+      // these with it.
+      const seat = (id: string) => ({ softwareProductId: id, quantity: 1 });
+      const one = (id: string) => ({ modelId: id, quantity: 1 });
+      await seededIn('softwareProducts', 'sp-microsoft-365');
+      const kitItems = {
+        engineering: [
+          one(String(mbp.id)),
+          one(String(u2723.id)),
+          one(String(wd22.id)),
+          one(String(mxKeys.id)),
+          one(String(mxMaster.id)),
+          seat(String(intellij.id)),
+          seat('sp-microsoft-365'),
+          seat(String(zoom.id)),
+        ],
+        office: [
+          one(String(thinkpad.id)),
+          one(String(mxKeys.id)),
+          one(String(mxMaster.id)),
+          seat('sp-microsoft-365'),
+        ],
+      };
+      const ENGINEERING = new Set(['dept-tech', 'dept-rd', 'dept-qa']);
+      const departments = await database
+        .query()
+        .selectFrom('departments')
+        .select(['id', 'name', 'parentId', 'path'])
+        .orderBy('path', 'asc')
+        .execute<Row>();
+      const defaults = new Map<string, unknown>();
+      for (const kit of await database
+        .query()
+        .selectFrom('onboardingKits')
+        .select(['departmentId', 'position', 'items'])
+        .execute<Row>())
+        if (!asText(kit.position))
+          defaults.set(String(kit.departmentId), kit.items);
+      for (const department of departments) {
+        const id = String(department.id);
+        if (defaults.has(id)) continue;
+        let items: unknown = ENGINEERING.has(id)
+          ? kitItems.engineering
+          : undefined;
+        for (
+          let parent = asText(department.parentId);
+          items === undefined && parent;
+          parent = asText(
+            departments.find((row) => String(row.id) === parent)?.parentId,
+          )
+        )
+          items = defaults.get(parent);
+        items ??= kitItems.office;
+        await md('onboardingKits', {
+          name: texts.defaultKit.replace('{name}', String(department.name)),
+          departmentId: id,
+          items,
+        });
+        defaults.set(id, items);
+      }
 
       // 入职准备: joining in five and nine days, nothing reserved yet. Entered
       // last, once the spare laptops, monitors, stock and seats exist:

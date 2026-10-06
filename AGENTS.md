@@ -354,6 +354,10 @@ Rules learned while building it:
   longest warranty) is SG-LT-050, whose keyboard was repaired twice, and
   SG-MON-006, with a dead pixel; SG-LT-053 is due for replacement within
   months.
+  Every department has a default 入职配置 once the demo is in (2026-10-06):
+  one without — 技术部, which the seeds skip, or one whose default was
+  deleted — gets engineering's kit, its nearest parent's or an office kit,
+  tracked so clearing the demo removes it.
 - The ITAM settings page is **tabs**, one per settings document (基本设置,
   提醒阈值, 编号规则, AI 助手, 按送货单入库, 演示数据), the open one in the
   address as `?tab=` so a link can open it (2026-10-05).
