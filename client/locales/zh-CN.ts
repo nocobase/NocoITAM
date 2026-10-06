@@ -1693,6 +1693,7 @@ const zhCN: AppResource = {
       tagAudit: '盘点',
       pendingPurchaseApprovals: '待审批的采购单',
       pendingDisposalApprovals: '待审批的报废单',
+      purchasing: '采购中',
       pendingOrders: '待下单',
       awaitingReceipt: '待到货入库',
       pendingDisposalExecution: '待执行报废',

@@ -2082,11 +2082,18 @@ overdue loan is drawn from its to-do (`LOAN_CARD`, the 设备 tag through
 `BoardCardEntry.badge`): the device, 借给 whom — the server returns the
 borrower's name as the record's `subtitle` — and when it was due back.
 The workbench's columns run 需要关注 (on a warning-tinted ground, since it
-holds risks rather than to-dos), 离职交接, 待审批, 待下单, 待到货入库,
+holds risks rather than to-dos), 离职交接, 待审批, 采购中,
 待执行报废, 维修中, 借出逾期, 进行中的盘点. 待下单 (`pendingOrders`,
 2026-10-05) is the approved purchase orders nobody has placed yet, granted
 by `order` and scoped like 待到货入库: without it an approved order sat in
-已批准 with nothing on the board asking for it. In the team view (全部) a
+已批准 with nothing on the board asking for it. The two are one column,
+采购中, since 2026-10-06 (`purchasingCard` in `client/lib/itam/my-work.ts`):
+they follow one order through and are the same people's work. They stay two
+to-dos underneath, each granted by its own act, and each card says which
+step it is at — its status tag at the right of its amount line
+(`BoardCardEntry.aside`), where it squeezes neither the number nor the
+负责人. Overdue deliveries come first, then the orders to place, then the
+rest of the deliveries. In the team view (全部) a
 待审批 card addressed to the reader says 待你审批 after the time on its
 bottom line — the 负责人 before it is the part that truncates, so a long
 name never pushes the time or the marker off the card — (`MyWorkRecord.mine`, from `approvals.pendingFor` asked for the

@@ -68,6 +68,13 @@ export interface BoardCardEntry {
    * the list is everybody's (待你审批 on the workbench's team view).
    */
   readonly marker?: ReactNode;
+  /**
+   * At the right of the first line: the step a record is at, on a column
+   * that holds several (采购中). The first line is a short figure (an
+   * amount) with room beside it; beside the heading the tag cut the number
+   * short, and on the bottom line it cut the 负责人's name.
+   */
+  readonly aside?: ReactNode;
 }
 
 /** A line's part, whether or not it carries an icon. */
@@ -192,6 +199,9 @@ export function BoardCards({
                         />
                       ) : null}
                       <span className='min-w-0 truncate'>{node}</span>
+                      {index === 0 && entry.aside ? (
+                        <span className='ml-auto shrink-0'>{entry.aside}</span>
+                      ) : null}
                     </p>
                   ))}
                 </div>

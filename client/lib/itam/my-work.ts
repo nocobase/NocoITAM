@@ -1,6 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
 
 import type { DocumentKind } from './document-kinds.js';
+import { todayIso } from './format.js';
 import {
   MY_WORK_PREVIEW,
   useMyWork,
@@ -86,13 +87,22 @@ export function useWorkCards(): readonly WorkCard[] {
     // A person names themselves, so these records take no tag.
     'leaverRecovery',
     'pendingOnboarding',
-    'pendingOrders',
-    'awaitingReceipt',
+    // 待下单 and 待到货入库 as one column, 采购中 (2026-10-06).
+    'purchasing',
     'pendingDisposalExecution',
     'activeRepairs',
     'loansDueToday',
     'activeAudits',
   ]) {
+    if (key === 'purchasing') {
+      const merged = purchasingCard(
+        find('pendingOrders'),
+        find('awaitingReceipt'),
+        t,
+      );
+      if (merged) cards.push(merged);
+      continue;
+    }
     const item = find(key);
     if (!item) continue;
     const tag = TAGGED[key];
@@ -111,4 +121,47 @@ export function useWorkCards(): readonly WorkCard[] {
   }
 
   return cards;
+}
+
+/**
+ * 采购中: an approved purchase order from the moment nobody has placed it
+ * until its goods are all in — 待下单 and 待到货入库, which follow one order
+ * through and are the same people's to do, in one column (2026-10-06). The
+ * two stay separate to-dos underneath, each granted by its own act (`order`,
+ * `receive`), so the column holds only what the reader can move on. The
+ * card's status says which step it is at. Overdue deliveries come first,
+ * then the orders still to place (needed soonest first), then the rest of
+ * the deliveries (expected soonest first).
+ */
+function purchasingCard(
+  toPlace: MyWorkItem | undefined,
+  toReceive: MyWorkItem | undefined,
+  t: (key: string) => string,
+): WorkCard | undefined {
+  if (!toPlace && !toReceive) return undefined;
+  const today = todayIso();
+  const tagged = (item: MyWorkItem | undefined): CardRecord[] =>
+    (item?.records ?? []).map((record) => ({
+      ...record,
+      tag: 'purchaseOrders',
+    }));
+  const receiving = tagged(toReceive);
+  const overdue = receiving.filter(
+    (record) => record.date !== null && record.date < today,
+  );
+  return {
+    key: 'purchasing',
+    label: t('workbench.work.purchasing'),
+    count: (toPlace?.count ?? 0) + (toReceive?.count ?? 0),
+    records: [
+      ...overdue,
+      ...tagged(toPlace),
+      ...receiving.filter((record) => !overdue.includes(record)),
+    ].slice(0, MY_WORK_PREVIEW),
+    links: [toPlace, toReceive].flatMap((item) =>
+      item && item.count > MY_WORK_PREVIEW
+        ? [{ label: t(`workbench.work.${item.key}`), url: item.url }]
+        : [],
+    ),
+  };
 }

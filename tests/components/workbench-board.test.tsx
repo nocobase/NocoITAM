@@ -84,7 +84,8 @@ it('lays the to-dos out as columns, 需要关注 first, and opens a record in th
       .map((region) => region.getAttribute('aria-label')),
   ).toEqual([
     'workbench.attention',
-    'workbench.work.awaitingReceipt',
+    // 待到货入库 reads as 采购中, the column it shares with 待下单.
+    'workbench.work.purchasing',
     'workbench.work.loansDueToday',
   ]);
   // An empty column stays, dimmed, and says so.
@@ -141,18 +142,52 @@ it('draws a purchase order with the card of its board, and opens it in the drawe
         orderNo: 'PO-000020',
         estimatedTotal: 2990,
         currency: 'CNY',
+        status: 'ordered',
         createdAt: '2026-10-05T21:13:00.000',
       },
     ],
   };
   show();
-  const receipts = column('workbench.work.awaitingReceipt');
+  const receipts = column('workbench.work.purchasing');
   // The board's card: the order's number and amount, not the to-do's title.
   expect(within(receipts).getByText('PO-000020')).toBeTruthy();
   expect(within(receipts).getByText(/2,990\.00/)).toBeTruthy();
+  // 采购中 holds orders at several steps, so each card says which.
+  expect(within(receipts).getByText('enums.poStatus.ordered')).toBeTruthy();
   fireEvent.click(within(receipts).getByText('PO-000020'));
   expect(state.opened).toHaveBeenCalledWith('/procurement/po-1');
   state.rows = {};
+});
+
+it('puts orders to place and to receive in one column, overdue first', () => {
+  state.items = [
+    {
+      key: 'pendingOrders',
+      count: 1,
+      url: '/procurement?status=approved',
+      records: [record('PO-000030', '2999-01-01', '/procurement/place')],
+    },
+    {
+      key: 'awaitingReceipt',
+      count: 2,
+      url: '/procurement?view=awaitingReceipt',
+      records: [
+        record('PO-000031', '2020-01-01', '/procurement/late'),
+        record('PO-000032', '2999-06-01', '/procurement/coming'),
+      ],
+    },
+  ];
+  show();
+  expect(
+    screen.queryByRole('region', { name: 'workbench.work.pendingOrders' }),
+  ).toBeNull();
+  const purchasing = column('workbench.work.purchasing');
+  expect(within(purchasing).getByText('3')).toBeTruthy();
+  expect(
+    within(purchasing)
+      .getAllByText(/^PO-/)
+      .map((node) => node.textContent),
+  ).toEqual(['PO-000031', 'PO-000030', 'PO-000032']);
 });
 
 it('keeps a long fault description to one truncated line on a repair card', () => {
