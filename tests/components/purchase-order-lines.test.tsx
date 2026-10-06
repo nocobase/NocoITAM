@@ -50,6 +50,7 @@ vi.mock('@nocobase/i18n/client', () => ({
   }),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({
+  listQueryParams: (query: unknown) => query,
   useApi: () => ({ request: vi.fn() }),
 }));
 // 解析单据 is AI 整理's reading (tested on its own); here, what the card
@@ -82,6 +83,7 @@ vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCurrentUserId: () => 'mia',
 }));
 vi.mock('../../client/lib/itam/references.js', () => ({
+  referencePath: (collection: string) => `itam/master/${collection}`,
   useReferenceNames: () => ({ models: new Map([['m1', 'MacBook Pro 14']]) }),
 }));
 // The assistant is not configured unless a test says so: the card registers

@@ -38,6 +38,9 @@ export interface PlannedLine {
   readonly units: readonly PlannedUnit[];
   readonly matchedBy: readonly ('partCode' | 'assistant')[];
   readonly sources: readonly string[];
+  /** Devices: the warranty end the document states, as a date. */
+  readonly warrantyEndDate?: string;
+  readonly warrantySource?: string;
 }
 
 export interface ReceiptPlan {

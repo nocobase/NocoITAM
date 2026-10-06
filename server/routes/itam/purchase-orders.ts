@@ -103,6 +103,14 @@ const draftSchema = z
             quantity: z.number().min(0).max(10000),
             serialNos: z.array(z.string().max(128)).max(10000).optional(),
             source: z.string().max(200).nullable().optional(),
+            warrantyMonths: z
+              .number()
+              .int()
+              .min(0)
+              .max(240)
+              .nullable()
+              .optional(),
+            warrantyEndDate: z.string().max(32).nullable().optional(),
           })
           .strict(),
       )

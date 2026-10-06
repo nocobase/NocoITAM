@@ -107,10 +107,9 @@ const clip = (value: string | null | undefined, limit: number): string =>
  * The one record a name means: the same name, else the only one whose name
  * contains it or is contained in it. Two candidates are no answer.
  */
-export function byName<T extends { readonly id: string; readonly name: string }>(
-  rows: readonly T[],
-  name: string,
-): T | undefined {
+export function byName<
+  T extends { readonly id: string; readonly name: string },
+>(rows: readonly T[], name: string): T | undefined {
   const wanted = bareName(name);
   if (wanted.length < 2) return undefined;
   const same = rows.filter((row) => bareName(row.name) === wanted);
@@ -119,6 +118,31 @@ export function byName<T extends { readonly id: string; readonly name: string }>
   const near = rows.filter((row) => {
     const have = bareName(row.name);
     return have.length >= 2 && (have.includes(wanted) || wanted.includes(have));
+  });
+  return near.length === 1 ? near[0] : undefined;
+}
+
+/**
+ * The one model whose part code a misread code starts with. Text taken out
+ * of a PDF table can run the next column into a code — "CT32G56C46S5" and
+ * its quantity "4" came out as "CT32G56C46S54" (found testing 2026-10-06) —
+ * so a printed code no model holds is matched to the single model code it
+ * begins with, when that code is long enough to mean something and leaves
+ * at most three characters over. The line is then marked 请核对.
+ */
+export function modelByCodePrefix<T extends { readonly code: string | null }>(
+  models: readonly T[],
+  code: string,
+): T | undefined {
+  if (code.length < 7) return undefined;
+  const near = models.filter((model) => {
+    const own = normalizeCode(model.code);
+    return (
+      own.length >= 6 &&
+      code.length > own.length &&
+      code.length - own.length <= 3 &&
+      code.startsWith(own)
+    );
   });
   return near.length === 1 ? near[0] : undefined;
 }
@@ -207,9 +231,17 @@ export async function matchPurchaseCapture(
     const coded = code
       ? models.filter((model) => normalizeCode(model.code) === code)
       : [];
+    const picked = models.find((row) => row.id === line.modelId);
+    // A code nobody holds may be one misread off the page; only then, and
+    // only when the assistant named no record itself.
+    const prefixed =
+      code && coded.length === 0 && !picked
+        ? modelByCodePrefix(models, code)
+        : undefined;
     const model =
       (coded.length === 1 ? coded[0] : undefined) ??
-      models.find((row) => row.id === line.modelId) ??
+      picked ??
+      prefixed ??
       (line.softwareProductId ? undefined : modelByName(models, text));
     const product = model
       ? undefined
@@ -222,7 +254,7 @@ export async function matchPurchaseCapture(
         softwareProductId: null,
         quantity,
         unitPrice,
-        uncertain: Boolean(line.uncertain),
+        uncertain: Boolean(line.uncertain) || model === prefixed,
         description: text || null,
       });
     else if (product)

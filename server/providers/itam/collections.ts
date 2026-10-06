@@ -128,6 +128,12 @@ export const MASTER_DATA_COLLECTIONS: readonly ItamCollectionDefinition[] = [
     ],
     attributes: { identifier: 'id', creator: 'createdById' },
     searchFields: ['name', 'code'],
+    // A model is written with its maker in front ("Crucial DDR5-5600",
+    // "Dell U2723QE") while its name leaves the maker out, so a search's
+    // words may match the maker too (2026-10-06).
+    searchByReference: [
+      { field: 'manufacturerId', collection: 'manufacturers', column: 'name' },
+    ],
     defaultSort: 'manufacturerName',
     sortByReference: {
       manufacturerName: {
@@ -153,6 +159,10 @@ export const MASTER_DATA_COLLECTIONS: readonly ItamCollectionDefinition[] = [
     ],
     attributes: { identifier: 'id', creator: 'createdById' },
     searchFields: ['name'],
+    // "JetBrains IntelliJ IDEA" finds IntelliJ IDEA, as a model's maker does.
+    searchByReference: [
+      { field: 'manufacturerId', collection: 'manufacturers', column: 'name' },
+    ],
     defaultSort: 'name',
   },
   {

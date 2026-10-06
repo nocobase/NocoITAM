@@ -1461,6 +1461,7 @@ const zhCN: AppResource = {
     newStock: '新建库存记录的位置',
     nothing: '这张采购单已全部到货。',
     aiFilled: 'AI 按送货单填写',
+    warrantyFromModel: '留空时按型号的保修月数推算',
     aiFilledFrom: 'AI 按送货单填写：{{source}}',
     documentChecks: '单据核对',
     document: {

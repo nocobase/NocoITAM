@@ -49,6 +49,74 @@ describe('receipt plan', () => {
     expect(normalizeCode(null)).toBe('');
   });
 
+  it('dates a warranty the document states, for devices', () => {
+    const plan = planReceipt(
+      {
+        deliveryDate: '2026-10-15',
+        rows: [
+          {
+            lineId: 'line-laptop',
+            description: 'MacBook Pro 14',
+            quantity: 1,
+            serialNos: ['C02X1'],
+            source: 'page 1 line 1',
+            warrantyMonths: 36,
+          },
+          {
+            lineId: 'line-monitor',
+            description: 'U2723QE',
+            quantity: 1,
+            serialNos: ['CN01'],
+            warrantyEndDate: '2029-12-31',
+          },
+          // Stock keeps no warranty.
+          {
+            lineId: 'line-mouse',
+            description: 'MX Master',
+            quantity: 2,
+            warrantyMonths: 12,
+          },
+        ],
+      },
+      LINES,
+      '2026-10-20',
+    );
+    const by = (id: string) => plan.lines.find((line) => line.lineId === id);
+    // Counted from the delivery date, not from today.
+    expect(by('line-laptop')).toMatchObject({
+      warrantyEndDate: '2029-10-15',
+      warrantySource: 'page 1 line 1',
+    });
+    expect(by('line-monitor')?.warrantyEndDate).toBe('2029-12-31');
+    expect(by('line-mouse')?.warrantyEndDate).toBeUndefined();
+    // Without a delivery date, from today; with no warranty stated, none.
+    const undated = planReceipt(
+      {
+        rows: [
+          {
+            lineId: 'line-laptop',
+            description: 'MacBook Pro 14',
+            quantity: 1,
+            serialNos: ['C02X1'],
+            warrantyMonths: 12,
+          },
+          {
+            lineId: 'line-monitor',
+            description: 'U2723QE',
+            quantity: 1,
+            serialNos: ['CN01'],
+          },
+        ],
+      },
+      LINES,
+      '2026-10-20',
+    );
+    expect(undated.lines.map((line) => line.warrantyEndDate)).toEqual([
+      '2027-10-20',
+      undefined,
+    ]);
+  });
+
   it('matches by part code before the assistant, and says when they differ', () => {
     const plan = planReceipt(
       {

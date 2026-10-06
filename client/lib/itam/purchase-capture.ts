@@ -157,14 +157,43 @@ export function keyedUnmatched(
 const SPEC_WORD =
   /^\d+(?:\.\d+)?\s*(?:gb|tb|mb|g|t|m|寸|英寸|"|inch|in|w|hz|ghz|mhz|核|c|nm|mah|ml|l)$/iu;
 
+/** A word with a Latin letter or a digit in it: how the books name models. */
+const NAMED = /[A-Za-z0-9]/;
+
 /**
  * What an unmatched line's picker searches for first: the document's own
  * wording without the configuration (16GB/512GB, 27英寸), since a list search
- * wants every word and a model is named without those.
+ * wants every word and a model is named without those — nor, when there are
+ * other words, the Chinese that only says what kind of thing it is
+ * (显示器, 笔记本内存), which no model name carries (2026-10-06).
  */
 export function pickerSearch(description: string): string {
-  return description
+  const words = description
     .split(/[\s/,，、()（）]+/u)
-    .filter((word) => word && !SPEC_WORD.test(word))
-    .join(' ');
+    .filter((word) => word && !SPEC_WORD.test(word));
+  const named = words.filter((word) => NAMED.test(word));
+  return (named.length > 0 ? named : words).join(' ');
+}
+
+/**
+ * The searches an unmatched line's picker tries in turn until one finds a
+ * record: its wording, then each word that looks like a model number
+ * (letters and digits together, longest first), then its part code. Found
+ * testing 2026-10-06: "Crucial DDR5-5600 32GB 笔记本内存" opened on a list
+ * with nothing in it.
+ */
+export function pickerSearches(
+  description: string,
+  partCode: string | null,
+): string[] {
+  const first = pickerSearch(description);
+  const numbers = first
+    .split(' ')
+    .filter(
+      (word) => word.length >= 3 && /[A-Za-z]/.test(word) && /\d/.test(word),
+    )
+    .sort((a, b) => b.length - a.length);
+  return [
+    ...new Set([first, ...numbers, ...(partCode ? [partCode] : [])]),
+  ].filter(Boolean);
 }

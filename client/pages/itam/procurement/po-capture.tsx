@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { useQuery } from '@tanstack/react-query';
 import { FileText, Sparkles, Upload, X } from 'lucide-react';
 import { useRef, useState, type ReactElement } from 'react';
 
@@ -9,12 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { listQueryParams, useApi, type ListResponse } from '@/lib/itam/api';
 import { errorMessage, formatMoney, text } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 import {
-  pickerSearch,
+  pickerSearches,
   type PurchaseCapture,
 } from '@/lib/itam/purchase-capture';
+import { referencePath } from '@/lib/itam/references';
 import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 import type { PurchaseOrderCaptureState } from '@/lib/itam/use-purchase-capture';
 
@@ -301,6 +304,23 @@ function UnmatchedPicker({
   const [creating, setCreating] = useState<string>();
   const [placing, setPlacing] = useState(false);
   const [failure, setFailure] = useState<string>();
+  // The first of the searches that finds something is what the picker
+  // opens on, so it does not open on an empty list.
+  const api = useApi();
+  const searches = pickerSearches(line.description, line.partCode);
+  const start = useQuery({
+    queryKey: ['itam', referencePath(collection), 'picker-start', searches],
+    queryFn: async () => {
+      for (const q of searches) {
+        const found = await api.request<ListResponse>({
+          path: referencePath(collection),
+          query: listQueryParams({ q, pageSize: 1 }),
+        });
+        if (found.total > 0) return q;
+      }
+      return searches[0] ?? '';
+    },
+  });
   const place = (id: string) => {
     setPlacing(true);
     setFailure(undefined);
@@ -311,10 +331,12 @@ function UnmatchedPicker({
   return (
     <>
       <ReferenceSelect
+        // Opened afresh on the search found, should it arrive after mount.
+        key={start.data ?? ''}
         reference={{ collection }}
         value={null}
         disabled={placing}
-        initialSearch={pickerSearch(line.description)}
+        initialSearch={start.data ?? searches[0]}
         placeholder={t(
           software ? 'procurement.selectProduct' : 'procurement.selectModel',
         )}

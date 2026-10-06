@@ -70,6 +70,7 @@ vi.mock('../../client/lib/itam/api.js', () => ({
     },
   }),
   apiErrorBody: () => undefined,
+  listQueryParams: (query: unknown) => query,
   useItamList: () => ({ data: { data: [] } }),
   useItamMutations: () => ({
     create: { mutateAsync: vi.fn(), reset: vi.fn(), isPending: false },
@@ -150,6 +151,8 @@ vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCurrentUserId: () => 'mia',
 }));
 vi.mock('@tanstack/react-query', () => ({
+  // The unmatched pickers' starting search; none is found here.
+  useQuery: () => ({ data: undefined }),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   useMutation: () => ({
     mutate: vi.fn(),

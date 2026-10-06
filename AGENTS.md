@@ -1102,7 +1102,11 @@ Rules learned while building it:
   assistant guessed (`matchConflict` says when they differ), entitlements
   and unmatched rows are listed, never forced onto a line. Every value it
   filled carries a sparkle naming where in the document it came from, and
-  loses it once the receiver types over it. Nothing is received until the
+  loses it once the receiver types over it. A warranty the document states
+  (保修 36 个月, or an end date) fills a device line's 保修截止日期, counted
+  from the delivery date (`warrantyEnd` in `receipt-plan.ts`, 2026-10-06);
+  one it does not state stays empty, and the form says the service works it
+  out from the model's 保修月数, as it always did. Nothing is received until the
   receiver presses 入库; that batch closes the run (`saved`, with `final`
   and per-field `stats`: kept / changed / removed / added), its `received`
   events read `origin: 'agent'` under the receiver's name and name the
@@ -1148,7 +1152,10 @@ Rules learned while building it:
   takes it (`POST /itam/purchase-orders/capture/match`,
   `server/providers/itam/purchase-capture.ts`, under `create`): a printed
   part code decides by the model's `code`, an id the assistant gives must
-  exist, and anything else matches only by an identical name (a model with
+  exist — and a printed code no model holds is placed, marked 请核对, on the
+  one code on the books it starts with when at most three characters are
+  over (`modelByCodePrefix`, 2026-10-06: a PDF's text layer ran the quantity
+  "4" into "CT32G56C46S5") — and anything else matches only by an identical name (a model with
   or without its maker in front; a vendor or department identical or the
   only one containing it). What matches nothing is never put on a line — an
   M4 must not become the M3 the books hold. A vendor or department the text
@@ -1172,7 +1179,13 @@ Rules learned while building it:
   assistant (2026-10-06): each row in the column beside the form carries a
   picker that starts at the document's own wording without its
   configuration (`pickerSearch`: 16GB/512GB, 27英寸 would rule every model
-  out of a word-by-word search) — a different spelling of a model on the
+  out of a word-by-word search) nor, beside other words, the Chinese that
+  only names the kind of thing (显示器, 笔记本内存); when that finds nothing
+  it opens on the first of `pickerSearches` that does — the model-number
+  word, then the part code. A model's or product's search also matches its
+  maker's name (`searchByReference` on both, 2026-10-06), since a document
+  writes "Crucial DDR5-5600" and the books "DDR5-5600 32 GB SO-DIMM". A
+  different spelling of a model on the
   books is the common case — and, for whoever may create
   one, 创建型号 / 创建软件产品 at the foot of that list
   (`ReferenceSelect`'s `onCreate`). Creating opens `QuickCreateDialog`
@@ -1210,7 +1223,10 @@ Rules learned while building it:
   (2026-10-06), since "MacBook Air 13 英寸（M3）" is the books' "MacBook Air
   13 M3" without matching it exactly. That check is the server's, not the
   `catalog` skill's. Only dates a page states are filled; the prompt forbids
-  estimating them. The pages it cites are listed (links only). The form is
+  estimating them. A model the search cannot confirm is still handed back
+  with what the reader's own words give — name, maker, closest category,
+  marked 请核对 — and nothing else (2026-10-06): the empty form it used to
+  leave made the reader type even the maker. The pages it cites are listed (links only). The form is
   `RecordFormDialog`, which takes its values from outside for this
   (`values` / `onValuesChange`, `initialFormValues`), plus `marks`
   (请核对), `titleAside`, `replacement` and `aside`. A dialog opened from

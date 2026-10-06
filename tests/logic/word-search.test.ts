@@ -1,7 +1,10 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { pickerSearch } from '../../client/lib/itam/purchase-capture.js';
+import {
+  pickerSearch,
+  pickerSearches,
+} from '../../client/lib/itam/purchase-capture.js';
 import { searchWords } from '../../server/providers/itam/collection-query.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
@@ -23,10 +26,24 @@ describe('searching a list word by word', () => {
     expect(pickerSearch('MacBook Pro 14 M4 16GB/512GB')).toBe(
       'MacBook Pro 14 M4',
     );
-    expect(pickerSearch('Dell U2724D 27英寸 显示器')).toBe(
-      'Dell U2724D 显示器',
+    // Chinese that only names the kind of thing goes when there is more.
+    expect(pickerSearch('Dell U2724D 27英寸 显示器')).toBe('Dell U2724D');
+    expect(pickerSearch('Crucial DDR5-5600 32GB 笔记本内存')).toBe(
+      'Crucial DDR5-5600',
     );
+    expect(pickerSearch('联想 笔记本')).toBe('联想 笔记本');
     expect(pickerSearch('Figma')).toBe('Figma');
+  });
+
+  it('falls back to the model number, then the part code', () => {
+    expect(pickerSearches('Dell WD25TB4 雷电扩展坞', null)).toEqual([
+      'Dell WD25TB4',
+      'WD25TB4',
+    ]);
+    expect(
+      pickerSearches('Crucial DDR5-5600 32GB 笔记本内存', 'CT32G56C46S54'),
+    ).toEqual(['Crucial DDR5-5600', 'DDR5-5600', 'CT32G56C46S54']);
+    expect(pickerSearches('Figma', null)).toEqual(['Figma']);
   });
 
   describe('through the list endpoint', () => {
@@ -77,6 +94,8 @@ describe('searching a list word by word', () => {
       expect(await names('Testbook TBA13')).toEqual(['Testbook Air 13 (T2)']);
       // Every word must match: another generation is not this model.
       expect(await names('Testbook Pro 14 T4')).toEqual([]);
+      // A word may be the maker, which the name leaves out.
+      expect(await names('Testmaker Air')).toEqual(['Testbook Air 13 (T2)']);
       expect((await names('Testbook')).sort()).toEqual([
         'Testbook Air 13 (T2)',
         'Testbook Pro 14 (T3)',

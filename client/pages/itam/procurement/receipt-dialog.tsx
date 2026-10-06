@@ -80,6 +80,8 @@ interface DeviceDraft {
   /** `undefined` until chosen: the line's default owner (`defaultOwner`). */
   readonly ownerId?: string | null;
   readonly warrantyEndDate: string;
+  /** Where in the document the warranty was read, until it is typed over. */
+  readonly warrantySource?: string;
 }
 
 /** A stock line: how many arrived, and where a new stock record goes. */
@@ -367,6 +369,12 @@ export function ReceiptDialog({
             units: planned.units.map((unit) =>
               newUnit(unit.serialNo, unit.source ?? planned.sources[0]),
             ),
+            ...(planned.warrantyEndDate
+              ? {
+                  warrantyEndDate: planned.warrantyEndDate,
+                  warrantySource: planned.warrantySource ?? '',
+                }
+              : {}),
           };
       }
       return next;
@@ -741,17 +749,29 @@ function DeviceLine({
         <div className='grid gap-1.5'>
           <Label htmlFor={`batch-warranty-${lineId}`}>
             {t('fields.warrantyEndDate')}
+            {draft.warrantySource !== undefined ? (
+              <AiMark source={draft.warrantySource} />
+            ) : null}
           </Label>
-          {/* Empty lets the service work it out from the model's 保修月数. */}
           <Input
             id={`batch-warranty-${lineId}`}
             type='date'
             max='9999-12-31'
             value={draft.warrantyEndDate}
             onChange={(event) =>
-              onChange({ warrantyEndDate: event.target.value })
+              onChange({
+                warrantyEndDate: event.target.value,
+                warrantySource: undefined,
+              })
             }
           />
+          {/* Empty lets the service work it out from the model's 保修月数,
+              which the form says rather than leaving a blank to wonder at. */}
+          {draft.warrantyEndDate ? null : (
+            <p className='text-xs text-muted-foreground'>
+              {t('receipt.warrantyFromModel')}
+            </p>
+          )}
         </div>
       </div>
       <div className='grid gap-1.5'>
@@ -1287,7 +1307,7 @@ function useDeliveryDocument({
         name: 'prefillReceipt',
         title: 'Prefill the receiving form',
         description:
-          'Hand what you read from the delivery document to the receiving form on screen, which the receiver checks and saves. One entry in "rows" per goods row of the document: lineId is the purchase order line it matches (an id from the page context lines, or an empty string when it matches none), description the row as printed, partCode the part number printed on it (omit when none), quantity the quantity delivered, serialNos every serial number belonging to that row, source where the row is in the document ("Sheet1 row 4", "page 2 line 3"). deliveryNo, deliveryDate (YYYY-MM-DD) and vendorName from the document header when printed. Call it once, after reading the whole document.',
+          'Hand what you read from the delivery document to the receiving form on screen, which the receiver checks and saves. One entry in "rows" per goods row of the document: lineId is the purchase order line it matches (an id from the page context lines, or an empty string when it matches none), description the row as printed, partCode the part number printed on it (omit when none), quantity the quantity delivered, serialNos every serial number belonging to that row, source where the row is in the document ("Sheet1 row 4", "page 2 line 3"). warrantyMonths when the document states a warranty period that covers the row (36 for 保修 36 个月, also when one note states it for several rows), or warrantyEndDate (YYYY-MM-DD) when it prints an end date; omit both when it states none. deliveryNo, deliveryDate (YYYY-MM-DD) and vendorName from the document header when printed. Call it once, after reading the whole document.',
         permission: 'ALLOW',
         inputSchema: {
           type: 'object',
@@ -1307,6 +1327,8 @@ function useDeliveryDocument({
                   quantity: { type: 'number', minimum: 0 },
                   serialNos: { type: 'array', items: { type: 'string' } },
                   source: { type: 'string' },
+                  warrantyMonths: { type: 'integer', minimum: 1 },
+                  warrantyEndDate: { type: 'string' },
                 },
                 required: ['lineId', 'description', 'quantity'],
               },
@@ -1337,6 +1359,10 @@ function useDeliveryDocument({
                   .filter(Boolean)
                   .slice(0, 10000),
                 source: clip(row.source, 200) || null,
+                warrantyMonths: Number.isInteger(Number(row.warrantyMonths))
+                  ? Math.min(240, Math.max(0, Number(row.warrantyMonths)))
+                  : null,
+                warrantyEndDate: clip(row.warrantyEndDate, 32) || null,
               };
             });
           const { data } = await api.request<{

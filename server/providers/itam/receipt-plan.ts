@@ -15,6 +15,8 @@
  * already on the books, so the rules are unit tested without a database.
  */
 
+import { addMonths } from './dates.js';
+
 /** One item row as the assistant read it from the document. */
 export interface DocumentRow {
   /** The order line the assistant matched it to, or null when it could not. */
@@ -26,6 +28,10 @@ export interface DocumentRow {
   readonly serialNos?: readonly string[];
   /** Where it is in the document ("Sheet1 row 4", "page 2, line 3"). */
   readonly source?: string | null;
+  /** A warranty the document states for the row: a period ("36 个月"). */
+  readonly warrantyMonths?: number | null;
+  /** …or an end date it prints. */
+  readonly warrantyEndDate?: string | null;
 }
 
 /** What the assistant hands over (the `prefillReceipt` page tool). */
@@ -62,6 +68,9 @@ export interface PlannedLine {
   /** How each contributing row was matched. */
   readonly matchedBy: readonly ('partCode' | 'assistant')[];
   readonly sources: readonly string[];
+  /** Devices: the warranty end the document states, as a date. */
+  readonly warrantyEndDate?: string;
+  readonly warrantySource?: string;
 }
 
 export type ReceiptIssueCode =
@@ -127,12 +136,36 @@ export const normalizeCode = (code: string | null | undefined): string =>
 const clean = (serials: readonly string[] | undefined): string[] =>
   (serials ?? []).map((serial) => serial.trim()).filter(Boolean);
 
-/** Turns the assistant's rows into a plan the batch form opens on. */
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const isDate = (value: string | null | undefined): value is string =>
+  Boolean(value && DATE.test(value) && !Number.isNaN(Date.parse(value)));
+
+/**
+ * The warranty end a document states for a row: its printed date, or its
+ * period counted from `start` (2026-10-06 — a note that says 保修 36 个月
+ * left the field empty, so the receiver could not see it had been read).
+ */
+function warrantyEnd(row: DocumentRow, start: string): string | undefined {
+  const printed = row.warrantyEndDate?.trim();
+  if (isDate(printed)) return printed;
+  const months = Number(row.warrantyMonths);
+  return start && Number.isInteger(months) && months > 0 && months <= 240
+    ? addMonths(start, months)
+    : undefined;
+}
+
+/**
+ * Turns the assistant's rows into a plan the batch form opens on. `today`
+ * dates a stated warranty period when the document prints no delivery date.
+ */
 export function planReceipt(
   draft: ReceiptDraft,
   lines: readonly PlanLine[],
+  today = '',
 ): ReceiptPlan {
   const issues: ReceiptIssue[] = [];
+  const delivered = draft.deliveryDate?.trim();
+  const start = isDate(delivered) ? delivered : today;
   const byId = new Map(lines.map((line) => [line.id, line]));
   const byCode = new Map<string, PlanLine[]>();
   for (const line of lines) {
@@ -147,6 +180,8 @@ export function planReceipt(
       units: PlannedUnit[];
       matchedBy: ('partCode' | 'assistant')[];
       sources: string[];
+      warrantyEndDate?: string;
+      warrantySource?: string;
     }
   >();
 
@@ -192,6 +227,12 @@ export function planReceipt(
     entry.quantity += quantity;
     entry.matchedBy.push(ruled ? 'partCode' : 'assistant');
     if (source) entry.sources.push(source);
+    const warranty =
+      line.itemType === 'device' ? warrantyEnd(row, start) : undefined;
+    if (warranty && !entry.warrantyEndDate) {
+      entry.warrantyEndDate = warranty;
+      if (source) entry.warrantySource = source;
+    }
     if (line.itemType === 'device')
       for (let index = 0; index < quantity; index += 1)
         entry.units.push(

@@ -1523,6 +1523,8 @@ const messages = {
     newStock: 'Location of the new stock record',
     nothing: 'Everything on this order has arrived.',
     aiFilled: 'Filled by AI from the delivery note',
+    warrantyFromModel:
+      "Left empty, it is worked out from the model's warranty months",
     aiFilledFrom: 'Filled by AI from the delivery note: {{source}}',
     documentChecks: 'Delivery note checks',
     document: {

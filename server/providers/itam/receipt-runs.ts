@@ -5,6 +5,7 @@ import {
 } from '@nocobase/service-provider';
 
 import type { Row } from './collection-query.js';
+import { today } from './dates.js';
 import type { OperationContext } from './devices.js';
 import type { ReadDocument } from './document-text.js';
 import {
@@ -318,7 +319,7 @@ export function createReceiptRunService(deps: {
       const run = await load(orderId, runId, context);
       requireOpen(run, new Set(['reading']));
       const lines = await planLines(orderId);
-      const planned = planReceipt(draft, lines);
+      const planned = planReceipt(draft, lines, today());
       // The register check needs the database; the rest of the plan's
       // issues are the rules' own.
       const plan: ReceiptPlan = {

@@ -187,6 +187,28 @@ describe('AI 整理 for a new purchase order', () => {
     expect(capture.vendorName).toBe('Contoso Hardware');
   });
 
+  it('places a part code misread off the page on the one code it starts with', async () => {
+    const capture = await match({
+      lines: [
+        // The quantity "4" run into the code by the PDF's text layer.
+        { description: 'Testbook memory', partCode: 'TBP14-T34', quantity: 4 },
+        // Too far from any code on the books to be a misreading.
+        {
+          description: 'Something else',
+          partCode: 'TBP14-T3XYZW',
+          quantity: 1,
+        },
+      ],
+    });
+    expect(capture.lines).toEqual([
+      // Placed, but for the reader to check.
+      expect.objectContaining({ modelId: ids.book, uncertain: true }),
+    ]);
+    expect(capture.unmatched).toEqual([
+      expect.objectContaining({ partCode: 'TBP14-T3XYZW' }),
+    ]);
+  });
+
   it('takes the assistant’s pick when it names a real record', async () => {
     const capture = await match({
       vendorId: ids.vendor,
