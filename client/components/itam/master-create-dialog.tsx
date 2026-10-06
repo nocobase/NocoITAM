@@ -558,29 +558,46 @@ function CapturePrelude({
 }): ReactElement | null {
   const { t } = useTranslation();
   const route = masterDataByName(collection)!.route;
-  if (!reviewing && result.duplicates.length === 0) return null;
+  const similar = result.similar ?? [];
+  if (!reviewing && result.duplicates.length === 0 && similar.length === 0)
+    return null;
+  const list = (rows: readonly { id: string; name: string }[]) => (
+    <ul className='grid gap-0.5'>
+      {rows.map((row) => (
+        <li key={row.id} className='min-w-0'>
+          {/* A new tab: following the link must not lose the form. */}
+          <a
+            href={resolveAppUrl(`/${route}/${row.id}`)}
+            target='_blank'
+            rel='noreferrer'
+            className='block truncate text-info-foreground hover:underline'
+          >
+            {row.name}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
   return (
     <div className='grid gap-2'>
-      {result.duplicates.length > 0 ? (
+      {result.duplicates.length > 0 || similar.length > 0 ? (
         <div className='grid gap-1 rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm'>
-          <p className='text-warning-foreground'>
-            {t(`masterCapture.duplicates.${collection}`)}
-          </p>
-          <ul className='grid gap-0.5'>
-            {result.duplicates.map((row) => (
-              <li key={row.id} className='min-w-0'>
-                {/* A new tab: following the link must not lose the form. */}
-                <a
-                  href={resolveAppUrl(`/${route}/${row.id}`)}
-                  target='_blank'
-                  rel='noreferrer'
-                  className='block truncate text-info-foreground hover:underline'
-                >
-                  {row.name}
-                </a>
-              </li>
-            ))}
-          </ul>
+          {result.duplicates.length > 0 ? (
+            <>
+              <p className='text-warning-foreground'>
+                {t(`masterCapture.duplicates.${collection}`)}
+              </p>
+              {list(result.duplicates)}
+            </>
+          ) : null}
+          {similar.length > 0 ? (
+            <>
+              <p className='text-warning-foreground'>
+                {t(`masterCapture.similar.${collection}`)}
+              </p>
+              {list(similar)}
+            </>
+          ) : null}
         </div>
       ) : null}
       {reviewing ? <ReviewHint /> : null}

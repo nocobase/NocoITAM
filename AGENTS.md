@@ -1157,7 +1157,11 @@ Rules learned while building it:
   a vendor and **never created** — the dialog offers 新建制造商 with the name
   — values a field would refuse are dropped (a date that does not exist, a
   non-http website), and records of the same part code or name are listed
-  beside the form. Only dates a page states are filled; the prompt forbids
+  above the form, with a second list of possible ones — the same maker and
+  every word of one name inside the other, as the lists search
+  (2026-10-06), since "MacBook Air 13 英寸（M3）" is the books' "MacBook Air
+  13 M3" without matching it exactly. That check is the server's, not the
+  `catalog` skill's. Only dates a page states are filled; the prompt forbids
   estimating them. The pages it cites are listed (links only). The form is
   `RecordFormDialog`, which takes its values from outside for this
   (`values` / `onValuesChange`, `initialFormValues`), plus `marks`

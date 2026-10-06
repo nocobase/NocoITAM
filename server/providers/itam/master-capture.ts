@@ -1,6 +1,7 @@
 import type { DatabaseManager } from '@nocobase/db';
 
 import { bareName, byName } from './purchase-capture.js';
+import { searchWords } from './collection-query.js';
 import { normalizeCode } from './receipt-plan.js';
 
 /**
@@ -61,6 +62,11 @@ export interface MasterCapture {
   readonly manufacturerName: string | null;
   /** Records already on the books under the same part code or name. */
   readonly duplicates: readonly {
+    readonly id: string;
+    readonly name: string;
+  }[];
+  /** Records of the same maker whose name is another wording of it. */
+  readonly similar: readonly {
     readonly id: string;
     readonly name: string;
   }[];
@@ -242,11 +248,12 @@ export async function matchMasterCapture(
     values,
     manufacturerName:
       manufacturer || !manufacturerName ? null : manufacturerName,
-    duplicates: await duplicatesOf(database, collection, {
+    ...(await lookalikesOf(database, collection, {
       name,
       code: typeof values.code === 'string' ? values.code : '',
       maker: manufacturer?.name ?? manufacturerName,
-    }),
+      manufacturerId: manufacturer?.id ?? null,
+    })),
     uncertain,
     sources,
   };
@@ -322,50 +329,83 @@ function fieldValue(field: TemplateEntry, raw: unknown): unknown {
   }
 }
 
+type Lookalike = { id: string; name: string };
+type LookalikeRow = {
+  readonly id: string;
+  readonly name: string;
+  readonly code?: string | null;
+  readonly manufacturerId: string | null;
+  readonly manufacturer: string | null;
+};
+
 /**
- * Records the books already hold for what was read: a model with the same
- * part code, or the same name with or without its maker in front; a product
- * with the same name. The reader decides — it may be the record they wanted.
+ * Records the books already hold for what was read. `duplicates`: a model
+ * with the same part code, or the same name with or without its maker in
+ * front, once case, spaces and punctuation are set aside; a product with
+ * the same name. `similar` (2026-10-06): the same maker and every word of
+ * one name inside the other, the way the lists search — so "MacBook Air 13
+ * 英寸（M3）" finds "MacBook Air 13 M3" while "MacBook Air 13 M4" does not,
+ * since M3 is not M4. The reader decides either way; it may be the record
+ * they wanted.
  */
-async function duplicatesOf(
+async function lookalikesOf(
   database: DatabaseManager,
   collection: MasterCaptureCollection,
   read: {
     readonly name: string;
     readonly code: string;
     readonly maker: string;
+    readonly manufacturerId: string | null;
   },
-): Promise<{ id: string; name: string }[]> {
+): Promise<{ duplicates: Lookalike[]; similar: Lookalike[] }> {
   const name = bareName(read.name);
   const code = normalizeCode(read.code);
-  if (!name && !code) return [];
-  if (collection === 'softwareProducts') {
-    const products = await database
-      .query()
-      .selectFrom('softwareProducts')
-      .select(['id', 'name'])
-      .execute<{ id: string; name: string }>();
-    return products
-      .filter((row) => bareName(row.name) === name)
-      .slice(0, 5)
-      .map((row) => ({ id: row.id, name: row.name }));
-  }
-  const models = await database
-    .query()
-    .selectFrom('models')
-    .leftJoin('manufacturers', 'manufacturers.id', 'models.manufacturerId')
-    .select([
-      'models.id as id',
-      'models.name as name',
-      'models.code as code',
-      'manufacturers.name as manufacturer',
-    ])
-    .execute<{
-      id: string;
-      name: string;
-      code: string | null;
-      manufacturer: string | null;
-    }>();
+  if (!name && !code) return { duplicates: [], similar: [] };
+  const rows: readonly LookalikeRow[] =
+    collection === 'softwareProducts'
+      ? await database
+          .query()
+          .selectFrom('softwareProducts')
+          .leftJoin(
+            'manufacturers',
+            'manufacturers.id',
+            'softwareProducts.manufacturerId',
+          )
+          .select([
+            'softwareProducts.id as id',
+            'softwareProducts.name as name',
+            'softwareProducts.manufacturerId as manufacturerId',
+            'manufacturers.name as manufacturer',
+          ])
+          .execute<{
+            id: string;
+            name: string;
+            code?: null;
+            manufacturerId: string | null;
+            manufacturer: string | null;
+          }>()
+      : await database
+          .query()
+          .selectFrom('models')
+          .leftJoin(
+            'manufacturers',
+            'manufacturers.id',
+            'models.manufacturerId',
+          )
+          .select([
+            'models.id as id',
+            'models.name as name',
+            'models.code as code',
+            'models.manufacturerId as manufacturerId',
+            'manufacturers.name as manufacturer',
+          ])
+          .execute<{
+            id: string;
+            name: string;
+            code: string | null;
+            manufacturerId: string | null;
+            manufacturer: string | null;
+          }>();
   const named = (row: { name: string; manufacturer: string | null }) => {
     if (!name) return false;
     const own = bareName(row.name);
@@ -375,8 +415,32 @@ async function duplicatesOf(
       own === bareName(`${read.maker}${read.name}`)
     );
   };
-  return models
-    .filter((row) => (code && normalizeCode(row.code) === code) || named(row))
-    .slice(0, 5)
-    .map((row) => ({ id: row.id, name: row.name }));
+  const duplicates = rows.filter(
+    (row) =>
+      (code && row.code && normalizeCode(row.code) === code) || named(row),
+  );
+  const words = (value: string) =>
+    searchWords(value).map((word) => word.toLowerCase());
+  const within = (some: readonly string[], text: string) =>
+    some.length > 0 && some.every((word) => text.includes(word));
+  const readText = `${read.maker} ${read.name}`.toLowerCase();
+  const similar = name
+    ? rows.filter((row) => {
+        if (duplicates.includes(row)) return false;
+        // A model is the maker's: without one matched, nothing is near.
+        if (collection === 'models' || row.manufacturerId)
+          if (
+            !read.manufacturerId ||
+            row.manufacturerId !== read.manufacturerId
+          )
+            return false;
+        const own = `${row.manufacturer ?? ''} ${row.name}`.toLowerCase();
+        return (
+          within(words(row.name), readText) || within(words(read.name), own)
+        );
+      })
+    : [];
+  const brief = (list: readonly LookalikeRow[]) =>
+    list.slice(0, 5).map((row) => ({ id: row.id, name: row.name }));
+  return { duplicates: brief(duplicates), similar: brief(similar) };
 }

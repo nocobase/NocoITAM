@@ -14,6 +14,11 @@ export interface MasterCapture {
     readonly id: string;
     readonly name: string;
   }[];
+  /** Same maker, another wording of the name: possibly the same record. */
+  readonly similar?: readonly {
+    readonly id: string;
+    readonly name: string;
+  }[];
   readonly uncertain: readonly string[];
   readonly sources: readonly { readonly title: string; readonly url: string }[];
 }

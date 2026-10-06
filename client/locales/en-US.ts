@@ -1051,6 +1051,10 @@ const messages = {
       models: 'Already on the books with the same part code or name:',
       softwareProducts: 'Already on the books with the same name:',
     },
+    similar: {
+      models: 'Possibly the same model (same maker, worded differently):',
+      softwareProducts: 'Possibly the same product (worded differently):',
+    },
   },
   locations: {
     title: 'Locations',

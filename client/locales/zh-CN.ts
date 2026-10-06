@@ -1026,6 +1026,10 @@ const zhCN: AppResource = {
       models: '主数据里已有相同料号或同名的型号：',
       softwareProducts: '主数据里已有同名的软件产品：',
     },
+    similar: {
+      models: '可能是同一型号（同一制造商，名称写法不同）：',
+      softwareProducts: '可能是同一软件产品（名称写法不同）：',
+    },
   },
   locations: {
     title: '位置',

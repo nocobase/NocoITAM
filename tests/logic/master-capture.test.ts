@@ -11,6 +11,7 @@ interface Capture {
   readonly values: Record<string, string | number>;
   readonly manufacturerName: string | null;
   readonly duplicates: readonly { id: string; name: string }[];
+  readonly similar: readonly { id: string; name: string }[];
   readonly uncertain: readonly string[];
   readonly sources: readonly { title: string; url: string }[];
 }
@@ -146,6 +147,35 @@ describe('AI 整理 for a new model or software product', () => {
     expect(
       (await match('models', { name: 'Testbook Pro 16' })).duplicates,
     ).toEqual([]);
+  });
+
+  it('also points out another wording of a model of the same maker', async () => {
+    const reworded = await match('models', {
+      name: 'Testbook Pro 14 英寸（T3）',
+      manufacturerName: 'Testmaker',
+    });
+    expect(reworded.duplicates).toEqual([]);
+    expect(reworded.similar).toEqual([
+      { id: ids.book, name: 'Testbook Pro 14' },
+    ]);
+    // Another size is another model.
+    expect(
+      (
+        await match('models', {
+          name: 'Testbook Pro 16',
+          manufacturerName: 'Testmaker',
+        })
+      ).similar,
+    ).toEqual([]);
+    // Without its maker matched, a model is near nothing.
+    expect(
+      (await match('models', { name: 'Testbook Pro 14 英寸' })).similar,
+    ).toEqual([]);
+    // A product is near by its words alone when it names no vendor.
+    expect(
+      (await match('softwareProducts', { name: 'Test Sketcher 专业版' }))
+        .similar,
+    ).toEqual([{ id: ids.sketcher, name: 'Test Sketcher' }]);
   });
 
   it('keeps what holds of a software product', async () => {

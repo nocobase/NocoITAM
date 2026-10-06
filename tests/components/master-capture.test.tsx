@@ -42,6 +42,7 @@ vi.mock('../../client/lib/itam/api.js', () => ({
           },
           manufacturerName: 'Dell Technologies',
           duplicates: [{ id: 'm9', name: 'OptiPlex 7010' }],
+          similar: [{ id: 'm8', name: 'OptiPlex 7010 Tower' }],
           uncertain: ['code'],
           sources: [
             { title: 'Dell spec sheet', url: 'https://dell.example/7010' },
@@ -240,6 +241,11 @@ it('looks a model up on the web and fills the form for checking', async () => {
     'href',
     '/main/models/m9',
   );
+  // Another wording of the same maker's model, said apart from an exact one.
+  expect(screen.getByText('masterCapture.similar.models')).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: 'OptiPlex 7010 Tower' }),
+  ).toHaveAttribute('href', '/main/models/m8');
 
   // Changing the uncertain value is the check.
   fireEvent.change(screen.getByLabelText('form-code'), {
