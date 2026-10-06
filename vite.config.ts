@@ -63,6 +63,19 @@ export default createAppViteConfig(async (environment) => {
         ignored: [
           '**/.agent-annotations/**',
           '**/storage/**',
+          // Application change (ITAM): nothing the page loads lives here, yet
+          // Vite reloaded every open page whenever one of them changed — a
+          // note in AGENTS.md, a launch configuration, a test — and a reload
+          // drops an AI turn in progress, such as a purchase order's AI 整理.
+          // The server has its own watcher (app-cli's supervisor), unaffected.
+          '**/*.md',
+          '**/*.MD',
+          '**/.claude/**',
+          '**/.agents/**',
+          '**/docs/**',
+          '**/nocosolution/**',
+          '**/tests/**',
+          '**/e2e/**',
           // Vite only excludes dist/client automatically. The server build and
           // vendored packages also live in dist and can exhaust file watchers.
           // Scope this to the app so linked dependencies still receive HMR.
