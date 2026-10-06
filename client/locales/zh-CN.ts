@@ -1494,7 +1494,6 @@ const zhCN: AppResource = {
   },
   search: {
     label: '搜索台账',
-    trigger: '搜索',
     placeholder: '搜索设备、人员、采购单、型号…',
     askPlaceholder: '问 AI，例如：哪些 MacBook 的保修下个月到期',
     askLabel: '问 AI',
@@ -2279,6 +2278,8 @@ const zhCN: AppResource = {
     },
   },
   ai: {
+    openChat: '打开 AI 对话',
+    closeChat: '收起 AI 对话',
     chat: {
       loading: '正在加载 AI 配置…',
       configError: '无法加载 AI 配置，请检查网络和「设置 → AI」后刷新页面。',

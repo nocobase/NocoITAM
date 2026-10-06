@@ -178,9 +178,11 @@ Rules learned while building it:
   give frontend tools as typed object literals: the React Compiler lint
   refuses a ref read during render, and cannot see that
   `defineAIFrontendTool()` does not run `execute`. The global entry is
-  the plugin's floating launcher (`AIChatFloatingTrigger`, lower right, in
-  `client/layouts/ai-panel.tsx`), which reopens the conversation in progress;
-  there is no header button. Ava's name, role, bio and greeting come from the
+  a button in the header, left of the reader's menu (`AiHeaderButton` in
+  `client/layouts/ai-panel.tsx`, through `HeaderActions`' `showAssistant`,
+  2026-10-06), which opens the panel on the conversation in progress and
+  closes it again; the plugin's floating launcher at the lower right went
+  with it, since it covered that corner of every page. Ava's name, role, bio and greeting come from the
   locales (`ai.employee.*`): the plugin keeps a code-registered employee's
   texts in one language, so the panel wraps the service that lists employees,
   as the CRM does. The registrar also switches the plugin's own built-in
@@ -190,8 +192,9 @@ Rules learned while building it:
   compete with the page's own actions. The chat's header has 展开 / 收起到侧边
   and 关闭: one `ChatSurface` switching between side panel and dialog, so the
   conversation stays mounted, and only the side panel pushes the page aside.
-  The launcher shows the NocoBase AI chat mark and drags by its icon — two
-  edits to the Registry copy marked "Application change (ITAM)". Nothing AI
+  The header button shows the NocoBase AI chat mark, which the Registry copy
+  exports for it (`NocoBaseAIChatIcon`, marked "Application change (ITAM)";
+  the unused floating launcher keeps its own two such edits). Nothing AI
   runs outside a conversation any more (step 3, 2026-09-27, migration
   `202609270008_drop_ai_findings`): no findings, no inspection, no instant
   check, no direct model calls. Whether the assistant is available is the
@@ -1094,11 +1097,9 @@ Rules learned while building it:
   with the job right after it, the leave date under them, then a bar of 已处理 N / M — `MyWorkRecord.progress`,
   counted against the newest belongings snapshot exactly as the 归属 tab
   counts it (`handoverProgress` in `workbench.ts`), restricted to the
-  kinds the reader may act on. The workbench's header also carries the
-  global search as a field beside the title (`SearchTrigger`, through
-  `PageHeader`'s `aside` slot), opening the dialog the sidebar's 搜索 and
-  ⌘K open; its end is a green sparkle 问 AI, shown when the assistant is
-  available, that opens the same dialog already in ask mode.
+  kinds the reader may act on. The global search is the sidebar's 搜索 and
+  ⌘K; the field beside the workbench's title that also opened it went on
+  2026-10-06 — a third way into the same dialog, on one page only.
 - The board shows only what is waiting; there is no 已完成 (2026-10-05,
   migration `202610050004_drop_handover_completed`). It had one for a
   day — a column, then a folded list under each column, then a

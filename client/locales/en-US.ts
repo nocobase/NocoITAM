@@ -1550,7 +1550,6 @@ const messages = {
   },
   search: {
     label: 'Search the register',
-    trigger: 'Search',
     placeholder: 'Search devices, people, orders, models…',
     askPlaceholder:
       'Ask AI, e.g. which MacBooks have a warranty ending next month',
@@ -2409,6 +2408,8 @@ const messages = {
     },
   },
   ai: {
+    openChat: 'Open the AI chat',
+    closeChat: 'Close the AI chat',
     chat: {
       loading: 'Loading the AI configuration…',
       configError:

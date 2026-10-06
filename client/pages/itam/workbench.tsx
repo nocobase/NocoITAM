@@ -13,7 +13,6 @@ import {
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
-import { SearchTrigger } from '@/components/itam/global-search';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { useWorkScope } from '@/lib/itam/work-scope';
@@ -65,7 +64,6 @@ export default function WorkbenchPage(): ReactElement {
     <Page fill>
       <PageHeader
         title={t('workbench.title')}
-        aside={<SearchTrigger />}
         actions={<WorkScopeToggle />}
       />
       {/* The board takes the rest of the page's height, so each column
