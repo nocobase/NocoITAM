@@ -152,3 +152,19 @@ export function keyedUnmatched(
     line.key ? line : { ...line, key: crypto.randomUUID() },
   );
 }
+
+/** A capacity, a size or a speed: how the item is configured, not which. */
+const SPEC_WORD =
+  /^\d+(?:\.\d+)?\s*(?:gb|tb|mb|g|t|m|寸|英寸|"|inch|in|w|hz|ghz|mhz|核|c|nm|mah|ml|l)$/iu;
+
+/**
+ * What an unmatched line's picker searches for first: the document's own
+ * wording without the configuration (16GB/512GB, 27英寸), since a list search
+ * wants every word and a model is named without those.
+ */
+export function pickerSearch(description: string): string {
+  return description
+    .split(/[\s/,，、()（）]+/u)
+    .filter((word) => word && !SPEC_WORD.test(word))
+    .join(' ');
+}

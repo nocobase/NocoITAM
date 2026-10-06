@@ -1073,8 +1073,10 @@ Rules learned while building it:
   through `dbDateTime()`.
 - A line AI 整理 could not place is placed by the reader, never by the
   assistant (2026-10-06): each row in the column beside the form carries a
-  picker that starts at the document's own wording — a different spelling of
-  a model on the books is the common case — and, for whoever may create
+  picker that starts at the document's own wording without its
+  configuration (`pickerSearch`: 16GB/512GB, 27英寸 would rule every model
+  out of a word-by-word search) — a different spelling of a model on the
+  books is the common case — and, for whoever may create
   one, 创建型号 / 创建软件产品 at the foot of that list
   (`ReferenceSelect`'s `onCreate`). Creating opens `QuickCreateDialog`
   (`client/components/itam/quick-create-dialog.tsx`), the collection's own
@@ -1596,7 +1598,13 @@ Rules learned while building it:
   through references (`searchByReference` in `collections.ts`: a device or
   stock item by its model's name, an entitlement by its product's), because
   a device is named by its asset tag while people type "MacBook" — which
-  also fixed the lists' own search boxes. It is still a conversation — the
+  also fixed the lists' own search boxes. Every list search goes **word by
+  word** (2026-10-06, `searchWords` in `collection-query.ts`): the search is
+  split on spaces and the punctuation inside names, and each word must
+  appear in one of the search fields or a referenced name, in any order, so
+  "MacBook Pro 14" finds "MacBook Pro 14 (M3)" and "M3 MacBook" does too;
+  "MacBook Pro 14 M4" still finds nothing when only the M3 is on the books.
+  One string matched whole failed on any bracket or change of order. It is still a conversation — the
   decision that nothing AI runs outside one stands. A list reads the found
   ids from `?ids=` with `?found=` naming them: it shows them as a table,
   under `FoundRecords`, whose 显示全部 clears both, and exports them alone.

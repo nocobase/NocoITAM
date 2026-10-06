@@ -53,6 +53,19 @@ const RANGE_OPERATORS: Readonly<Record<string, '>=' | '<=' | '<' | '>'>> = {
 
 export type ExtraWhere = (query: SelectQuery) => SelectQuery;
 
+/**
+ * A search as the words it is made of: split on spaces and the punctuation
+ * that separates words in a name (brackets, commas, slashes), at most eight
+ * so a pasted paragraph cannot build an unbounded query.
+ */
+export function searchWords(q: string | undefined): string[] {
+  return (q ?? '')
+    .split(/[\s,，、;；/|()（）[\]【】]+/u)
+    .map((word) => word.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
 export function applyListFilters(
   query: SelectQuery,
   definition: ItamCollectionDefinition,
@@ -92,28 +105,35 @@ export function applyListFilters(
         ? next.where(col(field), 'is', null)
         : next.where(col(field), '=', value);
   }
-  const q = options.q?.trim();
+  // Searched word by word: every word must appear in one of the search
+  // fields (or a referenced record's name), in any order, so "MacBook Pro
+  // 14" finds "MacBook Pro 14 (M3)" and "M3 MacBook" does too. One string
+  // matched whole found nothing as soon as the words came in another order
+  // or with a bracket between them.
+  const words = searchWords(options.q);
   const throughReferences = definition.searchByReference ?? [];
-  if (q && definition.searchFields.length + throughReferences.length > 0) {
-    next = next.where((eb) =>
-      eb.or([
-        ...definition.searchFields.map((field) =>
-          eb(col(field), 'like', `%${q}%`),
-        ),
-        // A match on the referenced record's name, e.g. a device by its
-        // model: what the record points at, not a column of its own.
-        ...throughReferences.map((reference) =>
-          eb(
-            col(reference.field),
-            'in',
-            eb
-              .selectFrom(reference.collection)
-              .select('id')
-              .where(reference.column, 'like', `%${q}%`),
+  if (definition.searchFields.length + throughReferences.length > 0) {
+    for (const word of words) {
+      next = next.where((eb) =>
+        eb.or([
+          ...definition.searchFields.map((field) =>
+            eb(col(field), 'like', `%${word}%`),
           ),
-        ),
-      ]),
-    );
+          // A match on the referenced record's name, e.g. a device by its
+          // model: what the record points at, not a column of its own.
+          ...throughReferences.map((reference) =>
+            eb(
+              col(reference.field),
+              'in',
+              eb
+                .selectFrom(reference.collection)
+                .select('id')
+                .where(reference.column, 'like', `%${word}%`),
+            ),
+          ),
+        ]),
+      );
+    }
   }
   return next;
 }
