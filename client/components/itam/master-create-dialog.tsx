@@ -1,7 +1,7 @@
 import { resolveAppUrl } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { Globe, Sparkles } from 'lucide-react';
-import { useMemo, useState, type ReactElement } from 'react';
+import { Fragment, useMemo, useState, type ReactElement } from 'react';
 
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { ReviewHint } from '@/components/itam/review-mark';
@@ -561,45 +561,46 @@ function CapturePrelude({
   const similar = result.similar ?? [];
   if (!reviewing && result.duplicates.length === 0 && similar.length === 0)
     return null;
-  const list = (rows: readonly { id: string; name: string }[]) => (
-    <ul className='grid gap-0.5'>
-      {rows.map((row) => (
-        <li key={row.id} className='min-w-0'>
+  // The label and its records on one line, the records as links.
+  const line = (
+    label: string,
+    rows: readonly { id: string; name: string }[],
+  ) => (
+    <p className='min-w-0 text-warning-foreground'>
+      {label}
+      {rows.map((row, index) => (
+        <Fragment key={row.id}>
+          {index > 0 ? '、' : null}
           {/* A new tab: following the link must not lose the form. */}
           <a
             href={resolveAppUrl(`/${route}/${row.id}`)}
             target='_blank'
             rel='noreferrer'
-            className='block truncate text-info-foreground hover:underline'
+            className='text-info-foreground wrap-anywhere hover:underline'
           >
             {row.name}
           </a>
-        </li>
+        </Fragment>
       ))}
-    </ul>
+    </p>
   );
+  const found = result.duplicates.length > 0 || similar.length > 0;
+  // One box for everything to read before checking the fields; it warns
+  // only when the books may already hold the record.
   return (
-    <div className='grid gap-2'>
-      {result.duplicates.length > 0 || similar.length > 0 ? (
-        <div className='grid gap-1 rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm'>
-          {result.duplicates.length > 0 ? (
-            <>
-              <p className='text-warning-foreground'>
-                {t(`masterCapture.duplicates.${collection}`)}
-              </p>
-              {list(result.duplicates)}
-            </>
-          ) : null}
-          {similar.length > 0 ? (
-            <>
-              <p className='text-warning-foreground'>
-                {t(`masterCapture.similar.${collection}`)}
-              </p>
-              {list(similar)}
-            </>
-          ) : null}
-        </div>
-      ) : null}
+    <div
+      className={
+        found
+          ? 'grid gap-1.5 rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm'
+          : 'grid gap-1.5 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm'
+      }
+    >
+      {result.duplicates.length > 0
+        ? line(t(`masterCapture.duplicates.${collection}`), result.duplicates)
+        : null}
+      {similar.length > 0
+        ? line(t(`masterCapture.similar.${collection}`), similar)
+        : null}
       {reviewing ? <ReviewHint /> : null}
     </div>
   );
