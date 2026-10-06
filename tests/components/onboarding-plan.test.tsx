@@ -19,7 +19,8 @@ const state = vi.hoisted(() => ({
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock('../../client/lib/itam/onboarding.js', () => ({
+vi.mock('../../client/lib/itam/onboarding.js', async (original) => ({
+  ...(await original<object>()),
   useOnboardingPlan: () => ({ data: state.plan }),
 }));
 vi.mock('../../client/lib/itam/ai-context.js', () => ({
@@ -92,11 +93,13 @@ const plan = (hireDate: string): OnboardingPlan => ({
   required: 3,
   hasDevice: false,
   orders: [],
+  waived: 0,
   advice: null,
   lines: [
     {
       key: 'model:m1',
       missing: 1,
+      waived: false,
       target: { type: 'model', id: 'm1', name: 'MacBook Pro 14' },
       kind: 'device',
       itemType: 'device',
@@ -110,6 +113,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
     {
       key: 'model:m2',
       missing: 1,
+      waived: false,
       target: { type: 'model', id: 'm2', name: 'MX Keys' },
       kind: 'stock',
       itemType: 'accessory',
@@ -123,6 +127,7 @@ const plan = (hireDate: string): OnboardingPlan => ({
     {
       key: 'softwareProduct:sp1',
       missing: 1,
+      waived: false,
       target: { type: 'softwareProduct', id: 'sp1', name: 'Figma' },
       kind: 'entitlement',
       itemType: null,
@@ -238,6 +243,8 @@ it('carries on past a refused item, and gives a subscription seat its account', 
       {
         key: 'softwareProduct:sp2',
         missing: 1,
+        waived: false,
+        waived: false,
         target: { type: 'softwareProduct', id: 'sp2', name: 'Zoom' },
         kind: 'entitlement',
         itemType: 'subscription',

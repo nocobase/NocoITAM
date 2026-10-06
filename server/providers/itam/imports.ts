@@ -223,13 +223,15 @@ export const IMPORT_SPECS: Readonly<Record<string, ImportSpec>> = {
       ref('departmentId', 'departments', false, ['department']),
       text('position'),
       ref('locationId', 'locations', false, ['location']),
-      en('employmentStatus', ['active', 'left']),
       date('hireDate'),
       date('leaveDate'),
       text('notes'),
     ],
+    // No 在职状态 column: it follows the joining and leave dates, which are
+    // imported, and creating or updating a person refuses it as an input —
+    // the default of `active` this spec used to send failed every row.
     match: ['employeeNo', 'email'],
-    defaults: { employmentStatus: 'active' },
+    defaults: {},
   },
   devices: {
     fields: [

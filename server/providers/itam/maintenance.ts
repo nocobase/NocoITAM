@@ -499,6 +499,7 @@ export function createMaintenanceService(dependencies: {
         return {
           leavers: employment.left,
           reinstated: employment.reinstated,
+          joined: employment.joined,
           recoveriesPrepared: await prepareRecoveries(),
         };
       }

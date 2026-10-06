@@ -589,7 +589,10 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // 入职配备: a joiner's kit, what they have and what stock would make
     // up the rest (`onboarding.ts`).
     container.singleton(onboardingServiceToken, () =>
-      createOnboardingService(container.resolve(databaseManagerToken)),
+      createOnboardingService(
+        container.resolve(databaseManagerToken),
+        container.resolve(historyServiceToken),
+      ),
     );
     // Noco choosing a joiner's equipment in the background, as their
     // 入职负责人 (`onboarding-advisor.ts`).

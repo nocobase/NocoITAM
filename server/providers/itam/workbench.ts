@@ -11,7 +11,11 @@ import { compileAuthzScope } from './authz-filter.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
 import { OWNED_BY_USER, RECOVERABLE_DEVICE_STATUSES } from './recovery.js';
 import { nameOf, referenceNames } from './reference-names.js';
-import type { OnboardingService } from './onboarding.js';
+import {
+  isJoiner,
+  isPrepared,
+  type OnboardingService,
+} from './onboarding.js';
 
 /**
  * "My work" on the workbench: what waits for the signed-in user right now.
@@ -741,50 +745,62 @@ export function createWorkbenchService(dependencies: {
         });
       }
 
-      // 入职准备: somebody joining within the fortnight — or in the week since,
-      // so a first day without a laptop does not drop off — whose kit is not
-      // yet in hand (2026-10-05). Ready means every item of their kit is
-      // held or reserved for them; with no kit for their department, any
-      // device held or reserved. Granted by `reserve`; under 我负责的 it is
-      // the joiners whose 入职负责人 the reader is.
+      // 入职准备 (2026-10-06): a joiner — somebody entered around their
+      // first day rather than long after it (`isJoiner`) — who starts within
+      // the fortnight, or has started, and whose kit is not yet in hand.
+      // There is no cut-off after the first day: somebody still missing
+      // half their kit a month in is still somebody to equip, and what they
+      // will not get is marked 不需要 on their card. In hand means every
+      // item held, reserved or 不需要 (`isPrepared`); with no kit for their
+      // department, any device held or reserved. Once in hand the person is
+      // stamped `onboardingCompletedAt` and not worked out again, so the
+      // register's whole history of joiners is not recomputed on every
+      // reading. Granted by `reserve`; under 我负责的 it is the joiners whose
+      // 入职负责人 the reader is.
       if (
         onboarding &&
         peopleConditions &&
         (await decide('devices', 'reserve'))
       ) {
         const now = todayIso();
-        // Under 我负责的, the joiners whose 入职负责人 is the reader
-        // (2026-10-06); everybody's otherwise.
-        const joiners = await take(
-          'people',
-          peopleConditions,
-          ['id', 'name', 'position', 'hireDate'],
-          (query) => {
-            const window = query
-              // `!=` alone would also drop an empty status.
-              .where((eb) =>
-                eb.or([
-                  eb('employmentStatus', 'is', null),
-                  eb('employmentStatus', '!=', 'left'),
-                ]),
-              )
-              .where('hireDate', '>=', addDays(now, -7))
-              .where('hireDate', '<=', addDays(now, 14))
-              .orderBy('hireDate', 'asc');
-            return reader === null
-              ? window
-              : window.where('onboardingOwnerId', '=', reader);
-          },
-        );
+        let candidates = database
+          .query()
+          .selectFrom('people')
+          .where((eb) => compileAuthzScope(eb, peopleConditions.scope))
+          .where((eb) =>
+            eb.or([
+              eb('employmentStatus', 'is', null),
+              eb('employmentStatus', '!=', 'left'),
+            ]),
+          )
+          .where('hireDate', 'is not', null)
+          .where('hireDate', '<=', addDays(now, 14))
+          .where('onboardingCompletedAt', 'is', null);
+        // Under 我负责的, the joiners whose 入职负责人 is the reader.
+        if (reader !== null)
+          candidates = candidates.where('onboardingOwnerId', '=', reader);
+        const joiners = (
+          await candidates
+            .select(['id', 'name', 'position', 'hireDate', 'createdAt'])
+            .orderBy('hireDate', 'asc')
+            .execute<Row>()
+        ).filter((row) => isJoiner(row.hireDate, row.createdAt));
         const waiting: MyWorkRecord[] = [];
+        let open = 0;
         for (const row of joiners) {
           const plan = await onboarding.plan(String(row.id));
           if (!plan) continue;
-          const ready =
-            plan.required > 0
-              ? plan.prepared >= plan.required
-              : plan.hasDevice;
-          if (ready) continue;
+          if (isPrepared(plan)) {
+            await database
+              .query()
+              .updateTable('people')
+              .set({ onboardingCompletedAt: new Date() })
+              .where('id', '=', String(row.id))
+              .execute();
+            continue;
+          }
+          open += 1;
+          if (waiting.length >= MY_WORK_PREVIEW) continue;
           waiting.push({
             id: String(row.id),
             title: String(row.name),
@@ -798,7 +814,7 @@ export function createWorkbenchService(dependencies: {
         }
         items.push({
           key: 'pendingOnboarding',
-          count: waiting.length,
+          count: open,
           url: '/people',
           records: waiting,
         });

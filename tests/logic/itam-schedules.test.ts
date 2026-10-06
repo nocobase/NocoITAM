@@ -97,7 +97,7 @@ describe('ITAM schedules', () => {
         { job: 'monthly' },
       ],
     ]);
-    expect(defined[0]!.title).toBe('人员离职状态更新');
+    expect(defined[0]!.title).toBe('人员在职状态更新');
     expect(defined[1]!.title).toBe('资产每日维护');
     expect(target.validate({ job: 'daily' }).valid).toBe(true);
     expect(target.validate({ job: 'leavers' }).valid).toBe(true);

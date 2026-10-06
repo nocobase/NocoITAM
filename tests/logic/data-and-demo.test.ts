@@ -63,6 +63,39 @@ describe('CSV import / export and demo data', () => {
     expect(parseCsv(csv).rows).toEqual(table.rows);
   });
 
+  it('imports people, their status following the dates in the file', async () => {
+    // The spec sent a status of its own, which creating a person refuses —
+    // every row of a people import failed until 2026-10-06.
+    expect(
+      (await post('imports/departments/commit', { csv: 'Name\nImport Dept\n' }))
+        .status,
+    ).toBe(200);
+    const csv = [
+      'Name,Employee No,Department,Hire Date,Leave Date',
+      'Early Bird,E-1,Import Dept,2020-01-01,',
+      'New Face,E-2,Import Dept,2099-01-01,',
+      'Gone Soon,E-3,Import Dept,2020-01-01,2020-06-30',
+    ].join('\n');
+    const committed = await data<{
+      creates: number;
+      errors: number;
+      rows: { status: string; id?: string; errors?: string[] }[];
+    }>(await post('imports/people/commit', { csv }));
+    expect(committed.rows.flatMap((row) => row.errors ?? [])).toEqual([]);
+    expect(committed.creates).toBe(3);
+    const statuses = await Promise.all(
+      committed.rows.map(
+        async (row) =>
+          (
+            await data<{ employmentStatus: string }>(
+              await get(`master/people/${row.id}`),
+            )
+          ).employmentStatus,
+      ),
+    );
+    expect(statuses).toEqual(['active', 'pending', 'left']);
+  });
+
   it('imports master data then devices by name references, reports errors, exports the filter', async () => {
     const step = (
       collection: string,

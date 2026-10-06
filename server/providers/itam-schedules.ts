@@ -28,8 +28,8 @@ const TITLES: Readonly<
     ],
     monthly: ['资产月度折旧', '按每台设备的折旧方式重算账面价值和累计折旧'],
     leavers: [
-      '人员离职状态更新',
-      '把离职日期已到（当天或更早）仍是在职的人员标记为已离职；在每日维护之前运行，当天的提醒就能列出他们仍持有的资产',
+      '人员在职状态更新',
+      '按入职日期和离职日期更新在职状态：入职日期已到的待入职人员改为在职，离职日期已到的改为已离职；在每日维护之前运行，当天的提醒就能列出离职人员仍持有的资产',
     ],
     onboardingAdvice: [
       '入职配备建议',
@@ -46,8 +46,8 @@ const TITLES: Readonly<
       "Recomputes every device's book value and accumulated depreciation",
     ],
     leavers: [
-      'People leave status update',
-      "Marks people still active whose leave date has come as left; runs before the daily maintenance, so that day's reminders list what they still hold",
+      'People employment status update',
+      "Updates employment status from the joining and leave dates: joiners whose first day has come become active, people whose leave date has come are marked as left; runs before the daily maintenance, so that day's reminders list what leavers still hold",
     ],
     onboardingAdvice: [
       'Onboarding suggestions',

@@ -141,7 +141,7 @@ export const OWNED_BY_USER: readonly {
     collection: 'people',
     field: 'onboardingOwnerId',
     label: 'name',
-    open: { column: 'employmentStatus', values: ['active'] },
+    open: { column: 'employmentStatus', values: ['pending', 'active'] },
     since: { column: 'hireDate', days: 30 },
   },
 ];

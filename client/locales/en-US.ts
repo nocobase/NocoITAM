@@ -231,6 +231,8 @@ const messages = {
       signed: 'Signed',
       statusChange: 'Status changed',
       left: 'Left',
+      onboardingWaived: 'Onboarding kit',
+      onboardingRestored: 'Onboarding kit',
       accountDisabledOnLeaving: 'Sign-in disabled',
       accountRestoredOnReturning: 'Sign-in enabled',
       repairCreated: 'Repair created',
@@ -352,6 +354,8 @@ const messages = {
         '{{from}} → {{to}}: approved without review, approval is switched off',
       renewalAdvanced: 'Next renewal {{from}} → {{to}}',
       left: 'Marked as left',
+      onboardingWaived: '{{target}} marked not needed',
+      onboardingRestored: '{{target}} needed again',
       accountDisabledOnLeaving: 'Sign-in {{target}} disabled on leaving',
       accountRestoredOnReturning:
         'Sign-in {{target}} enabled again on returning',
@@ -672,6 +676,7 @@ const messages = {
       other: 'Other',
     },
     employmentStatus: {
+      pending: 'Joining',
       active: 'Active',
       left: 'Left',
     },
@@ -893,6 +898,11 @@ const messages = {
         current: 'Noco has already chosen on what is known now',
       },
     },
+    waive: 'Not needed',
+    restore: 'Undo',
+    waived: 'Not needed',
+    waivedTotal_one: '{{count}} item not needed',
+    waivedTotal_other: '{{count}} items not needed',
     state: { assigned: 'assigned', reserved: 'reserved' },
     done: {
       reserved: 'Reserved {{label}}',
@@ -1025,7 +1035,8 @@ const messages = {
     empty: 'No departments yet',
   },
   people: {
-    followsLeaveDate: 'Follows the leave date: a date that has come means left',
+    followsLeaveDate:
+      'Follows the dates: joining before the joining day, left once the leave date has come, active otherwise',
     title: 'People',
     object: 'person',
     new: 'New person',

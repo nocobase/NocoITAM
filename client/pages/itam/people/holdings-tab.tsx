@@ -6,6 +6,7 @@ import { OnboardingPlanCard } from '@/components/itam/onboarding-plan';
 import { PersonBelongings } from '@/components/itam/person-belongings';
 import { masterDataPath, useApi, type ItamRecord } from '@/lib/itam/api';
 import { addDays, text, todayIso } from '@/lib/itam/format';
+import { isJoiner } from '@/lib/itam/onboarding';
 
 /**
  * 归属: everything in this person's name.
@@ -27,14 +28,19 @@ export default function PersonHoldingsTab(): ReactElement {
     queryFn: async () =>
       (await api.request<{ data: ItamRecord }>({ path: `${path}/${id}` })).data,
   });
-  // 入职配备 for a joiner: somebody still here whose 入职日期 is ahead or
-  // within the last month. Long-standing staff are not measured against
-  // a kit that may have changed since they joined.
+  // 入职配备 for a joiner (2026-10-06): somebody still here who was entered
+  // around their first day rather than long after it (`isJoiner`). Staff
+  // entered after the fact are not measured against a kit they never had;
+  // the card itself steps aside once a joiner is equipped and a month in.
+  // Without the creation stamp to read, the joining month decides.
   const hireDate = text(person.data?.hireDate);
+  const entered = text(person.data?.createdAt);
   const joining =
     person.data?.employmentStatus !== 'left' &&
     Boolean(hireDate) &&
-    hireDate >= addDays(todayIso(), -30);
+    (entered
+      ? isJoiner(hireDate, entered)
+      : hireDate >= addDays(todayIso(), -30));
   return (
     <div className='space-y-4'>
       {joining ? (

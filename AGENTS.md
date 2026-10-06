@@ -84,7 +84,9 @@ Rules learned while building it:
   (`runJob('leavers' | 'daily' | 'monthly')`) and is scheduled through the
   scheduler plugin (2026-09-28): `server/providers/itam-schedules.ts`
   registers the `app.itam.maintenance` target and defines
-  `itam.mark-leavers` (01:50, before the daily run), `itam.daily-maintenance`
+  `itam.mark-leavers` (01:50, before the daily run; 人员在职状态更新 since
+  2026-10-06, which also moves 待入职 joiners to 在职 on their first day),
+  `itam.daily-maintenance`
   (02:00) and
   `itam.monthly-depreciation` (1st, 03:00) in the ITAM time zone,
   so each execution — status, reason, counts — shows at 设置 → 自动化 → 定时任务
@@ -742,9 +744,27 @@ Rules learned while building it:
   exists — 预留 until the joining day while they have not started, 分配
   once they have, 领用, 分配席位 — with 全部执行 running them in order.
   The workbench's 入职准备 (`pendingOnboarding`, right after 离职交接) lists
-  people joining within 14 days, or in the 7 since, whose kit is not all in
-  hand (with no kit, while no device is held or reserved), granted by
-  `reserve`. A joiner has a **入职负责人** (`people.onboardingOwnerId`,
+  **joiners** — people entered in the register no more than 30 days before
+  their first day (`isJoiner`; staff entered long after they started, such
+  as a whole register imported at go-live, are not measured against a kit)
+  — who start within 14 days or have started, for as long as their kit is
+  not all in hand (`isPrepared`: each item held, reserved or marked 不需要;
+  with no kit, while no device is held or reserved), granted by `reserve`
+  (2026-10-06; it was the 7 days after the first day before). An item the
+  joiner will not be given — their own monitor, another laptop — is marked
+  **不需要** on the 入职配备 card (`POST /itam/master/people/:id/onboarding/
+  waive`, people `update`, `people.onboardingWaived`, migration
+  `202610060003_joiner_status`): nothing is proposed, ordered or chosen
+  for it, it counts on neither side of 已配备 N / M, and taking the mark
+  back (撤回) reopens the joiner. Once in hand a joiner is stamped
+  `onboardingCompletedAt` and not worked out again, so the register's
+  history of joiners is not recomputed on every reading; the card steps
+  aside once they are equipped and a month in. 在职状态 is the two dates
+  (`employmentFor`): **待入职** (`pending`) before the first day, 已离职
+  once the leave date has come, 在职 otherwise; it is off the create form,
+  every person picker offers anybody not 已离职 (`employmentStatus:ne`),
+  and the people import no longer sends a status of its own, which made
+  every row of it fail. A joiner has a **入职负责人** (`people.onboardingOwnerId`,
   2026-10-06, migration `202610060001_person_onboarding_owner`): the IT
   person who gets them equipped, starting at whoever enters the person
   (people entered before stay empty), editable beside 入职日期. Under
@@ -802,7 +822,7 @@ Rules learned while building it:
   latest finished run) is **held back** from every other joiner's
   candidates and proposals (`heldForOthers`), or two joiners of one
   department were both offered the laptop it had just chosen for the first. Runs are queued one at a time and start when a
-  joiner in the 入职准备 window has an owner, Noco has a choice (some item
+  joiner 入职准备 lists has an owner, Noco has a choice (some item
   with more candidates than it needs) and the last run was not asked the
   same question (`inputs`: joining day, department, position, owner, kit):
   after a person is saved (`personSaved` on the master-data service), by

@@ -293,6 +293,39 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
       }
     });
 
+    // 不需要: an item of this person's kit they will not be given — they
+    // brought their own monitor, they work on Windows — or the mark taken
+    // back. It is part of the person, so it takes the people `update`
+    // grant; nothing is proposed or ordered for a marked item, and it no
+    // longer keeps them in 入职准备.
+    routes.post('/people/:id/onboarding/waive', async (context) => {
+      try {
+        const conditions = await decideCollection(context, 'people', 'update');
+        const id = context.req.param('id');
+        const person = await masterData.get('people', id, {
+          ...conditions,
+          fieldAccess: undefined,
+        });
+        if (!person) {
+          return context.json(
+            { code: 'NOT_FOUND', message: 'Record not found' },
+            404,
+          );
+        }
+        const input = z
+          .object({ key: z.string().min(1).max(200), waived: z.boolean() })
+          .strict()
+          .parse(await readJsonObject(context));
+        return context.json({
+          data: await app.container
+            .resolve(onboardingServiceToken)
+            .waive(id, input.key, input.waived, principalId(context)),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
     // 重新建议: Noco chooses this joiner's equipment again, in the
     // background. Only their 入职负责人 may ask, because the run is made as
     // that person, under their grants and in their conversations; anybody

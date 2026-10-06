@@ -16,10 +16,11 @@ import { z } from 'zod';
 import { asText, type Row } from './collection-query.js';
 import { addDays, today } from './dates.js';
 import type { ItamNotifier } from './notifier.js';
-import type {
-  AdvisedLine,
-  OnboardingPlan,
-  OnboardingService,
+import {
+  isJoiner,
+  type AdvisedLine,
+  type OnboardingPlan,
+  type OnboardingService,
 } from './onboarding.js';
 import type { SettingsService } from './settings.js';
 
@@ -451,18 +452,22 @@ export function createOnboardingAdvisor(deps: {
         'hireDate',
         'employmentStatus',
         'onboardingOwnerId',
+        'onboardingCompletedAt',
+        'createdAt',
       ])
       .where('id', '=', personId)
       .executeTakeFirst<Row>();
     const hireDate = asText(person?.hireDate);
     const now = today();
-    // The 入职准备 window: two weeks ahead, and the first week after.
+    // The joiners 入职准备 lists: entered around their first day, starting
+    // within the fortnight or started, and not yet equipped.
     if (
       !person ||
       asText(person.employmentStatus) === 'left' ||
       !hireDate ||
-      hireDate < addDays(now, -7) ||
-      hireDate > addDays(now, 14)
+      hireDate > addDays(now, 14) ||
+      !isJoiner(hireDate, person.createdAt) ||
+      asText(person.onboardingCompletedAt)
     )
       return { started: false, reason: 'notJoiner' };
     const ownerId = asText(person.onboardingOwnerId);
@@ -529,19 +534,21 @@ export function createOnboardingAdvisor(deps: {
     consider,
     async nightly() {
       const now = today();
-      const joiners = await q()
-        .selectFrom('people')
-        .select(['id'])
-        .where((eb) =>
-          eb.or([
-            eb('employmentStatus', 'is', null),
-            eb('employmentStatus', '!=', 'left'),
-          ]),
-        )
-        .where('hireDate', '>=', addDays(now, -7))
-        .where('hireDate', '<=', addDays(now, 14))
-        .where('onboardingOwnerId', 'is not', null)
-        .execute<Row>();
+      const joiners = (
+        await q()
+          .selectFrom('people')
+          .select(['id', 'hireDate', 'createdAt'])
+          .where((eb) =>
+            eb.or([
+              eb('employmentStatus', 'is', null),
+              eb('employmentStatus', '!=', 'left'),
+            ]),
+          )
+          .where('hireDate', '<=', addDays(now, 14))
+          .where('onboardingOwnerId', 'is not', null)
+          .where('onboardingCompletedAt', 'is', null)
+          .execute<Row>()
+      ).filter((row) => isJoiner(row.hireDate, row.createdAt));
       let started = 0;
       for (const joiner of joiners) {
         const result = await consider(String(joiner.id), 'nightly').catch(

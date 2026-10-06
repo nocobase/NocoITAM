@@ -253,7 +253,7 @@ function EntitlementActions({
             reference={{
               collection: holderType === 'device' ? 'devices' : 'people',
               ...(holderType === 'person'
-                ? { filter: { employmentStatus: 'active' } }
+                ? { filter: { 'employmentStatus:ne': 'left' } }
                 : {}),
             }}
             value={holderId}
