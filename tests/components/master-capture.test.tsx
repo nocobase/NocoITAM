@@ -43,7 +43,9 @@ vi.mock('../../client/lib/itam/api.js', () => ({
           manufacturerName: 'Dell Technologies',
           duplicates: [{ id: 'm9', name: 'OptiPlex 7010' }],
           uncertain: ['code'],
-          sources: [{ title: 'Dell spec sheet', url: 'https://dell.example/7010' }],
+          sources: [
+            { title: 'Dell spec sheet', url: 'https://dell.example/7010' },
+          ],
         },
       });
     },
@@ -156,12 +158,16 @@ const dialog = (initial?: Record<string, unknown>) => (
 
 it('looks a model up on the web and fills the form for checking', async () => {
   // From a purchase line, the material starts at its name and part code.
-  const view = render(dialog({ name: 'Dell OptiPlex 7010', code: 'OPT7010SFF' }));
+  const view = render(
+    dialog({ name: 'Dell OptiPlex 7010', code: 'OPT7010SFF' }),
+  );
   expect(
     screen.getByRole('tab', { name: 'procurement.capture.aiTab' }),
   ).toHaveAttribute('aria-selected', 'true');
-  // Nothing to save before the form is filled.
+  // Nothing to save before the form is filled, and no footer at all: the
+  // corner's close button closes it.
   expect(screen.queryByRole('button', { name: 'actions.save' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'actions.cancel' })).toBeNull();
   expect(
     screen.getByRole('textbox', { name: 'masterCapture.material' }),
   ).toHaveValue('Dell OptiPlex 7010 OPT7010SFF');
@@ -191,10 +197,15 @@ it('looks a model up on the web and fills the form for checking', async () => {
     status: 'ready',
     conversationId: 'c1',
     messages: [
-      { role: 'user', parts: [{ type: 'text', text: state.asked[0]!.message }] },
+      {
+        role: 'user',
+        parts: [{ type: 'text', text: state.asked[0]!.message }],
+      },
       {
         role: 'assistant',
-        parts: [{ type: 'text', text: 'No EOL date published; check the code.' }],
+        parts: [
+          { type: 'text', text: 'No EOL date published; check the code.' },
+        ],
       },
     ],
   };

@@ -989,13 +989,11 @@ const messages = {
         'Type the vendor and the product; AI looks up the rest and fills the form for you to check',
     },
     placeholder: {
-      models:
-        'The maker and the model, e.g. Dell OptiPlex 7010 SFF\nAdd anything else you know: a part code, a spec sheet, a quote line…',
-      softwareProducts:
-        'The vendor and the product, e.g. Figma Professional\nAdd anything else you know…',
+      models: 'The maker and the model, e.g. Dell OptiPlex 7010 SFF',
+      softwareProducts: 'The vendor and the product, e.g. Figma Professional',
     },
     material: 'What you know about it',
-    willSearch: 'AI searches the web for specifications and dates',
+    willSearch: 'AI searches the web to fill in more details',
     cannotSearch:
       'The current model cannot search the web; AI uses only what it knows',
     searching: 'AI is searching…',

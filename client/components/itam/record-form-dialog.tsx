@@ -70,7 +70,7 @@ export interface RecordFormDialogProps {
   readonly marks?: ReadonlySet<string>;
   /** Beside the title: AI 整理 / 表单录入. */
   readonly titleAside?: ReactNode;
-  /** Shown instead of the fields, with only 取消 below (the AI 整理 tab). */
+  /** Shown instead of the fields, with no footer (the AI 整理 tab). */
   readonly replacement?: ReactNode;
   /** A column beside the fields (what AI 整理 said), widening the dialog. */
   readonly aside?: ReactNode;
@@ -338,24 +338,26 @@ export function RecordFormDialog({
           {generalError ? (
             <p className='text-sm text-destructive'>{generalError}</p>
           ) : null}
-          <DialogFooter>
-            <Button
-              type='button'
-              variant='outline'
-              disabled={submitting}
-              onClick={() => onOpenChange(false)}
-            >
-              {t('actions.cancel')}
-            </Button>
-            {replacement ? null : (
+          {/* The AI 整理 tab has nothing to save and no footer: the
+              corner's close button closes the dialog. */}
+          {replacement ? null : (
+            <DialogFooter>
+              <Button
+                type='button'
+                variant='outline'
+                disabled={submitting}
+                onClick={() => onOpenChange(false)}
+              >
+                {t('actions.cancel')}
+              </Button>
               <Button
                 type='submit'
                 disabled={submitting || missing || uploading}
               >
                 {t('actions.save')}
               </Button>
-            )}
-          </DialogFooter>
+            </DialogFooter>
+          )}
         </form>
       </DialogContent>
     </Dialog>
