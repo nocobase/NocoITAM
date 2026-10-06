@@ -346,6 +346,12 @@ Rules learned while building it:
   every way goods arrive. The extra orders are never received — receiving makes devices and
   stock — and the extra audits keep off the laptops, whose 400-day-old last
   count a matched count would stamp today.
+  The two joiners are entered **last** (2026-10-06), because saving one sets
+  Noco choosing their equipment, and four spare MacBook Pro 14s and two
+  spare monitors give it something to weigh: the rule's pick (own floor,
+  longest warranty) is SG-LT-050, whose keyboard was repaired twice, and
+  SG-MON-006, with a dead pixel; SG-LT-053 is due for replacement within
+  months.
 - The ITAM settings page is **tabs**, one per settings document (基本设置,
   提醒阈值, 编号规则, AI 助手, 按送货单入库, 演示数据), the open one in the
   address as `?tab=` so a link can open it (2026-10-05).
@@ -792,7 +798,10 @@ Rules learned while building it:
   `plan()` puts a pick first **while it is still free** (marked
   `source: 'noco'` with its `reason`) and otherwise falls back to the rule,
   so a pick taken since needs no clean-up; `plan(id, { candidates: true })`
-  is what the run is shown. Runs are queued one at a time and start when a
+  is what the run is shown. A device Noco picked for one joiner (their
+  latest finished run) is **held back** from every other joiner's
+  candidates and proposals (`heldForOthers`), or two joiners of one
+  department were both offered the laptop it had just chosen for the first. Runs are queued one at a time and start when a
   joiner in the 入职准备 window has an owner, Noco has a choice (some item
   with more candidates than it needs) and the last run was not asked the
   same question (`inputs`: joining day, department, position, owner, kit):

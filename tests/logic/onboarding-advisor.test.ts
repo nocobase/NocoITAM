@@ -172,6 +172,34 @@ describe('onboarding advisor', () => {
     expect(after.proposals[0]?.reason).toBeUndefined();
   });
 
+  it('holds a device it picked for one joiner back from the others', async () => {
+    const longer = await laptop('C02ADV0041', '2030-01-01');
+    const picked = await laptop('C02ADV0042', '2029-06-01');
+    const third = await laptop('C02ADV0043', '2029-01-01');
+    const first = await joiner();
+    const second = await joiner({ name: 'Lin Xue' });
+    answer = () => ({
+      items: [{ line: LINE, picks: [{ id: picked.id, reason: 'Clean' }] }],
+      summary: 'Chosen.',
+    });
+    await advisor.consider(first.id, 'manual');
+    await advisor.idle();
+
+    // The second joiner is neither offered it nor shown it to choose from.
+    const line = await macbook(second.id);
+    expect(line.proposals.map((thing) => thing.id)).toEqual([longer.id]);
+    const withCandidates = await app.container
+      .resolve(onboardingServiceToken)
+      .plan(second.id, { candidates: true });
+    expect(
+      withCandidates!.lines
+        .find((entry) => entry.key === LINE)!
+        .candidates!.map((candidate) => candidate.id),
+    ).toEqual([longer.id, third.id]);
+    // The first still has it.
+    expect((await macbook(first.id)).proposals[0]?.id).toBe(picked.id);
+  });
+
   it('keeps only picks that are candidates of their own item, as many as needed', async () => {
     const first = await laptop('C02ADV0011', '2030-01-01');
     const second = await laptop('C02ADV0012', '2029-01-01');
