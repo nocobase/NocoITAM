@@ -4,8 +4,6 @@ import {
   ChevronsUpDown,
   Columns3,
   List,
-  MoreHorizontal,
-  Pencil,
   Plus,
   Trash2,
 } from 'lucide-react';
@@ -25,12 +23,6 @@ import { MasterDataFilters } from '@/components/itam/master-data-filters';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   apiErrorBody,
   useApi,
@@ -202,7 +194,6 @@ function DomainList({
   const filterActive = filterFields.some((field) => filter[field.key]);
   const [searchOpen, setSearchOpen] = useState(Boolean(q) || filterActive);
   const [creating, setCreating] = useState(params.get('new') === '1');
-  const [editing, setEditing] = useState<ItamRecord>();
   const [deleting, setDeleting] = useState<ItamRecord>();
   const impact = useDeleteImpact(domain.path, deleting?.id);
   const objectLabel = t(`${domain.i18n}.object`);
@@ -273,42 +264,24 @@ function DomainList({
       entry,
     );
   }
-  const rowActions =
-    permissions.update || permissions.delete
-      ? (row: ItamRecord) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant='ghost'
-                  size='icon-sm'
-                  aria-label={t('common.actions')}
-                />
-              }
-            >
-              <MoreHorizontal />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              {permissions.update ? (
-                <DropdownMenuItem onClick={() => setEditing(row)}>
-                  <Pencil />
-                  {t('actions.edit')}
-                </DropdownMenuItem>
-              ) : null}
-              {permissions.delete &&
-              (domain.deletable?.(row, currentUserId) ?? true) ? (
-                <DropdownMenuItem
-                  variant='destructive'
-                  onClick={() => setDeleting(row)}
-                >
-                  <Trash2 />
-                  {t('actions.deleteObject', { object: objectLabel })}
-                </DropdownMenuItem>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
-      : undefined;
+  // A row's one action is deleting it, as an icon rather than a menu of
+  // one: editing is the record's own page, where every field edits in
+  // place, so a 编辑 dialog here only repeated it (2026-10-06).
+  const rowActions = permissions.delete
+    ? (row: ItamRecord) =>
+        (domain.deletable?.(row, currentUserId) ?? true) ? (
+          <Button
+            variant='ghost'
+            size='icon-sm'
+            className='text-muted-foreground hover:text-destructive'
+            aria-label={t('actions.deleteObject', { object: objectLabel })}
+            title={t('actions.deleteObject', { object: objectLabel })}
+            onClick={() => setDeleting(row)}
+          >
+            <Trash2 />
+          </Button>
+        ) : null
+    : undefined;
 
   // An explicit createFields list may include fields that are read-only
   // afterwards (e.g. an initial quantity), so the create form shows them.
@@ -564,31 +537,6 @@ function DomainList({
           }}
         />
       )}
-      <RecordFormDialog
-        key={editing?.id ?? 'edit-closed'}
-        open={Boolean(editing)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditing(undefined);
-            mutations.update.reset();
-          }
-        }}
-        title={t(`${domain.i18n}.edit`)}
-        fields={domain.fields.filter((field) => field.form !== false)}
-        initial={editing}
-        recordId={editing?.id}
-        submitting={mutations.update.isPending}
-        error={mutations.update.error}
-        onSubmit={async (values) => {
-          if (!editing) return;
-          if (Object.keys(values).length > 0)
-            await mutations.update.mutateAsync({
-              id: editing.id,
-              input: values,
-            });
-          setEditing(undefined);
-        }}
-      />
       <DeleteDialog
         open={Boolean(deleting)}
         onOpenChange={(open) => {

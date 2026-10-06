@@ -2143,7 +2143,10 @@ A detail page's own actions sit in the header; a destructive one goes in the
 "more" menu beside them — the device page does this directly, and a domain
 page asks for it with `deleteInMenu` on its `domain.ts` entry (stock does).
 A page whose only action is deletion keeps the plain button: hiding a lone
-action behind a menu costs a click and finds nothing else.
+action behind a menu costs a click and finds nothing else. A list row is
+the same case (2026-10-06): its one action is a trash icon, not a "···"
+menu — the row's 编辑 dialog went, since opening the row lands on its page
+where every field edits in place.
 
 ### Shared tag appearance
 
