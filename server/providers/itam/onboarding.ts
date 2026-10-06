@@ -303,6 +303,37 @@ export function createOnboardingService(
     }));
   };
 
+  /**
+   * The devices Noco picked for other joiners, by each one's latest finished
+   * run. Two joiners of the same department want the same laptop, and
+   * without this the plan offered both of them the one Noco had just chosen
+   * for the first — the second 入职负责人 to press 预留 would take it from
+   * under the first. A pick is held back only while it is still a pick:
+   * once reserved it leaves stock anyway, and a newer run replaces it.
+   */
+  const heldForOthers = async (personId: string): Promise<Set<string>> => {
+    const runs = await q()
+      .selectFrom('onboardingRuns')
+      .select(['personId', 'suggestions', 'createdAt'])
+      .where('status', '=', 'ready')
+      .where('personId', '!=', personId)
+      .orderBy('createdAt', 'desc')
+      .execute<Row>();
+    const seen = new Set<string>();
+    const held = new Set<string>();
+    for (const run of runs) {
+      if (seen.has(String(run.personId))) continue;
+      seen.add(String(run.personId));
+      const stored = decodeRow(run).suggestions;
+      for (const line of Array.isArray(stored) ? (stored as AdvisedLine[]) : [])
+        // Only a device is one thing for one person; a stock record or an
+        // entitlement has room for several.
+        if (!String(line.line).startsWith('softwareProduct:'))
+          for (const pick of line.picks ?? []) held.add(String(pick.id));
+    }
+    return held;
+  };
+
   /** Noco's latest run for a person, and the picks of its latest ready one. */
   const adviceFor = async (
     personId: string,
@@ -398,6 +429,7 @@ export function createOnboardingService(
       .executeTakeFirst<Row>();
     if (!person) return null;
     const { advice, picks: advisedPicks } = await adviceFor(personId);
+    const held = await heldForOthers(personId);
     const withCandidates = options.candidates === true;
     const kit = await kitFor(
       asText(person.departmentId) ?? null,
@@ -748,7 +780,11 @@ export function createOnboardingService(
             ? query.where('modelId', '=', modelId)
             : query.where('categoryId', 'in', [...(categories ?? [])]);
           const rows = (await query.execute<Row>())
-            .filter((row) => !proposedDevices.has(String(row.id)))
+            .filter(
+              (row) =>
+                !proposedDevices.has(String(row.id)) &&
+                !held.has(String(row.id)),
+            )
             // Nearest first, then the longest warranty left.
             .sort(
               (a, b) =>

@@ -286,6 +286,8 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairScreen: 'Cracked screen; replace the panel',
     repairNotes: 'Replaced under warranty',
     repairFault: 'Battery swollen; replace battery',
+    spareKeyboard: 'Keyboard drops keys now and then; repaired twice',
+    spareDeadPixel: 'One dead pixel in the lower right corner',
     auditName: 'Q3 count · 3F',
     auditNotes: 'Quarterly count',
     leaverAuditName: 'Q3 count · warehouse',
@@ -339,6 +341,8 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairPanel: '面板出现竖线',
     repairScreen: '屏幕碎裂，更换面板',
     repairNotes: '保内更换',
+    spareKeyboard: '键盘偶发失灵，已两次返修',
+    spareDeadPixel: '屏幕右下角有一个坏点',
     repairFault: '电池鼓包，需更换电池',
     auditName: '三季度盘点 · 3 楼',
     auditNotes: '季度例行盘点',
@@ -795,24 +799,6 @@ export function createDemoService(dependencies: {
         );
       }
 
-      // 入职准备: joining in five and nine days, nothing reserved yet.
-      const productDept = await seededIn('departments', 'dept-product');
-      for (const [index, entry] of (
-        JOINER_NAMES[locale] ??
-        JOINER_NAMES['en-US'] ??
-        []
-      ).entries()) {
-        await md('people', {
-          name: entry.name,
-          employeeNo: `EMP-${String(index + 301).padStart(3, '0')}`,
-          email: `${entry.mail}@northbridge.example`,
-          position: entry.position,
-          departmentId: index === 0 ? rnd.id : productDept.id,
-          locationId: floor3.id,
-          hireDate: daysFromNow(index === 0 ? 5 : 9),
-        });
-      }
-
       // What the leaver answers for. Returning equipment is only half of
       // offboarding: the records naming them as 负责人 keep naming
       // them until somebody takes them over, and nothing but a person can do
@@ -979,6 +965,75 @@ export function createDemoService(dependencies: {
           }),
         );
       }
+      // Spares in stock for the joiners, where choosing is not obvious
+      // (2026-10-06): the rule takes the joiner's own floor first and then
+      // the longest warranty, which lands on SG-LT-030 — the one whose
+      // keyboard has been repaired twice — and on SG-MON-004, with its dead
+      // pixel. Noco reads the repairs, the notes and the replacement dates
+      // and picks otherwise, with a reason the 入职负责人 can check:
+      // SG-LT-031 for the first joiner, the clean warehouse SG-LT-032 for
+      // the second (031 being held for the first), never SG-LT-033, which
+      // is due for replacement within months.
+      const spare = (
+        name: string,
+        serialNo: string,
+        index: number,
+        input: Row,
+      ) =>
+        device({
+          modelId: mbp.id,
+          serialNo,
+          name,
+          vendorId: reseller.id,
+          purchasePrice: 15999,
+          ...input,
+          attributes: {
+            os: 'macOS 15.6',
+            cpu: 'Apple M3',
+            memory: '16 GB',
+            storage: '512 GB',
+            macAddress: `a4:83:e7:3${index}:3${index}:3${index}`,
+            hostname: name,
+            screenSize: '14',
+          },
+        });
+      const repairedSpare = await spare('SG-LT-030', 'C02ZK3A00MD6T', 0, {
+        purchaseDate: daysFromNow(-420),
+        warrantyEndDate: daysFromNow(675),
+        notes: texts.spareKeyboard,
+      });
+      await spare('SG-LT-031', 'C02ZK3A01MD6T', 1, {
+        purchaseDate: daysFromNow(-400),
+        warrantyEndDate: daysFromNow(655),
+      });
+      await spare('SG-LT-032', 'C02ZK3A02MD6T', 2, {
+        locationId: warehouse.id,
+        purchaseDate: daysFromNow(-390),
+        warrantyEndDate: daysFromNow(665),
+      });
+      await spare('SG-LT-033', 'C02ZK3A03MD6T', 3, {
+        // Four years old next spring: the laptop cycle is 48 months.
+        purchaseDate: daysFromNow(-1400),
+        warrantyEndDate: daysFromNow(25),
+      });
+      for (const [index, notes] of [texts.spareDeadPixel, null].entries())
+        await device({
+          modelId: u2723.id,
+          serialNo: `CN0F5K7Y${3003 + index}`,
+          name: `SG-MON-00${index + 4}`,
+          vendorId: reseller.id,
+          purchaseDate: daysFromNow(-200 + index * 30),
+          purchasePrice: 4299,
+          // The flawed one has the longer warranty, so the rule takes it.
+          warrantyEndDate: daysFromNow(900 - index * 30),
+          ...(notes ? { notes } : {}),
+          attributes: {
+            screenSize: '27',
+            resolution: '3840×2160',
+            inputs: 'HDMI, DisplayPort, USB-C',
+          },
+        });
+
       // One of everything else the seeded categories describe, each with its
       // extended fields filled in.
       const deskPc = await device({
@@ -1915,6 +1970,24 @@ export function createDemoService(dependencies: {
           returnDays: -46,
           cost: 0,
           notes: texts.repairNotes,
+        },
+        // The spare laptop the rule would hand a joiner: its keyboard has
+        // been back twice.
+        {
+          deviceId: String(repairedSpare.id),
+          method: 'internal',
+          fault: texts.repairKeyboard,
+          sentDays: -160,
+          returnDays: -157,
+          cost: 0,
+        },
+        {
+          deviceId: String(repairedSpare.id),
+          method: 'internal',
+          fault: texts.repairKeyboard,
+          sentDays: -40,
+          returnDays: -38,
+          cost: 380,
         },
         // Two more of the 2023-11 MacBook Pro batch, same swollen battery:
         // a repair history with something in it, on devices that are still
@@ -3029,6 +3102,28 @@ export function createDemoService(dependencies: {
         writerId,
         unrestricted('people', 'update'),
       );
+
+      // 入职准备: joining in five and nine days, nothing reserved yet. Entered
+      // last, once the spare laptops, monitors, stock and seats exist:
+      // saving a joiner is what sets Noco choosing their equipment
+      // (`onboarding-advisor.ts`), and entered first it found nothing in
+      // stock to choose from, or half of it.
+      const productDept = await seededIn('departments', 'dept-product');
+      for (const [index, entry] of (
+        JOINER_NAMES[locale] ??
+        JOINER_NAMES['en-US'] ??
+        []
+      ).entries()) {
+        await md('people', {
+          name: entry.name,
+          employeeNo: `EMP-${String(index + 301).padStart(3, '0')}`,
+          email: `${entry.mail}@northbridge.example`,
+          position: entry.position,
+          departmentId: index === 0 ? rnd.id : productDept.id,
+          locationId: floor3.id,
+          hireDate: daysFromNow(index === 0 ? 5 : 9),
+        });
+      }
 
       return this.status();
     },
