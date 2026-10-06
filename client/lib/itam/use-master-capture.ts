@@ -226,7 +226,7 @@ export function useMasterCapture({
           ...(collection === 'models'
             ? {
                 fields: templateOf(row.fieldTemplate)
-                  .filter((field) => field.scope === 'model' && !field.hidden)
+                  .filter((field) => !field.hidden)
                   .map((field) => ({
                     key: field.key,
                     label: field.label,

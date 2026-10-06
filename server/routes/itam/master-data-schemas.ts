@@ -21,11 +21,6 @@ const fieldTemplateEntry = z.object({
   options: z.array(z.string()).optional(),
   /** Kept with its values but not shown on device pages. */
   hidden: z.boolean().optional(),
-  /**
-   * `model`: every device of a model shares the value, so it is kept on the
-   * model and the devices read it (2026-10-06). Absent: each record's own.
-   */
-  scope: z.enum(['model', 'device']).optional(),
 });
 
 const schemas: Readonly<

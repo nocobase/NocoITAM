@@ -644,7 +644,6 @@ function diffStructured(
         options?: unknown;
         required?: unknown;
         hidden?: unknown;
-        scope?: unknown;
       };
       const parts = [text(e.label)];
       if (typeof e.type === 'string')
@@ -655,7 +654,6 @@ function diffStructured(
         parts.push(`(${e.options.map(text).join(', ')})`);
       if (e.required) parts.push('*');
       if (e.hidden) parts.push(t('fieldTemplate.hiddenShort'));
-      if (e.scope === 'model') parts.push(t('fieldTemplate.modelShort'));
       return parts.join(' ');
     }
     return JSON.stringify(entry);

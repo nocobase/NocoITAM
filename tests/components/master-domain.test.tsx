@@ -127,8 +127,8 @@ it('describes each collection for the generic pages', () => {
   // The derived device type is shown, never edited or created.
   const kind = models.fields.find((field) => field.key === 'categoryAppliesTo');
   expect(kind?.form).toBe(false);
-  // A model shows the fields of its template its devices share.
-  expect(models.extendedFields).toBe('model');
+  // A model fills its category's fields, the defaults of its new devices.
+  expect(models.extendedFields).toBe(true);
 
   const vendors = masterDomain('vendors');
   expect(vendors.listColumns?.map((column) => column.key)).toEqual([

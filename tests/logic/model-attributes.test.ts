@@ -4,24 +4,8 @@ import {
   applyMasterCapture,
   withAttributes,
 } from '../../client/lib/itam/master-capture.js';
-import { effectiveAttributes } from '../../client/lib/itam/model-attributes.js';
 
-describe('extended fields kept on the model', () => {
-  it('reads a device’s own value first, then its model’s', () => {
-    expect(
-      effectiveAttributes(
-        { os: 'macOS', memory: '32 GB', storage: '' },
-        { memory: '16 GB', storage: '512 GB', screenSize: '14', os: 'iOS' },
-        ['memory', 'storage', 'screenSize'],
-      ),
-    ).toEqual({
-      os: 'macOS',
-      memory: '32 GB',
-      storage: '512 GB',
-      screenSize: '14',
-    });
-  });
-
+describe('a model’s extended fields in its create dialog', () => {
   it('puts a reading’s extended fields on the form and gathers them back', () => {
     const form = applyMasterCapture(
       { name: 'Old', 'attributes.cpu': 'stale' },

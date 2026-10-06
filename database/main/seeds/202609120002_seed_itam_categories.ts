@@ -34,6 +34,7 @@ function resolveLocale(context: SeedContext): string {
   return process.env.APP_DEFAULT_LOCALE?.trim() || 'en-US';
 }
 
+
 /** Category names by id for locales other than English. */
 const NAMES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   'zh-CN': {
@@ -128,14 +129,11 @@ interface CategorySeed {
   readonly sort: number;
 }
 
-// `scope: 'model'` marks what every device of a model shares (2026-10-06):
-// its value is kept on the model and the devices read it, while the rest —
-// an operating system, a MAC address — is each device's own.
 const computerFields = [
   { key: 'os', label: 'Operating system', type: 'text' },
-  { key: 'cpu', label: 'CPU', type: 'text', scope: 'model' },
-  { key: 'memory', label: 'Memory', type: 'text', scope: 'model' },
-  { key: 'storage', label: 'Storage', type: 'text', scope: 'model' },
+  { key: 'cpu', label: 'CPU', type: 'text' },
+  { key: 'memory', label: 'Memory', type: 'text' },
+  { key: 'storage', label: 'Storage', type: 'text' },
   { key: 'macAddress', label: 'MAC address', type: 'text' },
   { key: 'hostname', label: 'Hostname', type: 'text' },
 ];
@@ -181,7 +179,6 @@ const CATEGORIES: readonly CategorySeed[] = [
         label: 'Screen size',
         type: 'select',
         options: ['13', '14', '15', '16'],
-        scope: 'model',
       },
     ],
     sort: 11,
@@ -207,16 +204,14 @@ const CATEGORIES: readonly CategorySeed[] = [
         label: 'Screen size',
         type: 'select',
         options: ['24', '27', '32', '34'],
-        scope: 'model',
       },
       {
         key: 'resolution',
         label: 'Resolution',
         type: 'select',
         options: ['1920×1080', '2560×1440', '3840×2160'],
-        scope: 'model',
       },
-      { key: 'inputs', label: 'Inputs', type: 'text', scope: 'model' },
+      { key: 'inputs', label: 'Inputs', type: 'text' },
     ],
     usefulLifeMonths: 60,
     replacementMonths: 72,
@@ -233,7 +228,7 @@ const CATEGORIES: readonly CategorySeed[] = [
     fieldTemplate: [
       { key: 'managementIp', label: 'Management IP', type: 'text' },
       { key: 'rackPosition', label: 'Rack position', type: 'text' },
-      { key: 'rackUnits', label: 'U', type: 'number', scope: 'model' },
+      { key: 'rackUnits', label: 'U', type: 'number' },
       { key: 'purpose', label: 'Purpose', type: 'text' },
     ],
     sort: 14,
@@ -249,7 +244,7 @@ const CATEGORIES: readonly CategorySeed[] = [
     fieldTemplate: [
       { key: 'managementIp', label: 'Management IP', type: 'text' },
       { key: 'firmware', label: 'Firmware version', type: 'text' },
-      { key: 'ports', label: 'Ports', type: 'number', scope: 'model' },
+      { key: 'ports', label: 'Ports', type: 'number' },
     ],
     sort: 15,
   },
@@ -275,9 +270,9 @@ const CATEGORIES: readonly CategorySeed[] = [
     ...hardware,
     fieldTemplate: [
       { key: 'ipAddress', label: 'IP address', type: 'text' },
-      { key: 'color', label: 'Color', type: 'boolean', scope: 'model' },
-      { key: 'duplex', label: 'Duplex', type: 'boolean', scope: 'model' },
-      { key: 'consumable', label: 'Toner / ink', type: 'text', scope: 'model' },
+      { key: 'color', label: 'Color', type: 'boolean' },
+      { key: 'duplex', label: 'Duplex', type: 'boolean' },
+      { key: 'consumable', label: 'Toner / ink', type: 'text' },
     ],
     assignableToPerson: false,
     usefulLifeMonths: 60,

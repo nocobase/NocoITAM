@@ -7,12 +7,6 @@ export interface TemplateField {
   readonly options?: readonly string[];
   /** Kept in the template (its values survive) but not shown on device pages. */
   readonly hidden?: boolean;
-  /**
-   * `model`: every device of a model shares the value, so it is filled on
-   * the model and its devices (and stock items) read it, each free to state
-   * its own (2026-10-06). Absent: each record's own.
-   */
-  readonly scope?: 'model' | 'device';
 }
 
 export const TEMPLATE_TYPES: readonly TemplateField['type'][] = [
@@ -42,7 +36,6 @@ export function parseTemplate(value: unknown): TemplateField[] {
           ? field.options.map(String)
           : undefined,
         ...(field.hidden ? { hidden: true } : {}),
-        ...(field.scope === 'model' ? { scope: 'model' as const } : {}),
       },
     ];
   });
@@ -51,7 +44,3 @@ export function parseTemplate(value: unknown): TemplateField[] {
 /** The template a record reads, parsed; anything malformed is left out. */
 export const templateOf = (value: unknown): TemplateField[] =>
   parseTemplate(value);
-
-/** The fields a category keeps on the model, which its devices read. */
-export const modelFieldsOf = (value: unknown): TemplateField[] =>
-  parseTemplate(value).filter((field) => field.scope === 'model');

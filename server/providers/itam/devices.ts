@@ -861,8 +861,20 @@ export function createDeviceService(
           ? input.depreciationMethod
           : ((category.depreciationMethod as string | null) ?? 'none');
     const now = new Date();
+    // A new device starts with its model's extended fields (2026-10-06):
+    // what was filled on the model is copied, what the caller states wins,
+    // and from then on the two are edited separately — a device whose
+    // memory was upgraded later does not change its model, nor the other way
+    // round.
+    const modelAttributes = jsonObject(model.attributes);
+    const ownAttributes = jsonObject(input.attributes);
+    const attributes =
+      Object.keys(modelAttributes).length > 0
+        ? { ...modelAttributes, ...ownAttributes }
+        : (input.attributes ?? null);
     const values: Record<string, unknown> = {
       ...input,
+      attributes,
       id: crypto.randomUUID(),
       deviceNo,
       serialNo,
@@ -1893,4 +1905,21 @@ export function createDeviceService(
       return updated;
     },
   };
+}
+
+/** A JSON document as an object: decoded, or empty when it is not one. */
+function jsonObject(value: unknown): Record<string, unknown> {
+  const parsed: unknown =
+    typeof value === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(value) as unknown;
+          } catch {
+            return undefined;
+          }
+        })()
+      : value;
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+    ? (parsed as Record<string, unknown>)
+    : {};
 }

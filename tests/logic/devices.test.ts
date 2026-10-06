@@ -217,6 +217,44 @@ describe('devices', () => {
     expect(backOn.status).toBe(400);
   });
 
+  it('starts a new device with its model’s extended fields, then lets each change alone', async () => {
+    const patch = (path: string, body: Record<string, unknown>) =>
+      app.request(`/api/itam/${path}`, {
+        ...json(body),
+        method: 'PATCH',
+        ...manager,
+      });
+    expect(
+      (
+        await patch(`master/models/${fixture.modelId}`, {
+          attributes: { cpu: 'M3', memory: '16 GB' },
+        })
+      ).status,
+    ).toBe(200);
+    // Copied when created; what the caller states wins.
+    const device = await createDevice({
+      attributes: { memory: '32 GB', hostname: 'LT-01' },
+    });
+    expect(device.attributes).toEqual({
+      cpu: 'M3',
+      memory: '32 GB',
+      hostname: 'LT-01',
+    });
+    // From then on the two are separate: changing the model changes no
+    // device already made.
+    await patch(`master/models/${fixture.modelId}`, {
+      attributes: { cpu: 'M4', memory: '16 GB' },
+    });
+    const read = (await (
+      await app.request(`/api/itam/devices/${device.id}`, manager)
+    ).json()) as { data: { attributes: Record<string, unknown> } };
+    expect(read.data.attributes.cpu).toBe('M3');
+    expect((await createDevice()).attributes).toEqual({
+      cpu: 'M4',
+      memory: '16 GB',
+    });
+  });
+
   it('rejects a missing serial for a category that requires one, and duplicates', async () => {
     const missing = await post('', {
       modelId: fixture.modelId,

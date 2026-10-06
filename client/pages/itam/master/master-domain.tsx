@@ -165,10 +165,10 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
     exportColumns: 'readable',
     // A location's owner is a named responsibility, not whoever typed it in.
     ownerFromCreator: false,
-    // Reference data has no category template of its own. A model shows
-    // the fields of its category's template its devices share
-    // (`scope: 'model'`, 2026-10-06); the rest describe each device.
-    extendedFields: collection.name === 'models' ? 'model' : false,
+    // Reference data has no category template of its own. A model fills
+    // its category's fields as the defaults its new devices start with
+    // (2026-10-06).
+    extendedFields: collection.name === 'models',
     summaryTimestamps: false,
     deleteInMenu: true,
     filterFields: [

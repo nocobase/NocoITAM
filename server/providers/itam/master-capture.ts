@@ -185,7 +185,7 @@ export async function matchMasterCapture(
       const date = calendarDate(input[key]);
       if (date) values[key] = date;
     }
-    // Only the fields the chosen category keeps on the model, each held to
+    // Only the fields the chosen category defines, each held to
     // its type: an answer a field would refuse is no answer.
     const attributes: Record<string, unknown> = {};
     for (const field of category && values.categoryId
@@ -258,7 +258,7 @@ interface TemplateEntry {
   readonly options?: readonly string[];
 }
 
-/** The template fields a category keeps on the model. */
+/** The template fields a model may fill: all but the hidden ones. */
 function modelFields(template: unknown): TemplateEntry[] {
   const parsed: unknown =
     typeof template === 'string' ? safeParse(template) : template;
@@ -266,8 +266,7 @@ function modelFields(template: unknown): TemplateEntry[] {
   return parsed.flatMap((entry: unknown) => {
     if (!entry || typeof entry !== 'object') return [];
     const field = entry as Record<string, unknown>;
-    return field.scope === 'model' &&
-      !field.hidden &&
+    return !field.hidden &&
       typeof field.key === 'string' &&
       typeof field.type === 'string'
       ? [
