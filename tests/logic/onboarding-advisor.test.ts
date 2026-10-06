@@ -3,7 +3,6 @@ import { databaseManagerToken } from '@nocobase/db';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { addDays, today } from '../../server/providers/itam/dates.js';
-import type { NotificationInput } from '../../server/providers/itam/notifier.js';
 import {
   createOnboardingAdvisor,
   type AdviceAnswer,
@@ -24,8 +23,8 @@ const MACBOOK = 'model-macbook-pro-14-m3';
 const LINE = `model:${MACBOOK}`;
 
 /**
- * Noco choosing a joiner's equipment in the background
- * (`onboarding-advisor.ts`): when a run is due, what is kept of its answer,
+ * Noco choosing a joiner's equipment when their 入职负责人 asks
+ * (`onboarding-advisor.ts`): when a run may start, what is kept of its answer,
  * and how the plan puts its picks first. The model is a stand-in that
  * answers what each test tells it to.
  */
@@ -36,7 +35,6 @@ describe('onboarding advisor', () => {
   let available = true;
   let answer: (prompt: string) => AdviceAnswer | Promise<AdviceAnswer>;
   let prompts: { actorId: string; prompt: string }[] = [];
-  let notes: NotificationInput[] = [];
 
   const post = (path: string, body: Record<string, unknown> = {}) =>
     app.request(`/api/itam/${path}`, { ...json(body), ...manager });
@@ -80,7 +78,6 @@ describe('onboarding advisor', () => {
     ).id;
     available = true;
     prompts = [];
-    notes = [];
     answer = () => ({ items: [], summary: '' });
     const runner: AgentRunner = {
       available: async () => available,
@@ -94,11 +91,6 @@ describe('onboarding advisor', () => {
       database: app.container.resolve(databaseManagerToken),
       onboarding: app.container.resolve(onboardingServiceToken),
       settings: app.container.resolve(settingsServiceToken),
-      notifier: {
-        async notify(input) {
-          notes.push(input);
-        },
-      },
       runner,
       locale: () => 'en-US',
     });
@@ -109,7 +101,7 @@ describe('onboarding advisor', () => {
     await app.destroy();
   });
 
-  it('puts Noco’s pick first, with its reason, and tells the owner', async () => {
+  it('puts Noco’s pick first, with its reason', async () => {
     // The rule would take the longer warranty; Noco takes the other.
     const longer = await laptop('C02ADV0001', '2030-01-01');
     const other = await laptop('C02ADV0002', '2028-01-01');
@@ -122,7 +114,7 @@ describe('onboarding advisor', () => {
       ],
       summary: 'One laptop chosen.',
     });
-    expect(await advisor.consider(person.id, 'nightly')).toMatchObject({
+    expect(await advisor.advise(person.id)).toMatchObject({
       started: true,
     });
     await advisor.idle();
@@ -148,13 +140,6 @@ describe('onboarding advisor', () => {
       sessionId: 'session-1',
       actorId: 'mia',
     });
-    expect(notes).toEqual([
-      expect.objectContaining({
-        to: ['mia'],
-        url: `/people/${person.id}`,
-        body: expect.objectContaining({ params: { count: 1 } }),
-      }),
-    ]);
 
     // Taken since by somebody else: the rule's choice again, unexplained.
     const other2 = await joiner({ name: 'Lin Xue' });
@@ -182,7 +167,7 @@ describe('onboarding advisor', () => {
       items: [{ line: LINE, picks: [{ id: picked.id, reason: 'Clean' }] }],
       summary: 'Chosen.',
     });
-    await advisor.consider(first.id, 'manual');
+    await advisor.advise(first.id);
     await advisor.idle();
 
     // The second joiner is neither offered it nor shown it to choose from.
@@ -219,21 +204,19 @@ describe('onboarding advisor', () => {
       ],
       summary: 'Done.',
     });
-    await advisor.consider(person.id, 'manual');
+    await advisor.advise(person.id);
     await advisor.idle();
     const line = await macbook(person.id);
     expect(line.proposals).toEqual([
       expect.objectContaining({ id: second.id, reason: 'Good' }),
     ]);
-    // Asked by the owner, who is looking at the card: no notification.
-    expect(notes).toEqual([]);
   });
 
-  it('runs only when it is due', async () => {
+  it('runs for a joiner with an owner and something to choose', async () => {
     await laptop('C02ADV0021', '2030-01-01');
     // One candidate for one laptop: nothing to choose.
     const person = await joiner();
-    expect(await advisor.consider(person.id, 'nightly')).toEqual({
+    expect(await advisor.advise(person.id)).toEqual({
       started: false,
       reason: 'nothingToChoose',
     });
@@ -241,7 +224,7 @@ describe('onboarding advisor', () => {
 
     // Not a joiner: entered two months after starting.
     const staff = await joiner({ hireDate: addDays(today(), -60) });
-    expect(await advisor.consider(staff.id, 'nightly')).toMatchObject({
+    expect(await advisor.advise(staff.id)).toMatchObject({
       reason: 'notJoiner',
     });
     // A joiner a month out is chosen for too; one with nobody to run as
@@ -254,7 +237,7 @@ describe('onboarding advisor', () => {
       .set({ onboardingOwnerId: null })
       .where('id', '=', later.id)
       .execute();
-    expect(await advisor.consider(later.id, 'nightly')).toMatchObject({
+    expect(await advisor.advise(later.id)).toMatchObject({
       reason: 'noOwner',
     });
 
@@ -264,7 +247,7 @@ describe('onboarding advisor', () => {
       ...(await settings.get('ai')),
       onboardingAdvice: false,
     });
-    expect(await advisor.consider(person.id, 'nightly')).toMatchObject({
+    expect(await advisor.advise(person.id)).toMatchObject({
       reason: 'disabled',
     });
     await settings.set('ai', {
@@ -272,57 +255,42 @@ describe('onboarding advisor', () => {
       onboardingAdvice: true,
     });
     available = false;
-    expect(await advisor.consider(person.id, 'nightly')).toMatchObject({
+    expect(await advisor.advise(person.id)).toMatchObject({
       reason: 'unavailable',
     });
     available = true;
 
-    // A run on the same question is not repeated; a changed one is.
-    expect((await advisor.consider(person.id, 'nightly')).started).toBe(true);
-    expect(await advisor.consider(person.id, 'change')).toMatchObject({
+    // One run at a time; asked again once it is over, it runs again.
+    expect((await advisor.advise(person.id)).started).toBe(true);
+    expect(await advisor.advise(person.id)).toMatchObject({
       reason: 'running',
     });
     await advisor.idle();
-    expect(await advisor.consider(person.id, 'change')).toMatchObject({
-      reason: 'current',
-    });
-    const saved = await app.request(`/api/itam/master/people/${person.id}`, {
-      ...json({ position: 'Backend Engineer' }),
-      method: 'PATCH',
-      ...manager,
-    });
-    expect(saved.status).toBe(200);
-    expect((await advisor.consider(person.id, 'change')).started).toBe(true);
+    expect((await advisor.advise(person.id)).started).toBe(true);
     await advisor.idle();
-    // The card's 重新建议 always asks.
-    expect((await advisor.consider(person.id, 'manual')).started).toBe(true);
-    await advisor.idle();
-    expect(prompts).toHaveLength(3);
+    expect(prompts).toHaveLength(2);
   });
 
-  it('records a failed run, which the nightly pass retries and a save does not', async () => {
+  it('records a failed run, and runs again when asked', async () => {
     await laptop('C02ADV0031', '2030-01-01');
     const second = await laptop('C02ADV0032', '2029-01-01');
-    // Six weeks out: the nightly pass takes every joiner not yet equipped.
+    // Six weeks out: however far off the first day.
     const person = await joiner({ hireDate: addDays(today(), 40) });
     answer = () => {
       throw new Error('PROVIDER_ERROR: rate limited');
     };
-    await advisor.consider(person.id, 'nightly');
+    await advisor.advise(person.id);
     await advisor.idle();
     expect((await plan(person.id))!.advice).toMatchObject({
       status: 'failed',
       failure: 'PROVIDER_ERROR: rate limited',
-    });
-    expect(await advisor.consider(person.id, 'change')).toMatchObject({
-      reason: 'current',
     });
     // An answer that names none of the candidates is no advice either.
     answer = () => ({
       items: [{ line: LINE, picks: [{ id: 'model-thinkpad', reason: 'No' }] }],
       summary: 'Buy a ThinkPad instead.',
     });
-    expect(await advisor.nightly()).toEqual({ considered: 1, started: 1 });
+    expect((await advisor.advise(person.id)).started).toBe(true);
     await advisor.idle();
     expect((await plan(person.id))!.advice).toMatchObject({
       status: 'failed',
@@ -333,7 +301,7 @@ describe('onboarding advisor', () => {
       items: [{ line: LINE, picks: [{ id: second.id, reason: 'Fine' }] }],
       summary: 'Chosen.',
     });
-    expect(await advisor.nightly()).toEqual({ considered: 1, started: 1 });
+    expect((await advisor.advise(person.id)).started).toBe(true);
     await advisor.idle();
     expect((await plan(person.id))!.advice?.status).toBe('ready');
   });

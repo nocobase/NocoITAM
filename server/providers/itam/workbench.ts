@@ -746,8 +746,11 @@ export function createWorkbenchService(dependencies: {
       }
 
       // 入职准备 (2026-10-06): a joiner — somebody entered around their
-      // first day rather than long after it (`isJoiner`) — who starts within
-      // the fortnight, or has started, and whose kit is not yet in hand.
+      // first day rather than long after it (`isJoiner`) — however far off
+      // that day, or started, whose kit is not yet in hand. It waited for
+      // the fortnight before the first day until the same day: a joiner
+      // entered a month ahead then sat on nobody's board, and the card now
+      // says how far off the day is instead.
       // There is no cut-off after the first day: somebody still missing
       // half their kit a month in is still somebody to equip, and what they
       // will not get is marked 不需要 on their card. In hand means every
@@ -762,7 +765,6 @@ export function createWorkbenchService(dependencies: {
         peopleConditions &&
         (await decide('devices', 'reserve'))
       ) {
-        const now = todayIso();
         let candidates = database
           .query()
           .selectFrom('people')
@@ -774,7 +776,6 @@ export function createWorkbenchService(dependencies: {
             ]),
           )
           .where('hireDate', 'is not', null)
-          .where('hireDate', '<=', addDays(now, 14))
           .where('onboardingCompletedAt', 'is', null);
         // Under 我负责的, the joiners whose 入职负责人 is the reader.
         if (reader !== null)

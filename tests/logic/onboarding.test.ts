@@ -203,6 +203,13 @@ describe('onboarding', () => {
 
   it('lists a joiner as 入职准备 for the team until their kit is in hand', async () => {
     const joiner = await person('Lin Xue', 'dept-product', 'Designer');
+    // However far off the first day: two months out is listed too, after.
+    const later = await person(
+      'Far Off',
+      'dept-product',
+      'Designer',
+      addDays(today(), 60),
+    );
     // Somebody who joined years ago is not joining.
     await person('Old Hand', 'dept-product', 'Designer', '2020-01-01');
     const card = async (scope?: 'mine') =>
@@ -221,7 +228,10 @@ describe('onboarding', () => {
         )
       ).find((item) => item.key === 'pendingOnboarding');
     const all = await card();
-    expect(all?.records.map((record) => record.id)).toEqual([joiner.id]);
+    expect(all?.records.map((record) => record.id)).toEqual([
+      joiner.id,
+      later.id,
+    ]);
     expect(all?.records[0]?.progress).toEqual({
       done: 0,
       total: (await plan(joiner.id)).required,
@@ -230,6 +240,7 @@ describe('onboarding', () => {
     // entered them, to start with.
     expect((await card('mine'))?.records.map((record) => record.id)).toEqual([
       joiner.id,
+      later.id,
     ]);
     const stored = await data<{ onboardingOwnerId: string }>(
       await app.request(`/api/itam/master/people/${joiner.id}`, manager),
@@ -241,7 +252,9 @@ describe('onboarding', () => {
       method: 'PATCH',
       ...manager,
     });
-    expect((await card('mine'))?.count).toBe(0);
+    expect((await card('mine'))?.records.map((record) => record.id)).toEqual([
+      later.id,
+    ]);
   });
 
   it('makes a joiner 待入职 until their first day, and 在职 on it', async () => {
