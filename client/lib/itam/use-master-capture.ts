@@ -88,11 +88,12 @@ const PROPERTIES: Readonly<
   },
 };
 
+/** What each tool is for; how to fill it is the catalog skill's. */
 const DESCRIPTIONS: Readonly<Record<MasterCaptureCollection, string>> = {
   models:
-    'Hand the model you looked up to the new model form on screen, which the user checks and saves. Call it once, with the whole form. name: the model name without the maker in front. code: the maker part number or model code, only when a source states it. manufacturerName: the maker as it is commonly called; the form matches it to its records. categoryId: one id from the page context categories. specification: the main specifications the category fields do not cover, one per line; never repeat a value a field holds. warrantyMonths: the standard warranty in months. releaseDate, eolDate, eosDate: YYYY-MM-DD, only when a source states them. attributes: the fields of the chosen category (page context categories[].fields), by key, each of its type — a select takes one of its options, a boolean true or false, a number a number — and only what a source states. sources: the web pages you used, title and url. uncertain: the field names you filled but are not sure of.',
+    'Hand the model you looked up to the new model form on screen, which the user checks and saves. Call it once, with the whole form, filled as the catalog skill says: attributes by the keys of the chosen category fields, sources the pages you used, uncertain the fields you are not sure of.',
   softwareProducts:
-    'Hand the software product you looked up to the new software product form on screen, which the user checks and saves. Call it once, with the whole form. name: the product name. manufacturerName: the vendor as it is commonly called; the form matches it to its records. categoryId: one id from the page context categories. deliveryMethod: saas, onPremise or both. description: one or two sentences on what the product is for. website: the product home page. sources: the web pages you used, title and url. uncertain: the field names you filled but are not sure of.',
+    'Hand the software product you looked up to the new software product form on screen, which the user checks and saves. Call it once, with the whole form, filled as the catalog skill says: sources the pages you used, uncertain the fields you are not sure of.',
 };
 
 /**
@@ -247,7 +248,27 @@ export function useMasterCapture({
     chat.messages !== session.before
       ? readSearchTurn(chat, session.prompt)
       : undefined;
-  if (session && turn?.asked && !turn.working) {
+  // A turn that looks over before the form was filled may only be the chat
+  // reloading its messages from the server mid-turn, which for a moment
+  // shows its last words without the tool call that follows them (seen
+  // 2026-10-06, with a skill and several searches in the turn). It is called
+  // failed only once it has stayed that way for a moment.
+  const [given, setGiven] = useState<readonly AIChatMessage[]>();
+  const unfilled = Boolean(
+    session && turn?.asked && !turn.working && !session.filled && !turn.failed,
+  );
+  const asked = session?.before;
+  useEffect(() => {
+    if (!unfilled || !asked) return;
+    const timer = setTimeout(() => setGiven(asked), 2500);
+    return () => clearTimeout(timer);
+  }, [unfilled, asked]);
+  if (
+    session &&
+    turn?.asked &&
+    !turn.working &&
+    (session.filled || turn.failed !== undefined || given === session.before)
+  ) {
     const said = plain(turn.text);
     if (session.filled) {
       setSearched(Boolean(session.searching));
@@ -296,8 +317,9 @@ export function useMasterCapture({
       `${prompt}\n\n<material>\n${material.trim()}\n</material>`,
       [context],
       {
-        // Nothing of the register to read or write: the page tool is all.
-        skillSettings: { skills: [], tools: [] },
+        // The catalog skill says how to look a record up and fill the form;
+        // nothing of the register to read or write, the page tool is all.
+        skillSettings: { skills: ['catalog'], tools: [] },
         ...(searchModel
           ? {
               webSearch: true,

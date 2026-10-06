@@ -504,9 +504,7 @@ describe('ITAM AI resources', () => {
       'itam_reserve_device',
     ])
       expect(byName.get(name)?.defaultPermission).toBe('ASK');
-    expect(byName.get('itam_onboarding_plan')?.defaultPermission).toBe(
-      'ALLOW',
-    );
+    expect(byName.get('itam_onboarding_plan')?.defaultPermission).toBe('ALLOW');
     expect(byName.get('itam_search_records')?.defaultPermission).toBe('ALLOW');
   });
 });
@@ -582,11 +580,17 @@ describe('the ITAM skills on Noco', () => {
   it('are all enabled on a first registration, and recorded as offered', async () => {
     const { state, register, skills } = await setup();
     await register();
-    expect(await skills()).toEqual(['offboarding', 'onboarding', 'receiving']);
+    expect(await skills()).toEqual([
+      'offboarding',
+      'onboarding',
+      'receiving',
+      'catalog',
+    ]);
     expect(state.ai.offeredSkills).toEqual([
       'offboarding',
       'onboarding',
       'receiving',
+      'catalog',
     ]);
   });
 
@@ -598,7 +602,12 @@ describe('the ITAM skills on Noco', () => {
     await save(['offboarding']);
     state.ai = { ...state.ai, offeredSkills: null };
     await register();
-    expect(await skills()).toEqual(['offboarding', 'onboarding', 'receiving']);
+    expect(await skills()).toEqual([
+      'offboarding',
+      'onboarding',
+      'receiving',
+      'catalog',
+    ]);
 
     // Removed afterwards by the administrator, a skill stays removed.
     await save(['offboarding', 'receiving']);
@@ -609,12 +618,19 @@ describe('the ITAM skills on Noco', () => {
   it('keep what the administrator added beside them', async () => {
     const { register, skills, save } = await setup();
     await register();
-    await save(['offboarding', 'onboarding', 'receiving', 'data-query']);
+    await save([
+      'offboarding',
+      'onboarding',
+      'receiving',
+      'catalog',
+      'data-query',
+    ]);
     await register();
     expect(await skills()).toEqual([
       'offboarding',
       'onboarding',
       'receiving',
+      'catalog',
       'data-query',
     ]);
   });

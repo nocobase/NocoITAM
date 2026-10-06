@@ -26,7 +26,12 @@ export const LOGO_AVATAR_PATH = '/assets/logo-mark.png';
  * people can read and change without a release, which is what makes it a
  * deliverable of its own rather than prose buried in these instructions.
  */
-export const ITAM_SKILLS = ['offboarding', 'onboarding', 'receiving'] as const;
+export const ITAM_SKILLS = [
+  'offboarding',
+  'onboarding',
+  'receiving',
+  'catalog',
+] as const;
 
 const employee: AIEmployeeOptions = defineAIEmployee({
   username: 'itam',

@@ -1128,8 +1128,12 @@ Rules learned while building it:
   `MasterCreateDialog` in `client/components/itam/master-create-dialog.tsx`,
   the master domain's `Create` and `QuickCreateDialog` alike): the reader
   types the maker and the model, and the assistant **searches the web** for
-  the rest — the one capture that does. It runs in the `master` unseen chat
-  with no tool of the register's (`skillSettings.tools: []`), the task's
+  the rest — the one capture that does. How to look a record up and fill
+  the form is the `catalog` skill (`ai/skills/catalog/SKILL.md`, 型号与软件产品资料,
+  2026-10-06), so the rules are a document the business can change; the
+  message only names the skill, says whether it may search and which tool
+  hands the form back. It runs in the `master` unseen chat
+  with `skillSettings: { skills: ['catalog'], tools: [] }`, the task's
   `webSearch` on and its `model` set to the first configured model that can
   search (`supportWebSearch`); with none, it reads from what the model knows
   and the dialog says so. It hands its reading back through `fillModel` /
@@ -1147,6 +1151,11 @@ Rules learned while building it:
   (请核对), `titleAside`, `replacement` and `aside`. A dialog opened from
   the aside renders as a sibling of the form, never inside it: a submit in
   a portal still bubbles to the form around it in React's tree.
+  A capture turn that looks over before its page tool filled the form is
+  called failed only after 2.5 seconds (both capture hooks): the chat
+  reloads its messages from the server mid-turn and for a moment shows its
+  last words without the call that follows them, which with a skill and
+  several searches in the turn happened often enough to see.
 - An approved purchase order states what it asks for: its request fields
   (事由, 说明, 部门, 需求日期, 供应商, 币种) go read-only once it reaches
   `approved` (`SETTLED_STATUSES` / `SETTLED_EDITABLE` in `procurement.ts`,

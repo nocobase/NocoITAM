@@ -214,7 +214,27 @@ export function usePurchaseOrderCapture({
     chat.messages !== session.before
       ? readSearchTurn(chat, session.prompt)
       : undefined;
-  if (session && turn?.asked && !turn.working) {
+  // A turn that looks over before the form was filled may only be the chat
+  // reloading its messages from the server mid-turn, which for a moment
+  // shows its last words without the tool call that follows them (seen
+  // 2026-10-06, with a skill and several searches in the turn). It is called
+  // failed only once it has stayed that way for a moment.
+  const [given, setGiven] = useState<readonly AIChatMessage[]>();
+  const unfilled = Boolean(
+    session && turn?.asked && !turn.working && !session.filled && !turn.failed,
+  );
+  const asked = session?.before;
+  useEffect(() => {
+    if (!unfilled || !asked) return;
+    const timer = setTimeout(() => setGiven(asked), 2500);
+    return () => clearTimeout(timer);
+  }, [unfilled, asked]);
+  if (
+    session &&
+    turn?.asked &&
+    !turn.working &&
+    (session.filled || turn.failed !== undefined || given === session.before)
+  ) {
     const said = plain(turn.text);
     if (session.filled) {
       if (session.mode === 'organise') {

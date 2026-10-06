@@ -184,7 +184,7 @@ it('looks a model up on the web and fills the form for checking', async () => {
     '<material>\nDell OptiPlex 7010 OPT7010SFF\n</material>',
   );
   expect(state.asked[0]!.options).toEqual({
-    skillSettings: { skills: [], tools: [] },
+    skillSettings: { skills: ['catalog'], tools: [] },
     webSearch: true,
     model: { llmService: 'svc', model: 'searcher' },
   });
@@ -270,7 +270,7 @@ it('says so when no configured model can search the web', () => {
     screen.getByRole('button', { name: 'procurement.capture.organise' }),
   );
   expect(state.asked[0]!.options).toEqual({
-    skillSettings: { skills: [], tools: [] },
+    skillSettings: { skills: ['catalog'], tools: [] },
   });
 });
 
@@ -280,4 +280,69 @@ it('is the plain form without the assistant', () => {
   expect(screen.queryByRole('tab')).toBeNull();
   expect(screen.getByLabelText('form-name')).toBeVisible();
   expect(screen.getByRole('button', { name: 'actions.save' })).toBeVisible();
+});
+
+it('waits a moment before calling a turn that has not filled the form failed', async () => {
+  vi.useFakeTimers();
+  try {
+    const view = render(dialog({ name: 'Testbook' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'procurement.capture.organise' }),
+    );
+    // The chat reloaded mid-turn: its last words are there, the call that
+    // follows them not yet.
+    const asked = state.asked[0]!.message;
+    state.chat = {
+      status: 'ready',
+      conversationId: 'c2',
+      messages: [
+        { role: 'user', parts: [{ type: 'text', text: asked }] },
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Handing the form back now.' }],
+        },
+      ],
+    };
+    view.rerender(dialog({ name: 'Testbook' }));
+    expect(screen.queryByText('Handing the form back now.')).toBeNull();
+    // The call arrives within the moment: the turn is a success.
+    const fill = state.tools.find((tool) => tool.name === 'fillModel');
+    await act(async () => {
+      await fill!.execute({ name: 'Testbook' });
+    });
+    view.rerender(dialog({ name: 'Testbook' }));
+    expect(
+      screen.getByRole('tab', { name: 'procurement.capture.formTab' }),
+    ).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Handing the form back now.')).toBeVisible();
+
+    // A turn that never fills fails once the moment has passed.
+    fireEvent.click(
+      screen.getByRole('tab', { name: 'procurement.capture.aiTab' }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'procurement.capture.organise' }),
+    );
+    const again = state.asked[1]!.message;
+    state.chat = {
+      status: 'ready',
+      conversationId: 'c3',
+      messages: [
+        { role: 'user', parts: [{ type: 'text', text: again }] },
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'No such model.' }],
+        },
+      ],
+    };
+    view.rerender(dialog({ name: 'Testbook' }));
+    expect(screen.queryByText('No such model.')).toBeNull();
+    await act(async () => {
+      vi.advanceTimersByTime(2600);
+    });
+    view.rerender(dialog({ name: 'Testbook' }));
+    expect(screen.getByText('No such model.')).toBeVisible();
+  } finally {
+    vi.useRealTimers();
+  }
 });
