@@ -127,6 +127,7 @@ export function ItamAiShell({ children }: PropsWithChildren): ReactElement {
         <AiSidePanel />
         <HiddenChat name='search' />
         <HiddenChat name='receipt' />
+        <HiddenChat name='capture' />
       </ItamAiProvider>
     </NocoBaseAIRootProvider>
   );
@@ -306,7 +307,7 @@ function ConfiguredChat({
 
 /**
  * A chat nobody sees: the same employee in a conversation of its own, so the
- * search's 问 AI and receiving by delivery document neither open the panel
+ * search's 问 AI, receiving by delivery document and AI 整理 neither open the panel
  * nor replace what is in it. Mounted on the same conditions as the panel's
  * chat, for the same reason (`ConfiguredChat`), and without a window:
  * sending, tool calls and their automatic approval all happen in the

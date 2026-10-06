@@ -20,6 +20,7 @@ import {
   receiptRunServiceToken,
 } from '../../providers/index.js';
 import { RecordNotFoundError } from '../../providers/itam/errors.js';
+import { matchPurchaseCapture } from '../../providers/itam/purchase-capture.js';
 import { outputFields, pickFields } from '../../providers/itam/authz-filter.js';
 import {
   LINE_ITEM_TYPES,
@@ -110,6 +111,47 @@ const draftSchema = z
   .strict();
 
 /**
+ * What the assistant read for a new order (`fillPurchaseOrder` in the create
+ * dialog), bounded like the receipt draft: the matching reads it, nothing
+ * stores it.
+ */
+const nullableText = (limit: number) =>
+  z.string().max(limit).nullable().optional();
+const captureSchema = z
+  .object({
+    reason: nullableText(64),
+    description: nullableText(20000),
+    neededBy: nullableText(32),
+    vendorId: nullableText(64),
+    vendorName: nullableText(255),
+    departmentId: nullableText(64),
+    departmentName: nullableText(255),
+    uncertain: z.array(z.string().max(64)).max(20).optional(),
+    lines: z
+      .array(
+        z
+          .object({
+            itemType: nullableText(32),
+            modelId: nullableText(64),
+            softwareProductId: nullableText(64),
+            description: nullableText(500),
+            partCode: nullableText(128),
+            quantity: z.number().min(0).max(10000).nullable().optional(),
+            unitPrice: z.number().min(0).nullable().optional(),
+            uncertain: z.boolean().nullable().optional(),
+            source: nullableText(200),
+          })
+          .strict(),
+      )
+      .max(200)
+      .optional(),
+  })
+  .strict();
+
+/** How long an upload may wait unattached before AI 整理 reads it. */
+const CAPTURE_UPLOAD_WINDOW_MS = 60 * 60 * 1000;
+
+/**
  * A line as the caller may read it. Lines are a collection of their own, so
  * reading the order does not open them: a role without cost access reads
  * every line field but the unit price. The id stays, since editing and
@@ -183,6 +225,69 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
       updateSchema: orderSchema.partial(),
       middleware: [auth.required(), authorization.middleware()],
       before: (routes, { decide, operationContext, operation }) => {
+        // AI 整理 in the create dialog, before the order exists: both ask for
+        // `create`, the grant the dialog itself needs. Registered first, so
+        // `capture` is never read as an order id.
+        routes.post('/capture/match', async (context) => {
+          try {
+            await decide(context, 'create');
+            const input = captureSchema.parse(await readJsonObject(context));
+            return context.json({
+              data: await matchPurchaseCapture(database, input),
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
+        // The text of a document uploaded for AI 整理. There is no order to
+        // attach it to yet, so only a file attached to nothing, and uploaded
+        // within the hour, is read: an id alone does not open somebody
+        // else's attachment. The dialog attaches it to the order it saves.
+        routes.post('/capture/document-text', async (context) => {
+          try {
+            await decide(context, 'create');
+            const { fileId } = z
+              .object({ fileId: id })
+              .strict()
+              .parse(await readJsonObject(context));
+            const fresh = await database
+              .query()
+              .selectFrom('itamFiles')
+              .select('id')
+              .where('id', '=', fileId)
+              // The file plugin stamps its rows in UTC without the `Z`
+              // (`toISOString().slice(0, -1)`), not in the local form
+              // `dbDateTime()` writes, so the window is compared that way.
+              .where(
+                'createdAt',
+                '>=',
+                new Date(Date.now() - CAPTURE_UPLOAD_WINDOW_MS)
+                  .toISOString()
+                  .slice(0, -1),
+              )
+              .where((eb) =>
+                eb.not(
+                  eb.exists(
+                    eb
+                      .selectFrom('attachmentLinks')
+                      .select('id')
+                      .whereRef('attachmentLinks.fileId', '=', 'itamFiles.id'),
+                  ),
+                ),
+              )
+              .executeTakeFirst();
+            if (!fresh) throw new RecordNotFoundError('itamFiles', fileId);
+            const document = await readDocument(fileId).catch(() => undefined);
+            return context.json({
+              data: {
+                text: document?.text ?? null,
+                truncated: document?.truncated ?? false,
+              },
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
         routes.get('/:id/lines', async (context) => {
           try {
             const conditions = await decide(context, 'read');
