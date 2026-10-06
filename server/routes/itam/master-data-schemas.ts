@@ -163,7 +163,7 @@ const schemas: Readonly<
     position: optionalText,
     locationId: optionalId,
     userId: optionalId,
-    employmentStatus: z.enum(['active', 'left']).optional(),
+    employmentStatus: z.enum(['pending', 'active', 'left']).optional(),
     hireDate: optionalDate,
     onboardingOwnerId: optionalId,
     leaveDate: optionalDate,

@@ -360,7 +360,7 @@ function StockActions({
             reference={{
               collection: holderCollection,
               ...(holderType === 'person'
-                ? { filter: { employmentStatus: 'active' } }
+                ? { filter: { 'employmentStatus:ne': 'left' } }
                 : {}),
             }}
             value={holderId}

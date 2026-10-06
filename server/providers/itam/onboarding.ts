@@ -5,7 +5,9 @@ import {
 } from '@nocobase/service-provider';
 
 import { asText, decodeRow, type Row } from './collection-query.js';
-import { today } from './dates.js';
+import { addDays, isoDate, today } from './dates.js';
+import { ValidationError } from './errors.js';
+import type { HistoryService } from './history.js';
 
 /**
  * 入职配备: what a new joiner should be given, what they already have, and
@@ -105,6 +107,11 @@ export interface OnboardingPlanLine {
   readonly prepared: readonly PlanThing[];
   readonly preparedCount: number;
   readonly proposals: readonly PlanThing[];
+  /**
+   * Marked 不需要 for this person by their 入职负责人: nothing is proposed
+   * or ordered for it, and it counts towards neither total.
+   */
+  readonly waived: boolean;
   /** How many stock is asked for: required less what they have. */
   readonly missing: number;
   /** Only when asked for (`candidates: true`): what stock could give. */
@@ -131,15 +138,57 @@ export interface OnboardingPlan {
   /** The kit that applies, or null when none does. */
   readonly kit: OnboardingKit | null;
   readonly lines: readonly OnboardingPlanLine[];
-  /** Totals over the lines: the card's 已配备 N / M. */
+  /** Totals over the lines not marked 不需要: the card's 已配备 N / M. */
   readonly prepared: number;
   readonly required: number;
+  /** How many items are marked 不需要. */
+  readonly waived: number;
   /** Whether they already hold or have reserved any device at all. */
   readonly hasDevice: boolean;
   /** Open 新员工配备 orders for them, whose lines count as on order. */
   readonly orders: readonly PlanOrder[];
   /** Noco's latest background run for them, or null when none ran. */
   readonly advice: PlanAdvice | null;
+}
+
+/** The keys of the items marked 不需要, however the column came back. */
+export function waivedOf(value: unknown): string[] {
+  const list =
+    typeof value === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(value) as unknown;
+          } catch {
+            return [];
+          }
+        })()
+      : value;
+  return Array.isArray(list) ? list.map(String) : [];
+}
+
+/** How long before somebody's first day they may be entered and be a joiner. */
+export const JOINER_ENTERED_WITHIN_DAYS = 30;
+
+/**
+ * Whether somebody is a joiner rather than an employee entered after the
+ * fact (2026-10-06): their joining day is no more than 30 days before they
+ * were entered in the register. Somebody imported when the register went
+ * live, two years after they started, is not equipped by 入职配置 — they
+ * already have what they have — and without this every one of them would
+ * sit in 入职准备 for ever, their kit never matched.
+ */
+export function isJoiner(hireDate: unknown, createdAt: unknown): boolean {
+  const hire = asText(hireDate);
+  if (!hire) return false;
+  const entered =
+    createdAt instanceof Date ? isoDate(createdAt) : asText(createdAt);
+  if (!entered) return false;
+  return hire.slice(0, 10) >= addDays(entered.slice(0, 10), -JOINER_ENTERED_WITHIN_DAYS);
+}
+
+/** Whether a plan has everything in hand: each item held, reserved or 不需要. */
+export function isPrepared(plan: OnboardingPlan): boolean {
+  return plan.kit ? plan.prepared >= plan.required : plan.hasDevice;
 }
 
 /** Purchase order statuses still on their way to arriving. */
@@ -160,6 +209,17 @@ export interface OnboardingService {
   plan(
     personId: string,
     options?: { readonly candidates?: boolean },
+  ): Promise<OnboardingPlan | null>;
+  /**
+   * Marks an item of a person's kit 不需要, or takes the mark back, and
+   * writes it on their timeline. Taking one back reopens a joiner already
+   * counted as equipped, since they now lack something again.
+   */
+  waive(
+    personId: string,
+    key: string,
+    waived: boolean,
+    actorId: string,
   ): Promise<OnboardingPlan | null>;
 }
 
@@ -183,6 +243,7 @@ const same = (a: unknown, b: unknown): boolean =>
 
 export function createOnboardingService(
   database: DatabaseManager,
+  history?: HistoryService,
 ): OnboardingService {
   const q = () => database.query();
 
@@ -424,11 +485,13 @@ export function createOnboardingService(
         'locationId',
         'hireDate',
         'email',
+        'onboardingWaived',
       ])
       .where('id', '=', personId)
       .executeTakeFirst<Row>();
     if (!person) return null;
     const { advice, picks: advisedPicks } = await adviceFor(personId);
+    const waivedKeys = new Set(waivedOf(person.onboardingWaived));
     const held = await heldForOthers(personId);
     const withCandidates = options.candidates === true;
     const kit = await kitFor(
@@ -602,9 +665,10 @@ export function createOnboardingService(
         const candidates: PlanCandidate[] = [];
         const key = `softwareProduct:${productId}`;
         const picks = advisedPicks.get(key);
+        const waived = waivedKeys.has(key);
         const asked = required - prepared.length;
         let missing = asked;
-        if (missing > 0) {
+        if (missing > 0 && !waived) {
           const entitlements = await q()
             .selectFrom('entitlements')
             .select([
@@ -696,13 +760,16 @@ export function createOnboardingService(
           prepared,
           preparedCount: prepared.length,
           proposals,
-          missing: Math.max(0, asked),
+          waived,
+          missing: waived ? 0 : Math.max(0, asked),
           ...(withCandidates ? { candidates } : {}),
           ...(() => {
-            const ordered = takeOnOrder(`product:${productId}`, missing);
+            const ordered = waived
+              ? 0
+              : takeOnOrder(`product:${productId}`, missing);
             return {
               onOrder: ordered,
-              shortfall: Math.max(0, missing - ordered),
+              shortfall: waived ? 0 : Math.max(0, missing - ordered),
             };
           })(),
         });
@@ -740,6 +807,7 @@ export function createOnboardingService(
 
       const key = `${modelId ? 'model' : 'category'}:${String(target.id)}`;
       const picks = advisedPicks.get(key);
+      const waived = waivedKeys.has(key);
       const prepared: PlanThing[] = [];
       const proposals: PlanThing[] = [];
       const candidates: PlanCandidate[] = [];
@@ -759,7 +827,7 @@ export function createOnboardingService(
           missing -= 1;
         }
         asked = missing;
-        if (missing > 0) {
+        if (missing > 0 && !waived) {
           let query = q()
             .selectFrom('devices')
             .select([
@@ -828,7 +896,7 @@ export function createOnboardingService(
           });
         }
         asked = missing;
-        if (missing > 0) {
+        if (missing > 0 && !waived) {
           let query = q()
             .selectFrom('stockItems')
             .select([
@@ -916,17 +984,17 @@ export function createOnboardingService(
         prepared,
         preparedCount,
         proposals,
-        missing: Math.max(0, asked),
+        waived,
+        missing: waived ? 0 : Math.max(0, asked),
         ...(withCandidates ? { candidates } : {}),
         // Only a model can be on an order line; a category item is bought
         // as some model, which a person picks.
         ...(() => {
-          const ordered = modelId
-            ? takeOnOrder(`model:${modelId}`, missing)
-            : 0;
+          const ordered =
+            modelId && !waived ? takeOnOrder(`model:${modelId}`, missing) : 0;
           return {
             onOrder: ordered,
-            shortfall: Math.max(0, missing - ordered),
+            shortfall: waived ? 0 : Math.max(0, missing - ordered),
           };
         })(),
       });
@@ -937,11 +1005,18 @@ export function createOnboardingService(
       hireDate: asText(person.hireDate) ?? null,
       kit,
       lines,
+      // An item marked 不需要 counts on neither side: 已配备 N / M is about
+      // what they are getting.
       prepared: lines.reduce(
-        (sum, line) => sum + Math.min(line.preparedCount, line.required),
+        (sum, line) =>
+          line.waived ? sum : sum + Math.min(line.preparedCount, line.required),
         0,
       ),
-      required: lines.reduce((sum, line) => sum + line.required, 0),
+      required: lines.reduce(
+        (sum, line) => (line.waived ? sum : sum + line.required),
+        0,
+      ),
+      waived: lines.filter((line) => line.waived).length,
       hasDevice: devices.length > 0,
       orders: orders.map((order) => ({
         id: String(order.id),
@@ -952,5 +1027,50 @@ export function createOnboardingService(
     };
   };
 
-  return { kitFor, plan };
+  const waive: OnboardingService['waive'] = async (
+    personId,
+    key,
+    waived,
+    actorId,
+  ) => {
+    const current = await plan(personId);
+    if (!current) return null;
+    const line = current.lines.find((entry) => entry.key === key);
+    if (!line)
+      throw new ValidationError('No such item in their onboarding kit', 'key');
+    const person = await q()
+      .selectFrom('people')
+      .select(['onboardingWaived'])
+      .where('id', '=', personId)
+      .executeTakeFirst<Row>();
+    const keys = new Set(waivedOf(person?.onboardingWaived));
+    if (waived === keys.has(key)) return current;
+    if (waived) keys.add(key);
+    else keys.delete(key);
+    await database.transaction(async (connection) => {
+      await connection.query
+        .updateTable('people')
+        .set({
+          onboardingWaived: [...keys],
+          ...(waived ? {} : { onboardingCompletedAt: null }),
+          updatedAt: new Date(),
+        })
+        .where('id', '=', personId)
+        .execute();
+      await history?.record(
+        {
+          subjectType: 'people',
+          subjectId: personId,
+          type: waived ? 'onboardingWaived' : 'onboardingRestored',
+          summary: `${waived ? 'Not needed' : 'Needed again'}: ${line.target.name}`,
+          payload: { key, targetLabel: line.target.name },
+          actorId,
+        },
+        connection,
+      );
+    });
+    return plan(personId);
+  };
+
+  return { kitFor, plan, waive };
 }

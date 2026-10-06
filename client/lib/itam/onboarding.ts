@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
 import { masterDataPath, useApi } from './api.js';
+import { addDays } from './format.js';
 
 /** Mirrors `OnboardingPlan` in `server/providers/itam/onboarding.ts`. */
 export interface PlanThing {
@@ -43,6 +44,8 @@ export interface OnboardingPlanLine {
   readonly prepared: readonly PlanThing[];
   readonly preparedCount: number;
   readonly proposals: readonly PlanThing[];
+  /** Marked 不需要 for this person. */
+  readonly waived: boolean;
   readonly missing: number;
   /** Still to arrive on an open 新员工配备 order for them. */
   readonly onOrder: number;
@@ -59,8 +62,11 @@ export interface OnboardingPlan {
     readonly position: string | null;
   } | null;
   readonly lines: readonly OnboardingPlanLine[];
+  /** Over the items not marked 不需要. */
   readonly prepared: number;
   readonly required: number;
+  /** How many items are marked 不需要. */
+  readonly waived: number;
   readonly hasDevice: boolean;
   /** Open 新员工配备 orders for them. */
   readonly orders: readonly {
@@ -91,4 +97,20 @@ export function useOnboardingPlan(
     refetchInterval: (query) =>
       query.state.data?.advice?.status === 'running' ? 5_000 : false,
   });
+}
+
+/**
+ * Whether somebody is a joiner: entered in the register no more than 30 days
+ * before their first day rather than long after it. Mirrors `isJoiner` in
+ * `server/providers/itam/onboarding.ts`.
+ */
+export function isJoiner(hireDate: unknown, createdAt: unknown): boolean {
+  if (typeof hireDate !== 'string' || !hireDate) return false;
+  if (typeof createdAt !== 'string' || !createdAt) return false;
+  return hireDate.slice(0, 10) >= addDays(createdAt.slice(0, 10), -30);
+}
+
+/** Whether a plan has everything in hand: each item held, reserved or 不需要. */
+export function isPrepared(plan: OnboardingPlan): boolean {
+  return plan.kit ? plan.prepared >= plan.required : plan.hasDevice;
 }

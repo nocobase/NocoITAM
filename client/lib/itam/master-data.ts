@@ -734,10 +734,13 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         label: 'fields.employmentStatus',
         type: 'select',
         column: true,
-        options: options('employmentStatus', ['active', 'left']),
-        // The leave date decides it; the server refuses it as an input. It
-        // stays on the form because it is worth reading, and read-only
-        // because two ways to say the same thing disagree sooner or later.
+        options: options('employmentStatus', ['pending', 'active', 'left']),
+        // The dates decide it; the server refuses it as an input. It stays
+        // on the person's page because it is worth reading, read-only
+        // because two ways to say the same thing disagree sooner or later,
+        // and off the create form, where it could only echo the dates typed
+        // beside it (2026-10-06).
+        visibleWhen: (values) => values.id !== undefined,
         readonlyWhen: () => true,
         readonlyHint: 'people.followsLeaveDate',
         group: 'groups.employment',

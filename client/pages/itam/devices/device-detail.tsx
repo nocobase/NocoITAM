@@ -1002,7 +1002,7 @@ function ReserveDialog({
                   ? 'locations'
                   : 'devices',
             ...(targetType === 'person'
-              ? { filter: { employmentStatus: 'active' } }
+              ? { filter: { 'employmentStatus:ne': 'left' } }
               : {}),
           }}
           value={targetId}

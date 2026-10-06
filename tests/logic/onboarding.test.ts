@@ -244,6 +244,73 @@ describe('onboarding', () => {
     expect((await card('mine'))?.count).toBe(0);
   });
 
+  it('makes a joiner 待入职 until their first day, and 在职 on it', async () => {
+    const joiner = await person('Sun Hao', 'dept-rd', 'Frontend Engineer');
+    const status = async () =>
+      (
+        await data<{ employmentStatus: string }>(
+          await app.request(`/api/itam/master/people/${joiner.id}`, manager),
+        )
+      ).employmentStatus;
+    expect(await status()).toBe('pending');
+    const { masterDataServiceToken } =
+      await import('../../server/providers/itam/master-data.js');
+    // The nightly status task, on the joining day.
+    const result = await app.container
+      .resolve(masterDataServiceToken)
+      .markDueLeavers(addDays(today(), 5));
+    expect(result.joined).toBe(1);
+    expect(await status()).toBe('active');
+  });
+
+  it('keeps a started joiner in 入职准备 until each item is in hand or not needed', async () => {
+    // Started three weeks ago, entered since: still being equipped.
+    const joiner = await person(
+      'Zhou Lan',
+      'dept-product',
+      'Designer',
+      addDays(today(), -21),
+    );
+    const listed = async () =>
+      (
+        await data<{ key: string; records: { id: string }[] }[]>(
+          await app.request('/api/itam/workbench/my-work', manager),
+        )
+      )
+        .find((item) => item.key === 'pendingOnboarding')
+        ?.records.map((record) => record.id) ?? [];
+    expect(await listed()).toContain(joiner.id);
+
+    const service = app.container.resolve(onboardingServiceToken);
+    const keys = (await service.plan(joiner.id))!.lines.map((line) => line.key);
+    const waive = (key: string, waived: boolean) =>
+      post(`master/people/${joiner.id}/onboarding/waive`, { key, waived });
+    // Not needed, item by item: nothing proposed for it, and it counts on
+    // neither side of 已配备 N / M.
+    expect((await waive(keys[0]!, true)).status).toBe(200);
+    const one = (await service.plan(joiner.id))!;
+    expect(one.waived).toBe(1);
+    expect(one.lines[0]).toMatchObject({
+      waived: true,
+      proposals: [],
+      shortfall: 0,
+    });
+    for (const key of keys.slice(1)) await waive(key, true);
+    expect(await listed()).not.toContain(joiner.id);
+
+    // Taking a mark back: something is missing again.
+    expect((await waive(keys[0]!, false)).status).toBe(200);
+    expect(await listed()).toContain(joiner.id);
+
+    // An item that is not in their kit, and somebody who may not edit people.
+    expect((await waive('model:nothing', true)).status).toBe(400);
+    const refused = await app.request(
+      `/api/itam/master/people/${joiner.id}/onboarding/waive`,
+      { ...json({ key: keys[0], waived: true }), user: 'li', role: 'employee' },
+    );
+    expect(refused.status).toBe(403);
+  });
+
   it('lists a joiner among what a leaving 入职负责人 answers for, while they are joining', async () => {
     const recent = await person('Sun Hao', 'dept-rd', 'Frontend Engineer');
     const long = await person('Old Hand', 'dept-rd', 'Engineer', '2020-01-01');

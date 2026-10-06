@@ -216,7 +216,7 @@ export function AssignDialog({
                         ? 'locations'
                         : 'devices',
                   ...(targetType === 'person'
-                    ? { filter: { employmentStatus: 'active' } }
+                    ? { filter: { 'employmentStatus:ne': 'left' } }
                     : {}),
                 }}
                 value={targetId}

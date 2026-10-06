@@ -78,7 +78,8 @@ export interface OwnedRecord {
 }
 
 /**
- * Whether somebody has left is the leave date and nothing else.
+ * 在职状态 is the two dates and nothing else: 已离职 once the leave date has
+ * come, 待入职 while the joining day is still ahead, 在职 otherwise.
  *
  * It used to be a field of its own, which meant three writers — the form's
  * select, 标记离职, and the nightly job — and any two of them could disagree:
@@ -86,19 +87,24 @@ export interface OwnedRecord {
  * that night, and one set to 已离职 with no date gave a person the recovery
  * list without the leaving ever appearing on their timeline.
  *
- * So the date is the only input and the status follows it, derived here on
- * every write and by the nightly job for a date that merely came round. The
- * hire date deliberately takes no part: somebody is active from the moment
- * they exist in the register, because a device is reserved and a kit prepared
- * before the first day, and an assignment refuses a person who has left
- * (`devices.ts`, `entitlements.ts`).
+ * So the dates are the only input and the status follows them, derived here
+ * on every write and by the nightly job for a date that merely came round.
+ * 待入职 (2026-10-06) only says the first day has not come: a joiner is in
+ * the register before it, so a device is reserved and a kit prepared for
+ * them, and only leaving refuses an assignment (`devices.ts`,
+ * `entitlements.ts`).
  */
+export type EmploymentStatus = 'pending' | 'active' | 'left';
+
 export function employmentFor(
+  hireDate: unknown,
   leaveDate: unknown,
   day: string,
-): 'active' | 'left' {
-  const date = typeof leaveDate === 'string' ? leaveDate.trim() : '';
-  return date !== '' && date <= day ? 'left' : 'active';
+): EmploymentStatus {
+  const leave = typeof leaveDate === 'string' ? leaveDate.trim() : '';
+  if (leave !== '' && leave <= day) return 'left';
+  const hire = typeof hireDate === 'string' ? hireDate.trim() : '';
+  return hire !== '' && hire > day ? 'pending' : 'active';
 }
 
 /** Related collections a list shows counts of, per master-data collection. */
@@ -254,10 +260,15 @@ export interface MasterDataService {
    * `day`) as left, keeping that date; the daily maintenance calls it.
    * Returns how many were marked.
    */
-  /** Reconciles 在职状态 with the leave dates, both ways. */
-  markDueLeavers(
-    day: string,
-  ): Promise<{ readonly left: number; readonly reinstated: number }>;
+  /**
+   * Reconciles 在职状态 with the dates: leavers whose day came, people whose
+   * leave was undone, and joiners whose first day came.
+   */
+  markDueLeavers(day: string): Promise<{
+    readonly left: number;
+    readonly reinstated: number;
+    readonly joined: number;
+  }>;
   /**
    * Everything a person currently holds: devices, stock, entitlement seats.
    * Takes the open connection when it runs inside a transaction — the SQLite
@@ -687,14 +698,14 @@ export function createMasterDataService(
       if (collection === 'categories' && parent)
         input = { ...input, appliesTo: parent.appliesTo };
       await assertModelCategory(collection, input);
-      // 在职状态 follows the leave date on a create as well as an update: a
+      // 在职状态 follows the dates on a create as well as an update: a
       // person entered with a date already passed — a leaver recorded after
       // the fact, or an import — was stored `active` and stayed so until the
       // nightly job came round, which is long enough for the register to say
       // somebody still works here when the file said otherwise.
       if (collection === 'people' && 'employmentStatus' in input) {
         throw new ValidationError(
-          'Employment status follows the leave date and cannot be set directly',
+          'Employment status follows the joining and leave dates and cannot be set directly',
           'employmentStatus',
         );
       }
@@ -704,7 +715,11 @@ export function createMasterDataService(
         ...input,
         ...(collection === 'people'
           ? {
-              employmentStatus: employmentFor(input.leaveDate, today()),
+              employmentStatus: employmentFor(
+                input.hireDate,
+                input.leaveDate,
+                today(),
+              ),
               // 入职负责人 starts at whoever enters the person, as every
               // other 负责人 starts at whoever files the record.
               ...(input.onboardingOwnerId === undefined
@@ -804,20 +819,25 @@ export function createMasterDataService(
         }
       }
 
-      // 在职状态 follows the leave date; see `employmentFor`. An attempt to
+      // 在职状态 follows the dates; see `employmentFor`. An attempt to
       // set it directly is refused rather than ignored, so a caller is told
       // the field is not theirs instead of watching the value not stick.
       if (collection === 'people' && 'employmentStatus' in input) {
         throw new ValidationError(
-          'Employment status follows the leave date and cannot be set directly',
+          'Employment status follows the joining and leave dates and cannot be set directly',
           'employmentStatus',
         );
       }
       const values: Record<string, unknown> = {
         ...input,
-        ...(collection === 'people' && 'leaveDate' in input
+        ...(collection === 'people' &&
+        ('leaveDate' in input || 'hireDate' in input)
           ? {
-              employmentStatus: employmentFor(input.leaveDate, today()),
+              employmentStatus: employmentFor(
+                'hireDate' in input ? input.hireDate : previous.hireDate,
+                'leaveDate' in input ? input.leaveDate : previous.leaveDate,
+                today(),
+              ),
             }
           : {}),
         updatedAt: new Date(),
@@ -1316,7 +1336,7 @@ export function createMasterDataService(
         .query()
         .selectFrom('people')
         .selectAll()
-        .where('employmentStatus', '=', 'active')
+        .where('employmentStatus', 'in', ['active', 'pending'])
         .where('leaveDate', 'is not', null)
         .where('leaveDate', '<=', day)
         .execute<Row>();
@@ -1354,36 +1374,47 @@ export function createMasterDataService(
       }
       // The other direction, which was missing: a leave date cleared or moved
       // out again leaves somebody marked as left for ever, and extending a
-      // notice period is not rare. The status is the date's, so the job
-      // reconciles both ways.
-      const back = await database
+      // notice period is not rare. The status is the dates', so the job
+      // reconciles both ways — and a joining day that came round moves a
+      // joiner from 待入职 to 在职 (2026-10-06).
+      const others = await database
         .query()
         .selectFrom('people')
         .selectAll()
-        .where('employmentStatus', '=', 'left')
+        .where('employmentStatus', 'in', ['left', 'pending'])
         .execute<Row>();
-      const reinstated = back.filter(
-        (person) => employmentFor(person.leaveDate, day) === 'active',
+      const changed = others
+        .map((person) => ({
+          person,
+          status: employmentFor(person.hireDate, person.leaveDate, day),
+        }))
+        .filter(({ person, status }) => status !== person.employmentStatus);
+      const reinstated = changed.filter(
+        ({ person }) => person.employmentStatus === 'left',
       );
-      for (const person of reinstated) {
+      for (const { person, status } of changed) {
         const id = String(person.id);
         await database.transaction(async (connection) => {
           await connection.query
             .updateTable('people')
-            .set({ employmentStatus: 'active', updatedAt: new Date() })
+            .set({ employmentStatus: status, updatedAt: new Date() })
             .where('id', '=', id)
             .execute();
           await history.logChanges(
             { subjectType: 'people', subjectId: id },
             person,
-            { employmentStatus: 'active' },
+            { employmentStatus: status },
             { sourceType: 'scheduler', origin: 'schedule' },
             connection,
           );
         });
-        await leavers?.returned(id);
+        if (person.employmentStatus === 'left') await leavers?.returned(id);
       }
-      return { left: due.length, reinstated: reinstated.length };
+      return {
+        left: due.length,
+        reinstated: reinstated.length,
+        joined: changed.length - reinstated.length,
+      };
     },
 
     async move(collection, id, target, actorId, conditions) {

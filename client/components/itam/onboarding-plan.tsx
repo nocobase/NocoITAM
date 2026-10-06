@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AppWindow,
   Check,
@@ -19,8 +19,15 @@ import { useAnnounce } from '@/lib/itam/announce';
 import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
-import { errorMessage, formatDate, text, todayIso } from '@/lib/itam/format';
 import {
+  addDays,
+  errorMessage,
+  formatDate,
+  text,
+  todayIso,
+} from '@/lib/itam/format';
+import {
+  isPrepared,
   useOnboardingPlan,
   type OnboardingPlan,
   type OnboardingPlanLine,
@@ -62,6 +69,7 @@ export function OnboardingPlanCard({
   const api = useApi();
   const announce = useAnnounce();
   const plan = useOnboardingPlan(personId);
+  const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   // 更换: a device the person chose instead of the one proposed, by the
@@ -83,7 +91,33 @@ export function OnboardingPlanCard({
     getContext: () => ({ personId, name: personName, plan: data }),
   });
   if (!data) return null;
+  // Equipped and a month in: onboarding is over, and the 归属 tab below
+  // says what they hold.
+  if (
+    isPrepared(data) &&
+    data.hireDate &&
+    data.hireDate < addDays(todayIso(), -30)
+  )
+    return null;
   const started = !data.hireDate || data.hireDate <= todayIso();
+
+  /** Marks an item 不需要 for this person, or takes the mark back. */
+  const waive = async (key: string, waived: boolean) => {
+    setBusy(true);
+    setError(undefined);
+    try {
+      await api.request({
+        path: `${masterDataPath('people')}/${personId}/onboarding/waive`,
+        method: 'POST',
+        json: { key, waived },
+      });
+      await queryClient.invalidateQueries({ queryKey: ['itam'] });
+    } catch (caught) {
+      setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   /** Carries out one proposal through its own operation. */
   const carryOut = async (thing: PlanThing) => {
@@ -266,6 +300,11 @@ export function OnboardingPlanCard({
                     {t('onboarding.shortfallTotal', { count: shortfall })}
                   </span>
                 ) : null}
+                {data.waived > 0 ? (
+                  <span>
+                    {t('onboarding.waivedTotal', { count: data.waived })}
+                  </span>
+                ) : null}
                 {/* What is already being bought for them, and where. */}
                 {data.orders.map((order) => (
                   <RecordLink
@@ -298,6 +337,7 @@ export function OnboardingPlanCard({
                     }))
                   }
                   onRun={(thing) => void run([thing], () => titleFor(thing))}
+                  onWaive={(waived) => void waive(line.key, waived)}
                 />
               ))}
             </ul>
@@ -320,6 +360,7 @@ function PlanLine({
   effective,
   onChoose,
   onRun,
+  onWaive,
 }: {
   readonly line: OnboardingPlanLine;
   readonly busy: boolean;
@@ -328,6 +369,8 @@ function PlanLine({
   readonly effective: (thing: PlanThing) => PlanThing;
   readonly onChoose: (original: PlanThing, replacement: PlanThing) => void;
   readonly onRun: (thing: PlanThing) => void;
+  /** Marks the item 不需要 for this person, or takes the mark back. */
+  readonly onWaive: (waived: boolean) => void;
 }): ReactElement {
   const { t } = useTranslation();
   // The proposal whose device is being chosen again, if any.
@@ -338,6 +381,27 @@ function PlanLine({
   const reasons = line.proposals.filter(
     (thing) => thing.reason && effective(thing) === thing,
   );
+  // Marked 不需要: the item stays in the list, dimmed, so the mark can be
+  // seen and taken back, with nothing offered for it.
+  if (line.waived)
+    return (
+      <li className='flex items-center gap-3 py-2 text-sm text-muted-foreground'>
+        <span className='flex min-w-0 flex-1 items-center gap-2'>
+          <Icon aria-hidden='true' className='size-4 shrink-0' />
+          <span className='truncate line-through'>{line.target.name}</span>
+          <span className='shrink-0 tabular-nums'>×{line.required}</span>
+        </span>
+        <Badge variant='secondary'>{t('onboarding.waived')}</Badge>
+        <Button
+          size='sm'
+          variant='ghost'
+          disabled={busy}
+          onClick={() => onWaive(false)}
+        >
+          {t('onboarding.restore')}
+        </Button>
+      </li>
+    );
   return (
     <li className='py-2 text-sm'>
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
@@ -448,6 +512,19 @@ function PlanLine({
             <span className='text-xs text-destructive'>
               {t('onboarding.shortfall', { count: line.shortfall })}
             </span>
+          ) : null}
+          {/* Something they will not be given — their own monitor, another
+              laptop — is marked rather than left outstanding for ever. */}
+          {line.preparedCount < line.required ? (
+            <Button
+              size='sm'
+              variant='ghost'
+              className='text-muted-foreground'
+              disabled={busy}
+              onClick={() => onWaive(true)}
+            >
+              {t('onboarding.waive')}
+            </Button>
           ) : null}
         </span>
       </div>

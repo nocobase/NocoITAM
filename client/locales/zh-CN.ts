@@ -226,6 +226,8 @@ const zhCN: AppResource = {
       signed: '签收',
       statusChange: '状态变更',
       left: '离职',
+      onboardingWaived: '入职配备',
+      onboardingRestored: '入职配备',
       accountDisabledOnLeaving: '停用账号',
       accountRestoredOnReturning: '启用账号',
       repairCreated: '创建维修单',
@@ -345,6 +347,8 @@ const zhCN: AppResource = {
       statusChangeApprovalDisabled: '{{from}} → {{to}}：审批已关闭，无需审批',
       renewalAdvanced: '下次续订日 {{from}} → {{to}}',
       left: '标记为离职',
+      onboardingWaived: '{{target}} 标为不需要',
+      onboardingRestored: '{{target}} 重新需要',
       accountDisabledOnLeaving: '登录账号 {{target}} 随离职停用',
       accountRestoredOnReturning: '登录账号 {{target}} 随恢复在职重新启用',
       leftOnLeaveDate: '离职日期 {{date}} 已到，自动标记为离职',
@@ -664,6 +668,7 @@ const zhCN: AppResource = {
       other: '其他',
     },
     employmentStatus: {
+      pending: '待入职',
       active: '在职',
       left: '已离职',
     },
@@ -883,6 +888,11 @@ const zhCN: AppResource = {
         current: 'Noco 已经按当前信息挑过了',
       },
     },
+    waive: '不需要',
+    restore: '撤回',
+    waived: '不需要',
+    waivedTotal_one: '{{count}} 项不需要',
+    waivedTotal_other: '{{count}} 项不需要',
     state: { assigned: '已分配', reserved: '已预留' },
     done: {
       reserved: '已预留 {{label}}',
@@ -1002,7 +1012,8 @@ const zhCN: AppResource = {
     empty: '暂无部门',
   },
   people: {
-    followsLeaveDate: '由离职日期决定：日期到了即为已离职，日期未到仍是在职',
+    followsLeaveDate:
+      '由日期决定：入职日期未到为待入职，离职日期已到为已离职，其余为在职',
     title: '人员',
     object: '人员',
     new: '创建人员',
