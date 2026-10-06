@@ -5,6 +5,7 @@ import { DeviceRelation } from '@/components/itam/device-relation';
 import { OverdueBadge } from '@/components/itam/overdue-badge';
 import { RecordApprover } from '@/components/itam/record-approver';
 import {
+  DeviceStatusBadge,
   AuditStatusBadge,
   DisposalStatusBadge,
   PurchaseOrderStatusBadge,
@@ -42,9 +43,12 @@ function useDeviceSummary(record: ItamRecord, t: Translate): SummaryItem[] {
     disposals.data?.find((row) =>
       ['draft', 'pendingApproval', 'approved'].includes(text(row.status)),
     ) ?? disposals.data?.find((row) => row.status === 'executed');
-  // The status is the second row of 基本信息, under 负责人 (2026-10-06); the
-  // strip says what the device is caught up in: its disposal, and who has it.
   return [
+    {
+      key: 'status',
+      label: t('fields.status'),
+      value: <DeviceStatusBadge status={text(record.status)} />,
+    },
     ...(disposal
       ? [
           {

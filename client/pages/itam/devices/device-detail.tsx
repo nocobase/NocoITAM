@@ -115,7 +115,6 @@ import { AiQuickEntries } from '@/components/itam/ai/quick-entries';
 
 import { DisposalCreateDialog } from '../disposals/create-dialog.js';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
-import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { useDeviceDisposals } from '@/lib/itam/device-disposals';
 
 type DialogKind =
@@ -315,16 +314,6 @@ export default function DeviceDetailPage(): ReactElement {
   for (const field of DEVICE_FIELDS) {
     // The name is the title; `detail: false` fields live in the title or
     // the summary strip (the record drawer skips them the same way).
-    // 状态 is the second row of 基本信息, under 负责人 (2026-10-06): where
-    // the device stands is read with who answers for it. It is changed only
-    // by the device's own operations, so the row shows it and nothing more.
-    if (field.key === 'status') {
-      groups.set('groups.basic', [
-        ...(groups.get('groups.basic') ?? []),
-        { ...field, group: 'groups.basic', detailOrder: -999 },
-      ]);
-      continue;
-    }
     if (field.key === 'name' || field.detail === false) continue;
     // 负责人 is the first row of 基本信息 (2026-10-05): who answers for the
     // device is read before what it is, and handed over in place.
@@ -658,8 +647,6 @@ export default function DeviceDetailPage(): ReactElement {
                             <span className='inline-flex flex-wrap items-baseline gap-x-3'>
                               {field.key === 'warrantyEndDate' ? (
                                 <WarrantyDate value={data.warrantyEndDate} />
-                              ) : field.key === 'status' ? (
-                                <DeviceStatusBadge status={data.status} />
                               ) : (
                                 <FieldValue
                                   field={field}
