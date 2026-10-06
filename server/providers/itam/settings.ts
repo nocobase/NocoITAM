@@ -42,6 +42,14 @@ export interface ItamSettings {
      * administrator who re-enables one on the AI employees page keeps it.
      */
     readonly builtInEmployeesDisabled: boolean;
+    /**
+     * The application's skills already put in front of the administrator:
+     * added once to Noco's saved skill selection, and never again after
+     * that, so one they removed stays removed (`ai/index.ts`, 2026-10-06).
+     * Null until the registrar first records it. Not shown on the settings
+     * page.
+     */
+    readonly offeredSkills: readonly string[] | null;
   };
 }
 
@@ -80,6 +88,7 @@ export const DEFAULT_ITAM_SETTINGS: ItamSettings = {
     businessNotes: '',
     onboardingAdvice: true,
     builtInEmployeesDisabled: false,
+    offeredSkills: null,
   },
 };
 

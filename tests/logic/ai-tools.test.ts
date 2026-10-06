@@ -548,3 +548,74 @@ describe('the plugin built-in employees', () => {
     expect(await enabled('dex')).toBe(true);
   });
 });
+
+describe('the ITAM skills on Noco', () => {
+  const setup = async () => {
+    const { createAIManager } = await import('@nocobase/ai-employee');
+    const { ItamAiResources } = await import('../../ai/index.js');
+    const { DEFAULT_ITAM_SETTINGS } =
+      await import('../../server/providers/itam/settings.js');
+    const state = { ai: { ...DEFAULT_ITAM_SETTINGS.ai } };
+    const settings = {
+      get: () => Promise.resolve(state.ai),
+      set: (_key: string, value: typeof state.ai) => {
+        state.ai = value;
+        return Promise.resolve(value);
+      },
+    } as never;
+    const manager = createAIManager();
+    const register = () =>
+      new ItamAiResources(settings).registerAIResources(manager);
+    const skills = async () =>
+      (await manager.employeeManager.getEmployee('itam'))?.skillSettings
+        ?.enabledSkills;
+    const save = async (enabledSkills: string[]) => {
+      const employee = await manager.employeeManager.getEmployee('itam');
+      await manager.employeeManager.upsertEmployee({
+        ...employee!,
+        skillSettings: { ...employee!.skillSettings, enabledSkills },
+      });
+    };
+    return { state, register, skills, save };
+  };
+
+  it('are all enabled on a first registration, and recorded as offered', async () => {
+    const { state, register, skills } = await setup();
+    await register();
+    expect(await skills()).toEqual(['offboarding', 'onboarding', 'receiving']);
+    expect(state.ai.offeredSkills).toEqual([
+      'offboarding',
+      'onboarding',
+      'receiving',
+    ]);
+  });
+
+  it('reach a selection saved before they were added, once', async () => {
+    const { state, register, skills, save } = await setup();
+    await register();
+    // A deployment registered when offboarding was the only skill, and its
+    // selection saved then: nothing recorded what was offered.
+    await save(['offboarding']);
+    state.ai = { ...state.ai, offeredSkills: null };
+    await register();
+    expect(await skills()).toEqual(['offboarding', 'onboarding', 'receiving']);
+
+    // Removed afterwards by the administrator, a skill stays removed.
+    await save(['offboarding', 'receiving']);
+    await register();
+    expect(await skills()).toEqual(['offboarding', 'receiving']);
+  });
+
+  it('keep what the administrator added beside them', async () => {
+    const { register, skills, save } = await setup();
+    await register();
+    await save(['offboarding', 'onboarding', 'receiving', 'data-query']);
+    await register();
+    expect(await skills()).toEqual([
+      'offboarding',
+      'onboarding',
+      'receiving',
+      'data-query',
+    ]);
+  });
+});
