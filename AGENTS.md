@@ -188,7 +188,14 @@ Rules learned while building it:
   locales (`ai.employee.*`): the plugin keeps a code-registered employee's
   texts in one language, so the panel wraps the service that lists employees,
   as the CRM does. The registrar also switches the plugin's own built-in
-  employees off once and sorts Ava first (`ai/index.ts`). Every AI shortcut on
+  employees off once and sorts Ava first (`ai/index.ts`), and keeps Noco's
+  skill selection to this application's skills: the first registration
+  writes all of `ITAM_SKILLS`, and a skill added later reaches a saved
+  selection **once** — `ai.offeredSkills` in ITAM's settings records what
+  was offered, so one the administrator removes stays removed (2026-10-06;
+  until then a new skill never reached a deployment that had registered
+  before it, and `getSkill('onboarding')` answered "Skill not found"). A new
+  skill needs only its entry in `ITAM_SKILLS`. Every AI shortcut on
   a page is green text with a sparkle (`AiShortcut`,
   `client/components/itam/ai/ai-shortcut.tsx`), not a button, so it does not
   compete with the page's own actions. The chat's header has 展开 / 收起到侧边

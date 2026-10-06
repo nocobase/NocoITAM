@@ -98,23 +98,62 @@ export class ItamAiResources extends AIResourceRegistrar {
    * services and see only what that user may see.
    *
    * So the first registration writes a selection of this application's own
-   * skills. A selection the administrator has saved is theirs and is left
-   * alone; when a second skill is added later it will not reach them, which
-   * NocoCRM answers with a marker per skill, and this should too by then.
+   * skills. A selection saved since is the administrator's, but a skill this
+   * application adds later must still reach it: until 2026-10-06 nothing
+   * did, and a deployment that had registered with `offboarding` alone never
+   * got `onboarding` or `receiving` — Noco's `getSkill` answered "Skill not
+   * found" in every conversation. Each ITAM skill is therefore added to a
+   * saved selection **once**, recorded in `ai.offeredSkills`, and one the
+   * administrator removes afterwards stays removed (NocoCRM keeps a marker
+   * per skill for the same reason). Without settings — a test's bare
+   * manager — a saved selection is left alone.
    */
   private async limitSkills(
     aiEmployeeManager: AIEmployeeManager,
   ): Promise<void> {
     const employee = await aiEmployeeManager.getEmployee(itamEmployee.username);
-    if (!employee || employee.skillSettings?.enabledSkills !== undefined)
-      return;
-    await aiEmployeeManager.upsertEmployee({
-      ...employee,
-      skillSettings: {
-        ...employee.skillSettings,
-        enabledSkills: [...ITAM_SKILLS],
-      },
-    });
+    if (!employee) return;
+    // Settings live in a table, which a database whose migrations have not
+    // run yet does not have; starting is not worth refusing over this.
+    const ai = this.settings
+      ? await this.settings.get('ai').catch(() => undefined)
+      : undefined;
+    // Never saved reads as undefined or null.
+    const enabled = employee.skillSettings?.enabledSkills ?? undefined;
+    const added =
+      enabled === undefined
+        ? [...ITAM_SKILLS]
+        : ai
+          ? ITAM_SKILLS.filter(
+              (name) =>
+                // Before the record was kept, which skills the first
+                // registration offered is not known; a skill the selection
+                // already holds counts as offered, and the rest come once.
+                !(ai.offeredSkills ?? enabled).includes(name) &&
+                !enabled.includes(name),
+            )
+          : [];
+    if (enabled === undefined || added.length > 0)
+      await aiEmployeeManager.upsertEmployee({
+        ...employee,
+        skillSettings: {
+          ...employee.skillSettings,
+          enabledSkills: [...(enabled ?? []), ...added],
+        },
+      });
+    if (
+      this.settings &&
+      ai &&
+      ITAM_SKILLS.some((name) => !(ai.offeredSkills ?? []).includes(name))
+    )
+      await this.settings
+        .set('ai', {
+          ...ai,
+          offeredSkills: [
+            ...new Set([...(ai.offeredSkills ?? []), ...ITAM_SKILLS]),
+          ],
+        })
+        .catch(() => undefined);
   }
 
   /**
