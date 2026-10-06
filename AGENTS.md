@@ -723,8 +723,17 @@ Rules learned while building it:
   The workbench's 待入职 (`pendingOnboarding`, right after 离职交接) lists
   people joining within 14 days, or in the 7 since, whose kit is not all in
   hand (with no kit, while no device is held or reserved), granted by
-  `reserve`; nobody owns a joiner's preparation, so under 我负责的 it is
-  empty. The seeds write a kit per department (the ones the AI business
+  `reserve`. A joiner has a **入职负责人** (`people.onboardingOwnerId`,
+  2026-10-06, migration `202610060001_person_onboarding_owner`): the IT
+  person who gets them equipped, starting at whoever enters the person
+  (people entered before stay empty), editable beside 入职日期. Under
+  我负责的, 待入职 is the joiners whose 入职负责人 the reader is; and a
+  leaving IT person's handover list includes the active joiners they own
+  whose joining day is ahead or within 30 days (`OWNED_BY_USER`'s new
+  `since` condition), not every person they ever entered. Each proposed
+  device on the 入职配备 card has 更换: a picker of devices of that model
+  (or category) in stock and held for nobody, and the chosen one is what
+  预留, 分配 and 全部执行 act on. The seeds write a kit per department (the ones the AI business
   notes describe) and a designer's in Product; the demo adds two joiners.
   Choosing which device is the service's, never the model's. The AI side
   is the `onboarding` skill (`ai/skills/onboarding/SKILL.md`): Noco reads

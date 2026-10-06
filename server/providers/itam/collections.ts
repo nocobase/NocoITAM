@@ -229,6 +229,8 @@ export const MASTER_DATA_COLLECTIONS: readonly ItamCollectionDefinition[] = [
       'userId',
       'employmentStatus',
       'hireDate',
+      // 入职负责人 (2026-10-06): who gets this joiner equipped.
+      'onboardingOwnerId',
       'leaveDate',
       'notes',
       ...audit,

@@ -749,6 +749,15 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         group: 'groups.employment',
       },
       {
+        // 入职负责人 (2026-10-06): who gets this joiner equipped. Starts at
+        // whoever enters the person; any IT person may take it over.
+        key: 'onboardingOwnerId',
+        label: 'fields.onboardingOwner',
+        type: 'reference',
+        reference: { collection: 'users' },
+        group: 'groups.employment',
+      },
+      {
         key: 'leaveDate',
         label: 'fields.leaveDate',
         type: 'date',
