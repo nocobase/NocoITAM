@@ -63,6 +63,12 @@ export interface DomainTreeProps {
   readonly search: string;
   readonly filter: Readonly<Record<string, string | undefined>>;
   readonly rowActions?: (row: ItamRecord) => ReactNode;
+  /**
+   * Asks to delete a node, through the list's own confirmation; given only
+   * where the reader may delete it. A tree that edits its nodes beside it
+   * (the categories page) offers this alone instead of the row menu.
+   */
+  readonly onDelete?: (row: ItamRecord) => void;
 }
 
 /** One list a tab counts; a tab counting several sums them. */
@@ -147,6 +153,11 @@ export interface DomainConfig {
    * expand / collapse all in the header; search and filters narrow it.
    */
   readonly Tree?: ComponentType<DomainTreeProps>;
+  /**
+   * The tree page takes the window's height and its panes scroll on their
+   * own, as a board's columns do (the categories page's two panes).
+   */
+  readonly treeFills?: boolean;
   /**
    * Which columns the export carries: the list's (the default), or every
    * field the reader may read — reference data exported to be imported

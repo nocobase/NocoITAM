@@ -37,6 +37,9 @@ export function MasterDataTree({
   search = '',
   filter = {},
   rowActions,
+  compact = false,
+  selectedId,
+  onSelect,
 }: {
   readonly collection: MasterDataCollection;
   readonly expandAll?: boolean;
@@ -46,6 +49,14 @@ export function MasterDataTree({
   readonly filter?: Readonly<Record<string, string | undefined>>;
   /** Per-row menu (edit, delete) rendered at the end of the row. */
   readonly rowActions?: (row: ItamRecord) => ReactNode;
+  /**
+   * The names alone, for a narrow column beside the record (the categories
+   * page): no kind tag and no count.
+   */
+  readonly compact?: boolean;
+  readonly selectedId?: string;
+  /** Replaces opening the node in the record drawer. */
+  readonly onSelect?: (id: string) => void;
 }): ReactElement {
   const { t } = useTranslation();
   // A node opens in the record drawer rather than taking the reader off
@@ -179,7 +190,7 @@ export function MasterDataTree({
           label: text(row[collection.nameField]),
           sort: typeof row.sort === 'number' ? row.sort : 0,
           details: [
-            ...(kindField
+            ...(kindField && !compact
               ? [
                   {
                     key: 'kind',
@@ -198,7 +209,7 @@ export function MasterDataTree({
           ],
         };
       }),
-    [visibleRows, collection.nameField, kindField, t],
+    [visibleRows, collection.nameField, kindField, compact, t],
   );
   if (list.data && list.data.total === 0)
     return <EmptyState title={t(`${collection.i18n}.empty`)} />;
@@ -210,7 +221,7 @@ export function MasterDataTree({
         key={`${expandAll === false && !filtering ? 'collapsed' : 'expanded'}-${filtering ? needle : ''}`}
         defaultCollapsed={expandAll === false && !filtering}
         nodes={nodes}
-        counts={mergedCounts}
+        counts={compact ? undefined : mergedCounts}
         countLabel={(node) => {
           const applies = isCategories
             ? text(rows.find((row) => row.id === node.id)?.appliesTo)
@@ -223,7 +234,10 @@ export function MasterDataTree({
                 : 'tabs.stock',
           );
         }}
-        onSelect={(id) => openRecord(`/${collection.route}/${id}`)}
+        selectedId={selectedId}
+        onSelect={
+          onSelect ?? ((id) => openRecord(`/${collection.route}/${id}`))
+        }
         onMove={permissions.update ? (next) => move.mutate(next) : undefined}
         rowActions={
           rowActions

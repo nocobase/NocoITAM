@@ -98,6 +98,8 @@ function DomainList({
     'order',
     'layout',
     'new',
+    // The record open beside a tree (the categories page), not a filter.
+    'selected',
     FOUND_IDS,
     FOUND_TITLE,
   ]);
@@ -323,7 +325,7 @@ function DomainList({
   const Views = domain.Views;
 
   return (
-    <Page fill={layout === 'board'}>
+    <Page fill={layout === 'board' || (layout === 'tree' && domain.treeFills)}>
       <PageHeader
         title={t(`${domain.i18n}.title`)}
         total={list.data?.total}
@@ -462,6 +464,14 @@ function DomainList({
           search={q}
           filter={filter}
           rowActions={rowActions}
+          onDelete={
+            permissions.delete
+              ? (row) =>
+                  (domain.deletable?.(row, currentUserId) ?? true)
+                    ? setDeleting(row)
+                    : undefined
+              : undefined
+          }
         />
       ) : layout === 'board' && domain.Board ? (
         <domain.Board filter={filter} q={q} />

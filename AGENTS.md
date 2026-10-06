@@ -1586,6 +1586,20 @@ Rules learned while building it:
 - A master-data tree node opens in the record drawer rather than navigating
   (`MasterDataTree`, 2026-09-28): the tree is the map, and reading one node
   should not lose the reader's place in it. A flat list row still navigates.
+  The **categories** page goes further (2026-10-06): two panes, each
+  scrolling on its own (`treeFills` on the domain makes the page fill the
+  window, as a board does). The tree is a narrow column of names only —
+  `MasterDataTree`'s `compact` drops the kind tag and the count — and a
+  row's one action is a delete icon (`DomainTreeProps.onDelete`, through the
+  list's own confirmation), since editing is the pane's. The clicked
+  category's own detail page sits beside it through `RecordPane`, named in
+  the address as `?selected=` (a list parameter, not a filter: `RESERVED`
+  in `domain-list.tsx`), followed when the pane moves to its parent and
+  cleared when it is deleted or left; with nothing chosen the pane says to
+  pick one. The pane leaves out the breadcrumb (`HideBreadcrumbContext`),
+  which the tree beside it already states; the drawer keeps it. No tree
+  draws a drag handle any more: the whole row drags, and a leaf keeps no
+  room for an arrow it does not have.
 - Base UI drops a **nested** dialog's backdrop, reasoning that the dialog it
   is nested in already dims the page. The record drawer is such a parent and
   its backdrop sits *behind* the drawer panel, so a dialog opened inside the

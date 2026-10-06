@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import {
   useMemo,
   useState,
@@ -185,17 +185,14 @@ export function TreeView({
               finish();
             }}
           >
-            {onMove ? (
-              <GripVertical
-                className='size-4 shrink-0 cursor-grab text-muted-foreground/60'
-                aria-hidden='true'
-              />
-            ) : null}
+            {/* No handle: the whole row drags (`draggable` above). */}
             <button
               type='button'
               className={cn(
                 'flex size-5 items-center justify-center rounded text-muted-foreground',
-                !hasChildren && 'invisible',
+                // A leaf keeps no room for an arrow it does not have, so its
+                // name starts where a sibling's arrow would.
+                !hasChildren && 'hidden',
               )}
               aria-label={isCollapsed ? 'expand' : 'collapse'}
               onClick={() =>

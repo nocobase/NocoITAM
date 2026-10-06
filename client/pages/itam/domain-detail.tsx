@@ -1,7 +1,13 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
-import { Fragment, useMemo, useState, type ReactElement } from 'react';
+import {
+  Fragment,
+  useContext,
+  useMemo,
+  useState,
+  type ReactElement,
+} from 'react';
 import {
   Link,
   matchPath,
@@ -45,6 +51,7 @@ import {
   type ItamRecord,
 } from '@/lib/itam/api';
 import { attachmentCount, useAttachmentGroups } from '@/lib/itam/attachments';
+import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
 import type { DomainConfig } from '@/lib/itam/domain';
 import { resolveFormField, type FieldDefinition } from '@/lib/itam/fields';
 import { errorMessage, formatDate, text } from '@/lib/itam/format';
@@ -72,6 +79,7 @@ export function DomainDetailPage({
   readonly domain: DomainConfig;
 }): ReactElement {
   const { t } = useTranslation();
+  const hideBreadcrumb = useContext(HideBreadcrumbContext);
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -358,7 +366,7 @@ export function DomainDetailPage({
       <DetailPage
         layout={domain.detailLayout ?? 'narrow'}
         breadcrumb={
-          BreadcrumbTrail ? (
+          hideBreadcrumb ? undefined : BreadcrumbTrail ? (
             <span className='inline-flex flex-wrap items-center gap-1'>
               <Link to={`/${domain.route}`} className='hover:text-foreground'>
                 {t(`${domain.i18n}.title`)}

@@ -183,6 +183,7 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
     Tree: collection.tree
       ? (props) => <MasterTree collection={collection} {...props} />
       : undefined,
+    treeFills: collection.name === 'categories',
     Stats:
       collection.name === 'people'
         ? ({ onFilter }) => <PeopleStats onFilter={onFilter} />
