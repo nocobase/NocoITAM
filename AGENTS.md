@@ -790,8 +790,8 @@ Rules learned while building it:
   less the preparation days (devices) and `purchaseLeadDays` — both in
   提醒阈值, 3 and 7 by default. Nothing is held by a plan: it is recomputed
   on every reading and only a reservation commits. Devices in repair are not
-  counted. 入职供需 (`/onboarding-supply`, linked under the workbench's
-  入职准备 column, no menu entry and no page grant; `GET
+  counted. 入职供需 (`/onboarding-supply`, linked beside the
+  heading of the workbench's 入职准备 column, no menu entry and no page grant; `GET
   /itam/workbench/onboarding-supply`, people `read` and devices `reserve`)
   lists every joiner still being equipped with their lines and, above them,
   what is short across all of them with the earliest last order day. 全部执行 carries on past a refused item and

@@ -92,6 +92,7 @@ function Column({
   count,
   dimmed = false,
   attention = false,
+  action,
   footer,
   children,
 }: {
@@ -100,6 +101,8 @@ function Column({
   readonly dimmed?: boolean;
   /** 需要关注: risks rather than to-dos, so it is told apart by its ground. */
   readonly attention?: boolean;
+  /** A link at the heading's far end, about the column as a whole. */
+  readonly action?: ReactNode;
   readonly footer?: ReactNode;
   readonly children: ReactNode;
 }): ReactElement {
@@ -121,6 +124,7 @@ function Column({
             {count}
           </span>
         )}
+        {action ? <span className='ml-auto shrink-0'>{action}</span> : null}
       </header>
       <div className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2'>
         {children}
@@ -137,6 +141,19 @@ function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
       title={card.label}
       count={card.count}
       dimmed={card.count === 0}
+      action={
+        // The joiners worked out together: what each will get, and what
+        // must be bought across them (入职供需).
+        card.key === 'pendingOnboarding' && card.count > 0 ? (
+          <Link
+            to='/onboarding-supply'
+            className='flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground'
+          >
+            {t('onboarding.supply.link')}
+            <ArrowRight aria-hidden='true' className='size-3' />
+          </Link>
+        ) : null
+      }
       footer={
         card.links.length > 0 ? (
           <div className='flex flex-col gap-1 px-1.5'>
