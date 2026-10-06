@@ -1020,6 +1020,8 @@ const messages = {
     capture: { context: 'New software product' },
   },
   // AI 整理 in the new model / software product dialogs.
+  // Shared by the AI 整理 of every create dialog.
+  capture: { adjustPlaceholder: 'Tell the AI what to change' },
   masterCapture: {
     description: {
       models:
@@ -1048,11 +1050,6 @@ const messages = {
     duplicates: {
       models: 'Already on the books with the same part code or name:',
       softwareProducts: 'Already on the books with the same name:',
-    },
-    adjustPlaceholder: {
-      models: 'Tell AI what to change, e.g. it is the 16 GB version',
-      softwareProducts:
-        'Tell AI what to change, e.g. it is the on-premise edition',
     },
   },
   locations: {
@@ -1564,8 +1561,6 @@ const messages = {
       stillUnmatched: 'That record does not fit this line. Pick another.',
       adjust: 'Adjust',
       adjusting: 'Adjusting…',
-      adjustPlaceholder:
-        'Tell the AI what to change, e.g. make it 5 units and need it by next Friday',
       context: 'New purchase order',
     },
     edit: 'Edit purchase order',

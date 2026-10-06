@@ -1000,6 +1000,8 @@ const zhCN: AppResource = {
     empty: '暂无软件产品',
     capture: { context: '创建软件产品' },
   },
+  // Shared by the AI 整理 of every create dialog.
+  capture: { adjustPlaceholder: '告诉 AI 要改什么' },
   masterCapture: {
     description: {
       models: '写上制造商和型号，AI 联网查询补全其余信息，核对后保存',
@@ -1023,10 +1025,6 @@ const zhCN: AppResource = {
     duplicates: {
       models: '主数据里已有相同料号或同名的型号：',
       softwareProducts: '主数据里已有同名的软件产品：',
-    },
-    adjustPlaceholder: {
-      models: '告诉 AI 要改什么，例如：是 16G 内存的版本',
-      softwareProducts: '告诉 AI 要改什么，例如：是本地部署版',
     },
   },
   locations: {
@@ -1500,8 +1498,6 @@ const zhCN: AppResource = {
       stillUnmatched: '选的这一项和这一行对不上，换一个再试。',
       adjust: '调整',
       adjusting: '调整中…',
-      adjustPlaceholder:
-        '告诉 AI 要改什么，例如：数量改成 5 台，需求日期改成下周五',
       context: '新建采购单',
     },
     edit: '编辑采购单',

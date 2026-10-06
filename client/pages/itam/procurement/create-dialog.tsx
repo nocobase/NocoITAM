@@ -7,7 +7,7 @@ import { useMemo, useState, type DragEvent, type ReactElement } from 'react';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
 import { ReferenceSelect } from '@/components/itam/reference-select';
-import { ReviewMark } from '@/components/itam/review-mark';
+import { ReviewHint, ReviewMark } from '@/components/itam/review-mark';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -329,6 +329,11 @@ export function PurchaseOrderCreateDialog({
               }
             >
               <div className='grid min-w-0 gap-3'>
+                {/* Before the fields it explains, not beside them. */}
+                {result &&
+                (review.size > 0 || lines.some((line) => line.uncertain)) ? (
+                  <ReviewHint />
+                ) : null}
                 <div className='grid gap-3 sm:grid-cols-2'>
                   {HEADER_FIELDS.map((field) => (
                     <div
@@ -499,9 +504,6 @@ export function PurchaseOrderCreateDialog({
                   <CaptureNotice
                     capture={capture}
                     result={result}
-                    reviewing={
-                      review.size > 0 || lines.some((line) => line.uncertain)
-                    }
                     currency={text(values.currency) || currency}
                     priced={priced}
                     onPlace={async (line, pick) => {

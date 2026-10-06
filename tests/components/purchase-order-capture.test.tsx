@@ -240,7 +240,9 @@ it('opens on AI 整理 and fills the form from what the assistant read', async (
     screen.getByRole('button', { name: 'procurement.saveDraft' }),
   ).toBeVisible();
   // The vendor and the line the assistant was not sure of.
-  expect(screen.getAllByText('procurement.capture.check')).toHaveLength(2);
+  // Plus the sample in the hint above the form.
+  expect(screen.getAllByText('procurement.capture.check')).toHaveLength(3);
+  expect(screen.getByText('procurement.capture.reviewHint')).toBeVisible();
   expect(screen.getByText('procurement.capture.unmatched:1')).toBeVisible();
   expect(screen.getByText(/Testbook Pro 14 \(T4\) × 10/)).toBeVisible();
   expect(

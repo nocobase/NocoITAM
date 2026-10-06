@@ -4,6 +4,7 @@ import { Globe, Sparkles } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { CollapsibleText } from '@/components/itam/collapsible-text';
+import { ReviewHint } from '@/components/itam/review-mark';
 import {
   initialFormValues,
   RecordFormDialog,
@@ -194,6 +195,16 @@ function MasterCreateForm({
             : undefined
         }
         fields={formFields}
+        columns={2}
+        prelude={
+          result && current === 'form' ? (
+            <CapturePrelude
+              collection={collection}
+              result={result}
+              reviewing={marks.size > 0}
+            />
+          ) : undefined
+        }
         // The category's fields stand apart from the model's own, under
         // 扩展字段, so the reader sees which came from the category.
         section={
@@ -246,10 +257,8 @@ function MasterCreateForm({
         aside={
           result ? (
             <CaptureNotes
-              collection={collection}
               capture={capture}
               result={result}
-              reviewing={marks.size > 0}
               onCreateManufacturer={
                 mayCreateManufacturer
                   ? () => setCreatingManufacturer(true)
@@ -380,26 +389,20 @@ function MaterialPane({
 
 /**
  * Beside the form once AI 整理 filled it: what the assistant said, where it
- * read it, what the books lack or already hold, and where to ask for a
- * change.
+ * read it, a maker the books lack, and where to ask for a change.
  */
 function CaptureNotes({
-  collection,
   capture,
   result,
-  reviewing,
   onCreateManufacturer,
 }: {
-  readonly collection: MasterCaptureCollection;
   readonly capture: MasterCaptureState;
   readonly result: MasterCapture;
-  readonly reviewing: boolean;
   /** Opens 新建制造商; absent for a reader who may not create one. */
   readonly onCreateManufacturer: (() => void) | undefined;
 }): ReactElement {
   const { t } = useTranslation();
   const [instruction, setInstruction] = useState('');
-  const route = masterDataByName(collection)!.route;
   const busy = capture.busy;
   const adjusting = busy && capture.mode === 'adjust';
   const send = () => {
@@ -419,15 +422,10 @@ function CaptureNotes({
           )}
         </span>
       </p>
-      {reviewing ? (
-        <p className='pl-6 text-xs text-muted-foreground'>
-          {t('procurement.capture.reviewHint')}
-        </p>
-      ) : null}
       {/* Where it came from — or that it came from nowhere but the model,
           which is when every value wants checking. */}
       {capture.searched && result.sources.length > 0 ? (
-        <div className='grid gap-1'>
+        <div className='grid gap-1 pl-6'>
           <p className='text-xs text-muted-foreground'>
             {t('masterCapture.sources')}
           </p>
@@ -448,7 +446,7 @@ function CaptureNotes({
           </ul>
         </div>
       ) : (
-        <p className='text-xs text-warning-foreground'>
+        <p className='pl-6 text-xs text-warning-foreground'>
           {t(
             capture.searched
               ? 'masterCapture.noSources'
@@ -457,7 +455,7 @@ function CaptureNotes({
         </p>
       )}
       {result.manufacturerName ? (
-        <div className='grid gap-1.5'>
+        <div className='grid gap-1.5 pl-6'>
           <p className='text-warning-foreground wrap-anywhere'>
             {t('masterCapture.manufacturerNotFound', {
               name: result.manufacturerName,
@@ -474,28 +472,6 @@ function CaptureNotes({
               {t('manufacturers.new')}
             </Button>
           ) : null}
-        </div>
-      ) : null}
-      {result.duplicates.length > 0 ? (
-        <div className='grid gap-1'>
-          <p className='text-warning-foreground'>
-            {t(`masterCapture.duplicates.${collection}`)}
-          </p>
-          <ul className='grid gap-0.5'>
-            {result.duplicates.map((row) => (
-              <li key={row.id} className='min-w-0'>
-                {/* A new tab: following the link must not lose the form. */}
-                <a
-                  href={resolveAppUrl(`/${route}/${row.id}`)}
-                  target='_blank'
-                  rel='noreferrer'
-                  className='block truncate text-info-foreground hover:underline'
-                >
-                  {row.name}
-                </a>
-              </li>
-            ))}
-          </ul>
         </div>
       ) : null}
       <div className='grid gap-2 border-t border-border pt-2'>
@@ -531,7 +507,7 @@ function CaptureNotes({
           disabled={busy}
           maxLength={1000}
           className='bg-background'
-          placeholder={t(`masterCapture.adjustPlaceholder.${collection}`)}
+          placeholder={t('capture.adjustPlaceholder')}
           aria-label={t('procurement.capture.adjust')}
           onChange={(event) => setInstruction(event.target.value)}
           onKeyDown={(event) => {
@@ -562,6 +538,52 @@ function CaptureNotes({
           )}
         </Button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Above the form AI 整理 filled: what 请核对 means, and the records the
+ * books already hold for it — both read before checking the fields, not in
+ * the column beside them.
+ */
+function CapturePrelude({
+  collection,
+  result,
+  reviewing,
+}: {
+  readonly collection: MasterCaptureCollection;
+  readonly result: MasterCapture;
+  readonly reviewing: boolean;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const route = masterDataByName(collection)!.route;
+  if (!reviewing && result.duplicates.length === 0) return null;
+  return (
+    <div className='grid gap-2'>
+      {result.duplicates.length > 0 ? (
+        <div className='grid gap-1 rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm'>
+          <p className='text-warning-foreground'>
+            {t(`masterCapture.duplicates.${collection}`)}
+          </p>
+          <ul className='grid gap-0.5'>
+            {result.duplicates.map((row) => (
+              <li key={row.id} className='min-w-0'>
+                {/* A new tab: following the link must not lose the form. */}
+                <a
+                  href={resolveAppUrl(`/${route}/${row.id}`)}
+                  target='_blank'
+                  rel='noreferrer'
+                  className='block truncate text-info-foreground hover:underline'
+                >
+                  {row.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {reviewing ? <ReviewHint /> : null}
     </div>
   );
 }

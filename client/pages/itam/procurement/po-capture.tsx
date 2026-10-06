@@ -139,7 +139,6 @@ export function CapturePane({
 export function CaptureNotice({
   capture,
   result,
-  reviewing,
   currency,
   priced,
   onPlace,
@@ -148,8 +147,6 @@ export function CaptureNotice({
   readonly result: PurchaseCapture;
   /** An unmatched line the reader picked or created a record for. */
   readonly onPlace: UnmatchedPickerProps['onPlace'];
-  /** Something on the form still carries 请核对. */
-  readonly reviewing: boolean;
   readonly currency: string | null;
   readonly priced: boolean;
 }): ReactElement {
@@ -174,25 +171,20 @@ export function CaptureNotice({
           )}
         </span>
       </p>
-      {reviewing ? (
-        <p className='pl-6 text-xs text-muted-foreground'>
-          {t('procurement.capture.reviewHint')}
-        </p>
-      ) : null}
       {result.vendorName ? (
-        <p className='text-warning-foreground'>
+        <p className='pl-6 text-warning-foreground'>
           {t('procurement.capture.vendorNotFound', { name: result.vendorName })}
         </p>
       ) : null}
       {result.departmentName ? (
-        <p className='text-warning-foreground'>
+        <p className='pl-6 text-warning-foreground'>
           {t('procurement.capture.departmentNotFound', {
             name: result.departmentName,
           })}
         </p>
       ) : null}
       {result.unmatched.length > 0 ? (
-        <div className='grid gap-1.5'>
+        <div className='grid gap-1.5 pl-6'>
           <p className='text-warning-foreground'>
             {t('procurement.capture.unmatched', {
               count: result.unmatched.length,
@@ -256,7 +248,7 @@ export function CaptureNotice({
             disabled={busy}
             maxLength={1000}
             className='bg-background'
-            placeholder={t('procurement.capture.adjustPlaceholder')}
+            placeholder={t('capture.adjustPlaceholder')}
             aria-label={t('procurement.capture.adjust')}
             onChange={(event) => setInstruction(event.target.value)}
             onKeyDown={(event) => {

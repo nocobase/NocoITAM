@@ -223,7 +223,9 @@ it('looks a model up on the web and fills the form for checking', async () => {
   expect(screen.getByLabelText('form-warrantyMonths')).toHaveValue('36');
   // What it was not sure of, where it read it, a maker the books lack and
   // a model they already hold.
-  expect(screen.getAllByText('procurement.capture.check')).toHaveLength(1);
+  // One beside the field, one in the hint above the form.
+  expect(screen.getAllByText('procurement.capture.check')).toHaveLength(2);
+  expect(screen.getByText('procurement.capture.reviewHint')).toBeVisible();
   expect(screen.getByRole('link', { name: 'Dell spec sheet' })).toHaveAttribute(
     'href',
     'https://dell.example/7010',

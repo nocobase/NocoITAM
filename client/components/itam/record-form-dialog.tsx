@@ -26,6 +26,7 @@ import {
   type FieldDefinition,
 } from '@/lib/itam/fields';
 import { errorMessage } from '@/lib/itam/format';
+import { cn } from '@/lib/utils';
 
 import { AttachmentsUpload } from './attachments-upload.js';
 import { FieldInput } from './field-input.js';
@@ -85,6 +86,10 @@ export interface RecordFormDialogProps {
     readonly title: string;
     readonly keys: ReadonlySet<string>;
   };
+  /** Two fields to a row; a long text takes the whole row. */
+  readonly columns?: 1 | 2;
+  /** Above the fields: what the reader should know before checking them. */
+  readonly prelude?: ReactNode;
 }
 
 /** A form's starting values: what it was given, else each field's default. */
@@ -129,6 +134,8 @@ export function RecordFormDialog({
   aside,
   contentRef,
   section,
+  columns = 1,
+  prelude,
 }: RecordFormDialogProps): ReactElement {
   const [files, setFiles] = useState<readonly FileRecord[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -207,6 +214,12 @@ export function RecordFormDialog({
     await onSubmit(payload, files);
   };
 
+  const twoColumns = columns === 2;
+  // In two columns a long text keeps the whole row.
+  const cell = (field: FieldDefinition) =>
+    twoColumns && field.type === 'textarea'
+      ? 'grid gap-1.5 sm:col-span-2'
+      : 'grid gap-1.5';
   const renderField = (field: FieldDefinition): ReactNode => {
     if (field.visibleWhen && !field.visibleWhen(values)) return null;
     // A currency edited with its amount has no row of its own.
@@ -216,7 +229,7 @@ export function RecordFormDialog({
     if (field.currencyField) {
       const currencyKey = field.currencyField;
       return (
-        <div key={field.key} className='grid gap-1.5'>
+        <div key={field.key} className={cell(field)}>
           <Label htmlFor={id}>
             {t(field.label)}
             {field.required ? (
@@ -251,7 +264,7 @@ export function RecordFormDialog({
       );
     }
     return (
-      <div key={field.key} className='grid gap-1.5'>
+      <div key={field.key} className={cell(field)}>
         <Label htmlFor={id}>
           <FieldLabel
             label={t(field.label)}
@@ -292,8 +305,11 @@ export function RecordFormDialog({
   const sectionFields = section
     ? resolved.filter((field) => section.keys.has(field.key))
     : [];
+  const grid = twoColumns
+    ? 'grid min-w-0 gap-4 sm:grid-cols-2'
+    : 'grid min-w-0 gap-4';
   const fieldsGrid = (
-    <div className='grid min-w-0 gap-4'>
+    <div className={grid}>
       {resolved.map((field) => {
         if (!section?.keys.has(field.key)) return renderField(field);
         if (field !== sectionFields[0]) return null;
@@ -302,9 +318,20 @@ export function RecordFormDialog({
             key={`section:${section.title}`}
             role='group'
             aria-label={section.title}
-            className='grid min-w-0 gap-4 rounded-lg bg-muted/60 p-3'
+            className={cn(
+              grid,
+              'rounded-lg bg-muted/60 p-3',
+              twoColumns && 'sm:col-span-2',
+            )}
           >
-            <p className='-mb-1 text-sm font-medium'>{section.title}</p>
+            <p
+              className={cn(
+                '-mb-1 text-sm font-medium',
+                twoColumns && 'sm:col-span-2',
+              )}
+            >
+              {section.title}
+            </p>
             {sectionFields.map(renderField)}
           </div>
         );
@@ -318,11 +345,16 @@ export function RecordFormDialog({
       onOpenChange={(next) => (!submitting ? onOpenChange(next) : undefined)}
     >
       <DialogContent
-        className={
+        className={cn(
+          'max-h-[90svh] overflow-y-auto',
           aside && !replacement
-            ? 'max-h-[90svh] overflow-y-auto sm:max-w-3xl'
-            : 'max-h-[90svh] overflow-y-auto sm:max-w-lg'
-        }
+            ? twoColumns
+              ? 'sm:max-w-5xl'
+              : 'sm:max-w-3xl'
+            : twoColumns && !replacement
+              ? 'sm:max-w-2xl'
+              : 'sm:max-w-lg',
+        )}
       >
         <form
           ref={contentRef}
@@ -352,7 +384,14 @@ export function RecordFormDialog({
                   : 'grid'
               }
             >
-              {fieldsGrid}
+              {prelude ? (
+                <div className='grid min-w-0 gap-3'>
+                  {prelude}
+                  {fieldsGrid}
+                </div>
+              ) : (
+                fieldsGrid
+              )}
               {aside}
             </div>
           )}
