@@ -984,6 +984,33 @@ Rules learned while building it:
   message, because the panel's own attachment was gone once `addDraftLines`
   was approved. Lines it adds take the place of the blank row an empty order
   opens on, which otherwise kept 保存 from being offered.
+- 新建采购单 opens on **AI 整理** whenever the assistant is available
+  (2026-10-06, after NocoCRM's lead and opportunity capture), with 表单录入
+  beside it; without the assistant there are no tabs. The requester pastes
+  what they have or uploads a document, and the assistant fills the dialog
+  — in the `capture` unseen chat, limited to `itam_match_model`, handing its
+  reading back through the page tool `fillPurchaseOrder`
+  (`client/lib/itam/use-purchase-capture.ts`). It is still a conversation,
+  deleted when the turn ends, so the 2026-09-27 rule — no model calls
+  outside a conversation — holds; do not replace it with a direct
+  structured model call. The server checks the reading before the dialog
+  takes it (`POST /itam/purchase-orders/capture/match`,
+  `server/providers/itam/purchase-capture.ts`, under `create`): a printed
+  part code decides by the model's `code`, an id the assistant gives must
+  exist, and anything else matches only by an identical name (a model with
+  or without its maker in front; a vendor or department identical or the
+  only one containing it). What matches nothing is listed above the form and
+  never put on a line — an M4 must not become the M3 the books hold. A field
+  or line the assistant was unsure of carries 请核对 (`ReviewMark`) until it
+  is changed. Adjusting happens in the dialog, not the side panel, which a
+  modal dialog leaves out of reach: each instruction is a new unseen turn
+  with the material, the form as it stands (page context) and the request.
+  An uploaded document is read by `POST /itam/purchase-orders/capture/
+  document-text`, which reads only a file uploaded within the hour and
+  attached to nothing — there is no order yet to scope it by — and the
+  saved order takes it as an attachment. The file plugin stamps `createdAt`
+  in UTC without the `Z`, so that window is compared in that form, not
+  through `dbDateTime()`.
 - An approved purchase order states what it asks for: its request fields
   (事由, 说明, 部门, 需求日期, 供应商, 币种) go read-only once it reaches
   `approved` (`SETTLED_STATUSES` / `SETTLED_EDITABLE` in `procurement.ts`,

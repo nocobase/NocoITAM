@@ -22,6 +22,7 @@ import {
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { ReferenceSelect } from '@/components/itam/reference-select';
+import { ReviewMark } from '@/components/itam/review-mark';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -738,6 +739,7 @@ export function LineEditor({
   draft,
   priced,
   showReceived = true,
+  review = false,
   busy,
   dragging,
   dropBefore,
@@ -753,6 +755,8 @@ export function LineEditor({
   readonly draft: LineDraft;
   readonly priced: boolean;
   readonly showReceived?: boolean;
+  /** The assistant picked this line's item without being sure (AI 整理). */
+  readonly review?: boolean;
   readonly busy: boolean;
   readonly dragging: boolean;
   readonly dropBefore: boolean;
@@ -898,6 +902,7 @@ export function LineEditor({
               />
             </div>
           )}
+          {review ? <ReviewMark /> : null}
         </div>
       </TableCell>
       <TableCell className='w-px'>

@@ -1,0 +1,129 @@
+import { LINE_ITEM_TYPES, type LineItemType } from './procurement.js';
+import type { PurchaseLineDraft } from './purchase-lines.js';
+
+/**
+ * AI 整理 in the new purchase order dialog: what the assistant hands the
+ * dialog (`fillPurchaseOrder`), and what the server makes of it
+ * (`POST /itam/purchase-orders/capture/match`, `purchase-capture.ts`).
+ */
+export interface PurchaseCapture {
+  readonly values: Readonly<Record<string, string>>;
+  readonly lines: readonly {
+    readonly itemType: LineItemType;
+    readonly modelId: string | null;
+    readonly softwareProductId: string | null;
+    readonly quantity: number;
+    readonly unitPrice: number | null;
+    readonly uncertain: boolean;
+    readonly description: string | null;
+  }[];
+  readonly unmatched: readonly {
+    readonly description: string;
+    readonly partCode: string | null;
+    readonly quantity: number;
+    readonly unitPrice: number | null;
+    readonly source: string | null;
+  }[];
+  readonly vendorName: string | null;
+  readonly departmentName: string | null;
+  readonly uncertain: readonly string[];
+}
+
+/** The header fields AI 整理 fills; 负责人 stays whoever the dialog has. */
+export const CAPTURED_FIELDS = [
+  'reason',
+  'description',
+  'departmentId',
+  'neededBy',
+  'vendorId',
+] as const;
+
+const clip = (value: unknown, length: number): string | null => {
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+  const text = String(value).trim().slice(0, length);
+  return text || null;
+};
+
+const amount = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === '') return null;
+  const number =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value.replace(/[,\s，]/g, ''))
+        : Number.NaN;
+  return Number.isFinite(number) && number >= 0 ? number : null;
+};
+
+/**
+ * The assistant's arguments as the server takes them. It supplies them, so
+ * they are read defensively and only the keys the endpoint's strict schema
+ * knows are sent.
+ */
+export function captureArgs(args: unknown): Record<string, unknown> {
+  const input = (args ?? {}) as Record<string, unknown>;
+  const lines = (Array.isArray(input.lines) ? input.lines : [])
+    .slice(0, 200)
+    .map((value: unknown) => {
+      const line = (value ?? {}) as Record<string, unknown>;
+      const quantity = amount(line.quantity);
+      return {
+        itemType: clip(line.itemType, 32),
+        modelId: clip(line.modelId, 64),
+        softwareProductId: clip(line.softwareProductId, 64),
+        description: clip(line.description, 500),
+        partCode: clip(line.partCode, 128),
+        quantity: quantity === null ? null : Math.min(10000, quantity),
+        unitPrice: amount(line.unitPrice),
+        uncertain: line.uncertain === true,
+        source: clip(line.source, 200),
+      };
+    });
+  return {
+    reason: clip(input.reason, 64),
+    description: clip(input.description, 20000),
+    neededBy: clip(input.neededBy, 32),
+    vendorId: clip(input.vendorId, 64),
+    vendorName: clip(input.vendorName, 255),
+    departmentId: clip(input.departmentId, 64),
+    departmentName: clip(input.departmentName, 255),
+    uncertain: (Array.isArray(input.uncertain) ? input.uncertain : [])
+      .map((key: unknown) => clip(key, 64))
+      .filter((key): key is string => Boolean(key))
+      .slice(0, 20),
+    lines,
+  };
+}
+
+/**
+ * The dialog's values once a capture is applied. The header fields AI 整理
+ * fills are replaced by what it read — an adjustment returns the whole
+ * order, so a field it left out is one it cleared — and every other value
+ * (负责人) is kept.
+ */
+export function applyCaptureValues(
+  current: Readonly<Record<string, unknown>>,
+  capture: PurchaseCapture,
+): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...current };
+  for (const key of CAPTURED_FIELDS) delete next[key];
+  return { ...next, ...capture.values };
+}
+
+/** The captured lines as the dialog edits them. */
+export function captureLines(
+  capture: PurchaseCapture,
+): (PurchaseLineDraft & { readonly uncertain: boolean })[] {
+  return capture.lines.map((line) => ({
+    key: crypto.randomUUID(),
+    itemType: (LINE_ITEM_TYPES as readonly string[]).includes(line.itemType)
+      ? line.itemType
+      : 'device',
+    modelId: line.modelId,
+    softwareProductId: line.softwareProductId,
+    quantity: line.quantity,
+    unitPrice: line.unitPrice === null ? '' : String(line.unitPrice),
+    receivedQuantity: 0,
+    uncertain: line.uncertain,
+  }));
+}
