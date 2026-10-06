@@ -717,12 +717,28 @@ Rules learned while building it:
 - 入职 is the mirror of 离职, with one difference (2026-10-05): what a
   leaver must hand back is a fact in the register, while what a joiner
   should get is a rule. The rule is **data**, 入职配置 (`onboardingKits`,
-  migration `202610050005_onboarding_kits`, master data page
-  `onboarding-kits`): one kit per department and position — the empty
-  position being the department's default, and a department with no kit
-  taking its parent's — whose `items` are a JSON list of { modelId |
-  categoryId | softwareProductId, quantity }, edited beside the kit's
-  information card (`KitItems`). One per department and position is
+  migration `202610050005_onboarding_kits`): one kit per department and
+  position — the empty position being the department's default, and a
+  department with no kit taking its parent's — whose `items` are a JSON
+  list of { modelId | categoryId | softwareProductId, quantity }. Kits have
+  **no page of their own** since 2026-10-06: a department's 入职配置 tab
+  (`DepartmentKits`, route child `onboarding`, reading
+  `GET /itam/master/departments/:id/onboarding-kits`) holds its default kit —
+  or says which department above it it takes one from, with a button to
+  start its own from a copy — and its **positions** (`departments.positions`,
+  migration `202610060005_department_positions`, filled from the people and
+  kits already there by the seed `202610060002_…`), each set to 用部门默认配置
+  or 自定义配置, which creates the position's kit from a copy of the default
+  (switching back deletes it, so it takes `delete` on kits). A person's 职位
+  is **chosen from their department's positions** (`positionOf` on the
+  field, `PositionSelect`; changing the department clears it), so it is
+  spelled the way its kit is attached; one saved otherwise — an import, the
+  assistant — joins the department's list (`enlistPosition`), and a
+  position still held by somebody in the department cannot be removed
+  (`POSITION_IN_USE`), while removing one takes its kit with it. The old
+  `onboarding-kits` page grant is stripped (`STALE_PAGES`). Each kit row is
+  chosen by asset type (设备 … 授权) and then a model of that type or, for 授权,
+  a software product, and shows its asset-type tag first (`KitItems`). One per department and position is
   enforced by scoping the department within the position
   (`UNIQUE_SCOPES`), since an empty value is skipped. The arithmetic is
   **deterministic**, `server/providers/itam/onboarding.ts`: what the person

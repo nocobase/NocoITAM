@@ -226,7 +226,7 @@ export function OnboardingPlanCard({
             </h2>
             {data.kit ? (
               <RecordLink
-                to={`/onboarding-kits/${data.kit.id}`}
+                to={`/departments/${data.kit.departmentId}/onboarding`}
                 className='truncate text-sm text-muted-foreground hover:text-foreground'
               >
                 {data.kit.name}

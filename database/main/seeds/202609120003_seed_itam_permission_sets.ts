@@ -111,7 +111,6 @@ const IT_PAGES = [
   'locations',
   'departments',
   'people',
-  'onboarding-kits',
 ];
 /**
  * 报表 reads costs across the register, which is the Asset Manager's, and

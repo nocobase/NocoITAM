@@ -126,6 +126,12 @@ const schemas: Readonly<
     costCenter: optionalText,
     managerId: optionalId,
     sort: z.number().int().optional(),
+    // The positions a person in it is given; each name once, ignoring case.
+    positions: z
+      .array(z.string().trim().min(1).max(100))
+      .max(200)
+      .nullable()
+      .optional(),
   }),
   onboardingKits: z.object({
     name: text,

@@ -24,7 +24,6 @@ import {
   MonitorSmartphone,
   Mouse,
   Package,
-  PackageCheck,
   Printer,
   Recycle,
   ShoppingCart,
@@ -497,6 +496,13 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
               loader: () =>
                 import('./pages/itam/master/departments-children-tab.js'),
             },
+            // 入职配置 (2026-10-06): the department's default kit and its
+            // positions; it had a page of its own under 主数据 before.
+            {
+              path: 'onboarding',
+              loader: () =>
+                import('./pages/itam/master/departments-onboarding-tab.js'),
+            },
           ],
         }),
         master({
@@ -511,14 +517,6 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
               loader: () => import('./pages/itam/people/holdings-tab.js'),
             },
           ],
-        }),
-        // 入职配置 (2026-10-05): the standard kit per department and position.
-        master({
-          file: 'onboarding-kits',
-          title: 'navigation.onboardingKits',
-          icon: PackageCheck,
-          list: () => import('./pages/itam/master/onboarding-kits.js'),
-          detail: () => import('./pages/itam/master/onboarding-kits-detail.js'),
         }),
       ],
     },

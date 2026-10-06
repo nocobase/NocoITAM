@@ -151,8 +151,11 @@ export interface OnboardingPlan {
   readonly advice: PlanAdvice | null;
 }
 
-/** The keys of the items marked 不需要, however the column came back. */
-export function waivedOf(value: unknown): string[] {
+/**
+ * A JSON list of strings — the items marked 不需要, a department's
+ * positions — however the column came back.
+ */
+export function stringList(value: unknown): string[] {
   const list =
     typeof value === 'string'
       ? (() => {
@@ -221,6 +224,36 @@ export interface OnboardingService {
     waived: boolean,
     actorId: string,
   ): Promise<OnboardingPlan | null>;
+  /**
+   * A department's 入职配置 as its page shows it (2026-10-06): its default
+   * kit, the one it takes from above when it has none, and each of its
+   * positions with its own kit or none (the default's), and how many people
+   * in the department hold it.
+   */
+  departmentKits(departmentId: string): Promise<DepartmentKits | null>;
+}
+
+export interface KitSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly departmentId: string;
+  readonly position: string | null;
+  readonly items: unknown;
+}
+
+export interface DepartmentKits {
+  readonly department: { readonly id: string; readonly name: string };
+  readonly defaultKit: KitSummary | null;
+  /** The kit a department with no default of its own takes, and whose. */
+  readonly inherited: {
+    readonly department: { readonly id: string; readonly name: string };
+    readonly kit: KitSummary;
+  } | null;
+  readonly positions: readonly {
+    readonly name: string;
+    readonly kit: KitSummary | null;
+    readonly holders: number;
+  }[];
 }
 
 /** How many candidates an item shows Noco: enough to choose among. */
@@ -491,7 +524,7 @@ export function createOnboardingService(
       .executeTakeFirst<Row>();
     if (!person) return null;
     const { advice, picks: advisedPicks } = await adviceFor(personId);
-    const waivedKeys = new Set(waivedOf(person.onboardingWaived));
+    const waivedKeys = new Set(stringList(person.onboardingWaived));
     const held = await heldForOthers(personId);
     const withCandidates = options.candidates === true;
     const kit = await kitFor(
@@ -1043,7 +1076,7 @@ export function createOnboardingService(
       .select(['onboardingWaived'])
       .where('id', '=', personId)
       .executeTakeFirst<Row>();
-    const keys = new Set(waivedOf(person?.onboardingWaived));
+    const keys = new Set(stringList(person?.onboardingWaived));
     if (waived === keys.has(key)) return current;
     if (waived) keys.add(key);
     else keys.delete(key);
@@ -1072,5 +1105,85 @@ export function createOnboardingService(
     return plan(personId);
   };
 
-  return { kitFor, plan, waive };
+  const kitRow = async (id: string): Promise<KitSummary | null> => {
+    const row = await q()
+      .selectFrom('onboardingKits')
+      .select(['id', 'name', 'departmentId', 'position', 'items'])
+      .where('id', '=', id)
+      .executeTakeFirst<Row>();
+    return row
+      ? {
+          id: String(row.id),
+          name: String(row.name),
+          departmentId: String(row.departmentId),
+          position: asText(row.position) ?? null,
+          items: decodeRow(row).items ?? [],
+        }
+      : null;
+  };
+
+  const departmentKits: OnboardingService['departmentKits'] = async (
+    departmentId,
+  ) => {
+    const department = await q()
+      .selectFrom('departments')
+      .select(['id', 'name', 'parentId', 'positions'])
+      .where('id', '=', departmentId)
+      .executeTakeFirst<Row>();
+    if (!department) return null;
+    const kits = await q()
+      .selectFrom('onboardingKits')
+      .select(['id'])
+      .select(['position'])
+      .where('departmentId', '=', departmentId)
+      .execute<Row>();
+    const defaultRow = kits.find((kit) => !asText(kit.position));
+    const defaultKit = defaultRow ? await kitRow(String(defaultRow.id)) : null;
+    let inherited: DepartmentKits['inherited'] = null;
+    const parentId = asText(department.parentId);
+    if (!defaultKit && parentId) {
+      const found = await kitFor(parentId, null);
+      if (found) {
+        const owner = await q()
+          .selectFrom('departments')
+          .select(['id', 'name'])
+          .where('id', '=', found.departmentId)
+          .executeTakeFirst<Row>();
+        const kit = await kitRow(found.id);
+        if (owner && kit)
+          inherited = {
+            department: { id: String(owner.id), name: String(owner.name) },
+            kit,
+          };
+      }
+    }
+    const holders = await q()
+      .selectFrom('people')
+      .select(['position'])
+      .where('departmentId', '=', departmentId)
+      .where((eb) =>
+        eb.or([
+          eb('employmentStatus', 'is', null),
+          eb('employmentStatus', '!=', 'left'),
+        ]),
+      )
+      .execute<Row>();
+    const positions = [];
+    for (const name of stringList(department.positions)) {
+      const own = kits.find((kit) => same(kit.position, name));
+      positions.push({
+        name,
+        kit: own ? await kitRow(String(own.id)) : null,
+        holders: holders.filter((row) => same(row.position, name)).length,
+      });
+    }
+    return {
+      department: { id: String(department.id), name: String(department.name) },
+      defaultKit,
+      inherited,
+      positions,
+    };
+  };
+
+  return { kitFor, plan, waive, departmentKits };
 }

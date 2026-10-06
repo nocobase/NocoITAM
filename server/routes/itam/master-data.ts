@@ -327,6 +327,35 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
       }
     });
 
+    // A department's 入职配置 tab: its default kit (or the one it takes from
+    // above), and each of its positions with its own kit or the default's.
+    // Read under the department's read grant; every change is the kits' or
+    // the department's own write.
+    routes.get('/departments/:id/onboarding-kits', async (context) => {
+      try {
+        const conditions = await decideCollection(
+          context,
+          'departments',
+          'read',
+        );
+        const id = context.req.param('id');
+        const department = await masterData.get('departments', id, conditions);
+        if (!department) {
+          return context.json(
+            { code: 'NOT_FOUND', message: 'Record not found' },
+            404,
+          );
+        }
+        return context.json({
+          data: await app.container
+            .resolve(onboardingServiceToken)
+            .departmentKits(id),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
     // 重新建议: Noco chooses this joiner's equipment again, in the
     // background. Only their 入职负责人 may ask, because the run is made as
     // that person, under their grants and in their conversations; anybody

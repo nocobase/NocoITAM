@@ -5,7 +5,6 @@ import { useState, type ReactElement } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
-import { KitItems } from '@/components/itam/kit-items';
 import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
 import { MasterDataTree } from '@/components/itam/master-data-tree';
 import { PeopleStatCards } from '@/components/itam/people-stats';
@@ -231,37 +230,6 @@ export function CategoryTemplate({
           await mutations.update.mutateAsync({
             id: record.id,
             input: { fieldTemplate: template },
-          });
-        } catch (error) {
-          throw new Error(apiErrorBody(error)?.message ?? errorMessage(error), {
-            cause: error,
-          });
-        }
-      }}
-    />
-  );
-}
-
-/** An onboarding kit's items (入职配置), edited beside its information card. */
-export function OnboardingKitItems({
-  record,
-}: {
-  readonly record: ItamRecord;
-}): ReactElement {
-  const mutations = useItamMutations<ItamRecord>(
-    masterDataPath('onboardingKits'),
-  );
-  const permissions = useCollectionPermissions('onboardingKits', ['update']);
-  return (
-    <KitItems
-      key={JSON.stringify(record.items ?? null)}
-      value={record.items}
-      editable={Boolean(permissions.update)}
-      onSave={async (items) => {
-        try {
-          await mutations.update.mutateAsync({
-            id: record.id,
-            input: { items },
           });
         } catch (error) {
           throw new Error(apiErrorBody(error)?.message ?? errorMessage(error), {

@@ -9,6 +9,11 @@ export interface KitItem {
   readonly type: KitItemType;
   readonly id: string | null;
   readonly quantity: number;
+  /**
+   * The asset type a row being edited was given (设备 … 授权), which narrows
+   * its picker; not stored, since the model, category or product says it.
+   */
+  readonly kind?: string;
 }
 
 /** The stored list as rows; anything unrecognised is dropped. */

@@ -82,7 +82,6 @@ describe('app client routes', () => {
       'locations',
       'departments',
       'people',
-      'onboarding-kits',
     ]);
     // A detail page is not a menu entry and carries no grant of its own.
     expect(
