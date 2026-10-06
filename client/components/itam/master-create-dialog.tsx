@@ -64,12 +64,13 @@ export interface MasterCreateDialogProps {
 export function MasterCreateDialog(
   props: MasterCreateDialogProps,
 ): ReactElement {
-  // A fresh form, and a fresh capture, for every opening.
+  // Nothing while closed: the form registers the capture's page tool under
+  // one context id per collection, and a purchase order mounts one of these
+  // beside every line, so two closed forms threw "already registered" and
+  // took the page down. A fresh form, and a fresh capture, for every opening.
+  if (!props.open) return <Fragment />;
   return (
-    <MasterCreateForm
-      key={props.open ? JSON.stringify(props.initial ?? {}) : 'closed'}
-      {...props}
-    />
+    <MasterCreateForm key={JSON.stringify(props.initial ?? {})} {...props} />
   );
 }
 

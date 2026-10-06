@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   created: [] as unknown[],
   chat: { status: 'ready', messages: [] } as Record<string, unknown>,
   removed: [] as string[],
+  registrations: 0,
   tools: [] as {
     name: string;
     execute: (args: unknown) => Promise<unknown>;
@@ -113,6 +114,7 @@ vi.mock('../../client/extensions/nocobase-ai/index.js', () => ({
       : [{ value: 'plain', llmService: 'svc', supportWebSearch: false }],
   }),
   useAIPageElementHandle: (descriptor: { tools?: typeof state.tools }) => {
+    state.registrations += 1;
     state.tools = descriptor.tools ?? [];
     return { ref: () => undefined, context: {} };
   },
@@ -146,6 +148,7 @@ beforeEach(() => {
   state.tools = [];
   state.chat = { status: 'ready', messages: [] };
   state.removed = [];
+  state.registrations = 0;
 });
 
 const dialog = (initial?: Record<string, unknown>) => (
@@ -353,4 +356,23 @@ it('waits a moment before calling a turn that has not filled the form failed', a
   } finally {
     vi.useRealTimers();
   }
+});
+
+it('registers its page tool only while open, so several can sit closed', () => {
+  // A purchase order mounts one beside every line; two registering the same
+  // tool under the same context id threw and took the page down.
+  render(
+    <>
+      {[1, 2].map((key) => (
+        <MasterCreateDialog
+          key={key}
+          collection='models'
+          open={false}
+          onOpenChange={vi.fn()}
+          onCreated={vi.fn()}
+        />
+      ))}
+    </>,
+  );
+  expect(state.registrations).toBe(0);
 });
