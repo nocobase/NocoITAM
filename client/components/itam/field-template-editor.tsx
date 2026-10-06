@@ -328,7 +328,7 @@ export function FieldTemplateEditor({
           ) : null}
         </div>
         {rows.length === 0 ? (
-          <div className='flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground'>
+          <div className='flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground'>
             {t('fieldTemplate.empty')}
             {/* The only thing to do on an empty card, so it reads as the
                 action it is rather than as a muted secondary one. */}

@@ -986,7 +986,6 @@ const messages = {
     new: 'New category',
     newChild: 'New sub-category',
     noneOfKind: 'No categories of this type yet',
-    pickToEdit: 'Click a category on the left to see and edit its details here',
     appliesToInherited: 'Inherited from the parent',
     appliesToFromCategory: 'Set by the category',
     hintNotSoftware:
@@ -2135,6 +2134,8 @@ const messages = {
     },
   },
   tree: {
+    pickToEdit:
+      'Click a {{object}} on the left to see and edit its details here',
     dragHint:
       'Drag a node above or below a sibling to reorder, or onto another node to move it there.',
     kindPrefix: 'Asset type: ',

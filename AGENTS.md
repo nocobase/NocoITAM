@@ -1588,19 +1588,21 @@ Rules learned while building it:
 - A master-data tree node opens in the record drawer rather than navigating
   (`MasterDataTree`, 2026-09-28): the tree is the map, and reading one node
   should not lose the reader's place in it. A flat list row still navigates.
-  The **categories** page goes further (2026-10-06): two panes, each
+  The **categories, locations and departments** pages go further
+  (2026-10-06, every master-data tree): two panes, each
   scrolling on its own (`treeFills` on the domain makes the page fill the
   window, as a board does). The tree is a narrow column of names only —
   `MasterDataTree`'s `compact` drops the kind tag and the count — and a
   row's one action is a delete icon (`DomainTreeProps.onDelete`, through the
   list's own confirmation), since editing is the pane's. The clicked
-  category's own detail page sits beside it through `RecordPane`, named in
+  node's own detail page — its tabs included — sits beside it through
+  `RecordPane` (`TreePanes` in `master-domain-parts.tsx`), named in
   the address as `?selected=` (a list parameter, not a filter: `RESERVED`
   in `domain-list.tsx`), followed when the pane moves to its parent and
   cleared when it is deleted or left; with nothing chosen the pane says to
   pick one. The pane leaves out the breadcrumb (`HideBreadcrumbContext`),
-  which the tree beside it already states; the drawer keeps it. The left
-  column is grouped by asset type (设备, 配件, 耗材, 组件, 授权, each under
+  which the tree beside it already states; the drawer keeps it. On the
+  categories page the left column is grouped by asset type (设备, 配件, 耗材, 组件, 授权, each under
   its tag, an empty one saying so): a top-level category chooses its type
   and its subtree inherits it, so each tree falls in one group, and a drag
   stays inside its group. The service orders all top-level categories

@@ -967,7 +967,6 @@ const zhCN: AppResource = {
     new: '创建分类',
     newChild: '创建子分类',
     noneOfKind: '暂无这一类的分类',
-    pickToEdit: '点击左侧的分类，在这里查看和编辑它的详情',
     appliesToInherited: '继承上级分类',
     appliesToFromCategory: '随分类',
     hintNotSoftware:
@@ -2009,6 +2008,7 @@ const zhCN: AppResource = {
     },
   },
   tree: {
+    pickToEdit: '点击左侧的{{object}}，在这里查看和编辑它的详情',
     dragHint:
       '拖动节点到同级的上方或下方可排序，拖到另一个节点上可移动为其子级。',
     kindPrefix: '资产类型：',

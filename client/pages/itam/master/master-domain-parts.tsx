@@ -59,8 +59,7 @@ export function MasterTree({
 }: DomainTreeProps & {
   readonly collection: MasterDataCollection;
 }): ReactElement {
-  if (collection.name === 'categories')
-    return <CategoryPanes collection={collection} {...props} />;
+  if (collection.tree) return <TreePanes collection={collection} {...props} />;
   return (
     <MasterDataTree
       collection={collection}
@@ -73,14 +72,15 @@ export function MasterTree({
 }
 
 /**
- * Categories read as two panes (2026-10-06): the tree in a narrow column —
- * names only, since the kind and the count are on the record — and the
- * clicked category's own detail page beside it, where it is read and
- * edited without a drawer over the tree. The category is named in the
- * address (`?selected=`), so a refresh or a link keeps it open; leaving
- * it from inside (its 返回, or deleting it) clears the pane.
+ * A tree of reference data reads as two panes (categories, then locations
+ * and departments, 2026-10-06): the tree in a narrow column — names only,
+ * since the kind and the count are on the record — and the clicked node's
+ * own detail page beside it, where it is read and edited without a drawer
+ * over the tree. The node is named in the address (`?selected=`), so a
+ * refresh or a link keeps it open; leaving it from inside (its 返回, or
+ * deleting it) clears the pane.
  */
-function CategoryPanes({
+function TreePanes({
   collection,
   ...props
 }: DomainTreeProps & {
@@ -134,7 +134,7 @@ function CategoryPanes({
                     size='icon-sm'
                     className='text-muted-foreground hover:text-destructive'
                     aria-label={t('actions.deleteObject', {
-                      object: t('categories.object'),
+                      object: t(`${collection.i18n}.object`),
                     })}
                     title={t('actions.delete')}
                     onClick={() => props.onDelete?.(row)}
@@ -169,7 +169,11 @@ function CategoryPanes({
           </HideBreadcrumbContext.Provider>
         </section>
       ) : (
-        <EmptyState title={t('categories.pickToEdit')} />
+        <EmptyState
+          title={t('tree.pickToEdit', {
+            object: t(`${collection.i18n}.object`),
+          })}
+        />
       )}
     </div>
   );
