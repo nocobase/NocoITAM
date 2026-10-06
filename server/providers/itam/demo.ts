@@ -967,12 +967,12 @@ export function createDemoService(dependencies: {
       }
       // Spares in stock for the joiners, where choosing is not obvious
       // (2026-10-06): the rule takes the joiner's own floor first and then
-      // the longest warranty, which lands on SG-LT-030 — the one whose
-      // keyboard has been repaired twice — and on SG-MON-004, with its dead
+      // the longest warranty, which lands on SG-LT-050 — the one whose
+      // keyboard has been repaired twice — and on SG-MON-006, with its dead
       // pixel. Noco reads the repairs, the notes and the replacement dates
       // and picks otherwise, with a reason the 入职负责人 can check:
-      // SG-LT-031 for the first joiner, the clean warehouse SG-LT-032 for
-      // the second (031 being held for the first), never SG-LT-033, which
+      // SG-LT-051 for the first joiner, the clean warehouse SG-LT-052 for
+      // the second (051 being held for the first), never SG-LT-053, which
       // is due for replacement within months.
       const spare = (
         name: string,
@@ -997,21 +997,21 @@ export function createDemoService(dependencies: {
             screenSize: '14',
           },
         });
-      const repairedSpare = await spare('SG-LT-030', 'C02ZK3A00MD6T', 0, {
+      const repairedSpare = await spare('SG-LT-050', 'C02ZK3A00MD6T', 0, {
         purchaseDate: daysFromNow(-420),
         warrantyEndDate: daysFromNow(675),
         notes: texts.spareKeyboard,
       });
-      await spare('SG-LT-031', 'C02ZK3A01MD6T', 1, {
+      await spare('SG-LT-051', 'C02ZK3A01MD6T', 1, {
         purchaseDate: daysFromNow(-400),
         warrantyEndDate: daysFromNow(655),
       });
-      await spare('SG-LT-032', 'C02ZK3A02MD6T', 2, {
+      await spare('SG-LT-052', 'C02ZK3A02MD6T', 2, {
         locationId: warehouse.id,
         purchaseDate: daysFromNow(-390),
         warrantyEndDate: daysFromNow(665),
       });
-      await spare('SG-LT-033', 'C02ZK3A03MD6T', 3, {
+      await spare('SG-LT-053', 'C02ZK3A03MD6T', 3, {
         // Four years old next spring: the laptop cycle is 48 months.
         purchaseDate: daysFromNow(-1400),
         warrantyEndDate: daysFromNow(25),
@@ -1020,7 +1020,7 @@ export function createDemoService(dependencies: {
         await device({
           modelId: u2723.id,
           serialNo: `CN0F5K7Y${3003 + index}`,
-          name: `SG-MON-00${index + 4}`,
+          name: `SG-MON-00${index + 6}`,
           vendorId: reseller.id,
           purchaseDate: daysFromNow(-200 + index * 30),
           purchasePrice: 4299,

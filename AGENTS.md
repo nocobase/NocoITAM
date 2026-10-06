@@ -349,8 +349,8 @@ Rules learned while building it:
   The two joiners are entered **last** (2026-10-06), because saving one sets
   Noco choosing their equipment, and four spare MacBook Pro 14s and two
   spare monitors give it something to weigh: the rule's pick (own floor,
-  longest warranty) is SG-LT-030, whose keyboard was repaired twice, and
-  SG-MON-004, with a dead pixel; SG-LT-033 is due for replacement within
+  longest warranty) is SG-LT-050, whose keyboard was repaired twice, and
+  SG-MON-006, with a dead pixel; SG-LT-053 is due for replacement within
   months.
 - The ITAM settings page is **tabs**, one per settings document (基本设置,
   提醒阈值, 编号规则, AI 助手, 按送货单入库, 演示数据), the open one in the
