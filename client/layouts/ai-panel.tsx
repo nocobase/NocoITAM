@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { Maximize2, PanelRight, X } from 'lucide-react';
+import { Maximize2, PanelRight, Sparkles, X } from 'lucide-react';
 import {
   useEffect,
   useMemo,
@@ -20,7 +20,6 @@ import { apiClientToken, useService } from '@nocobase/app-client';
 
 import {
   AIChatProvider,
-  NocoBaseAIChatIcon,
   AIChatWindow,
   ChatSurface,
   type AIChatController,
@@ -222,7 +221,9 @@ export function AiHeaderButton({
         }
         aria-label={label}
       >
-        <NocoBaseAIChatIcon className='size-6' aria-hidden='true' />
+        {/* The sparkle every AI shortcut wears, so the entry reads as the
+            assistant's at a glance (2026-10-06). */}
+        <Sparkles className='size-5' aria-hidden='true' />
       </TooltipTrigger>
       <TooltipContent side='bottom'>{label}</TooltipContent>
     </Tooltip>

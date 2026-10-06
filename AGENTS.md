@@ -203,9 +203,12 @@ Rules learned while building it:
   compete with the page's own actions. The chat's header has 展开 / 收起到侧边
   and 关闭: one `ChatSurface` switching between side panel and dialog, so the
   conversation stays mounted, and only the side panel pushes the page aside.
-  The header button shows the NocoBase AI chat mark, which the Registry copy
-  exports for it (`NocoBaseAIChatIcon`, marked "Application change (ITAM)";
-  the unused floating launcher keeps its own two such edits). Nothing AI
+  The header button is the sparkle every AI shortcut wears, in a green frame
+  on a light green ground (the success tokens, `ASSISTANT_LINK_CLASS` in
+  `header-actions.tsx`, 2026-10-06); the Registry copy still exports the
+  NocoBase AI chat mark (`NocoBaseAIChatIcon`, marked "Application change
+  (ITAM)"), which nothing draws now, and the unused floating launcher keeps
+  its own two such edits. Nothing AI
   ran outside a conversation from step 3 (2026-09-27, migration
   `202609270008_drop_ai_findings`: no findings, no inspection, no instant
   check, no direct model calls) until the onboarding advisor (2026-10-06,
