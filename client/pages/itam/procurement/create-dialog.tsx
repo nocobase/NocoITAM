@@ -264,6 +264,8 @@ export function PurchaseOrderCreateDialog({
         onOpenChange(next);
       }}
       size='wide'
+      // AI 整理 only organises; the order is saved from the form it fills.
+      actions={current === 'form'}
       title={t('procurement.new')}
       titleAside={
         capture.available ? (

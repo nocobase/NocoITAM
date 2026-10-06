@@ -139,6 +139,13 @@ it('opens on AI 整理 and fills the form from what the assistant read', async (
   expect(
     screen.getByRole('tab', { name: 'procurement.capture.aiTab' }),
   ).toHaveAttribute('aria-selected', 'true');
+  // Nothing to save before the form is filled: only 取消 in the footer.
+  expect(
+    screen.queryByRole('button', { name: 'procurement.saveDraft' }),
+  ).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: 'procurement.submit' }),
+  ).toBeNull();
   fireEvent.change(
     screen.getByRole('textbox', { name: 'procurement.capture.material' }),
     { target: { value: 'Three Testbooks for the lab from Northwind' } },
@@ -194,6 +201,9 @@ it('opens on AI 整理 and fills the form from what the assistant read', async (
     screen.getByRole('tab', { name: 'procurement.capture.formTab' }),
   ).toHaveAttribute('aria-selected', 'true');
   expect(screen.getByDisplayValue('Three laptops for the lab')).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'procurement.saveDraft' }),
+  ).toBeVisible();
   // The vendor and the line the assistant was not sure of.
   expect(screen.getAllByText('procurement.capture.check')).toHaveLength(2);
   expect(screen.getByText('procurement.capture.unmatched:1')).toBeVisible();
