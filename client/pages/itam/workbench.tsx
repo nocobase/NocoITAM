@@ -7,11 +7,11 @@ import {
   AUDIT_CARD,
   DISPOSAL_CARD,
   PURCHASE_ORDER_CARD,
+  PURCHASING_CARD,
   LOAN_CARD,
   REPAIR_CARD,
 } from '@/components/itam/board-card-specs';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
-import { PurchaseOrderStatusBadge } from '@/components/itam/status-badge';
 import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { Page, PageHeader } from '@/components/itam/page-header';
@@ -234,7 +234,8 @@ function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
       };
     return board && row
       ? {
-          spec: board.spec,
+          // 采购中 holds orders at several steps, so its cards say which.
+          spec: card.key === 'purchasing' ? PURCHASING_CARD : board.spec,
           row,
           url: record.url,
           // In the team's view, which approvals are this reader's to
@@ -243,11 +244,6 @@ function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
             card.key === 'pendingApprovals' && scope === 'all' && record.mine
               ? t('workbench.work.awaitingYou')
               : undefined,
-          // 采购中 holds orders at three steps; each card says which.
-          aside:
-            card.key === 'purchasing' ? (
-              <PurchaseOrderStatusBadge status={row.status} />
-            ) : undefined,
         }
       : null;
   });

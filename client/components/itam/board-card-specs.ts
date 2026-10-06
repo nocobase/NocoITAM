@@ -15,6 +15,7 @@ import { createElement } from 'react';
 
 import type { BoardCardSpec } from '@/components/itam/board-cards';
 import { OverdueBadge } from '@/components/itam/overdue-badge';
+import { PurchaseOrderStatusBadge } from '@/components/itam/status-badge';
 import { formatDate, text } from '@/lib/itam/format';
 import {
   AUDIT_TASK_FIELDS,
@@ -59,6 +60,32 @@ export const PURCHASE_ORDER_CARD: BoardCardSpec = {
     // When it was raised, to the minute: orders raised the same day are
     // otherwise indistinguishable on a card.
     footer: ['ownerId', (record) => formatDate(record.createdAt, true)],
+  },
+};
+
+/**
+ * A purchase order on the workbench's 采购中 column, which holds orders at
+ * several steps — to place, to receive, partly received — where its own
+ * board says the step by column. Under the vendor, the step it is at, and
+ * beside it 到货逾期 when the goods are late, on one line of tags.
+ */
+export const PURCHASING_CARD: BoardCardSpec = {
+  ...PURCHASE_ORDER_CARD,
+  card: {
+    ...PURCHASE_ORDER_CARD.card,
+    lines: [
+      { part: 'estimatedTotal', icon: Banknote },
+      { part: 'vendorId', icon: Store },
+      (record) =>
+        createElement(
+          'span',
+          { className: 'mt-1 flex items-center gap-1.5' },
+          createElement(PurchaseOrderStatusBadge, { status: record.status }),
+          ['ordered', 'partiallyReceived'].includes(text(record.status))
+            ? createElement(OverdueBadge, { date: record.expectedAt })
+            : null,
+        ),
+    ],
   },
 };
 

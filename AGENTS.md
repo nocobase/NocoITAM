@@ -2090,9 +2090,10 @@ by `order` and scoped like 待到货入库: without it an approved order sat in
 采购中, since 2026-10-06 (`purchasingCard` in `client/lib/itam/my-work.ts`):
 they follow one order through and are the same people's work. They stay two
 to-dos underneath, each granted by its own act, and each card says which
-step it is at — its status tag at the right of its amount line
-(`BoardCardEntry.aside`), where it squeezes neither the number nor the
-负责人. Overdue deliveries come first, then the orders to place, then the
+step it is at — its status tag on a line under the vendor, with 到货逾期
+beside it when the goods are late (`PURCHASING_CARD` in
+`board-card-specs.ts`; the purchase board keeps its own card, its columns
+saying the status). Overdue deliveries come first, then the orders to place, then the
 rest of the deliveries. In the team view (全部) a
 待审批 card addressed to the reader says 待你审批 after the time on its
 bottom line — the 负责人 before it is the part that truncates, so a long
