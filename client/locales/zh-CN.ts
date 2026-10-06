@@ -966,7 +966,7 @@ const zhCN: AppResource = {
       softwareProducts: '厂商和产品名，例如：Figma 专业版',
     },
     material: '已知信息',
-    willSearch: 'AI 会联网搜索规格和日期',
+    willSearch: 'AI 会联网搜索补充更多信息',
     cannotSearch: '当前模型不支持联网，AI 只按自身知识整理',
     searching: 'AI 正在联网查询…',
     nothing: 'AI 没有填好表单，请补充信息后再试。',

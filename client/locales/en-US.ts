@@ -983,7 +983,7 @@ const messages = {
       softwareProducts: 'The vendor and the product, e.g. Figma Professional',
     },
     material: 'What you know about it',
-    willSearch: 'AI searches the web for specifications and dates',
+    willSearch: 'AI searches the web to fill in more details',
     cannotSearch:
       'The current model cannot search the web; AI uses only what it knows',
     searching: 'AI is searching…',
