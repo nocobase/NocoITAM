@@ -249,6 +249,9 @@ export const PO_CREATE_FIELDS: readonly string[] = [
   'departmentId',
   'neededBy',
   'vendorId',
+  // Starts at the default currency of 基本设置, which the service also falls
+  // back to when it is left out.
+  'currency',
   // Last, across the dialog's full width, under the short fields
   // (2026-10-06).
   'description',

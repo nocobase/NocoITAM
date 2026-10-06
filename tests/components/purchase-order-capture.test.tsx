@@ -233,11 +233,19 @@ it('is the plain form when the assistant is not available', () => {
     screen.queryByRole('textbox', { name: 'procurement.capture.material' }),
   ).toBeNull();
   expect(screen.getByText('fields.poReason')).toBeVisible();
-  // 说明 comes last, after 供应商, across the full width.
+  // 供应商 and 币种, then 说明 across the full width above the lines, and
+  // 审批人 at the bottom.
   const labels = [...document.querySelectorAll('label')].map(
-    (label) => label.textContent,
+    (label) => label.textContent ?? '',
   );
-  expect(labels.indexOf('fields.description')).toBeGreaterThan(
-    labels.findIndex((label) => label?.startsWith('fields.vendor')),
-  );
+  const at = (key: string) =>
+    labels.findIndex((label) => label.startsWith(key));
+  expect(at('fields.vendor')).toBeGreaterThan(-1);
+  expect(at('fields.currency')).toBe(at('fields.vendor') + 1);
+  expect(at('fields.description')).toBe(at('fields.currency') + 1);
+  expect(at('procurement.approver')).toBe(labels.length - 1);
+  // Rows add rows; the header button is only for an empty list.
+  expect(
+    screen.queryByRole('button', { name: 'procurement.addLine' }),
+  ).toBeNull();
 });

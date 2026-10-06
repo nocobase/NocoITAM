@@ -347,7 +347,11 @@ export function PurchaseOrderCreateDialog({
                   <FieldInput
                     id={`po-${field.key}`}
                     field={field}
-                    value={values[field.key]}
+                    value={
+                      field.key === 'currency'
+                        ? (values.currency ?? currency)
+                        : values[field.key]
+                    }
                     // Once created, the header is the order's; a retry only
                     // finishes the lines and the submission.
                     disabled={Boolean(created)}
@@ -370,15 +374,19 @@ export function PurchaseOrderCreateDialog({
             <div className='grid gap-1.5'>
               <div className='flex items-center justify-between gap-2'>
                 <Label>{t('tabs.lines')}</Label>
-                <Button
-                  type='button'
-                  size='sm'
-                  variant='outline'
-                  onClick={() => insertAfter()}
-                >
-                  <Plus data-icon='inline-start' />
-                  {t('procurement.addLine')}
-                </Button>
+                {/* Each row adds the next one after it; this is only the
+                    way back once every row has been removed. */}
+                {lines.length === 0 ? (
+                  <Button
+                    type='button'
+                    size='sm'
+                    variant='outline'
+                    onClick={() => insertAfter()}
+                  >
+                    <Plus data-icon='inline-start' />
+                    {t('procurement.addLine')}
+                  </Button>
+                ) : null}
               </div>
               <div className='overflow-x-auto rounded-lg border border-border bg-card'>
                 <Table>
