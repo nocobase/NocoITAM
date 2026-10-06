@@ -379,7 +379,7 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
           );
         const result = await app.container
           .resolve(onboardingAdvisorToken)
-          .consider(id, 'manual');
+          .advise(id);
         return context.json({ data: result }, result.started ? 202 : 200);
       } catch (error) {
         return errorResponse(context, error);

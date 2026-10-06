@@ -8,18 +8,11 @@ import {
   type MaintenanceJob,
 } from './itam/maintenance.js';
 import { itamChangesToken } from './itam/changes.js';
-import { onboardingAdvisorToken } from './itam/onboarding-advisor.js';
 import { settingsServiceToken } from './itam/settings.js';
-
-/**
- * A scheduled job: the maintenance service's, or Noco's nightly pass over
- * the joiners (`onboarding-advisor.ts`).
- */
-type ScheduledJob = MaintenanceJob | 'onboardingAdvice';
 
 /** What each task is called on 设置 → 自动化 → 定时任务, in the deployment's language. */
 const TITLES: Readonly<
-  Record<string, Readonly<Record<ScheduledJob, readonly [string, string]>>>
+  Record<string, Readonly<Record<MaintenanceJob, readonly [string, string]>>>
 > = {
   'zh-CN': {
     daily: [
@@ -30,10 +23,6 @@ const TITLES: Readonly<
     leavers: [
       '人员在职状态更新',
       '按入职日期和离职日期更新在职状态：入职日期已到的待入职人员改为在职，离职日期已到的改为已离职；在每日维护之前运行，当天的提醒就能列出离职人员仍持有的资产',
-    ],
-    onboardingAdvice: [
-      '入职配备建议',
-      '让 Noco 以入职负责人的身份，为两周内入职、还没挑过或上次没挑成的新人挑选库存里的设备、配件和授权，并写明理由；结果显示在新人的入职配备卡片上，由入职负责人确认或更换',
     ],
   },
   'en-US': {
@@ -49,27 +38,21 @@ const TITLES: Readonly<
       'People employment status update',
       "Updates employment status from the joining and leave dates: joiners whose first day has come become active, people whose leave date has come are marked as left; runs before the daily maintenance, so that day's reminders list what leavers still hold",
     ],
-    onboardingAdvice: [
-      'Onboarding suggestions',
-      "Has Noco, as each joiner's onboarding owner, choose devices, accessories and seats in stock for joiners starting within two weeks that have none chosen yet or whose last choice failed, with a reason for each; the onboarding owner confirms or changes them on the joiner's onboarding card",
-    ],
   },
 };
 
+// Noco's nightly pass over the joiners (`itam.onboarding-advice`, 02:30)
+// went on 2026-10-06: Noco chooses only when the 入职负责人 asks. A database
+// that synchronised it keeps the definition until `scheduler sync
+// --finalize` deactivates it; a firing before then finds no definition and
+// runs nothing.
 const SCHEDULES: readonly {
   readonly key: string;
-  readonly job: ScheduledJob;
+  readonly job: MaintenanceJob;
   readonly cron: string;
 }[] = [
   { key: 'itam.mark-leavers', job: 'leavers', cron: '50 1 * * *' },
   { key: 'itam.daily-maintenance', job: 'daily', cron: '0 2 * * *' },
-  // After the daily run, which releases lapsed reservations: a device it
-  // freed is a candidate again.
-  {
-    key: 'itam.onboarding-advice',
-    job: 'onboardingAdvice',
-    cron: '30 2 * * *',
-  },
   { key: 'itam.monthly-depreciation', job: 'monthly', cron: '0 3 1 * *' },
 ];
 
@@ -96,7 +79,7 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
     if (!container.has(schedulerServiceToken)) return;
     const scheduler = container.resolve(schedulerServiceToken);
 
-    scheduler.registerTarget<{ job: ScheduledJob }>({
+    scheduler.registerTarget<{ job: MaintenanceJob }>({
       type: TARGET_TYPE,
       title: 'ITAM maintenance',
       validate: (config) =>
@@ -110,15 +93,9 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
           : { valid: false, reason: 'unknown-maintenance-job' },
       async start(config) {
         try {
-          // Noco's runs go on after this returns, one after another: the
-          // execution records how many it started, and each run's outcome
-          // is on its joiner's card.
-          const summary =
-            config.job === 'onboardingAdvice'
-              ? await container.resolve(onboardingAdvisorToken).nightly()
-              : await container
-                  .resolve(maintenanceServiceToken)
-                  .runJob(config.job);
+          const summary = await container
+            .resolve(maintenanceServiceToken)
+            .runJob(config.job);
           // A leaver marked at 01:50 or a loan now overdue reaches pages
           // left open overnight.
           if (container.has(itamChangesToken))

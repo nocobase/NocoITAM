@@ -886,7 +886,6 @@ const zhCN: AppResource = {
         noOwner: '先给他指定入职负责人',
         nothingToChoose: '没有可挑的：每一项的候选都只有一个或没有',
         running: 'Noco 正在挑选',
-        current: 'Noco 已经按当前信息挑过了',
       },
     },
     waive: '不需要',
@@ -1711,6 +1710,12 @@ const zhCN: AppResource = {
       awaitingYou: '待你审批',
       leftOn: '{{date}} 离职',
       joinsOn: '{{date}} 入职',
+      // How far off the first day is, beside it on a 入职准备 card.
+      joinsIn_one: '还有 {{count}} 天',
+      joinsIn_other: '还有 {{count}} 天',
+      joinsToday: '今天',
+      joinedAgo_one: '已入职 {{count}} 天',
+      joinedAgo_other: '已入职 {{count}} 天',
       lentTo: '借给 {{name}}',
       dueBack: '预计 {{date}} 归还',
     },
@@ -2114,7 +2119,7 @@ const zhCN: AppResource = {
       businessNotes: '业务说明（Noco 开始任务时读取）',
       onboardingAdvice: '入职建议',
       onboardingAdviceHint:
-        '录入新人后，Noco 以入职负责人的身份在后台从库存里为他挑选设备、配件和授权并写明理由，由入职负责人确认或更换。关闭后只在对话中准备。',
+        '入职负责人可以在新人的入职配备卡片上点「让 Noco 挑选」，Noco 以他的身份从库存里挑选设备、配件和授权并写明理由，由他确认或更换。关闭后只在对话中准备。',
     },
     demo: {
       title: '演示数据',

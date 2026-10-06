@@ -896,7 +896,6 @@ const messages = {
         nothingToChoose:
           'Nothing to choose: every item has one candidate or none',
         running: 'Noco is already choosing',
-        current: 'Noco has already chosen on what is known now',
       },
     },
     waive: 'Not needed',
@@ -1788,6 +1787,12 @@ const messages = {
       awaitingYou: 'Awaiting you',
       leftOn: 'Left {{date}}',
       joinsOn: 'Joins {{date}}',
+      // How far off the first day is, beside it on a 入职准备 card.
+      joinsIn_one: 'in {{count}} day',
+      joinsIn_other: 'in {{count}} days',
+      joinsToday: 'today',
+      joinedAgo_one: 'started {{count}} day ago',
+      joinedAgo_other: 'started {{count}} days ago',
       lentTo: 'Lent to {{name}}',
       dueBack: 'Due back {{date}}',
     },
@@ -2247,7 +2252,7 @@ const messages = {
       businessNotes: 'Business notes (Noco reads them when a task starts)',
       onboardingAdvice: 'Onboarding suggestions',
       onboardingAdviceHint:
-        'Once a joiner is entered, Noco chooses devices, accessories and seats from stock for them in the background, as their onboarding owner, with a reason for each; the owner confirms or changes them. Off, it prepares them only in a conversation.',
+        "On a joiner's onboarding card, their onboarding owner can ask Noco to choose devices, accessories and seats from stock, as them and with a reason for each, then confirm or change them. Off, it prepares them only in a conversation.",
     },
     demo: {
       title: 'Demo data',

@@ -464,13 +464,6 @@ export function createMasterDataService(
    * users plugin opens a transaction of its own (`leaver-accounts.ts`).
    */
   leavers?: LeaverAccounts,
-  /**
-   * Told after a person was saved, once the change committed: Noco looks at
-   * whether a joiner's equipment is now worth choosing again
-   * (`onboarding-advisor.ts`). It never waits for that and never fails the
-   * save.
-   */
-  personSaved?: (id: string) => void,
 ): MasterDataService {
   const definitions = new Map(
     MASTER_DATA_COLLECTIONS.map((definition) => [definition.name, definition]),
@@ -812,7 +805,6 @@ export function createMasterDataService(
             values.position,
           );
       });
-      if (collection === 'people') personSaved?.(id);
       const created = await findRaw(collection, id);
       return pickFields(
         created ?? {},
@@ -1071,7 +1063,6 @@ export function createMasterDataService(
         )
           await leavers?.returned(id, actorId);
       }
-      if (collection === 'people') personSaved?.(id);
       const updated = await findRaw(collection, id);
       return pickFields(
         updated ?? {},

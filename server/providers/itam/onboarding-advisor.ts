@@ -14,7 +14,6 @@ import {
 import { z } from 'zod';
 
 import { asText, type Row } from './collection-query.js';
-import type { ItamNotifier } from './notifier.js';
 import {
   isJoiner,
   type AdvisedLine,
@@ -41,16 +40,14 @@ import type { SettingsService } from './settings.js';
  * the 入职负责人 reserves or changes them on the card. Agent does the work,
  * a person decides (guideline 3.3).
  *
- * A run is due when a joiner inside the 入职准备 window has an owner, Noco has
- * something to choose — some item with more candidates than it needs — and
- * the last run was not asked the same question (`inputs`): a person saved
- * with a changed joining day, department, position or owner asks again, the
- * nightly pass retries a failed one, and the card's 重新建议 always does.
- * It is switched off by the 入职建议 setting, and nothing happens while no
- * model is usable or Noco is disabled.
+ * A run starts only when the 入职负责人 asks for one on the card (让 Noco
+ * 挑选 / 重新建议), for a joiner not yet equipped, with an owner, and with
+ * something to choose — some item with more candidates than it needs. It
+ * ran on every save and nightly too until 2026-10-06, which spent a model
+ * run on joiners nobody had looked at yet and held their picks back from
+ * the others. It is switched off by the 入职建议 setting, and nothing
+ * happens while no model is usable or Noco is disabled.
  */
-
-export type AdviceTrigger = 'change' | 'nightly' | 'manual';
 
 export type ConsiderResult =
   | { readonly started: true; readonly runId: string }
@@ -62,15 +59,12 @@ export type ConsiderResult =
         | 'notJoiner'
         | 'noOwner'
         | 'nothingToChoose'
-        | 'running'
-        | 'current';
+        | 'running';
     };
 
 export interface OnboardingAdvisor {
-  /** Starts a run for a joiner when one is due; never waits for it. */
-  consider(personId: string, trigger: AdviceTrigger): Promise<ConsiderResult>;
-  /** Every joiner in the window: the scheduled pass. */
-  nightly(): Promise<{ readonly considered: number; readonly started: number }>;
+  /** Starts a run for a joiner, asked by their 入职负责人; never waits for it. */
+  advise(personId: string): Promise<ConsiderResult>;
   /** Settles once every run started so far has finished. */
   idle(): Promise<void>;
 }
@@ -304,14 +298,13 @@ export function createOnboardingAdvisor(deps: {
   readonly database: DatabaseManager;
   readonly onboarding: OnboardingService;
   readonly settings: SettingsService;
-  readonly notifier: ItamNotifier;
   readonly runner: AgentRunner;
   readonly locale: () => string;
   /** Told when a run finished, so open pages refresh the card. */
   readonly touched?: () => void;
   readonly log?: (message: string, error: unknown) => void;
 }): OnboardingAdvisor {
-  const { database, onboarding, settings, notifier, runner } = deps;
+  const { database, onboarding, settings, runner } = deps;
   const q = () => database.query();
   const active = new Set<string>();
   let queue: Promise<void> = Promise.resolve();
@@ -328,12 +321,7 @@ export function createOnboardingAdvisor(deps: {
       .execute();
   };
 
-  const execute = async (
-    runId: string,
-    person: Row,
-    ownerId: string,
-    trigger: AdviceTrigger,
-  ) => {
+  const execute = async (runId: string, person: Row, ownerId: string) => {
     const personId = String(person.id);
     try {
       const plan = await onboarding.plan(personId, { candidates: true });
@@ -397,27 +385,6 @@ export function createOnboardingAdvisor(deps: {
         suggestions,
         summary: answer.summary.slice(0, 1000),
       });
-      const count = suggestions.reduce(
-        (sum, line) => sum + line.picks.length,
-        0,
-      );
-      // The 入职负责人 pressed 重新建议 and is looking at the card; anything
-      // else they learn of from their inbox.
-      if (trigger !== 'manual' && count > 0)
-        await notifier.notify({
-          key: `onboardingAdvice:${runId}`,
-          to: [ownerId],
-          title: {
-            key: 'notifications.onboardingAdvice',
-            params: { name: String(person.name) },
-          },
-          body: {
-            key: 'notifications.onboardingAdviceBody',
-            params: { count },
-          },
-          url: `/people/${personId}`,
-          source: { type: 'people', referenceId: personId },
-        });
     } catch (error) {
       deps.log?.('Onboarding advice failed', error);
       await finish(runId, {
@@ -433,11 +400,10 @@ export function createOnboardingAdvisor(deps: {
     }
   };
 
-  const consider: OnboardingAdvisor['consider'] = async (personId, trigger) => {
+  const advise: OnboardingAdvisor['advise'] = async (personId) => {
     const switches = await settings.get('ai');
     if (switches.onboardingAdvice === false)
       return { started: false, reason: 'disabled' };
-    // Before anything is read: every save of a person asks.
     if (!(await runner.available()))
       return { started: false, reason: 'unavailable' };
     const person = await q()
@@ -484,7 +450,7 @@ export function createOnboardingAdvisor(deps: {
     ].join('|');
     const latest = await q()
       .selectFrom('onboardingRuns')
-      .select(['id', 'status', 'inputs', 'createdAt'])
+      .select(['id', 'status', 'createdAt'])
       .where('personId', '=', personId)
       .orderBy('createdAt', 'desc')
       .executeTakeFirst<Row>();
@@ -497,14 +463,7 @@ export function createOnboardingAdvisor(deps: {
         status: 'failed',
         failure: 'Interrupted',
       });
-    } else if (
-      latest &&
-      trigger !== 'manual' &&
-      latest.inputs === inputs &&
-      // A failed run is retried by the nightly pass, not by every save.
-      (latest.status === 'ready' || trigger === 'change')
-    )
-      return { started: false, reason: 'current' };
+    }
 
     const runId = crypto.randomUUID();
     const at = new Date();
@@ -514,7 +473,7 @@ export function createOnboardingAdvisor(deps: {
         id: runId,
         personId,
         actorId: ownerId,
-        trigger,
+        trigger: 'manual',
         status: 'running',
         inputs,
         createdAt: at,
@@ -522,42 +481,14 @@ export function createOnboardingAdvisor(deps: {
       })
       .execute();
     active.add(runId);
-    // One at a time: a nightly pass over ten joiners is ten runs in a row,
-    // not ten models at once.
-    queue = queue.then(() => execute(runId, person, ownerId, trigger));
+    // One at a time: owners asking for ten joiners at once get ten runs in
+    // a row, not ten models at once.
+    queue = queue.then(() => execute(runId, person, ownerId));
     return { started: true, runId };
   };
 
   return {
-    consider,
-    async nightly() {
-      const joiners = (
-        await q()
-          .selectFrom('people')
-          .select(['id', 'hireDate', 'createdAt'])
-          .where((eb) =>
-            eb.or([
-              eb('employmentStatus', 'is', null),
-              eb('employmentStatus', '!=', 'left'),
-            ]),
-          )
-          .where('hireDate', 'is not', null)
-          .where('onboardingOwnerId', 'is not', null)
-          .where('onboardingCompletedAt', 'is', null)
-          .execute<Row>()
-      ).filter((row) => isJoiner(row.hireDate, row.createdAt));
-      let started = 0;
-      for (const joiner of joiners) {
-        const result = await consider(String(joiner.id), 'nightly').catch(
-          (error: unknown) => {
-            deps.log?.('Onboarding advice could not start', error);
-            return { started: false } as const;
-          },
-        );
-        if (result.started) started += 1;
-      }
-      return { considered: joiners.length, started };
-    },
+    advise,
     idle: () => queue,
   };
 }

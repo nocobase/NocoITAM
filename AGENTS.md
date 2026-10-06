@@ -779,10 +779,12 @@ Rules learned while building it:
   **joiners** — people entered in the register no more than 30 days before
   their first day (`isJoiner`; staff entered long after they started, such
   as a whole register imported at go-live, are not measured against a kit)
-  — who start within 14 days or have started, for as long as their kit is
-  not all in hand (`isPrepared`: each item held, reserved or marked 不需要;
-  with no kit, while no device is held or reserved), granted by `reserve`
-  (2026-10-06; it was the 7 days after the first day before). An item the
+  — however far off their first day, or started, for as long as their kit
+  is not all in hand (`isPrepared`: each item held, reserved or marked
+  不需要; with no kit, while no device is held or reserved), granted by
+  `reserve`; each card says how far off the day is (还有 N 天 / 今天入职 /
+  已入职 N 天). Until 2026-10-06 it took only those starting within 14
+  days, so a joiner entered a month ahead sat on nobody's board. An item the
   joiner will not be given — their own monitor, another laptop — is marked
   **不需要** on the 入职配备 card (`POST /itam/master/people/:id/onboarding/
   waive`, people `update`, `people.onboardingWaived`, migration
@@ -824,7 +826,7 @@ Rules learned while building it:
   seat looked complete on the card while it belonged to nobody (found
   testing 2026-10-05). The kits are no longer
   listed in the seeded AI business notes, which point to 入职配置.
-- **Noco chooses a joiner's equipment in the background** (2026-10-06,
+- **Noco chooses a joiner's equipment when asked** (2026-10-06,
   `server/providers/itam/onboarding-advisor.ts`, migration
   `202610060002_onboarding_runs`), reversing "nothing AI runs outside a
   conversation" for this one job. The rule picks among identical laptops by
@@ -853,17 +855,19 @@ Rules learned while building it:
   is what the run is shown. A device Noco picked for one joiner (their
   latest finished run) is **held back** from every other joiner's
   candidates and proposals (`heldForOthers`), or two joiners of one
-  department were both offered the laptop it had just chosen for the first. Runs are queued one at a time and start when a
-  joiner not yet equipped has an owner — however far off their first day,
-  not only once 入职准备 lists them (2026-10-06) — Noco has a choice (some item
-  with more candidates than it needs) and the last run was not asked the
-  same question (`inputs`: joining day, department, position, owner, kit):
-  after a person is saved (`personSaved` on the master-data service), by
-  the nightly `itam.onboarding-advice` task (02:30, after the daily run
-  frees lapsed reservations; it also retries a failed run) and by 重新建议
-  on the card, which only the 入职负责人 may press because the run is made
-  as them (`POST /itam/master/people/:id/onboarding/advise`, `NOT_OWNER`).
-  The owner is notified when a run they did not ask for found something.
+  department were both offered the laptop it had just chosen for the first.
+  A run starts **only when the 入职负责人 asks** — 让 Noco 挑选 / 重新建议
+  on the card, which only they may press because the run is made as them
+  (`advise`, `POST /itam/master/people/:id/onboarding/advise`,
+  `NOT_OWNER`) — for a joiner not yet equipped, however far off their
+  first day, when Noco has a choice (some item with more candidates than it
+  needs). Runs are queued one at a time. It also ran after every save of a
+  person and nightly (`itam.onboarding-advice`, 02:30) until later the same
+  day, notifying the owner of what it found; that went, because it spent a
+  model run on joiners nobody had looked at yet and held their picks back
+  from the others. A database that synchronised the nightly task keeps its
+  definition until `scheduler sync --finalize`; a firing before then finds
+  no definition and runs nothing.
   The card shows the run under its heading — choosing, chosen with
   Noco's summary and 查看过程 (the conversation, the owner's), or failed —
   and each pick's reason under its item; the buttons stay the person's.

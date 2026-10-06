@@ -26,7 +26,7 @@ import {
   REPAIRS_PATH,
 } from '@/lib/itam/operations';
 import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
-import { formatDate } from '@/lib/itam/format';
+import { daysOverdue, formatDate } from '@/lib/itam/format';
 import {
   useWorkCards,
   type CardRecord,
@@ -354,6 +354,14 @@ function LeaverCard({
   const progress = record.progress;
   const ratio =
     progress && progress.total > 0 ? progress.done / progress.total : 0;
+  // Negative while the first day is ahead.
+  const since = daysOverdue(record.date);
+  const countdown =
+    since < 0
+      ? t('workbench.work.joinsIn', { count: -since })
+      : since === 0
+        ? t('workbench.work.joinsToday')
+        : t('workbench.work.joinedAgo', { count: since });
   return (
     <button
       type='button'
@@ -383,10 +391,18 @@ function LeaverCard({
             ) : null}
           </div>
           {record.date ? (
-            <p className='text-xs text-muted-foreground tabular-nums'>
-              {t(joining ? 'workbench.work.joinsOn' : 'workbench.work.leftOn', {
-                date: formatDate(record.date),
-              })}
+            <p className='flex gap-1.5 text-xs text-muted-foreground tabular-nums'>
+              <span>
+                {t(
+                  joining ? 'workbench.work.joinsOn' : 'workbench.work.leftOn',
+                  { date: formatDate(record.date) },
+                )}
+              </span>
+              {/* A joiner's column runs from next week to months out, so
+                  each card says how far off the first day is. */}
+              {joining ? (
+                <span className='font-medium text-foreground'>{countdown}</span>
+              ) : null}
             </p>
           ) : null}
         </div>
