@@ -3,11 +3,14 @@ import { FileText, Sparkles, Upload, X } from 'lucide-react';
 import { useRef, useState, type ReactElement } from 'react';
 
 import { CollapsibleText } from '@/components/itam/collapsible-text';
+import { QuickCreateDialog } from '@/components/itam/quick-create-dialog';
+import { ReferenceSelect } from '@/components/itam/reference-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { formatMoney } from '@/lib/itam/format';
+import { errorMessage, formatMoney, text } from '@/lib/itam/format';
+import { useCollectionPermissions } from '@/lib/itam/permissions';
 import type { PurchaseCapture } from '@/lib/itam/purchase-capture';
 import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 import type { PurchaseOrderCaptureState } from '@/lib/itam/use-purchase-capture';
@@ -136,9 +139,12 @@ export function CaptureNotice({
   reviewing,
   currency,
   priced,
+  onPlace,
 }: {
   readonly capture: PurchaseOrderCaptureState;
   readonly result: PurchaseCapture;
+  /** An unmatched line the reader picked or created a record for. */
+  readonly onPlace: UnmatchedPickerProps['onPlace'];
   /** Something on the form still carries 请核对. */
   readonly reviewing: boolean;
   readonly currency: string | null;
@@ -183,25 +189,29 @@ export function CaptureNotice({
         </p>
       ) : null}
       {result.unmatched.length > 0 ? (
-        <div className='grid gap-1'>
+        <div className='grid gap-1.5'>
           <p className='text-warning-foreground'>
             {t('procurement.capture.unmatched', {
               count: result.unmatched.length,
             })}
           </p>
-          <ul className='grid gap-0.5 pl-6 text-muted-foreground'>
-            {result.unmatched.map((line, index) => (
-              // The list is the one reading, never reordered or edited.
-              // eslint-disable-next-line @eslint-react/no-array-index-key
-              <li key={index} className='list-disc wrap-anywhere'>
-                {line.description}
-                {line.partCode && line.partCode !== line.description
-                  ? ` (${line.partCode})`
-                  : ''}
-                {` × ${line.quantity}`}
-                {priced && line.unitPrice !== null
-                  ? ` · ${formatMoney(line.unitPrice, currency)}`
-                  : ''}
+          <ul className='grid gap-2'>
+            {result.unmatched.map((line) => (
+              <li
+                key={line.key ?? line.description}
+                className='grid gap-1 rounded-md border border-border bg-background p-2'
+              >
+                <span className='text-muted-foreground wrap-anywhere'>
+                  {line.description}
+                  {line.partCode && line.partCode !== line.description
+                    ? ` (${line.partCode})`
+                    : ''}
+                  {` × ${line.quantity}`}
+                  {priced && line.unitPrice !== null
+                    ? ` · ${formatMoney(line.unitPrice, currency)}`
+                    : ''}
+                </span>
+                <UnmatchedPicker line={line} onPlace={onPlace} />
               </li>
             ))}
           </ul>
@@ -275,5 +285,74 @@ export function CaptureNotice({
         </div>
       </div>
     </div>
+  );
+}
+
+type Unmatched = PurchaseCapture['unmatched'][number];
+
+interface UnmatchedPickerProps {
+  readonly line: Unmatched;
+  readonly onPlace: (
+    line: Unmatched,
+    pick: { readonly modelId: string } | { readonly softwareProductId: string },
+  ) => Promise<void>;
+}
+
+/**
+ * Places a line AI 整理 could not: pick the record it is — the search starts
+ * at the document's own wording, since a different spelling of the same
+ * model is the common case — or, for whoever may create one, 新建 it from the
+ * same list, starting at that name and part code. Either way the line moves
+ * into the order's lines.
+ */
+function UnmatchedPicker({
+  line,
+  onPlace,
+}: UnmatchedPickerProps): ReactElement {
+  const { t } = useTranslation();
+  const software =
+    line.itemType === 'perpetual' || line.itemType === 'subscription';
+  const collection = software ? 'softwareProducts' : 'models';
+  const mayCreate = useCollectionPermissions(collection, ['create']).create;
+  const [creating, setCreating] = useState<string>();
+  const [placing, setPlacing] = useState(false);
+  const [failure, setFailure] = useState<string>();
+  const place = (id: string) => {
+    setPlacing(true);
+    setFailure(undefined);
+    onPlace(line, software ? { softwareProductId: id } : { modelId: id })
+      .catch((error: unknown) => setFailure(errorMessage(error)))
+      .finally(() => setPlacing(false));
+  };
+  return (
+    <>
+      <ReferenceSelect
+        reference={{ collection }}
+        value={null}
+        disabled={placing}
+        initialSearch={line.description}
+        placeholder={t(
+          software ? 'procurement.selectProduct' : 'procurement.selectModel',
+        )}
+        onChange={(id) => {
+          if (id) place(id);
+        }}
+        onCreate={mayCreate ? (name) => setCreating(name) : undefined}
+        createLabel={t(software ? 'softwareProducts.new' : 'models.new')}
+      />
+      {failure ? <p className='text-xs text-destructive'>{failure}</p> : null}
+      <QuickCreateDialog
+        collection={collection}
+        open={creating !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setCreating(undefined);
+        }}
+        initial={{
+          name: creating || line.description,
+          ...(software || !line.partCode ? {} : { code: line.partCode }),
+        }}
+        onCreated={(record) => place(text(record.id))}
+      />
+    </>
   );
 }

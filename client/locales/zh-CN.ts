@@ -1418,8 +1418,11 @@ const zhCN: AppResource = {
       vendorNotFound:
         '原文的供应商「{{name}}」不在供应商列表里，请选择，或先在主数据里新建。',
       departmentNotFound: '原文的部门「{{name}}」没有对上，请选择。',
-      unmatched_one: '有 {{count}} 行没有对上型号或软件产品，没有填入明细：',
-      unmatched_other: '有 {{count}} 行没有对上型号或软件产品，没有填入明细：',
+      unmatched_one:
+        '有 {{count}} 行没有对上型号或软件产品：选一个已有的，或新建后加入明细。',
+      unmatched_other:
+        '有 {{count}} 行没有对上型号或软件产品：选一个已有的，或新建后加入明细。',
+      stillUnmatched: '选的这一项和这一行对不上，换一个再试。',
       adjust: '调整',
       adjusting: '调整中…',
       adjustPlaceholder:

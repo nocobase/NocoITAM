@@ -161,6 +161,9 @@ describe('AI 整理 for a new purchase order', () => {
         { description: 'Testbook Pro 14 (T4)', quantity: 10, unitPrice: 2299 },
         // An id the assistant made up names nothing.
         { description: 'Mystery', modelId: 'model-nope', quantity: 1 },
+        // Software it could not place says so, so the dialog offers a
+        // product to pick or create rather than a model.
+        { description: 'Test Painter', itemType: 'subscription', quantity: 4 },
       ],
     });
     expect(capture.values).toEqual({});
@@ -171,7 +174,15 @@ describe('AI 整理 for a new purchase order', () => {
         quantity: 10,
         unitPrice: 2299,
       }),
-      expect.objectContaining({ description: 'Mystery', quantity: 1 }),
+      expect.objectContaining({
+        description: 'Mystery',
+        quantity: 1,
+        itemType: null,
+      }),
+      expect.objectContaining({
+        description: 'Test Painter',
+        itemType: 'subscription',
+      }),
     ]);
     expect(capture.vendorName).toBe('Contoso Hardware');
   });

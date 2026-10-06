@@ -65,6 +65,10 @@ vi.mock('../../client/lib/itam/ai-context.js', () => ({
 }));
 // The reference pickers fetch their own options; the line's own behaviour is
 // what this covers.
+// Creating a model from a line's picker is the master data's own form.
+vi.mock('../../client/components/itam/quick-create-dialog.js', () => ({
+  QuickCreateDialog: () => null,
+}));
 vi.mock('../../client/components/itam/reference-select.js', () => ({
   ReferenceSelect: ({
     value,

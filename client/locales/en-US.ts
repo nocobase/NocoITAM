@@ -856,7 +856,8 @@ const messages = {
     noKit:
       'No onboarding kit applies to this person’s department and position.',
     askAi: 'Have Noco prepare',
-    needsAccount: 'A subscription seat needs an account: give this person an e-mail, or assign it on the entitlement',
+    needsAccount:
+      'A subscription seat needs an account: give this person an e-mail, or assign it on the entitlement',
     change: 'Change',
     onOrder_one: 'On order ×{{count}}',
     onOrder_other: 'On order ×{{count}}',
@@ -1470,9 +1471,10 @@ const messages = {
       departmentNotFound:
         'The department "{{name}}" did not match one. Choose it.',
       unmatched_one:
-        '{{count}} item matched no model or software product and was not added:',
+        '{{count}} item matched no model or software product: pick one that exists, or create it, to add it to the lines.',
       unmatched_other:
-        '{{count}} items matched no model or software product and were not added:',
+        '{{count}} items matched no model or software product: pick one that exists, or create it, to add it to the lines.',
+      stillUnmatched: 'That record does not fit this line. Pick another.',
       adjust: 'Adjust',
       adjusting: 'Adjusting…',
       adjustPlaceholder:

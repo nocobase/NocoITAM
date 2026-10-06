@@ -21,6 +21,7 @@ import {
 } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { QuickCreateDialog } from '@/components/itam/quick-create-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { ReviewMark } from '@/components/itam/review-mark';
 import { Button } from '@/components/ui/button';
@@ -787,6 +788,13 @@ export function LineEditor({
   }));
   const patch = (values: Partial<LineDraft>) =>
     onChange({ ...draft, ...values });
+  // A model or product the books do not hold yet is created from the picker
+  // itself, by whoever may create one, without leaving the order.
+  const mayCreateModel = useCollectionPermissions('models', ['create']).create;
+  const mayCreateProduct = useCollectionPermissions('softwareProducts', [
+    'create',
+  ]).create;
+  const [creating, setCreating] = useState<string>();
   return (
     <TableRow
       className={cn(
@@ -890,6 +898,10 @@ export function LineEditor({
                 placeholder={t('procurement.selectModel')}
                 value={draft.modelId}
                 onChange={(value) => patch({ modelId: value })}
+                onCreate={
+                  mayCreateModel ? (name) => setCreating(name) : undefined
+                }
+                createLabel={t('models.new')}
               />
             </div>
           ) : (
@@ -899,9 +911,43 @@ export function LineEditor({
                 placeholder={t('procurement.selectProduct')}
                 value={draft.softwareProductId}
                 onChange={(value) => patch({ softwareProductId: value })}
+                onCreate={
+                  mayCreateProduct ? (name) => setCreating(name) : undefined
+                }
+                createLabel={t('softwareProducts.new')}
               />
             </div>
           )}
+          <QuickCreateDialog
+            collection={
+              HARDWARE.has(draft.itemType) ? 'models' : 'softwareProducts'
+            }
+            open={creating !== undefined}
+            onOpenChange={(open) => {
+              if (!open) setCreating(undefined);
+            }}
+            initial={creating ? { name: creating } : undefined}
+            // The line already says what kind it is, and a purchase line's
+            // model must be of that kind, so the category offered is too.
+            narrow={(field) =>
+              field.key === 'categoryId' && HARDWARE.has(draft.itemType)
+                ? {
+                    ...field,
+                    reference: {
+                      ...field.reference!,
+                      filter: { appliesTo: draft.itemType },
+                    },
+                  }
+                : field
+            }
+            onCreated={(record) =>
+              patch(
+                HARDWARE.has(draft.itemType)
+                  ? { modelId: text(record.id) }
+                  : { softwareProductId: text(record.id) },
+              )
+            }
+          />
           {review ? <ReviewMark /> : null}
         </div>
       </TableCell>

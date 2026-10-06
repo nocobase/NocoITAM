@@ -55,6 +55,12 @@ export interface UnmatchedLine {
   readonly quantity: number;
   readonly unitPrice: number | null;
   readonly source: string | null;
+  /**
+   * What the assistant read it as — a software line says `perpetual` or
+   * `subscription` — so the dialog offers a software product to pick or
+   * create rather than a model. Null when it did not say.
+   */
+  readonly itemType: LineItemType | null;
 }
 
 export interface PurchaseCapture {
@@ -77,6 +83,7 @@ const HARDWARE = new Set<string>([
   'component',
 ]);
 const ENTITLEMENT = new Set<string>(['perpetual', 'subscription']);
+const KNOWN_TYPES = new Set<string>([...HARDWARE, ...ENTITLEMENT]);
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 /** The assistant names the header fields as the form does; refs by their key. */
 const UNCERTAIN_KEYS: Readonly<Record<string, string>> = {
@@ -239,6 +246,9 @@ export async function matchPurchaseCapture(
         quantity,
         unitPrice,
         source: clip(line.source, 200) || null,
+        itemType: KNOWN_TYPES.has(clip(line.itemType, 32))
+          ? (clip(line.itemType, 32) as LineItemType)
+          : null,
       });
   }
 
