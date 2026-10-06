@@ -927,6 +927,7 @@ const messages = {
     quantity: 'Quantity',
     addItem: 'Add item',
     itemRequired: 'Choose one',
+    assetType: 'Asset type',
     types: {
       model: 'Model',
       category: 'Category',

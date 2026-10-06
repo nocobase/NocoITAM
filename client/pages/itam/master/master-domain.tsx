@@ -18,7 +18,6 @@ import {
   CategoryKindCell,
   CategoryKindValue,
   CategoryTemplate,
-  OnboardingKitItems,
   MasterActions,
   MasterTree,
   OnHandCell,
@@ -213,12 +212,7 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
             return <MasterCreateDialog collection={name} {...props} />;
           })(collection.name)
       : undefined,
-    Aside:
-      collection.name === 'categories'
-        ? CategoryTemplate
-        : collection.name === 'onboardingKits'
-          ? OnboardingKitItems
-          : undefined,
+    Aside: collection.name === 'categories' ? CategoryTemplate : undefined,
   };
 }
 

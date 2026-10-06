@@ -242,7 +242,7 @@ export function CategoryTemplate({
   );
 }
 
-/** An onboarding kit's items (入职配置), edited beside its information card. */
+/** An onboarding kit's items (入职配置), its 配置清单 tab. */
 export function OnboardingKitItems({
   record,
 }: {

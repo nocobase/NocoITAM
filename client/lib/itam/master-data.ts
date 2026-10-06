@@ -620,13 +620,17 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
   },
   {
     // 入职配置 (2026-10-05): what a new joiner in a department and position
-    // is given. Its items are edited beside the information card
-    // (`KitItems`), the way a category's field template is.
+    // is given. Its items are a tab of their own, 配置清单 (`KitItems`),
+    // opened first, beside 历史 (2026-10-06).
     name: 'onboardingKits',
     route: 'onboarding-kits',
     icon: PackageCheck,
     i18n: 'onboardingKits',
     nameField: 'name',
+    extraTabs: [
+      { key: 'items', label: 'onboardingKits.items', countless: true },
+    ],
+    defaultTab: 'items',
     fields: [
       {
         key: 'name',

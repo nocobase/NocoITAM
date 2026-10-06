@@ -721,8 +721,10 @@ Rules learned while building it:
   `onboarding-kits`): one kit per department and position — the empty
   position being the department's default, and a department with no kit
   taking its parent's — whose `items` are a JSON list of { modelId |
-  categoryId | softwareProductId, quantity }, edited beside the kit's
-  information card (`KitItems`). One per department and position is
+  categoryId | softwareProductId, quantity }, edited on the kit's first tab,
+  配置清单, beside 历史 (`KitItems`, the route child `items`): each row is
+  chosen by asset type (设备 … 授权) and then a model of that type or, for
+  授权, a software product, and shows its asset-type tag first. One per department and position is
   enforced by scoping the department within the position
   (`UNIQUE_SCOPES`), since an empty value is skipped. The arithmetic is
   **deterministic**, `server/providers/itam/onboarding.ts`: what the person

@@ -917,6 +917,7 @@ const zhCN: AppResource = {
     quantity: '数量',
     addItem: '添加物品',
     itemRequired: '请选择',
+    assetType: '资产类型',
     types: { model: '型号', category: '分类', softwareProduct: '软件产品' },
     pick: {
       model: '选择型号',

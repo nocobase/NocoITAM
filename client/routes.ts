@@ -519,6 +519,13 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
           icon: PackageCheck,
           list: () => import('./pages/itam/master/onboarding-kits.js'),
           detail: () => import('./pages/itam/master/onboarding-kits-detail.js'),
+          tabs: [
+            {
+              path: 'items',
+              loader: () =>
+                import('./pages/itam/master/onboarding-kits-items-tab.js'),
+            },
+          ],
         }),
       ],
     },

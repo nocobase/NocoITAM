@@ -18,8 +18,11 @@ import {
   type KitItem,
   type KitItemType,
 } from '@/lib/itam/kit-items';
+import { masterDataPath, useItamList } from '@/lib/itam/api';
+import { text } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
 
+import { AssetTypeBadge } from './asset-type-badge.js';
 import { ReferenceSelect } from './reference-select.js';
 
 /**
@@ -29,6 +32,14 @@ import { ReferenceSelect } from './reference-select.js';
  * kit's one `items` list.
  */
 const TYPES: readonly KitItemType[] = ['model', 'category', 'softwareProduct'];
+/** The asset types a row is chosen by, in the order the navigation lists them. */
+const KINDS = [
+  'device',
+  'accessory',
+  'consumable',
+  'component',
+  'entitlement',
+] as const;
 const COLLECTION: Readonly<Record<KitItemType, string>> = {
   model: 'models',
   category: 'categories',
@@ -39,6 +50,61 @@ const ICON = {
   category: FolderTree,
   softwareProduct: AppWindow,
 };
+
+/** What the row shows until its kind has loaded. */
+function Icon({ type }: { readonly type: KitItemType }): ReactElement {
+  const Glyph = ICON[type];
+  return (
+    <Glyph
+      aria-hidden='true'
+      className='size-4 shrink-0 text-muted-foreground'
+    />
+  );
+}
+
+/**
+ * What kind of asset each item is — 设备, 配件, 耗材, 组件 or 授权 — the way
+ * every list of this application tags it: a model's comes from its
+ * category, a category's is its own, and a software product is always an
+ * entitlement. Reads only the models and categories the kit names.
+ */
+function useItemKinds(
+  items: readonly KitItem[],
+): (item: KitItem) => string | undefined {
+  const idsOf = (type: KitItemType) => [
+    ...new Set(
+      items
+        .filter((item) => item.type === type && item.id)
+        .map((item) => String(item.id)),
+    ),
+  ];
+  const modelIds = idsOf('model');
+  const models = useItamList(
+    masterDataPath('models'),
+    { ids: modelIds, pageSize: 200 },
+    { enabled: modelIds.length > 0 },
+  );
+  const categoryOfModel = new Map(
+    (models.data?.data ?? []).map((row) => [row.id, text(row.categoryId)]),
+  );
+  const categoryIds = [
+    ...new Set([...idsOf('category'), ...categoryOfModel.values()]),
+  ].filter(Boolean);
+  const categories = useItamList(
+    masterDataPath('categories'),
+    { ids: categoryIds, pageSize: 200 },
+    { enabled: categoryIds.length > 0 },
+  );
+  const appliesTo = new Map(
+    (categories.data?.data ?? []).map((row) => [row.id, text(row.appliesTo)]),
+  );
+  return (item) => {
+    if (item.type === 'softwareProduct') return 'entitlement';
+    const category =
+      item.type === 'category' ? item.id : categoryOfModel.get(item.id ?? '');
+    return (category && appliesTo.get(category)) || undefined;
+  };
+}
 
 export function KitItems({
   value,
@@ -64,6 +130,10 @@ export function KitItems({
       ids: shown.filter((row) => row.type === type).map((row) => row.id),
     })),
   );
+  const kindOf = useItemKinds(stored);
+  // A row being edited says its asset type once chosen; a stored one reads
+  // it from its model, category or product.
+  const rowKind = (row: KitItem) => row.kind ?? kindOf(row);
   const nameOf = (item: KitItem) =>
     (item.id && names[COLLECTION[item.type]]?.get(item.id)) || item.id || '';
   const update = (index: number, patch: Partial<KitItem>) =>
@@ -102,7 +172,12 @@ export function KitItems({
               variant='outline'
               className='shrink-0'
               onClick={() => {
-                setRows(parseKitItems(value));
+                setRows(
+                  parseKitItems(value).map((row) => ({
+                    ...row,
+                    kind: kindOf(row),
+                  })),
+                );
                 setError(undefined);
                 setAttempted(false);
                 setEditing(true);
@@ -122,7 +197,7 @@ export function KitItems({
           ) : (
             <ul className='divide-y divide-border/60 text-sm'>
               {stored.map((item, index) => {
-                const Icon = ICON[item.type];
+                const kind = kindOf(item);
                 return (
                   <li
                     // Positional: the list has no ids of its own.
@@ -130,10 +205,13 @@ export function KitItems({
                     key={index}
                     className='flex items-center gap-2 py-2'
                   >
-                    <Icon
-                      aria-hidden='true'
-                      className='size-4 shrink-0 text-muted-foreground'
-                    />
+                    {/* What kind of asset it is leads the row, the way the
+                        lists tag a record; the tag carries its own icon. */}
+                    {kind ? (
+                      <AssetTypeBadge value={kind} className='shrink-0' />
+                    ) : (
+                      <Icon type={item.type} />
+                    )}
                     <span className='min-w-0 flex-1 truncate'>
                       {nameOf(item)}
                       {item.type === 'category' ? (
@@ -158,30 +236,46 @@ export function KitItems({
                 key={index}
                 className='flex flex-wrap items-start gap-2'
               >
+                {/* The asset type first, then what of it: a model of that
+                    type, or a software product for 授权. A row stored as a
+                    whole category keeps its category. */}
                 <Select
-                  items={TYPES.map((type) => ({
-                    value: type,
-                    label: t(`onboardingKits.types.${type}`),
+                  items={KINDS.map((kind) => ({
+                    value: kind,
+                    label: t(`enums.appliesTo.${kind}`),
                   }))}
-                  value={row.type}
+                  value={rowKind(row) ?? null}
                   onValueChange={(next) =>
-                    update(index, { type: next as KitItemType, id: null })
+                    update(index, {
+                      kind: String(next),
+                      type:
+                        next === 'entitlement' ? 'softwareProduct' : 'model',
+                      id: null,
+                    })
                   }
                 >
-                  <SelectTrigger className='w-28 shrink-0'>
-                    <SelectValue />
+                  <SelectTrigger
+                    className='w-24 shrink-0'
+                    aria-label={t('onboardingKits.assetType')}
+                  >
+                    <SelectValue placeholder={t('onboardingKits.assetType')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {t(`onboardingKits.types.${type}`)}
+                    {KINDS.map((kind) => (
+                      <SelectItem key={kind} value={kind}>
+                        {t(`enums.appliesTo.${kind}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <div className='min-w-40 flex-1'>
                   <ReferenceSelect
-                    reference={{ collection: COLLECTION[row.type] }}
+                    reference={{
+                      collection: COLLECTION[row.type],
+                      ...(row.type !== 'softwareProduct' && rowKind(row)
+                        ? { filter: { appliesTo: String(rowKind(row)) } }
+                        : {}),
+                    }}
                     value={row.id}
                     onChange={(next) => update(index, { id: next })}
                     placeholder={t(`onboardingKits.pick.${row.type}`)}
@@ -228,7 +322,7 @@ export function KitItems({
               onClick={() =>
                 setRows((current) => [
                   ...current,
-                  { type: 'model', id: null, quantity: 1 },
+                  { type: 'model', id: null, quantity: 1, kind: 'device' },
                 ])
               }
             >
