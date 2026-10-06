@@ -990,7 +990,7 @@ const zhCN: AppResource = {
     new: '创建型号',
     edit: '编辑型号',
     empty: '暂无型号',
-    capture: { context: '创建型号' },
+    capture: { context: '创建型号', enrichContext: '补充型号资料' },
   },
   softwareProducts: {
     title: '软件产品',
@@ -998,10 +998,26 @@ const zhCN: AppResource = {
     new: '创建软件产品',
     edit: '编辑软件产品',
     empty: '暂无软件产品',
-    capture: { context: '创建软件产品' },
+    capture: { context: '创建软件产品', enrichContext: '补充软件产品资料' },
   },
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
+  // AI 联网补充 on a model's or software product's page.
+  masterEnrich: {
+    action: 'AI 联网补充',
+    title: '联网补充「{{name}}」',
+    description:
+      '只列出和现有值不同的字段；空着的默认勾选，已有的值需要你决定是否覆盖',
+    apply_one: '应用所选（{{count}}）',
+    apply_other: '应用所选（{{count}}）',
+    unavailable: 'AI 助手当前不可用。',
+    retry: '重新查询',
+    done: 'AI 已查完，请核对后勾选要采用的值。',
+    nothing: '没有查到和现有值不同的信息。',
+    field: '字段',
+    current: '现有值',
+    found: 'AI 查到的',
+  },
   masterCapture: {
     description: {
       models: '写上制造商和型号，AI 联网查询补全其余信息，核对后保存',
@@ -2531,6 +2547,12 @@ const zhCN: AppResource = {
         '屏幕上的新建采购单是按下面的材料整理的，我已经看过（当前内容见页面上下文的 form）。请按我的要求修改，再用 fillPurchaseOrder 交回整张采购单：只改我提到的，其他字段和明细保持表单当前的样子（包括我自己改过的），我要求清空的字段留空。改完用一句简短的纯文本说明改了什么；做不到的直接说。不要提我没问的事。我的要求：{{instruction}}',
       captureModel:
         '请按「型号与软件产品资料」技能，为新建型号查资料并填好表单。{{search}}查好后调用一次 fillModel，再用一句纯文本说明哪些没查到、需要核对什么。',
+      enrichModel:
+        '请按「型号与软件产品资料」技能补充这个已有型号的资料（现有值见页面上下文的 form）。{{search}}查好后调用一次 fillModel，再用一句纯文本说明补了什么、哪些和现有值不一致。',
+      enrichSoftwareProduct:
+        '请按「型号与软件产品资料」技能补充这个已有软件产品的资料（现有值见页面上下文的 form）。{{search}}查好后调用一次 fillSoftwareProduct，再用一句纯文本说明补了什么、哪些和现有值不一致。',
+      adjustEnrichRecord:
+        '请按「型号与软件产品资料」技能，按我的要求重新补充这个{{object}}的资料，用 {{tool}} 交回整张表单。{{search}}我的要求：{{instruction}}',
       captureSoftwareProduct:
         '请按「型号与软件产品资料」技能，为新建软件产品查资料并填好表单。{{search}}查好后调用一次 fillSoftwareProduct，再用一句纯文本说明哪些没查到、需要核对什么。',
       masterSearch: '请先联网搜索，优先看制造商官网，只填网页上写明的内容。',

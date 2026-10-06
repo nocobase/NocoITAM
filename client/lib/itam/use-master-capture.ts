@@ -91,9 +91,9 @@ const PROPERTIES: Readonly<
 /** What each tool is for; how to fill it is the catalog skill's. */
 const DESCRIPTIONS: Readonly<Record<MasterCaptureCollection, string>> = {
   models:
-    'Hand the model you looked up to the new model form on screen, which the user checks and saves. Call it once, with the whole form, filled as the catalog skill says: attributes by the keys of the chosen category fields, sources the pages you used, uncertain the fields you are not sure of.',
+    'Hand the model you looked up to the model form on screen, which the user checks and saves. Call it once, with the whole form, filled as the catalog skill says: attributes by the keys of the chosen category fields, sources the pages you used, uncertain the fields you are not sure of.',
   softwareProducts:
-    'Hand the software product you looked up to the new software product form on screen, which the user checks and saves. Call it once, with the whole form, filled as the catalog skill says: sources the pages you used, uncertain the fields you are not sure of.',
+    'Hand the software product you looked up to the software product form on screen, which the user checks and saves. Call it once, with the whole form, filled as the catalog skill says: sources the pages you used, uncertain the fields you are not sure of.',
 };
 
 /**
@@ -111,8 +111,15 @@ export function useMasterCapture({
   collection,
   form,
   onFill,
+  purpose = 'create',
 }: {
   readonly collection: MasterCaptureCollection;
+  /**
+   * `create`: the new record's dialog. `enrich`: a record on the books,
+   * whose gaps the reading fills and whose values it checks (AI 联网补充 on
+   * the detail page, 2026-10-06); the form is then its current values.
+   */
+  readonly purpose?: 'create' | 'enrich';
   /** The form as it stands, read when the assistant asks for the context. */
   readonly form: () => Readonly<Record<string, unknown>>;
   readonly onFill: (capture: MasterCapture) => void;
@@ -206,8 +213,12 @@ export function useMasterCapture({
     [api, collection, tool],
   );
   const { ref: contextRef, context } = useAIPageElementHandle({
-    id: `itam-${collection}-capture`,
-    title: t(`${collection}.capture.context`),
+    id: `itam-${collection}-${purpose}`,
+    title: t(
+      purpose === 'enrich'
+        ? `${collection}.capture.enrichContext`
+        : `${collection}.capture.context`,
+    ),
     kind: `${collection}Draft`,
     getContext: () => ({
       today: todayIso(),
@@ -352,9 +363,13 @@ export function useMasterCapture({
       ask(
         'organise',
         t(
-          collection === 'models'
-            ? 'ai.prompts.captureModel'
-            : 'ai.prompts.captureSoftwareProduct',
+          purpose === 'enrich'
+            ? collection === 'models'
+              ? 'ai.prompts.enrichModel'
+              : 'ai.prompts.enrichSoftwareProduct'
+            : collection === 'models'
+              ? 'ai.prompts.captureModel'
+              : 'ai.prompts.captureSoftwareProduct',
           { search },
         ),
         material,
@@ -369,12 +384,17 @@ export function useMasterCapture({
       ]);
       ask(
         'adjust',
-        t('ai.prompts.adjustMasterRecord', {
-          object: t(`${collection}.object`),
-          tool,
-          search,
-          instruction: said,
-        }),
+        t(
+          purpose === 'enrich'
+            ? 'ai.prompts.adjustEnrichRecord'
+            : 'ai.prompts.adjustMasterRecord',
+          {
+            object: t(`${collection}.object`),
+            tool,
+            search,
+            instruction: said,
+          },
+        ),
         materialRef.current,
       );
     },

@@ -4,9 +4,11 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState, type ReactElement } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 
+import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { EmptyState } from '@/components/itam/empty-state';
 import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
+import { MasterEnrichDialog } from '@/components/itam/master-enrich-dialog';
 import { MasterDataTree } from '@/components/itam/master-data-tree';
 import { PeopleStatCards } from '@/components/itam/people-stats';
 import { RecordPane } from '@/components/itam/record-drawer';
@@ -25,6 +27,11 @@ import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
 import type { DomainTreeProps } from '@/lib/itam/domain';
 import { errorMessage, text } from '@/lib/itam/format';
+import { useItamAi } from '@/lib/itam/ai-chat';
+import {
+  isMasterCaptureCollection,
+  type MasterCaptureCollection,
+} from '@/lib/itam/master-capture';
 import type { MasterDataCollection } from '@/lib/itam/master-data';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { STOCK_PATH } from '@/lib/itam/stock';
@@ -467,10 +474,46 @@ export function MasterActions({
 }): ReactElement {
   return (
     <>
+      {isMasterCaptureCollection(collection.name) ? (
+        <EnrichAction collection={collection.name} record={record} />
+      ) : null}
       {collection.name === 'people' ? <PersonActions record={record} /> : null}
       {collection.tree ? (
         <NewChildAction collection={collection} record={record} />
       ) : null}
+    </>
+  );
+}
+
+/**
+ * AI 联网补充 on a model's or software product's page (2026-10-06): the
+ * assistant looks the record up on the web and the reader picks what to
+ * take. Offered to whoever may edit the record, while the assistant is
+ * available.
+ */
+function EnrichAction({
+  collection,
+  record,
+}: {
+  readonly collection: MasterCaptureCollection;
+  readonly record: ItamRecord;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const ai = useItamAi();
+  const permissions = useCollectionPermissions(collection, ['update']);
+  const [open, setOpen] = useState(false);
+  if (!ai?.available || !permissions.update) return null;
+  return (
+    <>
+      <AiShortcut onClick={() => setOpen(true)}>
+        {t('masterEnrich.action')}
+      </AiShortcut>
+      <MasterEnrichDialog
+        collection={collection}
+        record={record}
+        open={open}
+        onOpenChange={setOpen}
+      />
     </>
   );
 }
