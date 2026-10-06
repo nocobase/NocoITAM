@@ -465,6 +465,8 @@ const messages = {
     owningDepartment: 'Owning department',
     department: 'Department',
     position: 'Position',
+    // A department's list of positions, as its history names the change.
+    positions: 'Positions',
     employmentStatus: 'Status',
     linkedUser: 'Linked user account',
     officeLocation: 'Office location',
@@ -934,6 +936,8 @@ const messages = {
     useCustom: 'Own kit',
     positionKit: 'Kit for {{position}}',
     addPosition: 'Add position',
+    removePositionTitle: 'Remove the position “{{position}}”?',
+    removePositionWithKit: 'Its own onboarding kit is removed with it.',
     removePosition: 'Remove position',
     positionInUse_one:
       '{{count}} person holds this position, so it cannot be removed',

@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CornerLeftUp, Plus, X } from 'lucide-react';
+import { CornerLeftUp, Plus, Trash2 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -75,6 +75,11 @@ export function DepartmentKits({
   const department = useItamRecord<ItamRecord>(departmentsPath, departmentId);
   const hasParent = Boolean(department.data?.parentId);
   const [confirmingInherit, setConfirmingInherit] = useState(false);
+  // The position asked to be removed, until the reader confirms.
+  const [removing, setRemoving] = useState<{
+    readonly name: string;
+    readonly hasKit: boolean;
+  }>();
   const kits = useCollectionPermissions('onboardingKits', [
     'create',
     'update',
@@ -153,6 +158,32 @@ export function DepartmentKits({
 
   return (
     <div className='space-y-4'>
+      {/* Removing a position is asked first: its own kit goes with it. */}
+      <ConfirmDialog
+        open={removing !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(undefined);
+        }}
+        title={t('departmentKits.removePositionTitle', {
+          position: removing?.name ?? '',
+        })}
+        description={
+          removing?.hasKit
+            ? t('departmentKits.removePositionWithKit')
+            : undefined
+        }
+        destructive
+        confirmLabel={t('departmentKits.removePosition')}
+        busy={busy}
+        onConfirm={() => {
+          const name = removing?.name;
+          setRemoving(undefined);
+          if (name)
+            void run(() =>
+              setPositions(names.filter((known) => !samePosition(known, name))),
+            );
+        }}
+      />
       {/* Falling back deletes this department's own kit: asked first. */}
       <ConfirmDialog
         open={confirmingInherit}
@@ -307,16 +338,13 @@ export function DepartmentKits({
                           }
                           disabled={busy || position.holders > 0}
                           onClick={() =>
-                            void run(() =>
-                              setPositions(
-                                names.filter(
-                                  (name) => !samePosition(name, position.name),
-                                ),
-                              ),
-                            )
+                            setRemoving({
+                              name: position.name,
+                              hasKit: Boolean(position.kit),
+                            })
                           }
                         >
-                          <X />
+                          <Trash2 />
                         </Button>
                       ) : null}
                     </div>

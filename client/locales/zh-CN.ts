@@ -457,6 +457,8 @@ const zhCN: AppResource = {
     owningDepartment: '所属部门',
     department: '部门',
     position: '职位',
+    // A department's list of positions, as its history names the change.
+    positions: '职位',
     employmentStatus: '在职状态',
     linkedUser: '关联登录用户',
     officeLocation: '办公位置',
@@ -921,6 +923,8 @@ const zhCN: AppResource = {
     useCustom: '自定义配置',
     positionKit: '{{position}} 的配置',
     addPosition: '添加职位',
+    removePositionTitle: '删除职位「{{position}}」？',
+    removePositionWithKit: '这个职位自己的入职配置会一起删除。',
     removePosition: '删除职位',
     positionInUse_one: '有 {{count}} 人担任这个职位，不能删除',
     positionInUse_other: '有 {{count}} 人担任这个职位，不能删除',
