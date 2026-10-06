@@ -115,8 +115,15 @@ const LIST_COUNTS: Readonly<
       key: string;
       collection: string;
       field: string;
-      /** Extra conditions, e.g. only active people; `null` means IS NULL. */
-      where?: readonly { field: string; value: string | null }[];
+      /**
+       * Extra conditions, e.g. only people still here; `null` means IS NULL,
+       * and `not` turns an equality into its opposite.
+       */
+      where?: readonly {
+        field: string;
+        value: string | null;
+        not?: boolean;
+      }[];
     }[]
   >
 > = {
@@ -133,7 +140,9 @@ const LIST_COUNTS: Readonly<
       key: 'people',
       collection: 'people',
       field: 'departmentId',
-      where: [{ field: 'employmentStatus', value: 'active' }],
+      // Everybody not gone, 待入职 included (2026-10-06): a joiner is in the
+      // department from the day they are entered.
+      where: [{ field: 'employmentStatus', value: 'left', not: true }],
     },
   ],
   manufacturers: [
@@ -1643,8 +1652,12 @@ export function createMasterDataService(
         for (const condition of related.where ?? [])
           query =
             condition.value === null
-              ? query.where(condition.field, 'is', null)
-              : query.where(condition.field, '=', condition.value);
+              ? query.where(condition.field, condition.not ? 'is not' : 'is', null)
+              : query.where(
+                  condition.field,
+                  condition.not ? '!=' : '=',
+                  condition.value,
+                );
         const rows = await query.execute<Record<string, unknown>>();
         result[related.key] = Object.fromEntries(
           rows
@@ -1757,10 +1770,11 @@ export function createMasterDataService(
           break;
         case 'departments':
           counts.children = await count('departments', 'parentId');
+          // Everybody not gone, 待入职 included, as the list counts them.
           counts.people = await count('people', 'departmentId', {
             field: 'employmentStatus',
-            op: '=',
-            value: 'active',
+            op: 'not in',
+            value: ['left'],
           });
           await devicesBy('departmentId');
           break;
