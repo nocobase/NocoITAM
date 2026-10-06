@@ -330,6 +330,35 @@ describe('CSV import / export and demo data', () => {
     });
   });
 
+  it('fills an empty default kit rather than adding a second one', async () => {
+    // 设置本部门默认配置 on a department with nothing above it to copy.
+    const empty = await data<{ id: string }>(
+      await post('master/onboardingKits', {
+        name: 'Technology default kit',
+        departmentId: 'dept-tech',
+        items: [],
+      }),
+    );
+    expect((await post('demo/generate')).status).toBe(200);
+    const kits = async () =>
+      (
+        (await (await get('master/onboardingKits?pageSize=200')).json()) as {
+          data: {
+            id: string;
+            departmentId: string;
+            position: string | null;
+            items: unknown[];
+          }[];
+        }
+      ).data.filter((kit) => kit.departmentId === 'dept-tech' && !kit.position);
+    const imported = await kits();
+    expect(imported.map((kit) => kit.id)).toEqual([empty.id]);
+    expect(imported[0]?.items.length).toBeGreaterThan(0);
+    // It is the user's kit, not the demo's: clearing leaves it.
+    expect((await post('demo/clear')).status).toBe(200);
+    expect((await kits()).map((kit) => kit.id)).toEqual([empty.id]);
+  });
+
   it('generates the demo chain with its problem records and clears it without a trace', async () => {
     const generated = await post('demo/generate');
     expect(generated.status).toBe(200);

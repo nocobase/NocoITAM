@@ -7,7 +7,7 @@ import {
 import type { DeviceService, OperationContext } from './devices.js';
 import type { AuditService, CountInput } from './audits.js';
 import { unrestricted } from './authz-filter.js';
-import { asText, type Row } from './collection-query.js';
+import { asText, decodeRow, type Row } from './collection-query.js';
 import type { DisposalService } from './disposals.js';
 import { BusinessRuleError } from './errors.js';
 import type { EntitlementService } from './entitlements.js';
@@ -3104,14 +3104,24 @@ export function createDemoService(dependencies: {
         .select(['id', 'name', 'parentId', 'path'])
         .orderBy('path', 'asc')
         .execute<Row>();
+      // A default with nothing in it counts as none — 设置本部门默认配置 on
+      // a department with nothing above it to copy starts one empty — and is
+      // filled rather than doubled. That kit is the user's, not the demo's,
+      // so it is not tracked and stays when the demo is cleared.
+      const filled = (items: unknown) =>
+        Array.isArray(items) && items.length > 0;
       const defaults = new Map<string, unknown>();
+      const emptyDefaults = new Map<string, string>();
       for (const kit of await database
         .query()
         .selectFrom('onboardingKits')
-        .select(['departmentId', 'position', 'items'])
+        .select(['id', 'departmentId', 'position', 'items'])
         .execute<Row>())
-        if (!asText(kit.position))
-          defaults.set(String(kit.departmentId), kit.items);
+        if (!asText(kit.position)) {
+          const items = decodeRow(kit).items;
+          if (filled(items)) defaults.set(String(kit.departmentId), items);
+          else emptyDefaults.set(String(kit.departmentId), String(kit.id));
+        }
       for (const department of departments) {
         const id = String(department.id);
         if (defaults.has(id)) continue;
@@ -3127,11 +3137,21 @@ export function createDemoService(dependencies: {
         )
           items = defaults.get(parent);
         items ??= kitItems.office;
-        await md('onboardingKits', {
-          name: texts.defaultKit.replace('{name}', String(department.name)),
-          departmentId: id,
-          items,
-        });
+        const empty = emptyDefaults.get(id);
+        if (empty)
+          await masterData.update(
+            'onboardingKits',
+            empty,
+            { items },
+            writerId,
+            all('onboardingKits', 'update'),
+          );
+        else
+          await md('onboardingKits', {
+            name: texts.defaultKit.replace('{name}', String(department.name)),
+            departmentId: id,
+            items,
+          });
         defaults.set(id, items);
       }
 
