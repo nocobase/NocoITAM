@@ -74,6 +74,12 @@ export const OWNED_BY_USER: readonly {
     readonly column: string;
     readonly values: readonly string[];
   };
+  /**
+   * Open only while a date is recent or ahead: a joiner is somebody's to
+   * get equipped around their joining day, and a 入职负责人 set years ago
+   * is history, not a handover.
+   */
+  readonly since?: { readonly column: string; readonly days: number };
 }[] = [
   {
     collection: 'devices',
@@ -129,6 +135,15 @@ export const OWNED_BY_USER: readonly {
     },
   },
   { collection: 'locations', field: 'ownerId', label: 'name' },
+  {
+    // 入职负责人 (2026-10-06): an active joiner whose joining day is ahead
+    // or within the last month.
+    collection: 'people',
+    field: 'onboardingOwnerId',
+    label: 'name',
+    open: { column: 'employmentStatus', values: ['active'] },
+    since: { column: 'hireDate', days: 30 },
+  },
 ];
 
 export type RecoveryHandling =

@@ -226,8 +226,48 @@ describe('onboarding', () => {
       done: 0,
       total: (await plan(joiner.id)).required,
     });
-    // Nobody owns a joiner's preparation: under 我负责的 it is empty.
+    // 我负责的 is the joiners whose 入职负责人 the reader is — whoever
+    // entered them, to start with.
+    expect((await card('mine'))?.records.map((record) => record.id)).toEqual([
+      joiner.id,
+    ]);
+    const stored = await data<{ onboardingOwnerId: string }>(
+      await app.request(`/api/itam/master/people/${joiner.id}`, manager),
+    );
+    expect(stored.onboardingOwnerId).toBe('mia');
+    // Handed to a colleague, it leaves the reader's view.
+    await app.request(`/api/itam/master/people/${joiner.id}`, {
+      ...json({ onboardingOwnerId: 'ann' }),
+      method: 'PATCH',
+      ...manager,
+    });
     expect((await card('mine'))?.count).toBe(0);
+  });
+
+  it('lists a joiner among what a leaving 入职负责人 answers for, while they are joining', async () => {
+    const recent = await person('Sun Hao', 'dept-rd', 'Frontend Engineer');
+    const long = await person('Old Hand', 'dept-rd', 'Engineer', '2020-01-01');
+    const masterData = app.container.resolve(
+      (await import('../../server/providers/itam/master-data.js'))
+        .masterDataServiceToken,
+    );
+    const { unrestricted } =
+      await import('../../server/providers/itam/authz-filter.js');
+    // mia entered both, so is 入职负责人 of both. mia's own person record
+    // links the sign-in, the way a leaving IT person's does.
+    const staff = await create('master/people', {
+      name: 'Mia',
+      departmentId: 'dept-it',
+      userId: 'mia',
+    });
+    const rows = await masterData.personOwnedRecords(
+      staff.id,
+      new Map([['people', unrestricted('people', 'read')]]),
+    );
+    const ids = rows.map((row) => row.id);
+    // The one joining now; not the one who joined years ago.
+    expect(ids).toContain(recent.id);
+    expect(ids).not.toContain(long.id);
   });
 
   it('keeps one kit per department and position, each item one thing', async () => {

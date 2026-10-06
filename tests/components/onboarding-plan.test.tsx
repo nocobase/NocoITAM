@@ -43,6 +43,23 @@ vi.mock('../../client/lib/itam/api.js', async (original) => ({
     },
   }),
 }));
+// The picker fetches its own options; choosing one is what matters here.
+vi.mock('../../client/components/itam/reference-select.js', () => ({
+  ReferenceSelect: ({
+    onChange,
+  }: {
+    onChange: (value: string, record: Record<string, unknown>) => void;
+  }) => (
+    <button
+      type='button'
+      onClick={() =>
+        onChange('d2', { id: 'd2', deviceNo: 'DE-000002', name: 'Mac 2' })
+      }
+    >
+      pick another
+    </button>
+  ),
+}));
 vi.mock('../../client/lib/itam/record-drawer.js', async (original) => ({
   ...(await original<object>()),
   useOpenRecord: () => () => undefined,
@@ -199,4 +216,22 @@ it('carries on past a refused item, and gives a subscription seat its account', 
   });
   // The refusal is named.
   expect(screen.getByText(/MX Keys — Not enough in stock/)).toBeTruthy();
+});
+
+it('reserves the device the person chose instead of the proposed one', async () => {
+  state.plan = plan('2099-01-10');
+  show();
+  fireEvent.click(screen.getByRole('button', { name: 'onboarding.change' }));
+  fireEvent.click(screen.getByRole('button', { name: 'pick another' }));
+  fireEvent.click(screen.getByRole('button', { name: 'onboarding.reserve' }));
+  await settle();
+  expect(state.requests).toEqual([
+    expect.objectContaining({ path: 'itam/devices/d2/reserve' }),
+  ]);
+  // And 全部执行 takes the chosen one too.
+  state.requests = [];
+  fireEvent.click(screen.getByRole('button', { name: 'onboarding.runAll' }));
+  await settle();
+  await settle();
+  expect(state.requests[0]?.path).toBe('itam/devices/d2/reserve');
 });

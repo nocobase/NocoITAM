@@ -165,6 +165,7 @@ const schemas: Readonly<
     userId: optionalId,
     employmentStatus: z.enum(['active', 'left']).optional(),
     hireDate: optionalDate,
+    onboardingOwnerId: optionalId,
     leaveDate: optionalDate,
     notes: optionalLong,
   }),

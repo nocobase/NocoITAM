@@ -11,7 +11,7 @@ import { useAnnounce } from '@/lib/itam/announce';
 import { apiErrorBody, useApi } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
-import { errorMessage, formatDate, todayIso } from '@/lib/itam/format';
+import { errorMessage, formatDate, text, todayIso } from '@/lib/itam/format';
 import {
   useOnboardingPlan,
   type OnboardingPlanLine,
@@ -20,6 +20,7 @@ import {
 import { STOCK_PATH } from '@/lib/itam/stock';
 
 import { RecordLink } from './record-link.js';
+import { ReferenceSelect } from './reference-select.js';
 
 /**
  * 入职配备 on a joiner's 归属 tab (2026-10-05): their kit, what they already
@@ -44,6 +45,10 @@ export function OnboardingPlanCard({
   const plan = useOnboardingPlan(personId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  // 更换: a device the person chose instead of the one proposed, by the
+  // proposal's id. Every action takes the chosen one.
+  const [chosen, setChosen] = useState<Readonly<Record<string, PlanThing>>>({});
+  const effective = (thing: PlanThing): PlanThing => chosen[thing.id] ?? thing;
   const data = plan.data;
   // The plan goes along as page context, so Noco presents and carries out
   // this very plan (the onboarding skill) — and drafts the purchase order
@@ -149,6 +154,7 @@ export function OnboardingPlanCard({
   const runnable = (thing: PlanThing) => !thing.needsAccount || thing.account;
   const proposals = data.lines
     .flatMap((line) => line.proposals)
+    .map(effective)
     .filter(runnable);
   const shortfall = data.lines.reduce((sum, line) => sum + line.shortfall, 0);
   const ratio = data.required > 0 ? data.prepared / data.required : 0;
@@ -256,6 +262,13 @@ export function OnboardingPlanCard({
                   line={line}
                   busy={busy}
                   started={started}
+                  effective={effective}
+                  onChoose={(original, replacement) =>
+                    setChosen((current) => ({
+                      ...current,
+                      [original.id]: replacement,
+                    }))
+                  }
                   onRun={(thing) => void run([thing], () => titleFor(thing))}
                 />
               ))}
@@ -276,14 +289,21 @@ function PlanLine({
   line,
   busy,
   started,
+  effective,
+  onChoose,
   onRun,
 }: {
   readonly line: OnboardingPlanLine;
   readonly busy: boolean;
   readonly started: boolean;
+  /** The proposal as it stands: the one chosen instead, if any. */
+  readonly effective: (thing: PlanThing) => PlanThing;
+  readonly onChoose: (original: PlanThing, replacement: PlanThing) => void;
   readonly onRun: (thing: PlanThing) => void;
 }): ReactElement {
   const { t } = useTranslation();
+  // The proposal whose device is being chosen again, if any.
+  const [changing, setChanging] = useState<string>();
   const Icon = line.kind === 'entitlement' ? AppWindow : Package;
   return (
     <li className='flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2 text-sm'>
@@ -311,31 +331,80 @@ function PlanLine({
               : thing.label}
           </Badge>
         ))}
-        {line.proposals.map((thing) => (
-          <Button
-            key={`o:${thing.type}:${thing.id}`}
-            size='sm'
-            variant='outline'
-            disabled={busy || (thing.needsAccount && !thing.account)}
-            title={
-              thing.needsAccount && !thing.account
-                ? t('onboarding.needsAccount')
-                : undefined
-            }
-            onClick={() => onRun(thing)}
-          >
-            {thing.type === 'device'
-              ? t(started ? 'onboarding.assign' : 'onboarding.reserve', {
-                  label: thing.label,
-                })
-              : thing.type === 'stock'
-                ? t('onboarding.issue', {
-                    label: thing.label,
-                    count: thing.quantity ?? 1,
-                  })
-                : t('onboarding.seat', { label: thing.label })}
-          </Button>
-        ))}
+        {line.proposals.map((original) => {
+          const thing = effective(original);
+          if (changing === original.id)
+            return (
+              // 更换: any device of this model (or category) that is in
+              // stock and held for nobody.
+              <span key={`c:${original.id}`} className='w-56'>
+                <ReferenceSelect
+                  reference={{
+                    collection: 'devices',
+                    filter: {
+                      view: 'available',
+                      ...(line.target.type === 'model'
+                        ? { modelId: line.target.id }
+                        : { categoryId: line.target.id }),
+                    },
+                  }}
+                  value={thing.id}
+                  defaultOpen
+                  onOpenChange={(open) => {
+                    if (!open) setChanging(undefined);
+                  }}
+                  onChange={(id, record) => {
+                    if (id && record)
+                      onChoose(original, {
+                        type: 'device',
+                        id,
+                        label: `${text(record.deviceNo)} / ${text(record.name)}`,
+                      });
+                    setChanging(undefined);
+                  }}
+                />
+              </span>
+            );
+          return (
+            <span
+              key={`o:${original.type}:${original.id}`}
+              className='inline-flex items-center gap-1'
+            >
+              <Button
+                size='sm'
+                variant='outline'
+                disabled={busy || (thing.needsAccount && !thing.account)}
+                title={
+                  thing.needsAccount && !thing.account
+                    ? t('onboarding.needsAccount')
+                    : undefined
+                }
+                onClick={() => onRun(thing)}
+              >
+                {thing.type === 'device'
+                  ? t(started ? 'onboarding.assign' : 'onboarding.reserve', {
+                      label: thing.label,
+                    })
+                  : thing.type === 'stock'
+                    ? t('onboarding.issue', {
+                        label: thing.label,
+                        count: thing.quantity ?? 1,
+                      })
+                    : t('onboarding.seat', { label: thing.label })}
+              </Button>
+              {thing.type === 'device' ? (
+                <Button
+                  size='sm'
+                  variant='ghost'
+                  disabled={busy}
+                  onClick={() => setChanging(original.id)}
+                >
+                  {t('onboarding.change')}
+                </Button>
+              ) : null}
+            </span>
+          );
+        })}
         {line.onOrder > 0 ? (
           <span className='text-xs text-muted-foreground'>
             {t('onboarding.onOrder', { count: line.onOrder })}

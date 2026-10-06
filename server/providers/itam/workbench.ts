@@ -322,6 +322,12 @@ export function createWorkbenchService(dependencies: {
         // Only what is still waiting.
         if (entry.open)
           query = query.where(entry.open.column, 'in', [...entry.open.values]);
+        if (entry.since)
+          query = query.where(
+            entry.since.column,
+            '>=',
+            addDays(todayIso(), -entry.since.days),
+          );
         const rows = await query
           .where(entry.field, 'in', [...accounts.keys()])
           .execute<Row>();
@@ -739,35 +745,37 @@ export function createWorkbenchService(dependencies: {
       // so a first day without a laptop does not drop off — whose kit is not
       // yet in hand (2026-10-05). Ready means every item of their kit is
       // held or reserved for them; with no kit for their department, any
-      // device held or reserved. Nobody owns a joiner's preparation, so
-      // under 我负责的 the column is empty: it is everybody's, like the
-      // reservations it asks for, and granted by `reserve`.
+      // device held or reserved. Granted by `reserve`; under 我负责的 it is
+      // the joiners whose 入职负责人 the reader is.
       if (
         onboarding &&
         peopleConditions &&
         (await decide('devices', 'reserve'))
       ) {
         const now = todayIso();
-        const joiners =
-          reader === null
-            ? await take(
-                'people',
-                peopleConditions,
-                ['id', 'name', 'position', 'hireDate'],
-                (query) =>
-                  query
-                    // `!=` alone would also drop an empty status.
-                    .where((eb) =>
-                      eb.or([
-                        eb('employmentStatus', 'is', null),
-                        eb('employmentStatus', '!=', 'left'),
-                      ]),
-                    )
-                    .where('hireDate', '>=', addDays(now, -7))
-                    .where('hireDate', '<=', addDays(now, 14))
-                    .orderBy('hireDate', 'asc'),
+        // Under 我负责的, the joiners whose 入职负责人 is the reader
+        // (2026-10-06); everybody's otherwise.
+        const joiners = await take(
+          'people',
+          peopleConditions,
+          ['id', 'name', 'position', 'hireDate'],
+          (query) => {
+            const window = query
+              // `!=` alone would also drop an empty status.
+              .where((eb) =>
+                eb.or([
+                  eb('employmentStatus', 'is', null),
+                  eb('employmentStatus', '!=', 'left'),
+                ]),
               )
-            : [];
+              .where('hireDate', '>=', addDays(now, -7))
+              .where('hireDate', '<=', addDays(now, 14))
+              .orderBy('hireDate', 'asc');
+            return reader === null
+              ? window
+              : window.where('onboardingOwnerId', '=', reader);
+          },
+        );
         const waiting: MyWorkRecord[] = [];
         for (const row of joiners) {
           const plan = await onboarding.plan(String(row.id));

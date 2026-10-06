@@ -33,7 +33,7 @@ import {
   type DeleteImpact,
   type DeleteReference,
 } from './errors.js';
-import { addMonths, today } from './dates.js';
+import { addDays, addMonths, today } from './dates.js';
 import type { LeaverAccounts } from './leaver-accounts.js';
 import {
   OWNED_BY_USER,
@@ -696,7 +696,14 @@ export function createMasterDataService(
       const values: Record<string, unknown> = {
         ...input,
         ...(collection === 'people'
-          ? { employmentStatus: employmentFor(input.leaveDate, today()) }
+          ? {
+              employmentStatus: employmentFor(input.leaveDate, today()),
+              // 入职负责人 starts at whoever enters the person, as every
+              // other 负责人 starts at whoever files the record.
+              ...(input.onboardingOwnerId === undefined
+                ? { onboardingOwnerId: actorId }
+                : {}),
+            }
           : {}),
         id,
         createdAt: now,
@@ -1110,6 +1117,14 @@ export function createMasterDataService(
           query = query.where(entry.open.column, 'in', [
             ...entry.open.values,
           ]);
+        // A record that is waiting only for a while (a joiner's 入职负责人,
+        // while the joining day is near).
+        if (entry.since)
+          query = query.where(
+            entry.since.column,
+            '>=',
+            addDays(today(), -entry.since.days),
+          );
         const rows = await query
           .where(entry.field, '=', userId)
           .execute<Row>();

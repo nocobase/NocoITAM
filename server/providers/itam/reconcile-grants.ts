@@ -147,6 +147,8 @@ const ADDED_FIELDS: ReadonlyMap<string, readonly string[]> = new Map([
   ['main.repairs', ['ownerId']],
   // And a stocktake since 2026-10-05 (`202610050002_audit_owner`).
   ['main.auditTasks', ['ownerId']],
+  // And a joiner their 入职负责人 since 2026-10-06.
+  ['main.people', ['onboardingOwnerId']],
 ]);
 
 /**
