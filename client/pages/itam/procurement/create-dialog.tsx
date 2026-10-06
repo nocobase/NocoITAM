@@ -32,7 +32,10 @@ import {
 } from '@/lib/itam/procurement';
 import {
   applyCaptureValues,
+  blankLine,
+  captureLine,
   captureLines,
+  keyedUnmatched,
   type PurchaseCapture,
 } from '@/lib/itam/purchase-capture';
 import {
@@ -142,11 +145,11 @@ export function PurchaseOrderCreateDialog({
       setReview(new Set(next.uncertain));
       // A line the first reading could not place is still unplaced after
       // an adjustment, which hands back only what is on the form.
-      setResult((previous) =>
-        previous
-          ? {
-              ...next,
-              unmatched: [
+      setResult((previous) => ({
+        ...next,
+        unmatched: keyedUnmatched(
+          previous
+            ? [
                 ...previous.unmatched,
                 ...next.unmatched.filter(
                   (line) =>
@@ -154,10 +157,10 @@ export function PurchaseOrderCreateDialog({
                       (known) => known.description === line.description,
                     ),
                 ),
-              ],
-            }
-          : next,
-      );
+              ]
+            : next.unmatched,
+        ),
+      }));
       setTab('form');
     },
   });
@@ -501,6 +504,29 @@ export function PurchaseOrderCreateDialog({
                     }
                     currency={text(values.currency) || currency}
                     priced={priced}
+                    onPlace={async (line, pick) => {
+                      const placed = await capture.place(line, pick);
+                      if (!placed)
+                        throw new Error(
+                          t('procurement.capture.stillUnmatched'),
+                        );
+                      // It joins the lines, taking the place of the blank
+                      // row an order with nothing placed yet opens on.
+                      setLines((rows) => [
+                        ...rows.filter((row) => !blankLine(row)),
+                        captureLine(placed),
+                      ]);
+                      setResult((previous) =>
+                        previous
+                          ? {
+                              ...previous,
+                              unmatched: previous.unmatched.filter(
+                                (row) => row.key !== line.key,
+                              ),
+                            }
+                          : previous,
+                      );
+                    }}
                   />
                 </aside>
               ) : null}

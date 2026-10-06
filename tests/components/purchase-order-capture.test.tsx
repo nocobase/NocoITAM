@@ -107,9 +107,42 @@ vi.mock('../../client/extensions/nocobase-ai/index.js', () => ({
   },
 }));
 vi.mock('../../client/components/itam/reference-select.js', () => ({
-  ReferenceSelect: ({ id, value }: { id?: string; value: string | null }) => (
-    <span data-testid={id}>{value ?? 'reference'}</span>
+  // A picker that picks: the unmatched rows' pickers are found by their
+  // placeholder, and choosing hands back a model of the books.
+  ReferenceSelect: ({
+    id,
+    value,
+    placeholder,
+    initialSearch,
+    onChange,
+    onCreate,
+  }: {
+    id?: string;
+    value: string | null;
+    placeholder?: string;
+    initialSearch?: string;
+    onChange: (value: string | null) => void;
+    onCreate?: (search: string) => void;
+  }) => (
+    <span data-testid={id}>
+      <button
+        type='button'
+        data-search={initialSearch}
+        onClick={() => onChange('m2')}
+      >
+        {value ?? placeholder ?? 'reference'}
+      </button>
+      {onCreate ? <span>create offered</span> : null}
+    </span>
   ),
+}));
+// Creating a model is the master data's own form, tested on its page.
+vi.mock('../../client/components/itam/quick-create-dialog.js', () => ({
+  QuickCreateDialog: () => null,
+}));
+vi.mock('../../client/lib/itam/permissions.js', () => ({
+  useCollectionPermissions: () => ({ create: true }),
+  useCurrentUserId: () => 'mia',
 }));
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
@@ -213,6 +246,28 @@ it('opens on AI 整理 and fills the form from what the assistant read', async (
   expect(
     screen.getByText('procurement.capture.departmentNotFound:Moon Base'),
   ).toBeVisible();
+
+  // The row the books did not hold is placed from its own picker, which
+  // starts at the document's wording and offers to create the model.
+  expect(screen.getByText(/procurement\.linesTotal:1\b/)).toBeVisible();
+  const picker = screen
+    .getAllByRole('button', { name: 'procurement.selectModel' })
+    .find((button) => button.dataset.search === 'Testbook Pro 14 (T4)');
+  expect(picker).toBeDefined();
+  await act(async () => {
+    fireEvent.click(picker!);
+    await Promise.resolve();
+  });
+  const placed = state.requests.filter((request) =>
+    request.path.endsWith('capture/match'),
+  );
+  expect(placed.at(-1)?.json).toMatchObject({
+    lines: [
+      { modelId: 'm2', description: 'Testbook Pro 14 (T4)', quantity: 10 },
+    ],
+  });
+  expect(screen.getByText(/procurement\.linesTotal:2\b/)).toBeVisible();
+  expect(screen.queryByText('procurement.capture.unmatched:1')).toBeNull();
 
   // 调整 asks again with the request, the material still attached.
   fireEvent.change(

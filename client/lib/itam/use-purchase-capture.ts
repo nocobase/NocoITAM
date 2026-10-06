@@ -72,6 +72,16 @@ export interface PurchaseOrderCaptureState {
   readonly adjust: (instruction: string) => void;
   /** Lets go of the conversation, as the dialog closes. */
   readonly release: () => void;
+  /**
+   * A line AI 整理 could not place, now placed by the reader — an existing
+   * record picked, or one just created — checked by the same match so its
+   * kind follows the record's category. Undefined when it still matches
+   * nothing.
+   */
+  readonly place: (
+    line: PurchaseCapture['unmatched'][number],
+    pick: { readonly modelId: string } | { readonly softwareProductId: string },
+  ) => Promise<PurchaseCapture['lines'][number] | undefined>;
 }
 
 export interface PurchaseOrderCapture extends PurchaseOrderCaptureState {
@@ -330,6 +340,24 @@ export function usePurchaseOrderCapture({
   };
 
   return {
+    place: async (line, pick) => {
+      const { data } = await api.request<{ data: PurchaseCapture }>({
+        path: `${PURCHASE_ORDERS_PATH}/capture/match`,
+        method: 'POST',
+        json: {
+          lines: [
+            {
+              ...pick,
+              description: line.description,
+              quantity: line.quantity,
+              unitPrice: line.unitPrice,
+              itemType: line.itemType,
+            },
+          ],
+        },
+      });
+      return data.lines[0];
+    },
     available: Boolean(ai?.available),
     busy: session?.phase === 'uploading' || session?.phase === 'reading',
     mode: session?.mode,

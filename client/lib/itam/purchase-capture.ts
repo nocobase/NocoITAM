@@ -23,6 +23,10 @@ export interface PurchaseCapture {
     readonly quantity: number;
     readonly unitPrice: number | null;
     readonly source: string | null;
+    /** `perpetual` / `subscription` for software, as the assistant read it. */
+    readonly itemType: LineItemType | null;
+    /** The dialog's own handle on the row, so placing one keeps the rest. */
+    readonly key?: string;
   }[];
   readonly vendorName: string | null;
   readonly departmentName: string | null;
@@ -110,11 +114,11 @@ export function applyCaptureValues(
   return { ...next, ...capture.values };
 }
 
-/** The captured lines as the dialog edits them. */
-export function captureLines(
-  capture: PurchaseCapture,
-): (PurchaseLineDraft & { readonly uncertain: boolean })[] {
-  return capture.lines.map((line) => ({
+/** A captured line as the dialog edits it. */
+export function captureLine(
+  line: PurchaseCapture['lines'][number],
+): PurchaseLineDraft & { readonly uncertain: boolean } {
+  return {
     key: crypto.randomUUID(),
     itemType: (LINE_ITEM_TYPES as readonly string[]).includes(line.itemType)
       ? line.itemType
@@ -125,5 +129,26 @@ export function captureLines(
     unitPrice: line.unitPrice === null ? '' : String(line.unitPrice),
     receivedQuantity: 0,
     uncertain: line.uncertain,
-  }));
+  };
+}
+
+/** The captured lines as the dialog edits them. */
+export function captureLines(
+  capture: PurchaseCapture,
+): (PurchaseLineDraft & { readonly uncertain: boolean })[] {
+  return capture.lines.map(captureLine);
+}
+
+/** A row nobody has filled in: the blank line the form opens on. */
+export function blankLine(line: PurchaseLineDraft): boolean {
+  return !line.modelId && !line.softwareProductId && line.unitPrice === '';
+}
+
+/** Each unmatched row with a handle of its own, kept once it has one. */
+export function keyedUnmatched(
+  unmatched: PurchaseCapture['unmatched'],
+): PurchaseCapture['unmatched'] {
+  return unmatched.map((line) =>
+    line.key ? line : { ...line, key: crypto.randomUUID() },
+  );
 }

@@ -1062,6 +1062,21 @@ Rules learned while building it:
   saved order takes it as an attachment. The file plugin stamps `createdAt`
   in UTC without the `Z`, so that window is compared in that form, not
   through `dbDateTime()`.
+- A line AI 整理 could not place is placed by the reader, never by the
+  assistant (2026-10-06): each row in the column beside the form carries a
+  picker that starts at the document's own wording — a different spelling of
+  a model on the books is the common case — and, for whoever may create
+  one, 创建型号 / 创建软件产品 at the foot of that list
+  (`ReferenceSelect`'s `onCreate`). Creating opens `QuickCreateDialog`
+  (`client/components/itam/quick-create-dialog.tsx`), the collection's own
+  form over the dialog, starting at the line's name and part code. Either
+  way the pick goes through `/capture/match` again (`place` in
+  `use-purchase-capture.ts`), so its line type follows the record's
+  category, and the line joins the lines in place of the blank row. The
+  assistant creates no master data: three spellings of one model would
+  split every report. A line row's own model and product pickers offer the
+  same 创建… entry, narrowing a new model's category to the line's kind,
+  since `setLines` refuses a model of another kind.
 - An approved purchase order states what it asks for: its request fields
   (事由, 说明, 部门, 需求日期, 供应商, 币种) go read-only once it reaches
   `approved` (`SETTLED_STATUSES` / `SETTLED_EDITABLE` in `procurement.ts`,

@@ -1,6 +1,6 @@
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { useTranslation } from '@nocobase/i18n/client';
-import { ChevronsUpDown, X } from 'lucide-react';
+import { ChevronsUpDown, Plus, X } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@/components/ui/command';
 import {
   Popover,
@@ -44,6 +45,16 @@ export interface ReferenceSelectProps {
   /** Open the list immediately, e.g. when editing a field in place. */
   readonly defaultOpen?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
+  /** What the search box starts with (an unmatched line's own wording). */
+  readonly initialSearch?: string;
+  /**
+   * Offers 新建… at the foot of the list, for a record that is not on the
+   * books yet; it is handed what was typed, to start the new record's name
+   * with. Leave it out where the reader may not create one.
+   */
+  readonly onCreate?: (search: string) => void;
+  /** The 新建… entry's label, e.g. 新建型号. */
+  readonly createLabel?: string;
 }
 
 /** A searchable single-select that queries the server as the user types. */
@@ -58,6 +69,9 @@ export function ReferenceSelect({
   className,
   defaultOpen = false,
   onOpenChange,
+  initialSearch = '',
+  onCreate,
+  createLabel,
 }: ReferenceSelectProps): ReactElement {
   const { t } = useTranslation();
   const [open, setOpen] = useState(defaultOpen);
@@ -65,7 +79,7 @@ export function ReferenceSelect({
     setOpen(next);
     onOpenChange?.(next);
   };
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const path = referencePath(reference.collection);
   // Trees (categories, locations, departments) are shown whole and indented
   // by depth; flat collections page through search results.
@@ -251,6 +265,26 @@ export function ReferenceSelect({
                 </CommandItem>
               ))}
             </CommandGroup>
+            {onCreate ? (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    value='__create__'
+                    onSelect={() => {
+                      changeOpen(false);
+                      onCreate(search.trim());
+                    }}
+                  >
+                    <Plus />
+                    <span className='min-w-0 flex-1 truncate'>
+                      {createLabel ?? t('actions.create')}
+                      {search.trim() ? ` “${search.trim()}”` : ''}
+                    </span>
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            ) : null}
             {reference.filterHint ? (
               <p className='border-t border-border px-3 py-2 text-xs text-muted-foreground'>
                 {t(reference.filterHint)}
