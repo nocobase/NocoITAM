@@ -430,11 +430,27 @@ export function PurchaseOrderLinesCard({
           ) : null}
           {canEdit ? (
             <div className='flex flex-wrap items-center justify-end gap-2'>
+              {/* Offered whether or not the lines are being edited: it opens
+                  the editor itself, since the lines it reads are added there
+                  for the reader to save (2026-10-06). */}
+              {aiAvailable ? (
+                <ParseDocumentShortcut
+                  orderId={id}
+                  ask={ask}
+                  onStart={() => {
+                    if (draftsRef.current) return;
+                    save.reset();
+                    const opened =
+                      rows.length > 0 ? rows.map(draftOf) : [blankLine()];
+                    // Set at once rather than after the render, so the page
+                    // tool finds the editor open however soon it is called.
+                    draftsRef.current = opened;
+                    setDrafts(opened);
+                  }}
+                />
+              ) : null}
               {drafts ? (
                 <>
-                  {aiAvailable ? (
-                    <ParseDocumentShortcut orderId={id} ask={ask} />
-                  ) : null}
                   <Button
                     size='sm'
                     variant='ghost'
@@ -1023,12 +1039,15 @@ export function LineEditor({
 function ParseDocumentShortcut({
   orderId,
   ask,
+  onStart,
 }: {
   readonly orderId: string;
   readonly ask: (
     prompt: string,
     options?: { readonly attachments?: readonly AIChatAttachment[] },
   ) => void;
+  /** A file was chosen: open the lines for editing if they are not. */
+  readonly onStart: () => void;
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
@@ -1039,6 +1058,7 @@ function ParseDocumentShortcut({
   const [parsing, setParsing] = useState<string>();
   const [failure, setFailure] = useState<string>();
   const parse = async (file: File) => {
+    onStart();
     setParsing(file.name);
     setFailure(undefined);
     try {

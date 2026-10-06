@@ -7,6 +7,8 @@ const state = vi.hoisted(() => ({
   status: 'draft',
   saved: [] as { lines: unknown[]; reason?: string }[],
   rows: undefined as unknown[] | undefined,
+  aiAvailable: false,
+  asked: [] as string[],
   // The frontend tools the card hands the assistant.
   tools: [] as {
     name: string;
@@ -40,7 +42,24 @@ vi.mock('@nocobase/i18n/client', () => ({
   }),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({
-  useApi: () => ({ request: vi.fn() }),
+  apiErrorBody: () => undefined,
+  // 解析单据 asks for the document's text.
+  useApi: () => ({
+    request: () => Promise.resolve({ data: { text: 'ThinkPad T14 x 2' } }),
+  }),
+}));
+vi.mock('@nocobase/app-client', async (original) => ({
+  ...(await original<object>()),
+  // The file repository 解析单据 keeps the document with.
+  useService: () => ({
+    repository: () => ({
+      uploadOne: () => Promise.resolve({ record: { id: 'f1' } }),
+    }),
+  }),
+}));
+vi.mock('../../client/extensions/nocobase-ai/index.js', async (original) => ({
+  ...(await original<object>()),
+  useAI: () => ({}),
 }));
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCollectionPermissions: () => ({ update: true, receive: true }),
@@ -51,15 +70,15 @@ vi.mock('../../client/lib/itam/permissions.js', () => ({
 vi.mock('../../client/lib/itam/references.js', () => ({
   useReferenceNames: () => ({ models: new Map([['m1', 'MacBook Pro 14']]) }),
 }));
-// The assistant is not configured here: the card registers as page context
-// and hides its 解析单据 shortcut, as it does without a model.
+// The assistant is not configured unless a test says so: the card registers
+// as page context and hides its 解析单据 shortcut, as it does without a model.
 vi.mock('../../client/lib/itam/ai-context.js', () => ({
   useAiPageContext: (descriptor: { tools?: typeof state.tools }) => {
     state.tools = descriptor.tools ?? [];
     return {
       ref: () => undefined,
-      available: false,
-      ask: () => undefined,
+      available: state.aiAvailable,
+      ask: (prompt: string) => state.asked.push(prompt),
     };
   },
 }));
@@ -98,6 +117,8 @@ beforeEach(() => {
   state.status = 'draft';
   state.saved = [];
   state.rows = undefined;
+  state.aiAvailable = false;
+  state.asked = [];
 });
 
 it('reads as a document: every line, and what the order comes to', () => {
@@ -263,4 +284,36 @@ it('lets added lines take the place of the blank row an empty order opens on', a
     screen.getAllByRole('button', { name: 'actions.delete' }),
   ).toHaveLength(1);
   expect(screen.getByRole('button', { name: 'actions.save' })).toBeEnabled();
+});
+
+it('reads a document into the lines without pressing 编辑 first', async () => {
+  state.aiAvailable = true;
+  render(
+    <PurchaseOrderLinesCard
+      record={{ id: 'po1', status: state.status, ownerId: 'mia' }}
+    />,
+  );
+  // Offered beside 编辑, not only inside the editor.
+  expect(
+    screen.getByRole('button', { name: 'ai.parseDocument' }),
+  ).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'actions.save' })).toBeNull();
+  const input = document.querySelector<HTMLInputElement>('input[type=file]')!;
+  await act(async () => {
+    fireEvent.change(input, {
+      target: { files: [new File(['quote'], 'quote.txt')] },
+    });
+  });
+  // Choosing the file opened the editor, and the text went to the assistant.
+  expect(screen.getByRole('button', { name: 'actions.save' })).toBeVisible();
+  expect(state.asked[0]).toContain('ThinkPad T14 x 2');
+  const tool = state.tools.find((entry) => entry.name === 'addDraftLines');
+  await act(async () => {
+    await tool?.execute({
+      lines: [{ itemType: 'device', modelId: 'm1', quantity: 2 }],
+    });
+  });
+  expect(
+    screen.getAllByRole('button', { name: 'actions.delete' }),
+  ).toHaveLength(3);
 });

@@ -1,0 +1,21 @@
+送货单  No. DN-20261015-052
+供应商：北桥 IT 供应有限公司            送货日期：2026-10-15
+收货单位：示例科技有限公司 总部 3 楼      对应报价单：QT-20261008-017
+
+序号  品名                                   料号            数量
+1     ThinkPad T14 Gen 5 笔记本电脑          21ML000ECD      5
+2     Dell U2723QE 27 英寸 4K 显示器         210-BDPF        5
+3     Logitech MX Keys 无线键盘              920-009295      5
+4     Logitech MX Master 3S 无线鼠标         910-006559      5
+5     Dell WD25TB4 雷电扩展坞                                3（余 2 台下周补发）
+6     HP 58A 原装黑色硒鼓                    CF258A          10
+7     Crucial DDR5-5600 32GB 笔记本内存      CT32G56C46S5    4
+
+序列号：
+ThinkPad T14 Gen 5：PF5A7K21  PF5A7K22  PF5A7K23  PF5A7K24  PF5A7K25
+Dell U2723QE：CN0D7X1M3K  CN0D7X1M3L  CN0D7X1M3M  CN0D7X1M3N  CN0D7X1M3P
+Dell WD25TB4：8QX2K93  8QX2K94  8QX2K95
+
+说明：IntelliJ IDEA Ultimate 订阅激活码已另行邮件发送，不随货。
+保修：笔记本与显示器原厂保修 36 个月。
+收货人签字：______________   日期：________
