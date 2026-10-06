@@ -349,7 +349,7 @@ function LeaverCard({
   joining = false,
 }: {
   readonly record: CardRecord;
-  /** 待入职 rather than 离职交接: the date joins, and progress is 已配备. */
+  /** 入职准备 rather than 离职交接: the date joins, and progress is 已配备. */
   readonly joining?: boolean;
 }): ReactElement {
   const { t } = useTranslation();

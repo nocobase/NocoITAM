@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import ItamSchedulesProvider from '../../server/providers/itam-schedules.js';
 import { maintenanceServiceToken } from '../../server/providers/itam/maintenance.js';
+import { onboardingAdvisorToken } from '../../server/providers/itam/onboarding-advisor.js';
 import { settingsServiceToken } from '../../server/providers/itam/settings.js';
 
 interface Definition {
@@ -43,6 +44,10 @@ async function boot(runJob: (job: string) => Promise<Record<string, unknown>>) {
       { get: async () => ({ timeZone: 'Asia/Shanghai' }) },
     ],
     [maintenanceServiceToken, { runJob }],
+    [
+      onboardingAdvisorToken,
+      { nightly: async () => ({ considered: 3, started: 2 }) },
+    ],
   ]);
   const app = {
     container: {
@@ -61,7 +66,7 @@ describe('ITAM schedules', () => {
     else process.env.APP_DEFAULT_LOCALE = locale;
   });
 
-  it('defines the leaver, daily and monthly tasks in the configured zone and language', async () => {
+  it('defines the leaver, daily, onboarding and monthly tasks in the configured zone and language', async () => {
     process.env.APP_DEFAULT_LOCALE = 'zh-CN';
     const { defined, target } = await boot(async () => ({}));
     expect(
@@ -80,6 +85,12 @@ describe('ITAM schedules', () => {
         { job: 'daily' },
       ],
       [
+        'itam.onboarding-advice',
+        '30 2 * * *',
+        'Asia/Shanghai',
+        { job: 'onboardingAdvice' },
+      ],
+      [
         'itam.monthly-depreciation',
         '0 3 1 * *',
         'Asia/Shanghai',
@@ -90,6 +101,8 @@ describe('ITAM schedules', () => {
     expect(defined[1]!.title).toBe('资产每日维护');
     expect(target.validate({ job: 'daily' }).valid).toBe(true);
     expect(target.validate({ job: 'leavers' }).valid).toBe(true);
+    expect(target.validate({ job: 'onboardingAdvice' }).valid).toBe(true);
+    expect(defined[2]!.title).toBe('入职配备建议');
     expect(target.validate({ job: 'reminders' }).valid).toBe(false);
   });
 
@@ -114,6 +127,13 @@ describe('ITAM schedules', () => {
         reservationsReleased: 0,
         reminders: { lowStock: 2 },
       },
+    });
+    // Noco's pass reports how many joiners it looked at and how many runs
+    // it started; the runs themselves go on after it returns.
+    expect(await target.start({ job: 'onboardingAdvice' }, context)).toEqual({
+      state: 'completed',
+      outcome: 'succeeded',
+      result: { considered: 3, started: 2 },
     });
     expect(await target.start({ job: 'monthly' }, context)).toEqual({
       state: 'failed',

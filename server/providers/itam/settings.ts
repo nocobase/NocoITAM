@@ -30,6 +30,12 @@ export interface ItamSettings {
   readonly ai: {
     readonly businessNotes: string;
     /**
+     * Whether Noco chooses a joiner's equipment in the background
+     * (`onboarding-advisor.ts`, 2026-10-06). On by default: the switch is
+     * for a deployment that wants no model running unattended.
+     */
+    readonly onboardingAdvice: boolean;
+    /**
      * Whether the AI plugin's own built-in employees were switched off once,
      * so the application's assistant is the one people meet. Set by the
      * registrar (`ai/index.ts`), not shown on the settings page; an
@@ -72,6 +78,7 @@ export const DEFAULT_ITAM_SETTINGS: ItamSettings = {
   },
   ai: {
     businessNotes: '',
+    onboardingAdvice: true,
     builtInEmployeesDisabled: false,
   },
 };

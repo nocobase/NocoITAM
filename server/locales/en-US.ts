@@ -18,6 +18,9 @@ const enUS = {
     loanOverdueBody: 'Expected back on {{date}}',
     leaverRecovery: 'Recover from {{name}}',
     leaverRecoveryBody: '{{count}} of their holdings are yours to settle',
+    onboardingAdvice: 'Noco has chosen equipment for {{name}}',
+    onboardingAdviceBody:
+      '{{count}} suggestions are waiting for you to confirm or change',
   },
 };
 

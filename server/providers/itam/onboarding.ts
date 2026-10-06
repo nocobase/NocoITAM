@@ -14,7 +14,10 @@ import { today } from './dates.js';
  * The kit is the rule (`onboardingKits`, by department and position); this
  * is the arithmetic on it, deterministic so that "which laptop" is a
  * computed answer rather than a guess — the page lists it and Noco presents
- * it, and neither invents a device. It writes nothing: every proposal is
+ * it, and neither invents a device. Among the candidates the arithmetic
+ * finds, Noco may have chosen in the background with a reason
+ * (`onboarding-advisor.ts`, 2026-10-06): its pick leads while it is still
+ * free, and the rule's order decides the rest. It writes nothing: every proposal is
  * carried out by the operation that already exists for it (reserve, issue,
  * assign a seat), under the reader's own grants.
  *
@@ -54,9 +57,37 @@ export interface PlanThing {
    */
   readonly needsAccount?: boolean;
   readonly account?: string;
+  /** A proposal Noco chose in the background, with the reason it gave. */
+  readonly source?: 'noco';
+  readonly reason?: string;
+}
+
+/**
+ * Something in stock that could make up an item, with what the choice
+ * between them turns on: what Noco is shown when it picks in the
+ * background (`onboarding-advisor.ts`).
+ */
+export interface PlanCandidate {
+  readonly id: string;
+  readonly label: string;
+  readonly facts: Readonly<Record<string, string | number | boolean | null>>;
+}
+
+/** Noco's latest background run for this joiner, as the card shows it. */
+export interface PlanAdvice {
+  readonly runId: string;
+  readonly status: 'running' | 'ready' | 'failed';
+  readonly summary: string | null;
+  readonly failure: string | null;
+  readonly sessionId: string | null;
+  readonly actorId: string;
+  readonly createdAt: string;
+  readonly finishedAt: string | null;
 }
 
 export interface OnboardingPlanLine {
+  /** The item's identity across runs: `<target type>:<target id>`. */
+  readonly key: string;
   readonly target: {
     readonly type: KitTargetType;
     readonly id: string;
@@ -74,6 +105,10 @@ export interface OnboardingPlanLine {
   readonly prepared: readonly PlanThing[];
   readonly preparedCount: number;
   readonly proposals: readonly PlanThing[];
+  /** How many stock is asked for: required less what they have. */
+  readonly missing: number;
+  /** Only when asked for (`candidates: true`): what stock could give. */
+  readonly candidates?: readonly PlanCandidate[];
   /**
    * Already being bought for them: still to be received on an open
    * 新员工配备 order for their department and joining day.
@@ -103,6 +138,8 @@ export interface OnboardingPlan {
   readonly hasDevice: boolean;
   /** Open 新员工配备 orders for them, whose lines count as on order. */
   readonly orders: readonly PlanOrder[];
+  /** Noco's latest background run for them, or null when none ran. */
+  readonly advice: PlanAdvice | null;
 }
 
 /** Purchase order statuses still on their way to arriving. */
@@ -120,7 +157,19 @@ export interface OnboardingService {
     departmentId: string | null,
     position: string | null,
   ): Promise<OnboardingKit | null>;
-  plan(personId: string): Promise<OnboardingPlan | null>;
+  plan(
+    personId: string,
+    options?: { readonly candidates?: boolean },
+  ): Promise<OnboardingPlan | null>;
+}
+
+/** How many candidates an item shows Noco: enough to choose among. */
+const CANDIDATE_LIMIT = 12;
+
+/** Noco's picks for one kit item, as a run stores them. */
+export interface AdvisedLine {
+  readonly line: string;
+  readonly picks: readonly { readonly id: string; readonly reason: string }[];
 }
 
 export const onboardingServiceToken: ServiceToken<OnboardingService> =
@@ -190,7 +239,151 @@ export function createOnboardingService(
     return found;
   };
 
-  const plan: OnboardingService['plan'] = async (personId) => {
+  /** Names of records by id, for the facts a candidate is shown with. */
+  const namesOf = async (
+    table: 'locations' | 'models',
+    ids: readonly (string | undefined)[],
+  ): Promise<Map<string, string>> => {
+    const wanted = [...new Set(ids.filter((id): id is string => !!id))];
+    if (wanted.length === 0) return new Map();
+    const rows = await q()
+      .selectFrom(table)
+      .select(['id', 'name'])
+      .where('id', 'in', wanted)
+      .execute<Row>();
+    return new Map(rows.map((row) => [String(row.id), String(row.name)]));
+  };
+
+  /**
+   * A device in stock as Noco sees it: where it is, how old, how long its
+   * warranty runs, when it is due to be replaced and how often it has been
+   * repaired — what a person choosing among identical laptops would ask.
+   */
+  const deviceCandidates = async (
+    rows: readonly Row[],
+    locationId: string | null,
+  ): Promise<PlanCandidate[]> => {
+    if (rows.length === 0) return [];
+    const places = await namesOf(
+      'locations',
+      rows.map((row) => asText(row.locationId)),
+    );
+    const models = await namesOf(
+      'models',
+      rows.map((row) => asText(row.modelId)),
+    );
+    const repairs = new Map(
+      (
+        await q()
+          .selectFrom('repairs')
+          .select((eb) => ['deviceId', eb.fn.countAll().as('count')])
+          .where(
+            'deviceId',
+            'in',
+            rows.map((row) => String(row.id)),
+          )
+          .groupBy('deviceId')
+          .execute<Row>()
+      ).map((row) => [String(row.deviceId), Number(row.count) || 0]),
+    );
+    return rows.map((row) => ({
+      id: String(row.id),
+      label: `${String(row.deviceNo)} / ${String(row.name)}`,
+      facts: {
+        model: models.get(String(asText(row.modelId) ?? '')) ?? null,
+        location: places.get(String(asText(row.locationId) ?? '')) ?? null,
+        sameLocationAsJoiner:
+          locationId !== null && asText(row.locationId) === locationId,
+        purchaseDate: asText(row.purchaseDate) ?? null,
+        warrantyEndDate: asText(row.warrantyEndDate) ?? null,
+        plannedReplacementDate: asText(row.plannedReplacementDate) ?? null,
+        repairs: repairs.get(String(row.id)) ?? 0,
+        notes: asText(row.notes) ?? null,
+      },
+    }));
+  };
+
+  /** Noco's latest run for a person, and the picks of its latest ready one. */
+  const adviceFor = async (
+    personId: string,
+  ): Promise<{
+    advice: PlanAdvice | null;
+    picks: Map<string, Map<string, string>>;
+  }> => {
+    const runs = await q()
+      .selectFrom('onboardingRuns')
+      .select([
+        'id',
+        'status',
+        'summary',
+        'failure',
+        'sessionId',
+        'actorId',
+        'createdAt',
+        'finishedAt',
+        'suggestions',
+      ])
+      .where('personId', '=', personId)
+      .orderBy('createdAt', 'desc')
+      .limit(5)
+      .execute<Row>();
+    const latest = runs[0];
+    const ready = runs.find((run) => run.status === 'ready');
+    const picks = new Map<string, Map<string, string>>();
+    const stored = ready ? decodeRow(ready).suggestions : undefined;
+    for (const line of Array.isArray(stored) ? (stored as AdvisedLine[]) : [])
+      picks.set(
+        String(line.line),
+        new Map(
+          (line.picks ?? []).map((pick) => [
+            String(pick.id),
+            String(pick.reason ?? ''),
+          ]),
+        ),
+      );
+    return {
+      advice: latest
+        ? {
+            runId: String(latest.id),
+            status: String(latest.status) as PlanAdvice['status'],
+            summary: asText(latest.summary) ?? null,
+            failure: asText(latest.failure) ?? null,
+            sessionId: asText(latest.sessionId) ?? null,
+            actorId: String(latest.actorId),
+            createdAt: String(latest.createdAt),
+            finishedAt: asText(latest.finishedAt) ?? null,
+          }
+        : null,
+      picks,
+    };
+  };
+
+  /**
+   * Noco's picks first, in its order, then the rule's: a pick still free
+   * leads, and one taken since simply is not among the rows any more.
+   */
+  const preferred = <T>(
+    rows: readonly T[],
+    idOf: (row: T) => string,
+    picks: ReadonlyMap<string, string> | undefined,
+  ): T[] => {
+    if (!picks || picks.size === 0) return [...rows];
+    const order = [...picks.keys()];
+    const rank = (row: T) => {
+      const at = order.indexOf(idOf(row));
+      return at === -1 ? order.length : at;
+    };
+    return [...rows].sort((a, b) => rank(a) - rank(b));
+  };
+
+  /** The reason Noco gave for a thing, marking it as Noco's. */
+  const advised = (
+    picks: ReadonlyMap<string, string> | undefined,
+    id: string,
+  ): Pick<PlanThing, 'source' | 'reason'> =>
+    picks?.has(id) ? { source: 'noco', reason: picks.get(id) } : {};
+
+  const plan: OnboardingService['plan'] = async (personId, options = {}) => {
     const person = await q()
       .selectFrom('people')
       .select([
@@ -204,6 +397,8 @@ export function createOnboardingService(
       .where('id', '=', personId)
       .executeTakeFirst<Row>();
     if (!person) return null;
+    const { advice, picks: advisedPicks } = await adviceFor(personId);
+    const withCandidates = options.candidates === true;
     const kit = await kitFor(
       asText(person.departmentId) ?? null,
       asText(person.position) ?? null,
@@ -372,7 +567,11 @@ export function createOnboardingService(
           });
         });
         const proposals: PlanThing[] = [];
-        let missing = required - prepared.length;
+        const candidates: PlanCandidate[] = [];
+        const key = `softwareProduct:${productId}`;
+        const picks = advisedPicks.get(key);
+        const asked = required - prepared.length;
+        let missing = asked;
         if (missing > 0) {
           const entitlements = await q()
             .selectFrom('entitlements')
@@ -383,12 +582,15 @@ export function createOnboardingService(
               'kind',
               'autoRenew',
               'expiryDate',
+              'maintenanceExpiryDate',
+              'billingModel',
             ])
             .where('softwareProductId', '=', productId)
+            .orderBy('name', 'asc')
             .execute<Row>();
           const now = today();
+          const open: { row: Row; free: number }[] = [];
           for (const entitlement of entitlements) {
-            if (missing <= 0) break;
             // An ended subscription hands out nothing.
             if (
               asText(entitlement.kind) === 'subscription' &&
@@ -407,16 +609,39 @@ export function createOnboardingService(
               entitlement.seatCount === undefined
                 ? Number.POSITIVE_INFINITY
                 : Number(entitlement.seatCount) - Number(held?.count ?? 0);
-            if (free <= 0) continue;
+            if (free > 0) open.push({ row: entitlement, free });
+          }
+          if (withCandidates)
+            for (const { row, free } of open.slice(0, CANDIDATE_LIMIT))
+              candidates.push({
+                id: String(row.id),
+                label: String(row.name),
+                facts: {
+                  kind: asText(row.kind) ?? null,
+                  freeSeats: Number.isFinite(free) ? free : 'unlimited',
+                  billingModel: asText(row.billingModel) ?? null,
+                  autoRenew: Boolean(row.autoRenew),
+                  expiryDate: asText(row.expiryDate) ?? null,
+                  maintenanceExpiryDate:
+                    asText(row.maintenanceExpiryDate) ?? null,
+                },
+              });
+          const email = asText(person.email);
+          for (const { row } of preferred(
+            open,
+            (entry) => String(entry.row.id),
+            picks,
+          )) {
+            if (missing <= 0) break;
             // One person holds one seat of a product.
-            const email = asText(person.email);
             proposals.push({
               type: 'seat',
-              id: String(entitlement.id),
-              label: String(entitlement.name),
-              ...(asText(entitlement.kind) === 'subscription'
+              id: String(row.id),
+              label: String(row.name),
+              ...(asText(row.kind) === 'subscription'
                 ? { needsAccount: true, ...(email ? { account: email } : {}) }
                 : {}),
+              ...advised(picks, String(row.id)),
             });
             missing -= 1;
           }
@@ -427,6 +652,7 @@ export function createOnboardingService(
           .where('softwareProductId', '=', productId)
           .executeTakeFirst<Row>();
         lines.push({
+          key,
           target: {
             type: 'softwareProduct',
             id: productId,
@@ -438,6 +664,8 @@ export function createOnboardingService(
           prepared,
           preparedCount: prepared.length,
           proposals,
+          missing: Math.max(0, asked),
+          ...(withCandidates ? { candidates } : {}),
           ...(() => {
             const ordered = takeOnOrder(`product:${productId}`, missing);
             return {
@@ -478,9 +706,13 @@ export function createOnboardingService(
           ? asText(row.modelId) === modelId
           : Boolean(categories?.has(String(asText(row.categoryId) ?? '')));
 
+      const key = `${modelId ? 'model' : 'category'}:${String(target.id)}`;
+      const picks = advisedPicks.get(key);
       const prepared: PlanThing[] = [];
       const proposals: PlanThing[] = [];
+      const candidates: PlanCandidate[] = [];
       let missing = required;
+      let asked: number;
       if (kind === 'device') {
         for (const { row, state } of devices) {
           if (missing <= 0) break;
@@ -494,8 +726,9 @@ export function createOnboardingService(
           });
           missing -= 1;
         }
+        asked = missing;
         if (missing > 0) {
-          let candidates = q()
+          let query = q()
             .selectFrom('devices')
             .select([
               'id',
@@ -504,14 +737,17 @@ export function createOnboardingService(
               'modelId',
               'categoryId',
               'locationId',
+              'purchaseDate',
               'warrantyEndDate',
+              'plannedReplacementDate',
+              'notes',
             ])
             .where('status', '=', 'inStock')
             .where('reservedForId', 'is', null);
-          candidates = modelId
-            ? candidates.where('modelId', '=', modelId)
-            : candidates.where('categoryId', 'in', [...(categories ?? [])]);
-          const rows = (await candidates.execute<Row>())
+          query = modelId
+            ? query.where('modelId', '=', modelId)
+            : query.where('categoryId', 'in', [...(categories ?? [])]);
+          const rows = (await query.execute<Row>())
             .filter((row) => !proposedDevices.has(String(row.id)))
             // Nearest first, then the longest warranty left.
             .sort(
@@ -522,15 +758,24 @@ export function createOnboardingService(
                   asText(a.warrantyEndDate) ?? '',
                 ),
             );
-          for (const row of rows.slice(0, missing)) {
+          if (withCandidates)
+            candidates.push(
+              ...(await deviceCandidates(
+                rows.slice(0, CANDIDATE_LIMIT),
+                locationId,
+              )),
+            );
+          for (const row of preferred(rows, (row) => String(row.id), picks)) {
+            if (missing <= 0) break;
             proposedDevices.add(String(row.id));
             proposals.push({
               type: 'device',
               id: String(row.id),
               label: `${String(row.deviceNo)} / ${String(row.name)}`,
+              ...advised(picks, String(row.id)),
             });
+            missing -= 1;
           }
-          missing -= proposals.length;
         }
       } else {
         for (const held of heldStock) {
@@ -546,8 +791,9 @@ export function createOnboardingService(
             quantity: take,
           });
         }
+        asked = missing;
         if (missing > 0) {
-          let candidates = q()
+          let query = q()
             .selectFrom('stockItems')
             .select([
               'id',
@@ -558,10 +804,10 @@ export function createOnboardingService(
               'totalQuantity',
               'usedQuantity',
             ]);
-          candidates = modelId
-            ? candidates.where('modelId', '=', modelId)
-            : candidates.where('categoryId', 'in', [...(categories ?? [])]);
-          const rows = (await candidates.execute<Row>())
+          query = modelId
+            ? query.where('modelId', '=', modelId)
+            : query.where('categoryId', 'in', [...(categories ?? [])]);
+          const rows = (await query.execute<Row>())
             .map((row) => ({
               row,
               available:
@@ -576,7 +822,30 @@ export function createOnboardingService(
                   Number(asText(a.row.locationId) === locationId) ||
                 b.available - a.available,
             );
-          for (const { row, available } of rows) {
+          if (withCandidates) {
+            const places = await namesOf(
+              'locations',
+              rows.map((entry) => asText(entry.row.locationId)),
+            );
+            for (const { row, available } of rows.slice(0, CANDIDATE_LIMIT))
+              candidates.push({
+                id: String(row.id),
+                label: String(row.name),
+                facts: {
+                  available,
+                  location:
+                    places.get(String(asText(row.locationId) ?? '')) ?? null,
+                  sameLocationAsJoiner:
+                    locationId !== null &&
+                    asText(row.locationId) === locationId,
+                },
+              });
+          }
+          for (const { row, available } of preferred(
+            rows,
+            (entry) => String(entry.row.id),
+            picks,
+          )) {
             if (missing <= 0) break;
             const take = Math.min(available, missing);
             proposedStock.set(
@@ -588,6 +857,7 @@ export function createOnboardingService(
               id: String(row.id),
               label: String(row.name),
               quantity: take,
+              ...advised(picks, String(row.id)),
             });
             missing -= take;
           }
@@ -598,6 +868,7 @@ export function createOnboardingService(
         0,
       );
       lines.push({
+        key,
         target: {
           type: modelId ? 'model' : 'category',
           id: String(target.id),
@@ -609,6 +880,8 @@ export function createOnboardingService(
         prepared,
         preparedCount,
         proposals,
+        missing: Math.max(0, asked),
+        ...(withCandidates ? { candidates } : {}),
         // Only a model can be on an order line; a category item is bought
         // as some model, which a person picks.
         ...(() => {
@@ -639,6 +912,7 @@ export function createOnboardingService(
         orderNo: String(order.orderNo),
         status: String(order.status),
       })),
+      advice,
     };
   };
 

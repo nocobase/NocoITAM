@@ -122,7 +122,7 @@ function isMine(row: Row, userId: string): boolean {
 export function createWorkbenchService(dependencies: {
   database: DatabaseManager;
   approvals: ApprovalService;
-  /** For 待入职; a container without it shows no such column. */
+  /** For 入职准备; a container without it shows no such column. */
   onboarding?: OnboardingService;
 }): WorkbenchService {
   const { database, approvals, onboarding } = dependencies;
@@ -741,7 +741,7 @@ export function createWorkbenchService(dependencies: {
         });
       }
 
-      // 待入职: somebody joining within the fortnight — or in the week since,
+      // 入职准备: somebody joining within the fortnight — or in the week since,
       // so a first day without a laptop does not drop off — whose kit is not
       // yet in hand (2026-10-05). Ready means every item of their kit is
       // held or reserved for them; with no kit for their department, any

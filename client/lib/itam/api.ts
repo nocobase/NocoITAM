@@ -238,6 +238,8 @@ export interface ItamSettings {
   >;
   readonly ai: {
     businessNotes: string;
+    /** Noco choosing joiners' equipment in the background. */
+    onboardingAdvice: boolean;
   };
 }
 

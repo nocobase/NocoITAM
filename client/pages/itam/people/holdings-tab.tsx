@@ -41,6 +41,7 @@ export default function PersonHoldingsTab(): ReactElement {
         <OnboardingPlanCard
           personId={id}
           personName={text(person.data?.name)}
+          ownerId={text(person.data?.onboardingOwnerId) || undefined}
         />
       ) : null}
       <PersonBelongings personId={id} personName={text(person.data?.name)} />

@@ -222,6 +222,8 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   { table: 'auditItems', column: 'auditTaskId' },
   { table: 'disposalDevices', column: 'disposalId' },
   { table: 'repairs', column: 'deviceId' },
+  // Noco's background suggestions for the demo's joiners.
+  { table: 'onboardingRuns', column: 'personId' },
 ];
 
 /** Deleted in dependency order: children before the master data they reference. */
@@ -415,7 +417,7 @@ const PERSON_NAMES: Readonly<
 };
 
 /**
- * Two people joining in the coming days with nothing prepared yet, so 待入职
+ * Two people joining in the coming days with nothing prepared yet, so 入职准备
  * and 入职配备 have someone to show (2026-10-05): one in R&D, who takes the
  * department's default kit, and a designer in Product, whose position has a
  * kit of its own.
@@ -793,7 +795,7 @@ export function createDemoService(dependencies: {
         );
       }
 
-      // 待入职: joining in five and nine days, nothing reserved yet.
+      // 入职准备: joining in five and nine days, nothing reserved yet.
       const productDept = await seededIn('departments', 'dept-product');
       for (const [index, entry] of (
         JOINER_NAMES[locale] ??

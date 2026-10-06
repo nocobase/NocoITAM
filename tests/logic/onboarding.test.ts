@@ -13,7 +13,7 @@ const manager = { user: 'mia', role: 'manager' as const };
 /**
  * 入职配置 and 入职配备: the seeded kits (one per department, a designer's in
  * Product), which kit a person takes, what the plan proposes from stock and
- * the 待入职 to-do it feeds.
+ * the 入职准备 to-do it feeds.
  */
 describe('onboarding', () => {
   let app: TestApp;
@@ -201,7 +201,7 @@ describe('onboarding', () => {
     ).toMatchObject({ shortfall: 0, onOrder: 1 });
   });
 
-  it('lists a joiner as 待入职 for the team until their kit is in hand', async () => {
+  it('lists a joiner as 入职准备 for the team until their kit is in hand', async () => {
     const joiner = await person('Lin Xue', 'dept-product', 'Designer');
     // Somebody who joined years ago is not joining.
     await person('Old Hand', 'dept-product', 'Designer', '2020-01-01');

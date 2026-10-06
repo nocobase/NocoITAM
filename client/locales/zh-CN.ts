@@ -865,6 +865,24 @@ const zhCN: AppResource = {
     seat: '分配 {{label}} 席位',
     runAll_one: '全部执行（{{count}}）',
     runAll_other: '全部执行（{{count}}）',
+    advice: {
+      none: 'Noco 还没有为他挑选，可以让它从库存里挑一遍。',
+      running: 'Noco 正在从库存里为他挑选…',
+      ready: 'Noco 已挑选（{{date}}）',
+      failed: 'Noco 这次没挑成。',
+      conversation: '查看过程',
+      first: '让 Noco 挑选',
+      again: '重新建议',
+      notStarted: {
+        disabled: '入职建议已在设置中关闭',
+        unavailable: 'Noco 现在不可用：请检查 设置 → AI',
+        notJoiner: '只为两周内入职的新人挑选',
+        noOwner: '先给他指定入职负责人',
+        nothingToChoose: '没有可挑的：每一项的候选都只有一个或没有',
+        running: 'Noco 正在挑选',
+        current: 'Noco 已经按当前信息挑过了',
+      },
+    },
     state: { assigned: '已分配', reserved: '已预留' },
     done: {
       reserved: '已预留 {{label}}',
@@ -1570,7 +1588,7 @@ const zhCN: AppResource = {
       activeAudits: '进行中的盘点',
       loansDueToday: '借出逾期',
       leaverRecovery: '离职交接',
-      pendingOnboarding: '待入职',
+      pendingOnboarding: '入职准备',
       // The card lists everybody's now, so this says which part of a row
       // answers to the reader — not that only they may act on it.
       mine_one: '你负责 {{count}} 项',
@@ -1977,8 +1995,11 @@ const zhCN: AppResource = {
     ai: {
       title: 'AI 助手',
       description:
-        '给 AI 助手 Noco 的业务说明；模型、启用与否和工具权限在「设置 → AI」中配置',
+        '给 AI 助手 Noco 的业务说明，以及它在后台做的事；模型、启用与否和工具权限在「设置 → AI」中配置',
       businessNotes: '业务说明（Noco 开始任务时读取）',
+      onboardingAdvice: '入职建议',
+      onboardingAdviceHint:
+        '新人进入入职窗口（两周内入职）后，Noco 以入职负责人的身份在后台从库存里为他挑选设备、配件和授权并写明理由，由入职负责人确认或更换。关闭后只在对话中准备。',
     },
     demo: {
       title: '演示数据',

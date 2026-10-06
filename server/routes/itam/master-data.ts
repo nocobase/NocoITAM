@@ -17,7 +17,10 @@ import {
   historyServiceToken,
   masterDataServiceToken,
 } from '../../providers/index.js';
-import { ValidationError } from '../../providers/itam/errors.js';
+import {
+  BusinessRuleError,
+  ValidationError,
+} from '../../providers/itam/errors.js';
 import {
   OWNED_BY_USER,
   recoveryPlan,
@@ -37,6 +40,7 @@ import { CREATE_DEFAULTS, masterDataSchema } from './master-data-schemas.js';
 import { userAdministrationServiceToken } from '@nocobase/app-plugin-authentication';
 import { leaverAccountsToken } from '../../providers/itam/leaver-accounts.js';
 import { onboardingServiceToken } from '../../providers/itam/onboarding.js';
+import { onboardingAdvisorToken } from '../../providers/itam/onboarding-advisor.js';
 
 /**
  * Generic CRUD for the master-data collections at
@@ -257,6 +261,36 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
         return context.json({
           data: await app.container.resolve(onboardingServiceToken).plan(id),
         });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // 重新建议: Noco chooses this joiner's equipment again, in the
+    // background. Only their 入职负责人 may ask, because the run is made as
+    // that person, under their grants and in their conversations; anybody
+    // else hands the joiner over first. Answers at once — the card follows
+    // the run through the plan's `advice`.
+    routes.post('/people/:id/onboarding/advise', async (context) => {
+      try {
+        const conditions = await decideCollection(context, 'people', 'read');
+        const id = context.req.param('id');
+        const person = await masterData.get('people', id, conditions);
+        if (!person) {
+          return context.json(
+            { code: 'NOT_FOUND', message: 'Record not found' },
+            404,
+          );
+        }
+        if (person.onboardingOwnerId !== principalId(context))
+          throw new BusinessRuleError(
+            'Only the onboarding owner can ask Noco for suggestions',
+            'NOT_OWNER',
+          );
+        const result = await app.container
+          .resolve(onboardingAdvisorToken)
+          .consider(id, 'manual');
+        return context.json({ data: result }, result.started ? 202 : 200);
       } catch (error) {
         return errorResponse(context, error);
       }
