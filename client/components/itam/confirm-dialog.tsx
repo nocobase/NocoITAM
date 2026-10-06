@@ -45,8 +45,11 @@ export interface ConfirmDialogProps {
    * AI 整理 tab, before there is a form to save).
    */
   readonly actions?: boolean;
-  /** `wide` for a form that carries a table, such as an order's lines. */
-  readonly size?: 'default' | 'wide';
+  /**
+   * `wide` for a form that carries a table, such as an order's lines;
+   * `wider` for that form with a column beside it (AI 整理's result).
+   */
+  readonly size?: 'default' | 'wide' | 'wider';
 }
 
 /** A small dialog with optional inputs and one confirming action. */
@@ -85,7 +88,11 @@ export function ConfirmDialog({
       <DialogContent
         className={cn(
           'max-h-[90svh] overflow-y-auto',
-          size === 'wide' ? 'sm:max-w-3xl' : 'sm:max-w-md',
+          size === 'wider'
+            ? 'sm:max-w-5xl'
+            : size === 'wide'
+              ? 'sm:max-w-3xl'
+              : 'sm:max-w-md',
         )}
       >
         <DialogHeader>

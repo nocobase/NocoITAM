@@ -263,7 +263,8 @@ export function PurchaseOrderCreateDialog({
         }
         onOpenChange(next);
       }}
-      size='wide'
+      // The form with AI 整理's column beside it needs the room.
+      size={result && current === 'form' ? 'wider' : 'wide'}
       // AI 整理 only organises; the order is saved from the form it fills.
       actions={current === 'form'}
       title={t('procurement.new')}
@@ -314,176 +315,195 @@ export function PurchaseOrderCreateDialog({
           />
         ) : (
           <>
-            {result ? (
-              <CaptureNotice
-                capture={capture}
-                result={result}
-                reviewing={
-                  review.size > 0 || lines.some((line) => line.uncertain)
-                }
-                currency={text(values.currency) || currency}
-                priced={priced}
-              />
-            ) : null}
-            <div className='grid gap-3 sm:grid-cols-2'>
-              {HEADER_FIELDS.map((field) => (
-                <div
-                  key={field.key}
-                  className={
-                    field.type === 'textarea'
-                      ? 'grid gap-1.5 sm:col-span-2'
-                      : 'grid gap-1.5'
-                  }
-                >
-                  <div className='flex items-center gap-2'>
-                    <Label htmlFor={`po-${field.key}`}>
-                      {t(field.label)}
-                      {field.required ? (
-                        <span className='text-destructive'> *</span>
-                      ) : null}
-                    </Label>
-                    {review.has(field.key) ? <ReviewMark /> : null}
-                  </div>
-                  <FieldInput
-                    id={`po-${field.key}`}
-                    field={field}
-                    value={
-                      field.key === 'currency'
-                        ? (values.currency ?? currency)
-                        : values[field.key]
-                    }
-                    // Once created, the header is the order's; a retry only
-                    // finishes the lines and the submission.
-                    disabled={Boolean(created)}
-                    onChange={(value) => {
-                      setValues((values) => ({
-                        ...values,
-                        [field.key]: value,
-                      }));
-                      setReview((keys) => {
-                        if (!keys.has(field.key)) return keys;
-                        const next = new Set(keys);
-                        next.delete(field.key);
-                        return next;
-                      });
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className='grid gap-1.5'>
-              <div className='flex items-center justify-between gap-2'>
-                <Label>{t('tabs.lines')}</Label>
-                {/* Each row adds the next one after it; this is only the
-                    way back once every row has been removed. */}
-                {lines.length === 0 ? (
-                  <Button
-                    type='button'
-                    size='sm'
-                    variant='outline'
-                    onClick={() => insertAfter()}
-                  >
-                    <Plus data-icon='inline-start' />
-                    {t('procurement.addLine')}
-                  </Button>
-                ) : null}
-              </div>
-              <div className='overflow-x-auto rounded-lg border border-border bg-card'>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className='w-8' />
-                      <TableHead className='w-px whitespace-nowrap'>
-                        {t('fields.appliesTo')}
-                      </TableHead>
-                      <TableHead>{t('procurement.modelOrProduct')}</TableHead>
-                      <TableHead className='w-px whitespace-nowrap text-right'>
-                        {t('fields.quantity')}
-                      </TableHead>
-                      {priced ? (
-                        <TableHead className='w-px whitespace-nowrap text-right'>
-                          {t('fields.unitPrice')}
-                        </TableHead>
-                      ) : null}
-                      <TableHead className='w-px' />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {lines.map((line, index) => (
-                      <LineEditor
-                        key={line.key}
-                        draft={line}
-                        priced={priced}
-                        showReceived={false}
-                        review={line.uncertain}
-                        busy={save.isPending}
-                        dragging={dragKey === line.key}
-                        dropBefore={dropAt === index}
-                        dropAfter={
-                          dropAt === index + 1 && index === lines.length - 1
+            {/* Once AI 整理 has filled the form, what the assistant said,
+                what it could not place and where to adjust it stand in a
+                column of their own beside the form (2026-10-06). */}
+            <div
+              className={
+                result
+                  ? 'grid gap-4 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start'
+                  : 'grid'
+              }
+            >
+              <div className='grid min-w-0 gap-3'>
+                <div className='grid gap-3 sm:grid-cols-2'>
+                  {HEADER_FIELDS.map((field) => (
+                    <div
+                      key={field.key}
+                      className={
+                        field.type === 'textarea'
+                          ? 'grid gap-1.5 sm:col-span-2'
+                          : 'grid gap-1.5'
+                      }
+                    >
+                      <div className='flex items-center gap-2'>
+                        <Label htmlFor={`po-${field.key}`}>
+                          {t(field.label)}
+                          {field.required ? (
+                            <span className='text-destructive'> *</span>
+                          ) : null}
+                        </Label>
+                        {review.has(field.key) ? <ReviewMark /> : null}
+                      </div>
+                      <FieldInput
+                        id={`po-${field.key}`}
+                        field={field}
+                        value={
+                          field.key === 'currency'
+                            ? (values.currency ?? currency)
+                            : values[field.key]
                         }
-                        onChange={(next) =>
-                          setLines((rows) =>
-                            rows.map((row) =>
-                              row.key === line.key
-                                ? { ...next, uncertain: false }
-                                : row,
-                            ),
-                          )
-                        }
-                        onAdd={() => insertAfter(line.key)}
-                        onRemove={() =>
-                          setLines((rows) =>
-                            rows.filter((row) => row.key !== line.key),
-                          )
-                        }
-                        onDragStart={() => setDragKey(line.key)}
-                        onDragEnd={() => {
-                          setDragKey(undefined);
-                          setDropAt(undefined);
-                        }}
-                        onDragOver={(event) => {
-                          if (dragKey === undefined) return;
-                          event.preventDefault();
-                          const at = dropIndexFor(event, index);
-                          if (at !== dropAt) setDropAt(at);
-                        }}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          const from = lines.findIndex(
-                            (row) => row.key === dragKey,
-                          );
-                          if (from >= 0)
-                            reorder(from, dropIndexFor(event, index));
-                          setDragKey(undefined);
-                          setDropAt(undefined);
+                        // Once created, the header is the order's; a retry only
+                        // finishes the lines and the submission.
+                        disabled={Boolean(created)}
+                        onChange={(value) => {
+                          setValues((values) => ({
+                            ...values,
+                            [field.key]: value,
+                          }));
+                          setReview((keys) => {
+                            if (!keys.has(field.key)) return keys;
+                            const next = new Set(keys);
+                            next.delete(field.key);
+                            return next;
+                          });
                         }}
                       />
-                    ))}
-                  </TableBody>
-                </Table>
+                    </div>
+                  ))}
+                </div>
+                <div className='grid gap-1.5'>
+                  <div className='flex items-center justify-between gap-2'>
+                    <Label>{t('tabs.lines')}</Label>
+                    {/* Each row adds the next one after it; this is only the
+                        way back once every row has been removed. */}
+                    {lines.length === 0 ? (
+                      <Button
+                        type='button'
+                        size='sm'
+                        variant='outline'
+                        onClick={() => insertAfter()}
+                      >
+                        <Plus data-icon='inline-start' />
+                        {t('procurement.addLine')}
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className='w-8' />
+                          <TableHead className='w-px whitespace-nowrap'>
+                            {t('fields.appliesTo')}
+                          </TableHead>
+                          <TableHead>
+                            {t('procurement.modelOrProduct')}
+                          </TableHead>
+                          <TableHead className='w-px whitespace-nowrap text-right'>
+                            {t('fields.quantity')}
+                          </TableHead>
+                          {priced ? (
+                            <TableHead className='w-px whitespace-nowrap text-right'>
+                              {t('fields.unitPrice')}
+                            </TableHead>
+                          ) : null}
+                          <TableHead className='w-px' />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {lines.map((line, index) => (
+                          <LineEditor
+                            key={line.key}
+                            draft={line}
+                            priced={priced}
+                            showReceived={false}
+                            review={line.uncertain}
+                            busy={save.isPending}
+                            dragging={dragKey === line.key}
+                            dropBefore={dropAt === index}
+                            dropAfter={
+                              dropAt === index + 1 && index === lines.length - 1
+                            }
+                            onChange={(next) =>
+                              setLines((rows) =>
+                                rows.map((row) =>
+                                  row.key === line.key
+                                    ? { ...next, uncertain: false }
+                                    : row,
+                                ),
+                              )
+                            }
+                            onAdd={() => insertAfter(line.key)}
+                            onRemove={() =>
+                              setLines((rows) =>
+                                rows.filter((row) => row.key !== line.key),
+                              )
+                            }
+                            onDragStart={() => setDragKey(line.key)}
+                            onDragEnd={() => {
+                              setDragKey(undefined);
+                              setDropAt(undefined);
+                            }}
+                            onDragOver={(event) => {
+                              if (dragKey === undefined) return;
+                              event.preventDefault();
+                              const at = dropIndexFor(event, index);
+                              if (at !== dropAt) setDropAt(at);
+                            }}
+                            onDrop={(event) => {
+                              event.preventDefault();
+                              const from = lines.findIndex(
+                                (row) => row.key === dragKey,
+                              );
+                              if (from >= 0)
+                                reorder(from, dropIndexFor(event, index));
+                              setDragKey(undefined);
+                              setDropAt(undefined);
+                            }}
+                          />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <p className='text-right text-xs text-muted-foreground'>
+                    {t('procurement.linesTotal', { count: lines.length })}
+                    {priced
+                      ? ` · ${formatMoney(total, text(values.currency) || currency)}`
+                      : ''}
+                  </p>
+                </div>
+                <div className='grid gap-1.5'>
+                  <Label htmlFor='po-approver'>
+                    {t('procurement.approver')}
+                  </Label>
+                  <ReferenceSelect
+                    id='po-approver'
+                    reference={{
+                      collection: 'approvers',
+                      filter: { subject: 'purchaseOrder' },
+                    }}
+                    value={approverId}
+                    onChange={setApproverId}
+                  />
+                  <p className='text-xs text-muted-foreground'>
+                    {t('procurement.approverForSubmit')}
+                  </p>
+                </div>
               </div>
-              <p className='text-right text-xs text-muted-foreground'>
-                {t('procurement.linesTotal', { count: lines.length })}
-                {priced
-                  ? ` · ${formatMoney(total, text(values.currency) || currency)}`
-                  : ''}
-              </p>
-            </div>
-            <div className='grid gap-1.5'>
-              <Label htmlFor='po-approver'>{t('procurement.approver')}</Label>
-              <ReferenceSelect
-                id='po-approver'
-                reference={{
-                  collection: 'approvers',
-                  filter: { subject: 'purchaseOrder' },
-                }}
-                value={approverId}
-                onChange={setApproverId}
-              />
-              <p className='text-xs text-muted-foreground'>
-                {t('procurement.approverForSubmit')}
-              </p>
+              {result ? (
+                <aside className='md:sticky md:top-0'>
+                  <CaptureNotice
+                    capture={capture}
+                    result={result}
+                    reviewing={
+                      review.size > 0 || lines.some((line) => line.uncertain)
+                    }
+                    currency={text(values.currency) || currency}
+                    priced={priced}
+                  />
+                </aside>
+              ) : null}
             </div>
           </>
         )}

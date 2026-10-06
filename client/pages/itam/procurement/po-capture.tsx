@@ -235,7 +235,9 @@ export function CaptureNotice({
             <CollapsibleText text={capture.failure} chars={160} lines={3} />
           </p>
         ) : null}
-        <div className='flex items-center gap-2'>
+        {/* Stacked: the column beside the form is too narrow for the
+            request and its button on one line. */}
+        <div className='grid gap-2'>
           <Input
             value={instruction}
             disabled={busy}
@@ -255,7 +257,7 @@ export function CaptureNotice({
             type='button'
             size='sm'
             variant='outline'
-            className='shrink-0'
+            className='justify-self-end'
             disabled={busy || !instruction.trim()}
             onClick={send}
           >
