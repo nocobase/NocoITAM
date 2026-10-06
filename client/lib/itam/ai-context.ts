@@ -31,6 +31,8 @@ export function useAiPageContext(descriptor: {
     options?: {
       readonly autoSend?: boolean;
       readonly attachments?: readonly AIChatAttachment[];
+      readonly webSearch?: boolean;
+      readonly model?: { readonly llmService?: string; readonly model: string };
     },
   ) => void;
 } {

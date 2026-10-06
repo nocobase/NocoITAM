@@ -14,7 +14,7 @@ import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { RecordLink } from '@/components/itam/record-link';
 import { Button } from '@/components/ui/button';
 import type { AIToolRendererProps } from '@/extensions/nocobase-ai';
-import { useApi } from '@/lib/itam/api';
+import { masterDataPath, useApi } from '@/lib/itam/api';
 import { AI_PATH } from '@/lib/itam/ai';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 import { DEVICE_CREATE_FIELDS, DEVICE_FIELDS } from '@/lib/itam/devices';
@@ -25,6 +25,7 @@ import {
 } from '@/lib/itam/entitlements';
 import type { FieldDefinition, FieldOption } from '@/lib/itam/fields';
 import { formatDate, formatMoney, text } from '@/lib/itam/format';
+import { templateOf, type TemplateField } from '@/lib/itam/field-template';
 import { MASTER_DATA } from '@/lib/itam/master-data';
 import {
   AUDIT_TASK_FIELDS,
@@ -78,6 +79,8 @@ interface Shown {
    * confirming (a seat with nobody as its holder).
    */
   readonly always?: boolean;
+  /** The label is the text itself (a category field's), not a key. */
+  readonly literal?: boolean;
 }
 
 const TARGET_COLLECTIONS: Readonly<Record<string, string>> = {
@@ -300,22 +303,67 @@ function createdFields(args: Data): Shown[] {
   return shown;
 }
 
-const fieldsOf = (tool: string, args: Data): readonly Shown[] =>
+/**
+ * An update of a model or software product (AI 联网补充): the fields it
+ * changes, labelled as the record's page labels them, its extended fields
+ * by their template's labels.
+ */
+function updatedFields(args: Data, facts?: CardFacts): Shown[] {
+  const collection = text(args.collection);
+  const fields =
+    MASTER_DATA.find((entry) => entry.name === collection)?.fields ?? [];
+  const shown: Shown[] = [];
+  for (const field of fields)
+    if (field.key in args && field.key !== 'attributes')
+      shown.push(shownOf(field, args));
+  for (const key of Object.keys(object(args.attributes))) {
+    const entry = facts?.template?.find((item) => item.key === key);
+    shown.push({
+      key: `attributes.${key}`,
+      label: entry?.label ?? key,
+      literal: true,
+    });
+  }
+  return shown;
+}
+
+const fieldsOf = (
+  tool: string,
+  args: Data,
+  facts?: CardFacts,
+): readonly Shown[] =>
   tool === 'itam_create_record'
     ? createdFields(args)
-    : tool === 'itam_receive_purchase_line'
-      ? [...MORE_SHOWN[tool], ...receiptExtras(args)]
-      : (SHOWN[tool] ?? MORE_SHOWN[tool] ?? []);
+    : tool === 'itam_update_master_record'
+      ? updatedFields(args, facts)
+      : tool === 'itam_receive_purchase_line'
+        ? [...MORE_SHOWN[tool], ...receiptExtras(args)]
+        : (SHOWN[tool] ?? MORE_SHOWN[tool] ?? []);
+
+/** A record's extended fields flattened to `attributes.<key>`. */
+const flatAttributes = (attributes: unknown): Data =>
+  Object.fromEntries(
+    Object.entries(object(attributes)).map(([key, value]) => [
+      `attributes.${key}`,
+      value,
+    ]),
+  );
 
 /** The values a card shows, beside its arguments. */
 const sourceOf = (tool: string, args: Data, facts: CardFacts): Data =>
   tool === 'itam_create_record'
     ? createSource(args)
-    : tool === 'itam_receive_purchase_line'
-      ? { ...args, ...object(args.extra), lineLabel: facts.lineLabel }
-      : args;
+    : tool === 'itam_update_master_record'
+      ? { ...args, ...flatAttributes(args.attributes) }
+      : tool === 'itam_receive_purchase_line'
+        ? { ...args, ...object(args.extra), lineLabel: facts.lineLabel }
+        : args;
 
 interface CardFacts {
+  /** The record an update changes, as it stands (`attributes.<key>` flat). */
+  readonly current?: Data;
+  /** Its category's extended fields, for their labels. */
+  readonly template?: readonly TemplateField[];
   /** The received line, as "model × quantity". */
   readonly lineLabel?: string;
   readonly lineRef?: { collection: string; id: string };
@@ -368,6 +416,30 @@ function useCardFacts(tool: string, args: Data): CardFacts {
   const seats = new Map<string, Data>();
   for (const query of seatLists)
     for (const seat of query.data ?? []) seats.set(text(seat.id), seat);
+  const updating = tool === 'itam_update_master_record';
+  const currentPath = updating
+    ? `${masterDataPath(text(args.collection))}/${text(args.id)}`
+    : '';
+  const current = useQuery({
+    // Keys of its own: the page's record queries cache another shape.
+    queryKey: ['itam', currentPath, 'write-card'],
+    queryFn: async () =>
+      (await api.request<{ data: Data }>({ path: currentPath })).data,
+    enabled: updating && text(args.id) !== '',
+    staleTime: 30_000,
+  });
+  const categoryId = text(current.data?.categoryId);
+  const category = useQuery({
+    queryKey: ['itam', masterDataPath('categories'), categoryId, 'write-card'],
+    queryFn: async () =>
+      (
+        await api.request<{ data: Data }>({
+          path: `${masterDataPath('categories')}/${categoryId}`,
+        })
+      ).data,
+    enabled: updating && categoryId !== '',
+    staleTime: 60_000,
+  });
   const line = lines.data?.find(
     (entry) => text(entry.id) === text(args.lineId),
   );
@@ -380,6 +452,10 @@ function useCardFacts(tool: string, args: Data): CardFacts {
     lineRef,
     lineLabel: line ? `× ${text(line.quantity)}` : undefined,
     seats,
+    current: current.data
+      ? { ...current.data, ...flatAttributes(current.data.attributes) }
+      : undefined,
+    template: updating ? templateOf(category.data?.fieldTemplate) : undefined,
   };
 }
 
@@ -465,6 +541,8 @@ function pathOf(tool: string, key: string, args: Data): string[] {
   }
   if (tool === 'itam_receive_purchase_line' && key in object(args.extra))
     return ['extra', key];
+  if (tool === 'itam_update_master_record' && key.startsWith('attributes.'))
+    return ['attributes', key.slice('attributes.'.length)];
   return [key];
 }
 
@@ -537,7 +615,7 @@ function wantedNames(
     if (!collection || !text(id)) return;
     wanted.set(collection, [...(wanted.get(collection) ?? []), text(id)]);
   };
-  for (const shown of fieldsOf(tool, args))
+  for (const shown of fieldsOf(tool, args, facts))
     for (const value of Array.isArray(source[shown.key])
       ? (source[shown.key] as unknown[])
       : [source[shown.key]])
@@ -795,8 +873,8 @@ export function ItamWriteCard({
         lineLabel: `${nameOf(facts.lineRef.collection, facts.lineRef.id)} ${facts.lineLabel ?? ''}`,
       }
     : shownSource;
-  const valueOf = (shown: Shown): string => {
-    const value = source[shown.key];
+  const valueIn = (shown: Shown, data: Data): string => {
+    const value = data[shown.key];
     if (shown.always && (value === null || value === undefined || value === ''))
       return '—';
     if (Array.isArray(value))
@@ -820,7 +898,21 @@ export function ItamWriteCard({
       return JSON.stringify(value);
     return shown.ref ? nameOf(refOf(shown, source), value) : text(value);
   };
-  const rows = fieldsOf(tool, args).filter((shown) => {
+  // An update reads as what it was and what it becomes.
+  const valueOf = (shown: Shown): string => {
+    const next = valueIn(shown, source);
+    const before = facts.current?.[shown.key];
+    if (
+      tool !== 'itam_update_master_record' ||
+      before === undefined ||
+      before === null ||
+      before === '' ||
+      text(before) === text(source[shown.key])
+    )
+      return next;
+    return `${valueIn(shown, facts.current ?? {})} → ${next}`;
+  };
+  const rows = fieldsOf(tool, args, facts).filter((shown) => {
     const value = source[shown.key];
     if (shown.always) return true;
     return Array.isArray(value)
@@ -876,7 +968,9 @@ export function ItamWriteCard({
           {rows.map((shown) => (
             <div key={shown.key} className='flex items-start gap-3'>
               <dt className='w-24 shrink-0 text-muted-foreground'>
-                {t(shown.label, { defaultValue: shown.key })}
+                {shown.literal
+                  ? shown.label
+                  : t(shown.label, { defaultValue: shown.key })}
               </dt>
               <dd className='min-w-0 flex-1 break-words'>
                 {editable && editorOf(shown, source) ? (

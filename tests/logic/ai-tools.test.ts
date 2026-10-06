@@ -11,6 +11,7 @@ import issueStock from '../../ai/tools/itam/issue-stock.js';
 import stockIn from '../../ai/tools/itam/stock-in.js';
 import onboardingPlan from '../../ai/tools/itam/onboarding-plan.js';
 import reserveDevice from '../../ai/tools/itam/reserve-device.js';
+import updateMasterRecord from '../../ai/tools/itam/update-master-record.js';
 import { addDays, today } from '../../server/providers/itam/dates.js';
 import { aiRoutes } from '../../server/routes/itam/ai.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
@@ -410,6 +411,89 @@ describe('AI write tools, inspection and tools', () => {
       collection: 'vendors',
       name: 'AI Vendor Ltd',
     });
+  });
+
+  it('fills in a model on the books, and nothing that names it', async () => {
+    expect(updateMasterRecord.defaultPermission).toBe('ASK');
+    const monitors = await create('master/categories', {
+      name: 'Monitor',
+      appliesTo: 'device',
+      fieldTemplate: [
+        { key: 'cpu', label: 'CPU', type: 'text' },
+        { key: 'size', label: 'Size', type: 'select', options: ['24', '27'] },
+      ],
+    });
+    const panel = await create('master/models', {
+      name: 'View 27',
+      categoryId: monitors.id,
+      manufacturerId: (
+        await create('master/manufacturers', { name: 'Test View Co' })
+      ).id,
+      attributes: { cpu: 'none' },
+    });
+    const updated = await invoke(updateMasterRecord, manager.user, {
+      title: '补充 View 27',
+      collection: 'models',
+      id: panel.id,
+      releaseDate: '2024-03-01',
+      warrantyMonths: 36,
+      attributes: { size: '27' },
+    });
+    expect(updated.content).toMatchObject({ id: panel.id, name: 'View 27' });
+    const stored = await data<{
+      releaseDate: string;
+      warrantyMonths: number;
+      attributes: Record<string, unknown>;
+    }>(await get(`master/models/${panel.id}`));
+    expect(stored.releaseDate).toBe('2024-03-01');
+    expect(stored.warrantyMonths).toBe(36);
+    // Merged into what the record held.
+    expect(stored.attributes).toEqual({ cpu: 'none', size: '27' });
+
+    // A size the field does not offer, a field a model does not have, and
+    // the name are refused.
+    await expect(
+      invoke(updateMasterRecord, manager.user, {
+        title: 'x',
+        collection: 'models',
+        id: panel.id,
+        attributes: { size: '32' },
+      }),
+    ).rejects.toThrow();
+    await expect(
+      invoke(updateMasterRecord, manager.user, {
+        title: 'x',
+        collection: 'models',
+        id: panel.id,
+        deliveryMethod: 'saas',
+      }),
+    ).rejects.toThrow();
+    await expect(
+      invoke(updateMasterRecord, manager.user, {
+        title: 'x',
+        collection: 'models',
+        id: panel.id,
+        name: 'Other',
+      }),
+    ).rejects.toThrow();
+    // Someone who may not edit models is told before confirming.
+    expect(
+      await data(
+        await post(
+          'ai/screen',
+          {
+            tool: 'itam_update_master_record',
+            args: {
+              title: 'x',
+              collection: 'models',
+              id: panel.id,
+              eolDate: '2027-01-01',
+            },
+          },
+          employee,
+        ),
+      ),
+    ).toMatchObject({ ok: false, code: 'FORBIDDEN' });
   });
 
   it('stocks in and issues through the stock tools', async () => {

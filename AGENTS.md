@@ -1172,16 +1172,20 @@ Rules learned while building it:
   the aside renders as a sibling of the form, never inside it: a submit in
   a portal still bubbles to the form around it in React's tree.
   A model's or software product's own page offers the same lookup as
-  **AI 联网补充** (2026-10-06, `MasterEnrichDialog` in
-  `client/components/itam/master-enrich-dialog.tsx`, the `enrich` purpose of
-  `useMasterCapture`, offered by `MasterActions` to whoever may update the
-  record): the record's current values are the form, the `catalog` skill's
-  补充已有记录 section says to keep them and flag what differs, and the
-  dialog lists only the fields whose found value differs — empty ones
-  ticked, values that would change unticked, name and maker never ticked,
-  the category not compared — and saves the ticked ones as an edit. The
-  lookup starts once the dialog's body is mounted: asked earlier, the chat
-  cannot resolve the page context and silently never sends.
+  **AI 联网补充** (2026-10-06, `EnrichAction` in
+  `client/pages/itam/master/master-domain-parts.tsx`, for whoever may update
+  the record): it opens the side panel on a new conversation with web search
+  on (`ItamAi.ask` takes `webSearch` and `model` for this) and the record and
+  its category's fields as page context. Under the `catalog` skill's
+  补充已有记录 section Noco says what it found, then proposes the change with
+  the write tool `itam_update_master_record` (`ai-writes.ts`, ASK): only the
+  fields the lookup fills — a model's code, specification, warranty, dates
+  and extended fields (held to the template by `holdAttributes`, merged into
+  what it holds), a product's delivery method, description and website —
+  never the name, maker or category. Its card shows each field as old →
+  new; the user confirms or declines, and asks in the conversation for
+  another selection. It replaced, the same day, a modal comparison dialog —
+  the reader wanted the conversation.
   A capture turn that looks over before its page tool filled the form is
   called failed only after 2.5 seconds (both capture hooks): the chat
   reloads its messages from the server mid-turn and for a moment shows its

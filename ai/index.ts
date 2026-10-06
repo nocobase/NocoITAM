@@ -15,6 +15,7 @@ import assignSeat from './tools/itam/assign-seat.js';
 import businessContext from './tools/itam/business-context.js';
 import checkAvailability from './tools/itam/check-availability.js';
 import correctDeviceStatus from './tools/itam/correct-device-status.js';
+import updateMasterRecord from './tools/itam/update-master-record.js';
 import createDisposal from './tools/itam/create-disposal.js';
 import createRecord from './tools/itam/create-record.js';
 import createPurchaseOrder from './tools/itam/create-purchase-order.js';
@@ -52,6 +53,7 @@ export const ITAM_TOOLS = [
   createPurchaseOrder,
   createDisposal,
   createRecord,
+  updateMasterRecord,
   stockIn,
   issueStock,
   takeBackStock,

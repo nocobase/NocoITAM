@@ -265,6 +265,23 @@ interface TemplateEntry {
   readonly options?: readonly string[];
 }
 
+/**
+ * A model's extended fields as a category's template takes them: only its
+ * keys, each held to its type, an answer the field would refuse dropped.
+ * Shared by AI 整理 and the AI's update of a model on the books.
+ */
+export function holdAttributes(
+  template: unknown,
+  raw: Readonly<Record<string, unknown>> | null | undefined,
+): Record<string, unknown> {
+  const held: Record<string, unknown> = {};
+  for (const field of modelFields(template)) {
+    const value = fieldValue(field, raw?.[field.key]);
+    if (value !== undefined) held[field.key] = value;
+  }
+  return held;
+}
+
 /** The template fields a model may fill: all but the hidden ones. */
 function modelFields(template: unknown): TemplateEntry[] {
   const parsed: unknown =

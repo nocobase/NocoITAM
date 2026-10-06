@@ -63,6 +63,7 @@ const TOOL_RENDERERS: AIToolRendererMap = Object.fromEntries(
     'itam_create_purchase_order',
     'itam_create_disposal',
     'itam_create_record',
+    'itam_update_master_record',
     'itam_stock_in',
     'itam_issue_stock',
     'itam_take_back_stock',

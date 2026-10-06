@@ -1026,21 +1026,7 @@ const messages = {
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: 'Tell the AI what to change' },
   // AI lookup on a model's or software product's page.
-  masterEnrich: {
-    action: 'Look up with AI',
-    title: 'Look up “{{name}}”',
-    description:
-      'Only fields that differ from the record are listed; empty ones start ticked, and replacing a value is your choice',
-    apply_one: 'Apply {{count}} selected',
-    apply_other: 'Apply {{count}} selected',
-    unavailable: 'The AI assistant is not available.',
-    retry: 'Look up again',
-    done: 'The AI has finished. Tick the values to take.',
-    nothing: 'Nothing found that differs from the record.',
-    field: 'Field',
-    current: 'Current',
-    found: 'Found by AI',
-  },
+  masterEnrich: { action: 'Look up with AI' },
   masterCapture: {
     description: {
       models:
@@ -2633,6 +2619,7 @@ const messages = {
         itam_reclaim_seats: 'Reclaim seats',
         itam_create_purchase_order: 'Draft a purchase order',
         itam_create_disposal: 'Draft a disposal',
+        itam_update_master_record: 'Update a model or software product',
         itam_create_record: 'Create a record',
         itam_stock_in: 'Stock in',
         itam_issue_stock: 'Issue / install',
@@ -2703,11 +2690,9 @@ const messages = {
       captureModel:
         'Following the catalog skill, look this model up and fill the new model form. {{search}} Then call fillModel once, and say in one sentence of plain text what you could not find and what to check.',
       enrichModel:
-        'Following the catalog skill, fill in this existing model (its current values are the page context form). {{search}} Then call fillModel once, and say in one sentence of plain text what you added and what differs from the record.',
+        'Following the catalog skill, look up the model “{{name}}” on the web and fill in its details (its current values and category fields are the page context). {{search}} First tell me in a few sentences what is empty and can be filled, and what differs from the record, with the pages you used; then propose the change with itam_update_master_record, holding only the empty fields — the differing ones wait for my say.',
       enrichSoftwareProduct:
-        'Following the catalog skill, fill in this existing software product (its current values are the page context form). {{search}} Then call fillSoftwareProduct once, and say in one sentence of plain text what you added and what differs from the record.',
-      adjustEnrichRecord:
-        'Following the catalog skill, look this {{object}} up again as I ask and hand the whole form back with {{tool}}. {{search}} My request: {{instruction}}',
+        'Following the catalog skill, look up the software product “{{name}}” on the web and fill in its details (its current values are the page context). {{search}} First tell me in a few sentences what is empty and can be filled, and what differs from the record, with the pages you used; then propose the change with itam_update_master_record, holding only the empty fields — the differing ones wait for my say.',
       captureSoftwareProduct:
         'Following the catalog skill, look this software product up and fill the new software product form. {{search}} Then call fillSoftwareProduct once, and say in one sentence of plain text what you could not find and what to check.',
       masterSearch:

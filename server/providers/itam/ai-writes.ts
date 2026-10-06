@@ -24,6 +24,8 @@ import {
   WIPE_METHODS,
 } from './disposals.js';
 import { entitlementServiceToken } from './entitlements.js';
+import { holdAttributes } from './master-capture.js';
+import { masterDataServiceToken } from './master-data.js';
 import {
   BusinessRuleError,
   DuplicateValueError,
@@ -176,7 +178,44 @@ export const AI_WRITE_SCHEMAS = {
     recipientVendorId: id.optional(),
     recipientName: z.string().trim().max(255).optional(),
   }),
+  // AI 联网补充 (2026-10-06): what the lookup found, written into a model or
+  // a software product the user is looking at. Never its name, maker or
+  // category: another of those is another record.
+  itam_update_master_record: z.object({
+    title,
+    collection: z.enum(['models', 'softwareProducts']),
+    id,
+    code: z.string().trim().min(1).max(255).optional(),
+    specification: z.string().trim().min(1).max(20000).optional(),
+    warrantyMonths: z.number().int().min(1).max(240).optional(),
+    releaseDate: date.optional(),
+    eolDate: date.optional(),
+    eosDate: date.optional(),
+    deliveryMethod: z.enum(['onPremise', 'saas', 'both']).optional(),
+    description: z.string().trim().min(1).max(20000).optional(),
+    website: z.string().trim().url().max(500).optional(),
+    attributes: z
+      .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+      .optional()
+      .describe(
+        "A model's extended fields by key, merged into what it already holds.",
+      ),
+  }),
 } as const;
+
+/** The fields the update may write, per collection. */
+const UPDATABLE: Readonly<Record<string, readonly string[]>> = {
+  models: [
+    'code',
+    'specification',
+    'warrantyMonths',
+    'releaseDate',
+    'eolDate',
+    'eosDate',
+    'attributes',
+  ],
+  softwareProducts: ['deliveryMethod', 'description', 'website'],
+};
 
 export type AiWriteTool = keyof typeof AI_WRITE_SCHEMAS;
 export const AI_WRITE_TOOLS = Object.keys(AI_WRITE_SCHEMAS) as AiWriteTool[];
@@ -198,6 +237,8 @@ const PERMISSIONS: Readonly<
     ['purchaseOrders', 'update'],
   ],
   itam_create_disposal: [['disposals', 'create']],
+  // Decided on the collection the call names (`screenWrite`).
+  itam_update_master_record: [],
 };
 
 /** How a refusal reads on the card and to the model. */
@@ -262,6 +303,15 @@ export async function screenWrite(
     return { ok: false, code: 'VALIDATION', message: `Unknown tool: ${tool}` };
   const parsed = AI_WRITE_SCHEMAS[tool as AiWriteTool].safeParse(args);
   if (!parsed.success) return { ok: false, ...describeFailure(parsed.error) };
+  if (tool === 'itam_update_master_record') {
+    const { collection } = parsed.data as { collection: string };
+    if (!(await scope.may(collection, 'update')))
+      return {
+        ok: false,
+        code: 'FORBIDDEN',
+        message: `Not allowed: ${collection}.update`,
+      };
+  }
   for (const [collection, action] of PERMISSIONS[tool as AiWriteTool])
     if (!(await scope.may(collection, action)))
       return {
@@ -516,6 +566,59 @@ async function execute(
         orderNo: created.orderNo,
         status: created.status,
       };
+    }
+    case 'itam_update_master_record': {
+      const {
+        title: _title,
+        collection,
+        id: recordId,
+        attributes,
+        ...fields
+      } = AI_WRITE_SCHEMAS[tool].parse(raw);
+      const allowed = UPDATABLE[collection] ?? [];
+      for (const key of Object.keys(fields))
+        if (!allowed.includes(key))
+          throw new ValidationError(`Not a field of ${collection}`, key);
+      if (attributes && !allowed.includes('attributes'))
+        throw new ValidationError(`Not a field of ${collection}`, 'attributes');
+      const masterData = container.resolve(masterDataServiceToken);
+      const conditions = await decide(collection, 'update');
+      const current = await masterData.get(collection, recordId, conditions);
+      if (!current) throw new RecordNotFoundError(collection, recordId);
+      const input: Record<string, unknown> = { ...fields };
+      if (attributes && Object.keys(attributes).length > 0) {
+        // Only the category's fields, each of its type, over what the
+        // record already holds.
+        const category = await container
+          .resolve(databaseManagerToken)
+          .query()
+          .selectFrom('categories')
+          .select('fieldTemplate')
+          .where('id', '=', String(current.categoryId))
+          .executeTakeFirst<{ fieldTemplate: unknown }>();
+        const held = holdAttributes(category?.fieldTemplate, attributes);
+        const refused = Object.keys(attributes).find((key) => !(key in held));
+        if (refused)
+          throw new ValidationError(
+            'Not a value this extended field takes',
+            `attributes.${refused}`,
+          );
+        const own =
+          current.attributes && typeof current.attributes === 'object'
+            ? (current.attributes as Record<string, unknown>)
+            : {};
+        input.attributes = { ...own, ...held };
+      }
+      if (Object.keys(input).length === 0)
+        throw new ValidationError('Nothing to change');
+      const row = await masterData.update(
+        collection,
+        recordId,
+        input,
+        scope.actorId,
+        conditions,
+      );
+      return { id: row.id, name: row.name, collection };
     }
     case 'itam_create_disposal': {
       const { title: _title, ...input } = AI_WRITE_SCHEMAS[tool].parse(raw);

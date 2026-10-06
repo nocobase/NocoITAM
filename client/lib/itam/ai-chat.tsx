@@ -46,6 +46,9 @@ export interface ItamAi {
       readonly workContext?: readonly AIWorkContextItem[];
       /** Files already uploaded (`AIService.uploadFile`), sent with it. */
       readonly attachments?: readonly AIChatAttachment[];
+      /** Search the web for this message, with a model that can. */
+      readonly webSearch?: boolean;
+      readonly model?: AIEmployeeTask['model'];
     },
   ) => void;
   /** Opens the panel on a conversation that already exists. */
@@ -206,6 +209,8 @@ export function ItamAiProvider({
                 : undefined,
             },
             autoSend: options?.autoSend ?? true,
+            webSearch: options?.webSearch,
+            model: options?.model,
           },
           open: true,
         });

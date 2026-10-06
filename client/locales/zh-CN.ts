@@ -1003,21 +1003,7 @@ const zhCN: AppResource = {
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
   // AI 联网补充 on a model's or software product's page.
-  masterEnrich: {
-    action: 'AI 联网补充',
-    title: '联网补充「{{name}}」',
-    description:
-      '只列出和现有值不同的字段；空着的默认勾选，已有的值需要你决定是否覆盖',
-    apply_one: '应用所选（{{count}}）',
-    apply_other: '应用所选（{{count}}）',
-    unavailable: 'AI 助手当前不可用。',
-    retry: '重新查询',
-    done: 'AI 已查完，请核对后勾选要采用的值。',
-    nothing: '没有查到和现有值不同的信息。',
-    field: '字段',
-    current: '现有值',
-    found: 'AI 查到的',
-  },
+  masterEnrich: { action: 'AI 联网补充' },
   masterCapture: {
     description: {
       models: '写上制造商和型号，AI 联网查询补全其余信息，核对后保存',
@@ -2480,6 +2466,7 @@ const zhCN: AppResource = {
         itam_reclaim_seats: '收回席位',
         itam_create_purchase_order: '创建采购单草稿',
         itam_create_disposal: '创建报废单草稿',
+        itam_update_master_record: '补充型号 / 软件产品资料',
         itam_create_record: '创建记录',
         itam_stock_in: '入库',
         itam_issue_stock: '发放 / 安装',
@@ -2548,11 +2535,9 @@ const zhCN: AppResource = {
       captureModel:
         '请按「型号与软件产品资料」技能，为新建型号查资料并填好表单。{{search}}查好后调用一次 fillModel，再用一句纯文本说明哪些没查到、需要核对什么。',
       enrichModel:
-        '请按「型号与软件产品资料」技能补充这个已有型号的资料（现有值见页面上下文的 form）。{{search}}查好后调用一次 fillModel，再用一句纯文本说明补了什么、哪些和现有值不一致。',
+        '请按「型号与软件产品资料」技能联网补充型号「{{name}}」的资料（现有值和它的分类字段见页面上下文）。{{search}}查完先用几句话告诉我：哪些现在空着、可以补上，哪些和现有值不一致，附上参考网页；然后用 itam_update_master_record 提出修改，只放现有值为空的字段，不一致的等我决定。',
       enrichSoftwareProduct:
-        '请按「型号与软件产品资料」技能补充这个已有软件产品的资料（现有值见页面上下文的 form）。{{search}}查好后调用一次 fillSoftwareProduct，再用一句纯文本说明补了什么、哪些和现有值不一致。',
-      adjustEnrichRecord:
-        '请按「型号与软件产品资料」技能，按我的要求重新补充这个{{object}}的资料，用 {{tool}} 交回整张表单。{{search}}我的要求：{{instruction}}',
+        '请按「型号与软件产品资料」技能联网补充软件产品「{{name}}」的资料（现有值见页面上下文）。{{search}}查完先用几句话告诉我：哪些现在空着、可以补上，哪些和现有值不一致，附上参考网页；然后用 itam_update_master_record 提出修改，只放现有值为空的字段，不一致的等我决定。',
       captureSoftwareProduct:
         '请按「型号与软件产品资料」技能，为新建软件产品查资料并填好表单。{{search}}查好后调用一次 fillSoftwareProduct，再用一句纯文本说明哪些没查到、需要核对什么。',
       masterSearch: '请先联网搜索，优先看制造商官网，只填网页上写明的内容。',
