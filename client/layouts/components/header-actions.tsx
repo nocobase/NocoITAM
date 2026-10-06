@@ -13,6 +13,7 @@ import { NotificationBell } from '@/components/itam/notification-bell';
 
 import { ThemeSettings } from '../../theme/index.js';
 import { UserMenu } from './user-menu.js';
+import { AiHeaderButton } from '../ai-panel.js';
 
 const ACTION_LINK_CLASS =
   'inline-flex size-10 items-center justify-center rounded-xl border border-border/70 bg-card/60 text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -22,11 +23,17 @@ export function HeaderActions({
   showSettings,
   showDev,
   showNotifications = false,
+  showAssistant = false,
 }: {
   readonly showSettings: boolean;
   readonly showDev: boolean;
   /** Application change (ITAM): only the app layout shows 通知. */
   readonly showNotifications?: boolean;
+  /**
+   * Application change (ITAM): the assistant's entry, beside the reader's
+   * menu, in place of the plugin's floating launcher (2026-10-06).
+   */
+  readonly showAssistant?: boolean;
 }): ReactElement {
   const { t } = useTranslation();
 
@@ -71,6 +78,9 @@ export function HeaderActions({
           </Tooltip>
         ) : null}
         <ThemeSettings />
+        {showAssistant ? (
+          <AiHeaderButton className={ACTION_LINK_CLASS} />
+        ) : null}
         <UserMenu />
       </div>
     </TooltipProvider>

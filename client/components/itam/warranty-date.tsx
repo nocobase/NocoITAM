@@ -2,7 +2,7 @@ import { useTranslation } from '@nocobase/i18n/client';
 
 import { Badge } from '@/components/ui/badge';
 import { useItamSettings } from '@/lib/itam/api';
-import { warrantyState } from '@/lib/itam/devices';
+import { replacementState, warrantyState } from '@/lib/itam/devices';
 import { formatDate } from '@/lib/itam/format';
 
 /** The same date and current warranty status wherever a device is referenced. */
@@ -28,6 +28,34 @@ export function WarrantyDate({ value }: { readonly value: unknown }) {
           {t(`devices.warranty.${warranty.state}`, {
             days: warranty.daysLeft ?? 0,
             date: formatDate(value),
+          })}
+        </Badge>
+      ) : null}
+    </span>
+  );
+}
+
+/**
+ * A device's planned replacement date with how far off it is, beside it the
+ * way the warranty's end has its tag (2026-10-06).
+ */
+export function ReplacementDate({ value }: { readonly value: unknown }) {
+  const { t } = useTranslation();
+  const replacement = replacementState(value);
+  return (
+    <span className='inline-flex flex-wrap items-center gap-x-3 gap-y-1'>
+      <span>{formatDate(value) || '—'}</span>
+      {replacement.state !== 'unknown' ? (
+        <Badge
+          variant={
+            replacement.state === 'overdue' ? 'destructive' : 'secondary'
+          }
+          className={
+            replacement.state === 'soon' ? 'text-warning-foreground' : undefined
+          }
+        >
+          {t(`devices.replacement.${replacement.state}`, {
+            days: replacement.days ?? 0,
           })}
         </Badge>
       ) : null}

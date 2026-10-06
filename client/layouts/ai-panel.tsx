@@ -11,11 +11,16 @@ import {
 
 import { ItamWriteCard } from '@/components/itam/ai/write-card';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { apiClientToken, useService } from '@nocobase/app-client';
 
 import {
-  AIChatFloatingTrigger,
   AIChatProvider,
+  NocoBaseAIChatIcon,
   AIChatWindow,
   ChatSurface,
   type AIChatController,
@@ -122,6 +127,7 @@ export function ItamAiShell({ children }: PropsWithChildren): ReactElement {
         <AiSidePanel />
         <HiddenChat name='search' />
         <HiddenChat name='receipt' />
+        <HiddenChat name='capture' />
       </ItamAiProvider>
     </NocoBaseAIRootProvider>
   );
@@ -132,21 +138,6 @@ function AiSidePanel(): ReactElement | null {
   const ai = useItamAi();
   const controller = ai?.controller;
   const { open } = useAIChatControllerState(controller);
-  // The plugin's launcher opens the chat by starting a task with the
-  // employee, which begins a new conversation; this one reopens the
-  // conversation already in progress, as the page shortcuts do (the CRM's
-  // launcher does the same).
-  const launcher = useMemo<AIChatController | undefined>(
-    () =>
-      controller && {
-        ...controller,
-        triggerTask: (options) => {
-          if (options.task) controller.triggerTask(options);
-          else controller.open();
-        },
-      },
-    [controller],
-  );
   if (!ai?.available || !controller) return null;
   const setPanelOpen = (next: boolean): void => {
     if (!next) ai.setExpanded(false);
@@ -154,9 +145,6 @@ function AiSidePanel(): ReactElement | null {
   };
   return (
     <>
-      {/* The assistant's global entry, as in the CRM: the plugin's floating
-          launcher at the lower right, hidden while the chat is open. */}
-      <AIChatFloatingTrigger aiEmployee='itam' controller={launcher} />
       {/* The plugin's surface: a side panel beside the page, or expanded, a
           dialog over it — the same chat window stays mounted either way.
           Escape closes only the dialog: in the panel it would also fire
@@ -195,6 +183,48 @@ function AiSidePanel(): ReactElement | null {
         />
       </ChatSurface>
     </>
+  );
+}
+
+/**
+ * The assistant's global entry: a button in the header, beside the reader's
+ * own menu (2026-10-06). It was the plugin's floating launcher at the lower
+ * right, which covered whatever a page put in that corner and moved when
+ * dragged. It opens the panel on the conversation in progress, as the page
+ * shortcuts do, and closes it again; nothing shows without a usable model.
+ */
+export function AiHeaderButton({
+  className,
+}: {
+  readonly className: string;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const ai = useItamAi();
+  const { open } = useAIChatControllerState(ai?.controller);
+  if (!ai?.available) return null;
+  const label = t(open ? 'ai.closeChat' : 'ai.openChat');
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type='button'
+            className={className}
+            aria-pressed={open}
+            onClick={() => {
+              if (open) {
+                ai.setExpanded(false);
+                ai.controller.setOpen(false);
+              } else ai.controller.open();
+            }}
+          />
+        }
+        aria-label={label}
+      >
+        <NocoBaseAIChatIcon className='size-6' aria-hidden='true' />
+      </TooltipTrigger>
+      <TooltipContent side='bottom'>{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -277,7 +307,7 @@ function ConfiguredChat({
 
 /**
  * A chat nobody sees: the same employee in a conversation of its own, so the
- * search's 问 AI and receiving by delivery document neither open the panel
+ * search's 问 AI, receiving by delivery document and AI 整理 neither open the panel
  * nor replace what is in it. Mounted on the same conditions as the panel's
  * chat, for the same reason (`ConfiguredChat`), and without a window:
  * sending, tool calls and their automatic approval all happen in the

@@ -104,12 +104,14 @@ Rules learned while building it:
   the service and the provider's target (`tests/logic/itam-schedules.test.ts`),
   not the clock.
 - 需要关注 is a column of **risk cards** (2026-10-05, the workbench board's
-  first column): one card per rule that found something — its count large,
-  its sentence beside it, and the first few records it found by name
+  first column): one card per rule that found something — its count large
+  and bold, its sentence beside it in a quieter grey, and, lighter still,
+  the first few records it found by name
   (`ReminderSummary.preview`, up to three, soonest first for a dated rule,
   used/total for 超量使用 and 低于水位) — worst first, then the biggest.
-  The rules at zero are one line, 其余 N 项都是 0, with their names on hover:
-  `0` is still an answer, it says the check ran, but it does not need a card.
+  The rules at zero come last, each a dimmed row of its own — `0` and the
+  sentence, not a card (2026-10-06): `0` is still an answer, it says the
+  check ran, and folding them into 其余 N 项都是 0 hid which checks those were.
   Only a `critical` rule is red: severity is the rule's, not today's.
   `REMINDER_GROUPS` (设备, 授权, 库存 — **not** 资产, the umbrella over all
   five kinds) now only orders rules among equals. There are eleven rules:
@@ -178,9 +180,11 @@ Rules learned while building it:
   give frontend tools as typed object literals: the React Compiler lint
   refuses a ref read during render, and cannot see that
   `defineAIFrontendTool()` does not run `execute`. The global entry is
-  the plugin's floating launcher (`AIChatFloatingTrigger`, lower right, in
-  `client/layouts/ai-panel.tsx`), which reopens the conversation in progress;
-  there is no header button. Ava's name, role, bio and greeting come from the
+  a button in the header, left of the reader's menu (`AiHeaderButton` in
+  `client/layouts/ai-panel.tsx`, through `HeaderActions`' `showAssistant`,
+  2026-10-06), which opens the panel on the conversation in progress and
+  closes it again; the plugin's floating launcher at the lower right went
+  with it, since it covered that corner of every page. Ava's name, role, bio and greeting come from the
   locales (`ai.employee.*`): the plugin keeps a code-registered employee's
   texts in one language, so the panel wraps the service that lists employees,
   as the CRM does. The registrar also switches the plugin's own built-in
@@ -190,13 +194,14 @@ Rules learned while building it:
   compete with the page's own actions. The chat's header has 展开 / 收起到侧边
   and 关闭: one `ChatSurface` switching between side panel and dialog, so the
   conversation stays mounted, and only the side panel pushes the page aside.
-  The launcher shows the NocoBase AI chat mark and drags by its icon — two
-  edits to the Registry copy marked "Application change (ITAM)". Nothing AI
+  The header button shows the NocoBase AI chat mark, which the Registry copy
+  exports for it (`NocoBaseAIChatIcon`, marked "Application change (ITAM)";
+  the unused floating launcher keeps its own two such edits). Nothing AI
   ran outside a conversation from step 3 (2026-09-27, migration
   `202609270008_drop_ai_findings`: no findings, no inspection, no instant
   check, no direct model calls) until the onboarding advisor (2026-10-06,
-  below), which is the one exception: an unattended run of the employee,
-  as a named person, writing only its own suggestions. Whether the assistant is available is the
+  below), which is the one exception: an unattended run, as a named person,
+  writing only its own suggestions. Whether the assistant is available is the
   plugin's to say — `/itam/ai/status` reports a usable model and Ava enabled
   at 设置 → AI; ITAM's settings keep the business notes and the
   入职建议 switch (the web
@@ -1023,6 +1028,33 @@ Rules learned while building it:
   message, because the panel's own attachment was gone once `addDraftLines`
   was approved. Lines it adds take the place of the blank row an empty order
   opens on, which otherwise kept 保存 from being offered.
+- 新建采购单 opens on **AI 整理** whenever the assistant is available
+  (2026-10-06, after NocoCRM's lead and opportunity capture), with 表单录入
+  beside it; without the assistant there are no tabs. The requester pastes
+  what they have or uploads a document, and the assistant fills the dialog
+  — in the `capture` unseen chat, limited to `itam_match_model`, handing its
+  reading back through the page tool `fillPurchaseOrder`
+  (`client/lib/itam/use-purchase-capture.ts`). It is still a conversation,
+  deleted when the turn ends, so the 2026-09-27 rule — no model calls
+  outside a conversation — holds; do not replace it with a direct
+  structured model call. The server checks the reading before the dialog
+  takes it (`POST /itam/purchase-orders/capture/match`,
+  `server/providers/itam/purchase-capture.ts`, under `create`): a printed
+  part code decides by the model's `code`, an id the assistant gives must
+  exist, and anything else matches only by an identical name (a model with
+  or without its maker in front; a vendor or department identical or the
+  only one containing it). What matches nothing is listed above the form and
+  never put on a line — an M4 must not become the M3 the books hold. A field
+  or line the assistant was unsure of carries 请核对 (`ReviewMark`) until it
+  is changed. Adjusting happens in the dialog, not the side panel, which a
+  modal dialog leaves out of reach: each instruction is a new unseen turn
+  with the material, the form as it stands (page context) and the request.
+  An uploaded document is read by `POST /itam/purchase-orders/capture/
+  document-text`, which reads only a file uploaded within the hour and
+  attached to nothing — there is no order yet to scope it by — and the
+  saved order takes it as an attachment. The file plugin stamps `createdAt`
+  in UTC without the `Z`, so that window is compared in that form, not
+  through `dbDateTime()`.
 - An approved purchase order states what it asks for: its request fields
   (事由, 说明, 部门, 需求日期, 供应商, 币种) go read-only once it reaches
   `approved` (`SETTLED_STATUSES` / `SETTLED_EDITABLE` in `procurement.ts`,
@@ -1138,11 +1170,9 @@ Rules learned while building it:
   with the job right after it, the leave date under them, then a bar of 已处理 N / M — `MyWorkRecord.progress`,
   counted against the newest belongings snapshot exactly as the 归属 tab
   counts it (`handoverProgress` in `workbench.ts`), restricted to the
-  kinds the reader may act on. The workbench's header also carries the
-  global search as a field beside the title (`SearchTrigger`, through
-  `PageHeader`'s `aside` slot), opening the dialog the sidebar's 搜索 and
-  ⌘K open; its end is a green sparkle 问 AI, shown when the assistant is
-  available, that opens the same dialog already in ask mode.
+  kinds the reader may act on. The global search is the sidebar's 搜索 and
+  ⌘K; the field beside the workbench's title that also opened it went on
+  2026-10-06 — a third way into the same dialog, on one page only.
 - The board shows only what is waiting; there is no 已完成 (2026-10-05,
   migration `202610050004_drop_handover_completed`). It had one for a
   day — a column, then a folded list under each column, then a

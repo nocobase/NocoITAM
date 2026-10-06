@@ -63,10 +63,15 @@ export interface ItamAi {
    * the assistant reads the document while the receiving form stays open.
    */
   readonly receipt: HiddenChat;
+  /**
+   * And so does AI 整理 in the new purchase order dialog: the assistant
+   * reads what was pasted while the dialog stays open, and fills it.
+   */
+  readonly capture: HiddenChat;
 }
 
-/** Which unseen chat (`ItamAi.search`, `ItamAi.receipt`). */
-export type HiddenChatName = 'search' | 'receipt';
+/** Which unseen chat (`ItamAi.search`, `ItamAi.receipt`, `ItamAi.capture`). */
+export type HiddenChatName = 'search' | 'receipt' | 'capture';
 
 /** A conversation with the employee that no window shows. */
 export interface HiddenChat {
@@ -159,6 +164,7 @@ export function ItamAiProvider({
   );
   const [search] = useState(createHiddenChat);
   const [receipt] = useState(createHiddenChat);
+  const [capture] = useState(createHiddenChat);
   const value = useMemo<ItamAi>(
     () => ({
       available: Boolean(status.data?.configured && status.data.enabled),
@@ -168,6 +174,7 @@ export function ItamAiProvider({
       pendingConversation,
       search,
       receipt,
+      capture,
       toggle: () => controller.setOpen(!controller.getSnapshot().open),
       // Open first: the chat mounts inside the panel, and the controller
       // holds the task until that chat binds to it.
@@ -197,7 +204,15 @@ export function ItamAiProvider({
         controller.open();
       },
     }),
-    [controller, status.data, expanded, pendingConversation, search, receipt],
+    [
+      controller,
+      status.data,
+      expanded,
+      pendingConversation,
+      search,
+      receipt,
+      capture,
+    ],
   );
   return (
     <ItamAiContext.Provider value={value}>{children}</ItamAiContext.Provider>

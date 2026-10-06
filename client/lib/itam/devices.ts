@@ -387,6 +387,28 @@ export function warrantyState(
   return { state: 'active', daysLeft };
 }
 
+/**
+ * How a device's planned replacement date stands. A replacement needs a
+ * purchase order raised and approved before the old device goes, so it is
+ * flagged a quarter ahead (`REPLACEMENT_LEAD_DAYS`) rather than at the
+ * warranty's threshold, which is about a different act.
+ */
+export const REPLACEMENT_LEAD_DAYS = 90;
+
+export function replacementState(
+  plannedReplacementDate: unknown,
+  today = new Date(),
+): { state: 'overdue' | 'soon' | 'later' | 'unknown'; days?: number } {
+  if (typeof plannedReplacementDate !== 'string' || !plannedReplacementDate)
+    return { state: 'unknown' };
+  const due = new Date(`${plannedReplacementDate.slice(0, 10)}T00:00:00`);
+  const daysLeft = Math.ceil((due.getTime() - today.getTime()) / 86_400_000);
+  if (daysLeft < 0) return { state: 'overdue', days: -daysLeft };
+  if (daysLeft <= REPLACEMENT_LEAD_DAYS)
+    return { state: 'soon', days: daysLeft };
+  return { state: 'later', days: daysLeft };
+}
+
 /** The label of a device's holder relation: 分配给 / 借给 / 预留给, or 分配对象. */
 export function deviceRelationLabel(
   device: ItamRecord,
