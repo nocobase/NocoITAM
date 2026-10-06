@@ -39,6 +39,11 @@ export interface ConfirmDialogProps {
    * two main actions — and only its label carries the destructive colour.
    */
   readonly secondaryDestructive?: boolean;
+  /**
+   * False leaves only 取消 in the footer, for a step that finishes nothing
+   * yet (the purchase order's AI 整理 tab, before there is a form to save).
+   */
+  readonly actions?: boolean;
   /** `wide` for a form that carries a table, such as an order's lines. */
   readonly size?: 'default' | 'wide';
 }
@@ -61,6 +66,7 @@ export function ConfirmDialog({
   secondaryLabel,
   onSecondary,
   secondaryDestructive,
+  actions = true,
   size = 'default',
 }: ConfirmDialogProps): ReactElement {
   const { t } = useTranslation();
@@ -105,7 +111,7 @@ export function ConfirmDialog({
           >
             {t('actions.cancel')}
           </Button>
-          {onSecondary ? (
+          {actions && onSecondary ? (
             <Button
               variant='outline'
               className={
@@ -119,13 +125,15 @@ export function ConfirmDialog({
               {secondaryLabel}
             </Button>
           ) : null}
-          <Button
-            variant={destructive ? 'destructive' : 'default'}
-            disabled={busy || disabled || confirmDisabled}
-            onClick={onConfirm}
-          >
-            {confirmLabel ?? t('actions.confirm')}
-          </Button>
+          {actions ? (
+            <Button
+              variant={destructive ? 'destructive' : 'default'}
+              disabled={busy || disabled || confirmDisabled}
+              onClick={onConfirm}
+            >
+              {confirmLabel ?? t('actions.confirm')}
+            </Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>
