@@ -396,6 +396,19 @@ describe('onboarding', () => {
     expect(joiner.id).toBeTruthy();
   });
 
+  it('counts a 待入职 joiner among the department’s people', async () => {
+    const joiner = await person('Sun Hao', 'dept-rd', 'Frontend Engineer');
+    const stats = await data<{ counts: { people: number } }>(
+      await app.request('/api/itam/master/departments/dept-rd/stats', manager),
+    );
+    expect(stats.counts.people).toBe(1);
+    const counts = await data<Record<string, Record<string, number>>>(
+      await app.request('/api/itam/master/departments/counts', manager),
+    );
+    expect(counts.people?.['dept-rd']).toBe(1);
+    expect(joiner.id).toBeTruthy();
+  });
+
   it('shows the kit a department takes from above when it has none', async () => {
     const team = await create('master/departments', {
       name: 'Web team',
