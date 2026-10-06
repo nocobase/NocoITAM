@@ -94,7 +94,15 @@ export function CapturePane({
             {t('procurement.capture.hint')}
           </span>
         </div>
-        <Button type='button' size='sm' disabled={busy || !ready} onClick={go}>
+        {/* Green like every AI entry (AiShortcut's colour), filled because
+            it is this tab's one action. */}
+        <Button
+          type='button'
+          size='sm'
+          className='bg-success-foreground text-background hover:bg-success-foreground/90'
+          disabled={busy || !ready}
+          onClick={go}
+        >
           {busy ? (
             <Spinner data-icon='inline-start' />
           ) : (

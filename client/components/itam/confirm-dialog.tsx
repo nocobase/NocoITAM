@@ -40,8 +40,9 @@ export interface ConfirmDialogProps {
    */
   readonly secondaryDestructive?: boolean;
   /**
-   * False leaves only 取消 in the footer, for a step that finishes nothing
-   * yet (the purchase order's AI 整理 tab, before there is a form to save).
+   * False drops the footer, 取消 included — the corner's close button is
+   * enough — for a step that finishes nothing yet (the purchase order's
+   * AI 整理 tab, before there is a form to save).
    */
   readonly actions?: boolean;
   /** `wide` for a form that carries a table, such as an order's lines. */
@@ -104,29 +105,29 @@ export function ConfirmDialog({
         </DialogHeader>
         {children ? <div className='grid gap-3'>{children}</div> : null}
         {message ? <p className='text-sm text-destructive'>{message}</p> : null}
-        <DialogFooter>
-          <Button
-            variant='outline'
-            disabled={busy}
-            onClick={() => onOpenChange(false)}
-          >
-            {t('actions.cancel')}
-          </Button>
-          {actions && onSecondary ? (
+        {actions ? (
+          <DialogFooter>
             <Button
               variant='outline'
-              className={
-                secondaryDestructive
-                  ? 'text-destructive hover:text-destructive'
-                  : undefined
-              }
-              disabled={busy || disabled}
-              onClick={onSecondary}
+              disabled={busy}
+              onClick={() => onOpenChange(false)}
             >
-              {secondaryLabel}
+              {t('actions.cancel')}
             </Button>
-          ) : null}
-          {actions ? (
+            {onSecondary ? (
+              <Button
+                variant='outline'
+                className={
+                  secondaryDestructive
+                    ? 'text-destructive hover:text-destructive'
+                    : undefined
+                }
+                disabled={busy || disabled}
+                onClick={onSecondary}
+              >
+                {secondaryLabel}
+              </Button>
+            ) : null}
             <Button
               variant={destructive ? 'destructive' : 'default'}
               disabled={busy || disabled || confirmDisabled}
@@ -134,8 +135,8 @@ export function ConfirmDialog({
             >
               {confirmLabel ?? t('actions.confirm')}
             </Button>
-          ) : null}
-        </DialogFooter>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

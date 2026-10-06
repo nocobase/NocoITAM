@@ -139,7 +139,9 @@ it('opens on AI 整理 and fills the form from what the assistant read', async (
   expect(
     screen.getByRole('tab', { name: 'procurement.capture.aiTab' }),
   ).toHaveAttribute('aria-selected', 'true');
-  // Nothing to save before the form is filled: only 取消 in the footer.
+  // Nothing to save before the form is filled, and no footer at all: the
+  // corner's close button closes it.
+  expect(screen.queryByRole('button', { name: 'actions.cancel' })).toBeNull();
   expect(
     screen.queryByRole('button', { name: 'procurement.saveDraft' }),
   ).toBeNull();
