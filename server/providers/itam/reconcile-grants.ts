@@ -149,6 +149,9 @@ const ADDED_FIELDS: ReadonlyMap<string, readonly string[]> = new Map([
   ['main.auditTasks', ['ownerId']],
   // And a joiner their 入职负责人 since 2026-10-06.
   ['main.people', ['onboardingOwnerId']],
+  // A model keeps the extended fields its devices share since 2026-10-06
+  // (`202610060004_model_attributes`).
+  ['main.models', ['attributes']],
 ]);
 
 /**

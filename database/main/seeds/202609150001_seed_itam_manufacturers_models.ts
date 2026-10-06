@@ -45,7 +45,6 @@ function resolveLocale(context: SeedContext): string {
   return process.env.APP_DEFAULT_LOCALE?.trim() || 'en-US';
 }
 
-
 interface ManufacturerSeed {
   readonly id: string;
   readonly name: string;
@@ -60,6 +59,12 @@ interface ModelSeed {
   readonly code?: string;
   readonly specification?: string;
   readonly warrantyMonths?: number;
+  /**
+   * The extended fields the model's category keeps on the model
+   * (`scope: 'model'`), which its devices read. Values, not prose, so they
+   * are the same in every language.
+   */
+  readonly attributes?: Readonly<Record<string, string | number | boolean>>;
   /** File name under `assets/models/`. */
   readonly image: string;
   /** Attribution the picture's license requires; none for our own drawings. */
@@ -116,6 +121,12 @@ const MODELS: readonly ModelSeed[] = [
     code: 'MRX33CH/A',
     specification: '14-inch, M3, 16 GB memory, 512 GB SSD',
     warrantyMonths: 36,
+    attributes: {
+      cpu: 'Apple M3',
+      memory: '16 GB',
+      storage: '512 GB',
+      screenSize: '14',
+    },
   },
   {
     id: 'model-macbook-air-13-m3',
@@ -127,6 +138,12 @@ const MODELS: readonly ModelSeed[] = [
     code: 'MRXV3CH/A',
     specification: '13-inch, M3, 16 GB memory, 256 GB SSD',
     warrantyMonths: 36,
+    attributes: {
+      cpu: 'Apple M3',
+      memory: '16 GB',
+      storage: '256 GB',
+      screenSize: '13',
+    },
   },
   {
     id: 'model-thinkpad-t14-gen5',
@@ -138,6 +155,12 @@ const MODELS: readonly ModelSeed[] = [
     code: '21ML000ECD',
     specification: '14-inch, Core Ultra 5 125U, 16 GB memory, 512 GB SSD',
     warrantyMonths: 36,
+    attributes: {
+      cpu: 'Intel Core Ultra 5 125U',
+      memory: '16 GB',
+      storage: '512 GB',
+      screenSize: '14',
+    },
   },
   {
     id: 'model-latitude-5440',
@@ -148,6 +171,12 @@ const MODELS: readonly ModelSeed[] = [
     code: '210-BFZY',
     specification: '14-inch, Core i5-1335U, 16 GB memory, 512 GB SSD',
     warrantyMonths: 36,
+    attributes: {
+      cpu: 'Intel Core i5-1335U',
+      memory: '16 GB',
+      storage: '512 GB',
+      screenSize: '14',
+    },
   },
   {
     id: 'model-optiplex-7010',
@@ -158,6 +187,11 @@ const MODELS: readonly ModelSeed[] = [
     code: '210-BFXR',
     specification: 'Core i5-13500, 16 GB memory, 512 GB SSD',
     warrantyMonths: 36,
+    attributes: {
+      cpu: 'Intel Core i5-13500',
+      memory: '16 GB',
+      storage: '512 GB',
+    },
   },
   {
     id: 'model-u2723qe',
@@ -168,6 +202,11 @@ const MODELS: readonly ModelSeed[] = [
     code: '210-BDPF',
     specification: '27-inch 4K IPS, USB-C 90 W power delivery',
     warrantyMonths: 36,
+    attributes: {
+      screenSize: '27',
+      resolution: '3840×2160',
+      inputs: 'HDMI, DisplayPort, USB-C',
+    },
   },
   {
     id: 'model-poweredge-r760',
@@ -178,6 +217,7 @@ const MODELS: readonly ModelSeed[] = [
     code: '210-BDZY',
     specification: '2U, dual Xeon Silver 4410Y, 256 GB memory',
     warrantyMonths: 60,
+    attributes: { rackUnits: 2 },
   },
   {
     id: 'model-catalyst-9200-48p',
@@ -188,6 +228,7 @@ const MODELS: readonly ModelSeed[] = [
     code: 'C9200-48P-E',
     specification: '48-port PoE+ gigabit access switch',
     warrantyMonths: 60,
+    attributes: { ports: 48 },
   },
   {
     id: 'model-iphone-15',
@@ -209,6 +250,7 @@ const MODELS: readonly ModelSeed[] = [
     code: 'W1A31A',
     specification: 'Monochrome laser multifunction printer, duplex',
     warrantyMonths: 12,
+    attributes: { color: false, duplex: true, consumable: 'CF258A' },
   },
   // Consumables and components are bought by model too: the toner of the
   // seeded printer, and the parts the demo installs.
@@ -462,6 +504,7 @@ const seed: SeedDefinition = defineSeed({
           imageFileId: await pictureFile(model.image),
           imageCredit: model.imageCredit ?? null,
           warrantyMonths: model.warrantyMonths ?? null,
+          attributes: model.attributes ?? null,
           releaseDate: null,
           eolDate: null,
           eosDate: null,

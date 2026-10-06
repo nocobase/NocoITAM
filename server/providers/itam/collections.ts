@@ -123,6 +123,7 @@ export const MASTER_DATA_COLLECTIONS: readonly ItamCollectionDefinition[] = [
       'releaseDate',
       'eolDate',
       'eosDate',
+      'attributes',
       ...audit,
     ],
     attributes: { identifier: 'id', creator: 'createdById' },

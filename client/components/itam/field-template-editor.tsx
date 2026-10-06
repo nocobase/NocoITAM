@@ -40,50 +40,16 @@ import {
 } from '@/components/ui/table';
 import { apiErrorBody } from '@/lib/itam/api';
 import { errorMessage } from '@/lib/itam/format';
+import {
+  parseTemplate,
+  TEMPLATE_TYPES as TYPES,
+  type TemplateField,
+} from '@/lib/itam/field-template';
 import { cn } from '@/lib/utils';
 
-/** One extended field of a category, as stored in `categories.fieldTemplate`. */
-export interface TemplateField {
-  readonly key: string;
-  readonly label: string;
-  readonly type: 'text' | 'number' | 'date' | 'select' | 'boolean';
-  readonly required?: boolean;
-  readonly options?: readonly string[];
-  /** Kept in the template (its values survive) but not shown on device pages. */
-  readonly hidden?: boolean;
-}
+export type { TemplateField };
 
-const TYPES: readonly TemplateField['type'][] = [
-  'text',
-  'number',
-  'date',
-  'select',
-  'boolean',
-];
-
-function parseTemplate(value: unknown): TemplateField[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((entry) => {
-    if (!entry || typeof entry !== 'object') return [];
-    const field = entry as Partial<TemplateField>;
-    if (typeof field.key !== 'string' || typeof field.label !== 'string')
-      return [];
-    return [
-      {
-        key: field.key,
-        label: field.label,
-        type: TYPES.includes(field.type as TemplateField['type'])
-          ? (field.type as TemplateField['type'])
-          : 'text',
-        required: Boolean(field.required),
-        options: Array.isArray(field.options)
-          ? field.options.map(String)
-          : undefined,
-        ...(field.hidden ? { hidden: true } : {}),
-      },
-    ];
-  });
-}
+const SCOPES = ['device', 'model'] as const;
 
 /** Derives a camelCase key from a label the first time a row gets one. */
 function keyFromLabel(label: string): string {
@@ -134,10 +100,16 @@ export function FieldTemplateEditor({
   value,
   editable,
   usage,
+  scopes = false,
   onSave,
 }: {
   readonly value: unknown;
   readonly editable: boolean;
+  /**
+   * Offer 归属 (按设备 / 按型号): for categories whose records have a model —
+   * devices and stock — not for software, whose products keep no values.
+   */
+  readonly scopes?: boolean;
   /** Devices holding a value per key; such fields can be hidden, not deleted. */
   readonly usage?: Readonly<Record<string, number>>;
   readonly onSave: (template: TemplateField[]) => Promise<void>;
@@ -255,6 +227,7 @@ export function FieldTemplateEditor({
           type: row.type,
           ...(row.required ? { required: true } : {}),
           ...(row.hidden ? { hidden: true } : {}),
+          ...(scopes && row.scope === 'model' ? { scope: 'model' } : {}),
           ...(row.type === 'select' ? { options: row.options ?? [] } : {}),
         })),
       );
@@ -316,6 +289,9 @@ export function FieldTemplateEditor({
                   <span className='font-normal text-muted-foreground no-underline'>
                     {t(`fieldTemplate.types.${field.type}`)}
                     {field.required ? ' *' : ''}
+                    {scopes && field.scope === 'model'
+                      ? ` · ${t('fieldTemplate.scopes.model')}`
+                      : ''}
                   </span>
                 </Badge>
               ))}
@@ -389,6 +365,11 @@ export function FieldTemplateEditor({
                   <TableHead className='w-16 text-center'>
                     {t('fieldTemplate.required')}
                   </TableHead>
+                  {scopes ? (
+                    <TableHead className='w-32'>
+                      {t('fieldTemplate.scope')}
+                    </TableHead>
+                  ) : null}
                   <TableHead>{t('fieldTemplate.options')}</TableHead>
                   {editable ? <TableHead className='w-28' /> : null}
                 </TableRow>
@@ -520,6 +501,42 @@ export function FieldTemplateEditor({
                         />
                       </div>
                     </TableCell>
+                    {scopes ? (
+                      <TableCell>
+                        {editable ? (
+                          <Select
+                            items={SCOPES.map((scope) => ({
+                              value: scope,
+                              label: t(`fieldTemplate.scopes.${scope}`),
+                            }))}
+                            value={row.scope === 'model' ? 'model' : 'device'}
+                            onValueChange={(next) =>
+                              update(index, {
+                                scope: next === 'model' ? 'model' : undefined,
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              className='w-full'
+                              aria-label={t('fieldTemplate.scope')}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SCOPES.map((scope) => (
+                                <SelectItem key={scope} value={scope}>
+                                  {t(`fieldTemplate.scopes.${scope}`)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          t(
+                            `fieldTemplate.scopes.${row.scope === 'model' ? 'model' : 'device'}`,
+                          )
+                        )}
+                      </TableCell>
+                    ) : null}
                     <TableCell>
                       {row.type === 'select' ? (
                         editable ? (

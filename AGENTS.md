@@ -1552,6 +1552,26 @@ Rules learned while building it:
   is not enough on its own: every stored grant states an explicit list, so
   `ADDED_FIELDS` in `reconcile-grants.ts` is what an existing database
   learns it from.
+- **Extended fields come in two layers** (2026-10-06, migration
+  `202610060004_model_attributes`): a template field may say it belongs to
+  the model (`scope: 'model'`, the template editor's 填写位置 column, offered
+  for every category but software), because the template mixed what every
+  device of a model shares — a screen size, a resolution, a switch's ports —
+  with what each has of its own — a MAC address, an IMEI — and the shared half
+  was typed on every device or, in practice, on none. Its value is kept in
+  `models.attributes`; a device or a stock item of the model shows the
+  model's value (来自型号) until it states its own, which reads as 型号为 …
+  beside it with 改回型号的值, and saving nothing or the model's own value
+  drops it again. Nothing is copied: a device's own `attributes` hold only
+  what differs, so correcting the model corrects every device that did not
+  say otherwise. A model's page shows only those fields
+  (`extendedFields: 'model'` on its domain, `ExtendedFields of='model'`), the
+  create dialog asks for them right after the specification once a category
+  is chosen, and AI 整理 fills them, each held to its type by
+  `/capture/match` (a select only to one of its options). The template
+  parser lives in `client/lib/itam/field-template.ts`; `effectiveAttributes`
+  in `model-attributes.ts` is the two-layer read for any page that needs it.
+  Software products keep no values: an entitlement's fields stay its own.
 - A master-data tree node opens in the record drawer rather than navigating
   (`MasterDataTree`, 2026-09-28): the tree is the map, and reading one node
   should not lose the reader's place in it. A flat list row still navigates.

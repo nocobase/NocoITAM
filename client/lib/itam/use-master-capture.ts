@@ -16,6 +16,7 @@ import {
   type MasterCapture,
   type MasterCaptureCollection,
 } from './master-capture.js';
+import { templateOf } from './field-template.js';
 import { readSearchTurn } from './search-turn.js';
 import { treePathLabel } from './tree.js';
 import type { Turn } from './use-purchase-capture.js';
@@ -75,6 +76,7 @@ const PROPERTIES: Readonly<
     releaseDate: { type: 'string' },
     eolDate: { type: 'string' },
     eosDate: { type: 'string' },
+    attributes: { type: 'object', additionalProperties: true },
   },
   softwareProducts: {
     name: { type: 'string' },
@@ -88,7 +90,7 @@ const PROPERTIES: Readonly<
 
 const DESCRIPTIONS: Readonly<Record<MasterCaptureCollection, string>> = {
   models:
-    'Hand the model you looked up to the new model form on screen, which the user checks and saves. Call it once, with the whole form. name: the model name without the maker in front. code: the maker part number or model code, only when a source states it. manufacturerName: the maker as it is commonly called; the form matches it to its records. categoryId: one id from the page context categories. specification: the main specifications, one per line. warrantyMonths: the standard warranty in months. releaseDate, eolDate, eosDate: YYYY-MM-DD, only when a source states them. sources: the web pages you used, title and url. uncertain: the field names you filled but are not sure of.',
+    'Hand the model you looked up to the new model form on screen, which the user checks and saves. Call it once, with the whole form. name: the model name without the maker in front. code: the maker part number or model code, only when a source states it. manufacturerName: the maker as it is commonly called; the form matches it to its records. categoryId: one id from the page context categories. specification: the main specifications, one per line. warrantyMonths: the standard warranty in months. releaseDate, eolDate, eosDate: YYYY-MM-DD, only when a source states them. attributes: the fields of the chosen category (page context categories[].fields), by key, each of its type — a select takes one of its options, a boolean true or false, a number a number — and only what a source states. sources: the web pages you used, title and url. uncertain: the field names you filled but are not sure of.',
   softwareProducts:
     'Hand the software product you looked up to the new software product form on screen, which the user checks and saves. Call it once, with the whole form. name: the product name. manufacturerName: the vendor as it is commonly called; the form matches it to its records. categoryId: one id from the page context categories. deliveryMethod: saas, onPremise or both. description: one or two sentences on what the product is for. website: the product home page. sources: the web pages you used, title and url. uncertain: the field names you filled but are not sure of.',
 };
@@ -219,6 +221,20 @@ export function useMasterCapture({
           id: row.id,
           name: treePathLabel(categoriesRef.current, row.id),
           appliesTo: row.appliesTo,
+          // The extended fields a model of this category keeps for its
+          // devices, which the reading may fill.
+          ...(collection === 'models'
+            ? {
+                fields: templateOf(row.fieldTemplate)
+                  .filter((field) => field.scope === 'model' && !field.hidden)
+                  .map((field) => ({
+                    key: field.key,
+                    label: field.label,
+                    type: field.type,
+                    ...(field.options ? { options: field.options } : {}),
+                  })),
+              }
+            : {}),
         })),
       form: formRef.current(),
     }),
