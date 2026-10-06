@@ -1,15 +1,10 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  AppWindow,
-  Check,
-  Package,
-  PackageCheck,
-  Sparkles,
-} from 'lucide-react';
+import { Check, Package, PackageCheck, Sparkles } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -375,7 +370,19 @@ function PlanLine({
   const { t } = useTranslation();
   // The proposal whose device is being chosen again, if any.
   const [changing, setChanging] = useState<string>();
-  const Icon = line.kind === 'entitlement' ? AppWindow : Package;
+  // The item's asset type leads its row, as on the kit it comes from:
+  // software is 授权 whatever kind of entitlement, the rest follow their
+  // category (设备, 配件, 耗材, 组件).
+  const kind =
+    line.kind === 'entitlement' ? 'entitlement' : (line.itemType ?? undefined);
+  const tag = kind ? (
+    <AssetTypeBadge value={kind} className='shrink-0' />
+  ) : (
+    <Package
+      aria-hidden='true'
+      className='size-4 shrink-0 text-muted-foreground'
+    />
+  );
   // Noco's reasons, for the picks still standing: one replaced by 更换 is
   // the person's choice now, and its reason no longer applies.
   const reasons = line.proposals.filter(
@@ -387,7 +394,7 @@ function PlanLine({
     return (
       <li className='flex items-center gap-3 py-2 text-sm text-muted-foreground'>
         <span className='flex min-w-0 flex-1 items-center gap-2'>
-          <Icon aria-hidden='true' className='size-4 shrink-0' />
+          {tag}
           <span className='truncate line-through'>{line.target.name}</span>
           <span className='shrink-0 tabular-nums'>×{line.required}</span>
         </span>
@@ -406,10 +413,7 @@ function PlanLine({
     <li className='py-2 text-sm'>
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
         <span className='flex min-w-0 flex-1 items-center gap-2'>
-          <Icon
-            aria-hidden='true'
-            className='size-4 shrink-0 text-muted-foreground'
-          />
+          {tag}
           <span className='truncate'>{line.target.name}</span>
           {line.target.type === 'category' ? (
             <span className='shrink-0 text-xs text-muted-foreground'>
