@@ -444,7 +444,7 @@ describe('ITAM seeds', () => {
     );
   });
 
-  it('gives a set stored before 入职配置 its grant and page', async () => {
+  it('gives a set stored before 入职配置 its grant, and no page of its own', async () => {
     const stored = [
       { key: 'itam-it-support', grants: [] },
       { key: 'itam-asset-manager', grants: [] },
@@ -471,7 +471,9 @@ describe('ITAM seeds', () => {
     expect(kitGrant('itam-asset-manager')?.actions.map((a) => a.action)).toEqual(
       ['read', 'create', 'update', 'delete'],
     );
-    expect(updated.get('itam-it-support')).toContainEqual({
+    // 入职配置 is a tab of the department's page since 2026-10-06, so its
+    // page of its own is not added, and a stored grant for it is stripped.
+    expect(updated.get('itam-it-support')).not.toContainEqual({
       resource: { type: 'page', id: 'onboarding-kits' },
       actions: [{ action: 'access' }],
     });

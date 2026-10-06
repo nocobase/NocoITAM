@@ -41,7 +41,7 @@ function resolveLocale(context: SeedContext): string {
  */
 const BUSINESS_NOTES: Readonly<Record<string, string>> = {
   'zh-CN': `## 入职
-- 入职标准配置按部门和职位维护在 主数据 → 入职配置，入职配备以它为准，这里不再重复列出。
+- 入职标准配置按部门和职位维护在 主数据 → 部门 → 入职配置，入职配备以它为准，这里不再重复列出。
 - 先用库存，库存没有再提采购；入职前预留，入职当天分配。
 - 分配席位后，记得在软件后台给新人开通账号。
 
@@ -64,7 +64,7 @@ const BUSINESS_NOTES: Readonly<Record<string, string>> = {
 ## 命名习惯
 - 设备名称用「地点代码-类型-序号」：新加坡总部为 SG，日本分公司为 JP；笔记本 LT、台式机 DT、显示器 MN、手机 PH，例如 SG-LT-001。`,
   'en-US': `## Onboarding
-- The standard kits are kept by department and position in Master data → Onboarding kits; onboarding follows them, so they are not repeated here.
+- The standard kits are kept by department and position in Master data → Departments → Onboarding kits; onboarding follows them, so they are not repeated here.
 - Use stock first and raise a purchase only for what is missing; reserve before the first day, assign on it.
 - After assigning a seat, open the new joiner's account in the software's own admin console.
 

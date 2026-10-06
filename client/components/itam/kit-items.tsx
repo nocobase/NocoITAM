@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { AppWindow, FolderTree, Package, Pencil, Plus, X } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -110,10 +110,16 @@ export function KitItems({
   value,
   editable,
   onSave,
+  title,
+  actions,
 }: {
   readonly value: unknown;
   readonly editable: boolean;
   readonly onSave: (items: Record<string, unknown>[]) => Promise<void>;
+  /** The heading, 配置清单 unless the page names the list otherwise. */
+  readonly title?: ReactNode;
+  /** More of the heading's buttons, before 编辑. */
+  readonly actions?: ReactNode;
 }): ReactElement {
   const { t } = useTranslation();
   const stored = parseKitItems(value);
@@ -164,8 +170,10 @@ export function KitItems({
       <CardContent className='space-y-3 p-4'>
         <div className='flex min-h-9 items-center justify-between gap-3 border-b border-border/60 pb-2'>
           <h2 className='font-heading text-sm font-semibold'>
-            {t('onboardingKits.items')}
+            {title ?? t('onboardingKits.items')}
           </h2>
+          <span className='flex-1' />
+          {!editing ? actions : null}
           {editable && !editing ? (
             <Button
               size='sm'

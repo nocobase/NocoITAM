@@ -438,6 +438,7 @@ const JSON_FIELDS: Readonly<Record<string, readonly string[]>> = {
   categories: ['fieldTemplate'],
   onboardingKits: ['items'],
   models: ['attributes'],
+  departments: ['positions'],
 };
 
 export function createMasterDataService(
@@ -634,6 +635,54 @@ export function createMasterDataService(
   const pathFor = (parent: Row | undefined, id: string): string =>
     `${parent ? String(parent.path) : '/'}${id}/`;
 
+  /** A department's positions, however the column came back. */
+  const positionsOf = (value: unknown): string[] => {
+    const list =
+      typeof value === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(value) as unknown;
+            } catch {
+              return [];
+            }
+          })()
+        : value;
+    return Array.isArray(list) ? list.map(String) : [];
+  };
+  const samePosition = (a: unknown, b: unknown): boolean =>
+    (asText(a) ?? '').trim().toLowerCase() ===
+    (asText(b) ?? '').trim().toLowerCase();
+
+  /**
+   * A person's position is one of their department's (2026-10-06): the
+   * pages offer only those, and a position that arrives otherwise — an
+   * import, the assistant, a department changed under it — joins the list
+   * rather than standing outside it, where no kit could ever be attached
+   * to it.
+   */
+  const enlistPosition = async (
+    connection: DatabaseConnection,
+    departmentId: unknown,
+    position: unknown,
+  ): Promise<void> => {
+    const name = asText(position)?.trim();
+    const department = asText(departmentId);
+    if (!name || !department) return;
+    const row = await connection.query
+      .selectFrom('departments')
+      .select(['positions'])
+      .where('id', '=', department)
+      .executeTakeFirst<Row>();
+    if (!row) return;
+    const list = positionsOf(row.positions);
+    if (list.some((known) => samePosition(known, name))) return;
+    await connection.query
+      .updateTable('departments')
+      .set({ positions: [...list, name], updatedAt: new Date() })
+      .where('id', '=', department)
+      .execute();
+  };
+
   return {
     definition: (collection) => definitions.get(collection),
 
@@ -742,6 +791,8 @@ export function createMasterDataService(
           { subjectType: collection, subjectId: id, action: 'create', actorId },
           connection,
         );
+        if (collection === 'people')
+          await enlistPosition(connection, values.departmentId, values.position);
       });
       if (collection === 'people') personSaved?.(id);
       const created = await findRaw(collection, id);
@@ -829,6 +880,44 @@ export function createMasterDataService(
           'employmentStatus',
         );
       }
+      // A department's positions: each once, and none taken away while
+      // somebody still in the department holds it. A position's own kit goes
+      // with it (below), since it describes a position that no longer exists.
+      let removedPositions: string[] = [];
+      if (collection === 'departments' && 'positions' in input) {
+        const next: string[] = [];
+        for (const name of positionsOf(input.positions))
+          if (name.trim() && !next.some((known) => samePosition(known, name)))
+            next.push(name.trim());
+        input = { ...input, positions: next };
+        removedPositions = positionsOf(previous.positions).filter(
+          (name) => !next.some((known) => samePosition(known, name)),
+        );
+        if (removedPositions.length > 0) {
+          const holders = await database
+            .query()
+            .selectFrom('people')
+            .select(['position'])
+            .where('departmentId', '=', id)
+            .where((eb) =>
+              eb.or([
+                eb('employmentStatus', 'is', null),
+                eb('employmentStatus', '!=', 'left'),
+              ]),
+            )
+            .execute<Row>();
+          for (const name of removedPositions) {
+            const count = holders.filter((row) =>
+              samePosition(row.position, name),
+            ).length;
+            if (count > 0)
+              throw new BusinessRuleError(
+                `${count} people in this department hold the position ${name}`,
+                'POSITION_IN_USE',
+              );
+          }
+        }
+      }
       const values: Record<string, unknown> = {
         ...input,
         ...(collection === 'people' &&
@@ -848,6 +937,32 @@ export function createMasterDataService(
       delete values.createdById;
 
       await database.transaction(async (connection) => {
+        if (
+          collection === 'people' &&
+          ('position' in input || 'departmentId' in input)
+        )
+          await enlistPosition(
+            connection,
+            'departmentId' in input ? input.departmentId : previous.departmentId,
+            'position' in input ? input.position : previous.position,
+          );
+        if (removedPositions.length > 0) {
+          const kits = await connection.query
+            .selectFrom('onboardingKits')
+            .select(['id', 'position'])
+            .where('departmentId', '=', id)
+            .execute<Row>();
+          const gone = kits
+            .filter((kit) =>
+              removedPositions.some((name) => samePosition(kit.position, name)),
+            )
+            .map((kit) => String(kit.id));
+          if (gone.length > 0)
+            await connection.query
+              .deleteFrom('onboardingKits')
+              .where('id', 'in', gone)
+              .execute();
+        }
         if (parentChanged && PATH_COLLECTIONS.has(collection)) {
           const oldPath = String(previous.path);
           const newPath = pathFor(parent, id);

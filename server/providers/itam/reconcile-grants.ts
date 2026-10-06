@@ -61,6 +61,8 @@ const STALE_PAGES = new Set([
   // menu entry to check a page grant (2026-10-05).
   'inbox',
   'notifications',
+  // 入职配置 moved into the department's page as a tab (2026-10-06).
+  'onboarding-kits',
 ]);
 
 /**
@@ -458,8 +460,6 @@ const IT_PAGES: readonly string[] = [
   'locations',
   'departments',
   'people',
-  // 入职配置 (2026-10-05).
-  'onboarding-kits',
 ];
 /**
  * Both IT roles reach the same pages since IT support became the Asset

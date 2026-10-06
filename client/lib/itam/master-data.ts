@@ -581,6 +581,7 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
       { key: 'devices', label: 'tabs.devices' },
       { key: 'people', label: 'navigation.people' },
       { key: 'children', label: 'tabs.children' },
+      { key: 'onboarding', label: 'onboardingKits.title', countless: true },
     ],
     defaultTab: 'devices',
     defaultSort: 'path',
@@ -620,17 +621,14 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
   },
   {
     // 入职配置 (2026-10-05): what a new joiner in a department and position
-    // is given. Its items are a tab of their own, 配置清单 (`KitItems`),
-    // opened first, beside 历史 (2026-10-06).
+    // is given. It has no pages of its own since 2026-10-06: a department's
+    // 入职配置 tab holds its default kit and its positions' (`DepartmentKits`).
+    // The entry stays for its name and fields, which references read.
     name: 'onboardingKits',
     route: 'onboarding-kits',
     icon: PackageCheck,
     i18n: 'onboardingKits',
     nameField: 'name',
-    extraTabs: [
-      { key: 'items', label: 'onboardingKits.items', countless: true },
-    ],
-    defaultTab: 'items',
     fields: [
       {
         key: 'name',
@@ -706,6 +704,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         reference: { collection: 'departments' },
         column: true,
         group: 'groups.basic',
+        // A position belongs to its department (2026-10-06).
+        clearOnChange: ['position'],
       },
       {
         key: 'position',
@@ -713,6 +713,9 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         type: 'text',
         column: true,
         group: 'groups.basic',
+        // Chosen from the department's positions, so it always matches the
+        // position a kit is attached to.
+        positionOf: 'departmentId',
       },
       {
         key: 'email',

@@ -337,6 +337,86 @@ describe('onboarding', () => {
     expect(ids).not.toContain(long.id);
   });
 
+  it('keeps a department’s positions, with a kit for one or the default', async () => {
+    const department = async (id: string) =>
+      data<{ positions: string[] | null }>(
+        await app.request(`/api/itam/master/departments/${id}`, manager),
+      );
+    // Seeded: the designer kit's position is Product's.
+    expect((await department('dept-product')).positions).toContain(
+      'Designer',
+    );
+    // A person saved with a position the department lacks adds it.
+    const joiner = await person('New Role', 'dept-product', 'Researcher');
+    expect((await department('dept-product')).positions).toContain(
+      'Researcher',
+    );
+    const kits = async () =>
+      data<{
+        defaultKit: { id: string } | null;
+        inherited: unknown;
+        positions: { name: string; kit: { id: string } | null; holders: number }[];
+      }>(
+        await app.request(
+          '/api/itam/master/departments/dept-product/onboarding-kits',
+          manager,
+        ),
+      );
+    const before = await kits();
+    expect(before.defaultKit?.id).toBe('kit-product');
+    expect(
+      before.positions.find((entry) => entry.name === 'Designer'),
+    ).toMatchObject({ kit: { id: 'kit-product-designer' }, holders: 0 });
+    expect(
+      before.positions.find((entry) => entry.name === 'Researcher'),
+    ).toMatchObject({ kit: null, holders: 1 });
+
+    const setPositions = (positions: string[]) =>
+      app.request('/api/itam/master/departments/dept-product', {
+        ...json({ positions }),
+        method: 'PATCH',
+        ...manager,
+      });
+    // Held by somebody: it stays.
+    const refused = await setPositions(['Designer']);
+    expect(refused.status).toBe(422);
+    expect(await refused.json()).toMatchObject({ rule: 'POSITION_IN_USE' });
+    // Held by nobody: it goes, and its own kit with it.
+    expect((await setPositions(['Researcher'])).status).toBe(200);
+    const after = await kits();
+    expect(after.positions.map((entry) => entry.name)).toEqual(['Researcher']);
+    expect(
+      (
+        await app.request(
+          '/api/itam/master/onboardingKits/kit-product-designer',
+          manager,
+        )
+      ).status,
+    ).toBe(404);
+    expect(joiner.id).toBeTruthy();
+  });
+
+  it('shows the kit a department takes from above when it has none', async () => {
+    const team = await create('master/departments', {
+      name: 'Web team',
+      parentId: 'dept-rd',
+    });
+    const result = await data<{
+      defaultKit: unknown;
+      inherited: { department: { id: string }; kit: { id: string } } | null;
+    }>(
+      await app.request(
+        `/api/itam/master/departments/${team.id}/onboarding-kits`,
+        manager,
+      ),
+    );
+    expect(result.defaultKit).toBeNull();
+    expect(result.inherited).toMatchObject({
+      department: { id: 'dept-rd' },
+      kit: { id: 'kit-rd' },
+    });
+  });
+
   it('keeps one kit per department and position, each item one thing', async () => {
     // Research & Development already has its default kit.
     const duplicate = await post('master/onboardingKits', {

@@ -126,6 +126,13 @@ export interface FieldDefinition {
   ) => boolean;
   /** Translation key explaining why the field is read-only when it is. */
   readonly readonlyHint?: string;
+  /**
+   * A person's position: chosen from the positions of the department in
+   * this field of the same record (2026-10-06); `department` is that
+   * department, resolved against the values.
+   */
+  readonly positionOf?: string;
+  readonly department?: string | null;
 }
 
 /** Resolve dependent form constraints against the current record. */
@@ -141,6 +148,14 @@ export function resolveFormField(
       field.reference && field.referenceFilter
         ? { ...field.reference, filter: field.referenceFilter(values) }
         : field.reference,
+    ...(field.positionOf
+      ? {
+          department:
+            typeof values[field.positionOf] === 'string'
+              ? (values[field.positionOf] as string)
+              : null,
+        }
+      : {}),
   };
 }
 export function changeFormField(

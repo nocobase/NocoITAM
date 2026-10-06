@@ -21,6 +21,7 @@ import { CURRENCIES } from '@/lib/itam/currencies';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { text } from '@/lib/itam/format';
 
+import { PositionSelect } from './position-select.js';
 import { RecipientInput } from './recipient-input.js';
 import { ReferenceSelect } from './reference-select.js';
 
@@ -54,6 +55,20 @@ export function FieldInput({
   // A placeholder is a translation key, the way the label is; a caller that
   // passes text already translated gets it back unchanged.
   const placeholder = field.placeholder ? t(field.placeholder) : undefined;
+
+  if (field.positionOf)
+    return (
+      <PositionSelect
+        id={inputId}
+        departmentId={field.department}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        autoFocus={autoFocus}
+        onBlur={onBlur}
+        onDismiss={onDismiss}
+      />
+    );
 
   switch (field.type) {
     case 'textarea':
