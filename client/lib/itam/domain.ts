@@ -159,11 +159,8 @@ export interface DomainConfig {
    * responsibility rather than whoever typed the record in.
    */
   readonly ownerFromCreator?: boolean;
-  /**
-   * Extended fields from the record's category template (default true);
-   * `model` for a model, which shows only the fields its devices share.
-   */
-  readonly extendedFields?: boolean | 'model';
+  /** Extended fields from the record's category template (default true). */
+  readonly extendedFields?: boolean;
   /**
    * A record this one's tabs depend on, loaded beside it (a model's
    * category decides whether it has devices or stock).

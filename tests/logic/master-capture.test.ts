@@ -185,7 +185,7 @@ describe('AI 整理 for a new model or software product', () => {
     });
   });
 
-  it('fills the fields a category keeps on the model, each by its type', async () => {
+  it('fills the category’s fields, each by its type', async () => {
     const monitors = await created('master/categories', {
       name: 'Test Monitor',
       appliesTo: 'device',
@@ -195,20 +195,17 @@ describe('AI 整理 for a new model or software product', () => {
           label: 'Screen size',
           type: 'select',
           options: ['24', '27'],
-          scope: 'model',
         },
-        { key: 'refresh', label: 'Refresh', type: 'number', scope: 'model' },
-        { key: 'speakers', label: 'Speakers', type: 'boolean', scope: 'model' },
-        { key: 'launched', label: 'Launched', type: 'date', scope: 'model' },
-        { key: 'panel', label: 'Panel', type: 'text', scope: 'model' },
-        // Each device's own: never the model's to fill.
+        { key: 'refresh', label: 'Refresh', type: 'number' },
+        { key: 'speakers', label: 'Speakers', type: 'boolean' },
+        { key: 'launched', label: 'Launched', type: 'date' },
+        { key: 'panel', label: 'Panel', type: 'text' },
         { key: 'assetLabel', label: 'Label', type: 'text' },
         // Hidden: kept with its values, not asked for.
         {
           key: 'legacy',
           label: 'Legacy',
           type: 'text',
-          scope: 'model',
           hidden: true,
         },
       ],
@@ -232,6 +229,7 @@ describe('AI 整理 for a new model or software product', () => {
       screenSize: '27',
       refresh: 144,
       speakers: false,
+      assetLabel: 'X-1',
     });
     expect(capture.uncertain).toEqual([
       'attributes.refresh',

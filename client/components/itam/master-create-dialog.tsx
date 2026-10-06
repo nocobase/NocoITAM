@@ -19,7 +19,7 @@ import {
   useItamRecord,
   type ItamRecord,
 } from '@/lib/itam/api';
-import { modelFieldsOf } from '@/lib/itam/field-template';
+import { templateOf } from '@/lib/itam/field-template';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { text } from '@/lib/itam/format';
 import {
@@ -93,9 +93,9 @@ function MasterCreateForm({
   const [values, setValues] = useState<Record<string, unknown>>(() =>
     initialFormValues(fields, initial),
   );
-  // A model fills the extended fields its category keeps on the model
-  // (2026-10-06), right after its specification: they are the structured
-  // half of it, and its devices read them.
+  // A model fills its category's extended fields (2026-10-06), right after
+  // its specification: they are the structured half of it, and a new device
+  // of the model starts with them.
   const category = useItamRecord<ItamRecord>(
     masterDataPath('categories'),
     collection === 'models' && values.categoryId
@@ -105,7 +105,7 @@ function MasterCreateForm({
   const shared = useMemo(
     () =>
       collection === 'models'
-        ? modelFieldsOf(category.data?.fieldTemplate).filter(
+        ? templateOf(category.data?.fieldTemplate).filter(
             (field) => !field.hidden,
           )
         : [],

@@ -966,12 +966,6 @@ const zhCN: AppResource = {
     empty: '暂无软件产品',
     capture: { context: '创建软件产品' },
   },
-  extendedFields: {
-    fromModel: '来自型号',
-    ownValue: '本台单独填写',
-    modelSays: '型号为 {{value}}',
-    useModel: '改回型号的值',
-  },
   masterCapture: {
     description: {
       models: '写上制造商和型号，AI 联网查询补全其余信息，核对后保存',
@@ -1778,9 +1772,6 @@ const zhCN: AppResource = {
     hiddenHint: '已隐藏：字段和已录入的值保留，资产页面不再显示',
     inUse_one: '{{count}} 条记录录入了值，该字段只能隐藏，不能删除',
     inUse_other: '{{count}} 条记录录入了值，该字段只能隐藏，不能删除',
-    scope: '填写位置',
-    scopes: { device: '每台设备', model: '型号' },
-    modelShort: '（按型号填写）',
     remove: '删除',
     labelRequired: '请填写字段标签',
     keyInvalid: '键必须以字母开头，只能包含字母、数字或下划线',

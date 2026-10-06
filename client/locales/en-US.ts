@@ -981,13 +981,6 @@ const messages = {
     capture: { context: 'New software product' },
   },
   // AI 整理 in the new model / software product dialogs.
-  // A field a category keeps on the model, as a device or stock item reads it.
-  extendedFields: {
-    fromModel: 'from the model',
-    ownValue: 'this one’s own',
-    modelSays: 'the model says {{value}}',
-    useModel: 'Use the model’s',
-  },
   masterCapture: {
     description: {
       models:
@@ -1859,9 +1852,6 @@ const messages = {
       '{{count}} record holds a value; the field can be hidden, not deleted',
     inUse_other:
       '{{count}} records hold a value; the field can be hidden, not deleted',
-    scope: 'Filled on',
-    scopes: { device: 'Each device', model: 'The model' },
-    modelShort: '(on the model)',
     remove: 'Remove',
     labelRequired: 'Give the field a label',
     keyInvalid:

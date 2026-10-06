@@ -226,8 +226,6 @@ export function CategoryTemplate({
       value={record.fieldTemplate}
       editable={Boolean(permissions.update)}
       usage={stats.data?.attributeUsage}
-      // Software products keep no values; everything else has a model.
-      scopes={record.appliesTo !== 'entitlement'}
       onSave={async (template) => {
         try {
           await mutations.update.mutateAsync({

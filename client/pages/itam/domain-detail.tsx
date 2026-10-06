@@ -513,7 +513,6 @@ export function DomainDetailPage({
                 {groupIndex === 0 && domain.extendedFields !== false ? (
                   <ExtendedFields
                     record={data}
-                    of={domain.extendedFields === 'model' ? 'model' : 'record'}
                     editable={editable}
                     onSave={async (attributes: Record<string, unknown>) => {
                       await mutations.update.mutateAsync({
