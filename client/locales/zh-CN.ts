@@ -91,9 +91,9 @@ const zhCN: AppResource = {
     laneWhere: '资产归属',
     laneWhereHint:
       '资产分配给人员、位置或设备后归其持有；人员属于部门并有办公位置',
-    laneWho: '资产来源',
+    laneWho: '资产来源与去向',
     laneWhoHint:
-      '供应商不被其他主数据引用，但可被资产记录以及采购单、维修单引用',
+      '供应商不被其他主数据引用，但可被资产记录以及采购、维修、报废引用',
     edgeBelongsTo: '属于',
     edgeDividesInto: '细分',
     edgeContains: '收录',

@@ -313,15 +313,6 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
             history: () => import('./pages/itam/repairs/tab-history.js'),
           },
         }),
-        domainRoute('audits', 'navigation.audits', ClipboardCheck, {
-          list: () => import('./pages/itam/audits/audits.js'),
-          detail: () => import('./pages/itam/audits/audits-detail.js'),
-          tabs: {
-            items: () => import('./pages/itam/audits/tab-items.js'),
-            attachments: () => import('./pages/itam/audits/tab-attachments.js'),
-            history: () => import('./pages/itam/audits/tab-history.js'),
-          },
-        }),
         domainRoute('disposals', 'navigation.disposals', Recycle, {
           list: () => import('./pages/itam/disposals/disposals.js'),
           detail: () => import('./pages/itam/disposals/disposals-detail.js'),
@@ -329,6 +320,15 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
             attachments: () =>
               import('./pages/itam/disposals/tab-attachments.js'),
             history: () => import('./pages/itam/disposals/tab-history.js'),
+          },
+        }),
+        domainRoute('audits', 'navigation.audits', ClipboardCheck, {
+          list: () => import('./pages/itam/audits/audits.js'),
+          detail: () => import('./pages/itam/audits/audits-detail.js'),
+          tabs: {
+            items: () => import('./pages/itam/audits/tab-items.js'),
+            attachments: () => import('./pages/itam/audits/tab-attachments.js'),
+            history: () => import('./pages/itam/audits/tab-history.js'),
           },
         }),
         {
@@ -443,6 +443,11 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
               path: 'repairs',
               loader: () =>
                 import('./pages/itam/master/vendors-repairs-tab.js'),
+            },
+            {
+              path: 'disposals',
+              loader: () =>
+                import('./pages/itam/master/vendors-disposals-tab.js'),
             },
           ],
         }),

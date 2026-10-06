@@ -134,11 +134,13 @@ it('describes each collection for the generic pages', () => {
   expect(vendors.listColumns?.map((column) => column.key)).toEqual([
     'count:purchaseOrders',
     'count:repairs',
+    'count:disposals',
   ]);
   expect(vendors.Tree).toBeUndefined();
   expect(vendors.tabs?.map((tab) => tab.key)).toEqual([
     'purchaseOrders',
     'repairs',
+    'disposals',
   ]);
 
   for (const tree of ['categories', 'locations', 'departments'])

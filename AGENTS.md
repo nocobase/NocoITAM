@@ -1708,7 +1708,8 @@ Rules learned while building it:
   rule. Since nothing marks where an unfolded group ends, every page sits
   either above the groups (工作台) or
   inside one (资产, 业务, 主数据); an ungrouped entry placed after
-  a group reads as part of it. 业务 holds 采购, 维修, 盘点, 报废 and 报表.
+  a group reads as part of it. 业务 holds 采购, 维修, 报废, 盘点 and 报表 (盘点 below 报废 since
+  2026-10-06).
   Route names are what stored page grants reference, so regrouping changes
   no grant — `tests/logic/client-routes.test.ts` pins only their order.
 

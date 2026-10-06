@@ -173,10 +173,13 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
     countColumns: [
       { key: 'purchaseOrders', label: 'tabs.purchaseOrders' },
       { key: 'repairs', label: 'tabs.repairs' },
+      { key: 'disposals', label: 'tabs.disposals' },
     ],
+    // A vendor may also take scrapped devices: a disposal's 接收方（供应商）.
     extraTabs: [
       { key: 'purchaseOrders', label: 'tabs.purchaseOrders' },
       { key: 'repairs', label: 'tabs.repairs' },
+      { key: 'disposals', label: 'tabs.disposals' },
     ],
     defaultTab: 'purchaseOrders',
     fields: [

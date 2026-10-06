@@ -92,9 +92,9 @@ const messages = {
     laneWhere: 'Asset ownership',
     laneWhereHint:
       'Assets are held by the person, location or device they are assigned to; a person belongs to a department and has an office location',
-    laneWho: 'Asset sourcing',
+    laneWho: 'Where assets come from and go',
     laneWhoHint:
-      'No other master data references a vendor, but asset records, purchase orders and repairs do',
+      'No other master data references a vendor, but asset records, purchases, repairs and disposals do',
     edgeBelongsTo: 'belongs to',
     edgeDividesInto: 'divided into',
     edgeContains: 'lists',
@@ -920,10 +920,13 @@ const messages = {
     positionKitName: '{{department}} · {{position}}',
     setDefault: 'Set a default for this department',
     removeDefault: 'Take the parent department’s',
-    removeDefaultHint: 'Delete this department’s default kit and take its parent’s',
-    inherits: 'This department has no default of its own and takes its parent’s:',
+    removeDefaultHint:
+      'Delete this department’s default kit and take its parent’s',
+    inherits:
+      'This department has no default of its own and takes its parent’s:',
     inherited: 'Taken from {{department}}',
-    noDefault: 'Neither this department nor any above it has a default kit yet.',
+    noDefault:
+      'Neither this department nor any above it has a default kit yet.',
     positions: 'Positions',
     noPositions: 'No positions yet.',
     holders_one: '{{count}} person',
@@ -933,8 +936,10 @@ const messages = {
     positionKit: 'Kit for {{position}}',
     addPosition: 'Add position',
     removePosition: 'Remove position',
-    positionInUse_one: '{{count}} person holds this position, so it cannot be removed',
-    positionInUse_other: '{{count}} people hold this position, so it cannot be removed',
+    positionInUse_one:
+      '{{count}} person holds this position, so it cannot be removed',
+    positionInUse_other:
+      '{{count}} people hold this position, so it cannot be removed',
   },
   positions: {
     pickDepartment: 'Choose a department first',

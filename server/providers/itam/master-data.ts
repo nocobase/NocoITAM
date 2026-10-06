@@ -35,11 +35,7 @@ import {
 } from './errors.js';
 import { addDays, addMonths, today } from './dates.js';
 import type { LeaverAccounts } from './leaver-accounts.js';
-import {
-  OWNED_BY_USER,
-  recoveryPlan,
-  type RecoveryItem,
-} from './recovery.js';
+import { OWNED_BY_USER, recoveryPlan, type RecoveryItem } from './recovery.js';
 import type { HistoryService } from './history.js';
 
 /**
@@ -157,6 +153,12 @@ const LIST_COUNTS: Readonly<
   vendors: [
     { key: 'purchaseOrders', collection: 'purchaseOrders', field: 'vendorId' },
     { key: 'repairs', collection: 'repairs', field: 'vendorId' },
+    // The vendor a disposal hands its devices to (接收方（供应商）).
+    {
+      key: 'disposals',
+      collection: 'disposals',
+      field: 'recipientVendorId',
+    },
   ],
   softwareProducts: [
     {
@@ -305,7 +307,10 @@ export interface MasterDataService {
     connection?: DatabaseConnection,
   ): Promise<readonly OwnedRecord[]>;
   /** Writes down what is in somebody's name as they are marked left. */
-  snapshotBelongings(id: string, connection?: DatabaseConnection): Promise<void>;
+  snapshotBelongings(
+    id: string,
+    connection?: DatabaseConnection,
+  ): Promise<void>;
   /** What that snapshot holds, or undefined where none was taken. */
   belongingsSnapshot(id: string): Promise<
     | {
@@ -356,6 +361,7 @@ const REFERENCES: Readonly<
     { collection: 'devices', field: 'lenderVendorId' },
     { collection: 'purchaseOrders', field: 'vendorId' },
     { collection: 'repairs', field: 'vendorId' },
+    { collection: 'disposals', field: 'recipientVendorId' },
   ],
   categories: [
     { collection: 'categories', field: 'parentId' },
@@ -801,7 +807,11 @@ export function createMasterDataService(
           connection,
         );
         if (collection === 'people')
-          await enlistPosition(connection, values.departmentId, values.position);
+          await enlistPosition(
+            connection,
+            values.departmentId,
+            values.position,
+          );
       });
       if (collection === 'people') personSaved?.(id);
       const created = await findRaw(collection, id);
@@ -952,7 +962,9 @@ export function createMasterDataService(
         )
           await enlistPosition(
             connection,
-            'departmentId' in input ? input.departmentId : previous.departmentId,
+            'departmentId' in input
+              ? input.departmentId
+              : previous.departmentId,
             'position' in input ? input.position : previous.position,
           );
         if (removedPositions.length > 0) {
@@ -1090,9 +1102,7 @@ export function createMasterDataService(
     async snapshotBelongings(id, connection) {
       const items = recoveryPlan(
         await this.personHoldings(id, connection),
-      ).filter(
-        (item) => item.handling !== 'none',
-      );
+      ).filter((item) => item.handling !== 'none');
       // Both halves, because both have to be settled and the progress counts
       // them together. Read unrestricted: this is the register writing down
       // a fact rather than a reader asking a question, and what each reader
@@ -1149,7 +1159,11 @@ export function createMasterDataService(
       // would quietly show last month's answer beside this month's.
       const byId = <T extends Row>(rows: readonly T[]) =>
         new Map(rows.map((entry) => [String(entry.id), entry]));
-      const read = (collection: string, ids: readonly string[], fields: readonly string[]) =>
+      const read = (
+        collection: string,
+        ids: readonly string[],
+        fields: readonly string[],
+      ) =>
         ids.length === 0
           ? Promise.resolve([] as Row[])
           : database
@@ -1169,14 +1183,18 @@ export function createMasterDataService(
       const stockItems = byId(
         await read(
           'stockItems',
-          items.filter((item) => item.kind === 'stock').map((item) => item.targetId),
+          items
+            .filter((item) => item.kind === 'stock')
+            .map((item) => item.targetId),
           ['name', 'kind', 'ownerId'],
         ),
       );
       const entitlements = byId(
         await read(
           'entitlements',
-          items.filter((item) => item.kind === 'seat').map((item) => item.targetId),
+          items
+            .filter((item) => item.kind === 'seat')
+            .map((item) => item.targetId),
           ['name', 'ownerId'],
         ),
       );
@@ -1213,7 +1231,10 @@ export function createMasterDataService(
             entry.field,
             ...(entry.label2 ? [entry.label2] : []),
           ];
-          return [entry.collection, byId(await read(entry.collection, ids, columns))] as const;
+          return [
+            entry.collection,
+            byId(await read(entry.collection, ids, columns)),
+          ] as const;
         }),
       );
       const ownedLive = new Map(ownedNow);
@@ -1268,9 +1289,7 @@ export function createMasterDataService(
         // cancelled or carried out names whoever raised it as a fact about
         // what happened, not as a job for somebody else.
         if (entry.open)
-          query = query.where(entry.open.column, 'in', [
-            ...entry.open.values,
-          ]);
+          query = query.where(entry.open.column, 'in', [...entry.open.values]);
         // A record that is waiting only for a while (a joiner's 入职负责人,
         // while the joining day is near).
         if (entry.since)
@@ -1279,9 +1298,7 @@ export function createMasterDataService(
             '>=',
             addDays(today(), -entry.since.days),
           );
-        const rows = await query
-          .where(entry.field, '=', userId)
-          .execute<Row>();
+        const rows = await query.where(entry.field, '=', userId).execute<Row>();
         for (const row of rows) {
           found.push({
             collection: entry.collection,
@@ -1754,6 +1771,7 @@ export function createMasterDataService(
         case 'vendors':
           counts.purchaseOrders = await count('purchaseOrders', 'vendorId');
           counts.repairs = await count('repairs', 'vendorId');
+          counts.disposals = await count('disposals', 'recipientVendorId');
           await devicesBy('vendorId');
           break;
         case 'softwareProducts':

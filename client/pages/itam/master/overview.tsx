@@ -15,6 +15,7 @@ import {
   Mouse,
   Package,
   Printer,
+  Recycle,
   ShoppingCart,
   Store,
   Users,
@@ -30,7 +31,7 @@ import { masterDataPath, useItamList, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
 import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
-import { REPAIRS_PATH } from '@/lib/itam/operations';
+import { DISPOSALS_PATH, REPAIRS_PATH } from '@/lib/itam/operations';
 import { STOCK_PATH } from '@/lib/itam/stock';
 import { cn } from '@/lib/utils';
 
@@ -157,16 +158,24 @@ export default function MasterDataOverviewPage(): ReactElement {
     purchaseOrders: record(
       'purchaseOrders',
       ShoppingCart,
-      t('procurement.object'),
+      t('navigation.procurement'),
       '/procurement',
       PURCHASE_ORDERS_PATH,
     ),
     repairs: record(
       'repairs',
       Wrench,
-      t('tabs.repairs'),
-      '/devices',
+      t('navigation.repairs'),
+      '/repairs',
       REPAIRS_PATH,
+    ),
+    // A vendor also takes scrapped devices: a disposal's 接收方（供应商）.
+    disposals: record(
+      'disposals',
+      Recycle,
+      t('navigation.disposals'),
+      '/disposals',
+      DISPOSALS_PATH,
     ),
   };
 
@@ -328,14 +337,16 @@ export default function MasterDataOverviewPage(): ReactElement {
           title={t('masterData.laneWho')}
           hint={t('masterData.laneWhoHint')}
         >
-          <div className='grid grid-cols-2 gap-2'>
-            <div className='col-span-2'>
+          <div className='grid grid-cols-3 gap-2'>
+            <div className='col-span-3'>
               <NodeCard node={nodes.vendors} compact />
             </div>
             <Arrow label={t('masterData.edgeUndertakes')} centered />
             <Arrow label={t('masterData.edgeUndertakes')} centered />
+            <Arrow label={t('masterData.edgeUndertakes')} centered />
             <NodeCard node={nodes.purchaseOrders} compact emphasis />
             <NodeCard node={nodes.repairs} compact emphasis />
+            <NodeCard node={nodes.disposals} compact emphasis />
           </div>
         </Lane>
       </div>
