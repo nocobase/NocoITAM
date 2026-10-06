@@ -113,10 +113,16 @@ export function useWorkCards(): readonly WorkCard[] {
       records: tag
         ? item.records.map((record) => ({ ...record, tag }))
         : item.records,
-      links:
-        item.count > MY_WORK_PREVIEW
+      links: [
+        ...(item.count > MY_WORK_PREVIEW
           ? [{ label: t('workbench.seeAll'), url: item.url }]
-          : [],
+          : []),
+        // The joiners worked out together: what each will get, and what
+        // must be bought across them.
+        ...(key === 'pendingOnboarding' && item.count > 0
+          ? [{ label: t('onboarding.supply.link'), url: '/onboarding-supply' }]
+          : []),
+      ],
     });
   }
 

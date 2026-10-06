@@ -107,7 +107,10 @@ const plan = (hireDate: string): OnboardingPlan => ({
       prepared: [],
       preparedCount: 0,
       proposals: [{ type: 'device', id: 'd1', label: 'DE-000001 / Mac' }],
+      planned: [],
       onOrder: 0,
+      returning: 0,
+      orderBy: null,
       shortfall: 0,
     },
     {
@@ -121,7 +124,10 @@ const plan = (hireDate: string): OnboardingPlan => ({
       prepared: [],
       preparedCount: 0,
       proposals: [{ type: 'stock', id: 's1', label: 'MX Keys', quantity: 1 }],
+      planned: [],
       onOrder: 0,
+      returning: 0,
+      orderBy: null,
       shortfall: 0,
     },
     {
@@ -135,7 +141,10 @@ const plan = (hireDate: string): OnboardingPlan => ({
       prepared: [],
       preparedCount: 0,
       proposals: [],
+      planned: [],
       onOrder: 0,
+      returning: 0,
+      orderBy: null,
       shortfall: 1,
     },
   ],
@@ -259,7 +268,10 @@ it('carries on past a refused item, and gives a subscription seat its account', 
             account: 'sun.hao@example.com',
           },
         ],
+        planned: [],
         onOrder: 0,
+        returning: 0,
+        orderBy: null,
         shortfall: 0,
       },
     ],
@@ -350,4 +362,43 @@ it('lets nobody but the onboarding owner ask again', () => {
   expect(
     screen.queryByRole('button', { name: 'onboarding.advice.conversation' }),
   ).toBeNull();
+});
+
+it('says where planned things come from, with no button, and when to order the rest', () => {
+  const base = plan('2099-01-10');
+  state.plan = {
+    ...base,
+    lines: base.lines.map((line) =>
+      line.key === 'model:m1'
+        ? {
+            ...line,
+            proposals: [],
+            planned: [
+              {
+                type: 'device',
+                id: 'd9',
+                label: 'DE-000009 / Mac',
+                supply: {
+                  kind: 'return',
+                  availableOn: '2099-01-05',
+                  fromId: 'p9',
+                  fromName: 'Chen Jie',
+                },
+              },
+            ],
+            returning: 1,
+          }
+        : line.key === 'softwareProduct:sp1'
+          ? { ...line, orderBy: '2000-01-01' }
+          : line,
+    ),
+  };
+  show();
+  expect(screen.getByText('onboarding.planned.return')).toBeTruthy();
+  // Not here yet: nothing to reserve for it.
+  expect(
+    screen.queryByRole('button', { name: 'onboarding.reserve' }),
+  ).toBeNull();
+  // A shortfall whose last order day has passed is to be ordered now.
+  expect(screen.getByText(/onboarding\.orderNow/)).toBeTruthy();
 });
