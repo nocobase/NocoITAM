@@ -179,6 +179,8 @@ const RENAMED_FIELDS: ReadonlyMap<
       ['costCenter', null],
     ]),
   ],
+  // A location's 负责人 went too (`202610060007_drop_location_owner`).
+  ['main.locations', new Map<string, string | null>([['ownerId', null]])],
 ]);
 
 /** Renames (or drops) the fields above in every list a stored policy states. */

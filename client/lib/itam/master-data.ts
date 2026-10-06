@@ -561,13 +561,6 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         column: true,
         group: 'groups.basic',
       },
-      {
-        key: 'ownerId',
-        label: 'fields.owner',
-        type: 'reference',
-        reference: { collection: 'users' },
-        group: 'groups.basic',
-      },
       notes,
       ...AUDIT_FIELDS,
     ],

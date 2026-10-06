@@ -115,7 +115,6 @@ const schemas: Readonly<
       'other',
     ]),
     address: optionalText,
-    ownerId: optionalId,
     notes: optionalLong,
     sort: z.number().int().optional(),
   }),

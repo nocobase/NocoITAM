@@ -117,7 +117,6 @@ const seed: SeedDefinition = defineSeed({
           type: location.type,
           path: `${parent ? parent.path : '/'}${location.id}/`,
           address: null,
-          ownerId: null,
           notes: null,
           sort: location.sort,
           createdById: null,

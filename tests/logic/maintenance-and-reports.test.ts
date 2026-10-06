@@ -7,6 +7,7 @@ import {
   maintenanceServiceToken,
   masterDataServiceToken,
 } from '../../server/providers/index.js';
+import { addDays, today } from '../../server/providers/itam/dates.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { repairRoutes } from '../../server/routes/itam/repairs.js';
@@ -465,10 +466,12 @@ describe('maintenance, reminders, workbench and reports', () => {
       departmentId: hr.id,
       userId: 'qian',
     });
-    await create('master/locations', {
-      name: 'Server room',
-      type: 'room',
-      ownerId: 'zhou',
+    // A joiner they were getting equipped: theirs to hand over.
+    await create('master/people', {
+      name: 'New Joiner',
+      departmentId: hr.id,
+      hireDate: addDays(today(), 5),
+      onboardingOwnerId: 'zhou',
     });
     await leave(owner.id);
     await leave(quiet.id);
