@@ -233,4 +233,11 @@ it('is the plain form when the assistant is not available', () => {
     screen.queryByRole('textbox', { name: 'procurement.capture.material' }),
   ).toBeNull();
   expect(screen.getByText('fields.poReason')).toBeVisible();
+  // 说明 comes last, after 供应商, across the full width.
+  const labels = [...document.querySelectorAll('label')].map(
+    (label) => label.textContent,
+  );
+  expect(labels.indexOf('fields.description')).toBeGreaterThan(
+    labels.findIndex((label) => label?.startsWith('fields.vendor')),
+  );
 });

@@ -243,11 +243,13 @@ export function raisedBy(
 
 export const PO_CREATE_FIELDS: readonly string[] = [
   'reason',
-  'description',
   // Who follows it through, and the department it is for. Left empty, the
   // service files the order under whoever is signed in.
   'ownerId',
   'departmentId',
   'neededBy',
   'vendorId',
+  // Last, across the dialog's full width, under the short fields
+  // (2026-10-06).
+  'description',
 ];
