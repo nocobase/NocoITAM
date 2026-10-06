@@ -40,6 +40,8 @@ export interface MasterCaptureInput {
   readonly deliveryMethod?: string | null;
   readonly description?: string | null;
   readonly website?: string | null;
+  /** A model's extended fields kept on the model, by template key. */
+  readonly attributes?: Readonly<Record<string, unknown>> | null;
   readonly uncertain?: readonly string[] | null;
   readonly sources?:
     | readonly {
@@ -50,8 +52,11 @@ export interface MasterCaptureInput {
 }
 
 export interface MasterCapture {
-  /** The create dialog's fields, only those the reading gave and that hold. */
-  readonly values: Readonly<Record<string, string | number>>;
+  /**
+   * The create dialog's fields, only those the reading gave and that hold;
+   * a model's extended fields under `attributes`.
+   */
+  readonly values: Readonly<Record<string, unknown>>;
   /** A maker the reading names that is not among the manufacturers. */
   readonly manufacturerName: string | null;
   /** Records already on the books under the same part code or name. */
@@ -59,7 +64,7 @@ export interface MasterCapture {
     readonly id: string;
     readonly name: string;
   }[];
-  /** Fields filled but not certain, by the form's keys. */
+  /** Fields filled but not certain, by the form's keys (`attributes.<key>`). */
   readonly uncertain: readonly string[];
   /** The web pages the reading cites, links only. */
   readonly sources: readonly MasterCaptureSource[];
@@ -144,11 +149,11 @@ export async function matchMasterCapture(
       .execute<{ id: string; name: string }>(),
     query
       .selectFrom('categories')
-      .select(['id', 'appliesTo'])
-      .execute<{ id: string; appliesTo: string }>(),
+      .select(['id', 'appliesTo', 'fieldTemplate'])
+      .execute<{ id: string; appliesTo: string; fieldTemplate: unknown }>(),
   ]);
 
-  const values: Record<string, string | number> = {};
+  const values: Record<string, unknown> = {};
   const name = clip(input.name, 255);
   if (name) values.name = name;
 
@@ -180,6 +185,16 @@ export async function matchMasterCapture(
       const date = calendarDate(input[key]);
       if (date) values[key] = date;
     }
+    // Only the fields the chosen category keeps on the model, each held to
+    // its type: an answer a field would refuse is no answer.
+    const attributes: Record<string, unknown> = {};
+    for (const field of category && values.categoryId
+      ? modelFields(category.fieldTemplate)
+      : []) {
+      const value = fieldValue(field, input.attributes?.[field.key]);
+      if (value !== undefined) attributes[field.key] = value;
+    }
+    if (Object.keys(attributes).length > 0) values.attributes = attributes;
   } else {
     const delivery = clip(input.deliveryMethod, 32);
     if (DELIVERY_METHODS.has(delivery)) values.deliveryMethod = delivery;
@@ -189,12 +204,26 @@ export async function matchMasterCapture(
     if (website) values.website = website;
   }
 
-  const filled = new Set(Object.keys(values));
-  const asked = new Set(FIELDS[collection]);
+  const filledAttributes = Object.keys(
+    (values.attributes as Record<string, unknown> | undefined) ?? {},
+  );
+  const filled = new Set([
+    ...Object.keys(values),
+    ...filledAttributes.map((key) => `attributes.${key}`),
+  ]);
+  const asked = new Set([
+    ...FIELDS[collection],
+    ...filledAttributes.map((key) => `attributes.${key}`),
+  ]);
   const uncertain = [
     ...new Set(
       (input.uncertain ?? [])
-        .map((key) => UNCERTAIN_ALIASES[key] ?? key)
+        .map(
+          (key) =>
+            UNCERTAIN_ALIASES[key] ??
+            // An extended field named by its bare key.
+            (filledAttributes.includes(key) ? `attributes.${key}` : key),
+        )
         .filter((key) => asked.has(key) && filled.has(key)),
     ),
   ];
@@ -221,6 +250,77 @@ export async function matchMasterCapture(
     uncertain,
     sources,
   };
+}
+
+interface TemplateEntry {
+  readonly key: string;
+  readonly type: string;
+  readonly options?: readonly string[];
+}
+
+/** The template fields a category keeps on the model. */
+function modelFields(template: unknown): TemplateEntry[] {
+  const parsed: unknown =
+    typeof template === 'string' ? safeParse(template) : template;
+  if (!Array.isArray(parsed)) return [];
+  return parsed.flatMap((entry: unknown) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const field = entry as Record<string, unknown>;
+    return field.scope === 'model' &&
+      !field.hidden &&
+      typeof field.key === 'string' &&
+      typeof field.type === 'string'
+      ? [
+          {
+            key: field.key,
+            type: field.type,
+            options: Array.isArray(field.options)
+              ? field.options.map(String)
+              : undefined,
+          },
+        ]
+      : [];
+  });
+}
+
+const safeParse = (value: string): unknown => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+};
+
+/** A value as the field's type takes it, or undefined for none. */
+function fieldValue(field: TemplateEntry, raw: unknown): unknown {
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  // Only a scalar is an answer; an object or a list is none.
+  const scalar =
+    typeof raw === 'string' || typeof raw === 'number' ? String(raw) : '';
+  switch (field.type) {
+    case 'number': {
+      const value =
+        typeof raw === 'number' ? raw : Number(scalar.trim() || NaN);
+      return Number.isFinite(value) ? value : undefined;
+    }
+    case 'boolean':
+      if (raw === true || raw === 'true') return true;
+      if (raw === false || raw === 'false') return false;
+      return undefined;
+    case 'date':
+      return typeof raw === 'string' ? calendarDate(raw) : undefined;
+    case 'select': {
+      // One of its options, however it was spaced or cased.
+      const wanted = bareName(scalar);
+      if (!wanted) return undefined;
+      return (field.options ?? []).find(
+        (option) => bareName(option) === wanted,
+      );
+    }
+    default: {
+      return clip(scalar, 255) || undefined;
+    }
+  }
 }
 
 /**

@@ -841,12 +841,8 @@ export function createDemoService(dependencies: {
             ...(index >= 3 ? { ownerId: leaverUserId } : {}),
             attributes: {
               os: 'macOS 15.6',
-              cpu: 'Apple M3',
-              memory: '16 GB',
-              storage: '512 GB',
               macAddress: macFor(index),
               hostname: `SG-LT-00${index + 1}`,
-              screenSize: '14',
             },
           }),
         );
@@ -867,12 +863,8 @@ export function createDemoService(dependencies: {
         warrantyEndDate: daysFromNow(-100),
         attributes: {
           os: 'Windows 11 23H2',
-          cpu: 'Intel Core i5-1335U',
-          memory: '16 GB',
-          storage: '512 GB',
           macAddress: 'b0:4f:13:20:01:01',
           hostname: 'SG-LT-006',
-          screenSize: '14',
         },
       });
       const idleLaptop = await device({
@@ -884,6 +876,8 @@ export function createDemoService(dependencies: {
         purchaseDate: daysFromNow(-700),
         purchasePrice: 8999,
         warrantyEndDate: daysFromNow(400),
+        // Upgraded after purchase: what its model says is not what it has,
+        // so it states its own processor, memory and disk.
         attributes: {
           os: 'Windows 11 24H2',
           cpu: 'Intel Core i7-1355U',
@@ -891,7 +885,6 @@ export function createDemoService(dependencies: {
           storage: '1 TB',
           macAddress: 'b0:4f:13:20:02:02',
           hostname: 'SG-LT-007',
-          screenSize: '14',
         },
       });
       const airs: Row[] = [];
@@ -910,12 +903,8 @@ export function createDemoService(dependencies: {
             warrantyEndDate: daysFromNow(945),
             attributes: {
               os: 'macOS 15.6',
-              cpu: 'Apple M3',
-              memory: '16 GB',
-              storage: '256 GB',
               macAddress: `a4:83:e7:2${index}:2${index}:2${index}`,
               hostname: `SG-LT-01${index}`,
-              screenSize: '13',
             },
           }),
         );
@@ -935,12 +924,8 @@ export function createDemoService(dependencies: {
             warrantyEndDate: daysFromNow(1035),
             attributes: {
               os: 'Windows 11 24H2',
-              cpu: 'Intel Core Ultra 5 125U',
-              memory: '16 GB',
-              storage: '512 GB',
               macAddress: `b0:4f:13:3${index}:3${index}:3${index}`,
               hostname: `SG-LT-02${index}`,
-              screenSize: '14',
             },
           }),
         );
@@ -957,11 +942,6 @@ export function createDemoService(dependencies: {
             purchaseDate: daysFromNow(-300),
             purchasePrice: 4299,
             warrantyEndDate: daysFromNow(795),
-            attributes: {
-              screenSize: '27',
-              resolution: '3840×2160',
-              inputs: 'HDMI, DisplayPort, USB-C',
-            },
           }),
         );
       }
@@ -989,12 +969,8 @@ export function createDemoService(dependencies: {
           ...input,
           attributes: {
             os: 'macOS 15.6',
-            cpu: 'Apple M3',
-            memory: '16 GB',
-            storage: '512 GB',
             macAddress: `a4:83:e7:3${index}:3${index}:3${index}`,
             hostname: name,
-            screenSize: '14',
           },
         });
       const repairedSpare = await spare('SG-LT-050', 'C02ZK3A00MD6T', 0, {
@@ -1027,11 +1003,6 @@ export function createDemoService(dependencies: {
           // The flawed one has the longer warranty, so the rule takes it.
           warrantyEndDate: daysFromNow(900 - index * 30),
           ...(notes ? { notes } : {}),
-          attributes: {
-            screenSize: '27',
-            resolution: '3840×2160',
-            inputs: 'HDMI, DisplayPort, USB-C',
-          },
         });
 
       // One of everything else the seeded categories describe, each with its
@@ -1047,9 +1018,6 @@ export function createDemoService(dependencies: {
         warrantyEndDate: daysFromNow(595),
         attributes: {
           os: 'Windows 11 24H2',
-          cpu: 'Intel Core i5-13500',
-          memory: '16 GB',
-          storage: '512 GB',
           macAddress: 'b0:4f:13:40:01:01',
           hostname: 'SG-DT-001',
         },
@@ -1067,7 +1035,6 @@ export function createDemoService(dependencies: {
         attributes: {
           managementIp: '10.0.0.21',
           rackPosition: 'A1-U12',
-          rackUnits: 2,
         },
       });
       const coreSwitch = await device({
@@ -1083,7 +1050,6 @@ export function createDemoService(dependencies: {
         attributes: {
           managementIp: '10.0.0.2',
           firmware: '17.9.4',
-          ports: 48,
         },
       });
       const mobile = await device({
@@ -1111,9 +1077,6 @@ export function createDemoService(dependencies: {
         warrantyEndDate: daysFromNow(-235),
         attributes: {
           ipAddress: '10.0.3.50',
-          color: false,
-          duplex: true,
-          consumable: 'CF258A',
         },
       });
       const vm = await device({

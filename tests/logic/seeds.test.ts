@@ -292,7 +292,7 @@ describe('ITAM seeds', () => {
         key: 'legacy',
         grants: [
           {
-            resource: { type: 'database.collection', id: 'main.models' },
+            resource: { type: 'database.collection', id: 'main.vendors' },
             actions: [
               {
                 action: 'read',
@@ -335,7 +335,7 @@ describe('ITAM seeds', () => {
         key: 'legacy',
         grants: [
           {
-            resource: { type: 'database.collection', id: 'main.models' },
+            resource: { type: 'database.collection', id: 'main.vendors' },
             actions: [
               {
                 action: 'read',

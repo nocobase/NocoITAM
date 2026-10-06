@@ -50,13 +50,13 @@ import {
 } from '@/components/itam/detail-page';
 import { EmptyState } from '@/components/itam/empty-state';
 import { FieldLabel } from '@/components/itam/field-label';
+import { ExtendedFields } from '@/components/itam/extended-fields';
 import { InlineField } from '@/components/itam/inline-field';
 import { RepairCompleteButton } from '@/components/itam/repair-complete';
 import { RepairCreateDialog } from '@/components/itam/repair-create-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { ReplacementDate, WarrantyDate } from '@/components/itam/warranty-date';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
@@ -86,6 +86,7 @@ import {
   useRelatedCounts,
   type ItamRecord,
 } from '@/lib/itam/api';
+import { templateOf } from '@/lib/itam/field-template';
 import {
   DEVICES_PATH,
   useDeviceOperation,
@@ -133,15 +134,6 @@ type DialogKind =
   | 'correctStatus'
   | 'delete';
 
-interface TemplateField {
-  readonly key: string;
-  readonly label: string;
-  readonly type: 'text' | 'number' | 'date' | 'select' | 'boolean';
-  readonly required?: boolean;
-  readonly options?: readonly string[];
-  readonly hidden?: boolean;
-}
-
 export default function DeviceDetailPage(): ReactElement {
   const { t } = useTranslation();
   const { id = '' } = useParams();
@@ -187,7 +179,6 @@ export default function DeviceDetailPage(): ReactElement {
     'correctStatus',
   ]);
   const [dialog, setDialog] = useState<DialogKind>();
-  const [showHidden, setShowHidden] = useState(false);
   const impact = useDeleteImpact(
     DEVICES_PATH,
     dialog === 'delete' ? id : undefined,
@@ -294,22 +285,8 @@ export default function DeviceDetailPage(): ReactElement {
       );
   };
 
-  const fullTemplate = (
-    Array.isArray(category.data?.fieldTemplate)
-      ? category.data.fieldTemplate
-      : []
-  ) as TemplateField[];
-  // Hidden template fields stay out of the way unless the reader asks.
-  const hiddenCount = fullTemplate.filter((entry) => entry.hidden).length;
-  const template = showHidden
-    ? fullTemplate
-    : fullTemplate.filter((entry) => !entry.hidden);
-  const attributes = (
-    data.attributes && typeof data.attributes === 'object'
-      ? data.attributes
-      : {}
-  ) as Record<string, unknown>;
-
+  // The extended fields, by key, for the change log's labels.
+  const fullTemplate = templateOf(category.data?.fieldTemplate);
   const groups = new Map<string, FieldDefinition[]>();
   for (const field of DEVICE_FIELDS) {
     // The name is the title; `detail: false` fields live in the title or
@@ -679,81 +656,11 @@ export default function DeviceDetailPage(): ReactElement {
                 </InfoSection>
                 {/* A category's extended fields belong with the basics. */}
                 {index === 0 ? (
-                  <>
-                    {fullTemplate.length > 0 ? (
-                      <InfoSection
-                        title={t('groups.extended')}
-                        action={
-                          hiddenCount > 0 ? (
-                            <label className='flex items-center gap-2 text-xs text-muted-foreground'>
-                              {t('devices.showHiddenFields', {
-                                count: hiddenCount,
-                              })}
-                              <Switch
-                                checked={showHidden}
-                                onCheckedChange={setShowHidden}
-                                aria-label={t('devices.showHiddenFields', {
-                                  count: hiddenCount,
-                                })}
-                              />
-                            </label>
-                          ) : undefined
-                        }
-                      >
-                        {template.map((entry) => {
-                          const field: FieldDefinition = {
-                            key: entry.key,
-                            label: entry.label,
-                            type: entry.type,
-                            required: entry.required,
-                            options: entry.options?.map((option) => ({
-                              value: option,
-                              label: option,
-                            })),
-                          };
-                          return (
-                            <InfoRow
-                              key={entry.key}
-                              label={
-                                entry.hidden ? (
-                                  <span className='text-muted-foreground line-through'>
-                                    {entry.label}
-                                  </span>
-                                ) : (
-                                  entry.label
-                                )
-                              }
-                            >
-                              <InlineField
-                                field={field}
-                                value={attributes[entry.key]}
-                                editable={editable && !entry.hidden}
-                                display={
-                                  <span>
-                                    {attributes[entry.key] === undefined ||
-                                    attributes[entry.key] === null ||
-                                    attributes[entry.key] === '' ? (
-                                      <span className='text-muted-foreground'>
-                                        —
-                                      </span>
-                                    ) : (
-                                      text(attributes[entry.key])
-                                    )}
-                                  </span>
-                                }
-                                onSave={(value) =>
-                                  saveField('attributes', {
-                                    ...attributes,
-                                    [entry.key]: value,
-                                  })
-                                }
-                              />
-                            </InfoRow>
-                          );
-                        })}
-                      </InfoSection>
-                    ) : null}
-                  </>
+                  <ExtendedFields
+                    record={data}
+                    editable={editable}
+                    onSave={(next) => saveField('attributes', next)}
+                  />
                 ) : null}
               </Fragment>
             ))}

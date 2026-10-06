@@ -86,6 +86,7 @@ const masterCaptureSchema = z.object({
   deliveryMethod: z.string().nullish(),
   description: z.string().nullish(),
   website: z.string().nullish(),
+  attributes: z.record(z.string(), z.unknown()).nullish(),
   uncertain: z.array(z.string()).max(50).nullish(),
   sources: z
     .array(z.object({ title: z.string().nullish(), url: z.string().nullish() }))

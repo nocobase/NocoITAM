@@ -86,7 +86,10 @@ describe('AI 整理 for a new model or software product', () => {
       eosDate: 'soon',
       uncertain: ['manufacturer', 'eolDate', 'specification', 'nonsense'],
       sources: [
-        { title: 'Testmaker spec sheet', url: 'https://testmaker.example/tba13' },
+        {
+          title: 'Testmaker spec sheet',
+          url: 'https://testmaker.example/tba13',
+        },
         { title: 'Same page again', url: 'https://testmaker.example/tba13' },
         { title: 'Not a web page', url: 'javascript:alert(1)' },
         { url: 'https://reviews.example/tba13' },
@@ -180,6 +183,70 @@ describe('AI 整理 for a new model or software product', () => {
       deliveryMethod: 'both',
       website: 'https://other.example/',
     });
+  });
+
+  it('fills the fields a category keeps on the model, each by its type', async () => {
+    const monitors = await created('master/categories', {
+      name: 'Test Monitor',
+      appliesTo: 'device',
+      fieldTemplate: [
+        {
+          key: 'screenSize',
+          label: 'Screen size',
+          type: 'select',
+          options: ['24', '27'],
+          scope: 'model',
+        },
+        { key: 'refresh', label: 'Refresh', type: 'number', scope: 'model' },
+        { key: 'speakers', label: 'Speakers', type: 'boolean', scope: 'model' },
+        { key: 'launched', label: 'Launched', type: 'date', scope: 'model' },
+        { key: 'panel', label: 'Panel', type: 'text', scope: 'model' },
+        // Each device's own: never the model's to fill.
+        { key: 'assetLabel', label: 'Label', type: 'text' },
+        // Hidden: kept with its values, not asked for.
+        {
+          key: 'legacy',
+          label: 'Legacy',
+          type: 'text',
+          scope: 'model',
+          hidden: true,
+        },
+      ],
+    });
+    const capture = await match('models', {
+      name: 'Testview 27',
+      categoryId: monitors,
+      attributes: {
+        screenSize: ' 27 ',
+        refresh: '144',
+        speakers: false,
+        launched: '2025-02-30',
+        panel: { nested: true },
+        assetLabel: 'X-1',
+        legacy: 'old',
+        unknown: 'dropped',
+      },
+      uncertain: ['refresh', 'attributes.screenSize', 'attributes.panel'],
+    });
+    expect(capture.values.attributes).toEqual({
+      screenSize: '27',
+      refresh: 144,
+      speakers: false,
+    });
+    expect(capture.uncertain).toEqual([
+      'attributes.refresh',
+      'attributes.screenSize',
+    ]);
+    // A size that is not one of the options is no answer.
+    expect(
+      (
+        await match('models', {
+          name: 'Testview 32',
+          categoryId: monitors,
+          attributes: { screenSize: '32' },
+        })
+      ).values.attributes,
+    ).toBeUndefined();
   });
 
   it('asks for create, and only for models and software products', async () => {

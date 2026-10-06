@@ -362,7 +362,18 @@ describe('CSV import / export and demo data', () => {
     );
     expect(laptops.length).toBeGreaterThan(0);
     expect(laptops[0]?.attributes.os).toBe('macOS 15.6');
-    expect(laptops[0]?.attributes.screenSize).toBe('14');
+    // What every MacBook Pro 14 shares is the model's, read by its devices
+    // (2026-10-06); only the upgraded Latitude states a processor of its
+    // own.
+    expect(laptops[0]?.attributes.screenSize).toBeUndefined();
+    const model = await data<{ attributes: Record<string, unknown> }>(
+      await get('master/models/model-macbook-pro-14-m3'),
+    );
+    expect(model.attributes).toMatchObject({ cpu: 'Apple M3', screenSize: '14' });
+    const upgraded = await data<{ attributes: Record<string, unknown> }[]>(
+      await get('devices?q=SG-LT-007&pageSize=1'),
+    );
+    expect(upgraded[0]?.attributes.cpu).toBe('Intel Core i7-1355U');
     expect((await post('demo/generate')).status).toBe(422);
     expect((await post('demo/generate', {}, employee)).status).toBe(403);
 

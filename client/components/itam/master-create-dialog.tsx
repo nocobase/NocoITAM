@@ -13,11 +13,19 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { useItamMutations, type ItamRecord } from '@/lib/itam/api';
+import {
+  masterDataPath,
+  useItamMutations,
+  useItamRecord,
+  type ItamRecord,
+} from '@/lib/itam/api';
+import { modelFieldsOf } from '@/lib/itam/field-template';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { text } from '@/lib/itam/format';
 import {
   applyMasterCapture,
+  attributeKey,
+  withAttributes,
   type MasterCapture,
   type MasterCaptureCollection,
 } from '@/lib/itam/master-capture';
@@ -85,6 +93,40 @@ function MasterCreateForm({
   const [values, setValues] = useState<Record<string, unknown>>(() =>
     initialFormValues(fields, initial),
   );
+  // A model fills the extended fields its category keeps on the model
+  // (2026-10-06), right after its specification: they are the structured
+  // half of it, and its devices read them.
+  const category = useItamRecord<ItamRecord>(
+    masterDataPath('categories'),
+    collection === 'models' && values.categoryId
+      ? text(values.categoryId)
+      : undefined,
+  );
+  const shared = useMemo(
+    () =>
+      collection === 'models'
+        ? modelFieldsOf(category.data?.fieldTemplate).filter(
+            (field) => !field.hidden,
+          )
+        : [],
+    [collection, category.data],
+  );
+  const formFields = useMemo(() => {
+    if (shared.length === 0) return fields;
+    const extra = shared.map((field): FieldDefinition => ({
+      key: attributeKey(field.key),
+      label: field.label,
+      type: field.type,
+      options: field.options?.map((option) => ({
+        value: option,
+        label: option,
+      })),
+    }));
+    const at = fields.findIndex((field) => field.key === 'specification');
+    return at < 0
+      ? [...fields, ...extra]
+      : [...fields.slice(0, at + 1), ...extra, ...fields.slice(at + 1)];
+  }, [fields, shared]);
   const [tab, setTab] = useState<'ai' | 'form'>();
   // What a reader coming from a purchase line already has: its name and
   // part code.
@@ -110,7 +152,10 @@ function MasterCreateForm({
     collection,
     // The form as the reader sees it: references by name.
     form: () => ({
-      ...values,
+      ...withAttributes(
+        values,
+        shared.map((field) => field.key),
+      ),
       manufacturer:
         names.manufacturers?.get(text(values.manufacturerId)) ?? null,
       category: names.categories?.get(text(values.categoryId)) ?? null,
@@ -148,7 +193,7 @@ function MasterCreateForm({
             ? t(`masterCapture.description.${collection}`)
             : undefined
         }
-        fields={fields}
+        fields={formFields}
         values={values}
         onValuesChange={(next, key) => {
           setValues(next);
@@ -206,7 +251,12 @@ function MasterCreateForm({
         submitting={mutations.create.isPending}
         error={mutations.create.error}
         onSubmit={async (payload) => {
-          const created = await mutations.create.mutateAsync(payload);
+          const created = await mutations.create.mutateAsync(
+            withAttributes(
+              payload,
+              shared.map((field) => field.key),
+            ),
+          );
           capture.release();
           onCreated(created);
           onOpenChange(false);

@@ -58,6 +58,7 @@ vi.mock('../../client/lib/itam/api.js', () => ({
       ],
     },
   }),
+  useItamRecord: () => ({ data: undefined }),
   useItamMutations: () => ({
     create: {
       mutateAsync: (values: unknown) => {

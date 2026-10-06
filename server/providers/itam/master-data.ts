@@ -437,6 +437,7 @@ const JSON_FIELDS: Readonly<Record<string, readonly string[]>> = {
   vendors: ['types'],
   categories: ['fieldTemplate'],
   onboardingKits: ['items'],
+  models: ['attributes'],
 };
 
 export function createMasterDataService(
@@ -1664,13 +1665,22 @@ export function createMasterDataService(
       let attributeUsage: Record<string, number> | undefined;
       if (collection === 'categories') {
         // Which template keys still carry values decides whether a field
-        // may be deleted or only hidden.
-        const holders = await database
-          .query()
-          .selectFrom('devices')
-          .select('attributes')
-          .where('categoryId', '=', id)
-          .execute<{ attributes: unknown }>();
+        // may be deleted or only hidden — on a device, or on a model when
+        // the field is one its devices share.
+        const holders = [
+          ...(await database
+            .query()
+            .selectFrom('devices')
+            .select('attributes')
+            .where('categoryId', '=', id)
+            .execute<{ attributes: unknown }>()),
+          ...(await database
+            .query()
+            .selectFrom('models')
+            .select('attributes')
+            .where('categoryId', '=', id)
+            .execute<{ attributes: unknown }>()),
+        ];
         attributeUsage = {};
         for (const holder of holders) {
           const raw = holder.attributes;
