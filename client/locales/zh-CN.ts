@@ -1436,8 +1436,7 @@ const zhCN: AppResource = {
       description:
         '粘贴采购需求或上传报价单，AI 整理成采购单；核对后再保存或提交审批',
       material: '采购需求或单据内容',
-      placeholder:
-        '粘贴同事的采购需求、邮件、报价单内容……\n例如：研发部下个月入职 3 人，各配一台 MacBook Pro 14 M3 和一个扩展坞，供应商北桥 IT，月底前到货',
+      placeholder: '粘贴采购需求、邮件、报价单内容……',
       upload: '上传单据',
       removeFile: '移除文件',
       hint: '支持 Excel、CSV、Word、PDF 和图片',

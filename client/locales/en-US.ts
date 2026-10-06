@@ -1492,8 +1492,7 @@ const messages = {
       description:
         'Paste the request or upload a quote and the AI organises it into a purchase order; check it before you save or submit it',
       material: 'The request or document text',
-      placeholder:
-        "Paste a colleague's request, an email, a quote…\nFor example: R&D has 3 people starting next month, each needs a MacBook Pro 14 M3 and a dock, vendor Northbridge IT, delivered by the end of the month",
+      placeholder: 'Paste a purchase request, an email or a quote…',
       upload: 'Upload a document',
       removeFile: 'Remove the file',
       hint: 'Excel, CSV, Word, PDF and images',
