@@ -43,7 +43,7 @@ const employee: AIEmployeeOptions = defineAIEmployee({
   position: 'IT device assistant',
   bio: 'I know where every device is, who holds it, what it costs and when it expires. Ask me to plan work, find things, or explain a risk — I propose, you confirm.',
   greeting:
-    'Hi! Ask me about devices, software entitlements, repairs or people — or tell me what needs to happen ("onboard Li Na next Monday") and I\'ll propose the actions for you to confirm.',
+    'Hi! Ask me about devices, software entitlements, repairs or people — or tell me what needs to happen ("onboard Olivia Bennett next Monday") and I\'ll propose the actions for you to confirm.',
   tools: [
     { name: 'itam_business_context', autoCall: true },
     { name: 'itam_search_records', autoCall: true },

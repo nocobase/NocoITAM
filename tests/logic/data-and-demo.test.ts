@@ -402,6 +402,11 @@ describe('CSV import / export and demo data', () => {
     expect(
       status.accountsByLanguage['zh-CN']?.map((account) => account.username),
     ).toEqual(['sunqiang', 'wujing', 'zhouyu', 'chenjie']);
+    // The English demo's IT people are English names, not the Chinese ones
+    // romanised, and so are their sign-ins.
+    expect(
+      status.accountsByLanguage['en-US']?.map((account) => account.username),
+    ).toEqual(['daniel', 'emily', 'ryan', 'mark']);
     const laptops = await data<{ attributes: Record<string, unknown> }[]>(
       await get('devices?q=SG-LT-00&pageSize=5'),
     );
@@ -449,7 +454,8 @@ describe('CSV import / export and demo data', () => {
       await get('master/people/counts'),
     );
     const liNa = people.find(
-      (person) => person.name === 'Li Na' && person.employeeNo === 'EMP-101',
+      (person) =>
+        person.name === 'Olivia Bennett' && person.employeeNo === 'EMP-101',
     );
     expect(liNa).toBeDefined();
     const stats = await data<{ counts: Record<string, number> }>(

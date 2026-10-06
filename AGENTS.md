@@ -388,18 +388,25 @@ Rules learned while building it:
   leaves on the day of the import (marked left last, the way 标记离职 does,
   so his handover snapshot is whole and his sign-in is disabled); each
   password is the username and 123. The other demo people are employees and
-  have none. They are listed in `nocosolution/NocoITAM/SPEC.md ## 演示数据`
+  have none. Those are the Chinese demo's; the English demo has people of
+  its own (2026-10-06, `DEMO_STAFF` and `PERSON_NAMES` by language) —
+  Daniel Brooks `daniel` and Emily Carter `emily` (asset managers), Ryan
+  Mitchell `ryan` (IT support) and the leaver Mark Taylor `mark` — rather
+  than the Chinese names romanised, and its employees, joiners and vendor
+  contacts are English names too. Inside the generator the staff are known
+  by what they do (`approver`, `writer`, `support`), not by a username. They are listed in `nocosolution/NocoITAM/SPEC.md ## 演示数据`
   and go through `DemoAccounts` (`demoAccounts()` in
   `server/providers/itam/index.ts`) rather than the `user` table, are tracked
   in `demoRecords` under `accounts`, and each is written to its person's
   `userId` — the staff have a person record in IT, named as their account
   is in the deployment's language — because the records they answer for
-  name the account. 孙强 and 周宇 have a laptop each, 吴静 a laptop, a
+  name the account. 孙强 and 周宇 (Daniel and Ryan) have a laptop each, 吴静 (Emily) a laptop, a
   monitor and a phone. The account that generated the demo is the system
   administrator and no employee: it gets no person record, holds nothing
   and answers for no record — the demo is written as 吴静 (`writerId`), who
   raises the requests 孙强 decides; repairs and audits are 周宇's. `demoAccountUsernames()`
-  keeps the retired `manager` / `support` so a reset still removes them.
+  keeps the retired `manager` / `support`, and the pinyin usernames an English
+  demo had before 2026-10-06, so a reset still removes them.
   The requests are addressed to 孙强, not to whatever `otherUser` finds.
   Two traps: the users
   plugin's `remove` refuses without deletion hooks (so the authentication

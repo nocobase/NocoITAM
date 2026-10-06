@@ -103,51 +103,72 @@ export interface DemoAccounts {
  * A password is the username and 123: this is demonstration data, and
  * clearing it removes the accounts.
  */
-export const DEMO_STAFF_ACCOUNTS: readonly DemoAccountSpec[] = [
+/** What each staff sign-in does in the demo, whatever it is called. */
+type StaffKey = 'approver' | 'writer' | 'support';
+
+/** A staff sign-in, with the person record behind it. */
+interface StaffSpec extends DemoAccountSpec {
+  readonly key: StaffKey;
+  readonly position: string;
+}
+
+const staff = (
+  key: StaffKey,
+  username: string,
+  name: string,
+  mail: string,
+  position: string,
+): StaffSpec => ({
+  key,
+  username,
+  name,
+  email: `${mail}@northbridge.example`,
+  password: `${username}123`,
+  position,
+  permissionSet: key === 'support' ? 'itam-it-support' : 'itam-asset-manager',
+});
+
+/**
+ * The staff sign-ins by language (2026-10-06): the Chinese demo's IT people
+ * have Chinese names and pinyin usernames, the English demo's English names
+ * and usernames — not the same people romanised. In each, the first asset
+ * manager decides the requests (`approver`), the second writes the demo
+ * (`writer`) and IT support carries the repairs and the counts (`support`).
+ */
+export const DEMO_STAFF: Readonly<Record<DemoLanguage, readonly StaffSpec[]>> =
   {
-    username: 'sunqiang',
-    name: 'Sun Qiang',
-    email: 'sun.qiang@northbridge.example',
-    password: 'sunqiang123',
-    permissionSet: 'itam-asset-manager',
-  },
-  {
-    username: 'wujing',
-    name: 'Wu Jing',
-    email: 'wu.jing@northbridge.example',
-    password: 'wujing123',
-    permissionSet: 'itam-asset-manager',
-  },
-  {
-    username: 'zhouyu',
-    name: 'Zhou Yu',
-    email: 'zhou.yu@northbridge.example',
-    password: 'zhouyu123',
-    permissionSet: 'itam-it-support',
-  },
-];
+    'zh-CN': [
+      staff('approver', 'sunqiang', '孙强', 'sun.qiang', 'IT 资产经理'),
+      staff('writer', 'wujing', '吴静', 'wu.jing', 'IT 资产经理'),
+      staff('support', 'zhouyu', '周宇', 'zhou.yu', 'IT 支持工程师'),
+    ],
+    'en-US': [
+      staff(
+        'approver',
+        'daniel',
+        'Daniel Brooks',
+        'daniel.brooks',
+        'IT Asset Manager',
+      ),
+      staff(
+        'writer',
+        'emily',
+        'Emily Carter',
+        'emily.carter',
+        'IT Asset Manager',
+      ),
+      staff(
+        'support',
+        'ryan',
+        'Ryan Mitchell',
+        'ryan.mitchell',
+        'IT Support Engineer',
+      ),
+    ],
+  };
 
 /** The role accounts the demo created until 2026-10-05, removed by name. */
 const RETIRED_DEMO_USERNAMES = ['manager', 'support'] as const;
-
-/**
- * Each staff sign-in's name and position by locale: the account and the
- * person record behind it carry the same name, as the leaver's do.
- */
-const STAFF_PEOPLE: Readonly<
-  Record<string, Readonly<Record<string, { name: string; position: string }>>>
-> = {
-  'en-US': {
-    sunqiang: { name: 'Sun Qiang', position: 'IT Asset Manager' },
-    wujing: { name: 'Wu Jing', position: 'IT Asset Manager' },
-    zhouyu: { name: 'Zhou Yu', position: 'IT Support Engineer' },
-  },
-  'zh-CN': {
-    sunqiang: { name: '孙强', position: 'IT 资产经理' },
-    wujing: { name: '吴静', position: 'IT 资产经理' },
-    zhouyu: { name: '周宇', position: 'IT 支持工程师' },
-  },
-};
 
 /**
  * The sign-ins the demo creates in a language, as the settings page lists
@@ -157,26 +178,25 @@ const STAFF_PEOPLE: Readonly<
 export function demoAccountsIn(
   language: DemoLanguage,
 ): readonly DemoAccountSummary[] {
-  const staffNames = STAFF_PEOPLE[language] ?? STAFF_PEOPLE['en-US'] ?? {};
   const leaver = (PERSON_NAMES[language] ?? PERSON_NAMES['en-US'] ?? [])[
     LEAVER_INDEX
   ];
   return [
-    ...DEMO_STAFF_ACCOUNTS.map((spec) => ({
+    ...(DEMO_STAFF[language] ?? DEMO_STAFF['en-US']).map((spec) => ({
       username: spec.username,
-      name: staffNames[spec.username]?.name ?? spec.name,
+      name: spec.name,
       role: spec.permissionSet,
       password: spec.password,
     })),
-    ...(leaver
+    ...(leaver?.username
       ? [
           {
-            username: leaver.mail.replaceAll('.', ''),
+            username: leaver.username,
             name: leaver.name,
             // IT support who leaves on import, which disables the sign-in:
             // listed so the account behind their records is not a mystery.
             role: 'leaver',
-            password: `${leaver.mail.replaceAll('.', '')}123`,
+            password: `${leaver.username}123`,
           },
         ]
       : []),
@@ -190,12 +210,19 @@ export function demoAccountsIn(
  */
 export function demoAccountUsernames(): readonly string[] {
   return [
-    ...DEMO_STAFF_ACCOUNTS.map((spec) => spec.username),
-    // A database generated before 2026-10-05 still holds these.
-    ...RETIRED_DEMO_USERNAMES,
-    ...(PERSON_NAMES['en-US'] ?? []).map((entry) =>
-      entry.mail.replaceAll('.', ''),
-    ),
+    ...new Set([
+      ...DEMO_LANGUAGES.flatMap((language) =>
+        demoAccountsIn(language).map((account) => account.username),
+      ),
+      // A database generated before 2026-10-05 still holds these, and one
+      // generated before 2026-10-06 the pinyin usernames of the English
+      // demo.
+      ...RETIRED_DEMO_USERNAMES,
+      'sunqiang',
+      'wujing',
+      'zhouyu',
+      'chenjie',
+    ]),
   ];
 }
 
@@ -257,9 +284,9 @@ const VENDOR_NAMES: Readonly<
   >
 > = {
   'en-US': {
-    reseller: { name: 'Northbridge IT Supply', contact: 'Sun Qiang' },
-    repair: { name: 'Northbridge Repair Center', contact: 'Zhou Lei' },
-    recycler: { name: 'GreenLoop Recycling', contact: 'Xu Ping' },
+    reseller: { name: 'Northbridge IT Supply', contact: 'Peter Grant' },
+    repair: { name: 'Northbridge Repair Center', contact: 'Helen Ward' },
+    recycler: { name: 'GreenLoop Recycling', contact: 'Sam Fischer' },
   },
   'zh-CN': {
     reseller: { name: '北桥 IT 供应有限公司', contact: '孙强' },
@@ -401,23 +428,53 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
  */
 const LEAVER_INDEX = 3;
 
-/** Demo people by locale: display name and the romanised mailbox. */
+/**
+ * Demo people by locale: display name, mailbox and position; the leaver has
+ * a username too, being IT and signing in. The English demo's people have
+ * English names (2026-10-06), not the Chinese ones romanised.
+ */
 const PERSON_NAMES: Readonly<
-  Record<string, readonly { name: string; mail: string; position: string }[]>
+  Record<
+    string,
+    readonly {
+      name: string;
+      mail: string;
+      position: string;
+      username?: string;
+    }[]
+  >
 > = {
   'en-US': [
-    { name: 'Li Na', mail: 'li.na', position: 'Frontend Engineer' },
-    { name: 'Zhang Wei', mail: 'zhang.wei', position: 'Backend Engineer' },
-    { name: 'Wang Fang', mail: 'wang.fang', position: 'Sales Manager' },
-    { name: 'Chen Jie', mail: 'chen.jie', position: 'IT Support Engineer' },
-    { name: 'Liu Yang', mail: 'liu.yang', position: 'QA Engineer' },
-    { name: 'Zhao Min', mail: 'zhao.min', position: 'Presales Consultant' },
+    {
+      name: 'Olivia Bennett',
+      mail: 'olivia.bennett',
+      position: 'Frontend Engineer',
+    },
+    { name: 'Ethan Brown', mail: 'ethan.brown', position: 'Backend Engineer' },
+    { name: 'Sophia Turner', mail: 'sophia.turner', position: 'Sales Manager' },
+    {
+      name: 'Mark Taylor',
+      mail: 'mark.taylor',
+      position: 'IT Support Engineer',
+      username: 'mark',
+    },
+    { name: 'Lucas Martin', mail: 'lucas.martin', position: 'QA Engineer' },
+    {
+      name: 'Chloe Adams',
+      mail: 'chloe.adams',
+      position: 'Presales Consultant',
+    },
   ],
   'zh-CN': [
     { name: '李娜', mail: 'li.na', position: '前端工程师' },
     { name: '张伟', mail: 'zhang.wei', position: '后端工程师' },
     { name: '王芳', mail: 'wang.fang', position: '销售经理' },
-    { name: '陈杰', mail: 'chen.jie', position: 'IT 支持工程师' },
+    {
+      name: '陈杰',
+      mail: 'chen.jie',
+      position: 'IT 支持工程师',
+      username: 'chenjie',
+    },
     { name: '刘洋', mail: 'liu.yang', position: '测试工程师' },
     { name: '赵敏', mail: 'zhao.min', position: '售前顾问' },
   ],
@@ -433,8 +490,8 @@ const JOINER_NAMES: Readonly<
   Record<string, readonly { name: string; mail: string; position: string }[]>
 > = {
   'en-US': [
-    { name: 'Sun Hao', mail: 'sun.hao', position: 'Frontend Engineer' },
-    { name: 'Lin Xue', mail: 'lin.xue', position: 'Designer' },
+    { name: 'Noah Harris', mail: 'noah.harris', position: 'Frontend Engineer' },
+    { name: 'Grace Lee', mail: 'grace.lee', position: 'Designer' },
   ],
   'zh-CN': [
     { name: '孙浩', mail: 'sun.hao', position: '前端工程师' },
@@ -578,14 +635,10 @@ export function createDemoService(dependencies: {
         await track('accounts', { id });
         return id;
       };
-      const staffNames = STAFF_PEOPLE[locale] ?? STAFF_PEOPLE['en-US'];
+      const staffSpecs =
+        DEMO_STAFF[locale as DemoLanguage] ?? DEMO_STAFF['en-US'];
       const staffUserIds = await Promise.all(
-        DEMO_STAFF_ACCOUNTS.map((spec) =>
-          account({
-            ...spec,
-            name: staffNames[spec.username]?.name ?? spec.name,
-          }),
-        ),
+        staffSpecs.map((spec) => account(spec)),
       );
       const [managerUserId, deskManagerUserId, supportUserId] = staffUserIds;
       // Who decides the demo's requests: the first asset manager, who holds
@@ -742,15 +795,14 @@ export function createDemoService(dependencies: {
         // Only the leaver signs in: they are IT, and a person who has left
         // still owns the records that name them, which point at a sign-in.
         // The others are employees, who are people in the register and not
-        // accounts (2026-10-05). The username is the romanised mailbox,
-        // which does not move with the locale the display names follow.
+        // accounts (2026-10-05).
         const userId =
-          index === LEAVER_INDEX
+          index === LEAVER_INDEX && entry.username
             ? await account({
-                username: entry.mail.replaceAll('.', ''),
+                username: entry.username,
                 name: entry.name,
                 email: `${entry.mail}@northbridge.example`,
-                password: `${entry.mail.replaceAll('.', '')}123`,
+                password: `${entry.username}123`,
                 permissionSet: 'itam-it-support',
               })
             : undefined;
@@ -780,20 +832,18 @@ export function createDemoService(dependencies: {
       // The staff sign-ins get a person record of their own, in IT, so the
       // equipment they are issued has somebody to be assigned to.
       const itDepartment = itDept;
-      const staff = new Map<string, Row>();
-      for (const [index, spec] of DEMO_STAFF_ACCOUNTS.entries()) {
-        const entry = staffNames[spec.username];
-        if (!entry) continue;
+      const staff = new Map<StaffKey, Row>();
+      for (const [index, spec] of staffSpecs.entries()) {
         staff.set(
-          spec.username,
+          spec.key,
           await md('people', {
-            name: entry.name,
+            name: spec.name,
             // EMP-001 belongs to a seeded person, and EMP-1xx to the demo
             // employees above.
             employeeNo: `EMP-${String(index + 201).padStart(3, '0')}`,
             email: spec.email,
             phone: `138 0013 0${String(index + 201)}`,
-            position: entry.position,
+            position: spec.position,
             departmentId: itDepartment.id,
             locationId: floor3.id,
             hireDate: daysFromNow(-900 + index * 120),
@@ -1097,11 +1147,11 @@ export function createDemoService(dependencies: {
       // The IT staff hold equipment of their own, like everybody: a laptop
       // each for the first manager and IT support, and the second manager
       // the desk below.
-      const staffLaptops = new Map<string, Row>();
-      for (const [index, username] of ['sunqiang', 'zhouyu'].entries()) {
-        if (!staff.has(username)) continue;
+      const staffLaptops = new Map<StaffKey, Row>();
+      for (const [index, key] of (['approver', 'support'] as const).entries()) {
+        if (!staff.has(key)) continue;
         staffLaptops.set(
-          username,
+          key,
           await device({
             modelId: index === 0 ? mbp.id : thinkpad.id,
             serialNo: index === 0 ? 'C02XK1A05MD6T' : 'PF4ZTQ07',
@@ -1139,7 +1189,7 @@ export function createDemoService(dependencies: {
 
       // A laptop, a monitor and a phone: a real desk rather than a single
       // row.
-      const deskOwner = staff.get('wujing');
+      const deskOwner = staff.get('writer');
       const deskDevices: Row[] = [];
       if (deskOwner) {
         deskDevices.push(
@@ -1888,7 +1938,8 @@ export function createDemoService(dependencies: {
 
       // A repair in progress on the expired laptop, IT support's: a repair
       // belongs to its 负责人, so the 维修中 card has something to show
-      // when you sign in as `zhouyu`. The finished ones below are his too.
+      // when you sign in as IT support (`zhouyu`, or `ryan` in English). The
+      // finished ones below are theirs too.
       await track(
         'repairs',
         await repairs.create(
