@@ -193,7 +193,7 @@ const messages = {
     generated: 'Received records',
     repairs: 'Repairs',
     disposals: 'Disposals',
-    documents: 'Related documents',
+    documents: 'Related work',
     attachments: 'Attachments',
     auditItems: 'Audit items',
   },

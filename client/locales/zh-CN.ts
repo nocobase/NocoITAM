@@ -188,7 +188,7 @@ const zhCN: AppResource = {
     generated: '入库记录',
     repairs: '维修单',
     disposals: '报废单',
-    documents: '关联单据',
+    documents: '关联业务',
     attachments: '附件',
     auditItems: '盘点明细',
   },
