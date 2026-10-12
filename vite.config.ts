@@ -40,6 +40,7 @@ export default createAppViteConfig(async (environment) => {
 
   return {
     root: __dirname,
+    ...(command === 'build' ? { base: env.CDN_BASE_URL?.trim() || './' } : {}),
     plugins: [
       ...(await loadAppVitePlugins({ appRoot: __dirname, environment })),
       ...(devClientConfig ? [devClientConfig] : []),
@@ -99,6 +100,8 @@ export default createAppViteConfig(async (environment) => {
     },
     resolve: {
       dedupe: ['react', 'react-dom', 'react-router'],
+      // Application change (ITAM): the application's code imports through
+      // `@/`, which the template replaced with package `imports` (#components/*).
       alias: [{ find: '@', replacement: path.resolve(__dirname, './client') }],
     },
   };

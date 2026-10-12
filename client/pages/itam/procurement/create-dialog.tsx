@@ -158,7 +158,7 @@ export function PurchaseOrderCreateDialog({
       unitPrice: line.unitPrice === '' ? null : Number(line.unitPrice),
     })),
   });
-  const { contextRef, ...capture } = usePurchaseOrderCapture({
+  const capture = usePurchaseOrderCapture({
     form,
     onFill: (next) => {
       setValues((current) => applyCaptureValues(current, next));
@@ -329,7 +329,7 @@ export function PurchaseOrderCreateDialog({
       secondaryLabel={t('procurement.saveDraft')}
       onSecondary={() => save.mutate(false)}
     >
-      <div ref={contextRef} className='grid gap-3'>
+      <div className='grid gap-3'>
         {current === 'ai' ? (
           <CapturePane
             capture={capture}

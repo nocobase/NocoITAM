@@ -27,12 +27,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  useAI,
-  useAIPageElementHandle,
-  type AIFrontendToolRegistration,
-} from '@/extensions/nocobase-ai';
-import { useHiddenChat, useItamAi } from '@/lib/itam/ai-chat';
+import { useAiReading, useItamAi } from '@/lib/itam/ai-chat';
 import {
   useApi,
   useItamList,
@@ -44,14 +39,12 @@ import { errorMessage, text } from '@/lib/itam/format';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
 import {
-  chatAttachmentOf,
   DOCUMENT_ACCEPT,
   splitSerials,
   type ReceiptIssue,
   type ReceiptPlan,
 } from '@/lib/itam/receipt';
 import { useReferenceNames } from '@/lib/itam/references';
-import { readSearchTurn } from '@/lib/itam/search-turn';
 import { STOCK_PATH } from '@/lib/itam/stock';
 import { cn } from '@/lib/utils';
 
@@ -141,9 +134,7 @@ interface DocumentSession {
   readonly file: File;
   readonly phase: 'uploading' | 'reading' | 'done' | 'failed';
   readonly runId?: string;
-  readonly prompt?: string;
   readonly plan?: ReceiptPlan;
-  readonly conversationId?: string;
   /** What the assistant said when it finished. */
   readonly summary?: string;
   /** Why it failed. */
@@ -504,7 +495,6 @@ export function ReceiptDialog({
     session,
     read,
     release,
-    contextRef,
   } = useDeliveryDocument({
     orderId,
     order,
@@ -596,7 +586,6 @@ export function ReceiptDialog({
       confirmLabel={t('receipt.confirm', { count })}
       onConfirm={() => receive.mutate()}
     >
-      <div ref={contextRef} hidden />
       {canRead ? (
         <DocumentStrip session={session} busy={reading} read={read} />
       ) : null}
@@ -1252,24 +1241,22 @@ function DocumentHeader({
 }
 
 interface DeliveryDocument {
-  /** A model is configured and the assistant is switched on. */
+  /** A model is there to ask. */
   readonly available: boolean;
   readonly busy: boolean;
   readonly session: DocumentSession | undefined;
   readonly read: (file: File) => void;
   /** Lets go of a run that was not saved, as the dialog closes. */
   readonly release: () => void;
-  readonly contextRef: (element: HTMLElement | null) => void;
 }
 
 /**
  * Reading a delivery document. The file is kept on the order (its
- * attachments) and a run is started for it, then the assistant reads it in
- * a conversation of its own (`ItamAi.receipt`) under the receiving skill,
- * with read-only tools — the plugin enforces that list on the server — and
- * hands its reading back through the one page tool it has, `prefillReceipt`.
- * The rules on the server turn that into the plan the form opens on. The
- * conversation is deleted once the turn is over; the run is the record.
+ * attachments) and a run is started for it, which reads it as text; then the
+ * model reads that text against the order's lines on the server under the
+ * receiving skill (`POST /itam/ai/read`, template 1.0.0-beta.64) and answers
+ * with the rows the run's draft takes. The rules on the server turn that
+ * into the plan the form opens on; the run is the record.
  */
 function useDeliveryDocument({
   orderId,
@@ -1289,182 +1276,9 @@ function useDeliveryDocument({
   const { t } = useTranslation();
   const api = useApi();
   const ai = useItamAi();
-  const aiService = useAI();
+  const readAi = useAiReading();
   const files = useService(clientFileRepositoryManagerToken);
-  const chat = useHiddenChat('receipt');
   const [session, setSession] = useState<DocumentSession>();
-  // The run the page tool reports to: the tool is registered once, and
-  // must reach the run of whichever document is being read.
-  const runRef = useRef<string | undefined>(undefined);
-  const onPlanRef = useRef(onPlan);
-  useEffect(() => {
-    onPlanRef.current = onPlan;
-  }, [onPlan]);
-
-  const tools = useMemo(
-    (): AIFrontendToolRegistration[] => [
-      {
-        name: 'prefillReceipt',
-        title: 'Prefill the receiving form',
-        description:
-          'Hand what you read from the delivery document to the receiving form on screen, which the receiver checks and saves. One entry in "rows" per goods row of the document: lineId is the purchase order line it matches (an id from the page context lines, or an empty string when it matches none), description the row as printed, partCode the part number printed on it (omit when none), quantity the quantity delivered, serialNos every serial number belonging to that row, source where the row is in the document ("Sheet1 row 4", "page 2 line 3"). warrantyMonths when the document states a warranty period that covers the row (36 for 保修 36 个月, also when one note states it for several rows), or warrantyEndDate (YYYY-MM-DD) when it prints an end date; omit both when it states none. deliveryNo, deliveryDate (YYYY-MM-DD) and vendorName from the document header when printed. Call it once, after reading the whole document.',
-        permission: 'ALLOW',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            deliveryNo: { type: 'string' },
-            deliveryDate: { type: 'string' },
-            vendorName: { type: 'string' },
-            notes: { type: 'string' },
-            rows: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  lineId: { type: 'string' },
-                  description: { type: 'string' },
-                  partCode: { type: 'string' },
-                  quantity: { type: 'number', minimum: 0 },
-                  serialNos: { type: 'array', items: { type: 'string' } },
-                  source: { type: 'string' },
-                  warrantyMonths: { type: 'integer', minimum: 1 },
-                  warrantyEndDate: { type: 'string' },
-                },
-                required: ['lineId', 'description', 'quantity'],
-              },
-            },
-          },
-          required: ['rows'],
-        },
-        // The assistant supplies the arguments; read them defensively and
-        // send the server only what its schema takes.
-        execute: async (args: unknown) => {
-          const runId = runRef.current;
-          if (!runId) throw new Error('No delivery document is being read.');
-          const input = (args ?? {}) as Record<string, unknown>;
-          const rows = (Array.isArray(input.rows) ? input.rows : [])
-            .slice(0, 500)
-            .map((value: unknown) => {
-              const row = (value ?? {}) as Record<string, unknown>;
-              const quantity = Number(row.quantity);
-              return {
-                lineId: clip(row.lineId, 64) || null,
-                description: clip(row.description, 500),
-                partCode: clip(row.partCode, 128) || null,
-                quantity: Number.isFinite(quantity)
-                  ? Math.min(10000, Math.max(0, quantity))
-                  : 0,
-                serialNos: (Array.isArray(row.serialNos) ? row.serialNos : [])
-                  .map((serial: unknown) => clip(serial, 128))
-                  .filter(Boolean)
-                  .slice(0, 10000),
-                source: clip(row.source, 200) || null,
-                warrantyMonths: Number.isInteger(Number(row.warrantyMonths))
-                  ? Math.min(240, Math.max(0, Number(row.warrantyMonths)))
-                  : null,
-                warrantyEndDate: clip(row.warrantyEndDate, 32) || null,
-              };
-            });
-          const { data } = await api.request<{
-            data: { plan: ReceiptPlan };
-          }>({
-            path: `${PURCHASE_ORDERS_PATH}/${orderId}/receipt-runs/${runId}/draft`,
-            method: 'POST',
-            json: {
-              deliveryNo: clip(input.deliveryNo, 128) || null,
-              deliveryDate: clip(input.deliveryDate, 32) || null,
-              vendorName: clip(input.vendorName, 255) || null,
-              notes: clip(input.notes, 2000) || null,
-              rows,
-            },
-          });
-          onPlanRef.current(data.plan);
-          setSession((current) =>
-            current?.runId === runId
-              ? { ...current, plan: data.plan }
-              : current,
-          );
-          // What the rules made of it, so the assistant's closing sentence
-          // can say what the receiver needs to look at.
-          return {
-            linesFilled: data.plan.lines.length,
-            issues: data.plan.issues.map((entry) => entry.code),
-          };
-        },
-      },
-    ],
-    [api, orderId],
-  );
-  const { ref: contextRef, context } = useAIPageElementHandle({
-    id: 'itam-receipt-document',
-    title: t('receipt.context'),
-    kind: 'purchaseOrderReceipt',
-    getContext: () => ({
-      order: {
-        orderNo: order.orderNo,
-        vendorId: order.vendorId,
-        orderedAt: order.orderedAt,
-      },
-      lines: lines.map((line) => {
-        const model = modelById.get(text(line.modelId));
-        return {
-          lineId: line.id,
-          itemType: line.itemType,
-          item: model ? model.name : undefined,
-          manufacturer: model
-            ? makers?.get(text(model.manufacturerId))
-            : undefined,
-          partCode: model?.code ?? undefined,
-          softwareProductId: line.softwareProductId ?? undefined,
-          quantity: line.quantity,
-          received: line.receivedQuantity,
-          outstanding: outstandingOf(line),
-        };
-      }),
-    }),
-    tools,
-  });
-
-  // While the assistant reads, its turn is read out of the chat; once the
-  // turn is over it either handed a plan over or it did not.
-  const turn =
-    session?.phase === 'reading' && session.prompt
-      ? readSearchTurn(chat, session.prompt)
-      : undefined;
-  if (session && turn?.asked && !turn.working)
-    setSession({
-      ...session,
-      phase: session.plan ? 'done' : 'failed',
-      conversationId: turn.conversationId,
-      summary: turn.text,
-      message: session.plan
-        ? undefined
-        : turn.failed || turn.text || t('receipt.document.noRows'),
-    });
-
-  // A finished turn records how it ended and lets its conversation go —
-  // the run is the record, the conversation was only the means.
-  const settledRef = useRef(new Set<string>());
-  useEffect(() => {
-    const runId = session?.runId;
-    if (!runId || (session.phase !== 'done' && session.phase !== 'failed'))
-      return;
-    if (settledRef.current.has(runId)) return;
-    settledRef.current.add(runId);
-    if (session.phase === 'failed')
-      void api
-        .request({
-          path: `${PURCHASE_ORDERS_PATH}/${orderId}/receipt-runs/${runId}/fail`,
-          method: 'POST',
-          json: { reason: (session.message ?? '').slice(0, 2000) || '—' },
-        })
-        .catch(() => undefined);
-    if (session.conversationId)
-      void ai?.receipt.state
-        .get()
-        .removeConversation?.(session.conversationId)
-        .catch(() => undefined);
-  });
 
   const discard = (runId: string | undefined) => {
     if (!runId) return;
@@ -1476,8 +1290,50 @@ function useDeliveryDocument({
       .catch(() => undefined);
   };
 
+  const fail = (runId: string | undefined, message: string) => {
+    if (!runId) return;
+    void api
+      .request({
+        path: `${PURCHASE_ORDERS_PATH}/${orderId}/receipt-runs/${runId}/fail`,
+        method: 'POST',
+        json: { reason: message.slice(0, 2000) || '—' },
+      })
+      .catch(() => undefined);
+  };
+
+  /** The model's rows as the run's draft takes them, read defensively. */
+  const draftOf = (input: Record<string, unknown>) => ({
+    deliveryNo: clip(input.deliveryNo, 128) || null,
+    deliveryDate: clip(input.deliveryDate, 32) || null,
+    vendorName: clip(input.vendorName, 255) || null,
+    notes: clip(input.notes, 2000) || null,
+    rows: (Array.isArray(input.rows) ? input.rows : [])
+      .slice(0, 500)
+      .map((value: unknown) => {
+        const row = (value ?? {}) as Record<string, unknown>;
+        const quantity = Number(row.quantity);
+        return {
+          lineId: clip(row.lineId, 64) || null,
+          description: clip(row.description, 500),
+          partCode: clip(row.partCode, 128) || null,
+          quantity: Number.isFinite(quantity)
+            ? Math.min(10000, Math.max(0, quantity))
+            : 0,
+          serialNos: (Array.isArray(row.serialNos) ? row.serialNos : [])
+            .map((serial: unknown) => clip(serial, 128))
+            .filter(Boolean)
+            .slice(0, 10000),
+          source: clip(row.source, 200) || null,
+          warrantyMonths: Number.isInteger(Number(row.warrantyMonths))
+            ? Math.min(240, Math.max(0, Number(row.warrantyMonths)))
+            : null,
+          warrantyEndDate: clip(row.warrantyEndDate, 32) || null,
+        };
+      }),
+  });
+
   const read = (file: File) => {
-    if (!ai?.available) return;
+    if (!ai.available) return;
     discard(session?.runId);
     setSession({ file, phase: 'uploading' });
     void (async () => {
@@ -1504,62 +1360,77 @@ function useDeliveryDocument({
           json: { fileId, documentName: file.name },
         });
         runId = run.data.id;
-        runRef.current = runId;
-        const prompt = t('ai.prompts.readDeliveryDocument', {
-          file: file.name,
-          orderNo: text(order.orderNo),
-        });
-        // The server read the document as text: it goes in the message
-        // itself, which every later turn of the conversation still has (an
-        // attachment is parsed for its own request only, and the turn
-        // resumes once the page tool is approved). Only a document the
-        // server could not read — a picture — is attached, for a model that
-        // reads images.
         const documentText = run.data.documentText;
-        const attachments = documentText
-          ? []
-          : [chatAttachmentOf(await aiService.uploadFile(file), file)];
-        setSession({ file, phase: 'reading', runId, prompt });
-        ai.receipt.ask(
-          documentText
-            ? `${prompt}\n\n<delivery_document filename="${file.name.replace(/"/g, "'")}">\n${documentText}\n</delivery_document>`
-            : prompt,
-          [context],
-          {
-            attachments,
-            // Read-only: the receiving skill and no write tool. The plugin
-            // holds the conversation to this list on the server.
-            skillSettings: {
-              skills: ['receiving'],
-              tools: ['itam_business_context'],
+        if (!documentText) {
+          const message = t('receipt.document.unreadable');
+          fail(runId, message);
+          setSession({ file, phase: 'failed', runId, message });
+          return;
+        }
+        setSession({ file, phase: 'reading', runId });
+        const answer = await readAi({
+          task: 'deliveryDocument',
+          material: `<delivery_document filename="${file.name.replace(/"/g, "'")}">\n${documentText}\n</delivery_document>`,
+          context: {
+            order: {
+              orderNo: order.orderNo,
+              vendorId: order.vendorId,
+              orderedAt: order.orderedAt,
             },
+            lines: lines.map((line) => {
+              const model = modelById.get(text(line.modelId));
+              return {
+                lineId: line.id,
+                itemType: line.itemType,
+                item: model ? model.name : undefined,
+                manufacturer: model
+                  ? makers?.get(text(model.manufacturerId))
+                  : undefined,
+                partCode: model?.code ?? undefined,
+                softwareProductId: line.softwareProductId ?? undefined,
+                quantity: line.quantity,
+                received: line.receivedQuantity,
+                outstanding: outstandingOf(line),
+              };
+            }),
           },
-        );
-      } catch (error) {
+        });
+        const rows = answer.reading?.rows;
+        if (!answer.reading || !Array.isArray(rows) || rows.length === 0) {
+          const message = plain(answer.said) || t('receipt.document.noRows');
+          fail(runId, message);
+          setSession({ file, phase: 'failed', runId, message });
+          return;
+        }
+        const { data } = await api.request<{ data: { plan: ReceiptPlan } }>({
+          path: `${PURCHASE_ORDERS_PATH}/${orderId}/receipt-runs/${runId}/draft`,
+          method: 'POST',
+          json: draftOf(answer.reading),
+        });
+        onPlan(data.plan);
         setSession({
           file,
-          phase: 'failed',
+          phase: 'done',
           runId,
-          message: errorMessage(error),
+          plan: data.plan,
+          summary: plain(answer.said),
         });
+      } catch (error) {
+        const message = errorMessage(error);
+        fail(runId, message);
+        setSession({ file, phase: 'failed', runId, message });
       }
     })();
   };
 
   return {
-    available: Boolean(ai?.available),
+    available: ai.available,
     busy: session?.phase === 'uploading' || session?.phase === 'reading',
     session,
     read,
     release: () => {
       if (session?.phase !== 'failed') discard(session?.runId);
-      if (session?.conversationId)
-        void ai?.receipt.state
-          .get()
-          .removeConversation?.(session.conversationId)
-          .catch(() => undefined);
     },
-    contextRef,
   };
 }
 

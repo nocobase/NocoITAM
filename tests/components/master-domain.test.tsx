@@ -29,6 +29,11 @@ vi.mock('../../client/lib/itam/api.js', async (importOriginal) => ({
   useRelatedCounts: () => [],
   useRowCounts: () => [],
 }));
+// The assistant is not configured: a model's page offers no AI 补充.
+vi.mock('../../client/lib/itam/ai-chat.js', () => ({
+  useItamAi: () => ({ available: false }),
+  useAiPageContext: () => ({ available: false, ask: () => undefined }),
+}));
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCollectionPermissions: () => ({}),
   useCurrentUserId: () => 'u1',

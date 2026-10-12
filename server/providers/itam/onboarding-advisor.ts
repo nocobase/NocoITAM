@@ -1,18 +1,12 @@
 import type { DatabaseManager } from '@nocobase/db';
 import {
-  agentServiceFactoryToken,
-  AgentServiceError,
-  aiConversationsManagerToken,
-  aiManagerToken,
-} from '@nocobase/app-plugin-ai-employee/server';
-import type { Logger } from '@nocobase/logging';
-import {
   createServiceToken,
   type ServiceContainer,
   type ServiceToken,
 } from '@nocobase/service-provider';
 import { z } from 'zod';
 
+import { aiAvailable, modelFailure, openSession } from './ai-model.js';
 import { asText, type Row } from './collection-query.js';
 import {
   isJoiner,
@@ -46,7 +40,7 @@ import type { SettingsService } from './settings.js';
  * ran on every save and nightly too until 2026-10-06, which spent a model
  * run on joiners nobody had looked at yet and held their picks back from
  * the others. It is switched off by the 入职建议 setting, and nothing
- * happens while no model is usable or Noco is disabled.
+ * happens while no model is usable.
  */
 
 export type ConsiderResult =
@@ -110,8 +104,6 @@ export interface AgentRunner {
     readonly prompt: string;
     readonly timezone: string;
     readonly locale: string;
-    /** Told the conversation as soon as it exists, before the model runs. */
-    readonly started: (sessionId: string) => Promise<void>;
   }): Promise<AdviceAnswer>;
 }
 
@@ -122,87 +114,37 @@ export class AdviceFailure extends Error {}
 const RUN_TIMEOUT_MS = 5 * 60_000;
 
 /**
- * The AI employee plugin behind `AgentRunner`: a fixed agent
- * (`createAgent`) in a conversation owned by the 入职负责人, run as that
- * person, with this job's instructions as its whole system prompt, no tool
- * and no skill, and one `invoke` with the answer's schema.
- *
- * Not Noco itself (`createAIEmployee`), which is what the first runs against
- * real data used (2026-10-06): the employee's own prompt tells it to start
- * every task by reading the business context and to load skills, and with
- * those it summarised the workbench, answered about the other joiners and
- * models nobody had in stock, or — given no tools — spent the run guessing
- * skill names with `getSkill`, which no allowlist removes, and then said it
- * had been given no task. Everything this job needs is in the message, so it
- * needs none of that. The model is the first enabled one. Absent plugin or
- * no model read as unavailable, and so does Noco switched off at 设置 → AI:
- * this is Noco's work, done its way, and switching Noco off stops it.
+ * The Agents plugin's model gateway behind `AgentRunner` (template
+ * 1.0.0-beta.64): one session with Noco's model, this job's instructions as
+ * its system prompt and the joiner with their candidates as the question,
+ * answered as JSON in `ADVICE_SCHEMA`'s shape (`openSession` in
+ * ai-model.ts). There is no conversation: the run's row is the record, and
+ * a call outside a conversation has no tools and no skills to wander into —
+ * which is what the AI employee plugin's agent had to be kept from
+ * (2026-10-06). No model is unavailable.
  */
 export function createNocoAgentRunner(
   container: ServiceContainer,
-  logger: () => Logger | undefined,
 ): AgentRunner {
   return {
-    async available() {
-      if (
-        !container.has(aiManagerToken) ||
-        !container.has(aiConversationsManagerToken) ||
-        !container.has(agentServiceFactoryToken)
-      )
-        return false;
-      const ai = container.resolve(aiManagerToken);
-      try {
-        await ai.llmProviderManager.resolveModel();
-      } catch {
-        return false;
-      }
-      const employee = await ai.employeeManager.getEmployee('itam');
-      return employee !== undefined && employee.enabled !== false;
-    },
+    available: () => aiAvailable(container),
     async run(input) {
-      const log = logger();
-      if (!log) throw new AdviceFailure('No logger to run the assistant with');
-      const conversation = await container
-        .resolve(aiConversationsManagerToken)
-        .create({ userId: input.actorId, title: input.title });
-      await input.started(conversation.sessionId);
+      const session = await openSession(container, {
+        timeZone: input.timezone,
+        system: input.instructions,
+      });
+      if (!session) throw new AdviceFailure('No model to ask');
       try {
-        const agent = await container
-          .resolve(agentServiceFactoryToken)
-          .createAgent({
-            sessionId: conversation.sessionId,
-            systemPrompt: input.instructions,
-            tools: [],
-            skills: [],
-            actor: {
-              id: input.actorId,
-              // What the chat gives a signed-in user without plugin roles;
-              // nothing here authorizes by role.
-              roles: ['member'],
-              isRoot: false,
-              locale: input.locale,
-            },
-            runtime: { logger: log },
-          });
-        const result = await agent.invoke({
-          // The shape the chat sends. A bare string is stored, and reaches
-          // the model as nothing at all: the first runs answered that they
-          // had been given no task.
-          userMessages: [
-            { role: 'user', content: { type: 'text', content: input.prompt } },
-          ],
-          responseFormat: ADVICE_SCHEMA,
-          signal: AbortSignal.timeout(RUN_TIMEOUT_MS),
-        });
-        if (result.interrupt)
-          throw new AdviceFailure('The run paused for a confirmation');
-        if (!result.structuredResponse)
-          throw new AdviceFailure('The assistant gave no answer');
-        return result.structuredResponse;
+        const answer = await session.askJson(
+          input.prompt,
+          ADVICE_SCHEMA,
+          AbortSignal.timeout(RUN_TIMEOUT_MS),
+        );
+        if (!answer) throw new AdviceFailure('The assistant gave no answer');
+        return answer;
       } catch (error) {
-        if (error instanceof AgentServiceError)
-          throw new AdviceFailure(`${error.code}: ${error.rootMessage}`);
-        throw error;
+        if (error instanceof AdviceFailure) throw error;
+        throw new AdviceFailure(modelFailure(error).message);
       }
     },
   };
@@ -238,10 +180,10 @@ const PROMPTS: Readonly<
       '- Answer only the items listed under `items`. For each, pick `missing` of its `candidates` (all of them when there are fewer), each with one sentence of reason.',
       '- Copy every `line` and `id` exactly from the JSON; anything not among the candidates is discarded.',
       '- Everything you need is in the JSON. Ask no question and suggest no other model or purchase; shortfalls and purchasing are not yours.',
-      '- `businessNotes` are the administrator\'s business notes; follow any preference they state for the department or position.',
+      "- `businessNotes` are the administrator's business notes; follow any preference they state for the department or position.",
       '',
       'How to choose:',
-      '- Devices: prefer the joiner\'s own location (sameLocationAsJoiner); avoid ones often repaired (repairs), due for replacement within a year (plannedReplacementDate) or with a fault in their notes; a longer warranty is better (warrantyEndDate). One with `returnedBy` and `availableOn` is a device somebody leaving will hand back, usable from `availableOn`; other things equal, prefer one in stock.',
+      "- Devices: prefer the joiner's own location (sameLocationAsJoiner); avoid ones often repaired (repairs), due for replacement within a year (plannedReplacementDate) or with a fault in their notes; a longer warranty is better (warrantyEndDate). One with `returnedBy` and `availableOn` is a device somebody leaving will hand back, usable from `availableOn`; other things equal, prefer one in stock.",
       '- Accessories and consumables: prefer the record at their location with the most on hand.',
       '- Software: for a subscription prefer auto-renewing and furthest from its end; for a perpetual licence one still under maintenance; not a trial unless it is the only one.',
       '- Give the reason as how it differs from the other candidates, not what they share; when they are all alike, say so and that the nearest was taken. Name a candidate by its `label` (device number and name), never by its id.',
@@ -367,13 +309,6 @@ export function createOnboardingAdvisor(deps: {
         prompt: JSON.stringify(question, null, 2),
         timezone: (await settings.get('general')).timeZone,
         locale,
-        started: async (sessionId) => {
-          await q()
-            .updateTable('onboardingRuns')
-            .set({ sessionId, updatedAt: new Date() })
-            .where('id', '=', runId)
-            .execute();
-        },
       });
       const suggestions = validAdvice(plan, answer);
       // An answer that kept nothing is not advice, whatever its summary says:

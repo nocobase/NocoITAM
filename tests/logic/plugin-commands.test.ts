@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 // Users develop, build and start their app through these scripts. Nothing at runtime depends on them, so dropping or
-// renaming one — a bad merge resolution did exactly that once — breaks the documented workflow silently: the app still
+// renaming one — a bad merge resolution did exactly that once — breaks the documented development steps silently: the app still
 // builds, starts, and passes every other test. These assertions are the alarm.
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -64,6 +64,8 @@ describe('application scripts', () => {
       expect(existsSync(npmIgnorePath)).toBe(true);
       expect(readFileSync(npmIgnorePath, 'utf8')).toContain('.agents/');
     }
-    if (appPackage.files) expect(appPackage.files).not.toContain('.agents');
+    // Application change (ITAM): the application is not published, so its
+    // manifest names no `files`, and nothing of `.agents` can be packed.
+    expect(appPackage.files ?? []).not.toContain('.agents');
   });
 });

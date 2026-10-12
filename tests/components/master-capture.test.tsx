@@ -5,17 +5,18 @@ import { MasterCreateDialog } from '../../client/components/itam/master-create-d
 
 const state = vi.hoisted(() => ({
   available: true,
-  searchModel: true,
-  asked: [] as { message: string; options: unknown }[],
+  asked: [] as {
+    task: string;
+    material: string;
+    context: Record<string, unknown>;
+    instruction?: string;
+  }[],
+  answer: {
+    reading: { name: 'OptiPlex 7010 SFF' } as Record<string, unknown> | null,
+    said: 'No EOL date published; check the code.',
+  },
   requests: [] as { path: string; json?: unknown }[],
   created: [] as unknown[],
-  chat: { status: 'ready', messages: [] } as Record<string, unknown>,
-  removed: [] as string[],
-  registrations: 0,
-  tools: [] as {
-    name: string;
-    execute: (args: unknown) => Promise<unknown>;
-  }[],
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -81,43 +82,14 @@ vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCollectionPermissions: () => ({ create: true }),
 }));
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
-  useItamAi: () =>
-    state.available
-      ? {
-          available: true,
-          master: {
-            ask: (message: string, _context: unknown, options: unknown) =>
-              state.asked.push({ message, options }),
-            state: {
-              get: () => ({
-                ...state.chat,
-                removeConversation: (id: string) => {
-                  state.removed.push(id);
-                  return Promise.resolve();
-                },
-              }),
-            },
-          },
-        }
-      : undefined,
-  useHiddenChat: () => state.chat,
-  messageText: (message: { parts: { type: string; text?: string }[] }) =>
-    message.parts.map((part) => part.text ?? '').join(''),
-}));
-vi.mock('../../client/extensions/nocobase-ai/index.js', () => ({
-  useAI: () => ({
-    models: state.searchModel
-      ? [
-          { value: 'plain', llmService: 'svc', supportWebSearch: false },
-          { value: 'searcher', llmService: 'svc', supportWebSearch: true },
-        ]
-      : [{ value: 'plain', llmService: 'svc', supportWebSearch: false }],
-  }),
-  useAIPageElementHandle: (descriptor: { tools?: typeof state.tools }) => {
-    state.registrations += 1;
-    state.tools = descriptor.tools ?? [];
-    return { ref: () => undefined, context: {} };
-  },
+  useItamAi: () => ({ available: state.available }),
+  // The model on the server, one call per reading (`POST /itam/ai/read`).
+  useAiReading:
+    () =>
+    (input: (typeof state.asked)[number]): Promise<typeof state.answer> => {
+      state.asked.push(input);
+      return Promise.resolve(state.answer);
+    },
 }));
 vi.mock('../../client/components/itam/field-input.js', () => ({
   // A plain input per field, so the filled values can be read.
@@ -141,14 +113,13 @@ vi.mock('../../client/components/itam/field-input.js', () => ({
 
 beforeEach(() => {
   state.available = true;
-  state.searchModel = true;
   state.asked = [];
+  state.answer = {
+    reading: { name: 'OptiPlex 7010 SFF' },
+    said: 'No EOL date published; check the code.',
+  };
   state.requests = [];
   state.created = [];
-  state.tools = [];
-  state.chat = { status: 'ready', messages: [] };
-  state.removed = [];
-  state.registrations = 0;
 });
 
 const dialog = (initial?: Record<string, unknown>) => (
@@ -161,11 +132,9 @@ const dialog = (initial?: Record<string, unknown>) => (
   />
 );
 
-it('looks a model up on the web and fills the form for checking', async () => {
+it('reads a model and fills the form for checking', async () => {
   // From a purchase line, the material starts at its name and part code.
-  const view = render(
-    dialog({ name: 'Dell OptiPlex 7010', code: 'OPT7010SFF' }),
-  );
+  render(dialog({ name: 'Dell OptiPlex 7010', code: 'OPT7010SFF' }));
   expect(
     screen.getByRole('tab', { name: 'procurement.capture.aiTab' }),
   ).toHaveAttribute('aria-selected', 'true');
@@ -176,64 +145,40 @@ it('looks a model up on the web and fills the form for checking', async () => {
   expect(
     screen.getByRole('textbox', { name: 'masterCapture.material' }),
   ).toHaveValue('Dell OptiPlex 7010 OPT7010SFF');
-  expect(screen.getByText('masterCapture.willSearch')).toBeVisible();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'procurement.capture.organise' }),
-  );
-  // Its own conversation, searching the web with a model that can, with
-  // no tool of the register's.
-  expect(state.asked).toHaveLength(1);
-  expect(state.asked[0]!.message).toContain('ai.prompts.captureModel');
-  expect(state.asked[0]!.message).toContain(
-    '<material>\nDell OptiPlex 7010 OPT7010SFF\n</material>',
-  );
-  expect(state.asked[0]!.options).toEqual({
-    skillSettings: { skills: ['catalog'], tools: [] },
-    webSearch: true,
-    model: { llmService: 'svc', model: 'searcher' },
-  });
-
-  const fill = state.tools.find((tool) => tool.name === 'fillModel');
+  // The gateway does not search the web, and the dialog says so.
+  expect(screen.getByText('masterCapture.cannotSearch')).toBeVisible();
   await act(async () => {
-    await fill!.execute({ name: 'OptiPlex 7010 SFF' });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'procurement.capture.organise' }),
+    );
   });
-  expect(state.requests[0]!.path).toBe('itam/master/models/capture/match');
-  state.chat = {
-    status: 'ready',
-    conversationId: 'c1',
-    messages: [
-      {
-        role: 'user',
-        parts: [{ type: 'text', text: state.asked[0]!.message }],
-      },
-      {
-        role: 'assistant',
-        parts: [
-          { type: 'text', text: 'No EOL date published; check the code.' },
-        ],
-      },
-    ],
-  };
-  view.rerender(dialog({ name: 'Dell OptiPlex 7010', code: 'OPT7010SFF' }));
+  // One reading on the server, given the categories a model may take.
+  expect(state.asked).toHaveLength(1);
+  expect(state.asked[0]).toMatchObject({
+    task: 'model',
+    material: 'Dell OptiPlex 7010 OPT7010SFF',
+  });
+  expect(state.asked[0]!.context.categories).toEqual([
+    expect.objectContaining({ id: 'cat-desktop' }),
+  ]);
+  // The reading goes through the server's check before the form takes it.
+  expect(state.requests[0]).toMatchObject({
+    path: 'itam/master/models/capture/match',
+    json: { name: 'OptiPlex 7010 SFF' },
+  });
   expect(
     screen.getByText('No EOL date published; check the code.'),
   ).toBeVisible();
-  expect(state.removed).toEqual(['c1']);
 
   expect(
     screen.getByRole('tab', { name: 'procurement.capture.formTab' }),
   ).toHaveAttribute('aria-selected', 'true');
   expect(screen.getByLabelText('form-name')).toHaveValue('OptiPlex 7010 SFF');
   expect(screen.getByLabelText('form-warrantyMonths')).toHaveValue('36');
-  // What it was not sure of, where it read it, a maker the books lack and
-  // a model they already hold.
-  // Beside the field; what it means is the mark's tooltip.
+  // What it was not sure of, a maker the books lack and a model they
+  // already hold. Beside the field; what it means is the mark's tooltip.
   expect(screen.getAllByText('procurement.capture.check')).toHaveLength(1);
   expect(screen.queryByText('procurement.capture.reviewHint')).toBeNull();
-  expect(screen.getByRole('link', { name: 'Dell spec sheet' })).toHaveAttribute(
-    'href',
-    'https://dell.example/7010',
-  );
   expect(
     screen.getByText('masterCapture.manufacturerNotFound:Dell Technologies'),
   ).toBeVisible();
@@ -256,32 +201,20 @@ it('looks a model up on the web and fills the form for checking', async () => {
   });
   expect(screen.queryByText('procurement.capture.check')).toBeNull();
 
-  // An adjustment is a new turn, with the same material.
+  // An adjustment is a new reading, with the same material.
   fireEvent.change(
     screen.getByRole('textbox', { name: 'procurement.capture.adjust' }),
     { target: { value: 'It is the tower version' } },
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'procurement.capture.adjust' }),
-  );
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole('button', { name: 'procurement.capture.adjust' }),
+    );
+  });
   expect(state.asked).toHaveLength(2);
-  expect(state.asked[1]!.message).toContain('ai.prompts.adjustMasterRecord');
-  expect(state.asked[1]!.message).toContain('Dell OptiPlex 7010 OPT7010SFF');
-});
-
-it('says so when no configured model can search the web', () => {
-  state.searchModel = false;
-  render(dialog());
-  expect(screen.getByText('masterCapture.cannotSearch')).toBeVisible();
-  fireEvent.change(
-    screen.getByRole('textbox', { name: 'masterCapture.material' }),
-    { target: { value: 'Figma Professional' } },
-  );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'procurement.capture.organise' }),
-  );
-  expect(state.asked[0]!.options).toEqual({
-    skillSettings: { skills: ['catalog'], tools: [] },
+  expect(state.asked[1]).toMatchObject({
+    material: 'Dell OptiPlex 7010 OPT7010SFF',
+    instruction: 'It is the tower version',
   });
 });
 
@@ -293,86 +226,14 @@ it('is the plain form without the assistant', () => {
   expect(screen.getByRole('button', { name: 'actions.save' })).toBeVisible();
 });
 
-it('waits a moment before calling a turn that has not filled the form failed', async () => {
-  vi.useFakeTimers();
-  try {
-    const view = render(dialog({ name: 'Testbook' }));
+it('says what the reading said when it filled nothing', async () => {
+  state.answer = { reading: null, said: 'Which maker is it?' };
+  render(dialog({ name: 'Testbook' }));
+  await act(async () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'procurement.capture.organise' }),
     );
-    // The chat reloaded mid-turn: its last words are there, the call that
-    // follows them not yet.
-    const asked = state.asked[0]!.message;
-    state.chat = {
-      status: 'ready',
-      conversationId: 'c2',
-      messages: [
-        { role: 'user', parts: [{ type: 'text', text: asked }] },
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', text: 'Handing the form back now.' }],
-        },
-      ],
-    };
-    view.rerender(dialog({ name: 'Testbook' }));
-    expect(screen.queryByText('Handing the form back now.')).toBeNull();
-    // The call arrives within the moment: the turn is a success.
-    const fill = state.tools.find((tool) => tool.name === 'fillModel');
-    await act(async () => {
-      await fill!.execute({ name: 'Testbook' });
-    });
-    view.rerender(dialog({ name: 'Testbook' }));
-    expect(
-      screen.getByRole('tab', { name: 'procurement.capture.formTab' }),
-    ).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('Handing the form back now.')).toBeVisible();
-
-    // A turn that never fills fails once the moment has passed.
-    fireEvent.click(
-      screen.getByRole('tab', { name: 'procurement.capture.aiTab' }),
-    );
-    fireEvent.click(
-      screen.getByRole('button', { name: 'procurement.capture.organise' }),
-    );
-    const again = state.asked[1]!.message;
-    state.chat = {
-      status: 'ready',
-      conversationId: 'c3',
-      messages: [
-        { role: 'user', parts: [{ type: 'text', text: again }] },
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', text: 'No such model.' }],
-        },
-      ],
-    };
-    view.rerender(dialog({ name: 'Testbook' }));
-    expect(screen.queryByText('No such model.')).toBeNull();
-    await act(async () => {
-      vi.advanceTimersByTime(2600);
-    });
-    view.rerender(dialog({ name: 'Testbook' }));
-    expect(screen.getByText('No such model.')).toBeVisible();
-  } finally {
-    vi.useRealTimers();
-  }
-});
-
-it('registers its page tool only while open, so several can sit closed', () => {
-  // A purchase order mounts one beside every line; two registering the same
-  // tool under the same context id threw and took the page down.
-  render(
-    <>
-      {[1, 2].map((key) => (
-        <MasterCreateDialog
-          key={key}
-          collection='models'
-          open={false}
-          onOpenChange={vi.fn()}
-          onCreated={vi.fn()}
-        />
-      ))}
-    </>,
-  );
-  expect(state.registrations).toBe(0);
+  });
+  expect(state.requests).toHaveLength(0);
+  expect(screen.getByText('Which maker is it?')).toBeVisible();
 });

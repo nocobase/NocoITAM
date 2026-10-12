@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   TestI18nProvider,
@@ -16,10 +23,14 @@ function I18n({ children }: { readonly children: ReactNode }) {
   return <TestI18nProvider runtime={runtime}>{children}</TestI18nProvider>;
 }
 
-const { signOut, refresh, showToast } = vi.hoisted(() => ({
+const { signOut, refresh, showToast, resolveError } = vi.hoisted(() => ({
+  resolveError: vi.fn(),
   signOut: vi.fn(),
   refresh: vi.fn(),
   showToast: vi.fn(),
+}));
+vi.mock('@nocobase/app-plugin-authentication/client/actions', () => ({
+  useAuthenticationErrorResolver: () => resolveError,
 }));
 vi.mock('@nocobase/app-client', () => {
   const toaster = { show: showToast, close: vi.fn() };
@@ -39,14 +50,24 @@ vi.mock('../../client/layouts/components/language-switcher.js', () => ({
   LanguageSwitcher: () => null,
 }));
 
+/**
+ * Opens the account menu from the keyboard. A pointer opens it on hover and again on the press, one frame later, which
+ * can reopen the menu after a test has already chosen an item and closed it.
+ */
+async function openAccountMenu(): Promise<void> {
+  act(() => screen.getByRole('button', { name: 'Open account menu' }).focus());
+  await userEvent.keyboard('{Enter}');
+}
+
 describe('account menu sign out', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     refresh.mockResolvedValue(undefined);
+    resolveError.mockReturnValue({ message: 'Localized authentication error' });
   });
   async function signOutFromMenu() {
     render(<UserMenu />, { wrapper: I18n });
-    fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
+    await openAccountMenu();
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Sign out' }));
   }
   it('refreshes the server session after successful sign-out', async () => {
@@ -64,11 +85,15 @@ describe('account menu sign out', () => {
     await waitFor(() =>
       expect(showToast).toHaveBeenCalledWith({
         type: 'error',
-        title: 'Unable to sign out. Please try again.',
+        title: 'Localized authentication error',
       }),
     );
+    expect(resolveError).toHaveBeenCalledWith({
+      status: 403,
+      code: 'INVALID_ORIGIN',
+    });
     expect(refresh).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Open account menu' }));
+    await openAccountMenu();
     expect(
       await screen.findByRole('menuitem', { name: 'Sign out' }),
     ).not.toHaveAttribute('aria-disabled', 'true');

@@ -16,12 +16,10 @@ import { type ReactElement, type ReactNode, useEffect, useState } from 'react';
 import { createMemoryRouter, Link, Outlet, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { RouteDialog } from '@/components/route-dialog';
-import { Button } from '@/components/ui/button';
-import { useRouteOverlay } from '@/components/use-route-overlay';
+import { RouteDialog } from '#components/route-dialog';
+import { Button } from '#components/ui/button';
+import { useRouteOverlay } from '#components/use-route-overlay';
 
-// Application change (ITAM): this application's locale nests its keys (`enUS.status.loading`), where the
-// template's states them flat (`enUS['status.loading']`).
 import enUS from '../../client/locales/en-US.js';
 
 // `vi.mock` factories run before this file's imports and code, so everything a factory uses is created here.
@@ -230,7 +228,7 @@ describe('page test harness', () => {
     renderAt('/items');
 
     expect(screen.getByRole('status')).toHaveTextContent(
-      enUS.status.loading,
+      enUS['status.loading'],
     );
     expect(await screen.findByText(/Alpha/)).toBeInTheDocument();
     expect(api.request).toHaveBeenCalledWith(
@@ -252,7 +250,7 @@ describe('page test harness', () => {
       copy.items.error.forbidden,
     );
     expect(
-      screen.queryByRole('button', { name: enUS.status.retry }),
+      screen.queryByRole('button', { name: enUS['status.retry'] }),
     ).not.toBeInTheDocument();
   });
 
@@ -270,7 +268,7 @@ describe('page test harness', () => {
       copy['status.sessionExpired'],
     );
     expect(
-      screen.queryByRole('button', { name: enUS.status.retry }),
+      screen.queryByRole('button', { name: enUS['status.retry'] }),
     ).not.toBeInTheDocument();
     await userEvent.click(
       screen.getByRole('button', { name: copy.actions.signInAgain }),

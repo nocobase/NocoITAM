@@ -23,15 +23,13 @@ vi.mock('../../client/lib/itam/onboarding.js', async (original) => ({
   ...(await original<object>()),
   useOnboardingPlan: () => ({ data: state.plan }),
 }));
-vi.mock('../../client/lib/itam/ai-context.js', () => ({
+vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useAiPageContext: () => ({
-    ref: () => undefined,
     available: state.aiAvailable,
     ask: () => undefined,
   }),
-}));
-vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useItamAi: () => ({
+    available: state.aiAvailable,
     openConversation: (id: string) => state.opened.push(id),
   }),
 }));
@@ -327,11 +325,10 @@ it('shows Noco’s reason under its pick, and the run under the heading', async 
   expect(screen.getByText('Never repaired, same office')).toBeTruthy();
   expect(screen.getByText('onboarding.advice.ready')).toBeTruthy();
   expect(screen.getByText('Chose the laptop with no repairs.')).toBeTruthy();
-  // The conversation is the owner's, who ran it.
-  fireEvent.click(
-    screen.getByRole('button', { name: 'onboarding.advice.conversation' }),
-  );
-  expect(state.opened).toEqual(['s1']);
+  // A run is one call to the model, with no conversation to open.
+  expect(
+    screen.queryByRole('button', { name: 'onboarding.advice.conversation' }),
+  ).toBeNull();
   // The 入职负责人 may ask again.
   fireEvent.click(
     screen.getByRole('button', { name: 'onboarding.advice.again' }),
@@ -357,10 +354,6 @@ it('lets nobody but the onboarding owner ask again', () => {
   expect(screen.getByText('Never repaired, same office')).toBeTruthy();
   expect(
     screen.queryByRole('button', { name: 'onboarding.advice.again' }),
-  ).toBeNull();
-  // Nor open the conversation, which is not theirs.
-  expect(
-    screen.queryByRole('button', { name: 'onboarding.advice.conversation' }),
   ).toBeNull();
 });
 

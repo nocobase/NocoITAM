@@ -5,14 +5,13 @@ import { PurchaseOrderCreateDialog } from '../../client/pages/itam/procurement/c
 
 const state = vi.hoisted(() => ({
   available: true,
-  asked: [] as { message: string; options: unknown }[],
-  requests: [] as { path: string; json?: unknown }[],
-  chat: { status: 'ready', messages: [] } as Record<string, unknown>,
-  removed: [] as string[],
-  tools: [] as {
-    name: string;
-    execute: (args: unknown) => Promise<unknown>;
+  asked: [] as {
+    task: string;
+    material: string;
+    context: Record<string, unknown>;
+    instruction?: string;
   }[],
+  requests: [] as { path: string; json?: unknown }[],
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -82,34 +81,19 @@ vi.mock('../../client/lib/itam/references.js', () => ({
   useReferenceNames: () => ({}),
 }));
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
-  useItamAi: () =>
-    state.available
-      ? {
-          available: true,
-          capture: {
-            ask: (message: string, _context: unknown, options: unknown) =>
-              state.asked.push({ message, options }),
-            state: {
-              get: () => ({
-                ...state.chat,
-                removeConversation: (id: string) => {
-                  state.removed.push(id);
-                  return Promise.resolve();
-                },
-              }),
-            },
-          },
-        }
-      : undefined,
-  useHiddenChat: () => state.chat,
-  messageText: (message: { parts: { type: string; text?: string }[] }) =>
-    message.parts.map((part) => part.text ?? '').join(''),
-}));
-vi.mock('../../client/extensions/nocobase-ai/index.js', () => ({
-  useAI: () => ({}),
-  useAIPageElementHandle: (descriptor: { tools?: typeof state.tools }) => {
-    state.tools = descriptor.tools ?? [];
-    return { ref: () => undefined, context: {} };
+  useItamAi: () => ({ available: state.available }),
+  // The model on the server, one call per reading (`POST /itam/ai/read`).
+  useAiReading: () => (input: (typeof state.asked)[number]) => {
+    state.asked.push(input);
+    return Promise.resolve({
+      reading: {
+        reason: 'newHire',
+        vendorName: 'Northwind',
+        surprise: 'dropped',
+        lines: [{ description: 'Testbook', quantity: 3 }],
+      },
+      said: 'Filled one line; check the vendor.',
+    });
   },
 }));
 vi.mock('../../client/components/itam/reference-select.js', () => ({
@@ -166,17 +150,14 @@ beforeEach(() => {
   state.available = true;
   state.asked = [];
   state.requests = [];
-  state.tools = [];
-  state.chat = { status: 'ready', messages: [] };
-  state.removed = [];
 });
 
 const dialog = () => (
   <PurchaseOrderCreateDialog open onOpenChange={vi.fn()} onCreated={vi.fn()} />
 );
 
-it('opens on AI 整理 and fills the form from what the assistant read', async () => {
-  const view = render(dialog());
+it('opens on AI 整理 and fills the form from what the model read', async () => {
+  render(dialog());
   expect(
     screen.getByRole('tab', { name: 'procurement.capture.aiTab' }),
   ).toHaveAttribute('aria-selected', 'true');
@@ -193,52 +174,26 @@ it('opens on AI 整理 and fills the form from what the assistant read', async (
     screen.getByRole('textbox', { name: 'procurement.capture.material' }),
     { target: { value: 'Three Testbooks for the lab from Northwind' } },
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'procurement.capture.organise' }),
-  );
-  // The material goes to the assistant's own conversation, which may only
-  // look models up besides filling the form.
-  expect(state.asked).toHaveLength(1);
-  expect(state.asked[0]!.message).toContain('ai.prompts.capturePurchaseOrder');
-  expect(state.asked[0]!.message).toContain(
-    '<pasted_text>\nThree Testbooks for the lab from Northwind\n</pasted_text>',
-  );
-  expect(state.asked[0]!.options).toMatchObject({
-    skillSettings: { skills: [], tools: ['itam_match_model'] },
-  });
-
-  const fill = state.tools.find((tool) => tool.name === 'fillPurchaseOrder');
   await act(async () => {
-    await fill!.execute({
-      reason: 'newHire',
-      vendorName: 'Northwind',
-      surprise: 'dropped',
-      lines: [{ description: 'Testbook', quantity: 3 }],
-    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'procurement.capture.organise' }),
+    );
   });
-  // Only what the endpoint's strict schema knows is sent.
+  // The material goes to the model on the server, with the reasons the
+  // form offers and the form as it stands.
+  expect(state.asked).toHaveLength(1);
+  expect(state.asked[0]).toMatchObject({
+    task: 'purchaseOrder',
+    material: 'Three Testbooks for the lab from Northwind',
+  });
+  expect(state.asked[0]!.context).toHaveProperty('reasons');
+  expect(state.asked[0]!.context).toHaveProperty('form');
+  // Only what the endpoint's strict schema knows is sent to the check.
   const sent = state.requests.find((request) =>
     request.path.endsWith('capture/match'),
   );
   expect(sent?.json).not.toHaveProperty('surprise');
-  // The turn ends with the assistant's sentence, and its conversation goes.
-  state.chat = {
-    status: 'ready',
-    conversationId: 'c1',
-    messages: [
-      {
-        role: 'user',
-        parts: [{ type: 'text', text: state.asked[0]!.message }],
-      },
-      {
-        role: 'assistant',
-        parts: [{ type: 'text', text: 'Filled one line; check the vendor.' }],
-      },
-    ],
-  };
-  view.rerender(dialog());
   expect(screen.getByText('Filled one line; check the vendor.')).toBeVisible();
-  expect(state.removed).toEqual(['c1']);
 
   expect(
     screen.getByRole('tab', { name: 'procurement.capture.formTab' }),
@@ -284,12 +239,16 @@ it('opens on AI 整理 and fills the form from what the assistant read', async (
     screen.getByRole('textbox', { name: 'procurement.capture.adjust' }),
     { target: { value: 'make it 5' } },
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'procurement.capture.adjust' }),
-  );
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole('button', { name: 'procurement.capture.adjust' }),
+    );
+  });
   expect(state.asked).toHaveLength(2);
-  expect(state.asked[1]!.message).toContain('ai.prompts.adjustPurchaseOrder');
-  expect(state.asked[1]!.message).toContain('<pasted_text>');
+  expect(state.asked[1]).toMatchObject({
+    material: 'Three Testbooks for the lab from Northwind',
+    instruction: 'make it 5',
+  });
 });
 
 it('is the plain form when the assistant is not available', () => {

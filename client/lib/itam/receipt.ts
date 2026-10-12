@@ -1,5 +1,3 @@
-import type { AIChatAttachment } from '@/extensions/nocobase-ai';
-
 /**
  * Receiving several order lines at once, and receiving by delivery document:
  * the shapes the server answers with (`server/providers/itam/receipt-plan.ts`
@@ -91,20 +89,17 @@ export interface ReceiptRunReport {
 }
 
 /**
- * The files the AI plugin reads as text whatever the model (its document
- * loader): any deployment reads these. Pictures go to the model itself, so
- * only a model that sees images reads a photographed or scanned note.
+ * The documents the server reads as text (`document-text.ts`): spreadsheets
+ * row by row, Word and PDF as their text, CSV and plain text as they are. A
+ * picture is not read: the model is given text only.
  */
 export const DOCUMENT_ACCEPT = [
   '.xlsx',
-  '.xls',
   '.xlsm',
   '.csv',
   '.docx',
-  '.doc',
   '.pdf',
   '.txt',
-  'image/*',
 ].join(',');
 
 /**
@@ -122,41 +117,3 @@ export const keptShare = (stats: FieldStats): number | undefined => {
   const proposed = stats.accepted + stats.changed + stats.removed;
   return proposed === 0 ? undefined : stats.accepted / proposed;
 };
-
-/**
- * A file the AI plugin has stored, in the shape its composer keeps for an
- * attachment (`use-chat-attachments.ts`), so a task can send it the way a
- * file attached by hand is sent.
- */
-export function chatAttachmentOf(
-  response: Readonly<Record<string, unknown>>,
-  file: File,
-): AIChatAttachment {
-  const meta =
-    response.meta && typeof response.meta === 'object'
-      ? (response.meta as Record<string, unknown>)
-      : undefined;
-  const text = (value: unknown, fallback: string): string =>
-    typeof value === 'string' && value ? value : fallback;
-  const url = typeof response.url === 'string' ? response.url : undefined;
-  return {
-    ...response,
-    uid: text(response.id, crypto.randomUUID()),
-    filename: text(response.filename ?? response.title, file.name),
-    status: 'done',
-    size: typeof response.size === 'number' ? response.size : file.size,
-    mimetype: text(response.mimetype, file.type),
-    url,
-    preview:
-      typeof response.preview === 'string'
-        ? response.preview
-        : file.type.startsWith('image/')
-          ? url
-          : undefined,
-    progress: 100,
-    source:
-      meta?.source && typeof meta.source === 'object'
-        ? meta.source
-        : response.source,
-  };
-}

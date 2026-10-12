@@ -1,33 +1,111 @@
-import { resolveAppUrl } from '@nocobase/app-client';
-import type { ReactElement } from 'react';
+import { resolveAssetUrl } from '@nocobase/app-client';
+import { useTranslation } from '@nocobase/i18n/client';
+import { Blocks, ShieldCheck, Sparkles } from 'lucide-react';
+import type { ReactElement, ReactNode } from 'react';
 
-import { AuthBrand } from '../../extensions/nocobase-auth-ui/components/auth-brand.js';
-import { AuthMarketingPanel } from '../../extensions/nocobase-auth-ui/components/auth-marketing-panel.js';
+import { AuthSplitLayout } from '#extensions/nocobase-auth-split-layout/auth-split-layout';
 
-// The sign-in pages carry the same brand as the application shell
-// (client/layouts/components/app-brand.tsx): the template's logo mark beside
-// this application's wordmark.
-const brand = (variant: 'light' | 'dark'): ReactElement => (
-  <span className='flex items-center gap-2 text-foreground'>
-    <img
-      alt=''
-      aria-hidden='true'
-      className='h-10 w-auto object-contain'
-      src={resolveAppUrl(
-        variant === 'dark'
-          ? '/assets/logo-mark-dark.png'
-          : '/assets/logo-mark.png',
-      )}
-    />
-    <span className='font-heading text-2xl tracking-wide'>
-      <span className='font-black'>Noco</span>
-      <span className='font-normal'>ITAM</span>
-    </span>
-  </span>
-);
+export interface AuthPageProps {
+  readonly title: ReactNode;
+  readonly description: ReactNode;
+  readonly children: ReactNode;
+}
 
-export const authLogo = (
-  <AuthBrand dark={brand('dark')} light={brand('light')} name='NocoITAM' />
-);
+/**
+ * The frame every sign-in, sign-up and password page shares: the form on the left, and on wide screens the NocoBase
+ * brand panel on the right. Replace `BrandPanel` with the application's own content, or install
+ * `auth-centered-layout` from the UI Library to drop the panel.
+ */
+export function AuthPage({
+  children,
+  description,
+  title,
+}: AuthPageProps): ReactElement {
+  const { t } = useTranslation();
+  return (
+    <AuthSplitLayout
+      aside={<BrandPanel />}
+      asideLabel={t('auth.about')}
+      description={description}
+      logo={
+        <>
+          <img
+            alt=''
+            className='dark:hidden'
+            src={resolveAssetUrl('/assets/logo-mark.png')}
+          />
+          <img
+            alt=''
+            className='hidden dark:block'
+            src={resolveAssetUrl('/assets/logo-mark-dark.png')}
+          />
+        </>
+      }
+      name={t('app.title')}
+      title={title}
+    >
+      {children}
+    </AuthSplitLayout>
+  );
+}
 
-export const authMarketing = <AuthMarketingPanel />;
+// The brand panel stays dark in both color modes; its dedicated palette belongs to the theme presets.
+function BrandPanel(): ReactElement {
+  const { t } = useTranslation();
+  const features = [
+    {
+      description: t('auth.frontendDescription'),
+      icon: Sparkles,
+      id: 'frontend',
+      title: t('auth.frontend'),
+    },
+    {
+      description: t('auth.foundationDescription'),
+      icon: ShieldCheck,
+      id: 'foundation',
+      title: t('auth.foundation'),
+    },
+  ];
+
+  return (
+    <div className='relative grid h-full place-items-center overflow-hidden bg-(--auth-brand-background) p-12 text-white'>
+      <div className='pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,color-mix(in_srgb,var(--primary)_22%,transparent),transparent_65%)]' />
+      <div className='relative w-full max-w-xl'>
+        <p className='text-xs font-semibold tracking-[0.16em] text-(--auth-brand-highlight) uppercase'>
+          {t('auth.platform')}
+        </p>
+        <h2 className='mt-4 text-5xl leading-[1.05] font-semibold tracking-[-0.045em]'>
+          {t('auth.marketingTitleFirst')}
+          <br />
+          {t('auth.marketingTitleSecond')}
+          <br />
+          {t('auth.marketingTitleThird')}
+        </h2>
+        <p className='mt-5 text-sm leading-6 text-(--auth-brand-muted)'>
+          {t('auth.marketingDescription')}
+        </p>
+        <div className='mt-8 overflow-hidden rounded-2xl border border-white/10 bg-white/5 text-white shadow-lg backdrop-blur-sm'>
+          <div className='space-y-5 p-6'>
+            {features.map(({ description, icon: Icon, id, title }) => (
+              <div className='flex gap-4' key={id}>
+                <span className='grid size-11 shrink-0 place-items-center rounded-xl bg-(--auth-brand-highlight)/10 text-(--auth-brand-highlight)'>
+                  <Icon aria-hidden='true' className='size-5' />
+                </span>
+                <div>
+                  <p className='font-semibold'>{title}</p>
+                  <p className='mt-1 text-sm leading-6 text-(--auth-brand-muted)'>
+                    {description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className='flex items-center gap-3 border-t border-white/10 bg-white/3 px-6 py-4 text-sm font-medium text-(--auth-brand-muted)'>
+            <Blocks aria-hidden='true' className='size-4' />
+            <span>{t('auth.marketingFooter')}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

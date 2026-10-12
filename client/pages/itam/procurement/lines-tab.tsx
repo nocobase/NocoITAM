@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type DragEvent,
@@ -50,13 +49,11 @@ import {
   useCurrentUserId,
 } from '@/lib/itam/permissions';
 import {
-  LINE_ITEM_TYPES,
   PURCHASE_ORDERS_PATH,
   raisedBy,
   type LineItemType,
 } from '@/lib/itam/procurement';
-import { type AIFrontendToolRegistration } from '@/extensions/nocobase-ai';
-import { useAiPageContext } from '@/lib/itam/ai-context';
+import { useAiPageContext } from '@/lib/itam/ai-chat';
 import {
   blankLine as isBlankLine,
   captureLine,
@@ -144,118 +141,17 @@ export function PurchaseOrderLinesCard({
   // 到货入库, opened empty or on a delivery document already picked.
   const [batch, setBatch] = useState<{ readonly file?: File }>();
   const documentInputRef = useRef<HTMLInputElement>(null);
-  // The lines as the assistant sees them, and the one thing it may do to
-  // them: add lines to the draft under edit (ALLOW — nothing is saved until
-  // the user presses 保存). The tool reads the draft through a ref so it
-  // sees the current one, not the render that registered it.
+  // The lines under edit, read by AI 整理's form when it asks.
   const draftsRef = useRef(drafts);
   useEffect(() => {
     draftsRef.current = drafts;
   }, [drafts]);
-  // Outside editing the assistant reads the saved lines, with the ids that
-  // receiving one names.
-  const savedRef = useRef(lines.data);
-  useEffect(() => {
-    savedRef.current = lines.data;
-  }, [lines.data]);
-  const lineTools = useMemo(
-    (): AIFrontendToolRegistration[] => [
-      {
-        name: 'addDraftLines',
-        title: 'Add purchase order lines',
-        description:
-          'Add lines to the purchase order draft on screen, which the user then reviews and saves. Each line: itemType (one of the page context itemTypes), modelId for hardware or softwareProductId for software (resolve names with itam_match_model), quantity, and unitPrice when the document states one. Only while the lines are being edited.',
-        permission: 'ALLOW',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            lines: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  itemType: { type: 'string', enum: [...LINE_ITEM_TYPES] },
-                  modelId: { type: 'string' },
-                  softwareProductId: { type: 'string' },
-                  quantity: { type: 'integer', minimum: 1 },
-                  unitPrice: { type: 'number', minimum: 0 },
-                },
-                required: ['itemType', 'quantity'],
-              },
-            },
-          },
-          required: ['lines'],
-        },
-        // The assistant supplies the arguments; read them defensively.
-        execute: (args: unknown) => {
-          const proposed = (
-            args as { lines?: readonly Record<string, unknown>[] } | null
-          )?.lines;
-          if (!draftsRef.current)
-            throw new Error(
-              'The lines are not being edited; ask the user to press 编辑明细 first.',
-            );
-          const added: LineDraft[] = (proposed ?? []).map((line) => {
-            const itemType = (
-              (LINE_ITEM_TYPES as readonly string[]).includes(
-                text(line.itemType),
-              )
-                ? text(line.itemType)
-                : 'device'
-            ) as LineItemType;
-            return {
-              key: crypto.randomUUID(),
-              itemType,
-              modelId: text(line.modelId) || null,
-              softwareProductId: text(line.softwareProductId) || null,
-              quantity: Math.max(1, Math.round(Number(line.quantity) || 1)),
-              unitPrice: Number.isFinite(Number(line.unitPrice))
-                ? String(Number(line.unitPrice))
-                : '',
-              receivedQuantity: 0,
-            };
-          });
-          // The blank row 编辑 opens an empty order on is a place to start
-          // typing, not a line: left in place it is an incomplete line that
-          // keeps 保存 from being offered, so added lines take its place.
-          setDrafts((current) => [
-            ...(current ?? []).filter(
-              (line) =>
-                line.id !== undefined ||
-                line.modelId !== null ||
-                line.softwareProductId !== null,
-            ),
-            ...added,
-          ]);
-          return { added: added.length };
-        },
-      },
-    ],
-    [setDrafts],
-  );
-  const { ref: contextRef, available: aiAvailable } = useAiPageContext({
-    id: 'itam-purchase-order-lines',
-    title: t('tabs.lines'),
-    kind: 'purchaseOrderLines',
-    getContext: () => ({
-      orderNo: record.orderNo,
-      vendorId: record.vendorId,
-      currency: record.currency,
-      editing: draftsRef.current !== undefined,
-      itemTypes: LINE_ITEM_TYPES,
-      lines: draftsRef.current
-        ? draftsRef.current.map(({ key: _key, ...line }) => line)
-        : (savedRef.current ?? []).map((line) => ({
-            lineId: line.id,
-            itemType: line.itemType,
-            modelId: line.modelId,
-            softwareProductId: line.softwareProductId,
-            quantity: line.quantity,
-            unitPrice: line.unitPrice,
-            receivedQuantity: line.receivedQuantity,
-          })),
-    }),
-    tools: lineTools,
+  // The order is the chat's page context while its lines are shown, so the
+  // assistant reads it with its commands.
+  const { available: aiAvailable } = useAiPageContext({
+    kind: 'purchaseOrders',
+    id,
+    label: text(record.orderNo) || id,
   });
   const status = text(order.data?.status);
   const rows = lines.data ?? [];
@@ -269,7 +165,7 @@ export function PurchaseOrderLinesCard({
   // The rows the last reading added: an adjustment hands its lines back
   // whole, so these are what it replaces.
   const addedRef = useRef<ReadonlySet<string>>(new Set());
-  const { contextRef: captureRef, ...capture } = usePurchaseOrderCapture({
+  const capture = usePurchaseOrderCapture({
     orderId: id,
     form: () => {
       const current = draftsRef.current ?? [];
@@ -491,8 +387,8 @@ export function PurchaseOrderLinesCard({
       JSON.stringify(rows.map(draftOf).map(({ key: _key, ...line }) => line));
 
   return (
-    <Card ref={contextRef} className='@container py-0'>
-      <CardContent ref={captureRef} className='space-y-3 p-4'>
+    <Card className='@container py-0'>
+      <CardContent className='space-y-3 p-4'>
         <div className='flex min-h-9 items-center justify-between gap-3 border-b border-border/60 pb-2'>
           <h2 className='font-heading text-sm font-semibold'>
             {t('tabs.lines')}

@@ -2892,3 +2892,59 @@ Inside ITAM:
 - `tests/logic/app-locale-coverage.test.ts` skips `client/extensions/nocobase-ai`,
   which translates through its own `useAITranslate()` and locales, and
   `tests/components/page-harness.test.tsx` reads ITAM's nested keys.
+
+## Template upgrade: beta.53 → beta.64, onto public npm (2026-10-12)
+
+`@nocobase/app-template-default` 1.0.0-beta.53 → 1.0.0-beta.64 and the
+packages it pins (app-server 2.0.0-beta.4, app-client 3.0.0-beta.1,
+authentication 2, users 2, authorization 1.0, …). NocoBase 3's open-source
+packages are published on the public npm registry from this release; every
+dependency and the lockfile now resolve there.
+
+What the template changed:
+
+- **No AI employee, workflow or Hub.** `@nocobase/app-plugin-ai-employee`,
+  `@nocobase/ai-employee`, `@nocobase/app-plugin-workflow` and
+  `@nocobase/hub-cli` are gone (Hub is discontinued); the template's
+  assistant is `@nocobase/app-plugin-agents`. The mail plugin and
+  `@nocobase/lifecycle` are new.
+- **The shell** is the shadcn sidebar (`AppSidebar`, `NavigationMenu`), and
+  there is no settings or dev layout: plugins ship no settings pages, and
+  `defineSettingsRoutes` went. `#components/*`, `#lib/*`, … package imports
+  replace the `@/` alias (kept as ITAM's own alias beside them). The sign-in
+  pages are three blocks (auth forms, methods, split layout), `/device`
+  approves a CLI's sign-in (migration `202610060001_create_device_code`),
+  and `secrets.keys` holds the master key everything encrypted at rest is
+  derived from.
+
+Inside ITAM:
+
+- **The assistant moved to the Agents plugin**, decided with the upgrade
+  (2026-10-12), after NocoCRM's move: the AI employee plugin cannot run on
+  app-client 3, and its `ai/` employee, tools, page tools and unseen chats
+  have no counterpart. Noco is an online agent made once at start; it reads
+  through the application's `itam` commands and changes nothing itself:
+  every change is **one plan** of the operations its write tools used to
+  perform, checked when proposed and carried out step by step by the person
+  who confirms its card (`itamPlans`, migration `202610120001_itam_plans`).
+  The forms filled from material (AI 整理, delivery documents, a new model)
+  and Noco's choice for a joiner are single calls to the plugin's model
+  gateway, answering in the shape their old page tools delivered, so the
+  server's checks are unchanged. This reverses 2026-09-27's "nothing AI
+  runs outside a conversation" for those forms. Given up with it: web search
+  (the gateway has none; a model is filled from what the model knows, marked
+  请核对), answers inside the search dialog (问 AI now opens the panel), page
+  tools (`addDraftLines`, `presentRecords`), reading a picture, and the 查看过程
+  link of a joiner's suggestion. See `AGENTS.md` for how it is built.
+- **Settings** is a section of the menu: ITAM's settings plus users,
+  permission sets, API keys and scheduled tasks pages ported from NocoCRM's,
+  on the plugins' client APIs. AI is a section with the Agents plugin's
+  agents, skills, model services (`/ai-models`, since `/models` is the asset
+  models page) and usage pages.
+- `ai.llmServices` is this application's own configuration section now,
+  read once to create the plugin's model services; the AI skills are put
+  into the plugin's library once. The old AI employee tables stay in an
+  upgraded database; their orphaned metadata on a new one is removed by
+  `202610120002_drop_orphaned_ai_metadata`.
+- Documents are read as text by exceljs, mammoth and unpdf, which the AI
+  employee plugin's loader used to do.

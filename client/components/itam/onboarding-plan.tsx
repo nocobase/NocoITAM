@@ -15,8 +15,7 @@ import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useAiPageContext } from '@/lib/itam/ai-context';
-import { useItamAi } from '@/lib/itam/ai-chat';
+import { useAiPageContext } from '@/lib/itam/ai-chat';
 import { useAnnounce } from '@/lib/itam/announce';
 import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
@@ -79,18 +78,14 @@ export function OnboardingPlanCard({
   const [chosen, setChosen] = useState<Readonly<Record<string, PlanThing>>>({});
   const effective = (thing: PlanThing): PlanThing => chosen[thing.id] ?? thing;
   const data = plan.data;
-  // The plan goes along as page context, so Noco presents and carries out
-  // this very plan (the onboarding skill) — and drafts the purchase order
-  // for the shortfall, which needs a vendor the card does not ask for.
-  const {
-    ref: contextRef,
-    available: aiAvailable,
-    ask,
-  } = useAiPageContext({
-    id: 'itam-onboarding',
-    title: t('onboarding.title'),
-    kind: 'onboarding',
-    getContext: () => ({ personId, name: personName, plan: data }),
+  // The person goes along as page context, so Noco reads this very plan
+  // (`itam onboarding plan`) and proposes it as a plan of its own (the
+  // onboarding skill) — with the purchase order for the shortfall, which
+  // needs a vendor the card does not ask for.
+  const { available: aiAvailable, ask } = useAiPageContext({
+    kind: 'people',
+    id: personId,
+    label: personName,
   });
   if (!data) return null;
   // Equipped and a month in: onboarding is over, and the 归属 tab below
@@ -240,7 +235,6 @@ export function OnboardingPlanCard({
               </span>
             ) : null}
           </div>
-          <span ref={contextRef} hidden />
           {aiAvailable && data.kit ? (
             <AiShortcut
               onClick={() =>
@@ -639,7 +633,6 @@ function AdviceStrip({
 }): ReactElement | null {
   const { t } = useTranslation();
   const api = useApi();
-  const ai = useItamAi();
   const me = useCurrentUserId();
   const announce = useAnnounce();
   const advice = plan.advice;
@@ -705,18 +698,7 @@ function AdviceStrip({
           )}
         </span>
       </span>
-      <span className='flex shrink-0 items-center gap-3'>
-        {advice?.sessionId && ai && me === advice.actorId ? (
-          <button
-            type='button'
-            className='text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
-            onClick={() => ai.openConversation(advice.sessionId ?? '')}
-          >
-            {t('onboarding.advice.conversation')}
-          </button>
-        ) : null}
-        {again}
-      </span>
+      <span className='flex shrink-0 items-center gap-3'>{again}</span>
     </div>
   );
 }

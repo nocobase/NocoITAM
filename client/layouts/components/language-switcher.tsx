@@ -10,8 +10,8 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-} from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+} from '#components/ui/dropdown-menu';
+import { cn } from 'cn';
 
 export interface LanguageSwitcherProps {
   readonly className?: string;

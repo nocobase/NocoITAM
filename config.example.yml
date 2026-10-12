@@ -9,6 +9,19 @@
 # i18n:
 #   defaultLocale: zh-CN
 
+# Limits every /api request meets before its route, each off until set. bodyLimit refuses a larger body with 413
+# BODY_TOO_LARGE; a route may set its own, usually smaller, limit. timeout answers 503 REQUEST_TIMEOUT when a handler
+# has not produced its response in time; a streaming response that has started is not cut off. rateLimit allows max
+# requests per window from each client address and answers 429 RATE_LIMITED with Retry-After; GET /api/healthz is
+# exempt. Counters live in each process, so every instance counts on its own, and behind a reverse proxy the proxy is
+# the client address. API_BODY_LIMIT and API_TIMEOUT set the first two.
+# api:
+#   bodyLimit: 10mb
+#   timeout: 30s
+#   rateLimit:
+#     max: 600
+#     window: 1m
+
 # Values under client are public and embedded in the SPA HTML.
 client:
   app:
@@ -19,24 +32,29 @@ client:
 
 users:
   # The first administrator, created only when seeding an empty user table. Changing these values later does not
-  # reset an existing account. Replace the password before exposing the application.
+  # reset an existing account. Replace the password before exposing the application. INITIAL_ADMIN_USERNAME,
+  # INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD set them from the environment instead.
   initialAdmin:
     username: nocobase # 3–30 letters, digits, underscores or dots; stored lowercase
     email: admin@nocobase.com # stored lowercase; also signs in
     password: admin123
 
+# Master keys for what the application encrypts at rest — stored credentials and API keys, OAuth tokens — and from
+# which the sign-in and session keys are derived. The first key is current; the others only decrypt. To rotate, put a
+# new key first with a higher version, run `pnpm nocobase secrets rotate`, then remove the old key. Changing the current
+# key signs everyone out. Generate a key with: openssl rand -hex 32. SECRETS_KEYS=2:<key>,1:<key> sets the list from
+# the environment instead.
+secrets:
+  keys:
+    - version: 1
+      key: replace-with-a-unique-secret
+
 auth:
-  # Generate a unique secret, for example with: openssl rand -hex 32
-  secret: replace-with-a-unique-secret
   emailAndPassword:
     enabled: true
     autoSignIn: false
   session:
     storeSessionInDatabase: true
-
-session:
-  # Use the same generated value as auth.secret, or another unique secret.
-  secret: replace-with-a-unique-secret
 
 notification:
   channels:
@@ -44,42 +62,30 @@ notification:
       provider: in-app
 
     # Uncomment and configure independent email Channels.
+    # Values are read as written: ${NAME} is not expanded. To take a secret from the environment instead, map a
+    # variable onto its path in env of server/config/notification.ts, such as SMTP_PASSWORD.
     # system-email:
     #   provider: smtp
     #   host: smtp.example.com
     #   port: 587
     #   auth:
-    #     user: ${SMTP_USER}
-    #     pass: ${SMTP_PASSWORD}
+    #     user: notifications@example.com
+    #     pass: replace-with-the-smtp-password
     #   from: notifications@example.com
     # marketing-email:
     #   provider: resend
-    #   apiKey: ${RESEND_API_KEY}
+    #   apiKey: replace-with-the-resend-api-key
     #   from: marketing@example.com
 
     # ops-feishu:
     #   provider: feishu-webhook
-    #   webhookUrl: ${FEISHU_WEBHOOK_URL}
+    #   webhookUrl: https://open.feishu.cn/open-apis/bot/v2/hook/replace-with-the-token
     # ops-dingtalk:
     #   provider: dingtalk-webhook
-    #   webhookUrl: ${DINGTALK_WEBHOOK_URL}
+    #   webhookUrl: https://oapi.dingtalk.com/robot/send?access_token=replace-with-the-token
 
-# Declarative LLM services are loaded from application config, keyed by service name.
-# The server reads this when it starts: restart it after editing, which `pnpm dev` does on its own.
-# Keep the key out of this file. Write it into config.yml with
-# `pnpm nocobase config set --from-env ai.llmServices.openai.options.apiKey=OPENAI_API_KEY`,
-# or map an injected environment variable onto that path in server/config/ai.ts.
-# ai:
-#   llmServices:
-#     openai:
-#       title: OpenAI
-#       provider: openai
-#       enabledModels:
-#         - label: GPT-4.1
-#           value: gpt-4.1
-#       enabled: true
-#       sort: 10
-
+# DB_DIALECT, DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD, DB_SSL and DB_FILENAME override the main
+# connection's fields from the environment.
 database:
   default: main
   connections:
@@ -100,7 +106,7 @@ database:
     #   host: localhost
     #   database: analytics
     #   username: postgres
-    #   password: ${ANALYTICS_DB_PASSWORD}
+    #   password: replace-with-the-password # or DB_ANALYTICS_PASSWORD, declared with connectionEnvironment('analytics', 'DB_ANALYTICS')
     #   schemaManagement: managed
     #   migrations:
     #     autoRun: false
@@ -130,6 +136,11 @@ snowflake:
 # The jobs configuration the Scheduler plugin's schedules run on, by name. Left out, they follow jobs.default.
 # scheduler:
 #   jobs: redis
+
+# Mail is registered by default. Configure mailbox provider instances before connecting accounts.
+# See .agents/skills/nocobase-app-plugin-mail/references/configuration-and-accounts.md.
+mail:
+  providers: {}
 
 # File logging is independent of terminal formatting.
 logging:

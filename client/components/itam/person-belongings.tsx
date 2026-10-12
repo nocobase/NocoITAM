@@ -31,7 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { apiErrorBody, useApi } from '@/lib/itam/api';
-import { useAiPageContext } from '@/lib/itam/ai-context';
+import { useAiPageContext } from '@/lib/itam/ai-chat';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { errorMessage } from '@/lib/itam/format';
 import { isDocumentKind } from '@/lib/itam/document-kinds';
@@ -135,30 +135,10 @@ export function PersonBelongings({
   const announce = useAnnounce();
   const ownerName = (id: string | null) =>
     id ? (owners.users?.get(id) ?? id) : '';
-  // Registered as page context, with no shortcut of its own: the card is
-  // already the list such a shortcut would ask for, so a button here would
-  // have Noco read the screen back. Asking it anything from the launcher
-  // while this is open still carries the list.
-  const { ref: contextRef } = useAiPageContext({
-    id: 'itam-leaver-recovery',
-    title: t('people.recovery.title'),
-    kind: 'leaverRecovery',
-    getContext: () => ({
-      personId,
-      person: personName,
-      leaveDate: recovery.data?.leaveDate ?? null,
-      items: items.map((item) => ({
-        kind: item.kind,
-        id: item.id,
-        name: item.label,
-        handling: item.handling,
-        status: item.status,
-        quantity: item.quantity,
-        account: item.account,
-        ownerId: item.ownerId,
-      })),
-    }),
-  });
+  // The person is the chat's page context while this is open, with no
+  // shortcut of its own: the card is already the list such a shortcut would
+  // ask for. Asking from the panel reads their holdings with the commands.
+  useAiPageContext({ kind: 'people', id: personId, label: personName });
 
   // Every action ends the same way: the holding is gone, so the lists on this
   // page, the workbench's to-do and the reminder counts all move — and the
@@ -439,7 +419,7 @@ export function PersonBelongings({
         : `/${STOCK_ROUTES[item.assetType as StockKind] ?? 'accessories'}/${item.targetId}`;
 
   return (
-    <div ref={contextRef} className='space-y-3'>
+    <div className='space-y-3'>
       {/* First, because it is the one thing here that is not equipment:
           their sign-in. Leaving disables it, so this is usually a settled
           line saying so. When it could not — the platform's last

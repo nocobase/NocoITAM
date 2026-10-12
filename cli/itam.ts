@@ -18,7 +18,7 @@ const itam: AppCliPlugin = defineCliPlugin({
   buildHooks: {
     afterServerBuild: [
       {
-        label: 'Copy seed assets',
+        label: 'Copy seed assets and AI skills',
         command: ['node', 'scripts/copy-seed-assets.mjs'],
       },
     ],

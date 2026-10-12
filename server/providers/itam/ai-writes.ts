@@ -39,18 +39,16 @@ import {
 } from './procurement.js';
 
 /**
- * What the ITAM assistant may change, as the AI employee plugin's write
- * tools (`ai/tools/itam/*`, permission ASK). The plugin holds each call
- * until the user confirms the card in the conversation; confirming runs
- * the operation here, through the same service and under the same
- * authorization as the page that does it, with the confirming user as the
- * actor. Nothing is proposed into a table of its own: the conversation is
- * where a proposal lives, and where it is confirmed or denied.
+ * What the ITAM assistant may change: the operations a plan's steps are
+ * (`plans.ts`, named without `itam_`). The person the plan was proposed to
+ * carries it out on its card, and each step then runs here, through the same
+ * service and under the same authorization as the page that does it, with
+ * that person as the actor. `screenWrite` checks a step when the plan is
+ * proposed; the operation itself still decides the rules that depend on the
+ * record's state when it runs.
  *
- * A refused operation is thrown, never returned: the plugin records a
- * thrown error as the call's result, while a result object reading
- * `status: 'error'` would leave the card pending (the lesson of the CRM
- * that went this way first).
+ * A refused operation is thrown (`refuse`), carrying its code and message as
+ * JSON, which the plan records as the step's failure.
  */
 const id = z.string().min(1).max(64);
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -241,7 +239,7 @@ const PERMISSIONS: Readonly<
   itam_update_master_record: [],
 };
 
-/** How a refusal reads on the card and to the model. */
+/** How a refusal reads on the plan's card and to the model. */
 export interface AiWriteFailure {
   readonly code: string;
   readonly message: string;
@@ -271,7 +269,7 @@ export function describeFailure(error: unknown): AiWriteFailure {
     : { code: 'SERVER_ERROR', message };
 }
 
-/** Throws the failure the way the plugin records it: as the call's error. */
+/** Throws the failure as JSON in the error, which the plan records. */
 export function refuse(error: unknown): never {
   throw new Error(JSON.stringify(describeFailure(error)));
 }
@@ -282,9 +280,9 @@ type Result = Record<string, unknown>;
  * Checks what can be known without writing: the arguments, and that the
  * user holds every grant the operation needs. A business rule that depends
  * on the record's state (a device already assigned) is still decided by
- * the operation itself, and shows on the card if it refuses.
+ * the operation itself, and stops the plan there if it refuses.
  */
-/** The device operation each device tool performs, checked on the card. */
+/** The device operation each device step performs, checked when proposed. */
 const DEVICE_OPERATIONS: Partial<Record<AiWriteTool, DeviceOperation>> = {
   itam_assign_device: 'assign',
   itam_loan_device: 'loan',
@@ -355,7 +353,7 @@ export async function screenWrite(
   return { ok: true };
 }
 
-/** Runs one confirmed tool call as the user, returning what was written. */
+/** Runs one confirmed step as the user, returning what was written. */
 export async function runWrite(
   container: ServiceContainer,
   scope: ActorScope,

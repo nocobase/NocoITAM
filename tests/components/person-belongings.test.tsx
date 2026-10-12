@@ -59,12 +59,9 @@ vi.mock('../../client/lib/itam/references.js', async (original) => ({
   ...(await original<object>()),
   useReferenceNames: () => ({}),
 }));
-vi.mock('../../client/lib/itam/ai-context.js', () => ({
-  useAiPageContext: () => ({
-    ref: () => undefined,
-    available: false,
-    ask: () => undefined,
-  }),
+vi.mock('../../client/lib/itam/ai-chat.js', () => ({
+  useAiPageContext: () => ({ available: false, ask: () => undefined }),
+  useItamAi: () => ({ available: false }),
 }));
 vi.mock('../../client/lib/itam/record-drawer.js', async (original) => ({
   ...(await original<object>()),

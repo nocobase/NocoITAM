@@ -6,23 +6,10 @@ import { ForbiddenError } from '../../routes/itam/http.js';
 import { decideWith, type Authorize } from './authz-resources.js';
 
 /**
- * The bridge between the AI runtime and this application. AI tools are
- * loaded from `ai/` by the AI plugin and receive only the actor and the
- * database, so the ITAM provider hands them the service container at boot.
- * Every tool authorizes through a scope built for the actor, exactly as a
- * route would for that user.
+ * An authorization scope for a user outside an HTTP request: the assistant's
+ * commands and plans (`itam-agents/`) decide as the person a run works for,
+ * exactly as a route would for that user.
  */
-let bridged: ServiceContainer | undefined;
-
-export function registerAiBridge(container: ServiceContainer): void {
-  bridged = container;
-}
-
-export function aiContainer(): ServiceContainer {
-  if (!bridged) throw new Error('The ITAM services are not available yet');
-  return bridged;
-}
-
 export interface ActorScope {
   readonly actorId: string;
   /** Conditions for an action, or a forbidden error. */
