@@ -1,0 +1,302 @@
+# ITAM: the assistant
+
+Read this before changing Noco, its commands or plans, the chat, a page's AI shortcut, AI 整理, receiving by delivery document, or any call to a model.
+
+Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small; each rule is as it was written, with the date it was decided.
+
+- **The assistant runs on the Agents plugin** (`@nocobase/app-plugin-agents`,
+  template 1.0.0-beta.64, after NocoCRM's); the AI employee plugin, its
+  `ai/` employee and tools, the `nocobase-ai` Registry copy, the unseen
+  chats and every page tool are gone. `server/providers/itam-agents/`
+  (`ItamAgentsProvider`) gives the plugin ITAM's two business actions —
+  `itam.records/view` and `itam.plans/create` (`actions.ts`) — and the gate
+  (`gate.ts`: a person holds both, a run what its agent is configured with),
+  the `itam-assistant` preset, the `itam-work` skill every online run gets
+  (`skill.ts`: the commands and the plan's shape), the conversation rules
+  (`rules.ts`: how to read the register, the business notes and the time
+  zone, kept current through `settings.onSaved`), the page-context kinds
+  (`context.ts`) and the `itam` conversation source. At start it creates,
+  once each, the model services from `ai.llmServices` in `config.yml`
+  (`model-services.ts`, in their `sort` order; the keys are stored
+  encrypted, so `secrets.keys` must be configured), Noco as an online agent
+  open to everyone with every chat model, the system's default chat agent
+  (`assistant.ts`), and the four method skills of `ai/skills/` in the
+  plugin's library, attached to Noco (`library.ts`, copied into `dist` by
+  the build hook). A marker row in `itamSettings` (`agents-noco-v1`,
+  `agents-skills-v1`, `markers.ts`) records each, so what an administrator
+  changes on AI → 智能体 / 技能 / 模型服务 is never overwritten. Nothing of it
+  may stop the application starting: a failure is logged and retried at the
+  next start.
+- Noco reads the register through **commands**, the routes of
+  `server/routes/itam/agent-commands.ts` under `/api/assistant/*` (not
+  `/itam/*`, whose `auth.required()` refuses a run's token): `itam context`,
+  `search`, `record get`, `stats`, `availability`, `model match`,
+  `onboarding plan`, and `plan ops | create | list | get`. Each is a
+  `describeRoute` with `cliRoute({ action })`, the plugin builds the run's
+  command line from them, and the guard there refuses an action the run
+  does not hold and answers any write `PLAN_REQUIRED`. What they read is
+  `server/providers/itam-agents/reads.ts`, as the person the run works for
+  (`readerFor(container, userId)` → `scopeFor`), exactly as the pages would
+  show it. Noco **changes nothing itself**: it writes one **plan**
+  (`server/providers/itam/plans.ts`, tables `itamPlans` / `itamPlanSteps`,
+  migration `202610120001_itam_plans`) whose steps are the operations it
+  could once call directly — `AI_WRITE_SCHEMAS` (`ai-writes.ts`) and
+  `AI_RECORD_SCHEMAS` (`routes/itam/ai-records.ts`), named without `itam_`
+  — checked by their screens when proposed (a refused step is named,
+  `steps.N`) and carried out by `runWrite` / `runRecordTool` as the person
+  who confirms. The steps run **one after another**, not in one
+  transaction: the services open their own, and SQLite has one connection.
+  A refused step stops the plan there, the steps before it staying done,
+  and the card and the outcome say how far it got. A later step names what
+  an earlier one created by `$n` or its `ref`. A plan is its proposer's,
+  expires after a day, and its outcome goes back to the conversation as
+  news and as an input that wakes the agent (`plan-news.ts`). The card is
+  `client/components/itam/ai/plan-card.tsx`, placed among a conversation's
+  messages through the plugin's `ChatExtensionsContext`
+  (`client/lib/itam/chat-extensions.tsx`); unticking a step leaves it out.
+  Submitting, deciding, ordering, cancelling, executing a disposal and
+  deleting are never plan steps — they stay on the pages.
+- The chat itself is the UI Library's `agent-chat` block in
+  `client/extensions/nocobase-agent-chat/` (written from the registry: the
+  CLI could not install it), around the shell through `AgentChatShell` in
+  `client/layouts/agent-chat.tsx`, with the panel beside `<main>` and a full
+  page at `/agent-chat/:conversationId`. One `Application change (ITAM)`
+  there: a model is sent as its service and name alone (`modelRef` in
+  `conversation-view.tsx`), since plugin 0.1.0-beta.8 refuses the labels
+  and effort a model choice carries, which made every model but the
+  agent's default unpickable. The header's assistant button is
+  `AgentChatButton` (the sparkle in the success tokens' green frame,
+  `ASSISTANT_LINK_CLASS` in `header-actions.tsx`, ⌘J). A page offers what it
+  shows through `useAiPageContext({ kind, id, label })`
+  (`client/lib/itam/ai-chat.tsx`): the record's chip sits above the composer
+  and `ask(prompt)` starts a conversation with it pinned. A page context
+  carries ids only; the server resolves each kind (`context.ts`) from a
+  per-person snapshot of the collections they may read, taken by
+  `/itam/ai/status` (the plugin resolves inside its own transaction, where
+  authorization cannot be asked on SQLite). Noco then reads the record with
+  its commands. `useItamAi()` says whether a model is there (`/itam/ai/status`:
+  Noco's first model, else the system default) and opens or starts
+  conversations. Every AI shortcut on a page is green text with a sparkle
+  (`AiShortcut`), not a button. There is no web search.
+- ITAM's **own model calls** go through the plugin's model gateway
+  (`server/providers/itam/ai-model.ts`: `openSession`, `askJson` with a zod
+  shape spelled out as JSON Schema, asked once more when the reply does not
+  hold it, and `readSkill` from the library), with Noco's first model. They
+  are the forms filled from material — AI 整理 on a purchase order or its
+  lines, a new model or software product, a delivery document —
+  `POST /itam/ai/read` (`ai-reading.ts`, each task under the grant its form
+  needs), which answers in the shape the form's own handler took when a page
+  tool delivered it, so the same server checks (`/capture/match`, a receipt
+  run's `/draft`) still decide what the form takes; and Noco choosing a
+  joiner's equipment (`createNocoAgentRunner` in `onboarding-advisor.ts`).
+  A purchase reading is given the models and products on the books to pick
+  ids from. Documents are read as text on the server (`document-text.ts`:
+  exceljs, mammoth, unpdf); a picture is not read.
+- An AI create meets the page dialog's bar: `REQUIRED_ON_CREATE` in
+  `server/routes/itam/ai-records.ts` lists what each create dialog requires
+  beyond its input schema (conditional ones included, and a device's serial
+  when its category requires one), checked when a plan holding a
+  `create_record` step is proposed and again when it runs. A new required
+  field on a create dialog is added there too. Its field guide
+  (`CREATE_FIELD_GUIDE`, generated from the routes' own schemas) is what
+  `itam plan ops` shows, so a field added to a page reaches the assistant by
+  itself.
+- **Noco chooses a joiner's equipment when asked** (2026-10-06,
+  `server/providers/itam/onboarding-advisor.ts`, migration
+  `202610060002_onboarding_runs`), reversing "nothing AI runs outside a
+  conversation" for this one job. The rule picks among identical laptops by
+  place and warranty; Noco also weighs repairs, the replacement date, notes
+  and the business notes, and says why. A run is one call to the Agents
+  plugin's model gateway (`createNocoAgentRunner`, `openSession` /
+  `askJson` in `ai-model.ts`, template 1.0.0-beta.64) with Noco's model and
+  this job's instructions (`PROMPTS`) as the whole system prompt, answered
+  in `ADVICE_SCHEMA`'s shape; the message is the joiner, the kit, the
+  business notes and each item's candidates as JSON. It has no conversation,
+  tool or skill to wander into — which, run as the AI employee, it did
+  (2026-10-06: it summarised the workbench or guessed skill names). An
+  answer that keeps no valid pick is recorded as `failed`, not as chosen. It
+  writes only its `onboardingRuns` row: per kit item (`OnboardingPlanLine.key`,
+  `<target type>:<target id>`) the picks and a reason each, held by
+  `validAdvice` to that item's own candidates and to as many as it needs.
+  `plan()` puts a pick first **while it is still free** (marked
+  `source: 'noco'` with its `reason`) and otherwise falls back to the rule,
+  so a pick taken since needs no clean-up; `plan(id, { candidates: true })`
+  is what the run is shown. A device Noco picked for one joiner (their
+  latest finished run) is **held back** from every other joiner's
+  candidates and proposals (`heldForOthers`), or two joiners of one
+  department were both offered the laptop it had just chosen for the first.
+  A run starts **only when the 入职负责人 asks** — 让 Noco 挑选 / 重新建议
+  on the card, which only they may press (`advise`, `POST /itam/master/people/:id/onboarding/advise`,
+  `NOT_OWNER`) — for a joiner not yet equipped, however far off their
+  first day, when Noco has a choice (some item with more candidates than it
+  needs). Runs are queued one at a time. It also ran after every save of a
+  person and nightly (`itam.onboarding-advice`, 02:30) until later the same
+  day, notifying the owner of what it found; that went, because it spent a
+  model run on joiners nobody had looked at yet and held their picks back
+  from the others. A database that synchronised the nightly task keeps its
+  definition until `scheduler sync --finalize`; a firing before then finds
+  no definition and runs nothing.
+  The card shows the run under its heading — choosing, chosen with
+  Noco's summary, or failed — and each pick's reason under its item; the
+  buttons stay the person's. `ai.onboardingAdvice` in ITAM's settings
+  (入职建议, on by default) switches it off; no usable model starts
+  nothing.
+- Receiving **by delivery document** is the first work the assistant
+  carries rather than answers (2026-10-05, the NocoITAM plan's first
+  vertical; offboarding stays rules and people). 按送货单入库 on the order's
+  lines card picks the file and opens 到货入库 already reading it:
+  the file is kept as the order's attachment, a run is started
+  (`receiptRuns`, `202610050003_receipt_runs`, `receipt-runs.ts`), and the
+  model reads it on the server under the `receiving` skill
+  (`ai/skills/receiving/SKILL.md`), one gateway call (`POST /itam/ai/read`,
+  task `deliveryDocument`, template 1.0.0-beta.64) answering with the rows
+  the run's `/draft` takes — what the page tool `prefillReceipt` used to
+  hand over. The server's
+  rules turn that into the plan the form opens on (`planReceipt`): a row
+  whose part code is a line's model `code` goes there whatever the
+  assistant guessed (`matchConflict` says when they differ), entitlements
+  and unmatched rows are listed, never forced onto a line. Every value it
+  filled carries a sparkle naming where in the document it came from, and
+  loses it once the receiver types over it. A warranty the document states
+  (保修 36 个月, or an end date) fills a device line's 保修截止日期, counted
+  from the delivery date (`warrantyEnd` in `receipt-plan.ts`, 2026-10-06);
+  one it does not state stays empty, and the form says the service works it
+  out from the model's 保修月数, as it always did. Nothing is received until the
+  receiver presses 入库; that batch closes the run (`saved`, with `final`
+  and per-field `stats`: kept / changed / removed / added), its `received`
+  events read `origin: 'agent'` under the receiver's name and name the
+  document. A run belongs to whoever started it (`NOT_RUN_ACTOR`); closing
+  the form discards it, and a reading that gave no rows fails it — the run
+  is the record. 设置 shows
+  the boundary, the acceptance counts and the latest runs (`GET
+/itam/ai/receipt-runs`, the settings grant). The server reads the
+  document as text when the run starts (`document-text.ts`, kept in
+  `receiptRuns.documentText`), and that text is what the model reads. CSV
+  and plain text are decoded as they are — a CSV loader that takes the first
+  line for the column names lost every column of a delivery note whose
+  header block comes first — spreadsheets row by row under their sheet's
+  name (exceljs), Word as its raw text (mammoth) and PDF page by page
+  (unpdf). A picture, or a legacy .xls / .doc, is not read, and the form
+  says so; do not add an OCR library for them. 解析单据 on a draft's lines is **AI 整理, lines
+  only** (2026-10-06; until then it opened the side panel and Noco placed
+  lines through `addDraftLines`, unchecked by the server's matching): the
+  shortcut sits beside 编辑 and opens the editor itself, keeps the file on
+  the order, reads it through `POST /itam/purchase-orders/:id/document-text`
+  (only a file linked to that order, under `update`) and runs
+  `usePurchaseOrderCapture` with `orderId` — the `purchaseLines` reading,
+  and `/capture/match`, which takes `create` or `update`. What it read
+  joins the lines under edit (请核对 where
+  it was unsure), in place of the blank row an empty order opens on; what it
+  could not place is listed above them with its picker and 创建型号 (the
+  same `CaptureNotice`), and an adjustment replaces only the lines it
+  added — the order's own go to the model as `existingLines`.
+- 新建采购单 opens on **AI 整理** whenever the assistant is available
+  (2026-10-06, after NocoCRM's lead and opportunity capture), with 表单录入
+  beside it; without the assistant there are no tabs. The requester pastes
+  what they have or uploads a document, and the model fills the dialog
+  (`client/lib/itam/use-purchase-capture.ts`): one gateway call
+  (`POST /itam/ai/read`, task `purchaseOrder`), given the models and
+  products on the books to take ids from, answering in the shape the page
+  tool `fillPurchaseOrder` once took (template 1.0.0-beta.64 replaced the
+  unseen conversation it ran in, and with it the 2026-09-27 rule that no
+  model call happens outside a conversation). The server checks the reading before the dialog
+  takes it (`POST /itam/purchase-orders/capture/match`,
+  `server/providers/itam/purchase-capture.ts`, under `create`): a printed
+  part code decides by the model's `code`, an id the assistant gives must
+  exist — and a printed code no model holds is placed, marked 请核对, on the
+  one code on the books it starts with when at most three characters are
+  over (`modelByCodePrefix`, 2026-10-06: a PDF's text layer ran the quantity
+  "4" into "CT32G56C46S5") — and anything else matches only by an identical name (a model with
+  or without its maker in front; a vendor or department identical or the
+  only one containing it). What matches nothing is never put on a line — an
+  M4 must not become the M3 the books hold. A vendor or department the text
+  named but the books lack is said **under its own field** while that field
+  is empty (`UnplacedNote` in `create-dialog.tsx`, 2026-10-06), where a
+  vendor can also be created (创建供应商, from the note or the foot of the
+  vendor list, `FieldInput`'s `onCreate`); a department is only chosen. The
+  lines it could not place stay in the column beside the form. A field or
+  line the assistant was unsure of carries 请核对 (`ReviewMark`, whose
+  tooltip says what it means — there is no sentence above the form) until it
+  is changed. Adjusting happens in the dialog: each instruction is a new
+  reading of the material, with the form as it stands and the request.
+  An uploaded document is read by `POST /itam/purchase-orders/capture/
+document-text`, which reads only a file uploaded within the hour and
+  attached to nothing — there is no order yet to scope it by — and the
+  saved order takes it as an attachment. The file plugin stamps `createdAt`
+  in UTC without the `Z`, so that window is compared in that form, not
+  through `dbDateTime()`.
+- A line AI 整理 could not place is placed by the reader, never by the
+  assistant (2026-10-06): each row in the column beside the form carries a
+  picker that starts at the document's own wording without its
+  configuration (`pickerSearch`: 16GB/512GB, 27英寸 would rule every model
+  out of a word-by-word search) nor, beside other words, the Chinese that
+  only names the kind of thing (显示器, 笔记本内存); when that finds nothing
+  it opens on the first of `pickerSearches` that does — the model-number
+  word, then the part code. A model's or product's search also matches its
+  maker's name (`searchByReference` on both, 2026-10-06), since a document
+  writes "Crucial DDR5-5600" and the books "DDR5-5600 32 GB SO-DIMM". A
+  different spelling of a model on the
+  books is the common case — and, for whoever may create
+  one, 创建型号 / 创建软件产品 at the foot of that list
+  (`ReferenceSelect`'s `onCreate`). Creating opens `QuickCreateDialog`
+  (`client/components/itam/quick-create-dialog.tsx`), the collection's own
+  form over the dialog, starting at the line's name and part code. Either
+  way the pick goes through `/capture/match` again (`place` in
+  `use-purchase-capture.ts`), so its line type follows the record's
+  category, and the line joins the lines in place of the blank row. The
+  assistant creates no master data: three spellings of one model would
+  split every report. A line row's own model and product pickers offer the
+  same 创建… entry, narrowing a new model's category to the line's kind,
+  since `setLines` refuses a model of another kind.
+- 创建型号 and 创建软件产品 open on **AI 整理** too (2026-10-06,
+  `MasterCreateDialog` in `client/components/itam/master-create-dialog.tsx`,
+  the master domain's `Create` and `QuickCreateDialog` alike): the reader
+  types the maker and the model, and the model fills the rest from what it
+  reliably knows — there is no web search on the Agents plugin's gateway
+  (template 1.0.0-beta.64), and the dialog says so. How to look a record up
+  and fill the form is the `catalog` skill (`ai/skills/catalog/SKILL.md`,
+  型号与软件产品资料, 2026-10-06), read from the plugin's skill library into
+  the system prompt, so the rules are a document the business can change.
+  One gateway call (`POST /itam/ai/read`, task `model` or
+  `softwareProduct`, with the categories and their fields) answers in the
+  shape the page tools `fillModel` / `fillSoftwareProduct` once took
+  (`client/lib/itam/use-master-capture.ts`), which the server checks first (`POST /itam/master/:collection/capture/match`,
+  `server/providers/itam/master-capture.ts`, under `create`): the category
+  must exist and be of the record's kind, the maker is matched by name like
+  a vendor and **never created** — the dialog offers 新建制造商 with the name
+  — values a field would refuse are dropped (a date that does not exist, a
+  non-http website), and records of the same part code or name are listed
+  above the form, with a second list of possible ones — the same maker and
+  every word of one name inside the other, as the lists search
+  (2026-10-06), since "MacBook Air 13 英寸（M3）" is the books' "MacBook Air
+  13 M3" without matching it exactly. That check is the server's, not the
+  `catalog` skill's. Only dates a page states are filled; the prompt forbids
+  estimating them. A model the search cannot confirm is still handed back
+  with what the reader's own words give — name, maker, closest category,
+  marked 请核对 — and nothing else (2026-10-06): the empty form it used to
+  leave made the reader type even the maker. The pages it cites are listed (links only). The form is
+  `RecordFormDialog`, which takes its values from outside for this
+  (`values` / `onValuesChange`, `initialFormValues`), plus `marks`
+  (请核对), `titleAside`, `replacement` and `aside`. A dialog opened from
+  the aside renders as a sibling of the form, never inside it: a submit in
+  a portal still bubbles to the form around it in React's tree.
+  A model's or software product's own page offers the same check as
+  **AI 补充** (2026-10-06, `EnrichAction` in
+  `client/pages/itam/master/master-domain-parts.tsx`, for whoever may update
+  the record): it starts a conversation with the record pinned. Under the
+  `catalog` skill's 补充已有记录 section Noco reads the record and its
+  category with its commands, says what it found, then proposes the change
+  as a plan with one `update_master_record` step (`ai-writes.ts`): only the
+  fields the lookup fills — a model's code, specification, warranty, dates
+  and extended fields (held to the template by `holdAttributes`, merged into
+  what it holds), a product's delivery method, description and website —
+  never the name, maker or category. The user confirms or declines the
+  plan, and asks in the conversation for another selection.
+- `ai.llmServices` in `config.yml` (typed by `server/config/ai.ts`, this
+  application's own section since template 1.0.0-beta.64) is read **once**:
+  at a start where the Agents plugin has no model service of that name, it
+  is created there (`model-services.ts`), and from then on the service is
+  the plugin's, edited on AI → 模型服务 — a key changed in `config.yml`
+  later does not reach it. The plugin stores keys encrypted with
+  `secrets.keys`, so a configuration without one cannot create them: the
+  start logs a warning and the assistant has no model until it is added.

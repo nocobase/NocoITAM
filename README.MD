@@ -158,7 +158,7 @@ Behind a reverse proxy, keep the public host and protocol and pass WebSocket upg
 
 ## Development
 
-`AGENTS.md` is the guide for working on the code, with Claude Code or any other agent; `docs/IMPLEMENTATION_PLAN.md` records the decisions taken. The main commands:
+`AGENTS.md` is the guide for working on the code, with Claude Code or any other agent, and `.agents/rules/` holds the rules for each area it indexes; `docs/IMPLEMENTATION_PLAN.md` records the decisions taken. The main commands:
 
 | Command                           | What it does                                                         |
 | --------------------------------- | -------------------------------------------------------------------- |

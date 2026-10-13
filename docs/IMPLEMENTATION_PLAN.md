@@ -2948,3 +2948,23 @@ Inside ITAM:
   `202610120002_drop_orphaned_ai_metadata`.
 - Documents are read as text by exceljs, mammoth and unpdf, which the AI
   employee plugin's loader used to do.
+
+## Template upgrade: beta.64 → beta.67 (2026-10-13)
+
+`@nocobase/app-template-default` 1.0.0-beta.64 → 1.0.0-beta.67: app-server
+2.0.0-beta.5, app-cli 1.0.0-beta.21, the mail plugin 1.0.0-beta.13 and
+app-skills 0.1.0-beta.34. No source or schema change.
+
+- **AGENTS.md stays under 32 KB** (`tests/logic/agents-md.test.ts`): it
+  holds the rules that apply everywhere and an index, and application
+  guidance lives in `.agents/rules/<topic>.md`, which is committed
+  (`.gitignore` now ignores only what `skills sync` writes there). ITAM's
+  168 KB of rules moved there unchanged, one file per area (`itam-*.md`),
+  with `skills/itam-conventions.md` as `.agents/rules/itam-conventions.md`,
+  and the template's own shell, components and build rules each gained a
+  short "In this application" section. A new rule goes into the matching
+  file, never back into AGENTS.md.
+- `CLAUDE.md` is only `@AGENTS.md`; its UI and manifest notes moved to the
+  template's rules files.
+- Prettier no longer formats executed migrations and seeds, whose checksums
+  a reformat would change.
