@@ -1,4 +1,3 @@
-import { aiManagerToken } from '@nocobase/app-plugin-ai-employee/server';
 import { userAdministrationServiceToken } from '@nocobase/app-plugin-authentication';
 import { userManagementServiceToken } from '@nocobase/app-plugin-users/server/tokens';
 
@@ -19,7 +18,6 @@ import {
   type ServiceContainer,
 } from '@nocobase/service-provider';
 
-import { registerAiBridge } from './ai-bridge.js';
 import { approvalServiceToken, createApprovalService } from './approvals.js';
 import { auditServiceToken, createAuditService } from './audits.js';
 import { deviceServiceToken, createDeviceService } from './devices.js';
@@ -82,6 +80,7 @@ import {
   receiptRunServiceToken,
 } from './receipt-runs.js';
 import { createRepairService, repairServiceToken } from './repairs.js';
+import { createPlanService, planServiceToken } from './plans.js';
 import { createReportService, reportServiceToken } from './reports.js';
 import { createSettingsService, settingsServiceToken } from './settings.js';
 import { createWorkbenchService, workbenchServiceToken } from './workbench.js';
@@ -124,9 +123,11 @@ export {
 function demoAccounts(container: ServiceContainer): DemoAccounts {
   /**
    * Deletes a demo account's row and everything that still refers to it:
-   * its sessions and credentials, the AI plugin's conversations and usage
-   * (an account that talked to Noco cannot go before them), and any
-   * Permission Set assignment. Only ever for the demo's own sign-ins.
+   * its sessions and credentials, the conversations and usage the AI
+   * employee plugin left in a database upgraded from before template
+   * 1.0.0-beta.64 (their rows reference the account, so it cannot go before
+   * them; the Agents plugin's own reference no row), and any Permission Set
+   * assignment. Only ever for the demo's own sign-ins.
    */
   const purge = async (userId: string): Promise<void> => {
     const permissionSets = container.resolve(authorizationToken).permissionSets;
@@ -137,9 +138,9 @@ function demoAccounts(container: ServiceContainer): DemoAccounts {
       )
         await permissionSets.revoke(assignment.id);
     const database = container.resolve(databaseManagerToken);
-    // The AI plugin's tables first, each on its own: they exist only where
-    // the plugin is installed, and a statement that fails inside a
-    // transaction would abort the rest of it on some databases.
+    // The AI employee plugin's tables first, each on its own: they exist
+    // only where it ran, and a statement that fails inside a transaction
+    // would abort the rest of it on some databases.
     const query = database.query();
     const sessions = await query
       .selectFrom('aiConversations')
@@ -298,9 +299,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // that show live to-dos subscribe to (`changes.ts`). The topic is
     // defined at boot; a container without realtime publishes nothing.
     container.singleton(itamChangesToken, () =>
-      createItamChanges(() =>
-        this.changesTopic?.publish({ kind: 'changed' }),
-      ),
+      createItamChanges(() => this.changesTopic?.publish({ kind: 'changed' })),
     );
     // The notification plugin is resolved per send so registration order
     // does not matter and a test container without it stays silent.
@@ -470,9 +469,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
         container.resolve(settingsServiceToken),
       ),
     );
-    // AI tools under `ai/` are registered with the AI plugin at boot and
-    // reach the ITAM services through this bridge.
-    registerAiBridge(container);
     container.singleton(demoServiceToken, () =>
       createDemoService({
         database: container.resolve(databaseManagerToken),
@@ -581,18 +577,17 @@ export default class ItamProvider extends ServiceProvider<Application> {
         container.resolve(settingsServiceToken),
       ),
     );
+    // The changes the assistant proposes, carried out by the person it
+    // works for (`plans.ts`).
+    container.singleton(planServiceToken, () => createPlanService(container));
     // Noco choosing a joiner's equipment when their 入职负责人 asks, in the
-    // background and as them (`onboarding-advisor.ts`).
+    // background (`onboarding-advisor.ts`).
     container.singleton(onboardingAdvisorToken, () =>
       createOnboardingAdvisor({
         database: container.resolve(databaseManagerToken),
         onboarding: container.resolve(onboardingServiceToken),
         settings: container.resolve(settingsServiceToken),
-        runner: createNocoAgentRunner(container, () =>
-          container.has(loggingToken)
-            ? container.resolve(loggingToken).getLogger('itam')
-            : undefined,
-        ),
+        runner: createNocoAgentRunner(container),
         locale: () =>
           process.env.APP_DEFAULT_LOCALE ??
           this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??
@@ -671,36 +666,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
       section: `${ITAM_RESOURCE_SECTION}.admin`,
     });
 
-    // The ITAM assistant and its tools (`ai/`), registered with the AI
-    // employee plugin here, after every provider registered its services.
-    // The plugin loads only what a registrar hands it; it does not scan
-    // `ai/`, so without this the employee and its tools do not exist.
-    // Imported here rather than at the top: the tools import this module's
-    // services, and a static import would evaluate them mid-cycle.
-    if (this.app.container.has(aiManagerToken)) {
-      const ai = this.app.container.resolve(aiManagerToken);
-      const settings = this.app.container.resolve(settingsServiceToken);
-      return import('../../../ai/index.js').then(
-        ({ ItamAiResources, LOGO_AVATAR_PATH }) => {
-          // The employee's avatar is the application's mark. The record keeps
-          // the root-relative path, which the client resolves under the mount
-          // path; with a public origin configured it is absolutised, so the
-          // plugin's own settings pages — which render it outside this
-          // application — show it too. NocoCRM does the same.
-          const identity = this.app.config.get<{ publicOrigin?: string }>(
-            'app',
-          );
-          const origin = (identity?.publicOrigin ?? '')
-            .toString()
-            .trim()
-            .replace(/\/+$/, '');
-          const avatar = origin
-            ? `${origin}${this.app.publicBasePath.replace(/\/+$/, '')}${LOGO_AVATAR_PATH}`
-            : undefined;
-          return new ItamAiResources(settings, avatar).registerAIResources(ai);
-        },
-      );
-    }
     return Promise.resolve();
   }
 }

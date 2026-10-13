@@ -15,7 +15,7 @@ import {
 } from 'react';
 import { useLocation, useNavigate, type To } from 'react-router';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '#components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -23,8 +23,8 @@ import {
   DialogOverlay,
   DialogPortal,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+} from '#components/ui/dialog';
+import { cn } from 'cn';
 
 import { RouteOverlayContext } from './use-route-overlay.js';
 
@@ -134,6 +134,8 @@ export function RouteOverlay({
             <DialogOverlay forceRender />
             <DialogPrimitive.Popup
               ref={popupRef}
+              data-slot='route-overlay-content'
+              data-presentation={drawer ? 'drawer' : 'dialog'}
               finalFocus={() => {
                 const previous = previousFocusRef.current;
                 if (parentPopup?.current) {
@@ -146,24 +148,33 @@ export function RouteOverlay({
               }}
               className={cn(
                 'fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-popover text-popover-foreground shadow-lg outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
-                'flex max-h-[calc(100svh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl',
+                'flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl',
                 // The viewport constraints are deliberate; all ordinary styling uses theme tokens.
                 drawer &&
-                  'top-0 right-0 left-auto h-svh max-h-svh w-full max-w-full translate-x-0 translate-y-0 rounded-none sm:max-w-xl data-open:slide-in-from-right data-open:zoom-in-100',
+                  'top-0 right-0 left-auto h-dvh max-h-dvh w-full max-w-full translate-x-0 translate-y-0 rounded-none sm:max-w-xl data-open:slide-in-from-right data-open:zoom-in-100',
                 className,
               )}
             >
-              <header className='shrink-0 space-y-2 border-b p-4 pr-12'>
+              <header
+                data-slot='route-overlay-header'
+                className='flex shrink-0 flex-col gap-2 border-b p-6 pr-14'
+              >
                 <DialogTitle>{title}</DialogTitle>
                 {description != null && (
                   <DialogDescription>{description}</DialogDescription>
                 )}
               </header>
-              <div className='min-h-0 flex-1 overflow-y-auto p-4'>
+              <div
+                data-slot='route-overlay-body'
+                className='min-h-0 flex-1 overflow-y-auto p-6'
+              >
                 {children}
               </div>
               {footer != null && (
-                <footer className='flex shrink-0 flex-wrap justify-end gap-2 border-t p-4'>
+                <footer
+                  data-slot='route-overlay-footer'
+                  className='flex shrink-0 flex-wrap justify-end gap-2 border-t bg-muted/30 p-6'
+                >
                   {footer}
                 </footer>
               )}
@@ -172,7 +183,7 @@ export function RouteOverlay({
                   <Button
                     variant='ghost'
                     size='icon-sm'
-                    className='absolute top-2 right-2'
+                    className='absolute top-4 right-4'
                   />
                 }
               >

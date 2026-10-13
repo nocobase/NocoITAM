@@ -2,17 +2,15 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
 import { useApi } from './api.js';
 
-/** Whether the assistant is available, and the write tools' pre-check. */
+/** The assistant's own endpoints: status, form readings, receipt runs. */
 export const AI_PATH = 'itam/ai';
 
 /**
- * What the AI employee plugin says about the assistant: a model it can use
- * (`configured`) and Noco switched on at 设置 → AI 员工 (`enabled`).
+ * Whether the assistant is available: a model to ask (Noco's, else the
+ * system's default chat model, on the Agents plugin).
  */
 export interface AiStatus {
-  readonly configured: boolean;
-  readonly enabled: boolean;
-  readonly employee: string;
+  readonly available: boolean;
 }
 
 export function useAiStatus(): UseQueryResult<AiStatus> {
@@ -25,3 +23,16 @@ export function useAiStatus(): UseQueryResult<AiStatus> {
     staleTime: 5 * 60_000,
   });
 }
+
+/** What a form reading answers (`POST /itam/ai/read`). */
+export interface AiReading {
+  readonly reading: Record<string, unknown> | null;
+  readonly said: string;
+}
+
+export type AiReadingTask =
+  | 'purchaseOrder'
+  | 'purchaseLines'
+  | 'model'
+  | 'softwareProduct'
+  | 'deliveryDocument';

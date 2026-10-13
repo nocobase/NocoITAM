@@ -22,9 +22,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '#components/ui/dropdown-menu';
 
-import { LanguageSwitcher } from '@/layouts/components/language-switcher';
+import { LanguageSwitcher } from '../../client/layouts/components/language-switcher.js';
 
 const APP = '@nocobase/app-template-default';
 const FALLBACK_NOTICE = '服务端不支持该语言，服务端内容已回落为英文。';
@@ -39,9 +39,11 @@ const applications: ClientApplication[] = [];
 function createServerResponse(fallback = false): Response {
   return new Response(
     JSON.stringify({
-      locale: fallback ? 'en-US' : 'zh-CN',
-      requestedLocale: 'zh-CN',
-      fallback,
+      data: {
+        locale: fallback ? 'en-US' : 'zh-CN',
+        requestedLocale: 'zh-CN',
+        fallback,
+      },
     }),
     { headers: { 'Content-Type': 'application/json' } },
   );

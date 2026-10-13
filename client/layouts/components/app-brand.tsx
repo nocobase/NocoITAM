@@ -1,4 +1,4 @@
-import { resolveAppUrl } from '@nocobase/app-client';
+import { resolveAssetUrl } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
@@ -25,13 +25,13 @@ export function AppBrand(inputProps: AppBrandProps): ReactElement {
         alt=''
         aria-hidden='true'
         className='h-7 w-auto shrink-0 object-contain dark:hidden'
-        src={resolveAppUrl('/assets/logo-mark.png')}
+        src={resolveAssetUrl('/assets/logo-mark.png')}
       />
       <img
         alt=''
         aria-hidden='true'
         className='hidden h-7 w-auto shrink-0 object-contain dark:block'
-        src={resolveAppUrl('/assets/logo-mark-dark.png')}
+        src={resolveAssetUrl('/assets/logo-mark-dark.png')}
       />
       {!compact && (
         <span className='truncate font-heading text-lg tracking-wide'>

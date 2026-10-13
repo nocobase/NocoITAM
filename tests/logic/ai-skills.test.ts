@@ -5,27 +5,26 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import itamEmployee, { ITAM_SKILLS } from '../../ai/employees/itam.js';
+import { METHOD_SKILLS } from '../../server/providers/itam-agents/skill.js';
 
 const skillsDir = path.resolve(process.cwd(), 'ai/skills');
 
 /**
  * A skill is a delivered document, not prose inside the instructions: the
- * plugin loads `ai/skills/<name>/SKILL.md` by scanning that directory, and the
- * build copies it into `dist`. So the thing to hold still is that the files
- * and the names the employee enables are the same set — a skill the employee
- * does not name is never offered, and a name with no file is nothing at all.
+ * server puts `ai/skills/<name>/SKILL.md` into the Agents plugin's skill
+ * library at its first start and attaches it to Noco
+ * (`server/providers/itam-agents/library.ts`), and the build copies the
+ * directory into `dist`. So the thing to hold still is that the files and
+ * the names the library is given are the same set — a file nobody names is
+ * never offered, and a name with no file is nothing at all.
  */
 describe('the skills this Solution delivers', () => {
   const directories = readdirSync(skillsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
 
-  it('are exactly the ones the employee enables', () => {
-    expect([...directories].sort()).toEqual([...ITAM_SKILLS].sort());
-    expect([...(itamEmployee.skills ?? [])].sort()).toEqual(
-      [...ITAM_SKILLS].sort(),
-    );
+  it('are exactly the ones put into the library', () => {
+    expect([...directories].sort()).toEqual([...METHOD_SKILLS].sort());
   });
 
   it('each carry a SKILL.md whose name matches its directory', () => {
@@ -40,9 +39,5 @@ describe('the skills this Solution delivers', () => {
         /^description: \S.*$/m.test(read(name)),
     );
     expect(wellFormed).toEqual(directories);
-  });
-
-  it('let the chat use skills at all', () => {
-    expect(itamEmployee.chatSettings?.enableSkills).toBe(true);
   });
 });

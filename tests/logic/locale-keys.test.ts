@@ -22,6 +22,9 @@ function walk(dir: string, files: string[] = []): string[] {
 }
 
 function lookup(resource: Record<string, unknown>, key: string): unknown {
+  // The template's system copy keys some groups flat, by their whole dotted
+  // name (`'auth.loading'`), beside the nested groups.
+  if (key in resource) return resource[key];
   const parts = key.split('.');
   let current: unknown = resource;
   for (const part of parts) {

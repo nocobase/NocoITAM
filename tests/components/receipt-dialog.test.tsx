@@ -53,12 +53,8 @@ vi.mock('../../client/lib/itam/references.js', () => ({
 // No model configured: the form is the batch form alone, with no document
 // strip — receiving in batch never depends on the assistant.
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
-  useItamAi: () => undefined,
-  useHiddenChat: () => ({ status: 'ready', messages: [] }),
-}));
-vi.mock('../../client/extensions/nocobase-ai/index.js', () => ({
-  useAI: () => ({}),
-  useAIPageElementHandle: () => ({ ref: () => undefined, context: {} }),
+  useItamAi: () => ({ available: false }),
+  useAiReading: () => () => Promise.reject(new Error('not available')),
 }));
 vi.mock('../../client/components/itam/reference-select.js', () => ({
   ReferenceSelect: ({

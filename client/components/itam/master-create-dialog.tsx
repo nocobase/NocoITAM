@@ -149,7 +149,7 @@ function MasterCreateForm({
       [values.manufacturerId, values.categoryId],
     ),
   );
-  const { contextRef, ...capture } = useMasterCapture({
+  const capture = useMasterCapture({
     collection,
     // The form as the reader sees it: references by name.
     form: () => ({
@@ -185,7 +185,6 @@ function MasterCreateForm({
   return (
     <>
       <RecordFormDialog
-        contentRef={contextRef}
         open={open}
         onOpenChange={close}
         title={t(`${meta.i18n}.new`)}

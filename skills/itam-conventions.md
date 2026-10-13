@@ -23,6 +23,28 @@ registered in `server/providers/itam/index.ts`, a route under
 `server/routes/itam/` using `http.ts`, field metadata under `client/lib/itam/`,
 and pages composed from `client/components/itam/`.
 
+### The shell and the assistant (template 1.0.0-beta.64)
+
+The layout is the template's shadcn sidebar (`AppSidebar`, `NavigationMenu`)
+with two application changes: a menu group reads as a heading with its pages
+always listed (`sections` on `NavigationMenu`), and 搜索 sits under 工作台
+(`after`). There is no settings layout: 设置 is a section of the same menu,
+with ITAM's own settings and the administration pages in
+`client/pages/settings/` (users, permission sets, API keys, scheduled tasks),
+built on the plugins' client APIs and worded through `admin.*`
+(`client/locales/admin.ts`). AI is a section too, holding the Agents
+plugin's own pages; its model services page is at `/ai-models`, since
+`/models` is the asset models page.
+
+The assistant is the Agents plugin's chat (`client/layouts/agent-chat.tsx`,
+the UI Library's `agent-chat` block in `client/extensions/nocobase-agent-chat/`).
+A page that shows a record pins it with `useAiPageContext` and asks through
+`useItamAi` (`client/lib/itam/ai-chat.tsx`); a form filled from material asks
+`useAiReading` (`POST /itam/ai/read`). The assistant reads through the `itam`
+commands and changes things only as a plan the person confirms on its card
+(`client/components/itam/ai/plan-card.tsx`); see `AGENTS.md`. Pages register
+no frontend tools: the chat has none.
+
 ## From `references/frontend/references/styling.md` (was `components-and-styling.md`)
 
 ### Shared tag appearance

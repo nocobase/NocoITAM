@@ -27,11 +27,7 @@ describe('app client routes', () => {
 
   it('loads every page component', async () => {
     const resolved = resolveRoutes();
-    const loaders = [
-      ...componentLoadersIn(resolved.routes),
-      ...componentLoadersIn(resolved.settingsRouteTree),
-      ...componentLoadersIn(resolved.devRouteTree),
-    ];
+    const loaders = componentLoadersIn(resolved.routes);
     // The trees above are filtered by loader, so an empty list would make the loop below pass without loading
     // anything at all.
     expect(loaders).not.toHaveLength(0);
@@ -82,14 +78,23 @@ describe('app client routes', () => {
       'locations',
       'departments',
       'people',
+      // AI and 设置 (template 1.0.0-beta.64): the Agents plugin's pages, each
+      // behind its own grant or the settings item its API reads, then this
+      // application's settings and the administration pages, each checking
+      // what the plugin's own API checks.
+      'agents',
+      'skills',
+      'settings:agents.services',
+      'usage',
+      'itam-settings',
+      'user:*',
+      'settings:authorization.permission-sets',
+      'scheduler.schedules',
     ]);
     // A detail page is not a menu entry and carries no grant of its own.
     expect(
       pages.find((page) => page.name === 'devices-detail')?.authorizedAs,
     ).toBeNull();
-    expect(pageAuthorizations(resolved.settingsRouteTree)).toEqual([
-      { name: 'itam-settings', authorizedAs: 'itam-settings' },
-    ]);
   });
 });
 

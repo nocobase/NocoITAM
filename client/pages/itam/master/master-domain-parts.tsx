@@ -26,19 +26,13 @@ import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
 import type { DomainTreeProps } from '@/lib/itam/domain';
 import { errorMessage, text } from '@/lib/itam/format';
-import { useAI } from '@/extensions/nocobase-ai';
-import { useItamAi } from '@/lib/itam/ai-chat';
-import { useAiPageContext } from '@/lib/itam/ai-context';
+import { useAiPageContext, useItamAi } from '@/lib/itam/ai-chat';
 import { useReferenceNames } from '@/lib/itam/references';
-import { templateOf } from '@/lib/itam/field-template';
 import {
   isMasterCaptureCollection,
   type MasterCaptureCollection,
 } from '@/lib/itam/master-capture';
-import {
-  masterDataByName,
-  type MasterDataCollection,
-} from '@/lib/itam/master-data';
+import type { MasterDataCollection } from '@/lib/itam/master-data';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { STOCK_PATH } from '@/lib/itam/stock';
 
@@ -492,13 +486,13 @@ export function MasterActions({
 }
 
 /**
- * AI 联网补充 on a model's or software product's page (2026-10-06): opens
- * the assistant's panel on a new conversation, with web search on (a model
- * that can is chosen), and asks Noco to look the record up under the
- * catalog skill. The record and its category's fields go along as page
- * context. Noco says what it found and proposes the change through
- * itam_update_master_record, whose card the user confirms or declines.
- * Offered to whoever may edit the record, while the assistant is available.
+ * AI 补充 on a model's or software product's page (2026-10-06): opens the
+ * assistant's panel on a new conversation and asks Noco to check the record
+ * under the catalog skill, with the record as page context. Noco says what
+ * it found and proposes the change as a plan (`update_master_record`), whose
+ * card the user confirms or declines. There is no web search on the Agents
+ * plugin's chat (template 1.0.0-beta.64). Offered to whoever may edit the
+ * record, while the assistant is available.
  */
 function EnrichAction({
   collection,
@@ -509,11 +503,15 @@ function EnrichAction({
 }): ReactElement | null {
   const ai = useItamAi();
   const permissions = useCollectionPermissions(collection, ['update']);
-  if (!ai?.available || !permissions.update) return null;
+  if (!ai.available || !permissions.update) return null;
   return <EnrichShortcut collection={collection} record={record} />;
 }
 
-/** The shortcut itself, rendered only inside the assistant's provider. */
+/**
+ * The shortcut itself: the record is the chat's page context, and the
+ * assistant reads it and its category's fields with its commands, then
+ * proposes the empty fields it can fill as a plan (the catalog skill).
+ */
 function EnrichShortcut({
   collection,
   record,
@@ -522,83 +520,32 @@ function EnrichShortcut({
   readonly record: ItamRecord;
 }): ReactElement {
   const { t } = useTranslation();
-  const { models } = useAI();
-  const category = useItamRecord<ItamRecord>(
-    masterDataPath('categories'),
-    record.categoryId ? text(record.categoryId) : undefined,
-  );
   const names = useReferenceNames([
     { collection: 'manufacturers', ids: [text(record.manufacturerId)] },
-    { collection: 'categories', ids: [text(record.categoryId)] },
   ]);
   const maker = names.manufacturers?.get(text(record.manufacturerId)) ?? '';
-  const fields = masterDataByName(collection)?.fields ?? [];
-  const { ref: contextRef, ask } = useAiPageContext({
-    id: `itam-${collection}-${text(record.id)}-enrich`,
-    title: t(`${collection}.capture.enrichContext`),
+  const { ask } = useAiPageContext({
     kind: collection,
-    // The record as the books hold it, with its category's fields: what
-    // the lookup checks, and the keys its extended fields take.
-    getContext: () => ({
-      collection,
-      id: record.id,
-      manufacturer: maker || null,
-      category: names.categories?.get(text(record.categoryId)) ?? null,
-      values: Object.fromEntries(
-        fields
-          .filter((field) => field.form !== false)
-          .map((field) => [field.key, record[field.key] ?? null]),
-      ),
-      ...(collection === 'models'
-        ? {
-            attributes: record.attributes ?? {},
-            fields: templateOf(category.data?.fieldTemplate)
-              .filter((field) => !field.hidden)
-              .map((field) => ({
-                key: field.key,
-                label: field.label,
-                type: field.type,
-                ...(field.options ? { options: field.options } : {}),
-              })),
-          }
-        : {}),
-    }),
+    id: text(record.id),
+    label: text(record.name),
   });
-  const searchModel = models.find((model) => model.supportWebSearch);
   return (
-    // The page context is this record; the element it registers is the
-    // shortcut's own wrapper.
-    <span ref={contextRef} className='contents'>
-      <AiShortcut
-        onClick={() =>
-          ask(
-            t(
-              collection === 'models'
-                ? 'ai.prompts.enrichModel'
-                : 'ai.prompts.enrichSoftwareProduct',
-              {
-                name: [maker, text(record.name)].filter(Boolean).join(' '),
-                search: t(
-                  searchModel
-                    ? 'ai.prompts.masterSearch'
-                    : 'ai.prompts.masterNoSearch',
-                ),
-              },
-            ),
-            searchModel
-              ? {
-                  webSearch: true,
-                  model: {
-                    llmService: searchModel.llmService,
-                    model: searchModel.value,
-                  },
-                }
-              : undefined,
-          )
-        }
-      >
-        {t('masterEnrich.action')}
-      </AiShortcut>
-    </span>
+    <AiShortcut
+      onClick={() =>
+        ask(
+          t(
+            collection === 'models'
+              ? 'ai.prompts.enrichModel'
+              : 'ai.prompts.enrichSoftwareProduct',
+            {
+              name: [maker, text(record.name)].filter(Boolean).join(' '),
+              search: t('ai.prompts.masterNoSearch'),
+            },
+          ),
+        )
+      }
+    >
+      {t('masterEnrich.action')}
+    </AiShortcut>
   );
 }

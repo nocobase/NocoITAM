@@ -5,15 +5,12 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
-  useRef,
   useState,
   type PropsWithChildren,
   type ReactElement,
 } from 'react';
 import { useNavigate } from 'react-router';
 
-import { SearchAnswer } from '@/components/itam/ai/search-answer';
 import {
   CommandEmpty,
   CommandGroup,
@@ -28,19 +25,18 @@ import {
 } from '@/components/ui/input-group';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  useAIPageElementHandle,
-  type AIFrontendToolRegistration,
-} from '@/extensions/nocobase-ai';
-import { useItamAi, useItamSearchChat } from '@/lib/itam/ai-chat';
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { useItamAi } from '@/lib/itam/ai-chat';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
 import {
   SEARCH_PAGES,
   searchRowDetail,
   searchRowTitle,
   useSearchResults,
-  type FoundRecordSet,
 } from '@/lib/itam/search';
-import { readSearchTurn, type SearchTurn } from '@/lib/itam/search-turn';
 
 /** The shortcut as the reader's keyboard labels it. */
 const SHORTCUT =
@@ -48,9 +44,6 @@ const SHORTCUT =
   /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
     ? '⌘K'
     : 'Ctrl K';
-
-/** How many ids the AI may hand over at most; it says when it found more. */
-const MAX_FOUND = 200;
 
 type Mode = 'search' | 'ask';
 
@@ -61,64 +54,29 @@ interface GlobalSearch {
   readonly setValue: (value: string) => void;
   readonly mode: Mode;
   readonly setMode: (mode: Mode) => void;
-  /** The last question asked and where its answer stands, if any. */
-  readonly answer: Answer | undefined;
+  /** Asks the assistant in its panel, and closes the search. */
   readonly ask: (text: string) => void;
-  readonly clearAnswer: () => void;
-  /** 继续追问: a new conversation in the side panel about the answer. */
-  readonly followUp: () => void;
-  /** The conversation the answer kept, in the side panel. */
-  readonly openConversation: () => void;
-}
-
-/** A question asked from the search, and its answer as far as it got. */
-interface Answer extends Omit<SearchTurn, 'asked' | 'conversationId'> {
-  /** The words the reader typed. */
-  readonly question: string;
-  readonly found: FoundRecordSet | undefined;
-}
-
-/** One question's run: the prompt it was sent as, and what came of it. */
-interface Session {
-  readonly question: string;
-  readonly prompt: string;
-  readonly conversationId?: string;
-  /** Kept once finished, when the conversation has been let go. */
-  readonly result?: Omit<SearchTurn, 'asked' | 'conversationId'>;
-  readonly found?: FoundRecordSet;
-  /** The reader took the conversation into the panel: never delete it. */
-  readonly kept?: boolean;
 }
 
 const GlobalSearchContext = createContext<GlobalSearch | undefined>(undefined);
 
 /**
- * The search the sidebar opens (2026-10-05), after InvGate's and the AI
- * answers of Slack, Glean and Rovo: one box over every list the reader may
- * read, in two modes.
+ * The search the sidebar opens (2026-10-05), after InvGate's: one box over
+ * every list the reader may read, in two modes.
  *
  * - **Search** answers as it is typed, without a model: matches grouped by
  *   the list they belong to, the first few each, opening in the record
  *   drawer; a group's last row opens its list searched for the same words.
- * - **Ask AI** sends the sentence to the search's own chat (`HiddenChat` in
- *   the shell, a second conversation nobody sees: the side panel neither
- *   opens nor loses what it holds), with this search as page context and
- *   one frontend tool, `presentRecords`, which hands the records the AI
- *   found to the answer card (ALLOW: it only shows them).
+ * - **Ask AI** hands the sentence to the assistant in its chat panel, on a
+ *   new conversation (template 1.0.0-beta.64, after NocoCRM's): the answer
+ *   is a conversation the reader can go on with, and the records it names
+ *   are links there. Until then the answer came in this dialog, from an
+ *   unseen chat with a page tool of its own; the Agents plugin's chat has
+ *   no page tools.
  *
- * A search answer is not a chat the reader meant to keep: as in Rovo, it
- * becomes one only when they follow it up. So the answer is kept here once
- * it is complete and its conversation is deleted straight away; 继续追问
- * starts a new conversation in the panel with the question, the answer and
- * the records as page context. Only a turn that ended on a change waiting
- * for confirmation, or that failed, keeps its conversation, which 在对话中查看
- * opens in the panel (decided 2026-10-05).
- *
- * The state lives here, around the whole shell, rather than in the dialog:
- * closing the dialog while the AI works must not lose the answer, and the
- * tool must still be there when the AI calls it. Everybody who signs in is
- * IT (2026-10-05); what each finds is still what their grants let them
- * read, which the server decides group by group.
+ * The state lives here, around the whole shell, so the box keeps what was
+ * typed while it is closed. What each reader finds is still what their
+ * grants let them read, which the server decides group by group.
  */
 export function GlobalSearchProvider({
   children,
@@ -128,8 +86,6 @@ export function GlobalSearchProvider({
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [mode, setMode] = useState<Mode>('search');
-  const [session, setSession] = useState<Session>();
-  const chat = useItamSearchChat();
 
   // ⌘K (Ctrl+K off a Mac) opens it from anywhere, and closes it again —
   // the shortcut a command palette is expected to have.
@@ -150,129 +106,6 @@ export function GlobalSearchProvider({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  // While the question runs its answer is read from the chat; once it is
-  // complete it is kept here, so deleting the conversation loses nothing.
-  const turn =
-    session && !session.result
-      ? readSearchTurn(chat, session.prompt)
-      : undefined;
-  if (session && turn) {
-    const conversationId = session.conversationId ?? turn.conversationId;
-    const { asked: _asked, conversationId: _id, ...result } = turn;
-    if (turn.asked && !turn.working)
-      setSession({ ...session, conversationId, result });
-    else if (conversationId !== session.conversationId)
-      setSession({ ...session, conversationId });
-  }
-  // The conversations already let go, so none is deleted twice.
-  const releasedRef = useRef(new Set<string>());
-  const release = (id: string) => {
-    if (releasedRef.current.has(id)) return;
-    releasedRef.current.add(id);
-    void ai?.search.state
-      .get()
-      .removeConversation?.(id)
-      .catch(() => undefined);
-  };
-  // A complete answer lets its conversation go, unless it ended on a change
-  // to confirm or failed: then the conversation is what the reader needs.
-  const finished = session?.result;
-  const releasable =
-    finished &&
-    session.conversationId &&
-    !session.kept &&
-    !finished.decision &&
-    finished.failed === undefined
-      ? session.conversationId
-      : undefined;
-  useEffect(() => {
-    if (releasable) release(releasable);
-  });
-
-  /** Lets go of a question's conversation nothing kept, before the next. */
-  const discard = () => {
-    if (session?.conversationId && !session.kept)
-      release(session.conversationId);
-  };
-
-  const tools = useMemo(
-    (): AIFrontendToolRegistration[] => [
-      {
-        name: 'presentRecords',
-        title: 'Present the records found',
-        description: `Show the records you found under the search box, where the user opens them and goes on to their list to filter and export them. "list" is one of the lists in the page context, "ids" the ids of the records you found in it (look them up with the ITAM read tools; at most ${MAX_FOUND}), "title" a few words saying what they are, in the user's language. Call it once, for the list the question is about.`,
-        permission: 'ALLOW',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            list: { type: 'string', enum: Object.keys(SEARCH_PAGES) },
-            ids: { type: 'array', items: { type: 'string' } },
-            title: { type: 'string' },
-          },
-          required: ['list', 'ids', 'title'],
-        },
-        // The assistant supplies the arguments; read them defensively.
-        execute: (args: unknown) => {
-          const input = (args ?? {}) as {
-            list?: unknown;
-            ids?: unknown;
-            title?: unknown;
-          };
-          const list = typeof input.list === 'string' ? input.list : '';
-          if (!SEARCH_PAGES[list])
-            return { error: `Unknown list: ${String(input.list)}` };
-          const ids = (Array.isArray(input.ids) ? input.ids : [])
-            .filter((id): id is string => typeof id === 'string' && id !== '')
-            .slice(0, MAX_FOUND);
-          if (ids.length === 0) return { error: 'No ids to show' };
-          const found = {
-            list,
-            ids,
-            title: typeof input.title === 'string' ? input.title.trim() : '',
-          };
-          setSession((current) => current && { ...current, found });
-          return { shown: ids.length, list };
-        },
-      },
-    ],
-    [],
-  );
-  const { ref: contextRef, context } = useAIPageElementHandle({
-    id: 'itam-global-search',
-    title: t('search.context'),
-    kind: 'search',
-    getContext: () => ({
-      lists: Object.entries(SEARCH_PAGES).map(([list, page]) => ({
-        list,
-        collection: page.collection,
-        title: t(page.title),
-      })),
-      // What a follow-up is about: the search answer the reader is taking
-      // into the conversation.
-      lastAnswer: session?.result
-        ? {
-            question: session.question,
-            answer: session.result.text,
-            found: session.found,
-          }
-        : undefined,
-    }),
-    tools,
-  });
-
-  const answer: Answer | undefined = session
-    ? {
-        question: session.question,
-        found: session.found,
-        ...(session.result ?? {
-          working: true,
-          step: turn?.step,
-          text: turn?.text ?? '',
-          decision: false,
-        }),
-      }
-    : undefined;
-
   const search: GlobalSearch = {
     open,
     setOpen,
@@ -280,40 +113,16 @@ export function GlobalSearchProvider({
     setValue,
     mode,
     setMode,
-    answer,
     ask: (text) => {
-      if (!ai?.available || !text) return;
-      discard();
-      const prompt = t('ai.prompts.globalSearch', { text });
-      setSession({ question: text, prompt });
-      setMode('ask');
-      ai.search.ask(prompt, [context]);
-    },
-    clearAnswer: () => {
-      discard();
-      setSession(undefined);
-    },
-    followUp: () => {
-      if (!ai || !session) return;
+      if (!ai.available || !text) return;
       setOpen(false);
-      ai.ask(t('search.followUpDraft', { question: session.question }), {
-        workContext: [context],
-        autoSend: false,
-      });
-    },
-    openConversation: () => {
-      if (!ai || !session?.conversationId) return;
-      setSession({ ...session, kept: true });
-      setOpen(false);
-      ai.openConversation(session.conversationId);
+      setValue('');
+      ai.ask(t('ai.prompts.globalSearch', { text }));
     },
   };
 
   return (
     <GlobalSearchContext.Provider value={search}>
-      {/* The page element the search registers as the AI's context: always
-          in the document, so its tool outlives the dialog. */}
-      <span ref={contextRef} hidden />
       {children}
     </GlobalSearchContext.Provider>
   );
@@ -356,8 +165,8 @@ function SearchPanel({
   const ai = useItamAi();
   const navigate = useNavigate();
   const openRecord = useOpenRecord();
-  const { value, setValue, mode, setMode, answer } = search;
-  const asking = mode === 'ask' && Boolean(ai?.available);
+  const { value, setValue, mode, setMode } = search;
+  const asking = mode === 'ask' && Boolean(ai.available);
   // A request per pause in typing, not per key.
   const [term, setTerm] = useState(value.trim());
   useEffect(() => {
@@ -429,7 +238,7 @@ function SearchPanel({
               placeholder={t('search.placeholder')}
             />
           )}
-          {ai?.available ? (
+          {ai.available ? (
             <InputGroupAddon align='inline-end'>
               {/* Two modes, so a segmented switch like the pages' own tabs:
                   which one is on reads from the switch, and the box stays
@@ -517,7 +326,7 @@ function SearchPanel({
                 </CommandGroup>
               );
             })}
-            {ai?.available ? (
+            {ai.available ? (
               // Words the register does not contain may still be a
               // question: one step from here to asking it.
               <CommandGroup>
@@ -534,21 +343,6 @@ function SearchPanel({
               </CommandGroup>
             ) : null}
           </CommandList>
-        ) : answer ? (
-          <div className='p-3'>
-            <SearchAnswer
-              working={answer.working}
-              step={answer.step}
-              text={answer.text}
-              found={answer.found}
-              decision={answer.decision}
-              failed={answer.failed}
-              onLeave={leave}
-              onClose={search.clearAnswer}
-              onFollowUp={search.followUp}
-              onOpenConversation={search.openConversation}
-            />
-          </div>
         ) : (
           <p className='px-4 py-6 text-center text-sm text-muted-foreground'>
             {asking ? t('search.askHint') : t('search.hint')}
@@ -563,43 +357,32 @@ function SearchPanel({
  * 搜索 in the sidebar, right under 工作台: not a page but the dialog, so it
  * is drawn here like a navigation link rather than declared as a route.
  */
-export function SearchNavButton({
-  collapsed,
-  onOpen,
-}: {
-  readonly collapsed: boolean;
-  /** Also closes the mobile sidebar, which would cover the dialog. */
-  readonly onOpen?: () => void;
-}): ReactElement | null {
+export function SearchNavButton(): ReactElement | null {
   const { t } = useTranslation();
   const search = useGlobalSearch();
+  // Application change (ITAM, template beta.64): an entry of the template's
+  // sidebar menu, so it lines up with the pages around it and wears the
+  // same tooltip in the icon mode; on a phone it closes the sheet, which
+  // would cover the dialog.
+  const { isMobile, setOpenMobile } = useSidebar();
   if (!search) return null;
   const label = t('navigation.search');
   return (
-    <button
-      type='button'
-      title={collapsed ? `${label} (${SHORTCUT})` : undefined}
-      aria-label={label}
-      onClick={() => {
-        onOpen?.();
-        search.setOpen(true);
-      }}
-      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring ${collapsed ? 'md:justify-center md:px-2' : ''}`}
-    >
-      <span className='flex size-4 shrink-0 items-center justify-center [&_svg]:size-4'>
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        tooltip={`${label} (${SHORTCUT})`}
+        onClick={() => {
+          if (isMobile) setOpenMobile(false);
+          search.setOpen(true);
+        }}
+      >
         <Search />
-      </span>
-      <span
-        className={`min-w-0 flex-1 truncate text-left ${collapsed ? 'md:hidden' : ''}`}
-      >
-        {label}
-      </span>
-      <kbd
-        className={`shrink-0 font-sans text-xs text-muted-foreground ${collapsed ? 'md:hidden' : ''}`}
-      >
-        {SHORTCUT}
-      </kbd>
-    </button>
+        <span>{label}</span>
+        <kbd className='ml-auto shrink-0 font-sans text-xs text-muted-foreground group-data-[collapsible=icon]:hidden'>
+          {SHORTCUT}
+        </kbd>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
 

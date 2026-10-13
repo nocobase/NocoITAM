@@ -2,13 +2,13 @@ import { useTranslation } from '@nocobase/i18n/client';
 import type { ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
-import { useAiPageContext } from '@/lib/itam/ai-context';
+import { useItamAi } from '@/lib/itam/ai-chat';
 import type { ReportResult } from '@/lib/itam/workbench';
 
 /**
  * "Interpret this report", answered by the ITAM assistant in the chat: the
- * report on screen — its filters, totals and the first rows of each
- * section — goes with the prompt as page context.
+ * prompt names the report and the filters on screen, and the assistant runs
+ * the same report under the reader's grants (`itam stats --report`).
  */
 export function ReportInsight({
   report,
@@ -16,31 +16,25 @@ export function ReportInsight({
   readonly report: ReportResult;
 }): ReactElement | null {
   const { t } = useTranslation();
-  const {
-    ref: contextRef,
-    available,
-    ask,
-  } = useAiPageContext({
-    id: `itam-report-${report.name}`,
-    title: t(`reports.names.${report.name}`, { defaultValue: report.name }),
-    kind: 'report',
-    getContext: () => ({
-      report: report.name,
-      filters: report.filters,
-      canSeeCost: report.canSeeCost,
-      totals: report.totals,
-      sections: report.sections.map((section) => ({
-        key: section.key,
-        columns: section.columns,
-        rows: section.rows.slice(0, 50),
-        more: Math.max(0, section.rows.length - 50),
-      })),
-    }),
-  });
-  if (!available) return null;
+  const ai = useItamAi();
+  if (!ai.available) return null;
+  const filters = Object.fromEntries(
+    Object.entries(report.filters).filter(
+      ([, value]) => value !== undefined && value !== null && value !== '',
+    ),
+  );
   return (
-    <div ref={contextRef}>
-      <AiShortcut onClick={() => ask(t('ai.prompts.reportInsight'))}>
+    <div>
+      <AiShortcut
+        onClick={() =>
+          ai.ask(
+            t('ai.prompts.reportInsight', {
+              report: report.name,
+              filters: JSON.stringify(filters),
+            }),
+          )
+        }
+      >
         {t('ai.reportInsight')}
       </AiShortcut>
     </div>

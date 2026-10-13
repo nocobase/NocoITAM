@@ -1,8 +1,3 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
-
-import { loadByWorker } from '@nocobase/ai-employee';
 import type { DatabaseManager } from '@nocobase/db';
 import {
   createServiceToken,
@@ -13,19 +8,16 @@ import {
  * A document as text, read on the server: a delivery note when a receipt
  * run starts, a quote or invoice when 解析单据 fills an order's lines.
  *
- * The AI plugin parses a file attached to a message into that one request
- * only: once the conversation resumes — which it does as soon as the page
- * tool `prefillReceipt` is approved — the document is gone and the model is
- * left saying it cannot open it (found 2026-10-05). So the text goes into
- * the message itself, where every later turn still has it, and onto the run,
- * where it is the document of the eval case the run becomes.
+ * The text is what the model reads (`ai-reading.ts`), and it is kept on a
+ * receipt run, where it is the document of the eval case the run becomes.
  *
- * Plain text is decoded as it is: the plugin's CSV loader takes the first
- * line as the header, and a delivery note's first lines are its own header
- * block, so every column past the second was dropped. Spreadsheets, Word and
- * PDF go through the plugin's own loader (`loadByWorker`), which is what a
- * file attached in the chat is read with. A picture is not text: it is sent
- * to the model as an attachment, and only a model that reads images reads it.
+ * Plain text is decoded as it is (a CSV loader that takes the first line for
+ * the column names drops every column of a delivery note whose own header
+ * block comes first). Spreadsheets are read sheet by sheet and row by row
+ * (exceljs), Word documents as their raw text (mammoth) and PDF as the text
+ * of each page (unpdf) — the readers the AI employee plugin lent this until
+ * template 1.0.0-beta.64. A picture, or a legacy .xls / .doc, is not read:
+ * the page says so and the person types what it says.
  */
 export interface DocumentText {
   readonly text: string;
@@ -51,7 +43,7 @@ export type ReadBytes = (disk: string, key: string) => Promise<Uint8Array>;
 export const MAX_DOCUMENT_TEXT = 60_000;
 
 const PLAIN = new Set(['csv', 'tsv', 'txt', 'md', 'json']);
-const LOADED = new Set(['xlsx', 'xls', 'xlsm', 'docx', 'doc', 'pdf', 'pptx']);
+const LOADED = new Set(['xlsx', 'xlsm', 'docx', 'pdf']);
 
 /** Text as a run keeps it: without a byte-order mark, and bounded. */
 export function documentText(raw: string): DocumentText | undefined {
@@ -86,21 +78,64 @@ export function createDocumentReader(deps: {
     const bytes = await readBytes(file.disk, file.key);
     if (PLAIN.has(ext))
       return documentText(new TextDecoder('utf-8').decode(bytes));
-    // The loader reads a path, so the bytes go to a temporary file named
-    // with the extension the loader is chosen by.
-    const directory = await mkdtemp(path.join(os.tmpdir(), 'itam-document-'));
-    try {
-      const filePath = path.join(directory, `document.${ext}`);
-      await writeFile(filePath, bytes);
-      const documents = await loadByWorker(`.${ext}`, {
-        filePath,
-        mimeType: file.mimeType ?? '',
-      });
-      return documentText(
-        documents.map((document) => document.pageContent).join('\n\n'),
-      );
-    } finally {
-      await rm(directory, { recursive: true, force: true });
-    }
+    return documentText(await loadText(ext, bytes));
   };
+}
+
+/** The text of a spreadsheet, a Word document or a PDF. */
+async function loadText(ext: string, bytes: Uint8Array): Promise<string> {
+  if (ext === 'docx') {
+    const mammoth = await import('mammoth');
+    const { value } = await mammoth.extractRawText({
+      buffer: Buffer.from(bytes),
+    });
+    return value;
+  }
+  if (ext === 'pdf') {
+    const { extractText, getDocumentProxy } = await import('unpdf');
+    const pdf = await getDocumentProxy(new Uint8Array(bytes));
+    const { text } = await extractText(pdf, { mergePages: false });
+    return text
+      .map((page, index) => `--- page ${String(index + 1)} ---\n${page}`)
+      .join('\n\n');
+  }
+  // A spreadsheet: each sheet under its name, each row its cells by tabs, so
+  // "Sheet1 row 4" in the reading names a row a person can find.
+  const { default: ExcelJS } = await import('exceljs');
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(Buffer.from(bytes) as unknown as ArrayBuffer);
+  const sheets: string[] = [];
+  workbook.eachSheet((sheet) => {
+    const rows: string[] = [`--- ${sheet.name} ---`];
+    sheet.eachRow({ includeEmpty: false }, (row, number) => {
+      const cells = (row.values as unknown[])
+        .slice(1)
+        .map((cell) => cellText(cell));
+      if (cells.some(Boolean))
+        rows.push(`row ${String(number)}\t${cells.join('\t')}`);
+    });
+    sheets.push(rows.join('\n'));
+  });
+  return sheets.join('\n\n');
+}
+
+function cellText(cell: unknown): string {
+  if (cell === null || cell === undefined) return '';
+  if (cell instanceof Date) return cell.toISOString().slice(0, 10);
+  if (typeof cell === 'object') {
+    const value = cell as {
+      text?: unknown;
+      result?: unknown;
+      richText?: { text: string }[];
+    };
+    if (value.richText) return value.richText.map((run) => run.text).join('');
+    if (value.result !== undefined) return cellText(value.result);
+    if (typeof value.text === 'string') return value.text;
+    return '';
+  }
+  return typeof cell === 'string' ||
+    typeof cell === 'number' ||
+    typeof cell === 'boolean'
+    ? String(cell).replace(/[\t\n]+/g, ' ')
+    : '';
 }

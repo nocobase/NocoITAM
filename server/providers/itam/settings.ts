@@ -117,6 +117,18 @@ export interface SettingsService {
     value: ItamSettings[K],
     actorId?: string,
   ): Promise<ItamSettings[K]>;
+  /**
+   * Called after each save, with the settings as stored: for a reader that
+   * may not read the database when it needs them (the Agents plugin's
+   * conversation rules run inside its own transaction). Returns what removes
+   * the listener.
+   */
+  onSaved(
+    listener: <K extends ItamSettingsKey>(
+      key: K,
+      value: ItamSettings[K],
+    ) => void,
+  ): () => void;
 }
 
 export const settingsServiceToken: ServiceToken<SettingsService> =
@@ -144,7 +156,15 @@ export function createSettingsService(
     return { ...defaults, ...stored };
   };
 
+  const listeners = new Set<
+    <K extends ItamSettingsKey>(key: K, value: ItamSettings[K]) => void
+  >();
+
   return {
+    onSaved(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
     async all() {
       const rows = await database
         .query()
@@ -197,6 +217,7 @@ export function createSettingsService(
           })
           .execute();
       }
+      for (const listener of listeners) listener(key, next);
       return next;
     },
   };

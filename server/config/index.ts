@@ -5,6 +5,8 @@ import {
 import auth from './auth.js';
 import authorization from './authorization.js';
 import notification from './notification.js';
+import mail from './mail.js';
+import secrets from './secrets.js';
 import session from './session.js';
 import server from './server.js';
 import spa from './spa.js';
@@ -16,15 +18,19 @@ import scheduler from './scheduler.js';
 import caching from './caching.js';
 import i18n from './i18n.js';
 import app from './app.js';
+import api from './api.js';
 import database from './database.js';
 import snowflake from './snowflake.js';
+import users from './users.js';
 import ai from './ai.js';
-import workflow from './workflow.js';
+import agents from './agents.js';
 
 const defaultConfigs: AppConfigFactory<{
   auth: ReturnType<typeof auth>;
   authorization: ReturnType<typeof authorization>;
   notification: ReturnType<typeof notification>;
+  mail: ReturnType<typeof mail>;
+  secrets: ReturnType<typeof secrets>;
   session: ReturnType<typeof session>;
   server: ReturnType<typeof server>;
   spa: ReturnType<typeof spa>;
@@ -36,14 +42,19 @@ const defaultConfigs: AppConfigFactory<{
   caching: ReturnType<typeof caching>;
   i18n: ReturnType<typeof i18n>;
   app: ReturnType<typeof app>;
+  api: ReturnType<typeof api>;
   database: ReturnType<typeof database>;
   snowflake: ReturnType<typeof snowflake>;
+  users: ReturnType<typeof users>;
+  // Application sections: ITAM's model services and the Agents plugin's.
   ai: ReturnType<typeof ai>;
-  workflow: ReturnType<typeof workflow>;
+  agents: ReturnType<typeof agents>;
 }> = defaultAppConfigs({
   auth,
   authorization,
   notification,
+  mail,
+  secrets,
   session,
   server,
   spa,
@@ -55,10 +66,12 @@ const defaultConfigs: AppConfigFactory<{
   caching,
   i18n,
   app,
+  api,
   database,
   snowflake,
+  users,
   ai,
-  workflow,
+  agents,
 });
 
 export default defaultConfigs;

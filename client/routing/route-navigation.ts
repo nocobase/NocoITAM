@@ -7,7 +7,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { matchPath, matchRoutes, type RouteObject } from 'react-router';
 
-import { EMPTY_ARRAY } from '@/lib/constants';
+import { EMPTY_ARRAY } from '#lib/constants';
 
 export interface RouteNavigationItem {
   readonly route: AppClientRegisteredRoute;
@@ -58,7 +58,7 @@ export function selectedNavigationId(
   return selected ? routeKey(selected) : undefined;
 }
 
-export function navigationPages(
+function navigationPages(
   items: readonly RouteNavigationItem[],
 ): AppClientRegisteredRoute[] {
   return items.flatMap(({ route, children }) => [

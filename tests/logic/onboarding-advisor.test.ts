@@ -83,7 +83,6 @@ describe('onboarding advisor', () => {
       available: async () => available,
       async run(input) {
         prompts.push({ actorId: input.actorId, prompt: input.prompt });
-        await input.started('session-1');
         return answer(input.prompt);
       },
     };
@@ -137,7 +136,8 @@ describe('onboarding advisor', () => {
     expect((await plan(person.id))!.advice).toMatchObject({
       status: 'ready',
       summary: 'One laptop chosen.',
-      sessionId: 'session-1',
+      // One call to the model's gateway: there is no conversation.
+      sessionId: null,
       actorId: 'mia',
     });
 

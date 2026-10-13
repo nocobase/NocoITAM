@@ -4,6 +4,10 @@ import authConfig from '../../server/config/auth.js';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  createTestAppConfig,
+  type TestAppConfig,
+} from '@nocobase/app-testing/server';
+import {
   mkdirSync,
   mkdtempSync,
   rmSync,
@@ -123,6 +127,8 @@ interface RegisteredTestDisposer {
 const apps: CloseableResource[] = [];
 const servers: Server[] = [];
 const tempDirs: string[] = [];
+/** Test databases the applications above ran on, dropped once those applications have closed. */
+const testConfigs: TestAppConfig[] = [];
 const TEST_REALTIME_TOPIC = 'test:realtime';
 const require = createRequire(import.meta.url);
 
@@ -139,6 +145,7 @@ function requestApp(
 afterEach(async () => {
   vi.unstubAllEnvs();
   await Promise.all(apps.splice(0).map((app) => app.close()));
+  await Promise.all(testConfigs.splice(0).map((config) => config.dispose()));
 
   for (const dir of tempDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
@@ -162,6 +169,10 @@ afterEach(async () => {
 });
 
 describe('app server', () => {
+  it('encrypts stored OAuth tokens', () => {
+    expect(authConfig({} as never).account?.encryptOAuthTokens).toBe(true);
+  });
+
   it('represents the NocoBase application separately from its Hono router', () => {
     const app = createTestApp({
       publicBasePath: '/app-template-default',
@@ -243,7 +254,7 @@ describe('app server', () => {
       expect(ready).not.toHaveBeenCalled();
 
       await createEmbeddedServer(
-        createEmbeddedTestScope({
+        await createEmbeddedTestScope({
           id: 'provider-lifecycle-app',
           basePath: '/provider-lifecycle-app',
         }),
@@ -265,17 +276,9 @@ describe('app server', () => {
     }
   });
 
-  it('starts without optional plugins or workflow routes', async () => {
-    const app = createTestApp();
-
-    expect(
-      app.router.routes.some((route) => route.path.includes('/workflows')),
-    ).toBe(false);
-  });
-
   it('creates embedded apps from a scope', async () => {
     const app = await createEmbeddedServer(
-      createEmbeddedTestScope({
+      await createEmbeddedTestScope({
         id: 'app-template-default',
         basePath: '/embedded-app-template-default',
       }),
@@ -324,7 +327,7 @@ describe('app server', () => {
         providerCalls.push(this.app.container.resolve(pluginServiceToken));
       }
     }
-    const scope = createEmbeddedTestScope({
+    const scope = await createEmbeddedTestScope({
       id: 'app-template-default',
       basePath: '/embedded-app-template-default',
     });
@@ -476,7 +479,7 @@ describe('app server', () => {
   it('registers embedded app resources with the scope', async () => {
     const registeredDisposers: RegisteredTestDisposer[] = [];
     const app = await createEmbeddedServer(
-      createEmbeddedTestScope(
+      await createEmbeddedTestScope(
         {
           id: 'app-template-default',
           basePath: '/embedded-app-template-default',
@@ -507,7 +510,7 @@ describe('app server', () => {
     );
 
     const app = await createEmbeddedServer(
-      createEmbeddedTestScope({
+      await createEmbeddedTestScope({
         id: 'app-template-default',
         basePath: '/app-template-default',
         clientDir: root,
@@ -549,7 +552,7 @@ describe('app server', () => {
     );
 
     const app = await createEmbeddedServer(
-      createEmbeddedTestScope({
+      await createEmbeddedTestScope({
         id: 'app-template-default',
         basePath: '/app-template-default',
         rootDir: appRoot,
@@ -593,7 +596,7 @@ describe('app server', () => {
     );
 
     const app = await createEmbeddedServer(
-      createEmbeddedTestScope({
+      await createEmbeddedTestScope({
         id: 'app-template-default',
         basePath: '/app-template-default',
         rootDir: appRoot,
@@ -660,17 +663,24 @@ describe('app server', () => {
     const database = app.application.container.resolve(databaseManagerToken);
     const client = await database.connection('main').client<Knex>();
     expect(await client.schema.hasTable('articles')).toBe(false);
-    const tables = await client('sqlite_master')
-      .where({ type: 'table' })
-      .pluck('name');
-    expect(tables.some((name: string) => name.includes('example'))).toBe(false);
+    const tables: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await database
+        .connection('main')
+        .schemaInspector.listPhysicalCollections(cursor ? { cursor } : {});
+      tables.push(...page.items.map((item) => item.tableName));
+      cursor = page.nextCursor;
+    } while (cursor);
+    expect(tables.some((name) => name.includes('example'))).toBe(false);
     const baseUrl = `http://localhost${app.application.publicBasePath}`;
-    for (const endpoint of ['articles', 'example', 'routes-example']) {
+    for (const endpoint of ['articles', 'example', 'routesExample']) {
       const response = await requestApp(app, `${baseUrl}/api/${endpoint}`);
-      // Unregistered GET paths reach the application's existing SPA fallback.
-      expect(response.status).toBe(200);
-      expect(response.headers.get('content-type')).toContain('text/html');
-      await expect(response.text()).resolves.toContain(spaContent);
+      // An unregistered API path is a JSON 404, never the application page.
+      expect(response.status).toBe(404);
+      await expect(response.json()).resolves.toMatchObject({
+        error: { status: 'NOT_FOUND', reason: 'ROUTE_NOT_FOUND' },
+      });
     }
   });
 
@@ -1212,12 +1222,6 @@ function createTestApp(options: CreateTestAppOptions = {}): TestApp {
     logging: createSilentLoggingConfig(),
     queue: options.queue ?? createTestQueueConfig(),
     session: createNullSessionConfig(),
-    workflow: {
-      sourceRoot: path.resolve(process.cwd(), 'workflows'),
-      distRoot: path.resolve(process.cwd(), 'dist/workflows'),
-      artifactDisk: 'local',
-      production: false,
-    },
     snowflake: {
       workerId: 0,
     },
@@ -1318,10 +1322,10 @@ function createTestConfig(
   };
 }
 
-function createEmbeddedTestScope(
+async function createEmbeddedTestScope(
   options: Omit<AppScope, 'registerDisposer'>,
   registeredDisposers: RegisteredTestDisposer[] = [],
-): AppScope {
+): Promise<AppScope> {
   const lifecycle = createAppDisposerRegistry();
   const sourceRoot = path.resolve(import.meta.dirname, '../..');
   const databaseDir = mkdtempSync(
@@ -1335,12 +1339,11 @@ function createEmbeddedTestScope(
   return {
     ...options,
     env: {
-      DB_DIALECT: 'sqlite',
       DB_MIGRATIONS_AUTO_RUN: 'true',
       ...options.env,
       APP_CONFIG_FILE: options.rootDir
         ? undefined
-        : writeRuntimeTestConfig(databaseDir, options.env),
+        : await writeRuntimeTestConfig(databaseDir, options.env),
     },
     paths:
       options.paths ??
@@ -1373,10 +1376,9 @@ async function createIsolatedStandaloneServer(
   return createStandaloneServer({
     ...options,
     env: {
-      DB_DIALECT: 'sqlite',
       DB_MIGRATIONS_AUTO_RUN: 'true',
       ...options.env,
-      APP_CONFIG_FILE: writeRuntimeTestConfig(databaseDir, options.env),
+      APP_CONFIG_FILE: await writeRuntimeTestConfig(databaseDir, options.env),
     },
     paths: {
       rootDir: sourceRoot,
@@ -1515,14 +1517,18 @@ function createMockQuery(
   } as unknown as QueryAdapter;
 }
 
-function writeRuntimeTestConfig(
+/**
+ * The configuration the application under test loads instead of config.yml: test databases of its own, on the dialect
+ * NOCOBASE_TEST_DB_DIALECT selects, dropped once the test's applications have closed.
+ */
+async function writeRuntimeTestConfig(
   directory: string,
   env: Readonly<Record<string, string | undefined>> = {},
-): string {
-  const file = path.join(directory, 'config.json');
-  writeFileSync(
-    file,
-    JSON.stringify({
+): Promise<string> {
+  const config = await createTestAppConfig({
+    connections: ['main'],
+    install: env.DB_MIGRATIONS_AUTO_RUN !== 'false',
+    config: {
       auth: { secret: 'test-auth-secret-at-least-32-characters' },
       // Scheduled jobs keep their state beside the test database, not in the template's storage/, which
       // another suite may be using at the same time.
@@ -1542,20 +1548,14 @@ function writeRuntimeTestConfig(
         },
       },
       database: {
-        default: 'main',
         connections: {
-          main: {
-            dialect: 'sqlite',
-            filename: path.join(directory, 'database.sqlite'),
-          },
+          main: { seeds: { autoRun: env.DB_SEEDS_AUTO_RUN === 'true' } },
         },
-        migrations: { autoRun: env.DB_MIGRATIONS_AUTO_RUN !== 'false' },
-        seeds: { autoRun: env.DB_SEEDS_AUTO_RUN === 'true' },
       },
-      hub: { host: { enabled: false } },
-    }),
-  );
-  return file;
+    },
+  });
+  testConfigs.push(config);
+  return config.path;
 }
 
 function readRuntimeConfig(html: string): {

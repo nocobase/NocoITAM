@@ -4,7 +4,7 @@ import {
   type AppClientReactProviderDefinition,
 } from '@nocobase/app-client/plugins';
 
-import { Toaster } from '@/components/ui/toast';
+import { Toaster } from '#components/ui/toast';
 
 import { QueryProvider } from './lib/itam/query-provider.js';
 import { AppThemeProvider } from './theme/theme-provider.js';

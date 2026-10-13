@@ -1,272 +1,177 @@
+import { useToaster } from '@nocobase/app-client';
 import {
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-  type PropsWithChildren,
-  type ReactElement,
-} from 'react';
+  buildPageContext,
+  newConversationAgent,
+  useChatAgents,
+  useChatApi,
+  useChatContextSource,
+  useChatPanel,
+  type ChatContextItem,
+} from '@nocobase/app-plugin-agents/client/chat';
+import { useTranslation } from '@nocobase/i18n/client';
+import { useCallback, useMemo } from 'react';
 
 import {
-  createAIChatController,
-  type AIChatAttachment,
-  type AIChatController,
-  type AIChatMessage,
-  type AIEmployeeTask,
-  type AIWorkContextItem,
-} from '@/extensions/nocobase-ai';
-
-import { useAiStatus } from './ai.js';
+  AI_PATH,
+  useAiStatus,
+  type AiReading,
+  type AiReadingTask,
+} from './ai.js';
+import { useApi } from './api.js';
 
 /**
- * The assistant as the pages see it: whether a model is configured, and a
- * way to open the side panel with a prompt. The shell mounts the provider;
- * pages only ask. Without a configured model the quick entries and the
- * page shortcuts hide, and the pages keep their plain forms.
+ * The assistant as the pages see it (template 1.0.0-beta.64): Noco on the
+ * Agents plugin, in its chat panel (`client/layouts/agent-chat.tsx`).
+ * Whether a model is there to answer, asking a question with the page's
+ * record pinned, and opening a conversation. Without a model the page
+ * shortcuts hide and the pages keep their plain forms.
  */
 export interface ItamAi {
   readonly available: boolean;
-  readonly controller: AIChatController;
-  readonly toggle: () => void;
-  /** Whether the chat is expanded into a dialog rather than the side panel. */
-  readonly expanded: boolean;
-  readonly setExpanded: (expanded: boolean) => void;
   /**
-   * Opens the panel and sends a prompt to the ITAM employee. `workContext`
-   * names the page elements the prompt is about (`useAIPageElementHandle`):
-   * their data goes with the message, and their frontend tools become
-   * available to the employee. `autoSend: false` drafts the prompt in the
-   * composer instead, for a request the user completes (attaching a file).
+   * Opens the panel on a new conversation about `pins` (records the page
+   * shows) and sends the prompt; `autoSend: false` drafts it in the
+   * composer instead, for a request the person completes.
    */
   readonly ask: (
     prompt: string,
     options?: {
       readonly autoSend?: boolean;
-      readonly workContext?: readonly AIWorkContextItem[];
-      /** Files already uploaded (`AIService.uploadFile`), sent with it. */
-      readonly attachments?: readonly AIChatAttachment[];
-      /** Search the web for this message, with a model that can. */
-      readonly webSearch?: boolean;
-      readonly model?: AIEmployeeTask['model'];
+      readonly pins?: readonly ChatContextItem[];
     },
   ) => void;
   /** Opens the panel on a conversation that already exists. */
   readonly openConversation: (conversationId: string) => void;
-  /** The conversation the panel is asked to open, until it has. */
-  readonly pendingConversation: Store<string | undefined>;
-  /**
-   * The search's own chat (`HiddenChat` in the shell): a second, unseen
-   * conversation with the same employee, so asking from the search neither
-   * opens the panel nor replaces the conversation in it.
-   */
-  readonly search: HiddenChat;
-  /**
-   * Receiving by delivery document has one of its own, for the same reason:
-   * the assistant reads the document while the receiving form stays open.
-   */
-  readonly receipt: HiddenChat;
-  /**
-   * And so does AI 整理 in the new purchase order dialog: the assistant
-   * reads what was pasted while the dialog stays open, and fills it.
-   */
-  readonly capture: HiddenChat;
-  /**
-   * 新建型号 / 新建软件产品's AI 整理, which searches the web; a chat of its
-   * own so it can run while a purchase order's capture, which it may have
-   * been opened from, keeps its own.
-   */
-  readonly master: HiddenChat;
 }
 
-/** Which unseen chat (`ItamAi.search`, `.receipt`, `.capture`, `.master`). */
-export type HiddenChatName = 'search' | 'receipt' | 'capture' | 'master';
+/** Where ITAM's conversations come from (`itam-agents/index.ts`). */
+const ITAM_SOURCE = 'itam';
 
-/** A conversation with the employee that no window shows. */
-export interface HiddenChat {
-  readonly controller: AIChatController;
-  readonly state: Store<ChatState>;
+export function useItamAi(): ItamAi {
+  const status = useAiStatus();
+  const panel = useChatPanel();
+  const agents = useChatAgents(panel.available);
+  const api = useChatApi();
+  const toaster = useToaster();
+  const { t } = useTranslation();
+  const agent =
+    newConversationAgent(agents.data, null) ?? agents.data?.[0] ?? null;
+  const available = Boolean(panel.available && status.data?.available && agent);
+
+  const ask = useCallback<ItamAi['ask']>(
+    (prompt, options = {}) => {
+      if (!agent) return;
+      const pins = options.pins ?? [];
+      if (options.autoSend === false) {
+        panel.clearPinned();
+        panel.openChat({ conversationId: null, view: 'chat', draft: prompt });
+        for (const pin of pins) panel.openChat({ pin });
+        panel.focusComposer();
+        return;
+      }
+      const failed = () =>
+        toaster.show({ type: 'error', title: t('ai.sendFailed') });
+      void (async () => {
+        const conversation = await api.createConversation({
+          agentId: agent.id,
+          source: ITAM_SOURCE,
+        });
+        panel.clearPinned();
+        try {
+          const context = buildPageContext({
+            route: window.location.pathname,
+            pinned: pins,
+            sources: [],
+            filter: null,
+            selection: null,
+            removed: new Set(),
+          });
+          await api.sendMessage(conversation.id, {
+            content: prompt,
+            clientId: crypto.randomUUID(),
+            ...(context ? { context } : {}),
+          });
+          panel.openChat({ conversationId: conversation.id, view: 'chat' });
+        } catch {
+          failed();
+          panel.openChat({
+            conversationId: conversation.id,
+            view: 'chat',
+            draft: prompt,
+          });
+        }
+      })().catch(failed);
+    },
+    [agent, api, panel, t, toaster],
+  );
+
+  return useMemo(
+    () => ({
+      available,
+      ask,
+      openConversation: (conversationId: string) =>
+        panel.openChat({ conversationId, view: 'chat' }),
+    }),
+    [available, ask, panel],
+  );
+}
+
+/**
+ * A record the page shows, as context for the chat: its chip sits above the
+ * composer while the page is open, and `ask` opens a new conversation with
+ * it pinned. The server resolves the id under the reader's own grants
+ * (`itam-agents/context.ts`), and the assistant reads it with its commands.
+ */
+export function useAiPageContext(
+  item: {
+    readonly kind: string;
+    readonly id: string;
+    readonly label: string;
+  } | null,
+): {
+  readonly available: boolean;
   readonly ask: (
     prompt: string,
-    workContext: readonly AIWorkContextItem[],
-    options?: {
-      /** Files already uploaded, sent with the message. */
-      readonly attachments?: readonly AIChatAttachment[];
-      /**
-       * The skills and tools this conversation may use. The plugin enforces
-       * the tool list on the server, so it is a boundary, not a request.
-       */
-      readonly skillSettings?: AIEmployeeTask['skillSettings'];
-      /** Search the web for this turn, with a model that can. */
-      readonly webSearch?: boolean;
-      readonly model?: AIEmployeeTask['model'];
-    },
+    options?: { readonly autoSend?: boolean },
   ) => void;
-}
-
-/** Where a chat stands, as its bridge publishes it. */
-export interface ChatState {
-  readonly status: 'submitted' | 'streaming' | 'ready' | 'error';
-  readonly messages: readonly AIChatMessage[];
-  readonly error?: Error;
-  /** The conversation on screen; a draft until first sent. */
-  readonly conversationId?: string;
-  /** Deletes a conversation, as the history list does. */
-  readonly removeConversation?: (conversationId: string) => Promise<void>;
-}
-
-export interface Store<T> {
-  get: () => T;
-  set: (next: T) => void;
-  subscribe: (listener: () => void) => () => void;
-}
-
-function createStore<T>(initial: T): Store<T> {
-  let value = initial;
-  const listeners = new Set<() => void>();
+} {
+  const ai = useItamAi();
+  const kind = item?.kind;
+  const id = item?.id;
+  const label = item?.label;
+  const pin = useMemo<ChatContextItem | null>(
+    () => (kind && id ? { kind, id, label: label ?? id } : null),
+    [kind, id, label],
+  );
+  useChatContextSource(pin);
   return {
-    get: () => value,
-    set: (next) => {
-      value = next;
-      listeners.forEach((listener) => listener());
-    },
-    subscribe: (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    available: ai.available,
+    ask: (prompt, options) =>
+      ai.ask(prompt, { ...options, pins: pin ? [pin] : [] }),
   };
 }
 
-const IDLE: ChatState = { status: 'ready', messages: [] };
-
-function createHiddenChat(): HiddenChat {
-  const controller = createAIChatController();
-  return {
-    controller,
-    state: createStore<ChatState>(IDLE),
-    ask: (prompt, workContext, options) =>
-      controller.triggerTask({
-        aiEmployee: 'itam',
-        task: {
-          message: {
-            user: prompt,
-            workContext: [...workContext],
-            attachments: options?.attachments
-              ? [...options.attachments]
-              : undefined,
-          },
-          skillSettings: options?.skillSettings,
-          webSearch: options?.webSearch,
-          model: options?.model,
-          autoSend: true,
-        },
-        open: false,
-      }),
-  };
-}
-
-const ItamAiContext = createContext<ItamAi | undefined>(undefined);
-
-export function ItamAiProvider({
-  controller,
-  children,
-}: PropsWithChildren<{ readonly controller: AIChatController }>): ReactElement {
-  const status = useAiStatus();
-  const [expanded, setExpanded] = useState(false);
-  const [pendingConversation] = useState(() =>
-    createStore<string | undefined>(undefined),
-  );
-  const [search] = useState(createHiddenChat);
-  const [receipt] = useState(createHiddenChat);
-  const [capture] = useState(createHiddenChat);
-  const [master] = useState(createHiddenChat);
-  const value = useMemo<ItamAi>(
-    () => ({
-      available: Boolean(status.data?.configured && status.data.enabled),
-      controller,
-      expanded,
-      setExpanded,
-      pendingConversation,
-      search,
-      receipt,
-      capture,
-      master,
-      toggle: () => controller.setOpen(!controller.getSnapshot().open),
-      // Open first: the chat mounts inside the panel, and the controller
-      // holds the task until that chat binds to it.
-      ask: (prompt, options) => {
-        controller.open();
-        controller.triggerTask({
-          aiEmployee: 'itam',
-          task: {
-            message: {
-              user: prompt,
-              workContext: options?.workContext
-                ? [...options.workContext]
-                : undefined,
-              attachments: options?.attachments
-                ? [...options.attachments]
-                : undefined,
-            },
-            autoSend: options?.autoSend ?? true,
-            webSearch: options?.webSearch,
-            model: options?.model,
-          },
-          open: true,
-        });
-      },
-      // The panel's chat selects it once mounted (`PendingConversation` in
-      // the shell).
-      openConversation: (conversationId) => {
-        pendingConversation.set(conversationId);
-        controller.open();
-      },
-    }),
-    [
-      controller,
-      status.data,
-      expanded,
-      pendingConversation,
-      search,
-      receipt,
-      capture,
-      master,
-    ],
-  );
-  return (
-    <ItamAiContext.Provider value={value}>{children}</ItamAiContext.Provider>
+/**
+ * A form filled from material (AI 整理, a delivery document): one call to
+ * the model on the server, answered in the shape the form's handler takes.
+ */
+export function useAiReading(): (input: {
+  readonly task: AiReadingTask;
+  readonly material: string;
+  readonly context: Readonly<Record<string, unknown>>;
+  readonly instruction?: string;
+}) => Promise<AiReading> {
+  const api = useApi();
+  const { i18n } = useTranslation();
+  return useCallback(
+    async (input) =>
+      (
+        await api.request<{ data: AiReading }>({
+          path: `${AI_PATH}/read`,
+          method: 'POST',
+          json: { ...input, language: i18n.language || 'en-US' },
+        })
+      ).data,
+    [api, i18n.language],
   );
 }
-
-/** Undefined outside the application shell (settings, dev). */
-// eslint-disable-next-line react-refresh/only-export-components -- the hook and its provider ship together
-export function useItamAi(): ItamAi | undefined {
-  return useContext(ItamAiContext);
-}
-
-/** An unseen chat as it stands; idle outside the shell. */
-// eslint-disable-next-line react-refresh/only-export-components -- the hook and its provider ship together
-export function useHiddenChat(name: HiddenChatName): ChatState {
-  const ai = useContext(ItamAiContext);
-  return useSyncExternalStore(
-    ai?.[name].state.subscribe ?? noSubscription,
-    ai?.[name].state.get ?? idle,
-  );
-}
-
-/** The search's chat as it stands; idle outside the shell. */
-// eslint-disable-next-line react-refresh/only-export-components -- the hook and its provider ship together
-export const useItamSearchChat = (): ChatState => useHiddenChat('search');
-
-const noSubscription = () => () => undefined;
-const idle = () => IDLE;
-
-/** A message's text, its text parts joined. */
-// eslint-disable-next-line react-refresh/only-export-components -- a helper of the chat state above
-export const messageText = (message: AIChatMessage): string =>
-  message.parts
-    .flatMap((part) => (part.type === 'text' ? [part.text] : []))
-    .join('');
-
-// eslint-disable-next-line react-refresh/only-export-components -- re-exported for the shell
-export { createAIChatController };

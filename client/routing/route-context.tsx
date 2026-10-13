@@ -8,7 +8,7 @@ import {
   type ReactElement,
 } from 'react';
 
-import { EMPTY_ARRAY } from '@/lib/constants';
+import { EMPTY_ARRAY } from '#lib/constants';
 
 import { matchRouteTree } from './route-navigation.js';
 
@@ -47,6 +47,15 @@ export function RouteTreeProvider({
       {children}
     </RouteTreeContext.Provider>
   );
+}
+
+/**
+ * Application change (ITAM, after NocoCRM's): the route tree the shell publishes, for a page that lists the
+ * application's pages, such as the permission sets page, which grants page access from it
+ * (client/pages/settings/permission-sets/).
+ */
+export function useRouteTree(): readonly AppClientRegisteredRoute[] {
+  return useContext(RouteTreeContext);
 }
 
 /**

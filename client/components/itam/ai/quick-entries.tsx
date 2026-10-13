@@ -22,7 +22,7 @@ export function AiQuickEntries({
 }): ReactElement | null {
   const { t } = useTranslation();
   const ai = useItamAi();
-  if (!ai?.available) return null;
+  if (!ai.available) return null;
   return (
     <div className='flex flex-wrap gap-x-4 gap-y-1'>
       {entries.map((entry) => (

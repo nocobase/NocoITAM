@@ -11,14 +11,19 @@ import {
 import { Hono } from 'hono';
 import { z } from 'zod';
 
-import { aiManagerToken } from '@nocobase/app-plugin-ai-employee/server';
-
 import { receiptRunServiceToken } from '../../providers/index.js';
+import { readSnapshotsToken } from '../../providers/itam-agents/index.js';
+import { CONTEXT_KINDS } from '../../providers/itam-agents/context.js';
 import { scopeFor } from '../../providers/itam/ai-bridge.js';
-import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
-import { screenWrite } from '../../providers/itam/ai-writes.js';
-import { AI_RECORD_TOOLS, screenRecord } from './ai-records.js';
+import { aiAvailable } from '../../providers/itam/ai-model.js';
 import {
+  READING_GRANTS,
+  READING_TASKS,
+  readForForm,
+} from '../../providers/itam/ai-reading.js';
+import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
+import {
+  ForbiddenError,
   errorResponse,
   principalId,
   readJsonObject,
@@ -26,9 +31,9 @@ import {
 } from './http.js';
 
 /**
- * `/api/itam/ai`: whether the assistant is available, and the pre-check the
- * write tools' cards ask. Everything else — the chat, its tools, the
- * confirmation cards — runs on the AI employee plugin's `/api/ai`.
+ * `/api/itam/ai`: whether the assistant is available, the readings AI 整理
+ * and receiving by delivery document ask for, and what those readings have
+ * done. The chat itself is the Agents plugin's (template 1.0.0-beta.64).
  */
 export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
   (app) => {
@@ -39,26 +44,53 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
 
     routes.use('*', auth.required(), authorization.middleware());
 
-    // Available means what the plugin says: a model it can use, and Noco
-    // switched on at 设置 → AI 员工 (the CRM decides the same way). There is
-    // no ITAM switch of its own beside those (removed 2026-09-27).
+    // Available means a model to ask: Noco's, else the system's default
+    // chat model (`itamModel` in ai-model.ts). The shell asks on every load,
+    // so this is also where the collections the reader may read are noted
+    // for the chat's page context, which is resolved where authorization
+    // cannot be asked (itam-agents/context.ts).
     routes.get('/status', async (context) => {
       try {
-        let configured = false;
-        let enabled = false;
-        if (app.container.has(aiManagerToken)) {
-          const ai = app.container.resolve(aiManagerToken);
-          try {
-            await ai.llmProviderManager.resolveModel();
-            configured = true;
-          } catch {
-            configured = false;
-          }
-          const employee = await ai.employeeManager.getEmployee('itam');
-          enabled = employee !== undefined && employee.enabled !== false;
+        const userId = principalId(context);
+        if (app.container.has(readSnapshotsToken)) {
+          const scope = scopeFor(app.container, userId);
+          const readable: string[] = [];
+          for (const collection of Object.keys(CONTEXT_KINDS))
+            if (await scope.may(collection, 'read').catch(() => undefined))
+              readable.push(collection);
+          app.container.resolve(readSnapshotsToken).set(userId, readable);
         }
         return context.json({
-          data: { configured, enabled, employee: 'itam' },
+          data: { available: await aiAvailable(app.container) },
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // A form filled from material (AI 整理, a delivery document): the model
+    // answers in the shape the form's handler takes, which then checks it
+    // as it always has. Each task asks the grant its form needs.
+    routes.post('/read', async (context) => {
+      try {
+        const input = z
+          .object({
+            task: z.enum(READING_TASKS),
+            material: z.string().min(1).max(200_000),
+            context: z.record(z.string(), z.unknown()).default({}),
+            instruction: z.string().max(2000).optional(),
+            language: z.string().min(2).max(32).default('en-US'),
+          })
+          .strict()
+          .parse(await readJsonObject(context));
+        const userId = principalId(context);
+        const scope = scopeFor(app.container, userId);
+        let granted = false;
+        for (const [collection, action] of READING_GRANTS[input.task])
+          if (await scope.may(collection, action)) granted = true;
+        if (!granted) throw new ForbiddenError('Not allowed');
+        return context.json({
+          data: await readForForm(app.container, userId, input),
         });
       } catch (error) {
         return errorResponse(context, error);
@@ -87,27 +119,6 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
         }
       },
     );
-
-    // Whether the signed-in user could run a write tool's call as it
-    // stands, asked by its card before confirmation is offered: the
-    // arguments and every grant the operation needs. The operation itself
-    // still decides the rules that depend on the record's state.
-    routes.post('/screen', async (context) => {
-      try {
-        const input = z
-          .object({ tool: z.string().min(1).max(64), args: z.unknown() })
-          .strict()
-          .parse(await readJsonObject(context));
-        const scope = scopeFor(app.container, principalId(context));
-        return context.json({
-          data: (AI_RECORD_TOOLS as string[]).includes(input.tool)
-            ? await screenRecord(app.container, scope, input.tool, input.args)
-            : await screenWrite(app.container, scope, input.tool, input.args),
-        });
-      } catch (error) {
-        return errorResponse(context, error);
-      }
-    });
 
     router.route('/itam/ai', routes);
     return router;

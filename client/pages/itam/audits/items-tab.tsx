@@ -418,11 +418,15 @@ export default function AuditItemsTab(): ReactElement {
       ) : null}
       {resolving ? (
         <AuditGrouping
-          items={rows.filter(
-            (row) =>
-              AUDIT_DIFFERENCES.includes(text(row.result)) &&
-              row.resolution === 'unresolved',
-          )}
+          auditId={id}
+          auditName={text(task.data?.name) || id}
+          differences={
+            rows.filter(
+              (row) =>
+                AUDIT_DIFFERENCES.includes(text(row.result)) &&
+                row.resolution === 'unresolved',
+            ).length
+          }
         />
       ) : null}
       {status === 'notStarted' && rows.length > 0 ? (

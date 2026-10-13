@@ -17,11 +17,6 @@ const state = vi.hoisted(() => ({
       existingLines?: unknown[];
     };
   },
-  // The frontend tools the card hands the assistant.
-  tools: [] as {
-    name: string;
-    execute: (args: unknown) => unknown;
-  }[],
 }));
 const lines = [
   {
@@ -72,7 +67,6 @@ vi.mock('../../client/lib/itam/use-purchase-capture.js', () => ({
       adjust: vi.fn(),
       release: vi.fn(),
       place: vi.fn(),
-      contextRef: () => undefined,
     };
   },
 }));
@@ -86,17 +80,14 @@ vi.mock('../../client/lib/itam/references.js', () => ({
   referencePath: (collection: string) => `itam/master/${collection}`,
   useReferenceNames: () => ({ models: new Map([['m1', 'MacBook Pro 14']]) }),
 }));
-// The assistant is not configured unless a test says so: the card registers
-// as page context and hides its 解析单据 shortcut, as it does without a model.
-vi.mock('../../client/lib/itam/ai-context.js', () => ({
-  useAiPageContext: (descriptor: { tools?: typeof state.tools }) => {
-    state.tools = descriptor.tools ?? [];
-    return {
-      ref: () => undefined,
-      available: state.aiAvailable,
-      ask: () => undefined,
-    };
-  },
+// The assistant is not configured unless a test says so: the order is the
+// chat's page context, and the card hides its 解析单据 shortcut, as it does
+// without a model.
+vi.mock('../../client/lib/itam/ai-chat.js', () => ({
+  useAiPageContext: () => ({
+    available: state.aiAvailable,
+    ask: () => undefined,
+  }),
 }));
 // The reference pickers fetch their own options; the line's own behaviour is
 // what this covers.
@@ -238,69 +229,6 @@ it('leaves the price out for a reader the order shows no money to', () => {
   fireEvent.click(screen.getByRole('button', { name: 'actions.edit' }));
   expect(screen.queryByText('fields.unitPrice')).toBeNull();
   expect(screen.getAllByRole('spinbutton')).toHaveLength(1);
-});
-
-it('lets the assistant add lines to the draft under edit, not save them', async () => {
-  render(
-    <PurchaseOrderLinesCard
-      record={{ id: 'po1', status: state.status, ownerId: 'mia' }}
-    />,
-  );
-  const tool = state.tools.find((entry) => entry.name === 'addDraftLines');
-  // Outside the editor there is no draft to add to.
-  expect(() =>
-    tool?.execute({ lines: [{ itemType: 'device', quantity: 1 }] }),
-  ).toThrow();
-  fireEvent.click(screen.getByRole('button', { name: 'actions.edit' }));
-  const current = state.tools.find((entry) => entry.name === 'addDraftLines');
-  await act(async () => {
-    await current?.execute({
-      lines: [
-        { itemType: 'device', modelId: 'm1', quantity: 2, unitPrice: 900 },
-      ],
-    });
-  });
-  // Two existing lines, one added; nothing is written until 保存.
-  expect(
-    screen.getAllByRole('button', { name: 'actions.delete' }),
-  ).toHaveLength(3);
-  expect(state.saved).toHaveLength(0);
-  fireEvent.click(screen.getByRole('button', { name: 'actions.save' }));
-  expect(state.saved[0]?.lines).toHaveLength(3);
-  expect(state.saved[0]?.lines.at(-1)).toMatchObject({
-    itemType: 'device',
-    modelId: 'm1',
-    quantity: 2,
-    // The draft holds the price as the input shows it.
-    unitPrice: '900',
-  });
-});
-
-it('lets added lines take the place of the blank row an empty order opens on', async () => {
-  state.rows = [];
-  render(
-    <PurchaseOrderLinesCard
-      record={{ id: 'po1', status: state.status, ownerId: 'mia' }}
-    />,
-  );
-  fireEvent.click(screen.getByRole('button', { name: 'actions.edit' }));
-  // An empty order opens on one blank row to start typing in.
-  expect(
-    screen.getAllByRole('button', { name: 'actions.delete' }),
-  ).toHaveLength(1);
-  const tool = state.tools.find((entry) => entry.name === 'addDraftLines');
-  await act(async () => {
-    await tool?.execute({
-      lines: [
-        { itemType: 'device', modelId: 'm1', quantity: 3, unitPrice: 5299 },
-      ],
-    });
-  });
-  // The blank row is gone, so nothing incomplete stands in the way of 保存.
-  expect(
-    screen.getAllByRole('button', { name: 'actions.delete' }),
-  ).toHaveLength(1);
-  expect(screen.getByRole('button', { name: 'actions.save' })).toBeEnabled();
 });
 
 const reading = (lines: number) => ({

@@ -1,13 +1,25 @@
 import {
   defineAppRoutes,
-  defineSettingsRoutes,
   type AppClientRouteComponentLoader,
   type AppClientRouteContribution,
   type AppClientRouteDefinition,
-  type AppClientSettingIcon,
+  type AppClientRouteIcon,
 } from '@nocobase/app-client/plugins';
 import {
+  agentsRoute,
+  modelsRoute,
+  skillsRoute,
+  usageRoute,
+} from '@nocobase/app-plugin-agents/client/routes';
+import {
   AppWindow,
+  BookOpen,
+  Bot,
+  CalendarClock,
+  Gauge,
+  Settings2,
+  ShieldUser,
+  UsersRound,
   BarChart3,
   Briefcase,
   Building2,
@@ -53,7 +65,7 @@ const deviceTab = (tab: string): AppClientRouteComponentLoader =>
 interface MasterRoute {
   readonly file: string;
   readonly title: string;
-  readonly icon: AppClientSettingIcon;
+  readonly icon: AppClientRouteIcon;
   readonly list: AppClientRouteComponentLoader;
   readonly detail: AppClientRouteComponentLoader;
   /** Extra detail tabs (child routes) before History. */
@@ -109,7 +121,7 @@ interface DomainRouteLoaders {
 const domainRoute = (
   name: string,
   title: string,
-  icon: AppClientSettingIcon,
+  icon: AppClientRouteIcon,
   loaders: DomainRouteLoaders,
 ): AppClientRouteDefinition => ({
   name,
@@ -130,6 +142,19 @@ const domainRoute = (
     },
   ],
 });
+
+// The overlays a permission set's header opens, declared under each of its
+// tabs, so they stack on the tab being shown; `tab` is that tab's route name.
+function permissionSetHeaderRoutes(tab: string): AppClientRouteDefinition[] {
+  return [
+    {
+      name: `${tab}-rename`,
+      path: 'edit',
+      componentLoader: () =>
+        import('./pages/settings/permission-sets/rename.js'),
+    },
+  ];
+}
 
 /**
  * Page authorization arrived with template beta.43: an App page with no rule
@@ -196,6 +221,17 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       path: '/reset-password',
     },
     {
+      // Where a command line's sign-in sends the person to approve it
+      // (`pages/auth/device.tsx`). Optional rather than required so it
+      // renders outside the shell, like the sign-in pages; the page sends a
+      // guest to sign in and back.
+      auth: 'optional',
+      authz: 'skip',
+      componentLoader: () => import('./pages/auth/device.js'),
+      name: 'device',
+      path: '/device',
+    },
+    {
       name: 'workbench',
       path: '/',
       auth: 'required',
@@ -214,6 +250,15 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       path: '/onboarding-supply',
       auth: 'required',
       componentLoader: () => import('./pages/itam/onboarding-supply.js'),
+    },
+    // A conversation with the assistant as a page (the chat panel's "open
+    // as a page"); no menu entry, so no page grant: the Agents plugin
+    // answers each person for their own conversations only.
+    {
+      name: 'agent-chat',
+      path: '/agent-chat/:conversationId',
+      auth: 'required',
+      componentLoader: () => import('./pages/itam/agent-chat.js'),
     },
     {
       name: 'notifications',
@@ -534,27 +579,215 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
         }),
       ],
     },
+    // AI (template 1.0.0-beta.64): the Agents plugin's pages, which it
+    // leaves to the application to route — the agents, the skill library,
+    // the model services and what runs used. Each keeps the page grant or
+    // settings item its definition declares, so it shows only to whoever
+    // may open it; the coding-tool runtimes page is left out, ITAM's agents
+    // being online ones.
+    {
+      name: 'ai-group',
+      navigation: { title: 'navigation.aiGroup', icon: Bot },
+      children: [
+        {
+          ...agentsRoute,
+          navigation: { title: 'navigation.agents', icon: Bot },
+        },
+        {
+          ...skillsRoute,
+          navigation: { title: 'navigation.skills', icon: BookOpen },
+        },
+        // The plugin's `/models` is this application's asset models page
+        // (a stored page grant names it), so the model services move aside.
+        // The plugin's own "set up models" link still says `/models`.
+        {
+          ...modelsRoute,
+          name: 'ai-models',
+          path: '/ai-models',
+          navigation: { title: 'navigation.aiModels', icon: Cpu },
+        },
+        {
+          ...usageRoute,
+          navigation: { title: 'navigation.usage', icon: Gauge },
+        },
+      ],
+    },
+    // 设置 (template 1.0.0-beta.64): the template has no settings area and
+    // the plugins ship no pages, so the application routes its own —
+    // ITAM's settings, then the administration pages built on the plugins'
+    // APIs (client/pages/settings/, ported from NocoCRM's), each route
+    // checking what the plugin's own API checks.
+    {
+      name: 'settings-group',
+      navigation: { title: 'navigation.settingsGroup', icon: Settings2 },
+      children: [
+        {
+          name: 'itam-settings',
+          path: '/settings/itam',
+          auth: 'required',
+          navigation: { title: 'navigation.itamSettings', icon: Wrench },
+          authz: {
+            resource: { type: 'page', id: 'itam-settings' },
+            action: 'access',
+          },
+          componentLoader: () =>
+            import('./pages/itam/settings/itam-settings.js'),
+        },
+        {
+          // The users plugin's `user` record type, which it does not place
+          // in the permission catalog: only the unrestricted root set opens
+          // it.
+          name: 'settings-users',
+          path: '/settings/users',
+          auth: 'required',
+          navigation: { title: 'navigation.users', icon: UsersRound },
+          authz: { resource: { type: 'user', id: '*' }, action: 'read' },
+          componentLoader: () => import('./pages/settings/users/index.js'),
+          children: [
+            {
+              name: 'settings-users-new',
+              path: 'new',
+              componentLoader: () => import('./pages/settings/users/new.js'),
+            },
+            {
+              name: 'settings-users-invite',
+              path: 'invite',
+              componentLoader: () => import('./pages/settings/users/invite.js'),
+            },
+            {
+              name: 'settings-users-edit',
+              path: ':userId/edit',
+              componentLoader: () => import('./pages/settings/users/edit.js'),
+            },
+            {
+              name: 'settings-users-roles',
+              path: ':userId/roles',
+              componentLoader: () => import('./pages/settings/users/roles.js'),
+            },
+            {
+              name: 'settings-users-password',
+              path: ':userId/password',
+              componentLoader: () =>
+                import('./pages/settings/users/password.js'),
+            },
+          ],
+        },
+        {
+          name: 'settings-permission-sets',
+          path: '/settings/permission-sets',
+          auth: 'required',
+          navigation: {
+            title: 'navigation.permissionSets',
+            icon: ShieldUser,
+          },
+          authz: {
+            resource: {
+              type: 'settings',
+              id: 'authorization.permission-sets',
+            },
+            action: 'read',
+          },
+          componentLoader: () =>
+            import('./pages/settings/permission-sets/index.js'),
+          children: [
+            {
+              name: 'settings-permission-sets-new',
+              path: 'new',
+              componentLoader: () =>
+                import('./pages/settings/permission-sets/new.js'),
+            },
+            {
+              name: 'settings-permission-sets-rename',
+              path: 'edit/:setKey',
+              componentLoader: () =>
+                import('./pages/settings/permission-sets/rename.js'),
+            },
+            {
+              // A set's own page, covering the list, with its two tabs; the
+              // header's Rename is declared under each tab.
+              name: 'settings-permission-set',
+              path: ':setKey',
+              componentLoader: () =>
+                import('./pages/settings/permission-sets/detail/index.js'),
+              children: [
+                {
+                  name: 'settings-permission-set-permissions',
+                  path: 'permissions',
+                  componentLoader: () =>
+                    import('./pages/settings/permission-sets/detail/permissions.js'),
+                  children: permissionSetHeaderRoutes(
+                    'settings-permission-set-permissions',
+                  ),
+                },
+                {
+                  name: 'settings-permission-set-members',
+                  path: 'members',
+                  componentLoader: () =>
+                    import('./pages/settings/permission-sets/detail/members.js'),
+                  children: [
+                    ...permissionSetHeaderRoutes(
+                      'settings-permission-set-members',
+                    ),
+                    {
+                      name: 'settings-permission-set-members-add',
+                      path: 'add',
+                      componentLoader: () =>
+                        import('./pages/settings/permission-sets/detail/add-members.js'),
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          // Every signed-in person manages their own keys only; the API
+          // answers for the caller alone.
+          name: 'settings-api-keys',
+          path: '/settings/api-keys',
+          auth: 'required',
+          navigation: { title: 'navigation.apiKeys', icon: KeyRound },
+          authz: 'skip',
+          componentLoader: () => import('./pages/settings/api-keys/index.js'),
+          children: [
+            {
+              name: 'settings-api-keys-new',
+              path: 'new',
+              componentLoader: () => import('./pages/settings/api-keys/new.js'),
+            },
+          ],
+        },
+        {
+          // The page grant the scheduler's API checks.
+          name: 'settings-scheduled-tasks',
+          path: '/settings/scheduled-tasks',
+          auth: 'required',
+          navigation: {
+            title: 'navigation.scheduledTasks',
+            icon: CalendarClock,
+          },
+          authz: {
+            resource: { type: 'page', id: 'scheduler.schedules' },
+            action: 'access',
+          },
+          componentLoader: () =>
+            import('./pages/settings/scheduled-tasks/index.js'),
+          children: [
+            {
+              name: 'settings-scheduled-task',
+              path: ':scheduleId',
+              componentLoader: () =>
+                import('./pages/settings/scheduled-tasks/detail.js'),
+            },
+          ],
+        },
+      ],
+    },
   ]);
 
 const appRoutes: AppClientRouteContribution =
   defineAppRoutes(appRouteDefinitions);
 
-const settingsRoutes: AppClientRouteContribution = defineSettingsRoutes([
-  {
-    name: 'itam-settings',
-    path: '/itam',
-    navigation: { title: 'navigation.itamSettings', icon: Wrench },
-    authz: {
-      resource: { type: 'page', id: 'itam-settings' },
-      action: 'access',
-    },
-    componentLoader: () => import('./pages/itam/settings/itam-settings.js'),
-  },
-]);
-
-const routes: readonly AppClientRouteContribution[] = [
-  appRoutes,
-  settingsRoutes,
-];
+const routes: readonly AppClientRouteContribution[] = [appRoutes];
 
 export default routes;
