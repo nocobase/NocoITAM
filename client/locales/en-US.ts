@@ -156,6 +156,8 @@ const messages = {
     other: 'Other',
     select: 'Select…',
     clear: 'Clear',
+    pickDate: 'Pick a date',
+    clearDate: 'Clear date',
     search: 'Search',
     searchPlaceholder: 'Search…',
     clearSearch: 'Clear search',

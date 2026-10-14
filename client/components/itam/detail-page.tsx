@@ -1,8 +1,9 @@
+import type { LucideIcon } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router';
 
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { TAB_ICONS } from '@/lib/itam/tab-icons';
 import { cn } from '@/lib/utils';
 
 import { EditableTitle } from './editable-title.js';
@@ -14,6 +15,8 @@ export interface DetailTab {
   /** Relative path under the detail route. */
   readonly to: string;
   readonly count?: number;
+  /** Leads the label; by default the one `TAB_ICONS` keeps for the key. */
+  readonly icon?: LucideIcon;
 }
 
 export interface SummaryItem {
@@ -178,31 +181,42 @@ export function DetailPage({
             {/* The tabs sit on a card like the information column, on every
               detail page, so the two sides read as one. */}
             <TabsFrame>
+              {/* NocoCRM's record tabs (DetailTabBar): underlined on a thin
+                  rule, the open tab in the foreground over a 2px line of it,
+                  the others muted until hovered, each led by its icon and
+                  followed by its count in plain muted figures. The first
+                  tab's text lines up with the content below. */}
               <nav
-                className='flex flex-wrap gap-1 border-b border-border/60'
+                className='flex w-full flex-wrap gap-x-5 border-b border-border'
                 aria-label='tabs'
               >
-                {tabs.map((tab) => (
-                  <NavLink
-                    key={tab.key}
-                    to={{ pathname: tab.to, search: location.search }}
-                    className={({ isActive }) =>
-                      cn(
-                        '-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors',
-                        isActive
-                          ? 'border-primary font-medium text-foreground'
-                          : 'border-transparent text-muted-foreground hover:text-foreground',
-                      )
-                    }
-                  >
-                    {tab.label}
-                    {tab.count !== undefined ? (
-                      <Badge variant='secondary' className='tabular-nums'>
-                        {tab.count}
-                      </Badge>
-                    ) : null}
-                  </NavLink>
-                ))}
+                {tabs.map((tab) => {
+                  const Icon = tab.icon ?? TAB_ICONS[tab.key];
+                  return (
+                    <NavLink
+                      key={tab.key}
+                      to={{ pathname: tab.to, search: location.search }}
+                      className={({ isActive }) =>
+                        cn(
+                          '-mb-px flex h-10 items-center gap-1.5 border-b-2 text-sm font-medium transition-colors outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
+                          isActive
+                            ? 'border-foreground text-foreground'
+                            : 'border-transparent text-muted-foreground hover:text-foreground',
+                        )
+                      }
+                    >
+                      {Icon ? (
+                        <Icon aria-hidden='true' className='size-4' />
+                      ) : null}
+                      {tab.label}
+                      {tab.count !== undefined ? (
+                        <span className='text-xs text-muted-foreground tabular-nums'>
+                          {tab.count}
+                        </span>
+                      ) : null}
+                    </NavLink>
+                  );
+                })}
               </nav>
               {/* An empty tab says so in a shorter box than an empty list
                   page: the tab is one of several on a page. */}

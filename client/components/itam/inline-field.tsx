@@ -98,7 +98,9 @@ export function InlineField({
       !composite &&
       (field.type === 'boolean' ||
         field.type === 'select' ||
-        field.type === 'reference');
+        field.type === 'reference' ||
+        // A date is picked from a calendar, and the pick is the answer.
+        field.type === 'date');
     // A write-only field cannot be emptied by leaving the editor empty —
     // that means "unchanged" — so clearing it is its own control, beside
     // the input: an input is inline, so a control after it would flow past

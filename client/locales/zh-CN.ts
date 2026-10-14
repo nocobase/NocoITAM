@@ -153,6 +153,8 @@ const zhCN: AppResource = {
     other: '其他',
     select: '请选择…',
     clear: '清除',
+    pickDate: '选择日期',
+    clearDate: '清除日期',
     search: '搜索',
     searchPlaceholder: '搜索…',
     clearSearch: '清除搜索',

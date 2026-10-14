@@ -3,6 +3,9 @@ import { AssetTypeBadge } from './asset-type-badge.js';
 import { useTranslation } from '@nocobase/i18n/client';
 import { X } from 'lucide-react';
 import type { PointerEvent, ReactElement } from 'react';
+import { enUS, zhCN } from 'react-day-picker/locale';
+
+import { DatePicker } from '#components/date-picker';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -55,7 +58,7 @@ export function FieldInput({
   onCreate,
   createLabel,
 }: FieldInputProps): ReactElement {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const inputId = id ?? `field-${field.key}`;
   // A placeholder is a translation key, the way the label is; a caller that
   // passes text already translated gets it back unchanged.
@@ -209,16 +212,27 @@ export function FieldInput({
       );
     }
     case 'date':
+      // A day picked from a calendar, not a native date input, as NocoCRM
+      // edits one. Picking closes the calendar and is the change, so an
+      // inline editor saves on it as it does on a select; closing without
+      // a pick is a dismissal. An optional date clears under the calendar.
       return (
-        <Input
+        <DatePicker
           id={inputId}
-          type='date'
-          max='9999-12-31'
-          value={value ? text(value).slice(0, 10) : ''}
-          onChange={(event) => onChange(event.target.value || null)}
+          className='w-full'
+          value={value ? text(value).slice(0, 10) : undefined}
+          onChange={(next) => onChange(next)}
           disabled={disabled}
-          autoFocus={autoFocus}
-          onBlur={onBlur}
+          defaultOpen={autoFocus}
+          locale={i18n.language.startsWith('zh') ? zhCN : enUS}
+          placeholder={placeholder ?? t('common.pickDate')}
+          clearLabel={field.required ? undefined : t('common.clearDate')}
+          onOpenChange={(open) => {
+            if (!open) {
+              onDismiss?.();
+              onBlur?.();
+            }
+          }}
         />
       );
     case 'boolean':

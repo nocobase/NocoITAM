@@ -253,3 +253,25 @@ button, AI 整理's tabs, buttons and markers, the plan cards — are in
 where it means a state is fine, as the `success` tokens: a counted item that
 matches the books (一致), an active account, and the template's own status
 dots.
+
+## Detail tabs and dates, after NocoCRM
+
+A detail page's tabs are drawn as NocoCRM's record pages draw theirs
+(2026-10-14, `DetailPage` in `client/components/itam/detail-page.tsx`):
+underlined on a thin rule, the open tab in the foreground over a 2px line of
+it, the others muted until hovered, each led by its icon and followed by its
+count in plain muted figures rather than a tag. The icon comes from
+`TAB_ICONS` (`client/lib/itam/tab-icons.ts`) by the tab's key, which every
+page shares (`history`, `attachments`, `devices` …), so a domain names none;
+a tab listing another collection wears that collection's menu icon. A new tab
+key needs its entry there, or the tab draws without one; `DetailTab.icon`
+overrides it for a single page.
+
+A date is picked from a calendar, never a native date input (2026-10-14, as
+NocoCRM edits one): `FieldInput`'s `date` case is `DatePicker`
+(`client/components/date-picker.tsx`, the shadcn `calendar` in a `Popover`),
+so forms and in-place editing share it. In place it opens with the calendar
+showing and saves on the pick, as a select saves on its choice; closing
+without one puts the value back. An optional date offers 清除日期 under the
+calendar, a required one does not. The value stays `yyyy-mm-dd`, made from
+the local day, never through `toISOString()`.

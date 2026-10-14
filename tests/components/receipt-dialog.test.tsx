@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({
+    i18n: { language: 'en-US' },
     t: (key: string, options?: { count?: number }) =>
       options?.count === undefined ? key : `${key}:${options.count}`,
   }),
