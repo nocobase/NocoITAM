@@ -1091,7 +1091,7 @@ function AiMark({ source }: { readonly source: string }): ReactElement {
       <TooltipTrigger
         render={
           <span
-            className='inline-flex size-4 shrink-0 text-success-foreground'
+            className='inline-flex size-4 shrink-0 text-primary'
             aria-label={label}
           />
         }
@@ -1161,7 +1161,7 @@ function DocumentStrip({
           ) : session ? (
             <FileText className='size-4 shrink-0 text-muted-foreground' />
           ) : (
-            <Sparkles className='size-4 shrink-0 text-success-foreground' />
+            <Sparkles className='size-4 shrink-0 text-primary' />
           )}
           <span className='min-w-0 wrap-anywhere'>
             {!session

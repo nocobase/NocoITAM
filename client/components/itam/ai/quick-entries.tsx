@@ -11,7 +11,7 @@ export interface QuickEntry {
 }
 
 /**
- * Shortcuts that open the assistant with a prepared prompt, as green text
+ * Shortcuts that open the assistant with a prepared prompt, as blue text
  * (`AiShortcut`). They render nothing when no model is configured, so the
  * page keeps its plain forms.
  */

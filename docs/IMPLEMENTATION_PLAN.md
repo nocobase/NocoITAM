@@ -2968,3 +2968,24 @@ app-skills 0.1.0-beta.34. No source or schema change.
   template's rules files.
 - Prettier no longer formats executed migrations and seeds, whose checksums
   a reformat would change.
+
+## Template upgrade: beta.67 → beta.68 (2026-10-14)
+
+`@nocobase/app-template-default` 1.0.0-beta.67 → 1.0.0-beta.68: app-server
+2.0.0-beta.6 (with the new `MailerProvider`), authentication
+2.0.0-beta.8, notification-providers 0.2.0-beta.12, lifecycle 0.1.0-beta.2,
+app-skills 0.1.0-beta.35. A shell and theme release, adopted as the template
+ships it (decided 2026-10-14):
+
+- **The new look.** The compact preset is roomier (spacing 0.2rem → 0.225rem),
+  corners rounder (radius 0.375rem → 0.5rem), borders lighter (60% alpha), and
+  a `--hover` token drives hovered rows and the sidebar. Overlays have a light,
+  blurred backdrop and no shadow; one lighter focus ring applies everywhere;
+  scrollbars are thin and appear only while scrolling; line tabs read as a
+  record page's tabs; badges have a small size. ITAM's darker page background,
+  its tokens and its tag contract are kept.
+- **Navigation sections are the template's.** Its `NavigationMenu` now draws a
+  top-level group with no page as a heading over its entries, which ITAM had
+  added itself; ITAM keeps only `after` (搜索 under 工作台) on top.
+- The boards keep a visible scrollbar (`scroll-shown`), and joiner cards wrap
+  their date and countdown as whole phrases.

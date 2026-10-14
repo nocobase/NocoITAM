@@ -533,7 +533,7 @@ function PlanLine({
             >
               <Sparkles
                 aria-hidden='true'
-                className='mt-0.5 size-3 shrink-0 text-success-foreground'
+                className='mt-0.5 size-3 shrink-0 text-primary'
               />
               <span className='min-w-0'>
                 {reasons.length > 1 ? `${thing.label}：` : null}
@@ -668,11 +668,11 @@ function AdviceStrip({
       </AiShortcut>
     ) : null;
   return (
-    <div className='flex flex-wrap items-start gap-x-3 gap-y-1 rounded-md bg-success/50 px-3 py-2 text-xs'>
+    <div className='flex flex-wrap items-start gap-x-3 gap-y-1 rounded-md bg-accent px-3 py-2 text-xs'>
       <span className='flex min-w-0 flex-1 gap-1.5'>
         <Sparkles
           aria-hidden='true'
-          className='mt-0.5 size-3.5 shrink-0 text-success-foreground'
+          className='mt-0.5 size-3.5 shrink-0 text-primary'
         />
         <span className='min-w-0 text-muted-foreground'>
           {!advice ? (

@@ -44,7 +44,7 @@ export function AppSidebarFooter(): ReactElement {
   );
 
   return (
-    <SidebarFooter className='shrink-0 border-t border-sidebar-border/70'>
+    <SidebarFooter className='shrink-0 border-t border-sidebar-border'>
       {/* The menu button's inset (`p-2`, `gap-2`), so the shield lines up with the menu icons above. */}
       <div className='flex min-w-0 items-start gap-2 p-2 text-xs leading-5'>
         <Tooltip>
@@ -90,13 +90,8 @@ export function AppSidebarFooter(): ReactElement {
               {brandLink} keeps it reliable.
             </Trans>
           </p>
-          {/* Application change (ITAM): the version alone, the template's name
-              on hover. */}
-          <p
-            className='mt-1 truncate text-muted-foreground'
-            title={`${templateName} ${versionLabel}`}
-          >
-            {versionLabel}
+          <p className='mt-1 truncate text-muted-foreground'>
+            {templateName} {versionLabel}
           </p>
         </div>
       </div>

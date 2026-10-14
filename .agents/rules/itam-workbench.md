@@ -166,7 +166,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   with the job right after it, the leave date under them, then a bar of 已处理 N / M — `MyWorkRecord.progress`,
   counted against the newest belongings snapshot exactly as the 归属 tab
   counts it (`handoverProgress` in `workbench.ts`), restricted to the
-  kinds the reader may act on. The global search is the sidebar's 搜索 and
+  kinds the reader may act on. The global search is the sidebar's search button and
   ⌘K; the field beside the workbench's title that also opened it went on
   2026-10-06 — a third way into the same dialog, on one page only.
 - The board shows only what is waiting; there is no 已完成 (2026-10-05,
@@ -298,3 +298,11 @@ CSV exports write a reference as the name the pages show — the lookup in
 `server/providers/itam/reference-names.ts`, which the AI tools' `…Name`
 fields share — and imports accept those names, so an export re-imports.
 A collection the caller may not read keeps its ids.
+
+A board's sideways scroller (the status boards' and the workbench's) carries
+`scroll-shown` (template 1.0.0-beta.68, `client/styles.css`): every other
+scrollbar is thin and shows only while its element scrolls, while a board is
+wider than the page and a mouse without a sideways wheel moves it only by its
+bar, so that one always shows. A joiner's card keeps its date and its
+countdown each whole (`whitespace-nowrap`, wrapping between them), since the
+template's roomier spacing narrowed the column's text.

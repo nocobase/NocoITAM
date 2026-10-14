@@ -48,11 +48,11 @@ export function AppSidebarProvider({
       open={!collapsed}
       onOpenChange={(open) => setCollapsed(!open)}
       className='h-svh bg-background'
-      // Give expanded navigation more breathing room while retaining density-aware sizing
-      // and the existing compact icon rail (the provider's documented width override).
+      // shadcn's 16rem in spacing units, so a density preset that changes the unit scales the sidebar together with
+      // the items inside it (the provider's documented width override).
       style={
         {
-          '--sidebar-width': 'calc(var(--spacing) * 75)',
+          '--sidebar-width': 'calc(var(--spacing) * 64)',
           '--sidebar-width-icon': 'calc(var(--spacing) * 12)',
         } as CSSProperties
       }
@@ -85,10 +85,16 @@ function useSuppressSidebarShortcut(): void {
  * an untranslated title.
  */
 export function AppSidebar({
+  action,
   children,
   footer,
   label,
 }: {
+  /**
+   * Application change (ITAM): a control beside the brand, shown while the sidebar is expanded or on a phone — the
+   * global search's button, where NocoCRM puts it. The template's header has the brand alone.
+   */
+  readonly action?: ReactNode;
   readonly children: ReactNode;
   readonly footer?: ReactNode;
   /** The accessible name of the sidebar, and the title of the phone's sheet. */
@@ -102,8 +108,11 @@ export function AppSidebar({
   }, [isMobile, openMobile, setOpenMobile]);
 
   const header = (
-    <SidebarHeader className='h-16 shrink-0 flex-row items-center justify-between border-b border-sidebar-border/70 px-5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0'>
+    <SidebarHeader className='h-16 shrink-0 flex-row items-center justify-between gap-2 border-b border-sidebar-border pr-3 pl-5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0'>
       <AppBrand compact={state === 'collapsed' && !isMobile} />
+      {action && (isMobile || state === 'expanded') ? (
+        <div className='ml-auto flex items-center'>{action}</div>
+      ) : null}
       {isMobile ? (
         <Button
           aria-label={t('navigation.close', {
@@ -123,7 +132,7 @@ export function AppSidebar({
     <>
       {header}
       {/* The primitive hides the icon mode's overflow; a long menu still scrolls there. */}
-      <SidebarContent className='app-navigation group-data-[collapsible=icon]:overflow-y-auto [&_[data-slot=sidebar-menu-button]]:h-10 [&_[data-slot=sidebar-menu-button]]:px-3'>
+      <SidebarContent className='app-navigation group-data-[collapsible=icon]:overflow-y-auto'>
         {children}
       </SidebarContent>
       {footer}

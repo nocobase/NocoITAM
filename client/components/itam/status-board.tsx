@@ -140,7 +140,7 @@ export function createStatusBoard(
       // sideways scrollbar sits at the foot of the page instead of under
       // the shortest column. Below 20rem it stops shrinking and the page
       // scrolls instead.
-      <div className='-mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
+      <div className='scroll-shown -mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
         {statuses.map((status) => (
           <StatusColumn key={status} status={status} filter={filter} q={q} />
         ))}

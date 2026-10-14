@@ -154,10 +154,13 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
   and their history tab is `client/pages/itam/record-history-tab.tsx`,
   which reads the collection from the route's first segment.
 - One search over every list (2026-10-05, after InvGate's), opened from
-  搜索 in the sidebar, right under 工作台: `SearchNavButton` in
-  `client/components/itam/global-search.tsx`, drawn by
-  `client/layouts/app-layout.tsx` beside the route tree because it opens a
-  dialog rather than a page (an "Application change (ITAM)" there). Its
+  the search button beside the logo in the sidebar's header, as NocoCRM has
+  it (2026-10-14; it was a 搜索 entry under 工作台): `SearchHeaderButton` in
+  `client/components/itam/global-search.tsx`, passed by
+  `client/layouts/app-layout.tsx` as `AppSidebar`'s `action` because it
+  opens a dialog rather than a page. The collapsed sidebar has no room
+  beside its mark, so there `SearchNavButton` stands in as a menu entry
+  under 工作台 (`NavigationMenu`'s `after`); it renders nothing otherwise. Its
   state lives in
   `GlobalSearchProvider` around the whole shell, not in the dialog
   (`GlobalSearchDialog`, mounted inside the record drawer's provider so a
@@ -240,3 +243,13 @@ outline variants use a muted fill. Background/text colors still convey status.
 The slot rule also covers plugin-owned Badge copies without editing Registry
 sources. Do not override tag typography, radius or padding in individual pages.
 Step numbers, timeline dots and avatars are not tags.
+
+## The theme's colour
+
+ITAM follows NocoBase's blue (2026-10-14): links (`--link`, which is
+`var(--primary)`) and every AI entry — the shortcuts, the header's assistant
+button, AI 整理's tabs, buttons and markers, the plan cards — are in
+`primary` on the `accent` ground. They were green until then. Green stays only
+where it means a state is fine, as the `success` tokens: a counted item that
+matches the books (一致), an active account, and the template's own status
+dots.

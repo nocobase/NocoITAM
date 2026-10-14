@@ -15,12 +15,12 @@ const ACTION_LINK_CLASS =
   'inline-flex size-10 items-center justify-center rounded-xl border border-border/70 bg-card/60 text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50';
 
 /**
- * Application change (ITAM): the assistant's entry in its own colours — a
- * green frame on a light green ground, the success tokens, so it follows the
- * theme and the dark mode — set apart from the plain header buttons.
+ * Application change (ITAM): the assistant's entry in the theme's blue — a
+ * blue frame on the light blue accent ground, so it follows the theme and the
+ * dark mode — set apart from the plain header buttons.
  */
 const ASSISTANT_LINK_CLASS =
-  'inline-flex size-10 items-center justify-center rounded-xl border border-success-foreground/50 bg-success text-success-foreground transition-colors hover:border-success-foreground aria-pressed:border-success-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50';
+  'inline-flex size-10 items-center justify-center rounded-xl border border-primary/40 bg-accent text-primary transition-colors hover:border-primary aria-pressed:border-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50';
 
 /** The header's right-hand actions, shared by every authenticated page. */
 export function HeaderActions(): ReactElement {
