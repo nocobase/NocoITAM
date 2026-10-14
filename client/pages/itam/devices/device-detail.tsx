@@ -113,6 +113,7 @@ import { REPAIRS_PATH } from '@/lib/itam/operations';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { useReferenceNames } from '@/lib/itam/references';
 import { AiQuickEntries } from '@/components/itam/ai/quick-entries';
+import { ManagedPlatforms } from '@/components/itam/managed-platforms';
 
 import { DisposalCreateDialog } from '../disposals/create-dialog.js';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
@@ -582,6 +583,11 @@ export default function DeviceDetailPage(): ReactElement {
           <InfoCard>
             {[...groups.entries()].map(([group, fields], index) => (
               <Fragment key={group}>
+                {/* What the device management platforms report, before
+                    the system fields (device sync, 2026-10-14). */}
+                {group === 'groups.system' && id ? (
+                  <ManagedPlatforms deviceId={id} />
+                ) : null}
                 <InfoSection title={t(group)}>
                   {fields
                     .filter((field) => field.visibleWhen?.(data) ?? true)

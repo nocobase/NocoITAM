@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { databaseManagerToken } from '@nocobase/db';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -424,6 +425,37 @@ describe('CSV import / export and demo data', () => {
     expect((await post('demo/generate')).status).toBe(422);
     expect((await post('demo/generate', {}, employee)).status).toBe(403);
 
+    // The demo's Intune (device sync, 2026-10-14) went through the real
+    // matching: the laptops and desktops in use are linked by serial, and
+    // three of its devices are not on the books — one an employee's own.
+    const managed = (await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('managedDevices')
+      .select(['externalId', 'matchState', 'ownership'])
+      .execute()) as {
+      externalId: string;
+      matchState: string;
+      ownership: string;
+    }[];
+    expect(
+      managed.filter((row) => row.matchState === 'linked').length,
+    ).toBeGreaterThanOrEqual(4);
+    expect(
+      managed
+        .filter((row) => row.matchState !== 'linked')
+        .map((row) => row.externalId)
+        .sort(),
+    ).toEqual([
+      'demo-build-vm',
+      'demo-personal-phone',
+      'demo-unregistered-laptop',
+    ]);
+    expect(
+      managed.find((row) => row.externalId === 'demo-personal-phone')
+        ?.ownership,
+    ).toBe('personal');
+
     const reminders = await app.container
       .resolve(maintenanceServiceToken)
       .reminderCounts();
@@ -492,6 +524,15 @@ describe('CSV import / export and demo data', () => {
       await post('demo/clear'),
     );
     expect(cleared.generated).toBe(false);
+    for (const table of ['managedDevices', 'deviceSyncRuns'])
+      expect(
+        await app.container
+          .resolve(databaseManagerToken)
+          .query()
+          .selectFrom(table)
+          .select(['id'])
+          .execute(),
+      ).toEqual([]);
     for (const collection of ['devices', 'entitlements'])
       expect(
         ((await (await get(collection)).json()) as { total: number }).total,

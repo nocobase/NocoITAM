@@ -131,6 +131,15 @@ export function describeEvent(
       });
     case 'stockedIn':
       return t('history.summaries.stockedIn', { count: count('count') });
+    // Device sync (2026-10-14): which platform record the device was tied
+    // to, and why.
+    case 'managedLinked':
+      return t('history.summaries.managedLinked', {
+        source: t(`deviceSync.sources.${label('source')}`, {
+          defaultValue: label('source'),
+        }),
+        target: label('targetLabel'),
+      });
     case 'unregisteredFound':
       return t('history.summaries.unregisteredFound', {
         target: label('label'),

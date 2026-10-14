@@ -8,6 +8,7 @@ import {
   type MaintenanceJob,
 } from './itam/maintenance.js';
 import { itamChangesToken } from './itam/changes.js';
+import { deviceSyncServiceToken } from './itam/device-sync.js';
 import { settingsServiceToken } from './itam/settings.js';
 
 /** What each task is called on 设置 → 自动化 → 定时任务, in the deployment's language. */
@@ -57,6 +58,25 @@ const SCHEDULES: readonly {
 ];
 
 const TARGET_TYPE = 'app.itam.maintenance';
+
+/**
+ * Device sync (2026-10-14): its own target, because a pull talks to a
+ * platform over the network rather than recomputing from the register.
+ * 01:30, before 人员在职状态更新 at 01:50, so a leaver is judged on that
+ * night's data.
+ */
+const SYNC_TARGET_TYPE = 'app.itam.device-sync';
+const SYNC_SCHEDULE = { key: 'itam.device-sync', cron: '30 1 * * *' };
+const SYNC_TITLES: Readonly<Record<string, readonly [string, string]>> = {
+  'zh-CN': [
+    '设备同步',
+    '从已连接的管理平台（Intune）拉取设备清单，更新设备的管理平台信息，按序列号关联台账设备；没有连接任何平台时什么也不做',
+  ],
+  'en-US': [
+    'Device sync',
+    'Pulls the device list from the connected management platforms (Intune), updates what each platform reports and links the register devices by serial number; does nothing when no platform is connected',
+  ],
+};
 
 /**
  * The ITAM maintenance jobs, scheduled through the scheduler plugin so an
@@ -114,6 +134,51 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
       },
     });
 
+    scheduler.registerTarget<Record<string, never>>({
+      type: SYNC_TARGET_TYPE,
+      title: 'ITAM device sync',
+      validate: () => ({ valid: true }),
+      async start() {
+        try {
+          const runs = await container
+            .resolve(deviceSyncServiceToken)
+            .runAll('schedule');
+          const failed = runs.filter((run) => run.status !== 'succeeded');
+          // A platform that could not be read fails the execution, so the
+          // task page shows it; its run on 设置 → 设备同步 says why.
+          if (failed.length > 0)
+            return {
+              state: 'failed',
+              reason: failed
+                .map(
+                  (run) => `${String(run.source)}: ${String(run.failureCode)}`,
+                )
+                .join('; '),
+            };
+          return {
+            state: 'completed',
+            outcome: 'succeeded',
+            result: Object.fromEntries(
+              runs.map((run) => [
+                String(run.source),
+                {
+                  seen: Number(run.seen),
+                  added: Number(run.added),
+                  linked: Number(run.linked),
+                  gone: Number(run.gone),
+                },
+              ]),
+            ),
+          };
+        } catch (error) {
+          return {
+            state: 'failed',
+            reason: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+    });
+
     // Settings live in a table, so a database whose migrations have not run
     // yet has none; the tasks then keep UTC until the next start.
     let timezone = 'UTC';
@@ -138,6 +203,15 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
         target: { type: TARGET_TYPE, config: { job: schedule.job } },
       });
     }
+    const [syncTitle, syncDescription] =
+      SYNC_TITLES[locale] ?? SYNC_TITLES['en-US'];
+    scheduler.defineSchedule({
+      key: SYNC_SCHEDULE.key,
+      title: syncTitle,
+      description: syncDescription,
+      schedule: { cron: SYNC_SCHEDULE.cron, timezone },
+      target: { type: SYNC_TARGET_TYPE, config: {} },
+    });
   }
 }
 

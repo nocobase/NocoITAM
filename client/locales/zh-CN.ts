@@ -218,6 +218,7 @@ const zhCN: AppResource = {
       agent: '经 Noco 提议',
       import: '经数据导入',
       schedule: '经定时任务',
+      sync: '经设备同步',
     },
     fieldsChanged_one: '更新了 {{count}} 个字段',
     fieldsChanged_other: '更新了 {{count}} 个字段',
@@ -254,6 +255,7 @@ const zhCN: AppResource = {
       repairCreated: '创建维修单',
       repairCompleted: '维修完成',
       counted: '录入盘点结果',
+      managedLinked: '关联管理平台',
       unregisteredFound: '发现账外设备',
       resolved: '差异处理',
       audited: '已盘点',
@@ -372,6 +374,7 @@ const zhCN: AppResource = {
       onboardingRestored: '{{target}} 重新需要',
       accountDisabledOnLeaving: '登录账号 {{target}} 随离职停用',
       accountRestoredOnReturning: '登录账号 {{target}} 随恢复在职重新启用',
+      managedLinked: '与 {{source}} 设备 {{target}} 关联（序列号一致）',
       leftOnLeaveDate: '离职日期 {{date}} 已到，自动标记为离职',
       recoveryPrepared:
         '已整理待回收清单：设备 {{devices}}、库存 {{stock}}、席位 {{seats}}',
@@ -1871,6 +1874,41 @@ const zhCN: AppResource = {
       boolean: '是 / 否',
     },
   },
+  deviceSync: {
+    group: '管理平台',
+    notFound: '未在已连接的管理平台中找到',
+    sources: { intune: 'Intune' },
+    sourceNames: { intune: 'Microsoft Intune' },
+    openIn: '在 {{source}} 中打开',
+    gone: '{{date}} 起已不在平台中',
+    today: '今天',
+    daysAgo_one: '{{count}} 天前',
+    daysAgo_other: '{{count}} 天前',
+    fields: {
+      deviceName: '设备名',
+      os: '操作系统',
+      user: '主用户',
+      lastSync: '最后同步',
+      enrolledAt: '注册时间',
+      ownership: '归属',
+      compliance: '合规状态',
+      encrypted: '已加密',
+    },
+    ownership: {
+      company: '公司',
+      personal: '个人',
+      unknown: '未知',
+    },
+    compliance: {
+      compliant: '合规',
+      noncompliant: '不合规',
+      conflict: '冲突',
+      error: '错误',
+      inGracePeriod: '宽限期内',
+      configManager: 'Configuration Manager',
+      unknown: '未知',
+    },
+  },
   serverErrors: {
     messages: {
       'Nothing to receive': '没有要入库的内容',
@@ -1993,6 +2031,7 @@ const zhCN: AppResource = {
       'Cannot install on a disposed device': '不能安装到已报废的设备上',
       'Cannot issue to a person who has left': '不能领用给已离职人员',
       'Consumables are not returned': '耗材不可归还',
+      'No device management platform is configured': '尚未连接任何设备管理平台',
       'Demo data already exists; clear it first': '演示数据已存在，请先清除',
       'Disposal is only reached through the disposal process':
         '只能通过报废流程报废设备',
@@ -2076,6 +2115,52 @@ const zhCN: AppResource = {
   },
   settings: {
     title: '设置',
+    deviceSync: {
+      title: '设备同步',
+      description:
+        '每天 01:30 从已连接的设备管理平台拉取设备清单，按序列号关联台账设备。只读：不改动台账，也不改动管理平台。',
+      syncNow: '立即同步',
+      running: '同步中…',
+      configured: '已连接',
+      notConfigured: '未配置',
+      howTo: {
+        intune:
+          '在服务器的 config.yml 中 deviceSync.intune 下填写 tenantId、clientId、clientSecret（或设置环境变量 INTUNE_TENANT_ID、INTUNE_CLIENT_ID、INTUNE_CLIENT_SECRET），然后重启。Entra ID 应用注册需要 Microsoft Graph 应用权限 DeviceManagementManagedDevices.Read.All，并由管理员同意。',
+      },
+      lastRun: '最近一次同步',
+      statuses: {
+        running: '进行中',
+        succeeded: '成功',
+        partial: '中途停止',
+        failed: '失败',
+      },
+      triggers: {
+        schedule: '定时任务',
+        manual: '{{name}} 手动发起',
+        demo: '演示数据',
+      },
+      runCounts:
+        '读取 {{seen}} 台，新增 {{added}} 台，关联 {{linked}} 台，{{gone}} 台已不在平台中',
+      failures: {
+        AUTH_FAILED:
+          '登录被拒绝：请检查 config.yml 中的租户、客户端 ID 和客户端密钥',
+        PERMISSION_MISSING:
+          '缺少权限：请授予 DeviceManagementManagedDevices.Read.All 并由管理员同意',
+        UNAVAILABLE: '无法连接管理平台，今晚会再试',
+        INVALID_RESPONSE: '管理平台返回的内容无法识别',
+        INTERRUPTED: '同步过程中应用停止了',
+      },
+      lastSuccess: '最近一次完整同步：{{date}}',
+      neverRun: '尚未同步。今晚 01:30 会自动同步，也可以点「立即同步」。',
+      counts: {
+        devices: '设备',
+        linked: '已关联',
+        unlinked: '台账未登记',
+        ambiguous: '序列号重复',
+        personal: '个人设备',
+        gone: '已不在平台中',
+      },
+    },
     receiptAgent: {
       title: '按送货单入库',
       description:

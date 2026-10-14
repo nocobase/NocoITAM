@@ -36,6 +36,7 @@ import {
 } from '@/lib/itam/api';
 import { errorMessage, formatDate } from '@/lib/itam/format';
 
+import { DeviceSyncCard } from './device-sync-card';
 import { ReceiptAgentCard } from './receipt-agent-card';
 
 type SettingsKey = keyof ItamSettings;
@@ -47,6 +48,7 @@ const TABS = [
   'numbering',
   'ai',
   'receiptAgent',
+  'deviceSync',
   'demo',
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -99,6 +101,8 @@ export default function ItamSettingsPage(): ReactElement {
             <AiCard value={settings.data.ai} />
           ) : tab === 'receiptAgent' ? (
             <ReceiptAgentCard />
+          ) : tab === 'deviceSync' ? (
+            <DeviceSyncCard />
           ) : (
             <DemoCard />
           )}

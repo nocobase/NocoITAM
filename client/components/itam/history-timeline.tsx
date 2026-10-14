@@ -34,7 +34,7 @@ import { RecordLink } from './record-link.js';
  * written before it was recorded, and `human` on a person's own edit —
  * neither is shown, because saying so on every line says nothing.
  */
-export type HistoryOrigin = 'human' | 'agent' | 'import' | 'schedule';
+export type HistoryOrigin = 'human' | 'agent' | 'import' | 'schedule' | 'sync';
 
 export interface HistoryEvent {
   readonly origin?: HistoryOrigin | null;

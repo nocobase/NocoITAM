@@ -40,6 +40,9 @@ import appRuntime from '../server/runtime.js';
  * developer stays signed in with the same roles.
  */
 const ITAM_TABLES = [
+  // Device sync (2026-10-14).
+  'managedDevices',
+  'deviceSyncRuns',
   'onboardingRuns',
   'receiptRuns',
   'reminders',
