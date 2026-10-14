@@ -495,6 +495,21 @@ label:has(> .sr-only:focus-visible),
   height: calc(var(--spacing) * 4);
 }
 
+/* Application change (ITAM): the top-level rows as NocoCRM draws them, 8.5
+   units high rather than the template's 10 (30.6px on the compact theme), so
+   the sidebar's sections fit more of ITAM's pages on screen. The count and
+   the expand button are centred on the shorter row: (8.5 - 5) / 2. Nested
+   rows keep the template's 8.5. */
+.app-navigation [data-slot='sidebar-menu-button'] {
+  height: calc(var(--spacing) * 8.5);
+  padding-block: calc(var(--spacing) * 1.5);
+}
+.app-navigation
+  [data-slot='sidebar-menu-item']
+  > :is([data-slot='sidebar-menu-badge'], [data-slot='sidebar-menu-action']) {
+  top: calc(var(--spacing) * 1.75);
+}
+
 /* Brand tint belongs to the application shell, independent of each page's content. */
 .app-brand-surface {
   background-image: radial-gradient(
