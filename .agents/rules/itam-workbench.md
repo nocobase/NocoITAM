@@ -309,6 +309,10 @@ A board's sideways scroller (the status boards' and the workbench's) carries
 `scroll-shown` (template 1.0.0-beta.68, `client/styles.css`): every other
 scrollbar is thin and shows only while its element scrolls, while a board is
 wider than the page and a mouse without a sideways wheel moves it only by its
-bar, so that one always shows. A joiner's card keeps its date and its
+bar, so that one always shows. Held on its empty space, a board also drags
+sideways (2026-10-14, as NocoCRM's does): `useDragPan` in
+`client/hooks/use-drag-pan.ts`, spread on the scroller, skips presses on
+links, buttons and fields — the cards are buttons — and touch, which keeps
+its native swipe. A joiner's card keeps its date and its
 countdown each whole (`whitespace-nowrap`, wrapping between them), since the
 template's roomier spacing narrowed the column's text.

@@ -18,6 +18,7 @@ import { Page, PageHeader } from '@/components/itam/page-header';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { useWorkScope } from '@/lib/itam/work-scope';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDragPan } from '@/hooks/use-drag-pan';
 import { useItamList, useItamSettings, type ItamRecord } from '@/lib/itam/api';
 import type { DocumentKind } from '@/lib/itam/document-kinds';
 import {
@@ -61,13 +62,18 @@ export default function WorkbenchPage(): ReactElement {
   const leavers = cards.find((card) => card.key === 'leaverRecovery');
   const joiners = cards.find((card) => card.key === 'pendingOnboarding');
   const rest = cards.filter((card) => card !== leavers && card !== joiners);
+  // Held on its empty space, the board drags sideways (useDragPan).
+  const pan = useDragPan();
   return (
     <Page fill>
       <PageHeader title={t('workbench.title')} actions={<WorkScopeToggle />} />
       {/* The board takes the rest of the page's height, so each column
           scrolls its own cards and the sideways scrollbar sits at the foot
           of the page — as the status boards do. */}
-      <div className='scroll-shown -mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
+      <div
+        className='scroll-shown -mx-1 flex min-h-80 flex-1 cursor-grab gap-3 overflow-x-auto px-1 pb-2 data-[panning]:cursor-grabbing data-[panning]:select-none'
+        {...pan}
+      >
         {/* 需要关注 leads the board, then 离职交接 (2026-10-05): somebody has
             left with the company's equipment, the one to-do that was ever
             `critical`, and each is a job of several parts. */}

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router';
 import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDragPan } from '@/hooks/use-drag-pan';
 import { useItamList, type ItamRecord } from '@/lib/itam/api';
 
 /** Cards a column reads at first, and how many each 加载更多 adds. */
@@ -134,13 +135,18 @@ export function createStatusBoard(
     const statuses = chosen
       ? config.statuses.filter((status) => status === chosen)
       : config.statuses;
+    // Held on its empty space, the board drags sideways (useDragPan).
+    const pan = useDragPan();
     return (
       // The board takes the rest of the page's height (`Page fill`), so the
       // columns reach the bottom, each scrolls its own cards, and the
       // sideways scrollbar sits at the foot of the page instead of under
       // the shortest column. Below 20rem it stops shrinking and the page
       // scrolls instead.
-      <div className='scroll-shown -mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
+      <div
+        className='scroll-shown -mx-1 flex min-h-80 flex-1 cursor-grab gap-3 overflow-x-auto px-1 pb-2 data-[panning]:cursor-grabbing data-[panning]:select-none'
+        {...pan}
+      >
         {statuses.map((status) => (
           <StatusColumn key={status} status={status} filter={filter} q={q} />
         ))}
