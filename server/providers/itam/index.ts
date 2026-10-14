@@ -21,6 +21,12 @@ import {
 import { approvalServiceToken, createApprovalService } from './approvals.js';
 import { auditServiceToken, createAuditService } from './audits.js';
 import { deviceServiceToken, createDeviceService } from './devices.js';
+import { configuredSources } from './device-sources.js';
+import {
+  createDeviceSyncService,
+  deviceSyncServiceToken,
+} from './device-sync.js';
+import type { DeviceSyncConfig } from '../../config/device-sync.js';
 import {
   attachmentServiceToken,
   createAttachmentService,
@@ -92,6 +98,7 @@ import {
 export {
   approvalServiceToken,
   deviceServiceToken,
+  deviceSyncServiceToken,
   auditServiceToken,
   disposalServiceToken,
   repairServiceToken,
@@ -481,6 +488,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         audits: container.resolve(auditServiceToken),
         disposals: container.resolve(disposalServiceToken),
         numbering: container.resolve(numberingServiceToken),
+        deviceSync: container.resolve(deviceSyncServiceToken),
         // Who stands in as the colleague deciding the demo's requests:
         // another account that may approve purchase orders, else any other
         // account. The demo falls back to a stand-in id when it is alone.
@@ -576,6 +584,27 @@ export default class ItamProvider extends ServiceProvider<Application> {
         container.resolve(historyServiceToken),
         container.resolve(settingsServiceToken),
       ),
+    );
+    // Device sync: the devices Intune reports, kept apart from the register
+    // and linked to it by serial (`device-sync.ts`, 2026-10-14). The sources
+    // are read from `config.yml` at each pull; a test container has none.
+    container.singleton(deviceSyncServiceToken, () =>
+      createDeviceSyncService({
+        database: container.resolve(databaseManagerToken),
+        history: container.resolve(historyServiceToken),
+        sources: () =>
+          configuredSources(
+            this.app.config?.get<DeviceSyncConfig>('deviceSync'),
+          ),
+        touched: () => container.resolve(itamChangesToken).touched(),
+        log: (message, error) => {
+          if (container.has(loggingToken))
+            container
+              .resolve(loggingToken)
+              .getLogger('itam')
+              .warn({ err: error }, message);
+        },
+      }),
     );
     // The changes the assistant proposes, carried out by the person it
     // works for (`plans.ts`).

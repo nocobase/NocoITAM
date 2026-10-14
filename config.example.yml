@@ -159,3 +159,15 @@ logging:
     enabled: true
     # Set true for human-readable terminal output.
     pretty: false
+
+# Application change (ITAM, device sync): the device management platforms ITAM
+# reads its devices from, read only. Leave it out to connect none. Write each
+# value itself (a ${NAME} placeholder is not expanded), or set
+# INTUNE_TENANT_ID, INTUNE_CLIENT_ID and INTUNE_CLIENT_SECRET. The Entra ID app
+# registration needs the Microsoft Graph application permission
+# DeviceManagementManagedDevices.Read.All, with admin consent.
+# deviceSync:
+#   intune:
+#     tenantId: 00000000-0000-0000-0000-000000000000
+#     clientId: 00000000-0000-0000-0000-000000000000
+#     clientSecret: your-client-secret

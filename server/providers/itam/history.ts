@@ -41,7 +41,7 @@ const BOOKKEEPING_FIELDS: ReadonlySet<string> = new Set(['updatedAt']);
  * confirms the card, so they carry `agent` *and* that person's `actorId`.
  * Absent on rows written before it was recorded, which read as `human`.
  */
-export type HistoryOrigin = 'human' | 'agent' | 'import' | 'schedule';
+export type HistoryOrigin = 'human' | 'agent' | 'import' | 'schedule' | 'sync';
 
 export interface HistorySource {
   /** Defaults to `human`: a person acting on a page. */

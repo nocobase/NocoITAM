@@ -5,6 +5,8 @@ import {
 } from '@nocobase/service-provider';
 
 import type { DeviceService, OperationContext } from './devices.js';
+import type { ObservedDevice } from './device-sources.js';
+import type { DeviceSyncService } from './device-sync.js';
 import type { AuditService, CountInput } from './audits.js';
 import { unrestricted } from './authz-filter.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
@@ -255,6 +257,9 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
 
 /** Deleted in dependency order: children before the master data they reference. */
 const ORDER: readonly string[] = [
+  // What the demo's Intune reported (device sync, 2026-10-14).
+  'managedDevices',
+  'deviceSyncRuns',
   'disposals',
   'auditTasks',
   'repairs',
@@ -522,6 +527,8 @@ export function createDemoService(dependencies: {
   accounts?: DemoAccounts;
   /** Rewinds the number sequences once the demo's records are gone. */
   numbering?: NumberingService;
+  /** What the demo's Intune reports goes through the real matching. */
+  deviceSync?: DeviceSyncService;
 }): DemoService {
   const {
     database,
@@ -3226,6 +3233,194 @@ export function createDemoService(dependencies: {
           locationId: floor3.id,
           hireDate: daysFromNow(index === 0 ? 5 : 9),
         });
+      }
+
+      // What the demo's Intune reports (device sync, 2026-10-14), read in
+      // through the same matching as a real pull, so the devices' pages show
+      // their management platform and the settings page has something to
+      // count without a tenant. Most of the laptops and desktops in use sync
+      // daily under their holder; a few are wrong on purpose — one silent for
+      // seven weeks, one in another person's hands, one on the shelf yet
+      // online — and three are not on the books: a new laptop, an employee's
+      // own phone and a virtual machine with a placeholder serial.
+      if (dependencies.deviceSync) {
+        const demoDeviceIds = (
+          await database
+            .query()
+            .selectFrom('demoRecords')
+            .select(['recordId'])
+            .where('collection', '=', 'devices')
+            .execute<{ recordId: string }>()
+        ).map((row) => row.recordId);
+        const register = await database
+          .query()
+          .selectFrom('devices')
+          .innerJoin('models', 'models.id', 'devices.modelId')
+          .innerJoin('categories', 'categories.id', 'models.categoryId')
+          .leftJoin(
+            'manufacturers',
+            'manufacturers.id',
+            'models.manufacturerId',
+          )
+          .leftJoin('people', 'people.id', 'devices.assigneeId')
+          .select([
+            'devices.id as id',
+            'devices.serialNo as serialNo',
+            'devices.name as name',
+            'devices.status as status',
+            'devices.assigneeType as assigneeType',
+            'people.email as email',
+            'people.name as personName',
+            'models.name as model',
+            'manufacturers.name as manufacturer',
+            'categories.id as categoryId',
+          ])
+          .where(
+            'devices.id',
+            'in',
+            demoDeviceIds.length ? demoDeviceIds : ['__none__'],
+          )
+          .orderBy('devices.serialNo')
+          .execute();
+        const computers = register.filter(
+          (row) =>
+            ['cat-laptop', 'cat-desktop'].includes(String(row.categoryId)) &&
+            typeof row.serialNo === 'string' &&
+            row.serialNo,
+        );
+        const inUse = computers.filter(
+          (row) => row.status === 'inUse' && row.assigneeType === 'person',
+        );
+        const onShelf = computers.filter((row) => row.status === 'inStock');
+        const syncedAgo = (days: number, hour = 22) =>
+          `${daysFromNow(-days)}T${String(hour).padStart(2, '0')}:10:00.000Z`;
+        const osOf = (manufacturer: unknown) =>
+          manufacturer === 'Apple'
+            ? { osName: 'macOS', osVersion: '15.6.1' }
+            : { osName: 'Windows', osVersion: '10.0.26100.4946' };
+        const observation = (
+          row: Row,
+          index: number,
+          overrides: Partial<ObservedDevice> = {},
+        ): ObservedDevice => {
+          const externalId = `demo-${String(row.id).slice(0, 8)}-${index}`;
+          return {
+            externalId,
+            serialNo: String(row.serialNo),
+            deviceName: String(row.name ?? row.serialNo).slice(0, 60),
+            manufacturer: (row.manufacturer as string | null) ?? null,
+            model: (row.model as string | null) ?? null,
+            ...osOf(row.manufacturer),
+            userPrincipal: (row.email as string | null) ?? null,
+            userName: (row.personName as string | null) ?? null,
+            ownership: 'company',
+            compliance: 'compliant',
+            encrypted: true,
+            wifiMac: null,
+            enrolledAt: `${daysFromNow(-200 - index * 3)}T09:00:00.000Z`,
+            lastSyncAt: syncedAgo(index % 3, 20 + (index % 3)),
+            raw: { id: externalId, demo: true },
+            ...overrides,
+          };
+        };
+        const observed: ObservedDevice[] = inUse.map((row, index) =>
+          observation(row, index),
+        );
+        // Silent for seven weeks: lost, or left in a drawer.
+        if (observed[1])
+          observed[1] = { ...observed[1], lastSyncAt: syncedAgo(49) };
+        // In someone else's hands than the register says.
+        const other = inUse.find(
+          (row, index) => index > 2 && row.email !== inUse[2]?.email,
+        );
+        if (observed[2] && other)
+          observed[2] = {
+            ...observed[2],
+            userPrincipal: (other.email as string | null) ?? null,
+            userName: (other.personName as string | null) ?? null,
+          };
+        // On the shelf, yet syncing every day.
+        if (onShelf[0])
+          observed.push(
+            observation(onShelf[0], observed.length, {
+              userPrincipal: null,
+              userName: null,
+              lastSyncAt: syncedAgo(0),
+            }),
+          );
+        const extra = (
+          externalId: string,
+          values: Partial<ObservedDevice>,
+        ): ObservedDevice => ({
+          externalId,
+          serialNo: null,
+          deviceName: null,
+          manufacturer: null,
+          model: null,
+          osName: 'Windows',
+          osVersion: '10.0.26100.4946',
+          userPrincipal: null,
+          userName: null,
+          ownership: 'company',
+          compliance: 'compliant',
+          encrypted: true,
+          wifiMac: null,
+          enrolledAt: `${daysFromNow(-12)}T09:00:00.000Z`,
+          lastSyncAt: syncedAgo(0),
+          raw: { id: externalId, demo: true },
+          ...values,
+        });
+        const someone = inUse[4] ?? inUse[0];
+        observed.push(
+          extra('demo-unregistered-laptop', {
+            serialNo: 'PF5DEMO01',
+            deviceName: 'LAPTOP-PF5DEMO01',
+            manufacturer: 'Lenovo',
+            model: 'ThinkPad T14 Gen 5',
+            userPrincipal: (someone?.email as string | null) ?? null,
+            userName: (someone?.personName as string | null) ?? null,
+          }),
+          extra('demo-personal-phone', {
+            serialNo: 'F2LDEMO02',
+            deviceName: 'iPhone',
+            manufacturer: 'Apple',
+            model: 'iPhone 15',
+            osName: 'iOS',
+            osVersion: '18.6.2',
+            ownership: 'personal',
+            userPrincipal: (someone?.email as string | null) ?? null,
+            userName: (someone?.personName as string | null) ?? null,
+          }),
+          extra('demo-build-vm', {
+            serialNo: 'To be filled by O.E.M.',
+            deviceName: 'BUILD-VM-07',
+            manufacturer: 'Microsoft Corporation',
+            model: 'Virtual Machine',
+            compliance: 'noncompliant',
+            encrypted: false,
+          }),
+        );
+        const run = await dependencies.deviceSync.ingest(
+          'intune',
+          (async function* () {
+            yield observed;
+          })(),
+          'demo',
+          actorId,
+        );
+        await track('deviceSyncRuns', run);
+        const pulled = await database
+          .query()
+          .selectFrom('managedDevices')
+          .select(['id'])
+          .where('source', '=', 'intune')
+          .where(
+            'externalId',
+            'in',
+            observed.map((device) => device.externalId),
+          )
+          .execute<{ id: string }>();
+        for (const row of pulled) await track('managedDevices', row);
       }
 
       return this.status();

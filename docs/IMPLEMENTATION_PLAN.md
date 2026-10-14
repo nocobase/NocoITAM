@@ -2762,6 +2762,33 @@ AI 整理对不上的行原来只列在表单旁边，要建型号就得离开�
 `/workbench`、页面授权 id 和代码里的 workbench 命名不变，已有的页面授权不受影响；本文档更早的
 记录仍按当时的名字写作「工作台」。
 
+### 2026-10-14 Device sync, step 1: Intune into its own tables
+
+The decision the 2026-09-27 removal of 设备发现 asked for: a live connection
+to the device management platform, not a CSV page. Designed in the
+NocoSolution document `NocoITAM 设备同步方案` (decisions settled 2026-10-14:
+a daily pull at 01:30, personal devices ignored by default, Jamf to include
+iPhone and iPad, credentials in `config.yml`, the connectors ITAM's own).
+Step 1 of four is built:
+
+- Microsoft Intune through Microsoft Graph (`device-sources.ts`), read only;
+  credentials under `deviceSync.intune` in `config.yml`.
+- Migration `202610140001_device_sync`: `managedDevices` (what a platform
+  reports, one row per record) and `deviceSyncRuns` (one row per pull). The
+  register gains no field; a sync never writes it.
+- Matching by normalized serial, placeholders excluded; several devices of
+  one serial are left `ambiguous`; a link follows the platform id once made.
+  Linking writes `managedLinked` on the device's timeline, origin `sync`.
+- A device marked gone only after a pull that read everything.
+- The 管理平台 group on the device page, 设置 → 设备同步 with "sync now",
+  the `itam.device-sync` schedule at 01:30, and demo observations.
+
+Steps 2–4 (the six kinds of difference and their one-click handling, Jamf
+with iPhone and iPad, Noco's `device-sync` skill) are not started. The design
+document's permission table said IT 支持 may not open 设置 → 设备同步; the
+seeded IT 支持 role holds the settings grant, so it may, as it may every
+other settings tab. Rules: `.agents/rules/itam-device-sync.md`.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

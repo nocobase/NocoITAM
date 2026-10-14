@@ -24,6 +24,7 @@ import snowflake from './snowflake.js';
 import users from './users.js';
 import ai from './ai.js';
 import agents from './agents.js';
+import deviceSync from './device-sync.js';
 
 const defaultConfigs: AppConfigFactory<{
   auth: ReturnType<typeof auth>;
@@ -46,9 +47,11 @@ const defaultConfigs: AppConfigFactory<{
   database: ReturnType<typeof database>;
   snowflake: ReturnType<typeof snowflake>;
   users: ReturnType<typeof users>;
-  // Application sections: ITAM's model services and the Agents plugin's.
+  // Application sections: ITAM's model services, the Agents plugin's and the
+  // device management platforms ITAM reads devices from.
   ai: ReturnType<typeof ai>;
   agents: ReturnType<typeof agents>;
+  deviceSync: ReturnType<typeof deviceSync>;
 }> = defaultAppConfigs({
   auth,
   authorization,
@@ -72,6 +75,7 @@ const defaultConfigs: AppConfigFactory<{
   users,
   ai,
   agents,
+  deviceSync,
 });
 
 export default defaultConfigs;

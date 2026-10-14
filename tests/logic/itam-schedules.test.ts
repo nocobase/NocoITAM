@@ -3,6 +3,7 @@ import { schedulerServiceToken } from '@nocobase/app-plugin-scheduler/server/tok
 import { afterEach, describe, expect, it } from 'vitest';
 
 import ItamSchedulesProvider from '../../server/providers/itam-schedules.js';
+import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.js';
 import { maintenanceServiceToken } from '../../server/providers/itam/maintenance.js';
 import { settingsServiceToken } from '../../server/providers/itam/settings.js';
 
@@ -22,15 +23,18 @@ interface Target {
 }
 
 /** The provider against a stand-in scheduler, settings and maintenance. */
-async function boot(runJob: (job: string) => Promise<Record<string, unknown>>) {
+async function boot(
+  runJob: (job: string) => Promise<Record<string, unknown>>,
+  runAll: () => Promise<Record<string, unknown>[]> = async () => [],
+) {
   const defined: Definition[] = [];
-  let target: Target | undefined;
+  const targets = new Map<string, Target>();
   const services = new Map<unknown, unknown>([
     [
       schedulerServiceToken,
       {
         registerTarget(registered: Target) {
-          target = registered;
+          targets.set(registered.type, registered);
           return { reportCompletion: async () => {} };
         },
         defineSchedule(definition: Definition) {
@@ -43,6 +47,7 @@ async function boot(runJob: (job: string) => Promise<Record<string, unknown>>) {
       { get: async () => ({ timeZone: 'Asia/Shanghai' }) },
     ],
     [maintenanceServiceToken, { runJob }],
+    [deviceSyncServiceToken, { runAll }],
   ]);
   const app = {
     container: {
@@ -51,7 +56,11 @@ async function boot(runJob: (job: string) => Promise<Record<string, unknown>>) {
     },
   };
   await new ItamSchedulesProvider(app as never).boot();
-  return { defined, target: target! };
+  return {
+    defined,
+    target: targets.get('app.itam.maintenance')!,
+    sync: targets.get('app.itam.device-sync')!,
+  };
 }
 
 describe('ITAM schedules', () => {
@@ -85,7 +94,11 @@ describe('ITAM schedules', () => {
         'Asia/Shanghai',
         { job: 'monthly' },
       ],
+      // Device sync (2026-10-14), before the leavers are judged at 01:50.
+      ['itam.device-sync', '30 1 * * *', 'Asia/Shanghai', {}],
     ]);
+    expect(defined[3]!.title).toBe('设备同步');
+    expect(defined[3]!.target.type).toBe('app.itam.device-sync');
     expect(defined[0]!.title).toBe('人员在职状态更新');
     expect(defined[1]!.title).toBe('资产每日维护');
     expect(target.validate({ job: 'daily' }).valid).toBe(true);
@@ -120,6 +133,34 @@ describe('ITAM schedules', () => {
     expect(await target.start({ job: 'monthly' }, context)).toEqual({
       state: 'failed',
       reason: 'Depreciation failed',
+    });
+  });
+
+  it("reports each platform's pull, and fails the run when a platform could not be read", async () => {
+    let runs: Record<string, unknown>[] = [
+      {
+        source: 'intune',
+        status: 'succeeded',
+        seen: 12,
+        added: 2,
+        linked: 1,
+        gone: 0,
+      },
+    ];
+    const { sync } = await boot(
+      async () => ({}),
+      async () => runs,
+    );
+    const context = { scheduleId: 's', occurrenceId: 'o' };
+    expect(await sync.start({} as never, context)).toEqual({
+      state: 'completed',
+      outcome: 'succeeded',
+      result: { intune: { seen: 12, added: 2, linked: 1, gone: 0 } },
+    });
+    runs = [{ source: 'intune', status: 'failed', failureCode: 'AUTH_FAILED' }];
+    expect(await sync.start({} as never, context)).toEqual({
+      state: 'failed',
+      reason: 'intune: AUTH_FAILED',
     });
   });
 });

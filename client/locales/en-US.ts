@@ -225,6 +225,7 @@ const messages = {
       agent: 'proposed by Noco',
       import: 'through a data import',
       schedule: 'by a scheduled task',
+      sync: 'through device sync',
     },
     fieldsChanged_one: '{{count}} field updated',
     fieldsChanged_other: '{{count}} fields updated',
@@ -261,6 +262,7 @@ const messages = {
       repairCreated: 'Repair created',
       repairCompleted: 'Repair completed',
       counted: 'Results recorded',
+      managedLinked: 'Linked to a management platform',
       unregisteredFound: 'Unregistered device found',
       resolved: 'Differences handled',
       audited: 'Audited',
@@ -382,6 +384,7 @@ const messages = {
       accountDisabledOnLeaving: 'Sign-in {{target}} disabled on leaving',
       accountRestoredOnReturning:
         'Sign-in {{target}} enabled again on returning',
+      managedLinked: 'Linked to {{source}} device {{target}} by serial number',
       leftOnLeaveDate: 'Leave date {{date}} reached; marked as left',
       recoveryPrepared:
         'Recovery listed: {{devices}} devices, {{stock}} stock, {{seats}} seats',
@@ -1964,6 +1967,41 @@ const messages = {
       boolean: 'Yes / no',
     },
   },
+  deviceSync: {
+    group: 'Management platform',
+    notFound: 'Not found on the connected management platforms',
+    sources: { intune: 'Intune' },
+    sourceNames: { intune: 'Microsoft Intune' },
+    openIn: 'Open in {{source}}',
+    gone: 'No longer reported since {{date}}',
+    today: 'today',
+    daysAgo_one: '{{count}} day ago',
+    daysAgo_other: '{{count}} days ago',
+    fields: {
+      deviceName: 'Device name',
+      os: 'Operating system',
+      user: 'Primary user',
+      lastSync: 'Last sync',
+      enrolledAt: 'Enrolled',
+      ownership: 'Ownership',
+      compliance: 'Compliance',
+      encrypted: 'Encrypted',
+    },
+    ownership: {
+      company: 'Company',
+      personal: 'Personal',
+      unknown: 'Unknown',
+    },
+    compliance: {
+      compliant: 'Compliant',
+      noncompliant: 'Not compliant',
+      conflict: 'Conflict',
+      error: 'Error',
+      inGracePeriod: 'In grace period',
+      configManager: 'Configuration Manager',
+      unknown: 'Unknown',
+    },
+  },
   serverErrors: {
     messages: {
       'Nothing to receive': 'Nothing to receive',
@@ -2115,6 +2153,8 @@ const messages = {
       'Cannot issue to a person who has left':
         'Cannot issue to a person who has left',
       'Consumables are not returned': 'Consumables are not returned',
+      'No device management platform is configured':
+        'No device management platform is configured',
       'Demo data already exists; clear it first':
         'Demo data already exists; clear it first',
       'Disposal is only reached through the disposal process':
@@ -2210,6 +2250,53 @@ const messages = {
   },
   settings: {
     title: 'Settings',
+    deviceSync: {
+      title: 'Device sync',
+      description:
+        'Pulls the device list from each connected device management platform every day at 01:30 and links register devices by serial number. Read only: it changes neither the register nor the platform.',
+      syncNow: 'Sync now',
+      running: 'Syncing…',
+      configured: 'Connected',
+      notConfigured: 'Not configured',
+      howTo: {
+        intune:
+          'Set tenantId, clientId and clientSecret under deviceSync.intune in config.yml on the server (or INTUNE_TENANT_ID, INTUNE_CLIENT_ID and INTUNE_CLIENT_SECRET), then restart. The Entra ID app registration needs the Microsoft Graph application permission DeviceManagementManagedDevices.Read.All, with admin consent.',
+      },
+      lastRun: 'Latest sync',
+      statuses: {
+        running: 'Running',
+        succeeded: 'Succeeded',
+        partial: 'Stopped part way',
+        failed: 'Failed',
+      },
+      triggers: {
+        schedule: 'by the scheduled task',
+        manual: 'started by {{name}}',
+        demo: 'demo data',
+      },
+      runCounts:
+        '{{seen}} devices read, {{added}} new, {{linked}} linked, {{gone}} no longer reported',
+      failures: {
+        AUTH_FAILED:
+          'Sign-in refused: check the tenant, client ID and client secret in config.yml',
+        PERMISSION_MISSING:
+          'Permission missing: grant DeviceManagementManagedDevices.Read.All and admin consent',
+        UNAVAILABLE:
+          'The platform could not be reached; it is tried again tonight',
+        INVALID_RESPONSE: 'The platform answered in an unexpected form',
+        INTERRUPTED: 'The application stopped during this sync',
+      },
+      lastSuccess: 'Last complete sync {{date}}',
+      neverRun: 'Not synced yet. It runs tonight at 01:30, or press Sync now.',
+      counts: {
+        devices: 'Devices',
+        linked: 'Linked',
+        unlinked: 'Not on the register',
+        ambiguous: 'Serial on several devices',
+        personal: 'Personal devices',
+        gone: 'No longer reported',
+      },
+    },
     receiptAgent: {
       title: 'Receiving from delivery notes',
       description:

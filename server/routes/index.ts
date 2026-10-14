@@ -5,6 +5,7 @@ import { aiRoutes } from './itam/ai.js';
 import { agentCommandRoutes } from './itam/agent-commands.js';
 import { approvalRoutes } from './itam/approvals.js';
 import { deviceRoutes } from './itam/devices.js';
+import { deviceSyncRoutes } from './itam/device-sync.js';
 import { auditRoutes } from './itam/audits.js';
 import { disposalRoutes } from './itam/disposals.js';
 import { repairRoutes } from './itam/repairs.js';
@@ -32,6 +33,7 @@ const routes: readonly AppRouteContribution<Application>[] = [
   dataRoutes,
   masterDataRoutes,
   deviceRoutes,
+  deviceSyncRoutes,
   stockRoutes,
   entitlementRoutes,
   purchaseOrderRoutes,

@@ -20,6 +20,7 @@ import {
 } from '../../providers/itam/device-status.js';
 import {
   deviceServiceToken,
+  deviceSyncServiceToken,
   historyServiceToken,
 } from '../../providers/index.js';
 import {
@@ -175,6 +176,27 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
             kind: historyKind(context),
           }),
         );
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // What each device management platform reports about this device
+    // (device sync, 2026-10-14): whoever may read the device may read it.
+    routes.get('/:id/managed', async (context) => {
+      try {
+        const conditions = await decide(context, 'read');
+        const deviceId = context.req.param('id');
+        if (!(await devices.get(deviceId, conditions)))
+          return context.json(
+            { code: 'NOT_FOUND', message: 'Device not found' },
+            404,
+          );
+        const sync = app.container.resolve(deviceSyncServiceToken);
+        return context.json({
+          data: await sync.forDevice(deviceId),
+          connected: await sync.connected(),
+        });
       } catch (error) {
         return errorResponse(context, error);
       }
