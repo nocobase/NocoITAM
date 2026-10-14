@@ -2847,6 +2847,15 @@ are code rather than a file beside the skills so the build carries them
 without a copy step. Only the scoring is tested in CI; a model run needs the
 application's model service.
 
+### 2026-10-15 Device sync: the two places left out
+
+Two parts of the design missed in steps 1 and 2: the device list's 最后同步
+column and 同步状态 filter (on a platform / unmanaged / silent, also applied
+to the CSV export), shown only while a platform is connected; and a leaver's
+归属 tab naming the devices still online after they left, as the SPEC says
+beside the 离职交接 card's tag. The tab shows it even when the leaver holds
+nothing on the register.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

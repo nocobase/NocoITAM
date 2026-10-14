@@ -1887,6 +1887,15 @@ const zhCN: AppResource = {
     },
   },
   deviceSync: {
+    filter: {
+      label: '同步状态',
+      linked: '已关联管理平台',
+      unmanaged: '未纳管',
+      stale: '失联',
+    },
+    syncedOn: '{{date}} 仍在 {{source}} 同步',
+    notOnRegister: '（台账未登记）',
+    unknownDevice: '未知设备',
     prompts: {
       checkAction: '让 Noco 看看',
       check:

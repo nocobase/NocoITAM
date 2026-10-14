@@ -1982,6 +1982,15 @@ const messages = {
     },
   },
   deviceSync: {
+    filter: {
+      label: 'Sync status',
+      linked: 'On a platform',
+      unmanaged: 'Unmanaged',
+      stale: 'Silent',
+    },
+    syncedOn: 'synced with {{source}} on {{date}}',
+    notOnRegister: '(not on the register)',
+    unknownDevice: 'Unknown device',
     prompts: {
       checkAction: 'Ask Noco',
       check:

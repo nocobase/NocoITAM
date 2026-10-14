@@ -24,6 +24,7 @@ import {
   deviceSyncServiceToken,
   historyServiceToken,
 } from '../../providers/index.js';
+import { narrowBySyncState } from '../../providers/itam/device-review.js';
 import {
   COUNT_FIELDS,
   type CountField,
@@ -107,9 +108,27 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
     routes.get('/', async (context) => {
       try {
         const conditions = await decide(context, 'read');
-        return context.json(
-          await devices.list(parseListOptions(context), conditions),
+        const review = app.container.resolve(deviceReviewServiceToken);
+        // 同步状态 is no column: it narrows to the devices in that state.
+        const result = await devices.list(
+          await narrowBySyncState(review, parseListOptions(context)),
+          conditions,
         );
+        // While a platform is connected, each row says when a platform
+        // last heard from it (the list's 最后同步 column).
+        if (!(await review.active()))
+          return context.json({ ...result, syncConnected: false });
+        const synced = await review.lastSync(
+          result.data.map((row) => String(row.id)),
+        );
+        return context.json({
+          ...result,
+          data: result.data.map((row) => ({
+            ...row,
+            lastSyncAt: synced.get(String(row.id)) ?? null,
+          })),
+          syncConnected: true,
+        });
       } catch (error) {
         return errorResponse(context, error);
       }

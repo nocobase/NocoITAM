@@ -24,6 +24,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ReferenceSelect } from '@/components/itam/reference-select';
+import { LeaverOnlineDevices } from '@/components/itam/leaver-online-devices';
 import { EmptyState } from '@/components/itam/empty-state';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -234,7 +235,14 @@ export function PersonBelongings({
     owned.length === 0 &&
     handedOver.length === 0
   )
-    return <EmptyState title={t('people.noHoldings')} />;
+    return (
+      <div className='space-y-3'>
+        {/* A leaver holding nothing on the register may still be signing
+            in on a device (device sync). */}
+        <LeaverOnlineDevices personId={personId} left={left} />
+        <EmptyState title={t('people.noHoldings')} />
+      </div>
+    );
   // Of what is still to do, how much is this reader's. Settled rows are
   // deliberately out: the sentence promises a size of job, and counting a
   // returned device because somebody later made the reader its owner would
@@ -420,6 +428,8 @@ export function PersonBelongings({
 
   return (
     <div className='space-y-3'>
+      {/* Their devices still online after they left (device sync). */}
+      <LeaverOnlineDevices personId={personId} left={left} />
       {/* First, because it is the one thing here that is not equipment:
           their sign-in. Leaving disables it, so this is usually a settled
           line saying so. When it could not — the platform's last

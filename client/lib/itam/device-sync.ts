@@ -258,3 +258,31 @@ export function useDeviceReviewAction() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itam'] }),
   });
 }
+
+/** A leaver's device a platform still heard from after they left. */
+export interface OnlineAfterLeaving {
+  readonly id: string;
+  readonly source: DeviceSourceKey;
+  readonly deviceId: string | null;
+  readonly deviceName: string | null;
+  readonly serialNo: string | null;
+  readonly lastSyncAt: string | null;
+}
+
+/** For a leaver's 归属 tab; empty unless they have left. */
+export function useOnlineAfterLeaving(
+  personId: string,
+  enabled: boolean,
+): UseQueryResult<OnlineAfterLeaving[]> {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['itam', DEVICE_SYNC_PATH, 'online', personId],
+    queryFn: async () =>
+      (
+        await api.request<{ data: OnlineAfterLeaving[] }>({
+          path: `${DEVICE_SYNC_PATH}/people/${personId}/online`,
+        })
+      ).data,
+    enabled,
+  });
+}

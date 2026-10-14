@@ -142,6 +142,62 @@ export interface DeviceReviewService {
   restore(managedId: string, actorId: string): Promise<Row>;
   /** 以台账为准: this difference, with this value, is not raised again. */
   dismiss(deviceId: string, kind: CheckKind, actorId: string): Promise<void>;
+  /**
+   * The devices in one sync state, for the device list's 同步状态 filter
+   * (2026-10-15): on a platform (`linked`), in use and on none
+   * (`unmanaged`), or silent (`stale`).
+   */
+  syncStateIds(state: SyncState): Promise<string[]>;
+  /** Each device's latest sync on any platform, for the list's column. */
+  lastSync(deviceIds: readonly string[]): Promise<Map<string, string>>;
+  /**
+   * A leaver's devices, by the platforms' primary user, that synced after
+   * the leave date: what their 归属 tab lists.
+   */
+  onlineAfterLeavingOf(
+    personId: string,
+    leaveDate: string,
+  ): Promise<
+    {
+      readonly id: string;
+      readonly source: string;
+      readonly deviceId: string | null;
+      readonly deviceName: string | null;
+      readonly serialNo: string | null;
+      readonly lastSyncAt: string | null;
+    }[]
+  >;
+}
+
+export const SYNC_STATES = ['linked', 'unmanaged', 'stale'] as const;
+export type SyncState = (typeof SYNC_STATES)[number];
+
+/**
+ * A list's options narrowed by `filter.syncState`, which no collection
+ * holds: the devices in that state become the ids the list may show (both
+ * the list and its export go through here).
+ */
+export async function narrowBySyncState<
+  T extends {
+    readonly filter?: Readonly<
+      Record<string, string | readonly string[] | Date>
+    >;
+    readonly ids?: readonly string[];
+  },
+>(review: DeviceReviewService, options: T): Promise<T> {
+  const raw = options.filter?.syncState;
+  if (raw === undefined) return options;
+  const { syncState: _state, ...filter } = options.filter ?? {};
+  const state = (
+    typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
+  ) as SyncState;
+  if (!SYNC_STATES.includes(state)) return { ...options, filter };
+  const inState = new Set(await review.syncStateIds(state));
+  const ids = options.ids
+    ? options.ids.filter((id) => inState.has(id))
+    : [...inState];
+  // An empty list of ids would mean "no narrowing": name nothing instead.
+  return { ...options, filter, ids: ids.length ? ids : ['__none__'] };
 }
 
 export const deviceReviewServiceToken: ServiceToken<DeviceReviewService> =
@@ -743,6 +799,73 @@ export function createDeviceReviewService(deps: {
         actorId,
       });
       deps.touched?.();
+    },
+
+    async syncStateIds(state) {
+      if (state === 'unmanaged')
+        return (await self.unmanaged()).map((device) => device.id);
+      if (state === 'stale')
+        return (await self.checks())
+          .filter((check) => check.kind === 'stale')
+          .map((check) => check.deviceId);
+      const rows = await database
+        .query()
+        .selectFrom('managedDevices')
+        .select('deviceId')
+        .where('matchState', '=', 'linked')
+        .where('goneAt', 'is', null)
+        .execute<{ deviceId: string | null }>();
+      return [
+        ...new Set(
+          rows
+            .map((row) => row.deviceId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+    },
+
+    async lastSync(deviceIds) {
+      const result = new Map<string, string>();
+      if (deviceIds.length === 0) return result;
+      const rows = await database
+        .query()
+        .selectFrom('managedDevices')
+        .select(['deviceId', 'lastSyncAt'])
+        .where('matchState', '=', 'linked')
+        .where('deviceId', 'in', [...deviceIds])
+        .execute<{ deviceId: string; lastSyncAt: unknown }>();
+      for (const row of rows) {
+        const at = iso(row.lastSyncAt);
+        if (!at) continue;
+        const known = result.get(row.deviceId);
+        if (!known || (time(at) ?? 0) > (time(known) ?? 0))
+          result.set(row.deviceId, at);
+      }
+      return result;
+    },
+
+    async onlineAfterLeavingOf(personId, leaveDate) {
+      if (!(await sync.connected())) return [];
+      const config = limits(await settings.get('deviceSync'));
+      let query = database
+        .query()
+        .selectFrom('managedDevices')
+        .selectAll()
+        .where('personId', '=', personId)
+        .where('goneAt', 'is', null);
+      if (config.ignorePersonal)
+        query = query.where('ownership', '!=', 'personal');
+      const rows = await query.orderBy('lastSyncAt', 'desc').execute<Row>();
+      return rows
+        .filter((row) => (iso(row.lastSyncAt)?.slice(0, 10) ?? '') > leaveDate)
+        .map((row) => ({
+          id: String(row.id),
+          source: String(row.source),
+          deviceId: asText(row.deviceId) ?? null,
+          deviceName: asText(row.deviceName) ?? null,
+          serialNo: asText(row.serialNo) ?? null,
+          lastSyncAt: iso(row.lastSyncAt),
+        }));
     },
   };
   return self;
