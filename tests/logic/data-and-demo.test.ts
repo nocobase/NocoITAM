@@ -433,12 +433,17 @@ describe('CSV import / export and demo data', () => {
       .resolve(databaseManagerToken)
       .query()
       .selectFrom('managedDevices')
-      .select(['externalId', 'matchState', 'ownership'])
+      .select(['externalId', 'matchState', 'ownership', 'lastSyncAt'])
       .execute()) as {
       externalId: string;
       matchState: string;
       ownership: string;
+      lastSyncAt: string;
     }[];
+    // Whatever the hour it is imported, no sync is dated in the future.
+    expect(
+      managed.filter((row) => Date.parse(row.lastSyncAt) > Date.now()),
+    ).toEqual([]);
     expect(
       managed.filter((row) => row.matchState === 'linked').length,
     ).toBeGreaterThanOrEqual(4);

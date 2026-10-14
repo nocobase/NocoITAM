@@ -3294,8 +3294,15 @@ export function createDemoService(dependencies: {
           (row) => row.status === 'inUse' && row.assigneeType === 'person',
         );
         const onShelf = computers.filter((row) => row.status === 'inStock');
-        const syncedAgo = (days: number, hour = 22) =>
-          `${daysFromNow(-days)}T${String(hour).padStart(2, '0')}:10:00.000Z`;
+        // A nightly sync at a UTC hour that has not come round yet today
+        // happened the day before; without the step back, a demo imported
+        // in the daytime in China showed syncs dated tomorrow.
+        const syncedAgo = (days: number, hour = 22) => {
+          const at = `${daysFromNow(-days)}T${String(hour).padStart(2, '0')}:10:00.000Z`;
+          return Date.parse(at) <= Date.now()
+            ? at
+            : new Date(Date.parse(at) - DAY).toISOString();
+        };
         const osOf = (manufacturer: unknown) =>
           manufacturer === 'Apple'
             ? { osName: 'macOS', osVersion: '15.6.1' }
