@@ -16,7 +16,7 @@ import { METHOD_SKILLS } from './skill.js';
  * when it has one.
  *
  * ITAM's method skills (ai/skills: onboarding, offboarding, receiving,
- * catalog) as skills of the library, where people read and edit them under
+ * catalog, device-sync) as skills of the library, where people read and edit them under
  * AI → 技能: each is added once, from its SKILL.md as shipped, and attached
  * to Noco; the marker keeps their ids, so a skill an administrator edited,
  * detached or deleted stays as they left it, and a later SKILL.md shipped

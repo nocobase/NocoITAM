@@ -2,7 +2,7 @@
 
 Read this before changing device sync: the platform connectors, the `managedDevices` and `deviceSyncRuns` tables, matching by serial, the device page's 管理平台 group, 设置 → 设备同步 or the nightly pull.
 
-The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); steps 1 to 3 of its four are built.
+The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); all four steps are built.
 
 - **Read only, and never into the register** (2026-10-14). A pull writes
   `managedDevices` (one row per platform record, keyed by `source` and the
@@ -110,3 +110,26 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   the differences read the latest sync. 管理平台核对 folds unregistered and
   kept-off records of one serial into one row (`sources` lists the
   platforms), and 不纳入台账 / 恢复 decide them together.
+- **Noco** (step 4, 2026-10-15): the method skill `device-sync`
+  (`ai/skills/device-sync/SKILL.md`, 管理平台核对) — explain a difference,
+  find the right device for a shared serial, sort the records the register
+  lacks into one plan; never mark lost or keep the register for the person,
+  never act on a platform. It reads `itam device-sync review` (`--view`, or
+  `--device-id` for one device's records and differences;
+  `deviceSyncReview` in `itam-agents/reads.ts`, under the person's devices
+  `read`), and proposes three plan steps besides the register's own:
+  `link_managed_device`, `unlink_managed_device` (devices `update`) and
+  `ignore_managed_device` (devices `create`), whose history reads origin
+  `agent`. A device a plan creates through `create_record` is matched by
+  serial at once, as on its page. Entry points: 让 Noco 看看 on a
+  difference's notice, and 让 Noco 解释这些差异 / 整理这批设备 on 管理平台核对.
+- **Eval set** (step 4): `server/providers/itam/evals/device-sync.ts` holds
+  the cases — what the commands show, the question, and the decision a
+  person who knows the method would make per item (transfer, assign,
+  register, link, ignore, restore, keep, verify, escalate) — and
+  `skill-evals.ts` scores them. `POST /api/itam/ai/evals/device-sync`
+  (settings grant) runs every case against Noco's model with the skill as
+  the library holds it and answers a report (passed / total, each case's
+  misses). Run it before changing the skill, the instructions or the model,
+  and attach the report to the change. A case from real use — a difference a
+  person settled otherwise than Noco proposed — is the best kind to add.

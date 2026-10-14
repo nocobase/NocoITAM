@@ -2830,6 +2830,23 @@ and keeps it off the register, or takes it back, on all of them. The demo's
 Jamf reports its Macs and all its phones in use but one. Step 4 (Noco's
 `device-sync` skill) is not started.
 
+### 2026-10-15 Device sync, step 4: Noco's method and its eval set
+
+Noco gets the fifth method skill, `device-sync` (管理平台核对), put into the
+library at the next start like the others. It reads `itam device-sync
+review` and proposes `link_managed_device`, `unlink_managed_device` and
+`ignore_managed_device` steps besides the register's own operations; a device
+it creates is linked by serial at once. 让 Noco 看看 sits on each difference
+on a device's page, and 管理平台核对 offers 让 Noco 解释这些差异 and 整理这批设备.
+
+The first eval set of the Solution comes with it
+(`server/providers/itam/evals/device-sync.ts`, six cases): situations with
+the decision a person who knows the method would make, scored per item, run
+against the model through `POST /api/itam/ai/evals/device-sync`. The cases
+are code rather than a file beside the skills so the build carries them
+without a copy step. Only the scoring is tested in CI; a model run needs the
+application's model service.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

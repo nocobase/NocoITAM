@@ -1982,6 +1982,17 @@ const messages = {
     },
   },
   deviceSync: {
+    prompts: {
+      checkAction: 'Ask Noco',
+      check:
+        'Using the device sync method, look at device {{device}} (id: {{id}}) and this difference: {{kind}}. Say what most likely happened and how to check it; propose a plan for what can be settled on the register.',
+      checksAction: 'Let Noco explain these',
+      checks:
+        'Using the device sync method, go through all current device checks: the most urgent first, each with its most likely cause and how to check it; put what can be settled on the register into one plan.',
+      unregisteredAction: 'Let Noco sort these out',
+      unregistered:
+        'Using the device sync method, handle the platform devices the register lacks: register what can be registered, find the right device for shared serials, keep off the register what does not belong there, all in one plan; list anything you are unsure of and ask me.',
+    },
     checks: {
       kinds: {
         stale: 'Silent',
@@ -2877,6 +2888,9 @@ const messages = {
         loan_device: 'Lend a device',
         return_devices: 'Return devices',
         transfer_device: 'Transfer a device',
+        link_managed_device: 'Link a platform device',
+        unlink_managed_device: 'Unlink a platform device',
+        ignore_managed_device: 'Keep a platform device off the register',
         reserve_device: 'Reserve a device',
         correct_device_status: 'Correct a device status',
         assign_seat: 'Assign a seat',

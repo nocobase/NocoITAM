@@ -28,6 +28,9 @@ import {
 } from '../itam/reference-names.js';
 import { REPORT_NAMES } from '../itam/reports.js';
 import { RecordNotFoundError } from '../itam/errors.js';
+import { compileAuthzScope } from '../itam/authz-filter.js';
+import { deviceReviewServiceToken } from '../itam/device-review.js';
+import { deviceSyncServiceToken } from '../itam/device-sync.js';
 
 /**
  * What ITAM's agent commands read (server/routes/itam/agent-commands.ts),
@@ -519,5 +522,78 @@ export async function onboardingPlan(
       employmentStatus: person.employmentStatus,
     },
     plan,
+  };
+}
+
+/** What `itam device-sync review` reads (device sync, step 4). */
+export const DeviceSyncReviewInput = z.object({
+  view: z
+    .enum(['checks', 'unregistered', 'unmanaged', 'ignored'])
+    .default('checks'),
+  deviceId: z.string().min(1).max(64).optional(),
+});
+
+/**
+ * Where the management platforms and the register disagree, as the person
+ * may see it: one view of 管理平台核对, or — with a device — that device's
+ * platform records and its differences. Differences and devices stay within
+ * the person's device `read`; platform records not on the register are
+ * listed to whoever may read devices, as the page lists them.
+ */
+export async function deviceSyncReview(
+  reader: Reader,
+  input: z.infer<typeof DeviceSyncReviewInput>,
+): Promise<Row> {
+  const conditions = await reader.scope.decide('devices', 'read');
+  const sync = reader.container.resolve(deviceSyncServiceToken);
+  const review = reader.container.resolve(deviceReviewServiceToken);
+  if (!(await review.active())) return { connected: false, rows: [] };
+  if (input.deviceId) {
+    if (!(await reader.get('devices', input.deviceId)))
+      throw new RecordNotFoundError('devices', input.deviceId);
+    return {
+      connected: true,
+      device: input.deviceId,
+      platformRecords: await sync.forDevice(input.deviceId),
+      differences: await review.checks({ deviceIds: [input.deviceId] }),
+    };
+  }
+  const inScope = async (ids: readonly string[]) => {
+    if (ids.length === 0) return new Set<string>();
+    const rows = await reader.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('devices')
+      .select('id')
+      .where((eb) => compileAuthzScope(eb, conditions.scope))
+      .where('id', 'in', [...ids])
+      .execute<{ id: string }>();
+    return new Set(rows.map((row) => row.id));
+  };
+  if (input.view === 'checks') {
+    const checks = await review.checks();
+    const visible = await inScope(checks.map((check) => check.deviceId));
+    return {
+      connected: true,
+      view: input.view,
+      rows: checks.filter((check) => visible.has(check.deviceId)),
+    };
+  }
+  if (input.view === 'unmanaged') {
+    const rows = await review.unmanaged();
+    const visible = await inScope(rows.map((row) => row.id));
+    return {
+      connected: true,
+      view: input.view,
+      rows: rows.filter((row) => visible.has(row.id)),
+    };
+  }
+  return {
+    connected: true,
+    view: input.view,
+    rows:
+      input.view === 'unregistered'
+        ? await review.unregistered()
+        : await review.ignored(),
   };
 }

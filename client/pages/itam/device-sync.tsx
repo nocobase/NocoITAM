@@ -4,6 +4,7 @@ import { useState, type ReactElement } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import { BackButton } from '@/components/back-button';
+import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { HolderLink } from '@/components/itam/holder-link';
 import { Page, PageHeader } from '@/components/itam/page-header';
@@ -31,6 +32,7 @@ import {
   type ReviewView,
   type UnregisteredDevice,
 } from '@/lib/itam/device-sync';
+import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
 
@@ -46,6 +48,7 @@ import { useReferenceNames } from '@/lib/itam/references';
 export default function DeviceSyncReviewPage(): ReactElement {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
+  const ai = useItamAi();
   const requested = params.get('view');
   const view: ReviewView = REVIEW_VIEWS.includes(requested as ReviewView)
     ? (requested as ReviewView)
@@ -71,9 +74,18 @@ export default function DeviceSyncReviewPage(): ReactElement {
           ))}
         </TabsList>
       </Tabs>
-      <p className='text-sm text-muted-foreground'>
-        {t(`deviceSync.review.hints.${view}`)}
-      </p>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
+        <p className='text-sm text-muted-foreground'>
+          {t(`deviceSync.review.hints.${view}`)}
+        </p>
+        {/* Noco explains the differences, or sorts out the records the
+            register lacks into one plan (device-sync skill, step 4). */}
+        {ai.available && (view === 'checks' || view === 'unregistered') ? (
+          <AiShortcut onClick={() => ai.ask(t(`deviceSync.prompts.${view}`))}>
+            {t(`deviceSync.prompts.${view}Action`)}
+          </AiShortcut>
+        ) : null}
+      </div>
       {view === 'checks' ? (
         <ChecksView />
       ) : view === 'unmanaged' ? (

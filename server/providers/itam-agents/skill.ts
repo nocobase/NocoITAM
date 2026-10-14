@@ -24,6 +24,7 @@ description: How to look things up in the IT asset register with the itam comman
 - \`itam availability\` — what is in stock for a model or category, stock quantities by name, free seats of a product.
 - \`itam model match --text "MacBook Pro 14"\` turns a description into model, category or product ids.
 - \`itam onboarding plan <personId>\` — a joiner's kit, what they have and the system's proposal for the rest.
+- \`itam device-sync review --view checks|unregistered|unmanaged|ignored\` — where the device management platforms (Intune, Jamf Pro) and the register disagree; \`--device-id <id>\` for one device's platform records and differences.
 
 Every command prints \`{ ok, result: { data } }\`; a search's rows are \`.result.data.rows[]\` with a \`…Name\` beside each id. Cut output with jq or \`head -n\`, never \`head -c\`, which splits Chinese characters.
 
@@ -49,7 +50,7 @@ itam plan create --file /tmp/plan.json
 \`\`\`
 
 - \`itam plan ops\` lists every operation and the JSON Schema of its \`params\`, and the fields \`create_record\` takes for each collection. Read it before writing a step of a kind you have not written in this conversation; a field that is not there, or a value of the wrong type, refuses the plan.
-- The operations: assign_device, loan_device, return_devices, transfer_device, reserve_device, correct_device_status, assign_seat, reclaim_seats, create_purchase_order, create_disposal, update_master_record, create_record, stock_in, issue_stock, take_back_stock, receive_purchase_line.
+- The operations: assign_device, loan_device, return_devices, transfer_device, reserve_device, correct_device_status, link_managed_device, unlink_managed_device, ignore_managed_device, assign_seat, reclaim_seats, create_purchase_order, create_disposal, update_master_record, create_record, stock_in, issue_stock, take_back_stock, receive_purchase_line.
 - Each step's \`params.title\` is its own line on the card, in the person's language ("把 DE-000012 分配给李娜"). Ids come from the commands, never guessed.
 - A step names a record an earlier step creates by its \`ref\` (\`$laptop\`) or its place (\`$1\`), wherever an id goes.
 - The plan is checked when you create it: a refused step is named (\`steps.2\`) with why. Fix that step and create the plan again.
@@ -80,4 +81,6 @@ export const METHOD_SKILLS = [
   'offboarding',
   'receiving',
   'catalog',
+  // Device sync, step 4 (2026-10-15).
+  'device-sync',
 ] as const;

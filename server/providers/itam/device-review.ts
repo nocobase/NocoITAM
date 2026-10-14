@@ -120,10 +120,22 @@ export interface DeviceReviewService {
   onlineAfterLeaving(
     people: readonly { readonly id: string; readonly leaveDate: string }[],
   ): Promise<Map<string, number>>;
-  /** Ties a platform record to a register device, by a person. */
-  link(managedId: string, deviceId: string, actorId: string): Promise<Row>;
+  /**
+   * Ties a platform record to a register device, by a person — or on a plan
+   * Noco proposed and the person confirmed (`origin: 'agent'`).
+   */
+  link(
+    managedId: string,
+    deviceId: string,
+    actorId: string,
+    origin?: 'human' | 'agent',
+  ): Promise<Row>;
   /** Unties it; a person's decision, so the next pull leaves it alone. */
-  unlink(managedId: string, actorId: string): Promise<Row>;
+  unlink(
+    managedId: string,
+    actorId: string,
+    origin?: 'human' | 'agent',
+  ): Promise<Row>;
   /** Keeps a platform record off the register, with the reason. */
   ignore(managedId: string, reason: string, actorId: string): Promise<Row>;
   /** Takes a kept-off record back: it is matched again at once. */
@@ -589,7 +601,7 @@ export function createDeviceReviewService(deps: {
       return result;
     },
 
-    async link(managedId, deviceId, actorId) {
+    async link(managedId, deviceId, actorId, origin = 'human') {
       const row = await managedRow(managedId);
       if (row.matchState === 'linked' && row.deviceId === deviceId) return row;
       await history.record({
@@ -603,7 +615,7 @@ export function createDeviceReviewService(deps: {
           targetLabel: asText(row.deviceName) ?? String(row.externalId),
           manual: true,
         },
-        origin: 'human',
+        origin,
         sourceType: 'managedDevices',
         sourceId: managedId,
         actorId,
@@ -618,7 +630,7 @@ export function createDeviceReviewService(deps: {
       });
     },
 
-    async unlink(managedId, actorId) {
+    async unlink(managedId, actorId, origin = 'human') {
       const row = await managedRow(managedId);
       const deviceId = asText(row.deviceId);
       if (row.matchState !== 'linked' || !deviceId)
@@ -636,7 +648,7 @@ export function createDeviceReviewService(deps: {
           externalId: row.externalId,
           targetLabel: asText(row.deviceName) ?? String(row.externalId),
         },
-        origin: 'human',
+        origin,
         sourceType: 'managedDevices',
         sourceId: managedId,
         actorId,

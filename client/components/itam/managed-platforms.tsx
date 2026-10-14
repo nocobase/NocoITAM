@@ -5,6 +5,7 @@ import { useState, type ReactElement, type ReactNode } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AiShortcut } from './ai/ai-shortcut.js';
 import { ConfirmDialog } from './confirm-dialog.js';
 import { HolderLink } from './holder-link.js';
 import { InfoRow, InfoSection } from './detail-page.js';
@@ -14,6 +15,7 @@ import {
   type DeviceCheck,
   type ManagedDevice,
 } from '@/lib/itam/device-sync';
+import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate, toDate } from '@/lib/itam/format';
 
 /** What the device's page offers to settle a difference with. */
@@ -85,6 +87,7 @@ function CheckNotice({
 }): ReactElement {
   const { t } = useTranslation();
   const review = useDeviceReviewAction();
+  const ai = useItamAi();
   const [now] = useState(() => Date.now());
   const source = t(`deviceSync.sources.${check.source}`);
   const user = check.userName ?? '';
@@ -162,6 +165,25 @@ function CheckNotice({
               {t('deviceSync.checks.keepRegister')}
             </Button>
           </span>
+        ) : null}
+        {/* Why it is so and what to do, by the device-sync skill (step 4). */}
+        {ai.available ? (
+          <AiShortcut
+            onClick={() =>
+              ai.ask(
+                t('deviceSync.prompts.check', {
+                  device:
+                    [check.deviceNo, check.deviceName]
+                      .filter(Boolean)
+                      .join(' / ') || check.deviceId,
+                  id: check.deviceId,
+                  kind: t(`deviceSync.checks.kinds.${check.kind}`),
+                }),
+              )
+            }
+          >
+            {t('deviceSync.prompts.checkAction')}
+          </AiShortcut>
         ) : null}
       </AlertDescription>
     </Alert>

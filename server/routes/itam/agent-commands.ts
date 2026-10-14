@@ -34,11 +34,13 @@ import { z } from 'zod';
 
 import {
   AvailabilityInput,
+  DeviceSyncReviewInput,
   SEARCHABLE_COLLECTIONS,
   SearchInput,
   StatsInput,
   availability,
   businessContext,
+  deviceSyncReview,
   getRecord,
   matchModel,
   onboardingPlan,
@@ -295,6 +297,29 @@ export const agentCommandRoutes: AppApiRouteContribution<Application> =
           data: await onboardingPlan(
             reader(context),
             context.req.valid('param').personId,
+          ),
+        }),
+    );
+
+    // Device sync (step 4, 2026-10-15): where the management platforms and
+    // the register disagree, the way 管理平台核对 lists it.
+    router.get(
+      '/assistant/device-sync/review',
+      describeRoute({
+        tags,
+        summary: 'Device sync review',
+        operationId: 'itamDeviceSyncReview',
+        description:
+          "Where the device management platforms (Intune, Jamf Pro) and the register disagree. `view`: checks — register devices that are silent (`stale`), with another primary user (`userMismatch`) or online while off duty (`statusMismatch`); unregistered — platform records no device answers to, with `suggestedModelId` and, for a serial several devices share, `candidates`; unmanaged — devices in use of a managed category on no platform; ignored — records kept off the register. With `deviceId`, that device's platform records and differences. `connected: false` means no platform is connected.",
+        ...command(VIEW_ACTION, { command: 'device-sync review' }),
+        responses: { '200': dataResponse(anyData), ...apiErrorResponses },
+      }),
+      apiValidator('query', DeviceSyncReviewInput),
+      async (context) =>
+        context.json({
+          data: await deviceSyncReview(
+            reader(context),
+            context.req.valid('query'),
           ),
         }),
     );

@@ -16,6 +16,7 @@ import { refuse, type AiWriteFailure } from '../../providers/itam/ai-writes.js';
 import { itamChangesToken } from '../../providers/itam/changes.js';
 import { MASTER_DATA_COLLECTIONS } from '../../providers/itam/collections.js';
 import type { OperationContext } from '../../providers/itam/devices.js';
+import { deviceSyncServiceToken } from '../../providers/itam/device-sync.js';
 import { seatsRequired } from '../../providers/itam/entitlements.js';
 import { ValidationError } from '../../providers/itam/errors.js';
 import { HOLDER_TYPES } from '../../providers/itam/stock.js';
@@ -385,6 +386,13 @@ async function executeRecordTool(
           context,
           scope,
         );
+        // A device a platform already reports is linked at once, as when
+        // it is created on its page (device sync, step 4).
+        if (collection === 'devices' && container.has(deviceSyncServiceToken))
+          await container
+            .resolve(deviceSyncServiceToken)
+            .matchDevice(String(row.id), scope.actorId)
+            .catch(() => undefined);
         return {
           collection,
           id: row.id,
