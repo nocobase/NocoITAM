@@ -67,7 +67,7 @@ export default function WorkbenchPage(): ReactElement {
       {/* The board takes the rest of the page's height, so each column
           scrolls its own cards and the sideways scrollbar sits at the foot
           of the page — as the status boards do. */}
-      <div className='-mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
+      <div className='scroll-shown -mx-1 flex min-h-80 flex-1 gap-3 overflow-x-auto px-1 pb-2'>
         {/* 需要关注 leads the board, then 离职交接 (2026-10-05): somebody has
             left with the company's equipment, the one to-do that was ever
             `critical`, and each is a job of several parts. */}
@@ -408,8 +408,10 @@ function LeaverCard({
             ) : null}
           </div>
           {record.date ? (
-            <p className='flex gap-1.5 text-xs text-muted-foreground tabular-nums'>
-              <span>
+            // Each phrase whole: on a narrow card the countdown moves under
+            // the date rather than either breaking mid-phrase.
+            <p className='flex flex-wrap gap-x-1.5 text-xs text-muted-foreground tabular-nums'>
+              <span className='whitespace-nowrap'>
                 {t(
                   joining ? 'workbench.work.joinsOn' : 'workbench.work.leftOn',
                   { date: formatDate(record.date) },
@@ -418,7 +420,9 @@ function LeaverCard({
               {/* A joiner's column runs from next week to months out, so
                   each card says how far off the first day is. */}
               {joining ? (
-                <span className='font-medium text-foreground'>{countdown}</span>
+                <span className='font-medium whitespace-nowrap text-foreground'>
+                  {countdown}
+                </span>
               ) : null}
             </p>
           ) : null}

@@ -298,3 +298,11 @@ CSV exports write a reference as the name the pages show — the lookup in
 `server/providers/itam/reference-names.ts`, which the AI tools' `…Name`
 fields share — and imports accept those names, so an export re-imports.
 A collection the caller may not read keeps its ids.
+
+A board's sideways scroller (the status boards' and the workbench's) carries
+`scroll-shown` (template 1.0.0-beta.68, `client/styles.css`): every other
+scrollbar is thin and shows only while its element scrolls, while a board is
+wider than the page and a mouse without a sideways wheel moves it only by its
+bar, so that one always shows. A joiner's card keeps its date and its
+countdown each whole (`whitespace-nowrap`, wrapping between them), since the
+template's roomier spacing narrowed the column's text.

@@ -1,7 +1,9 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { ChevronRight } from 'lucide-react';
 import {
+  createContext,
   Fragment,
+  useContext,
   useRef,
   useState,
   type ReactElement,
@@ -26,6 +28,7 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuAction,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -45,75 +48,112 @@ const SELECTED =
   'data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground';
 
 /**
- * A permission-filtered route tree as the sidebar's menu, drawn with shadcn's Sidebar primitives. Groups and parents
- * with a page are collapsible sub-menus. In the desktop icon mode the labels hide, every entry carries its label as a
- * tooltip, and an entry with children opens them in a popover.
+ * A count beside a menu entry. A number is what waits on the viewer, such as unread messages or requests to decide;
+ * `live` is work under way, such as runs in progress, with `hint` as its words for the tooltip and screen readers. Zero
+ * shows nothing.
+ */
+export type NavigationBadge =
+  | number
+  | { readonly count: number; readonly live: true; readonly hint: string };
+
+/** Counts keyed by the route name of the entry they stand beside. */
+export type NavigationBadges = Readonly<Record<string, NavigationBadge>>;
+
+const NavigationBadgesContext = createContext<NavigationBadges>({});
+
+function useNavigationBadge(item: RouteNavigationItem): {
+  readonly count: number;
+  readonly live: boolean;
+  readonly text: string;
+} {
+  const badge = useContext(NavigationBadgesContext)[item.route.name];
+  if (typeof badge === 'object')
+    return { count: badge.count, live: true, text: badge.hint };
+  const count = badge ?? 0;
+  return { count, live: false, text: String(count) };
+}
+
+/**
+ * A permission-filtered route tree as the sidebar's menu, drawn with shadcn's Sidebar primitives. A top-level group
+ * with no page of its own is a section: a sidebar group under a small heading, its entries always shown. Nested groups
+ * and parents with a page are collapsible sub-menus. In the desktop icon mode the labels and headings hide, every entry
+ * carries its label as a tooltip, and an entry with children opens them in a popover.
  */
 export function NavigationMenu({
   items,
   label,
   selectedKey,
-  sections = false,
+  sections = true,
+  badges = {},
   after,
 }: {
   readonly items: readonly RouteNavigationItem[];
   readonly label: string;
   readonly selectedKey: string | undefined;
-  // Application change (ITAM, after NocoCRM's): a menu-only group (children
-  // and no page of its own) is a section, its own sidebar group with a small
-  // heading and its entries always shown, rather than the template's
-  // collapsible or, in the icon mode, its popover. ITAM's sidebar never
-  // folded (2026-10-04): 资产, 业务 and 主数据 hold every page, and a menu
-  // that hid them behind a click on every visit would defeat the grouping.
-  // The icon mode hides the heading (the primitive's own behaviour) and
-  // keeps the entries' icons.
+  /** `false` draws top-level groups as collapsible sub-menus too. */
   readonly sections?: boolean;
-  // Application change (ITAM): something drawn right after the entry of the
-  // route so named, among the plain entries: 搜索, under 工作台, which opens
-  // a dialog rather than a page, so no route's `navigation` can express it
-  // (client/components/itam/global-search.tsx).
+  /**
+   * Counts beside entries, keyed by route name, for a page entry that is not a sub-menu's: a top-level entry or a
+   * section's. They change while the page is open, so the layout passes them rather than the route declaring them.
+   */
+  readonly badges?: NavigationBadges;
+  /**
+   * Application change (ITAM): something drawn right after the entry of the
+   * route so named, among the plain entries: 搜索, under 工作台, which opens a
+   * dialog rather than a page, so no route's `navigation` can express it
+   * (client/components/itam/global-search.tsx).
+   */
   readonly after?: Readonly<Record<string, ReactNode>>;
 }): ReactElement {
+  // A group already divided into `section`s by the navigation stays one collapsible entry over them.
   const isSection = (item: RouteNavigationItem): boolean =>
-    sections && item.children.length > 0 && !item.route.componentLoader;
-  // Consecutive plain entries share one group; each section is a group.
+    sections &&
+    item.children.length > 0 &&
+    !item.route.componentLoader &&
+    !item.children.some((child) => child.section);
+  // Consecutive plain entries share one sidebar group; each section is a group of its own.
   const runs: (RouteNavigationItem | RouteNavigationItem[])[] = [];
   for (const item of items) {
+    const last = runs.at(-1);
     if (isSection(item)) runs.push(item);
-    else if (Array.isArray(runs.at(-1)))
-      (runs.at(-1) as RouteNavigationItem[]).push(item);
+    else if (Array.isArray(last)) last.push(item);
     else runs.push([item]);
   }
   return (
-    <nav aria-label={label}>
-      {runs.map((run) =>
-        Array.isArray(run) ? (
-          <SidebarGroup key={routeKey(run[0].route)}>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {run.map((item) => (
-                  <Fragment key={routeKey(item.route)}>
-                    <NavigationItem item={item} selectedKey={selectedKey} />
-                    {after?.[item.route.name]}
-                  </Fragment>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ) : (
-          <NavigationSection
-            key={routeKey(run.route)}
-            item={run}
-            selectedKey={selectedKey}
-          />
-        ),
-      )}
-    </nav>
+    <NavigationBadgesContext value={badges}>
+      <nav aria-label={label}>
+        {runs.map((run) =>
+          Array.isArray(run) ? (
+            <SidebarGroup key={routeKey(run[0].route)}>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {run.map((item) => (
+                    <Fragment key={routeKey(item.route)}>
+                      <NavigationItem item={item} selectedKey={selectedKey} />
+                      {after?.[item.route.name]}
+                    </Fragment>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : (
+            <NavigationGroup
+              key={routeKey(run.route)}
+              item={run}
+              selectedKey={selectedKey}
+            />
+          ),
+        )}
+      </nav>
+    </NavigationBadgesContext>
   );
 }
 
-/** A section of the application menu (`sections`): a heading over its entries, always shown. */
-function NavigationSection({
+/**
+ * A top-level group with no page of its own, as a sidebar group under a heading, its entries always shown. A section
+ * the navigation marks deeper in the tree (`section`) is a `NavigationSection` inside its menu instead.
+ */
+function NavigationGroup({
   item,
   selectedKey,
 }: {
@@ -136,6 +176,43 @@ function NavigationSection({
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
+  );
+}
+
+/** Navigation sections are labels with direct links, rather than another collapsible menu level. */
+function NavigationSection({
+  item,
+  selectedKey,
+  onNavigate,
+  inPopover = false,
+}: ItemProps): ReactElement {
+  const label = useItemLabel(item);
+  return (
+    <SidebarMenuItem>
+      <SidebarGroup role='group' aria-label={label} className='p-0'>
+        <SidebarGroupLabel
+          className={
+            inPopover
+              ? 'text-sidebar-foreground/50 group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:opacity-100'
+              : 'text-sidebar-foreground/50'
+          }
+        >
+          {label}
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {item.children.map((child) => (
+              <NavigationSubItem
+                key={routeKey(child.route)}
+                item={child}
+                selectedKey={selectedKey}
+                onNavigate={onNavigate}
+              />
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    </SidebarMenuItem>
   );
 }
 
@@ -176,9 +253,21 @@ function NavigationItem({
   const isSelected = routeKey(item.route) === selectedKey;
   const children = item.children;
   const disclosure = useDisclosure(item, selectedKey);
+  const badge = useNavigationBadge(item);
+  const counted = badge.count > 0 ? `${label} · ${badge.text}` : null;
   const tooltip = inPopover
     ? undefined
     : { children: label, role: 'tooltip', sideOffset: 8 };
+
+  if (item.section)
+    return (
+      <NavigationSection
+        item={item}
+        selectedKey={selectedKey}
+        onNavigate={navigate}
+        inPopover={inPopover}
+      />
+    );
 
   if (children.length > 0 && state === 'collapsed' && !isMobile && !inPopover)
     return (
@@ -207,12 +296,22 @@ function NavigationItem({
         <SidebarMenuButton
           render={link}
           isActive={isSelected}
-          tooltip={tooltip}
+          // A counted entry is named with its count, as its tooltip shows it.
+          aria-label={counted ?? undefined}
+          tooltip={
+            tooltip && counted ? { ...tooltip, children: counted } : tooltip
+          }
           className={SELECTED}
         >
           {Icon ? <Icon /> : null}
           <span>{label}</span>
         </SidebarMenuButton>
+        {badge.count > 0 && (
+          <EntryBadge
+            {...badge}
+            dot={state === 'collapsed' && !isMobile && !inPopover}
+          />
+        )}
       </SidebarMenuItem>
     );
 
@@ -264,6 +363,50 @@ function NavigationItem({
   );
 }
 
+/**
+ * An entry's count at the row's end, on a round ground of its own; work under way in the primary color behind a
+ * pulsing dot. The primitive hides it in the icon mode, where a dot on the icon's corner keeps it noticed and the
+ * tooltip carries the count. The words are the entry's, so this is hidden from screen readers.
+ */
+function EntryBadge({
+  count,
+  live,
+  text,
+  dot,
+}: {
+  readonly count: number;
+  readonly live: boolean;
+  readonly text: string;
+  readonly dot: boolean;
+}): ReactElement {
+  const pulse = 'animate-pulse motion-reduce:animate-none';
+  return (
+    <>
+      <SidebarMenuBadge
+        aria-hidden
+        title={live ? text : undefined}
+        className={
+          live
+            ? 'gap-1 rounded-full bg-primary/10 px-1.5 text-primary dark:bg-primary/20'
+            : 'rounded-full bg-foreground/8 px-1.5 dark:bg-foreground/15'
+        }
+      >
+        {live && (
+          <span className={`size-1.5 rounded-full bg-primary ${pulse}`} />
+        )}
+        {count > 99 ? '99+' : count}
+      </SidebarMenuBadge>
+      {dot && (
+        <span
+          aria-hidden
+          data-slot='navigation-badge-dot'
+          className={`pointer-events-none absolute top-1 right-1 size-2 rounded-full bg-primary ${live ? pulse : ''}`}
+        />
+      )}
+    </>
+  );
+}
+
 /** An entry inside a sub-menu: a link, or a collapsible sub-menu of its own. */
 function NavigationSubItem({
   item,
@@ -275,6 +418,14 @@ function NavigationSubItem({
   const isSelected = routeKey(item.route) === selectedKey;
   const disclosure = useDisclosure(item, selectedKey);
   const children = item.children;
+  if (item.section)
+    return (
+      <NavigationSection
+        item={item}
+        selectedKey={selectedKey}
+        onNavigate={onNavigate}
+      />
+    );
   if (children.length === 0 && !item.route.componentLoader) return null;
 
   const link = item.route.componentLoader ? (
