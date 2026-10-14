@@ -89,6 +89,18 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   leave date); `/device-sync` (管理平台核对, no menu entry or page grant,
   views checks / unregistered / unmanaged / ignored, devices `read`); the
   settings tab's 核对规则 card (`deviceSync` settings key).
+- **The device list** (2026-10-15): while a platform is connected the list
+  response says `syncConnected` and each row carries `lastSyncAt` (the
+  latest of its linked records), which the 最后同步 column shows; the
+  同步状态 filter (`filter[syncState]`: `linked`, `unmanaged`, `stale`) is
+  no column — `narrowBySyncState` turns it into the ids the list and its CSV
+  export may show. Both are absent while no platform is connected.
+- **A leaver's 归属 tab** lists the devices a platform still heard from
+  after the leave date with them as primary user
+  (`GET /itam/device-sync/people/:id/online`, people and devices `read`;
+  `LeaverOnlineDevices`), above everything else and even when they hold
+  nothing on the register — a device returned on paper but still signing in
+  as them is the case it is for.
 - **Grants**: the review lists take devices `read`; link, unlink and
   以台账为准 the device's `update`; 不纳入台账 and 恢复 devices `create`, the
   act they stand in for.

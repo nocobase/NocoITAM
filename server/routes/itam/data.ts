@@ -9,6 +9,11 @@ import {
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
 import { Hono } from 'hono';
+
+import {
+  deviceReviewServiceToken,
+  narrowBySyncState,
+} from '../../providers/itam/device-review.js';
 import { databaseManagerToken } from '@nocobase/db';
 import { z } from 'zod';
 
@@ -133,7 +138,15 @@ export const dataRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
           context.req.param('collection'),
         );
         const conditions = await decideCollection(context, collection, 'read');
-        const options = parseListOptions(context);
+        // A device list exported under its 同步状态 filter exports those
+        // devices (device sync, 2026-10-15).
+        const options =
+          collection === 'devices'
+            ? await narrowBySyncState(
+                app.container.resolve(deviceReviewServiceToken),
+                parseListOptions(context),
+              )
+            : parseListOptions(context);
         const result = await domains.list(
           collection,
           { ...options, page: 1, pageSize: 5000 },

@@ -230,6 +230,42 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
       }
     });
 
+    // A leaver's devices still online after they left (2026-10-15): what
+    // their 归属 tab warns of. The person under people `read`, the devices
+    // under devices `read`.
+    routes.get('/people/:personId/online', async (context) => {
+      try {
+        const personId = context.req.param('personId') ?? '';
+        const people = await decideFor(context, 'people', 'read');
+        await decideFor(context, 'devices', 'read');
+        const person = await database
+          .query()
+          .selectFrom('people')
+          .select(['id', 'leaveDate', 'employmentStatus'])
+          .where((eb) => compileAuthzScope(eb, people.scope))
+          .where('id', '=', personId)
+          .executeTakeFirst<{
+            id: string;
+            leaveDate: string | null;
+            employmentStatus: string | null;
+          }>();
+        if (!person)
+          return context.json(
+            { code: 'NOT_FOUND', message: 'Person not found' },
+            404,
+          );
+        const leaveDate =
+          person.employmentStatus === 'left' ? person.leaveDate : null;
+        return context.json({
+          data: leaveDate
+            ? await review.onlineAfterLeavingOf(personId, leaveDate)
+            : [],
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
     router.route('/itam/device-sync', routes);
     return router;
   });

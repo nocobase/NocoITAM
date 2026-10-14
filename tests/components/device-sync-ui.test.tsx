@@ -7,8 +7,10 @@ import { DeviceSyncCard } from '../../client/pages/itam/settings/device-sync-car
 import type {
   DeviceCheck,
   ManagedDevice,
+  OnlineAfterLeaving,
   SourceStatus,
 } from '../../client/lib/itam/device-sync.js';
+import { LeaverOnlineDevices } from '../../client/components/itam/leaver-online-devices.js';
 
 const state = vi.hoisted(() => ({
   managed: undefined as
@@ -16,6 +18,7 @@ const state = vi.hoisted(() => ({
     | undefined,
   review: vi.fn(),
   ask: vi.fn(),
+  online: [] as OnlineAfterLeaving[],
   status: [] as SourceStatus[],
   start: vi.fn(),
 }));
@@ -30,6 +33,7 @@ vi.mock('@nocobase/i18n/client', () => ({
 vi.mock('../../client/lib/itam/device-sync.js', () => ({
   useManagedDevices: () => ({ data: state.managed }),
   useDeviceSyncStatus: () => ({ data: state.status }),
+  useOnlineAfterLeaving: () => ({ data: state.online }),
   useDeviceReviewAction: () => ({
     mutate: state.review,
     isPending: false,
@@ -296,5 +300,49 @@ describe('设置 → 设备同步', () => {
     expect(
       screen.getByRole('button', { name: /settings\.deviceSync\.running/ }),
     ).toBeDisabled();
+  });
+});
+
+describe("a leaver's 归属 tab", () => {
+  it('names the devices still online after they left, and nothing otherwise', () => {
+    state.online = [];
+    const { container, rerender } = render(
+      <MemoryRouter>
+        <LeaverOnlineDevices personId='p1' left />
+      </MemoryRouter>,
+    );
+    expect(container).toBeEmptyDOMElement();
+    state.online = [
+      {
+        id: 'm1',
+        source: 'intune',
+        deviceId: 'd1',
+        deviceName: 'LAPTOP-LOU',
+        serialNo: 'S1',
+        lastSyncAt: '2026-10-13T08:00:00.000',
+      },
+      {
+        id: 'm2',
+        source: 'jamf',
+        deviceId: null,
+        deviceName: null,
+        serialNo: 'S2',
+        lastSyncAt: '2026-10-12T08:00:00.000',
+      },
+    ];
+    rerender(
+      <MemoryRouter>
+        <LeaverOnlineDevices personId='p1' left />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.getByText('deviceSync.onlineAfterLeaving:2'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'LAPTOP-LOU' })).toHaveAttribute(
+      'href',
+      '/devices/d1',
+    );
+    expect(screen.getByText('S2')).toBeInTheDocument();
+    expect(screen.getByText('deviceSync.notOnRegister')).toBeInTheDocument();
   });
 });

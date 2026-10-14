@@ -24,12 +24,27 @@ import {
   DEVICE_FIELDS,
   holderCollection,
 } from '@/lib/itam/devices';
-import { addMonths, text } from '@/lib/itam/format';
+import { addMonths, formatDate, text } from '@/lib/itam/format';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 import { useReferenceNames } from '@/lib/itam/references';
 import { isTreeReference } from '@/lib/itam/tree';
 import { FOUND_IDS, FOUND_TITLE, foundIds } from '@/lib/itam/search';
+
+/**
+ * 同步状态 (device sync, 2026-10-15): a filter no column holds — the server
+ * narrows the list to the devices in that state.
+ */
+const SYNC_STATE_FIELD: FieldDefinition = {
+  key: 'syncState',
+  label: 'deviceSync.filter.label',
+  type: 'select',
+  options: [
+    { value: 'linked', label: 'deviceSync.filter.linked' },
+    { value: 'unmanaged', label: 'deviceSync.filter.unmanaged' },
+    { value: 'stale', label: 'deviceSync.filter.stale' },
+  ],
+};
 
 /** Stat-card names for the views the workbench links to. */
 const VIEW_LABELS: Readonly<Record<string, string>> = {
@@ -59,6 +74,8 @@ function DevicesList(): ReactElement {
   const categoryId = params.get('categoryId') ?? undefined;
   const locationId = params.get('locationId') ?? undefined;
   const departmentId = params.get('departmentId') ?? undefined;
+  // 同步状态 (device sync, 2026-10-15): on a platform, unmanaged or silent.
+  const syncState = params.get('syncState') ?? undefined;
   // The devices Noco found for a question asked on the workbench.
   const found = foundIds(params);
 
@@ -77,9 +94,14 @@ function DevicesList(): ReactElement {
     q,
     sort: sortField,
     order: sortOrder,
-    filter: { view, status, categoryId, locationId, departmentId },
+    filter: { view, status, categoryId, locationId, departmentId, syncState },
     ids: found,
   });
+  // Whether any management platform is connected: the 同步状态 filter and
+  // the 最后同步 column are only there then.
+  const syncConnected = Boolean(
+    (list.data as { syncConnected?: boolean } | undefined)?.syncConnected,
+  );
   const mutations = useItamMutations<ItamRecord>(DEVICES_PATH);
   const currentUserId = useCurrentUserId();
 
@@ -200,6 +222,22 @@ function DevicesList(): ReactElement {
         ),
     },
     ...columns.filter((field) => trailing.includes(field.key)).map(fieldColumn),
+    // When a platform last heard from it, while one is connected.
+    ...(syncConnected
+      ? [
+          {
+            key: 'lastSyncAt',
+            header: t('deviceSync.fields.lastSync'),
+            className: 'whitespace-nowrap tabular-nums',
+            render: (row: ItamRecord) =>
+              row.lastSyncAt ? (
+                formatDate(row.lastSyncAt, true)
+              ) : (
+                <span className='text-muted-foreground'>—</span>
+              ),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -252,7 +290,9 @@ function DevicesList(): ReactElement {
         value={q}
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        forceOpen={Boolean(status || categoryId || locationId || departmentId)}
+        forceOpen={Boolean(
+          status || categoryId || locationId || departmentId || syncState,
+        )}
         onChange={(value) => setParam({ q: value, page: undefined })}
         onClear={() =>
           setParam({
@@ -261,6 +301,7 @@ function DevicesList(): ReactElement {
             categoryId: undefined,
             locationId: undefined,
             departmentId: undefined,
+            syncState: undefined,
             page: undefined,
           })
         }
@@ -268,8 +309,12 @@ function DevicesList(): ReactElement {
           // The same controls as the master-data lists, so every list's
           // filters look alike.
           <MasterDataFilters
-            fields={filterFields}
-            value={{ status, categoryId, locationId, departmentId }}
+            fields={
+              syncConnected || syncState
+                ? [...filterFields, SYNC_STATE_FIELD]
+                : filterFields
+            }
+            value={{ status, categoryId, locationId, departmentId, syncState }}
             onChange={(key, next) => setParam({ [key]: next, page: undefined })}
           />
         }
