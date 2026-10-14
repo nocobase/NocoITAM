@@ -166,7 +166,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   with the job right after it, the leave date under them, then a bar of 已处理 N / M — `MyWorkRecord.progress`,
   counted against the newest belongings snapshot exactly as the 归属 tab
   counts it (`handoverProgress` in `workbench.ts`), restricted to the
-  kinds the reader may act on. The global search is the sidebar's 搜索 and
+  kinds the reader may act on. The global search is the sidebar's search button and
   ⌘K; the field beside the workbench's title that also opened it went on
   2026-10-06 — a third way into the same dialog, on one page only.
 - The board shows only what is waiting; there is no 已完成 (2026-10-05,

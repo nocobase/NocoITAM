@@ -17,6 +17,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
   InputGroup,
@@ -24,6 +25,11 @@ import {
   InputGroupInput,
 } from '@/components/ui/input-group';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   SidebarMenuButton,
   SidebarMenuItem,
@@ -349,34 +355,61 @@ function SearchPanel({
   );
 }
 
-/**
- * 搜索 in the sidebar, right under 工作台: not a page but the dialog, so it
- * is drawn here like a navigation link rather than declared as a route.
- */
+// Application change (ITAM, 2026-10-14): 搜索 is not a page but the dialog,
+// so it is drawn in the sidebar rather than declared as a route. It sits
+// beside the brand, as NocoCRM has it (AppSidebar's `action`), with its
+// shortcut on hover; in the phone's sheet it closes the sheet first, which
+// would cover the dialog.
+export function SearchHeaderButton(): ReactElement | null {
+  const { t } = useTranslation();
+  const search = useGlobalSearch();
+  const { isMobile, setOpenMobile } = useSidebar();
+  if (!search) return null;
+  const label = t('navigation.search');
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            aria-label={label}
+            // The menu's own colour, in a box larger than the icon for the
+            // hover's ground, pulled back by its margin.
+            className='-m-1 size-7 rounded-md p-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            onClick={() => {
+              if (isMobile) setOpenMobile(false);
+              search.setOpen(true);
+            }}
+            size='icon-sm'
+            variant='ghost'
+          />
+        }
+      >
+        <Search />
+      </TooltipTrigger>
+      <TooltipContent side='bottom'>
+        {isMobile ? label : `${label} · ${SHORTCUT}`}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+// The collapsed sidebar has no room beside its mark, so there the search is
+// an entry of the menu under the workbench (NavigationMenu's `after`), with
+// the same tooltip as the pages around it.
 export function SearchNavButton(): ReactElement | null {
   const { t } = useTranslation();
   const search = useGlobalSearch();
-  // Application change (ITAM, template beta.64): an entry of the template's
-  // sidebar menu, so it lines up with the pages around it and wears the
-  // same tooltip in the icon mode; on a phone it closes the sheet, which
-  // would cover the dialog.
-  const { isMobile, setOpenMobile } = useSidebar();
-  if (!search) return null;
+  const { isMobile, state } = useSidebar();
+  if (!search || isMobile || state !== 'collapsed') return null;
   const label = t('navigation.search');
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         tooltip={`${label} (${SHORTCUT})`}
-        onClick={() => {
-          if (isMobile) setOpenMobile(false);
-          search.setOpen(true);
-        }}
+        onClick={() => search.setOpen(true)}
       >
         <Search />
         <span>{label}</span>
-        <kbd className='ml-auto shrink-0 font-sans text-xs text-muted-foreground group-data-[collapsible=icon]:hidden'>
-          {SHORTCUT}
-        </kbd>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );

@@ -9,6 +9,7 @@ import { Breadcrumbs } from '#components/breadcrumbs';
 import {
   GlobalSearchDialog,
   GlobalSearchProvider,
+  SearchHeaderButton,
   SearchNavButton,
 } from '@/components/itam/global-search';
 import { DemoBanner } from '@/components/itam/demo-banner';
@@ -71,7 +72,11 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
               (global-search.tsx). */}
           <GlobalSearchProvider>
             <AppSidebarProvider>
-              <AppSidebar label={navigationLabel} footer={<AppSidebarFooter />}>
+              <AppSidebar
+                action={<SearchHeaderButton />}
+                label={navigationLabel}
+                footer={<AppSidebarFooter />}
+              >
                 {/* Application change (ITAM): the groups read as headings
                     with their pages always listed (`sections`), and 搜索
                     sits under 工作台. */}

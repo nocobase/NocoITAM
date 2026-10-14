@@ -28,8 +28,9 @@ and pages composed from `client/components/itam/`.
 
 The layout is the template's shadcn sidebar (`AppSidebar`, `NavigationMenu`)
 with two application changes: a menu group reads as a heading with its pages
-always listed (`sections` on `NavigationMenu`), and 搜索 sits under 工作台
-(`after`). There is no settings layout: 设置 is a section of the same menu,
+always listed (`sections` on `NavigationMenu`), and the search button sits
+beside the logo (`AppSidebar`'s `action`), falling back to an entry under
+工作台 (`after`) when the sidebar is collapsed. There is no settings layout: 设置 is a section of the same menu,
 with ITAM's own settings and the administration pages in
 `client/pages/settings/` (users, permission sets, API keys, scheduled tasks),
 built on the plugins' client APIs and worded through `admin.*`
