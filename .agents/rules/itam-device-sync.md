@@ -2,7 +2,7 @@
 
 Read this before changing device sync: the platform connectors, the `managedDevices` and `deviceSyncRuns` tables, matching by serial, the device page's 管理平台 group, 设置 → 设备同步 or the nightly pull.
 
-The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); steps 1 and 2 of its four are built.
+The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); steps 1 to 3 of its four are built.
 
 - **Read only, and never into the register** (2026-10-14). A pull writes
   `managedDevices` (one row per platform record, keyed by `source` and the
@@ -92,3 +92,21 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
 - **Grants**: the review lists take devices `read`; link, unlink and
   以台账为准 the device's `update`; 不纳入台账 and 恢复 devices `create`, the
   act they stand in for.
+- **Jamf Pro** (step 3, 2026-10-15, `createJamfSource`): an API client's
+  token from `POST /api/oauth/token`, then `/api/v1/computers-inventory`
+  and `/api/v2/mobile-devices/detail` a page at a time (`page`,
+  `page-size`, `sort=id:asc`, stopping on a short page or `totalCount`).
+  Its two kinds of record are numbered apart, so their ids are
+  `computer:<id>` and `mobile:<id>`, which `consoleUrl` turns into
+  `computers.html` / `mobileDevices.html` on the configured server. A
+  computer's last word is `general.lastContactTime`, a mobile device's
+  `general.lastInventoryUpdateDate`; a computer has no owner type and counts
+  as the company's, a mobile device's `deviceOwnershipType` decides. The
+  field names come from the Jamf Pro API reference as the
+  `deploymenttheory/go-api-sdk-jamfpro` structs mirror it; no tenant has
+  been read yet.
+- **One device, several platforms**: a co-managed Mac has a record per
+  platform, each linked to the same device; the device page shows both and
+  the differences read the latest sync. 管理平台核对 folds unregistered and
+  kept-off records of one serial into one row (`sources` lists the
+  platforms), and 不纳入台账 / 恢复 decide them together.

@@ -490,6 +490,20 @@ describe('CSV import / export and demo data', () => {
     );
     expect(count('managedUnregistered')).toBe(2);
     expect(count('deviceUnmanaged')).toBeGreaterThanOrEqual(1);
+    // Step 3: the demo's Jamf reports the Macs and phones in use, each
+    // linked to the register device of its serial.
+    const jamf = (await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('managedDevices')
+      .select(['externalId', 'matchState'])
+      .where('source', '=', 'jamf')
+      .execute()) as { externalId: string; matchState: string }[];
+    expect(jamf.some((row) => row.externalId.startsWith('computer:'))).toBe(
+      true,
+    );
+    expect(jamf.some((row) => row.externalId.startsWith('mobile:'))).toBe(true);
+    expect(jamf.every((row) => row.matchState === 'linked')).toBe(true);
 
     // The people list's holding counts agree with each person's stats.
     const people = await data<

@@ -6,9 +6,11 @@ import {
 
 import type { Row } from './collection-query.js';
 import { dbDateTime } from './dates.js';
+import type { JamfSourceConfig } from '../../config/device-sync.js';
 import {
   DEVICE_SOURCES,
   SourceError,
+  consoleUrl,
   normalizeSerial,
   type DeviceSource,
   type DeviceSourceKey,
@@ -109,6 +111,8 @@ export interface DeviceSyncService {
    * device page says "not found on the platforms" only then.
    */
   connected(): Promise<boolean>;
+  /** Where the platform's own page for one of its records is. */
+  consoleUrlOf(source: string, externalId: string): string | null;
   /**
    * Links a device just put on the register to the platform record of its
    * serial, the way the next pull would (step 2, 2026-10-15) — so 补登记
@@ -135,12 +139,6 @@ const timestamp = (value: string | null): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-export function consoleUrl(source: string, externalId: string): string | null {
-  if (source === 'intune')
-    return `https://intune.microsoft.com/#view/Microsoft_Intune_Devices/DeviceSettingsMenuBlade/~/overview/mdmDeviceId/${encodeURIComponent(externalId)}`;
-  return null;
-}
-
 export function createDeviceSyncService(deps: {
   readonly database: DatabaseManager;
   readonly history: HistoryService;
@@ -150,6 +148,8 @@ export function createDeviceSyncService(deps: {
   readonly touched?: () => void;
   readonly log?: (message: string, error: unknown) => void;
   readonly now?: () => Date;
+  /** The platforms' addresses, for links to a record's own page. */
+  readonly consoles?: () => { readonly jamf?: JamfSourceConfig } | undefined;
 }): DeviceSyncService {
   const { database, history } = deps;
   const now = deps.now ?? (() => new Date());
@@ -637,6 +637,9 @@ export function createDeviceSyncService(deps: {
       deps.touched?.();
     },
 
+    consoleUrlOf: (source, externalId) =>
+      consoleUrl(source, externalId, deps.consoles?.()),
+
     async connected() {
       if (deps.sources().length > 0) return true;
       return Boolean(
@@ -681,7 +684,11 @@ export function createDeviceSyncService(deps: {
         lastSeenAt: iso(row.lastSeenAt),
         goneAt: iso(row.goneAt),
         matchedBy: (row.matchedBy as string | null) ?? null,
-        consoleUrl: consoleUrl(String(row.source), String(row.externalId)),
+        consoleUrl: consoleUrl(
+          String(row.source),
+          String(row.externalId),
+          deps.consoles?.(),
+        ),
       }));
     },
   };

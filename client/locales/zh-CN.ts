@@ -1955,8 +1955,8 @@ const zhCN: AppResource = {
     },
     group: '管理平台',
     notFound: '未在已连接的管理平台中找到',
-    sources: { intune: 'Intune' },
-    sourceNames: { intune: 'Microsoft Intune' },
+    sources: { intune: 'Intune', jamf: 'Jamf' },
+    sourceNames: { intune: 'Microsoft Intune', jamf: 'Jamf Pro' },
     openIn: '在 {{source}} 中打开',
     gone: '{{date}} 起已不在平台中',
     today: '今天',
@@ -2215,12 +2215,13 @@ const zhCN: AppResource = {
     deviceSync: {
       title: '设备同步',
       description:
-        '每天 01:30 从已连接的设备管理平台拉取设备清单，按序列号关联台账设备。只读：不改动台账，也不改动管理平台。',
+        '每天 01:30 从已连接的设备管理平台（Intune、Jamf Pro）拉取设备清单，按序列号关联台账设备。只读：不改动台账，也不改动管理平台。',
       syncNow: '立即同步',
       running: '同步中…',
       configured: '已连接',
       notConfigured: '未配置',
       howTo: {
+        jamf: '在服务器的 config.yml 中 deviceSync.jamf 下填写 url（Jamf Pro 地址）、clientId、clientSecret（或设置环境变量 JAMF_URL、JAMF_CLIENT_ID、JAMF_CLIENT_SECRET），然后重启。在 Jamf Pro「设置 → 系统 → API 角色和客户端」建一个只含 Read Computers、Read Mobile Devices 权限的角色和客户端（Jamf Pro 10.49 及以上）。',
         intune:
           '在服务器的 config.yml 中 deviceSync.intune 下填写 tenantId、clientId、clientSecret（或设置环境变量 INTUNE_TENANT_ID、INTUNE_CLIENT_ID、INTUNE_CLIENT_SECRET），然后重启。Entra ID 应用注册需要 Microsoft Graph 应用权限 DeviceManagementManagedDevices.Read.All，并由管理员同意。',
       },
@@ -2240,9 +2241,9 @@ const zhCN: AppResource = {
         '读取 {{seen}} 台，新增 {{added}} 台，关联 {{linked}} 台，{{gone}} 台已不在平台中',
       failures: {
         AUTH_FAILED:
-          '登录被拒绝：请检查 config.yml 中的租户、客户端 ID 和客户端密钥',
+          '登录被拒绝：请检查 config.yml 中的地址或租户、客户端 ID 和客户端密钥',
         PERMISSION_MISSING:
-          '缺少权限：请授予 DeviceManagementManagedDevices.Read.All 并由管理员同意',
+          '缺少权限：Intune 需要 DeviceManagementManagedDevices.Read.All 并由管理员同意，Jamf Pro 需要 Read Computers 和 Read Mobile Devices',
         UNAVAILABLE: '无法连接管理平台，今晚会再试',
         INVALID_RESPONSE: '管理平台返回的内容无法识别',
         INTERRUPTED: '同步过程中应用停止了',

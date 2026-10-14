@@ -171,3 +171,9 @@ logging:
 #     tenantId: 00000000-0000-0000-0000-000000000000
 #     clientId: 00000000-0000-0000-0000-000000000000
 #     clientSecret: your-client-secret
+#   # Jamf Pro 10.49+: an API client whose role holds only Read Computers and
+#   # Read Mobile Devices; or JAMF_URL, JAMF_CLIENT_ID, JAMF_CLIENT_SECRET.
+#   jamf:
+#     url: https://example.jamfcloud.com
+#     clientId: 00000000-0000-0000-0000-000000000000
+#     clientSecret: your-client-secret

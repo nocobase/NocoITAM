@@ -7,7 +7,7 @@ import {
 import { asText, type Row } from './collection-query.js';
 import { dbDateTime } from './dates.js';
 import { normalizeSerial } from './device-sources.js';
-import { consoleUrl, type DeviceSyncService } from './device-sync.js';
+import type { DeviceSyncService } from './device-sync.js';
 import { BusinessRuleError, RecordNotFoundError } from './errors.js';
 import type { HistoryService } from './history.js';
 import type { ItamSettings, SettingsService } from './settings.js';
@@ -78,6 +78,11 @@ export interface UnregisteredDevice {
   readonly ignoredAt: string | null;
   readonly ignoreReason: string | null;
   readonly consoleUrl: string | null;
+  /**
+   * Every platform that reports this device (step 3): a Mac in both Intune
+   * and Jamf is one row, its other records decided with it.
+   */
+  readonly sources: readonly string[];
 }
 
 /** A register device in use that no platform reports. */
@@ -257,8 +262,48 @@ export function createDeviceReviewService(deps: {
       ignoredById: asText(row.ignoredById) ?? null,
       ignoredAt: iso(row.ignoredAt),
       ignoreReason: asText(row.ignoreReason) ?? null,
-      consoleUrl: consoleUrl(String(row.source), String(row.externalId)),
+      consoleUrl: sync.consoleUrlOf(String(row.source), String(row.externalId)),
+      sources: [String(row.source)],
     };
+  };
+
+  /**
+   * One row per physical device: records of one serial from several
+   * platforms fold into the latest (step 3, 2026-10-15). Rows come latest
+   * first.
+   */
+  const fold = (rows: UnregisteredDevice[]): UnregisteredDevice[] => {
+    const bySerial = new Map<string, UnregisteredDevice>();
+    const result: UnregisteredDevice[] = [];
+    for (const row of rows) {
+      const first = row.serialNo ? bySerial.get(row.serialNo) : undefined;
+      if (!first) {
+        const kept = { ...row, sources: [...row.sources] };
+        if (row.serialNo) bySerial.set(row.serialNo, kept);
+        result.push(kept);
+        continue;
+      }
+      for (const source of row.sources)
+        if (!first.sources.includes(source))
+          (first.sources as string[]).push(source);
+    }
+    return result;
+  };
+
+  /** The other unlinked records of the same serial: the same device. */
+  const sameDevice = async (row: Row): Promise<string[]> => {
+    const serial = asText(row.serialNo);
+    if (!serial) return [];
+    const rows = await database
+      .query()
+      .selectFrom('managedDevices')
+      .select(['id', 'matchState'])
+      .where('serialNo', '=', serial)
+      .where('id', '!=', String(row.id))
+      .execute<{ id: string; matchState: string }>();
+    return rows
+      .filter((other) => other.matchState !== 'linked')
+      .map((other) => other.id);
   };
 
   /** Register devices sharing each serial, for the ambiguous rows. */
@@ -454,7 +499,7 @@ export function createDeviceReviewService(deps: {
       const rows = await query.orderBy('lastSyncAt', 'desc').execute<Row>();
       const models = await modelIndex();
       const shared = await sharedSerials(rows);
-      return rows.map((row) => toUnregistered(row, models, shared));
+      return fold(rows.map((row) => toUnregistered(row, models, shared)));
     },
 
     async ignored() {
@@ -466,7 +511,7 @@ export function createDeviceReviewService(deps: {
         .orderBy('ignoredAt', 'desc')
         .execute<Row>();
       const models = await modelIndex();
-      return rows.map((row) => toUnregistered(row, models, new Map()));
+      return fold(rows.map((row) => toUnregistered(row, models, new Map())));
     },
 
     async unmanaged() {
@@ -611,12 +656,15 @@ export function createDeviceReviewService(deps: {
           'A linked platform record cannot be kept off the register',
           'deviceSync.linked',
         );
-      return update(managedId, {
+      // Its records on the other platforms are the same device.
+      const decision = {
         matchState: 'ignored',
         ignoredById: actorId,
         ignoredAt: new Date(),
         ignoreReason: reason,
-      });
+      };
+      for (const other of await sameDevice(row)) await update(other, decision);
+      return update(managedId, decision);
     },
 
     async restore(managedId) {
@@ -633,7 +681,7 @@ export function createDeviceReviewService(deps: {
               .execute<{ id: string; serialNo: string | null }>()
           ).filter((device) => normalizeSerial(device.serialNo) === serial)
         : [];
-      return update(managedId, {
+      const decision = {
         ignoredById: null,
         ignoredAt: null,
         ignoreReason: null,
@@ -645,7 +693,9 @@ export function createDeviceReviewService(deps: {
             : devices.length > 1
               ? 'ambiguous'
               : 'unlinked',
-      });
+      };
+      for (const other of await sameDevice(row)) await update(other, decision);
+      return update(managedId, decision);
     },
 
     async dismiss(deviceId, kind, actorId) {

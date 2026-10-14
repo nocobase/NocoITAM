@@ -336,7 +336,7 @@ describe('device sync', () => {
         ((await status.json()) as { data: { key: string }[] }).data.map(
           (source) => source.key,
         ),
-      ).toEqual(['intune']);
+      ).toEqual(['intune', 'jamf']);
       expect(
         (
           await app.request('/api/itam/device-sync/run', {

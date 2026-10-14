@@ -2818,6 +2818,18 @@ sees in use is 状态不符, whose notice offers 分配给 the platform user, so
 assignment goes through the register's own dialog; and 未纳管 is a view of
 管理平台核对, since the devices list has no filter for it.
 
+### 2026-10-15 Device sync, step 3: Jamf Pro
+
+Jamf Pro joins Intune as a source (`createJamfSource` in
+`device-sources.ts`, `deviceSync.jamf` in `config.yml` or `JAMF_*`): the
+Macs, then the iPhones and iPads, read with an API client that holds only
+Read Computers and Read Mobile Devices. A Mac both platforms manage is two
+records on one device: its page shows both, and the differences take the
+later sync. 管理平台核对 lists a device several platforms report as one row,
+and keeps it off the register, or takes it back, on all of them. The demo's
+Jamf reports its Macs and all its phones in use but one. Step 4 (Noco's
+`device-sync` skill) is not started.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

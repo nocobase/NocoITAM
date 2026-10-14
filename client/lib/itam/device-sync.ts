@@ -11,7 +11,7 @@ import { useApi } from './api.js';
 /** Device sync (2026-10-14): what the management platforms report. */
 export const DEVICE_SYNC_PATH = 'itam/device-sync';
 
-export type DeviceSourceKey = 'intune';
+export type DeviceSourceKey = 'intune' | 'jamf';
 
 /** One platform's record of a register device. */
 export interface ManagedDevice {
@@ -175,6 +175,8 @@ export interface UnregisteredDevice {
   readonly ignoredAt: string | null;
   readonly ignoreReason: string | null;
   readonly consoleUrl: string | null;
+  /** Every platform that reports it; a co-managed Mac is one row. */
+  readonly sources: readonly DeviceSourceKey[];
 }
 
 /** A register device in use that no platform reports. */

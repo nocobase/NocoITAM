@@ -3423,6 +3423,67 @@ export function createDemoService(dependencies: {
           )
           .execute<{ id: string }>();
         for (const row of pulled) await track('managedDevices', row);
+
+        // The demo's Jamf (step 3, 2026-10-15): the Macs in use, managed by
+        // Jamf as well as Intune — kept off the three Intune shows wrong on
+        // purpose, so Jamf's later word does not put them right — and the
+        // phones in use but one, which stays on no platform (未纳管).
+        const jamfMacs = inUse.filter(
+          (row, index) => index > 2 && row.manufacturer === 'Apple',
+        );
+        const phones = register.filter(
+          (row) =>
+            row.categoryId === 'cat-phone' &&
+            row.status === 'inUse' &&
+            typeof row.serialNo === 'string' &&
+            row.serialNo,
+        );
+        const jamfObserved: ObservedDevice[] = [
+          ...jamfMacs.map((row, index) => ({
+            ...observation(row, index),
+            externalId: `computer:demo-${String(row.id).slice(0, 8)}`,
+            compliance: null,
+            lastSyncAt: syncedAgo(index % 2, 23),
+            raw: { id: `demo-${String(row.id).slice(0, 8)}`, demo: true },
+          })),
+          ...phones.slice(1).map((row, index) =>
+            extra(`mobile:demo-${String(row.id).slice(0, 8)}`, {
+              serialNo: String(row.serialNo),
+              deviceName: String(row.name ?? row.serialNo),
+              manufacturer: 'Apple',
+              model: (row.model as string | null) ?? null,
+              osName: 'iOS',
+              osVersion: '18.6.2',
+              userPrincipal: (row.email as string | null) ?? null,
+              userName: (row.personName as string | null) ?? null,
+              compliance: null,
+              lastSyncAt: syncedAgo(index % 2, 21),
+            }),
+          ),
+        ];
+        if (jamfObserved.length > 0) {
+          const jamfRun = await dependencies.deviceSync.ingest(
+            'jamf',
+            (async function* () {
+              yield jamfObserved;
+            })(),
+            'demo',
+            actorId,
+          );
+          await track('deviceSyncRuns', jamfRun);
+          const jamfPulled = await database
+            .query()
+            .selectFrom('managedDevices')
+            .select(['id'])
+            .where('source', '=', 'jamf')
+            .where(
+              'externalId',
+              'in',
+              jamfObserved.map((device) => device.externalId),
+            )
+            .execute<{ id: string }>();
+          for (const row of jamfPulled) await track('managedDevices', row);
+        }
       }
 
       return this.status();

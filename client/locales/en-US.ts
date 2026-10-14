@@ -2057,8 +2057,8 @@ const messages = {
     },
     group: 'Management platform',
     notFound: 'Not found on the connected management platforms',
-    sources: { intune: 'Intune' },
-    sourceNames: { intune: 'Microsoft Intune' },
+    sources: { intune: 'Intune', jamf: 'Jamf' },
+    sourceNames: { intune: 'Microsoft Intune', jamf: 'Jamf Pro' },
     openIn: 'Open in {{source}}',
     gone: 'No longer reported since {{date}}',
     today: 'today',
@@ -2364,12 +2364,13 @@ const messages = {
     deviceSync: {
       title: 'Device sync',
       description:
-        'Pulls the device list from each connected device management platform every day at 01:30 and links register devices by serial number. Read only: it changes neither the register nor the platform.',
+        'Pulls the device list from each connected device management platform (Intune, Jamf Pro) every day at 01:30 and links register devices by serial number. Read only: it changes neither the register nor the platform.',
       syncNow: 'Sync now',
       running: 'Syncing…',
       configured: 'Connected',
       notConfigured: 'Not configured',
       howTo: {
+        jamf: 'Set url (the Jamf Pro address), clientId and clientSecret under deviceSync.jamf in config.yml on the server (or JAMF_URL, JAMF_CLIENT_ID and JAMF_CLIENT_SECRET), then restart. In Jamf Pro, under Settings → System → API roles and clients, create a role with only Read Computers and Read Mobile Devices, and a client with that role (Jamf Pro 10.49 or later).',
         intune:
           'Set tenantId, clientId and clientSecret under deviceSync.intune in config.yml on the server (or INTUNE_TENANT_ID, INTUNE_CLIENT_ID and INTUNE_CLIENT_SECRET), then restart. The Entra ID app registration needs the Microsoft Graph application permission DeviceManagementManagedDevices.Read.All, with admin consent.',
       },
@@ -2389,9 +2390,9 @@ const messages = {
         '{{seen}} devices read, {{added}} new, {{linked}} linked, {{gone}} no longer reported',
       failures: {
         AUTH_FAILED:
-          'Sign-in refused: check the tenant, client ID and client secret in config.yml',
+          'Sign-in refused: check the address or tenant, client ID and client secret in config.yml',
         PERMISSION_MISSING:
-          'Permission missing: grant DeviceManagementManagedDevices.Read.All and admin consent',
+          'Permission missing: Intune needs DeviceManagementManagedDevices.Read.All with admin consent; Jamf Pro needs Read Computers and Read Mobile Devices',
         UNAVAILABLE:
           'The platform could not be reached; it is tried again tonight',
         INVALID_RESPONSE: 'The platform answered in an unexpected form',
