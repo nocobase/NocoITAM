@@ -7,6 +7,7 @@ import {
   numberingServiceToken,
 } from '../../server/providers/index.js';
 import { parseCsv, toCsv } from '../../server/providers/itam/csv.js';
+import { deviceReviewServiceToken } from '../../server/providers/itam/device-review.js';
 import { today } from '../../server/providers/itam/dates.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { dataRoutes } from '../../server/routes/itam/data.js';
@@ -477,6 +478,18 @@ describe('CSV import / export and demo data', () => {
     expect(count('auditOverdue')).toBeGreaterThanOrEqual(4);
     // The Zoom subscription the demo stopped renewing still holds a seat.
     expect(count('entitlementEnded')).toBe(1);
+    // Step 2 (2026-10-15): the demo shows every kind of difference — one
+    // silent, one under another user, one on the shelf yet online — and both
+    // 需要关注 rules: the laptop and the VM not on the register (the
+    // personal phone is ignored), and the phones in use on no platform.
+    const checks = await app.container
+      .resolve(deviceReviewServiceToken)
+      .checks();
+    expect(new Set(checks.map((check) => check.kind))).toEqual(
+      new Set(['stale', 'userMismatch', 'statusMismatch']),
+    );
+    expect(count('managedUnregistered')).toBe(2);
+    expect(count('deviceUnmanaged')).toBeGreaterThanOrEqual(1);
 
     // The people list's holding counts agree with each person's stats.
     const people = await data<

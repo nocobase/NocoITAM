@@ -253,6 +253,8 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   { table: 'repairs', column: 'deviceId' },
   // Noco's background suggestions for the demo's joiners.
   { table: 'onboardingRuns', column: 'personId' },
+  // 以台账为准 on the demo's devices (device sync, 2026-10-15).
+  { table: 'deviceSyncDismissals', column: 'deviceId' },
 ];
 
 /** Deleted in dependency order: children before the master data they reference. */

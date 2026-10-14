@@ -2789,6 +2789,35 @@ document's permission table said IT 支持 may not open 设置 → 设备同步;
 seeded IT 支持 role holds the settings grant, so it may, as it may every
 other settings tab. Rules: `.agents/rules/itam-device-sync.md`.
 
+### 2026-10-15 Device sync, step 2: differences and decisions
+
+Where the platforms and the register disagree, computed when asked
+(`device-review.ts`), and what a person decides:
+
+- Per device: 失联, 使用人不一致, 状态不符 — a 设备核对 column on 待办 (by
+  the device's 负责人 for 我负责的) and a notice in the device page's 管理平台
+  group, with 调拨给 / 分配给 the platform user, 恢复为库存中, or 以台账为准.
+- Whole register: two 需要关注 rules, 管理平台里有、台账未登记 and
+  在用但不在任何管理平台; leavers' cards say how many of their devices synced
+  after they left.
+- `/device-sync` (管理平台核对) lists each kind; an unregistered record is
+  registered (补登记, the device create form prefilled), linked by hand, or
+  kept off the register with a reason (恢复 takes it back).
+- Migration `202610150001_device_sync_dismissals` keeps 以台账为准 per
+  device, kind and seen value, so a refused value is not raised again but a
+  new one is. A person's link or unlink stands against the next pull.
+- Settings key `deviceSync`: 失联天数 (30), 状态不符的在线天数 (7), 应纳管分类
+  (laptops, desktops, phones), 忽略个人设备 (on).
+
+Decided while building, beyond the design document: an unregistered record
+counts only while synced within the 失联 threshold (a record silent longer is
+not worth registering); a serial several devices share is listed under 台账未登记
+with its candidates rather than as a difference of its own; 补登记 does not
+assign the device in the same step — a new device in stock that the platform
+sees in use is 状态不符, whose notice offers 分配给 the platform user, so the
+assignment goes through the register's own dialog; and 未纳管 is a view of
+管理平台核对, since the devices list has no filter for it.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

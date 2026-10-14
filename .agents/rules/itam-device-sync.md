@@ -2,7 +2,7 @@
 
 Read this before changing device sync: the platform connectors, the `managedDevices` and `deviceSyncRuns` tables, matching by serial, the device page's 管理平台 group, 设置 → 设备同步 or the nightly pull.
 
-The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); step 1 of its four is built.
+The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); steps 1 and 2 of its four are built.
 
 - **Read only, and never into the register** (2026-10-14). A pull writes
   `managedDevices` (one row per platform record, keyed by `source` and the
@@ -53,3 +53,42 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   online, and three not on the books (a laptop, a personal iPhone, a VM with
   a placeholder serial). Both tables are in `ORDER` and in
   `scripts/data-reset.ts`.
+- **Differences** (step 2, 2026-10-15, `device-review.ts`) are computed when
+  asked, like 需要关注, from the linked platform records and the register;
+  nothing stores them. Per device, from its latest platform record:
+  **失联** (`stale`) — in use and not synced for `deviceSync.staleDays`, or
+  every record gone; **使用人不一致** (`userMismatch`) — assigned to one
+  person, the platform's primary user is another; **状态不符**
+  (`statusMismatch`) — in stock, retired, pending disposal, disposed or
+  lost, yet synced within `recentDays` (lost and disposed are `critical`).
+  Personal records count only when `ignorePersonal` is off. Whole-register
+  ones are two 需要关注 rules, `managedUnregistered` (unlinked or ambiguous
+  company records synced within `staleDays`) and `deviceUnmanaged` (in use,
+  in a `managedCategoryIds` category or under one, on no platform). Without
+  a platform (`review.active()`) the rules are left out of the list, the
+  设备核对 column is absent and no leaver is tagged.
+- **以台账为准** writes `deviceSyncDismissals` (device, kind, the value that
+  was seen: the last sync, the other person, the register status) and a
+  `managedDismissed` event; the same difference with another value is
+  raised again (guideline 3.4). **不纳入台账** sets the record `ignored`
+  with a reason; 恢复 matches it again at once. A person's **link** and
+  **unlink** set `matchedBy: manual`, which the next pull keeps — an unlink
+  is not undone by a matching serial. Each writes `managedLinked` /
+  `managedUnlinked` on the device.
+- **Acts on the register stay the register's**: the 管理平台 group offers
+  调拨给 / 分配给 the platform user and 恢复为库存中 by opening the device
+  page's own dialogs, prefilled (`ManagedPlatforms`' `actions`). 补登记
+  opens the device list's create form through `?new=1&init.…` (the list
+  learned the prefill the generic lists had), with the model matched by
+  name or part code and its category and maker; `POST /itam/devices` then
+  calls `matchDevice`, so the new device is linked at once rather than at
+  the next pull.
+- **Where it shows**: 待办's 设备核对 column (`deviceChecks`, a device's
+  负责人 for 我负责的, devices `read` and `update` to see it); 离职交接
+  cards tagged N 台设备离职后仍在线 (`onlineAfterLeaving`, a sync after the
+  leave date); `/device-sync` (管理平台核对, no menu entry or page grant,
+  views checks / unregistered / unmanaged / ignored, devices `read`); the
+  settings tab's 核对规则 card (`deviceSync` settings key).
+- **Grants**: the review lists take devices `read`; link, unlink and
+  以台账为准 the device's `update`; 不纳入台账 and 恢复 devices `create`, the
+  act they stand in for.

@@ -20,6 +20,7 @@ import {
 } from '../../providers/itam/device-status.js';
 import {
   deviceServiceToken,
+  deviceReviewServiceToken,
   deviceSyncServiceToken,
   historyServiceToken,
 } from '../../providers/index.js';
@@ -31,6 +32,7 @@ import {
 import {
   errorResponse,
   parseListOptions,
+  principalId,
   historyKind,
   operationContextOf,
   readJsonObject,
@@ -196,6 +198,10 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
         return context.json({
           data: await sync.forDevice(deviceId),
           connected: await sync.connected(),
+          // Where the platforms and the register disagree on it (step 2).
+          checks: await app.container
+            .resolve(deviceReviewServiceToken)
+            .checks({ deviceIds: [deviceId] }),
         });
       } catch (error) {
         return errorResponse(context, error);
@@ -232,16 +238,18 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
         const conditions = await decide(context, 'create', {
           fields: { input: Object.keys(input) },
         });
-        return context.json(
-          {
-            data: await devices.create(
-              input,
-              operationContext(context),
-              conditions,
-            ),
-          },
-          201,
+        const created = await devices.create(
+          input,
+          operationContext(context),
+          conditions,
         );
+        // A device a platform already reports is linked at once (device
+        // sync, step 2); a failure there never undoes the create.
+        await app.container
+          .resolve(deviceSyncServiceToken)
+          .matchDevice(String(created.id), principalId(context))
+          .catch(() => undefined);
+        return context.json({ data: created }, 201);
       } catch (error) {
         return errorResponse(context, error);
       }

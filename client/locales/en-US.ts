@@ -265,6 +265,8 @@ const messages = {
       repairCompleted: 'Repair completed',
       counted: 'Results recorded',
       managedLinked: 'Linked to a management platform',
+      managedUnlinked: 'Unlinked from a management platform',
+      managedDismissed: 'Register kept',
       unregisteredFound: 'Unregistered device found',
       resolved: 'Differences handled',
       audited: 'Audited',
@@ -387,6 +389,9 @@ const messages = {
       accountRestoredOnReturning:
         'Sign-in {{target}} enabled again on returning',
       managedLinked: 'Linked to {{source}} device {{target}} by serial number',
+      managedLinkedManual: 'Linked to {{source}} device {{target}} by hand',
+      managedUnlinked: 'Unlinked from {{source}} device {{target}}',
+      managedDismissed: '{{check}}: the register kept',
       leftOnLeaveDate: 'Leave date {{date}} reached; marked as left',
       recoveryPrepared:
         'Recovery listed: {{devices}} devices, {{stock}} stock, {{seats}} seats',
@@ -1832,6 +1837,7 @@ const messages = {
       activeRepairs: 'Repairs in progress',
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
+      deviceChecks: 'Device checks',
       leaverRecovery: 'Offboarding',
       pendingOnboarding: 'Onboarding prep',
       // The card lists everybody's now, so this says which part of a row
@@ -1872,6 +1878,8 @@ const messages = {
       lowAccessories: 'Accessories below minimum',
       lowConsumables: 'Consumables below minimum',
       lowComponents: 'Components below minimum',
+      managedUnregistered: 'On a platform, not on the register',
+      deviceUnmanaged: 'In use, on no platform',
     },
     reminderCaptions: {
       warrantyExpiring: 'Devices in use',
@@ -1888,6 +1896,10 @@ const messages = {
       lowAccessories: 'Available quantity below its minimum',
       lowConsumables: 'Available quantity below its minimum',
       lowComponents: 'Available quantity below its minimum',
+      managedUnregistered:
+        'A device management platform reports a device the register does not hold',
+      deviceUnmanaged:
+        'Devices in use of a managed category that no connected platform reports',
     },
   },
   data: {
@@ -1970,6 +1982,79 @@ const messages = {
     },
   },
   deviceSync: {
+    checks: {
+      kinds: {
+        stale: 'Silent',
+        userMismatch: 'Other user',
+        statusMismatch: 'Status differs',
+      },
+      goneSentence:
+        '{{source}} no longer reports this device, which the register has in use',
+      staleSentence_one:
+        'In use, yet not synced with {{source}} for {{count}} day',
+      staleSentence_other:
+        'In use, yet not synced with {{source}} for {{count}} days',
+      userSentence:
+        'Its primary user on {{source}} is {{user}}; the register has it with someone else',
+      statusSentence:
+        'The register says “{{status}}”, yet it synced with {{source}} on {{date}}',
+      transferTo: 'Transfer to {{user}}',
+      assignTo: 'Assign to {{user}}',
+      restore: 'Restore to stock',
+      keepRegister: 'Keep the register',
+      platformUser: 'Platform user: {{user}}',
+    },
+    unlink: 'Unlink',
+    unlinkTitle: 'Unlink',
+    unlinkDescription:
+      'This device will no longer show what {{source}} reports, and later syncs will not link it by serial again. Link it again from the platform review page if needed.',
+    onlineAfterLeaving_one: '{{count}} device online after leaving',
+    onlineAfterLeaving_other: '{{count}} devices online after leaving',
+    review: {
+      title: 'Platform review',
+      description:
+        'Where the device management platforms and the register disagree',
+      views: {
+        checks: 'Device checks',
+        unregistered: 'Not on the register',
+        unmanaged: 'Unmanaged',
+        ignored: 'Kept off the register',
+      },
+      hints: {
+        checks:
+          'Register devices that are silent, with another user, or online against their status. Settle each on its page, or keep the register.',
+        unregistered:
+          'Devices a platform reports that the register lacks. Register one, link it to a device, or keep it off the register.',
+        unmanaged:
+          'Devices in use of a managed category that no connected platform reports; they need enrolling on the platform.',
+        ignored:
+          'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again.',
+      },
+      empty: 'Nothing to review',
+      columns: {
+        device: 'Device',
+        difference: 'Difference',
+        holder: 'Assigned to',
+        platformModel: 'Model on the platform',
+        reason: 'Reason',
+      },
+      sharedSerial_one: '{{count}} register device has this serial',
+      sharedSerial_other: '{{count}} register devices have this serial',
+      register: 'Register',
+      link: 'Link to a device',
+      ignore: 'Keep off the register',
+      restore: 'Restore',
+      linkTitle: 'Link to a device',
+      linkDescription:
+        'Link the platform device “{{name}}” to a device on the register.',
+      candidates: 'Devices with this serial',
+      pickDevice: 'Register device',
+      ignoreTitle: 'Keep off the register',
+      ignoreDescription:
+        '“{{name}}” will no longer be listed as not on the register.',
+      reason: 'Reason',
+      reasonPlaceholder: 'e.g. test virtual machine, contractor’s own laptop',
+    },
     group: 'Management platform',
     notFound: 'Not found on the connected management platforms',
     sources: { intune: 'Intune' },
@@ -2157,6 +2242,12 @@ const messages = {
       'Consumables are not returned': 'Consumables are not returned',
       'No device management platform is configured':
         'No device management platform is configured',
+      'This platform record is not linked to a device':
+        'This platform record is not linked to a device',
+      'A linked platform record cannot be kept off the register':
+        'A linked platform record cannot be kept off the register',
+      'There is no such difference on this device':
+        'There is no such difference on this device',
       'Demo data already exists; clear it first':
         'Demo data already exists; clear it first',
       'Disposal is only reached through the disposal process':
@@ -2252,6 +2343,24 @@ const messages = {
   },
   settings: {
     title: 'Settings',
+    deviceSyncRules: {
+      title: 'Review rules',
+      description:
+        'When a difference between the platforms and the register is raised',
+      staleDays: 'Days before silent',
+      staleDaysHint:
+        'A device in use that has not synced for this long is silent',
+      recentDays: 'Days online against status',
+      recentDaysHint:
+        'A device the register has off duty that synced within this many days has a status that differs',
+      managedCategories: 'Managed categories',
+      managedCategoriesHint:
+        'Devices in use of these categories (and their subcategories) should be on a platform, or they are unmanaged',
+      ignorePersonal: 'Ignore personal devices',
+      ignorePersonalHint:
+        'Devices a platform marks personal (employee-owned) take part in no review',
+      ignoredLink: 'Devices kept off the register',
+    },
     deviceSync: {
       title: 'Device sync',
       description:

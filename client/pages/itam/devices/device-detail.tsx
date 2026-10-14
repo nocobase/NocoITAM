@@ -180,6 +180,9 @@ export default function DeviceDetailPage(): ReactElement {
     'correctStatus',
   ]);
   const [dialog, setDialog] = useState<DialogKind>();
+  // The person a platform says has the device, offered by 管理平台's
+  // 分配给 / 调拨给 (device sync, 2026-10-15).
+  const [suggested, setSuggested] = useState<string>();
   const impact = useDeleteImpact(
     DEVICES_PATH,
     dialog === 'delete' ? id : undefined,
@@ -274,6 +277,7 @@ export default function DeviceDetailPage(): ReactElement {
       text(data.assigneeType) === 'person' ? text(data.assigneeId) : '';
     await operation.mutateAsync({ id, operation: op, body });
     setDialog(undefined);
+    setSuggested(undefined);
     operation.reset();
     if (op === 'return')
       await announce(
@@ -586,7 +590,21 @@ export default function DeviceDetailPage(): ReactElement {
                 {/* What the device management platforms report, before
                     the system fields (device sync, 2026-10-14). */}
                 {group === 'groups.system' && id ? (
-                  <ManagedPlatforms deviceId={id} />
+                  <ManagedPlatforms
+                    deviceId={id}
+                    actions={{
+                      editable,
+                      onAssign: (personId) => {
+                        setSuggested(personId);
+                        setDialog('assign');
+                      },
+                      onTransfer: (personId) => {
+                        setSuggested(personId);
+                        setDialog('transfer');
+                      },
+                      onRestore: () => setDialog('restore'),
+                    }}
+                  />
                 ) : null}
                 <InfoSection title={t(group)}>
                   {fields
@@ -691,15 +709,17 @@ export default function DeviceDetailPage(): ReactElement {
           excludeDeviceId={id}
           // A reserved device is meant for its reservation's target.
           initialTarget={
-            dialog !== 'transfer' &&
-            typeof data.reservedForType === 'string' &&
-            typeof data.reservedForId === 'string' &&
-            (dialog === 'assign' || data.reservedForType === 'person')
-              ? {
-                  type: data.reservedForType as AssigneeType,
-                  id: data.reservedForId,
-                }
-              : undefined
+            suggested
+              ? { type: 'person', id: suggested }
+              : dialog !== 'transfer' &&
+                  typeof data.reservedForType === 'string' &&
+                  typeof data.reservedForId === 'string' &&
+                  (dialog === 'assign' || data.reservedForType === 'person')
+                ? {
+                    type: data.reservedForType as AssigneeType,
+                    id: data.reservedForId,
+                  }
+                : undefined
           }
           // A reservation locks the dialog to its target; cancelling it
           // from here frees the picker without leaving the dialog.
@@ -718,7 +738,11 @@ export default function DeviceDetailPage(): ReactElement {
             await operation.mutateAsync({ id, operation: 'unreserve' });
             operation.reset();
           }}
-          onOpenChange={(open) => !open && setDialog(undefined)}
+          onOpenChange={(open) => {
+            if (open) return;
+            setDialog(undefined);
+            setSuggested(undefined);
+          }}
           submitting={operation.isPending}
           error={operation.error}
           onSubmit={(values: AssignValues) => run(dialog, { ...values })}

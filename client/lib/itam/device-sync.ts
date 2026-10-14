@@ -76,12 +76,20 @@ export interface SourceStatus {
  */
 export function useManagedDevices(
   deviceId: string | undefined,
-): UseQueryResult<{ data: ManagedDevice[]; connected: boolean }> {
+): UseQueryResult<{
+  data: ManagedDevice[];
+  connected: boolean;
+  checks: DeviceCheck[];
+}> {
   const api = useApi();
   return useQuery({
     queryKey: ['itam', DEVICES_PATH, 'managed', deviceId],
     queryFn: () =>
-      api.request<{ data: ManagedDevice[]; connected: boolean }>({
+      api.request<{
+        data: ManagedDevice[];
+        connected: boolean;
+        checks: DeviceCheck[];
+      }>({
         path: `${DEVICES_PATH}/${deviceId}/managed`,
       }),
     enabled: Boolean(deviceId),
@@ -116,5 +124,135 @@ export function useStartDeviceSync() {
       ).data,
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: ['itam', DEVICE_SYNC_PATH] }),
+  });
+}
+
+/** Device sync, step 2 (2026-10-15): where the platforms and the register disagree. */
+export type CheckKind = 'stale' | 'userMismatch' | 'statusMismatch';
+
+export interface DeviceCheck {
+  readonly kind: CheckKind;
+  readonly critical: boolean;
+  readonly deviceId: string;
+  readonly deviceNo: string | null;
+  readonly deviceName: string | null;
+  readonly status: string;
+  readonly ownerId: string | null;
+  readonly assigneeType: string | null;
+  readonly assigneeId: string | null;
+  readonly managedDeviceId: string;
+  readonly source: DeviceSourceKey;
+  readonly lastSyncAt: string | null;
+  readonly goneAt: string | null;
+  readonly personId: string | null;
+  readonly userName: string | null;
+}
+
+/** A platform record no register device answers to. */
+export interface UnregisteredDevice {
+  readonly id: string;
+  readonly source: DeviceSourceKey;
+  readonly externalId: string;
+  readonly serialNo: string | null;
+  readonly deviceName: string | null;
+  readonly manufacturer: string | null;
+  readonly model: string | null;
+  readonly osName: string | null;
+  readonly osVersion: string | null;
+  readonly personId: string | null;
+  readonly userName: string | null;
+  readonly ownership: string;
+  readonly lastSyncAt: string | null;
+  readonly matchState: 'unlinked' | 'ambiguous' | 'ignored';
+  readonly suggestedModelId: string | null;
+  readonly suggestedCategoryId: string | null;
+  readonly suggestedManufacturerId: string | null;
+  readonly candidates: readonly {
+    readonly id: string;
+    readonly label: string;
+  }[];
+  readonly ignoredById: string | null;
+  readonly ignoredAt: string | null;
+  readonly ignoreReason: string | null;
+  readonly consoleUrl: string | null;
+}
+
+/** A register device in use that no platform reports. */
+export interface UnmanagedDevice {
+  readonly id: string;
+  readonly deviceNo: string | null;
+  readonly name: string | null;
+  readonly categoryId: string | null;
+  readonly ownerId: string | null;
+  readonly assigneeType: string | null;
+  readonly assigneeId: string | null;
+}
+
+export const REVIEW_VIEWS = [
+  'checks',
+  'unregistered',
+  'unmanaged',
+  'ignored',
+] as const;
+export type ReviewView = (typeof REVIEW_VIEWS)[number];
+
+type ReviewRow<V extends ReviewView> = V extends 'checks'
+  ? DeviceCheck
+  : V extends 'unmanaged'
+    ? UnmanagedDevice
+    : UnregisteredDevice;
+
+/** One view of 管理平台核对. */
+export function useDeviceReview<V extends ReviewView>(
+  view: V,
+): UseQueryResult<ReviewRow<V>[]> {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['itam', DEVICE_SYNC_PATH, 'review', view],
+    queryFn: async () =>
+      (
+        await api.request<{ data: ReviewRow<V>[] }>({
+          path: `${DEVICE_SYNC_PATH}/review`,
+          query: { view },
+        })
+      ).data,
+  });
+}
+
+/**
+ * A decision about a platform record or a difference: link, unlink, keep
+ * off the register, take back, or 以台账为准. Everything under `['itam']`
+ * is read again, since the board, 需要关注 and the device pages all show it.
+ */
+export function useDeviceReviewAction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      action:
+        | { kind: 'link'; managedId: string; deviceId: string }
+        | { kind: 'unlink'; managedId: string }
+        | { kind: 'ignore'; managedId: string; reason: string }
+        | { kind: 'restore'; managedId: string }
+        | { kind: 'dismiss'; deviceId: string; check: CheckKind },
+    ) => {
+      if (action.kind === 'dismiss')
+        return api.request({
+          path: `${DEVICE_SYNC_PATH}/checks/${action.deviceId}/dismiss`,
+          method: 'POST',
+          json: { kind: action.check },
+        });
+      return api.request({
+        path: `${DEVICE_SYNC_PATH}/devices/${action.managedId}/${action.kind}`,
+        method: 'POST',
+        json:
+          action.kind === 'link'
+            ? { deviceId: action.deviceId }
+            : action.kind === 'ignore'
+              ? { reason: action.reason }
+              : {},
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itam'] }),
   });
 }

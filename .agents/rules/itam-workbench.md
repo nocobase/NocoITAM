@@ -52,7 +52,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   three different errands; 采购到货逾期 is not a rule any more — an overdue
   order is a 待验收到货 to-do, and its card, the purchase board and its
   summary strip say 到货逾期 N 天 (`OverdueBadge`, `daysOverdue` in
-  `client/lib/itam/format.ts`). Neither 需要关注 nor 待办 carries a count
+  `client/lib/itam/format.ts`). Device sync adds two rules (2026-10-15, `managedUnregistered` and
+  `deviceUnmanaged`, in the 设备 group), listed only while a platform is
+  connected, so the count is eleven or thirteen; and a 设备核对 column after
+  借出逾期 (see `itam-device-sync.md`). Neither 需要关注 nor 待办 carries a count
   beside its heading: a sum of unrelated rules is not something anybody acts
   on.
 - An entitlement's dates are three reminders, not one (2026-09-28): a

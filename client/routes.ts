@@ -251,6 +251,15 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       auth: 'required',
       componentLoader: () => import('./pages/itam/onboarding-supply.js'),
     },
+    // 管理平台核对 (device sync, 2026-10-15): opened from 待办's 设备核对 and
+    // 需要关注 and from 设置 → 设备同步, so no menu entry and no page grant;
+    // its endpoint answers whoever may read devices.
+    {
+      name: 'device-sync',
+      path: '/device-sync',
+      auth: 'required',
+      componentLoader: () => import('./pages/itam/device-sync.js'),
+    },
     // A conversation with the assistant as a page (the chat panel's "open
     // as a page"); no menu entry, so no page grant: the Agents plugin
     // answers each person for their own conversations only.

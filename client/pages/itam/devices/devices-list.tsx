@@ -128,7 +128,20 @@ function DevicesList(): ReactElement {
   );
   const names = useReferenceNames(referenceRequests);
 
-  const [creating, setCreating] = useState(false);
+  // Another page can open the create form filled in, the way the other
+  // lists can (`?new=1&init.serialNo=…`): 补登记 on 管理平台核对 brings what
+  // the platform knows (device sync, 2026-10-15).
+  const prefill: Record<string, unknown> = {};
+  for (const [key, value] of params.entries())
+    if (key.startsWith('init.')) prefill[key.slice('init.'.length)] = value;
+  const [creating, setCreating] = useState(params.get('new') === '1');
+  const clearPrefill = () => {
+    const next = new URLSearchParams(params);
+    next.delete('new');
+    for (const key of [...next.keys()])
+      if (key.startsWith('init.')) next.delete(key);
+    setParams(next, { replace: true });
+  };
   const derivedNameRef = useRef('');
   // The model chosen in the create dialog and the warranty end it implied,
   // so a changed purchase date recomputes a date the user never touched.
@@ -320,13 +333,19 @@ function DevicesList(): ReactElement {
         open={creating}
         onOpenChange={(open) => {
           setCreating(open);
-          if (!open) mutations.create.reset();
+          if (!open) {
+            mutations.create.reset();
+            clearPrefill();
+          }
         }}
         title={t('devices.new')}
         fields={DEVICE_CREATE_FIELDS.map((key) =>
           DEVICE_FIELDS.find((field) => field.key === key)!,
         )}
-        initial={currentUserId ? { ownerId: currentUserId } : undefined}
+        initial={{
+          ...(currentUserId ? { ownerId: currentUserId } : {}),
+          ...prefill,
+        }}
         derive={(change, values) => {
           if (change.key !== 'modelId' && change.key !== 'purchaseDate')
             return undefined;

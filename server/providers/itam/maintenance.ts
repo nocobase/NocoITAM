@@ -12,6 +12,7 @@ import type { SettingsService } from './settings.js';
 import { endedWhere, expiringWhere } from './entitlements.js';
 import type { EntitlementService } from './entitlements.js';
 import type { MasterDataService } from './master-data.js';
+import type { DeviceReviewService } from './device-review.js';
 import type { HistoryService } from './history.js';
 import type { ItamNotifier } from './notifier.js';
 
@@ -39,8 +40,18 @@ export const REMINDER_KINDS = [
   'lowAccessories',
   'lowConsumables',
   'lowComponents',
+  // Device sync (2026-10-15): the two differences no one person answers
+  // for. Absent from the list while no platform is connected.
+  'managedUnregistered',
+  'deviceUnmanaged',
 ] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
+
+/** The rules that need a device management platform to compare with. */
+const SYNC_KINDS: ReadonlySet<ReminderKind> = new Set([
+  'managedUnregistered',
+  'deviceUnmanaged',
+]);
 
 /**
  * One record a rule found, as 需要关注's card names it: the record and the
@@ -116,6 +127,8 @@ export function createMaintenanceService(dependencies: {
   masterData: MasterDataService;
   notifier: ItamNotifier;
   history: HistoryService;
+  /** Device sync's differences; a container without it has neither rule. */
+  review?: DeviceReviewService;
 }): MaintenanceService {
   const {
     database,
@@ -454,6 +467,29 @@ export function createMaintenanceService(dependencies: {
         });
     }
 
+    // Device sync: what a platform reports and nobody put on the register,
+    // and what the register has in use that no platform reports.
+    if (dependencies.review && (await dependencies.review.active())) {
+      for (const record of await dependencies.review.unregistered(now))
+        rows.push({
+          kind: 'managedUnregistered',
+          subjectType: 'managedDevices',
+          subjectId: record.id,
+          severity: 'warning',
+          data: {
+            name: record.deviceName ?? record.serialNo ?? record.externalId,
+          },
+        });
+      for (const device of await dependencies.review.unmanaged())
+        rows.push({
+          kind: 'deviceUnmanaged',
+          subjectType: 'devices',
+          subjectId: device.id,
+          severity: 'info',
+          data: { deviceNo: device.deviceNo, name: device.name },
+        });
+    }
+
     return rows;
   };
 
@@ -514,7 +550,10 @@ export function createMaintenanceService(dependencies: {
 
     async reminderCounts(now = new Date()) {
       const rows = await collect(now);
-      return REMINDER_KINDS.map((kind) => {
+      const synced = Boolean(await dependencies.review?.active());
+      return REMINDER_KINDS.filter(
+        (kind) => synced || !SYNC_KINDS.has(kind),
+      ).map((kind) => {
         const found = rows
           .filter((row) => row.kind === kind)
           .sort((a, b) =>

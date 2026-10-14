@@ -8,6 +8,7 @@ export {
   approvalServiceToken,
   deviceServiceToken,
   deviceSyncServiceToken,
+  deviceReviewServiceToken,
   attachmentServiceToken,
   auditServiceToken,
   disposalServiceToken,

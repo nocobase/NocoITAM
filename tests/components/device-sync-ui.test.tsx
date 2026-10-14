@@ -5,13 +5,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ManagedPlatforms } from '../../client/components/itam/managed-platforms.js';
 import { DeviceSyncCard } from '../../client/pages/itam/settings/device-sync-card.js';
 import type {
+  DeviceCheck,
   ManagedDevice,
   SourceStatus,
 } from '../../client/lib/itam/device-sync.js';
 
 const state = vi.hoisted(() => ({
   managed: undefined as
-    { data: ManagedDevice[]; connected: boolean } | undefined,
+    | { data: ManagedDevice[]; connected: boolean; checks?: DeviceCheck[] }
+    | undefined,
+  review: vi.fn(),
   status: [] as SourceStatus[],
   start: vi.fn(),
 }));
@@ -26,6 +29,11 @@ vi.mock('@nocobase/i18n/client', () => ({
 vi.mock('../../client/lib/itam/device-sync.js', () => ({
   useManagedDevices: () => ({ data: state.managed }),
   useDeviceSyncStatus: () => ({ data: state.status }),
+  useDeviceReviewAction: () => ({
+    mutate: state.review,
+    isPending: false,
+    error: null,
+  }),
   useStartDeviceSync: () => ({
     mutate: state.start,
     isPending: false,
@@ -116,6 +124,96 @@ describe("a device's 管理平台 group", () => {
     expect(
       screen.getByRole('link', { name: /deviceSync\.openIn/ }),
     ).toHaveAttribute('href', record.consoleUrl);
+  });
+});
+
+describe("a device's differences with the platform", () => {
+  const check = (overrides: Partial<DeviceCheck>): DeviceCheck => ({
+    kind: 'userMismatch',
+    critical: false,
+    deviceId: 'd1',
+    deviceNo: 'DE-1',
+    deviceName: 'Laptop',
+    status: 'inUse',
+    ownerId: 'mia',
+    assigneeType: 'person',
+    assigneeId: 'person-a',
+    managedDeviceId: 'm1',
+    source: 'intune',
+    lastSyncAt: '2026-10-13T22:10:00.000',
+    goneAt: null,
+    personId: 'person-b',
+    userName: 'Kim Ng',
+    ...overrides,
+  });
+  const actions = {
+    editable: true,
+    onAssign: vi.fn(),
+    onTransfer: vi.fn(),
+    onRestore: vi.fn(),
+  };
+
+  beforeEach(() => {
+    state.review.mockReset();
+    actions.onTransfer.mockReset();
+    actions.onAssign.mockReset();
+  });
+
+  it('offers to transfer to the platform user, or to keep the register', () => {
+    state.managed = { data: [record], connected: true, checks: [check({})] };
+    render(
+      <MemoryRouter>
+        <ManagedPlatforms deviceId='d1' actions={actions} />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.getByText('deviceSync.checks.userSentence'),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.checks.transferTo' }),
+    );
+    expect(actions.onTransfer).toHaveBeenCalledWith('person-b');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.checks.keepRegister' }),
+    );
+    expect(state.review).toHaveBeenCalledWith({
+      kind: 'dismiss',
+      deviceId: 'd1',
+      check: 'userMismatch',
+    });
+  });
+
+  it('offers to assign a shelved device to whoever is using it', () => {
+    state.managed = {
+      data: [record],
+      connected: true,
+      checks: [check({ kind: 'statusMismatch', status: 'inStock' })],
+    };
+    render(
+      <MemoryRouter>
+        <ManagedPlatforms deviceId='d1' actions={actions} />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.checks.assignTo' }),
+    );
+    expect(actions.onAssign).toHaveBeenCalledWith('person-b');
+  });
+
+  it('offers nothing to a reader who may not change the device', () => {
+    state.managed = { data: [record], connected: true, checks: [check({})] };
+    render(
+      <MemoryRouter>
+        <ManagedPlatforms
+          deviceId='d1'
+          actions={{ ...actions, editable: false }}
+        />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.queryByRole('button', { name: 'deviceSync.checks.keepRegister' }),
+    ).toBeNull();
+    expect(screen.queryByText('deviceSync.unlink')).toBeNull();
   });
 });
 

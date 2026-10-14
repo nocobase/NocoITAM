@@ -134,11 +134,27 @@ export function describeEvent(
     // Device sync (2026-10-14): which platform record the device was tied
     // to, and why.
     case 'managedLinked':
-      return t('history.summaries.managedLinked', {
-        source: t(`deviceSync.sources.${label('source')}`, {
-          defaultValue: label('source'),
+    case 'managedUnlinked':
+      return t(
+        row.type === 'managedUnlinked'
+          ? 'history.summaries.managedUnlinked'
+          : // By hand (step 2), or by the serial on a pull.
+            payload.manual === true
+            ? 'history.summaries.managedLinkedManual'
+            : 'history.summaries.managedLinked',
+        {
+          source: t(`deviceSync.sources.${label('source')}`, {
+            defaultValue: label('source'),
+          }),
+          target: label('targetLabel'),
+        },
+      );
+    // 以台账为准 on a difference the platforms showed (step 2).
+    case 'managedDismissed':
+      return t('history.summaries.managedDismissed', {
+        check: t(`deviceSync.checks.kinds.${label('kind')}`, {
+          defaultValue: label('kind'),
         }),
-        target: label('targetLabel'),
       });
     case 'unregisteredFound':
       return t('history.summaries.unregisteredFound', {
