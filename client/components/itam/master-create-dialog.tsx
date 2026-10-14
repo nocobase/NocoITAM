@@ -228,7 +228,7 @@ function MasterCreateForm({
               onValueChange={(value) => setTab(value as 'ai' | 'form')}
             >
               <TabsList>
-                <TabsTrigger value='ai' className='text-success-foreground'>
+                <TabsTrigger value='ai' className='text-primary'>
                   <Sparkles data-icon='inline-start' />
                   {t('procurement.capture.aiTab')}
                 </TabsTrigger>
@@ -350,12 +350,12 @@ function MaterialPane({
               : 'masterCapture.cannotSearch',
           )}
         </span>
-        {/* Green like every AI entry, filled because it is this tab's one
+        {/* Blue like every AI entry, filled because it is this tab's one
             action — as on the purchase order's AI 整理. */}
         <Button
           type='button'
           size='sm'
-          className='bg-success-foreground text-background hover:bg-success-foreground/90'
+          className='bg-primary text-primary-foreground hover:bg-primary/90'
           disabled={busy || !material.trim()}
           onClick={go}
         >
@@ -408,7 +408,7 @@ function CaptureNotes({
   return (
     <div className='grid gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
       <p className='flex gap-2'>
-        <Sparkles className='mt-0.5 size-4 shrink-0 text-success-foreground' />
+        <Sparkles className='mt-0.5 size-4 shrink-0 text-primary' />
         <span className='min-w-0'>
           {capture.summary ? (
             <CollapsibleText text={capture.summary} chars={200} lines={4} />
@@ -484,7 +484,7 @@ function CaptureNotes({
               className='flex max-w-[90%] gap-1.5 text-muted-foreground'
             >
               <span className='flex h-[1lh] shrink-0 items-center'>
-                <Sparkles className='size-3.5 text-success-foreground' />
+                <Sparkles className='size-3.5 text-primary' />
               </span>
               <span className='min-w-0'>
                 <CollapsibleText text={turn.text} chars={200} lines={3} />

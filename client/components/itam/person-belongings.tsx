@@ -449,7 +449,7 @@ export function PersonBelongings({
                 {account.canDisable ? (
                   <Link
                     to='/settings/users'
-                    className='font-medium text-success-foreground hover:underline'
+                    className='font-medium text-primary hover:underline'
                   >
                     {t('people.recovery.accountDisable')}
                   </Link>

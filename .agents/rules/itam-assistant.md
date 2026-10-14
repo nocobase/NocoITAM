@@ -65,7 +65,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `conversation-view.tsx`), since plugin 0.1.0-beta.8 refuses the labels
   and effort a model choice carries, which made every model but the
   agent's default unpickable. The header's assistant button is
-  `AgentChatButton` (the sparkle in the success tokens' green frame,
+  `AgentChatButton` (the sparkle in a blue frame on the accent ground,
   `ASSISTANT_LINK_CLASS` in `header-actions.tsx`, ⌘J). A page offers what it
   shows through `useAiPageContext({ kind, id, label })`
   (`client/lib/itam/ai-chat.tsx`): the record's chip sits above the composer
@@ -76,7 +76,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   authorization cannot be asked on SQLite). Noco then reads the record with
   its commands. `useItamAi()` says whether a model is there (`/itam/ai/status`:
   Noco's first model, else the system default) and opens or starts
-  conversations. Every AI shortcut on a page is green text with a sparkle
+  conversations. Every AI shortcut on a page is blue text with a sparkle
   (`AiShortcut`), not a button. There is no web search.
 - ITAM's **own model calls** go through the plugin's model gateway
   (`server/providers/itam/ai-model.ts`: `openSession`, `askJson` with a zod

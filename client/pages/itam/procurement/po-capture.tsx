@@ -103,12 +103,12 @@ export function CapturePane({
             {t('procurement.capture.hint')}
           </span>
         </div>
-        {/* Green like every AI entry (AiShortcut's colour), filled because
+        {/* Blue like every AI entry (AiShortcut's colour), filled because
             it is this tab's one action. */}
         <Button
           type='button'
           size='sm'
-          className='bg-success-foreground text-background hover:bg-success-foreground/90'
+          className='bg-primary text-primary-foreground hover:bg-primary/90'
           disabled={busy || !ready}
           onClick={go}
         >
@@ -165,7 +165,7 @@ export function CaptureNotice({
   return (
     <div className='grid gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
       <p className='flex gap-2'>
-        <Sparkles className='mt-0.5 size-4 shrink-0 text-success-foreground' />
+        <Sparkles className='mt-0.5 size-4 shrink-0 text-primary' />
         <span className='min-w-0'>
           {capture.summary ? (
             <CollapsibleText text={capture.summary} chars={200} lines={3} />
@@ -218,7 +218,7 @@ export function CaptureNotice({
               className='flex max-w-[90%] gap-1.5 text-muted-foreground'
             >
               <span className='flex h-[1lh] shrink-0 items-center'>
-                <Sparkles className='size-3.5 text-success-foreground' />
+                <Sparkles className='size-3.5 text-primary' />
               </span>
               <span className='min-w-0'>
                 <CollapsibleText text={turn.text} chars={200} lines={3} />

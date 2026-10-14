@@ -204,8 +204,8 @@
    across themes. */
 :root {
   --destructive-foreground: oklch(0.985 0 0);
-  /* Links read greenish so they stand apart from primary buttons. */
-  --link: oklch(0.5 0.12 165);
+  /* Links in the theme's blue, NocoBase's (2026-10-14; they were green). */
+  --link: var(--primary);
   --warning: oklch(0.96 0.06 85);
   --warning-foreground: oklch(0.45 0.12 70);
   /* A calm blue for tags that classify rather than warn (a perpetual
@@ -219,7 +219,7 @@
 }
 :root.dark {
   --destructive-foreground: oklch(0.985 0 0);
-  --link: oklch(0.76 0.12 165);
+  --link: var(--primary);
   --warning: oklch(0.3 0.05 80);
   --warning-foreground: oklch(0.88 0.12 85);
   --info: oklch(0.3 0.05 255);

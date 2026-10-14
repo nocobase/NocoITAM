@@ -204,11 +204,7 @@ function SearchPanel({
       <div className='border-b border-border p-2'>
         <InputGroup className='h-10 border-transparent shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-0'>
           <InputGroupAddon>
-            {asking ? (
-              <Sparkles className='text-success-foreground' />
-            ) : (
-              <Search />
-            )}
+            {asking ? <Sparkles className='text-primary' /> : <Search />}
           </InputGroupAddon>
           {asking ? (
             <InputGroupInput
@@ -254,7 +250,7 @@ function SearchPanel({
                     {t('search.searchTab')}
                   </TabsTrigger>
                   <TabsTrigger value='ask' className='px-2 text-xs'>
-                    <Sparkles className='text-success-foreground' />
+                    <Sparkles className='text-primary' />
                     {t('search.askAi')}
                   </TabsTrigger>
                 </TabsList>
@@ -332,7 +328,7 @@ function SearchPanel({
               <CommandGroup>
                 <CommandItem
                   value='ask-noco'
-                  className='text-success-foreground'
+                  className='text-primary'
                   onSelect={() => search.ask(term)}
                 >
                   <Sparkles />

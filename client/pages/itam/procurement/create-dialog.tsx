@@ -300,7 +300,7 @@ export function PurchaseOrderCreateDialog({
             onValueChange={(value) => setTab(value as 'ai' | 'form')}
           >
             <TabsList>
-              <TabsTrigger value='ai' className='text-success-foreground'>
+              <TabsTrigger value='ai' className='text-primary'>
                 <Sparkles data-icon='inline-start' />
                 {t('procurement.capture.aiTab')}
               </TabsTrigger>

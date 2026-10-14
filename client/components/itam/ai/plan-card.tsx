@@ -75,7 +75,7 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
     <div className='my-2 rounded-lg border border-border bg-card p-3 text-sm'>
       <div className='flex items-start gap-2'>
         <ListChecks
-          className='mt-0.5 size-4 shrink-0 text-success-foreground'
+          className='mt-0.5 size-4 shrink-0 text-primary'
           aria-hidden='true'
         />
         <div className='min-w-0 flex-1'>
@@ -171,7 +171,7 @@ function StepMark({
   if (status === 'done')
     return (
       <Check
-        className='mt-0.5 size-4 shrink-0 text-success-foreground'
+        className='mt-0.5 size-4 shrink-0 text-primary'
         aria-hidden='true'
       />
     );
