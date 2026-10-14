@@ -176,9 +176,10 @@ export const AI_WRITE_SCHEMAS = {
     recipientVendorId: id.optional(),
     recipientName: z.string().trim().max(255).optional(),
   }),
-  // AI 联网补充 (2026-10-06): what the lookup found, written into a model or
-  // a software product the user is looking at. Never its name, maker or
-  // category: another of those is another record.
+  // AI 补充 (2026-10-06; called AI 联网补充 until 2026-10-14, though the
+  // Agents plugin's gateway has no web search): what the lookup found,
+  // written into a model or a software product the user is looking at.
+  // Never its name, maker or category: another of those is another record.
   itam_update_master_record: z.object({
     title,
     collection: z.enum(['models', 'softwareProducts']),

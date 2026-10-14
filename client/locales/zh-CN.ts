@@ -1041,12 +1041,12 @@ const zhCN: AppResource = {
   },
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
-  // AI 联网补充 on a model's or software product's page.
-  masterEnrich: { action: 'AI 联网补充' },
+  // AI 补充 on a model's or software product's page.
+  masterEnrich: { action: 'AI 补充' },
   masterCapture: {
     description: {
-      models: '写上制造商和型号，AI 联网查询补全其余信息，核对后保存',
-      softwareProducts: '写上厂商和产品名，AI 联网查询补全其余信息，核对后保存',
+      models: '写上制造商和型号，AI 补全其余信息，核对后保存',
+      softwareProducts: '写上厂商和产品名，AI 补全其余信息，核对后保存',
     },
     placeholder: {
       models: '制造商和型号，例如：Dell OptiPlex 7010 SFF',
