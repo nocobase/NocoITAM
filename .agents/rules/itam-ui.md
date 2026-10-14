@@ -155,12 +155,12 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
   which reads the collection from the route's first segment.
 - One search over every list (2026-10-05, after InvGate's), opened from
   the search button beside the logo in the sidebar's header, as NocoCRM has
-  it (2026-10-14; it was a 搜索 entry under 工作台): `SearchHeaderButton` in
+  it (2026-10-14; it was a 搜索 entry under 待办): `SearchHeaderButton` in
   `client/components/itam/global-search.tsx`, passed by
   `client/layouts/app-layout.tsx` as `AppSidebar`'s `action` because it
   opens a dialog rather than a page. The collapsed sidebar has no room
   beside its mark, so there `SearchNavButton` stands in as a menu entry
-  under 工作台 (`NavigationMenu`'s `after`); it renders nothing otherwise. Its
+  under 待办 (`NavigationMenu`'s `after`); it renders nothing otherwise. Its
   state lives in
   `GlobalSearchProvider` around the whole shell, not in the dialog
   (`GlobalSearchDialog`, mounted inside the record drawer's provider so a
@@ -196,7 +196,7 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
   `client/layouts/app-layout.tsx` turns on, so the settings and dev menus
   keep folding. In the icon-only sidebar the heading gives way to a thin
   rule. Since nothing marks where an unfolded group ends, every page sits
-  either above the groups (工作台) or
+  either above the groups (待办) or
   inside one (资产, 业务, 主数据); an ungrouped entry placed after
   a group reads as part of it. 业务 holds 采购, 维修, 报废, 盘点 and 报表 (盘点 below 报废 since
   2026-10-06).

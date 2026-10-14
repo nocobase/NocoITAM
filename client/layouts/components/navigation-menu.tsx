@@ -99,7 +99,7 @@ export function NavigationMenu({
   readonly badges?: NavigationBadges;
   /**
    * Application change (ITAM): something drawn right after the entry of the
-   * route so named, among the plain entries: 搜索, under 工作台, which opens a
+   * route so named, among the plain entries: 搜索, under 待办, which opens a
    * dialog rather than a page, so no route's `navigation` can express it
    * (client/components/itam/global-search.tsx).
    */

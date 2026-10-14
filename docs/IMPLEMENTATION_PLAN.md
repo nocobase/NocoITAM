@@ -2000,7 +2000,6 @@ CSV 导出都把这三个字段返回了；授权那边同理漏了 `productKey`
 设置页提醒阈值卡片补上这四个阈值的中英文标签（加字段时漏了，界面上直接显示
 `settings.thresholds.lateDeliveryDays` 这样的键名）。
 
-
 ### 2026-09-28 我的待办：一行一类，就地展开到具体记录
 
 - **改名**：工作台第一张卡片叫「我的待办」（`workbench.myWork`，英文 `My to-dos`）
@@ -2325,7 +2324,6 @@ IT 支持的 `complete` 授权又是 `recordsICreated`，结果是**维修单没
   带出来的总是 IT）。保存过的权限集字段清单由 `RENAMED_FIELDS` 改名。
 - 演示数据：只有 `manager`、`support` 和离职的那位（IT 支持）有账号，其他演示
   人员不再建账号。
-
 
 ### 2026-10-05 IT 支持 = 资产经理 − 审批 − 删除
 
@@ -2757,6 +2755,13 @@ AI 整理对不上的行原来只列在表单旁边，要建型号就得离开�
 标签（已批准 / 已下单 / 部分到货），到货逾期的标签在同一行。列内顺序：到货逾期的在前，然后是待下单
 （需求日期早的在前），然后是其余待到货的（预计到货早的在前）。
 
+### 2026-10-14 工作台改名为「待办」
+
+菜单和页面标题从「工作台」改为「待办」：页面列的是要处理的事（需要关注、离职交接、入职准备和
+各类待办卡片），没有用「任务」，因为盘点任务、定时任务、维护任务已经用了这个词。路由
+`/workbench`、页面授权 id 和代码里的 workbench 命名不变，已有的页面授权不受影响；本文档更早的
+记录仍按当时的名字写作「工作台」。
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became
@@ -2822,7 +2827,7 @@ What the template changed:
 
 What it changed inside ITAM:
 
-- **Authorization.** Business resources became *composite resources*
+- **Authorization.** Business resources became _composite resources_
   (`defineCompositeResource`, `type: 'composite'`, policy
   `{ type: 'composite', scopes }`); `authz.db` is `authz.database`,
   `permissionSetsToken` is `authz.permissionSets`, record access is

@@ -79,7 +79,7 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
               >
                 {/* Application change (ITAM): the groups read as headings
                     with their pages always listed (`sections`), and 搜索
-                    sits under 工作台. */}
+                    sits under 待办. */}
                 <NavigationMenu
                   items={menuItems}
                   label={navigationLabel}
