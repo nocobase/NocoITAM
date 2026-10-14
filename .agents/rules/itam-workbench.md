@@ -4,7 +4,8 @@ Read this before changing the workbench board, 需要关注, a to-do card or its
 
 Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small; each rule is as it was written, with the date it was decided.
 
-- The page is called 待办 in Chinese (2026-10-14; it was 工作台, and older
+- The page is called 待办, To-dos in English (2026-10-14; it was 工作台 /
+  Workbench, and older
   rules and plan entries still say so). Not 任务, which 盘点任务, 定时任务
   and 维护任务 already use. The route `/workbench`, its page grant id and the
   code's `workbench` names are unchanged, so stored page grants still apply.

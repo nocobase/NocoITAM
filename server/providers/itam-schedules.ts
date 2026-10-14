@@ -28,7 +28,7 @@ const TITLES: Readonly<
   'en-US': {
     daily: [
       'Asset daily maintenance',
-      'Rolls auto-renewing subscriptions forward, releases lapsed reservations and recomputes the workbench reminders',
+      'Rolls auto-renewing subscriptions forward, releases lapsed reservations and recomputes the reminders on To-dos',
     ],
     monthly: [
       'Asset monthly depreciation',
