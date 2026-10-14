@@ -87,7 +87,9 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   负责人 for 我负责的, devices `read` and `update` to see it); 离职交接
   cards tagged N 台设备离职后仍在线 (`onlineAfterLeaving`, a sync after the
   leave date); `/device-sync` (管理平台核对, no menu entry or page grant,
-  views checks / unregistered / unmanaged / ignored, devices `read`); the
+  views checks / unregistered / unmanaged / ignored, devices `read`; reached
+  from the device list header while a platform is connected and from the
+  设备核对 column header, empty or not, since 2026-10-14); the
   settings tab's 核对规则 card (`deviceSync` settings key).
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the

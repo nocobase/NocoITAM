@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { Plus } from 'lucide-react';
+import { MonitorCheck, Plus } from 'lucide-react';
 import { useMemo, useRef, useState, type ReactElement } from 'react';
 import { useNavigate, useOutlet, useSearchParams } from 'react-router';
 
@@ -277,6 +277,17 @@ function DevicesList(): ReactElement {
               }}
               columns={columns.map((field) => field.key)}
             />
+            {/* 管理平台核对 has no menu entry (it is empty until a platform
+                is connected), so the device list leads to it while one is. */}
+            {syncConnected ? (
+              <Button
+                variant='outline'
+                onClick={() => void navigate('/device-sync')}
+              >
+                <MonitorCheck data-icon='inline-start' />
+                {t('deviceSync.review.title')}
+              </Button>
+            ) : null}
             <Button onClick={() => setCreating(true)}>
               <Plus data-icon='inline-start' />
               {t('devices.new')}

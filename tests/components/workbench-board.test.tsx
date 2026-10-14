@@ -283,3 +283,21 @@ it('marks, in the team view, the approvals that wait on the reader', () => {
   ).not.toBeNull();
   state.rows = {};
 });
+
+it('leads from the device checks column to 管理平台核对, even when it is empty', () => {
+  state.items = [
+    {
+      key: 'deviceChecks',
+      count: 0,
+      url: '/device-sync',
+      records: [],
+    },
+  ];
+  show();
+  const checks = column('workbench.work.deviceChecks');
+  expect(
+    within(checks)
+      .getByRole('link', { name: 'deviceSync.review.title' })
+      .getAttribute('href'),
+  ).toBe('/device-sync');
+});
