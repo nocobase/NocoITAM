@@ -90,13 +90,8 @@ export function AppSidebarFooter(): ReactElement {
               {brandLink} keeps it reliable.
             </Trans>
           </p>
-          {/* Application change (ITAM): the version alone, the template's name
-              on hover. */}
-          <p
-            className='mt-1 truncate text-muted-foreground'
-            title={`${templateName} ${versionLabel}`}
-          >
-            {versionLabel}
+          <p className='mt-1 truncate text-muted-foreground'>
+            {templateName} {versionLabel}
           </p>
         </div>
       </div>

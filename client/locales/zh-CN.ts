@@ -2627,8 +2627,6 @@ const zhCN: AppResource = {
   shell: {
     ...systemZhCN.shell,
     workspace: 'AI 应用工作区',
-    buildFreely: 'AI 自由构建。',
-    reliability: '<brand>NocoBase</brand> 保障可靠。',
   },
   auth: {
     welcome: '欢迎回来',
