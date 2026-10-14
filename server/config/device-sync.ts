@@ -2,6 +2,7 @@ import {
   defineAppConfig,
   envString,
   type AppConfigFactory,
+  type ConfigValidationContext,
 } from '@nocobase/app-server/config';
 
 /**
@@ -15,20 +16,59 @@ export interface IntuneSourceConfig {
   clientSecret?: string;
 }
 
+/**
+ * A Jamf Pro server (step 3, 2026-10-15): an API client whose role holds
+ * only the read privileges for computers and mobile devices (Read Computers,
+ * Read Mobile Devices). Jamf Pro 10.49 or later.
+ */
+export interface JamfSourceConfig {
+  /** The server's address, e.g. https://example.jamfcloud.com. */
+  url?: string;
+  clientId?: string;
+  clientSecret?: string;
+}
+
 export interface DeviceSyncConfig {
   /** Absent or empty: Intune is not connected. */
   intune?: IntuneSourceConfig;
+  /** Absent or empty: Jamf Pro is not connected. */
+  jamf?: JamfSourceConfig;
 }
 
 const INTUNE_FIELDS = ['tenantId', 'clientId', 'clientSecret'] as const;
+const JAMF_FIELDS = ['url', 'clientId', 'clientSecret'] as const;
+
+/** All of a source's values, or none: a half-configured one fails nightly. */
+function checkSource<K extends string>(
+  name: string,
+  values: Partial<Record<K, string>> | undefined,
+  fields: readonly K[],
+  context: ConfigValidationContext,
+): void {
+  if (!values) return;
+  const filled = fields.filter((field) => Boolean(values[field]?.trim()));
+  if (filled.length > 0 && filled.length < fields.length)
+    for (const field of fields)
+      if (!filled.includes(field))
+        context.error(
+          `${name}.${field}`,
+          `is required when ${name} is configured.`,
+        );
+  for (const field of fields)
+    if (values[field]?.includes('${'))
+      context.error(
+        `${name}.${field}`,
+        'holds a ${NAME} placeholder, which is not expanded; write the value itself.',
+      );
+}
 
 /**
- * Application section (2026-10-14, device sync step 1): the device management
- * platforms ITAM reads its devices from. Credentials stay here, on the
- * machine that runs the application (NocoSolution guideline 1.5); the
- * settings page only says whether a source is configured. A secret is written
- * as the value itself — a `${NAME}` placeholder is not expanded — or set
- * from the environment variables below.
+ * Application section (2026-10-14, device sync step 1; Jamf in step 3): the
+ * device management platforms ITAM reads its devices from. Credentials stay
+ * here, on the machine that runs the application (NocoSolution guideline
+ * 1.5); the settings page only says whether a source is configured. A secret
+ * is written as the value itself — a `${NAME}` placeholder is not expanded —
+ * or set from the environment variables below.
  */
 const deviceSync: AppConfigFactory<DeviceSyncConfig> =
   defineAppConfig<DeviceSyncConfig>({
@@ -43,28 +83,27 @@ const deviceSync: AppConfigFactory<DeviceSyncConfig> =
         description: "The app registration's client secret.",
         secret: true,
       }),
+      JAMF_URL: envString('jamf.url', {
+        description: 'The Jamf Pro server ITAM reads devices from.',
+      }),
+      JAMF_CLIENT_ID: envString('jamf.clientId', {
+        description: 'The Jamf Pro API client ITAM reads with.',
+      }),
+      JAMF_CLIENT_SECRET: envString('jamf.clientSecret', {
+        description: "The Jamf Pro API client's secret.",
+        secret: true,
+      }),
     },
     defaults: {},
     validate(value, context) {
-      const intune = value.intune;
-      if (!intune) return;
-      const filled = INTUNE_FIELDS.filter((field) =>
-        Boolean(intune[field]?.trim()),
-      );
-      // All three, or none: a half-configured source would fail every night.
-      if (filled.length > 0 && filled.length < INTUNE_FIELDS.length)
-        for (const field of INTUNE_FIELDS)
-          if (!filled.includes(field))
-            context.error(
-              `intune.${field}`,
-              'is required when Intune is configured.',
-            );
-      for (const field of INTUNE_FIELDS)
-        if (intune[field]?.includes('${'))
-          context.error(
-            `intune.${field}`,
-            'holds a ${NAME} placeholder, which is not expanded; write the value itself.',
-          );
+      checkSource('intune', value.intune, INTUNE_FIELDS, context);
+      checkSource('jamf', value.jamf, JAMF_FIELDS, context);
+      const url = value.jamf?.url?.trim();
+      if (url && !url.includes('${') && !/^https:\/\/[^/\s]+/.test(url))
+        context.error(
+          'jamf.url',
+          'must be the https:// address of the server.',
+        );
     },
   });
 

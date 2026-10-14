@@ -1,11 +1,14 @@
-import type { IntuneSourceConfig } from '../../config/device-sync.js';
+import type {
+  IntuneSourceConfig,
+  JamfSourceConfig,
+} from '../../config/device-sync.js';
 
 /**
  * The device management platforms ITAM reads devices from (device sync,
  * 2026-10-14). A source only reads: nothing here writes to a platform, and
  * each asks only for the permission to read devices.
  */
-export const DEVICE_SOURCES = ['intune'] as const;
+export const DEVICE_SOURCES = ['intune', 'jamf'] as const;
 export type DeviceSourceKey = (typeof DEVICE_SOURCES)[number];
 
 /** One device as a platform reports it, before it meets the register. */
@@ -294,9 +297,216 @@ function graphError(
   return text(error?.message) ?? `Microsoft Graph answered ${status}`;
 }
 
+/** Jamf's records are of two kinds, numbered apart: keep their ids apart. */
+const JAMF_COMPUTER = 'computer:';
+const JAMF_MOBILE = 'mobile:';
+
+/** A Jamf Pro computer (`/api/v1/computers-inventory`) as ITAM reads it. */
+export function jamfComputer(record: Record<string, unknown>): ObservedDevice {
+  const general = (record.general ?? {}) as Record<string, unknown>;
+  const hardware = (record.hardware ?? {}) as Record<string, unknown>;
+  const system = (record.operatingSystem ?? {}) as Record<string, unknown>;
+  const user = (record.userAndLocation ?? {}) as Record<string, unknown>;
+  const fileVault = text(system.fileVault2Status);
+  return {
+    externalId: `${JAMF_COMPUTER}${String(record.id)}`,
+    serialNo: text(hardware.serialNumber),
+    deviceName: text(general.name),
+    manufacturer: text(hardware.make) ?? 'Apple',
+    model: text(hardware.model),
+    osName: text(system.name) ?? 'macOS',
+    osVersion: text(system.version),
+    userPrincipal: text(user.email) ?? text(user.username),
+    userName: text(user.realname),
+    // Jamf records no owner type for a computer: a Mac it manages is the
+    // company's.
+    ownership: 'company',
+    compliance: null,
+    encrypted:
+      fileVault === 'ALL_ENCRYPTED' || fileVault === 'BOOT_ENCRYPTED'
+        ? true
+        : fileVault === 'NOT_ENCRYPTED'
+          ? false
+          : null,
+    wifiMac: text(hardware.macAddress),
+    enrolledAt: text(general.lastEnrolledDate),
+    lastSyncAt: text(general.lastContactTime) ?? text(general.reportDate),
+    raw: record,
+  };
+}
+
+/** A Jamf Pro iPhone or iPad (`/api/v2/mobile-devices/detail`). */
+export function jamfMobile(record: Record<string, unknown>): ObservedDevice {
+  const general = (record.general ?? {}) as Record<string, unknown>;
+  const hardware = (record.hardware ?? {}) as Record<string, unknown>;
+  const user = (record.userAndLocation ?? {}) as Record<string, unknown>;
+  const security = (record.security ?? {}) as Record<string, unknown>;
+  const owner = text(general.deviceOwnershipType)?.toLowerCase() ?? '';
+  return {
+    externalId: `${JAMF_MOBILE}${String(record.mobileDeviceId)}`,
+    serialNo: text(hardware.serialNumber),
+    deviceName: text(general.displayName),
+    manufacturer: 'Apple',
+    model: text(hardware.model),
+    osName: text(record.deviceType) ?? 'iOS',
+    osVersion: text(general.osVersion),
+    userPrincipal: text(user.emailAddress) ?? text(user.username),
+    userName: text(user.fullName),
+    // Institutional, or a person's own device enrolled for work.
+    ownership:
+      owner.includes('personal') || owner.includes('userenrollment')
+        ? 'personal'
+        : owner
+          ? 'company'
+          : 'unknown',
+    compliance: null,
+    encrypted:
+      typeof security.dataProtection === 'boolean'
+        ? security.dataProtection
+        : null,
+    wifiMac: text(hardware.wifiMacAddress),
+    enrolledAt: text(general.lastEnrolledDate),
+    // A mobile device's inventory is the platform's latest word on it.
+    lastSyncAt: text(general.lastInventoryUpdateDate),
+    raw: record,
+  };
+}
+
+/**
+ * Jamf Pro, read through its API with the client credentials of an API
+ * client (Jamf Pro 10.49+): the computers, then the iPhones and iPads, a
+ * page at a time.
+ */
+export function createJamfSource(
+  config: Required<JamfSourceConfig>,
+  options: HttpOptions & { readonly pageSize?: number } = {},
+): DeviceSource {
+  const base = config.url.replace(/\/+$/, '');
+  const pageSize = options.pageSize ?? 200;
+  const token = async (): Promise<string> => {
+    const response = await requestWithRetry(
+      `${base}/api/oauth/token`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: config.clientId,
+          client_secret: config.clientSecret,
+          grant_type: 'client_credentials',
+        }).toString(),
+      },
+      options,
+    );
+    const body = (await response.json().catch(() => ({}))) as Record<
+      string,
+      unknown
+    >;
+    if (!response.ok || typeof body.access_token !== 'string')
+      throw new SourceError(
+        'AUTH_FAILED',
+        text(body.error_description) ??
+          text(body.error) ??
+          `Sign-in to Jamf Pro answered ${response.status}`,
+      );
+    return body.access_token;
+  };
+
+  /** One endpoint, every page, mapped. */
+  async function* list(
+    bearer: string,
+    path: string,
+    sections: readonly string[],
+    map: (record: Record<string, unknown>) => ObservedDevice,
+  ): AsyncGenerator<readonly ObservedDevice[]> {
+    for (let page = 0; ; page++) {
+      const query = new URLSearchParams();
+      for (const section of sections) query.append('section', section);
+      query.set('page', String(page));
+      query.set('page-size', String(pageSize));
+      query.set('sort', 'id:asc');
+      const response = await requestWithRetry(
+        `${base}${path}?${query.toString()}`,
+        { headers: { authorization: `Bearer ${bearer}` } },
+        options,
+      );
+      const body = (await response.json().catch(() => undefined)) as
+        Record<string, unknown> | undefined;
+      if (response.status === 401)
+        throw new SourceError('AUTH_FAILED', jamfError(body, 401));
+      if (response.status === 403)
+        throw new SourceError('PERMISSION_MISSING', jamfError(body, 403));
+      if (!response.ok)
+        throw new SourceError('UNAVAILABLE', jamfError(body, response.status));
+      if (!body || !Array.isArray(body.results))
+        throw new SourceError(
+          'INVALID_RESPONSE',
+          'Jamf Pro answered without a device list',
+        );
+      const results = body.results as Record<string, unknown>[];
+      yield results.map(map);
+      const total = Number(body.totalCount);
+      if (
+        results.length < pageSize ||
+        (Number.isFinite(total) && (page + 1) * pageSize >= total)
+      )
+        return;
+    }
+  }
+
+  return {
+    key: 'jamf',
+    async *pages() {
+      const bearer = await token();
+      yield* list(
+        bearer,
+        '/api/v1/computers-inventory',
+        ['GENERAL', 'HARDWARE', 'OPERATING_SYSTEM', 'USER_AND_LOCATION'],
+        jamfComputer,
+      );
+      yield* list(
+        bearer,
+        '/api/v2/mobile-devices/detail',
+        ['GENERAL', 'HARDWARE', 'USER_AND_LOCATION', 'SECURITY'],
+        jamfMobile,
+      );
+    },
+  };
+}
+
+function jamfError(
+  body: Record<string, unknown> | undefined,
+  status: number,
+): string {
+  const errors = body?.errors as { description?: unknown }[] | undefined;
+  return text(errors?.[0]?.description) ?? `Jamf Pro answered ${status}`;
+}
+
+/** Where a platform's own page for one of its records is. */
+export function consoleUrl(
+  source: string,
+  externalId: string,
+  config?: { readonly jamf?: JamfSourceConfig },
+): string | null {
+  if (source === 'intune')
+    return `https://intune.microsoft.com/#view/Microsoft_Intune_Devices/DeviceSettingsMenuBlade/~/overview/mdmDeviceId/${encodeURIComponent(externalId)}`;
+  const jamf = config?.jamf?.url?.trim().replace(/\/+$/, '');
+  if (source === 'jamf' && jamf) {
+    if (externalId.startsWith(JAMF_COMPUTER))
+      return `${jamf}/computers.html?id=${encodeURIComponent(externalId.slice(JAMF_COMPUTER.length))}&o=r`;
+    if (externalId.startsWith(JAMF_MOBILE))
+      return `${jamf}/mobileDevices.html?id=${encodeURIComponent(externalId.slice(JAMF_MOBILE.length))}&o=r`;
+  }
+  return null;
+}
+
 /** The sources `config.yml` fully configures, ready to read. */
 export function configuredSources(
-  config: { readonly intune?: IntuneSourceConfig } | undefined,
+  config:
+    | {
+        readonly intune?: IntuneSourceConfig;
+        readonly jamf?: JamfSourceConfig;
+      }
+    | undefined,
   options: HttpOptions = {},
 ): DeviceSource[] {
   const sources: DeviceSource[] = [];
@@ -312,6 +522,18 @@ export function configuredSources(
           tenantId: intune.tenantId.trim(),
           clientId: intune.clientId.trim(),
           clientSecret: intune.clientSecret.trim(),
+        },
+        options,
+      ),
+    );
+  const jamf = config?.jamf;
+  if (jamf?.url?.trim() && jamf.clientId?.trim() && jamf.clientSecret?.trim())
+    sources.push(
+      createJamfSource(
+        {
+          url: jamf.url.trim(),
+          clientId: jamf.clientId.trim(),
+          clientSecret: jamf.clientSecret.trim(),
         },
         options,
       ),

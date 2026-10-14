@@ -603,6 +603,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
           configuredSources(
             this.app.config?.get<DeviceSyncConfig>('deviceSync'),
           ),
+        consoles: () => this.app.config?.get<DeviceSyncConfig>('deviceSync'),
         touched: () => container.resolve(itamChangesToken).touched(),
         log: (message, error) => {
           if (container.has(loggingToken))

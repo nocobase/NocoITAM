@@ -294,6 +294,12 @@ function RecordsView({
                   <span className='font-medium'>
                     {row.deviceName ?? row.externalId}
                   </span>
+                  {/* Which platforms report it: one row per device. */}
+                  <span className='text-xs text-muted-foreground'>
+                    {row.sources
+                      .map((source) => t(`deviceSync.sources.${source}`))
+                      .join(' · ')}
+                  </span>
                   {row.ownership === 'personal' ? (
                     <Badge variant='outline' data-size='sm'>
                       {t('deviceSync.ownership.personal')}
