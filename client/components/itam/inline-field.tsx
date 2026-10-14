@@ -3,10 +3,11 @@ import { useRef, useState, type ReactElement, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import type { FieldDefinition } from '@/lib/itam/fields';
-import { errorMessage } from '@/lib/itam/format';
+import { errorMessage, text } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
 
 import { FieldInput } from './field-input.js';
+import { LongTextField } from './long-text-field.js';
 
 export interface InlineFieldProps {
   readonly field: FieldDefinition;
@@ -78,6 +79,18 @@ export function InlineField({
       setSaving(false);
     }
   };
+
+  // A long text reads and edits in a pop-up beside the column, as NocoCRM's
+  // record pages do, rather than unfolding into the column.
+  if (field.type === 'textarea' && !renderInput && !field.writeOnly)
+    return (
+      <LongTextField
+        value={text(value)}
+        label={t(field.label)}
+        editable={editable}
+        onSave={onSave}
+      />
+    );
 
   if (!editable) return <div>{display}</div>;
 

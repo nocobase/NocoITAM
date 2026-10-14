@@ -63,6 +63,14 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
   summary, a change value, and the cancellation reason on the summary strip,
   where it also drops to the normal weight. A page that renders such a value
   itself must fold it too.
+  The one exception is a long text in a record's information column
+  (2026-10-14, after NocoCRM): `InlineField` renders every `textarea` field
+  through `LongTextField` (`client/components/itam/long-text-field.tsx`) —
+  three lines that fade out while there is more, a click opening the whole
+  in a pop-up beside the column, a double-click there editing it. Closing
+  the pop-up saves, Escape leaves it as it was, Cmd/Ctrl+Enter saves at
+  once, and an empty one opens straight into the editor. The column never
+  unfolds, and editing has room.
 - 负责人 (`ownerId`) is the **first row of 基本信息** on every detail page
   of a record that has one (2026-10-05): `domain-detail.tsx` places it
   there whatever group its field names (`OWNER_FIRST`), and the device page
