@@ -125,7 +125,6 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
       { key: 'models', label: 'navigation.models' },
       { key: 'softwareProducts', label: 'navigation.softwareProducts' },
     ],
-    defaultTab: 'models',
     fields: [
       {
         key: 'name',
@@ -181,7 +180,6 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
       { key: 'repairs', label: 'tabs.repairs' },
       { key: 'disposals', label: 'tabs.disposals' },
     ],
-    defaultTab: 'purchaseOrders',
     fields: [
       {
         key: 'name',
@@ -257,7 +255,6 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
       },
       { key: 'children', label: 'tabs.children' },
     ],
-    defaultTab: 'models',
     defaultSort: 'sort',
     fields: [
       {
@@ -374,7 +371,6 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
       { key: 'devices', label: 'tabs.devices', appliesTo: ['device'] },
       { key: 'stock', label: 'tabs.stock', appliesTo: ['stock'] },
     ],
-    defaultTab: 'devices',
     fields: [
       {
         key: 'name',
@@ -456,7 +452,6 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
     nameField: 'name',
     countColumns: [{ key: 'entitlements', label: 'entitlements.object' }],
     extraTabs: [{ key: 'entitlements', label: 'entitlements.object' }],
-    defaultTab: 'entitlements',
     fields: [
       {
         key: 'name',
@@ -526,7 +521,6 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
       { key: 'people', label: 'navigation.people' },
       { key: 'children', label: 'tabs.children' },
     ],
-    defaultTab: 'devices',
     defaultSort: 'path',
     fields: [
       {
@@ -579,7 +573,6 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
       { key: 'children', label: 'tabs.children' },
       { key: 'onboarding', label: 'onboardingKits.title', countless: true },
     ],
-    defaultTab: 'devices',
     defaultSort: 'path',
     fields: [
       {
@@ -648,6 +641,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
     i18n: 'people',
     nameField: 'name',
     extraTabs: [{ key: 'holdings', label: 'tabs.holdings', countless: true }],
+    // A person opens on what they hold, where they are worked on; every
+    // other record opens on its history.
     defaultTab: 'holdings',
     countColumns: [
       { key: 'devices', label: 'tabs.devices' },

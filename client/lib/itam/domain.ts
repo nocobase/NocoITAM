@@ -197,8 +197,9 @@ export interface DomainConfig {
     t: (key: string, options?: Record<string, unknown>) => string,
   ) => string;
   readonly defaultSort?: string;
-  /** Extra tabs before the history timeline. */
+  /** The tabs after the history timeline, which comes first. */
   readonly tabs?: readonly DomainTab[];
+  /** The tab a record opens on; history unless one is named. */
   readonly defaultTab?: string;
   /**
    * A row of named views above the table (待我审批), for a question the

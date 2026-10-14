@@ -9,6 +9,8 @@ const enUS = {
   // application does not write English into a record.
   notifications: {
     approvalRequested: 'Approval requested: {{title}}',
+    commentMentioned: '{{actor}} mentioned you on {{title}}',
+    commentReplied: '{{actor}} replied on {{title}}',
     approvalApproved: 'Approved: {{title}}',
     approvalRejected: 'Rejected: {{title}}',
     approvalBody: 'A request is waiting for your decision',

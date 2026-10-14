@@ -1,0 +1,112 @@
+import {
+  ArrowLeftRight,
+  CalendarClock,
+  CircleDot,
+  ClipboardCheck,
+  Clock,
+  Cpu,
+  Handshake,
+  KeyRound,
+  ListChecks,
+  LogOut,
+  MessageSquare,
+  MonitorSmartphone,
+  PackageMinus,
+  PackagePlus,
+  Paperclip,
+  PencilLine,
+  PenLine,
+  Plus,
+  Recycle,
+  RefreshCw,
+  ShieldCheck,
+  ShieldX,
+  SlidersHorizontal,
+  Sparkles,
+  Undo2,
+  UserCheck,
+  UserPlus,
+  UserRound,
+  UserX,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
+import { createElement, type ReactElement } from 'react';
+
+/**
+ * The icon each kind of line wears on a record's history rail, as NocoCRM's
+ * 动态 marks each entry (2026-10-14). Lines of the same act share one, so the
+ * rail reads at a glance: what moved a device, what came and went in stock,
+ * what an approval decided. A type missing here, and a line of field
+ * changes alone, wear the pencil.
+ */
+const HISTORY_ICONS: Readonly<Record<string, LucideIcon>> = {
+  comment: MessageSquare,
+  created: Plus,
+  assign: UserRound,
+  transfer: ArrowLeftRight,
+  return: Undo2,
+  loan: Handshake,
+  reserve: CalendarClock,
+  unreserve: CalendarClock,
+  signed: PenLine,
+  statusChange: CircleDot,
+  left: LogOut,
+  onboardingWaived: UserPlus,
+  onboardingRestored: UserPlus,
+  accountDisabledOnLeaving: UserX,
+  accountRestoredOnReturning: UserCheck,
+  repairCreated: Wrench,
+  repairCompleted: Wrench,
+  counted: ClipboardCheck,
+  audited: ClipboardCheck,
+  resolved: ClipboardCheck,
+  unregisteredFound: ClipboardCheck,
+  managedLinked: MonitorSmartphone,
+  managedUnlinked: MonitorSmartphone,
+  managedDismissed: MonitorSmartphone,
+  devicesChanged: ListChecks,
+  linesChanged: ListChecks,
+  approvalRequested: ShieldCheck,
+  approvalWithdrawn: ShieldCheck,
+  approvalApproved: ShieldCheck,
+  approvalRejected: ShieldX,
+  seatAssign: UserCheck,
+  seatReclaim: UserCheck,
+  seatsAdded: UserCheck,
+  seatsRemoved: UserCheck,
+  seatKey: KeyRound,
+  productKey: KeyRound,
+  attachmentAdded: Paperclip,
+  attachmentRemoved: Paperclip,
+  stockIn: PackagePlus,
+  stockedIn: PackagePlus,
+  received: PackagePlus,
+  stockIssued: PackageMinus,
+  issue: PackageMinus,
+  consume: PackageMinus,
+  stockReturned: Undo2,
+  componentInstalled: Cpu,
+  componentRemoved: Cpu,
+  install: Cpu,
+  uninstall: Cpu,
+  renewalAdvanced: RefreshCw,
+  adjust: SlidersHorizontal,
+  aiAction: Sparkles,
+  maintenance: Clock,
+  disposalExecuted: Recycle,
+};
+
+/** A line's icon. Drawn through `createElement`: the icon is looked up, not made. */
+export function HistoryIcon({
+  type,
+  className,
+}: {
+  readonly type: string | undefined;
+  readonly className?: string;
+}): ReactElement {
+  return createElement((type ? HISTORY_ICONS[type] : undefined) ?? PencilLine, {
+    'aria-hidden': true,
+    className,
+  });
+}

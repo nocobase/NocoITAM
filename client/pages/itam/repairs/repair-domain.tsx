@@ -41,7 +41,6 @@ export const repairDomain: DomainConfig = {
   // Beside 完成维修 in the header; deletion goes in the "more" menu.
   deleteInMenu: true,
   tabs: [{ key: 'attachments', label: 'tabs.attachments' }],
-  defaultTab: 'attachments',
   Actions: RepairActions,
   summaryTimestamps: false,
   summary: RECORD_SUMMARIES.repairs.items,

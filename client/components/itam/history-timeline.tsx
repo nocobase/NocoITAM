@@ -2,9 +2,11 @@ import { AssetTypeBadge } from './asset-type-badge.js';
 import { isAssetTypeField } from '@/lib/itam/fields';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router';
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactElement,
   type ReactNode,
@@ -14,7 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApi } from '@/lib/itam/api';
 import type { FieldDefinition } from '@/lib/itam/fields';
-import { formatDate, formatMoney, text } from '@/lib/itam/format';
+import { formatDate, formatMoney, relativeTime, text } from '@/lib/itam/format';
+import { HistoryIcon } from '@/lib/itam/history-icons';
 import { referenceRoute, useReferenceNames } from '@/lib/itam/references';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import {
@@ -26,6 +29,12 @@ import {
 } from '@/lib/itam/history-event';
 import { cn } from '@/lib/utils';
 
+import { useColleagues } from './comments/colleagues.js';
+import {
+  CommentComposer,
+  CommentThread,
+  type CommentScope,
+} from './comments/comments.js';
 import { EmptyState } from './empty-state.js';
 import { RecordLink } from './record-link.js';
 
@@ -72,6 +81,37 @@ export interface TimelineItem {
   readonly actorId: string | null;
   readonly event: HistoryEvent | null;
   readonly changes: readonly ChangeLogEntry[];
+  /** A comment's replies, oldest first. */
+  readonly replies?: readonly HistoryEvent[];
+}
+
+/**
+ * The collection a history's API path writes its comments under — the
+ * subjects `server/providers/itam/comments.ts` keeps them on.
+ */
+const COMMENT_SUBJECTS: Readonly<Record<string, string>> = {
+  'itam/devices': 'devices',
+  'itam/stock': 'stockItems',
+  'itam/entitlements': 'entitlements',
+  'itam/purchase-orders': 'purchaseOrders',
+  'itam/repairs': 'repairs',
+  'itam/disposals': 'disposals',
+  'itam/audits': 'auditTasks',
+};
+const MASTER_SUBJECTS = new Set([
+  'people',
+  'models',
+  'softwareProducts',
+  'categories',
+  'manufacturers',
+  'vendors',
+  'locations',
+  'departments',
+]);
+function commentSubjectOf(path: string): string | undefined {
+  const master = /^itam\/master\/(\w+)$/.exec(path)?.[1];
+  if (master) return MASTER_SUBJECTS.has(master) ? master : undefined;
+  return COMMENT_SUBJECTS[path];
 }
 
 interface PageResult<T> {
@@ -115,8 +155,10 @@ export function HistoryTimeline({
   /** Labels for keys inside JSON fields, e.g. a category's extended fields. */
   readonly keyLabels?: Readonly<Record<string, string>>;
 }): ReactElement {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const api = useApi();
+  const colleagues = useColleagues();
+  const subjectType = commentSubjectOf(path);
   const [pages, setPages] = useState(1);
   const pageSize = 30;
   const query = useQuery({
@@ -129,6 +171,23 @@ export function HistoryTimeline({
   });
 
   const items = query.data?.data ?? [];
+  // A notification about a comment opens the history at it (?focus=), as
+  // NocoCRM's does: brought into view once loaded, and lit up once.
+  const [search] = useSearchParams();
+  const focus = search.get('focus');
+  const loaded = items.length;
+  useEffect(() => {
+    if (!focus || !loaded) return;
+    const element = document.getElementById(`history-${focus}`);
+    if (!element) return;
+    element.scrollIntoView({ block: 'center' });
+    element.classList.add('rounded-md', 'bg-accent');
+    const timer = setTimeout(
+      () => element.classList.remove('rounded-md', 'bg-accent'),
+      2000,
+    );
+    return () => clearTimeout(timer);
+  }, [focus, loaded]);
   const fieldByKey = new Map(fields.map((field) => [field.key, field]));
   // Reference ids in old / new values resolve to names, grouped by collection.
   const referenceIds = new Map<string, (string | null)[]>();
@@ -144,9 +203,10 @@ export function HistoryTimeline({
   const names = useReferenceNames([
     {
       collection: 'users',
-      // Who acted, and who an approval request was addressed to.
+      // Who acted, who replied, and who an approval request was addressed to.
       ids: items.flatMap((item) => [
         item.actorId,
+        ...(item.replies ?? []).map((reply) => reply.actorId),
         typeof item.event?.payload?.approverId === 'string'
           ? item.event.payload.approverId
           : null,
@@ -178,24 +238,47 @@ export function HistoryTimeline({
       </Button>
     ) : null;
 
-  // A vertical timeline: a rail on the left with a dot per line, what
-  // happened, and who / when underneath.
+  // Everybody a comment may name: IT's accounts, and whoever wrote one
+  // here even if they are no longer among them.
+  const people = [
+    ...colleagues.all,
+    ...[...(names.users?.entries() ?? [])]
+      .filter(([id]) => !colleagues.all.some((person) => person.id === id))
+      .map(([id, name]) => ({ id, name })),
+  ];
+  const scope: CommentScope | undefined = subjectType
+    ? {
+        subjectType,
+        subjectId: id,
+        colleagues: colleagues.mentionable,
+        people,
+        me: colleagues.me,
+      }
+    : undefined;
+
+  // NocoCRM's 动态 (2026-10-14): the comment box atop, then one list, newest
+  // first, each line on a rail of icons — who, what they did, what changed,
+  // how long ago on the right — and comments as cards among them.
   return (
     <CurrencyContext.Provider value={currency}>
       <DisplayContext.Provider value={displayValue}>
-        <div className='space-y-3'>
+        <div className='space-y-5'>
+          {scope ? <CommentComposer scope={scope} /> : null}
           {items.length === 0 ? (
             <EmptyState title={t('history.empty')} />
           ) : (
-            <ol className='relative ml-2 border-l border-border pl-6'>
-              {items.map((item) => (
+            <ol>
+              {items.map((item, index) => (
                 <TimelineRow
                   key={item.id}
                   item={item}
+                  last={index === items.length - 1}
+                  scope={scope}
                   fieldByKey={fieldByKey}
                   keyLabels={keyLabels}
                   names={names}
                   statusEnum={statusEnum}
+                  language={i18n.language}
                   t={t}
                 />
               ))}
@@ -239,13 +322,19 @@ const IMPLIED_FIELDS: Readonly<Record<string, readonly string[]>> = {
 /** One line, with its field changes folded in until they are asked for. */
 function TimelineRow({
   item,
+  last,
+  scope,
   fieldByKey,
   keyLabels,
   names,
   statusEnum,
+  language,
   t,
 }: {
   readonly item: TimelineItem;
+  readonly last: boolean;
+  readonly scope: CommentScope | undefined;
+  readonly language: string;
   readonly fieldByKey: ReadonlyMap<string, FieldDefinition>;
   readonly keyLabels?: Readonly<Record<string, string>>;
   readonly names: Record<string, ReadonlyMap<string, string> | undefined>;
@@ -304,118 +393,157 @@ function TimelineRow({
           !change.field ||
           !(IMPLIED_FIELDS[event?.type ?? ''] ?? []).includes(change.field),
       );
+  const comment = event?.type === 'comment' && scope ? event : undefined;
   return (
-    <li className='relative pb-5 text-sm last:pb-0'>
-      <span
-        aria-hidden
-        // Centred on the rail: the rail sits one padding step (pl-6) plus half
-        // its own width left of the item, and the dot is shifted back by half
-        // of itself. Spacing units, not rems: the theme's step is not 4px.
-        className='absolute top-1.5 left-[calc(var(--spacing)*-6-0.5px)] size-2.5 -translate-x-1/2 rounded-full border-2 border-primary bg-background'
-      />
-      {/* Inline text, so the summary continues after the label and wraps like
-          a sentence rather than dropping to its own line. */}
-      <p className='whitespace-pre-wrap'>
-        <span className='font-medium'>
-          {event
-            ? t(`history.types.${event.type}`, { defaultValue: event.type })
-            : single
-              ? fieldLabel(single)
-              : t('history.fieldsChanged', { count: item.changes.length })}
-        </span>
-        {event ? (
-          <span className='text-foreground/80'>
-            {event.type === 'quickAction' ? '' : ' '}
-            {target ? (
-              // The record the summary names opens where it is named; such a
-              // summary is a sentence around a name, never long free text.
-              <>
-                {summaryParts?.before}
-                <RecordLink
-                  to={target.to}
-                  className='text-link underline-offset-4 hover:underline'
-                >
-                  {target.label}
-                </RecordLink>
-                {summaryParts?.after}
-              </>
-            ) : (
-              // A note, a cancellation reason, an approver's comment: any
-              // summary may carry what someone typed, so all of them fold.
-              <CollapsibleText text={describeEvent(event, t, statusEnum)} />
+    <li className='flex gap-3'>
+      {/* The icons on no rail of their own, joined by a hairline from one
+          line to the next. */}
+      <div className='flex w-5 shrink-0 flex-col items-center'>
+        <span className='flex h-6 items-center justify-center'>
+          <HistoryIcon
+            type={event?.type}
+            className={cn(
+              'size-3.5',
+              item.origin === 'agent'
+                ? 'text-primary'
+                : 'text-muted-foreground',
             )}
-            {link ? (
-              <>
-                {' '}
-                <RecordLink
-                  to={link.to}
-                  className='text-link underline-offset-4 hover:underline'
-                >
-                  {link.label}
-                </RecordLink>
-                {linkedDetail
-                  ? t('history.quick.detailWrap', { detail: linkedDetail })
-                  : ''}
-              </>
-            ) : null}
-          </span>
-        ) : null}
-        {single?.field ? (
-          <span className='text-foreground/80'>
-            {' '}
-            <ChangeValue
-              field={fieldByKey.get(single.field)}
-              fieldKey={single.field}
-              oldValue={single.oldValue}
-              newValue={single.newValue}
-              names={names}
-              keyLabels={keyLabels}
-              t={t}
-            />
-          </span>
-        ) : null}
-      </p>
-      {folded.length > 0 ? (
-        <>
-          <button
-            type='button'
-            className='mt-0.5 text-xs text-link underline-offset-4 hover:underline'
-            onClick={() => setOpen((current) => !current)}
-          >
-            {open
-              ? t('history.hideFields')
-              : t('history.showFields', { count: folded.length })}
-          </button>
-          {open ? (
-            <ul className='mt-1 space-y-0.5 border-l border-border pl-3 text-xs'>
-              {folded.map((change) => (
-                <li key={change.id}>
-                  <span className='text-muted-foreground'>
-                    {fieldLabel(change)}
-                  </span>{' '}
-                  {change.field ? (
+          />
+        </span>
+        {last ? null : <span className='min-h-3 w-px flex-1 bg-border' />}
+      </div>
+      <div className={cn('min-w-0 flex-1 text-sm', last ? '' : 'pb-5')}>
+        {comment && scope ? (
+          <CommentThread
+            comment={comment}
+            replies={item.replies}
+            scope={scope}
+          />
+        ) : (
+          <>
+            <div className='flex items-start gap-3'>
+              {/* A sentence: who, what they did, what changed. Inline text,
+                  so it wraps like one. */}
+              <p className='min-w-0 flex-1 leading-6 whitespace-pre-wrap'>
+                {actor ? <span className='font-semibold'>{actor} </span> : null}
+                <span className='text-muted-foreground'>
+                  {event
+                    ? t(`history.types.${event.type}`, {
+                        defaultValue: event.type,
+                      })
+                    : single
+                      ? fieldLabel(single)
+                      : t('history.fieldsChanged', {
+                          count: item.changes.length,
+                        })}
+                </span>
+                {event ? (
+                  <span className='text-foreground/80'>
+                    {event.type === 'quickAction' ? '' : ' '}
+                    {target ? (
+                      // The record the summary names opens where it is named; such a
+                      // summary is a sentence around a name, never long free text.
+                      <>
+                        {summaryParts?.before}
+                        <RecordLink
+                          to={target.to}
+                          className='text-link underline-offset-4 hover:underline'
+                        >
+                          {target.label}
+                        </RecordLink>
+                        {summaryParts?.after}
+                      </>
+                    ) : (
+                      // A note, a cancellation reason, an approver's comment: any
+                      // summary may carry what someone typed, so all of them fold.
+                      <CollapsibleText
+                        text={describeEvent(event, t, statusEnum)}
+                      />
+                    )}
+                    {link ? (
+                      <>
+                        {' '}
+                        <RecordLink
+                          to={link.to}
+                          className='text-link underline-offset-4 hover:underline'
+                        >
+                          {link.label}
+                        </RecordLink>
+                        {linkedDetail
+                          ? t('history.quick.detailWrap', {
+                              detail: linkedDetail,
+                            })
+                          : ''}
+                      </>
+                    ) : null}
+                  </span>
+                ) : null}
+                {single?.field ? (
+                  <span className='text-foreground/80'>
+                    {' '}
                     <ChangeValue
-                      field={fieldByKey.get(change.field)}
-                      fieldKey={change.field}
-                      oldValue={change.oldValue}
-                      newValue={change.newValue}
+                      field={fieldByKey.get(single.field)}
+                      fieldKey={single.field}
+                      oldValue={single.oldValue}
+                      newValue={single.newValue}
                       names={names}
                       keyLabels={keyLabels}
                       t={t}
                     />
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </>
-      ) : null}
-      <div className='mt-0.5 text-xs text-muted-foreground tabular-nums'>
-        {formatDate(item.createdAt, true)}
-        {actor ? ` · ${actor}` : ''}
-        {item.origin && item.origin !== 'human'
-          ? ` · ${t(`history.origin.${item.origin}`)}`
-          : ''}
+                  </span>
+                ) : null}
+                {item.origin && item.origin !== 'human' ? (
+                  <span className='ml-1.5 text-xs text-muted-foreground'>
+                    · {t(`history.origin.${item.origin}`)}
+                  </span>
+                ) : null}
+              </p>
+              {/* How long ago, the full time on hover. */}
+              <time
+                dateTime={item.createdAt}
+                title={formatDate(item.createdAt, true)}
+                className='shrink-0 text-xs leading-6 text-muted-foreground/80 tabular-nums'
+              >
+                {relativeTime(item.createdAt, language, t('comments.justNow'))}
+              </time>
+            </div>
+            {folded.length > 0 ? (
+              <>
+                <button
+                  type='button'
+                  className='mt-0.5 text-xs text-link underline-offset-4 hover:underline'
+                  onClick={() => setOpen((current) => !current)}
+                >
+                  {open
+                    ? t('history.hideFields')
+                    : t('history.showFields', { count: folded.length })}
+                </button>
+                {open ? (
+                  <ul className='mt-1 space-y-0.5 border-l border-border pl-3 text-xs'>
+                    {folded.map((change) => (
+                      <li key={change.id}>
+                        <span className='text-muted-foreground'>
+                          {fieldLabel(change)}
+                        </span>{' '}
+                        {change.field ? (
+                          <ChangeValue
+                            field={fieldByKey.get(change.field)}
+                            fieldKey={change.field}
+                            oldValue={change.oldValue}
+                            newValue={change.newValue}
+                            names={names}
+                            keyLabels={keyLabels}
+                            t={t}
+                          />
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </>
+            ) : null}
+          </>
+        )}
       </div>
     </li>
   );

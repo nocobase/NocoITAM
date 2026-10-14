@@ -4,6 +4,7 @@ import type { AppRouteContribution } from '@nocobase/app-server/router';
 import { aiRoutes } from './itam/ai.js';
 import { agentCommandRoutes } from './itam/agent-commands.js';
 import { approvalRoutes } from './itam/approvals.js';
+import { commentRoutes } from './itam/comments.js';
 import { deviceRoutes } from './itam/devices.js';
 import { deviceSyncRoutes } from './itam/device-sync.js';
 import { auditRoutes } from './itam/audits.js';
@@ -38,6 +39,7 @@ const routes: readonly AppRouteContribution<Application>[] = [
   entitlementRoutes,
   purchaseOrderRoutes,
   approvalRoutes,
+  commentRoutes,
   repairRoutes,
   auditRoutes,
   disposalRoutes,

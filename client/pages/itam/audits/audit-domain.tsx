@@ -95,6 +95,8 @@ export const auditDomain: DomainConfig = {
     { key: 'attachments', label: 'tabs.attachments' },
   ],
   summaryTimestamps: false,
+  // A stocktake opens where it is worked, on its items; every other record
+  // opens on its history.
   defaultTab: 'items',
   Create: AuditCreateDialog,
   Actions: AuditActions,

@@ -222,6 +222,21 @@ const messages = {
     attachments: 'Attachments',
     auditItems: 'Audit items',
   },
+  comments: {
+    label: 'Comment',
+    placeholder: 'Write a comment; @ to mention a colleague',
+    replyPlaceholder: 'Write a reply…',
+    reply: 'Reply',
+    post: 'Send',
+    attach: 'Attach files',
+    removeFile: 'Remove',
+    shortcut: 'Enter to send, Shift+Enter for a new line',
+    justNow: 'just now',
+    edited: 'edited',
+    deleted: 'This comment was deleted',
+    deleteTitle: 'Delete this comment?',
+    deleteDescription: 'Its text and files go; replies to it stay.',
+  },
   history: {
     origin: {
       agent: 'proposed by Noco',

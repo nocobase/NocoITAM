@@ -124,6 +124,8 @@ export interface TimelineItem {
   readonly event: HistoryEventRecord | null;
   /** The fields this operation changed, newest first. */
   readonly changes: readonly ChangeLogRecord[];
+  /** A comment's replies, oldest first (`comments.ts`). */
+  readonly replies?: readonly HistoryEventRecord[];
 }
 
 export interface HistoryPage<T> {
@@ -338,7 +340,22 @@ export function createHistoryService(
           ? Promise.resolve({ data: [] as ChangeLogRecord[] })
           : this.changes(subject, { limit: cap }),
       ]);
-      const allEvents = [...stored.data, ...extra];
+      // A reply is read with the comment it answers, not as a line of its
+      // own (comments.ts).
+      const replyTo = (event: HistoryEventRecord): string | undefined =>
+        event.type === 'comment' && typeof event.payload?.replyToId === 'string'
+          ? event.payload.replyToId
+          : undefined;
+      const replies = new Map<string, HistoryEventRecord[]>();
+      for (const event of stored.data) {
+        const parent = replyTo(event);
+        if (parent)
+          replies.set(parent, [event, ...(replies.get(parent) ?? [])]);
+      }
+      const allEvents = [
+        ...stored.data.filter((event) => !replyTo(event)),
+        ...extra,
+      ];
       // A key travels as an event because a masked value cannot be compared,
       // but it is a field edit: it reads with the changes, not with what
       // someone did to the record.
@@ -380,6 +397,7 @@ export function createHistoryService(
           origin: event.origin,
           event,
           changes: operation && claimed.has(operation) ? own : [],
+          ...(replies.has(event.id) ? { replies: replies.get(event.id) } : {}),
         });
         if (operation) byOperation.delete(operation);
       }

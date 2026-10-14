@@ -215,6 +215,21 @@ const zhCN: AppResource = {
     attachments: '附件',
     auditItems: '盘点明细',
   },
+  comments: {
+    label: '评论',
+    placeholder: '写评论，输入 @ 提及同事',
+    replyPlaceholder: '写回复…',
+    reply: '回复',
+    post: '发送',
+    attach: '添加附件',
+    removeFile: '移除',
+    shortcut: 'Enter 发送，Shift+Enter 换行',
+    justNow: '刚刚',
+    edited: '已编辑',
+    deleted: '评论已删除',
+    deleteTitle: '删除这条评论？',
+    deleteDescription: '评论的文字和附件会删除，回复会保留。',
+  },
   history: {
     origin: {
       agent: '经 Noco 提议',

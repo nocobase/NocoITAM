@@ -97,7 +97,6 @@ export const disposalDomain: DomainConfig = {
     { key: 'attachments', label: 'tabs.attachments' },
   ],
   summaryTimestamps: false,
-  defaultTab: 'attachments',
   Views: createMyApprovalView({
     collection: 'disposals',
     path: DISPOSALS_PATH,

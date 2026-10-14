@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -78,7 +78,9 @@ function landOn(domainName: string, route: string) {
   );
 }
 
-it('lands a stock model on its stock tab, following its category', () => {
+// Every record opens on its history, the first tab (2026-10-14); a model's
+// other tabs still follow its category.
+it('opens a stock model on its history, its tabs following its category', () => {
   state.records = {
     'itam/master/models/r1': {
       id: 'r1',
@@ -89,8 +91,13 @@ it('lands a stock model on its stock tab, following its category', () => {
     'itam/master/categories/c1': { id: 'c1', appliesTo: 'accessory' },
   };
   landOn('models', 'models');
-  expect(screen.getByText('Stock tab')).toBeVisible();
+  expect(screen.getByText('History tab')).toBeVisible();
+  const tabs = within(screen.getByRole('navigation', { name: 'tabs' }))
+    .getAllByRole('link')
+    .map((link) => link.textContent);
+  expect(tabs[0]).toBe('tabs.history');
   // A model has devices or stock, never both.
+  expect(screen.getByRole('link', { name: 'tabs.stock' })).toBeVisible();
   expect(screen.queryByRole('link', { name: 'tabs.devices' })).toBeNull();
   // "Manufacturer / Name" in the title, the picture at the head of the card.
   expect(screen.getByText('Logitech /')).toBeVisible();
@@ -99,7 +106,7 @@ it('lands a stock model on its stock tab, following its category', () => {
   expect(screen.getByText('fields.appliesTo')).toBeVisible();
 });
 
-it('lands a software category on its products, a category deciding its own kind', () => {
+it('opens a software category on its history, beside its products', () => {
   state.records = {
     'itam/master/categories/r1': {
       id: 'r1',
@@ -108,7 +115,10 @@ it('lands a software category on its products, a category deciding its own kind'
     },
   };
   landOn('categories', 'categories');
-  expect(screen.getByText('Products tab')).toBeVisible();
+  expect(screen.getByText('History tab')).toBeVisible();
+  expect(
+    screen.getByRole('link', { name: 'navigation.softwareProducts' }),
+  ).toBeVisible();
   // No timestamp strip: reference data keeps them in the system section.
   expect(screen.getAllByText('fields.createdAt')).toHaveLength(1);
 });

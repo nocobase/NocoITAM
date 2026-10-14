@@ -283,3 +283,37 @@ showing and saves on the pick, as a select saves on its choice; closing
 without one puts the value back. An optional date offers 清除日期 under the
 calendar, a required one does not. The value stays `yyyy-mm-dd`, made from
 the local day, never through `toISOString()`.
+
+## History first, with comments, after NocoCRM's 动态
+
+Every record's **历史** is its first tab and the one it opens on
+(2026-10-14), as NocoCRM's 动态 is — except a stocktake, which opens on its
+items, and a person, who opens on 归属: those are where they are worked on.
+`domain-detail.tsx` puts history first; a domain's `defaultTab` names only
+those exceptions.
+
+The tab reads as 动态 does (`HistoryTimeline`): a comment box atop, then one
+list, newest first, each line on a rail of icons (`HistoryIcon`,
+`client/lib/itam/history-icons.ts`, by event type; the pencil for field
+changes alone) and read as a sentence — who in bold, what they did, what
+changed — with how long ago on the right (`relativeTime` in `format.ts`) and
+the full time on hover. A new event type wants its icon there.
+
+**Comments** are what people write on a record (`server/providers/itam/
+comments.ts`, `POST / PATCH / DELETE /api/itam/comments`). A comment is a
+history event of type `comment` on the record, so the timeline reads it in
+place; a reply is one whose payload names its comment (`replyToId`, always
+the thread's first), which `historyService.timeline()` hangs under it
+(`TimelineItem.replies`) rather than listing. It is the one event that
+changes after it is written: its author alone edits it (`editedAt`) or
+deletes it, which keeps the line so a thread keeps its start and drops the
+text and files. Whoever may read the record may comment and reply — the
+route checks `read` on the record itself, under its scope — on the records
+`COMMENT_SUBJECTS` lists, which are the ones with a history tab of their
+own. `@` and a name mentions an IT account (`/itam/users`, through
+`MentionTextarea`, ported from NocoCRM); the mentioned, and on a reply
+whoever already wrote in the thread, are told in-app, with a link that
+opens the history at the comment (`?focus=`). Files are uploaded to
+`itamAttachments` first and attached by id only within the hour and while
+linked to nothing — an id alone does not hand somebody else's file over —
+and the comment keeps their names; they are not the record's attachments.

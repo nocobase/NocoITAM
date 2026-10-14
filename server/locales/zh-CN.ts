@@ -3,6 +3,8 @@ import type { AppServerResource } from './en-US.js';
 const zhCN: AppServerResource = {
   notifications: {
     approvalRequested: '待你审批：{{title}}',
+    commentMentioned: '{{actor}} 在 {{title}} 中提到了你',
+    commentReplied: '{{actor}} 在 {{title}} 中回复了评论',
     approvalApproved: '已批准：{{title}}',
     approvalRejected: '已拒绝：{{title}}',
     approvalBody: '有一条申请在等你的决定',

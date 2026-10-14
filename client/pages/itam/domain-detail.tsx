@@ -534,7 +534,10 @@ export function DomainDetailPage({
             ))}
           </InfoCard>
         }
+        // History first on every record, as NocoCRM's 动态 is: what happened
+        // and what people said about it (2026-10-14).
         tabs={[
+          { key: 'history', label: t('tabs.history'), to: 'history' },
           ...(domain.tabs ?? [])
             .filter((tab) => !tab.visible || tab.visible(data, related.data))
             .map((tab) => ({
@@ -552,7 +555,6 @@ export function DomainDetailPage({
                         ? tab.countOf(tabCountsAnswer.data)
                         : undefined,
             })),
-          { key: 'history', label: t('tabs.history'), to: 'history' },
         ]}
       >
         <Outlet />

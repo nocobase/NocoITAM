@@ -47,6 +47,31 @@ export function formatDate(value: unknown, withTime = false): string {
   return `${day} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+/**
+ * How long ago `value` was, as a timeline reads it (NocoCRM's 动态): "just
+ * now" under a minute, then minutes, hours and days, and the date itself
+ * after a week. The full time goes on hover, through `formatDate`.
+ */
+export function relativeTime(
+  value: unknown,
+  language: string,
+  justNow: string,
+  now: number = Date.now(),
+): string {
+  const date = toDate(value);
+  if (!date) return text(value);
+  const seconds = Math.round((now - date.getTime()) / 1000);
+  if (seconds < 60) return justNow;
+  const format = new Intl.RelativeTimeFormat(language, { numeric: 'auto' });
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return format.format(-minutes, 'minute');
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return format.format(-hours, 'hour');
+  const days = Math.round(hours / 24);
+  if (days < 7) return format.format(-days, 'day');
+  return formatDate(date);
+}
+
 export function formatMoney(value: unknown, currency?: string | null): string {
   if (value === null || value === undefined || value === '') return '';
   const amount = Number(value);

@@ -120,7 +120,6 @@ export const purchaseOrderDomain: DomainConfig = {
   ],
   summaryTimestamps: false,
   deleteInMenu: true,
-  defaultTab: 'generated',
   // Header, lines and approver in one dialog: saved as a draft or
   // submitted for approval straight away.
   Create: PurchaseOrderCreateDialog,

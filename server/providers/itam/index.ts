@@ -83,6 +83,7 @@ import {
 } from './maintenance.js';
 import { i18nToken } from '@nocobase/app-server/i18n';
 import { createItamNotifier, itamNotifierToken } from './notifier.js';
+import { commentServiceToken, createCommentService } from './comments.js';
 import { createNumberingService, numberingServiceToken } from './numbering.js';
 import { createDocumentReader, documentReaderToken } from './document-text.js';
 import {
@@ -101,6 +102,7 @@ import {
 
 export {
   approvalServiceToken,
+  commentServiceToken,
   deviceServiceToken,
   deviceSyncServiceToken,
   deviceReviewServiceToken,
@@ -306,6 +308,13 @@ export default class ItamProvider extends ServiceProvider<Application> {
           container.resolve(databaseManagerToken),
         ),
       }),
+    );
+    container.singleton(commentServiceToken, () =>
+      createCommentService(
+        container.resolve(databaseManagerToken),
+        container.resolve(historyServiceToken),
+        container.resolve(itamNotifierToken),
+      ),
     );
     // "The register changed": published on the realtime topic the pages
     // that show live to-dos subscribe to (`changes.ts`). The topic is

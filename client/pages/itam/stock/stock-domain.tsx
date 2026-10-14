@@ -92,7 +92,6 @@ export function stockDomain(kind: StockKind): DomainConfig {
         }),
       },
     ],
-    defaultTab: 'holders',
     // Issuing and stocking in are what this page is for; deletion sits in the
     // "more" menu, as it does on a device.
     deleteInMenu: true,

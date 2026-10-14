@@ -11,6 +11,7 @@ export {
   deviceReviewServiceToken,
   attachmentServiceToken,
   auditServiceToken,
+  commentServiceToken,
   disposalServiceToken,
   repairServiceToken,
   demoServiceToken,

@@ -106,7 +106,6 @@ export const entitlementDomain: DomainConfig = {
         hasKey={Boolean(record.hasProductKey)}
       />
     ) : undefined,
-  defaultTab: 'seats',
   Notice: EntitlementNotice,
   Actions: EntitlementActions,
   // No summary strip: the kind, the seat counts, the compliance status and
