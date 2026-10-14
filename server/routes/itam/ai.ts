@@ -15,7 +15,14 @@ import { receiptRunServiceToken } from '../../providers/index.js';
 import { readSnapshotsToken } from '../../providers/itam-agents/index.js';
 import { CONTEXT_KINDS } from '../../providers/itam-agents/context.js';
 import { scopeFor } from '../../providers/itam/ai-bridge.js';
-import { aiAvailable } from '../../providers/itam/ai-model.js';
+import {
+  aiAvailable,
+  openSession,
+  readSkill,
+} from '../../providers/itam/ai-model.js';
+import { BusinessRuleError } from '../../providers/itam/errors.js';
+import { settingsServiceToken } from '../../providers/itam/settings.js';
+import { runEval, SKILL_EVALS } from '../../providers/itam/skill-evals.js';
 import {
   READING_GRANTS,
   READING_TASKS,
@@ -114,6 +121,43 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
               recent: await runs.recent(10),
             },
           });
+        } catch (error) {
+          return errorResponse(context, error);
+        }
+      },
+    );
+
+    // A method skill's eval set, run against the model Noco answers with
+    // (device sync, step 4, 2026-10-15): what to run before changing a
+    // skill, its instructions or the model, and attach to the change
+    // (NocoSolution guideline 3.5). Slow — one model call per case — and an
+    // administrator's, so it takes the settings grant.
+    routes.post(
+      '/evals/:skill',
+      requireGrant(ITAM_SETTINGS_RESOURCE, 'update'),
+      async (context) => {
+        try {
+          const skill = context.req.param('skill');
+          if (!SKILL_EVALS[skill])
+            return context.json(
+              { code: 'NOT_FOUND', message: `No eval set for ${skill}` },
+              404,
+            );
+          if (!(await aiAvailable(app.container)))
+            throw new BusinessRuleError(
+              'No model is configured for the assistant',
+              'ai.unavailable',
+            );
+          const { timeZone } = await app.container
+            .resolve(settingsServiceToken)
+            .get('general');
+          const report = await runEval({
+            skill,
+            instructions: await readSkill(app.container, skill),
+            open: (system) => openSession(app.container, { timeZone, system }),
+            signal: AbortSignal.timeout(10 * 60_000),
+          });
+          return context.json({ data: report });
         } catch (error) {
           return errorResponse(context, error);
         }

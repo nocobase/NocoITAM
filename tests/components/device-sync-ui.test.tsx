@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
     | { data: ManagedDevice[]; connected: boolean; checks?: DeviceCheck[] }
     | undefined,
   review: vi.fn(),
+  ask: vi.fn(),
   status: [] as SourceStatus[],
   start: vi.fn(),
 }));
@@ -39,6 +40,9 @@ vi.mock('../../client/lib/itam/device-sync.js', () => ({
     isPending: false,
     error: null,
   }),
+}));
+vi.mock('../../client/lib/itam/ai-chat.js', () => ({
+  useItamAi: () => ({ available: true, ask: state.ask }),
 }));
 vi.mock('../../client/lib/itam/references.js', () => ({
   useReferenceNames: () => ({ users: new Map([['mia', 'Mia']]) }),
@@ -181,6 +185,11 @@ describe("a device's differences with the platform", () => {
       deviceId: 'd1',
       check: 'userMismatch',
     });
+    // And asks Noco about it, naming the device and the difference.
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.prompts.checkAction' }),
+    );
+    expect(state.ask).toHaveBeenCalledWith('deviceSync.prompts.check');
   });
 
   it('offers to assign a shelved device to whoever is using it', () => {

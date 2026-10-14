@@ -1887,6 +1887,17 @@ const zhCN: AppResource = {
     },
   },
   deviceSync: {
+    prompts: {
+      checkAction: '让 Noco 看看',
+      check:
+        '请按「管理平台核对」技能看看设备 {{device}}（id：{{id}}）的这项差异：{{kind}}。说说最可能是怎么回事、怎么核实；能在台账上处理的，提出一份计划。',
+      checksAction: '让 Noco 解释这些差异',
+      checks:
+        '请按「管理平台核对」技能看看现在所有的设备核对差异：最要紧的先说，每条说明最可能的原因和怎么核实；能在台账上处理的，整理成一份计划。',
+      unregisteredAction: '让 Noco 整理这批设备',
+      unregistered:
+        '请按「管理平台核对」技能处理管理平台里有、台账未登记的设备：能补登记的补登记，序列号重复的找出该关联的那台，不该进台账的标为不纳入台账，整理成一份计划；拿不准的单独列出来问我。',
+    },
     checks: {
       kinds: {
         stale: '失联',
@@ -2704,6 +2715,9 @@ const zhCN: AppResource = {
         loan_device: '借出设备',
         return_devices: '归还设备',
         transfer_device: '调拨设备',
+        link_managed_device: '关联管理平台设备',
+        unlink_managed_device: '解除管理平台关联',
+        ignore_managed_device: '管理平台设备不纳入台账',
         reserve_device: '预留设备',
         correct_device_status: '更正设备状态',
         assign_seat: '分配席位',

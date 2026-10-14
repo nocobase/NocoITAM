@@ -20,7 +20,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (`model-services.ts`, in their `sort` order; the keys are stored
   encrypted, so `secrets.keys` must be configured), Noco as an online agent
   open to everyone with every chat model, the system's default chat agent
-  (`assistant.ts`), and the four method skills of `ai/skills/` in the
+  (`assistant.ts`), and the five method skills of `ai/skills/` in the
   plugin's library, attached to Noco (`library.ts`, copied into `dist` by
   the build hook). A marker row in `itamSettings` (`agents-noco-v1`,
   `agents-skills-v1`, `markers.ts`) records each, so what an administrator

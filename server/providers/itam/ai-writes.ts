@@ -15,6 +15,7 @@ import {
   type DeviceOperation,
   type DeviceStatus,
 } from './device-status.js';
+import { deviceReviewServiceToken } from './device-review.js';
 import { deviceServiceToken, type OperationContext } from './devices.js';
 import {
   DATA_WIPE_OPTIONS,
@@ -107,6 +108,29 @@ export const AI_WRITE_SCHEMAS = {
     title,
     deviceId: id,
     ...target,
+  }),
+  // Device sync (step 4, 2026-10-15): a person's decisions about what a
+  // management platform reports, proposed by Noco.
+  itam_link_managed_device: z.object({
+    title,
+    managedDeviceId: id.describe(
+      'The platform record, from `itam device-sync review` (its `id`).',
+    ),
+    deviceId: id.describe('The register device it is.'),
+  }),
+  itam_unlink_managed_device: z.object({
+    title,
+    managedDeviceId: id,
+  }),
+  itam_ignore_managed_device: z.object({
+    title,
+    managedDeviceId: id,
+    reason: z
+      .string()
+      .trim()
+      .min(1)
+      .max(500)
+      .describe('Why it stays off the register, in the user’s language.'),
   }),
   // 入职配备 before the first day: held for a joiner until they arrive.
   itam_reserve_device: z.object({
@@ -227,6 +251,10 @@ const PERMISSIONS: Readonly<
   itam_loan_device: [['devices', 'loan']],
   itam_return_devices: [['devices', 'return']],
   itam_transfer_device: [['devices', 'transfer']],
+  itam_link_managed_device: [['devices', 'update']],
+  itam_unlink_managed_device: [['devices', 'update']],
+  // Keeping a platform record off the register stands in for creating it.
+  itam_ignore_managed_device: [['devices', 'create']],
   itam_reserve_device: [['devices', 'reserve']],
   itam_correct_device_status: [['devices', 'correctStatus']],
   itam_assign_seat: [['entitlements', 'assignSeat']],
@@ -411,6 +439,45 @@ async function execute(
           await decide('devices', 'assign'),
         ),
       );
+    }
+    case 'itam_link_managed_device': {
+      const args = AI_WRITE_SCHEMAS[tool].parse(raw);
+      // The device must be one the person may update.
+      if (
+        !(await devices.get(args.deviceId, await decide('devices', 'update')))
+      )
+        throw new RecordNotFoundError('devices', args.deviceId);
+      const row = await container
+        .resolve(deviceReviewServiceToken)
+        .link(args.managedDeviceId, args.deviceId, scope.actorId, 'agent');
+      return { id: row.id, deviceId: row.deviceId, matchState: row.matchState };
+    }
+    case 'itam_unlink_managed_device': {
+      const args = AI_WRITE_SCHEMAS[tool].parse(raw);
+      const record = await container
+        .resolve(databaseManagerToken)
+        .query()
+        .selectFrom('managedDevices')
+        .select('deviceId')
+        .where('id', '=', args.managedDeviceId)
+        .executeTakeFirst<{ deviceId: string | null }>();
+      if (
+        record?.deviceId &&
+        !(await devices.get(record.deviceId, await decide('devices', 'update')))
+      )
+        throw new RecordNotFoundError('devices', record.deviceId);
+      const row = await container
+        .resolve(deviceReviewServiceToken)
+        .unlink(args.managedDeviceId, scope.actorId, 'agent');
+      return { id: row.id, matchState: row.matchState };
+    }
+    case 'itam_ignore_managed_device': {
+      const args = AI_WRITE_SCHEMAS[tool].parse(raw);
+      await decide('devices', 'create');
+      const row = await container
+        .resolve(deviceReviewServiceToken)
+        .ignore(args.managedDeviceId, args.reason, scope.actorId);
+      return { id: row.id, matchState: row.matchState };
     }
     case 'itam_reserve_device': {
       const args = AI_WRITE_SCHEMAS[tool].parse(raw);
