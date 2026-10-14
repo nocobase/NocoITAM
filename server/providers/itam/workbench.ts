@@ -7,6 +7,7 @@ import {
 } from '@nocobase/service-provider';
 
 import type { ApprovalService, ApprovalSubject } from './approvals.js';
+import type { CheckKind, DeviceReviewService } from './device-review.js';
 import { compileAuthzScope } from './authz-filter.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
 import { OWNED_BY_USER, RECOVERABLE_DEVICE_STATUSES } from './recovery.js';
@@ -61,6 +62,22 @@ export interface MyWorkRecord {
    * when nothing was written down at leaving.
    */
   readonly progress?: { readonly done: number; readonly total: number };
+  /**
+   * 设备核对 (device sync, 2026-10-15): which difference a device shows,
+   * and whether it is a device that should not be anywhere (lost or
+   * disposed, yet online).
+   */
+  readonly check?: {
+    readonly kind: CheckKind;
+    readonly critical: boolean;
+    /** The platform's primary user, where that is the difference. */
+    readonly userName?: string | null;
+  };
+  /**
+   * A leaver's devices, by the platforms' primary user, that synced after
+   * their leave date (device sync, 2026-10-15).
+   */
+  readonly onlineAfterLeaving?: number;
 }
 
 export interface MyWorkItem {
@@ -74,7 +91,8 @@ export interface MyWorkItem {
     | 'activeRepairs'
     | 'activeAudits'
     | 'loansDueToday'
-    | 'leaverRecovery';
+    | 'leaverRecovery'
+    | 'deviceChecks';
   readonly count: number;
   /** Application route with the matching filter. */
   readonly url: string;
@@ -160,8 +178,10 @@ export function createWorkbenchService(dependencies: {
   approvals: ApprovalService;
   /** For 入职准备; a container without it shows no such column. */
   onboarding?: OnboardingService;
+  /** For 设备核对 and the leavers' online tag; absent, neither shows. */
+  review?: DeviceReviewService;
 }): WorkbenchService {
-  const { database, approvals, onboarding } = dependencies;
+  const { database, approvals, onboarding, review } = dependencies;
 
   const count = async (
     table: string,
@@ -756,6 +776,16 @@ export function createWorkbenchService(dependencies: {
           keys,
           checked,
         );
+        // Device sync: a leaver whose devices are still online after they
+        // left — the card says how many.
+        const online = review
+          ? await review.onlineAfterLeaving(
+              rows.flatMap((row) => {
+                const leaveDate = asText(row.leaveDate);
+                return leaveDate ? [{ id: String(row.id), leaveDate }] : [];
+              }),
+            )
+          : new Map<string, number>();
         items.push({
           key: 'leaverRecovery',
           count: total,
@@ -773,6 +803,7 @@ export function createWorkbenchService(dependencies: {
             // that is not about them.
             count: mine.get(String(row.id)) || undefined,
             progress: progress.get(String(row.id)),
+            onlineAfterLeaving: online.get(String(row.id)) || undefined,
           })),
         });
       }
@@ -931,6 +962,62 @@ export function createWorkbenchService(dependencies: {
             date: asText(row.expectedReturnDate) ?? null,
             url: `/devices/${String(row.id)}`,
             mine: asText(row.ownerId) === userId,
+          })),
+        });
+      }
+      // 设备核对 (device sync, 2026-10-15): a device the platforms see
+      // otherwise than the register — silent too long, in other hands, or
+      // online while on the shelf. Its 负责人 answers for it, so 我负责的
+      // narrows to theirs; everybody who may update devices sees all.
+      const checkable = await decide('devices', 'read');
+      if (
+        review &&
+        checkable &&
+        (await decide('devices', 'update')) &&
+        (await review.active())
+      ) {
+        const all = await review.checks();
+        const visible = new Set(
+          all.length === 0
+            ? []
+            : (
+                await database
+                  .query()
+                  .selectFrom('devices')
+                  .select('id')
+                  .where((eb) => compileAuthzScope(eb, checkable.scope))
+                  .where(
+                    'id',
+                    'in',
+                    all.map((check) => check.deviceId),
+                  )
+                  .execute<{ id: string }>()
+              ).map((row) => row.id),
+        );
+        const checks = all.filter(
+          (check) =>
+            visible.has(check.deviceId) &&
+            (reader === null || check.ownerId === reader),
+        );
+        items.push({
+          key: 'deviceChecks',
+          count: checks.length,
+          url: '/device-sync?view=checks',
+          records: checks.slice(0, MY_WORK_PREVIEW).map((check) => ({
+            id: check.deviceId,
+            title: [check.deviceNo, check.deviceName]
+              .filter(Boolean)
+              .join(' / '),
+            date: check.lastSyncAt,
+            url: `/devices/${check.deviceId}`,
+            mine: check.ownerId === userId,
+            check: {
+              kind: check.kind,
+              critical: check.critical,
+              ...(check.kind === 'userMismatch'
+                ? { userName: check.userName }
+                : {}),
+            },
           })),
         });
       }

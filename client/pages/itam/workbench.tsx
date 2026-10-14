@@ -334,6 +334,28 @@ function RecordCard({
           {record.subtitle}
         </p>
       ) : null}
+      {/* 设备核对: what the platform says otherwise (device sync). */}
+      {record.check ? (
+        <p className='mt-1.5 flex min-w-0 items-center gap-1.5 text-xs'>
+          <span
+            className={cn(
+              'shrink-0 rounded-md px-1.5 py-0.5 font-medium',
+              record.check.critical
+                ? 'bg-destructive/10 text-destructive'
+                : 'bg-warning text-warning-foreground',
+            )}
+          >
+            {t(`deviceSync.checks.kinds.${record.check.kind}`)}
+          </span>
+          {record.check.userName ? (
+            <span className='min-w-0 truncate text-muted-foreground'>
+              {t('deviceSync.checks.platformUser', {
+                user: record.check.userName,
+              })}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
       <p className='mt-2 flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums'>
         {record.date ? <span>{formatDate(record.date)}</span> : null}
         {/* Where a record stands for several things — a leaver
@@ -430,6 +452,14 @@ function LeaverCard({
                   {countdown}
                 </span>
               ) : null}
+            </p>
+          ) : null}
+          {/* Device sync: their devices still synced after they left. */}
+          {!joining && record.onlineAfterLeaving ? (
+            <p className='mt-1 text-xs font-medium text-warning-foreground'>
+              {t('deviceSync.onlineAfterLeaving', {
+                count: record.onlineAfterLeaving,
+              })}
             </p>
           ) : null}
         </div>

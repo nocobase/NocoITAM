@@ -256,6 +256,8 @@ const zhCN: AppResource = {
       repairCompleted: '维修完成',
       counted: '录入盘点结果',
       managedLinked: '关联管理平台',
+      managedUnlinked: '解除管理平台关联',
+      managedDismissed: '以台账为准',
       unregisteredFound: '发现账外设备',
       resolved: '差异处理',
       audited: '已盘点',
@@ -375,6 +377,9 @@ const zhCN: AppResource = {
       accountDisabledOnLeaving: '登录账号 {{target}} 随离职停用',
       accountRestoredOnReturning: '登录账号 {{target}} 随恢复在职重新启用',
       managedLinked: '与 {{source}} 设备 {{target}} 关联（序列号一致）',
+      managedLinkedManual: '手动关联 {{source}} 设备 {{target}}',
+      managedUnlinked: '解除与 {{source}} 设备 {{target}} 的关联',
+      managedDismissed: '{{check}}：以台账为准',
       leftOnLeaveDate: '离职日期 {{date}} 已到，自动标记为离职',
       recoveryPrepared:
         '已整理待回收清单：设备 {{devices}}、库存 {{stock}}、席位 {{seats}}',
@@ -1748,6 +1753,7 @@ const zhCN: AppResource = {
       activeRepairs: '维修中',
       activeAudits: '进行中的盘点',
       loansDueToday: '借出逾期',
+      deviceChecks: '设备核对',
       leaverRecovery: '离职交接',
       pendingOnboarding: '入职准备',
       // The card lists everybody's now, so this says which part of a row
@@ -1785,6 +1791,8 @@ const zhCN: AppResource = {
       lowAccessories: '低于水位的配件',
       lowConsumables: '低于水位的耗材',
       lowComponents: '低于水位的组件',
+      managedUnregistered: '管理平台里有、台账未登记',
+      deviceUnmanaged: '在用但不在任何管理平台',
     },
     reminderCaptions: {
       warrantyExpiring: '在用设备',
@@ -1798,6 +1806,8 @@ const zhCN: AppResource = {
       lowAccessories: '可用数量低于最低库存水位',
       lowConsumables: '可用数量低于最低库存水位',
       lowComponents: '可用数量低于最低库存水位',
+      managedUnregistered: '设备管理平台报告了，台账里却没有这台设备',
+      deviceUnmanaged: '应纳管分类的在用设备，没有出现在任何已连接的管理平台中',
     },
   },
   data: {
@@ -1875,6 +1885,72 @@ const zhCN: AppResource = {
     },
   },
   deviceSync: {
+    checks: {
+      kinds: {
+        stale: '失联',
+        userMismatch: '使用人不一致',
+        statusMismatch: '状态不符',
+      },
+      goneSentence: '{{source}} 已不再报告这台设备，台账上它仍在使用',
+      staleSentence_one: '在用设备已 {{count}} 天没有在 {{source}} 同步',
+      staleSentence_other: '在用设备已 {{count}} 天没有在 {{source}} 同步',
+      userSentence: '{{source}} 上的主用户是 {{user}}，台账分配给了别人',
+      statusSentence:
+        '台账状态是「{{status}}」，但 {{date}} 仍在 {{source}} 同步',
+      transferTo: '调拨给 {{user}}',
+      assignTo: '分配给 {{user}}',
+      restore: '恢复为库存中',
+      keepRegister: '以台账为准',
+      platformUser: '平台主用户：{{user}}',
+    },
+    unlink: '解除关联',
+    unlinkTitle: '解除关联',
+    unlinkDescription:
+      '这台设备将不再显示 {{source}} 的信息。之后的同步也不会再按序列号自动关联它，需要时可以在管理平台核对页重新关联。',
+    onlineAfterLeaving_one: '{{count}} 台设备离职后仍在线',
+    onlineAfterLeaving_other: '{{count}} 台设备离职后仍在线',
+    review: {
+      title: '管理平台核对',
+      description: '设备管理平台报告的设备与台账不一致的地方',
+      views: {
+        checks: '设备核对',
+        unregistered: '台账未登记',
+        unmanaged: '未纳管',
+        ignored: '不纳入台账',
+      },
+      hints: {
+        checks:
+          '失联、使用人不一致、状态不符的台账设备。到设备页处理，或以台账为准。',
+        unregistered:
+          '管理平台报告了、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
+        unmanaged:
+          '应纳管分类的在用设备，没有出现在任何已连接的管理平台中，需要在管理平台那边注册。',
+        ignored:
+          '标为不纳入台账的管理平台设备，以后的同步不再提示。恢复后会重新按序列号匹配。',
+      },
+      empty: '没有需要处理的设备',
+      columns: {
+        device: '设备',
+        difference: '差异',
+        holder: '分配给',
+        platformModel: '平台上的型号',
+        reason: '原因',
+      },
+      sharedSerial_one: '{{count}} 台台账设备用了这个序列号',
+      sharedSerial_other: '{{count}} 台台账设备用了这个序列号',
+      register: '补登记',
+      link: '关联到已有设备',
+      ignore: '不纳入台账',
+      restore: '恢复',
+      linkTitle: '关联到已有设备',
+      linkDescription: '把管理平台设备「{{name}}」关联到台账里的一台设备。',
+      candidates: '序列号相同的设备',
+      pickDevice: '台账设备',
+      ignoreTitle: '不纳入台账',
+      ignoreDescription: '「{{name}}」不会再出现在台账未登记里。',
+      reason: '原因',
+      reasonPlaceholder: '例如：测试虚拟机、外包人员自带设备',
+    },
     group: '管理平台',
     notFound: '未在已连接的管理平台中找到',
     sources: { intune: 'Intune' },
@@ -2032,6 +2108,11 @@ const zhCN: AppResource = {
       'Cannot issue to a person who has left': '不能领用给已离职人员',
       'Consumables are not returned': '耗材不可归还',
       'No device management platform is configured': '尚未连接任何设备管理平台',
+      'This platform record is not linked to a device':
+        '这条管理平台记录没有关联台账设备',
+      'A linked platform record cannot be kept off the register':
+        '已关联台账设备的管理平台记录不能标为不纳入台账',
+      'There is no such difference on this device': '这台设备上没有这项差异',
       'Demo data already exists; clear it first': '演示数据已存在，请先清除',
       'Disposal is only reached through the disposal process':
         '只能通过报废流程报废设备',
@@ -2115,6 +2196,20 @@ const zhCN: AppResource = {
   },
   settings: {
     title: '设置',
+    deviceSyncRules: {
+      title: '核对规则',
+      description: '管理平台与台账不一致时，什么情况下提示',
+      staleDays: '失联天数',
+      staleDaysHint: '在用设备超过这么多天没有同步，算作失联',
+      recentDays: '状态不符的在线天数',
+      recentDaysHint: '台账上不在用的设备，这么多天内同步过，算作状态不符',
+      managedCategories: '应纳管分类',
+      managedCategoriesHint:
+        '这些分类（含子分类）的在用设备应当出现在管理平台中，否则提示未纳管',
+      ignorePersonal: '忽略个人设备',
+      ignorePersonalHint: '管理平台标为个人（员工自带）的设备不参与任何核对',
+      ignoredLink: '查看不纳入台账的设备',
+    },
     deviceSync: {
       title: '设备同步',
       description:

@@ -92,6 +92,8 @@ export function useWorkCards(): readonly WorkCard[] {
     'pendingDisposalExecution',
     'activeRepairs',
     'loansDueToday',
+    // Device sync (2026-10-15): only while a platform is connected.
+    'deviceChecks',
     'activeAudits',
   ]) {
     if (key === 'purchasing') {

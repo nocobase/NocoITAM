@@ -109,6 +109,12 @@ export interface DeviceSyncService {
    * device page says "not found on the platforms" only then.
    */
   connected(): Promise<boolean>;
+  /**
+   * Links a device just put on the register to the platform record of its
+   * serial, the way the next pull would (step 2, 2026-10-15) — so 补登记
+   * shows the platform at once. A person's own decision on a record stands.
+   */
+  matchDevice(deviceId: string, actorId?: string): Promise<void>;
 }
 
 export const deviceSyncServiceToken: ServiceToken<DeviceSyncService> =
@@ -253,8 +259,11 @@ export function createDeviceSyncService(deps: {
         const row = byExternal.get(observed.externalId);
         // A link follows the platform's id once made; it is redone only when
         // its device has been deleted. An ignored record stays ignored.
+        // A person's own link or unlink (`matchedBy: manual`, step 2)
+        // stands too, until its device is deleted.
         const keepLink =
           row?.matchState === 'ignored' ||
+          (row?.matchState === 'unlinked' && row.matchedBy === 'manual') ||
           (row?.matchState === 'linked' &&
             typeof row.deviceId === 'string' &&
             register.exists.has(row.deviceId));
@@ -575,6 +584,58 @@ export function createDeviceSyncService(deps: {
     },
 
     ingest,
+
+    async matchDevice(deviceId, actorId) {
+      const device = await database
+        .query()
+        .selectFrom('devices')
+        .select(['id', 'serialNo'])
+        .where('id', '=', deviceId)
+        .executeTakeFirst<{ id: string; serialNo: string | null }>();
+      const serial = normalizeSerial(device?.serialNo);
+      if (!device || !serial) return;
+      const records = await database
+        .query()
+        .selectFrom('managedDevices')
+        .selectAll()
+        .where('serialNo', '=', serial)
+        .where('matchState', 'in', ['unlinked', 'ambiguous'])
+        .execute<Row>();
+      const open = records.filter((row) => row.matchedBy !== 'manual');
+      if (open.length === 0) return;
+      const register = await loadRegister();
+      if ((register.bySerial.get(serial) ?? []).length !== 1) return;
+      const now = new Date();
+      for (const row of open) {
+        await database
+          .query()
+          .updateTable('managedDevices')
+          .set({
+            deviceId,
+            matchState: 'linked',
+            matchedBy: 'serial',
+            updatedAt: now,
+          })
+          .where('id', '=', String(row.id))
+          .execute();
+        await history.record({
+          subjectType: 'devices',
+          subjectId: deviceId,
+          type: 'managedLinked',
+          summary: `Linked to ${String(row.source)} device ${String(row.deviceName ?? row.externalId)} by serial number`,
+          payload: {
+            source: row.source,
+            externalId: row.externalId,
+            targetLabel: row.deviceName ?? row.externalId,
+          },
+          origin: 'sync',
+          sourceType: 'managedDevices',
+          sourceId: String(row.id),
+          ...(actorId ? { actorId } : {}),
+        });
+      }
+      deps.touched?.();
+    },
 
     async connected() {
       if (deps.sources().length > 0) return true;

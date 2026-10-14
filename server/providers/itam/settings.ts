@@ -34,6 +34,20 @@ export interface ItamSettings {
     readonly purchaseLeadDays: number;
   };
   readonly numbering: Readonly<Record<NumberingKind, NumberingRule>>;
+  /** Device sync's thresholds (step 2, 2026-10-15). */
+  readonly deviceSync: {
+    /** A device in use that has not synced for this many days is 失联. */
+    readonly staleDays: number;
+    /** A device off the shelf that synced within this many days is 状态不符. */
+    readonly recentDays: number;
+    /**
+     * The categories whose devices in use should be on a platform (未纳管);
+     * a category covers its subcategories.
+     */
+    readonly managedCategoryIds: readonly string[];
+    /** Leave the devices a platform marks personal out of every difference. */
+    readonly ignorePersonal: boolean;
+  };
   readonly ai: {
     readonly businessNotes: string;
     /**
@@ -92,6 +106,12 @@ export const DEFAULT_ITAM_SETTINGS: ItamSettings = {
     purchaseOrder: { prefix: 'PO-', width: 6, start: 1 },
     disposal: { prefix: 'DP-', width: 6, start: 1 },
     repair: { prefix: 'RP-', width: 6, start: 1 },
+  },
+  deviceSync: {
+    staleDays: 30,
+    recentDays: 7,
+    managedCategoryIds: ['cat-laptop', 'cat-desktop', 'cat-phone'],
+    ignorePersonal: true,
   },
   ai: {
     businessNotes: '',

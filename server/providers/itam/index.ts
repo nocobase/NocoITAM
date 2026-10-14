@@ -26,6 +26,10 @@ import {
   createDeviceSyncService,
   deviceSyncServiceToken,
 } from './device-sync.js';
+import {
+  createDeviceReviewService,
+  deviceReviewServiceToken,
+} from './device-review.js';
 import type { DeviceSyncConfig } from '../../config/device-sync.js';
 import {
   attachmentServiceToken,
@@ -99,6 +103,7 @@ export {
   approvalServiceToken,
   deviceServiceToken,
   deviceSyncServiceToken,
+  deviceReviewServiceToken,
   auditServiceToken,
   disposalServiceToken,
   repairServiceToken,
@@ -461,6 +466,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         entitlements: container.resolve(entitlementServiceToken),
         masterData: container.resolve(masterDataServiceToken),
         notifier: container.resolve(itamNotifierToken),
+        review: container.resolve(deviceReviewServiceToken),
       }),
     );
     container.singleton(workbenchServiceToken, () =>
@@ -468,6 +474,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         database: container.resolve(databaseManagerToken),
         approvals: container.resolve(approvalServiceToken),
         onboarding: container.resolve(onboardingServiceToken),
+        review: container.resolve(deviceReviewServiceToken),
       }),
     );
     container.singleton(reportServiceToken, () =>
@@ -604,6 +611,17 @@ export default class ItamProvider extends ServiceProvider<Application> {
               .getLogger('itam')
               .warn({ err: error }, message);
         },
+      }),
+    );
+    // Device sync, step 2: where the platforms and the register disagree,
+    // and a person's decisions about it (`device-review.ts`, 2026-10-15).
+    container.singleton(deviceReviewServiceToken, () =>
+      createDeviceReviewService({
+        database: container.resolve(databaseManagerToken),
+        settings: container.resolve(settingsServiceToken),
+        history: container.resolve(historyServiceToken),
+        sync: container.resolve(deviceSyncServiceToken),
+        touched: () => container.resolve(itamChangesToken).touched(),
       }),
     );
     // The changes the assistant proposes, carried out by the person it

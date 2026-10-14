@@ -152,7 +152,8 @@ export function useItamMutations<T extends ItamRecord = ItamRecord>(
   // a stale number is plainly wrong. The operation dialogs already do this;
   // only the plain field edits did not, so editing in the drawer left the
   // workbench showing what it showed before. Only active queries refetch.
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['itam'] });
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['itam'] });
   return {
     create: useMutation({
       mutationFn: async (input: Record<string, unknown>) =>
@@ -238,6 +239,13 @@ export interface ItamSettings {
     string,
     { prefix: string; width: number; start: number }
   >;
+  /** Device sync's thresholds (2026-10-15). */
+  readonly deviceSync: {
+    staleDays: number;
+    recentDays: number;
+    managedCategoryIds: string[];
+    ignorePersonal: boolean;
+  };
   readonly ai: {
     businessNotes: string;
     /** Noco choosing joiners' equipment in the background. */

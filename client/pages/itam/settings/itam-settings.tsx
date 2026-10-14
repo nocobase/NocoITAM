@@ -2,9 +2,10 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Database, Save, Trash2 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
+import { MultiReferenceInput } from '@/components/itam/multi-reference';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -102,7 +103,10 @@ export default function ItamSettingsPage(): ReactElement {
           ) : tab === 'receiptAgent' ? (
             <ReceiptAgentCard />
           ) : tab === 'deviceSync' ? (
-            <DeviceSyncCard />
+            <div className='flex flex-col gap-4'>
+              <DeviceSyncCard />
+              <DeviceSyncRulesCard value={settings.data.deviceSync} />
+            </div>
           ) : (
             <DemoCard />
           )}
@@ -401,6 +405,91 @@ function AiCard({
           }
         />
       </div>
+    </SettingsCard>
+  );
+}
+
+/**
+ * When a difference with the platforms is raised (device sync, step 2,
+ * 2026-10-15): how long a device in use may be silent, how recent an
+ * off-duty device's sync makes it 状态不符, which categories should be on
+ * a platform, and whether personal devices count at all.
+ */
+function DeviceSyncRulesCard({
+  value,
+}: {
+  readonly value: ItamSettings['deviceSync'];
+}): ReactElement {
+  const { t } = useTranslation();
+  const save = useSave('deviceSync');
+  const [draft, setDraft] = useState(value);
+  return (
+    <SettingsCard
+      title={t('settings.deviceSyncRules.title')}
+      description={t('settings.deviceSyncRules.description')}
+      onSave={() => save.mutate(draft)}
+      saving={save.isPending}
+      error={save.error}
+      saved={save.isSuccess}
+    >
+      <div className='grid gap-3 sm:grid-cols-2'>
+        <NumberField
+          id='device-sync-stale-days'
+          label={t('settings.deviceSyncRules.staleDays')}
+          hint={t('settings.deviceSyncRules.staleDaysHint')}
+          value={draft.staleDays}
+          onChange={(next) => setDraft({ ...draft, staleDays: next })}
+        />
+        <NumberField
+          id='device-sync-recent-days'
+          label={t('settings.deviceSyncRules.recentDays')}
+          hint={t('settings.deviceSyncRules.recentDaysHint')}
+          value={draft.recentDays}
+          onChange={(next) => setDraft({ ...draft, recentDays: next })}
+        />
+      </div>
+      <div className='grid gap-1.5'>
+        <Label htmlFor='device-sync-categories'>
+          {t('settings.deviceSyncRules.managedCategories')}
+        </Label>
+        <MultiReferenceInput
+          id='device-sync-categories'
+          reference={{
+            collection: 'categories',
+            filter: { appliesTo: 'device' },
+          }}
+          value={draft.managedCategoryIds}
+          onChange={(next) =>
+            setDraft({ ...draft, managedCategoryIds: [...next] })
+          }
+        />
+        <p className='text-xs text-muted-foreground'>
+          {t('settings.deviceSyncRules.managedCategoriesHint')}
+        </p>
+      </div>
+      <div className='flex items-start justify-between gap-4'>
+        <div className='grid gap-1'>
+          <Label htmlFor='device-sync-personal'>
+            {t('settings.deviceSyncRules.ignorePersonal')}
+          </Label>
+          <p className='text-xs text-muted-foreground'>
+            {t('settings.deviceSyncRules.ignorePersonalHint')}
+          </p>
+        </div>
+        <Switch
+          id='device-sync-personal'
+          checked={draft.ignorePersonal !== false}
+          onCheckedChange={(checked) =>
+            setDraft({ ...draft, ignorePersonal: checked })
+          }
+        />
+      </div>
+      <Link
+        to='/device-sync?view=ignored'
+        className='text-sm text-link underline-offset-4 hover:underline'
+      >
+        {t('settings.deviceSyncRules.ignoredLink')}
+      </Link>
     </SettingsCard>
   );
 }
