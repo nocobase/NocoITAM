@@ -2296,7 +2296,7 @@ const zhCN: AppResource = {
         disconnect: '断开连接',
         title: '连接 {{name}}',
         editTitle: '修改 {{name}} 连接',
-        description: '只需要读取设备的权限。密钥保存后加密存储，不会再显示。',
+        description: '只需读取设备的权限。密钥加密保存，之后不再显示。',
         fields: {
           tenantId: '目录（租户）ID',
           url: 'Jamf Pro 地址',

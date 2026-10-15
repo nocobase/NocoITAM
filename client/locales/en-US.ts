@@ -2444,7 +2444,7 @@ const messages = {
         title: 'Connect {{name}}',
         editTitle: 'Edit the {{name}} connection',
         description:
-          'Only permission to read devices is needed. The secret is stored encrypted and never shown again.',
+          'Only read access to devices is needed. The secret is stored encrypted and not shown again.',
         fields: {
           tenantId: 'Directory (tenant) ID',
           url: 'Jamf Pro address',
