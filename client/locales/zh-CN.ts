@@ -1963,10 +1963,16 @@ const zhCN: AppResource = {
           'MDM 里有、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
         unmanaged:
           '台账里使用中或借出、分类属于应纳管分类（可在 MDM 设置中修改），却没有出现在任何已连接 MDM 中的设备，需要在 MDM 那边注册。',
-        ignored:
-          '标为不纳入台账的 MDM 设备，以后的同步不再提示；「忽略个人设备」忽略的个人设备也在这里。恢复后会重新按序列号匹配。',
       },
       ignoredHeading: '已忽略 {{count}} 台',
+      ignoredManual_one:
+        '手动不纳入台账 {{count}} 台：以后的同步不再提示；点「恢复」会重新按序列号匹配。',
+      ignoredManual_other:
+        '手动不纳入台账 {{count}} 台：以后的同步不再提示；点「恢复」会重新按序列号匹配。',
+      ignoredPersonal_one:
+        '个人设备 {{count}} 台：「忽略个人设备」已开启，个人设备不参与核对。在 MDM 设置中关闭并保存后，会移到「只在 MDM」。',
+      ignoredPersonal_other:
+        '个人设备 {{count}} 台：「忽略个人设备」已开启，个人设备不参与核对。在 MDM 设置中关闭并保存后，会移到「只在 MDM」。',
       empty: '没有需要处理的设备',
       columns: {
         device: '设备',
@@ -1982,8 +1988,6 @@ const zhCN: AppResource = {
       ignore: '不纳入台账',
       restore: '恢复',
       byRule: '个人设备（按核对规则）',
-      byRuleHint:
-        '在 MDM 设置的核对规则里关掉「忽略个人设备」并保存后，会移到「只在 MDM」',
       linkTitle: '关联到已有设备',
       linkDescription: '把 MDM 设备「{{name}}」关联到台账里的一台设备。',
       candidates: '序列号相同的设备',

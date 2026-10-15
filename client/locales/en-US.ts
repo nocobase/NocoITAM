@@ -2063,10 +2063,16 @@ const messages = {
           'Devices a platform reports that the register lacks. Register one, link it to a device, or keep it off the register.',
         unmanaged:
           'Register devices in use or on loan, of a managed category (changed in the MDM settings), that no connected MDM reports. They need enrolling in MDM.',
-        ignored:
-          'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again. Personal devices Ignore personal devices leaves out are listed here too.',
       },
       ignoredHeading: 'Ignored ({{count}})',
+      ignoredManual_one:
+        'Kept off the register by hand, {{count}}: syncs no longer raise it; Restore matches it by serial again.',
+      ignoredManual_other:
+        'Kept off the register by hand, {{count}}: syncs no longer raise them; Restore matches each by serial again.',
+      ignoredPersonal_one:
+        'Personal device, {{count}}: Ignore personal devices is on, so it is left out of the review. Turn it off in the MDM settings and save, and it moves to Only in MDM.',
+      ignoredPersonal_other:
+        'Personal devices, {{count}}: Ignore personal devices is on, so they are left out of the review. Turn it off in the MDM settings and save, and they move to Only in MDM.',
       empty: 'Nothing to review',
       columns: {
         device: 'Device',
@@ -2082,8 +2088,6 @@ const messages = {
       ignore: 'Keep off the register',
       restore: 'Restore',
       byRule: 'Personal device (by the rules)',
-      byRuleHint:
-        'Turn off Ignore personal devices in the MDM settings and save, and it moves to Only in MDM',
       linkTitle: 'Link to a device',
       linkDescription:
         'Link the platform device “{{name}}” to a device on the register.',

@@ -151,9 +151,21 @@ export default function DeviceSyncReviewPage(): ReactElement {
                 count: counts.ignored,
               })}
             </h2>
-            <p className='text-sm text-muted-foreground'>
-              {t('deviceSync.review.hints.ignored')}
-            </p>
+            {/* Each kind said once, and only the kinds there are. */}
+            {(counts.ignoredManual ?? 0) > 0 ? (
+              <p className='text-sm text-muted-foreground'>
+                {t('deviceSync.review.ignoredManual', {
+                  count: counts.ignoredManual,
+                })}
+              </p>
+            ) : null}
+            {(counts.ignoredByRule ?? 0) > 0 ? (
+              <p className='text-sm text-muted-foreground'>
+                {t('deviceSync.review.ignoredPersonal', {
+                  count: counts.ignoredByRule,
+                })}
+              </p>
+            ) : null}
           </div>
           <RecordsView view='ignored' />
         </section>
@@ -166,16 +178,25 @@ export default function DeviceSyncReviewPage(): ReactElement {
 const TABS = ['checks', 'unregistered', 'unmanaged'] as const;
 
 /** Each view's count, as its own list reads it (undefined while loading). */
-function useReviewCounts(): Partial<Record<ReviewView, number>> {
+function useReviewCounts(): Partial<
+  Record<ReviewView | 'ignoredManual' | 'ignoredByRule', number>
+> {
   const checks = useDeviceReview('checks');
   const unregistered = useDeviceReview('unregistered');
   const unmanaged = useDeviceReview('unmanaged');
   const ignored = useDeviceReview('ignored');
+  const byRule = ignored.data?.filter((row) => row.ignoredByRule).length;
   return {
     checks: checks.data?.length,
     unregistered: unregistered.data?.length,
     unmanaged: unmanaged.data?.length,
     ignored: ignored.data?.length,
+    // 已忽略's two kinds: kept off by a person, or by 忽略个人设备.
+    ignoredByRule: byRule,
+    ignoredManual:
+      ignored.data && byRule !== undefined
+        ? ignored.data.length - byRule
+        : undefined,
   };
 }
 
@@ -455,12 +476,7 @@ function RecordsView({
                 </TableCell>
                 <TableCell className='text-sm'>
                   {view === 'ignored' && row.ignoredByRule ? (
-                    <span>
-                      {t('deviceSync.review.byRule')}
-                      <span className='block text-xs text-muted-foreground'>
-                        {t('deviceSync.review.byRuleHint')}
-                      </span>
-                    </span>
+                    <span>{t('deviceSync.review.byRule')}</span>
                   ) : view === 'ignored' ? (
                     <span>
                       {row.ignoreReason}
