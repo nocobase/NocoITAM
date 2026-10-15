@@ -33,7 +33,6 @@ import {
   type ReviewView,
   type UnregisteredDevice,
 } from '@/lib/itam/device-sync';
-import { useItamSettings } from '@/lib/itam/api';
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
@@ -45,14 +44,14 @@ import { cn } from '@/lib/utils';
  * whose platform record says otherwise, the platform records nobody put on
  * the register, the devices in use no platform reports, and the records a
  * person kept off the register. Opened from 待办 (设备核对, 需要关注) and
- * from 设置 → 设备同步, so it has no menu entry and no page grant; its
+ * from 设置 → MDM, so it has no menu entry and no page grant; its
  * endpoint answers whoever may read devices.
  */
 export default function DeviceSyncReviewPage(): ReactElement {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const ai = useItamAi();
-  // 设备同步 settings (connections, runs, the rules behind these lists)
+  // MDM settings (connections, runs, the rules behind these lists)
   // for whoever may change them, the grant its API asks for.
   const { can: canSettle } = useCan({
     resource: { type: 'settings', id: 'itam.settings' },
@@ -121,13 +120,9 @@ export default function DeviceSyncReviewPage(): ReactElement {
         </TabsList>
       </Tabs>
       <div className='flex flex-wrap items-center justify-between gap-2'>
-        {view === 'unmanaged' ? (
-          <UnmanagedHint />
-        ) : (
-          <p className='text-sm text-muted-foreground'>
-            {t(`deviceSync.review.hints.${view}`)}
-          </p>
-        )}
+        <p className='text-sm text-muted-foreground'>
+          {t(`deviceSync.review.hints.${view}`)}
+        </p>
         {/* Noco explains the differences, or sorts out the records the
             register lacks into one plan (device-sync skill, step 4). */}
         {ai.available &&
@@ -164,30 +159,6 @@ export default function DeviceSyncReviewPage(): ReactElement {
         </section>
       ) : null}
     </Page>
-  );
-}
-
-/**
- * What puts a device under 只在台账, its three conditions in one sentence
- * with the categories 核对规则 names, so the count can be checked.
- */
-function UnmanagedHint(): ReactElement {
-  const { t } = useTranslation();
-  const settings = useItamSettings();
-  const ids = settings.data?.deviceSync.managedCategoryIds ?? [];
-  const names = useReferenceNames([{ collection: 'categories', ids }]);
-  const categories = ids
-    .map((id) => names.categories?.get(id))
-    .filter(Boolean)
-    .join('、');
-  // One sentence, not a list: it sits above the table like the others.
-  return (
-    <p className='text-sm text-muted-foreground'>
-      {t('deviceSync.review.unmanaged.hint', {
-        categories:
-          categories || t('deviceSync.review.unmanaged.categoriesByRule'),
-      })}
-    </p>
   );
 }
 

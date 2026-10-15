@@ -24,7 +24,7 @@ import { BusinessRuleError } from './errors.js';
 import type { HistoryService } from './history.js';
 
 /**
- * A platform's connection entered on 设置 → 设备同步 (2026-10-15), for a
+ * A platform's connection entered on 设置 → MDM (2026-10-15), for a
  * deployment whose operator does not edit `config.yml` — a hosted one, or
  * an IT team without access to the server. The client secret is sealed with
  * the deployment's `secrets.keys` and never leaves the server again: the

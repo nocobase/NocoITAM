@@ -1,6 +1,6 @@
 # ITAM: device sync
 
-Read this before changing device sync: the platform connectors, the `managedDevices` and `deviceSyncRuns` tables, matching by serial, the device page's MDM group, 设置 → 设备同步 or the nightly pull.
+Read this before changing device sync: the platform connectors, the `managedDevices` and `deviceSyncRuns` tables, matching by serial, the device page's MDM group, 设置 → MDM or the nightly pull.
 
 The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); all four steps are built.
 
@@ -20,7 +20,7 @@ since a library provisioned earlier keeps the title it was given.
 - **Credentials: `config.yml`, or the settings page** (2026-10-15). A
   platform under `deviceSync.intune` / `deviceSync.jamf` in `config.yml`
   (`server/config/device-sync.ts`, with `INTUNE_*` / `JAMF_*` environment
-  variables) wins, and 设置 → 设备同步 shows it read-only. Otherwise it can be
+  variables) wins, and 设置 → MDM shows it read-only. Otherwise it can be
   connected on that page (`device-connections.ts`, table
   `deviceSyncConnections`, one row per platform): the client secret is
   sealed with the framework's secrets service (`secretsServiceToken`,

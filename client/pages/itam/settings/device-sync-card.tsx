@@ -41,7 +41,7 @@ const RUN_TONE: Readonly<
 };
 
 /**
- * 设置 → 设备同步 (2026-10-14): each device management platform, its
+ * 设置 → MDM (2026-10-14): each device management platform, its
  * connection — from `config.yml`, or entered here since 2026-10-15 with the
  * secret sealed on the server and never shown again — how its latest pull
  * went and what it holds. A pull started here runs in the background and
@@ -64,7 +64,7 @@ export function DeviceSyncCard(): ReactElement {
           name and status below; the description runs the full width. */}
       <CardHeader>
         <div className='flex flex-wrap items-center gap-2'>
-          <CardTitle>{t('settings.deviceSync.title')}</CardTitle>
+          <CardTitle>{t('settings.deviceSync.cardTitle')}</CardTitle>
           <Button
             variant='outline'
             disabled={!configured || running || start.isPending}

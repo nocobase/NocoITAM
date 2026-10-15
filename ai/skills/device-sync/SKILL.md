@@ -17,7 +17,7 @@ tools: []
 
 - **一台设备**：从设备页发起的对话，页面上下文里会带上这台设备（`devices` 和它的 id）。用 `itam device-sync review --device-id <id>` 取它在各平台的记录（`platformRecords`）和差异（`differences`），用 `itam record get devices <id>` 看它的状态、分配给谁、最近的历史。
 - **一类差异**：`itam device-sync review --view checks`（信息不一致）、`--view unregistered`（只在 MDM，也就是台账未登记）、`--view unmanaged`（只在台账，也就是未纳管）、`--view ignored`（已忽略：人工标为不纳入台账的，以及核对规则忽略的个人设备）。
-- 返回 `connected: false` 说明还没有连接任何 MDM：告诉用户由管理员在「设置 → 设备同步」连接，或在服务器的 config.yml 里配置，不要编造差异。
+- 返回 `connected: false` 说明还没有连接任何 MDM：告诉用户由管理员在「设置 → MDM」连接，或在服务器的 config.yml 里配置，不要编造差异。
 
 同一台设备可能同时在 Intune 和 Jamf 里（Mac 常见），它有两条平台记录；判断时看**最后同步较晚**的那条，差异也是按它算的。
 

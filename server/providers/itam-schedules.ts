@@ -145,7 +145,7 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
             .runAll('schedule');
           const failed = runs.filter((run) => run.status !== 'succeeded');
           // A platform that could not be read fails the execution, so the
-          // task page shows it; its run on 设置 → 设备同步 says why.
+          // task page shows it; its run on 设置 → MDM says why.
           if (failed.length > 0)
             return {
               state: 'failed',

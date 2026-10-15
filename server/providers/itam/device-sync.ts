@@ -113,7 +113,7 @@ export interface DeviceSyncService {
   connected(): Promise<boolean>;
   /**
    * Where the platforms' own pages for their records are: read once, then
-   * asked per record (the Jamf address may be stored on 设置 → 设备同步).
+   * asked per record (the Jamf address may be stored on 设置 → MDM).
    */
   consoleUrls(): Promise<(source: string, externalId: string) => string | null>;
   /**
@@ -146,7 +146,7 @@ export function createDeviceSyncService(deps: {
   readonly database: DatabaseManager;
   readonly history: HistoryService;
   /**
-   * The sources connected — by `config.yml` or on 设置 → 设备同步 — read
+   * The sources connected — by `config.yml` or on 设置 → MDM — read
    * when a pull starts.
    */
   readonly sources: () =>

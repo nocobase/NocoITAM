@@ -1948,7 +1948,7 @@ const zhCN: AppResource = {
     onlineAfterLeaving_other: '{{count}} 台设备离职后仍在线',
     review: {
       title: 'MDM 核对',
-      settingsLink: '设备同步设置',
+      settingsLink: 'MDM 设置',
       description: '设备管理平台（MDM）报告的设备与台账不一致的地方',
       views: {
         checks: '信息不一致',
@@ -1962,15 +1962,11 @@ const zhCN: AppResource = {
         unregistered:
           'MDM 里有、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
         unmanaged:
-          '台账里在用、应纳管的设备，没有出现在任何已连接的 MDM 中，需要在 MDM 那边注册。',
+          '台账里使用中或借出、分类属于应纳管分类（可在 MDM 设置中修改），却没有出现在任何已连接 MDM 中的设备，需要在 MDM 那边注册。',
         ignored:
           '标为不纳入台账的 MDM 设备，以后的同步不再提示；核对规则忽略的个人设备也在这里。恢复后会重新按序列号匹配。',
       },
       ignoredHeading: '已忽略 {{count}} 台',
-      unmanaged: {
-        hint: '台账里使用中或借出、分类属于应纳管分类（{{categories}}，含子分类，可在核对规则中修改），却没有出现在任何已连接 MDM 中的设备，需要在 MDM 那边注册。',
-        categoriesByRule: '见核对规则',
-      },
       empty: '没有需要处理的设备',
       columns: {
         device: '设备',
@@ -2266,7 +2262,9 @@ const zhCN: AppResource = {
       ignoredLink: '查看已忽略的设备',
     },
     deviceSync: {
-      title: '设备同步',
+      // The settings tab; the card on it is cardTitle (2026-10-15).
+      title: 'MDM',
+      cardTitle: 'MDM 同步',
       description:
         '每天 01:30 从已连接的设备管理平台（MDM：Intune、Jamf Pro）拉取设备清单，按序列号关联台账设备。只读：不改动台账，也不改动 MDM。',
       syncNow: '立即同步',

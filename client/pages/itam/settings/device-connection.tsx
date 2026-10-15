@@ -16,7 +16,7 @@ import { formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
 
 /**
- * A platform's connection on 设置 → 设备同步 (2026-10-15): entered here
+ * A platform's connection on 设置 → MDM (2026-10-15): entered here
  * with the secret sealed on the server, or set in `config.yml`, which wins
  * and is shown read-only. The secret is written, never read back.
  *

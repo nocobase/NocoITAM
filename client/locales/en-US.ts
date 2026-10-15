@@ -2047,7 +2047,7 @@ const messages = {
     onlineAfterLeaving_other: '{{count}} devices online after leaving',
     review: {
       title: 'Platform review',
-      settingsLink: 'Device sync settings',
+      settingsLink: 'MDM settings',
       description:
         'Where the device management platforms and the register disagree',
       views: {
@@ -2062,15 +2062,11 @@ const messages = {
         unregistered:
           'Devices a platform reports that the register lacks. Register one, link it to a device, or keep it off the register.',
         unmanaged:
-          'Devices in use of a managed category that no connected platform reports; they need enrolling on the platform.',
+          'Register devices in use or on loan, of a managed category (changed in the MDM settings), that no connected MDM reports. They need enrolling in MDM.',
         ignored:
           'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again. Personal devices the rules ignore are listed here too.',
       },
       ignoredHeading: 'Ignored ({{count}})',
-      unmanaged: {
-        hint: 'Register devices in use or on loan, of a managed category ({{categories}}, with subcategories; changed under the review rules), that no connected MDM reports. They need enrolling in MDM.',
-        categoriesByRule: 'see the review rules',
-      },
       empty: 'Nothing to review',
       columns: {
         device: 'Device',
@@ -2416,7 +2412,9 @@ const messages = {
       ignoredLink: 'Ignored devices',
     },
     deviceSync: {
-      title: 'Device sync',
+      // The settings tab; the card on it is cardTitle (2026-10-15).
+      title: 'MDM',
+      cardTitle: 'MDM sync',
       description:
         'Pulls the device list from each connected device management platform (Intune, Jamf Pro) every day at 01:30 and links register devices by serial number. Read only: it changes neither the register nor the platform.',
       syncNow: 'Sync now',
