@@ -66,7 +66,6 @@ export function DeviceSyncCard(): ReactElement {
         <div className='flex flex-wrap items-center gap-2'>
           <CardTitle>{t('settings.deviceSync.cardTitle')}</CardTitle>
           <Button
-            variant='outline'
             disabled={!configured || running || start.isPending}
             onClick={() => start.mutate()}
           >

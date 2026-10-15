@@ -42,11 +42,9 @@ export function DeviceConnectionActions({
   const stored = connection?.origin === 'settings';
   return (
     <>
-      <Button
-        variant='outline'
-        disabled={!secretsReady}
-        onClick={() => setEditing(true)}
-      >
+      {/* Filled, as the page's own actions are (2026-10-15); 断开连接
+          stays the destructive outline. */}
+      <Button disabled={!secretsReady} onClick={() => setEditing(true)}>
         <Plug data-icon='inline-start' />
         {t(
           stored
