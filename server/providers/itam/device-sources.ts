@@ -301,7 +301,11 @@ function graphError(
 const JAMF_COMPUTER = 'computer:';
 const JAMF_MOBILE = 'mobile:';
 
-/** A Jamf Pro computer (`/api/v1/computers-inventory`) as ITAM reads it. */
+/**
+ * A Jamf Pro computer (`/api/v4/computers-inventory`, or v3 / v1 on an older
+ * Jamf Pro; the record is the same but for v4's `lastContact`) as ITAM
+ * reads it.
+ */
 export function jamfComputer(record: Record<string, unknown>): ObservedDevice {
   const general = (record.general ?? {}) as Record<string, unknown>;
   const hardware = (record.hardware ?? {}) as Record<string, unknown>;
@@ -330,7 +334,10 @@ export function jamfComputer(record: Record<string, unknown>): ObservedDevice {
           : null,
     wifiMac: text(hardware.macAddress),
     enrolledAt: text(general.lastEnrolledDate),
-    lastSyncAt: text(general.lastContactTime) ?? text(general.reportDate),
+    lastSyncAt:
+      text(general.lastContact) ??
+      text(general.lastContactTime) ??
+      text(general.reportDate),
     raw: record,
   };
 }
@@ -351,7 +358,7 @@ export function jamfMobile(record: Record<string, unknown>): ObservedDevice {
     osName: text(record.deviceType) ?? 'iOS',
     osVersion: text(general.osVersion),
     userPrincipal: text(user.emailAddress) ?? text(user.username),
-    userName: text(user.fullName),
+    userName: text(user.realName),
     // Institutional, or a person's own device enrolled for work.
     ownership:
       owner.includes('personal') || owner.includes('userenrollment')
@@ -361,8 +368,8 @@ export function jamfMobile(record: Record<string, unknown>): ObservedDevice {
           : 'unknown',
     compliance: null,
     encrypted:
-      typeof security.dataProtection === 'boolean'
-        ? security.dataProtection
+      typeof security.dataProtected === 'boolean'
+        ? security.dataProtected
         : null,
     wifiMac: text(hardware.wifiMacAddress),
     enrolledAt: text(general.lastEnrolledDate),
@@ -411,26 +418,36 @@ export function createJamfSource(
     return body.access_token;
   };
 
-  /** One endpoint, every page, mapped. */
+  /**
+   * One endpoint, every page, mapped. `paths` are tried in order while the
+   * first page answers 404, for an endpoint a newer Jamf Pro replaced.
+   */
   async function* list(
     bearer: string,
-    path: string,
+    paths: readonly string[],
     sections: readonly string[],
+    sort: string,
     map: (record: Record<string, unknown>) => ObservedDevice,
   ): AsyncGenerator<readonly ObservedDevice[]> {
+    let tried = 0;
     for (let page = 0; ; page++) {
       const query = new URLSearchParams();
       for (const section of sections) query.append('section', section);
       query.set('page', String(page));
       query.set('page-size', String(pageSize));
-      query.set('sort', 'id:asc');
+      query.set('sort', sort);
       const response = await requestWithRetry(
-        `${base}${path}?${query.toString()}`,
+        `${base}${paths[tried]}?${query.toString()}`,
         { headers: { authorization: `Bearer ${bearer}` } },
         options,
       );
       const body = (await response.json().catch(() => undefined)) as
         Record<string, unknown> | undefined;
+      if (response.status === 404 && page === 0 && tried < paths.length - 1) {
+        tried++;
+        page--;
+        continue;
+      }
       if (response.status === 401)
         throw new SourceError('AUTH_FAILED', jamfError(body, 401));
       if (response.status === 403)
@@ -457,16 +474,26 @@ export function createJamfSource(
     key: 'jamf',
     async *pages() {
       const bearer = await token();
+      // Jamf deprecated v1 of the computer inventory on 2025-06-30 for v3,
+      // and v3 on 2026-07-14 for v4 (Jamf Pro 11.30); a Jamf Pro too old
+      // for a version answers it with 404, so the newest is tried first.
       yield* list(
         bearer,
-        '/api/v1/computers-inventory',
+        [
+          '/api/v4/computers-inventory',
+          '/api/v3/computers-inventory',
+          '/api/v1/computers-inventory',
+        ],
         ['GENERAL', 'HARDWARE', 'OPERATING_SYSTEM', 'USER_AND_LOCATION'],
+        'id:asc',
         jamfComputer,
       );
+      // The mobile inventory sorts by `mobileDeviceId`; it has no `id`.
       yield* list(
         bearer,
-        '/api/v2/mobile-devices/detail',
+        ['/api/v2/mobile-devices/detail'],
         ['GENERAL', 'HARDWARE', 'USER_AND_LOCATION', 'SECURITY'],
+        'mobileDeviceId:asc',
         jamfMobile,
       );
     },
