@@ -42,9 +42,14 @@ export function DeviceConnectionActions({
   const stored = connection?.origin === 'settings';
   return (
     <>
-      {/* Filled, as the page's own actions are (2026-10-15); 断开连接
-          stays the destructive outline. */}
-      <Button disabled={!secretsReady} onClick={() => setEditing(true)}>
+      {/* 连接 is the platform's one action until it is connected, filled
+          like the page's own; 修改连接 then sits beside 断开连接 as an
+          outline, and 断开连接 keeps the destructive outline (2026-10-15). */}
+      <Button
+        variant={stored ? 'outline' : 'default'}
+        disabled={!secretsReady}
+        onClick={() => setEditing(true)}
+      >
         <Plug data-icon='inline-start' />
         {t(
           stored
