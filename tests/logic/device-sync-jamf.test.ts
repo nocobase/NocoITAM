@@ -85,10 +85,10 @@ describe('Jamf Pro', () => {
               deviceOwnershipType: 'Institutional',
             },
             userAndLocation: {
-              fullName: 'Kim Ng',
+              realName: 'Kim Ng',
               emailAddress: 'kim@example.com',
             },
-            security: { dataProtection: true },
+            security: { dataProtected: true },
           },
           {
             mobileDeviceId: '8',
@@ -125,10 +125,11 @@ describe('Jamf Pro', () => {
       'grant_type=client_credentials',
     );
     expect(requests[1]!.url).toBe(
-      'https://acme.jamfcloud.com/api/v1/computers-inventory?section=GENERAL&section=HARDWARE&section=OPERATING_SYSTEM&section=USER_AND_LOCATION&page=0&page-size=2&sort=id%3Aasc',
+      'https://acme.jamfcloud.com/api/v4/computers-inventory?section=GENERAL&section=HARDWARE&section=OPERATING_SYSTEM&section=USER_AND_LOCATION&page=0&page-size=2&sort=id%3Aasc',
     );
     expect(requests[2]!.url).toContain('page=1');
     expect(requests[3]!.url).toContain('/api/v2/mobile-devices/detail?');
+    expect(requests[3]!.url).toContain('sort=mobileDeviceId%3Aasc');
     expect(
       (requests[3]!.init?.headers as Record<string, string>).authorization,
     ).toBe('Bearer jamf-token');
@@ -154,6 +155,7 @@ describe('Jamf Pro', () => {
       serialNo: 'P7',
       osName: 'iOS',
       userPrincipal: 'kim@example.com',
+      userName: 'Kim Ng',
       ownership: 'company',
       encrypted: true,
       lastSyncAt: '2026-10-13T20:00:00Z',

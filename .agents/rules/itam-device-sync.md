@@ -4,6 +4,15 @@ Read this before changing device sync: the platform connectors, the `managedDevi
 
 The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); all four steps are built.
 
+**Not yet validated against a real tenant** (2026-10-15). No Intune or Jamf
+Pro tenant has been read: the connectors are checked only against the
+platforms' published shapes (`tests/logic/device-sources-official.test.ts`),
+and the rest of device sync against the demo and a local Mac. Do not
+describe Intune or Jamf support as verified, in the product or in release
+notes, until a first sync against a real tenant has been checked — its run,
+the fields on a device page, and matching by serial and by the primary
+user's email. Record that check here with its date and platform versions.
+
 - **Read only, and never into the register** (2026-10-14). A pull writes
   `managedDevices` (one row per platform record, keyed by `source` and the
   platform's `externalId`) and `deviceSyncRuns` (one row per pull), and
@@ -107,18 +116,25 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   以台账为准 the device's `update`; 不纳入台账 and 恢复 devices `create`, the
   act they stand in for.
 - **Jamf Pro** (step 3, 2026-10-15, `createJamfSource`): an API client's
-  token from `POST /api/oauth/token`, then `/api/v1/computers-inventory`
-  and `/api/v2/mobile-devices/detail` a page at a time (`page`,
-  `page-size`, `sort=id:asc`, stopping on a short page or `totalCount`).
+  token from `POST /api/oauth/token`, then the computer inventory and
+  `/api/v2/mobile-devices/detail` a page at a time (`page`, `page-size`,
+  stopping on a short page or `totalCount`). The computers are read from
+  `/api/v4/computers-inventory`, falling back to v3 and then v1 while the
+  first page answers 404: Jamf deprecated v1 on 2025-06-30 and v3 on
+  2026-07-14 (Jamf Pro 11.30); v4 renamed `general.lastContactTime` to
+  `general.lastContact`, and both are read. Computers sort by `id:asc`;
+  the mobile inventory has no `id` and sorts by `mobileDeviceId:asc`.
   Its two kinds of record are numbered apart, so their ids are
   `computer:<id>` and `mobile:<id>`, which `consoleUrl` turns into
   `computers.html` / `mobileDevices.html` on the configured server. A
   computer's last word is `general.lastContactTime`, a mobile device's
   `general.lastInventoryUpdateDate`; a computer has no owner type and counts
   as the company's, a mobile device's `deviceOwnershipType` decides. The
-  field names come from the Jamf Pro API reference as the
-  `deploymenttheory/go-api-sdk-jamfpro` structs mirror it; no tenant has
-  been read yet.
+  field names follow the Jamf Pro SDKs' models (`macadmins/jamf-pro-sdk-python`,
+  `deploymenttheory/go-sdk-jamfpro-v2`): a mobile device's user is
+  `userAndLocation.realName` and its encryption `security.dataProtected`.
+  The API reference's `fullName` and `dataProtection` are sort and filter
+  names only; reading them was a bug until 2026-10-15.
 - **One device, several platforms**: a co-managed Mac has a record per
   platform, each linked to the same device; the device page shows both and
   the differences read the latest sync. 管理平台核对 folds unregistered and

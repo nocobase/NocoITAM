@@ -2856,6 +2856,19 @@ to the CSV export), shown only while a platform is connected; and a leaver's
 beside the 离职交接 card's tag. The tab shows it even when the leaver holds
 nothing on the register.
 
+### 2026-10-15 Device sync: the connectors against the published shapes
+
+No real tenant is available, so the connectors were checked against what the
+platforms publish: the Microsoft Graph reference's managed device example,
+and the Jamf Pro SDKs' models. Graph matched. Jamf did not, in four places:
+the computer inventory moved from v1 to v3 to v4 (v3 deprecated on
+2026-07-14, Jamf Pro 11.30), so the connector now tries v4, then v3, then
+v1; the mobile inventory cannot sort by `id` and now sorts by
+`mobileDeviceId`; and a mobile device's user name and encryption are
+`realName` and `dataProtected`, not `fullName` and `dataProtection`. Device
+sync stays marked as not validated against a real tenant until a first real
+sync has been checked (`.agents/rules/itam-device-sync.md`).
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became
