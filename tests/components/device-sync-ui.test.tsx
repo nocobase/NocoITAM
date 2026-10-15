@@ -256,6 +256,13 @@ describe("a device's differences with the platform", () => {
   });
 });
 
+const renderCard = () =>
+  render(
+    <MemoryRouter>
+      <DeviceSyncCard />
+    </MemoryRouter>,
+  );
+
 describe('设置 → 设备同步', () => {
   beforeEach(() => {
     state.start.mockReset();
@@ -263,7 +270,7 @@ describe('设置 → 设备同步', () => {
 
   it('explains how to connect an unconfigured source and offers no sync', () => {
     state.status = [source({ configured: false })];
-    render(<DeviceSyncCard />);
+    renderCard();
     expect(
       screen.getByText('settings.deviceSync.notConfigured'),
     ).toBeInTheDocument();
@@ -304,7 +311,7 @@ describe('设置 → 设备同步', () => {
         },
       }),
     ];
-    render(<DeviceSyncCard />);
+    renderCard();
     expect(
       screen.getByText('settings.deviceSync.failures.AUTH_FAILED'),
     ).toBeInTheDocument();
@@ -322,7 +329,7 @@ describe('设置 → 设备同步', () => {
 
   it('holds the button while a pull runs', () => {
     state.status = [source({ running: true })];
-    render(<DeviceSyncCard />);
+    renderCard();
     expect(
       screen.getByRole('button', { name: /settings\.deviceSync\.running/ }),
     ).toBeDisabled();
@@ -354,7 +361,7 @@ describe('设置 → 设备同步: a connection entered on the page', () => {
   it('connects Intune: tests what was typed, then saves it', () => {
     state.connections = [connection()];
     state.testResult = { ok: true, devices: 3 };
-    render(<DeviceSyncCard />);
+    renderCard();
     fireEvent.click(
       screen.getByRole('button', {
         name: /settings\.deviceSync\.connection\.connect/,
@@ -407,7 +414,7 @@ describe('设置 → 设备同步: a connection entered on the page', () => {
         updatedById: 'mia',
       }),
     ];
-    render(<DeviceSyncCard />);
+    renderCard();
     expect(
       screen.getByText('settings.deviceSync.connection.saved'),
     ).toBeInTheDocument();
@@ -455,7 +462,7 @@ describe('设置 → 设备同步: a connection entered on the page', () => {
     state.connections = [
       connection({ origin: 'config', tenantId: 't', clientId: 'c' }),
     ];
-    render(<DeviceSyncCard />);
+    renderCard();
     expect(
       screen.getByText('settings.deviceSync.connection.fromConfig'),
     ).toBeInTheDocument();
@@ -469,7 +476,7 @@ describe('设置 → 设备同步: a connection entered on the page', () => {
   it('says why nothing can be stored without the secrets keys', () => {
     state.connections = [connection()];
     state.secretsReady = false;
-    render(<DeviceSyncCard />);
+    renderCard();
     expect(
       screen.getByText('settings.deviceSync.connection.secretsMissing'),
     ).toBeInTheDocument();
@@ -487,7 +494,7 @@ describe('设置 → 设备同步: a connection entered on the page', () => {
       failureCode: 'AUTH_FAILED',
       failure: 'AADSTS7000215: Invalid client secret',
     };
-    render(<DeviceSyncCard />);
+    renderCard();
     fireEvent.click(
       screen.getByRole('button', {
         name: /settings\.deviceSync\.connection\.connect/,

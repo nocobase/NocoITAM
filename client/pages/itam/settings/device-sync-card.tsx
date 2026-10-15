@@ -1,6 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { RefreshCw } from 'lucide-react';
 import type { ReactElement } from 'react';
+import { useNavigate } from 'react-router';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import {
 } from '@/lib/itam/device-sync';
 import { errorMessage, formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
+import { cn } from '@/lib/utils';
 
 import {
   DeviceConnectionActions,
@@ -116,6 +118,7 @@ function SourceBlock({
   const people = useReferenceNames([
     { collection: 'users', ids: run?.actorId ? [run.actorId] : [] },
   ]);
+  const navigate = useNavigate();
   const counts = source.counts;
   const hasData = counts.devices + counts.gone > 0;
   return (
@@ -200,7 +203,10 @@ function SourceBlock({
         </p>
       ) : null}
       {hasData ? (
-        <dl className='grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3'>
+        // Compact tiles, six across when there is room: the page-level
+        // StatCards are too large inside a platform's block. What waits on
+        // a person is tinted and opens 管理平台核对, where it is settled.
+        <div className='grid grid-cols-3 gap-2 lg:grid-cols-6'>
           {(
             [
               'devices',
@@ -210,18 +216,45 @@ function SourceBlock({
               'personal',
               'gone',
             ] as const
-          ).map((key) => (
-            <div
-              key={key}
-              className='flex items-baseline justify-between gap-2'
-            >
-              <dt className='text-muted-foreground'>
-                {t(`settings.deviceSync.counts.${key}`)}
-              </dt>
-              <dd className='font-medium tabular-nums'>{counts[key]}</dd>
-            </div>
-          ))}
-        </dl>
+          ).map((key) => {
+            const waiting =
+              (key === 'unlinked' || key === 'ambiguous') && counts[key] > 0;
+            const tile = (
+              <>
+                <span className='text-xs text-muted-foreground'>
+                  {t(`settings.deviceSync.counts.${key}`)}
+                </span>
+                <span
+                  className={cn(
+                    'font-heading text-base leading-tight font-semibold tabular-nums',
+                    waiting && 'text-warning-foreground',
+                  )}
+                >
+                  {counts[key]}
+                </span>
+              </>
+            );
+            const style =
+              'flex flex-col gap-0.5 rounded-lg bg-muted/50 px-3 py-1.5 text-left';
+            return waiting ? (
+              <button
+                key={key}
+                type='button'
+                className={cn(
+                  style,
+                  'bg-warning/40 transition-colors hover:bg-warning/60',
+                )}
+                onClick={() => void navigate('/device-sync?view=unregistered')}
+              >
+                {tile}
+              </button>
+            ) : (
+              <div key={key} className={style}>
+                {tile}
+              </div>
+            );
+          })}
+        </div>
       ) : null}
     </section>
   );
