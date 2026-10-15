@@ -4,7 +4,14 @@ import type { ReactElement } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { apiErrorBody } from '@/lib/itam/api';
 import {
@@ -49,30 +56,32 @@ export function DeviceSyncCard(): ReactElement {
     : null;
   return (
     <Card>
-      <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-3'>
-        <div className='space-y-1.5'>
-          <CardTitle>{t('settings.deviceSync.title')}</CardTitle>
-          <p className='text-sm text-muted-foreground'>
-            {t('settings.deviceSync.description')}
-          </p>
-        </div>
-        <Button
-          variant='outline'
-          size='sm'
-          disabled={!configured || running || start.isPending}
-          onClick={() => start.mutate()}
-        >
-          {running || start.isPending ? (
-            <Spinner data-icon='inline-start' />
-          ) : (
-            <RefreshCw data-icon='inline-start' />
-          )}
-          {t(
-            running
-              ? 'settings.deviceSync.running'
-              : 'settings.deviceSync.syncNow',
-          )}
-        </Button>
+      {/* The card's own action slot keeps 立即同步 at the right of the
+          title, however long the description runs. */}
+      <CardHeader>
+        <CardTitle>{t('settings.deviceSync.title')}</CardTitle>
+        <CardDescription>
+          {t('settings.deviceSync.description')}
+        </CardDescription>
+        <CardAction>
+          <Button
+            variant='outline'
+            size='sm'
+            disabled={!configured || running || start.isPending}
+            onClick={() => start.mutate()}
+          >
+            {running || start.isPending ? (
+              <Spinner data-icon='inline-start' />
+            ) : (
+              <RefreshCw data-icon='inline-start' />
+            )}
+            {t(
+              running
+                ? 'settings.deviceSync.running'
+                : 'settings.deviceSync.syncNow',
+            )}
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent className='space-y-5'>
         {error ? <p className='text-sm text-destructive'>{error}</p> : null}
