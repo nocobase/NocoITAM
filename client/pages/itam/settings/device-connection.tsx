@@ -19,8 +19,11 @@ import { useReferenceNames } from '@/lib/itam/references';
  * A platform's connection on 设置 → 设备同步 (2026-10-15): entered here
  * with the secret sealed on the server, or set in `config.yml`, which wins
  * and is shown read-only. The secret is written, never read back.
+ *
+ * Two parts: the buttons, beside the platform's name and status, and the
+ * notes about the connection, beneath them.
  */
-export function DeviceConnectionControls({
+export function DeviceConnectionActions({
   source,
   connection,
   secretsReady,
@@ -33,63 +36,36 @@ export function DeviceConnectionControls({
   const [editing, setEditing] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const { remove } = useDeviceConnectionActions();
-  const people = useReferenceNames([
-    {
-      collection: 'users',
-      ids: connection?.updatedById ? [connection.updatedById] : [],
-    },
-  ]);
   const name = t(`deviceSync.sourceNames.${source}`);
-
-  if (connection?.origin === 'config')
-    return (
-      <p className='text-sm text-muted-foreground'>
-        {t('settings.deviceSync.connection.fromConfig')}
-      </p>
-    );
-
+  // `config.yml`'s connection is changed on the server, not here.
+  if (connection?.origin === 'config') return null;
+  const stored = connection?.origin === 'settings';
   return (
-    <div className='space-y-2'>
-      {connection?.origin === 'settings' ? (
-        <p className='text-sm text-muted-foreground'>
-          {t('settings.deviceSync.connection.saved', {
-            clientId: connection.clientId,
-            name: people.users?.get(connection.updatedById ?? '') ?? '…',
-            date: formatDate(connection.updatedAt, true),
-          })}
-        </p>
-      ) : null}
-      {secretsReady ? null : (
-        <p className='text-sm text-destructive'>
-          {t('settings.deviceSync.connection.secretsMissing')}
-        </p>
-      )}
-      <div className='flex flex-wrap gap-2'>
+    <>
+      <Button
+        variant='outline'
+        size='sm'
+        disabled={!secretsReady}
+        onClick={() => setEditing(true)}
+      >
+        <Plug data-icon='inline-start' />
+        {t(
+          stored
+            ? 'settings.deviceSync.connection.edit'
+            : 'settings.deviceSync.connection.connect',
+        )}
+      </Button>
+      {stored ? (
         <Button
           variant='outline'
           size='sm'
-          disabled={!secretsReady}
-          onClick={() => setEditing(true)}
+          className='text-destructive hover:text-destructive'
+          onClick={() => setDisconnecting(true)}
         >
-          <Plug data-icon='inline-start' />
-          {t(
-            connection?.origin === 'settings'
-              ? 'settings.deviceSync.connection.edit'
-              : 'settings.deviceSync.connection.connect',
-          )}
+          <Unplug data-icon='inline-start' />
+          {t('settings.deviceSync.connection.disconnect')}
         </Button>
-        {connection?.origin === 'settings' ? (
-          <Button
-            variant='outline'
-            size='sm'
-            className='text-destructive hover:text-destructive'
-            onClick={() => setDisconnecting(true)}
-          >
-            <Unplug data-icon='inline-start' />
-            {t('settings.deviceSync.connection.disconnect')}
-          </Button>
-        ) : null}
-      </div>
+      ) : null}
       {editing ? (
         <ConnectionDialog
           source={source}
@@ -113,7 +89,45 @@ export function DeviceConnectionControls({
           remove.mutate(source, { onSuccess: () => setDisconnecting(false) })
         }
       />
-    </div>
+    </>
+  );
+}
+
+/** Where the connection comes from, who saved it, or why none can be. */
+export function DeviceConnectionNotes({
+  connection,
+  secretsReady,
+}: {
+  readonly connection: DeviceConnection | undefined;
+  readonly secretsReady: boolean;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const people = useReferenceNames([
+    {
+      collection: 'users',
+      ids: connection?.updatedById ? [connection.updatedById] : [],
+    },
+  ]);
+  if (connection?.origin === 'config')
+    return (
+      <p className='text-sm text-muted-foreground'>
+        {t('settings.deviceSync.connection.fromConfig')}
+      </p>
+    );
+  if (connection?.origin === 'settings')
+    return (
+      <p className='text-sm text-muted-foreground'>
+        {t('settings.deviceSync.connection.saved', {
+          clientId: connection.clientId,
+          name: people.users?.get(connection.updatedById ?? '') ?? '…',
+          date: formatDate(connection.updatedAt, true),
+        })}
+      </p>
+    );
+  return secretsReady ? null : (
+    <p className='text-sm text-destructive'>
+      {t('settings.deviceSync.connection.secretsMissing')}
+    </p>
   );
 }
 

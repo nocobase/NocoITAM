@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -25,7 +24,10 @@ import {
 import { errorMessage, formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
 
-import { DeviceConnectionControls } from './device-connection';
+import {
+  DeviceConnectionActions,
+  DeviceConnectionNotes,
+} from './device-connection';
 
 const RUN_TONE: Readonly<
   Record<SyncRun['status'], 'default' | 'secondary' | 'destructive' | 'outline'>
@@ -56,17 +58,11 @@ export function DeviceSyncCard(): ReactElement {
     : null;
   return (
     <Card>
-      {/* The card's own action slot keeps 立即同步 at the right of the
-          title; it holds the title's row only, so the description runs the
-          card's full width beneath both. */}
+      {/* 立即同步 follows the title, as each platform's buttons follow its
+          name and status below; the description runs the full width. */}
       <CardHeader>
-        <CardTitle className='self-center'>
-          {t('settings.deviceSync.title')}
-        </CardTitle>
-        <CardDescription className='col-span-2'>
-          {t('settings.deviceSync.description')}
-        </CardDescription>
-        <CardAction className='row-span-1'>
+        <div className='flex flex-wrap items-center gap-2'>
+          <CardTitle>{t('settings.deviceSync.title')}</CardTitle>
           <Button
             variant='outline'
             size='sm'
@@ -84,7 +80,10 @@ export function DeviceSyncCard(): ReactElement {
                 : 'settings.deviceSync.syncNow',
             )}
           </Button>
-        </CardAction>
+        </div>
+        <CardDescription>
+          {t('settings.deviceSync.description')}
+        </CardDescription>
       </CardHeader>
       <CardContent className='space-y-5'>
         {error ? <p className='text-sm text-destructive'>{error}</p> : null}
@@ -132,14 +131,18 @@ function SourceBlock({
               : 'settings.deviceSync.notConfigured',
           )}
         </Badge>
+        <DeviceConnectionActions
+          source={source.key}
+          connection={connection}
+          secretsReady={secretsReady}
+        />
       </div>
       {source.configured ? null : (
         <p className='text-sm text-muted-foreground'>
           {t(`settings.deviceSync.howTo.${source.key}`)}
         </p>
       )}
-      <DeviceConnectionControls
-        source={source.key}
+      <DeviceConnectionNotes
         connection={connection}
         secretsReady={secretsReady}
       />
