@@ -36,6 +36,7 @@ import {
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
+import { cn } from '@/lib/utils';
 
 /**
  * MDM 核对 (device sync, step 2, 2026-10-15): where the device management
@@ -68,10 +69,14 @@ export default function DeviceSyncReviewPage(): ReactElement {
         description={t('deviceSync.review.description')}
         actions={
           canSettle ? (
-            // A link drawn as a button: it goes to another page.
+            // A link drawn as a button: it goes to another page. Filled in
+            // the foreground colour, as asked (2026-10-15).
             <Link
               to='/settings/itam?tab=deviceSync'
-              className={buttonVariants({ variant: 'outline' })}
+              className={cn(
+                buttonVariants(),
+                'bg-foreground text-background hover:bg-foreground/85',
+              )}
             >
               <Settings2 data-icon='inline-start' />
               {t('deviceSync.review.settingsLink')}
