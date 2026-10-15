@@ -349,10 +349,14 @@ function UnmanagedView({
   const [reason, setReason] = useState('');
   const rows: readonly (UnmanagedDevice & Partial<ExemptDevice>)[] =
     review.data ?? [];
-  const people = useReferenceNames([
+  const names = useReferenceNames([
     {
       collection: 'users',
       ids: rows.flatMap((row) => (row.exemptedById ? [row.exemptedById] : [])),
+    },
+    {
+      collection: 'models',
+      ids: rows.flatMap((row) => (row.modelId ? [row.modelId] : [])),
     },
   ]);
   if (review.isLoading) return <Skeleton className='h-40 w-full rounded-xl' />;
@@ -364,6 +368,10 @@ function UnmanagedView({
           <TableHeader>
             <TableRow>
               <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
+              {/* The serial to find it by in MDM, and the model, which
+                  says which platform it belongs on (2026-10-15). */}
+              <TableHead>{t('fields.serialNo')}</TableHead>
+              <TableHead>{t('fields.model')}</TableHead>
               <TableHead>{t('deviceSync.review.columns.holder')}</TableHead>
               {view === 'exempted' ? (
                 <TableHead>{t('deviceSync.review.columns.reason')}</TableHead>
@@ -382,6 +390,12 @@ function UnmanagedView({
                     {deviceLabel(row)}
                   </RecordLink>
                 </TableCell>
+                <TableCell className='tabular-nums'>
+                  {row.serialNo ?? '—'}
+                </TableCell>
+                <TableCell>
+                  {row.modelId ? (names.models?.get(row.modelId) ?? '…') : '—'}
+                </TableCell>
                 <TableCell>
                   {row.assigneeType && row.assigneeId ? (
                     <HolderLink
@@ -398,7 +412,7 @@ function UnmanagedView({
                     <span className='block text-xs text-muted-foreground'>
                       {[
                         row.exemptedById
-                          ? (people.users?.get(row.exemptedById) ?? '…')
+                          ? (names.users?.get(row.exemptedById) ?? '…')
                           : null,
                         formatDate(row.exemptedAt ?? null),
                       ]

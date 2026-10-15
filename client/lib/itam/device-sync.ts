@@ -281,6 +281,8 @@ export interface UnmanagedDevice {
   readonly id: string;
   readonly deviceNo: string | null;
   readonly name: string | null;
+  readonly serialNo: string | null;
+  readonly modelId: string | null;
   readonly categoryId: string | null;
   readonly ownerId: string | null;
   readonly assigneeType: string | null;

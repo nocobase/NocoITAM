@@ -98,6 +98,9 @@ export interface UnmanagedDevice {
   readonly id: string;
   readonly deviceNo: string | null;
   readonly name: string | null;
+  /** What it is looked up by on a platform, and what says which one. */
+  readonly serialNo: string | null;
+  readonly modelId: string | null;
   readonly categoryId: string | null;
   readonly ownerId: string | null;
   readonly assigneeType: string | null;
@@ -317,6 +320,8 @@ export function createDeviceReviewService(deps: {
         'id',
         'deviceNo',
         'name',
+        'serialNo',
+        'modelId',
         'categoryId',
         'ownerId',
         'assigneeType',
@@ -332,6 +337,8 @@ export function createDeviceReviewService(deps: {
         id: String(device.id),
         deviceNo: asText(device.deviceNo) ?? null,
         name: asText(device.name) ?? null,
+        serialNo: asText(device.serialNo) ?? null,
+        modelId: asText(device.modelId) ?? null,
         categoryId: asText(device.categoryId) ?? null,
         ownerId: asText(device.ownerId) ?? null,
         assigneeType: asText(device.assigneeType) ?? null,

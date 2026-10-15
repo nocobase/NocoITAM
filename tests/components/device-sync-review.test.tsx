@@ -45,7 +45,10 @@ vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useItamAi: () => ({ available: false, ask: vi.fn() }),
 }));
 vi.mock('../../client/lib/itam/references.js', () => ({
-  useReferenceNames: () => ({ users: new Map([['mia', 'Mia']]) }),
+  useReferenceNames: () => ({
+    users: new Map([['mia', 'Mia']]),
+    models: new Map([['model-1', 'Dell OptiPlex 7020']]),
+  }),
 }));
 vi.mock('../../client/components/itam/holder-link.js', () => ({
   HolderLink: ({ holderId }: { holderId: string }) => (
@@ -63,6 +66,8 @@ const unmanaged: UnmanagedDevice = {
   id: 'd1',
   deviceNo: 'DE-000001',
   name: 'LINUX-WS',
+  serialNo: 'LNX-001',
+  modelId: 'model-1',
   categoryId: 'cat-desktop',
   ownerId: 'mia',
   assigneeType: 'person',
@@ -94,6 +99,9 @@ describe('MDM 核对 → 只在台账', () => {
   it('marks a device 不需要纳管 with a reason', () => {
     state.views = { unmanaged: [unmanaged] };
     show();
+    // The serial to find it by in MDM, and its model.
+    expect(screen.getByText('LNX-001')).toBeInTheDocument();
+    expect(screen.getByText('Dell OptiPlex 7020')).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('button', { name: 'deviceSync.review.exempt' }),
     );
