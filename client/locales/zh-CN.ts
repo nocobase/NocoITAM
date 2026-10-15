@@ -272,8 +272,8 @@ const zhCN: AppResource = {
       repairCreated: '创建维修单',
       repairCompleted: '维修完成',
       counted: '录入盘点结果',
-      managedLinked: '关联管理平台',
-      managedUnlinked: '解除管理平台关联',
+      managedLinked: '关联 MDM',
+      managedUnlinked: '解除 MDM 关联',
       managedDismissed: '以台账为准',
       unregisteredFound: '发现账外设备',
       resolved: '差异处理',
@@ -1770,7 +1770,7 @@ const zhCN: AppResource = {
       activeRepairs: '维修中',
       activeAudits: '进行中的盘点',
       loansDueToday: '借出逾期',
-      deviceChecks: '设备核对',
+      deviceChecks: 'MDM 信息不一致',
       leaverRecovery: '离职交接',
       pendingOnboarding: '入职准备',
       // The card lists everybody's now, so this says which part of a row
@@ -1808,8 +1808,8 @@ const zhCN: AppResource = {
       lowAccessories: '低于水位的配件',
       lowConsumables: '低于水位的耗材',
       lowComponents: '低于水位的组件',
-      managedUnregistered: '管理平台里有、台账未登记',
-      deviceUnmanaged: '在用但不在任何管理平台',
+      managedUnregistered: 'MDM 里有、台账未登记',
+      deviceUnmanaged: '在用但不在任何 MDM 中',
     },
     reminderCaptions: {
       warrantyExpiring: '在用设备',
@@ -1823,8 +1823,8 @@ const zhCN: AppResource = {
       lowAccessories: '可用数量低于最低库存水位',
       lowConsumables: '可用数量低于最低库存水位',
       lowComponents: '可用数量低于最低库存水位',
-      managedUnregistered: '设备管理平台报告了，台账里却没有这台设备',
-      deviceUnmanaged: '应纳管分类的在用设备，没有出现在任何已连接的管理平台中',
+      managedUnregistered: 'MDM 报告了，台账里却没有这台设备',
+      deviceUnmanaged: '应纳管分类的在用设备，没有出现在任何已连接的 MDM 中',
     },
   },
   data: {
@@ -1904,7 +1904,7 @@ const zhCN: AppResource = {
   deviceSync: {
     filter: {
       label: '同步状态',
-      linked: '已关联管理平台',
+      linked: '已关联 MDM',
       unmanaged: '未纳管',
       stale: '失联',
     },
@@ -1914,13 +1914,13 @@ const zhCN: AppResource = {
     prompts: {
       checkAction: '让 Noco 看看',
       check:
-        '请按「管理平台核对」技能看看设备 {{device}}（id：{{id}}）的这项差异：{{kind}}。说说最可能是怎么回事、怎么核实；能在台账上处理的，提出一份计划。',
+        '请按「MDM 核对」技能（device-sync）看看设备 {{device}}（id：{{id}}）的这项差异：{{kind}}。说说最可能是怎么回事、怎么核实；能在台账上处理的，提出一份计划。',
       checksAction: '让 Noco 解释这些差异',
       checks:
-        '请按「管理平台核对」技能看看现在所有的设备核对差异：最要紧的先说，每条说明最可能的原因和怎么核实；能在台账上处理的，整理成一份计划。',
+        '请按「MDM 核对」技能（device-sync）看看现在所有 MDM 信息不一致的设备：最要紧的先说，每条说明最可能的原因和怎么核实；能在台账上处理的，整理成一份计划。',
       unregisteredAction: '让 Noco 整理这批设备',
       unregistered:
-        '请按「管理平台核对」技能处理管理平台里有、台账未登记的设备：能补登记的补登记，序列号重复的找出该关联的那台，不该进台账的标为不纳入台账，整理成一份计划；拿不准的单独列出来问我。',
+        '请按「MDM 核对」技能（device-sync）处理 MDM 里有、台账未登记的设备：能补登记的补登记，序列号重复的找出该关联的那台，不该进台账的标为不纳入台账，整理成一份计划；拿不准的单独列出来问我。',
     },
     checks: {
       kinds: {
@@ -1943,28 +1943,36 @@ const zhCN: AppResource = {
     unlink: '解除关联',
     unlinkTitle: '解除关联',
     unlinkDescription:
-      '这台设备将不再显示 {{source}} 的信息。之后的同步也不会再按序列号自动关联它，需要时可以在管理平台核对页重新关联。',
+      '这台设备将不再显示 {{source}} 的信息。之后的同步也不会再按序列号自动关联它，需要时可以在 MDM 核对页重新关联。',
     onlineAfterLeaving_one: '{{count}} 台设备离职后仍在线',
     onlineAfterLeaving_other: '{{count}} 台设备离职后仍在线',
     review: {
-      title: '管理平台核对',
-      description: '设备管理平台报告的设备与台账不一致的地方',
+      title: 'MDM 核对',
+      settingsLink: 'MDM 设置',
+      description: '设备管理平台（MDM）报告的设备与台账不一致的地方',
       views: {
-        checks: '设备核对',
-        unregistered: '台账未登记',
-        unmanaged: '未纳管',
-        ignored: '不纳入台账',
+        checks: '信息不一致',
+        unregistered: '只在 MDM',
+        unmanaged: '只在台账',
+        ignored: '已忽略',
       },
       hints: {
         checks:
-          '失联、使用人不一致、状态不符的台账设备。到设备页处理，或以台账为准。',
+          '台账和 MDM 都有，但信息对不上：失联、使用人不一致、状态不符。到设备页处理，或以台账为准。',
         unregistered:
-          '管理平台报告了、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
+          'MDM 里有、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
         unmanaged:
-          '应纳管分类的在用设备，没有出现在任何已连接的管理平台中，需要在管理平台那边注册。',
-        ignored:
-          '标为不纳入台账的管理平台设备，以后的同步不再提示。恢复后会重新按序列号匹配。',
+          '台账里使用中或借出、分类属于应纳管分类（可在 MDM 设置中修改），却没有出现在任何已连接 MDM 中的设备，需要在 MDM 那边注册。',
       },
+      ignoredHeading: '已忽略 {{count}} 台',
+      ignoredManual_one:
+        '手动不纳入台账 {{count}} 台：以后的同步不再提示；点「恢复」会重新按序列号匹配。',
+      ignoredManual_other:
+        '手动不纳入台账 {{count}} 台：以后的同步不再提示；点「恢复」会重新按序列号匹配。',
+      ignoredPersonal_one:
+        '个人设备 {{count}} 台：「忽略个人设备」已开启，个人设备不参与核对。在 MDM 设置中关闭并保存后，会移到「只在 MDM」。',
+      ignoredPersonal_other:
+        '个人设备 {{count}} 台：「忽略个人设备」已开启，个人设备不参与核对。在 MDM 设置中关闭并保存后，会移到「只在 MDM」。',
       empty: '没有需要处理的设备',
       columns: {
         device: '设备',
@@ -1976,11 +1984,19 @@ const zhCN: AppResource = {
       sharedSerial_one: '{{count}} 台台账设备用了这个序列号',
       sharedSerial_other: '{{count}} 台台账设备用了这个序列号',
       register: '补登记',
+      registered: '已登记，并按序列号关联了 MDM：',
+      registerNotes: {
+        source: '从 {{source}} 补登记',
+        user: '主用户 {{user}}',
+        os: '系统 {{os}}',
+        separator: '；',
+      },
       link: '关联到已有设备',
       ignore: '不纳入台账',
       restore: '恢复',
+      byRule: '个人设备',
       linkTitle: '关联到已有设备',
-      linkDescription: '把管理平台设备「{{name}}」关联到台账里的一台设备。',
+      linkDescription: '把 MDM 设备「{{name}}」关联到台账里的一台设备。',
       candidates: '序列号相同的设备',
       pickDevice: '台账设备',
       ignoreTitle: '不纳入台账',
@@ -1988,8 +2004,8 @@ const zhCN: AppResource = {
       reason: '原因',
       reasonPlaceholder: '例如：测试虚拟机、外包人员自带设备',
     },
-    group: '管理平台',
-    notFound: '未在已连接的管理平台中找到',
+    group: 'MDM',
+    notFound: '未在已连接的 MDM 中找到',
     sources: { intune: 'Intune', jamf: 'Jamf' },
     sourceNames: { intune: 'Microsoft Intune', jamf: 'Jamf Pro' },
     openIn: '在 {{source}} 中打开',
@@ -2144,11 +2160,21 @@ const zhCN: AppResource = {
       'Cannot install on a disposed device': '不能安装到已报废的设备上',
       'Cannot issue to a person who has left': '不能领用给已离职人员',
       'Consumables are not returned': '耗材不可归还',
-      'No device management platform is configured': '尚未连接任何设备管理平台',
+      'No device management platform is configured': '尚未连接任何 MDM',
+      'The tenant ID is required': '请填写目录（租户）ID',
+      'The Jamf Pro address must start with https://':
+        'Jamf Pro 地址需要以 https:// 开头',
+      'The client ID is required': '请填写客户端 ID',
+      'The client secret is required': '请填写客户端密钥',
+      'This platform is connected in the server configuration file':
+        '这个平台已在服务器的 config.yml 中配置，不能在这里修改',
+      'The server has no secrets keys to store a secret with':
+        '服务器没有配置加密主密钥，不能保存密钥',
+      'The connection is incomplete': '连接信息不完整',
       'This platform record is not linked to a device':
-        '这条管理平台记录没有关联台账设备',
+        '这条 MDM 记录没有关联台账设备',
       'A linked platform record cannot be kept off the register':
-        '已关联台账设备的管理平台记录不能标为不纳入台账',
+        '已关联台账设备的 MDM 记录不能标为不纳入台账',
       'There is no such difference on this device': '这台设备上没有这项差异',
       'Demo data already exists; clear it first': '演示数据已存在，请先清除',
       'Disposal is only reached through the disposal process':
@@ -2235,30 +2261,62 @@ const zhCN: AppResource = {
     title: '设置',
     deviceSyncRules: {
       title: '核对规则',
-      description: '管理平台与台账不一致时，什么情况下提示',
-      staleDays: '失联天数',
-      staleDaysHint: '在用设备超过这么多天没有同步，算作失联',
-      recentDays: '状态不符的在线天数',
-      recentDaysHint: '台账上不在用的设备，这么多天内同步过，算作状态不符',
+      description: 'MDM 与台账不一致时，什么情况下提示',
+      staleDays: '在用设备多少天没联网算失联',
+      staleDaysHint:
+        '例：台账上分配给李娜在用的电脑，MDM 显示 45 天没联网，超过这个天数就提示「失联」，可能丢了或闲置了',
+      recentDays: '不在用的设备多少天内联过网算状态不符',
+      recentDaysHint:
+        '例：台账上是库存中、维修中或已报废的电脑，MDM 显示 2 天前还联过网，在这个天数内就提示「状态不符」，可能有人在用却没登记',
       managedCategories: '应纳管分类',
       managedCategoriesHint:
-        '这些分类（含子分类）的在用设备应当出现在管理平台中，否则提示未纳管',
+        '这些分类（含子分类）的在用设备应当出现在 MDM 中，否则提示未纳管',
       ignorePersonal: '忽略个人设备',
-      ignorePersonalHint: '管理平台标为个人（员工自带）的设备不参与任何核对',
-      ignoredLink: '查看不纳入台账的设备',
+      ignorePersonalHint: 'MDM 标为个人（员工自带）的设备不参与任何核对',
+      ignoredLink: '查看已忽略的设备',
     },
     deviceSync: {
-      title: '设备同步',
+      // The settings tab; the card on it is cardTitle (2026-10-15).
+      title: 'MDM',
+      cardTitle: 'MDM 同步',
       description:
-        '每天 01:30 从已连接的设备管理平台（Intune、Jamf Pro）拉取设备清单，按序列号关联台账设备。只读：不改动台账，也不改动管理平台。',
+        '每天 01:30 从已连接的设备管理平台（MDM：Intune、Jamf Pro）拉取设备清单，按序列号关联台账设备。只读：不改动台账，也不改动 MDM。',
       syncNow: '立即同步',
       running: '同步中…',
       configured: '已连接',
       notConfigured: '未配置',
       howTo: {
-        jamf: '在服务器的 config.yml 中 deviceSync.jamf 下填写 url（Jamf Pro 地址）、clientId、clientSecret（或设置环境变量 JAMF_URL、JAMF_CLIENT_ID、JAMF_CLIENT_SECRET），然后重启。在 Jamf Pro「设置 → 系统 → API 角色和客户端」建一个只含 Read Computers、Read Mobile Devices 权限的角色和客户端（Jamf Pro 10.49 及以上）。',
+        jamf: '先在 Jamf Pro「设置 → 系统 → API 角色和客户端」建一个只含 Read Computers、Read Mobile Devices 权限的角色，再用它建一个 API 客户端（Jamf Pro 10.49 及以上），然后点「连接」填写。也可以在服务器的 config.yml 中 deviceSync.jamf 下配置。',
         intune:
-          '在服务器的 config.yml 中 deviceSync.intune 下填写 tenantId、clientId、clientSecret（或设置环境变量 INTUNE_TENANT_ID、INTUNE_CLIENT_ID、INTUNE_CLIENT_SECRET），然后重启。Entra ID 应用注册需要 Microsoft Graph 应用权限 DeviceManagementManagedDevices.Read.All，并由管理员同意。',
+          '先在 Entra ID 注册一个应用，授予 Microsoft Graph 应用权限 DeviceManagementManagedDevices.Read.All 并由管理员同意，新建一个客户端密钥，然后点「连接」填写。也可以在服务器的 config.yml 中 deviceSync.intune 下配置。',
+      },
+      connection: {
+        connect: '连接',
+        edit: '修改连接',
+        disconnect: '断开连接',
+        title: '连接 {{name}}',
+        editTitle: '修改 {{name}} 连接',
+        description: '只需要读取设备的权限。密钥保存后加密存储，不会再显示。',
+        fields: {
+          tenantId: '目录（租户）ID',
+          url: 'Jamf Pro 地址',
+          clientId: '客户端 ID',
+          clientSecret: '客户端密钥',
+        },
+        urlPlaceholder: 'https://example.jamfcloud.com',
+        secretKept: '留空则保留已保存的密钥',
+        unreachable: '无法连接 MDM：请检查地址，以及服务器能否访问它',
+        test: '测试连接',
+        save: '保存',
+        testOk_one: '连接成功，读到第一页 {{count}} 台设备',
+        testOk_other: '连接成功，读到第一页 {{count}} 台设备',
+        fromConfig: '由服务器的 config.yml 配置，这里只能查看',
+        saved: '客户端 ID {{clientId}} · {{name}} 于 {{date}} 保存',
+        secretsMissing:
+          '服务器没有配置加密主密钥（config.yml 中的 secrets.keys），不能在这里保存密钥。请让管理员配置主密钥，或在 config.yml 中填写连接。',
+        disconnectTitle: '断开 {{name}}？',
+        disconnectDescription:
+          '删除保存的连接和密钥。已同步到的设备记录保留，之后不再同步这个平台，直到重新连接。',
       },
       lastRun: '最近一次同步',
       statuses: {
@@ -2275,20 +2333,25 @@ const zhCN: AppResource = {
       runCounts:
         '读取 {{seen}} 台，新增 {{added}} 台，关联 {{linked}} 台，{{gone}} 台已不在平台中',
       failures: {
-        AUTH_FAILED:
-          '登录被拒绝：请检查 config.yml 中的地址或租户、客户端 ID 和客户端密钥',
+        AUTH_FAILED: '登录被拒绝：请检查地址或租户 ID、客户端 ID 和客户端密钥',
         PERMISSION_MISSING:
           '缺少权限：Intune 需要 DeviceManagementManagedDevices.Read.All 并由管理员同意，Jamf Pro 需要 Read Computers 和 Read Mobile Devices',
-        UNAVAILABLE: '无法连接管理平台，今晚会再试',
-        INVALID_RESPONSE: '管理平台返回的内容无法识别',
+        UNAVAILABLE: '无法连接 MDM，今晚会再试',
+        INVALID_RESPONSE: 'MDM 返回的内容无法识别',
         INTERRUPTED: '同步过程中应用停止了',
       },
       lastSuccess: '最近一次完整同步：{{date}}',
+      retained_one:
+        '保留着之前同步到的 {{count}} 台设备记录（最近一次完整同步：{{date}}）',
+      retained_other:
+        '保留着之前同步到的 {{count}} 台设备记录（最近一次完整同步：{{date}}）',
+      retainedUndated_one: '保留着之前同步到的 {{count}} 台设备记录',
+      retainedUndated_other: '保留着之前同步到的 {{count}} 台设备记录',
       neverRun: '尚未同步。今晚 01:30 会自动同步，也可以点「立即同步」。',
       counts: {
         devices: '设备',
         linked: '已关联',
-        unlinked: '台账未登记',
+        unlinked: '只在 MDM',
         ambiguous: '序列号重复',
         personal: '个人设备',
         gone: '已不在平台中',
@@ -2739,9 +2802,9 @@ const zhCN: AppResource = {
         loan_device: '借出设备',
         return_devices: '归还设备',
         transfer_device: '调拨设备',
-        link_managed_device: '关联管理平台设备',
-        unlink_managed_device: '解除管理平台关联',
-        ignore_managed_device: '管理平台设备不纳入台账',
+        link_managed_device: '关联 MDM 设备',
+        unlink_managed_device: '解除 MDM 关联',
+        ignore_managed_device: 'MDM 设备不纳入台账',
         reserve_device: '预留设备',
         correct_device_status: '更正设备状态',
         assign_seat: '分配席位',

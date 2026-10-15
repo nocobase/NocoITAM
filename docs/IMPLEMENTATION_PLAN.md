@@ -2874,6 +2874,18 @@ Intune Plan 1 and one enrolled Windows 11 PC): the connection, the Graph
 list and every field ITAM reads were right, so Intune is recorded as
 validated, with what that check did and did not cover. Jamf Pro is not.
 
+### 2026-10-15 Device sync: connections entered on the settings page
+
+A platform can now be connected on 设置 → MDM as well as in
+`config.yml`, for a deployment whose operator does not edit the server's
+files. This revises decision 4 of the design (credentials only in
+`config.yml`): the credential still stays on the machine that runs the
+application, as NocoSolution guideline 1.5 asks, now in its own database with
+the client secret sealed by the framework's secrets service. `config.yml`
+wins for a platform it configures. The page tests a connection before saving
+it, never shows a stored secret, and refuses to store one without
+`secrets.keys`. Migration `202610150002_device_sync_connections`.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

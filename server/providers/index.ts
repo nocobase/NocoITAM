@@ -7,6 +7,7 @@ import ItamAgentsProvider from './itam-agents/index.js';
 export {
   approvalServiceToken,
   deviceServiceToken,
+  deviceConnectionsServiceToken,
   deviceSyncServiceToken,
   deviceReviewServiceToken,
   attachmentServiceToken,

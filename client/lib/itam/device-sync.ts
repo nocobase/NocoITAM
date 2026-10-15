@@ -127,6 +127,96 @@ export function useStartDeviceSync() {
   });
 }
 
+/**
+ * A platform's connection on 设置 → 设备同步 (2026-10-15): from
+ * `config.yml` (read-only here) or entered on the page. Never the secret.
+ */
+export interface DeviceConnection {
+  readonly source: DeviceSourceKey;
+  readonly origin: 'config' | 'settings' | null;
+  readonly tenantId: string | null;
+  readonly url: string | null;
+  readonly clientId: string | null;
+  readonly updatedAt: string | null;
+  readonly updatedById: string | null;
+}
+
+export interface DeviceConnectionInput {
+  readonly tenantId?: string;
+  readonly url?: string;
+  readonly clientId?: string;
+  /** Left out keeps the secret already stored. */
+  readonly clientSecret?: string;
+}
+
+export type ConnectionTestResult =
+  | { readonly ok: true; readonly devices: number }
+  | {
+      readonly ok: false;
+      readonly failureCode: string;
+      readonly failure: string;
+    };
+
+const CONNECTIONS_PATH = `${DEVICE_SYNC_PATH}/connections`;
+
+/** The connections, and whether the server can store a secret at all. */
+export function useDeviceConnections(): UseQueryResult<{
+  secretsReady: boolean;
+  connections: DeviceConnection[];
+}> {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['itam', DEVICE_SYNC_PATH, 'connections'],
+    queryFn: async () =>
+      (
+        await api.request<{
+          data: { secretsReady: boolean; connections: DeviceConnection[] };
+        }>({ path: CONNECTIONS_PATH })
+      ).data,
+  });
+}
+
+/** Saves or disconnects a connection; both refresh the whole page. */
+export function useDeviceConnectionActions() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: ['itam', DEVICE_SYNC_PATH] });
+  const save = useMutation({
+    mutationFn: async (input: {
+      source: DeviceSourceKey;
+      values: DeviceConnectionInput;
+    }) =>
+      (
+        await api.request<{ data: DeviceConnection }>({
+          path: `${CONNECTIONS_PATH}/${input.source}`,
+          method: 'PUT',
+          json: input.values,
+        })
+      ).data,
+    onSuccess: refresh,
+  });
+  const remove = useMutation({
+    mutationFn: async (source: DeviceSourceKey) =>
+      api.request({ path: `${CONNECTIONS_PATH}/${source}`, method: 'DELETE' }),
+    onSuccess: refresh,
+  });
+  const test = useMutation({
+    mutationFn: async (input: {
+      source: DeviceSourceKey;
+      values: DeviceConnectionInput;
+    }) =>
+      (
+        await api.request<{ data: ConnectionTestResult }>({
+          path: `${CONNECTIONS_PATH}/${input.source}/test`,
+          method: 'POST',
+          json: input.values,
+        })
+      ).data,
+  });
+  return { save, remove, test };
+}
+
 /** Device sync, step 2 (2026-10-15): where the platforms and the register disagree. */
 export type CheckKind = 'stale' | 'userMismatch' | 'statusMismatch';
 
@@ -167,6 +257,8 @@ export interface UnregisteredDevice {
   readonly suggestedModelId: string | null;
   readonly suggestedCategoryId: string | null;
   readonly suggestedManufacturerId: string | null;
+  /** The primary user's department, for 补登记. */
+  readonly suggestedDepartmentId: string | null;
   readonly candidates: readonly {
     readonly id: string;
     readonly label: string;
@@ -174,6 +266,8 @@ export interface UnregisteredDevice {
   readonly ignoredById: string | null;
   readonly ignoredAt: string | null;
   readonly ignoreReason: string | null;
+  /** Kept off by 核对规则 (a personal device), not by a person. */
+  readonly ignoredByRule: boolean;
   readonly consoleUrl: string | null;
   /** Every platform that reports it; a co-managed Mac is one row. */
   readonly sources: readonly DeviceSourceKey[];
@@ -204,7 +298,7 @@ type ReviewRow<V extends ReviewView> = V extends 'checks'
     ? UnmanagedDevice
     : UnregisteredDevice;
 
-/** One view of 管理平台核对. */
+/** One view of MDM 核对. */
 export function useDeviceReview<V extends ReviewView>(
   view: V,
 ): UseQueryResult<ReviewRow<V>[]> {

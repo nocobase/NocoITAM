@@ -1852,7 +1852,7 @@ const messages = {
       activeRepairs: 'Repairs in progress',
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
-      deviceChecks: 'Device checks',
+      deviceChecks: 'MDM mismatches',
       leaverRecovery: 'Offboarding',
       pendingOnboarding: 'Onboarding prep',
       // The card lists everybody's now, so this says which part of a row
@@ -2012,7 +2012,7 @@ const messages = {
         'Using the device sync method, look at device {{device}} (id: {{id}}) and this difference: {{kind}}. Say what most likely happened and how to check it; propose a plan for what can be settled on the register.',
       checksAction: 'Let Noco explain these',
       checks:
-        'Using the device sync method, go through all current device checks: the most urgent first, each with its most likely cause and how to check it; put what can be settled on the register into one plan.',
+        'Using the device sync method, go through every device where MDM and the register disagree: the most urgent first, each with its most likely cause and how to check it; put what can be settled on the register into one plan.',
       unregisteredAction: 'Let Noco sort these out',
       unregistered:
         'Using the device sync method, handle the platform devices the register lacks: register what can be registered, find the right device for shared serials, keep off the register what does not belong there, all in one plan; list anything you are unsure of and ask me.',
@@ -2047,24 +2047,32 @@ const messages = {
     onlineAfterLeaving_other: '{{count}} devices online after leaving',
     review: {
       title: 'Platform review',
+      settingsLink: 'MDM settings',
       description:
         'Where the device management platforms and the register disagree',
       views: {
-        checks: 'Device checks',
-        unregistered: 'Not on the register',
-        unmanaged: 'Unmanaged',
-        ignored: 'Kept off the register',
+        checks: 'Mismatched',
+        unregistered: 'Only in MDM',
+        unmanaged: 'Only on the register',
+        ignored: 'Ignored',
       },
       hints: {
         checks:
-          'Register devices that are silent, with another user, or online against their status. Settle each on its page, or keep the register.',
+          'On the register and in MDM, but they disagree: silent, with another user, or online against their status. Settle each on its page, or keep the register.',
         unregistered:
           'Devices a platform reports that the register lacks. Register one, link it to a device, or keep it off the register.',
         unmanaged:
-          'Devices in use of a managed category that no connected platform reports; they need enrolling on the platform.',
-        ignored:
-          'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again.',
+          'Register devices in use or on loan, of a managed category (changed in the MDM settings), that no connected MDM reports. They need enrolling in MDM.',
       },
+      ignoredHeading: 'Ignored ({{count}})',
+      ignoredManual_one:
+        'Kept off the register by hand, {{count}}: syncs no longer raise it; Restore matches it by serial again.',
+      ignoredManual_other:
+        'Kept off the register by hand, {{count}}: syncs no longer raise them; Restore matches each by serial again.',
+      ignoredPersonal_one:
+        'Personal device, {{count}}: Ignore personal devices is on, so it is left out of the review. Turn it off in the MDM settings and save, and it moves to Only in MDM.',
+      ignoredPersonal_other:
+        'Personal devices, {{count}}: Ignore personal devices is on, so they are left out of the review. Turn it off in the MDM settings and save, and they move to Only in MDM.',
       empty: 'Nothing to review',
       columns: {
         device: 'Device',
@@ -2076,9 +2084,17 @@ const messages = {
       sharedSerial_one: '{{count}} register device has this serial',
       sharedSerial_other: '{{count}} register devices have this serial',
       register: 'Register',
+      registered: 'Registered and linked to MDM by its serial:',
+      registerNotes: {
+        source: 'Registered from {{source}}',
+        user: 'primary user {{user}}',
+        os: 'system {{os}}',
+        separator: '; ',
+      },
       link: 'Link to a device',
       ignore: 'Keep off the register',
       restore: 'Restore',
+      byRule: 'Personal device',
       linkTitle: 'Link to a device',
       linkDescription:
         'Link the platform device “{{name}}” to a device on the register.',
@@ -2277,6 +2293,16 @@ const messages = {
       'Consumables are not returned': 'Consumables are not returned',
       'No device management platform is configured':
         'No device management platform is configured',
+      'The tenant ID is required': 'The tenant ID is required',
+      'The Jamf Pro address must start with https://':
+        'The Jamf Pro address must start with https://',
+      'The client ID is required': 'The client ID is required',
+      'The client secret is required': 'The client secret is required',
+      'This platform is connected in the server configuration file':
+        'This platform is connected in the server configuration file',
+      'The server has no secrets keys to store a secret with':
+        'The server has no secrets keys to store a secret with',
+      'The connection is incomplete': 'The connection is incomplete',
       'This platform record is not linked to a device':
         'This platform record is not linked to a device',
       'A linked platform record cannot be kept off the register':
@@ -2382,22 +2408,24 @@ const messages = {
       title: 'Review rules',
       description:
         'When a difference between the platforms and the register is raised',
-      staleDays: 'Days before silent',
+      staleDays: 'Days without contact before a device in use is silent',
       staleDaysHint:
-        'A device in use that has not synced for this long is silent',
-      recentDays: 'Days online against status',
+        'E.g. a laptop the register has in use by Lena that MDM last heard from 45 days ago: past this many days it is raised as silent, perhaps lost or idle',
+      recentDays: 'Days within which contact contradicts an off-duty status',
       recentDaysHint:
-        'A device the register has off duty that synced within this many days has a status that differs',
+        'E.g. a laptop the register has in stock, in repair or disposed of that MDM heard from 2 days ago: within this many days it is raised as a status that differs, perhaps in use without being recorded',
       managedCategories: 'Managed categories',
       managedCategoriesHint:
         'Devices in use of these categories (and their subcategories) should be on a platform, or they are unmanaged',
       ignorePersonal: 'Ignore personal devices',
       ignorePersonalHint:
         'Devices a platform marks personal (employee-owned) take part in no review',
-      ignoredLink: 'Devices kept off the register',
+      ignoredLink: 'Ignored devices',
     },
     deviceSync: {
-      title: 'Device sync',
+      // The settings tab; the card on it is cardTitle (2026-10-15).
+      title: 'MDM',
+      cardTitle: 'MDM sync',
       description:
         'Pulls the device list from each connected device management platform (Intune, Jamf Pro) every day at 01:30 and links register devices by serial number. Read only: it changes neither the register nor the platform.',
       syncNow: 'Sync now',
@@ -2405,9 +2433,39 @@ const messages = {
       configured: 'Connected',
       notConfigured: 'Not configured',
       howTo: {
-        jamf: 'Set url (the Jamf Pro address), clientId and clientSecret under deviceSync.jamf in config.yml on the server (or JAMF_URL, JAMF_CLIENT_ID and JAMF_CLIENT_SECRET), then restart. In Jamf Pro, under Settings → System → API roles and clients, create a role with only Read Computers and Read Mobile Devices, and a client with that role (Jamf Pro 10.49 or later).',
+        jamf: 'In Jamf Pro, under Settings → System → API roles and clients, create a role with only Read Computers and Read Mobile Devices and an API client with that role (Jamf Pro 10.49 or later), then press Connect. It can also be set under deviceSync.jamf in config.yml on the server.',
         intune:
-          'Set tenantId, clientId and clientSecret under deviceSync.intune in config.yml on the server (or INTUNE_TENANT_ID, INTUNE_CLIENT_ID and INTUNE_CLIENT_SECRET), then restart. The Entra ID app registration needs the Microsoft Graph application permission DeviceManagementManagedDevices.Read.All, with admin consent.',
+          'Register an app in Entra ID with the Microsoft Graph application permission DeviceManagementManagedDevices.Read.All and admin consent, create a client secret, then press Connect. It can also be set under deviceSync.intune in config.yml on the server.',
+      },
+      connection: {
+        connect: 'Connect',
+        edit: 'Edit connection',
+        disconnect: 'Disconnect',
+        title: 'Connect {{name}}',
+        editTitle: 'Edit the {{name}} connection',
+        description:
+          'Only permission to read devices is needed. The secret is stored encrypted and never shown again.',
+        fields: {
+          tenantId: 'Directory (tenant) ID',
+          url: 'Jamf Pro address',
+          clientId: 'Client ID',
+          clientSecret: 'Client secret',
+        },
+        urlPlaceholder: 'https://example.jamfcloud.com',
+        secretKept: 'Leave empty to keep the saved secret',
+        unreachable:
+          'The platform could not be reached: check the address, and that the server can reach it',
+        test: 'Test connection',
+        save: 'Save',
+        testOk_one: 'Connected: the first page holds {{count}} device',
+        testOk_other: 'Connected: the first page holds {{count}} devices',
+        fromConfig: "Set in the server's config.yml; read-only here",
+        saved: 'Client ID {{clientId}} · saved by {{name}} on {{date}}',
+        secretsMissing:
+          'The server has no secrets keys (secrets.keys in config.yml), so a secret cannot be stored here. Ask an administrator to configure them, or set the connection in config.yml.',
+        disconnectTitle: 'Disconnect {{name}}?',
+        disconnectDescription:
+          'Deletes the saved connection and secret. Device records already synced stay; this platform is no longer synced until it is connected again.',
       },
       lastRun: 'Latest sync',
       statuses: {
@@ -2425,7 +2483,7 @@ const messages = {
         '{{seen}} devices read, {{added}} new, {{linked}} linked, {{gone}} no longer reported',
       failures: {
         AUTH_FAILED:
-          'Sign-in refused: check the address or tenant, client ID and client secret in config.yml',
+          'Sign-in refused: check the address or tenant ID, client ID and client secret',
         PERMISSION_MISSING:
           'Permission missing: Intune needs DeviceManagementManagedDevices.Read.All with admin consent; Jamf Pro needs Read Computers and Read Mobile Devices',
         UNAVAILABLE:
@@ -2434,11 +2492,18 @@ const messages = {
         INTERRUPTED: 'The application stopped during this sync',
       },
       lastSuccess: 'Last complete sync {{date}}',
+      retained_one:
+        '{{count}} device record from earlier syncs is kept (last complete sync {{date}})',
+      retained_other:
+        '{{count}} device records from earlier syncs are kept (last complete sync {{date}})',
+      retainedUndated_one: '{{count}} device record from earlier syncs is kept',
+      retainedUndated_other:
+        '{{count}} device records from earlier syncs are kept',
       neverRun: 'Not synced yet. It runs tonight at 01:30, or press Sync now.',
       counts: {
         devices: 'Devices',
         linked: 'Linked',
-        unlinked: 'Not on the register',
+        unlinked: 'Only in MDM',
         ambiguous: 'Serial on several devices',
         personal: 'Personal devices',
         gone: 'No longer reported',

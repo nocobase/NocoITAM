@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { MonitorCheck, Plus } from 'lucide-react';
-import { useMemo, useRef, useState, type ReactElement } from 'react';
+import { useMemo, useState, type ReactElement } from 'react';
 import { useNavigate, useOutlet, useSearchParams } from 'react-router';
 
 import { FieldValue } from '@/components/itam/cells';
@@ -10,23 +10,18 @@ import { TreePath } from '@/components/itam/tree-path';
 import { DataTable, type DataTableColumn } from '@/components/itam/data-table';
 import { EmptyState } from '@/components/itam/empty-state';
 import { Page, PageHeader } from '@/components/itam/page-header';
-import { RecordFormDialog } from '@/components/itam/record-form-dialog';
+import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { FoundRecords } from '@/components/itam/found-records';
 import { ImportExport } from '@/components/itam/import-export';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useItamList, useItamMutations, type ItamRecord } from '@/lib/itam/api';
+import { useItamList, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
-import {
-  DEVICE_CREATE_FIELDS,
-  DEVICE_FIELDS,
-  holderCollection,
-} from '@/lib/itam/devices';
-import { addMonths, formatDate, text } from '@/lib/itam/format';
+import { DEVICE_FIELDS, holderCollection } from '@/lib/itam/devices';
+import { formatDate, text } from '@/lib/itam/format';
 import type { FieldDefinition } from '@/lib/itam/fields';
-import { useCurrentUserId } from '@/lib/itam/permissions';
 import { useReferenceNames } from '@/lib/itam/references';
 import { isTreeReference } from '@/lib/itam/tree';
 import { FOUND_IDS, FOUND_TITLE, foundIds } from '@/lib/itam/search';
@@ -102,8 +97,6 @@ function DevicesList(): ReactElement {
   const syncConnected = Boolean(
     (list.data as { syncConnected?: boolean } | undefined)?.syncConnected,
   );
-  const mutations = useItamMutations<ItamRecord>(DEVICES_PATH);
-  const currentUserId = useCurrentUserId();
 
   const columns = DEVICE_FIELDS.filter((field) => field.column);
   // Status, category (device categories only), location and department
@@ -151,7 +144,7 @@ function DevicesList(): ReactElement {
   const names = useReferenceNames(referenceRequests);
 
   // Another page can open the create form filled in, the way the other
-  // lists can (`?new=1&init.serialNo=…`): 补登记 on 管理平台核对 brings what
+  // lists can (`?new=1&init.serialNo=…`): 补登记 on MDM 核对 brings what
   // the platform knows (device sync, 2026-10-15).
   const prefill: Record<string, unknown> = {};
   for (const [key, value] of params.entries())
@@ -164,11 +157,6 @@ function DevicesList(): ReactElement {
       if (key.startsWith('init.')) next.delete(key);
     setParams(next, { replace: true });
   };
-  const derivedNameRef = useRef('');
-  // The model chosen in the create dialog and the warranty end it implied,
-  // so a changed purchase date recomputes a date the user never touched.
-  const derivedModelRef = useRef<ItamRecord | undefined>(undefined);
-  const derivedWarrantyRef = useRef('');
   const [searchOpen, setSearchOpen] = useState(
     Boolean(q || status || categoryId || locationId || departmentId),
   );
@@ -277,7 +265,7 @@ function DevicesList(): ReactElement {
               }}
               columns={columns.map((field) => field.key)}
             />
-            {/* 管理平台核对 has no menu entry (it is empty until a platform
+            {/* MDM 核对 has no menu entry (it is empty until a platform
                 is connected), so the device list leads to it while one is. */}
             {syncConnected ? (
               <Button
@@ -384,66 +372,14 @@ function DevicesList(): ReactElement {
         }}
       />
 
-      <RecordFormDialog
-        key={creating ? 'create' : 'closed'}
+      <DeviceCreateDialog
         open={creating}
         onOpenChange={(open) => {
           setCreating(open);
-          if (!open) {
-            mutations.create.reset();
-            clearPrefill();
-          }
+          if (!open) clearPrefill();
         }}
-        title={t('devices.new')}
-        fields={DEVICE_CREATE_FIELDS.map((key) =>
-          DEVICE_FIELDS.find((field) => field.key === key)!,
-        )}
-        initial={{
-          ...(currentUserId ? { ownerId: currentUserId } : {}),
-          ...prefill,
-        }}
-        derive={(change, values) => {
-          if (change.key !== 'modelId' && change.key !== 'purchaseDate')
-            return undefined;
-          const next: Record<string, unknown> = {};
-          if (change.key === 'modelId') {
-            derivedModelRef.current = change.record;
-            // Category and manufacturer follow the model, read-only.
-            next.categoryId = change.record?.categoryId ?? null;
-            next.manufacturerId = change.record?.manufacturerId ?? null;
-            // The name defaults to the model name and follows the model
-            // until the user types a name of their own.
-            const current = text(values.name);
-            if (!current || current === derivedNameRef.current) {
-              derivedNameRef.current = change.record
-                ? text(change.record.name)
-                : '';
-              next.name = derivedNameRef.current || null;
-            }
-          }
-          // Warranty end = purchase date + the model's warranty months,
-          // shown as soon as both are known; a date typed by hand stays
-          // (the server also fills the category default when the model
-          // has none).
-          const purchaseDate = text(
-            change.key === 'purchaseDate' ? change.value : values.purchaseDate,
-          );
-          const months = Number(derivedModelRef.current?.warrantyMonths ?? 0);
-          const warranty = text(values.warrantyEndDate);
-          if (!warranty || warranty === derivedWarrantyRef.current) {
-            derivedWarrantyRef.current =
-              purchaseDate && months > 0 ? addMonths(purchaseDate, months) : '';
-            next.warrantyEndDate = derivedWarrantyRef.current || null;
-          }
-          return next;
-        }}
-        submitting={mutations.create.isPending}
-        error={mutations.create.error}
-        onSubmit={async (values) => {
-          const created = await mutations.create.mutateAsync(values);
-          setCreating(false);
-          await navigate(`/devices/${created.id}`);
-        }}
+        initial={prefill}
+        onCreated={(created) => navigate(`/devices/${created.id}`)}
       />
     </Page>
   );

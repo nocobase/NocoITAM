@@ -1,20 +1,35 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { RefreshCw } from 'lucide-react';
 import type { ReactElement } from 'react';
+import { useNavigate } from 'react-router';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { apiErrorBody } from '@/lib/itam/api';
 import {
+  useDeviceConnections,
   useDeviceSyncStatus,
   useStartDeviceSync,
+  type DeviceConnection,
   type SourceStatus,
   type SyncRun,
 } from '@/lib/itam/device-sync';
 import { errorMessage, formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
+import { cn } from '@/lib/utils';
+
+import {
+  DeviceConnectionActions,
+  DeviceConnectionNotes,
+} from './device-connection';
 
 const RUN_TONE: Readonly<
   Record<SyncRun['status'], 'default' | 'secondary' | 'destructive' | 'outline'>
@@ -26,14 +41,16 @@ const RUN_TONE: Readonly<
 };
 
 /**
- * 设置 → 设备同步 (2026-10-14): each device management platform, whether
- * `config.yml` connects it, how its latest pull went and what it holds. The
- * credentials are never shown here: they stay on the server. A pull started
- * here runs in the background and the card follows it.
+ * 设置 → MDM (2026-10-14): each device management platform, its
+ * connection — from `config.yml`, or entered here since 2026-10-15 with the
+ * secret sealed on the server and never shown again — how its latest pull
+ * went and what it holds. A pull started here runs in the background and
+ * the card follows it.
  */
 export function DeviceSyncCard(): ReactElement {
   const { t } = useTranslation();
   const status = useDeviceSyncStatus();
+  const connections = useDeviceConnections();
   const start = useStartDeviceSync();
   const sources = status.data ?? [];
   const configured = sources.some((source) => source.configured);
@@ -43,35 +60,43 @@ export function DeviceSyncCard(): ReactElement {
     : null;
   return (
     <Card>
-      <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-3'>
-        <div className='space-y-1.5'>
-          <CardTitle>{t('settings.deviceSync.title')}</CardTitle>
-          <p className='text-sm text-muted-foreground'>
-            {t('settings.deviceSync.description')}
-          </p>
+      {/* 立即同步 follows the title, as each platform's buttons follow its
+          name and status below; the description runs the full width. */}
+      <CardHeader>
+        <div className='flex flex-wrap items-center gap-2'>
+          <CardTitle>{t('settings.deviceSync.cardTitle')}</CardTitle>
+          <Button
+            variant='outline'
+            disabled={!configured || running || start.isPending}
+            onClick={() => start.mutate()}
+          >
+            {running || start.isPending ? (
+              <Spinner data-icon='inline-start' />
+            ) : (
+              <RefreshCw data-icon='inline-start' />
+            )}
+            {t(
+              running
+                ? 'settings.deviceSync.running'
+                : 'settings.deviceSync.syncNow',
+            )}
+          </Button>
         </div>
-        <Button
-          variant='outline'
-          size='sm'
-          disabled={!configured || running || start.isPending}
-          onClick={() => start.mutate()}
-        >
-          {running || start.isPending ? (
-            <Spinner data-icon='inline-start' />
-          ) : (
-            <RefreshCw data-icon='inline-start' />
-          )}
-          {t(
-            running
-              ? 'settings.deviceSync.running'
-              : 'settings.deviceSync.syncNow',
-          )}
-        </Button>
+        <CardDescription>
+          {t('settings.deviceSync.description')}
+        </CardDescription>
       </CardHeader>
       <CardContent className='space-y-5'>
         {error ? <p className='text-sm text-destructive'>{error}</p> : null}
         {sources.map((source) => (
-          <SourceBlock key={source.key} source={source} />
+          <SourceBlock
+            key={source.key}
+            source={source}
+            connection={connections.data?.connections.find(
+              (connection) => connection.source === source.key,
+            )}
+            secretsReady={connections.data?.secretsReady ?? false}
+          />
         ))}
       </CardContent>
     </Card>
@@ -80,14 +105,19 @@ export function DeviceSyncCard(): ReactElement {
 
 function SourceBlock({
   source,
+  connection,
+  secretsReady,
 }: {
   readonly source: SourceStatus;
+  readonly connection: DeviceConnection | undefined;
+  readonly secretsReady: boolean;
 }): ReactElement {
   const { t } = useTranslation();
   const run = source.lastRun;
   const people = useReferenceNames([
     { collection: 'users', ids: run?.actorId ? [run.actorId] : [] },
   ]);
+  const navigate = useNavigate();
   const counts = source.counts;
   const hasData = counts.devices + counts.gone > 0;
   return (
@@ -103,13 +133,38 @@ function SourceBlock({
               : 'settings.deviceSync.notConfigured',
           )}
         </Badge>
+        <DeviceConnectionActions
+          source={source.key}
+          connection={connection}
+          secretsReady={secretsReady}
+        />
       </div>
       {source.configured ? null : (
         <p className='text-sm text-muted-foreground'>
           {t(`settings.deviceSync.howTo.${source.key}`)}
         </p>
       )}
-      {run ? (
+      <DeviceConnectionNotes
+        connection={connection}
+        secretsReady={secretsReady}
+      />
+      {/* Not connected (2026-10-15): no run to report, since nothing can
+          sync, and no tiles; only that records from before are kept, which
+          MDM 核对 still uses. */}
+      {!source.configured ? (
+        hasData ? (
+          <p className='text-sm text-muted-foreground'>
+            {source.lastSuccessAt
+              ? t('settings.deviceSync.retained', {
+                  count: counts.devices + counts.gone,
+                  date: formatDate(source.lastSuccessAt, true),
+                })
+              : t('settings.deviceSync.retainedUndated', {
+                  count: counts.devices + counts.gone,
+                })}
+          </p>
+        ) : null
+      ) : run ? (
         <div className='space-y-1 text-sm'>
           <div className='flex flex-wrap items-center gap-2'>
             <span className='text-muted-foreground'>
@@ -162,8 +217,11 @@ function SourceBlock({
           {t('settings.deviceSync.neverRun')}
         </p>
       ) : null}
-      {hasData ? (
-        <dl className='grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3'>
+      {source.configured && hasData ? (
+        // Compact tiles, six across when there is room: the page-level
+        // StatCards are too large inside a platform's block. What waits on
+        // a person is tinted and opens MDM 核对, where it is settled.
+        <div className='grid grid-cols-3 gap-2 lg:grid-cols-6'>
           {(
             [
               'devices',
@@ -173,18 +231,45 @@ function SourceBlock({
               'personal',
               'gone',
             ] as const
-          ).map((key) => (
-            <div
-              key={key}
-              className='flex items-baseline justify-between gap-2'
-            >
-              <dt className='text-muted-foreground'>
-                {t(`settings.deviceSync.counts.${key}`)}
-              </dt>
-              <dd className='font-medium tabular-nums'>{counts[key]}</dd>
-            </div>
-          ))}
-        </dl>
+          ).map((key) => {
+            const waiting =
+              (key === 'unlinked' || key === 'ambiguous') && counts[key] > 0;
+            const tile = (
+              <>
+                <span className='text-xs text-muted-foreground'>
+                  {t(`settings.deviceSync.counts.${key}`)}
+                </span>
+                <span
+                  className={cn(
+                    'font-heading text-base leading-tight font-semibold tabular-nums',
+                    waiting && 'text-warning-foreground',
+                  )}
+                >
+                  {counts[key]}
+                </span>
+              </>
+            );
+            const style =
+              'flex flex-col gap-0.5 rounded-lg bg-muted/50 px-3 py-1.5 text-left';
+            return waiting ? (
+              <button
+                key={key}
+                type='button'
+                className={cn(
+                  style,
+                  'bg-warning/40 transition-colors hover:bg-warning/60',
+                )}
+                onClick={() => void navigate('/device-sync?view=unregistered')}
+              >
+                {tile}
+              </button>
+            ) : (
+              <div key={key} className={style}>
+                {tile}
+              </div>
+            );
+          })}
+        </div>
       ) : null}
     </section>
   );

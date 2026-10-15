@@ -69,6 +69,8 @@ export interface UnregisteredDevice {
   /** That model's category and maker, which the create form shows with it. */
   readonly suggestedCategoryId: string | null;
   readonly suggestedManufacturerId: string | null;
+  /** The primary user's department, for 补登记. */
+  readonly suggestedDepartmentId: string | null;
   /** For a serial several devices share: those devices. */
   readonly candidates: readonly {
     readonly id: string;
@@ -77,6 +79,12 @@ export interface UnregisteredDevice {
   readonly ignoredById: string | null;
   readonly ignoredAt: string | null;
   readonly ignoreReason: string | null;
+  /**
+   * Kept off the register by 核对规则 rather than by a person: a personal
+   * device while 忽略个人设备 is on (2026-10-15). Listed with the ignored
+   * so it can be found; the rule, not a row's 恢复, brings it back.
+   */
+  readonly ignoredByRule: boolean;
   readonly consoleUrl: string | null;
   /**
    * Every platform that reports this device (step 3): a Mac in both Intune
@@ -280,6 +288,11 @@ export function createDeviceReviewService(deps: {
   };
 
   /** Models by their normalized name and part code, for 补登记. */
+  /**
+   * What 补登记 can be filled with from the register's own master data
+   * (2026-10-15): models by name or part code, makers by name, and each
+   * person's department.
+   */
   const modelIndex = async () => {
     const models = await database
       .query()
@@ -292,20 +305,62 @@ export function createDeviceReviewService(deps: {
         categoryId: string | null;
         manufacturerId: string | null;
       }>();
-    const index = new Map<string, (typeof models)[number]>();
+    const byName = new Map<string, (typeof models)[number]>();
     for (const model of models) {
       for (const key of [normalizeName(model.name), normalizeName(model.code)])
-        if (key && !index.has(key)) index.set(key, model);
+        if (key && !byName.has(key)) byName.set(key, model);
     }
-    return index;
+    const makers = new Map<string, string>();
+    for (const maker of await database
+      .query()
+      .selectFrom('manufacturers')
+      .select(['id', 'name'])
+      .execute<{ id: string; name: string }>()) {
+      const key = normalizeName(maker.name);
+      if (key && !makers.has(key)) makers.set(key, maker.id);
+    }
+    const departments = new Map<string, string>();
+    for (const person of await database
+      .query()
+      .selectFrom('people')
+      .select(['id', 'departmentId'])
+      .execute<{ id: string; departmentId: string | null }>())
+      if (person.departmentId) departments.set(person.id, person.departmentId);
+    return {
+      /**
+       * The register model a platform names: as written, without the maker
+       * it starts with ("HP ZHAN66 16+ G1i" is the model "ZHAN66 16+ G1i"),
+       * or with the maker put in front.
+       */
+      model(maker: unknown, model: unknown) {
+        const name = normalizeName(model);
+        const make = normalizeName(maker);
+        if (!name) return undefined;
+        const bare =
+          make && name.startsWith(`${make} `)
+            ? name.slice(make.length + 1)
+            : name;
+        return (
+          byName.get(name) ??
+          byName.get(bare) ??
+          (make ? byName.get(`${make} ${name}`) : undefined)
+        );
+      },
+      maker: (maker: unknown) => makers.get(normalizeName(maker)),
+      department: (personId: string | null) =>
+        personId ? departments.get(personId) : undefined,
+    };
   };
 
   const toUnregistered = (
     row: Row,
     models: Awaited<ReturnType<typeof modelIndex>>,
     candidates: Map<string, { id: string; label: string }[]>,
+    urlOf: (source: string, externalId: string) => string | null,
   ): UnregisteredDevice => {
     const serial = asText(row.serialNo) ?? null;
+    const model = models.model(row.manufacturer, row.model);
+    const personId = asText(row.personId) ?? null;
     return {
       id: String(row.id),
       source: String(row.source),
@@ -316,21 +371,24 @@ export function createDeviceReviewService(deps: {
       model: asText(row.model) ?? null,
       osName: asText(row.osName) ?? null,
       osVersion: asText(row.osVersion) ?? null,
-      personId: asText(row.personId) ?? null,
+      personId,
       userName: asText(row.userName) ?? asText(row.userPrincipal) ?? null,
       ownership: String(row.ownership),
       lastSyncAt: iso(row.lastSyncAt),
       matchState: String(row.matchState),
-      suggestedModelId: models.get(normalizeName(row.model))?.id ?? null,
-      suggestedCategoryId:
-        models.get(normalizeName(row.model))?.categoryId ?? null,
+      suggestedModelId: model?.id ?? null,
+      suggestedCategoryId: model?.categoryId ?? null,
+      // The model's maker, or one of the platform's maker name.
       suggestedManufacturerId:
-        models.get(normalizeName(row.model))?.manufacturerId ?? null,
+        model?.manufacturerId ?? models.maker(row.manufacturer) ?? null,
+      // The primary user's department, when the user is a known person.
+      suggestedDepartmentId: models.department(personId) ?? null,
       candidates: serial ? (candidates.get(serial) ?? []) : [],
       ignoredById: asText(row.ignoredById) ?? null,
       ignoredAt: iso(row.ignoredAt),
       ignoreReason: asText(row.ignoreReason) ?? null,
-      consoleUrl: sync.consoleUrlOf(String(row.source), String(row.externalId)),
+      ignoredByRule: false,
+      consoleUrl: urlOf(String(row.source), String(row.externalId)),
       sources: [String(row.source)],
     };
   };
@@ -567,7 +625,10 @@ export function createDeviceReviewService(deps: {
       const rows = await query.orderBy('lastSyncAt', 'desc').execute<Row>();
       const models = await modelIndex();
       const shared = await sharedSerials(rows);
-      return fold(rows.map((row) => toUnregistered(row, models, shared)));
+      const urlOf = await sync.consoleUrls();
+      return fold(
+        rows.map((row) => toUnregistered(row, models, shared, urlOf)),
+      );
     },
 
     async ignored() {
@@ -578,8 +639,29 @@ export function createDeviceReviewService(deps: {
         .where('matchState', '=', 'ignored')
         .orderBy('ignoredAt', 'desc')
         .execute<Row>();
+      // The personal devices 核对规则 keeps out of 台账未登记, after those
+      // a person kept off: otherwise they are on no list at all.
+      const config = limits(await settings.get('deviceSync'));
+      const byRule = config.ignorePersonal
+        ? await database
+            .query()
+            .selectFrom('managedDevices')
+            .selectAll()
+            .where('matchState', 'in', ['unlinked', 'ambiguous'])
+            .where('ownership', '=', 'personal')
+            .where('goneAt', 'is', null)
+            .orderBy('lastSyncAt', 'desc')
+            .execute<Row>()
+        : [];
       const models = await modelIndex();
-      return fold(rows.map((row) => toUnregistered(row, models, new Map())));
+      const urlOf = await sync.consoleUrls();
+      return fold([
+        ...rows.map((row) => toUnregistered(row, models, new Map(), urlOf)),
+        ...byRule.map((row) => ({
+          ...toUnregistered(row, models, new Map(), urlOf),
+          ignoredByRule: true,
+        })),
+      ]);
     },
 
     async unmanaged() {

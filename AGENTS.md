@@ -152,19 +152,19 @@ When the built-in mechanism genuinely cannot express what is being asked, changi
 
 ## Index
 
-| Read                                                                       | When                                                                                                                                |
-| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [.agents/rules/components.md](.agents/rules/components.md)                 | Adding or changing a component, a shadcn primitive, a UI Library item, or the visual design                                         |
-| [.agents/rules/shell.md](.agents/rules/shell.md)                           | Changing layouts, the header, sidebar, breadcrumbs, the account menu or loading indicators                                          |
-| [.agents/rules/build-and-deploy.md](.agents/rules/build-and-deploy.md)     | Changing the build, packing a deployment, the Docker image, `CDN_BASE_URL`, or building for another platform                        |
-| [.agents/rules/itam-conventions.md](.agents/rules/itam-conventions.md)     | Adding an ITAM domain, or changing the shell, the assistant's entry points or the shared tag, detail and list components            |
-| [.agents/rules/itam-foundations.md](.agents/rules/itam-foundations.md)     | Writing a service, route, transaction, date or JSON query, notification, CSV import or export, or reading `config.yml`              |
-| [.agents/rules/itam-assistant.md](.agents/rules/itam-assistant.md)         | Changing Noco, its commands or plans, the chat, an AI shortcut, AI 整理, receiving by document, or any model call                   |
-| [.agents/rules/itam-workbench.md](.agents/rules/itam-workbench.md)         | Changing the workbench, 需要关注, to-do cards and their scope, the status boards, or the scheduled jobs                             |
-| [.agents/rules/itam-people.md](.agents/rules/itam-people.md)               | Changing who signs in, a person's 归属 tab, offboarding and handover, onboarding kits and joiners, or leavers' accounts             |
-| [.agents/rules/itam-procurement.md](.agents/rules/itam-procurement.md)     | Changing purchase orders, their lines, receiving, approvals or a request's 负责人                                                   |
-| [.agents/rules/itam-assets.md](.agents/rules/itam-assets.md)               | Changing devices, stock, entitlements, stocktakes, repairs or disposals, or naming anything about assets                            |
-| [.agents/rules/itam-device-sync.md](.agents/rules/itam-device-sync.md)     | Changing device sync: the Intune / Jamf connectors, `managedDevices`, matching, the device page's 管理平台 group or 设置 → 设备同步 |
-| [.agents/rules/itam-authorization.md](.agents/rules/itam-authorization.md) | Changing a grant, a composite resource, a page grant, a permission set or what a role may do                                        |
-| [.agents/rules/itam-data-and-demo.md](.agents/rules/itam-data-and-demo.md) | Changing a seed, the demo generator or the demo's accounts                                                                          |
-| [.agents/rules/itam-ui.md](.agents/rules/itam-ui.md)                       | Changing a list, detail page, form, dialog, the record drawer, master-data pages, the global search, menus or tags                  |
+| Read                                                                       | When                                                                                                                      |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| [.agents/rules/components.md](.agents/rules/components.md)                 | Adding or changing a component, a shadcn primitive, a UI Library item, or the visual design                               |
+| [.agents/rules/shell.md](.agents/rules/shell.md)                           | Changing layouts, the header, sidebar, breadcrumbs, the account menu or loading indicators                                |
+| [.agents/rules/build-and-deploy.md](.agents/rules/build-and-deploy.md)     | Changing the build, packing a deployment, the Docker image, `CDN_BASE_URL`, or building for another platform              |
+| [.agents/rules/itam-conventions.md](.agents/rules/itam-conventions.md)     | Adding an ITAM domain, or changing the shell, the assistant's entry points or the shared tag, detail and list components  |
+| [.agents/rules/itam-foundations.md](.agents/rules/itam-foundations.md)     | Writing a service, route, transaction, date or JSON query, notification, CSV import or export, or reading `config.yml`    |
+| [.agents/rules/itam-assistant.md](.agents/rules/itam-assistant.md)         | Changing Noco, its commands or plans, the chat, an AI shortcut, AI 整理, receiving by document, or any model call         |
+| [.agents/rules/itam-workbench.md](.agents/rules/itam-workbench.md)         | Changing the workbench, 需要关注, to-do cards and their scope, the status boards, or the scheduled jobs                   |
+| [.agents/rules/itam-people.md](.agents/rules/itam-people.md)               | Changing who signs in, a person's 归属 tab, offboarding and handover, onboarding kits and joiners, or leavers' accounts   |
+| [.agents/rules/itam-procurement.md](.agents/rules/itam-procurement.md)     | Changing purchase orders, their lines, receiving, approvals or a request's 负责人                                         |
+| [.agents/rules/itam-assets.md](.agents/rules/itam-assets.md)               | Changing devices, stock, entitlements, stocktakes, repairs or disposals, or naming anything about assets                  |
+| [.agents/rules/itam-device-sync.md](.agents/rules/itam-device-sync.md)     | Changing device sync: the Intune / Jamf connectors, `managedDevices`, matching, the device page's MDM group or 设置 → MDM |
+| [.agents/rules/itam-authorization.md](.agents/rules/itam-authorization.md) | Changing a grant, a composite resource, a page grant, a permission set or what a role may do                              |
+| [.agents/rules/itam-data-and-demo.md](.agents/rules/itam-data-and-demo.md) | Changing a seed, the demo generator or the demo's accounts                                                                |
+| [.agents/rules/itam-ui.md](.agents/rules/itam-ui.md)                       | Changing a list, detail page, form, dialog, the record drawer, master-data pages, the global search, menus or tags        |

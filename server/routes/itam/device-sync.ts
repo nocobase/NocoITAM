@@ -13,10 +13,15 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import {
+  deviceConnectionsServiceToken,
   deviceReviewServiceToken,
   deviceServiceToken,
   deviceSyncServiceToken,
 } from '../../providers/index.js';
+import {
+  DEVICE_SOURCES,
+  SourceError,
+} from '../../providers/itam/device-sources.js';
 import { compileAuthzScope } from '../../providers/itam/authz-filter.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
 import { BusinessRuleError } from '../../providers/itam/errors.js';
@@ -51,6 +56,7 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
     const review = app.container.resolve(deviceReviewServiceToken);
     const devices = app.container.resolve(deviceServiceToken);
     const database = app.container.resolve(databaseManagerToken);
+    const connections = app.container.resolve(deviceConnectionsServiceToken);
 
     routes.use('*', auth.required(), authorization.middleware());
     const settingsGrant = requireGrant(ITAM_SETTINGS_RESOURCE, 'update');
@@ -74,6 +80,76 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
             'deviceSync.notConfigured',
           );
         return context.json({ data: runs }, 202);
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // A platform's connection entered here rather than in `config.yml`
+    // (2026-10-15), under the same settings grant. The client secret goes
+    // in and never comes back out.
+    const sourceParam = z.enum(DEVICE_SOURCES);
+    const connectionInput = z.object({
+      tenantId: z.string().max(255).optional(),
+      url: z.string().max(1024).optional(),
+      clientId: z.string().max(255).optional(),
+      clientSecret: z.string().max(4096).optional(),
+    });
+
+    routes.get('/connections', settingsGrant, async (context) => {
+      try {
+        return context.json({
+          data: {
+            secretsReady: connections.secretsReady(),
+            connections: await connections.describe(),
+          },
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    routes.put('/connections/:source', settingsGrant, async (context) => {
+      try {
+        const source = sourceParam.parse(context.req.param('source'));
+        const input = connectionInput.parse(await readJsonObject(context));
+        return context.json({
+          data: await connections.save(source, input, principalId(context)),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    routes.delete('/connections/:source', settingsGrant, async (context) => {
+      try {
+        const source = sourceParam.parse(context.req.param('source'));
+        await connections.remove(source, principalId(context));
+        return context.json({ data: { source } });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // Signs in and reads one page, storing nothing. A refused sign-in or a
+    // missing permission is the answer the person asked for, not an error.
+    routes.post('/connections/:source/test', settingsGrant, async (context) => {
+      try {
+        const source = sourceParam.parse(context.req.param('source'));
+        const input = connectionInput.parse(await readJsonObject(context));
+        try {
+          const result = await connections.test(source, input);
+          return context.json({ data: { ok: true, ...result } });
+        } catch (error) {
+          if (!(error instanceof SourceError)) throw error;
+          return context.json({
+            data: {
+              ok: false,
+              failureCode: error.code,
+              failure: error.message,
+            },
+          });
+        }
       } catch (error) {
         return errorResponse(context, error);
       }
@@ -108,7 +184,7 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
         throw new BusinessRuleError('Device not found', 'deviceSync.noDevice');
     };
 
-    // 管理平台核对: one view at a time. Everything here concerns devices, so
+    // MDM 核对: one view at a time. Everything here concerns devices, so
     // it is listed to whoever may read them.
     routes.get('/review', async (context) => {
       try {

@@ -302,7 +302,7 @@ export const agentCommandRoutes: AppApiRouteContribution<Application> =
     );
 
     // Device sync (step 4, 2026-10-15): where the management platforms and
-    // the register disagree, the way 管理平台核对 lists it.
+    // the register disagree, the way MDM 核对 lists it.
     router.get(
       '/assistant/device-sync/review',
       describeRoute({

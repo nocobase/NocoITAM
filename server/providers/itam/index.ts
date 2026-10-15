@@ -12,6 +12,7 @@ import {
   realtimeServiceToken,
   type RealtimePublicTopic,
 } from '@nocobase/app-server/realtime';
+import { secretsServiceToken } from '@nocobase/app-server/secrets';
 import { databaseManagerToken } from '@nocobase/db';
 import {
   ServiceProvider,
@@ -22,6 +23,11 @@ import { approvalServiceToken, createApprovalService } from './approvals.js';
 import { auditServiceToken, createAuditService } from './audits.js';
 import { deviceServiceToken, createDeviceService } from './devices.js';
 import { configuredSources } from './device-sources.js';
+import {
+  createDeviceConnectionsService,
+  createDeviceConnectionsSecretsStore,
+  deviceConnectionsServiceToken,
+} from './device-connections.js';
 import {
   createDeviceSyncService,
   deviceSyncServiceToken,
@@ -103,6 +109,7 @@ import {
 export {
   approvalServiceToken,
   commentServiceToken,
+  deviceConnectionsServiceToken,
   deviceServiceToken,
   deviceSyncServiceToken,
   deviceReviewServiceToken,
@@ -601,18 +608,32 @@ export default class ItamProvider extends ServiceProvider<Application> {
         container.resolve(settingsServiceToken),
       ),
     );
+    // Device sync connections: `config.yml`'s, or those entered on 设置 →
+    // 设备同步 with the secret sealed (`device-connections.ts`, 2026-10-15).
+    container.singleton(deviceConnectionsServiceToken, () =>
+      createDeviceConnectionsService({
+        database: container.resolve(databaseManagerToken),
+        history: container.resolve(historyServiceToken),
+        config: () => this.app.config?.get<DeviceSyncConfig>('deviceSync'),
+        secrets: () =>
+          container.has(secretsServiceToken)
+            ? container.resolve(secretsServiceToken)
+            : undefined,
+      }),
+    );
     // Device sync: the devices Intune reports, kept apart from the register
     // and linked to it by serial (`device-sync.ts`, 2026-10-14). The sources
-    // are read from `config.yml` at each pull; a test container has none.
+    // are read from the connections at each pull; a test container has none.
     container.singleton(deviceSyncServiceToken, () =>
       createDeviceSyncService({
         database: container.resolve(databaseManagerToken),
         history: container.resolve(historyServiceToken),
-        sources: () =>
+        sources: async () =>
           configuredSources(
-            this.app.config?.get<DeviceSyncConfig>('deviceSync'),
+            await container.resolve(deviceConnectionsServiceToken).effective(),
           ),
-        consoles: () => this.app.config?.get<DeviceSyncConfig>('deviceSync'),
+        consoles: () =>
+          container.resolve(deviceConnectionsServiceToken).effective(),
         touched: () => container.resolve(itamChangesToken).touched(),
         log: (message, error) => {
           if (container.has(loggingToken))
@@ -672,6 +693,16 @@ export default class ItamProvider extends ServiceProvider<Application> {
   }
 
   public override boot(): Promise<void> {
+    // The sealed client secrets of device sync connections, for `nocobase
+    // secrets status` and `secrets rotate` (2026-10-15).
+    if (this.app.container.has(secretsServiceToken))
+      this.app.container
+        .resolve(secretsServiceToken)
+        .registerStore(
+          createDeviceConnectionsSecretsStore(() =>
+            this.app.container.resolve(databaseManagerToken).connection(),
+          ),
+        );
     // Defined before any page subscribes, which a topic must be.
     if (this.app.container.has(realtimeServiceToken))
       this.changesTopic ??= this.app.container
