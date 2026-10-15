@@ -5,6 +5,7 @@ import { useState, type ReactElement } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { EmptyState } from '@/components/itam/empty-state';
 import { HistoryBackButton } from '@/components/itam/history-back-button';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { HolderLink } from '@/components/itam/holder-link';
@@ -176,13 +177,10 @@ function useReviewCounts(): Partial<Record<ReviewView, number>> {
   };
 }
 
+/** The record lists' own empty state. */
 function Empty(): ReactElement {
   const { t } = useTranslation();
-  return (
-    <p className='rounded-xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground'>
-      {t('deviceSync.review.empty')}
-    </p>
-  );
+  return <EmptyState title={t('deviceSync.review.empty')} />;
 }
 
 const deviceLabel = (row: {
@@ -206,73 +204,75 @@ function ChecksView(): ReactElement {
   if (review.isLoading) return <Skeleton className='h-40 w-full rounded-xl' />;
   if (rows.length === 0) return <Empty />;
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
-          <TableHead>{t('deviceSync.review.columns.difference')}</TableHead>
-          <TableHead>{t('deviceSync.fields.lastSync')}</TableHead>
-          <TableHead>{t('deviceSync.fields.user')}</TableHead>
-          <TableHead>{t('fields.owner')}</TableHead>
-          <TableHead />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map((row: DeviceCheck) => (
-          <TableRow key={`${row.deviceId}:${row.kind}`}>
-            <TableCell>
-              <RecordLink
-                to={`/devices/${row.deviceId}`}
-                className='font-medium text-foreground hover:underline'
-              >
-                {deviceLabel(row)}
-              </RecordLink>
-            </TableCell>
-            <TableCell>
-              <Badge variant={row.critical ? 'destructive' : 'outline'}>
-                {t(`deviceSync.checks.kinds.${row.kind}`)}
-              </Badge>
-              {row.kind === 'statusMismatch' ? (
-                <span className='ml-2 text-xs text-muted-foreground'>
-                  {t(`enums.deviceStatus.${row.status}`)}
-                </span>
-              ) : null}
-            </TableCell>
-            <TableCell className='whitespace-nowrap tabular-nums'>
-              {row.goneAt
-                ? t('deviceSync.gone', { date: formatDate(row.goneAt) })
-                : formatDate(row.lastSyncAt, true)}
-            </TableCell>
-            <TableCell>
-              {row.personId ? (
-                <HolderLink holderType='person' holderId={row.personId} />
-              ) : (
-                (row.userName ?? '—')
-              )}
-            </TableCell>
-            <TableCell>
-              {row.ownerId ? (people.users?.get(row.ownerId) ?? '…') : '—'}
-            </TableCell>
-            <TableCell className='text-right'>
-              <Button
-                size='sm'
-                variant='ghost'
-                disabled={action.isPending}
-                onClick={() =>
-                  action.mutate({
-                    kind: 'dismiss',
-                    deviceId: row.deviceId,
-                    check: row.kind,
-                  })
-                }
-              >
-                {t('deviceSync.checks.keepRegister')}
-              </Button>
-            </TableCell>
+    <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
+            <TableHead>{t('deviceSync.review.columns.difference')}</TableHead>
+            <TableHead>{t('deviceSync.fields.lastSync')}</TableHead>
+            <TableHead>{t('deviceSync.fields.user')}</TableHead>
+            <TableHead>{t('fields.owner')}</TableHead>
+            <TableHead />
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row: DeviceCheck) => (
+            <TableRow key={`${row.deviceId}:${row.kind}`}>
+              <TableCell>
+                <RecordLink
+                  to={`/devices/${row.deviceId}`}
+                  className='font-medium text-foreground hover:underline'
+                >
+                  {deviceLabel(row)}
+                </RecordLink>
+              </TableCell>
+              <TableCell>
+                <Badge variant={row.critical ? 'destructive' : 'outline'}>
+                  {t(`deviceSync.checks.kinds.${row.kind}`)}
+                </Badge>
+                {row.kind === 'statusMismatch' ? (
+                  <span className='ml-2 text-xs text-muted-foreground'>
+                    {t(`enums.deviceStatus.${row.status}`)}
+                  </span>
+                ) : null}
+              </TableCell>
+              <TableCell className='whitespace-nowrap tabular-nums'>
+                {row.goneAt
+                  ? t('deviceSync.gone', { date: formatDate(row.goneAt) })
+                  : formatDate(row.lastSyncAt, true)}
+              </TableCell>
+              <TableCell>
+                {row.personId ? (
+                  <HolderLink holderType='person' holderId={row.personId} />
+                ) : (
+                  (row.userName ?? '—')
+                )}
+              </TableCell>
+              <TableCell>
+                {row.ownerId ? (people.users?.get(row.ownerId) ?? '…') : '—'}
+              </TableCell>
+              <TableCell className='text-right'>
+                <Button
+                  size='sm'
+                  variant='ghost'
+                  disabled={action.isPending}
+                  onClick={() =>
+                    action.mutate({
+                      kind: 'dismiss',
+                      deviceId: row.deviceId,
+                      check: row.kind,
+                    })
+                  }
+                >
+                  {t('deviceSync.checks.keepRegister')}
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
@@ -284,38 +284,40 @@ function UnmanagedView(): ReactElement {
   if (review.isLoading) return <Skeleton className='h-40 w-full rounded-xl' />;
   if (rows.length === 0) return <Empty />;
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
-          <TableHead>{t('deviceSync.review.columns.holder')}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map((row) => (
-          <TableRow key={row.id}>
-            <TableCell>
-              <RecordLink
-                to={`/devices/${row.id}`}
-                className='font-medium text-foreground hover:underline'
-              >
-                {deviceLabel(row)}
-              </RecordLink>
-            </TableCell>
-            <TableCell>
-              {row.assigneeType && row.assigneeId ? (
-                <HolderLink
-                  holderType={row.assigneeType}
-                  holderId={row.assigneeId}
-                />
-              ) : (
-                '—'
-              )}
-            </TableCell>
+    <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
+            <TableHead>{t('deviceSync.review.columns.holder')}</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={row.id}>
+              <TableCell>
+                <RecordLink
+                  to={`/devices/${row.id}`}
+                  className='font-medium text-foreground hover:underline'
+                >
+                  {deviceLabel(row)}
+                </RecordLink>
+              </TableCell>
+              <TableCell>
+                {row.assigneeType && row.assigneeId ? (
+                  <HolderLink
+                    holderType={row.assigneeType}
+                    holderId={row.assigneeId}
+                  />
+                ) : (
+                  '—'
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
@@ -377,159 +379,161 @@ function RecordsView({
   if (rows.length === 0) return <Empty />;
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('deviceSync.fields.deviceName')}</TableHead>
-            <TableHead>{t('fields.serialNo')}</TableHead>
-            <TableHead>
-              {t('deviceSync.review.columns.platformModel')}
-            </TableHead>
-            <TableHead>{t('deviceSync.fields.user')}</TableHead>
-            <TableHead>
-              {view === 'ignored'
-                ? t('deviceSync.review.columns.reason')
-                : t('deviceSync.fields.lastSync')}
-            </TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell>
-                <span className='flex flex-wrap items-center gap-2'>
-                  <span className='font-medium'>
-                    {row.deviceName ?? row.externalId}
-                  </span>
-                  {/* Which platforms report it: one row per device. */}
-                  <span className='text-xs text-muted-foreground'>
-                    {row.sources
-                      .map((source) => t(`deviceSync.sources.${source}`))
-                      .join(' · ')}
-                  </span>
-                  {row.ownership === 'personal' ? (
-                    <Badge variant='outline' data-size='sm'>
-                      {t('deviceSync.ownership.personal')}
-                    </Badge>
-                  ) : null}
-                  {row.consoleUrl ? (
-                    <a
-                      href={row.consoleUrl}
-                      target='_blank'
-                      rel='noreferrer'
-                      aria-label={t('deviceSync.openIn', {
-                        source: t(`deviceSync.sources.${row.source}`),
-                      })}
-                      className='text-muted-foreground hover:text-foreground'
-                    >
-                      <ExternalLink className='size-3.5' />
-                    </a>
-                  ) : null}
-                </span>
-              </TableCell>
-              <TableCell className='tabular-nums'>
-                {row.serialNo ?? '—'}
-                {row.matchState === 'ambiguous' ? (
-                  <span className='block text-xs text-warning-foreground'>
-                    {t('deviceSync.review.sharedSerial', {
-                      count: row.candidates.length,
-                    })}
-                  </span>
-                ) : null}
-              </TableCell>
-              <TableCell>
-                {platformModel(row.manufacturer, row.model)}
-              </TableCell>
-              <TableCell>
-                {row.personId ? (
-                  <HolderLink holderType='person' holderId={row.personId} />
-                ) : (
-                  (row.userName ?? '—')
-                )}
-              </TableCell>
-              <TableCell className='text-sm'>
-                {view === 'ignored' && row.ignoredByRule ? (
-                  <span>
-                    {t('deviceSync.review.byRule')}
-                    <span className='block text-xs text-muted-foreground'>
-                      {t('deviceSync.review.byRuleHint')}
+      <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('deviceSync.fields.deviceName')}</TableHead>
+              <TableHead>{t('fields.serialNo')}</TableHead>
+              <TableHead>
+                {t('deviceSync.review.columns.platformModel')}
+              </TableHead>
+              <TableHead>{t('deviceSync.fields.user')}</TableHead>
+              <TableHead>
+                {view === 'ignored'
+                  ? t('deviceSync.review.columns.reason')
+                  : t('deviceSync.fields.lastSync')}
+              </TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell>
+                  <span className='flex flex-wrap items-center gap-2'>
+                    <span className='font-medium'>
+                      {row.deviceName ?? row.externalId}
                     </span>
-                  </span>
-                ) : view === 'ignored' ? (
-                  <span>
-                    {row.ignoreReason}
-                    <span className='block text-xs text-muted-foreground'>
-                      {[
-                        row.ignoredById
-                          ? (people.users?.get(row.ignoredById) ?? '…')
-                          : null,
-                        formatDate(row.ignoredAt),
-                      ]
-                        .filter(Boolean)
+                    {/* Which platforms report it: one row per device. */}
+                    <span className='text-xs text-muted-foreground'>
+                      {row.sources
+                        .map((source) => t(`deviceSync.sources.${source}`))
                         .join(' · ')}
                     </span>
+                    {row.ownership === 'personal' ? (
+                      <Badge variant='outline' data-size='sm'>
+                        {t('deviceSync.ownership.personal')}
+                      </Badge>
+                    ) : null}
+                    {row.consoleUrl ? (
+                      <a
+                        href={row.consoleUrl}
+                        target='_blank'
+                        rel='noreferrer'
+                        aria-label={t('deviceSync.openIn', {
+                          source: t(`deviceSync.sources.${row.source}`),
+                        })}
+                        className='text-muted-foreground hover:text-foreground'
+                      >
+                        <ExternalLink className='size-3.5' />
+                      </a>
+                    ) : null}
                   </span>
-                ) : (
-                  <span className='whitespace-nowrap tabular-nums'>
-                    {formatDate(row.lastSyncAt, true)}
-                  </span>
-                )}
-              </TableCell>
-              <TableCell>
-                <span className='flex flex-wrap justify-end gap-1'>
-                  {/* The rule brings a personal device back, not a row. */}
-                  {view === 'ignored' && row.ignoredByRule ? null : view ===
-                    'ignored' ? (
-                    <Button
-                      size='sm'
-                      variant='outline'
-                      disabled={action.isPending}
-                      onClick={() =>
-                        action.mutate({ kind: 'restore', managedId: row.id })
-                      }
-                    >
-                      {t('deviceSync.review.restore')}
-                    </Button>
+                </TableCell>
+                <TableCell className='tabular-nums'>
+                  {row.serialNo ?? '—'}
+                  {row.matchState === 'ambiguous' ? (
+                    <span className='block text-xs text-warning-foreground'>
+                      {t('deviceSync.review.sharedSerial', {
+                        count: row.candidates.length,
+                      })}
+                    </span>
+                  ) : null}
+                </TableCell>
+                <TableCell>
+                  {platformModel(row.manufacturer, row.model)}
+                </TableCell>
+                <TableCell>
+                  {row.personId ? (
+                    <HolderLink holderType='person' holderId={row.personId} />
                   ) : (
-                    <>
-                      {row.matchState === 'unlinked' ? (
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          onClick={() => register(row)}
-                        >
-                          {t('deviceSync.review.register')}
-                        </Button>
-                      ) : null}
+                    (row.userName ?? '—')
+                  )}
+                </TableCell>
+                <TableCell className='text-sm'>
+                  {view === 'ignored' && row.ignoredByRule ? (
+                    <span>
+                      {t('deviceSync.review.byRule')}
+                      <span className='block text-xs text-muted-foreground'>
+                        {t('deviceSync.review.byRuleHint')}
+                      </span>
+                    </span>
+                  ) : view === 'ignored' ? (
+                    <span>
+                      {row.ignoreReason}
+                      <span className='block text-xs text-muted-foreground'>
+                        {[
+                          row.ignoredById
+                            ? (people.users?.get(row.ignoredById) ?? '…')
+                            : null,
+                          formatDate(row.ignoredAt),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className='whitespace-nowrap tabular-nums'>
+                      {formatDate(row.lastSyncAt, true)}
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <span className='flex flex-wrap justify-end gap-1'>
+                    {/* The rule brings a personal device back, not a row. */}
+                    {view === 'ignored' && row.ignoredByRule ? null : view ===
+                      'ignored' ? (
                       <Button
                         size='sm'
                         variant='outline'
-                        onClick={() => {
-                          setTarget(row.candidates[0]?.id ?? null);
-                          setLinking(row);
-                        }}
+                        disabled={action.isPending}
+                        onClick={() =>
+                          action.mutate({ kind: 'restore', managedId: row.id })
+                        }
                       >
-                        {t('deviceSync.review.link')}
+                        {t('deviceSync.review.restore')}
                       </Button>
-                      <Button
-                        size='sm'
-                        variant='ghost'
-                        onClick={() => {
-                          setReason('');
-                          setIgnoring(row);
-                        }}
-                      >
-                        {t('deviceSync.review.ignore')}
-                      </Button>
-                    </>
-                  )}
-                </span>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                    ) : (
+                      <>
+                        {row.matchState === 'unlinked' ? (
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => register(row)}
+                          >
+                            {t('deviceSync.review.register')}
+                          </Button>
+                        ) : null}
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          onClick={() => {
+                            setTarget(row.candidates[0]?.id ?? null);
+                            setLinking(row);
+                          }}
+                        >
+                          {t('deviceSync.review.link')}
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          onClick={() => {
+                            setReason('');
+                            setIgnoring(row);
+                          }}
+                        >
+                          {t('deviceSync.review.ignore')}
+                        </Button>
+                      </>
+                    )}
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       <ConfirmDialog
         open={Boolean(linking)}
