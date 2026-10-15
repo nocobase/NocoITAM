@@ -1948,6 +1948,7 @@ const zhCN: AppResource = {
     onlineAfterLeaving_other: '{{count}} 台设备离职后仍在线',
     review: {
       title: 'MDM 核对',
+      settingsLink: '设备同步设置',
       description: '设备管理平台（MDM）报告的设备与台账不一致的地方',
       views: {
         checks: '设备核对',

@@ -44,7 +44,6 @@ export function DeviceConnectionActions({
     <>
       <Button
         variant='outline'
-        size='sm'
         disabled={!secretsReady}
         onClick={() => setEditing(true)}
       >
@@ -58,7 +57,6 @@ export function DeviceConnectionActions({
       {stored ? (
         <Button
           variant='outline'
-          size='sm'
           className='text-destructive hover:text-destructive'
           onClick={() => setDisconnecting(true)}
         >

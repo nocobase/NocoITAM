@@ -1,17 +1,18 @@
+import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Settings2 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 
-import { BackButton } from '@/components/back-button';
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { HistoryBackButton } from '@/components/itam/history-back-button';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { HolderLink } from '@/components/itam/holder-link';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { RecordLink } from '@/components/itam/record-link';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -49,16 +50,34 @@ export default function DeviceSyncReviewPage(): ReactElement {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const ai = useItamAi();
+  // 设备同步 settings (connections, runs, the rules behind these lists)
+  // for whoever may change them, the grant its API asks for.
+  const { can: canSettle } = useCan({
+    resource: { type: 'settings', id: 'itam.settings' },
+    action: 'update',
+  });
   const requested = params.get('view');
   const view: ReviewView = REVIEW_VIEWS.includes(requested as ReviewView)
     ? (requested as ReviewView)
     : 'checks';
   return (
     <Page>
-      <BackButton to='/' />
+      <HistoryBackButton fallback='/' />
       <PageHeader
         title={t('deviceSync.review.title')}
         description={t('deviceSync.review.description')}
+        actions={
+          canSettle ? (
+            // A link drawn as a button: it goes to another page.
+            <Link
+              to='/settings/itam?tab=deviceSync'
+              className={buttonVariants({ variant: 'outline' })}
+            >
+              <Settings2 data-icon='inline-start' />
+              {t('deviceSync.review.settingsLink')}
+            </Link>
+          ) : undefined
+        }
       />
       <Tabs
         value={view}

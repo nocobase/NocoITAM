@@ -2047,6 +2047,7 @@ const messages = {
     onlineAfterLeaving_other: '{{count}} devices online after leaving',
     review: {
       title: 'Platform review',
+      settingsLink: 'Device sync settings',
       description:
         'Where the device management platforms and the register disagree',
       views: {

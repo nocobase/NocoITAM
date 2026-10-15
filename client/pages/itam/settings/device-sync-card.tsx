@@ -67,7 +67,6 @@ export function DeviceSyncCard(): ReactElement {
           <CardTitle>{t('settings.deviceSync.title')}</CardTitle>
           <Button
             variant='outline'
-            size='sm'
             disabled={!configured || running || start.isPending}
             onClick={() => start.mutate()}
           >
