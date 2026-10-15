@@ -528,7 +528,7 @@ export async function onboardingPlan(
 /** What `itam device-sync review` reads (device sync, step 4). */
 export const DeviceSyncReviewInput = z.object({
   view: z
-    .enum(['checks', 'unregistered', 'unmanaged', 'ignored'])
+    .enum(['checks', 'unregistered', 'unmanaged', 'ignored', 'exempted'])
     .default('checks'),
   deviceId: z.string().min(1).max(64).optional(),
 });
@@ -556,6 +556,7 @@ export async function deviceSyncReview(
       device: input.deviceId,
       platformRecords: await sync.forDevice(input.deviceId),
       differences: await review.checks({ deviceIds: [input.deviceId] }),
+      exemption: await review.exemptionOf(input.deviceId),
     };
   }
   const inScope = async (ids: readonly string[]) => {
@@ -579,8 +580,11 @@ export async function deviceSyncReview(
       rows: checks.filter((check) => visible.has(check.deviceId)),
     };
   }
-  if (input.view === 'unmanaged') {
-    const rows = await review.unmanaged();
+  if (input.view === 'unmanaged' || input.view === 'exempted') {
+    const rows =
+      input.view === 'unmanaged'
+        ? await review.unmanaged()
+        : await review.exempted();
     const visible = await inScope(rows.map((row) => row.id));
     return {
       connected: true,

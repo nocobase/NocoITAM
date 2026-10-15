@@ -33,7 +33,9 @@ import {
   useDeviceReview,
   useDeviceReviewAction,
   type DeviceCheck,
+  type ExemptDevice,
   type ReviewView,
+  type UnmanagedDevice,
   type UnregisteredDevice,
 } from '@/lib/itam/device-sync';
 import type { ItamRecord } from '@/lib/itam/api';
@@ -65,18 +67,25 @@ export default function DeviceSyncReviewPage(): ReactElement {
   const requested = params.get('view');
   // 已忽略 is a section of 只在 MDM: a link to it (the settings page's)
   // opens that tab and scrolls down to it.
+  // 不需要纳管 is a section of 只在台账 in the same way (2026-10-15).
   const view: (typeof TABS)[number] =
     requested === 'ignored'
       ? 'unregistered'
-      : TABS.includes(requested as (typeof TABS)[number])
-        ? (requested as (typeof TABS)[number])
-        : 'checks';
+      : requested === 'exempted'
+        ? 'unmanaged'
+        : TABS.includes(requested as (typeof TABS)[number])
+          ? (requested as (typeof TABS)[number])
+          : 'checks';
   const ignoredRef = useRef<HTMLElement>(null);
   const ignoredShown = view === 'unregistered' && (counts.ignored ?? 0) > 0;
+  const exemptedShown = view === 'unmanaged' && (counts.exempted ?? 0) > 0;
   useEffect(() => {
-    if (requested === 'ignored' && ignoredShown)
+    if (
+      (requested === 'ignored' && ignoredShown) ||
+      (requested === 'exempted' && exemptedShown)
+    )
       ignoredRef.current?.scrollIntoView({ block: 'start' });
-  }, [requested, ignoredShown]);
+  }, [requested, ignoredShown, exemptedShown]);
   return (
     <Page>
       <HistoryBackButton fallback='/' />
@@ -140,7 +149,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
       {view === 'checks' ? (
         <ChecksView />
       ) : view === 'unmanaged' ? (
-        <UnmanagedView />
+        <UnmanagedView view='unmanaged' />
       ) : (
         <RecordsView view='unregistered' />
       )}
@@ -174,6 +183,24 @@ export default function DeviceSyncReviewPage(): ReactElement {
           <RecordsView view='ignored' />
         </section>
       ) : null}
+      {exemptedShown ? (
+        <section
+          ref={ignoredRef}
+          className='mt-4 flex scroll-mt-4 flex-col gap-3'
+        >
+          <div className='space-y-1'>
+            <h2 className='font-medium'>
+              {t('deviceSync.review.exemptedHeading', {
+                count: counts.exempted,
+              })}
+            </h2>
+            <p className='text-sm text-muted-foreground'>
+              {t('deviceSync.review.exemptedHint')}
+            </p>
+          </div>
+          <UnmanagedView view='exempted' />
+        </section>
+      ) : null}
     </Page>
   );
 }
@@ -189,12 +216,14 @@ function useReviewCounts(): Partial<
   const unregistered = useDeviceReview('unregistered');
   const unmanaged = useDeviceReview('unmanaged');
   const ignored = useDeviceReview('ignored');
+  const exempted = useDeviceReview('exempted');
   const byRule = ignored.data?.filter((row) => row.ignoredByRule).length;
   return {
     checks: checks.data?.length,
     unregistered: unregistered.data?.length,
     unmanaged: unmanaged.data?.length,
     ignored: ignored.data?.length,
+    exempted: exempted.data?.length,
     // 已忽略's two kinds: kept off by a person, or by 忽略个人设备.
     ignoredByRule: byRule,
     ignoredManual:
@@ -303,48 +332,142 @@ function ChecksView(): ReactElement {
   );
 }
 
-/** Devices in use, in a category that should be managed, on no platform. */
-function UnmanagedView(): ReactElement {
+/**
+ * Devices in use, in a category that should be managed, on no platform —
+ * with 不需要纳管 for one that rightly is (2026-10-15) — or, beneath them,
+ * the ones marked so, with the reason and 恢复.
+ */
+function UnmanagedView({
+  view,
+}: {
+  readonly view: 'unmanaged' | 'exempted';
+}): ReactElement {
   const { t } = useTranslation();
-  const review = useDeviceReview('unmanaged');
-  const rows = review.data ?? [];
+  const review = useDeviceReview(view);
+  const action = useDeviceReviewAction();
+  const [exempting, setExempting] = useState<UnmanagedDevice>();
+  const [reason, setReason] = useState('');
+  const rows: readonly (UnmanagedDevice & Partial<ExemptDevice>)[] =
+    review.data ?? [];
+  const people = useReferenceNames([
+    {
+      collection: 'users',
+      ids: rows.flatMap((row) => (row.exemptedById ? [row.exemptedById] : [])),
+    },
+  ]);
   if (review.isLoading) return <Skeleton className='h-40 w-full rounded-xl' />;
   if (rows.length === 0) return <Empty />;
   return (
-    <div className='overflow-x-auto rounded-lg border border-border bg-card'>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
-            <TableHead>{t('deviceSync.review.columns.holder')}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell>
-                <RecordLink
-                  to={`/devices/${row.id}`}
-                  className='font-medium text-foreground hover:underline'
-                >
-                  {deviceLabel(row)}
-                </RecordLink>
-              </TableCell>
-              <TableCell>
-                {row.assigneeType && row.assigneeId ? (
-                  <HolderLink
-                    holderType={row.assigneeType}
-                    holderId={row.assigneeId}
-                  />
-                ) : (
-                  '—'
-                )}
-              </TableCell>
+    <>
+      <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
+              <TableHead>{t('deviceSync.review.columns.holder')}</TableHead>
+              {view === 'exempted' ? (
+                <TableHead>{t('deviceSync.review.columns.reason')}</TableHead>
+              ) : null}
+              <TableHead />
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell>
+                  <RecordLink
+                    to={`/devices/${row.id}`}
+                    className='font-medium text-foreground hover:underline'
+                  >
+                    {deviceLabel(row)}
+                  </RecordLink>
+                </TableCell>
+                <TableCell>
+                  {row.assigneeType && row.assigneeId ? (
+                    <HolderLink
+                      holderType={row.assigneeType}
+                      holderId={row.assigneeId}
+                    />
+                  ) : (
+                    '—'
+                  )}
+                </TableCell>
+                {view === 'exempted' ? (
+                  <TableCell className='text-sm'>
+                    {row.reason}
+                    <span className='block text-xs text-muted-foreground'>
+                      {[
+                        row.exemptedById
+                          ? (people.users?.get(row.exemptedById) ?? '…')
+                          : null,
+                        formatDate(row.exemptedAt ?? null),
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </TableCell>
+                ) : null}
+                <TableCell>
+                  <span className='flex justify-end'>
+                    {view === 'exempted' ? (
+                      <Button
+                        size='sm'
+                        variant='outline'
+                        disabled={action.isPending}
+                        onClick={() =>
+                          action.mutate({ kind: 'unexempt', deviceId: row.id })
+                        }
+                      >
+                        {t('deviceSync.review.restore')}
+                      </Button>
+                    ) : (
+                      <Button
+                        size='sm'
+                        variant='ghost'
+                        onClick={() => {
+                          setReason('');
+                          setExempting(row);
+                        }}
+                      >
+                        {t('deviceSync.review.exempt')}
+                      </Button>
+                    )}
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <ConfirmDialog
+        open={Boolean(exempting)}
+        onOpenChange={(open) => !open && setExempting(undefined)}
+        title={t('deviceSync.review.exemptTitle')}
+        description={t('deviceSync.review.exemptDescription', {
+          name: exempting ? deviceLabel(exempting) : '',
+        })}
+        busy={action.isPending}
+        error={action.error}
+        confirmDisabled={!reason.trim()}
+        onConfirm={() => {
+          if (!exempting || !reason.trim()) return;
+          action.mutate(
+            { kind: 'exempt', deviceId: exempting.id, reason: reason.trim() },
+            { onSuccess: () => setExempting(undefined) },
+          );
+        }}
+      >
+        <div className='flex flex-col gap-2'>
+          <Label htmlFor='exempt-reason'>{t('deviceSync.review.reason')}</Label>
+          <Textarea
+            id='exempt-reason'
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder={t('deviceSync.review.exemptPlaceholder')}
+          />
+        </div>
+      </ConfirmDialog>
+    </>
   );
 }
 

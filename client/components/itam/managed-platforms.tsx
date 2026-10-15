@@ -13,8 +13,10 @@ import {
   useDeviceReviewAction,
   useManagedDevices,
   type DeviceCheck,
+  type Exemption,
   type ManagedDevice,
 } from '@/lib/itam/device-sync';
+import { useReferenceNames } from '@/lib/itam/references';
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate, toDate } from '@/lib/itam/format';
 
@@ -49,13 +51,20 @@ export function ManagedPlatforms({
   if (!managed.data?.connected) return null;
   const records = managed.data.data;
   const checks = managed.data.checks ?? [];
+  const exemption = managed.data.exemption ?? null;
   return (
     <InfoSection title={t('deviceSync.group')}>
       {/* Where the platforms and the register disagree (step 2), first. */}
       {checks.map((check) => (
         <CheckNotice key={check.kind} check={check} actions={actions} />
       ))}
-      {records.length === 0 ? (
+      {records.length === 0 && exemption ? (
+        <ExemptionNotice
+          deviceId={deviceId}
+          exemption={exemption}
+          editable={actions?.editable ?? false}
+        />
+      ) : records.length === 0 ? (
         <p className='text-sm text-muted-foreground'>
           {t('deviceSync.notFound')}
         </p>
@@ -71,6 +80,56 @@ export function ManagedPlatforms({
         </div>
       )}
     </InfoSection>
+  );
+}
+
+/**
+ * 不需要纳管 (2026-10-15): on no platform, and rightly so — the reason, who
+ * said it and when, and 恢复 for when it should be enrolled after all.
+ */
+function ExemptionNotice({
+  deviceId,
+  exemption,
+  editable,
+}: {
+  readonly deviceId: string;
+  readonly exemption: Exemption;
+  readonly editable: boolean;
+}): ReactElement {
+  const { t } = useTranslation();
+  const review = useDeviceReviewAction();
+  const people = useReferenceNames([
+    {
+      collection: 'users',
+      ids: exemption.exemptedById ? [exemption.exemptedById] : [],
+    },
+  ]);
+  return (
+    <div className='flex flex-wrap items-start justify-between gap-2 text-sm'>
+      <div className='min-w-0'>
+        <p>{t('deviceSync.exempted', { reason: exemption.reason })}</p>
+        <p className='text-xs text-muted-foreground'>
+          {[
+            exemption.exemptedById
+              ? (people.users?.get(exemption.exemptedById) ?? '…')
+              : null,
+            formatDate(exemption.exemptedAt),
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      </div>
+      {editable ? (
+        <Button
+          size='sm'
+          variant='outline'
+          disabled={review.isPending}
+          onClick={() => review.mutate({ kind: 'unexempt', deviceId })}
+        >
+          {t('deviceSync.review.restore')}
+        </Button>
+      ) : null}
+    </div>
   );
 }
 

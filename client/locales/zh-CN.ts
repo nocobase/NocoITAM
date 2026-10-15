@@ -275,6 +275,8 @@ const zhCN: AppResource = {
       managedLinked: '关联 MDM',
       managedUnlinked: '解除 MDM 关联',
       managedDismissed: '以台账为准',
+      managedExempted: '不需要纳管',
+      managedUnexempted: '恢复纳管',
       unregisteredFound: '发现账外设备',
       resolved: '差异处理',
       audited: '已盘点',
@@ -397,6 +399,8 @@ const zhCN: AppResource = {
       managedLinkedManual: '手动关联 {{source}} 设备 {{target}}',
       managedUnlinked: '解除与 {{source}} 设备 {{target}} 的关联',
       managedDismissed: '{{check}}：以台账为准',
+      managedExempted: '原因：{{reason}}',
+      managedUnexempted: '重新列入只在台账',
       leftOnLeaveDate: '离职日期 {{date}} 已到，自动标记为离职',
       recoveryPrepared:
         '已整理待回收清单：设备 {{devices}}、库存 {{stock}}、席位 {{seats}}',
@@ -1962,7 +1966,7 @@ const zhCN: AppResource = {
         unregistered:
           'MDM 里有、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
         unmanaged:
-          '台账里使用中或借出、分类属于应纳管分类（可在 MDM 设置中修改），却没有出现在任何已连接 MDM 中的设备，需要在 MDM 那边注册。',
+          '台账里使用中或借出、分类属于应纳管分类（可在 MDM 设置中修改），却没有出现在任何已连接 MDM 中的设备，需要在 MDM 那边注册；确实不该进 MDM 的，标为不需要纳管。',
       },
       ignoredHeading: '已忽略 {{count}} 台',
       ignoredManual_one:
@@ -2003,9 +2007,18 @@ const zhCN: AppResource = {
       ignoreDescription: '「{{name}}」不会再出现在台账未登记里。',
       reason: '原因',
       reasonPlaceholder: '例如：测试虚拟机、外包人员自带设备',
+      // 不需要纳管 (2026-10-15): 只在台账's counterpart of 不纳入台账.
+      exempt: '不需要纳管',
+      exemptTitle: '不需要纳管',
+      exemptDescription: '「{{name}}」不会再出现在只在台账里。',
+      exemptPlaceholder: '例如：Linux 工作站，不支持注册 MDM',
+      exemptedHeading: '不需要纳管 {{count}} 台',
+      exemptedHint:
+        '以后不再列入只在台账；设备出现在 MDM 里后自动失效。点「恢复」重新列入。',
     },
     group: 'MDM',
     notFound: '未在已连接的 MDM 中找到',
+    exempted: '不需要纳管：{{reason}}',
     sources: { intune: 'Intune', jamf: 'Jamf' },
     sourceNames: { intune: 'Microsoft Intune', jamf: 'Jamf Pro' },
     openIn: '在 {{source}} 中打开',

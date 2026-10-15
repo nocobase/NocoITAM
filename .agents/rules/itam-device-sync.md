@@ -123,6 +123,24 @@ product or in release notes, until it is listed here.
   **unlink** set `matchedBy: manual`, which the next pull keeps — an unlink
   is not undone by a matching serial. Each writes `managedLinked` /
   `managedUnlinked` on the device.
+- **不需要纳管** (2026-10-15) is 只在台账's counterpart of 不纳入台账: a
+  device in use of a managed category that rightly is on no platform (a
+  Linux workstation, a lab machine). It writes `deviceSyncExemptions`
+  (one row per device, a required reason, who, when; migration
+  `202610150003`) and a `managedExempted` event, taking it out of
+  `unmanaged()` — so out of the tab, 待办's count and the device list's
+  同步状态 filter — and into `exempted()`, listed under 只在台账's list as
+  its own section (`?view=exempted` scrolls to it) with 恢复
+  (`managedUnexempted`). The device page's MDM group says the reason in
+  place of 未在已连接的 MDM 中找到, with 恢复. Both acts take the device's
+  `update` (`POST /itam/device-sync/unmanaged/:deviceId/exempt` and
+  `/unexempt`); only a device `unmanaged()` lists can be marked. The mark
+  **lapses** once a platform reports the device (`expireExemptions` in
+  `device-sync.ts`, after every pull, a match by serial and a person's
+  link): its reason no longer holds, and a mark left behind would hide the
+  device again should it drop off the platform. Categories stay the coarse
+  rule; this is the per-device exception. Noco reads it as
+  `--view exempted` and in a device's `exemption`.
 - **Acts on the register stay the register's**: the MDM group offers
   调拨给 / 分配给 the platform user and 恢复为库存中 by opening the device
   page's own dialogs, prefilled (`ManagedPlatforms`' `actions`). 补登记

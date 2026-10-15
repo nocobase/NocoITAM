@@ -3,6 +3,7 @@ import { databaseManagerToken } from '@nocobase/db';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import migration from '../../database/main/migrations/202610150001_device_sync_dismissals.js';
+import exemptionsMigration from '../../database/main/migrations/202610150003_device_sync_exemptions.js';
 import type { ObservedDevice } from '../../server/providers/itam/device-sources.js';
 import {
   deviceReviewServiceToken,
@@ -425,6 +426,72 @@ describe('device review', () => {
     ]);
   });
 
+  it('marks a 只在台账 device 不需要纳管 with a reason, takes it back, and lets it lapse once a platform reports it', async () => {
+    const pat = await person('Pat Lee', 'pat@example.com');
+    const linux = await device('LINUX-1');
+    const laptop = await device('ON-1');
+    for (const id of [linux, laptop]) await assign(id, pat);
+    await pull(observed('on', { serialNo: 'ON-1' }));
+    const exempt = (id: string, who = manager) =>
+      request(
+        `device-sync/unmanaged/${id}/exempt`,
+        { reason: 'Linux workstation' },
+        who,
+      );
+    expect(
+      (
+        await app.request(`/api/itam/device-sync/unmanaged/${linux}/exempt`, {
+          ...json({ reason: 'x' }),
+        })
+      ).status,
+    ).toBe(401);
+    expect((await exempt(linux, employee)).status).toBe(403);
+    // A reason is required, and only a 只在台账 device can be marked.
+    expect(
+      (await request(`device-sync/unmanaged/${linux}/exempt`, { reason: ' ' }))
+        .status,
+    ).toBe(400);
+    expect((await exempt(laptop)).status).toBe(422);
+
+    expect((await exempt(linux)).status).toBe(200);
+    expect(await review.unmanaged()).toEqual([]);
+    expect(await review.exempted()).toMatchObject([
+      { id: linux, reason: 'Linux workstation', exemptedById: 'mia' },
+    ]);
+    const view = await request('device-sync/review?view=exempted');
+    expect(await view.json()).toMatchObject({ data: [{ id: linux }] });
+    const managed = await request(`devices/${linux}/managed`);
+    expect(await managed.json()).toMatchObject({
+      exemption: { reason: 'Linux workstation' },
+    });
+    const events = await app.container
+      .resolve(historyServiceToken)
+      .events({ subjectType: 'devices', subjectId: linux });
+    expect(
+      events.data.find((event) => event.type === 'managedExempted'),
+    ).toMatchObject({
+      actorId: 'mia',
+      payload: { reason: 'Linux workstation' },
+    });
+
+    expect(
+      (await request(`device-sync/unmanaged/${linux}/unexempt`, {})).status,
+    ).toBe(200);
+    expect((await review.unmanaged()).map((row) => row.id)).toEqual([linux]);
+    expect(await review.exempted()).toEqual([]);
+
+    // Enrolled after all: the mark lapses, and does not come back should
+    // the device drop off the platform again.
+    await exempt(linux);
+    await pull(
+      observed('on', { serialNo: 'ON-1' }),
+      observed('lx', { serialNo: 'LINUX-1' }),
+    );
+    expect(await review.exemptionOf(linux)).toBeNull();
+    await pull(observed('on', { serialNo: 'ON-1' }));
+    expect((await review.unmanaged()).map((row) => row.id)).toEqual([linux]);
+  });
+
   it("counts a leaver's devices that synced after the leave date", async () => {
     const pat = await person('Pat Lee', 'pat@example.com');
     await pull(
@@ -560,6 +627,32 @@ describe('device sync dismissals migration', () => {
       await migration.up(context);
       expect(
         await client.schema.hasColumn('device_sync_dismissals', 'value'),
+      ).toBe(true);
+    } finally {
+      await db.destroy();
+    }
+  });
+});
+
+describe('device sync exemptions migration', () => {
+  it('creates the table on up and drops it on down', async () => {
+    const db = await createTestDatabase();
+    try {
+      const client = await schemaClient(db.database);
+      const connection = db.database.connection();
+      const context = {
+        connection,
+        query: connection.query,
+        builder: connection.builder,
+      };
+      expect(await client.schema.hasTable('device_sync_exemptions')).toBe(true);
+      await exemptionsMigration.down!(context);
+      expect(await client.schema.hasTable('device_sync_exemptions')).toBe(
+        false,
+      );
+      await exemptionsMigration.up(context);
+      expect(
+        await client.schema.hasColumn('device_sync_exemptions', 'reason'),
       ).toBe(true);
     } finally {
       await db.destroy();

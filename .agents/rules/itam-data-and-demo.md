@@ -132,7 +132,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   one, a serial two register devices share (the second entered in lower
   case: the register refuses an equal serial, matching ignores case), a
   virtual machine; a personal phone and a meeting room computer kept off by
-  a person. Their platform ids start `demo-` (or `computer:demo-` /
+  a person; and, on the register's side, laptops in use on no platform
+  (只在台账) and a test phone marked 不需要纳管 with its reason
+  (`deviceSyncExemptions`, cleared through `DEPENDENTS`). Their platform ids start `demo-` (or `computer:demo-` /
   `mobile:demo-`), which is how `device-demo-source.ts` knows them: with no
   connection, a platform holding demo records reads as connected (`demo`)
   and its pulls replay them, last syncs moved on by the time since the

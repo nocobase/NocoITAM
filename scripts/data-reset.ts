@@ -42,6 +42,7 @@ import appRuntime from '../server/runtime.js';
 const ITAM_TABLES = [
   // Device sync (2026-10-14, 2026-10-15).
   'deviceSyncDismissals',
+  'deviceSyncExemptions',
   'managedDevices',
   'deviceSyncRuns',
   'onboardingRuns',

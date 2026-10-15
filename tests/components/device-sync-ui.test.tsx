@@ -7,6 +7,7 @@ import { DeviceSyncCard } from '../../client/pages/itam/settings/device-sync-car
 import type {
   DeviceCheck,
   DeviceConnection,
+  Exemption,
   ManagedDevice,
   OnlineAfterLeaving,
   SourceStatus,
@@ -15,7 +16,12 @@ import { LeaverOnlineDevices } from '../../client/components/itam/leaver-online-
 
 const state = vi.hoisted(() => ({
   managed: undefined as
-    | { data: ManagedDevice[]; connected: boolean; checks?: DeviceCheck[] }
+    | {
+        data: ManagedDevice[];
+        connected: boolean;
+        checks?: DeviceCheck[];
+        exemption?: Exemption | null;
+      }
     | undefined,
   review: vi.fn(),
   ask: vi.fn(),
@@ -139,6 +145,40 @@ describe("a device's MDM group", () => {
     render(<ManagedPlatforms deviceId='d1' />);
     expect(screen.getByText('deviceSync.group')).toBeInTheDocument();
     expect(screen.getByText('deviceSync.notFound')).toBeInTheDocument();
+  });
+
+  it('says why a device marked 不需要纳管 is on none, with 恢复 for an editor', () => {
+    state.review.mockReset();
+    state.managed = {
+      data: [],
+      connected: true,
+      exemption: {
+        reason: 'Linux workstation',
+        exemptedById: 'mia',
+        exemptedAt: '2026-10-15T09:00:00.000',
+      },
+    };
+    render(
+      <ManagedPlatforms
+        deviceId='d1'
+        actions={{
+          editable: true,
+          onAssign: vi.fn(),
+          onTransfer: vi.fn(),
+          onRestore: vi.fn(),
+        }}
+      />,
+    );
+    expect(screen.getByText('deviceSync.exempted')).toBeInTheDocument();
+    expect(screen.queryByText('deviceSync.notFound')).not.toBeInTheDocument();
+    expect(screen.getByText(/Mia/)).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.review.restore' }),
+    );
+    expect(state.review).toHaveBeenCalledWith({
+      kind: 'unexempt',
+      deviceId: 'd1',
+    });
   });
 
   it('shows what the platform reports, the primary user linked, and where it opens', () => {

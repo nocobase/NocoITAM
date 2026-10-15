@@ -142,6 +142,37 @@ const timestamp = (value: string | null): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+/**
+ * 不需要纳管 lapses once a platform reports the device after all
+ * (2026-10-15): the reason it was given — it cannot be enrolled — no longer
+ * holds, and leaving the mark would bring it back silently should the
+ * device later drop off the platform again.
+ */
+export async function expireExemptions(
+  database: DatabaseManager,
+  deviceIds?: readonly string[],
+): Promise<void> {
+  const linked = (
+    await database
+      .query()
+      .selectFrom('managedDevices')
+      .select('deviceId')
+      .where('matchState', '=', 'linked')
+      .where('goneAt', 'is', null)
+      .execute<{ deviceId: string | null }>()
+  ).flatMap((row) =>
+    row.deviceId && (!deviceIds || deviceIds.includes(row.deviceId))
+      ? [row.deviceId]
+      : [],
+  );
+  if (linked.length === 0) return;
+  await database
+    .query()
+    .deleteFrom('deviceSyncExemptions')
+    .where('deviceId', 'in', [...new Set(linked)])
+    .execute();
+}
+
 export function createDeviceSyncService(deps: {
   readonly database: DatabaseManager;
   readonly history: HistoryService;
@@ -442,6 +473,7 @@ export function createDeviceSyncService(deps: {
         .where('goneAt', 'is', null)
         .where('lastSeenAt', '<', dbDateTime(startedAt))
         .execute();
+      await expireExemptions(database);
       await finish(id, {
         status: 'succeeded',
         seen,
@@ -646,6 +678,7 @@ export function createDeviceSyncService(deps: {
           ...(actorId ? { actorId } : {}),
         });
       }
+      await expireExemptions(database, [deviceId]);
       deps.touched?.();
     },
 

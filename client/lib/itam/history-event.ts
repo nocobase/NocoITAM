@@ -156,6 +156,13 @@ export function describeEvent(
           defaultValue: label('kind'),
         }),
       });
+    // 不需要纳管 and taking it back (2026-10-15).
+    case 'managedExempted':
+      return t('history.summaries.managedExempted', {
+        reason: label('reason'),
+      });
+    case 'managedUnexempted':
+      return t('history.summaries.managedUnexempted');
     case 'unregisteredFound':
       return t('history.summaries.unregisteredFound', {
         target: label('label'),

@@ -310,7 +310,7 @@ export const agentCommandRoutes: AppApiRouteContribution<Application> =
         summary: 'Device sync review',
         operationId: 'itamDeviceSyncReview',
         description:
-          "Where the device management platforms (Intune, Jamf Pro) and the register disagree. `view`: checks — register devices that are silent (`stale`), with another primary user (`userMismatch`) or online while off duty (`statusMismatch`); unregistered — platform records no device answers to, with `suggestedModelId` and, for a serial several devices share, `candidates`; unmanaged — devices in use of a managed category on no platform; ignored — records kept off the register. With `deviceId`, that device's platform records and differences. `connected: false` means no platform is connected.",
+          "Where the device management platforms (Intune, Jamf Pro) and the register disagree. `view`: checks — register devices that are silent (`stale`), with another primary user (`userMismatch`) or online while off duty (`statusMismatch`); unregistered — platform records no device answers to, with `suggestedModelId` and, for a serial several devices share, `candidates`; unmanaged — devices in use of a managed category on no platform; ignored — records kept off the register; exempted — devices marked as not to be managed by any platform, with the reason (no longer `unmanaged`). With `deviceId`, that device's platform records, differences and `exemption`. `connected: false` means no platform is connected.",
         ...command(VIEW_ACTION, { command: 'device-sync review' }),
         responses: { '200': dataResponse(anyData), ...apiErrorResponses },
       }),
