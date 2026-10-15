@@ -85,6 +85,12 @@ vi.mock('../../client/lib/itam/recovery.js', async (original) => ({
   ...(await original<object>()),
   usePersonRecovery: () => ({ data: state.recovery }),
 }));
+// A leaver's devices still online (device sync, 2026-10-15) are their own
+// query; none here.
+vi.mock('../../client/lib/itam/device-sync.js', async (original) => ({
+  ...(await original<object>()),
+  useOnlineAfterLeaving: () => ({ data: [] }),
+}));
 vi.mock('@tanstack/react-query', async (original) => ({
   ...(await original<object>()),
   useQueryClient: () => ({

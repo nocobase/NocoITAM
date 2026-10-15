@@ -150,16 +150,27 @@ export function DataTable<T extends { readonly id: string }>({
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                   >
                     {columns.map((column) => (
-                      <TableCell
-                        key={column.key}
-                        // Long text wraps inside a bounded column instead of
-                        // stretching the table sideways.
-                        className={cn(
-                          'max-w-80 whitespace-normal break-words',
-                          column.className,
-                        )}
-                      >
-                        {column.render(row)}
+                      <TableCell key={column.key} className={column.className}>
+                        {/* One line per row (2026-10-15): a value stays on its
+                            line and the table scrolls sideways when it is
+                            wider than the page; past 20rem it ends in an
+                            ellipsis. A cell table layout ignores max-width
+                            on, so the bound is on a block inside it, and it
+                            holds what it renders to one line too (a long
+                            value's own text wraps elsewhere). */}
+                        <div
+                          className='max-w-80 truncate [&_*]:flex-nowrap [&_*]:whitespace-nowrap'
+                          // A value cut short shows whole on hover.
+                          onMouseEnter={(event) => {
+                            const cell = event.currentTarget;
+                            cell.title =
+                              cell.scrollWidth > cell.clientWidth
+                                ? (cell.textContent ?? '')
+                                : '';
+                          }}
+                        >
+                          {column.render(row)}
+                        </div>
                       </TableCell>
                     ))}
                     {rowActions ? (
