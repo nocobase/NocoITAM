@@ -1987,7 +1987,7 @@ const zhCN: AppResource = {
       link: '关联到已有设备',
       ignore: '不纳入台账',
       restore: '恢复',
-      byRule: '个人设备（按核对规则）',
+      byRule: '个人设备',
       linkTitle: '关联到已有设备',
       linkDescription: '把 MDM 设备「{{name}}」关联到台账里的一台设备。',
       candidates: '序列号相同的设备',

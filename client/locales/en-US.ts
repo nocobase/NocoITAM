@@ -2087,7 +2087,7 @@ const messages = {
       link: 'Link to a device',
       ignore: 'Keep off the register',
       restore: 'Restore',
-      byRule: 'Personal device (by the rules)',
+      byRule: 'Personal device',
       linkTitle: 'Link to a device',
       linkDescription:
         'Link the platform device “{{name}}” to a device on the register.',
