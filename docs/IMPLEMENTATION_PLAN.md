@@ -2856,9 +2856,27 @@ to the CSV export), shown only while a platform is connected; and a leaver's
 beside the 离职交接 card's tag. The tab shows it even when the leaver holds
 nothing on the register.
 
+### 2026-10-15 Device sync: the connectors against the published shapes
+
+No real tenant is available, so the connectors were checked against what the
+platforms publish: the Microsoft Graph reference's managed device example,
+and the Jamf Pro SDKs' models. Graph matched. Jamf did not, in four places:
+the computer inventory moved from v1 to v3 to v4 (v3 deprecated on
+2026-07-14, Jamf Pro 11.30), so the connector now tries v4, then v3, then
+v1; the mobile inventory cannot sort by `id` and now sorts by
+`mobileDeviceId`; and a mobile device's user name and encryption are
+`realName` and `dataProtected`, not `fullName` and `dataProtection`. Device
+sync stays marked as not validated against a real tenant until a first real
+sync has been checked (`.agents/rules/itam-device-sync.md`).
+
+The same day Intune was read from a real tenant (a Microsoft 365 trial with
+Intune Plan 1 and one enrolled Windows 11 PC): the connection, the Graph
+list and every field ITAM reads were right, so Intune is recorded as
+validated, with what that check did and did not cover. Jamf Pro is not.
+
 ### 2026-10-15 Device sync: connections entered on the settings page
 
-A platform can now be connected on 设置 → 设备同步 as well as in
+A platform can now be connected on 设置 → MDM as well as in
 `config.yml`, for a deployment whose operator does not edit the server's
 files. This revises decision 4 of the design (credentials only in
 `config.yml`): the credential still stays on the machine that runs the
