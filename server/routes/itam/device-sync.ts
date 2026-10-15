@@ -184,7 +184,7 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
         throw new BusinessRuleError('Device not found', 'deviceSync.noDevice');
     };
 
-    // 管理平台核对: one view at a time. Everything here concerns devices, so
+    // MDM 核对: one view at a time. Everything here concerns devices, so
     // it is listed to whoever may read them.
     routes.get('/review', async (context) => {
       try {

@@ -158,7 +158,7 @@ function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
             {t('onboarding.supply.link')}
             <ArrowRight aria-hidden='true' className='size-3' />
           </Link>
-        ) : // 管理平台核对, empty column or not: the platforms' unregistered
+        ) : // MDM 核对, empty column or not: the platforms' unregistered
         // and unmanaged devices are there too, and it has no menu entry.
         card.key === 'deviceChecks' ? (
           <Link

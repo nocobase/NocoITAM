@@ -205,7 +205,7 @@ function SourceBlock({
       {hasData ? (
         // Compact tiles, six across when there is room: the page-level
         // StatCards are too large inside a platform's block. What waits on
-        // a person is tinted and opens 管理平台核对, where it is settled.
+        // a person is tinted and opens MDM 核对, where it is settled.
         <div className='grid grid-cols-3 gap-2 lg:grid-cols-6'>
           {(
             [

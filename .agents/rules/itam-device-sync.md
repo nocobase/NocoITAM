@@ -1,8 +1,14 @@
 # ITAM: device sync
 
-Read this before changing device sync: the platform connectors, the `managedDevices` and `deviceSyncRuns` tables, matching by serial, the device page's 管理平台 group, 设置 → 设备同步 or the nightly pull.
+Read this before changing device sync: the platform connectors, the `managedDevices` and `deviceSyncRuns` tables, matching by serial, the device page's MDM group, 设置 → 设备同步 or the nightly pull.
 
 The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); all four steps are built.
+
+**Naming** (2026-10-15): the interface calls a device management platform
+**MDM** — the device page's MDM group, MDM 核对, 已关联 MDM — and spells it
+out once where it is first met, as 设备管理平台（MDM）. The skill's library
+title is MDM 核对; prompts name it with its slug (`device-sync`) as well,
+since a library provisioned earlier keeps the title it was given.
 
 - **Read only, and never into the register** (2026-10-14). A pull writes
   `managedDevices` (one row per platform record, keyed by `source` and the
@@ -59,7 +65,7 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   (`itam.settings` / `update`), which IT 支持 holds as well as the IT 资产经理
   in the seeded roles; a device's platform records
   (`GET /itam/devices/:id/managed`) take the device's `read`. Its
-  `connected` flag hides the 管理平台 group while no platform is configured
+  `connected` flag hides the MDM group while no platform is configured
   and none ever reported.
 - **Demo**: the generator reads its own Intune through `ingest` like a real
   pull (trigger `demo`): the laptops and desktops in use under their holders,
@@ -89,7 +95,7 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   **unlink** set `matchedBy: manual`, which the next pull keeps — an unlink
   is not undone by a matching serial. Each writes `managedLinked` /
   `managedUnlinked` on the device.
-- **Acts on the register stay the register's**: the 管理平台 group offers
+- **Acts on the register stay the register's**: the MDM group offers
   调拨给 / 分配给 the platform user and 恢复为库存中 by opening the device
   page's own dialogs, prefilled (`ManagedPlatforms`' `actions`). 补登记
   opens the device list's create form through `?new=1&init.…` (the list
@@ -100,7 +106,7 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
 - **Where it shows**: 待办's 设备核对 column (`deviceChecks`, a device's
   负责人 for 我负责的, devices `read` and `update` to see it); 离职交接
   cards tagged N 台设备离职后仍在线 (`onlineAfterLeaving`, a sync after the
-  leave date); `/device-sync` (管理平台核对, no menu entry or page grant,
+  leave date); `/device-sync` (MDM 核对, no menu entry or page grant,
   views checks / unregistered / unmanaged / ignored, devices `read`; reached
   from the device list header while a platform is connected and from the
   设备核对 column header, empty or not, since 2026-10-14); the
@@ -135,11 +141,11 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   been read yet.
 - **One device, several platforms**: a co-managed Mac has a record per
   platform, each linked to the same device; the device page shows both and
-  the differences read the latest sync. 管理平台核对 folds unregistered and
+  the differences read the latest sync. MDM 核对 folds unregistered and
   kept-off records of one serial into one row (`sources` lists the
   platforms), and 不纳入台账 / 恢复 decide them together.
 - **Noco** (step 4, 2026-10-15): the method skill `device-sync`
-  (`ai/skills/device-sync/SKILL.md`, 管理平台核对) — explain a difference,
+  (`ai/skills/device-sync/SKILL.md`, MDM 核对) — explain a difference,
   find the right device for a shared serial, sort the records the register
   lacks into one plan; never mark lost or keep the register for the person,
   never act on a platform. It reads `itam device-sync review` (`--view`, or
@@ -150,7 +156,7 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   `ignore_managed_device` (devices `create`), whose history reads origin
   `agent`. A device a plan creates through `create_record` is matched by
   serial at once, as on its page. Entry points: 让 Noco 看看 on a
-  difference's notice, and 让 Noco 解释这些差异 / 整理这批设备 on 管理平台核对.
+  difference's notice, and 让 Noco 解释这些差异 / 整理这批设备 on MDM 核对.
 - **Eval set** (step 4): `server/providers/itam/evals/device-sync.ts` holds
   the cases — what the commands show, the question, and the decision a
   person who knows the method would make per item (transfer, assign,

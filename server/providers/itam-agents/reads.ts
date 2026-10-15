@@ -535,7 +535,7 @@ export const DeviceSyncReviewInput = z.object({
 
 /**
  * Where the management platforms and the register disagree, as the person
- * may see it: one view of 管理平台核对, or — with a device — that device's
+ * may see it: one view of MDM 核对, or — with a device — that device's
  * platform records and its differences. Differences and devices stay within
  * the person's device `read`; platform records not on the register are
  * listed to whoever may read devices, as the page lists them.

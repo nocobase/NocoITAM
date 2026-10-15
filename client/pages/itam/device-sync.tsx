@@ -37,7 +37,7 @@ import { formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
 
 /**
- * 管理平台核对 (device sync, step 2, 2026-10-15): where the device management
+ * MDM 核对 (device sync, step 2, 2026-10-15): where the device management
  * platforms and the register disagree, one view at a time — the devices
  * whose platform record says otherwise, the platform records nobody put on
  * the register, the devices in use no platform reports, and the records a

@@ -284,7 +284,7 @@ it('marks, in the team view, the approvals that wait on the reader', () => {
   state.rows = {};
 });
 
-it('leads from the device checks column to 管理平台核对, even when it is empty', () => {
+it('leads from the device checks column to MDM 核对, even when it is empty', () => {
   state.items = [
     {
       key: 'deviceChecks',

@@ -151,7 +151,7 @@ function DevicesList(): ReactElement {
   const names = useReferenceNames(referenceRequests);
 
   // Another page can open the create form filled in, the way the other
-  // lists can (`?new=1&init.serialNo=…`): 补登记 on 管理平台核对 brings what
+  // lists can (`?new=1&init.serialNo=…`): 补登记 on MDM 核对 brings what
   // the platform knows (device sync, 2026-10-15).
   const prefill: Record<string, unknown> = {};
   for (const [key, value] of params.entries())
@@ -277,7 +277,7 @@ function DevicesList(): ReactElement {
               }}
               columns={columns.map((field) => field.key)}
             />
-            {/* 管理平台核对 has no menu entry (it is empty until a platform
+            {/* MDM 核对 has no menu entry (it is empty until a platform
                 is connected), so the device list leads to it while one is. */}
             {syncConnected ? (
               <Button

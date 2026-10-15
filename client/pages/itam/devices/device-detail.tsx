@@ -180,7 +180,7 @@ export default function DeviceDetailPage(): ReactElement {
     'correctStatus',
   ]);
   const [dialog, setDialog] = useState<DialogKind>();
-  // The person a platform says has the device, offered by 管理平台's
+  // The person a platform says has the device, offered by MDM's
   // 分配给 / 调拨给 (device sync, 2026-10-15).
   const [suggested, setSuggested] = useState<string>();
   const impact = useDeleteImpact(

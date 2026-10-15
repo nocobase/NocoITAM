@@ -294,7 +294,7 @@ type ReviewRow<V extends ReviewView> = V extends 'checks'
     ? UnmanagedDevice
     : UnregisteredDevice;
 
-/** One view of 管理平台核对. */
+/** One view of MDM 核对. */
 export function useDeviceReview<V extends ReviewView>(
   view: V,
 ): UseQueryResult<ReviewRow<V>[]> {

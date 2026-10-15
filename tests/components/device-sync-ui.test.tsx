@@ -123,7 +123,7 @@ const source = (overrides: Partial<SourceStatus> = {}): SourceStatus => ({
   ...overrides,
 });
 
-describe("a device's 管理平台 group", () => {
+describe("a device's MDM group", () => {
   beforeEach(() => {
     state.managed = undefined;
   });

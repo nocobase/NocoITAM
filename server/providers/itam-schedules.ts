@@ -70,7 +70,7 @@ const SYNC_SCHEDULE = { key: 'itam.device-sync', cron: '30 1 * * *' };
 const SYNC_TITLES: Readonly<Record<string, readonly [string, string]>> = {
   'zh-CN': [
     '设备同步',
-    '从已连接的管理平台（Intune、Jamf Pro）拉取设备清单，更新设备的管理平台信息，按序列号关联台账设备；没有连接任何平台时什么也不做',
+    '从已连接的 MDM（Intune、Jamf Pro）拉取设备清单，更新设备的 MDM 信息，按序列号关联台账设备；没有连接任何平台时什么也不做',
   ],
   'en-US': [
     'Device sync',
