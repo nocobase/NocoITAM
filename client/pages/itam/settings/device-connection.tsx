@@ -112,6 +112,14 @@ export function DeviceConnectionNotes({
         {t('settings.deviceSync.connection.fromConfig')}
       </p>
     );
+  if (connection?.origin === 'demo')
+    return (
+      <p className='text-sm text-muted-foreground'>
+        {t('settings.deviceSync.connection.demo', {
+          name: t(`deviceSync.sourceNames.${connection.source}`),
+        })}
+      </p>
+    );
   if (connection?.origin === 'settings')
     return (
       <p className='text-sm text-muted-foreground'>

@@ -2311,6 +2311,7 @@ const zhCN: AppResource = {
         testOk_one: '连接成功，读到第一页 {{count}} 台设备',
         testOk_other: '连接成功，读到第一页 {{count}} 台设备',
         fromConfig: '由服务器的 config.yml 配置，这里只能查看',
+        demo: '演示数据：模拟的 {{name}} 连接。「立即同步」重放演示记录，不会连接真实的 {{name}}；点「连接」换成真实连接。',
         saved: '客户端 ID {{clientId}} · {{name}} 于 {{date}} 保存',
         secretsMissing:
           '服务器没有配置加密主密钥（config.yml 中的 secrets.keys），不能在这里保存密钥。请让管理员配置主密钥，或在 config.yml 中填写连接。',

@@ -36,6 +36,13 @@ product or in release notes, until it is listed here.
   `managedDevices.deviceId`. The only trace on a device is the
   `managedLinked` timeline event, origin `sync`. No code writes to a
   platform; Intune asks only for `DeviceManagementManagedDevices.Read.All`.
+- **The demo stands in for a platform** (2026-10-15,
+  `device-demo-source.ts`): with no connection, a platform whose records
+  include the demo's (ids starting `demo-`) reads as connected, origin
+  `demo` on 设置 → MDM with a note that it is simulated, and its pulls —
+  立即同步 and the nightly one — replay those records instead of the
+  network. A real connection replaces it. Demo records have no console
+  link.
 - **Credentials: `config.yml`, or the settings page** (2026-10-15). A
   platform under `deviceSync.intune` / `deviceSync.jamf` in `config.yml`
   (`server/config/device-sync.ts`, with `INTUNE_*` / `JAMF_*` environment

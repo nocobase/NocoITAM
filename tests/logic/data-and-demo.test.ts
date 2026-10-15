@@ -7,7 +7,9 @@ import {
   numberingServiceToken,
 } from '../../server/providers/index.js';
 import { parseCsv, toCsv } from '../../server/providers/itam/csv.js';
+import { deviceConnectionsServiceToken } from '../../server/providers/itam/device-connections.js';
 import { deviceReviewServiceToken } from '../../server/providers/itam/device-review.js';
+import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.js';
 import { today } from '../../server/providers/itam/dates.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { dataRoutes } from '../../server/routes/itam/data.js';
@@ -313,6 +315,61 @@ describe('CSV import / export and demo data', () => {
     expect(after.map((order) => order.id)).toContain(partial.rows[2]?.id);
   });
 
+  it('shows the demo’s platforms as connected and syncs them from the demo', async () => {
+    expect((await post('demo/generate', { language: 'zh-CN' })).status).toBe(
+      200,
+    );
+    const connections = app.container.resolve(deviceConnectionsServiceToken);
+    expect(
+      (await connections.describe()).map((row) => [row.source, row.origin]),
+    ).toEqual([
+      ['intune', 'demo'],
+      ['jamf', 'demo'],
+    ]);
+    const sync = app.container.resolve(deviceSyncServiceToken);
+    expect(
+      (await sync.status()).map((source) => [source.key, source.configured]),
+    ).toEqual([
+      ['intune', true],
+      ['jamf', true],
+    ]);
+    const query = () => app.container.resolve(databaseManagerToken).query();
+    const before = (await query()
+      .selectFrom('managedDevices')
+      .select(['externalId', 'lastSyncAt', 'goneAt'])
+      .execute()) as {
+      externalId: string;
+      lastSyncAt: string;
+      goneAt: string | null;
+    }[];
+    const runs = await sync.runAll('manual');
+    expect(runs.map((run) => [run.source, run.status])).toEqual([
+      ['intune', 'succeeded'],
+      ['jamf', 'succeeded'],
+    ]);
+    const after = new Map(
+      (
+        (await query()
+          .selectFrom('managedDevices')
+          .select(['externalId', 'lastSyncAt', 'goneAt'])
+          .execute()) as typeof before
+      ).map((row) => [row.externalId, row]),
+    );
+    // The record Intune dropped stays gone; the rest sync no earlier.
+    expect(before.filter((row) => row.goneAt)).toHaveLength(1);
+    for (const row of before) {
+      expect(Boolean(after.get(row.externalId)?.goneAt)).toBe(
+        Boolean(row.goneAt),
+      );
+      if (!row.goneAt)
+        expect(
+          Date.parse(after.get(row.externalId)!.lastSyncAt),
+        ).toBeGreaterThanOrEqual(Date.parse(row.lastSyncAt));
+    }
+    // Made-up ids open no console page.
+    expect((await sync.consoleUrls())('intune', 'demo-build-vm')).toBeNull();
+  });
+
   it('generates the demo in the language asked for', async () => {
     expect((await post('demo/generate', { language: 'fr-FR' })).status).toBe(
       400,
@@ -433,12 +490,21 @@ describe('CSV import / export and demo data', () => {
       .resolve(databaseManagerToken)
       .query()
       .selectFrom('managedDevices')
-      .select(['externalId', 'matchState', 'ownership', 'lastSyncAt'])
+      .select([
+        'externalId',
+        'matchState',
+        'ownership',
+        'lastSyncAt',
+        'goneAt',
+        'ignoreReason',
+      ])
       .execute()) as {
       externalId: string;
       matchState: string;
       ownership: string;
       lastSyncAt: string;
+      goneAt: string | null;
+      ignoreReason: string | null;
     }[];
     // Whatever the hour it is imported, no sync is dated in the future.
     expect(
@@ -454,13 +520,24 @@ describe('CSV import / export and demo data', () => {
         .sort(),
     ).toEqual([
       'demo-build-vm',
+      'demo-contractor-laptop',
+      'demo-meeting-room',
       'demo-personal-phone',
+      'demo-shared-serial',
       'demo-unregistered-laptop',
     ]);
-    expect(
-      managed.find((row) => row.externalId === 'demo-personal-phone')
-        ?.ownership,
-    ).toBe('personal');
+    const record = (externalId: string) =>
+      managed.find((row) => row.externalId === externalId);
+    expect(record('demo-personal-phone')?.ownership).toBe('personal');
+    // 2026-10-15: every situation of MDM 核对 — a serial two register
+    // devices share, a record a person kept off the register with a
+    // reason, and one Intune stopped reporting on the second pull.
+    expect(record('demo-shared-serial')?.matchState).toBe('ambiguous');
+    expect(record('demo-meeting-room')).toMatchObject({
+      matchState: 'ignored',
+      ignoreReason: expect.stringMatching(/\S/),
+    });
+    expect(managed.filter((row) => row.goneAt)).toHaveLength(1);
 
     const reminders = await app.container
       .resolve(maintenanceServiceToken)
@@ -493,7 +570,10 @@ describe('CSV import / export and demo data', () => {
     expect(new Set(checks.map((check) => check.kind))).toEqual(
       new Set(['stale', 'userMismatch', 'statusMismatch']),
     );
-    expect(count('managedUnregistered')).toBe(2);
+    // The disposed laptop still online is the critical one.
+    expect(checks.some((check) => check.critical)).toBe(true);
+    // The new laptop, the contractor's, the shared serial and the VM.
+    expect(count('managedUnregistered')).toBe(4);
     expect(count('deviceUnmanaged')).toBeGreaterThanOrEqual(1);
     // Step 3: the demo's Jamf reports the Macs and phones in use, each
     // linked to the register device of its serial.

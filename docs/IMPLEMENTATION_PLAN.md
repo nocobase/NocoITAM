@@ -2886,6 +2886,17 @@ wins for a platform it configures. The page tests a connection before saving
 it, never shows a stored secret, and refuses to store one without
 `secrets.keys`. Migration `202610150002_device_sync_connections`.
 
+### 2026-10-15 Device sync: the demo as if connected
+
+The demo now shows Intune and Jamf as connected — simulated, and said so
+on 设置 → MDM — so 立即同步 works on it and replays the demo's records
+instead of reaching a platform. Its records cover every situation MDM 核对
+shows: the three kinds of difference plus a disposed device still online
+and one the platform stopped reporting; a new laptop of a known model, one
+of an unknown model under a contractor, a shared serial and a virtual
+machine; and a personal phone and a meeting room computer kept off the
+register.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

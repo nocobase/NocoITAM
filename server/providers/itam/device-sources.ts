@@ -508,12 +508,17 @@ function jamfError(
   return text(errors?.[0]?.description) ?? `Jamf Pro answered ${status}`;
 }
 
-/** Where a platform's own page for one of its records is. */
+/**
+ * Where a platform's own page for one of its records is. The demo's records
+ * have none: their ids are made up (2026-10-15).
+ */
 export function consoleUrl(
   source: string,
   externalId: string,
   config?: { readonly jamf?: JamfSourceConfig },
 ): string | null {
+  if (externalId.startsWith('demo-') || externalId.includes(':demo-'))
+    return null;
   if (source === 'intune')
     return `https://intune.microsoft.com/#view/Microsoft_Intune_Devices/DeviceSettingsMenuBlade/~/overview/mdmDeviceId/${encodeURIComponent(externalId)}`;
   const jamf = config?.jamf?.url?.trim().replace(/\/+$/, '');

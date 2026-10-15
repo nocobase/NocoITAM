@@ -20,6 +20,7 @@ import {
   type DeviceSourceKey,
   type HttpOptions,
 } from './device-sources.js';
+import { demoPlatforms } from './device-demo-source.js';
 import { BusinessRuleError } from './errors.js';
 import type { HistoryService } from './history.js';
 
@@ -60,7 +61,11 @@ export function createDeviceConnectionsSecretsStore(
   });
 }
 
-export type ConnectionOrigin = 'config' | 'settings';
+/**
+ * `demo`: no connection, but the demo's records — shown as connected and
+ * pulled from the demo itself (`device-demo-source.ts`, 2026-10-15).
+ */
+export type ConnectionOrigin = 'config' | 'settings' | 'demo';
 
 /** A platform's connection as the page shows it: never the secret. */
 export interface ConnectionView {
@@ -94,6 +99,11 @@ export interface DeviceConnectionsService {
   describe(): Promise<ConnectionView[]>;
   /** The connections a pull uses: `config.yml`'s, then the page's. */
   effective(): Promise<DeviceSyncConfig>;
+  /**
+   * The platforms the demo stands in for: its records are there and no
+   * connection names the platform.
+   */
+  demoSources(): Promise<DeviceSourceKey[]>;
   save(
     source: DeviceSourceKey,
     input: ConnectionInput,
@@ -210,7 +220,11 @@ export function createDeviceConnectionsService(deps: {
     return complete(source, values) ? values : undefined;
   };
 
-  const view = (source: DeviceSourceKey, row?: Row): ConnectionView => {
+  const view = (
+    source: DeviceSourceKey,
+    row?: Row,
+    demo = false,
+  ): ConnectionView => {
     const configured = fromConfig(source);
     if (configured)
       return {
@@ -224,7 +238,7 @@ export function createDeviceConnectionsService(deps: {
       };
     return {
       source,
-      origin: row ? 'settings' : null,
+      origin: row ? 'settings' : demo ? 'demo' : null,
       tenantId: row?.tenantId ?? null,
       url: row?.url ?? null,
       clientId: row?.clientId ?? null,
@@ -283,7 +297,21 @@ export function createDeviceConnectionsService(deps: {
 
     async describe() {
       const stored = await rows();
-      return DEVICE_SOURCES.map((source) => view(source, stored.get(source)));
+      const demo = await demoPlatforms(database);
+      return DEVICE_SOURCES.map((source) =>
+        view(source, stored.get(source), demo.has(source)),
+      );
+    },
+
+    async demoSources() {
+      const stored = await rows();
+      const demo = await demoPlatforms(database);
+      return DEVICE_SOURCES.filter(
+        (source) =>
+          demo.has(source) &&
+          !fromConfig(source) &&
+          !opened(stored.get(source)),
+      );
     },
 
     async effective() {

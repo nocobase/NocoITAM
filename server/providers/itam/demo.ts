@@ -339,6 +339,10 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     internRejection: 'Not in this quarter’s budget; raise it again in Q1',
     extraDockOrder: 'Second batch of docking stations',
     extraDockCancel: 'Covered by the stock already on hand',
+    syncMeetingRoom:
+      'Meeting room computer run by Administration; not on the IT register',
+    syncContractor: 'Li Gong (contractor)',
+    syncDuplicate: 'Entered twice by mistake',
     itSpareOrder: 'Spare laptops for IT',
     salesPhoneOrder: 'Phones for the new sales hires',
     airOrder: 'MacBook Air for the R&D hires',
@@ -396,6 +400,9 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     internRejection: '本季度预算已用完，下季度再提',
     extraDockOrder: '扩展坞第二批',
     extraDockCancel: '现有库存已够用，无需再采购',
+    syncMeetingRoom: '会议室公用电脑，由行政部管理，不入 IT 资产台账',
+    syncContractor: '李工（外包）',
+    syncDuplicate: '重复录入的设备',
     itSpareOrder: 'IT 备用笔记本',
     salesPhoneOrder: '销售新员工手机',
     airOrder: '研发新员工 MacBook Air',
@@ -3240,11 +3247,20 @@ export function createDemoService(dependencies: {
       // What the demo's Intune reports (device sync, 2026-10-14), read in
       // through the same matching as a real pull, so the devices' pages show
       // their management platform and the settings page has something to
-      // count without a tenant. Most of the laptops and desktops in use sync
-      // daily under their holder; a few are wrong on purpose — one silent for
-      // seven weeks, one in another person's hands, one on the shelf yet
-      // online — and three are not on the books: a new laptop, an employee's
-      // own phone and a virtual machine with a placeholder serial.
+      // count without a tenant; 设置 → MDM shows it as connected and pulls
+      // from the demo itself (`device-demo-source.ts`). Most of the laptops
+      // and desktops in use sync daily under their holder. Every situation
+      // MDM 核对 knows is there once (2026-10-15):
+      // - 信息不一致: one silent for seven weeks, one in another person's
+      //   hands, one on the shelf yet online, a disposed one still online
+      //   (critical), and one Intune stopped reporting (a second pull
+      //   leaves it out); one more syncs but is non-compliant and
+      //   unencrypted, which its page shows;
+      // - 只在 MDM: a new laptop of a model on the books, a contractor's
+      //   laptop of a model that is not, a serial two register devices
+      //   share, and a virtual machine with a placeholder serial;
+      // - 已忽略: an employee's own phone (忽略个人设备) and a meeting room
+      //   computer a person kept off the register.
       if (dependencies.deviceSync) {
         const demoDeviceIds = (
           await database
@@ -3271,6 +3287,7 @@ export function createDemoService(dependencies: {
             'devices.name as name',
             'devices.status as status',
             'devices.assigneeType as assigneeType',
+            'devices.modelId as modelId',
             'people.email as email',
             'people.name as personName',
             'models.name as model',
@@ -3357,6 +3374,33 @@ export function createDemoService(dependencies: {
               lastSyncAt: syncedAgo(0),
             }),
           );
+        // Disposed, yet online two days ago: a data risk, raised as critical.
+        const disposed = computers.find((row) => row.status === 'disposed');
+        if (disposed)
+          observed.push(
+            observation(disposed, observed.length, {
+              userPrincipal: null,
+              userName: null,
+              lastSyncAt: syncedAgo(2),
+            }),
+          );
+        // Of the laptops in use that only Intune manages (Jamf takes the
+        // Macs past the third), one is non-compliant and unencrypted, and
+        // one is left out of the second pull below: Intune no longer
+        // reports it.
+        const intuneOnly = inUse
+          .map((row, index) => ({ row, index }))
+          .filter(
+            ({ row, index }) => index > 2 && row.manufacturer !== 'Apple',
+          );
+        const unsafe = intuneOnly[0];
+        if (unsafe)
+          observed[unsafe.index] = {
+            ...observed[unsafe.index],
+            compliance: 'noncompliant',
+            encrypted: false,
+          };
+        const dropped = intuneOnly[1];
         const extra = (
           externalId: string,
           values: Partial<ObservedDevice>,
@@ -3408,16 +3452,75 @@ export function createDemoService(dependencies: {
             compliance: 'noncompliant',
             encrypted: false,
           }),
+          // A model the register does not have, under someone who is not a
+          // person on it: 补登记 can only bring the maker.
+          extra('demo-contractor-laptop', {
+            serialNo: 'DLDEMO03',
+            deviceName: 'LAPTOP-DLDEMO03',
+            manufacturer: 'Dell',
+            model: 'Dell Latitude 7450',
+            userPrincipal: 'li.gong@partner.example',
+            userName: texts.syncContractor,
+          }),
+          // Kept off the register by a person, below.
+          extra('demo-meeting-room', {
+            serialNo: 'MRDEMO04',
+            deviceName: 'MEETING-ROOM-01',
+            manufacturer: 'Dell',
+            model: 'OptiPlex 7020 Micro',
+          }),
         );
-        const run = await dependencies.deviceSync.ingest(
-          'intune',
-          (async function* () {
-            yield observed;
-          })(),
-          'demo',
-          actorId,
-        );
-        await track('deviceSyncRuns', run);
+        // A laptop on the shelf entered twice, the second time in lower case
+        // — the register takes it as another serial, matching ignores case —
+        // so the platform's serial is on two register devices and a person
+        // picks which one it is.
+        const shared = onShelf[1];
+        if (shared) {
+          await device({
+            modelId: shared.modelId,
+            serialNo: String(shared.serialNo).toLowerCase(),
+            name: texts.syncDuplicate,
+          });
+          observed.push(
+            extra('demo-shared-serial', {
+              serialNo: String(shared.serialNo),
+              deviceName: `LAPTOP-${String(shared.serialNo)}`,
+              manufacturer: (shared.manufacturer as string | null) ?? null,
+              model: (shared.model as string | null) ?? null,
+              userPrincipal: (inUse[0]?.email as string | null) ?? null,
+              userName: (inUse[0]?.personName as string | null) ?? null,
+            }),
+          );
+        }
+        // Two pulls: the first with every device, the second without the
+        // one Intune stopped reporting, which the second marks gone.
+        for (const batch of [
+          observed,
+          observed.filter((_, index) => index !== dropped?.index),
+        ]) {
+          const run = await dependencies.deviceSync.ingest(
+            'intune',
+            (async function* () {
+              yield batch;
+            })(),
+            'demo',
+            actorId,
+          );
+          await track('deviceSyncRuns', run);
+          if (!dropped) break;
+        }
+        await database
+          .query()
+          .updateTable('managedDevices')
+          .set({
+            matchState: 'ignored',
+            ignoredById: actorId,
+            ignoredAt: new Date(),
+            ignoreReason: texts.syncMeetingRoom,
+          })
+          .where('source', '=', 'intune')
+          .where('externalId', '=', 'demo-meeting-room')
+          .execute();
         const pulled = await database
           .query()
           .selectFrom('managedDevices')

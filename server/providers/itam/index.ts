@@ -23,6 +23,7 @@ import { approvalServiceToken, createApprovalService } from './approvals.js';
 import { auditServiceToken, createAuditService } from './audits.js';
 import { deviceServiceToken, createDeviceService } from './devices.js';
 import { configuredSources } from './device-sources.js';
+import { createDemoSource } from './device-demo-source.js';
 import {
   createDeviceConnectionsService,
   createDeviceConnectionsSecretsStore,
@@ -628,10 +629,18 @@ export default class ItamProvider extends ServiceProvider<Application> {
       createDeviceSyncService({
         database: container.resolve(databaseManagerToken),
         history: container.resolve(historyServiceToken),
-        sources: async () =>
-          configuredSources(
-            await container.resolve(deviceConnectionsServiceToken).effective(),
-          ),
+        // The connections, then the demo standing in for a platform none
+        // names (`device-demo-source.ts`, 2026-10-15).
+        sources: async () => {
+          const connections = container.resolve(deviceConnectionsServiceToken);
+          const database = container.resolve(databaseManagerToken);
+          return [
+            ...configuredSources(await connections.effective()),
+            ...(await connections.demoSources()).map((key) =>
+              createDemoSource(database, key),
+            ),
+          ];
+        },
         consoles: () =>
           container.resolve(deviceConnectionsServiceToken).effective(),
         touched: () => container.resolve(itamChangesToken).touched(),

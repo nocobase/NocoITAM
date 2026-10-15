@@ -124,3 +124,17 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   It also deletes the three seeded Permission Sets so the seeds rewrite them
   — a seed writes a set only when it is absent, so editing a grant in one
   otherwise has no effect on a database that already ran it.
+- **Device sync in the demo** (2026-10-15, `demo.ts`): the demo's Intune and
+  Jamf records hold every situation MDM 核对 shows once — silent, another
+  user, on the shelf yet online, disposed yet online (critical), no longer
+  reported (a second Intune pull leaves it out), non-compliant and
+  unencrypted; a new laptop of a known model, a contractor's of an unknown
+  one, a serial two register devices share (the second entered in lower
+  case: the register refuses an equal serial, matching ignores case), a
+  virtual machine; a personal phone and a meeting room computer kept off by
+  a person. Their platform ids start `demo-` (or `computer:demo-` /
+  `mobile:demo-`), which is how `device-demo-source.ts` knows them: with no
+  connection, a platform holding demo records reads as connected (`demo`)
+  and its pulls replay them, last syncs moved on by the time since the
+  previous pull. Keep that prefix on any record the demo adds. The data and
+  demo test asserts each situation.
