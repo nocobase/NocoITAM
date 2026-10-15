@@ -483,7 +483,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
         entitlements: container.resolve(entitlementServiceToken),
         masterData: container.resolve(masterDataServiceToken),
         notifier: container.resolve(itamNotifierToken),
-        review: container.resolve(deviceReviewServiceToken),
       }),
     );
     container.singleton(workbenchServiceToken, () =>

@@ -1852,7 +1852,9 @@ const messages = {
       activeRepairs: 'Repairs in progress',
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
-      deviceChecks: 'MDM mismatches',
+      deviceChecks: 'MDM review',
+      mdmUnregistered: 'Register them, or keep them off the register',
+      mdmUnmanaged: 'Enrol them in MDM',
       leaverRecovery: 'Offboarding',
       pendingOnboarding: 'Onboarding prep',
       // The card lists everybody's now, so this says which part of a row
@@ -1893,8 +1895,6 @@ const messages = {
       lowAccessories: 'Accessories below minimum',
       lowConsumables: 'Consumables below minimum',
       lowComponents: 'Components below minimum',
-      managedUnregistered: 'On a platform, not on the register',
-      deviceUnmanaged: 'In use, on no platform',
     },
     reminderCaptions: {
       warrantyExpiring: 'Devices in use',
@@ -1911,10 +1911,6 @@ const messages = {
       lowAccessories: 'Available quantity below its minimum',
       lowConsumables: 'Available quantity below its minimum',
       lowComponents: 'Available quantity below its minimum',
-      managedUnregistered:
-        'A device management platform reports a device the register does not hold',
-      deviceUnmanaged:
-        'Devices in use of a managed category that no connected platform reports',
     },
   },
   data: {

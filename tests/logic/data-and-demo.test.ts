@@ -561,20 +561,19 @@ describe('CSV import / export and demo data', () => {
     // The Zoom subscription the demo stopped renewing still holds a seat.
     expect(count('entitlementEnded')).toBe(1);
     // Step 2 (2026-10-15): the demo shows every kind of difference — one
-    // silent, one under another user, one on the shelf yet online — and both
-    // 需要关注 rules: the laptop and the VM not on the register (the
+    // silent, one under another user, one on the shelf yet online — and the
+    // other two tabs: the laptops and the VM not on the register (the
     // personal phone is ignored), and the phones in use on no platform.
-    const checks = await app.container
-      .resolve(deviceReviewServiceToken)
-      .checks();
+    const review = app.container.resolve(deviceReviewServiceToken);
+    const checks = await review.checks();
     expect(new Set(checks.map((check) => check.kind))).toEqual(
       new Set(['stale', 'userMismatch', 'statusMismatch']),
     );
     // The disposed laptop still online is the critical one.
     expect(checks.some((check) => check.critical)).toBe(true);
     // The new laptop, the contractor's, the shared serial and the VM.
-    expect(count('managedUnregistered')).toBe(4);
-    expect(count('deviceUnmanaged')).toBeGreaterThanOrEqual(1);
+    expect(await review.unregistered()).toHaveLength(4);
+    expect((await review.unmanaged()).length).toBeGreaterThanOrEqual(1);
     // Step 3: the demo's Jamf reports the Macs and phones in use, each
     // linked to the register device of its serial.
     const jamf = (await app.container

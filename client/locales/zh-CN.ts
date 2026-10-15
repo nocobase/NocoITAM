@@ -1770,7 +1770,11 @@ const zhCN: AppResource = {
       activeRepairs: '维修中',
       activeAudits: '进行中的盘点',
       loansDueToday: '借出逾期',
-      deviceChecks: 'MDM 信息不一致',
+      // MDM 核对 (2026-10-15): the differences as cards, and a count for
+      // each of the other two tabs.
+      deviceChecks: 'MDM 核对',
+      mdmUnregistered: '补登记，或标为不纳入台账',
+      mdmUnmanaged: '需要在 MDM 中注册',
       leaverRecovery: '离职交接',
       pendingOnboarding: '入职准备',
       // The card lists everybody's now, so this says which part of a row
@@ -1808,8 +1812,6 @@ const zhCN: AppResource = {
       lowAccessories: '低于水位的配件',
       lowConsumables: '低于水位的耗材',
       lowComponents: '低于水位的组件',
-      managedUnregistered: 'MDM 里有、台账未登记',
-      deviceUnmanaged: '在用但不在任何 MDM 中',
     },
     reminderCaptions: {
       warrantyExpiring: '在用设备',
@@ -1823,8 +1825,6 @@ const zhCN: AppResource = {
       lowAccessories: '可用数量低于最低库存水位',
       lowConsumables: '可用数量低于最低库存水位',
       lowComponents: '可用数量低于最低库存水位',
-      managedUnregistered: 'MDM 报告了，台账里却没有这台设备',
-      deviceUnmanaged: '应纳管分类的在用设备，没有出现在任何已连接的 MDM 中',
     },
   },
   data: {

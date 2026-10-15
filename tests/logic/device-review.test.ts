@@ -122,12 +122,6 @@ describe('device review', () => {
     expect(await review.active()).toBe(false);
     expect(await review.checks()).toEqual([]);
     expect(await review.unmanaged()).toEqual([]);
-    const counts = await app.container
-      .resolve(maintenanceServiceToken)
-      .reminderCounts();
-    expect(counts.map((entry) => entry.kind)).not.toContain(
-      'managedUnregistered',
-    );
   });
 
   it('calls a device in use silent once it has not synced for the threshold, or the platform dropped it', async () => {
@@ -281,12 +275,6 @@ describe('device review', () => {
       suggestedModelId: 'model-thinkpad-t14-gen5',
       matchState: 'unlinked',
     });
-    const counts = await app.container
-      .resolve(maintenanceServiceToken)
-      .reminderCounts();
-    expect(
-      counts.find((entry) => entry.kind === 'managedUnregistered'),
-    ).toMatchObject({ count: 1, preview: [{ label: 'LAPTOP-NEW' }] });
   });
 
   it('fills 补登记 from the model with or without its maker, the maker by name, and the user’s department', async () => {
@@ -476,6 +464,52 @@ describe('device review', () => {
       scope: 'mine',
     });
     expect(mine.find((item) => item.key === 'deviceChecks')?.count).toBe(0);
+  });
+
+  it('counts 只在 MDM and 只在台账 on the MDM 核对 column, not in 需要关注', async () => {
+    const pat = await person('Pat Lee', 'pat@example.com');
+    const off = await device('OFF-BOARD');
+    await assign(off, pat);
+    await pull(observed('new', { serialNo: 'NEW-BOARD' }));
+    const workbench = app.container.resolve(workbenchServiceToken);
+    const decide =
+      (denied?: string) => async (collection: string, action: string) =>
+        action === denied
+          ? null
+          : ({
+              type: 'database',
+              collection,
+              action,
+              scope: true,
+              fields: [],
+              fieldAccess: { input: '*', output: '*' },
+            } as never);
+    const column = async (
+      userId: string,
+      options?: { denied?: string; scope?: 'mine' },
+    ) =>
+      (
+        await workbench.myWork(userId, decide(options?.denied), {
+          scope: options?.scope ?? 'all',
+        })
+      ).find((item) => item.key === 'deviceChecks');
+    expect((await column('mia'))?.summary).toEqual({
+      unregistered: 1,
+      unmanaged: 1,
+    });
+    // 只在台账 has a 负责人; a record not on the register has nobody's name.
+    expect((await column('somebody-else', { scope: 'mine' }))?.summary).toEqual(
+      { unregistered: 1, unmanaged: 0 },
+    );
+    // Registering is creating a device.
+    expect((await column('mia', { denied: 'create' }))?.summary).toEqual({
+      unmanaged: 1,
+    });
+    const kinds = (
+      await app.container.resolve(maintenanceServiceToken).reminderCounts()
+    ).map((entry) => String(entry.kind));
+    expect(kinds).not.toContain('managedUnregistered');
+    expect(kinds).not.toContain('deviceUnmanaged');
   });
 
   it('lists each view to whoever may read devices', async () => {

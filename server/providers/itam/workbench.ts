@@ -98,6 +98,17 @@ export interface MyWorkItem {
   readonly url: string;
   /** The first few records behind it, oldest or soonest first. */
   readonly records: readonly MyWorkRecord[];
+  /**
+   * MDM 核对 only (2026-10-15): beside its differences, how many platform
+   * records are on no register device (只在 MDM) and how many devices in use
+   * are on no platform (只在台账). Counts rather than records: each is one
+   * errand on its tab of MDM 核对, where the column links. 只在 MDM is absent
+   * for a reader who may not register devices.
+   */
+  readonly summary?: {
+    readonly unregistered?: number;
+    readonly unmanaged: number;
+  };
 }
 
 export interface WorkbenchService {
@@ -965,10 +976,14 @@ export function createWorkbenchService(dependencies: {
           })),
         });
       }
-      // 设备核对 (device sync, 2026-10-15): a device the platforms see
+      // MDM 核对 (device sync, 2026-10-15): a device the platforms see
       // otherwise than the register — silent too long, in other hands, or
       // online while on the shelf. Its 负责人 answers for it, so 我负责的
-      // narrows to theirs; everybody who may update devices sees all.
+      // narrows to theirs; everybody who may update devices sees all. The
+      // column also counts the other two tabs, which were 需要关注 rules for
+      // a day: 只在台账 by the same rule, since those devices have a 负责人,
+      // and 只在 MDM in both views, since nobody's name is on a record that
+      // is not on the register yet — the act it asks for is registering.
       const checkable = await decide('devices', 'read');
       if (
         review &&
@@ -977,8 +992,13 @@ export function createWorkbenchService(dependencies: {
         (await review.active())
       ) {
         const all = await review.checks();
+        const unmanaged = await review.unmanaged();
+        const ids = [
+          ...all.map((check) => check.deviceId),
+          ...unmanaged.map((device) => device.id),
+        ];
         const visible = new Set(
-          all.length === 0
+          ids.length === 0
             ? []
             : (
                 await database
@@ -986,22 +1006,27 @@ export function createWorkbenchService(dependencies: {
                   .selectFrom('devices')
                   .select('id')
                   .where((eb) => compileAuthzScope(eb, checkable.scope))
-                  .where(
-                    'id',
-                    'in',
-                    all.map((check) => check.deviceId),
-                  )
+                  .where('id', 'in', ids)
                   .execute<{ id: string }>()
               ).map((row) => row.id),
         );
-        const checks = all.filter(
-          (check) =>
-            visible.has(check.deviceId) &&
-            (reader === null || check.ownerId === reader),
+        const ours = (id: string, ownerId: string | null) =>
+          visible.has(id) && (reader === null || ownerId === reader);
+        const checks = all.filter((check) =>
+          ours(check.deviceId, check.ownerId),
         );
+        const registrable = Boolean(await decide('devices', 'create'));
         items.push({
           key: 'deviceChecks',
           count: checks.length,
+          summary: {
+            ...(registrable
+              ? { unregistered: (await review.unregistered()).length }
+              : {}),
+            unmanaged: unmanaged.filter((device) =>
+              ours(device.id, device.ownerId),
+            ).length,
+          },
           url: '/device-sync?view=checks',
           records: checks.slice(0, MY_WORK_PREVIEW).map((check) => ({
             id: check.deviceId,
