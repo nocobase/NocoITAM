@@ -2068,14 +2068,8 @@ const messages = {
       },
       ignoredHeading: 'Ignored ({{count}})',
       unmanaged: {
-        lead: 'Register devices that meet all three:',
-        category:
-          'Of a managed category: {{categories}} (with their subcategories; changed under the review rules)',
-        categoryByRule:
-          'Of a managed category of the review rules (with their subcategories)',
-        status: 'In use or on loan',
-        noMdm: 'Reported by no connected MDM',
-        action: 'They need enrolling in MDM.',
+        hint: 'Register devices in use or on loan, of a managed category ({{categories}}, with subcategories; changed under the review rules), that no connected MDM reports. They need enrolling in MDM.',
+        categoriesByRule: 'see the review rules',
       },
       empty: 'Nothing to review',
       columns: {

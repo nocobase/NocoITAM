@@ -168,8 +168,8 @@ export default function DeviceSyncReviewPage(): ReactElement {
 }
 
 /**
- * What puts a device under 只在台账, all three spelt out with the
- * categories 核对规则 names, so the count can be checked against them.
+ * What puts a device under 只在台账, its three conditions in one sentence
+ * with the categories 核对规则 names, so the count can be checked.
  */
 function UnmanagedHint(): ReactElement {
   const { t } = useTranslation();
@@ -180,20 +180,14 @@ function UnmanagedHint(): ReactElement {
     .map((id) => names.categories?.get(id))
     .filter(Boolean)
     .join('、');
+  // One sentence, not a list: it sits above the table like the others.
   return (
-    <div className='space-y-1 text-sm text-muted-foreground'>
-      <p>{t('deviceSync.review.unmanaged.lead')}</p>
-      <ol className='list-decimal space-y-0.5 pl-5'>
-        <li>
-          {categories
-            ? t('deviceSync.review.unmanaged.category', { categories })
-            : t('deviceSync.review.unmanaged.categoryByRule')}
-        </li>
-        <li>{t('deviceSync.review.unmanaged.status')}</li>
-        <li>{t('deviceSync.review.unmanaged.noMdm')}</li>
-      </ol>
-      <p>{t('deviceSync.review.unmanaged.action')}</p>
-    </div>
+    <p className='text-sm text-muted-foreground'>
+      {t('deviceSync.review.unmanaged.hint', {
+        categories:
+          categories || t('deviceSync.review.unmanaged.categoriesByRule'),
+      })}
+    </p>
   );
 }
 

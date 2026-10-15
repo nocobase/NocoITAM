@@ -1968,13 +1968,8 @@ const zhCN: AppResource = {
       },
       ignoredHeading: '已忽略 {{count}} 台',
       unmanaged: {
-        lead: '台账里同时满足以下三个条件的设备：',
-        category:
-          '分类属于应纳管分类：{{categories}}（含子分类，可在核对规则中修改）',
-        categoryByRule: '分类属于核对规则中的应纳管分类（含子分类）',
-        status: '状态是使用中或借出',
-        noMdm: '没有出现在任何已连接的 MDM 中',
-        action: '需要在 MDM 那边给它们注册。',
+        hint: '台账里使用中或借出、分类属于应纳管分类（{{categories}}，含子分类，可在核对规则中修改），却没有出现在任何已连接 MDM 中的设备，需要在 MDM 那边注册。',
+        categoriesByRule: '见核对规则',
       },
       empty: '没有需要处理的设备',
       columns: {
