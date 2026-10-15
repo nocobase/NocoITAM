@@ -268,8 +268,11 @@ function DevicesList(): ReactElement {
             {/* MDM 核对 has no menu entry (it is empty until a platform
                 is connected), so the device list leads to it while one is. */}
             {syncConnected ? (
+              // Filled in the foreground colour like MDM 核对's own link to
+              // its settings (2026-10-15): a way to another page, apart
+              // from this page's blue actions.
               <Button
-                variant='outline'
+                className='bg-foreground text-background hover:bg-foreground/85'
                 onClick={() => void navigate('/device-sync')}
               >
                 <MonitorCheck data-icon='inline-start' />
