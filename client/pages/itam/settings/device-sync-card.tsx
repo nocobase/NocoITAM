@@ -57,13 +57,16 @@ export function DeviceSyncCard(): ReactElement {
   return (
     <Card>
       {/* The card's own action slot keeps 立即同步 at the right of the
-          title, however long the description runs. */}
+          title; it holds the title's row only, so the description runs the
+          card's full width beneath both. */}
       <CardHeader>
-        <CardTitle>{t('settings.deviceSync.title')}</CardTitle>
-        <CardDescription>
+        <CardTitle className='self-center'>
+          {t('settings.deviceSync.title')}
+        </CardTitle>
+        <CardDescription className='col-span-2'>
           {t('settings.deviceSync.description')}
         </CardDescription>
-        <CardAction>
+        <CardAction className='row-span-1'>
           <Button
             variant='outline'
             size='sm'
