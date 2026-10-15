@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import { CellText } from './cell-text.js';
 import { ConfirmDialog } from './confirm-dialog.js';
 import { Input } from '@/components/ui/input';
 import {
@@ -505,7 +506,9 @@ export function FieldTemplateEditor({
                             {problemText(index, 'options')}
                           </>
                         ) : (
-                          (row.options ?? []).join(', ')
+                          <CellText className='max-w-64'>
+                            {(row.options ?? []).join(', ')}
+                          </CellText>
                         )
                       ) : (
                         <span className='text-muted-foreground'>—</span>

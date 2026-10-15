@@ -2,6 +2,7 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
 
+import { CellText } from '@/components/itam/cell-text';
 import { RecordLink } from '@/components/itam/record-link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -173,8 +174,10 @@ export function ReceiptAgentCard(): ReactElement {
                         {run.orderNo ?? '—'}
                       </RecordLink>
                     </TableCell>
-                    <TableCell className='max-w-56 wrap-anywhere'>
-                      {run.documentName}
+                    <TableCell>
+                      <CellText className='max-w-56'>
+                        {run.documentName}
+                      </CellText>
                     </TableCell>
                     <TableCell>
                       {people.users?.get(run.actorId) ?? '…'}

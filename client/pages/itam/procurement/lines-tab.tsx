@@ -68,6 +68,7 @@ import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 
 import { CaptureNotice } from './po-capture';
 import { ReceiptDialog } from './receipt-dialog';
+import { CellText } from '@/components/itam/cell-text';
 
 export interface LineDraft {
   readonly key: string;
@@ -753,7 +754,7 @@ function LineItem({
     : row.softwareProductId
       ? (names.softwareProducts?.get(text(row.softwareProductId)) ?? '…')
       : '';
-  return <span className='font-medium'>{item || '—'}</span>;
+  return <CellText className='font-medium'>{item || '—'}</CellText>;
 }
 
 /** How much of the line has arrived, muted until something has. */

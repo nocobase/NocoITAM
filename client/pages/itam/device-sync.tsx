@@ -9,6 +9,7 @@ import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { EmptyState } from '@/components/itam/empty-state';
 import { HistoryBackButton } from '@/components/itam/history-back-button';
+import { CellText } from '@/components/itam/cell-text';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { HolderLink } from '@/components/itam/holder-link';
 import { Page, PageHeader } from '@/components/itam/page-header';
@@ -276,12 +277,14 @@ function ChecksView(): ReactElement {
           {rows.map((row: DeviceCheck) => (
             <TableRow key={`${row.deviceId}:${row.kind}`}>
               <TableCell>
-                <RecordLink
-                  to={`/devices/${row.deviceId}`}
-                  className='font-medium text-foreground hover:underline'
-                >
-                  {deviceLabel(row)}
-                </RecordLink>
+                <CellText>
+                  <RecordLink
+                    to={`/devices/${row.deviceId}`}
+                    className='font-medium text-foreground hover:underline'
+                  >
+                    {deviceLabel(row)}
+                  </RecordLink>
+                </CellText>
               </TableCell>
               <TableCell>
                 <Badge variant={row.critical ? 'destructive' : 'outline'}>
@@ -299,14 +302,18 @@ function ChecksView(): ReactElement {
                   : formatDate(row.lastSyncAt, true)}
               </TableCell>
               <TableCell>
-                {row.personId ? (
-                  <HolderLink holderType='person' holderId={row.personId} />
-                ) : (
-                  (row.userName ?? '—')
-                )}
+                <CellText className='max-w-48'>
+                  {row.personId ? (
+                    <HolderLink holderType='person' holderId={row.personId} />
+                  ) : (
+                    (row.userName ?? '—')
+                  )}
+                </CellText>
               </TableCell>
               <TableCell>
-                {row.ownerId ? (people.users?.get(row.ownerId) ?? '…') : '—'}
+                <CellText className='max-w-48'>
+                  {row.ownerId ? (people.users?.get(row.ownerId) ?? '…') : '—'}
+                </CellText>
               </TableCell>
               <TableCell className='text-right'>
                 <Button
@@ -383,32 +390,40 @@ function UnmanagedView({
             {rows.map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <RecordLink
-                    to={`/devices/${row.id}`}
-                    className='font-medium text-foreground hover:underline'
-                  >
-                    {deviceLabel(row)}
-                  </RecordLink>
+                  <CellText>
+                    <RecordLink
+                      to={`/devices/${row.id}`}
+                      className='font-medium text-foreground hover:underline'
+                    >
+                      {deviceLabel(row)}
+                    </RecordLink>
+                  </CellText>
                 </TableCell>
                 <TableCell className='tabular-nums'>
                   {row.serialNo ?? '—'}
                 </TableCell>
                 <TableCell>
-                  {row.modelId ? (names.models?.get(row.modelId) ?? '…') : '—'}
+                  <CellText className='max-w-56'>
+                    {row.modelId
+                      ? (names.models?.get(row.modelId) ?? '…')
+                      : '—'}
+                  </CellText>
                 </TableCell>
                 <TableCell>
-                  {row.assigneeType && row.assigneeId ? (
-                    <HolderLink
-                      holderType={row.assigneeType}
-                      holderId={row.assigneeId}
-                    />
-                  ) : (
-                    '—'
-                  )}
+                  <CellText className='max-w-48'>
+                    {row.assigneeType && row.assigneeId ? (
+                      <HolderLink
+                        holderType={row.assigneeType}
+                        holderId={row.assigneeId}
+                      />
+                    ) : (
+                      '—'
+                    )}
+                  </CellText>
                 </TableCell>
                 {view === 'exempted' ? (
                   <TableCell className='text-sm'>
-                    {row.reason}
+                    <CellText>{row.reason}</CellText>
                     <span className='block text-xs text-muted-foreground'>
                       {[
                         row.exemptedById
@@ -622,35 +637,39 @@ function RecordsView({
             {rows.map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <span className='flex flex-wrap items-center gap-2'>
-                    <span className='font-medium'>
-                      {row.deviceName ?? row.externalId}
+                  {/* The name gives way; where it is reported, its tag and
+                      the console link stay. */}
+                  <CellText>
+                    <span className='flex min-w-0 items-center gap-2 [&>*]:shrink-0'>
+                      <span className='min-w-0 shrink! truncate font-medium'>
+                        {row.deviceName ?? row.externalId}
+                      </span>
+                      {/* Which platforms report it: one row per device. */}
+                      <span className='text-xs text-muted-foreground'>
+                        {row.sources
+                          .map((source) => t(`deviceSync.sources.${source}`))
+                          .join(' · ')}
+                      </span>
+                      {row.ownership === 'personal' ? (
+                        <Badge variant='outline' data-size='sm'>
+                          {t('deviceSync.ownership.personal')}
+                        </Badge>
+                      ) : null}
+                      {row.consoleUrl ? (
+                        <a
+                          href={row.consoleUrl}
+                          target='_blank'
+                          rel='noreferrer'
+                          aria-label={t('deviceSync.openIn', {
+                            source: t(`deviceSync.sources.${row.source}`),
+                          })}
+                          className='text-muted-foreground hover:text-foreground'
+                        >
+                          <ExternalLink className='size-3.5' />
+                        </a>
+                      ) : null}
                     </span>
-                    {/* Which platforms report it: one row per device. */}
-                    <span className='text-xs text-muted-foreground'>
-                      {row.sources
-                        .map((source) => t(`deviceSync.sources.${source}`))
-                        .join(' · ')}
-                    </span>
-                    {row.ownership === 'personal' ? (
-                      <Badge variant='outline' data-size='sm'>
-                        {t('deviceSync.ownership.personal')}
-                      </Badge>
-                    ) : null}
-                    {row.consoleUrl ? (
-                      <a
-                        href={row.consoleUrl}
-                        target='_blank'
-                        rel='noreferrer'
-                        aria-label={t('deviceSync.openIn', {
-                          source: t(`deviceSync.sources.${row.source}`),
-                        })}
-                        className='text-muted-foreground hover:text-foreground'
-                      >
-                        <ExternalLink className='size-3.5' />
-                      </a>
-                    ) : null}
-                  </span>
+                  </CellText>
                 </TableCell>
                 <TableCell className='tabular-nums'>
                   {row.serialNo ?? '—'}
@@ -663,21 +682,25 @@ function RecordsView({
                   ) : null}
                 </TableCell>
                 <TableCell>
-                  {platformModel(row.manufacturer, row.model)}
+                  <CellText className='max-w-56'>
+                    {platformModel(row.manufacturer, row.model)}
+                  </CellText>
                 </TableCell>
                 <TableCell>
-                  {row.personId ? (
-                    <HolderLink holderType='person' holderId={row.personId} />
-                  ) : (
-                    (row.userName ?? '—')
-                  )}
+                  <CellText className='max-w-48'>
+                    {row.personId ? (
+                      <HolderLink holderType='person' holderId={row.personId} />
+                    ) : (
+                      (row.userName ?? '—')
+                    )}
+                  </CellText>
                 </TableCell>
                 <TableCell className='text-sm'>
                   {view === 'ignored' && row.ignoredByRule ? (
                     <span>{t('deviceSync.review.byRule')}</span>
                   ) : view === 'ignored' ? (
                     <span>
-                      {row.ignoreReason}
+                      <CellText>{row.ignoreReason}</CellText>
                       <span className='block text-xs text-muted-foreground'>
                         {[
                           row.ignoredById
@@ -696,7 +719,7 @@ function RecordsView({
                   )}
                 </TableCell>
                 <TableCell>
-                  <span className='flex flex-wrap justify-end gap-1'>
+                  <span className='flex justify-end gap-1'>
                     {/* The rule brings a personal device back, not a row. */}
                     {view === 'ignored' && row.ignoredByRule ? null : view ===
                       'ignored' ? (

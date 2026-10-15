@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { CellText } from '@/components/itam/cell-text';
 import { PURCHASE_ORDER_CARD } from '@/components/itam/board-card-specs';
 import { createStatusBoard } from '@/components/itam/status-board';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -698,21 +699,25 @@ export function PurchaseOrderGeneratedTab(): ReactElement {
                             <AssetTypeBadge value={assetTypeOf(row)} />
                           </TableCell>
                           <TableCell>
-                            <ReferenceLink
-                              collection={collection}
-                              route={route}
-                              id={row.id}
-                              names={names[collection]}
-                            />
+                            <CellText>
+                              <ReferenceLink
+                                collection={collection}
+                                route={route}
+                                id={row.id}
+                                names={names[collection]}
+                              />
+                            </CellText>
                           </TableCell>
                           <TableCell className='text-muted-foreground'>
-                            {(row.modelId
-                              ? names.models?.get(row.modelId)
-                              : row.softwareProductId
-                                ? names.softwareProducts?.get(
-                                    row.softwareProductId,
-                                  )
-                                : undefined) ?? '—'}
+                            <CellText>
+                              {(row.modelId
+                                ? names.models?.get(row.modelId)
+                                : row.softwareProductId
+                                  ? names.softwareProducts?.get(
+                                      row.softwareProductId,
+                                    )
+                                  : undefined) ?? '—'}
+                            </CellText>
                           </TableCell>
                           <TableCell className='text-right tabular-nums'>
                             {quantity || '—'}
@@ -790,19 +795,23 @@ function GeneratedDevices({
                     onClick={() => openRecord(`/devices/${id}`)}
                   >
                     <TableCell>
-                      <RecordLink
-                        to={`/devices/${id}`}
-                        className='font-medium text-foreground hover:underline'
-                      >
-                        {device ? deviceLabel(device) : '…'}
-                      </RecordLink>
+                      <CellText>
+                        <RecordLink
+                          to={`/devices/${id}`}
+                          className='font-medium text-foreground hover:underline'
+                        >
+                          {device ? deviceLabel(device) : '…'}
+                        </RecordLink>
+                      </CellText>
                     </TableCell>
                     <TableCell>{text(device?.serialNo) || '—'}</TableCell>
                     <TableCell className='w-px whitespace-nowrap'>
                       <DeviceStatusBadge status={device?.status} />
                     </TableCell>
                     <TableCell className='text-muted-foreground'>
-                      {places.locations?.get(text(device?.locationId)) ?? '—'}
+                      <CellText className='max-w-56'>
+                        {places.locations?.get(text(device?.locationId)) ?? '—'}
+                      </CellText>
                     </TableCell>
                     <TableCell className='whitespace-nowrap tabular-nums text-muted-foreground'>
                       {last ? formatDate(last, true) : '—'}

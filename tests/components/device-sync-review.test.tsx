@@ -128,9 +128,10 @@ describe('MDM 核对 → 只在台账', () => {
     const section = screen
       .getByText('deviceSync.review.exemptedHeading:1')
       .closest('section')!;
+    // A long reason is cut short rather than widening the table.
     expect(
-      within(section).getByText('Wiped for every release'),
-    ).toBeInTheDocument();
+      within(section).getByText('Wiped for every release').className,
+    ).toContain('truncate');
     expect(within(section).getByText(/Mia/)).toBeInTheDocument();
     fireEvent.click(
       within(section).getByRole('button', {

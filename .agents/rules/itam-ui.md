@@ -219,6 +219,25 @@ while the window stays wide, so a page's own splits use container
 breakpoints (`@3xl:grid-cols-2`), not viewport ones (`lg:`). The workbench
 and reports do; `DetailPage` already had its own container.
 
+## Table cells stay on one line
+
+A shadcn `TableCell` never wraps (`whitespace-nowrap`), so one long value —
+a reason, a name, a document's file name — widens its whole table and
+pushes the last columns, usually the buttons, out of view (2026-10-15).
+Every cell that holds free text goes in `CellText`
+(`client/components/itam/cell-text.tsx`): one line, cut short with an
+ellipsis past 20rem or the `max-w-*` it is given, shown whole on hover
+only when cut, and nothing inside it wraps either. `DataTable` and
+`ReportTable` wrap every cell; a table of its own (MDM 核对, a purchase
+order's lines and devices, 单据识别 runs, field templates) wraps its text
+cells. Give a short column a smaller bound (`max-w-48` for a person,
+`max-w-56` for a model or a place) and leave dates, numbers, tags and
+buttons alone; a row's buttons sit on one line (`flex`, not `flex-wrap`).
+An import's error messages are the exception — they wrap, since they must
+be read whole. The settings pages the template owns (users, permission
+sets, API keys, scheduled tasks) have their own `TruncatedText` with the
+bound on the cell.
+
 ## Menus and destructive actions
 
 `DropdownMenuContent` sizes to its content and never goes below the trigger

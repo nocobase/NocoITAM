@@ -1,6 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import type { ReactElement } from 'react';
 
+import { CellText } from '@/components/itam/cell-text';
 import { Paged } from '@/components/itam/paged';
 import {
   Table,
@@ -114,7 +115,8 @@ export function ReportTable({
                           : ''
                       }
                     >
-                      {render(column, row[column])}
+                      {/* One line, cut short past 20rem (CellText). */}
+                      <CellText>{render(column, row[column])}</CellText>
                     </TableCell>
                   ))}
                 </TableRow>
