@@ -1964,7 +1964,7 @@ const zhCN: AppResource = {
         unmanaged:
           '台账里使用中或借出、分类属于应纳管分类（可在 MDM 设置中修改），却没有出现在任何已连接 MDM 中的设备，需要在 MDM 那边注册。',
         ignored:
-          '标为不纳入台账的 MDM 设备，以后的同步不再提示；核对规则忽略的个人设备也在这里。恢复后会重新按序列号匹配。',
+          '标为不纳入台账的 MDM 设备，以后的同步不再提示；「忽略个人设备」忽略的个人设备也在这里。恢复后会重新按序列号匹配。',
       },
       ignoredHeading: '已忽略 {{count}} 台',
       empty: '没有需要处理的设备',
@@ -2251,10 +2251,12 @@ const zhCN: AppResource = {
     deviceSyncRules: {
       title: '核对规则',
       description: 'MDM 与台账不一致时，什么情况下提示',
-      staleDays: '失联天数',
-      staleDaysHint: '在用设备超过这么多天没有同步，算作失联',
-      recentDays: '状态不符的在线天数',
-      recentDaysHint: '台账上不在用的设备，这么多天内同步过，算作状态不符',
+      staleDays: '在用设备多少天没联网算失联',
+      staleDaysHint:
+        '例：台账上分配给李娜在用的电脑，MDM 显示 45 天没联网，超过这个天数就提示「失联」，可能丢了或闲置了',
+      recentDays: '不在用的设备多少天内联过网算状态不符',
+      recentDaysHint:
+        '例：台账上是库存中、维修中或已报废的电脑，MDM 显示 2 天前还联过网，在这个天数内就提示「状态不符」，可能有人在用却没登记',
       managedCategories: '应纳管分类',
       managedCategoriesHint:
         '这些分类（含子分类）的在用设备应当出现在 MDM 中，否则提示未纳管',

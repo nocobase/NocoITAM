@@ -2064,7 +2064,7 @@ const messages = {
         unmanaged:
           'Register devices in use or on loan, of a managed category (changed in the MDM settings), that no connected MDM reports. They need enrolling in MDM.',
         ignored:
-          'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again. Personal devices the rules ignore are listed here too.',
+          'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again. Personal devices Ignore personal devices leaves out are listed here too.',
       },
       ignoredHeading: 'Ignored ({{count}})',
       empty: 'Nothing to review',
@@ -2397,12 +2397,12 @@ const messages = {
       title: 'Review rules',
       description:
         'When a difference between the platforms and the register is raised',
-      staleDays: 'Days before silent',
+      staleDays: 'Days without contact before a device in use is silent',
       staleDaysHint:
-        'A device in use that has not synced for this long is silent',
-      recentDays: 'Days online against status',
+        'E.g. a laptop the register has in use by Lena that MDM last heard from 45 days ago: past this many days it is raised as silent, perhaps lost or idle',
+      recentDays: 'Days within which contact contradicts an off-duty status',
       recentDaysHint:
-        'A device the register has off duty that synced within this many days has a status that differs',
+        'E.g. a laptop the register has in stock, in repair or disposed of that MDM heard from 2 days ago: within this many days it is raised as a status that differs, perhaps in use without being recorded',
       managedCategories: 'Managed categories',
       managedCategoriesHint:
         'Devices in use of these categories (and their subcategories) should be on a platform, or they are unmanaged',
