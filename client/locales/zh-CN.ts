@@ -2273,7 +2273,6 @@ const zhCN: AppResource = {
         '这些分类（含子分类）的在用设备应当出现在 MDM 中，否则提示未纳管',
       ignorePersonal: '忽略个人设备',
       ignorePersonalHint: 'MDM 标为个人（员工自带）的设备不参与任何核对',
-      ignoredLink: '查看已忽略的设备',
     },
     deviceSync: {
       // The settings tab; the card on it is cardTitle (2026-10-15).

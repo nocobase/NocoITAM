@@ -2420,7 +2420,6 @@ const messages = {
       ignorePersonal: 'Ignore personal devices',
       ignorePersonalHint:
         'Devices a platform marks personal (employee-owned) take part in no review',
-      ignoredLink: 'Ignored devices',
     },
     deviceSync: {
       // The settings tab; the card on it is cardTitle (2026-10-15).

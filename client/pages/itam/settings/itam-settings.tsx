@@ -2,7 +2,7 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Database, Save, Trash2 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { MultiReferenceInput } from '@/components/itam/multi-reference';
@@ -165,7 +165,7 @@ function SettingsCard({
       <CardContent className='space-y-4'>
         {children}
         <div className='flex items-center gap-3'>
-          <Button size='sm' disabled={saving} onClick={onSave}>
+          <Button disabled={saving} onClick={onSave}>
             <Save data-icon='inline-start' />
             {t('actions.save')}
           </Button>
@@ -493,12 +493,6 @@ function DeviceSyncRulesCard({
           }
         />
       </div>
-      <Link
-        to='/device-sync?view=ignored'
-        className='text-sm text-link underline-offset-4 hover:underline'
-      >
-        {t('settings.deviceSyncRules.ignoredLink')}
-      </Link>
     </SettingsCard>
   );
 }
@@ -645,7 +639,7 @@ function DemoCard(): ReactElement {
                 value={language}
                 onValueChange={(next) => next && setLanguage(next)}
               >
-                <SelectTrigger id='demo-language' size='sm' className='w-32'>
+                <SelectTrigger id='demo-language' className='w-32'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -657,7 +651,6 @@ function DemoCard(): ReactElement {
                 </SelectContent>
               </Select>
               <Button
-                size='sm'
                 disabled={act.isPending}
                 onClick={() => {
                   act.reset();
@@ -673,7 +666,6 @@ function DemoCard(): ReactElement {
           ) : null}
           {demo?.generated ? (
             <Button
-              size='sm'
               variant='outline'
               disabled={act.isPending}
               onClick={() => {
