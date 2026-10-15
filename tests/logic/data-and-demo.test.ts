@@ -563,7 +563,7 @@ describe('CSV import / export and demo data', () => {
     // Step 2 (2026-10-15): the demo shows every kind of difference — one
     // silent, one under another user, one on the shelf yet online — and the
     // other two tabs: the laptops and the VM not on the register (the
-    // personal phone is ignored), and the phones in use on no platform.
+    // personal phone is ignored), and the laptops in use on no platform.
     const review = app.container.resolve(deviceReviewServiceToken);
     const checks = await review.checks();
     expect(new Set(checks.map((check) => check.kind))).toEqual(
@@ -574,6 +574,8 @@ describe('CSV import / export and demo data', () => {
     // The new laptop, the contractor's, the shared serial and the VM.
     expect(await review.unregistered()).toHaveLength(4);
     expect((await review.unmanaged()).length).toBeGreaterThanOrEqual(1);
+    // A test phone marked 不需要纳管, with its reason (2026-10-15).
+    expect(await review.exempted()).toHaveLength(1);
     // Step 3: the demo's Jamf reports the Macs and phones in use, each
     // linked to the register device of its serial.
     const jamf = (await app.container

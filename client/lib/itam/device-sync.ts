@@ -80,6 +80,7 @@ export function useManagedDevices(
   data: ManagedDevice[];
   connected: boolean;
   checks: DeviceCheck[];
+  exemption: Exemption | null;
 }> {
   const api = useApi();
   return useQuery({
@@ -89,6 +90,7 @@ export function useManagedDevices(
         data: ManagedDevice[];
         connected: boolean;
         checks: DeviceCheck[];
+        exemption: Exemption | null;
       }>({
         path: `${DEVICES_PATH}/${deviceId}/managed`,
       }),
@@ -285,11 +287,21 @@ export interface UnmanagedDevice {
   readonly assigneeId: string | null;
 }
 
+/** 不需要纳管: why a device is rightly on no platform (2026-10-15). */
+export interface Exemption {
+  readonly reason: string;
+  readonly exemptedById: string | null;
+  readonly exemptedAt: string | null;
+}
+
+export interface ExemptDevice extends UnmanagedDevice, Exemption {}
+
 export const REVIEW_VIEWS = [
   'checks',
   'unregistered',
   'unmanaged',
   'ignored',
+  'exempted',
 ] as const;
 export type ReviewView = (typeof REVIEW_VIEWS)[number];
 
@@ -297,7 +309,9 @@ type ReviewRow<V extends ReviewView> = V extends 'checks'
   ? DeviceCheck
   : V extends 'unmanaged'
     ? UnmanagedDevice
-    : UnregisteredDevice;
+    : V extends 'exempted'
+      ? ExemptDevice
+      : UnregisteredDevice;
 
 /** One view of MDM 核对. */
 export function useDeviceReview<V extends ReviewView>(
@@ -331,8 +345,17 @@ export function useDeviceReviewAction() {
         | { kind: 'unlink'; managedId: string }
         | { kind: 'ignore'; managedId: string; reason: string }
         | { kind: 'restore'; managedId: string }
-        | { kind: 'dismiss'; deviceId: string; check: CheckKind },
+        | { kind: 'dismiss'; deviceId: string; check: CheckKind }
+        | { kind: 'exempt'; deviceId: string; reason: string }
+        | { kind: 'unexempt'; deviceId: string },
     ) => {
+      // 不需要纳管 and taking it back (2026-10-15).
+      if (action.kind === 'exempt' || action.kind === 'unexempt')
+        return api.request({
+          path: `${DEVICE_SYNC_PATH}/unmanaged/${action.deviceId}/${action.kind}`,
+          method: 'POST',
+          json: action.kind === 'exempt' ? { reason: action.reason } : {},
+        });
       if (action.kind === 'dismiss')
         return api.request({
           path: `${DEVICE_SYNC_PATH}/checks/${action.deviceId}/dismiss`,

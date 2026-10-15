@@ -34,7 +34,14 @@ import {
   type ItamContext,
 } from './http.js';
 
-const VIEWS = ['checks', 'unregistered', 'unmanaged', 'ignored'] as const;
+const VIEWS = [
+  'checks',
+  'unregistered',
+  'unmanaged',
+  'ignored',
+  // 不需要纳管 (2026-10-15), listed under 只在台账.
+  'exempted',
+] as const;
 const CHECK_KINDS = ['stale', 'userMismatch', 'statusMismatch'] as const;
 
 /**
@@ -202,8 +209,11 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
             data: checks.filter((check) => visible.has(check.deviceId)),
           });
         }
-        if (view === 'unmanaged') {
-          const rows = await review.unmanaged();
+        if (view === 'unmanaged' || view === 'exempted') {
+          const rows =
+            view === 'unmanaged'
+              ? await review.unmanaged()
+              : await review.exempted();
           const visible = await devicesInScope(
             context,
             'read',
@@ -301,6 +311,34 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
         await requireDevice(context, 'update', deviceId);
         await review.dismiss(deviceId, kind, principalId(context));
         return context.json({ data: { deviceId, kind } });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // 不需要纳管 (2026-10-15): a 只在台账 device that rightly is on no
+    // platform, with the reason; and taking that back. A decision about the
+    // device, so its `update`.
+    routes.post('/unmanaged/:deviceId/exempt', async (context) => {
+      try {
+        const deviceId = context.req.param('deviceId') ?? '';
+        const { reason } = z
+          .object({ reason: z.string().trim().min(1).max(500) })
+          .parse(await readJsonObject(context));
+        await requireDevice(context, 'update', deviceId);
+        await review.exempt(deviceId, reason, principalId(context));
+        return context.json({ data: { deviceId } });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    routes.post('/unmanaged/:deviceId/unexempt', async (context) => {
+      try {
+        const deviceId = context.req.param('deviceId') ?? '';
+        await requireDevice(context, 'update', deviceId);
+        await review.unexempt(deviceId, principalId(context));
+        return context.json({ data: { deviceId } });
       } catch (error) {
         return errorResponse(context, error);
       }

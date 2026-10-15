@@ -282,6 +282,8 @@ const messages = {
       managedLinked: 'Linked to a management platform',
       managedUnlinked: 'Unlinked from a management platform',
       managedDismissed: 'Register kept',
+      managedExempted: 'Not to be managed',
+      managedUnexempted: 'To be managed again',
       unregisteredFound: 'Unregistered device found',
       resolved: 'Differences handled',
       audited: 'Audited',
@@ -407,6 +409,8 @@ const messages = {
       managedLinkedManual: 'Linked to {{source}} device {{target}} by hand',
       managedUnlinked: 'Unlinked from {{source}} device {{target}}',
       managedDismissed: '{{check}}: the register kept',
+      managedExempted: 'Reason: {{reason}}',
+      managedUnexempted: 'Listed as only on the register again',
       leftOnLeaveDate: 'Leave date {{date}} reached; marked as left',
       recoveryPrepared:
         'Recovery listed: {{devices}} devices, {{stock}} stock, {{seats}} seats',
@@ -2058,7 +2062,7 @@ const messages = {
         unregistered:
           'Devices a platform reports that the register lacks. Register one, link it to a device, or keep it off the register.',
         unmanaged:
-          'Register devices in use or on loan, of a managed category (changed in the MDM settings), that no connected MDM reports. They need enrolling in MDM.',
+          'Register devices in use or on loan, of a managed category (changed in the MDM settings), that no connected MDM reports. Enrol them in MDM, or mark one that rightly is not as not to be managed.',
       },
       ignoredHeading: 'Ignored ({{count}})',
       ignoredManual_one:
@@ -2101,9 +2105,18 @@ const messages = {
         '“{{name}}” will no longer be listed as not on the register.',
       reason: 'Reason',
       reasonPlaceholder: 'e.g. test virtual machine, contractor’s own laptop',
+      exempt: 'Not to be managed',
+      exemptTitle: 'Not to be managed',
+      exemptDescription:
+        '“{{name}}” will no longer be listed as only on the register.',
+      exemptPlaceholder: 'e.g. Linux workstation that cannot enrol in MDM',
+      exemptedHeading: 'Not to be managed ({{count}})',
+      exemptedHint:
+        'No longer listed as only on the register; the mark lapses once MDM reports the device. Restore lists it again.',
     },
     group: 'Management platform',
     notFound: 'Not found on the connected management platforms',
+    exempted: 'Not to be managed: {{reason}}',
     sources: { intune: 'Intune', jamf: 'Jamf' },
     sourceNames: { intune: 'Microsoft Intune', jamf: 'Jamf Pro' },
     openIn: 'Open in {{source}}',

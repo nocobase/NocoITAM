@@ -2909,6 +2909,19 @@ like the differences; 只在 MDM stays whole, since a record not on the
 register has no 负责人. Neither rule ever sent a notification, so nothing
 is lost there.
 
+### 2026-10-15 Device sync: 不需要纳管 for 只在台账
+
+只在台账 decides by category alone, so a device that rightly is on no
+platform — a Linux workstation, a lab machine, a phone wiped for every
+release — stayed on it for good, and its count on 待办 became a number to
+skip. Each row now has 不需要纳管, with a required reason, as 只在 MDM has
+不纳入台账: the device leaves the tab and the count, and is listed with its
+reason, who and when in a section beneath, with 恢复. The device page's MDM
+group says the reason. The mark lapses once a platform reports the device.
+Kept in a table of its own (`deviceSyncExemptions`), not a device field.
+The demo marks its unmanaged test phone. Noco's `device-sync` skill text is
+updated, which reaches only a skill library seeded after this change.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

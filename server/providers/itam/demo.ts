@@ -255,6 +255,8 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   { table: 'onboardingRuns', column: 'personId' },
   // 以台账为准 on the demo's devices (device sync, 2026-10-15).
   { table: 'deviceSyncDismissals', column: 'deviceId' },
+  // 不需要纳管 on the demo's test phone (2026-10-15).
+  { table: 'deviceSyncExemptions', column: 'deviceId' },
 ];
 
 /** Deleted in dependency order: children before the master data they reference. */
@@ -343,6 +345,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
       'Meeting room computer run by Administration; not on the IT register',
     syncContractor: 'Li Gong (contractor)',
     syncDuplicate: 'Entered twice by mistake',
+    syncTestPhone: 'Test phone, wiped for every release; not enrolled in MDM',
     itSpareOrder: 'Spare laptops for IT',
     salesPhoneOrder: 'Phones for the new sales hires',
     airOrder: 'MacBook Air for the R&D hires',
@@ -403,6 +406,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     syncMeetingRoom: '会议室公用电脑，由行政部管理，不入 IT 资产台账',
     syncContractor: '李工（外包）',
     syncDuplicate: '重复录入的设备',
+    syncTestPhone: '研发测试机，每次发版都要刷机，不注册 MDM',
     itSpareOrder: 'IT 备用笔记本',
     salesPhoneOrder: '销售新员工手机',
     airOrder: '研发新员工 MacBook Air',
@@ -3537,7 +3541,8 @@ export function createDemoService(dependencies: {
         // The demo's Jamf (step 3, 2026-10-15): the Macs in use, managed by
         // Jamf as well as Intune — kept off the three Intune shows wrong on
         // purpose, so Jamf's later word does not put them right — and the
-        // phones in use but one, which stays on no platform (未纳管).
+        // phones in use but one, a test phone on no platform and marked
+        // 不需要纳管 (2026-10-15); the laptops on none stay 只在台账.
         const jamfMacs = inUse.filter(
           (row, index) => index > 2 && row.manufacturer === 'Apple',
         );
@@ -3594,6 +3599,19 @@ export function createDemoService(dependencies: {
             .execute<{ id: string }>();
           for (const row of jamfPulled) await track('managedDevices', row);
         }
+        const testPhone = phones[0];
+        if (testPhone)
+          await database
+            .query()
+            .insertInto('deviceSyncExemptions')
+            .values({
+              id: crypto.randomUUID(),
+              deviceId: String(testPhone.id),
+              reason: texts.syncTestPhone,
+              exemptedById: actorId,
+              createdAt: new Date(),
+            })
+            .execute();
       }
 
       return this.status();

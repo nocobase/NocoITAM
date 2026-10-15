@@ -214,13 +214,14 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
             404,
           );
         const sync = app.container.resolve(deviceSyncServiceToken);
+        const review = app.container.resolve(deviceReviewServiceToken);
         return context.json({
           data: await sync.forDevice(deviceId),
           connected: await sync.connected(),
           // Where the platforms and the register disagree on it (step 2).
-          checks: await app.container
-            .resolve(deviceReviewServiceToken)
-            .checks({ deviceIds: [deviceId] }),
+          checks: await review.checks({ deviceIds: [deviceId] }),
+          // 不需要纳管, with the reason (2026-10-15).
+          exemption: await review.exemptionOf(deviceId),
         });
       } catch (error) {
         return errorResponse(context, error);

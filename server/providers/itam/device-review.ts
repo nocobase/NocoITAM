@@ -7,7 +7,7 @@ import {
 import { asText, type Row } from './collection-query.js';
 import { dbDateTime } from './dates.js';
 import { normalizeSerial } from './device-sources.js';
-import type { DeviceSyncService } from './device-sync.js';
+import { expireExemptions, type DeviceSyncService } from './device-sync.js';
 import { BusinessRuleError, RecordNotFoundError } from './errors.js';
 import type { HistoryService } from './history.js';
 import type { ItamSettings, SettingsService } from './settings.js';
@@ -104,6 +104,17 @@ export interface UnmanagedDevice {
   readonly assigneeId: string | null;
 }
 
+/**
+ * 不需要纳管 (2026-10-15): a device in use of a managed category that a
+ * person decided is rightly on no platform, with the reason. It is no
+ * longer 只在台账.
+ */
+export interface ExemptDevice extends UnmanagedDevice {
+  readonly reason: string;
+  readonly exemptedById: string | null;
+  readonly exemptedAt: string | null;
+}
+
 export interface DeviceReviewService {
   /**
    * Whether any platform is connected or has reported: without one there is
@@ -119,8 +130,23 @@ export interface DeviceReviewService {
   unregistered(now?: Date): Promise<UnregisteredDevice[]>;
   /** Platform records a person kept off the register. */
   ignored(): Promise<UnregisteredDevice[]>;
-  /** Devices in use, in a category that should be managed, on no platform. */
+  /**
+   * Devices in use, in a category that should be managed, on no platform,
+   * and not marked 不需要纳管.
+   */
   unmanaged(): Promise<UnmanagedDevice[]>;
+  /** The devices marked 不需要纳管 that still are on no platform. */
+  exempted(): Promise<ExemptDevice[]>;
+  /** The reason a device is marked 不需要纳管, if it is. */
+  exemptionOf(deviceId: string): Promise<{
+    readonly reason: string;
+    readonly exemptedById: string | null;
+    readonly exemptedAt: string | null;
+  } | null>;
+  /** 不需要纳管: takes a 只在台账 device off the list, with the reason. */
+  exempt(deviceId: string, reason: string, actorId: string): Promise<void>;
+  /** Takes 不需要纳管 back: the device is 只在台账 again. */
+  unexempt(deviceId: string, actorId: string): Promise<void>;
   /**
    * Per leaver, how many devices whose primary user they are synced after
    * their leave date.
@@ -264,6 +290,74 @@ export function createDeviceReviewService(deps: {
   readonly touched?: () => void;
 }): DeviceReviewService {
   const { database, settings, history, sync } = deps;
+
+  /**
+   * Devices in use, in a category that should be managed, on no platform:
+   * 只在台账 and 不需要纳管 together.
+   */
+  const notOnPlatform = async (): Promise<UnmanagedDevice[]> => {
+    if (!(await sync.connected())) return [];
+    const config = limits(await settings.get('deviceSync'));
+    if (config.managedCategoryIds.length === 0) return [];
+    const categories = await withSubcategories(config.managedCategoryIds);
+    const managed = await database
+      .query()
+      .selectFrom('managedDevices')
+      .select('deviceId')
+      .where('matchState', '=', 'linked')
+      .where('goneAt', 'is', null)
+      .execute<{ deviceId: string | null }>();
+    const onPlatform = new Set(
+      managed.map((row) => row.deviceId).filter(Boolean),
+    );
+    const devices = await database
+      .query()
+      .selectFrom('devices')
+      .select([
+        'id',
+        'deviceNo',
+        'name',
+        'categoryId',
+        'ownerId',
+        'assigneeType',
+        'assigneeId',
+      ])
+      .where('status', 'in', [...IN_USE])
+      .where('categoryId', 'in', [...categories])
+      .orderBy('deviceNo')
+      .execute<Row>();
+    return devices
+      .filter((device) => !onPlatform.has(String(device.id)))
+      .map((device) => ({
+        id: String(device.id),
+        deviceNo: asText(device.deviceNo) ?? null,
+        name: asText(device.name) ?? null,
+        categoryId: asText(device.categoryId) ?? null,
+        ownerId: asText(device.ownerId) ?? null,
+        assigneeType: asText(device.assigneeType) ?? null,
+        assigneeId: asText(device.assigneeId) ?? null,
+      }));
+  };
+
+  /** 不需要纳管 by device, or for the devices given. */
+  const exemptions = async (deviceIds?: readonly string[]) => {
+    let query = database
+      .query()
+      .selectFrom('deviceSyncExemptions')
+      .select(['deviceId', 'reason', 'exemptedById', 'createdAt']);
+    if (deviceIds) query = query.where('deviceId', 'in', [...deviceIds]);
+    const rows = await query.execute<Row>();
+    return new Map(
+      rows.map((row) => [
+        String(row.deviceId),
+        {
+          reason: String(row.reason),
+          exemptedById: asText(row.exemptedById) ?? null,
+          exemptedAt: iso(row.createdAt),
+        },
+      ]),
+    );
+  };
 
   const managedRow = async (id: string): Promise<Row> => {
     const row = await database
@@ -665,47 +759,68 @@ export function createDeviceReviewService(deps: {
     },
 
     async unmanaged() {
-      if (!(await sync.connected())) return [];
-      const config = limits(await settings.get('deviceSync'));
-      if (config.managedCategoryIds.length === 0) return [];
-      const categories = await withSubcategories(config.managedCategoryIds);
-      const managed = await database
+      const exempt = new Set((await exemptions()).keys());
+      return (await notOnPlatform()).filter((device) => !exempt.has(device.id));
+    },
+
+    async exempted() {
+      const exempt = await exemptions();
+      return (await notOnPlatform()).flatMap((device) => {
+        const row = exempt.get(device.id);
+        return row ? [{ ...device, ...row }] : [];
+      });
+    },
+
+    async exemptionOf(deviceId) {
+      return (await exemptions([deviceId])).get(deviceId) ?? null;
+    },
+
+    async exempt(deviceId, reason, actorId) {
+      if (!(await self.unmanaged()).some((device) => device.id === deviceId))
+        throw new BusinessRuleError(
+          'Only a device in use on no platform can be marked as not to be managed',
+          'deviceSync.notUnmanaged',
+        );
+      await database
         .query()
-        .selectFrom('managedDevices')
-        .select('deviceId')
-        .where('matchState', '=', 'linked')
-        .where('goneAt', 'is', null)
-        .execute<{ deviceId: string | null }>();
-      const onPlatform = new Set(
-        managed.map((row) => row.deviceId).filter(Boolean),
-      );
-      const devices = await database
+        .insertInto('deviceSyncExemptions')
+        .values({
+          id: crypto.randomUUID(),
+          deviceId,
+          reason,
+          exemptedById: actorId,
+          createdAt: new Date(),
+        })
+        .execute();
+      await history.record({
+        subjectType: 'devices',
+        subjectId: deviceId,
+        type: 'managedExempted',
+        summary: `Marked as not to be managed by a platform: ${reason}`,
+        payload: { reason },
+        origin: 'human',
+        actorId,
+      });
+      deps.touched?.();
+    },
+
+    async unexempt(deviceId, actorId) {
+      const removed = await database
         .query()
-        .selectFrom('devices')
-        .select([
-          'id',
-          'deviceNo',
-          'name',
-          'categoryId',
-          'ownerId',
-          'assigneeType',
-          'assigneeId',
-        ])
-        .where('status', 'in', [...IN_USE])
-        .where('categoryId', 'in', [...categories])
-        .orderBy('deviceNo')
-        .execute<Row>();
-      return devices
-        .filter((device) => !onPlatform.has(String(device.id)))
-        .map((device) => ({
-          id: String(device.id),
-          deviceNo: asText(device.deviceNo) ?? null,
-          name: asText(device.name) ?? null,
-          categoryId: asText(device.categoryId) ?? null,
-          ownerId: asText(device.ownerId) ?? null,
-          assigneeType: asText(device.assigneeType) ?? null,
-          assigneeId: asText(device.assigneeId) ?? null,
-        }));
+        .deleteFrom('deviceSyncExemptions')
+        .where('deviceId', '=', deviceId)
+        .execute();
+      if (!removed.deletedCount) return;
+      await history.record({
+        subjectType: 'devices',
+        subjectId: deviceId,
+        type: 'managedUnexempted',
+        summary: 'To be managed by a platform again',
+        payload: {},
+        origin: 'human',
+        actorId,
+      });
+      deps.touched?.();
     },
 
     async onlineAfterLeaving(people) {
@@ -758,7 +873,7 @@ export function createDeviceReviewService(deps: {
         sourceId: managedId,
         actorId,
       });
-      return update(managedId, {
+      const linked = await update(managedId, {
         deviceId,
         matchState: 'linked',
         matchedBy: 'manual',
@@ -766,6 +881,8 @@ export function createDeviceReviewService(deps: {
         ignoredAt: null,
         ignoreReason: null,
       });
+      await expireExemptions(database, [deviceId]);
+      return linked;
     },
 
     async unlink(managedId, actorId, origin = 'human') {
