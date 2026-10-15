@@ -2083,7 +2083,7 @@ const messages = {
       restore: 'Restore',
       byRule: 'Personal device (by the rules)',
       byRuleHint:
-        'Turn off Ignore personal devices to list it under Not on the register',
+        'Turn off Ignore personal devices in the MDM settings and save, and it moves to Only in MDM',
       linkTitle: 'Link to a device',
       linkDescription:
         'Link the platform device “{{name}}” to a device on the register.',
@@ -2485,7 +2485,7 @@ const messages = {
       counts: {
         devices: 'Devices',
         linked: 'Linked',
-        unlinked: 'Not on the register',
+        unlinked: 'Only in MDM',
         ambiguous: 'Serial on several devices',
         personal: 'Personal devices',
         gone: 'No longer reported',

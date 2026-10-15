@@ -1982,7 +1982,8 @@ const zhCN: AppResource = {
       ignore: '不纳入台账',
       restore: '恢复',
       byRule: '个人设备（按核对规则）',
-      byRuleHint: '关掉「忽略个人设备」后回到台账未登记',
+      byRuleHint:
+        '在 MDM 设置的核对规则里关掉「忽略个人设备」并保存后，会移到「只在 MDM」',
       linkTitle: '关联到已有设备',
       linkDescription: '把 MDM 设备「{{name}}」关联到台账里的一台设备。',
       candidates: '序列号相同的设备',
@@ -2331,7 +2332,7 @@ const zhCN: AppResource = {
       counts: {
         devices: '设备',
         linked: '已关联',
-        unlinked: '台账未登记',
+        unlinked: '只在 MDM',
         ambiguous: '序列号重复',
         personal: '个人设备',
         gone: '已不在平台中',
