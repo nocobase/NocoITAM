@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { CircleCheck, Plug, Unplug } from 'lucide-react';
+import { CircleCheck, Database, Plug, Unplug } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
@@ -110,6 +110,20 @@ export function DeviceConnectionNotes({
     return (
       <p className='text-sm text-muted-foreground'>
         {t('settings.deviceSync.connection.fromConfig')}
+      </p>
+    );
+  // Tinted like the demo's own banner, so a simulated connection is not
+  // taken for a real one.
+  if (connection?.origin === 'demo')
+    return (
+      <p className='flex items-start gap-2 rounded-lg bg-info px-3 py-2 text-sm text-foreground'>
+        <Database
+          aria-hidden='true'
+          className='mt-0.5 size-4 shrink-0 text-info-foreground'
+        />
+        {t('settings.deviceSync.connection.demo', {
+          name: t(`deviceSync.sourceNames.${connection.source}`),
+        })}
       </p>
     );
   if (connection?.origin === 'settings')

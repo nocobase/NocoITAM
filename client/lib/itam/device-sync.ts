@@ -133,7 +133,8 @@ export function useStartDeviceSync() {
  */
 export interface DeviceConnection {
   readonly source: DeviceSourceKey;
-  readonly origin: 'config' | 'settings' | null;
+  /** `demo`: the demo stands in for the platform (2026-10-15). */
+  readonly origin: 'config' | 'settings' | 'demo' | null;
   readonly tenantId: string | null;
   readonly url: string | null;
   readonly clientId: string | null;

@@ -2460,6 +2460,7 @@ const messages = {
         testOk_one: 'Connected: the first page holds {{count}} device',
         testOk_other: 'Connected: the first page holds {{count}} devices',
         fromConfig: "Set in the server's config.yml; read-only here",
+        demo: 'Demo data: a simulated {{name}} connection. Sync now replays the demo records and never reaches a real {{name}}; press Connect for a real one.',
         saved: 'Client ID {{clientId}} · saved by {{name}} on {{date}}',
         secretsMissing:
           'The server has no secrets keys (secrets.keys in config.yml), so a secret cannot be stored here. Ask an administrator to configure them, or set the connection in config.yml.',
