@@ -257,6 +257,8 @@ export interface UnregisteredDevice {
   readonly suggestedModelId: string | null;
   readonly suggestedCategoryId: string | null;
   readonly suggestedManufacturerId: string | null;
+  /** The primary user's department, for 补登记. */
+  readonly suggestedDepartmentId: string | null;
   readonly candidates: readonly {
     readonly id: string;
     readonly label: string;

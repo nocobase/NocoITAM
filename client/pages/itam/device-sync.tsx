@@ -1,10 +1,12 @@
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Settings2 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { EmptyState } from '@/components/itam/empty-state';
 import { HistoryBackButton } from '@/components/itam/history-back-button';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
@@ -27,12 +29,14 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  DEVICE_SYNC_PATH,
   useDeviceReview,
   useDeviceReviewAction,
   type DeviceCheck,
   type ReviewView,
   type UnregisteredDevice,
 } from '@/lib/itam/device-sync';
+import type { ItamRecord } from '@/lib/itam/api';
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
@@ -371,7 +375,6 @@ function RecordsView({
   readonly view: 'unregistered' | 'ignored';
 }): ReactElement {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const review = useDeviceReview(view);
   const action = useDeviceReviewAction();
   const [linking, setLinking] = useState<UnregisteredDevice>();
@@ -387,21 +390,79 @@ function RecordsView({
   ]);
   // 补登记: the device list's own create form, filled with what the
   // platform knows; the new device is linked by its serial when saved.
-  const register = (row: UnregisteredDevice) => {
-    const query = new URLSearchParams({ new: '1' });
-    if (row.serialNo) query.set('init.serialNo', row.serialNo);
-    if (row.deviceName) query.set('init.name', row.deviceName);
-    if (row.suggestedModelId) query.set('init.modelId', row.suggestedModelId);
-    if (row.suggestedCategoryId)
-      query.set('init.categoryId', row.suggestedCategoryId);
-    if (row.suggestedManufacturerId)
-      query.set('init.manufacturerId', row.suggestedManufacturerId);
-    void navigate(`/devices?${query.toString()}`);
+  // 补登记 opens 创建设备 here (2026-10-15), filled with all the platform
+  // record gives: serial, name, model and with it category and maker, the
+  // maker by name otherwise, the user's department, and a note of where it
+  // came from. Saved, the device is linked by its serial and the row goes.
+  const [registering, setRegistering] = useState<UnregisteredDevice>();
+  const [registered, setRegistered] = useState<ItamRecord>();
+  const queryClient = useQueryClient();
+  const registerValues = (row: UnregisteredDevice) => {
+    const notes = [
+      t('deviceSync.review.registerNotes.source', {
+        source: t(`deviceSync.sources.${row.source}`),
+      }),
+      row.userName
+        ? t('deviceSync.review.registerNotes.user', { user: row.userName })
+        : null,
+      row.osName
+        ? t('deviceSync.review.registerNotes.os', {
+            os: [row.osName, row.osVersion].filter(Boolean).join(' '),
+          })
+        : null,
+    ]
+      .filter(Boolean)
+      .join(t('deviceSync.review.registerNotes.separator'));
+    return Object.fromEntries(
+      Object.entries({
+        serialNo: row.serialNo,
+        name: row.deviceName,
+        modelId: row.suggestedModelId,
+        categoryId: row.suggestedCategoryId,
+        manufacturerId: row.suggestedManufacturerId,
+        departmentId: row.suggestedDepartmentId,
+        notes,
+      }).filter(([, value]) => Boolean(value)),
+    );
   };
   if (review.isLoading) return <Skeleton className='h-40 w-full rounded-xl' />;
-  if (rows.length === 0) return <Empty />;
+  const registerDialog = (
+    <DeviceCreateDialog
+      open={Boolean(registering)}
+      onOpenChange={(open) => !open && setRegistering(undefined)}
+      initial={registering ? registerValues(registering) : undefined}
+      onCreated={async (created) => {
+        setRegistered(created);
+        await queryClient.invalidateQueries({
+          queryKey: ['itam', DEVICE_SYNC_PATH],
+        });
+      }}
+    />
+  );
+  // What was just registered, with the way to it: the row itself is gone.
+  const notice = registered ? (
+    <p className='text-sm'>
+      {t('deviceSync.review.registered')}{' '}
+      <RecordLink to={`/devices/${String(registered.id)}`}>
+        {[registered.deviceNo, registered.name]
+          .filter(Boolean)
+          .map(String)
+          .join(' / ')}
+      </RecordLink>
+    </p>
+  ) : null;
+  if (rows.length === 0)
+    return (
+      <>
+        {notice}
+        <Empty />
+        {registerDialog}
+      </>
+    );
   return (
     <>
+      {notice}
+      {registerDialog}
       <div className='overflow-x-auto rounded-lg border border-border bg-card'>
         <Table>
           <TableHeader>
@@ -518,7 +579,10 @@ function RecordsView({
                           <Button
                             size='sm'
                             variant='outline'
-                            onClick={() => register(row)}
+                            onClick={() => {
+                              setRegistered(undefined);
+                              setRegistering(row);
+                            }}
                           >
                             {t('deviceSync.review.register')}
                           </Button>

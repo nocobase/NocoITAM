@@ -289,6 +289,38 @@ describe('device review', () => {
     ).toMatchObject({ count: 1, preview: [{ label: 'LAPTOP-NEW' }] });
   });
 
+  it('fills 补登记 from the model with or without its maker, the maker by name, and the user’s department', async () => {
+    await person('Kim Ng', 'kim@example.com');
+    await pull(
+      // Intune writes the maker in front of the model.
+      observed('prefixed', {
+        serialNo: 'PRE-1',
+        model: 'Lenovo ThinkPad T14 Gen 5',
+        userPrincipal: 'kim@example.com',
+      }),
+      // A model the register lacks: the maker is still known by name.
+      observed('unknown', {
+        serialNo: 'UNK-1',
+        manufacturer: 'HP',
+        model: 'HP ZHAN66 16+ G1i',
+      }),
+    );
+    const rows = new Map(
+      (await review.unregistered()).map((row) => [row.externalId, row]),
+    );
+    expect(rows.get('prefixed')).toMatchObject({
+      suggestedModelId: 'model-thinkpad-t14-gen5',
+      suggestedManufacturerId: 'mfr-lenovo',
+      suggestedDepartmentId: 'dept-rd',
+    });
+    expect(rows.get('unknown')).toMatchObject({
+      suggestedModelId: null,
+      suggestedCategoryId: null,
+      suggestedManufacturerId: 'mfr-hp',
+      suggestedDepartmentId: null,
+    });
+  });
+
   it('lists the personal devices the rules leave out with the ignored, until the rule is off', async () => {
     await pull(
       observed('own', { serialNo: 'OWN-1', ownership: 'personal' }),
