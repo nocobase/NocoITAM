@@ -2869,6 +2869,11 @@ v1; the mobile inventory cannot sort by `id` and now sorts by
 sync stays marked as not validated against a real tenant until a first real
 sync has been checked (`.agents/rules/itam-device-sync.md`).
 
+The same day Intune was read from a real tenant (a Microsoft 365 trial with
+Intune Plan 1 and one enrolled Windows 11 PC): the connection, the Graph
+list and every field ITAM reads were right, so Intune is recorded as
+validated, with what that check did and did not cover. Jamf Pro is not.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

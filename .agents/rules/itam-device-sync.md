@@ -4,14 +4,24 @@ Read this before changing device sync: the platform connectors, the `managedDevi
 
 The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); all four steps are built.
 
-**Not yet validated against a real tenant** (2026-10-15). No Intune or Jamf
-Pro tenant has been read: the connectors are checked only against the
-platforms' published shapes (`tests/logic/device-sources-official.test.ts`),
-and the rest of device sync against the demo and a local Mac. Do not
-describe Intune or Jamf support as verified, in the product or in release
-notes, until a first sync against a real tenant has been checked — its run,
-the fields on a device page, and matching by serial and by the primary
-user's email. Record that check here with its date and platform versions.
+**Validation against real tenants.** Record each check here with its date
+and platform versions. Do not describe a platform as verified, in the
+product or in release notes, until it is listed here.
+
+- **Microsoft Intune: validated** on 2026-10-15 against a Microsoft 365
+  trial tenant (Business Standard with Intune Plan 1), one Windows 11 PC
+  (10.0.26200) enrolled with "Enroll only in device management". Checked:
+  the connection entered on 设置 → MDM (secret sealed, 测试连接), the token
+  and the Graph list, every field ITAM reads (serial, name, maker, model,
+  OS and version, primary user, ownership `personal`, compliance,
+  encryption, enrolment and last sync), the run's counts, the record under
+  只在 MDM and, with 忽略个人设备 on, under 已忽略, and the console link
+  opening the device in the Intune admin center. Not yet checked against
+  the tenant: linking by serial after 补登记, the primary user matched to a
+  person by email, a record the platform stops reporting, paging past one
+  page, and the nightly run; the tests cover those.
+- **Jamf Pro: not validated.** Checked only against the published shapes
+  (`tests/logic/device-sources-official.test.ts`).
 
 - **Read only, and never into the register** (2026-10-14). A pull writes
   `managedDevices` (one row per platform record, keyed by `source` and the
