@@ -107,7 +107,7 @@ since a library provisioned earlier keeps the title it was given.
   负责人 for 我负责的, devices `read` and `update` to see it); 离职交接
   cards tagged N 台设备离职后仍在线 (`onlineAfterLeaving`, a sync after the
   leave date); `/device-sync` (MDM 核对, no menu entry or page grant,
-  views checks / unregistered / unmanaged / ignored, devices `read`; the ignored view also lists, after the records a person kept off, the personal devices 忽略个人设备 leaves out (`ignoredByRule`, no 恢复: the rule brings them back), since 2026-10-15; reached
+  views checks / unregistered / unmanaged / ignored, devices `read`; since 2026-10-15 the tabs read 信息不一致 / 只在 MDM / 只在台账 with their counts, and 已忽略 is no tab but opens from 只在 MDM; the ignored view also lists, after the records a person kept off, the personal devices 忽略个人设备 leaves out (`ignoredByRule`, no 恢复: the rule brings them back), since 2026-10-15; reached
   from the device list header while a platform is connected and from the
   设备核对 column header, empty or not, since 2026-10-14); the
   settings tab's 核对规则 card (`deviceSync` settings key).

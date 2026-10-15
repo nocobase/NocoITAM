@@ -57,6 +57,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
     resource: { type: 'settings', id: 'itam.settings' },
     action: 'update',
   });
+  const counts = useReviewCounts();
   const requested = params.get('view');
   const view: ReviewView = REVIEW_VIEWS.includes(requested as ReviewView)
     ? (requested as ReviewView)
@@ -84,27 +85,55 @@ export default function DeviceSyncReviewPage(): ReactElement {
           ) : undefined
         }
       />
+      {/* Three ways the two lists disagree (2026-10-15): both have the
+          device but say otherwise, only MDM has it, only the register has
+          it — each with its count. What was kept off is not a fourth to-do:
+          it opens from 只在 MDM and counts as part of it. */}
       <Tabs
-        value={view}
+        value={view === 'ignored' ? 'unregistered' : view}
         onValueChange={(next) =>
           setParams({ view: String(next) }, { replace: true })
         }
       >
         <TabsList variant='line'>
-          {REVIEW_VIEWS.map((key) => (
+          {TABS.map((key) => (
             <TabsTrigger key={key} value={key}>
               {t(`deviceSync.review.views.${key}`)}
+              {counts[key] === undefined ? null : (
+                <span className='text-xs text-muted-foreground tabular-nums'>
+                  {counts[key]}
+                </span>
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <p className='text-sm text-muted-foreground'>
+          {/* Under the 只在 MDM tab, so it says which list this is. */}
+          {view === 'ignored' ? (
+            <span className='mr-1.5 font-medium text-foreground'>
+              {t('deviceSync.review.views.ignored')}
+            </span>
+          ) : null}
           {t(`deviceSync.review.hints.${view}`)}
+          {view === 'ignored' ? (
+            <button
+              type='button'
+              className='ml-2 text-foreground underline-offset-4 hover:underline'
+              onClick={() =>
+                setParams({ view: 'unregistered' }, { replace: true })
+              }
+            >
+              {t('deviceSync.review.backToUnregistered')}
+            </button>
+          ) : null}
         </p>
         {/* Noco explains the differences, or sorts out the records the
             register lacks into one plan (device-sync skill, step 4). */}
-        {ai.available && (view === 'checks' || view === 'unregistered') ? (
+        {ai.available &&
+        (view === 'checks' || view === 'unregistered') &&
+        (counts[view] ?? 0) > 0 ? (
           <AiShortcut onClick={() => ai.ask(t(`deviceSync.prompts.${view}`))}>
             {t(`deviceSync.prompts.${view}Action`)}
           </AiShortcut>
@@ -117,8 +146,34 @@ export default function DeviceSyncReviewPage(): ReactElement {
       ) : (
         <RecordsView view={view} />
       )}
+      {view === 'unregistered' && (counts.ignored ?? 0) > 0 ? (
+        <button
+          type='button'
+          className='w-fit text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
+          onClick={() => setParams({ view: 'ignored' }, { replace: true })}
+        >
+          {t('deviceSync.review.ignoredLink', { count: counts.ignored })} →
+        </button>
+      ) : null}
     </Page>
   );
+}
+
+/** The views shown as tabs; 已忽略 opens from 只在 MDM. */
+const TABS = ['checks', 'unregistered', 'unmanaged'] as const;
+
+/** Each view's count, as its own list reads it (undefined while loading). */
+function useReviewCounts(): Partial<Record<ReviewView, number>> {
+  const checks = useDeviceReview('checks');
+  const unregistered = useDeviceReview('unregistered');
+  const unmanaged = useDeviceReview('unmanaged');
+  const ignored = useDeviceReview('ignored');
+  return {
+    checks: checks.data?.length,
+    unregistered: unregistered.data?.length,
+    unmanaged: unmanaged.data?.length,
+    ignored: ignored.data?.length,
+  };
 }
 
 function Empty(): ReactElement {

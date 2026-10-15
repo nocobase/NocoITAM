@@ -1770,7 +1770,7 @@ const zhCN: AppResource = {
       activeRepairs: '维修中',
       activeAudits: '进行中的盘点',
       loansDueToday: '借出逾期',
-      deviceChecks: '设备核对',
+      deviceChecks: 'MDM 信息不一致',
       leaverRecovery: '离职交接',
       pendingOnboarding: '入职准备',
       // The card lists everybody's now, so this says which part of a row
@@ -1917,7 +1917,7 @@ const zhCN: AppResource = {
         '请按「MDM 核对」技能（device-sync）看看设备 {{device}}（id：{{id}}）的这项差异：{{kind}}。说说最可能是怎么回事、怎么核实；能在台账上处理的，提出一份计划。',
       checksAction: '让 Noco 解释这些差异',
       checks:
-        '请按「MDM 核对」技能（device-sync）看看现在所有的设备核对差异：最要紧的先说，每条说明最可能的原因和怎么核实；能在台账上处理的，整理成一份计划。',
+        '请按「MDM 核对」技能（device-sync）看看现在所有 MDM 信息不一致的设备：最要紧的先说，每条说明最可能的原因和怎么核实；能在台账上处理的，整理成一份计划。',
       unregisteredAction: '让 Noco 整理这批设备',
       unregistered:
         '请按「MDM 核对」技能（device-sync）处理 MDM 里有、台账未登记的设备：能补登记的补登记，序列号重复的找出该关联的那台，不该进台账的标为不纳入台账，整理成一份计划；拿不准的单独列出来问我。',
@@ -1951,21 +1951,23 @@ const zhCN: AppResource = {
       settingsLink: '设备同步设置',
       description: '设备管理平台（MDM）报告的设备与台账不一致的地方',
       views: {
-        checks: '设备核对',
-        unregistered: '台账未登记',
-        unmanaged: '未纳管',
-        ignored: '不纳入台账',
+        checks: '信息不一致',
+        unregistered: '只在 MDM',
+        unmanaged: '只在台账',
+        ignored: '已忽略',
       },
       hints: {
         checks:
-          '失联、使用人不一致、状态不符的台账设备。到设备页处理，或以台账为准。',
+          '台账和 MDM 都有，但信息对不上：失联、使用人不一致、状态不符。到设备页处理，或以台账为准。',
         unregistered:
-          'MDM 报告了、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
+          'MDM 里有、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
         unmanaged:
-          '应纳管分类的在用设备，没有出现在任何已连接的 MDM 中，需要在 MDM 那边注册。',
+          '台账里在用、应纳管的设备，没有出现在任何已连接的 MDM 中，需要在 MDM 那边注册。',
         ignored:
-          '标为不纳入台账的 MDM 设备，以后的同步不再提示。恢复后会重新按序列号匹配。核对规则忽略的个人设备也列在这里。',
+          '标为不纳入台账的 MDM 设备，以后的同步不再提示；核对规则忽略的个人设备也在这里。恢复后会重新按序列号匹配。',
       },
+      ignoredLink: '已忽略 {{count}} 台',
+      backToUnregistered: '返回「只在 MDM」',
       empty: '没有需要处理的设备',
       columns: {
         device: '设备',
@@ -2258,7 +2260,7 @@ const zhCN: AppResource = {
         '这些分类（含子分类）的在用设备应当出现在 MDM 中，否则提示未纳管',
       ignorePersonal: '忽略个人设备',
       ignorePersonalHint: 'MDM 标为个人（员工自带）的设备不参与任何核对',
-      ignoredLink: '查看不纳入台账的设备',
+      ignoredLink: '查看已忽略的设备',
     },
     deviceSync: {
       title: '设备同步',

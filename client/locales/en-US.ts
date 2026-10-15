@@ -1852,7 +1852,7 @@ const messages = {
       activeRepairs: 'Repairs in progress',
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
-      deviceChecks: 'Device checks',
+      deviceChecks: 'MDM mismatches',
       leaverRecovery: 'Offboarding',
       pendingOnboarding: 'Onboarding prep',
       // The card lists everybody's now, so this says which part of a row
@@ -2012,7 +2012,7 @@ const messages = {
         'Using the device sync method, look at device {{device}} (id: {{id}}) and this difference: {{kind}}. Say what most likely happened and how to check it; propose a plan for what can be settled on the register.',
       checksAction: 'Let Noco explain these',
       checks:
-        'Using the device sync method, go through all current device checks: the most urgent first, each with its most likely cause and how to check it; put what can be settled on the register into one plan.',
+        'Using the device sync method, go through every device where MDM and the register disagree: the most urgent first, each with its most likely cause and how to check it; put what can be settled on the register into one plan.',
       unregisteredAction: 'Let Noco sort these out',
       unregistered:
         'Using the device sync method, handle the platform devices the register lacks: register what can be registered, find the right device for shared serials, keep off the register what does not belong there, all in one plan; list anything you are unsure of and ask me.',
@@ -2051,14 +2051,14 @@ const messages = {
       description:
         'Where the device management platforms and the register disagree',
       views: {
-        checks: 'Device checks',
-        unregistered: 'Not on the register',
-        unmanaged: 'Unmanaged',
-        ignored: 'Kept off the register',
+        checks: 'Mismatched',
+        unregistered: 'Only in MDM',
+        unmanaged: 'Only on the register',
+        ignored: 'Ignored',
       },
       hints: {
         checks:
-          'Register devices that are silent, with another user, or online against their status. Settle each on its page, or keep the register.',
+          'On the register and in MDM, but they disagree: silent, with another user, or online against their status. Settle each on its page, or keep the register.',
         unregistered:
           'Devices a platform reports that the register lacks. Register one, link it to a device, or keep it off the register.',
         unmanaged:
@@ -2066,6 +2066,8 @@ const messages = {
         ignored:
           'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again. Personal devices the rules ignore are listed here too.',
       },
+      ignoredLink: 'Ignored ({{count}})',
+      backToUnregistered: 'Back to Only in MDM',
       empty: 'Nothing to review',
       columns: {
         device: 'Device',
@@ -2408,7 +2410,7 @@ const messages = {
       ignorePersonal: 'Ignore personal devices',
       ignorePersonalHint:
         'Devices a platform marks personal (employee-owned) take part in no review',
-      ignoredLink: 'Devices kept off the register',
+      ignoredLink: 'Ignored devices',
     },
     deviceSync: {
       title: 'Device sync',
