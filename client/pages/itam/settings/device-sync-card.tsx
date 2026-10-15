@@ -148,7 +148,23 @@ function SourceBlock({
         connection={connection}
         secretsReady={secretsReady}
       />
-      {run ? (
+      {/* Not connected (2026-10-15): no run to report, since nothing can
+          sync, and no tiles; only that records from before are kept, which
+          MDM 核对 still uses. */}
+      {!source.configured ? (
+        hasData ? (
+          <p className='text-sm text-muted-foreground'>
+            {source.lastSuccessAt
+              ? t('settings.deviceSync.retained', {
+                  count: counts.devices + counts.gone,
+                  date: formatDate(source.lastSuccessAt, true),
+                })
+              : t('settings.deviceSync.retainedUndated', {
+                  count: counts.devices + counts.gone,
+                })}
+          </p>
+        ) : null
+      ) : run ? (
         <div className='space-y-1 text-sm'>
           <div className='flex flex-wrap items-center gap-2'>
             <span className='text-muted-foreground'>
@@ -201,7 +217,7 @@ function SourceBlock({
           {t('settings.deviceSync.neverRun')}
         </p>
       ) : null}
-      {hasData ? (
+      {source.configured && hasData ? (
         // Compact tiles, six across when there is room: the page-level
         // StatCards are too large inside a platform's block. What waits on
         // a person is tinted and opens MDM 核对, where it is settled.

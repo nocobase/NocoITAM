@@ -2492,6 +2492,13 @@ const messages = {
         INTERRUPTED: 'The application stopped during this sync',
       },
       lastSuccess: 'Last complete sync {{date}}',
+      retained_one:
+        '{{count}} device record from earlier syncs is kept (last complete sync {{date}})',
+      retained_other:
+        '{{count}} device records from earlier syncs are kept (last complete sync {{date}})',
+      retainedUndated_one: '{{count}} device record from earlier syncs is kept',
+      retainedUndated_other:
+        '{{count}} device records from earlier syncs are kept',
       neverRun: 'Not synced yet. It runs tonight at 01:30, or press Sync now.',
       counts: {
         devices: 'Devices',

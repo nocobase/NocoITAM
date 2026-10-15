@@ -2341,6 +2341,12 @@ const zhCN: AppResource = {
         INTERRUPTED: '同步过程中应用停止了',
       },
       lastSuccess: '最近一次完整同步：{{date}}',
+      retained_one:
+        '保留着之前同步到的 {{count}} 台设备记录（最近一次完整同步：{{date}}）',
+      retained_other:
+        '保留着之前同步到的 {{count}} 台设备记录（最近一次完整同步：{{date}}）',
+      retainedUndated_one: '保留着之前同步到的 {{count}} 台设备记录',
+      retainedUndated_other: '保留着之前同步到的 {{count}} 台设备记录',
       neverRun: '尚未同步。今晚 01:30 会自动同步，也可以点「立即同步」。',
       counts: {
         devices: '设备',

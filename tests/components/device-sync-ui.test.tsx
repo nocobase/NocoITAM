@@ -327,6 +327,47 @@ describe('设置 → 设备同步', () => {
     expect(state.start).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps only a line about the records an unconnected platform left', () => {
+    state.status = [
+      source({
+        configured: false,
+        lastRun: {
+          id: 'r9',
+          source: 'intune',
+          trigger: 'manual',
+          actorId: 'mia',
+          status: 'failed',
+          seen: 0,
+          added: 0,
+          linked: 0,
+          gone: 0,
+          failureCode: 'UNAVAILABLE',
+          failure: 'fetch failed',
+          startedAt: '2026-10-15T14:05:00.000',
+          finishedAt: '2026-10-15T14:05:03.000',
+        },
+        lastSuccessAt: '2026-10-14T18:44:00.000',
+        counts: {
+          devices: 6,
+          linked: 6,
+          unlinked: 0,
+          ambiguous: 0,
+          personal: 0,
+          gone: 0,
+        },
+      }),
+    ];
+    renderCard();
+    expect(
+      screen.getByText('settings.deviceSync.retained:6'),
+    ).toBeInTheDocument();
+    // Nothing can sync, so no run and no failure is reported, nor tiles.
+    expect(
+      screen.queryByText('settings.deviceSync.failures.UNAVAILABLE'),
+    ).toBeNull();
+    expect(screen.queryByText('settings.deviceSync.counts.devices')).toBeNull();
+  });
+
   it('holds the button while a pull runs', () => {
     state.status = [source({ running: true })];
     renderCard();
