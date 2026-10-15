@@ -2897,6 +2897,18 @@ of an unknown model under a contractor, a shared serial and a virtual
 machine; and a personal phone and a meeting room computer kept off the
 register.
 
+### 2026-10-15 Device sync: one MDM column on 待办
+
+MDM was in two places on 待办: a column of differences, and two 需要关注
+rules for the devices only in MDM and only on the register. It is now one
+column, MDM 核对, matching the page's three tabs: the differences as
+device cards, then a card each for 只在 MDM and 只在台账 with its count,
+opening that tab. The two rules are gone, so 需要关注 is back to eleven,
+none of them about MDM. 我负责的 narrows 只在台账 to the reader's devices,
+like the differences; 只在 MDM stays whole, since a record not on the
+register has no 负责人. Neither rule ever sent a notification, so nothing
+is lost there.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

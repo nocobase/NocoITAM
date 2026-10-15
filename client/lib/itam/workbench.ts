@@ -21,9 +21,6 @@ export const REMINDER_KINDS = [
   'lowAccessories',
   'lowConsumables',
   'lowComponents',
-  // Device sync (2026-10-15); absent while no platform is connected.
-  'managedUnregistered',
-  'deviceUnmanaged',
 ] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
@@ -44,13 +41,7 @@ export const REMINDER_GROUPS: readonly {
     // rule here is about a device. The one rule the other kinds have —
     // 低于水位 — is in `supply` with the goods coming in.
     key: 'devices',
-    kinds: [
-      'warrantyExpiring',
-      'idleDevice',
-      'auditOverdue',
-      'managedUnregistered',
-      'deviceUnmanaged',
-    ],
+    kinds: ['warrantyExpiring', 'idleDevice', 'auditOverdue'],
   },
   {
     key: 'entitlements',
@@ -86,8 +77,6 @@ export const REMINDER_ROUTES: Readonly<Record<ReminderKind, string>> = {
   lowAccessories: '/accessories?view=lowStock',
   lowConsumables: '/consumables?view=lowStock',
   lowComponents: '/components?view=lowStock',
-  managedUnregistered: '/device-sync?view=unregistered',
-  deviceUnmanaged: '/device-sync?view=unmanaged',
 };
 
 /** A record a 需要关注 rule found, as its card names it. */
@@ -150,6 +139,11 @@ export interface MyWorkItem {
   readonly count: number;
   readonly url: string;
   readonly records: readonly MyWorkRecord[];
+  /** MDM 核对 only: the other two tabs' counts (see the server's). */
+  readonly summary?: {
+    readonly unregistered?: number;
+    readonly unmanaged: number;
+  };
 }
 
 /**

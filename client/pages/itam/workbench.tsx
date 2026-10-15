@@ -158,14 +158,15 @@ function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
             {t('onboarding.supply.link')}
             <ArrowRight aria-hidden='true' className='size-3' />
           </Link>
-        ) : // MDM 核对, empty column or not: the platforms' unregistered
-        // and unmanaged devices are there too, and it has no menu entry.
+        ) : // MDM 核对, empty column or not: the page has no menu entry,
+        // and what is settled there — ignored records, the rules — is
+        // not on the board.
         card.key === 'deviceChecks' ? (
           <Link
             to='/device-sync'
             className='flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground'
           >
-            {t('deviceSync.review.title')}
+            {t('workbench.seeAll')}
             <ArrowRight aria-hidden='true' className='size-3' />
           </Link>
         ) : null
@@ -192,9 +193,50 @@ function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
           {t('workbench.nothingPending')}
         </p>
       ) : (
-        <ColumnCards card={card} />
+        <>
+          {card.summary?.map((entry) => (
+            <SummaryCard key={entry.key} entry={entry} />
+          ))}
+          {card.records.length > 0 ? <ColumnCards card={card} /> : null}
+        </>
       )}
     </Column>
+  );
+}
+
+/**
+ * MDM 核对's 只在 MDM or 只在台账 (2026-10-15): a count rather than its
+ * records — a record not on the register has no 负责人 and no drawer, and
+ * each set is settled on its own tab, which the card opens. Drawn like a
+ * 需要关注 card, since it is a number to act on rather than a record.
+ */
+function SummaryCard({
+  entry,
+}: {
+  readonly entry: NonNullable<WorkCard['summary']>[number];
+}): ReactElement {
+  const { t } = useTranslation();
+  return (
+    <Link
+      to={entry.url}
+      className='block w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+    >
+      <span className='flex items-baseline gap-2'>
+        <span className='text-base leading-none font-semibold tabular-nums'>
+          {entry.count}
+        </span>
+        <span className='text-sm font-semibold'>
+          {t(`deviceSync.review.views.${entry.key}`)}
+        </span>
+      </span>
+      <span className='mt-1 block text-xs text-muted-foreground'>
+        {t(
+          entry.key === 'unregistered'
+            ? 'workbench.work.mdmUnregistered'
+            : 'workbench.work.mdmUnmanaged',
+        )}
+      </span>
+    </Link>
   );
 }
 

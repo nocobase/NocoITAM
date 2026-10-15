@@ -107,12 +107,14 @@ product or in release notes, until it is listed here.
   person, the platform's primary user is another; **状态不符**
   (`statusMismatch`) — in stock, retired, pending disposal, disposed or
   lost, yet synced within `recentDays` (lost and disposed are `critical`).
-  Personal records count only when `ignorePersonal` is off. Whole-register
-  ones are two 需要关注 rules, `managedUnregistered` (unlinked or ambiguous
-  company records synced within `staleDays`) and `deviceUnmanaged` (in use,
-  in a `managedCategoryIds` category or under one, on no platform). Without
-  a platform (`review.active()`) the rules are left out of the list, the
-  设备核对 column is absent and no leaver is tagged.
+  Personal records count only when `ignorePersonal` is off. The
+  whole-register ones are `unregistered()` (unlinked or ambiguous company
+  records synced within `staleDays`) and `unmanaged()` (in use, in a
+  `managedCategoryIds` category or under one, on no platform). They were
+  two 需要关注 rules for a day; since 2026-10-15 they are counts on 待办's
+  MDM 核对 column (`MyWorkItem.summary`), so MDM is one place on the board.
+  Without a platform (`review.active()`) the column is absent and no
+  leaver is tagged.
 - **以台账为准** writes `deviceSyncDismissals` (device, kind, the value that
   was seen: the last sync, the other person, the register status) and a
   `managedDismissed` event; the same difference with another value is
@@ -129,13 +131,17 @@ product or in release notes, until it is listed here.
   name or part code and its category and maker; `POST /itam/devices` then
   calls `matchDevice`, so the new device is linked at once rather than at
   the next pull.
-- **Where it shows**: 待办's 设备核对 column (`deviceChecks`, a device's
-  负责人 for 我负责的, devices `read` and `update` to see it); 离职交接
+- **Where it shows**: 待办's MDM 核对 column (`deviceChecks`, devices
+  `read` and `update` to see it): the differences as device cards, a
+  device's 负责人 for 我负责的, then one card each for 只在 MDM (devices
+  `create`, whole under 我负责的 — such a record has no 负责人) and 只在台账
+  (the device's 负责人 for 我负责的) with its count, opening its tab;
+  the column's count is all three (2026-10-15); 离职交接
   cards tagged N 台设备离职后仍在线 (`onlineAfterLeaving`, a sync after the
   leave date); `/device-sync` (MDM 核对, no menu entry or page grant,
   views checks / unregistered / unmanaged / ignored, devices `read`; since 2026-10-15 the tabs read 信息不一致 / 只在 MDM / 只在台账 with their counts, and 已忽略 is no tab but a section beneath 只在 MDM's list (`?view=ignored` opens that tab and scrolls to it); 只在台账 says its three conditions in one sentence; the ignored view also lists, after the records a person kept off, the personal devices 忽略个人设备 leaves out (`ignoredByRule`, no 恢复: the rule brings them back), since 2026-10-15; reached
   from the device list header while a platform is connected and from the
-  设备核对 column header, empty or not, since 2026-10-14); the
+  MDM 核对 column header (查看全部), empty or not, since 2026-10-14); the
   settings tab's 核对规则 card (`deviceSync` settings key).
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the

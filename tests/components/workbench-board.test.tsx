@@ -297,7 +297,34 @@ it('leads from the device checks column to MDM 核对, even when it is empty', (
   const checks = column('workbench.work.deviceChecks');
   expect(
     within(checks)
-      .getByRole('link', { name: 'deviceSync.review.title' })
+      .getByRole('link', { name: 'workbench.seeAll' })
       .getAttribute('href'),
   ).toBe('/device-sync');
+});
+
+it('counts the MDM 核对 tabs its cards are not on, each opening its tab', () => {
+  state.items = [
+    {
+      key: 'deviceChecks',
+      count: 0,
+      url: '/device-sync',
+      records: [],
+      summary: { unregistered: 4, unmanaged: 0 },
+    },
+  ];
+  show();
+  const checks = column('workbench.work.deviceChecks');
+  // The column's count in its heading, and the card's own.
+  expect(within(checks).getAllByText('4')).toHaveLength(2);
+  expect(
+    within(checks)
+      .getByText('deviceSync.review.views.unregistered')
+      .closest('a')
+      ?.getAttribute('href'),
+  ).toBe('/device-sync?view=unregistered');
+  // An empty tab has no card.
+  expect(
+    within(checks).queryByText('deviceSync.review.views.unmanaged'),
+  ).toBeNull();
+  expect(within(checks).queryByText('workbench.nothingPending')).toBeNull();
 });
