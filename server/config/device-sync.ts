@@ -64,11 +64,14 @@ function checkSource<K extends string>(
 
 /**
  * Application section (2026-10-14, device sync step 1; Jamf in step 3): the
- * device management platforms ITAM reads its devices from. Credentials stay
- * here, on the machine that runs the application (NocoSolution guideline
- * 1.5); the settings page only says whether a source is configured. A secret
- * is written as the value itself — a `${NAME}` placeholder is not expanded —
- * or set from the environment variables below.
+ * device management platforms ITAM reads its devices from. A platform set
+ * here wins, and the settings page shows it read-only; one left out can be
+ * connected on 设置 → 设备同步 instead (2026-10-15,
+ * `providers/itam/device-connections.ts`), its secret sealed with
+ * `secrets.keys`. Either way the credential stays on the machine that runs
+ * the application (NocoSolution guideline 1.5). A secret is written as the
+ * value itself — a `${NAME}` placeholder is not expanded — or set from the
+ * environment variables below.
  */
 const deviceSync: AppConfigFactory<DeviceSyncConfig> =
   defineAppConfig<DeviceSyncConfig>({

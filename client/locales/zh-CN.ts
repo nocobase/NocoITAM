@@ -2145,6 +2145,16 @@ const zhCN: AppResource = {
       'Cannot issue to a person who has left': '不能领用给已离职人员',
       'Consumables are not returned': '耗材不可归还',
       'No device management platform is configured': '尚未连接任何设备管理平台',
+      'The tenant ID is required': '请填写目录（租户）ID',
+      'The Jamf Pro address must start with https://':
+        'Jamf Pro 地址需要以 https:// 开头',
+      'The client ID is required': '请填写客户端 ID',
+      'The client secret is required': '请填写客户端密钥',
+      'This platform is connected in the server configuration file':
+        '这个平台已在服务器的 config.yml 中配置，不能在这里修改',
+      'The server has no secrets keys to store a secret with':
+        '服务器没有配置加密主密钥，不能保存密钥',
+      'The connection is incomplete': '连接信息不完整',
       'This platform record is not linked to a device':
         '这条管理平台记录没有关联台账设备',
       'A linked platform record cannot be kept off the register':
@@ -2256,9 +2266,37 @@ const zhCN: AppResource = {
       configured: '已连接',
       notConfigured: '未配置',
       howTo: {
-        jamf: '在服务器的 config.yml 中 deviceSync.jamf 下填写 url（Jamf Pro 地址）、clientId、clientSecret（或设置环境变量 JAMF_URL、JAMF_CLIENT_ID、JAMF_CLIENT_SECRET），然后重启。在 Jamf Pro「设置 → 系统 → API 角色和客户端」建一个只含 Read Computers、Read Mobile Devices 权限的角色和客户端（Jamf Pro 10.49 及以上）。',
+        jamf: '先在 Jamf Pro「设置 → 系统 → API 角色和客户端」建一个只含 Read Computers、Read Mobile Devices 权限的角色，再用它建一个 API 客户端（Jamf Pro 10.49 及以上），然后点「连接」填写。也可以在服务器的 config.yml 中 deviceSync.jamf 下配置。',
         intune:
-          '在服务器的 config.yml 中 deviceSync.intune 下填写 tenantId、clientId、clientSecret（或设置环境变量 INTUNE_TENANT_ID、INTUNE_CLIENT_ID、INTUNE_CLIENT_SECRET），然后重启。Entra ID 应用注册需要 Microsoft Graph 应用权限 DeviceManagementManagedDevices.Read.All，并由管理员同意。',
+          '先在 Entra ID 注册一个应用，授予 Microsoft Graph 应用权限 DeviceManagementManagedDevices.Read.All 并由管理员同意，新建一个客户端密钥，然后点「连接」填写。也可以在服务器的 config.yml 中 deviceSync.intune 下配置。',
+      },
+      connection: {
+        connect: '连接',
+        edit: '修改连接',
+        disconnect: '断开连接',
+        title: '连接 {{name}}',
+        editTitle: '修改 {{name}} 连接',
+        description: '只需要读取设备的权限。密钥保存后加密存储，不会再显示。',
+        fields: {
+          tenantId: '目录（租户）ID',
+          url: 'Jamf Pro 地址',
+          clientId: '客户端 ID',
+          clientSecret: '客户端密钥',
+        },
+        urlPlaceholder: 'https://example.jamfcloud.com',
+        secretKept: '留空则保留已保存的密钥',
+        unreachable: '无法连接管理平台：请检查地址，以及服务器能否访问它',
+        test: '测试连接',
+        save: '保存',
+        testOk_one: '连接成功，读到第一页 {{count}} 台设备',
+        testOk_other: '连接成功，读到第一页 {{count}} 台设备',
+        fromConfig: '由服务器的 config.yml 配置，这里只能查看',
+        saved: '客户端 ID {{clientId}} · {{name}} 于 {{date}} 保存',
+        secretsMissing:
+          '服务器没有配置加密主密钥（config.yml 中的 secrets.keys），不能在这里保存密钥。请让管理员配置主密钥，或在 config.yml 中填写连接。',
+        disconnectTitle: '断开 {{name}}？',
+        disconnectDescription:
+          '删除保存的连接和密钥。已同步到的设备记录保留，之后不再同步这个平台，直到重新连接。',
       },
       lastRun: '最近一次同步',
       statuses: {
@@ -2275,8 +2313,7 @@ const zhCN: AppResource = {
       runCounts:
         '读取 {{seen}} 台，新增 {{added}} 台，关联 {{linked}} 台，{{gone}} 台已不在平台中',
       failures: {
-        AUTH_FAILED:
-          '登录被拒绝：请检查 config.yml 中的地址或租户、客户端 ID 和客户端密钥',
+        AUTH_FAILED: '登录被拒绝：请检查地址或租户 ID、客户端 ID 和客户端密钥',
         PERMISSION_MISSING:
           '缺少权限：Intune 需要 DeviceManagementManagedDevices.Read.All 并由管理员同意，Jamf Pro 需要 Read Computers 和 Read Mobile Devices',
         UNAVAILABLE: '无法连接管理平台，今晚会再试',

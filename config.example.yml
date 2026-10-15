@@ -161,7 +161,9 @@ logging:
     pretty: false
 
 # Application change (ITAM, device sync): the device management platforms ITAM
-# reads its devices from, read only. Leave it out to connect none. Write each
+# reads its devices from, read only. Leave it out to connect none, or to
+# connect them on 设置 → 设备同步 instead, where the client secret is sealed
+# with secrets.keys; a platform configured here wins over the page. Write each
 # value itself (a ${NAME} placeholder is not expanded), or set
 # INTUNE_TENANT_ID, INTUNE_CLIENT_ID and INTUNE_CLIENT_SECRET. The Entra ID app
 # registration needs the Microsoft Graph application permission

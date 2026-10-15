@@ -2277,6 +2277,16 @@ const messages = {
       'Consumables are not returned': 'Consumables are not returned',
       'No device management platform is configured':
         'No device management platform is configured',
+      'The tenant ID is required': 'The tenant ID is required',
+      'The Jamf Pro address must start with https://':
+        'The Jamf Pro address must start with https://',
+      'The client ID is required': 'The client ID is required',
+      'The client secret is required': 'The client secret is required',
+      'This platform is connected in the server configuration file':
+        'This platform is connected in the server configuration file',
+      'The server has no secrets keys to store a secret with':
+        'The server has no secrets keys to store a secret with',
+      'The connection is incomplete': 'The connection is incomplete',
       'This platform record is not linked to a device':
         'This platform record is not linked to a device',
       'A linked platform record cannot be kept off the register':
@@ -2405,9 +2415,39 @@ const messages = {
       configured: 'Connected',
       notConfigured: 'Not configured',
       howTo: {
-        jamf: 'Set url (the Jamf Pro address), clientId and clientSecret under deviceSync.jamf in config.yml on the server (or JAMF_URL, JAMF_CLIENT_ID and JAMF_CLIENT_SECRET), then restart. In Jamf Pro, under Settings → System → API roles and clients, create a role with only Read Computers and Read Mobile Devices, and a client with that role (Jamf Pro 10.49 or later).',
+        jamf: 'In Jamf Pro, under Settings → System → API roles and clients, create a role with only Read Computers and Read Mobile Devices and an API client with that role (Jamf Pro 10.49 or later), then press Connect. It can also be set under deviceSync.jamf in config.yml on the server.',
         intune:
-          'Set tenantId, clientId and clientSecret under deviceSync.intune in config.yml on the server (or INTUNE_TENANT_ID, INTUNE_CLIENT_ID and INTUNE_CLIENT_SECRET), then restart. The Entra ID app registration needs the Microsoft Graph application permission DeviceManagementManagedDevices.Read.All, with admin consent.',
+          'Register an app in Entra ID with the Microsoft Graph application permission DeviceManagementManagedDevices.Read.All and admin consent, create a client secret, then press Connect. It can also be set under deviceSync.intune in config.yml on the server.',
+      },
+      connection: {
+        connect: 'Connect',
+        edit: 'Edit connection',
+        disconnect: 'Disconnect',
+        title: 'Connect {{name}}',
+        editTitle: 'Edit the {{name}} connection',
+        description:
+          'Only permission to read devices is needed. The secret is stored encrypted and never shown again.',
+        fields: {
+          tenantId: 'Directory (tenant) ID',
+          url: 'Jamf Pro address',
+          clientId: 'Client ID',
+          clientSecret: 'Client secret',
+        },
+        urlPlaceholder: 'https://example.jamfcloud.com',
+        secretKept: 'Leave empty to keep the saved secret',
+        unreachable:
+          'The platform could not be reached: check the address, and that the server can reach it',
+        test: 'Test connection',
+        save: 'Save',
+        testOk_one: 'Connected: the first page holds {{count}} device',
+        testOk_other: 'Connected: the first page holds {{count}} devices',
+        fromConfig: "Set in the server's config.yml; read-only here",
+        saved: 'Client ID {{clientId}} · saved by {{name}} on {{date}}',
+        secretsMissing:
+          'The server has no secrets keys (secrets.keys in config.yml), so a secret cannot be stored here. Ask an administrator to configure them, or set the connection in config.yml.',
+        disconnectTitle: 'Disconnect {{name}}?',
+        disconnectDescription:
+          'Deletes the saved connection and secret. Device records already synced stay; this platform is no longer synced until it is connected again.',
       },
       lastRun: 'Latest sync',
       statuses: {
@@ -2425,7 +2465,7 @@ const messages = {
         '{{seen}} devices read, {{added}} new, {{linked}} linked, {{gone}} no longer reported',
       failures: {
         AUTH_FAILED:
-          'Sign-in refused: check the address or tenant, client ID and client secret in config.yml',
+          'Sign-in refused: check the address or tenant ID, client ID and client secret',
         PERMISSION_MISSING:
           'Permission missing: Intune needs DeviceManagementManagedDevices.Read.All with admin consent; Jamf Pro needs Read Computers and Read Mobile Devices',
         UNAVAILABLE:

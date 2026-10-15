@@ -8,13 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { apiErrorBody } from '@/lib/itam/api';
 import {
+  useDeviceConnections,
   useDeviceSyncStatus,
   useStartDeviceSync,
+  type DeviceConnection,
   type SourceStatus,
   type SyncRun,
 } from '@/lib/itam/device-sync';
 import { errorMessage, formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
+
+import { DeviceConnectionControls } from './device-connection';
 
 const RUN_TONE: Readonly<
   Record<SyncRun['status'], 'default' | 'secondary' | 'destructive' | 'outline'>
@@ -26,14 +30,16 @@ const RUN_TONE: Readonly<
 };
 
 /**
- * 设置 → 设备同步 (2026-10-14): each device management platform, whether
- * `config.yml` connects it, how its latest pull went and what it holds. The
- * credentials are never shown here: they stay on the server. A pull started
- * here runs in the background and the card follows it.
+ * 设置 → 设备同步 (2026-10-14): each device management platform, its
+ * connection — from `config.yml`, or entered here since 2026-10-15 with the
+ * secret sealed on the server and never shown again — how its latest pull
+ * went and what it holds. A pull started here runs in the background and
+ * the card follows it.
  */
 export function DeviceSyncCard(): ReactElement {
   const { t } = useTranslation();
   const status = useDeviceSyncStatus();
+  const connections = useDeviceConnections();
   const start = useStartDeviceSync();
   const sources = status.data ?? [];
   const configured = sources.some((source) => source.configured);
@@ -71,7 +77,14 @@ export function DeviceSyncCard(): ReactElement {
       <CardContent className='space-y-5'>
         {error ? <p className='text-sm text-destructive'>{error}</p> : null}
         {sources.map((source) => (
-          <SourceBlock key={source.key} source={source} />
+          <SourceBlock
+            key={source.key}
+            source={source}
+            connection={connections.data?.connections.find(
+              (connection) => connection.source === source.key,
+            )}
+            secretsReady={connections.data?.secretsReady ?? false}
+          />
         ))}
       </CardContent>
     </Card>
@@ -80,8 +93,12 @@ export function DeviceSyncCard(): ReactElement {
 
 function SourceBlock({
   source,
+  connection,
+  secretsReady,
 }: {
   readonly source: SourceStatus;
+  readonly connection: DeviceConnection | undefined;
+  readonly secretsReady: boolean;
 }): ReactElement {
   const { t } = useTranslation();
   const run = source.lastRun;
@@ -109,6 +126,11 @@ function SourceBlock({
           {t(`settings.deviceSync.howTo.${source.key}`)}
         </p>
       )}
+      <DeviceConnectionControls
+        source={source.key}
+        connection={connection}
+        secretsReady={secretsReady}
+      />
       {run ? (
         <div className='space-y-1 text-sm'>
           <div className='flex flex-wrap items-center gap-2'>

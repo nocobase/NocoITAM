@@ -304,6 +304,7 @@ export function createDeviceReviewService(deps: {
     row: Row,
     models: Awaited<ReturnType<typeof modelIndex>>,
     candidates: Map<string, { id: string; label: string }[]>,
+    urlOf: (source: string, externalId: string) => string | null,
   ): UnregisteredDevice => {
     const serial = asText(row.serialNo) ?? null;
     return {
@@ -330,7 +331,7 @@ export function createDeviceReviewService(deps: {
       ignoredById: asText(row.ignoredById) ?? null,
       ignoredAt: iso(row.ignoredAt),
       ignoreReason: asText(row.ignoreReason) ?? null,
-      consoleUrl: sync.consoleUrlOf(String(row.source), String(row.externalId)),
+      consoleUrl: urlOf(String(row.source), String(row.externalId)),
       sources: [String(row.source)],
     };
   };
@@ -567,7 +568,10 @@ export function createDeviceReviewService(deps: {
       const rows = await query.orderBy('lastSyncAt', 'desc').execute<Row>();
       const models = await modelIndex();
       const shared = await sharedSerials(rows);
-      return fold(rows.map((row) => toUnregistered(row, models, shared)));
+      const urlOf = await sync.consoleUrls();
+      return fold(
+        rows.map((row) => toUnregistered(row, models, shared, urlOf)),
+      );
     },
 
     async ignored() {
@@ -579,7 +583,10 @@ export function createDeviceReviewService(deps: {
         .orderBy('ignoredAt', 'desc')
         .execute<Row>();
       const models = await modelIndex();
-      return fold(rows.map((row) => toUnregistered(row, models, new Map())));
+      const urlOf = await sync.consoleUrls();
+      return fold(
+        rows.map((row) => toUnregistered(row, models, new Map(), urlOf)),
+      );
     },
 
     async unmanaged() {

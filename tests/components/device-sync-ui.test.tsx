@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,6 +6,7 @@ import { ManagedPlatforms } from '../../client/components/itam/managed-platforms
 import { DeviceSyncCard } from '../../client/pages/itam/settings/device-sync-card.js';
 import type {
   DeviceCheck,
+  DeviceConnection,
   ManagedDevice,
   OnlineAfterLeaving,
   SourceStatus,
@@ -21,7 +22,24 @@ const state = vi.hoisted(() => ({
   online: [] as OnlineAfterLeaving[],
   status: [] as SourceStatus[],
   start: vi.fn(),
+  connections: [] as DeviceConnection[],
+  secretsReady: true,
+  save: vi.fn(),
+  remove: vi.fn(),
+  test: vi.fn(),
+  testResult: undefined as unknown,
 }));
+/** A mutation's surface as the card uses it; `onSuccess` runs at once. */
+const mutation = (spy: ReturnType<typeof vi.fn>, data?: () => unknown) => ({
+  mutate: (variables: unknown, options?: { onSuccess?: () => void }) => {
+    spy(variables);
+    options?.onSuccess?.();
+  },
+  reset: () => undefined,
+  isPending: false,
+  error: null,
+  data: data?.(),
+});
 
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({
@@ -43,6 +61,14 @@ vi.mock('../../client/lib/itam/device-sync.js', () => ({
     mutate: state.start,
     isPending: false,
     error: null,
+  }),
+  useDeviceConnections: () => ({
+    data: { secretsReady: state.secretsReady, connections: state.connections },
+  }),
+  useDeviceConnectionActions: () => ({
+    save: mutation(state.save),
+    remove: mutation(state.remove),
+    test: mutation(state.test, () => state.testResult),
   }),
 }));
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
@@ -300,6 +326,177 @@ describe('设置 → 设备同步', () => {
     expect(
       screen.getByRole('button', { name: /settings\.deviceSync\.running/ }),
     ).toBeDisabled();
+  });
+});
+
+describe('设置 → 设备同步: a connection entered on the page', () => {
+  const connection = (
+    overrides: Partial<DeviceConnection> = {},
+  ): DeviceConnection => ({
+    source: 'intune',
+    origin: null,
+    tenantId: null,
+    url: null,
+    clientId: null,
+    updatedAt: null,
+    updatedById: null,
+    ...overrides,
+  });
+  beforeEach(() => {
+    state.status = [source({ configured: false })];
+    state.secretsReady = true;
+    state.testResult = undefined;
+    for (const spy of [state.save, state.remove, state.test]) spy.mockReset();
+  });
+  const type = (label: string, value: string) =>
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+
+  it('connects Intune: tests what was typed, then saves it', () => {
+    state.connections = [connection()];
+    state.testResult = { ok: true, devices: 3 };
+    render(<DeviceSyncCard />);
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /settings\.deviceSync\.connection\.connect/,
+      }),
+    );
+    const dialog = screen.getByRole('dialog');
+    // Intune asks for its tenant, not an address.
+    expect(
+      within(dialog).queryByLabelText(
+        'settings.deviceSync.connection.fields.url',
+      ),
+    ).toBeNull();
+    type('settings.deviceSync.connection.fields.tenantId', 'tenant-1');
+    type('settings.deviceSync.connection.fields.clientId', 'client-1');
+    type('settings.deviceSync.connection.fields.clientSecret', 's3cret');
+    expect(
+      within(dialog).getByLabelText(
+        'settings.deviceSync.connection.fields.clientSecret',
+      ),
+    ).toHaveAttribute('type', 'password');
+    fireEvent.click(
+      within(dialog).getByRole('button', {
+        name: 'settings.deviceSync.connection.test',
+      }),
+    );
+    const values = {
+      tenantId: 'tenant-1',
+      clientId: 'client-1',
+      clientSecret: 's3cret',
+    };
+    expect(state.test).toHaveBeenCalledWith({ source: 'intune', values });
+    expect(
+      within(dialog).getByText('settings.deviceSync.connection.testOk:3'),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole('button', {
+        name: 'settings.deviceSync.connection.save',
+      }),
+    );
+    expect(state.save).toHaveBeenCalledWith({ source: 'intune', values });
+  });
+
+  it('keeps the stored secret when it is left empty, and disconnects', () => {
+    state.connections = [
+      connection({
+        origin: 'settings',
+        tenantId: 'tenant-1',
+        clientId: 'client-1',
+        updatedAt: '2026-10-15T10:00:00.000Z',
+        updatedById: 'mia',
+      }),
+    ];
+    render(<DeviceSyncCard />);
+    expect(
+      screen.getByText('settings.deviceSync.connection.saved'),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /settings\.deviceSync\.connection\.edit/,
+      }),
+    );
+    const dialog = screen.getByRole('dialog');
+    // The secret is never sent to the page, so the field starts empty.
+    expect(
+      within(dialog).getByLabelText(
+        'settings.deviceSync.connection.fields.clientSecret',
+      ),
+    ).toHaveValue('');
+    expect(
+      within(dialog).getByLabelText(
+        'settings.deviceSync.connection.fields.tenantId',
+      ),
+    ).toHaveValue('tenant-1');
+    fireEvent.click(
+      within(dialog).getByRole('button', {
+        name: 'settings.deviceSync.connection.save',
+      }),
+    );
+    expect(state.save).toHaveBeenCalledWith({
+      source: 'intune',
+      values: { tenantId: 'tenant-1', clientId: 'client-1' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /settings\.deviceSync\.connection\.disconnect/,
+      }),
+    );
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'settings.deviceSync.connection.disconnect',
+      }),
+    );
+    expect(state.remove).toHaveBeenCalledWith('intune');
+  });
+
+  it('shows a connection from config.yml read-only', () => {
+    state.status = [source({ configured: true })];
+    state.connections = [
+      connection({ origin: 'config', tenantId: 't', clientId: 'c' }),
+    ];
+    render(<DeviceSyncCard />);
+    expect(
+      screen.getByText('settings.deviceSync.connection.fromConfig'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: /settings\.deviceSync\.connection\./,
+      }),
+    ).toBeNull();
+  });
+
+  it('says why nothing can be stored without the secrets keys', () => {
+    state.connections = [connection()];
+    state.secretsReady = false;
+    render(<DeviceSyncCard />);
+    expect(
+      screen.getByText('settings.deviceSync.connection.secretsMissing'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: /settings\.deviceSync\.connection\.connect/,
+      }),
+    ).toBeDisabled();
+  });
+
+  it('names a refused sign-in from the test', () => {
+    state.connections = [connection({ source: 'intune' })];
+    state.testResult = {
+      ok: false,
+      failureCode: 'AUTH_FAILED',
+      failure: 'AADSTS7000215: Invalid client secret',
+    };
+    render(<DeviceSyncCard />);
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /settings\.deviceSync\.connection\.connect/,
+      }),
+    );
+    expect(
+      screen.getByText('settings.deviceSync.failures.AUTH_FAILED'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/AADSTS7000215/)).toBeInTheDocument();
   });
 });
 

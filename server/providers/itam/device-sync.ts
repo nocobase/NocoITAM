@@ -111,8 +111,11 @@ export interface DeviceSyncService {
    * device page says "not found on the platforms" only then.
    */
   connected(): Promise<boolean>;
-  /** Where the platform's own page for one of its records is. */
-  consoleUrlOf(source: string, externalId: string): string | null;
+  /**
+   * Where the platforms' own pages for their records are: read once, then
+   * asked per record (the Jamf address may be stored on 设置 → 设备同步).
+   */
+  consoleUrls(): Promise<(source: string, externalId: string) => string | null>;
   /**
    * Links a device just put on the register to the platform record of its
    * serial, the way the next pull would (step 2, 2026-10-15) — so 补登记
@@ -142,14 +145,21 @@ const timestamp = (value: string | null): Date | null => {
 export function createDeviceSyncService(deps: {
   readonly database: DatabaseManager;
   readonly history: HistoryService;
-  /** The sources `config.yml` connects, read when a pull starts. */
-  readonly sources: () => readonly DeviceSource[];
+  /**
+   * The sources connected — by `config.yml` or on 设置 → 设备同步 — read
+   * when a pull starts.
+   */
+  readonly sources: () =>
+    readonly DeviceSource[] | Promise<readonly DeviceSource[]>;
   /** The pages that show live data are told when a pull changed something. */
   readonly touched?: () => void;
   readonly log?: (message: string, error: unknown) => void;
   readonly now?: () => Date;
   /** The platforms' addresses, for links to a record's own page. */
-  readonly consoles?: () => { readonly jamf?: JamfSourceConfig } | undefined;
+  readonly consoles?: () =>
+    | { readonly jamf?: JamfSourceConfig }
+    | undefined
+    | Promise<{ readonly jamf?: JamfSourceConfig } | undefined>;
 }): DeviceSyncService {
   const { database, history } = deps;
   const now = deps.now ?? (() => new Date());
@@ -521,7 +531,9 @@ export function createDeviceSyncService(deps: {
 
   return {
     async status() {
-      const configured = new Set(deps.sources().map((source) => source.key));
+      const configured = new Set(
+        (await deps.sources()).map((source) => source.key),
+      );
       const rows = await database
         .query()
         .selectFrom('managedDevices')
@@ -564,7 +576,7 @@ export function createDeviceSyncService(deps: {
 
     async start(trigger, actorId) {
       const runs: Row[] = [];
-      for (const source of deps.sources()) {
+      for (const source of await deps.sources()) {
         const { id, done } = await begin(source, trigger, actorId);
         // The pull carries on after the answer; its failures are its run's.
         done.catch((error: unknown) =>
@@ -578,7 +590,7 @@ export function createDeviceSyncService(deps: {
 
     async runAll(trigger, actorId) {
       const pulls = await Promise.all(
-        deps.sources().map((source) => begin(source, trigger, actorId)),
+        (await deps.sources()).map((source) => begin(source, trigger, actorId)),
       );
       return Promise.all(pulls.map((pull) => pull.done));
     },
@@ -637,11 +649,13 @@ export function createDeviceSyncService(deps: {
       deps.touched?.();
     },
 
-    consoleUrlOf: (source, externalId) =>
-      consoleUrl(source, externalId, deps.consoles?.()),
+    async consoleUrls() {
+      const consoles = await deps.consoles?.();
+      return (source, externalId) => consoleUrl(source, externalId, consoles);
+    },
 
     async connected() {
-      if (deps.sources().length > 0) return true;
+      if ((await deps.sources()).length > 0) return true;
       return Boolean(
         await database
           .query()
@@ -661,6 +675,7 @@ export function createDeviceSyncService(deps: {
         .where('matchState', '=', 'linked')
         .orderBy('lastSyncAt', 'desc')
         .execute();
+      const consoles = await deps.consoles?.();
       return rows.map((row) => ({
         id: String(row.id),
         source: row.source as DeviceSourceKey,
@@ -687,7 +702,7 @@ export function createDeviceSyncService(deps: {
         consoleUrl: consoleUrl(
           String(row.source),
           String(row.externalId),
-          deps.consoles?.(),
+          consoles,
         ),
       }));
     },

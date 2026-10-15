@@ -11,10 +11,24 @@ The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md
   `managedDevices.deviceId`. The only trace on a device is the
   `managedLinked` timeline event, origin `sync`. No code writes to a
   platform; Intune asks only for `DeviceManagementManagedDevices.Read.All`.
-- **Credentials live in `config.yml`** under `deviceSync.intune`
-  (`server/config/device-sync.ts`, with `INTUNE_*` environment variables),
-  never in the database or on a page; the settings page only says whether a
-  source is configured. `configuredSources` in
+- **Credentials: `config.yml`, or the settings page** (2026-10-15). A
+  platform under `deviceSync.intune` / `deviceSync.jamf` in `config.yml`
+  (`server/config/device-sync.ts`, with `INTUNE_*` / `JAMF_*` environment
+  variables) wins, and 设置 → 设备同步 shows it read-only. Otherwise it can be
+  connected on that page (`device-connections.ts`, table
+  `deviceSyncConnections`, one row per platform): the client secret is
+  sealed with the framework's secrets service (`secretsServiceToken`,
+  purpose `itam/device-sync-client-secret`, bound to the platform key) and
+  registered as a secrets store, so `nocobase secrets status` counts it and
+  `secrets rotate` reseals it. The secret is written, never answered: a
+  save without one keeps the stored one. Without `secrets.keys` the page
+  refuses to store (`deviceSync.secretsNotConfigured`) rather than store it
+  in plain text. Saving and disconnecting take the settings grant and leave
+  a history event on `deviceSyncConnections` / the platform key, without
+  the secret. 测试连接 signs in and reads one page, one attempt, storing
+  nothing; a refused sign-in is a 200 with `ok: false` and the failure
+  code. Every pull reads the connections afresh (`effective()`), so a save
+  takes effect without a restart. `configuredSources` in
   `server/providers/itam/device-sources.ts` connects a source only when all
   of its values are there, and the config's validator refuses a half-filled
   one or a `${NAME}` placeholder.

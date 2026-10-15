@@ -2856,6 +2856,18 @@ to the CSV export), shown only while a platform is connected; and a leaver's
 beside the 离职交接 card's tag. The tab shows it even when the leaver holds
 nothing on the register.
 
+### 2026-10-15 Device sync: connections entered on the settings page
+
+A platform can now be connected on 设置 → 设备同步 as well as in
+`config.yml`, for a deployment whose operator does not edit the server's
+files. This revises decision 4 of the design (credentials only in
+`config.yml`): the credential still stays on the machine that runs the
+application, as NocoSolution guideline 1.5 asks, now in its own database with
+the client secret sealed by the framework's secrets service. `config.yml`
+wins for a platform it configures. The page tests a connection before saving
+it, never shows a stored secret, and refuses to store one without
+`secrets.keys`. Migration `202610150002_device_sync_connections`.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became
