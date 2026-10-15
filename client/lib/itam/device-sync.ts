@@ -264,6 +264,8 @@ export interface UnregisteredDevice {
   readonly ignoredById: string | null;
   readonly ignoredAt: string | null;
   readonly ignoreReason: string | null;
+  /** Kept off by 核对规则 (a personal device), not by a person. */
+  readonly ignoredByRule: boolean;
   readonly consoleUrl: string | null;
   /** Every platform that reports it; a co-managed Mac is one row. */
   readonly sources: readonly DeviceSourceKey[];

@@ -268,6 +268,23 @@ function UnmanagedView(): ReactElement {
  * Platform records off the register: the ones nobody has decided on, with
  * 补登记 / 关联到已有设备 / 不纳入台账, or the ones kept off, with 恢复.
  */
+/**
+ * The platform's maker and model, the maker left out when the model already
+ * starts with it, as Intune's often does ("HP ZHAN66 16+ G1i").
+ */
+function platformModel(
+  manufacturer: string | null,
+  model: string | null,
+): string {
+  if (!model) return manufacturer ?? '—';
+  if (
+    !manufacturer ||
+    model.toLowerCase().startsWith(manufacturer.toLowerCase())
+  )
+    return model;
+  return `${manufacturer} ${model}`;
+}
+
 function RecordsView({
   view,
 }: {
@@ -367,7 +384,7 @@ function RecordsView({
                 ) : null}
               </TableCell>
               <TableCell>
-                {[row.manufacturer, row.model].filter(Boolean).join(' ') || '—'}
+                {platformModel(row.manufacturer, row.model)}
               </TableCell>
               <TableCell>
                 {row.personId ? (
@@ -377,7 +394,14 @@ function RecordsView({
                 )}
               </TableCell>
               <TableCell className='text-sm'>
-                {view === 'ignored' ? (
+                {view === 'ignored' && row.ignoredByRule ? (
+                  <span>
+                    {t('deviceSync.review.byRule')}
+                    <span className='block text-xs text-muted-foreground'>
+                      {t('deviceSync.review.byRuleHint')}
+                    </span>
+                  </span>
+                ) : view === 'ignored' ? (
                   <span>
                     {row.ignoreReason}
                     <span className='block text-xs text-muted-foreground'>
@@ -399,7 +423,9 @@ function RecordsView({
               </TableCell>
               <TableCell>
                 <span className='flex flex-wrap justify-end gap-1'>
-                  {view === 'ignored' ? (
+                  {/* The rule brings a personal device back, not a row. */}
+                  {view === 'ignored' && row.ignoredByRule ? null : view ===
+                    'ignored' ? (
                     <Button
                       size='sm'
                       variant='outline'

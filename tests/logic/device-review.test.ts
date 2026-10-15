@@ -289,6 +289,26 @@ describe('device review', () => {
     ).toMatchObject({ count: 1, preview: [{ label: 'LAPTOP-NEW' }] });
   });
 
+  it('lists the personal devices the rules leave out with the ignored, until the rule is off', async () => {
+    await pull(
+      observed('own', { serialNo: 'OWN-1', ownership: 'personal' }),
+      observed('new', { serialNo: 'NEW-1' }),
+    );
+    expect(await review.ignored()).toMatchObject([
+      { externalId: 'own', ignoredByRule: true, ignoredById: null },
+    ]);
+    await app.container.resolve(settingsServiceToken).set('deviceSync', {
+      staleDays: 30,
+      recentDays: 7,
+      managedCategoryIds: [],
+      ignorePersonal: false,
+    });
+    expect(await review.ignored()).toEqual([]);
+    expect(
+      (await review.unregistered()).map((row) => row.externalId).sort(),
+    ).toEqual(['new', 'own']);
+  });
+
   it('keeps a record off the register and takes it back, matching it again', async () => {
     await pull(observed('vm', { serialNo: 'LATER-1' }));
     const id = await managedId('vm');

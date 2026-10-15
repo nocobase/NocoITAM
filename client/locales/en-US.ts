@@ -2064,7 +2064,7 @@ const messages = {
         unmanaged:
           'Devices in use of a managed category that no connected platform reports; they need enrolling on the platform.',
         ignored:
-          'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again.',
+          'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again. Personal devices the rules ignore are listed here too.',
       },
       empty: 'Nothing to review',
       columns: {
@@ -2080,6 +2080,9 @@ const messages = {
       link: 'Link to a device',
       ignore: 'Keep off the register',
       restore: 'Restore',
+      byRule: 'Personal device (by the rules)',
+      byRuleHint:
+        'Turn off Ignore personal devices to list it under Not on the register',
       linkTitle: 'Link to a device',
       linkDescription:
         'Link the platform device “{{name}}” to a device on the register.',

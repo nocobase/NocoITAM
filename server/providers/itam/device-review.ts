@@ -77,6 +77,12 @@ export interface UnregisteredDevice {
   readonly ignoredById: string | null;
   readonly ignoredAt: string | null;
   readonly ignoreReason: string | null;
+  /**
+   * Kept off the register by 核对规则 rather than by a person: a personal
+   * device while 忽略个人设备 is on (2026-10-15). Listed with the ignored
+   * so it can be found; the rule, not a row's 恢复, brings it back.
+   */
+  readonly ignoredByRule: boolean;
   readonly consoleUrl: string | null;
   /**
    * Every platform that reports this device (step 3): a Mac in both Intune
@@ -331,6 +337,7 @@ export function createDeviceReviewService(deps: {
       ignoredById: asText(row.ignoredById) ?? null,
       ignoredAt: iso(row.ignoredAt),
       ignoreReason: asText(row.ignoreReason) ?? null,
+      ignoredByRule: false,
       consoleUrl: urlOf(String(row.source), String(row.externalId)),
       sources: [String(row.source)],
     };
@@ -582,11 +589,29 @@ export function createDeviceReviewService(deps: {
         .where('matchState', '=', 'ignored')
         .orderBy('ignoredAt', 'desc')
         .execute<Row>();
+      // The personal devices 核对规则 keeps out of 台账未登记, after those
+      // a person kept off: otherwise they are on no list at all.
+      const config = limits(await settings.get('deviceSync'));
+      const byRule = config.ignorePersonal
+        ? await database
+            .query()
+            .selectFrom('managedDevices')
+            .selectAll()
+            .where('matchState', 'in', ['unlinked', 'ambiguous'])
+            .where('ownership', '=', 'personal')
+            .where('goneAt', 'is', null)
+            .orderBy('lastSyncAt', 'desc')
+            .execute<Row>()
+        : [];
       const models = await modelIndex();
       const urlOf = await sync.consoleUrls();
-      return fold(
-        rows.map((row) => toUnregistered(row, models, new Map(), urlOf)),
-      );
+      return fold([
+        ...rows.map((row) => toUnregistered(row, models, new Map(), urlOf)),
+        ...byRule.map((row) => ({
+          ...toUnregistered(row, models, new Map(), urlOf),
+          ignoredByRule: true,
+        })),
+      ]);
     },
 
     async unmanaged() {

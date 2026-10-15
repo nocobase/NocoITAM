@@ -1964,7 +1964,7 @@ const zhCN: AppResource = {
         unmanaged:
           '应纳管分类的在用设备，没有出现在任何已连接的 MDM 中，需要在 MDM 那边注册。',
         ignored:
-          '标为不纳入台账的 MDM 设备，以后的同步不再提示。恢复后会重新按序列号匹配。',
+          '标为不纳入台账的 MDM 设备，以后的同步不再提示。恢复后会重新按序列号匹配。核对规则忽略的个人设备也列在这里。',
       },
       empty: '没有需要处理的设备',
       columns: {
@@ -1980,6 +1980,8 @@ const zhCN: AppResource = {
       link: '关联到已有设备',
       ignore: '不纳入台账',
       restore: '恢复',
+      byRule: '个人设备（按核对规则）',
+      byRuleHint: '关掉「忽略个人设备」后回到台账未登记',
       linkTitle: '关联到已有设备',
       linkDescription: '把 MDM 设备「{{name}}」关联到台账里的一台设备。',
       candidates: '序列号相同的设备',
