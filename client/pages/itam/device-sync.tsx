@@ -1,7 +1,7 @@
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { ExternalLink, Settings2 } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
@@ -27,13 +27,13 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  REVIEW_VIEWS,
   useDeviceReview,
   useDeviceReviewAction,
   type DeviceCheck,
   type ReviewView,
   type UnregisteredDevice,
 } from '@/lib/itam/device-sync';
+import { useItamSettings } from '@/lib/itam/api';
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
@@ -60,9 +60,20 @@ export default function DeviceSyncReviewPage(): ReactElement {
   });
   const counts = useReviewCounts();
   const requested = params.get('view');
-  const view: ReviewView = REVIEW_VIEWS.includes(requested as ReviewView)
-    ? (requested as ReviewView)
-    : 'checks';
+  // 已忽略 is a section of 只在 MDM: a link to it (the settings page's)
+  // opens that tab and scrolls down to it.
+  const view: (typeof TABS)[number] =
+    requested === 'ignored'
+      ? 'unregistered'
+      : TABS.includes(requested as (typeof TABS)[number])
+        ? (requested as (typeof TABS)[number])
+        : 'checks';
+  const ignoredRef = useRef<HTMLElement>(null);
+  const ignoredShown = view === 'unregistered' && (counts.ignored ?? 0) > 0;
+  useEffect(() => {
+    if (requested === 'ignored' && ignoredShown)
+      ignoredRef.current?.scrollIntoView({ block: 'start' });
+  }, [requested, ignoredShown]);
   return (
     <Page>
       <HistoryBackButton fallback='/' />
@@ -89,9 +100,9 @@ export default function DeviceSyncReviewPage(): ReactElement {
       {/* Three ways the two lists disagree (2026-10-15): both have the
           device but say otherwise, only MDM has it, only the register has
           it — each with its count. What was kept off is not a fourth to-do:
-          it opens from 只在 MDM and counts as part of it. */}
+          it is listed under 只在 MDM, beneath what still waits. */}
       <Tabs
-        value={view === 'ignored' ? 'unregistered' : view}
+        value={view}
         onValueChange={(next) =>
           setParams({ view: String(next) }, { replace: true })
         }
@@ -110,26 +121,13 @@ export default function DeviceSyncReviewPage(): ReactElement {
         </TabsList>
       </Tabs>
       <div className='flex flex-wrap items-center justify-between gap-2'>
-        <p className='text-sm text-muted-foreground'>
-          {/* Under the 只在 MDM tab, so it says which list this is. */}
-          {view === 'ignored' ? (
-            <span className='mr-1.5 font-medium text-foreground'>
-              {t('deviceSync.review.views.ignored')}
-            </span>
-          ) : null}
-          {t(`deviceSync.review.hints.${view}`)}
-          {view === 'ignored' ? (
-            <button
-              type='button'
-              className='ml-2 text-foreground underline-offset-4 hover:underline'
-              onClick={() =>
-                setParams({ view: 'unregistered' }, { replace: true })
-              }
-            >
-              {t('deviceSync.review.backToUnregistered')}
-            </button>
-          ) : null}
-        </p>
+        {view === 'unmanaged' ? (
+          <UnmanagedHint />
+        ) : (
+          <p className='text-sm text-muted-foreground'>
+            {t(`deviceSync.review.hints.${view}`)}
+          </p>
+        )}
         {/* Noco explains the differences, or sorts out the records the
             register lacks into one plan (device-sync skill, step 4). */}
         {ai.available &&
@@ -145,22 +143,61 @@ export default function DeviceSyncReviewPage(): ReactElement {
       ) : view === 'unmanaged' ? (
         <UnmanagedView />
       ) : (
-        <RecordsView view={view} />
+        <RecordsView view='unregistered' />
       )}
-      {view === 'unregistered' && (counts.ignored ?? 0) > 0 ? (
-        <button
-          type='button'
-          className='w-fit text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
-          onClick={() => setParams({ view: 'ignored' }, { replace: true })}
+      {ignoredShown ? (
+        <section
+          ref={ignoredRef}
+          className='mt-4 flex scroll-mt-4 flex-col gap-3'
         >
-          {t('deviceSync.review.ignoredLink', { count: counts.ignored })} →
-        </button>
+          <div className='space-y-1'>
+            <h2 className='font-medium'>
+              {t('deviceSync.review.ignoredHeading', {
+                count: counts.ignored,
+              })}
+            </h2>
+            <p className='text-sm text-muted-foreground'>
+              {t('deviceSync.review.hints.ignored')}
+            </p>
+          </div>
+          <RecordsView view='ignored' />
+        </section>
       ) : null}
     </Page>
   );
 }
 
-/** The views shown as tabs; 已忽略 opens from 只在 MDM. */
+/**
+ * What puts a device under 只在台账, all three spelt out with the
+ * categories 核对规则 names, so the count can be checked against them.
+ */
+function UnmanagedHint(): ReactElement {
+  const { t } = useTranslation();
+  const settings = useItamSettings();
+  const ids = settings.data?.deviceSync.managedCategoryIds ?? [];
+  const names = useReferenceNames([{ collection: 'categories', ids }]);
+  const categories = ids
+    .map((id) => names.categories?.get(id))
+    .filter(Boolean)
+    .join('、');
+  return (
+    <div className='space-y-1 text-sm text-muted-foreground'>
+      <p>{t('deviceSync.review.unmanaged.lead')}</p>
+      <ol className='list-decimal space-y-0.5 pl-5'>
+        <li>
+          {categories
+            ? t('deviceSync.review.unmanaged.category', { categories })
+            : t('deviceSync.review.unmanaged.categoryByRule')}
+        </li>
+        <li>{t('deviceSync.review.unmanaged.status')}</li>
+        <li>{t('deviceSync.review.unmanaged.noMdm')}</li>
+      </ol>
+      <p>{t('deviceSync.review.unmanaged.action')}</p>
+    </div>
+  );
+}
+
+/** The views shown as tabs; 已忽略 is listed under 只在 MDM. */
 const TABS = ['checks', 'unregistered', 'unmanaged'] as const;
 
 /** Each view's count, as its own list reads it (undefined while loading). */

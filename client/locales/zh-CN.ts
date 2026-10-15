@@ -1966,8 +1966,16 @@ const zhCN: AppResource = {
         ignored:
           '标为不纳入台账的 MDM 设备，以后的同步不再提示；核对规则忽略的个人设备也在这里。恢复后会重新按序列号匹配。',
       },
-      ignoredLink: '已忽略 {{count}} 台',
-      backToUnregistered: '返回「只在 MDM」',
+      ignoredHeading: '已忽略 {{count}} 台',
+      unmanaged: {
+        lead: '台账里同时满足以下三个条件的设备：',
+        category:
+          '分类属于应纳管分类：{{categories}}（含子分类，可在核对规则中修改）',
+        categoryByRule: '分类属于核对规则中的应纳管分类（含子分类）',
+        status: '状态是使用中或借出',
+        noMdm: '没有出现在任何已连接的 MDM 中',
+        action: '需要在 MDM 那边给它们注册。',
+      },
       empty: '没有需要处理的设备',
       columns: {
         device: '设备',

@@ -2066,8 +2066,17 @@ const messages = {
         ignored:
           'Platform devices kept off the register; syncs no longer raise them. Restoring one matches it by serial again. Personal devices the rules ignore are listed here too.',
       },
-      ignoredLink: 'Ignored ({{count}})',
-      backToUnregistered: 'Back to Only in MDM',
+      ignoredHeading: 'Ignored ({{count}})',
+      unmanaged: {
+        lead: 'Register devices that meet all three:',
+        category:
+          'Of a managed category: {{categories}} (with their subcategories; changed under the review rules)',
+        categoryByRule:
+          'Of a managed category of the review rules (with their subcategories)',
+        status: 'In use or on loan',
+        noMdm: 'Reported by no connected MDM',
+        action: 'They need enrolling in MDM.',
+      },
       empty: 'Nothing to review',
       columns: {
         device: 'Device',
