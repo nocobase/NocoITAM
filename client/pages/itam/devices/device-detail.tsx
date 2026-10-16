@@ -357,17 +357,7 @@ export default function DeviceDetailPage(): ReactElement {
   ) => {
     if (!allowed) return;
     actionButtons.push(
-      // The main act in the theme's colour, the others filled in the
-      // foreground colour rather than outlined (2026-10-16).
-      <Button
-        key={key}
-        className={
-          variant === 'outline'
-            ? 'bg-foreground text-background hover:bg-foreground/85'
-            : undefined
-        }
-        onClick={onClick}
-      >
+      <Button key={key} variant={variant} onClick={onClick}>
         {icon}
         {label}
       </Button>,
