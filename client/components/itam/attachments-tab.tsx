@@ -8,16 +8,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Paperclip } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
-import {
-  FilePreviewDialog,
-  FileUploadField,
-} from '@/extensions/nocobase-file-component-ui';
+import { FilePreviewDialog } from '@/extensions/nocobase-file-component-ui';
 import { EmptyState } from '@/components/itam/empty-state';
-import { FileRows } from '@/components/itam/file-cards';
+import { FileDropZone, FileRows } from '@/components/itam/file-cards';
 import { Paged } from '@/components/itam/paged';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApi } from '@/lib/itam/api';
-import { useAttachmentGroups } from '@/lib/itam/attachments';
+import {
+  MAX_UPLOAD_BYTES,
+  uploadFailure,
+  useAttachmentGroups,
+} from '@/lib/itam/attachments';
 import { errorMessage } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 
@@ -46,17 +47,14 @@ export function AttachmentsTab({
     [manager],
   );
   const permissions = useCollectionPermissions(ownerType, ['update']);
-  const [pending, setPending] = useState<readonly FileRecord[]>([]);
-  const [uploadError, setUploadError] = useState<string>();
+  const [uploading, setUploading] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState<readonly string[]>([]);
   const [preview, setPreview] = useState<{
     files: readonly FileRecord[];
     index: number;
   }>();
   const key = ['itam', 'attachments', ownerType, ownerId];
   const groups = useAttachmentGroups(ownerType, ownerId);
-  const noFiles = Boolean(
-    groups.data && groups.data.every((group) => group.files.length === 0),
-  );
   const names = useReferenceNames([
     {
       collection: 'users',
@@ -74,7 +72,6 @@ export function AttachmentsTab({
         json: { fileIds: files.map((file) => file.id) },
       }),
     onSuccess: async () => {
-      setPending([]);
       await queryClient.invalidateQueries({ queryKey: key });
     },
   });
@@ -87,58 +84,50 @@ export function AttachmentsTab({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
   });
   const confirm = useConfirm();
+  // Each file uploaded on its own, then linked together: one too large is
+  // refused before it is sent, one that fails says why, and the rest still
+  // arrive (2026-10-16 — the upload field's failed card read as broken).
+  const upload = async (picked: readonly File[]) => {
+    if (!picked.length || uploading) return;
+    setUploadErrors([]);
+    setUploading(true);
+    const failures: string[] = [];
+    const stored: FileRecord[] = [];
+    try {
+      for (const file of picked) {
+        if (file.size > MAX_UPLOAD_BYTES) {
+          failures.push(uploadFailure(t, file.name));
+          continue;
+        }
+        try {
+          stored.push((await repository.uploadOne({ file })).record);
+        } catch (error) {
+          failures.push(uploadFailure(t, file.name, error));
+        }
+      }
+      if (stored.length) await link.mutateAsync(stored);
+    } catch (error) {
+      failures.push(errorMessage(error));
+    } finally {
+      setUploading(false);
+      setUploadErrors(failures);
+    }
+  };
 
   return (
     <div className='space-y-5'>
       {confirm.dialog}
       {permissions.update ? (
         <div className='space-y-2'>
-          <FileUploadField
-            repository={repository}
-            value={pending}
-            onChange={(files) => {
-              setUploadError(undefined);
-              setPending(files);
-              if (files.length > pending.length)
-                link.mutate(
-                  files.filter(
-                    (file) =>
-                      !pending.some((existing) => existing.id === file.id),
-                  ),
-                );
-            }}
-            multiple
-            // With no files yet, the drop zone is the whole empty state;
-            // above existing files it shrinks to one line.
-            placeholder={
-              noFiles ? (
-                <div className='flex flex-col items-center gap-1 text-sm text-muted-foreground'>
-                  <Paperclip className='mb-1 size-6' aria-hidden='true' />
-                  <p className='font-medium text-foreground'>
-                    {t('attachments.empty')}
-                  </p>
-                  <p>{t('attachments.dropHint')}</p>
-                </div>
-              ) : (
-                <span className='text-muted-foreground'>
-                  {t('attachments.dropInline')}
-                </span>
-              )
-            }
-            placeholderLayout={noFiles ? 'stack' : 'inline'}
-            onError={(error) => setUploadError(error.message)}
-            labels={{
-              choose: t('attachments.upload'),
-              empty: t('attachments.dropHere'),
-              remove: t('actions.delete'),
-              retry: t('attachments.retry'),
-            }}
+          <FileDropZone
+            busy={uploading}
+            onFiles={(files) => void upload(files)}
           />
-          {uploadError || link.error ? (
-            <p role='alert' className='text-sm text-destructive'>
-              {uploadError ?? errorMessage(link.error)}
+          {uploadErrors.map((message) => (
+            <p key={message} role='alert' className='text-sm text-destructive'>
+              {message}
             </p>
-          ) : null}
+          ))}
         </div>
       ) : null}
       {groups.isLoading ? (
@@ -158,9 +147,14 @@ export function AttachmentsTab({
       ) : null}
       {groups.data?.map((group) => (
         <section
-          key={`${group.ownerType}:${group.ownerId}`}
+          key={`${group.ownerType}:${group.ownerId}:${group.source ?? 'own'}`}
           className='space-y-2'
         >
+          {group.source === 'comments' ? (
+            <h3 className='text-xs font-medium text-muted-foreground'>
+              {t('attachments.fromComments')}
+            </h3>
+          ) : null}
           {group.files.length === 0 ? (
             // Someone who may upload already sees the drop zone saying so.
             permissions.update ? null : (
@@ -193,8 +187,9 @@ export function AttachmentsTab({
                     )?.uploadedById;
                     return by ? names.users?.get(by) : undefined;
                   }}
+                  // A comment's files go with their comment, not from here.
                   onRemove={
-                    permissions.update
+                    permissions.update && group.source !== 'comments'
                       ? (card) =>
                           confirm.ask({
                             title: t('actions.delete'),

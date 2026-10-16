@@ -10,10 +10,17 @@ import {
   FileVideo,
   Presentation,
   Trash2,
+  Upload,
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { createElement, type ReactElement, type ReactNode } from 'react';
+import {
+  createElement,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
 import { formatDate } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
@@ -273,5 +280,85 @@ export function FileChips({
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Where files are added: drag them onto it or click it to pick them (after
+ * NocoCRM's FileDropZone). One line, dashed, lit while files are over it;
+ * what to do with the files is its owner's.
+ */
+export function FileDropZone({
+  busy,
+  onFiles,
+}: {
+  readonly busy: boolean;
+  readonly onFiles: (files: File[]) => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Entering a child fires a leave on the zone first, so enters are counted.
+  const [depth, setDepth] = useState(0);
+  const pick = () => {
+    if (!busy) inputRef.current?.click();
+  };
+  return (
+    <div
+      role='button'
+      tabIndex={busy ? -1 : 0}
+      aria-disabled={busy}
+      aria-label={t('attachments.upload')}
+      className={cn(
+        'flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 rounded-md border border-dashed px-3 py-3 text-sm transition-colors',
+        depth > 0
+          ? 'border-ring bg-muted/60 text-foreground'
+          : 'border-border text-muted-foreground hover:border-ring/60 hover:bg-muted/40',
+        busy ? 'cursor-progress opacity-60' : 'cursor-pointer',
+      )}
+      onClick={pick}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          pick();
+        }
+      }}
+      onDragEnter={(event) => {
+        event.preventDefault();
+        setDepth((n) => n + 1);
+      }}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = busy ? 'none' : 'copy';
+      }}
+      onDragLeave={() => setDepth((n) => Math.max(0, n - 1))}
+      onDrop={(event) => {
+        event.preventDefault();
+        setDepth(0);
+        if (!busy) onFiles(Array.from(event.dataTransfer.files));
+      }}
+    >
+      <Upload className='size-4 shrink-0' aria-hidden='true' />
+      <span>
+        {busy ? t('attachments.uploadingFiles') : t('attachments.dropFiles')}
+      </span>
+      {busy ? null : (
+        <span className='font-medium text-foreground underline-offset-4 hover:underline'>
+          {t('attachments.chooseFiles')}
+        </span>
+      )}
+      <input
+        ref={inputRef}
+        type='file'
+        multiple
+        hidden
+        tabIndex={-1}
+        aria-hidden
+        onChange={(event) => {
+          onFiles(Array.from(event.target.files ?? []));
+          // Without this, picking the same file again fires no change.
+          event.target.value = '';
+        }}
+      />
+    </div>
   );
 }

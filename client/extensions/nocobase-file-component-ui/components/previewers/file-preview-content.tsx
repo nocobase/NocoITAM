@@ -149,10 +149,12 @@ function ImagePreview(inputProps: {
       />
     );
   return (
+    // Application change (ITAM): centred in the dialog, rather than left at
+    // its start with the rest of the width empty (2026-10-16).
     <img
       src={url}
       alt={file.filename}
-      className='max-h-[70vh] max-w-full object-contain'
+      className='mx-auto block max-h-[70vh] max-w-full object-contain'
       onError={() => setFailedUrl(url)}
     />
   );

@@ -243,6 +243,9 @@ const messages = {
     justNow: 'just now',
     edited: 'edited',
     deleted: 'This comment was deleted',
+    removeFileTitle: 'Delete attachment',
+    removeFileDescription:
+      'Delete "{{name}}" from this comment? Its text stays.',
     deleteTitle: 'Delete this comment?',
     deleteDescription: 'Its text and files go; replies to it stay.',
   },
@@ -1746,6 +1749,12 @@ const messages = {
     runJob: 'Run "{{job}}" now; the result is recorded in the run log.',
   },
   attachments: {
+    dropFiles: 'Drop files here, or',
+    chooseFiles: 'choose files',
+    uploadingFiles: 'Uploading…',
+    tooLarge: '"{{name}}" is too large; a file can be at most {{max}}',
+    uploadFailed: '"{{name}}" could not be uploaded: {{reason}}',
+    fromComments: 'Files in comments',
     preview: 'Preview',
     optional: 'Attachments (optional)',
     previousFile: 'Previous file',

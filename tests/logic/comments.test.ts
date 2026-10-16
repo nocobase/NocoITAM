@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { commentRoutes } from '../../server/routes/itam/comments.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
+import { attachmentServiceToken } from '../../server/providers/itam/attachments.js';
 
 interface Line {
   readonly event: {
@@ -228,5 +229,61 @@ describe('comments', () => {
     ]);
 
     expect((await comment({ body: 'x', fileIds: ['taken'] })).status).toBe(400);
+  });
+
+  it('lets its author take one file off, and lists its files among the record’s attachments', async () => {
+    const stamp = new Date().toISOString().slice(0, -1);
+    await app.db.database
+      .query()
+      .insertInto('itamFiles')
+      .values(
+        ['one', 'two'].map((id) => ({
+          id,
+          disk: 'local',
+          key: id,
+          filename: `${id}.pdf`,
+          ext: 'pdf',
+          mimeType: 'application/pdf',
+          size: 10,
+          createdAt: stamp,
+          updatedAt: stamp,
+        })),
+      )
+      .execute();
+    const created = await comment({ body: 'Quotes', fileIds: ['one', 'two'] });
+    const id = ((await created.json()) as { data: { id: string } }).data.id;
+
+    // Somebody else may not; its author may, keeping the text.
+    const edit = (user: string) =>
+      app.request(`/api/itam/comments/${id}`, {
+        ...json({ body: 'Quotes', mentions: [], keepFileIds: ['two'] }),
+        method: 'PATCH',
+        user,
+        role: 'manager',
+      });
+    expect((await edit('sam')).status).toBe(422);
+    expect((await edit('mia')).status).toBe(200);
+    const line = (await timeline()).find(
+      (entry) => entry.event?.type === 'comment',
+    );
+    expect(line?.event?.payload).toMatchObject({
+      body: 'Quotes',
+      files: [expect.objectContaining({ id: 'two' })],
+    });
+
+    // The attachments tab lists them in a group of their own.
+    const groups = await app.container
+      .resolve(attachmentServiceToken)
+      .grouped('vendors', vendorId);
+    expect(groups.at(-1)).toMatchObject({
+      source: 'comments',
+      files: [
+        expect.objectContaining({
+          id: 'two',
+          commentId: id,
+          uploadedById: 'mia',
+        }),
+      ],
+    });
   });
 });

@@ -32,6 +32,8 @@ export interface AttachmentGroup {
   readonly ownerId: string;
   /** Display label of the related record; empty for the record itself. */
   readonly ownerLabel?: string;
+  /** `comments`: the files the record's comments carry, not its own. */
+  readonly source?: 'comments';
   readonly files: readonly Row[];
 }
 
@@ -43,7 +45,10 @@ export interface AttachmentService {
     context: OperationContext,
   ): Promise<readonly Row[]>;
   unlink(linkId: string, context: OperationContext): Promise<void>;
-  /** The record's own files, as the one group the tab shows. */
+  /**
+   * The record's own files, then — as a group of their own — the files its
+   * comments carry, so the tab lists every file the record holds.
+   */
   grouped(
     ownerType: AttachmentOwnerType,
     ownerId: string,
@@ -193,13 +198,52 @@ export function createAttachmentService(
 
     async grouped(ownerType, ownerId) {
       // Only what was attached to this record: files on a related record
-      // (its order) stay on that record's own tab.
+      // (its order) stay on that record's own tab. A comment's files are
+      // the record's too (2026-10-16): they follow, in a group of their
+      // own, newest first, each named by who wrote the comment and when —
+      // a deleted comment takes its files with it.
+      const comments = await database
+        .query()
+        .selectFrom('historyEvents')
+        .select(['id', 'actorId', 'createdAt', 'payload'])
+        .where('subjectType', '=', ownerType)
+        .where('subjectId', '=', ownerId)
+        .where('type', '=', 'comment')
+        .orderBy('createdAt', 'desc')
+        .execute<Row>();
+      const commentFiles = comments.flatMap((row) => {
+        const payload = (
+          typeof row.payload === 'string'
+            ? (JSON.parse(row.payload) as unknown)
+            : row.payload
+        ) as { files?: unknown } | null;
+        const files = Array.isArray(payload?.files)
+          ? (payload.files as Row[])
+          : [];
+        return files.map((file) => ({
+          ...file,
+          linkId: `comment:${String(row.id)}:${String(file.id)}`,
+          commentId: row.id,
+          uploadedById: row.actorId,
+          linkedAt: decodeRow(row).createdAt,
+        }));
+      });
       return [
         {
           ownerType,
           ownerId,
           files: await filesFor(await linksOf(ownerType, ownerId)),
         },
+        ...(commentFiles.length
+          ? [
+              {
+                ownerType,
+                ownerId,
+                source: 'comments' as const,
+                files: commentFiles,
+              },
+            ]
+          : []),
       ];
     },
 

@@ -1,6 +1,9 @@
 import { resolveAppUrl, useService } from '@nocobase/app-client';
 import { useAuthentication } from '@nocobase/app-plugin-authentication/client';
-import { clientFileRepositoryManagerToken } from '@nocobase/app-plugin-file/client';
+import {
+  clientFileRepositoryManagerToken,
+  type FileRecord,
+} from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -28,6 +31,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { FileChips, FileRows } from '@/components/itam/file-cards';
+import { FilePreviewDialog } from '@/extensions/nocobase-file-component-ui';
+import { MAX_UPLOAD_BYTES, uploadFailure } from '@/lib/itam/attachments';
 import { useApi } from '@/lib/itam/api';
 import { useFileDrag } from '@/lib/itam/file-drag';
 import {
@@ -128,6 +133,7 @@ function Avatar({
  * until the comment is posted.
  */
 function useUploads() {
+  const { t } = useTranslation();
   const manager = useService(clientFileRepositoryManagerToken);
   const [files, setFiles] = useState<CommentFile[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -141,7 +147,14 @@ function useUploads() {
         const repository = manager.repository('itamAttachments');
         const uploaded: CommentFile[] = [];
         for (const file of picked) {
-          const { record } = await repository.uploadOne({ file });
+          // Refused before it is sent, in the reader's language.
+          if (file.size > MAX_UPLOAD_BYTES)
+            throw new Error(uploadFailure(t, file.name));
+          const { record } = await repository
+            .uploadOne({ file })
+            .catch((error: unknown) => {
+              throw new Error(uploadFailure(t, file.name, error));
+            });
           uploaded.push({
             id: text(record.id),
             filename: text(record.filename),
@@ -352,17 +365,57 @@ export function CommentComposer({
   );
 }
 
-/** A comment's files, one a row, as a record's attachments read. */
+/**
+ * A comment's files, one a row, as a record's attachments read; a row opens
+ * the file in the preview, paging through the comment's files.
+ */
 function CommentFiles({
   files,
+  onRemove,
 }: {
   readonly files: readonly CommentFile[];
+  /** Its author takes a file off it. */
+  readonly onRemove?: (file: CommentFile) => void;
 }): ReactElement | null {
+  const [previewing, setPreviewing] = useState<number>();
+  if (!files.length) return null;
+  const records: FileRecord[] = files.map((file) => ({
+    id: file.id,
+    disk: 'local',
+    key: '',
+    filename: file.filename,
+    ext: file.ext,
+    mimeType: file.mimeType ?? '',
+    size: file.size ?? 0,
+    createdAt: '',
+    updatedAt: '',
+    contentUrl: fileUrl(file),
+  }));
   return (
-    <FileRows
-      className='mt-2'
-      files={files.map((file) => ({ ...file, url: fileUrl(file) }))}
-    />
+    <>
+      <FileRows
+        className='mt-2'
+        files={files.map((file) => ({ ...file, url: fileUrl(file) }))}
+        onOpen={(_file, index) => setPreviewing(index)}
+        onRemove={
+          onRemove
+            ? (card) => {
+                const file = files.find((entry) => entry.id === card.id);
+                if (file) onRemove(file);
+              }
+            : undefined
+        }
+      />
+      {previewing === undefined ? null : (
+        <FilePreviewDialog
+          files={records}
+          initialIndex={previewing}
+          open
+          onOpenChange={(open) => !open && setPreviewing(undefined)}
+          download
+        />
+      )}
+    </>
   );
 }
 
@@ -389,6 +442,7 @@ function Message({
   const [draft, setDraft] = useState('');
   const [mentions, setMentions] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [unfiling, setUnfiling] = useState<CommentFile>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const author =
@@ -396,7 +450,11 @@ function Message({
     text(event.actorId);
   const mine = Boolean(scope.me) && event.actorId === scope.me;
   const removed = gone(event);
-  const write = async (method: 'PATCH' | 'DELETE'): Promise<void> => {
+  const write = async (
+    method: 'PATCH' | 'DELETE',
+    // Taking one file off: the comment keeps its text and the rest.
+    without?: CommentFile,
+  ): Promise<void> => {
     setBusy(true);
     setError(undefined);
     try {
@@ -405,16 +463,27 @@ function Message({
         method,
         ...(method === 'PATCH'
           ? {
-              json: {
-                body: draft,
-                mentions: mentionsIn(draft, mentions, scope.colleagues),
-              },
+              json: without
+                ? {
+                    body: bodyOf(event),
+                    mentions: Array.isArray(event.payload?.mentions)
+                      ? event.payload.mentions.map(text)
+                      : [],
+                    keepFileIds: filesOf(event)
+                      .filter((file) => file.id !== without.id)
+                      .map((file) => file.id),
+                  }
+                : {
+                    body: draft,
+                    mentions: mentionsIn(draft, mentions, scope.colleagues),
+                  },
             }
           : {}),
       });
       await queryClient.invalidateQueries({ queryKey: ['itam'] });
       setEditing(false);
       setDeleting(false);
+      setUnfiling(undefined);
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -553,7 +622,18 @@ function Message({
                 )}
               </CommentBody>
             ) : null}
-            <CommentFiles files={filesOf(event)} />
+            <CommentFiles
+              files={filesOf(event)}
+              // Its author's to take off, while something else is left —
+              // a comment of one file and no text is deleted whole.
+              onRemove={
+                mine &&
+                !removed &&
+                (bodyOf(event).trim() !== '' || filesOf(event).length > 1)
+                  ? setUnfiling
+                  : undefined
+              }
+            />
           </>
         )}
         {error && !deleting ? (
@@ -570,6 +650,21 @@ function Message({
         busy={busy}
         error={error}
         onConfirm={() => void write('DELETE')}
+      />
+      <ConfirmDialog
+        open={unfiling !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setUnfiling(undefined);
+        }}
+        title={t('comments.removeFileTitle')}
+        description={t('comments.removeFileDescription', {
+          name: unfiling?.filename ?? '',
+        })}
+        confirmLabel={t('actions.delete')}
+        destructive
+        busy={busy}
+        error={error}
+        onConfirm={() => void write('PATCH', unfiling)}
       />
     </div>
   );

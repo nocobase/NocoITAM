@@ -45,7 +45,11 @@ const addSchema = z
   .strict();
 
 const editSchema = z
-  .object({ body: z.string().max(COMMENT_LIMIT), mentions })
+  .object({
+    body: z.string().max(COMMENT_LIMIT),
+    mentions,
+    keepFileIds: z.array(z.string().max(64)).max(50).optional(),
+  })
   .strict();
 
 /**

@@ -106,7 +106,12 @@ export interface CommentService {
   edit(
     actorId: string,
     id: string,
-    input: { readonly body: string; readonly mentions?: readonly string[] },
+    input: {
+      readonly body: string;
+      readonly mentions?: readonly string[];
+      /** The files it keeps, of those it has; absent keeps them all. */
+      readonly keepFileIds?: readonly string[];
+    },
   ): Promise<HistoryEventRecord>;
   remove(actorId: string, id: string): Promise<void>;
   /** The record a comment is on, for the route to authorize against. */
@@ -411,10 +416,15 @@ export function createCommentService(
           'The comment was deleted',
           'COMMENT_DELETED',
         );
-      const body = bodyOf(input.body, before.files.length);
+      // Its author may take a file off it (2026-10-16), never add one here.
+      const files = input.keepFileIds
+        ? before.files.filter((file) => input.keepFileIds?.includes(file.id))
+        : before.files;
+      const body = bodyOf(input.body, files.length);
       const mentions = await accounts(input.mentions ?? [], actorId);
       const payload: CommentPayload = {
         ...before,
+        files,
         body,
         mentions,
         editedAt: new Date().toISOString(),
