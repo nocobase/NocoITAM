@@ -1895,7 +1895,16 @@ const messages = {
       bookValue: 'Book value',
       bookValueCaption: 'Sum of current book values',
     },
+    view: {
+      label: 'View',
+      board: 'Board',
+      list: 'List',
+    },
     work: {
+      people: 'Joiners and leavers',
+      devices: 'Devices away',
+      tagLeaving: 'Leaving',
+      tagJoining: 'Joining',
       pendingApprovals: 'Waiting for approval',
       tagPurchase: 'Purchase',
       tagDisposal: 'Disposal',

@@ -90,9 +90,12 @@ const partsOf = (spec: BoardCardSpec): readonly (CardPart | undefined)[] => [
 export function BoardCards({
   entries,
   onOpen,
+  className = 'flex flex-col gap-2',
 }: {
   readonly entries: readonly BoardCardEntry[];
   readonly onOpen: (entry: BoardCardEntry) => void;
+  /** How the cards lie: a column's stack by default, a grid in a list. */
+  readonly className?: string;
 }): ReactElement {
   const { t } = useTranslation();
   const settings = useItamSettings();
@@ -132,7 +135,7 @@ export function BoardCards({
     );
   };
   return (
-    <ul className='flex flex-col gap-2'>
+    <ul className={className}>
       {entries.map((entry) => {
         const { spec, row } = entry;
         const meta = spec.card.meta && render(spec, spec.card.meta, row);

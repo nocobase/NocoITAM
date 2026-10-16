@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowRight } from 'lucide-react';
-import type { ReactElement, ReactNode } from 'react';
+import { ArrowRight, Columns3, List } from 'lucide-react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { Link } from 'react-router';
 
 import {
@@ -18,6 +18,8 @@ import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { useWorkScope } from '@/lib/itam/work-scope';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDragPan } from '@/hooks/use-drag-pan';
 import { useItamList, useItamSettings, type ItamRecord } from '@/lib/itam/api';
@@ -46,9 +48,10 @@ import {
 import { CountPill } from '@/components/itam/count-pill';
 
 /**
- * The workbench is the team's to-do board (2026-10-05): 需要关注 on the left,
- * then one column per kind of to-do, each listing its records as cards that
- * open in the record drawer. It answers "what is waiting" and nothing else —
+ * The workbench is the team's to-do board (2026-10-05): 需要关注 as a band
+ * above it and a line counting what waits (2026-10-17), then one column per
+ * kind of to-do — 看板, or 列表 with each column a section down the page —
+ * each listing its records as cards that open in the record drawer. It answers "what is waiting" and nothing else —
  * where the devices stand and what expires are the reports' to say, with a
  * period and filters. 全部 / 我负责的 narrows every column to the reader's
  * part; the board stays live (`useLiveWork` in the app layout).
@@ -57,71 +60,213 @@ import { CountPill } from '@/components/itam/count-pill';
  * column that disappears at zero cannot be told from one the reader does
  * not have, and a board whose columns move is one the eye has to search.
  */
+type WorkView = 'board' | 'list';
+const WORK_VIEWS: readonly WorkView[] = ['board', 'list'];
+// Remembered in this browser, a convenience: blocked storage opens the board.
+const VIEW_KEY = 'nocoitam:workbench-view';
+function readView(): WorkView {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'board';
+  } catch {
+    return 'board';
+  }
+}
+
 export default function WorkbenchPage(): ReactElement {
   const { t } = useTranslation();
   const cards = useWorkCards();
   const loading = useMyWork().isLoading;
-  const leavers = cards.find((card) => card.key === 'leaverRecovery');
-  const joiners = cards.find((card) => card.key === 'pendingOnboarding');
-  const rest = cards.filter((card) => card !== leavers && card !== joiners);
+  const [view, setView] = useState<WorkView>(readView);
   // Held on its empty space, the board drags sideways (useDragPan).
   const pan = useDragPan();
+  const layout = view === 'board' ? 'column' : 'section';
+  const columns = loading ? (
+    <Column title={t('workbench.myWork')} layout={layout}>
+      <Skeleton className='h-24 w-full rounded-lg' />
+    </Column>
+  ) : (
+    cards.map((card) => (
+      <WorkColumn key={card.key} card={card} layout={layout} />
+    ))
+  );
   return (
     <Page fill>
-      <PageHeader title={t('workbench.title')} actions={<WorkScopeToggle />} />
-      {/* The board takes the rest of the page's height, so each column
-          scrolls its own cards and the sideways scrollbar sits at the foot
-          of the page — as the status boards do. */}
-      <div
-        className='scroll-shown -mx-1 flex min-h-80 flex-1 cursor-grab gap-3 overflow-x-auto px-1 pb-2 data-[panning]:cursor-grabbing data-[panning]:select-none'
-        {...pan}
-      >
-        {/* 需要关注 leads the board, then 离职交接 (2026-10-05): somebody has
-            left with the company's equipment, the one to-do that was ever
-            `critical`, and each is a job of several parts. */}
-        <AttentionColumn />
-        {leavers ? <WorkColumn card={leavers} /> : null}
-        {joiners ? <WorkColumn card={joiners} /> : null}
-        {loading ? (
-          <Column title={t('workbench.myWork')}>
-            <Skeleton className='h-24 w-full rounded-lg' />
-          </Column>
-        ) : (
-          rest.map((card) => <WorkColumn key={card.key} card={card} />)
-        )}
-      </div>
+      <PageHeader
+        title={t('workbench.title')}
+        actions={
+          <>
+            <WorkViewToggle
+              value={view}
+              onChange={(next) => {
+                setView(next);
+                try {
+                  localStorage.setItem(VIEW_KEY, next);
+                } catch {
+                  // Storage unavailable: kept until the page is left.
+                }
+              }}
+            />
+            <WorkScopeToggle />
+          </>
+        }
+      />
+      {/* 需要关注 above the to-dos (2026-10-17): risks, not work, and as a
+          column it took a board's place. Then a line of what is waiting,
+          one count per column, which jumps to it — a column off the right
+          edge is still said. */}
+      <AttentionBand />
+      {loading ? null : <WorkCounts cards={cards} />}
+      {view === 'board' ? (
+        // The board takes the rest of the page's height, so each column
+        // scrolls its own cards and the sideways scrollbar sits at the foot
+        // of the page — as the status boards do.
+        <div
+          className='scroll-shown -mx-1 flex min-h-80 flex-1 cursor-grab gap-3 overflow-x-auto px-1 pb-2 data-[panning]:cursor-grabbing data-[panning]:select-none'
+          {...pan}
+        >
+          {columns}
+        </div>
+      ) : (
+        // 列表: every column a section down the page, its cards across, so
+        // nothing hides past the right edge (2026-10-17).
+        <div className='min-h-0 flex-1 space-y-4 overflow-y-auto'>
+          {columns}
+        </div>
+      )}
     </Page>
+  );
+}
+
+/** 看板 / 列表, beside 全部 / 我负责的 and drawn as it is. */
+function WorkViewToggle({
+  value,
+  onChange,
+}: {
+  readonly value: WorkView;
+  readonly onChange: (view: WorkView) => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  return (
+    <div
+      role='radiogroup'
+      aria-label={t('workbench.view.label')}
+      className='inline-flex rounded-lg border border-border p-0.5'
+    >
+      {WORK_VIEWS.map((option) => (
+        <Button
+          key={option}
+          role='radio'
+          aria-checked={value === option}
+          size='sm'
+          variant={value === option ? 'default' : 'ghost'}
+          className='h-7 px-2.5'
+          onClick={() => onChange(option)}
+        >
+          {option === 'board' ? (
+            <Columns3 data-icon='inline-start' />
+          ) : (
+            <List data-icon='inline-start' />
+          )}
+          {t(`workbench.view.${option}`)}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * What is waiting, one count per column that holds something, each a link
+ * to its column: the board scrolls sideways to it, the list down.
+ */
+function WorkCounts({
+  cards,
+}: {
+  readonly cards: readonly WorkCard[];
+}): ReactElement | null {
+  const waiting = cards.filter((card) => card.count > 0);
+  if (waiting.length === 0) return null;
+  return (
+    <nav className='flex flex-wrap items-center gap-x-1 gap-y-1 text-sm'>
+      {waiting.map((card, index) => (
+        <span key={card.key} className='flex items-center gap-1'>
+          {index > 0 ? (
+            <span aria-hidden='true' className='text-muted-foreground/50'>
+              ·
+            </span>
+          ) : null}
+          <button
+            type='button'
+            className='flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
+            onClick={() =>
+              document.getElementById(`work-${card.key}`)?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'start',
+              })
+            }
+          >
+            {card.label}
+            <span className='font-semibold text-foreground tabular-nums'>
+              {card.count}
+            </span>
+          </button>
+        </span>
+      ))}
+    </nav>
   );
 }
 
 /** One column: a heading with an optional count, then what it holds. */
 function Column({
+  id,
   title,
   count,
   dimmed = false,
-  attention = false,
+  layout = 'column',
   action,
   footer,
   children,
 }: {
+  readonly id?: string;
   readonly title: string;
   readonly count?: number;
   readonly dimmed?: boolean;
-  /** 需要关注: risks rather than to-dos, so it is told apart by its ground. */
-  readonly attention?: boolean;
+  /** A board's column, or a section of the list running down the page. */
+  readonly layout?: 'column' | 'section';
   /** A link at the heading's far end, about the column as a whole. */
   readonly action?: ReactNode;
   readonly footer?: ReactNode;
   readonly children: ReactNode;
 }): ReactElement {
+  if (layout === 'section')
+    return (
+      <section
+        id={id}
+        aria-label={title}
+        className={cn(
+          'scroll-mt-2 rounded-2xl bg-foreground/[0.025] pb-2',
+          dimmed && 'opacity-60',
+        )}
+      >
+        <header className='flex h-11 items-center gap-2 px-3.5'>
+          <span className='truncate text-sm font-semibold'>{title}</span>
+          {count === undefined ? null : <CountPill>{count}</CountPill>}
+          {action ? <span className='ml-auto shrink-0'>{action}</span> : null}
+        </header>
+        <div className='flex flex-col gap-2 px-2'>
+          {children}
+          {footer}
+        </div>
+      </section>
+    );
   return (
     <section
+      id={id}
       aria-label={title}
       // The status boards' column: a tint of the foreground, since the page
       // is the muted grey, at least 15rem and sharing the room up to 22rem.
       className={cn(
-        'flex max-w-[22rem] min-w-[15rem] flex-1 basis-[15rem] flex-col rounded-2xl',
-        attention ? 'bg-warning/50' : 'bg-foreground/[0.025]',
+        'flex max-w-[22rem] min-w-[15rem] flex-1 basis-[15rem] scroll-ml-1 flex-col rounded-2xl bg-foreground/[0.025]',
         dimmed && 'opacity-60',
       )}
     >
@@ -138,17 +283,26 @@ function Column({
   );
 }
 
-function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
+function WorkColumn({
+  card,
+  layout,
+}: {
+  readonly card: WorkCard;
+  readonly layout: 'column' | 'section';
+}): ReactElement {
   const { t } = useTranslation();
   return (
     <Column
+      id={`work-${card.key}`}
       title={card.label}
       count={card.count}
       dimmed={card.count === 0}
+      layout={layout}
       action={
         // The joiners worked out together: what each will get, and what
         // must be bought across them (入职供需).
-        card.key === 'pendingOnboarding' && card.count > 0 ? (
+        card.key === 'people' &&
+        card.records.some((record) => record.origin === 'pendingOnboarding') ? (
           <Link
             to='/onboarding-supply'
             className='flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground'
@@ -195,7 +349,9 @@ function WorkColumn({ card }: { readonly card: WorkCard }): ReactElement {
           {card.summary?.map((entry) => (
             <SummaryCard key={entry.key} entry={entry} />
           ))}
-          {card.records.length > 0 ? <ColumnCards card={card} /> : null}
+          {card.records.length > 0 ? (
+            <ColumnCards card={card} grid={layout === 'section'} />
+          ) : null}
         </>
       )}
     </Column>
@@ -278,7 +434,16 @@ function useDocumentRows(
  * they arrive, and for everything without a board of its own (a repair, a
  * loan, a leaver), the to-do's own card stands in.
  */
-function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
+/** The list view's cards: side by side, as many as the width takes. */
+const CARD_GRID = 'grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-2';
+
+function ColumnCards({
+  card,
+  grid = false,
+}: {
+  readonly card: WorkCard;
+  readonly grid?: boolean;
+}): ReactElement {
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
   const scope = useWorkScope();
@@ -298,7 +463,7 @@ function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
     const row = kind ? rows.get(`${kind}:${record.id}`) : undefined;
     // An overdue loan is a device, not a document: the to-do itself carries
     // what its card says (the borrower, the date it was due back).
-    if (card.key === 'loansDueToday')
+    if ((record.origin ?? card.key) === 'loansDueToday')
       return {
         spec: LOAN_CARD,
         row: { ...record },
@@ -329,6 +494,7 @@ function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
     );
     return (
       <BoardCards
+        className={grid ? CARD_GRID : undefined}
         entries={entries}
         onOpen={({ spec, row }) => {
           const url = urls.get(`${spec.nameField}:${String(row.id)}`);
@@ -338,10 +504,10 @@ function ColumnCards({ card }: { readonly card: WorkCard }): ReactElement {
     );
   }
   return (
-    <ul className='flex flex-col gap-2'>
+    <ul className={grid ? CARD_GRID : 'flex flex-col gap-2'}>
       {card.records.map((record) => (
         <li key={record.url}>
-          <RecordCard column={card.key} record={record} />
+          <RecordCard column={record.origin ?? card.key} record={record} />
         </li>
       ))}
     </ul>
@@ -358,9 +524,12 @@ function RecordCard({
 }): ReactElement {
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
-  if (column === 'leaverRecovery') return <LeaverCard record={record} />;
+  if (column === 'leaverRecovery')
+    return <LeaverCard record={record} tagged={Boolean(record.origin)} />;
   if (column === 'pendingOnboarding')
-    return <LeaverCard record={record} joining />;
+    return (
+      <LeaverCard record={record} joining tagged={Boolean(record.origin)} />
+    );
   return (
     <button
       type='button'
@@ -432,10 +601,13 @@ function RecordCard({
 function LeaverCard({
   record,
   joining = false,
+  tagged = false,
 }: {
   readonly record: CardRecord;
   /** 入职准备 rather than 离职交接: the date joins, and progress is 已配备. */
   readonly joining?: boolean;
+  /** In 人员变动, beside the other kind: a tag says which this is. */
+  readonly tagged?: boolean;
 }): ReactElement {
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
@@ -469,6 +641,15 @@ function LeaverCard({
         <div className='min-w-0 flex-1'>
           {/* The job right after the name, and giving way first. */}
           <div className='flex min-w-0 items-baseline gap-1.5'>
+            {tagged ? (
+              <Badge variant='outline' className='shrink-0'>
+                {t(
+                  joining
+                    ? 'workbench.work.tagJoining'
+                    : 'workbench.work.tagLeaving',
+                )}
+              </Badge>
+            ) : null}
             <span className='max-w-full shrink-0 truncate text-sm font-semibold'>
               {record.title}
             </span>
@@ -560,7 +741,7 @@ const SEVERITY_TEXT: Readonly<Record<string, string>> = {
  * group** and dimmed: a rule that vanishes at zero cannot be told from one
  * that was never set up, and "0" is an answer — it says the check ran.
  */
-function AttentionColumn(): ReactElement {
+function AttentionBand(): ReactElement {
   const { t } = useTranslation();
   const settings = useItamSettings();
   const thresholds = settings.data?.thresholds;
@@ -604,14 +785,22 @@ function AttentionColumn(): ReactElement {
     });
 
   return (
-    <Column title={t('workbench.attention')} attention>
+    // A band across the top on a warning-tinted ground (2026-10-17): risks
+    // rather than to-dos, so it no longer takes a column of the board.
+    <section
+      aria-label={t('workbench.attention')}
+      className='shrink-0 rounded-2xl bg-warning/50 px-3 py-2.5'
+    >
+      <h2 className='mb-2 px-0.5 text-sm font-semibold'>
+        {t('workbench.attention')}
+      </h2>
       {reminders.isLoading ? (
-        <Skeleton className='h-24 w-full rounded-lg' />
+        <Skeleton className='h-12 w-full rounded-lg' />
       ) : (
         <>
-          {/* Closer together than the to-do cards: eleven rules share the
-              column, and a risk card is a line to scan, not a record. */}
-          <div className='flex flex-col gap-1.5'>
+          {/* Side by side, a fixed width each: a risk card is a line to
+              scan, not a record. */}
+          <div className='flex flex-wrap gap-1.5'>
             {found.map((entry) => (
               <Link
                 key={entry.kind}
@@ -628,7 +817,7 @@ function AttentionColumn(): ReactElement {
                 // rules share one column. Only a critical rule is red; severity
                 // is the rule's, not today's.
                 className={cn(
-                  'block w-full rounded-lg border bg-card px-2.5 py-1.5 shadow-xs transition hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                  'block w-64 max-w-full rounded-lg border bg-card px-2.5 py-1.5 shadow-xs transition hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                   entry.severity === 'critical'
                     ? 'border-destructive/40 hover:border-destructive/60'
                     : 'border-border/50 hover:border-border',
@@ -660,11 +849,11 @@ function AttentionColumn(): ReactElement {
               were. They are plain rows, not cards — there is nothing behind
               a zero to open. */}
           {clear.length > 0 ? (
-            <ul className='flex flex-col gap-1 px-2.5 pt-1'>
+            <ul className='flex flex-wrap gap-x-4 gap-y-1 px-0.5 pt-2'>
               {clear.map((entry) => (
                 <li
                   key={entry.kind}
-                  className='flex items-baseline gap-2 text-muted-foreground/70'
+                  className='flex items-baseline gap-1.5 text-muted-foreground/70'
                 >
                   <span className='w-[1ch] text-sm leading-none tabular-nums'>
                     0
@@ -678,7 +867,7 @@ function AttentionColumn(): ReactElement {
           ) : null}
         </>
       )}
-    </Column>
+    </section>
   );
 }
 

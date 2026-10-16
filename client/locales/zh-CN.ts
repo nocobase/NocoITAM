@@ -1809,7 +1809,16 @@ const zhCN: AppResource = {
       bookValue: '账面价值',
       bookValueCaption: '当前账面价值合计',
     },
+    view: {
+      label: '视图',
+      board: '看板',
+      list: '列表',
+    },
     work: {
+      people: '人员变动',
+      devices: '设备跟进',
+      tagLeaving: '离职',
+      tagJoining: '入职',
       pendingApprovals: '待审批',
       tagPurchase: '采购',
       tagDisposal: '报废',

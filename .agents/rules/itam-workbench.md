@@ -319,3 +319,14 @@ links, buttons and fields — the cards are buttons — and touch, which keeps
 its native swipe. A joiner's card keeps its date and its
 countdown each whole (`whitespace-nowrap`, wrapping between them), since the
 template's roomier spacing narrowed the column's text.
+
+- Fewer columns (2026-10-17): 需要关注 is a band above the board, not its
+  first column (`AttentionBand`); a line under it counts each column that
+  holds something and scrolls to it (`WorkCounts`); 离职交接 and 入职准备
+  are one column, 人员变动 (`people`), and 维修中 and 借出逾期 one, 设备跟进
+  (`devices`) — `mergedCard` in `client/lib/itam/my-work.ts`, each record
+  keeping the to-do it came from (`CardRecord.origin`) for how it is drawn
+  and its 离职 / 入职 tag, each to-do keeping its own grant, scope and "see
+  all". 看板 / 列表 beside 全部 / 我负责的 (`WorkViewToggle`, remembered per
+  browser): the list runs the columns down the page as sections, their
+  cards in a grid.

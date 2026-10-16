@@ -16,6 +16,11 @@ import {
  */
 export interface CardRecord extends MyWorkRecord {
   readonly tag?: DocumentKind;
+  /**
+   * The to-do it came from, on a column that merges several (人员变动,
+   * 设备跟进): how it is drawn, and the small tag that says which it is.
+   */
+  readonly origin?: string;
 }
 
 export interface WorkCard {
@@ -91,20 +96,33 @@ export function useWorkCards(): readonly WorkCard[] {
     pendingDisposalExecution: 'disposals',
   };
   for (const key of [
-    // First after the approvals: somebody has left with the company's
-    // equipment, which was the one `critical` rule while this was a reminder.
-    // A person names themselves, so these records take no tag.
-    'leaverRecovery',
-    'pendingOnboarding',
+    // First after the approvals: 人员变动, somebody leaving with the
+    // company's equipment or joining without theirs yet (2026-10-17: one
+    // column for 离职交接 and 入职准备, so fewer columns run off the board).
+    'people',
     // 待下单 and 待到货入库 as one column, 采购中 (2026-10-06).
     'purchasing',
     'pendingDisposalExecution',
-    'activeRepairs',
-    'loansDueToday',
+    // 设备跟进: devices away — at the repairer, or lent and overdue
+    // (2026-10-17, 维修中 and 借出逾期 as one column).
+    'devices',
     // Device sync (2026-10-15): only while a platform is connected.
     'deviceChecks',
     'activeAudits',
   ]) {
+    if (key === 'people' || key === 'devices') {
+      const merged = mergedCard(
+        key,
+        key === 'people'
+          ? [find('leaverRecovery'), find('pendingOnboarding')]
+          : // Overdue loans first: they are late; a repair is only away.
+            [find('loansDueToday'), find('activeRepairs')],
+        t,
+        TAGGED,
+      );
+      if (merged) cards.push(merged);
+      continue;
+    }
     if (key === 'purchasing') {
       const merged = purchasingCard(
         find('pendingOrders'),
@@ -141,6 +159,41 @@ export function useWorkCards(): readonly WorkCard[] {
   }
 
   return cards;
+}
+
+/**
+ * One column for several to-dos (人员变动, 设备跟进): each record remembers
+ * the to-do it came from (`origin`), the counts add up, and each to-do keeps
+ * its own "see all" past the preview. The to-dos stay separate underneath,
+ * each granted and scoped by its own act.
+ */
+function mergedCard(
+  key: 'people' | 'devices',
+  items: readonly (MyWorkItem | undefined)[],
+  t: (key: string) => string,
+  tagged: Readonly<Record<string, DocumentKind>>,
+): WorkCard | undefined {
+  const present = items.filter((item): item is MyWorkItem => Boolean(item));
+  if (present.length === 0) return undefined;
+  return {
+    key,
+    label: t(`workbench.work.${key}`),
+    count: present.reduce((sum, item) => sum + item.count, 0),
+    records: present
+      .flatMap((item) =>
+        item.records.map((record) => ({
+          ...record,
+          origin: item.key,
+          ...(tagged[item.key] ? { tag: tagged[item.key] } : {}),
+        })),
+      )
+      .slice(0, MY_WORK_PREVIEW),
+    links: present.flatMap((item) =>
+      item.count > MY_WORK_PREVIEW
+        ? [{ label: t(`workbench.work.${item.key}`), url: item.url }]
+        : [],
+    ),
+  };
 }
 
 /**
