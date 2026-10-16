@@ -758,9 +758,12 @@ export function AgentComposer({
   );
   const stopLabel = stopping ? words.stopping : words.stop;
   // Icon-only and round in both forms, so the toolbar keeps its room; the name is the accessible label.
+  // Application change (ITAM, 2026-10-16, after NocoCRM's composer): the
+  // panel's buttons are the small round ones.
+  const actionSize = variant === 'page' ? 'icon' : 'icon-sm';
   const action = showStop ? (
     <Button
-      size='icon'
+      size={actionSize}
       variant='outline'
       className='shrink-0 rounded-full'
       disabled={stopping}
@@ -773,7 +776,7 @@ export function AgentComposer({
     </Button>
   ) : (
     <Button
-      size='icon'
+      size={actionSize}
       className='shrink-0 rounded-full disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100'
       disabled={!canSend}
       onClick={submit}
@@ -791,9 +794,7 @@ export function AgentComposer({
     ? words.attachmentsWaiting
     : running
       ? words.runningHint
-      : page
-        ? null
-        : words.hint;
+      : null;
 
   return (
     <div
@@ -811,7 +812,11 @@ export function AgentComposer({
         className={cn(
           // The send button is disabled while the box is empty; the field itself stays enabled.
           'bg-card has-disabled:bg-card has-disabled:opacity-100 dark:bg-card dark:has-disabled:bg-card',
-          page ? 'rounded-2xl shadow-sm' : 'rounded-xl shadow-xs',
+          // Application change (ITAM, after NocoCRM's composer): a soft
+          // shadow under the box and a light ring while it is written in.
+          page
+            ? 'rounded-2xl shadow-sm'
+            : 'rounded-xl shadow-[0_6px_22px_-12px_rgb(0_0_0/0.18)] has-[[data-slot=input-group-control]:focus-visible]:border-ring/50 has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/20',
         )}
       >
         {chips || fileChips ? (
@@ -819,7 +824,7 @@ export function AgentComposer({
             align='block-start'
             className={cn(
               'min-w-0 flex-col items-start gap-2 font-normal',
-              page ? 'px-3 pt-3' : 'px-2 pt-2',
+              page ? 'px-3 pt-3' : 'px-4 pt-3',
             )}
           >
             {fileChips}
@@ -830,10 +835,12 @@ export function AgentComposer({
           id={inputId}
           ref={attach}
           value={content}
-          rows={2}
+          rows={page ? 2 : 1}
           className={cn(
-            'min-h-14',
-            page ? 'max-h-60 px-4 pt-3' : 'max-h-48 px-3 pt-2.5',
+            // One line in the panel until more is written (after NocoCRM's).
+            page
+              ? 'min-h-14 max-h-60 px-4 pt-3'
+              : 'max-h-48 min-h-0 px-4 pt-3 pb-1 text-sm',
             inputClassName,
           )}
           placeholder={placeholder ?? words.placeholder}
@@ -846,7 +853,7 @@ export function AgentComposer({
           align='block-end'
           className={cn(
             'min-w-0 gap-1.5 font-normal',
-            page ? 'px-3 pb-3' : 'px-2 pb-2',
+            page ? 'px-3 pb-3' : 'px-3 pb-2.5',
           )}
         >
           {attachButton}

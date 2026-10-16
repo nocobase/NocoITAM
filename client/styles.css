@@ -677,3 +677,20 @@ label:has(> .sr-only:focus-visible),
       transparent;
   }
 }
+
+/* Application change (ITAM, 2026-10-16, after NocoCRM's): the assistant's
+   panel (28rem, fixed at the window's right edge, chat-panel.tsx) sits
+   beside the page only where both fit, from 1280px: the header and the page
+   (`.itam-page-main` in app-layout.tsx) make room for exactly its width, and
+   the record drawer moves left of it rather than lying under it. Narrower
+   screens show the panel over the page. */
+@media (min-width: 1280px) {
+  body.itam-agent-panel-open .itam-page-main {
+    margin-right: 28rem;
+    transition: margin-right 200ms ease-in-out;
+  }
+  body.itam-agent-panel-open .itam-record-drawer {
+    right: 28rem;
+    transition: right 200ms ease-in-out;
+  }
+}

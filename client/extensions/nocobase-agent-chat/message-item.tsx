@@ -8,15 +8,25 @@
  * (`metadata.streaming`); one whose run ended before it was final says it stopped there (`metadata.interrupted`).
  */
 import {
-  AgentAvatar,
   ChatExtensionsContext,
   noticeText,
   useFormatters,
   type PendingMessage,
 } from '@nocobase/app-plugin-agents/client/chat';
 import type { ConversationMessage } from '@nocobase/app-plugin-agents/shared/conversations';
-import { AlertCircleIcon, RotateCcwIcon } from 'lucide-react';
-import { useContext, type ReactElement, type ReactNode } from 'react';
+import {
+  AlertCircleIcon,
+  CheckIcon,
+  CopyIcon,
+  RotateCcwIcon,
+} from 'lucide-react';
+import {
+  useContext,
+  useEffect,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
 import { Button } from '#components/ui/button';
 import { cn } from 'cn';
@@ -108,81 +118,107 @@ export function MessageItem({
   }
   const fromAgent = message.role === 'assistant';
   const streaming = fromAgent && message.metadata.streaming === true;
-  const name = fromAgent ? agentName(message.metadata.agentId) : null;
-  return (
-    <li
-      className={cn('group/message flex gap-2', !fromAgent && 'justify-end')}
-      data-chat-message={message.role}
-      data-seq={message.seq}
-      data-streaming={streaming ? true : undefined}
-      aria-busy={streaming ? true : undefined}
-    >
-      {fromAgent ? (
-        <AgentAvatar name={name} size='sm' className='mt-0.5' />
-      ) : null}
-      <div
-        className={cn(
-          'flex min-w-0 flex-col',
-          fromAgent ? 'max-w-[92%] items-start' : 'max-w-[85%] items-end',
-        )}
+  const text = message.content.content;
+  // Application change (ITAM, 2026-10-16, after NocoCRM's conversation): the
+  // agent's reply is plain text across the panel — no avatar, name or bubble
+  // — and the viewer's message a grey bubble on the right; under either,
+  // while it is hovered or focused, when it was sent and a copy button.
+  if (fromAgent)
+    return (
+      <li
+        className='group/message grid min-w-0 gap-0.5'
+        data-chat-message={message.role}
+        data-seq={message.seq}
+        data-streaming={streaming ? true : undefined}
+        aria-busy={streaming ? true : undefined}
       >
-        {fromAgent ? (
-          <p className='mb-1 flex items-center gap-2 text-xs'>
-            <span className='font-medium text-muted-foreground'>{name}</span>
-            <Time at={message.createdAt} />
-          </p>
-        ) : (
-          <span className='sr-only'>{t('chat.you')}</span>
-        )}
-        {!fromAgent && message.attachments?.length ? (
-          <MessageAttachments
-            attachments={message.attachments}
-            className={message.content.content.trim() ? 'mb-1' : undefined}
-          />
-        ) : null}
-        {/* A message of files alone has no text bubble. */}
-        {fromAgent || message.content.content.trim() ? (
-          <div
-            className={cn(
-              'max-w-full min-w-0 rounded-lg px-3 py-2 text-sm',
-              fromAgent ? 'bg-muted' : 'bg-primary/10',
-            )}
-          >
-            {fromAgent ? (
-              <>
-                <ChatMarkdown content={message.content.content} />
-                {streaming ? (
-                  <span
-                    className='ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-foreground/60 align-middle motion-reduce:animate-none'
-                    role='status'
-                    aria-label={t('chat.reply.writing')}
-                  />
-                ) : null}
-              </>
-            ) : (
-              <p className='whitespace-pre-wrap wrap-anywhere'>
-                {message.content.content}
-              </p>
-            )}
-          </div>
-        ) : null}
-        {fromAgent && message.metadata.interrupted ? (
-          <p className='mt-1 text-xs text-muted-foreground'>
+        <span className='sr-only'>{agentName(message.metadata.agentId)}</span>
+        <div className='min-w-0 text-sm leading-6 [&_li]:my-1 [&_ol]:my-2 [&_p]:my-2 [&_ul]:my-2'>
+          <ChatMarkdown content={text} />
+          {streaming ? (
+            <span
+              className='ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-foreground/60 align-middle motion-reduce:animate-none'
+              role='status'
+              aria-label={t('chat.reply.writing')}
+            />
+          ) : null}
+        </div>
+        {message.metadata.interrupted ? (
+          <p className='text-xs text-muted-foreground'>
             {t('chat.reply.interrupted')}
           </p>
         ) : null}
-        {!fromAgent && message.workContext ? (
-          <SentContext context={message.workContext} />
-        ) : null}
-        {fromAgent ? null : (
-          <Time
-            at={message.createdAt}
-            className='mt-1 text-muted-foreground/80 opacity-0 transition-opacity group-focus-within/message:opacity-100 group-hover/message:opacity-100 motion-reduce:transition-none pointer-coarse:opacity-100'
-          />
-        )}
+        {streaming ? null : <SentAt at={message.createdAt} content={text} />}
         {extra ?? null}
-      </div>
+      </li>
+    );
+  return (
+    <li
+      className='group/message ml-auto flex max-w-[85%] min-w-0 flex-col items-end gap-1'
+      data-chat-message={message.role}
+      data-seq={message.seq}
+    >
+      <span className='sr-only'>{t('chat.you')}</span>
+      {message.attachments?.length ? (
+        <MessageAttachments attachments={message.attachments} />
+      ) : null}
+      {/* A message of files alone has no text bubble. */}
+      {text.trim() ? (
+        <div className='max-w-full min-w-0 rounded-xl bg-muted px-3 py-2 text-sm break-words whitespace-pre-wrap'>
+          {text}
+        </div>
+      ) : null}
+      {message.workContext ? (
+        <SentContext context={message.workContext} />
+      ) : null}
+      <SentAt at={message.createdAt} content={text} />
+      {extra ?? null}
     </li>
+  );
+}
+
+/**
+ * Under a message while it is hovered (or a control in it focused): when it was sent, and a button copying its text,
+ * which says so a moment once it has (after NocoCRM's `SentAt`).
+ */
+function SentAt({
+  at,
+  content,
+}: {
+  readonly at: string;
+  readonly content: string;
+}): ReactElement {
+  const { t } = useChatTranslation();
+  const format = useFormatters();
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(false), 1500);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
+  const label = t(copied ? 'actions.copied' : 'actions.copy');
+  return (
+    <span className='flex items-center gap-1 text-xs text-muted-foreground opacity-0 transition-opacity group-focus-within/message:opacity-100 group-hover/message:opacity-100 motion-reduce:transition-none pointer-coarse:opacity-100'>
+      <time dateTime={at} className='tabular-nums' title={format.dateTime(at)}>
+        {format.relative(at)}
+      </time>
+      {content.trim() ? (
+        <Button
+          variant='ghost'
+          size='icon-xs'
+          aria-label={label}
+          title={label}
+          onClick={() =>
+            void navigator.clipboard
+              ?.writeText(content)
+              .then(() => setCopied(true))
+              .catch(() => undefined)
+          }
+        >
+          {copied ? <CheckIcon /> : <CopyIcon />}
+        </Button>
+      ) : null}
+    </span>
   );
 }
 
@@ -230,7 +266,7 @@ export function PendingItem({
         {message.content.trim() ? (
           <div
             className={cn(
-              'max-w-full min-w-0 rounded-lg bg-primary/10 px-3 py-2 text-sm',
+              'max-w-full min-w-0 rounded-xl bg-muted px-3 py-2 text-sm',
               !failed && 'opacity-70',
             )}
           >

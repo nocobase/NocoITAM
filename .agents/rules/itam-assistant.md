@@ -59,14 +59,30 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
 - The chat itself is the UI Library's `agent-chat` block in
   `client/extensions/nocobase-agent-chat/` (written from the registry: the
   CLI could not install it), around the shell through `AgentChatShell` in
-  `client/layouts/agent-chat.tsx`, with the panel beside `<main>` and a full
-  page at `/agent-chat/:conversationId`. One `Application change (ITAM)`
-  there: a model is sent as its service and name alone (`modelRef` in
-  `conversation-view.tsx`), since plugin 0.1.0-beta.8 refuses the labels
-  and effort a model choice carries, which made every model but the
-  agent's default unpickable. The header's assistant button is
-  `AgentChatButton` (the sparkle in a blue frame on the accent ground,
-  `ASSISTANT_LINK_CLASS` in `header-actions.tsx`, ⌘J). A page offers what it
+  `client/layouts/agent-chat.tsx`, and a full page at
+  `/agent-chat/:conversationId`. A model is sent as its service and name
+  alone (`modelRef` in `conversation-view.tsx`), since plugin 0.1.0-beta.8
+  refuses the labels and effort a model choice carries, which made every
+  model but the agent's default unpickable. Since 2026-10-16 the panel looks
+  and sits as NocoCRM's does, through `Application change (ITAM)` edits to
+  the block: fixed at the window's right edge over the whole height, 28rem
+  (`chat-panel.tsx`, drawn by `AgentChatShell`), the header and page making
+  room for it from 1280px (`itam-page-main` / `itam-agent-panel-open` in
+  `client/styles.css`, the record drawer moving left of it through
+  `itam-record-drawer`) and lying over the page narrower, with no docked,
+  floating or expanded forms; its header one row — history, the agent's
+  round avatar, the title (still renamed in place) over "agent · what it
+  does", ⋯ (archive), new, the conversation's page, close — every button a
+  ghost icon with a tooltip (`panel-header.tsx`); the agent's reply plain
+  text with no avatar, name or bubble and the reader's message a grey
+  bubble, each with its time and a copy button on hover
+  (`message-item.tsx`); no greeting on a new conversation in the panel; and
+  the composer one line tall with a soft shadow, a focus ring and small round
+  buttons (`client/components/agent-composer.tsx`, its panel form). The
+  header's ✨ button (`AgentChatButton`) leads the header's actions in the
+  theme button's frame with the sparkle in the primary colour, toggles the
+  panel as ⌘J does, and while `/itam/ai/status` says the assistant cannot
+  answer stays, disabled, saying why (`ai.unavailable`). A page offers what it
   shows through `useAiPageContext({ kind, id, label })`
   (`client/lib/itam/ai-chat.tsx`): the record's chip sits above the composer
   and `ask(prompt)` starts a conversation with it pinned. A page context

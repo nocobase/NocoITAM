@@ -357,10 +357,14 @@ function ConversationBody({
         <div
           className={cn(
             'flex min-h-full flex-col',
-            page && cn(PAGE_COLUMN, 'py-6'),
+            // Application change (ITAM, after NocoCRM's panel): py-4.
+            page ? cn(PAGE_COLUMN, 'py-6') : 'py-4',
           )}
         >
-          {empty ? (
+          {/* Application change (ITAM, after NocoCRM's panel): a new
+              conversation in the panel is the empty view and the box, with
+              no greeting. */}
+          {empty && !page ? null : empty ? (
             <div className='flex flex-1 flex-col items-center justify-center gap-2 px-6 py-10 text-center'>
               <BotMessageSquareIcon
                 className='size-8 text-muted-foreground'
@@ -431,7 +435,7 @@ function ConversationBody({
         </div>
       </div>
       <TurnAnnouncer running={running} />
-      <div className={page ? cn(PAGE_COLUMN, 'pt-2 pb-4') : undefined}>
+      <div className={page ? cn(PAGE_COLUMN, 'pt-2 pb-4') : 'pt-3 pb-4'}>
         <Composer
           variant={variant}
           running={running}

@@ -296,9 +296,10 @@ Step numbers, timeline dots and avatars are not tags.
 ## The theme's colour
 
 ITAM follows NocoBase's blue (2026-10-14): links (`--link`, which is
-`var(--primary)`) and every AI entry — the shortcuts, the header's assistant
-button, AI 整理's tabs, buttons and markers, the plan cards — are in
-`primary` on the `accent` ground. They were green until then. Green stays only
+`var(--primary)`) and every AI entry — the shortcuts, AI 整理's tabs,
+buttons and markers, the plan cards — are in `primary` on the `accent`
+ground; the header's ✨ button is the theme button's frame with the sparkle
+in `primary` (2026-10-16, after NocoCRM's). They were green until then. Green stays only
 where it means a state is fine, as the `success` tokens: a counted item that
 matches the books (一致), an active account, and the template's own status
 dots.

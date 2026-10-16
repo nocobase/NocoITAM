@@ -1,11 +1,14 @@
 /**
- * The panel's header: the conversation's title (click to rename; Enter saves, Escape cancels), then new conversation,
- * history, full screen (the application's page of the conversation when it has one, else full width) or back, a menu
- * (archive) and close; under it, once the conversation exists, its agent with its availability and mode (Online or
- * Runner), read-only. A conversation stays with its agent and its mode: a new conversation chooses its agent in the
- * composer (`NewChatChoice`), and another agent means a new conversation.
+ * The panel's header. Application change (ITAM, 2026-10-16, after NocoCRM's panel): one row — the history toggle, the
+ * agent's round avatar, the conversation's title (click to rename; Enter saves, Escape cancels) over "agent · what it
+ * does", a menu (archive) while a conversation is open, new conversation, the conversation's own page, and close —
+ * every button a ghost icon with a tooltip. A new conversation is named after its agent. A conversation stays with its
+ * agent and its mode: a new conversation chooses its agent in the composer (`NewChatChoice`).
  */
 import {
+  AgentAvatar,
+  useAgentText,
+  useChatAgents,
   useChatPanel,
   useConversation,
   useConversationActions,
@@ -16,11 +19,10 @@ import {
 } from '@nocobase/app-plugin-agents/shared/conversations';
 import {
   ArchiveIcon,
+  EllipsisIcon,
+  ExpandIcon,
   HistoryIcon,
-  Maximize2Icon,
-  Minimize2Icon,
-  MoreHorizontalIcon,
-  SquarePenIcon,
+  PlusIcon,
   XIcon,
 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
@@ -29,145 +31,164 @@ import { Button } from '#components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '#components/ui/dropdown-menu';
 import { Input } from '#components/ui/input';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#components/ui/tooltip';
 import { cn } from 'cn';
 
-import { AgentLine } from './agent-status.js';
 import { useChatTranslation } from './chat-i18n.js';
 
-const TOUCH = "size-9 [&_svg:not([class*='size-'])]:size-4.5";
+/** A ghost icon button named by its tooltip. */
+function IconButton({
+  label,
+  pressed,
+  onClick,
+  children,
+  'data-testid': testId,
+}: {
+  readonly label: string;
+  readonly pressed?: boolean;
+  readonly onClick: () => void;
+  readonly children: ReactElement;
+  readonly 'data-testid'?: string;
+}): ReactElement {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant='ghost'
+            size='icon-sm'
+            aria-label={label}
+            aria-pressed={pressed}
+            onClick={onClick}
+            data-testid={testId}
+          />
+        }
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export function PanelHeader({
   compact,
 }: {
-  /** The full-screen mobile form: no width toggle. */
+  /** The full-screen mobile form: no page to open. */
   readonly compact: boolean;
 }): ReactElement {
   const { t } = useChatTranslation();
+  const agentText = useAgentText();
   const panel = useChatPanel();
   const history = panel.view === 'history';
-  const detail = useConversation(panel.conversationId);
+  const detail = useConversation(history ? null : panel.conversationId);
   const conversation = detail.data ?? null;
+  const agents = useChatAgents();
   const actions = useConversationActions();
-  const expanded = panel.mode === 'expanded';
-  const menuTarget = history ? null : conversation;
-  const pageTarget = panel.openPage && !expanded ? menuTarget : null;
+  // The conversation's agent, else the one a new conversation starts with;
+  // what it does comes from the agents' list.
+  const listed = conversation
+    ? agents.data?.find((entry) => entry.id === conversation.agent.id)
+    : agents.data?.[0];
+  const named = conversation?.agent ?? listed ?? null;
+  const name = (named ? agentText.name(named) : null) ?? t('chat.title');
+  const role = listed ? agentText.description(listed) : null;
   const shownTitle = history
     ? t('chat.history.title')
     : conversation
-      ? conversation.title?.trim() || t('chat.untitled')
-      : t('chat.newConversation');
+      ? conversation.title?.trim() || name
+      : name;
+  const subtitle = conversation
+    ? [name, role].filter(Boolean).join(' · ')
+    : history
+      ? null
+      : role;
 
   return (
-    <header className='flex shrink-0 flex-col gap-1 border-b px-3 py-2'>
-      <div className='flex min-w-0 items-center gap-0.5'>
+    <header className='flex shrink-0 items-center gap-1 border-b border-border px-3 py-2'>
+      <IconButton
+        label={t('chat.history.title')}
+        pressed={history}
+        onClick={() => panel.setView(history ? 'chat' : 'history')}
+        data-testid='chat-history-button'
+      >
+        <HistoryIcon />
+      </IconButton>
+      <AgentAvatar
+        name={name}
+        size='sm'
+        className='ml-1 shrink-0 rounded-full'
+      />
+      <div className='mx-1.5 min-w-0 flex-1'>
         <ConversationTitle
           conversation={history ? null : conversation}
           shown={shownTitle}
+          className='text-sm font-medium'
         />
-        <Button
-          variant='ghost'
-          size='icon-sm'
-          className={TOUCH}
-          aria-label={t('chat.newConversation')}
-          title={t('chat.newConversation')}
-          onClick={() => {
-            panel.selectConversation(null);
-            panel.focusComposer();
-          }}
-        >
-          <SquarePenIcon />
-        </Button>
-        <Button
-          variant='ghost'
-          size='icon-sm'
-          className={TOUCH}
-          aria-label={t('chat.history.title')}
-          title={t('chat.history.title')}
-          aria-pressed={history}
-          onClick={() => panel.setView(history ? 'chat' : 'history')}
-          data-testid='chat-history-button'
-        >
-          <HistoryIcon />
-        </Button>
-        {compact ? null : pageTarget ? (
-          // The application shows a conversation as a page of its own: "full screen" goes there.
-          <Button
-            variant='ghost'
-            size='icon-sm'
-            className={TOUCH}
-            aria-label={t('chat.openPage')}
-            title={t('chat.openPage')}
-            onClick={() => panel.openPage?.(pageTarget.id)}
-            data-testid='chat-open-page'
-          >
-            <Maximize2Icon />
-          </Button>
-        ) : (
-          // Without a page to go to (a new conversation, the history, or no page at all), the panel covers the content.
-          <Button
-            variant='ghost'
-            size='icon-sm'
-            className={TOUCH}
-            aria-label={expanded ? t('chat.restoreSize') : t('chat.expand')}
-            title={expanded ? t('chat.restoreSize') : t('chat.expand')}
-            onClick={() => panel.setMode(expanded ? 'docked' : 'expanded')}
-            data-testid='chat-expand'
-          >
-            {expanded ? <Minimize2Icon /> : <Maximize2Icon />}
-          </Button>
-        )}
-        {/* Always there, disabled without a conversation, so the row keeps its icons in place. */}
+        {subtitle ? (
+          <p className='truncate px-1 text-xs text-muted-foreground'>
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+      {conversation && !conversation.archivedAt ? (
         <DropdownMenu>
           <DropdownMenuTrigger
-            disabled={!menuTarget}
             render={
               <Button
                 variant='ghost'
                 size='icon-sm'
-                className={TOUCH}
                 aria-label={t('chat.more')}
               />
             }
           >
-            <MoreHorizontalIcon />
+            <EllipsisIcon />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align='end' className='w-auto min-w-40'>
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                onClick={() => {
-                  if (!menuTarget) return;
-                  actions.archive.mutate({
-                    id: menuTarget.id,
-                    archived: true,
-                  });
-                  panel.selectConversation(null);
-                }}
-              >
-                <ArchiveIcon />
-                {t('chat.archive')}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+          <DropdownMenuContent align='end'>
+            <DropdownMenuItem
+              disabled={actions.archive.isPending}
+              onClick={() =>
+                actions.archive.mutate(
+                  { id: conversation.id, archived: true },
+                  { onSuccess: () => panel.selectConversation(null) },
+                )
+              }
+            >
+              <ArchiveIcon />
+              {t('chat.archive')}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button
-          variant='ghost'
-          size='icon-sm'
-          className={TOUCH}
-          aria-label={t('chat.close')}
-          title={t('chat.close')}
-          onClick={panel.closeChat}
-        >
-          <XIcon />
-        </Button>
-      </div>
-      {!history && conversation ? (
-        <AgentLine conversation={conversation} />
       ) : null}
+      <IconButton
+        label={t('chat.newConversation')}
+        onClick={() => {
+          panel.selectConversation(null);
+          panel.focusComposer();
+        }}
+      >
+        <PlusIcon />
+      </IconButton>
+      {conversation && panel.openPage && !compact ? (
+        <IconButton
+          label={t('chat.openPage')}
+          onClick={() => panel.openPage?.(conversation.id)}
+          data-testid='chat-open-page'
+        >
+          <ExpandIcon />
+        </IconButton>
+      ) : null}
+      <IconButton label={t('chat.close')} onClick={panel.closeChat}>
+        <XIcon />
+      </IconButton>
     </header>
   );
 }

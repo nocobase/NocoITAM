@@ -33,6 +33,7 @@ const zhCN: AppResource = {
     ...systemZhCN.actions,
     close: '关闭',
     copy: '复制',
+    copied: '已复制',
     save: '保存',
     cancel: '取消',
     clear: '清除',
@@ -2771,6 +2772,8 @@ const zhCN: AppResource = {
     },
   },
   ai: {
+    ask: '问 AI',
+    unavailable: 'AI 暂不可用：请在「AI → 模型服务」检查模型',
     openChat: '打开 AI 对话',
     closeChat: '收起 AI 对话',
     sendFailed: '问题没能发出，请在对话里重试。',

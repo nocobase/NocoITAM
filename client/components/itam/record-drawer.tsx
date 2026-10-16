@@ -87,7 +87,8 @@ export function RecordDrawerProvider({
           // A little smaller than the page: the sheet's own right-side
           // width classes carry a data-side variant, so these do too to
           // replace rather than lose to them.
-          className='gap-0 overflow-y-auto bg-background data-[side=right]:w-[min(680px,88vw)] data-[side=right]:sm:max-w-none'
+          // `itam-record-drawer`: it moves left of the assistant's panel (styles.css).
+          className='itam-record-drawer gap-0 overflow-y-auto bg-background data-[side=right]:w-[min(680px,88vw)] data-[side=right]:sm:max-w-none'
         >
           {current ? (
             <RecordDrawerBody

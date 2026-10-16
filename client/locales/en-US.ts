@@ -36,6 +36,7 @@ const messages = {
     ...systemEnUS.actions,
     close: 'Close',
     copy: 'Copy',
+    copied: 'Copied',
     save: 'Save',
     cancel: 'Cancel',
     clear: 'Clear',
@@ -2944,6 +2945,8 @@ const messages = {
     },
   },
   ai: {
+    ask: 'Ask AI',
+    unavailable: 'AI is unavailable: check the models in AI → Model services',
     openChat: 'Open the AI chat',
     closeChat: 'Close the AI chat',
     sendFailed: 'The question could not be sent. Try again from the chat.',

@@ -20,7 +20,6 @@ import { RouteTreeProvider } from '../routing/route-context.js';
 
 import { PageBreadcrumbProvider } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
-import { ChatPanel } from '#extensions/nocobase-agent-chat/chat-panel';
 
 import { AgentChatShell } from './agent-chat.js';
 import { LayoutHeader } from './components/layout-header.js';
@@ -88,7 +87,10 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                   after={{ workbench: <SearchNavButton /> }}
                 />
               </AppSidebar>
-              <div className='flex min-w-0 flex-1 flex-col'>
+              {/* Application change (ITAM): `itam-page-main` makes room for
+                  the assistant's panel, header and page together
+                  (styles.css). */}
+              <div className='itam-page-main flex min-w-0 flex-1 flex-col'>
                 <LayoutHeader className='sticky top-0 z-40 justify-between'>
                   <div className='flex min-w-0 items-center gap-3'>
                     <AppSidebarToggle />
@@ -105,9 +107,6 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                     header and above the page, offered to whoever may import
                     it while none is (after NocoCRM's). */}
                 <DemoBanner />
-                {/* Application change (ITAM): the chat panel beside the
-                    content, in a positioned row, so it survives page changes
-                    and docks or floats by the window's width. */}
                 <div className='relative flex min-h-0 flex-1'>
                   <main className='app-brand-surface relative isolate min-w-0 flex-1 overflow-hidden'>
                     <BrandWatermark className='-z-10' />
@@ -124,7 +123,6 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                       </RecordDrawerProvider>
                     </div>
                   </main>
-                  <ChatPanel />
                 </div>
               </div>
             </AppSidebarProvider>

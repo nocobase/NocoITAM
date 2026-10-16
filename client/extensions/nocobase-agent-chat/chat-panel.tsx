@@ -1,14 +1,12 @@
 /**
- * The chat panel, which the application renders beside its content area (for example, a sibling of `<main>` inside a
- * `relative flex` row, so it survives page changes). From 1280px it docks beside the content (22rem, 26.25rem from
- * 1536px); between `md` and 1280px it floats over the content's right side (22rem); "full width" covers the content
- * area. Neither is a dialog nor traps focus; Escape restores the width, then closes. Below `md` it is a full-screen
- * dialog. Once opened it stays mounted while closed, so the conversation's subscriptions carry on.
+ * The chat panel. Application change (ITAM, 2026-10-16): fixed at the window's right edge, 28rem, as NocoCRM's
+ * panel is (the page makes room for it from 1280px); it is not a dialog and traps no focus; Escape closes it. Below
+ * `md` it is a full-screen dialog. Once opened it stays mounted while closed, so the conversation's subscriptions carry
+ * on.
  *
- * It needs `ChatProvider` above it, and a positioned parent: a `relative flex` row beside the content area.
+ * It needs `ChatProvider` above it.
  */
 import {
-  CHAT_DOCK_QUERY,
   CHAT_MOBILE_QUERY,
   CHAT_PANEL_ATTRIBUTE,
   CHAT_PANEL_ID,
@@ -17,7 +15,6 @@ import {
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 
 import { Dialog, DialogContent, DialogTitle } from '#components/ui/dialog';
-import { cn } from 'cn';
 
 import { useChatTranslation } from './chat-i18n.js';
 import { ConversationView } from './conversation-view.js';
@@ -35,13 +32,12 @@ function PanelFrame(): ReactElement | null {
   const { t } = useChatTranslation();
   const panel = useChatPanel();
   const mobile = useMediaQuery(CHAT_MOBILE_QUERY);
-  const wide = useMediaQuery(CHAT_DOCK_QUERY, true);
   const [mounted, setMounted] = useState(panel.open);
   const asideRef = useRef<HTMLElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   if (panel.open && !mounted) setMounted(true);
 
-  const { mode, setMode, closeChat, open } = panel;
+  const { closeChat, open } = panel;
   useEffect(() => {
     const element = asideRef.current;
     if (!element || !open) return undefined;
@@ -49,12 +45,16 @@ function PanelFrame(): ReactElement | null {
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       event.preventDefault();
-      if (mode === 'expanded') setMode('docked');
-      else closeChat();
+      closeChat();
     }
     element.addEventListener('keydown', onKeyDown);
     return () => element.removeEventListener('keydown', onKeyDown);
-  }, [open, mode, setMode, closeChat, mounted, mobile]);
+  }, [open, closeChat, mounted, mobile]);
+  // The page makes room for the panel (styles.css).
+  useEffect(() => {
+    document.body.classList.toggle('itam-agent-panel-open', open && !mobile);
+    return () => document.body.classList.remove('itam-agent-panel-open');
+  }, [open, mobile]);
 
   if (!mounted) return null;
   const marker = { [CHAT_PANEL_ATTRIBUTE]: '' };
@@ -86,7 +86,12 @@ function PanelFrame(): ReactElement | null {
       </Dialog>
     );
 
-  const expanded = mode === 'expanded';
+  // Application change (ITAM, 2026-10-16, after NocoCRM's panel): one
+  // form from `md` up, fixed at the window's right edge over the whole
+  // height (above the sticky header, z-40; dialogs and menus stay above it),
+  // 28rem wide; from 1280px the page makes room for it (`itam-page-main`,
+  // styles.css), narrower it lies over the page. No docked, floating or
+  // expanded forms: a conversation's own page is the wide view.
   return (
     <aside
       ref={asideRef}
@@ -94,16 +99,9 @@ function PanelFrame(): ReactElement | null {
       {...marker}
       aria-label={t('chat.title')}
       hidden={!open}
-      data-mode={expanded ? 'expanded' : wide ? 'docked' : 'floating'}
+      data-mode='docked'
       data-testid='chat-panel'
-      className={cn(
-        'flex min-h-0 flex-col bg-background',
-        expanded
-          ? 'absolute inset-0 z-30'
-          : wide
-            ? 'relative w-[22rem] shrink-0 border-l 2xl:w-[26.25rem]'
-            : 'absolute inset-y-0 right-0 z-30 w-[22rem] max-w-full border-l shadow-xl',
-      )}
+      className='fixed inset-y-0 right-0 z-40 flex w-[28rem] max-w-full flex-col border-l border-border bg-background shadow-lg'
     >
       <PanelHeader compact={false} />
       <PanelBody />
@@ -113,14 +111,9 @@ function PanelFrame(): ReactElement | null {
 
 function PanelBody(): ReactElement {
   const panel = useChatPanel();
-  const expanded = panel.mode === 'expanded';
   return (
-    <div
-      className={cn(
-        'flex min-h-0 flex-1 flex-col p-3',
-        expanded && 'mx-auto w-full max-w-3xl',
-      )}
-    >
+    // Application change (ITAM): NocoCRM's margins, px-4.
+    <div className='flex min-h-0 flex-1 flex-col px-4'>
       {panel.view === 'history' ? (
         <div className='min-h-0 flex-1 overflow-y-auto'>
           <HistoryList
