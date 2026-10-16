@@ -214,7 +214,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   - **Where it shows** (`frontend-standard.md` §S1–S4): 收件箱 (`/inbox`,
     first in the menu, its badge the runs waiting, `useInboxCount`) is the
     template's inbox block with the reviews added to its To do view as a
-    collection category (`client/pages/itam/inbox.tsx`), and NocoCRM's
+    collection category (`client/pages/itam/inbox.tsx`; a suggestion shows
+    its request's own page beside the list, 2026-10-16), and NocoCRM's
     application changes to the block (`client/extensions/nocobase-inbox/`,
     each marked): the two views are tabs labelled AI 建议 (first, the
     default, counting what waits) and 通知 (with 全部标为已读 at its head);

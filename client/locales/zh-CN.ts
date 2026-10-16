@@ -3251,7 +3251,6 @@ const zhCN: AppResource = {
     category: 'AI 建议',
     waiting: '待处理',
     handled: '已处理',
-    openRecord: '打开申请',
     nothingPicked: '选一条 AI 建议查看。',
   },
   review: {

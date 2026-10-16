@@ -3440,7 +3440,6 @@ const messages = {
     category: 'AI suggestions',
     waiting: 'To do',
     handled: 'Handled',
-    openRecord: 'Open the request',
     nothingPicked: 'Pick an AI suggestion to read it.',
   },
   review: {

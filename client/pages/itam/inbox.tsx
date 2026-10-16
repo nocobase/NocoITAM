@@ -10,7 +10,7 @@ import {
   itamNoticeRenderer,
 } from '@/components/itam/inbox-notices';
 import { noticePath } from '@/lib/itam/inbox-notices';
-import { RecordLink } from '@/components/itam/record-link';
+import { RecordPane } from '@/components/itam/record-drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInbox, type AgentRun } from '@/lib/itam/agents';
 import { relativeTime } from '@/lib/itam/format';
@@ -255,6 +255,7 @@ function ReviewDetail({
   readonly onBack: () => void;
 }): ReactElement {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const inbox = useInbox();
   const run = [
     ...(inbox.data?.open ?? []),
@@ -273,20 +274,27 @@ function ReviewDetail({
         <DeviceSyncRunCard key={run.id} run={run} />
       </article>
     );
+  // The request itself, as a notification shows its record (2026-10-16):
+  // its own page, whose 等你决定 carries the review while it waits on the
+  // reader. One already handled is no longer on the page, so its card,
+  // folded to how it ended, sits above it.
   return (
-    <article className='min-w-0 space-y-3 p-6'>
-      <div className='flex flex-wrap items-baseline gap-2'>
-        <h2 className='text-base font-semibold'>
-          {run.title ?? run.subjectId}
-        </h2>
-        <RecordLink
-          to={`${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`}
-          className='text-sm'
-        >
-          {t('agentInbox.openRecord')}
-        </RecordLink>
-      </div>
-      <ApprovalReviewCard key={run.id} run={run} />
-    </article>
+    <div className='min-w-0'>
+      {isOpen(run) ? null : (
+        <div className='px-6 pt-6'>
+          <ApprovalReviewCard key={run.id} run={run} />
+        </div>
+      )}
+      <RecordPane
+        key={run.id}
+        to={`${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`}
+        onLeave={(path) => void navigate(path)}
+        fallback={
+          <p className='p-6 text-sm text-muted-foreground'>
+            {t('common.notFound')}
+          </p>
+        }
+      />
+    </div>
   );
 }
