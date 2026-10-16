@@ -498,6 +498,96 @@ export const adminWording = {
       ],
     },
   },
+  // How a permission set's 权限 drawer names this application's Collections
+  // and their operations: server/providers/itam/authz-resources.ts registers
+  // these keys as the titles (`authzTitle`), worded as the pages word the
+  // actions. Every Collection and operation needs one —
+  // tests/logic/authz-titles.test.ts checks it.
+  authz: {
+    settings: ['ITAM settings', 'ITAM 设置'],
+    settingsActions: { read: ['View', '查看'], update: ['Edit', '编辑'] },
+    collections: {
+      manufacturers: ['Manufacturers', '制造商'],
+      vendors: ['Vendors', '供应商'],
+      categories: ['Categories', '分类'],
+      models: ['Models', '型号'],
+      softwareProducts: ['Software products', '软件产品'],
+      locations: ['Locations', '位置'],
+      departments: ['Departments', '部门'],
+      onboardingKits: ['Onboarding kits', '入职配置'],
+      people: ['People', '人员'],
+      devices: ['Devices', '设备'],
+      stockItems: ['Stock items', '库存物品'],
+      entitlements: ['Entitlements', '授权'],
+      purchaseOrders: ['Purchase orders', '采购单'],
+      approvals: ['Approvals', '审批'],
+      attachmentLinks: ['Attachments', '附件'],
+      repairs: ['Repairs', '维修单'],
+      auditTasks: ['Audit tasks', '盘点任务'],
+      disposals: ['Disposals', '报废单'],
+      purchaseOrderLines: ['Purchase order lines', '采购明细'],
+      purchaseReceipts: ['Purchase receipts', '到货记录'],
+      stockHoldings: ['Stock holdings', '库存持有'],
+      stockMovements: ['Stock movements', '库存流水'],
+      entitlementSeats: ['Entitlement seats', '授权席位'],
+      auditItems: ['Audit items', '盘点明细'],
+      disposalDevices: ['Disposal devices', '报废清单'],
+      historyEvents: ['History', '历史'],
+      changeLogs: ['Change logs', '变更记录'],
+      allocations: ['Allocations', '分配记录'],
+      reminders: ['Reminders', '提醒'],
+    },
+    operations: {
+      people: { markLeft: ['Mark as left', '标记离职'] },
+      devices: {
+        assign: ['Assign', '分配'],
+        return: ['Return', '归还'],
+        transfer: ['Transfer', '调拨'],
+        loan: ['Loan', '借出'],
+        // Cancelling a reservation is the same grant.
+        reserve: ['Reserve', '预留'],
+        correctStatus: ['Correct status', '修正状态'],
+        export: ['Export', '导出'],
+      },
+      stockItems: {
+        // Taking back (and uninstalling) is the same grant.
+        issue: ['Issue and take back', '发放与收回'],
+        stockIn: ['Stock in', '入库'],
+        export: ['Export', '导出'],
+      },
+      entitlements: {
+        // Reclaiming a seat and setting a seat's key are the same grant.
+        assignSeat: ['Assign and reclaim seats', '分配和回收席位'],
+        viewKey: ['Show key', '查看密钥'],
+        export: ['Export', '导出'],
+      },
+      purchaseOrders: {
+        // Withdrawing is the same grant.
+        submit: ['Submit for approval', '提交审批'],
+        approve: ['Approve or reject', '审批'],
+        order: ['Mark as ordered', '标记已下单'],
+        receive: ['Receive', '到货入库'],
+        export: ['Export', '导出'],
+      },
+      approvals: { decide: ['Approve or reject', '审批'] },
+      repairs: { complete: ['Complete repair', '完成维修'] },
+      auditTasks: {
+        start: ['Start audit', '开始盘点'],
+        // Registering a device found off the books is the same grant.
+        count: ['Record count results', '登记盘点结果'],
+        finish: ['Finish count', '完成盘点'],
+        resolve: ['Resolve differences', '处理差异'],
+        cancel: ['Cancel count', '取消盘点'],
+        export: ['Export', '导出'],
+      },
+      disposals: {
+        submit: ['Submit for approval', '提交审批'],
+        approve: ['Approve or reject', '审批'],
+        execute: ['Execute disposal', '执行报废'],
+        export: ['Export', '导出'],
+      },
+    },
+  },
   schedules: {
     // The page's title, the menu entry's words (navigation).
     title: ['Scheduled tasks', '定时任务'],

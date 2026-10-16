@@ -1,4 +1,5 @@
 import { defineCompositeResource } from '@nocobase/authorization/core';
+import { APP_NS } from '@nocobase/i18n';
 import {
   defineDatabasePermission,
   type DatabaseAuthorizationConditions,
@@ -32,6 +33,28 @@ import {
  * applying to what an operation may touch.
  */
 export const ITAM_RESOURCE_SECTION = 'itam';
+
+/**
+ * A title the permission workspace translates in this application's
+ * namespace: `admin.authz.*` in `client/locales/admin.ts`. A plain string is
+ * shown as written in every language, and an operation with no title at all
+ * is shown by its name (`markLeft`), which is what this replaced (2026-10-16).
+ */
+const authzTitle = (key: string) =>
+  ({ key: `admin.authz.${key}`, ns: APP_NS }) as const;
+
+/** What the permission workspace calls a Collection, and its operations' heading. */
+export const collectionTitleOf = (collection: string) =>
+  authzTitle(`collections.${collection}`);
+
+/** What the permission workspace calls one operation, worded as its page words it. */
+export const operationTitleOf = (collection: string, action: string) =>
+  authzTitle(`operations.${collection}.${action}`);
+
+/** The settings item 设置 → 通用 is granted through, and its two actions. */
+export const ITAM_SETTINGS_TITLE = authzTitle('settings');
+export const settingsActionTitleOf = (action: 'read' | 'update') =>
+  authzTitle(`settingsActions.${action}`);
 
 /** The four a Collection owns; everything else is an operation of its own. */
 const CRUD = new Set(['read', 'create', 'update', 'delete']);
@@ -69,7 +92,7 @@ const resourceOf = (collection: ItamCollectionDefinition) => {
   const permission = defineDatabasePermission((definition) =>
     definition
       .collection(`main.${collection.name}`)
-      .title(collection.title)
+      .title(collectionTitleOf(collection.name))
       .read([]),
   );
   // A resource is validated as it is defined and must already carry its
@@ -78,14 +101,17 @@ const resourceOf = (collection: ItamCollectionDefinition) => {
     operationsOf(collection).reduce(
       (builder, action) =>
         builder.action(action, (declaration) =>
-          declaration.grant(
-            collection.name,
-            databaseActionOf(action) === 'read'
-              ? permission
-              : permission.update([...collection.fields]),
-          ),
+          declaration
+            .title(operationTitleOf(collection.name, action))
+            .grant(
+              collection.name,
+              databaseActionOf(action) === 'read'
+                ? permission
+                : permission.update([...collection.fields]),
+              { title: collectionTitleOf(collection.name) },
+            ),
         ),
-      resource.title(collection.title),
+      resource.title(collectionTitleOf(collection.name)),
     ),
   );
 };

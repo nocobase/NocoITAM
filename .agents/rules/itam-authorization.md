@@ -54,6 +54,17 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   catalogue, so a route that asks the wrong resource fails in tests. A route
   that decides by calling `authz.authorize` itself skips all of this: it is
   how the master-data writes returned an empty record until 2026-09-26.
+- Every title this application registers with authorization — an
+  `itam.<collection>` resource and each of its operations and data scopes,
+  each database Collection, the ITAM settings item and its actions — is a
+  `{ key, ns: APP_NS }` key under `admin.authz.*` in `client/locales/admin.ts`
+  (`collectionTitleOf`, `operationTitleOf` in `authz-resources.ts`), worded as
+  the pages word the action (分配, 归还, 标记离职, 导出), the way the Agents
+  plugin titles its own. Until 2026-10-16 the operations carried no title and
+  the resources a plain English string, so a permission set's 业务操作 tab
+  listed `markLeft` and `correctStatus` under PEOPLE and DEVICES in Chinese
+  too. A new operation or Collection needs its key in both languages;
+  `tests/logic/authz-titles.test.ts` fails without it.
 - An `itam.<collection>` operation grants **no readable field of its own**
   (`resourceOf` in `authz-resources.ts` declares `.read([])`). It used to
   grant the Collection's whole field list, reasoning that a response is

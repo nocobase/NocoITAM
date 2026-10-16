@@ -54,7 +54,13 @@ import {
   procurementServiceToken,
 } from './procurement.js';
 import { ITAM_COLLECTIONS, ITAM_SETTINGS_RESOURCE } from './collections.js';
-import { ITAM_RESOURCE_SECTION, ITAM_RESOURCES } from './authz-resources.js';
+import {
+  collectionTitleOf,
+  ITAM_RESOURCE_SECTION,
+  ITAM_RESOURCES,
+  ITAM_SETTINGS_TITLE,
+  settingsActionTitleOf,
+} from './authz-resources.js';
 import {
   createEntitlementService,
   entitlementServiceToken,
@@ -733,7 +739,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         // leaves every ITAM collection outside the permission model, which
         // denies each read with COLLECTION_NOT_REGISTERED.
         name: `main.${collection.name}`,
-        title: collection.title,
+        title: collectionTitleOf(collection.name),
         actions: collection.actions.filter((name) => crud.has(name)),
       });
     }
@@ -755,8 +761,11 @@ export default class ItamProvider extends ServiceProvider<Application> {
     });
     authz.settings.add({
       id: ITAM_SETTINGS_RESOURCE.id,
-      title: 'ITAM settings',
-      actions: [{ name: 'read' }, { name: 'update' }],
+      title: ITAM_SETTINGS_TITLE,
+      actions: [
+        { name: 'read', title: settingsActionTitleOf('read') },
+        { name: 'update', title: settingsActionTitleOf('update') },
+      ],
     });
     authz.ui.place(ITAM_SETTINGS_RESOURCE, {
       section: `${ITAM_RESOURCE_SECTION}.admin`,
