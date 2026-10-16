@@ -86,7 +86,11 @@ export interface RecordFormDialogProps {
     readonly title: string;
     readonly keys: ReadonlySet<string>;
   };
-  /** Two fields to a row; a long text takes the whole row. */
+  /**
+   * Two fields to a row, a long text taking the whole row. By default two
+   * once the form has more than four fields (2026-10-16): a long form in one
+   * narrow column was a tall scroll.
+   */
   readonly columns?: 1 | 2;
   /** Above the fields: what the reader should know before checking them. */
   readonly prelude?: ReactNode;
@@ -134,9 +138,10 @@ export function RecordFormDialog({
   aside,
   contentRef,
   section,
-  columns = 1,
+  columns: columnsOption,
   prelude,
 }: RecordFormDialogProps): ReactElement {
+  const columns = columnsOption ?? (fields.length > 4 ? 2 : 1);
   const [files, setFiles] = useState<readonly FileRecord[]>([]);
   const [uploading, setUploading] = useState(false);
   const { t } = useTranslation();
