@@ -63,8 +63,8 @@ const zhCN: AppResource = {
     collapse: '收起导航',
     label: '应用导航',
     workbench: '待办',
-    agentWork: '智能体工作',
-    guidance: '业务说明',
+    agentWork: 'Agent 工作',
+    guidance: '业务指导',
     search: '搜索',
     inboxGroup: '收件箱',
     // 收件箱, first in the menu (2026-10-16); it said 待办 before, unused.
@@ -93,10 +93,11 @@ const zhCN: AppResource = {
     departments: '部门',
     people: '人员',
     onboardingKits: '入职配置',
-    aiGroup: 'AI',
-    agents: '智能体',
+    // Named as NocoCRM's and the NocoSolution front-end standard's (§S1).
+    aiGroup: 'Agent 团队',
+    agents: 'Agent',
     skills: '技能',
-    aiModels: '模型服务',
+    aiModels: '模型',
     usage: '用量',
     settingsGroup: '设置',
     settingsGeneral: '通用',
@@ -956,7 +957,7 @@ const zhCN: AppResource = {
       again: '重新建议',
       notStarted: {
         disabled: '入职建议已在设置中关闭',
-        unavailable: 'Noco 现在不可用：请在「AI → 模型服务」检查模型',
+        unavailable: 'Noco 现在不可用：请在「Agent 团队 → 模型」检查模型',
         notJoiner: '只为还没配齐的新人挑选',
         noOwner: '先给他指定入职负责人',
         nothingToChoose: '没有可挑的：每一项的候选都只有一个或没有',
@@ -2501,7 +2502,7 @@ const zhCN: AppResource = {
     ai: {
       title: 'AI 助手',
       description:
-        'AI 助手 Noco 在后台做的事；业务说明在「AI → 业务说明」，它的模型和能做的事在「AI → 智能体」中配置，模型服务在「AI → 模型服务」',
+        'AI 助手 Noco 在后台做的事；业务指导在「Agent 团队 → 业务指导」，它的模型和能做的事在「Agent 团队 → Agent」中配置，模型服务在「Agent 团队 → 模型」',
       onboardingAdvice: '入职建议',
       onboardingAdviceHint:
         '入职负责人可以在新人的入职配备卡片上点「让 Noco 挑选」，Noco 在后台从库存里为新人挑选设备、配件和授权并写明理由，由他确认或更换。关闭后只在对话中准备。',
@@ -2890,7 +2891,7 @@ const zhCN: AppResource = {
         reports: { summary: '总结一下当前的资产情况' },
       },
     },
-    unavailable: 'AI 暂不可用：请在「AI → 模型服务」检查模型',
+    unavailable: 'AI 暂不可用：请在「Agent 团队 → 模型」检查模型',
     openChat: '打开 AI 对话',
     closeChat: '收起 AI 对话',
     sendFailed: '问题没能发出，请在对话里重试。',
@@ -2901,7 +2902,7 @@ const zhCN: AppResource = {
       description:
         '在 IT 资产台账里查找信息，把修改整理成计划，由人确认后执行。',
     },
-    // The business actions an agent may be given (AI → 智能体).
+    // The business actions an agent may be given (Agent 团队 → Agent).
     agentActions: {
       records: 'IT 资产',
       view: '读取资产台账',
@@ -3106,12 +3107,12 @@ const zhCN: AppResource = {
     routeFailedDescription: '无法加载 {{packageName}} 的路由 {{label}}。',
   },
   guidance: {
-    title: '业务说明',
+    title: '业务指导',
     description:
-      'Noco 每次对话、每个智能体每次运行都会读这里：你们是谁、标准配置、预算、什么情况要审批。',
+      'Noco 每次对话、每个 Agent 每次运行都会读这里：你们是谁、标准配置、预算、什么情况要审批。',
     placeholder:
       '比如：\n- 公司 300 人，总部在上海，分部在深圳。\n- 标准笔记本：研发 MacBook Pro 14，其他岗位 Latitude 5440。\n- 笔记本 4 年更换，显示器 6 年。\n- 单张采购单超过 5 万元要财务总监审批。',
-    hint: '用 Markdown 写。留空则不提供业务说明。',
+    hint: '用 Markdown 写。留空则不提供业务指导。',
     save: '保存',
     saving: '保存中…',
     saved: '已保存。下一次对话和下一次运行起生效。',
@@ -3169,13 +3170,13 @@ const zhCN: AppResource = {
     redone: '已重做',
   },
   agentWork: {
-    title: '智能体工作',
+    title: 'Agent 工作',
     description:
-      '智能体自己做的事：什么时候运行、做得怎么样。它们只提建议，由人决定。',
+      'Agent 自己做的事：什么时候运行、做得怎么样。它们只提建议，由人决定。',
     on: '已开启',
     off: '已关闭',
     onlySuggests:
-      '由{{name}}智能体运行。它只提建议：由负责的人在收件箱里决定是否采纳。',
+      '由 {{name}} Agent 运行。它只提建议：由负责的人在收件箱里决定是否采纳。',
     model: '模型',
     noModel: '没有可用的模型',
     skill: '技能',

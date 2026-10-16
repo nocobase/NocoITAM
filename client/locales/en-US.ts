@@ -67,7 +67,7 @@ const messages = {
     label: 'Application navigation',
     workbench: 'To-dos',
     agentWork: 'Agent work',
-    guidance: 'Business notes',
+    guidance: 'Business guidance',
     search: 'Search',
     inboxGroup: 'Inbox',
     // The inbox, first in the menu (2026-10-16); it said To-dos before, unused.
@@ -96,10 +96,11 @@ const messages = {
     departments: 'Departments',
     people: 'People',
     onboardingKits: 'Onboarding kits',
-    aiGroup: 'AI',
+    // Named as NocoCRM's and the NocoSolution front-end standard's (§S1).
+    aiGroup: 'Agent team',
     agents: 'Agents',
     skills: 'Skills',
-    aiModels: 'Model services',
+    aiModels: 'Models',
     usage: 'Usage',
     settingsGroup: 'Settings',
     settingsGeneral: 'General',
@@ -970,7 +971,7 @@ const messages = {
       notStarted: {
         disabled: 'Onboarding suggestions are switched off in the settings',
         unavailable:
-          'Noco is not available: check the models under AI → Model services',
+          'Noco is not available: check the models under Agent team → Models',
         notJoiner: 'Noco chooses only for joiners not yet equipped',
         noOwner: 'Give them an onboarding owner first',
         nothingToChoose:
@@ -2659,7 +2660,7 @@ const messages = {
     ai: {
       title: 'AI assistant',
       description:
-        'What the assistant Noco does in the background; the business notes are under AI → Business notes, its model and what it may do under AI → Agents, the model services under AI → Model services.',
+        'What the assistant Noco does in the background; the business guidance is under Agent team → Business guidance, its model and what it may do under Agent team → Agents, the model services under Agent team → Models.',
       onboardingAdvice: 'Onboarding suggestions',
       onboardingAdviceHint:
         "On a joiner's onboarding card, their onboarding owner can ask Noco to choose devices, accessories and seats from stock in the background, with a reason for each, then confirm or change them. Off, it prepares them only in a conversation.",
@@ -3073,7 +3074,7 @@ const messages = {
         reports: { summary: 'Sum up where the assets stand' },
       },
     },
-    unavailable: 'AI is unavailable: check the models in AI → Model services',
+    unavailable: 'AI is unavailable: check the models in Agent team → Models',
     openChat: 'Open the AI chat',
     closeChat: 'Close the AI chat',
     sendFailed: 'The question could not be sent. Try again from the chat.',
@@ -3084,7 +3085,7 @@ const messages = {
       description:
         'Looks things up across the IT asset register and proposes changes as plans the person confirms.',
     },
-    // The business actions an agent may be given (AI → 智能体).
+    // The business actions an agent may be given (Agent 团队 → Agent).
     agentActions: {
       records: 'IT assets',
       view: 'Read the asset register',
@@ -3297,7 +3298,7 @@ const messages = {
       'Route {{label}} from {{packageName}} could not be loaded.',
   },
   guidance: {
-    title: 'Business notes',
+    title: 'Business guidance',
     description:
       'What Noco reads in every conversation and every agent run: who you are, your standard equipment, your budgets, when something needs approval.',
     placeholder:

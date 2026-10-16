@@ -24,7 +24,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   plugin's library, attached to Noco (`library.ts`, copied into `dist` by
   the build hook). A marker row in `itamSettings` (`agents-noco-v1`,
   `agents-skills-v1`, `markers.ts`) records each, so what an administrator
-  changes on AI → 智能体 / 技能 / 模型服务 is never overwritten. Nothing of it
+  changes on Agent 团队 → Agent / 技能 / 模型 is never overwritten. Nothing of it
   may stop the application starting: a failure is logged and retried at the
   next start.
 - Noco reads the register through **commands**, the routes of
@@ -157,7 +157,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   at start (`server/providers/itam-agents/work-agents.ts`, marker
   `agents-work-v1`, owner-only, no actions, its method skill attached —
   `WORK_SKILLS` in `skill.ts` go into the library but not onto Noco), is how
-  an administrator sets its model and instructions on AI → 智能体; a run
+  an administrator sets its model and instructions on Agent 团队 → Agent; a run
   asks the gateway with them (`openSession({ work })`, falling back to
   Noco's model) and its use shows under the agent's name on 用量. Each run
   is a row of `itamAgentRuns` (migration `202610160001_agent_runs`,
@@ -411,7 +411,7 @@ document-text`, which reads only a file uploaded within the hour and
   application's own section since template 1.0.0-beta.64) is read **once**:
   at a start where the Agents plugin has no model service of that name, it
   is created there (`model-services.ts`), and from then on the service is
-  the plugin's, edited on AI → 模型服务 — a key changed in `config.yml`
+  the plugin's, edited on Agent 团队 → 模型 — a key changed in `config.yml`
   later does not reach it. The plugin stores keys encrypted with
   `secrets.keys`, so a configuration without one cannot create them: the
   start logs a warning and the assistant has no model until it is added.
