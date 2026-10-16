@@ -46,6 +46,9 @@ const tables = [
   'disposals',
   'disposal_devices',
   'demo_records',
+  // The lifecycle runtime's own log (2026-10-18).
+  'lifecycle_transitions',
+  'lifecycle_effect_runs',
 ];
 
 describe('ITAM migrations', () => {
@@ -373,13 +376,26 @@ describe('ITAM migrations', () => {
     expect(await client.schema.hasColumn('departments', 'name')).toBe(true);
   });
 
+  it('gives disposals what their lifecycle keeps beside the state', async () => {
+    db = await createTestDatabase();
+    const client = await schemaClient(db.database);
+    expect(
+      await client.schema.hasColumn('disposals', 'status_changed_at'),
+    ).toBe(true);
+    expect(
+      await client.schema.hasColumn('disposals', 'lifecycle_version'),
+    ).toBe(true);
+    expect(await client.schema.hasTable('lifecycle_transitions')).toBe(true);
+    expect(await client.schema.hasTable('lifecycle_effect_runs')).toBe(true);
+  });
+
   it('is applied once and rolls back cleanly', async () => {
     db = await createTestDatabase();
     const again = await db.migrator.latest();
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(107);
+    expect(rolledBack.rolledBack.length).toBe(108);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

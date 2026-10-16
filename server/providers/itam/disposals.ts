@@ -1,10 +1,15 @@
 import type { DatabaseAuthorizationConditions } from '@nocobase/app-plugin-authorization/server';
 import type { DatabaseConnection, DatabaseManager } from '@nocobase/db';
+import type { JsonObject, LifecycleRuntime } from '@nocobase/lifecycle';
 import {
   createServiceToken,
   type ServiceToken,
 } from '@nocobase/service-provider';
 
+import {
+  DISPOSAL_LIFECYCLE,
+  type DisposalState,
+} from '../../lifecycles/disposals.js';
 import {
   requestTitle,
   type ApprovalDecision,
@@ -29,7 +34,7 @@ import {
 } from './errors.js';
 import type { HistoryService } from './history.js';
 import type { EntitlementService } from './entitlements.js';
-import type { ItamNotifier } from './notifier.js';
+import { lifecycleRefusal } from './lifecycles.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
 import type { StockService } from './stock.js';
@@ -41,6 +46,13 @@ import { OPEN_DISPOSAL_STATUSES } from './recovery.js';
  * rejected as the side exit and withdrawal returning it to draft. Approval moves every listed
  * device to pending disposal and reclaims its seats and components in the
  * same transaction; execution moves them to disposed, which is permanent.
+ *
+ * The state moves only through the disposal's lifecycle
+ * (`server/lifecycles/disposals.ts`, 2026-10-18): each operation fires its
+ * transition inside its own transaction, which checks the state, who may do
+ * it and the version, and owes the notifications; what the transition
+ * carries along — the approval request, the devices — is written here, in
+ * the same transaction.
  */
 export const DISPOSAL_METHODS = [
   'scrap',
@@ -172,6 +184,8 @@ export const disposalServiceToken: ServiceToken<DisposalService> =
  */
 const LIFECYCLE_FIELDS = new Set([
   'status',
+  'statusChangedAt',
+  'lifecycleVersion',
   'disposalNo',
   'deviceCount',
   'bookValueTotal',
@@ -217,7 +231,7 @@ export function createDisposalService(dependencies: {
   devices: DeviceService;
   entitlements: EntitlementService;
   stock: StockService;
-  notifier: ItamNotifier;
+  lifecycles: LifecycleRuntime;
 }): DisposalService {
   const {
     database,
@@ -228,10 +242,49 @@ export function createDisposalService(dependencies: {
     devices,
     entitlements,
     stock,
-    notifier,
+    lifecycles,
   } = dependencies;
   const definition = DISPOSALS_COLLECTION;
   const records = createRecordHelpers(database, history, definition);
+
+  /**
+   * Fires a transition in the operation's transaction: the runtime checks
+   * the state, the guard and the version, and writes the state with its log
+   * entry; the change log keeps its status line, as every other record's.
+   */
+  const move = async (
+    connection: DatabaseConnection,
+    disposal: Row,
+    transition: string,
+    context: OperationContext,
+    input: JsonObject = {},
+  ): Promise<DisposalState> => {
+    const id = String(disposal.id);
+    let next: DisposalState;
+    try {
+      const result = await lifecycles.fire(DISPOSAL_LIFECYCLE, id, transition, {
+        actor: { id: context.actorId },
+        input,
+        transaction: connection,
+      });
+      next = result.record.status as DisposalState;
+    } catch (error) {
+      throw lifecycleRefusal(error);
+    }
+    await history.log(
+      {
+        subjectType: 'disposals',
+        subjectId: id,
+        action: 'statusChange',
+        field: 'status',
+        oldValue: disposal.status,
+        newValue: next,
+        ...context,
+      },
+      connection,
+    );
+    return next;
+  };
 
   const listDevices = async (
     id: string,
@@ -376,26 +429,32 @@ export function createDisposalService(dependencies: {
     const { deviceIds, ...fields } = input;
     const id = crypto.randomUUID();
     const now = new Date();
-    await connection.query
-      .insertInto('disposals')
-      .values({
-        ...fields,
-        id,
-        disposalNo: await numbering.next('disposal', { connection }),
-        description: input.description ?? null,
-        ownerId: input.ownerId ?? context.actorId,
-        requestedAt: input.requestedAt ?? today(),
-        status: 'draft',
-        deviceCount: 0,
-        bookValueTotal: 0,
-        currency:
-          input.currency ??
-          (await settings.get('general', connection)).currency,
-        createdById: context.actorId,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .execute();
+    // Created through the lifecycle, which starts it as a draft and opens
+    // its log.
+    await lifecycles
+      .create(
+        DISPOSAL_LIFECYCLE,
+        {
+          ...fields,
+          id,
+          disposalNo: await numbering.next('disposal', { connection }),
+          description: input.description ?? null,
+          ownerId: input.ownerId ?? context.actorId,
+          requestedAt: input.requestedAt ?? today(),
+          deviceCount: 0,
+          bookValueTotal: 0,
+          currency:
+            input.currency ??
+            (await settings.get('general', connection)).currency,
+          createdById: context.actorId,
+          createdAt: now,
+          updatedAt: now,
+        },
+        { actor: { id: context.actorId }, transaction: connection },
+      )
+      .catch((error: unknown) => {
+        throw lifecycleRefusal(error);
+      });
     if (deviceIds && deviceIds.length > 0)
       await replaceDevices(connection, id, deviceIds);
     // One creation line that says what it lists, as a device's says its
@@ -497,23 +556,6 @@ export function createDisposalService(dependencies: {
       default:
         throw new ValidationError(`Unknown view: ${String(view)}`, 'view');
     }
-  };
-
-  /**
-   * Asking for approval, and taking the request back, belong to the
-   * disposal's 负责人, or to whoever wrote it before handing it over. Holding `submit` is not enough — the permission set that grants it
-   * also grants `approve`, so without this an approver could submit or
-   * withdraw instead of deciding (the same rule as a purchase order).
-   */
-  const requireOwner = (disposal: Row, context: OperationContext) => {
-    if (
-      context.actorId !== asText(disposal.ownerId) &&
-      context.actorId !== asText(disposal.createdById)
-    )
-      throw new BusinessRuleError(
-        'Only the owner can submit or withdraw this request',
-        'NOT_OWNER',
-      );
   };
 
   return {
@@ -635,6 +677,14 @@ export function createDisposalService(dependencies: {
           .deleteFrom('disposals')
           .where('id', '=', id)
           .execute();
+        // Its lifecycle log goes with it: the tables name records by id
+        // and hold no key to remove them by.
+        for (const table of ['lifecycleEffectRuns', 'lifecycleTransitions'])
+          await connection.query
+            .deleteFrom(table)
+            .where('lifecycle', '=', DISPOSAL_LIFECYCLE)
+            .where('recordId', '=', id)
+            .execute();
         await history.log(
           {
             subjectType: 'disposals',
@@ -668,149 +718,78 @@ export function createDisposalService(dependencies: {
       return listDevices(id);
     },
 
-    async submit(id, approverId, context, conditions) {
-      let approverIds: readonly string[] = [];
-      let title = '';
-      const row = await records.mutate(
-        id,
-        conditions,
-        async (connection, disposal) => {
-          records.requireStatus(disposal, ['draft', 'rejected'], 'submit');
-          requireOwner(disposal, context);
-          await recomputeTotals(connection, id);
-          const refreshed = (await records.findRaw(id, connection)) ?? disposal;
-          if (Number(refreshed.deviceCount) === 0)
-            throw new BusinessRuleError(
-              'Add at least one device before submitting',
-              'NO_DEVICES',
-            );
-          title = requestTitle(disposal.disposalNo, disposal.description);
-          // Every disposal is approved by the person its submitter names;
-          // there is no switch to skip it (removed 2026-09-27).
-          const approval = await approvals.request(
-            {
-              subjectType: 'disposal',
-              subjectId: id,
-              title,
-              amount: Number(refreshed.bookValueTotal ?? 0),
-              approverId,
-            },
-            context,
-            connection,
-          );
-          approverIds = Array.isArray(approval.approverIds)
-            ? (approval.approverIds as string[])
-            : [];
-          // `approvals.request` already wrote the event for this act.
-          await records.setStatus(
-            connection,
-            disposal,
-            'pendingApproval',
-            context,
-            null,
-          );
-        },
-      );
-      await notifier.notify({
-        key: `disposal:${id}:submitted:${String(row.updatedAt)}`,
-        to: approverIds,
-        actorId: context.actorId,
-        title: {
-          key: 'notifications.approvalRequested',
-          params: { title },
-        },
-        body: { key: 'notifications.approvalBody', params: {} },
-        url: `/disposals/${id}`,
-        source: { type: 'disposal', referenceId: id },
-      });
-      return row;
-    },
+    // The approver hears of it, and the requester of the decision, through
+    // the lifecycle's effects once the transaction commits.
+    submit: (id, approverId, context, conditions) =>
+      records.mutate(id, conditions, async (connection, disposal) => {
+        // The guard reads the count the devices make now.
+        await recomputeTotals(connection, id);
+        // Who it asks, and who asks: what the approver is told.
+        await move(connection, disposal, 'submit', context, {
+          approverIds: approverId ? [approverId] : [],
+          requestedById: context.actorId,
+        });
+        const refreshed = (await records.findRaw(id, connection)) ?? disposal;
+        // Every disposal is approved by the person its submitter names;
+        // there is no switch to skip it (removed 2026-09-27). It writes the
+        // event for this act.
+        await approvals.request(
+          {
+            subjectType: 'disposal',
+            subjectId: id,
+            title: requestTitle(disposal.disposalNo, disposal.description),
+            amount: Number(refreshed.bookValueTotal ?? 0),
+            approverId,
+          },
+          context,
+          connection,
+        );
+      }),
 
     withdraw: (id, context, conditions) =>
       records.mutate(id, conditions, async (connection, disposal) => {
-        records.requireStatus(disposal, ['pendingApproval'], 'withdraw');
-        requireOwner(disposal, context);
-        await approvals.withdraw('disposal', id, context, connection);
         // Taking the request back makes it a draft again, the way a
         // purchase order's withdrawal does; the timeline says it was
         // withdrawn.
-        await records.setStatus(connection, disposal, 'draft', context, null);
+        await move(connection, disposal, 'withdraw', context);
+        await approvals.withdraw('disposal', id, context, connection);
       }),
 
-    async decide(id, decision, comment, context, conditions) {
-      let submitterId: string | undefined;
-      let title = '';
-      const row = await records.mutate(
-        id,
-        conditions,
-        async (connection, disposal) => {
-          records.requireStatus(disposal, ['pendingApproval'], 'decide');
-          const pending = (
-            await approvals.forSubject('disposal', id, connection)
-          ).find((approval) => approval.status === 'pending');
-          if (!pending)
-            throw new BusinessRuleError('No pending approval', 'NOT_PENDING');
-          await approvals.decide(
-            String(pending.id),
-            decision,
-            comment,
-            context,
-            connection,
-          );
-          submitterId = String(pending.requestedById);
-          title = requestTitle(disposal.disposalNo, disposal.description);
-          await records.setStatus(
-            connection,
-            disposal,
-            decision === 'approved' ? 'approved' : 'rejected',
-            context,
-            null,
-          );
-          if (decision === 'approved')
-            await applyApproval(connection, disposal, context);
-        },
-      );
-      await notifier.notify({
-        key: `disposal:${id}:${decision}:${String(row.updatedAt)}`,
-        to: [submitterId],
-        actorId: context.actorId,
-        title: {
-          key:
-            decision === 'approved'
-              ? 'notifications.approvalApproved'
-              : 'notifications.approvalRejected',
-          params: { title },
-        },
-        // The approver's own sentence, passed through as written.
-        body: { text: comment ?? '' },
-        url: `/disposals/${id}`,
-        source: { type: 'disposal', referenceId: id },
-      });
-      return row;
-    },
+    decide: (id, decision, comment, context, conditions) =>
+      records.mutate(id, conditions, async (connection, disposal) => {
+        const pending = (
+          await approvals.forSubject('disposal', id, connection)
+        ).find((approval) => approval.status === 'pending');
+        await move(
+          connection,
+          disposal,
+          decision === 'approved' ? 'approve' : 'reject',
+          context,
+          // Who asked hears the decision, in the approver's own words.
+          {
+            comment: comment ?? '',
+            requestedById: asText(pending?.requestedById) ?? null,
+            decidedById: context.actorId,
+          },
+        );
+        // The guard refuses a disposal with no request open.
+        if (!pending)
+          throw new BusinessRuleError('No pending approval', 'NOT_PENDING');
+        await approvals.decide(
+          String(pending.id),
+          decision,
+          comment,
+          context,
+          connection,
+        );
+        if (decision === 'approved')
+          await applyApproval(connection, disposal, context);
+      }),
 
     execute: (id, input, context, conditions) =>
       records.mutate(id, conditions, async (connection, disposal) => {
-        records.requireStatus(disposal, ['approved'], 'execute');
-        // Carrying it out is for the people the request went through: the
-        // side that raised it, and whoever was asked to decide or decided.
-        if (
-          context.actorId !== asText(disposal.ownerId) &&
-          context.actorId !== asText(disposal.createdById)
-        ) {
-          const trail = await approvals.forSubject('disposal', id, connection);
-          const asked = trail.some(
-            (entry) =>
-              asText(entry.decidedById) === context.actorId ||
-              (Array.isArray(entry.approverIds) &&
-                (entry.approverIds as unknown[]).includes(context.actorId)),
-          );
-          if (!asked)
-            throw new BusinessRuleError(
-              'Only the owner or the approver can carry out this disposal',
-              'NOT_INVOLVED',
-            );
-        }
+        // Who may carry it out — the people the request went through — is
+        // the transition's guard, asked when it fires below.
         if (!DATA_WIPE_OPTIONS.includes(input.dataWipe))
           throw new ValidationError('dataWipe is required', 'dataWipe');
         if (input.dataWipe === 'wiped' && !input.wipeMethod)
@@ -828,6 +807,32 @@ export function createDisposalService(dependencies: {
           if (!vendor)
             throw new ValidationError('Vendor not found', 'recipientVendorId');
         }
+        const values = {
+          disposedAt: input.disposedAt ?? today(),
+          proceeds: input.proceeds ?? null,
+          expenses: input.expenses ?? null,
+          currency: input.currency ?? asText(disposal.currency) ?? null,
+          // The request already said where the devices go and what happens
+          // to the data on them; the execution confirms that or corrects
+          // it, and what it does not mention stands. Naming the recipient
+          // the other way replaces it rather than adding a second one.
+          recipientVendorId: statedRecipientName
+            ? null
+            : (input.recipientVendorId ??
+              asText(disposal.recipientVendorId) ??
+              null),
+          recipientName: input.recipientVendorId
+            ? null
+            : (statedRecipientName ?? asText(disposal.recipientName) ?? null),
+          dataWipe: input.dataWipe,
+          wipeMethod: input.dataWipe === 'wiped' ? input.wipeMethod : null,
+          // Who carried it out: the person the executor names, else
+          // whoever pressed the button.
+          executedById: input.executedById ?? context.actorId,
+        };
+        // Written with the state: the execution and what it states commit
+        // together or not at all.
+        await move(connection, disposal, 'execute', context, values);
         const source = { ...context, sourceType: 'disposal', sourceId: id };
         for (const entry of await listDevices(id, connection)) {
           if (entry.status !== 'pendingDisposal')
@@ -851,38 +856,8 @@ export function createDisposalService(dependencies: {
           );
         }
         const devicesDisposed = (await listDevices(id, connection)).length;
-        const values = {
-          disposedAt: input.disposedAt ?? today(),
-          proceeds: input.proceeds ?? null,
-          expenses: input.expenses ?? null,
-          currency: input.currency ?? disposal.currency ?? null,
-          // The request already said where the devices go and what happens
-          // to the data on them; the execution confirms that or corrects
-          // it, and what it does not mention stands. Naming the recipient
-          // the other way replaces it rather than adding a second one.
-          recipientVendorId: statedRecipientName
-            ? null
-            : (input.recipientVendorId ?? disposal.recipientVendorId ?? null),
-          recipientName: input.recipientVendorId
-            ? null
-            : (statedRecipientName ?? disposal.recipientName ?? null),
-          dataWipe: input.dataWipe,
-          wipeMethod: input.dataWipe === 'wiped' ? input.wipeMethod : null,
-          // Who carried it out: the person the executor names, else
-          // whoever pressed the button.
-          executedById: input.executedById ?? context.actorId,
-        };
-        // The status change is logged; the line that tells it is the
-        // execution itself — how many devices went and what it brought in.
-        await records.setStatus(
-          connection,
-          disposal,
-          'executed',
-          context,
-          null,
-          undefined,
-          values,
-        );
+        // The line that tells it is the execution itself — how many devices
+        // went and what it brought in.
         await history.record(
           {
             subjectType: 'disposals',
