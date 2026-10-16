@@ -39,46 +39,52 @@ export function RecipientInput({
   return (
     <div className='grid gap-1.5'>
       {labelled ? <Label>{t('fields.recipient')}</Label> : null}
-      <RadioGroup
-        value={mode}
-        onValueChange={(value: unknown) => {
-          if (value !== 'vendor' && value !== 'other') return;
-          setMode(value);
-          // The other kind's answer goes with it: a record names one
-          // recipient.
-          onChange({ vendorId: null, name: '' });
-        }}
-        className='flex flex-wrap gap-x-6 gap-y-2'
-      >
-        {(['vendor', 'other'] as const).map((value) => (
-          <Label
-            key={value}
-            htmlFor={`${id}-${value}`}
-            className='flex items-center gap-2 font-normal'
-          >
-            <RadioGroupItem value={value} id={`${id}-${value}`} />
-            {t(value === 'vendor' ? 'fields.vendor' : 'common.other')}
-          </Label>
-        ))}
-      </RadioGroup>
-      {mode === 'vendor' ? (
-        <ReferenceSelect
-          id={id}
-          reference={{ collection: 'vendors' }}
-          value={vendorId}
-          onChange={(value) =>
-            onChange({ vendorId: value ? String(value) : null, name: '' })
-          }
-        />
-      ) : (
-        <Input
-          id={id}
-          value={name}
-          onChange={(event) =>
-            onChange({ vendorId: null, name: event.target.value })
-          }
-        />
-      )}
+      {/* The kind, then its answer to the right on the same row
+          (2026-10-16), rather than a second row under it. */}
+      <div className='flex items-center gap-3'>
+        <RadioGroup
+          value={mode}
+          onValueChange={(value: unknown) => {
+            if (value !== 'vendor' && value !== 'other') return;
+            setMode(value);
+            // The other kind's answer goes with it: a record names one
+            // recipient.
+            onChange({ vendorId: null, name: '' });
+          }}
+          className='flex w-auto shrink-0 gap-x-4'
+        >
+          {(['vendor', 'other'] as const).map((value) => (
+            <Label
+              key={value}
+              htmlFor={`${id}-${value}`}
+              className='flex items-center gap-2 font-normal whitespace-nowrap'
+            >
+              <RadioGroupItem value={value} id={`${id}-${value}`} />
+              {t(value === 'vendor' ? 'fields.vendor' : 'common.other')}
+            </Label>
+          ))}
+        </RadioGroup>
+        <div className='min-w-0 flex-1'>
+          {mode === 'vendor' ? (
+            <ReferenceSelect
+              id={id}
+              reference={{ collection: 'vendors' }}
+              value={vendorId}
+              onChange={(value) =>
+                onChange({ vendorId: value ? String(value) : null, name: '' })
+              }
+            />
+          ) : (
+            <Input
+              id={id}
+              value={name}
+              onChange={(event) =>
+                onChange({ vendorId: null, name: event.target.value })
+              }
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
