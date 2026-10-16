@@ -3586,6 +3586,9 @@ const messages = {
       repair: 'Repair shop',
       recycler: 'Recycler',
     },
+    site: 'Shanghai office · Floor plan',
+    live: 'Live',
+    justNow: 'just now',
     outside: 'Outside',
     idle: 'The register is ready',
     statuses: {
@@ -3598,13 +3601,38 @@ const messages = {
       received: {
         device: 'PO-000052',
         what: 'two monitors received by delivery note',
+        by: 'Emily Carter · received by delivery note',
       },
-      assigned: { device: 'SG-LT-061', what: 'handed to new hire Noah Harris' },
-      repair: { device: 'SG-LT-018', what: 'cracked screen, sent for repair' },
-      synced: { device: 'Intune', what: 'synced, devices in use match' },
-      repaired: { device: 'SG-LT-018', what: 'repaired, back at its desk' },
-      disposed: { device: 'SG-PR-002', what: 'disposed of, to the recycler' },
-      counted: { device: 'Stocktake', what: 'warehouse and Floor 3 all match' },
+      assigned: {
+        device: 'SG-LT-061',
+        what: 'handed to new hire Noah Harris',
+        by: 'Ryan Mitchell · onboarding handover',
+      },
+      repair: {
+        device: 'SG-LT-018',
+        what: 'cracked screen, sent for repair',
+        by: 'Ryan Mitchell · repair RP-000012',
+      },
+      synced: {
+        device: 'Intune',
+        what: 'synced, devices in use match',
+        by: 'MDM sync',
+      },
+      repaired: {
+        device: 'SG-LT-018',
+        what: 'repaired, back at its desk',
+        by: 'Ryan Mitchell · repair done',
+      },
+      disposed: {
+        device: 'SG-PR-002',
+        what: 'disposed of, to the recycler',
+        by: 'Approved by Daniel Brooks · disposal DP-000005',
+      },
+      counted: {
+        device: 'Stocktake',
+        what: 'warehouse and Floor 3 all match',
+        by: 'Q3 stocktake · Ryan Mitchell',
+      },
     },
   },
 };

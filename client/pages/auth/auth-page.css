@@ -50,9 +50,51 @@
   }
 }
 
+/* A move's trail on the floor plan, drawn from where the device was. */
+.auth-move-trail {
+  stroke-dashoffset: 0;
+  animation:
+    auth-move-trail 0.8s linear infinite,
+    auth-move-fade 2.4s ease-out forwards;
+}
+
+@keyframes auth-move-trail {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+@keyframes auth-move-fade {
+  0%,
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.25;
+  }
+}
+
+/* The backdrop's devices drift a little, each in its own time. */
+.auth-backdrop-drift {
+  animation: auth-backdrop-drift 6s ease-in-out infinite alternate;
+}
+
+@keyframes auth-backdrop-drift {
+  from {
+    transform: translateY(-4px);
+  }
+  to {
+    transform: translateY(4px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-sync-sweep {
     animation: none;
     left: 0;
+  }
+  .auth-move-trail,
+  .auth-backdrop-drift {
+    animation: none;
   }
 }

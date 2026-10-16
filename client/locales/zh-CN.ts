@@ -3394,6 +3394,9 @@ const zhCN: AppResource = {
       repair: '维修商',
       recycler: '回收商',
     },
+    site: '上海办公室 · 平面图',
+    live: '实时',
+    justNow: '刚刚',
     outside: '公司外',
     idle: '台账已就绪',
     statuses: {
@@ -3403,13 +3406,41 @@ const zhCN: AppResource = {
       disposal: '待报废',
     },
     events: {
-      received: { device: 'PO-000052', what: '两台显示器到货，按送货单入库' },
-      assigned: { device: 'SG-LT-061', what: '发给新员工孙浩' },
-      repair: { device: 'SG-LT-018', what: '屏幕碎裂，送去维修' },
-      synced: { device: 'Intune', what: '同步完成，在用设备与台账一致' },
-      repaired: { device: 'SG-LT-018', what: '修好了，送回工位' },
-      disposed: { device: 'SG-PR-002', what: '报废，交给回收商' },
-      counted: { device: '盘点', what: '仓库和 3 楼全部对上' },
+      received: {
+        device: 'PO-000052',
+        what: '两台显示器到货，按送货单入库',
+        by: '吴静 · 按送货单入库',
+      },
+      assigned: {
+        device: 'SG-LT-061',
+        what: '发给新员工孙浩',
+        by: '周宇 · 入职发放',
+      },
+      repair: {
+        device: 'SG-LT-018',
+        what: '屏幕碎裂，送去维修',
+        by: '周宇 · 维修单 RP-000012',
+      },
+      synced: {
+        device: 'Intune',
+        what: '同步完成，在用设备与台账一致',
+        by: 'MDM 自动同步',
+      },
+      repaired: {
+        device: 'SG-LT-018',
+        what: '修好了，送回工位',
+        by: '周宇 · 维修完成',
+      },
+      disposed: {
+        device: 'SG-PR-002',
+        what: '报废，交给回收商',
+        by: '孙强批准 · 报废单 DP-000005',
+      },
+      counted: {
+        device: '盘点',
+        what: '仓库和 3 楼全部对上',
+        by: '三季度盘点 · 周宇',
+      },
     },
   },
 };
