@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/itam/empty-state';
 import { HistoryBackButton } from '@/components/itam/history-back-button';
 import { CellText } from '@/components/itam/cell-text';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
+import { KeepRegisterDialog } from '@/components/itam/managed-platforms';
 import { HolderLink } from '@/components/itam/holder-link';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { RecordLink } from '@/components/itam/record-link';
@@ -250,7 +251,8 @@ const deviceLabel = (row: {
 function ChecksView(): ReactElement {
   const { t } = useTranslation();
   const review = useDeviceReview('checks');
-  const action = useDeviceReviewAction();
+  // 以台账为准 asks first (2026-10-16): the difference is not raised again.
+  const [keeping, setKeeping] = useState<DeviceCheck>();
   const rows = review.data ?? [];
   const people = useReferenceNames([
     {
@@ -261,81 +263,84 @@ function ChecksView(): ReactElement {
   if (review.isLoading) return <Skeleton className='h-40 w-full rounded-xl' />;
   if (rows.length === 0) return <Empty />;
   return (
-    <div className='overflow-x-auto rounded-lg border border-border bg-card'>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
-            <TableHead>{t('deviceSync.review.columns.difference')}</TableHead>
-            <TableHead>{t('deviceSync.fields.lastSync')}</TableHead>
-            <TableHead>{t('deviceSync.fields.user')}</TableHead>
-            <TableHead>{t('fields.owner')}</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row: DeviceCheck) => (
-            <TableRow key={`${row.deviceId}:${row.kind}`}>
-              <TableCell>
-                <CellText>
-                  <RecordLink
-                    to={`/devices/${row.deviceId}`}
-                    className='font-medium text-foreground hover:underline'
-                  >
-                    {deviceLabel(row)}
-                  </RecordLink>
-                </CellText>
-              </TableCell>
-              <TableCell>
-                <Badge variant={row.critical ? 'destructive' : 'outline'}>
-                  {t(`deviceSync.checks.kinds.${row.kind}`)}
-                </Badge>
-                {row.kind === 'statusMismatch' ? (
-                  <span className='ml-2 text-xs text-muted-foreground'>
-                    {t(`enums.deviceStatus.${row.status}`)}
-                  </span>
-                ) : null}
-              </TableCell>
-              <TableCell className='whitespace-nowrap tabular-nums'>
-                {row.goneAt
-                  ? t('deviceSync.gone', { date: formatDate(row.goneAt) })
-                  : formatDate(row.lastSyncAt, true)}
-              </TableCell>
-              <TableCell>
-                <CellText className='max-w-48'>
-                  {row.personId ? (
-                    <HolderLink holderType='person' holderId={row.personId} />
-                  ) : (
-                    (row.userName ?? '—')
-                  )}
-                </CellText>
-              </TableCell>
-              <TableCell>
-                <CellText className='max-w-48'>
-                  {row.ownerId ? (people.users?.get(row.ownerId) ?? '…') : '—'}
-                </CellText>
-              </TableCell>
-              <TableCell className='text-right'>
-                <Button
-                  size='sm'
-                  variant='ghost'
-                  disabled={action.isPending}
-                  onClick={() =>
-                    action.mutate({
-                      kind: 'dismiss',
-                      deviceId: row.deviceId,
-                      check: row.kind,
-                    })
-                  }
-                >
-                  {t('deviceSync.checks.keepRegister')}
-                </Button>
-              </TableCell>
+    <>
+      <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
+              <TableHead>{t('deviceSync.review.columns.difference')}</TableHead>
+              <TableHead>{t('deviceSync.fields.lastSync')}</TableHead>
+              <TableHead>{t('deviceSync.fields.user')}</TableHead>
+              <TableHead>{t('fields.owner')}</TableHead>
+              <TableHead className='text-right'>
+                {t('common.actions')}
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row: DeviceCheck) => (
+              <TableRow key={`${row.deviceId}:${row.kind}`}>
+                <TableCell>
+                  <CellText>
+                    <RecordLink
+                      to={`/devices/${row.deviceId}`}
+                      className='font-medium text-foreground hover:underline'
+                    >
+                      {deviceLabel(row)}
+                    </RecordLink>
+                  </CellText>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={row.critical ? 'destructive' : 'outline'}>
+                    {t(`deviceSync.checks.kinds.${row.kind}`)}
+                  </Badge>
+                  {row.kind === 'statusMismatch' ? (
+                    <span className='ml-2 text-xs text-muted-foreground'>
+                      {t(`enums.deviceStatus.${row.status}`)}
+                    </span>
+                  ) : null}
+                </TableCell>
+                <TableCell className='whitespace-nowrap tabular-nums'>
+                  {row.goneAt
+                    ? t('deviceSync.gone', { date: formatDate(row.goneAt) })
+                    : formatDate(row.lastSyncAt, true)}
+                </TableCell>
+                <TableCell>
+                  <CellText className='max-w-48'>
+                    {row.personId ? (
+                      <HolderLink holderType='person' holderId={row.personId} />
+                    ) : (
+                      (row.userName ?? '—')
+                    )}
+                  </CellText>
+                </TableCell>
+                <TableCell>
+                  <CellText className='max-w-48'>
+                    {row.ownerId
+                      ? (people.users?.get(row.ownerId) ?? '…')
+                      : '—'}
+                  </CellText>
+                </TableCell>
+                <TableCell className='text-right'>
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    onClick={() => setKeeping(row)}
+                  >
+                    {t('deviceSync.checks.keepRegister')}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <KeepRegisterDialog
+        check={keeping}
+        onClose={() => setKeeping(undefined)}
+      />
+    </>
   );
 }
 
@@ -383,7 +388,9 @@ function UnmanagedView({
               {view === 'exempted' ? (
                 <TableHead>{t('deviceSync.review.columns.reason')}</TableHead>
               ) : null}
-              <TableHead />
+              <TableHead className='text-right'>
+                {t('common.actions')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -452,7 +459,7 @@ function UnmanagedView({
                     ) : (
                       <Button
                         size='sm'
-                        variant='ghost'
+                        variant='outline'
                         onClick={() => {
                           setReason('');
                           setExempting(row);
@@ -630,7 +637,9 @@ function RecordsView({
                   ? t('deviceSync.review.columns.reason')
                   : t('deviceSync.fields.lastSync')}
               </TableHead>
-              <TableHead />
+              <TableHead className='text-right'>
+                {t('common.actions')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -759,7 +768,7 @@ function RecordsView({
                         </Button>
                         <Button
                           size='sm'
-                          variant='ghost'
+                          variant='outline'
                           onClick={() => {
                             setReason('');
                             setIgnoring(row);

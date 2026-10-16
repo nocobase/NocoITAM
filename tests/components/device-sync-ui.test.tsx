@@ -59,7 +59,11 @@ vi.mock('../../client/lib/itam/device-sync.js', () => ({
   useDeviceSyncStatus: () => ({ data: state.status }),
   useOnlineAfterLeaving: () => ({ data: state.online }),
   useDeviceReviewAction: () => ({
-    mutate: state.review,
+    mutate: (variables: unknown, options?: { onSuccess?: () => void }) => {
+      state.review(variables);
+      options?.onSuccess?.();
+    },
+    reset: () => undefined,
     isPending: false,
     error: null,
   }),
@@ -255,6 +259,19 @@ describe("a device's differences with the platform", () => {
     expect(actions.onTransfer).toHaveBeenCalledWith('person-b');
     fireEvent.click(
       screen.getByRole('button', { name: 'deviceSync.checks.keepRegister' }),
+    );
+    // Asked first: nothing is kept until it is confirmed.
+    expect(state.review).not.toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'dismiss' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).getByText('deviceSync.checks.keepRegisterDescription'),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole('button', {
+        name: 'deviceSync.checks.keepRegister',
+      }),
     );
     expect(state.review).toHaveBeenCalledWith({
       kind: 'dismiss',

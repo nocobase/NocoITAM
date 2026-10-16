@@ -1942,6 +1942,9 @@ const zhCN: AppResource = {
       assignTo: '分配给 {{user}}',
       restore: '恢复为库存中',
       keepRegister: '以台账为准',
+      keepRegisterTitle: '以台账为准',
+      keepRegisterDescription:
+        '「{{device}}」的「{{kind}}」不再提示。MDM 里的信息再变化时会重新出现。',
       platformUser: '平台主用户：{{user}}',
     },
     unlink: '解除关联',

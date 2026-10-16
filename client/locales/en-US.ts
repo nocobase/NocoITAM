@@ -2037,6 +2037,9 @@ const messages = {
       assignTo: 'Assign to {{user}}',
       restore: 'Restore to stock',
       keepRegister: 'Keep the register',
+      keepRegisterTitle: 'Keep the register',
+      keepRegisterDescription:
+        '“{{kind}}” on “{{device}}” will no longer be raised. It comes back if what MDM reports changes.',
       platformUser: 'Platform user: {{user}}',
     },
     unlink: 'Unlink',

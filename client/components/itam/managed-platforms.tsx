@@ -155,8 +155,8 @@ function CheckNotice({
   readonly actions?: CheckActions;
 }): ReactElement {
   const { t } = useTranslation();
-  const review = useDeviceReviewAction();
   const ai = useItamAi();
+  const [keeping, setKeeping] = useState(false);
   const [now] = useState(() => Date.now());
   const source = t(`deviceSync.sources.${check.source}`);
   const user = check.userName ?? '';
@@ -221,18 +221,15 @@ function CheckNotice({
             ) : null}
             <Button
               size='sm'
-              variant='ghost'
-              disabled={review.isPending}
-              onClick={() =>
-                review.mutate({
-                  kind: 'dismiss',
-                  deviceId: check.deviceId,
-                  check: check.kind,
-                })
-              }
+              variant='outline'
+              onClick={() => setKeeping(true)}
             >
               {t('deviceSync.checks.keepRegister')}
             </Button>
+            <KeepRegisterDialog
+              check={keeping ? check : undefined}
+              onClose={() => setKeeping(false)}
+            />
           </span>
         ) : null}
         {/* Why it is so and what to do, by the device-sync skill (step 4). */}
@@ -387,5 +384,53 @@ function LastSync({ value }: { readonly value: string | null }): ReactElement {
           : t('deviceSync.daysAgo', { count: days })}
       </span>
     </span>
+  );
+}
+
+/**
+ * 以台账为准, asked first (2026-10-16): the register is right, so this
+ * difference, with what the platform showed, is not raised again — only a
+ * new value brings it back. Shared by MDM 核对 and the device page.
+ */
+export function KeepRegisterDialog({
+  check,
+  onClose,
+}: {
+  readonly check: DeviceCheck | undefined;
+  readonly onClose: () => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  const review = useDeviceReviewAction();
+  return (
+    <ConfirmDialog
+      open={Boolean(check)}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+          review.reset();
+        }
+      }}
+      title={t('deviceSync.checks.keepRegisterTitle')}
+      description={
+        check
+          ? t('deviceSync.checks.keepRegisterDescription', {
+              device: [check.deviceNo, check.deviceName]
+                .filter(Boolean)
+                .join(' / '),
+              kind: t(`deviceSync.checks.kinds.${check.kind}`),
+            })
+          : ''
+      }
+      busy={review.isPending}
+      error={review.error}
+      confirmLabel={t('deviceSync.checks.keepRegister')}
+      onConfirm={() => {
+        if (!check) return;
+        review.mutate(
+          { kind: 'dismiss', deviceId: check.deviceId, check: check.kind },
+          { onSuccess: onClose },
+        );
+      }}
+    />
   );
 }
