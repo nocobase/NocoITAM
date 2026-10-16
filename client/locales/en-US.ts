@@ -2361,6 +2361,8 @@ const messages = {
         'A linked platform record cannot be kept off the register',
       'There is no such difference on this device':
         'There is no such difference on this device',
+      'Demo data is being imported':
+        'Demo data is being imported; wait for it to finish',
       'Demo data already exists; clear it first':
         'Demo data already exists; clear it first',
       'Disposal is only reached through the disposal process':
@@ -2697,6 +2699,7 @@ const messages = {
       },
       banner:
         'No demo data yet. Import a sample company to try purchasing, assignment, repairs, stocktakes and offboarding with realistic records.',
+      importing: 'Importing demo data…',
       bannerAction: 'Import demo data',
       bannerDismiss: 'Dismiss',
     },

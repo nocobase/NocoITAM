@@ -2231,6 +2231,7 @@ const zhCN: AppResource = {
       'A linked platform record cannot be kept off the register':
         '已关联台账设备的 MDM 记录不能标为不纳入台账',
       'There is no such difference on this device': '这台设备上没有这项差异',
+      'Demo data is being imported': '演示数据正在导入，请稍候',
       'Demo data already exists; clear it first': '演示数据已存在，请先清除',
       'Disposal is only reached through the disposal process':
         '只能通过报废流程报废设备',
@@ -2540,6 +2541,7 @@ const zhCN: AppResource = {
       },
       banner:
         '还没有演示数据。导入一家示例公司，用真实感的记录体验采购、分配、维修、盘点和离职交接。',
+      importing: '正在导入演示数据…',
       bannerAction: '导入演示数据',
       bannerDismiss: '不再显示',
     },

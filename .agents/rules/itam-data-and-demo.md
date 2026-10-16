@@ -77,7 +77,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `client/layouts/app-layout.tsx` — an application change to the layout)
   offers it to whoever holds the settings grant the demo endpoints require,
   links to `/settings/demo` and, dismissed, stays away in that
-  browser. Clearing it takes its numbers too: `numbering.rewind()` moves
+  browser. While an import runs, the tab and the banner — dismissed or not —
+  show how far it has got (2026-10-16, after NocoCRM's): `status()` returns
+  `importing: { percent }` from a per-process counter `generate()` moves at
+  each step, and the page asks every second. Each step also yields the event
+  loop (`reached` in `demo.ts`): the SQLite driver is synchronous, so without
+  it the status requests waited for the whole import. A second import is
+  refused while one runs (`DEMO_IMPORTING`). Clearing it takes its numbers too: `numbering.rewind()` moves
   each sequence back to just past the highest number still in use (never
   forward, only under the current prefix), so on a database that held only
   the demo the next import starts at PO-000001 again rather than climbing

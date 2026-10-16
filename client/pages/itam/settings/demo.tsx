@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -24,8 +25,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useApi } from '@/lib/itam/api';
-import { formatDate } from '@/lib/itam/format';
+import { apiErrorBody, useApi } from '@/lib/itam/api';
+import { errorMessage, formatDate } from '@/lib/itam/format';
 
 /** 设置 → 演示数据, the last tab: a trial's, rarely opened once ITAM is in use. */
 export default function DemoSettingsPage(): ReactElement {
@@ -59,6 +60,8 @@ interface DemoSummary {
   readonly accountsByLanguage: Readonly<
     Record<DemoLanguage, readonly DemoAccount[]>
   >;
+  /** An import under way: how far it has got, 0 to 100. */
+  readonly importing: { readonly percent: number } | null;
 }
 
 /**
@@ -82,6 +85,8 @@ function DemoCard(): ReactElement {
     queryKey: ['itam', 'demo'],
     queryFn: async () =>
       (await api.request<{ data: DemoSummary }>({ path: 'itam/demo' })).data,
+    // How far an import has got, asked every second while one runs.
+    refetchInterval: (query) => (query.state.data?.importing ? 1000 : false),
   });
   const act = useMutation({
     mutationFn: (action: 'generate' | 'clear') =>
@@ -90,6 +95,19 @@ function DemoCard(): ReactElement {
         method: 'POST',
         json: action === 'generate' ? { language } : {},
       }),
+    // An import closes its dialog and shows its progress on the card and in
+    // the banner at once (2026-10-16, after NocoCRM's), rather than holding
+    // a spinner in the dialog for the minute it takes.
+    onMutate: (action) => {
+      if (action !== 'generate') return;
+      setConfirming(undefined);
+      queryClient.setQueryData<DemoSummary>(['itam', 'demo'], (current) =>
+        current ? { ...current, importing: { percent: 0 } } : current,
+      );
+    },
+    onError: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['itam', 'demo'] });
+    },
     onSuccess: async (_result, action) => {
       setConfirming(undefined);
       setNotice(
@@ -103,6 +121,7 @@ function DemoCard(): ReactElement {
     },
   });
   const demo = status.data;
+  const importing = demo?.importing ?? null;
   const accounts = demo
     ? demo.generated
       ? demo.accounts
@@ -155,13 +174,34 @@ function DemoCard(): ReactElement {
             </Table>
           </div>
         ) : null}
+        {importing ? (
+          <div className='space-y-1.5'>
+            <div className='flex items-center justify-between gap-3 text-sm'>
+              <span>{t('settings.demo.importing')}</span>
+              <span className='text-muted-foreground tabular-nums'>
+                {importing.percent}%
+              </span>
+            </div>
+            <Progress
+              value={importing.percent}
+              aria-label={t('settings.demo.importing')}
+            />
+          </div>
+        ) : null}
+        {act.error && act.variables === 'generate' && !confirming ? (
+          <p className='text-sm text-destructive'>
+            {apiErrorBody(act.error)?.message ?? errorMessage(act.error)}
+          </p>
+        ) : null}
         <p className='text-sm'>
-          {demo?.generated
-            ? t('settings.demo.present', {
-                date: formatDate(demo.createdAt, true),
-                count: demo.records,
-              })
-            : t('settings.demo.none')}
+          {importing
+            ? null
+            : demo?.generated
+              ? t('settings.demo.present', {
+                  date: formatDate(demo.createdAt, true),
+                  count: demo.records,
+                })
+              : t('settings.demo.none')}
         </p>
         {notice ? (
           <p role='status' className='rounded-md bg-primary/10 p-3 text-sm'>
@@ -169,7 +209,7 @@ function DemoCard(): ReactElement {
           </p>
         ) : null}
         <div className='flex flex-wrap items-center gap-2'>
-          {demo && !demo.generated ? (
+          {demo && !demo.generated && !importing ? (
             <>
               <Label htmlFor='demo-language'>
                 {t('settings.demo.language')}
@@ -207,7 +247,7 @@ function DemoCard(): ReactElement {
               </Button>
             </>
           ) : null}
-          {demo?.generated ? (
+          {demo?.generated && !importing ? (
             <Button
               variant='outline'
               disabled={act.isPending}

@@ -400,6 +400,29 @@ describe('CSV import / export and demo data', () => {
     });
   });
 
+  it('reports how far an import has got while it runs, and runs one at a time', async () => {
+    type Status = {
+      generated: boolean;
+      importing: { percent: number } | null;
+    };
+    const running = post('demo/generate', { language: 'en-US' });
+    // Under way as soon as the request is in.
+    let status = await data<Status>(await get('demo'));
+    for (let tries = 0; !status.importing && tries < 50; tries += 1) {
+      await new Promise((done) => setTimeout(done, 5));
+      status = await data<Status>(await get('demo'));
+    }
+    expect(status.importing?.percent).toBeGreaterThanOrEqual(0);
+    expect(status.importing?.percent).toBeLessThanOrEqual(100);
+    // A second import is refused while the first runs.
+    expect((await post('demo/generate', { language: 'en-US' })).status).toBe(
+      422,
+    );
+    expect((await running).status).toBe(200);
+    status = await data<Status>(await get('demo'));
+    expect(status).toMatchObject({ generated: true, importing: null });
+  });
+
   it('fills an empty default kit rather than adding a second one', async () => {
     // 设置本部门默认配置 on a department with nothing above it to copy.
     const empty = await data<{ id: string }>(

@@ -6,6 +6,7 @@ import { useState, type ReactElement } from 'react';
 import { Link } from 'react-router';
 
 import { Button, buttonVariants } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useApi } from '@/lib/itam/api';
 
 /**
@@ -15,6 +16,8 @@ import { useApi } from '@/lib/itam/api';
  * 演示数据 tab of the settings page and goes by itself once the import is
  * done; dismissed, it stays away in this browser. The dismissal is a
  * convenience, so blocked or cleared storage only means it shows again.
+ * While an import runs it shows how far it has got instead, dismissed or
+ * not, asking the server every second (2026-10-16, as NocoCRM's).
  */
 const DISMISSED_KEY = 'nocoitam:demo-banner-dismissed';
 
@@ -40,12 +43,43 @@ export function DemoBanner(): ReactElement | null {
     queryKey: ['itam', 'demo'],
     queryFn: async () =>
       (
-        await api.request<{ data: { generated: boolean } }>({
+        await api.request<{
+          data: {
+            generated: boolean;
+            importing: { percent: number } | null;
+          };
+        }>({
           path: 'itam/demo',
         })
       ).data,
-    enabled: can === true && !dismissed,
+    enabled: can === true,
+    refetchInterval: (query) => (query.state.data?.importing ? 1000 : false),
   });
+  const importing = status.data?.importing ?? null;
+  if (can === true && importing)
+    return (
+      <div
+        role='region'
+        aria-label={t('settings.demo.title')}
+        className='flex items-center gap-3 border-b bg-info px-4 py-2 text-sm sm:px-6'
+      >
+        <Database
+          className='size-4 shrink-0 text-info-foreground'
+          aria-hidden
+        />
+        <p className='min-w-0 flex-1 text-foreground'>
+          {t('settings.demo.importing')}
+        </p>
+        <Progress
+          value={importing.percent}
+          aria-label={t('settings.demo.importing')}
+          className='w-40 shrink-0 sm:w-56'
+        />
+        <span className='w-9 shrink-0 text-right text-xs text-muted-foreground tabular-nums'>
+          {importing.percent}%
+        </span>
+      </div>
+    );
   if (dismissed || can !== true || status.data?.generated !== false)
     return null;
   const dismiss = (): void => {
