@@ -3211,6 +3211,28 @@ is undone by `202610170002_drop_agent_run_plans`. The schedule
 `itam.agent-passes` is no longer defined; a database that synchronised it
 keeps it until `scheduler sync --finalize` deactivates it.
 
+### 2026-10-17 维修单整理: the kind of fault, and whether to repair at all
+
+The first AI work chosen by the rule of step 2 (a judgement, on material
+the register holds), and not a work agent: it is asked from the new repair
+form, when the repair is filed.
+
+- **Rules first, no model.** Above the form's fields: the device's warranty
+  (and whether it still holds), age, book value and how often it was
+  repaired. A device under warranty starts as a warranty repair to its own
+  vendor.
+- **A kind of fault.** Repairs gain `faultCategory` (migration
+  `202610170003_repair_fault_category`, optional): screen, keyboard,
+  battery, power, storage, network, system, peripheral, physical, other.
+  Picked on the form, or filled by Noco; reports can count by it later.
+- **让 Noco 看看** (`POST /itam/ai/read`, task `repairTriage`, under
+  `repairs.create`). The server reads the device as the person — model, age,
+  warranty, book value when they may see costs, its last repairs, and its
+  model's repairs over the last year by kind — and the model returns the
+  kind of fault (filled, marked 请核对), repair / replace / inspect, and at
+  most three reasons with the facts they rest on. The person decides.
+- The repairs list creates through the same dialog as the device page.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

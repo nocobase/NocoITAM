@@ -45,6 +45,19 @@ export const REPAIR_RESULTS = [
   'replaced',
 ] as const;
 export type RepairResult = (typeof REPAIR_RESULTS)[number];
+/** The kinds of fault a repair is filed under (2026-10-17). */
+export const REPAIR_FAULT_CATEGORIES = [
+  'screen',
+  'keyboard',
+  'battery',
+  'power',
+  'storage',
+  'network',
+  'system',
+  'peripheral',
+  'physical',
+  'other',
+] as const;
 
 export interface RepairInput extends Row {
   readonly deviceId: string;
@@ -53,6 +66,7 @@ export interface RepairInput extends Row {
   readonly method: (typeof REPAIR_METHODS)[number];
   readonly vendorId?: string | null;
   readonly faultDescription: string;
+  readonly faultCategory?: (typeof REPAIR_FAULT_CATEGORIES)[number] | null;
   readonly sentAt?: string;
   readonly expectedReturnAt?: string | null;
   readonly cost?: number | null;
@@ -226,6 +240,7 @@ export function createRepairService(dependencies: {
         method: input.method,
         vendorId: input.vendorId ?? null,
         faultDescription: input.faultDescription,
+        faultCategory: input.faultCategory ?? null,
         sentAt: input.sentAt ?? today(),
         expectedReturnAt: input.expectedReturnAt ?? null,
         actualReturnAt: null,

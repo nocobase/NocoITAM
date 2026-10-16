@@ -35,4 +35,5 @@ export type AiReadingTask =
   | 'purchaseLines'
   | 'model'
   | 'softwareProduct'
-  | 'deliveryDocument';
+  | 'deliveryDocument'
+  | 'repairTriage';
