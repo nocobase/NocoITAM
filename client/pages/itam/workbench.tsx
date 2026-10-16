@@ -109,38 +109,33 @@ export default function WorkbenchPage(): ReactElement {
   );
   return (
     <Page wide>
-      {/* The title, the switches and what waits stay pinned as the page
-          scrolls (2026-10-17); 需要关注 below them scrolls away. */}
+      <PageHeader title={t('workbench.title')} />
+      {/* 需要关注 first (2026-10-17): risks, not work, read before the
+          to-dos and scrolled away with the title. */}
+      <AttentionBand />
+      {/* The switches and what waits stay pinned as the page scrolls: one
+          count per column, which jumps to it — a column off the right edge
+          is still said. */}
       <div
         ref={barRef}
-        className='sticky top-0 z-10 -mx-6 space-y-3 bg-background/85 px-6 py-3 backdrop-blur-xl'
+        className='sticky top-0 z-10 -mx-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-background/85 px-6 py-2.5 backdrop-blur-xl'
       >
-        <PageHeader
-          title={t('workbench.title')}
-          actions={
-            <>
-              <WorkViewToggle
-                value={view}
-                onChange={(next) => {
-                  setView(next);
-                  try {
-                    localStorage.setItem(VIEW_KEY, next);
-                  } catch {
-                    // Storage unavailable: kept until the page is left.
-                  }
-                }}
-              />
-              <WorkScopeToggle />
-            </>
-          }
-        />
-        {/* What is waiting, one count per column, which jumps to it — a
-          column off the right edge is still said. */}
-        {loading ? null : <WorkCounts cards={cards} />}
+        {loading ? <span /> : <WorkCounts cards={cards} />}
+        <div className='ml-auto flex shrink-0 items-center gap-2'>
+          <WorkViewToggle
+            value={view}
+            onChange={(next) => {
+              setView(next);
+              try {
+                localStorage.setItem(VIEW_KEY, next);
+              } catch {
+                // Storage unavailable: kept until the page is left.
+              }
+            }}
+          />
+          <WorkScopeToggle />
+        </div>
       </div>
-      {/* 需要关注 above the to-dos (2026-10-17): risks, not work, and as a
-          column it took a board's place. */}
-      <AttentionBand />
       {view === 'board' ? (
         // The board is the window's height less the header and the pinned
         // bar, and scrolls with the page (2026-10-17): scrolled past the
