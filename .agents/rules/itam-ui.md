@@ -377,3 +377,16 @@ opens the history at the comment (`?focus=`). Files are uploaded to
 `itamAttachments` first and attached by id only within the hour and while
 linked to nothing — an id alone does not hand somebody else's file over —
 and the comment keeps their names; they are not the record's attachments.
+
+- Files read one way everywhere (2026-10-16, after NocoCRM's
+  comment-files.tsx): `FileRows` in `client/components/itam/file-cards.tsx`
+  — a row per file with its kind's tinted tile, name, size, who and when,
+  download and remove — on a record's 附件 tab and under a comment, and
+  `FileChips` for files a comment is about to be posted with. Files are
+  added through `FileDropZone` (one dashed line, lit while files are over
+  it), which uploads each on its own and refuses one over
+  `MAX_UPLOAD_BYTES` (20 MB, the `itamAttachments` exposure's limit) before
+  sending it, in words (`uploadFailure`). The 附件 tab lists the files the
+  record's comments carry as a group of their own (`source: 'comments'`
+  from the attachment service), which it does not remove; a comment's
+  author takes one off on the comment itself (`keepFileIds` on its edit).
