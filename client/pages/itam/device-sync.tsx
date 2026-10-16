@@ -332,7 +332,7 @@ function ChecksView(): ReactElement {
                   <CellText>
                     <RecordLink
                       to={`/devices/${row.deviceId}`}
-                      className='font-medium text-foreground hover:underline'
+                      className='font-medium text-link underline-offset-4 hover:underline'
                     >
                       {deviceLabel(row)}
                     </RecordLink>
@@ -440,7 +440,7 @@ function LinkedView(): ReactElement {
                 <CellText>
                   <RecordLink
                     to={`/devices/${row.linkedDevice.id}`}
-                    className='font-medium text-foreground hover:underline'
+                    className='font-medium text-link underline-offset-4 hover:underline'
                   >
                     {deviceLabel(row.linkedDevice)}
                   </RecordLink>
@@ -622,7 +622,7 @@ function DismissedView(): ReactElement {
                 <CellText>
                   <RecordLink
                     to={`/devices/${row.deviceId}`}
-                    className='font-medium text-foreground hover:underline'
+                    className='font-medium text-link underline-offset-4 hover:underline'
                   >
                     {deviceLabel(row)}
                   </RecordLink>
@@ -733,7 +733,7 @@ function UnmanagedView({
                   <CellText>
                     <RecordLink
                       to={`/devices/${row.id}`}
-                      className='font-medium text-foreground hover:underline'
+                      className='font-medium text-link underline-offset-4 hover:underline'
                     >
                       {deviceLabel(row)}
                     </RecordLink>

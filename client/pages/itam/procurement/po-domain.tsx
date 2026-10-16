@@ -798,7 +798,7 @@ function GeneratedDevices({
                       <CellText>
                         <RecordLink
                           to={`/devices/${id}`}
-                          className='font-medium text-foreground hover:underline'
+                          className='font-medium text-link underline-offset-4 hover:underline'
                         >
                           {device ? deviceLabel(device) : '…'}
                         </RecordLink>
