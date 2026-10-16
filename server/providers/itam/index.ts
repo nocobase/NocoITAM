@@ -14,7 +14,12 @@ import type { Application } from '@nocobase/app-server/application';
 import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
 import { notificationServiceToken } from '@nocobase/app-plugin-notification/server';
 import type { AppI18nConfig } from '@nocobase/app-server/i18n';
+import { jobExecutorServiceToken } from '@nocobase/app-server/jobs';
 import { loggingToken } from '@nocobase/app-server/logging';
+import {
+  createLifecycleJobs,
+  type LifecycleJobs,
+} from '@nocobase/lifecycle/jobs';
 import { driveManagerToken } from '@nocobase/app-server/drive';
 import {
   realtimeServiceToken,
@@ -61,6 +66,12 @@ import {
   type DemoAccounts,
 } from './demo.js';
 import { createDisposalService, disposalServiceToken } from './disposals.js';
+import {
+  createItamLifecycleRuntime,
+  LIFECYCLE_EFFECT_JOB,
+  LIFECYCLE_JOB_SCOPE,
+  lifecycleRuntimeToken,
+} from './lifecycles.js';
 import { createImportService, importServiceToken } from './imports.js';
 import {
   createProcurementService,
@@ -335,6 +346,49 @@ function demoAccounts(container: ServiceContainer): DemoAccounts {
 export default class ItamProvider extends ServiceProvider<Application> {
   public readonly name: string = 'itam/core';
   private changesTopic: RealtimePublicTopic<ItamChangesEvent> | undefined;
+  /**
+   * Runs the lifecycles' effects as jobs and sweeps them every minute
+   * (2026-10-18): only where the application has jobs, which a test's
+   * container does not.
+   */
+  private lifecycleJobs: LifecycleJobs | undefined;
+
+  private effectJobs(): LifecycleJobs | undefined {
+    const container = this.app.container;
+    if (this.lifecycleJobs || !container.has(jobExecutorServiceToken))
+      return this.lifecycleJobs;
+    const executors = container.resolve(jobExecutorServiceToken);
+    // A scope of its own: the agents' runs hold `itam` with their own
+    // concurrency, and one scope keeps one queue file.
+    this.lifecycleJobs = createLifecycleJobs({
+      jobs: executors.getJobExecutor(LIFECYCLE_JOB_SCOPE),
+      schedule: executors.getScheduleExecutor(LIFECYCLE_JOB_SCOPE),
+      jobName: LIFECYCLE_EFFECT_JOB,
+      sweepEveryMs: 60_000,
+      // Finished effect runs are kept a week for anyone looking into one.
+      onSweep: async () => {
+        await container
+          .resolve(lifecycleRuntimeToken)
+          .prune({ olderThan: new Date(Date.now() - 7 * 86_400_000) });
+      },
+      logger: this.lifecycleLogger(),
+    });
+    return this.lifecycleJobs;
+  }
+
+  private lifecycleLogger() {
+    const container = this.app.container;
+    const logger = () =>
+      container.has(loggingToken)
+        ? container.resolve(loggingToken).getLogger('lifecycle')
+        : undefined;
+    return {
+      warn: (message: string, details?: unknown) =>
+        logger()?.warn({ details }, message),
+      error: (message: string, details?: unknown) =>
+        logger()?.error({ details }, message),
+    };
+  }
 
   public override register(): void {
     const container = this.app.container;
@@ -530,6 +584,16 @@ export default class ItamProvider extends ServiceProvider<Application> {
         numbering: container.resolve(numberingServiceToken),
       }),
     );
+    container.singleton(lifecycleRuntimeToken, () => {
+      const dispatcher = this.effectJobs();
+      return createItamLifecycleRuntime({
+        database: container.resolve(databaseManagerToken),
+        approvals: container.resolve(approvalServiceToken),
+        notifier: container.resolve(itamNotifierToken),
+        ...(dispatcher ? { dispatcher } : {}),
+        logger: this.lifecycleLogger(),
+      });
+    });
     container.singleton(disposalServiceToken, () =>
       createDisposalService({
         database: container.resolve(databaseManagerToken),
@@ -540,7 +604,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         devices: container.resolve(deviceServiceToken),
         entitlements: container.resolve(entitlementServiceToken),
         stock: container.resolve(stockServiceToken),
-        notifier: container.resolve(itamNotifierToken),
+        lifecycles: container.resolve(lifecycleRuntimeToken),
       }),
     );
     container.singleton(auditServiceToken, () =>
@@ -784,6 +848,20 @@ export default class ItamProvider extends ServiceProvider<Application> {
   }
 
   public override async start(): Promise<void> {
+    // The lifecycles' effects and sweep, and what an earlier process left
+    // queued. Like the agents' setup, it never stops the application
+    // starting — a database not yet migrated has no log to recover from —
+    // and is tried again at the next start.
+    const jobs = this.effectJobs();
+    if (jobs)
+      try {
+        await jobs.start(this.app.container.resolve(lifecycleRuntimeToken));
+      } catch (error) {
+        this.lifecycleLogger().error(
+          'The lifecycle effects did not start',
+          error,
+        );
+      }
     if (!this.app.container.has(authorizationToken)) return;
     // Idempotent and cheap: older seeds may have just re-granted the
     // removed tickets collection and pages or the tables that became
@@ -791,6 +869,10 @@ export default class ItamProvider extends ServiceProvider<Application> {
     await reconcileGrants(
       this.app.container.resolve(authorizationToken).permissionSets,
     );
+  }
+
+  public override async shutdown(): Promise<void> {
+    await this.lifecycleJobs?.shutdown();
   }
 
   public override boot(): Promise<void> {

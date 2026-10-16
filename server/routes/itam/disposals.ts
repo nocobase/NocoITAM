@@ -5,6 +5,7 @@ import {
   defineApiRoutes,
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
+import { lifecycleDescriptionView } from '@nocobase/lifecycle';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -21,6 +22,8 @@ import {
   DISPOSAL_REASONS,
   WIPE_METHODS,
 } from '../../providers/itam/disposals.js';
+import { DISPOSAL_LIFECYCLE } from '../../lifecycles/disposals.js';
+import { lifecycleRuntimeToken } from '../../providers/itam/lifecycles.js';
 import { createCrudRoutes } from './crud-routes.js';
 import { decideCollection, errorResponse, principalId } from './http.js';
 
@@ -52,6 +55,7 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
     const disposals = app.container.resolve(disposalServiceToken);
     const approvals = app.container.resolve(approvalServiceToken);
     const history = app.container.resolve(historyServiceToken);
+    const lifecycles = app.container.resolve(lifecycleRuntimeToken);
 
     const routes = createCrudRoutes({
       collection: 'disposals',
@@ -91,6 +95,64 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
       updateSchema: disposalSchema.omit({ deviceIds: true }).partial(),
       middleware: [auth.required(), authorization.middleware()],
       before: (routes, { decide, operationContext, operation }) => {
+        // The lifecycle as its flowchart draws it (2026-10-18): states and
+        // transitions, from source; nothing about any one disposal.
+        routes.get('/lifecycle', async (context) => {
+          try {
+            await decide(context, 'read');
+            return context.json({
+              data: lifecycleDescriptionView(lifecycles, DISPOSAL_LIFECYCLE),
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
+        // Where one disposal stands on it: its state, what the reader may
+        // do next and why not, the moves it made, and the notifications
+        // they owe — never the record itself, whose fields the reader's
+        // field rules shape on the record's own route.
+        routes.get('/:id/lifecycle', async (context) => {
+          try {
+            const conditions = await decide(context, 'read');
+            const disposalId = context.req.param('id');
+            if (!(await disposals.get(disposalId, conditions)))
+              return context.json(
+                { code: 'NOT_FOUND', message: 'Record not found' },
+                404,
+              );
+            const view = await lifecycles.view(DISPOSAL_LIFECYCLE, disposalId, {
+              id: principalId(context),
+            });
+            return context.json({
+              data: {
+                state: view.state,
+                version: view.version,
+                available: view.available.map((transition) => ({
+                  name: transition.name,
+                  allowed: transition.allowed,
+                  blockers: transition.blockers.map((blocker) => ({
+                    code: blocker.code,
+                    kind: blocker.kind,
+                  })),
+                })),
+                history: view.history.transitions.map((entry) => ({
+                  transition: entry.transition,
+                  from: entry.from,
+                  to: entry.to,
+                  actorId: entry.actorId,
+                  at: entry.at,
+                })),
+                effects: view.history.effectRuns.map((run) => ({
+                  effect: run.effect,
+                  status: run.status,
+                  attempts: run.attempts,
+                })),
+              },
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
         // The disposals a device is or was listed on, for its detail page.
         routes.get('/for-device/:deviceId', async (context) => {
           try {

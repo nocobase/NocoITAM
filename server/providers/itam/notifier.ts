@@ -17,7 +17,10 @@ import {
  * resolves it in the deployment's language.
  */
 export type TranslatableText =
-  | { readonly key: string; readonly params?: Readonly<Record<string, unknown>> }
+  | {
+      readonly key: string;
+      readonly params?: Readonly<Record<string, unknown>>;
+    }
   /**
    * Somebody's own words — an approver's comment — which pass through as
    * they were written. The rule is that the *application* does not write
@@ -40,6 +43,13 @@ export interface NotificationInput {
 
 export interface ItamNotifier {
   notify(input: NotificationInput): Promise<void>;
+  /**
+   * The same delivery, failing when a recipient's does: for a lifecycle
+   * effect (2026-10-18), which retries what failed and keeps the failure
+   * visible rather than only logging it. The plugin deduplicates by key, so
+   * a retry does not reach anyone twice.
+   */
+  deliver(input: NotificationInput): Promise<void>;
 }
 
 export const itamNotifierToken: ServiceToken<ItamNotifier> =
@@ -74,37 +84,53 @@ export function createItamNotifier(
   translate: (text: TranslatableText) => string = (text) =>
     'text' in text ? text.text : text.key,
 ): ItamNotifier {
-  return {
-    async notify(input) {
-      if (!send) return;
-      const recipients = [
-        ...new Set(
-          input.to.filter(
-            (id): id is string =>
-              typeof id === 'string' && id.length > 0 && id !== input.actorId,
-          ),
+  const deliver = async (
+    input: NotificationInput,
+    failed: (id: string, error: unknown) => void,
+  ): Promise<void> => {
+    if (!send) return;
+    const recipients = [
+      ...new Set(
+        input.to.filter(
+          (id): id is string =>
+            typeof id === 'string' && id.length > 0 && id !== input.actorId,
         ),
-      ];
-      for (const id of recipients) {
-        try {
-          await send({
-            idempotencyKey: `itam:${input.key}:${id}:in-app`,
-            source: input.source,
-            messages: {
-              'in-app': {
-                to: id,
-                title: translate(input.title),
-                body: translate(input.body),
-                ...(input.url
-                  ? { target: { type: 'route' as const, path: input.url } }
-                  : {}),
-              },
+      ),
+    ];
+    for (const id of recipients) {
+      try {
+        await send({
+          idempotencyKey: `itam:${input.key}:${id}:in-app`,
+          source: input.source,
+          messages: {
+            'in-app': {
+              to: id,
+              title: translate(input.title),
+              body: translate(input.body),
+              ...(input.url
+                ? { target: { type: 'route' as const, path: input.url } }
+                : {}),
             },
-          });
-        } catch (error) {
-          log(`Notification ${input.key} to ${id} failed`, error);
-        }
+          },
+        });
+      } catch (error) {
+        failed(id, error);
       }
+    }
+  };
+  return {
+    notify: (input) =>
+      deliver(input, (id, error) =>
+        log(`Notification ${input.key} to ${id} failed`, error),
+      ),
+    async deliver(input) {
+      const failures: unknown[] = [];
+      await deliver(input, (_id, error) => failures.push(error));
+      if (failures.length > 0)
+        throw new AggregateError(
+          failures,
+          `Notification ${input.key} failed for ${String(failures.length)} recipient(s)`,
+        );
     },
   };
 }

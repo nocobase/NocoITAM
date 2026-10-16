@@ -208,6 +208,7 @@ const zhCN: AppResource = {
   },
   tabs: {
     history: '历史',
+    flow: '流程',
     children: '子级',
     holdings: '归属',
     relatedAssets: '关联资产',
@@ -2757,6 +2758,30 @@ const zhCN: AppResource = {
     noAssets: '尚未添加设备',
     noneForDevice: '这台设备没有报废单',
     approverForSubmit: '提交审批时必填；只保存草稿可以不选。',
+    // The moves on its 流程 tab, by the lifecycle's transition names.
+    transitions: {
+      $create: '创建',
+      submit: '提交审批',
+      withdraw: '撤回',
+      approve: '批准',
+      reject: '拒绝',
+      execute: '执行报废',
+    },
+  },
+  // A record's 流程 tab (2026-10-18).
+  lifecycle: {
+    diagram: '流程图',
+    end: '结束',
+    undelivered_one: '有 {{count}} 条通知未能送达',
+    undelivered_other: '有 {{count}} 条通知未能送达',
+  },
+  // The UI Library's diagram component.
+  flowDiagram: {
+    empty: '没有可显示的状态。',
+    failed: '无法绘制这张流程图。',
+    loading: '正在绘制流程图…',
+    nodeHelp: '按 Enter 或空格选中一个状态。',
+    edgeHelp: '按 Enter 或空格选中一个流转。',
   },
   reports: {
     unassigned: '未指定',
