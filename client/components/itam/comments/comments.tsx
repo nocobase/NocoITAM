@@ -445,6 +445,8 @@ function Message({
   const [unfiling, setUnfiling] = useState<CommentFile>();
   // The files an edit keeps: all of them until one is taken off.
   const [keptIds, setKeptIds] = useState<string[]>([]);
+  // A file the edit is about to drop, asked about first.
+  const [dropping, setDropping] = useState<CommentFile>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const author =
@@ -598,8 +600,8 @@ function Message({
                 to be taken off with the text's change (2026-10-16). */}
             <FileChips
               files={filesOf(event).filter((file) => keptIds.includes(file.id))}
-              onRemove={(file) =>
-                setKeptIds((ids) => ids.filter((id) => id !== file.id))
+              onRemove={(card) =>
+                setDropping(filesOf(event).find((file) => file.id === card.id))
               }
             />
             <div className='flex justify-end gap-2'>
@@ -677,6 +679,23 @@ function Message({
         busy={busy}
         error={error}
         onConfirm={() => void write('PATCH', unfiling)}
+      />
+      <ConfirmDialog
+        open={dropping !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setDropping(undefined);
+        }}
+        title={t('comments.removeFileTitle')}
+        description={t('comments.removeFileDescription', {
+          name: dropping?.filename ?? '',
+        })}
+        confirmLabel={t('actions.delete')}
+        destructive
+        onConfirm={() => {
+          const id = dropping?.id;
+          setKeptIds((ids) => ids.filter((kept) => kept !== id));
+          setDropping(undefined);
+        }}
       />
     </div>
   );

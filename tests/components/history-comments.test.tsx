@@ -180,7 +180,12 @@ it('keeps a comment’s files in view while it is edited, and saves those kept',
   fireEvent.click(
     screen.getByRole('button', { name: 'comments.removeFile: sheet.xlsx' }),
   );
-  expect(screen.queryByText('sheet.xlsx')).toBeNull();
+  // Asked first.
+  expect(screen.getByText('sheet.xlsx')).toBeVisible();
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'actions.delete' }),
+  );
+  await waitFor(() => expect(screen.queryByText('sheet.xlsx')).toBeNull());
   fireEvent.click(screen.getByRole('button', { name: 'actions.save' }));
   await waitFor(() =>
     expect(state.request).toHaveBeenCalledWith({
