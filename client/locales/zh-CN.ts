@@ -1937,10 +1937,10 @@ const zhCN: AppResource = {
         userMismatch: '使用人不一致',
         statusMismatch: '状态不符',
       },
-      userSentence: '{{source}} 上的主用户是 {{user}}，台账分配给了别人',
       statusSentence:
         '台账状态是「{{status}}」，但 {{date}} 仍在 {{source}} 同步',
       transferTo: '调拨给 {{user}}',
+      otherUserTag: '与台账不一致',
       assignTo: '分配给 {{user}}',
       restore: '恢复为库存中',
       keepRegister: '忽略',

@@ -261,13 +261,15 @@ describe("a device's differences with the platform", () => {
         <ManagedPlatforms deviceId='d1' actions={actions} />
       </MemoryRouter>,
     );
+    // Marked on the primary user, with 调拨 beside it, not as a notice.
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(
-      screen.getByText('deviceSync.checks.userSentence'),
+      screen.getByText('deviceSync.checks.otherUserTag'),
     ).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('button', { name: 'deviceSync.checks.transferTo' }),
     );
-    expect(actions.onTransfer).toHaveBeenCalledWith('person-b');
+    expect(actions.onTransfer).toHaveBeenCalledWith(record.personId);
     // 忽略 and Noco are MDM 核对's, not the device page's (2026-10-16).
     expect(
       screen.queryByRole('button', { name: 'deviceSync.checks.keepRegister' }),

@@ -59,10 +59,11 @@ export function ManagedPlatforms({
   return (
     <InfoSection title={t('deviceSync.group')}>
       {/* Where the platforms and the register disagree (step 2), first. */}
-      {/* A notice only for a difference with something to do about it
-          (2026-10-16): silence is the record's own last sync, marked. */}
+      {/* A notice only for 状态不符 (2026-10-16): silence is the record's
+          own last sync, marked, and another user its primary user, marked
+          with 调拨 beside it. */}
       {checks
-        .filter((check) => check.kind !== 'stale')
+        .filter((check) => check.kind === 'statusMismatch')
         .map((check) => (
           <CheckNotice key={check.kind} check={check} actions={actions} />
         ))}
@@ -95,6 +96,16 @@ export function ManagedPlatforms({
                 (check) =>
                   check.kind === 'stale' && check.managedDeviceId === record.id,
               )}
+              otherUser={checks.some(
+                (check) =>
+                  check.kind === 'userMismatch' &&
+                  check.managedDeviceId === record.id,
+              )}
+              onTransfer={
+                actions?.editable && record.personId
+                  ? () => actions.onTransfer(record.personId!)
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -167,15 +178,13 @@ function CheckNotice({
   const { t } = useTranslation();
   const source = t(`deviceSync.sources.${check.source}`);
   const user = check.userName ?? '';
-  // 失联 has no notice: its record's last sync is marked instead.
-  const sentence =
-    check.kind === 'userMismatch'
-      ? t('deviceSync.checks.userSentence', { user, source })
-      : t('deviceSync.checks.statusSentence', {
-          status: t(`enums.deviceStatus.${check.status}`),
-          date: formatDate(check.lastSyncAt),
-          source,
-        });
+  // Only 状态不符 has a notice: 失联 and another user are marked on the
+  // record itself (2026-10-16).
+  const sentence = t('deviceSync.checks.statusSentence', {
+    status: t(`enums.deviceStatus.${check.status}`),
+    date: formatDate(check.lastSyncAt),
+    source,
+  });
   const editable = actions?.editable ?? false;
   return (
     <Alert
@@ -193,23 +202,10 @@ function CheckNotice({
         {/* The register's own acts only (2026-10-16): 忽略 is MDM 核对's,
             where what was ignored is listed and taken back. */}
         {editable &&
-        ((check.kind === 'userMismatch' && check.personId) ||
-          (check.kind === 'statusMismatch' &&
-            ((check.status === 'inStock' && check.personId) ||
-              check.status === 'lost'))) ? (
+        ((check.status === 'inStock' && check.personId) ||
+          check.status === 'lost') ? (
           <span className='flex flex-wrap gap-2'>
-            {check.kind === 'userMismatch' && check.personId ? (
-              <Button
-                size='sm'
-                variant='outline'
-                onClick={() => actions?.onTransfer(check.personId!)}
-              >
-                {t('deviceSync.checks.transferTo', { user })}
-              </Button>
-            ) : null}
-            {check.kind === 'statusMismatch' &&
-            check.status === 'inStock' &&
-            check.personId ? (
+            {check.status === 'inStock' && check.personId ? (
               <Button
                 size='sm'
                 variant='outline'
@@ -218,7 +214,7 @@ function CheckNotice({
                 {t('deviceSync.checks.assignTo', { user })}
               </Button>
             ) : null}
-            {check.kind === 'statusMismatch' && check.status === 'lost' ? (
+            {check.status === 'lost' ? (
               <Button
                 size='sm'
                 variant='outline'
@@ -238,11 +234,17 @@ function PlatformRecord({
   record,
   editable,
   silent = false,
+  otherUser = false,
+  onTransfer,
 }: {
   readonly record: ManagedDevice;
   readonly editable: boolean;
   /** The record a 失联 was read from: its last sync is marked. */
   readonly silent?: boolean;
+  /** Its primary user is not who the register assigned it to. */
+  readonly otherUser?: boolean;
+  /** Opens 调拨 to the primary user, for whoever may. */
+  readonly onTransfer?: () => void;
 }): ReactElement {
   const { t } = useTranslation();
   const review = useDeviceReviewAction();
@@ -266,11 +268,30 @@ function PlatformRecord({
     ],
     [
       'deviceSync.fields.user',
-      record.personId ? (
-        <HolderLink key='user' holderType='person' holderId={record.personId} />
-      ) : (
-        (record.userName ?? record.userPrincipal)
-      ),
+      <span key='user' className='inline-flex flex-wrap items-center gap-2'>
+        {record.personId ? (
+          <HolderLink holderType='person' holderId={record.personId} />
+        ) : (
+          (record.userName ?? record.userPrincipal)
+        )}
+        {otherUser ? (
+          <>
+            <Badge
+              data-size='sm'
+              className='bg-warning text-warning-foreground'
+            >
+              {t('deviceSync.checks.otherUserTag')}
+            </Badge>
+            {onTransfer ? (
+              <Button size='sm' variant='outline' onClick={onTransfer}>
+                {t('deviceSync.checks.transferTo', {
+                  user: record.userName ?? '',
+                })}
+              </Button>
+            ) : null}
+          </>
+        ) : null}
+      </span>,
     ],
     [
       'deviceSync.fields.lastSync',

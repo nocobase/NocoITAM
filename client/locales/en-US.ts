@@ -2028,11 +2028,10 @@ const messages = {
         userMismatch: 'Other user',
         statusMismatch: 'Status differs',
       },
-      userSentence:
-        'Its primary user on {{source}} is {{user}}; the register has it with someone else',
       statusSentence:
         'The register says “{{status}}”, yet it synced with {{source}} on {{date}}',
       transferTo: 'Transfer to {{user}}',
+      otherUserTag: 'Not as on the register',
       assignTo: 'Assign to {{user}}',
       restore: 'Restore to stock',
       keepRegister: 'Ignore',
