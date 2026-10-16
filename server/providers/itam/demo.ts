@@ -361,6 +361,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
       'Meeting room computer run by Administration; not on the IT register',
     syncContractor: 'Li Gong (contractor)',
     syncTestPhone: 'Test phone, wiped for every release; not enrolled in MDM',
+    historicalOrder: 'Bought before the register; entered with it',
     itSpareOrder: 'Spare laptops for IT',
     salesPhoneOrder: 'Phones for the new sales hires',
     airOrder: 'MacBook Air for the R&D hires',
@@ -421,6 +422,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     syncMeetingRoom: '会议室公用电脑，由行政部管理，不入 IT 资产台账',
     syncContractor: '李工（外包）',
     syncTestPhone: '研发测试机，每次发版都要刷机，不注册 MDM',
+    historicalOrder: '上线前的采购，随台账一起录入',
     itSpareOrder: 'IT 备用笔记本',
     salesPhoneOrder: '销售新员工手机',
     airOrder: '研发新员工 MacBook Air',
@@ -1309,6 +1311,137 @@ export function createDemoService(dependencies: {
               },
             }),
           );
+        }
+
+        // The orders those devices came in on (2026-10-16): they were on the
+        // books before ITAM, bought in batches, so each batch — one vendor,
+        // one day — is a completed order with a line per model and a receipt
+        // per device, and a device names its order as one received here does.
+        // Numbered before the demo's own orders, as the older ones.
+        if (dependencies.numbering) {
+          const tracked = (
+            await database
+              .query()
+              .selectFrom('demoRecords')
+              .select('recordId')
+              .where('collection', '=', 'devices')
+              .execute<{ recordId: string }>()
+          ).map((row) => row.recordId);
+          const unordered = tracked.length
+            ? await database
+                .query()
+                .selectFrom('devices')
+                .select([
+                  'id',
+                  'modelId',
+                  'vendorId',
+                  'departmentId',
+                  'purchaseDate',
+                  'purchasePrice',
+                  'currency',
+                ])
+                .where('id', 'in', tracked)
+                .where('purchaseOrderId', 'is', null)
+                .where('vendorId', 'is not', null)
+                .where('purchaseDate', 'is not', null)
+                .execute<Row>()
+            : [];
+          const batches = new Map<string, Row[]>();
+          for (const row of unordered) {
+            const key = `${String(row.vendorId)}|${String(row.purchaseDate)}`;
+            batches.set(key, [...(batches.get(key) ?? []), row]);
+          }
+          // Oldest first, so the numbers run with the dates.
+          const ordered = [...batches.values()].sort((a, b) =>
+            String(a[0]?.purchaseDate).localeCompare(
+              String(b[0]?.purchaseDate),
+            ),
+          );
+          for (const batch of ordered) {
+            const first = batch[0];
+            const day = String(first.purchaseDate);
+            const at = new Date(`${day}T09:00:00`);
+            const orderId = crypto.randomUUID();
+            await database
+              .query()
+              .insertInto('purchaseOrders')
+              .values({
+                id: orderId,
+                orderNo: await dependencies.numbering.next('purchaseOrder'),
+                reason: 'other',
+                description: texts.historicalOrder,
+                departmentId: asText(first.departmentId) ?? null,
+                vendorId: String(first.vendorId),
+                estimatedTotal: batch.reduce(
+                  (sum, row) => sum + Number(row.purchasePrice ?? 0),
+                  0,
+                ),
+                currency: asText(first.currency) ?? null,
+                status: 'completed',
+                orderedAt: day,
+                expectedAt: day,
+                receivedAt: day,
+                ownerId: writerId,
+                createdById: writerId,
+                createdAt: at,
+                updatedAt: at,
+              })
+              .execute();
+            await track('purchaseOrders', { id: orderId });
+            const byModel = new Map<string, Row[]>();
+            for (const row of batch)
+              byModel.set(String(row.modelId), [
+                ...(byModel.get(String(row.modelId)) ?? []),
+                row,
+              ]);
+            let sort = 0;
+            for (const [modelId, rows] of byModel) {
+              const lineId = crypto.randomUUID();
+              await database
+                .query()
+                .insertInto('purchaseOrderLines')
+                .values({
+                  id: lineId,
+                  purchaseOrderId: orderId,
+                  itemType: 'device',
+                  modelId,
+                  quantity: rows.length,
+                  unitPrice: Number(rows[0]?.purchasePrice ?? 0),
+                  receivedQuantity: rows.length,
+                  sort: sort++,
+                  createdAt: at,
+                  updatedAt: at,
+                })
+                .execute();
+              for (const row of rows) {
+                await database
+                  .query()
+                  .insertInto('purchaseReceipts')
+                  .values({
+                    id: crypto.randomUUID(),
+                    purchaseOrderId: orderId,
+                    lineId,
+                    quantity: 1,
+                    generatedType: 'device',
+                    generatedId: String(row.id),
+                    notes: null,
+                    actorId: writerId,
+                    createdAt: at,
+                  })
+                  .execute();
+              }
+            }
+            await database
+              .query()
+              .updateTable('devices')
+              .set({ purchaseOrderId: orderId })
+              .where(
+                'id',
+                'in',
+                batch.map((row) => String(row.id)),
+              )
+              .execute();
+          }
         }
 
         await reached(30);

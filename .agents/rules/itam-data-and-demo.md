@@ -134,6 +134,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   It also deletes the three seeded Permission Sets so the seeds rewrite them
   — a seed writes a set only when it is absent, so editing a grant in one
   otherwise has no effect on a database that already ran it.
+- **The demo's devices came in on orders** (2026-10-16): those written
+  straight onto the register — the ones on the books before ITAM — are
+  grouped by vendor and purchase date into completed historical orders
+  (`texts.historicalOrder`), one line per model and one receipt per device,
+  and each device names its order; numbered before the demo's own orders
+  so the numbers run with the dates. Look an order up by what it holds,
+  not by its number, which moves when devices are added.
 - **Device sync in the demo** (2026-10-15, `demo.ts`): the demo's Intune and
   Jamf records hold every situation MDM 核对 shows once — silent, another
   user, on the shelf yet online, disposed yet online (critical), no longer

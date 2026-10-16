@@ -597,6 +597,24 @@ describe('CSV import / export and demo data', () => {
     // silent, one under another user, one on the shelf yet online — and the
     // other two tabs: the laptops and the VM not on the register (the
     // personal phone is ignored), and the laptops in use on no platform.
+    // The devices on the books before ITAM came in on completed orders of
+    // their own (2026-10-16): nearly every device names one, and each such
+    // order lists its devices through its receipts.
+    const db = app.container.resolve(databaseManagerToken).query();
+    const withOrder = await db
+      .selectFrom('devices')
+      .select(['id', 'purchaseOrderId'])
+      .execute<{ id: string; purchaseOrderId: string | null }>();
+    const ordered = withOrder.filter((row) => row.purchaseOrderId);
+    expect(ordered.length / withOrder.length).toBeGreaterThan(0.8);
+    const receipts = await db
+      .selectFrom('purchaseReceipts')
+      .select('generatedId')
+      .where('generatedType', '=', 'device')
+      .execute<{ generatedId: string }>();
+    expect(new Set(receipts.map((row) => row.generatedId))).toEqual(
+      new Set(ordered.map((row) => row.id)),
+    );
     const review = app.container.resolve(deviceReviewServiceToken);
     const checks = await review.checks();
     expect(new Set(checks.map((check) => check.kind))).toEqual(
@@ -664,15 +682,22 @@ describe('CSV import / export and demo data', () => {
     expect(holdingCounts.entitlements?.[liNa!.id]).toBe(2);
 
     // One placed order carries every kind of line, so receiving it shows
-    // every way goods arrive; it is PO-000020 on a fresh import.
+    // every way goods arrive: the placed order with the most kinds of line.
     const placed = await data<{ id: string; orderNo: string }[]>(
       await get('purchase-orders?filter[status]=ordered&pageSize=50'),
     );
-    const mixed = placed.find((order) => order.orderNo === 'PO-000020');
-    expect(mixed).toBeDefined();
-    const mixedLines = await data<{ itemType: string }[]>(
-      await get(`purchase-orders/${mixed!.id}/lines`),
-    );
+    const kindsOf = async (orderId: string) =>
+      (
+        await data<{ itemType: string }[]>(
+          await get(`purchase-orders/${orderId}/lines`),
+        )
+      ).map((line) => line.itemType);
+    let mixedLines: { itemType: string }[] = [];
+    for (const order of placed) {
+      const kinds = await kindsOf(order.id);
+      if (kinds.length > mixedLines.length)
+        mixedLines = kinds.map((itemType) => ({ itemType }));
+    }
     expect(mixedLines.map((line) => line.itemType).sort()).toEqual([
       'accessory',
       'component',
