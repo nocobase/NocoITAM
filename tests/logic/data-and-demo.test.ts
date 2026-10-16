@@ -7,6 +7,17 @@ import {
   numberingServiceToken,
 } from '../../server/providers/index.js';
 import { parseCsv, toCsv } from '../../server/providers/itam/csv.js';
+import { createDemoService } from '../../server/providers/itam/demo.js';
+import {
+  auditServiceToken,
+  deviceServiceToken,
+  disposalServiceToken,
+  entitlementServiceToken,
+  masterDataServiceToken,
+  procurementServiceToken,
+  repairServiceToken,
+  stockServiceToken,
+} from '../../server/providers/itam/index.js';
 import { deviceConnectionsServiceToken } from '../../server/providers/itam/device-connections.js';
 import { deviceReviewServiceToken } from '../../server/providers/itam/device-review.js';
 import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.js';
@@ -694,5 +705,50 @@ describe('CSV import / export and demo data', () => {
     const numbering = app.container.resolve(numberingServiceToken);
     expect(await numbering.next('purchaseOrder')).toBe('PO-000001');
     expect(await numbering.next('device')).toBe('DE-000001');
+  });
+
+  // The account importing the demo — the system administrator, who holds no
+  // ITAM grant — is an asset manager while the demo is there, and is not
+  // once it is cleared; the demo takes back only what it gave.
+  it('makes the importer an asset manager while the demo is there', async () => {
+    const grants: string[] = [];
+    const revoked: string[] = [];
+    let created = 0;
+    let held = false;
+    const resolve = app.container.resolve.bind(app.container);
+    const demo = createDemoService({
+      database: resolve(databaseManagerToken),
+      masterData: resolve(masterDataServiceToken),
+      devices: resolve(deviceServiceToken),
+      stock: resolve(stockServiceToken),
+      entitlements: resolve(entitlementServiceToken),
+      procurement: resolve(procurementServiceToken),
+      repairs: resolve(repairServiceToken),
+      audits: resolve(auditServiceToken),
+      disposals: resolve(disposalServiceToken),
+      numbering: resolve(numberingServiceToken),
+      accounts: {
+        create: async () => `staff-${String((created += 1))}`,
+        remove: async () => undefined,
+        describe: async () => ({ name: 'Staff', email: 'staff@example.com' }),
+        grant: async (userId, permissionSet) => {
+          grants.push(`${userId}:${permissionSet}`);
+          return held ? null : 'assignment-1';
+        },
+        revoke: async (id) => {
+          revoked.push(id);
+        },
+      },
+    });
+    await demo.generate('admin', 'en-US');
+    expect(grants).toEqual(['admin:itam-asset-manager']);
+    await demo.clear('admin');
+    expect(revoked).toEqual(['assignment-1']);
+
+    // An importer who held the set already keeps it.
+    held = true;
+    await demo.generate('admin', 'en-US');
+    await demo.clear('admin');
+    expect(revoked).toEqual(['assignment-1']);
   });
 });

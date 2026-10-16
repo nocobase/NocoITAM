@@ -260,6 +260,27 @@ function demoAccounts(container: ServiceContainer): DemoAccounts {
         });
       return user.id;
     },
+    async grant(userId, permissionSet) {
+      const permissionSets =
+        container.resolve(authorizationToken).permissionSets;
+      const held = (await permissionSets.listAssignments()).some(
+        (assignment) =>
+          assignment.subject.type === 'user' &&
+          String(assignment.subject.id) === userId &&
+          assignment.permissionSet === permissionSet,
+      );
+      if (held) return null;
+      const assignment = await permissionSets.assign({
+        subject: { type: 'user', id: userId },
+        permissionSet,
+      });
+      return assignment.id ? String(assignment.id) : null;
+    },
+    async revoke(assignmentId) {
+      await container
+        .resolve(authorizationToken)
+        .permissionSets.revoke(assignmentId);
+    },
     async describe(userId) {
       const user = await container
         .resolve(userAdministrationServiceToken)

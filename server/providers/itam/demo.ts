@@ -87,6 +87,13 @@ export interface DemoAccountSpec {
 export interface DemoAccounts {
   create(spec: DemoAccountSpec): Promise<string>;
   remove(userId: string, actorId: string): Promise<void>;
+  /**
+   * Gives an existing account a Permission Set: the assignment's id, or
+   * null when it held the set already (2026-10-16, the importing account).
+   */
+  grant(userId: string, permissionSet: string): Promise<string | null>;
+  /** Takes back an assignment `grant` made. */
+  revoke(assignmentId: string): Promise<void>;
   /** The account's own name and address, for the person record behind it. */
   describe(
     userId: string,
@@ -677,6 +684,18 @@ export function createDemoService(dependencies: {
       // system administrator and answers for nothing (2026-10-05); it only
       // stands in when the accounts plugins are missing (tests, a reset).
       const writerId = deskManagerUserId ?? actorId;
+      // The account importing the demo — the system administrator, which
+      // holds no ITAM grant of its own — is an asset manager while the demo
+      // is there (2026-10-16, as NocoCRM's importer is its sales manager):
+      // it may be named an approver or a 负责人 and work the register as the
+      // demo's managers do. Taken back when the demo is cleared, unless it
+      // held the set before.
+      if (dependencies.accounts && managerUserId) {
+        const granted = await dependencies.accounts
+          .grant(actorId, 'itam-asset-manager')
+          .catch(() => null);
+        if (granted) await track('importerGrants', { id: granted });
+      }
       const context: OperationContext = {
         actorId: writerId,
         sourceType: 'demo',
@@ -3726,6 +3745,11 @@ export function createDemoService(dependencies: {
       // account also ends its sessions and permission-set assignments.
       for (const userId of byCollection.get('accounts') ?? [])
         await dependencies.accounts?.remove(userId, actorId);
+      // The importer's asset manager set, which the demo gave.
+      for (const assignmentId of byCollection.get('importerGrants') ?? [])
+        await dependencies.accounts
+          ?.revoke(assignmentId)
+          .catch(() => undefined);
       return this.status();
     },
   };
