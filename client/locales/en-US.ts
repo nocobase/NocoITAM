@@ -2949,6 +2949,12 @@ const messages = {
   },
   ai: {
     ask: 'Ask AI',
+    conversations: {
+      title: 'AI conversations',
+      new: 'New conversation',
+      nothingOpen: 'Pick a conversation on the left, or start a new one',
+      viewAll: 'See all conversations on a page',
+    },
     dock: {
       placeholder: 'Ask anything…',
       placeholderAbout: 'Ask about "{{name}}"…',

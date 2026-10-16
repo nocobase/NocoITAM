@@ -69,14 +69,24 @@ function finePointer(): boolean {
 }
 
 export interface ChatConversationPageProps {
-  readonly conversationId: string;
+  /**
+   * Application change (ITAM, 2026-10-16): null is a new conversation, shown in the page's form; its first message
+   * moves the address to the conversation's own (replacing this one).
+   */
+  readonly conversationId: string | null;
   /** Where a new conversation starts (for example, its home page, whose composer picks the agent). */
   readonly newConversationPath: string;
+  /**
+   * Application change (ITAM, 2026-10-16): false where the page's own list of conversations sits beside it (the
+   * conversations page), so the header offers no history dialog.
+   */
+  readonly history?: boolean;
 }
 
 export function ChatConversationPage({
   conversationId,
   newConversationPath,
+  history = true,
 }: ChatConversationPageProps): ReactElement {
   const outer = useChatPanel();
   const tracking = useChatPageTracking();
@@ -107,7 +117,8 @@ export function ChatConversationPage({
   const select = useCallback(
     (id: string | null) => {
       if (id === null) void navigate(newConversationPath);
-      else if (id !== conversationId && pathOf) void navigate(pathOf(id));
+      else if (id !== conversationId && pathOf)
+        void navigate(pathOf(id), { replace: conversationId === null });
     },
     [navigate, newConversationPath, conversationId, pathOf],
   );
@@ -146,10 +157,11 @@ export function ChatConversationPage({
         className='flex h-full min-h-0 flex-col'
         {...{ [CHAT_PANEL_ATTRIBUTE]: '' }}
         data-testid='chat-page'
-        data-conversation={conversationId}
+        data-conversation={conversationId ?? undefined}
       >
         <PageBar
           conversationId={conversationId}
+          history={history}
           onNew={() => select(null)}
           onOpen={select}
           onDock={dock}
@@ -166,11 +178,13 @@ export function ChatConversationPage({
 
 function PageBar({
   conversationId,
+  history,
   onNew,
   onOpen,
   onDock,
 }: {
-  readonly conversationId: string;
+  readonly conversationId: string | null;
+  readonly history: boolean;
   readonly onNew: () => void;
   readonly onOpen: (conversationId: string) => void;
   readonly onDock: () => void;
@@ -214,16 +228,18 @@ function PageBar({
       >
         <SquarePenIcon />
       </Button>
-      <Button
-        variant='ghost'
-        size='icon'
-        aria-label={t('chat.history.title')}
-        title={t('chat.history.title')}
-        onClick={() => setHistoryOpen(true)}
-        data-testid='chat-page-history'
-      >
-        <HistoryIcon />
-      </Button>
+      {history ? (
+        <Button
+          variant='ghost'
+          size='icon'
+          aria-label={t('chat.history.title')}
+          title={t('chat.history.title')}
+          onClick={() => setHistoryOpen(true)}
+          data-testid='chat-page-history'
+        >
+          <HistoryIcon />
+        </Button>
+      ) : null}
       {mobile ? null : (
         <Button
           variant='ghost'
@@ -263,12 +279,14 @@ function PageBar({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
-      <ChatHistoryDialog
-        open={historyOpen}
-        onOpenChange={setHistoryOpen}
-        activeId={conversationId}
-        onOpen={onOpen}
-      />
+      {history ? (
+        <ChatHistoryDialog
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+          activeId={conversationId}
+          onOpen={onOpen}
+        />
+      ) : null}
     </header>
   );
 }

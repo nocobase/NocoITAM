@@ -247,6 +247,15 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
     // A conversation with the assistant as a page (the chat panel's "open
     // as a page"); no menu entry, so no page grant: the Agents plugin
     // answers each person for their own conversations only.
+    // The conversations page (2026-10-16, after NocoCRM's): the list alone,
+    // and one conversation beside it (`new` starts one). No menu entry: the
+    // panel's history and each conversation's own page button lead here.
+    {
+      name: 'agent-chat-list',
+      path: '/agent-chat',
+      auth: 'required',
+      componentLoader: () => import('./pages/itam/agent-chat.js'),
+    },
     {
       name: 'agent-chat',
       path: '/agent-chat/:conversationId',

@@ -100,7 +100,15 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   a hue of 0. `Page` and `DetailPage` keep room at their foot for it. The
   generic detail page and the device page offer their record to the chat
   (`useAiPageContext` with `recordKindOf`, `client/lib/itam/record-kind.ts`)
-  so the box, and the panel's composer, know it. A page offers what it
+  so the box, and the panel's composer, know it. The conversations have a
+  page of their own (`client/pages/itam/agent-chat.tsx`, 2026-10-16, laid
+  out as NocoCRM's): `/agent-chat` with the block's list (search, filters)
+  in a column at the left and the conversation open beside it
+  (`/agent-chat/:conversationId`), `/agent-chat/new` starting one — the
+  block's `ChatConversationPage` takes a null conversation and `history:
+false` for this, and the first message moves the address within the same
+  route, so the view stays. It has no menu entry: the panel's history ends
+  in a link to it, and a conversation's page button lands there. A page offers what it
   shows through `useAiPageContext({ kind, id, label })`
   (`client/lib/itam/ai-chat.tsx`): the record's chip sits above the composer
   and `ask(prompt)` starts a conversation with it pinned. A page context

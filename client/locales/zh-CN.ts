@@ -2775,6 +2775,12 @@ const zhCN: AppResource = {
   },
   ai: {
     ask: '问 AI',
+    conversations: {
+      title: 'AI 对话',
+      new: '新对话',
+      nothingOpen: '从左边选一个对话，或者开始新对话',
+      viewAll: '在页面中查看全部对话',
+    },
     dock: {
       placeholder: '问任何问题…',
       placeholderAbout: '问关于「{{name}}」的问题…',

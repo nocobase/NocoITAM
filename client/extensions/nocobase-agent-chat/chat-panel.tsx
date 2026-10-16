@@ -14,6 +14,9 @@ import {
 } from '@nocobase/app-plugin-agents/client/chat';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 
+import { useNavigate } from 'react-router';
+
+import { Button } from '#components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '#components/ui/dialog';
 
 import { useChatTranslation } from './chat-i18n.js';
@@ -110,21 +113,40 @@ function PanelFrame(): ReactElement | null {
 }
 
 function PanelBody(): ReactElement {
+  const { t } = useChatTranslation();
   const panel = useChatPanel();
+  const navigate = useNavigate();
   return (
     // Application change (ITAM): NocoCRM's margins, px-4.
     <div className='flex min-h-0 flex-1 flex-col px-4'>
       {panel.view === 'history' ? (
-        <div className='min-h-0 flex-1 overflow-y-auto'>
-          <HistoryList
-            activeId={panel.conversationId}
-            onOpen={(id) => {
-              panel.selectConversation(id);
-              panel.focusComposer();
-            }}
-            onOpenPage={panel.openPage}
-          />
-        </div>
+        <>
+          <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
+            <HistoryList
+              activeId={panel.conversationId}
+              onOpen={(id) => {
+                panel.selectConversation(id);
+                panel.focusComposer();
+              }}
+              onOpenPage={panel.openPage}
+            />
+          </div>
+          {/* Application change (ITAM, 2026-10-16): the conversations page
+              (/agent-chat), the list beside the conversation open. */}
+          <div className='border-t py-2'>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='w-full'
+              onClick={() => {
+                panel.closeChat();
+                void navigate('/agent-chat');
+              }}
+            >
+              {t('ai.conversations.viewAll')}
+            </Button>
+          </div>
+        </>
       ) : (
         <ConversationView conversationId={panel.conversationId} />
       )}
