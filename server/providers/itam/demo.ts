@@ -7,6 +7,7 @@ import {
 import type { DeviceService, OperationContext } from './devices.js';
 import type { ObservedDevice } from './device-sources.js';
 import type { DeviceSyncService } from './device-sync.js';
+import { writeDemoSuggestions, type DemoAgents } from './demo-suggestions.js';
 import type { AuditService, CountInput } from './audits.js';
 import type { CommentService } from './comments.js';
 import { unrestricted } from './authz-filter.js';
@@ -282,6 +283,9 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   { table: 'repairs', column: 'deviceId' },
   // Asset Steward's background suggestions for the demo's joiners.
   { table: 'onboardingRuns', column: 'personId' },
+  // The work agents' runs on the demo's requests, the demo's own and any a
+  // person asked for since (2026-10-16).
+  { table: 'itamAgentRuns', column: 'subjectId' },
   // 忽略 on the demo's differences (device sync, 2026-10-15).
   { table: 'deviceSyncDismissals', column: 'deviceId' },
   // 不需要纳管 on the demo's test phone (2026-10-15).
@@ -290,6 +294,10 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
 
 /** Deleted in dependency order: children before the master data they reference. */
 const ORDER: readonly string[] = [
+  // The work agents' suggestions the demo wrote (2026-10-16): the plans,
+  // then the runs that proposed them.
+  'itamPlans',
+  'itamAgentRuns',
   // Comments the demo wrote on records it did not make (seeded categories).
   'historyEvents',
   // What the demo's Intune reported (device sync, 2026-10-14).
@@ -931,6 +939,11 @@ export function createDemoService(dependencies: {
   deviceSync?: DeviceSyncService;
   /** Writes the demo's comment threads; absent in a bare harness. */
   comments?: CommentService;
+  /**
+   * The work agents, for the suggestions the demo comes with instead of
+   * asking a model (2026-10-16); absent in a bare harness.
+   */
+  agents?: DemoAgents;
 }): DemoService {
   const {
     database,
@@ -4106,7 +4119,7 @@ export function createDemoService(dependencies: {
           /** Raised for, and decided by, the importer rather than the staff. */
           readonly ownerId?: string;
           readonly approverId?: string;
-        }): Promise<void> => {
+        }): Promise<string> => {
           await on(-order.raisedDaysAgo);
           const created = await track(
             'purchaseOrders',
@@ -4130,7 +4143,7 @@ export function createDemoService(dependencies: {
             context,
             all('purchaseOrders', 'update'),
           );
-          if (order.stage === 'draft') return;
+          if (order.stage === 'draft') return id;
           const decider = order.approverId ?? approverId;
           await procurement.submit(
             id,
@@ -4138,7 +4151,7 @@ export function createDemoService(dependencies: {
             context,
             all('purchaseOrders', 'submit'),
           );
-          if (order.stage === 'pendingApproval') return;
+          if (order.stage === 'pendingApproval') return id;
           await on(-order.raisedDaysAgo + 1);
           if (
             (await procurement.get(id, all('purchaseOrders', 'read')))
@@ -4151,7 +4164,8 @@ export function createDemoService(dependencies: {
               { actorId: decider, sourceType: 'demo' },
               all('purchaseOrders', 'approve'),
             );
-          if (order.stage === 'rejected' || order.stage === 'approved') return;
+          if (order.stage === 'rejected' || order.stage === 'approved')
+            return id;
           if (order.stage === 'cancelled') {
             await procurement.cancel(
               id,
@@ -4159,7 +4173,7 @@ export function createDemoService(dependencies: {
               context,
               all('purchaseOrders', 'cancel'),
             );
-            return;
+            return id;
           }
           await on(-3);
           await procurement.markOrdered(
@@ -4168,6 +4182,7 @@ export function createDemoService(dependencies: {
             context,
             all('purchaseOrders', 'order'),
           );
+          return id;
         };
         const line = (
           itemType: LineItemType,
@@ -4202,7 +4217,7 @@ export function createDemoService(dependencies: {
           raisedDaysAgo: 2,
           ownerId: importerId,
         });
-        await queuedOrder({
+        const airOrderId = await queuedOrder({
           description: texts.airOrder,
           reason: 'newHire',
           departmentId: rnd.id,
@@ -4212,7 +4227,7 @@ export function createDemoService(dependencies: {
           raisedDaysAgo: 5,
           approverId: importerId,
         });
-        await queuedOrder({
+        const switchOrderId = await queuedOrder({
           description: texts.switchOrder,
           reason: 'project',
           departmentId: itDept.id,
@@ -5261,12 +5276,13 @@ export function createDemoService(dependencies: {
         // (`onboarding-advisor.ts`), and entered first it found nothing in
         // stock to choose from, or half of it.
         const productDept = await seededIn('departments', 'dept-product');
+        const joinerIds: string[] = [];
         for (const [index, entry] of (
           JOINER_NAMES[locale] ??
           JOINER_NAMES['en-US'] ??
           []
         ).entries()) {
-          await md('people', {
+          const joiner = await md('people', {
             name: entry.name,
             employeeNo: `EMP-${String(index + 301).padStart(3, '0')}`,
             email: `${entry.mail}@northbridge.example`,
@@ -5275,6 +5291,7 @@ export function createDemoService(dependencies: {
             locationId: floor3.id,
             hireDate: daysFromNow(index === 0 ? 5 : 9),
           });
+          joinerIds.push(String(joiner.id));
         }
 
         // What the demo's Intune reports (device sync, 2026-10-14), read in
@@ -5639,6 +5656,26 @@ export function createDemoService(dependencies: {
               })
               .execute();
         }
+
+        // What the work agents would have left (2026-10-16), written rather
+        // than asked of a model: reviews of the requests still waiting, the
+        // MDM follow-up on the pulls above, and the joiners' picks.
+        if (dependencies.agents)
+          await writeDemoSuggestions({
+            database,
+            agents: dependencies.agents,
+            locale,
+            actorId,
+            track,
+            requests: {
+              monitorOrder: String(monitorOrder.id),
+              airOrder: airOrderId,
+              switchOrder: switchOrderId,
+              internOrder: String(internOrder.id),
+              printerDisposal: String(printerDisposal.id),
+            },
+            joiners: joinerIds,
+          });
 
         importPercent = 100;
         return await this.status();

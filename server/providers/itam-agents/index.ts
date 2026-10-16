@@ -141,7 +141,10 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
           .getLogger('itam')
           .warn({ err: error }, message);
     };
-    approvals.onRequested = (approval) =>
+    // The demo's requests and pulls come with their suggestions written
+    // (2026-10-16): importing it never runs a model.
+    approvals.onRequested = (approval, context) => {
+      if (context.sourceType === 'demo') return;
       void reviewer
         .request({
           approvalId: String(approval.id),
@@ -151,6 +154,7 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
         .catch((error: unknown) =>
           warn(error, 'The approval review did not start'),
         );
+    };
     approvals.onSettled = (approval) =>
       void reviewer.settled(approval).catch(() => undefined);
     // MDM 跟进 (2026-10-17): after each pull that read every page. Pulls of
@@ -158,6 +162,7 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
     const followUp = container.resolve(deviceSyncFollowUpToken);
     let settling: ReturnType<typeof setTimeout> | undefined;
     container.resolve(deviceSyncServiceToken).onSynced = (run) => {
+      if (run.trigger === 'demo') return;
       if (settling) clearTimeout(settling);
       const by = typeof run.actorId === 'string' ? run.actorId : null;
       settling = setTimeout(() => {

@@ -111,7 +111,27 @@ const DECIDED = z.object({
     )
     .max(60),
 });
-type Decision = z.infer<typeof DECIDED>['decisions'][number];
+export type FollowUpDecision = z.infer<typeof DECIDED>['decisions'][number];
+type Decision = FollowUpDecision;
+
+/**
+ * Who decides the items instead of the model: the demo, whose follow-up is
+ * written with it (2026-10-16). Given each item as the model would read it
+ * — its `ref`, `kind` and what MDM 核对 shows — it answers for the item by
+ * that ref, or not at all (a note to look first).
+ */
+/** Who answers for a run's items: the model, or an answerer. */
+type Ask = (
+  material: readonly Record<string, unknown>[],
+  signal?: AbortSignal,
+) => Promise<
+  | { readonly decisions: readonly Decision[]; readonly model: string | null }
+  | { readonly failure: RunFailure; readonly model: string | null }
+>;
+
+export type FollowUpAnswerer = (
+  material: readonly Readonly<Record<string, unknown>>[],
+) => readonly FollowUpDecision[];
 
 export interface FollowUpResult {
   readonly items: readonly FollowUpItem[];
@@ -123,8 +143,18 @@ export interface FollowUpResult {
 
 export interface DeviceSyncFollowUp {
   useJobs(dispatch: (runId: string) => Promise<void>): void;
-  /** After a pull: a run per person with something new to judge. */
-  afterSync(by: string | null): Promise<readonly AgentRun[]>;
+  /**
+   * After a pull: a run per person with something new to judge. Given the
+   * answers (the demo), the runs are worked out here and now, without a
+   * model, and written in the answers' language.
+   */
+  afterSync(
+    by: string | null,
+    answers?: {
+      readonly answerer: FollowUpAnswerer;
+      readonly locale: string;
+    },
+  ): Promise<readonly AgentRun[]>;
   runEntry(runId: string, signal?: AbortSignal): Promise<void>;
   /** A plan decided on its card: the run that proposed it goes with it. */
   planDecided(outcome: PlanOutcome): Promise<void>;
@@ -149,7 +179,10 @@ export function createDeviceSyncFollowUp(dependencies: {
   const runs = () => container.resolve(agentRunServiceToken);
   const database = () => container.resolve(databaseManagerToken);
   const review = () => container.resolve(deviceReviewServiceToken);
-  const zh = () => dependencies.locale().startsWith('zh');
+  // The language a run is written in: the deployment's, or while the demo's
+  // runs are worked out, the demo's.
+  let answering: string | undefined;
+  const zh = () => (answering ?? dependencies.locale()).startsWith('zh');
   let dispatch: ((runId: string) => Promise<void>) | undefined;
   let local: Promise<void> = Promise.resolve();
 
@@ -265,7 +298,7 @@ export function createDeviceSyncFollowUp(dependencies: {
       dispatch = next;
     },
 
-    async afterSync(by) {
+    async afterSync(by, answers) {
       if (!(await agentOn(database(), AGENT, 'synced'))) return [];
       if (!(await review().active())) return [];
       const { byOwner, shared } = await pending();
@@ -281,7 +314,19 @@ export function createDeviceSyncFollowUp(dependencies: {
           deciderId,
         });
         started.push(run);
-        await enqueue(run.id);
+        if (!answers) {
+          await enqueue(run.id);
+          return;
+        }
+        answering = answers.locale;
+        try {
+          await work(run.id, async (material) => ({
+            decisions: answers.answerer(material),
+            model: null,
+          }));
+        } finally {
+          answering = undefined;
+        }
       };
       for (const [owner, items] of byOwner)
         if (items.length) await start(`owner:${owner}`, owner);
@@ -291,138 +336,7 @@ export function createDeviceSyncFollowUp(dependencies: {
       return started;
     },
 
-    async runEntry(runId, signal) {
-      const run = await runs().get(runId);
-      if (!run || run.status !== 'running' || run.agent !== AGENT) return;
-      const fail = (failure: RunFailure, model?: string | null) =>
-        runs().finish(runId, { status: 'failed', failure }, model);
-      if (!run.deciderId) {
-        await fail('notFound');
-        return;
-      }
-      await runs().markStarted(runId, true);
-      let model: string | null = null;
-      try {
-        const items = (await itemsOf(run)).slice(0, 40);
-        if (!items.length) {
-          await runs().finish(runId, {
-            status: 'pending',
-            result: {
-              items: [],
-              planId: null,
-              notes: [],
-              summary: words('没有新的差异要处理。', 'Nothing new to settle.'),
-            },
-          });
-          return;
-        }
-        // What Asset Steward's commands would show the person, one entry
-        // per item under a short ref the answer names it by.
-        const reader = readerFor(container, run.deciderId);
-        const refs = new Map(
-          items.map((item, at) => [`i${String(at + 1)}`, item]),
-        );
-        const listed = async (view: 'unmanaged' | 'unregistered') => {
-          const wanted = new Set(
-            items
-              .filter((item) => item.kind === view)
-              .map((item) => item.subject),
-          );
-          if (!wanted.size) return new Map<string, Row>();
-          const rows = (await deviceSyncReview(reader, { view })).rows as Row[];
-          return new Map(
-            rows
-              .filter((row) => wanted.has(String(row.id)))
-              .map((row) => [String(row.id), row]),
-          );
-        };
-        const [unmanaged, unregistered] = await Promise.all([
-          listed('unmanaged'),
-          listed('unregistered'),
-        ]);
-        const material: Record<string, unknown>[] = [];
-        for (const [ref, item] of refs) {
-          if (item.kind === 'unmanaged' || item.kind === 'unregistered') {
-            const row = (
-              item.kind === 'unmanaged' ? unmanaged : unregistered
-            ).get(item.subject);
-            if (row) material.push({ ref, kind: item.kind, ...row });
-            continue;
-          }
-          const found = await deviceSyncReview(reader, {
-            view: 'checks',
-            deviceId: item.subject,
-          }).catch(() => null);
-          if (!found) continue;
-          material.push({
-            ref,
-            kind: item.kind,
-            device: found.device,
-            platformRecords: found.platformRecords,
-            difference: ((found.differences ?? []) as Row[]).find(
-              (difference) => difference.kind === item.kind,
-            ),
-          });
-        }
-        const records = [...unregistered.values()];
-        const prompt = [
-          `The pull from the device platforms left these items on MDM 核对. Following your method, decide each one by its \`ref\` (\`item\`), or say why a person must look first. Allowed per kind — stale: correct, keep, verify, escalate; userMismatch: transfer, assign, keep, verify, escalate; statusMismatch: correct, keep, verify, escalate; unmanaged: exempt, verify, escalate; unregistered: register, link, ignore, verify.`,
-          "What each does: register — put the platform record on the register (modelId: the register model it is, from suggestedModelId or the candidates; the device goes to its platform user when it has one); link — it is the register device `target` (a candidate id); ignore — keep the record off the register (not a company asset); transfer / assign — the device goes to the person `target` (the platform user's personId); correct — set the device's register status to `status` (inStock, inUse, onLoan, inRepair or retired — never lost: a person finds that out); keep — the register is right, ignore this difference; exempt — the device rightly is on no platform; verify — a person must check first (say what); escalate — the platform's administrator must act (say what).",
-          `Every decision has a \`reason\`: one short sentence in ${zh() ? 'Chinese' : 'English'} with the fact it rests on (the platform user, the serial, the last sync, a matching device), never an id. Propose a change only where the evidence is clear; otherwise verify.`,
-          `<items>\n${JSON.stringify(material)}\n</items>`,
-          `Return only one JSON object matching this JSON Schema:\n${shapeOf(DECIDED)}`,
-        ].join('\n\n');
-        const settings = container.resolve(settingsServiceToken);
-        const [general, ai] = await Promise.all([
-          settings.get('general'),
-          settings.get('ai'),
-        ]);
-        const skill = await readSkill(container, 'device-sync');
-        const session = await openSession(container, {
-          timeZone: general.timeZone,
-          system: [
-            skill ? `# Method\n\n${skill}` : '',
-            ai.businessNotes
-              ? `The organisation's notes for the AI:\n${ai.businessNotes}`
-              : '',
-          ]
-            .filter(Boolean)
-            .join('\n\n'),
-          work: AGENT,
-        });
-        if (!session) {
-          await fail('unavailable');
-          return;
-        }
-        model = `${session.model.modelService}/${session.model.model}`;
-        const turn = signal
-          ? AbortSignal.any([AbortSignal.timeout(TURN_MS), signal])
-          : AbortSignal.timeout(TURN_MS);
-        const answer = await session.askJson(prompt, DECIDED, turn);
-        if (!answer) {
-          await fail('unreadable', model);
-          return;
-        }
-        const result = await proposal(run, refs, records, answer.decisions);
-        await runs().finish(
-          runId,
-          { status: 'pending', result: { ...result } },
-          model,
-        );
-      } catch (error) {
-        if (signal?.aborted) {
-          await runs().markStarted(runId, false);
-          throw new JobInterruptedError();
-        }
-        dependencies.warn?.({ err: error }, 'MDM follow-up failed');
-        await fail(
-          error instanceof Error && error.name === 'TimeoutError'
-            ? 'timedOut'
-            : 'failed',
-          model,
-        );
-      }
-    },
+    runEntry: (runId, signal) => work(runId, askModel, signal),
 
     async planDecided({ plan, decision }) {
       if (!plan.runId) return;
@@ -468,6 +382,149 @@ export function createDeviceSyncFollowUp(dependencies: {
       await settleShared(run);
       return (await runs().get(run.id)) ?? run;
     },
+  };
+
+  /** A run's work, with whoever answers for its items. */
+  const work = async (
+    runId: string,
+    ask: Ask,
+    signal?: AbortSignal,
+  ): Promise<void> => {
+    const run = await runs().get(runId);
+    if (!run || run.status !== 'running' || run.agent !== AGENT) return;
+    const fail = (failure: RunFailure, model?: string | null) =>
+      runs().finish(runId, { status: 'failed', failure }, model);
+    if (!run.deciderId) {
+      await fail('notFound');
+      return;
+    }
+    await runs().markStarted(runId, true);
+    let model: string | null = null;
+    try {
+      const items = (await itemsOf(run)).slice(0, 40);
+      if (!items.length) {
+        await runs().finish(runId, {
+          status: 'pending',
+          result: {
+            items: [],
+            planId: null,
+            notes: [],
+            summary: words('没有新的差异要处理。', 'Nothing new to settle.'),
+          },
+        });
+        return;
+      }
+      // What Asset Steward's commands would show the person, one entry
+      // per item under a short ref the answer names it by.
+      const reader = readerFor(container, run.deciderId);
+      const refs = new Map(
+        items.map((item, at) => [`i${String(at + 1)}`, item]),
+      );
+      const listed = async (view: 'unmanaged' | 'unregistered') => {
+        const wanted = new Set(
+          items
+            .filter((item) => item.kind === view)
+            .map((item) => item.subject),
+        );
+        if (!wanted.size) return new Map<string, Row>();
+        const rows = (await deviceSyncReview(reader, { view })).rows as Row[];
+        return new Map(
+          rows
+            .filter((row) => wanted.has(String(row.id)))
+            .map((row) => [String(row.id), row]),
+        );
+      };
+      const [unmanaged, unregistered] = await Promise.all([
+        listed('unmanaged'),
+        listed('unregistered'),
+      ]);
+      const material: Record<string, unknown>[] = [];
+      for (const [ref, item] of refs) {
+        if (item.kind === 'unmanaged' || item.kind === 'unregistered') {
+          const row = (
+            item.kind === 'unmanaged' ? unmanaged : unregistered
+          ).get(item.subject);
+          if (row) material.push({ ref, kind: item.kind, ...row });
+          continue;
+        }
+        const found = await deviceSyncReview(reader, {
+          view: 'checks',
+          deviceId: item.subject,
+        }).catch(() => null);
+        if (!found) continue;
+        material.push({
+          ref,
+          kind: item.kind,
+          device: found.device,
+          platformRecords: found.platformRecords,
+          difference: ((found.differences ?? []) as Row[]).find(
+            (difference) => difference.kind === item.kind,
+          ),
+        });
+      }
+      const records = [...unregistered.values()];
+      const answer = await ask(material, signal);
+      model = answer.model;
+      if ('failure' in answer) {
+        await fail(answer.failure, model);
+        return;
+      }
+      const result = await proposal(run, refs, records, answer.decisions);
+      await runs().finish(
+        runId,
+        { status: 'pending', result: { ...result } },
+        model,
+      );
+    } catch (error) {
+      if (signal?.aborted) {
+        await runs().markStarted(runId, false);
+        throw new JobInterruptedError();
+      }
+      dependencies.warn?.({ err: error }, 'MDM follow-up failed');
+      await fail(
+        error instanceof Error && error.name === 'TimeoutError'
+          ? 'timedOut'
+          : 'failed',
+        model,
+      );
+    }
+  };
+
+  /** Asset Steward decides, with its `device-sync` method. */
+  const askModel: Ask = async (material, signal) => {
+    const prompt = [
+      `The pull from the device platforms left these items on MDM 核对. Following your method, decide each one by its \`ref\` (\`item\`), or say why a person must look first. Allowed per kind — stale: correct, keep, verify, escalate; userMismatch: transfer, assign, keep, verify, escalate; statusMismatch: correct, keep, verify, escalate; unmanaged: exempt, verify, escalate; unregistered: register, link, ignore, verify.`,
+      "What each does: register — put the platform record on the register (modelId: the register model it is, from suggestedModelId or the candidates; the device goes to its platform user when it has one); link — it is the register device `target` (a candidate id); ignore — keep the record off the register (not a company asset); transfer / assign — the device goes to the person `target` (the platform user's personId); correct — set the device's register status to `status` (inStock, inUse, onLoan, inRepair or retired — never lost: a person finds that out); keep — the register is right, ignore this difference; exempt — the device rightly is on no platform; verify — a person must check first (say what); escalate — the platform's administrator must act (say what).",
+      `Every decision has a \`reason\`: one short sentence in ${zh() ? 'Chinese' : 'English'} with the fact it rests on (the platform user, the serial, the last sync, a matching device), never an id. Propose a change only where the evidence is clear; otherwise verify.`,
+      `<items>\n${JSON.stringify(material)}\n</items>`,
+      `Return only one JSON object matching this JSON Schema:\n${shapeOf(DECIDED)}`,
+    ].join('\n\n');
+    const settings = container.resolve(settingsServiceToken);
+    const [general, ai] = await Promise.all([
+      settings.get('general'),
+      settings.get('ai'),
+    ]);
+    const skill = await readSkill(container, 'device-sync');
+    const session = await openSession(container, {
+      timeZone: general.timeZone,
+      system: [
+        skill ? `# Method\n\n${skill}` : '',
+        ai.businessNotes
+          ? `The organisation's notes for the AI:\n${ai.businessNotes}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+      work: AGENT,
+    });
+    if (!session) return { failure: 'unavailable', model: null };
+    const model = `${session.model.modelService}/${session.model.model}`;
+    const turn = signal
+      ? AbortSignal.any([AbortSignal.timeout(TURN_MS), signal])
+      : AbortSignal.timeout(TURN_MS);
+    const answer = await session.askJson(prompt, DECIDED, turn);
+    if (!answer) return { failure: 'unreadable', model };
+    return { decisions: answer.decisions, model };
   };
 
   /** Where a registered device is kept: its user's place, else the main one. */

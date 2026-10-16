@@ -82,9 +82,11 @@ export interface ApprovalService {
   /**
    * Told once a request's transaction has committed (2026-10-16): the work
    * agents review it for its approver (`itam/approval-review.ts`). Set by
-   * the agents' provider; a failure in it never reaches the request.
+   * the agents' provider; a failure in it never reaches the request. The
+   * context says who asked and from where: the demo's requests come with
+   * their reviews already written (`sourceType: 'demo'`).
    */
-  onRequested?: (approval: Row) => void;
+  onRequested?: (approval: Row, context: OperationContext) => void;
   /** Told once a decision or a withdrawal has committed: a review waiting on it is over. */
   onSettled?: (approval: Row) => void;
 }
@@ -119,10 +121,13 @@ export function createApprovalService(
     connection: DatabaseConnection,
     hook: 'onRequested' | 'onSettled',
     approval: Row,
+    context?: OperationContext,
   ): void =>
     connection.afterCommit(() => {
       try {
-        service[hook]?.(approval);
+        if (hook === 'onRequested') {
+          if (context) service.onRequested?.(approval, context);
+        } else service.onSettled?.(approval);
       } catch {
         // A listener's failure is its own.
       }
@@ -224,7 +229,7 @@ export function createApprovalService(
         },
         connection,
       );
-      announce(connection, 'onRequested', decode(values));
+      announce(connection, 'onRequested', decode(values), context);
       return decode(values);
     },
 
