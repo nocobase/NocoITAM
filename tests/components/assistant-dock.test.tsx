@@ -77,7 +77,7 @@ it('asks about the record the page offers', () => {
   state.record = { kind: 'devices', id: 'd1', label: 'DE-000004' };
   at('/devices/d1');
   const box = screen.getByRole('textbox', {
-    name: 'ai.dock.placeholderAbout:DE-000004',
+    name: 'ai.dock.placeholder',
   });
   fireEvent.change(box, { target: { value: 'Is it under warranty?' } });
   fireEvent.keyDown(box, { key: 'Enter' });

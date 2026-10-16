@@ -2827,7 +2827,6 @@ const zhCN: AppResource = {
     },
     dock: {
       placeholder: '问任何问题…',
-      placeholderAbout: '问关于「{{name}}」的问题…',
       attach: '添加文件',
       model: '模型',
       send: '发送',

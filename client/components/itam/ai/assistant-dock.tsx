@@ -135,11 +135,9 @@ export function AssistantDock(): ReactElement | null {
   const questions = record
     ? (RECORD_QUESTIONS[record.kind] ?? [])
     : (PAGE_QUESTIONS[pathname] ?? []);
-  const placeholder =
-    unavailable ??
-    (record
-      ? t('ai.dock.placeholderAbout', { name: record.label })
-      : t('ai.dock.placeholder'));
+  // One prompt everywhere (2026-10-16): the record still goes with the
+  // question as context, and its name made the box wrap onto two lines.
+  const placeholder = unavailable ?? t('ai.dock.placeholder');
   // Open while it is being used or holds something; one line otherwise.
   const expanded =
     !unavailable &&

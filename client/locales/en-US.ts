@@ -3004,7 +3004,6 @@ const messages = {
     },
     dock: {
       placeholder: 'Ask anything…',
-      placeholderAbout: 'Ask about "{{name}}"…',
       attach: 'Attach files',
       model: 'Model',
       send: 'Send',
