@@ -1,6 +1,12 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { ArrowRight, Columns3, List } from 'lucide-react';
-import { useState, type ReactElement, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import { Link } from 'react-router';
 
 import {
@@ -80,6 +86,18 @@ export default function WorkbenchPage(): ReactElement {
   // Held on its empty space, the board drags sideways (useDragPan).
   const pan = useDragPan();
   const layout = view === 'board' ? 'column' : 'section';
+  // The bar pinned atop: its height is what the board leaves it.
+  const barRef = useRef<HTMLDivElement>(null);
+  const [bar, setBar] = useState(0);
+  useEffect(() => {
+    const element = barRef.current;
+    if (!element || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() =>
+      setBar(element.getBoundingClientRect().height),
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const columns = loading ? (
     <Column title={t('workbench.myWork')} layout={layout}>
       <Skeleton className='h-24 w-full rounded-lg' />
@@ -91,38 +109,49 @@ export default function WorkbenchPage(): ReactElement {
   );
   return (
     <Page wide>
-      <PageHeader
-        title={t('workbench.title')}
-        actions={
-          <>
-            <WorkViewToggle
-              value={view}
-              onChange={(next) => {
-                setView(next);
-                try {
-                  localStorage.setItem(VIEW_KEY, next);
-                } catch {
-                  // Storage unavailable: kept until the page is left.
-                }
-              }}
-            />
-            <WorkScopeToggle />
-          </>
-        }
-      />
+      {/* The title, the switches and what waits stay pinned as the page
+          scrolls (2026-10-17); 需要关注 below them scrolls away. */}
+      <div
+        ref={barRef}
+        className='sticky top-0 z-10 -mx-6 space-y-3 bg-background/85 px-6 py-3 backdrop-blur-xl'
+      >
+        <PageHeader
+          title={t('workbench.title')}
+          actions={
+            <>
+              <WorkViewToggle
+                value={view}
+                onChange={(next) => {
+                  setView(next);
+                  try {
+                    localStorage.setItem(VIEW_KEY, next);
+                  } catch {
+                    // Storage unavailable: kept until the page is left.
+                  }
+                }}
+              />
+              <WorkScopeToggle />
+            </>
+          }
+        />
+        {/* What is waiting, one count per column, which jumps to it — a
+          column off the right edge is still said. */}
+        {loading ? null : <WorkCounts cards={cards} />}
+      </div>
       {/* 需要关注 above the to-dos (2026-10-17): risks, not work, and as a
-          column it took a board's place. Then a line of what is waiting,
-          one count per column, which jumps to it — a column off the right
-          edge is still said. */}
+          column it took a board's place. */}
       <AttentionBand />
-      {loading ? null : <WorkCounts cards={cards} />}
       {view === 'board' ? (
-        // The board is one window tall (less the header) and scrolls with
-        // the page (2026-10-17): scrolled past the band and the counts, it
-        // has the whole window, each column scrolling its own cards and the
-        // sideways scrollbar at its foot — as the status boards do.
+        // The board is the window's height less the header and the pinned
+        // bar, and scrolls with the page (2026-10-17): scrolled past the
+        // band, it has the rest of the window, each column scrolling its
+        // own cards and the sideways scrollbar at its foot — as the status
+        // boards do.
         <div
-          className='scroll-shown -mx-1 flex h-[calc(100dvh_-_var(--spacing)*16)] min-h-80 shrink-0 cursor-grab gap-3 overflow-x-auto px-1 pb-2 data-[panning]:cursor-grabbing data-[panning]:select-none'
+          className='scroll-shown -mx-1 flex min-h-80 shrink-0 cursor-grab gap-3 overflow-x-auto px-1 pb-2 data-[panning]:cursor-grabbing data-[panning]:select-none'
+          style={{
+            height: `calc(100dvh - var(--spacing) * 22 - ${String(bar)}px)`,
+          }}
           {...pan}
         >
           {columns}
@@ -797,9 +826,9 @@ function AttentionBand(): ReactElement {
         <Skeleton className='h-12 w-full rounded-lg' />
       ) : (
         <>
-          {/* Side by side, a fixed width each: a risk card is a line to
-              scan, not a record. */}
-          <div className='flex flex-wrap gap-1.5'>
+          {/* Side by side, filling the row (2026-10-17): as many to a row
+              as fit at 14rem, each stretched to share it. */}
+          <div className='grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-1.5'>
             {found.map((entry) => (
               <Link
                 key={entry.kind}
@@ -816,7 +845,7 @@ function AttentionBand(): ReactElement {
                 // rules share one column. Only a critical rule is red; severity
                 // is the rule's, not today's.
                 className={cn(
-                  'block w-64 max-w-full rounded-lg border bg-card px-2.5 py-1.5 shadow-xs transition hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                  'block min-w-0 rounded-lg border bg-card px-2.5 py-1.5 shadow-xs transition hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                   entry.severity === 'critical'
                     ? 'border-destructive/40 hover:border-destructive/60'
                     : 'border-border/50 hover:border-border',

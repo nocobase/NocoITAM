@@ -332,4 +332,7 @@ template's roomier spacing narrowed the column's text.
   cards in a grid. The workbench is a `Page wide` — a board's width, the
   page's own height — so the band and the counts scroll away with the page
   and the board, one window tall, then fills it, its columns still
-  scrolling their own cards.
+  scrolling their own cards. The title with its switches and the counts
+  stay pinned atop (a sticky bar whose measured height the board's
+  leaves); 需要关注 sits under them and scrolls away, its cards a grid that
+  fills each row.
