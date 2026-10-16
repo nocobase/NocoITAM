@@ -64,6 +64,7 @@ const zhCN: AppResource = {
     label: '应用导航',
     workbench: '待办',
     agentWork: '智能体工作',
+    guidance: '业务说明',
     search: '搜索',
     inboxGroup: '收件箱',
     // 收件箱, first in the menu (2026-10-16); it said 待办 before, unused.
@@ -2500,8 +2501,7 @@ const zhCN: AppResource = {
     ai: {
       title: 'AI 助手',
       description:
-        '给 AI 助手 Noco 的业务说明，以及它在后台做的事；它的模型和能做的事在「AI → 智能体」中配置，模型服务在「AI → 模型服务」',
-      businessNotes: '业务说明（Noco 开始任务时读取）',
+        'AI 助手 Noco 在后台做的事；业务说明在「AI → 业务说明」，它的模型和能做的事在「AI → 智能体」中配置，模型服务在「AI → 模型服务」',
       onboardingAdvice: '入职建议',
       onboardingAdviceHint:
         '入职负责人可以在新人的入职配备卡片上点「让 Noco 挑选」，Noco 在后台从库存里为新人挑选设备、配件和授权并写明理由，由他确认或更换。关闭后只在对话中准备。',
@@ -3104,6 +3104,17 @@ const zhCN: AppResource = {
     retry: '重试',
     deniedDescription: '你没有访问 {{label}} 的权限。',
     routeFailedDescription: '无法加载 {{packageName}} 的路由 {{label}}。',
+  },
+  guidance: {
+    title: '业务说明',
+    description:
+      'Noco 每次对话、每个智能体每次运行都会读这里：你们是谁、标准配置、预算、什么情况要审批。',
+    placeholder:
+      '比如：\n- 公司 300 人，总部在上海，分部在深圳。\n- 标准笔记本：研发 MacBook Pro 14，其他岗位 Latitude 5440。\n- 笔记本 4 年更换，显示器 6 年。\n- 单张采购单超过 5 万元要财务总监审批。',
+    hint: '用 Markdown 写。留空则不提供业务说明。',
+    save: '保存',
+    saving: '保存中…',
+    saved: '已保存。下一次对话和下一次运行起生效。',
   },
   agentInbox: {
     category: 'AI 建议',

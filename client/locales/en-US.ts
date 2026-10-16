@@ -67,6 +67,7 @@ const messages = {
     label: 'Application navigation',
     workbench: 'To-dos',
     agentWork: 'Agent work',
+    guidance: 'Business notes',
     search: 'Search',
     inboxGroup: 'Inbox',
     // The inbox, first in the menu (2026-10-16); it said To-dos before, unused.
@@ -2658,8 +2659,7 @@ const messages = {
     ai: {
       title: 'AI assistant',
       description:
-        'Business notes for the assistant Noco, and what it does in the background; its model and what it may do are set under AI → Agents, the model services under AI → Model services.',
-      businessNotes: 'Business notes (Noco reads them when a task starts)',
+        'What the assistant Noco does in the background; the business notes are under AI → Business notes, its model and what it may do under AI → Agents, the model services under AI → Model services.',
       onboardingAdvice: 'Onboarding suggestions',
       onboardingAdviceHint:
         "On a joiner's onboarding card, their onboarding owner can ask Noco to choose devices, accessories and seats from stock in the background, with a reason for each, then confirm or change them. Off, it prepares them only in a conversation.",
@@ -3295,6 +3295,17 @@ const messages = {
     deniedDescription: 'You do not have permission to access {{label}}.',
     routeFailedDescription:
       'Route {{label}} from {{packageName}} could not be loaded.',
+  },
+  guidance: {
+    title: 'Business notes',
+    description:
+      'What Noco reads in every conversation and every agent run: who you are, your standard equipment, your budgets, when something needs approval.',
+    placeholder:
+      'For example:\n- 300 people, head office in Shanghai, a branch in Shenzhen.\n- Standard laptops: MacBook Pro 14 for engineering, Latitude 5440 for everyone else.\n- Laptops are replaced after 4 years, monitors after 6.\n- A purchase order over 50,000 needs the finance director.',
+    hint: 'Written in Markdown. Leave it empty for none.',
+    save: 'Save',
+    saving: 'Saving…',
+    saved: 'Saved. It applies from the next conversation and the next run.',
   },
   agentInbox: {
     category: 'AI suggestions',

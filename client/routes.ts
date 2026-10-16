@@ -36,6 +36,7 @@ import {
   Package,
   Printer,
   Recycle,
+  ScrollText,
   ShoppingCart,
   Store,
   Users,
@@ -49,6 +50,27 @@ import {
  * tabs are child routes of the detail page.
  */
 const comingSoon = () => import('./pages/itam/coming-soon-page.js');
+
+/**
+ * One of the Agents plugin's pages drawn in ITAM's look
+ * (components/itam/plugin-page.tsx, 2026-10-16, after NocoCRM's): its
+ * component loaded as the plugin declares it and wrapped, the route
+ * otherwise the plugin's own.
+ */
+const itamStyled = <
+  Route extends { componentLoader: AppClientRouteComponentLoader },
+>(
+  route: Route,
+): Route => ({
+  ...route,
+  componentLoader: async () => {
+    const [{ default: Page }, { withItamStyle }] = await Promise.all([
+      route.componentLoader(),
+      import('./components/itam/plugin-page.js'),
+    ]);
+    return { default: withItamStyle(Page) };
+  },
+});
 
 const deviceTabLoaders: Readonly<
   Record<string, AppClientRouteComponentLoader>
@@ -621,25 +643,40 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
           navigation: { title: 'navigation.agentWork', icon: Workflow },
           componentLoader: () => import('./pages/itam/agent-work.js'),
         },
+        // 业务说明 (2026-10-16, after NocoCRM's Business guidance): what
+        // every conversation and every background run works from, moved out
+        // of 设置 → AI; it is a setting, so it checks the settings page's
+        // grant.
         {
-          ...agentsRoute,
+          name: 'ai-guidance',
+          path: '/ai-guidance',
+          auth: 'required',
+          authz: {
+            resource: { type: 'page', id: 'itam-settings' },
+            action: 'access',
+          },
+          navigation: { title: 'navigation.guidance', icon: ScrollText },
+          componentLoader: () => import('./pages/itam/guidance.js'),
+        },
+        {
+          ...itamStyled(agentsRoute),
           navigation: { title: 'navigation.agents', icon: Bot },
         },
         {
-          ...skillsRoute,
+          ...itamStyled(skillsRoute),
           navigation: { title: 'navigation.skills', icon: BookOpen },
         },
         // The plugin's `/models` is this application's asset models page
         // (a stored page grant names it), so the model services move aside.
         // The plugin's own "set up models" link still says `/models`.
         {
-          ...modelsRoute,
+          ...itamStyled(modelsRoute),
           name: 'ai-models',
           path: '/ai-models',
           navigation: { title: 'navigation.aiModels', icon: Cpu },
         },
         {
-          ...usageRoute,
+          ...itamStyled(usageRoute),
           navigation: { title: 'navigation.usage', icon: Gauge },
         },
       ],

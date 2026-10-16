@@ -555,6 +555,68 @@ label:has(> .sr-only:focus-visible),
   color: var(--primary);
 }
 
+/* The Agents plugin's pages in ITAM's look (2026-10-16, after NocoCRM's;
+   components/itam/plugin-page.tsx wraps them): the plugin draws its own
+   copies of the registry primitives, so ITAM's choices are laid over them
+   here, outside the layers, where they win over the primitives' utilities.
+   Its boxes (a table's frame, a settings box, a list) become ITAM's cards:
+   white, rounded, the faint border and a short shadow; inputs, selects,
+   toggles and tinted boxes are left alone. */
+.itam-plugin-page
+  div.rounded-lg.border:not([data-slot]):not(.inline-flex):not(
+    [class*='border-input']
+  ):not([class*='bg-']) {
+  border-radius: var(--radius-xl);
+  border-color: var(--border);
+  background-color: var(--card);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+/* Cards take the same short shadow; their frame is every card's (below). */
+.itam-plugin-page [data-slot='card'] {
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+/* A table's rows on the general border. */
+.itam-plugin-page [data-slot='table-row'] {
+  border-color: var(--border);
+}
+/* Line tabs (an agent's General, Capabilities, History) as a record page's
+   tabs: on a thin rule across the page, the open one in the foreground over
+   a 2px line of it that sits on the rule, the others muted until hovered. */
+.itam-plugin-page [data-slot='tabs-list'][data-variant='line'] {
+  width: 100%;
+  height: auto;
+  justify-content: flex-start;
+  gap: calc(var(--spacing) * 5);
+  padding: 0;
+  border-bottom: 1px solid var(--border);
+}
+.itam-plugin-page
+  [data-slot='tabs-list'][data-variant='line']
+  > [data-slot='tabs-trigger'] {
+  flex: none;
+  height: calc(var(--spacing) * 10);
+  padding-inline: 0;
+  color: var(--muted-foreground);
+}
+.itam-plugin-page
+  [data-slot='tabs-list'][data-variant='line']
+  > [data-slot='tabs-trigger']:hover,
+.itam-plugin-page
+  [data-slot='tabs-list'][data-variant='line']
+  > [data-slot='tabs-trigger'][data-active] {
+  color: var(--foreground);
+}
+.itam-plugin-page
+  [data-slot='tabs-list'][data-variant='line']
+  > [data-slot='tabs-trigger']::after {
+  bottom: -1px;
+}
+/* The usage chart's first series in the primary colour, as the reports
+   page's bars are, rather than the palette's orange. */
+.itam-plugin-page {
+  --chart-1: color-mix(in oklch, var(--primary) 75%, transparent);
+}
+
 /* A card's frame in the general border, as every other line: the card
    primitive and the plugins' copies draw their ring at a tenth of the
    foreground. Matched by that class, so a card given another ring colour

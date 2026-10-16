@@ -83,6 +83,8 @@ describe('app client routes', () => {
       // or the settings item its API reads. 收件箱, first in the menu, checks
       // no grant: everyone has one, showing only their own.
       'agent-work',
+      // 业务说明 (2026-10-16), a setting: the settings page's grant.
+      'itam-settings',
       'agents',
       'skills',
       'settings:agents.services',

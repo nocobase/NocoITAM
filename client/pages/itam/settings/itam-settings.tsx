@@ -7,7 +7,6 @@ import { PageHeader } from '#components/page-header';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { useItamSettings, type ItamSettings } from '@/lib/itam/api';
 
 import { NumberField, SettingsCard } from './settings-parts';
@@ -224,17 +223,7 @@ function AiCard({
       error={save.error}
       saved={save.isSuccess}
     >
-      <div className='grid gap-1.5'>
-        <Label htmlFor='ai-notes'>{t('settings.ai.businessNotes')}</Label>
-        <Textarea
-          id='ai-notes'
-          rows={4}
-          value={draft.businessNotes}
-          onChange={(event) =>
-            setDraft({ ...draft, businessNotes: event.target.value })
-          }
-        />
-      </div>
+      {/* 业务说明 moved to its own page, AI → 业务说明 (2026-10-16). */}
       <div className='flex items-start justify-between gap-4'>
         <div className='grid gap-1'>
           <Label htmlFor='ai-onboarding-advice'>

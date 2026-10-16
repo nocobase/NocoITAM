@@ -3158,6 +3158,11 @@ Decisions taken while building it:
   `generateQuietly` (reasoning off) was not ported either: ITAM's runs use
   the gateway's `generate` as its other model calls do.
 
+- **The AI section follows NocoCRM's Agent team section**: 业务说明 is a
+  page of its own (the `ai.businessNotes` setting, moved from 设置 → AI),
+  and the Agents plugin's pages take ITAM's look through a wrapper and CSS
+  rules, as NocoCRM's take its own.
+
 Temporary implementations added (`@temporary(nocobase-official)`): the work
 agent created from code (`work-agents.ts`), its translated name written on
 the plugin's row, and the skill put into the library from code (as before).
