@@ -509,8 +509,9 @@ function InboxPageContent({
             // sitting in the page's header for every tab.
             head={
               view === 'all' ? (
-                // As far under the tabs' rule as the first item's title is under it.
-                <div className='flex shrink-0 justify-start pt-1.5'>
+                // As much room under it as above it (2026-10-16): the list's
+                // top padding above, and with the heading row's gap, below.
+                <div className='flex shrink-0 justify-start pb-2'>
                   <Button
                     variant='ghost'
                     size='xs'
