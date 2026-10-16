@@ -4,7 +4,7 @@ import {
 } from '@nocobase/app-plugin-agents/client/chat';
 import { useTranslation } from '@nocobase/i18n/client';
 import { Sparkles } from 'lucide-react';
-import { useRef, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useLocation } from 'react-router';
 
 import { useIsMobile } from '#hooks/use-mobile';
@@ -101,6 +101,23 @@ export function AssistantDock(): ReactElement | null {
   const phoneRef = useRef<HTMLButtonElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   useFocusReturn(() => (isMobile ? phoneRef.current : inputRef.current));
+  // A press outside closes it too, focus or not: a page that drags on a
+  // press keeps focus where it was, so no blur would come. Its model menu,
+  // outside it while open, keeps it open (2026-10-16, as NocoCRM's).
+  useEffect(() => {
+    if (!focused || modelMenu) return;
+    const outside = (event: PointerEvent): void => {
+      const target = event.target as Element | null;
+      if (target && dockRef.current?.contains(target)) return;
+      // The veil closes it on its click (below).
+      if (target?.closest?.('[data-dock-veil]')) return;
+      if (dockRef.current?.contains(document.activeElement))
+        (document.activeElement as HTMLElement | null)?.blur();
+      setFocused(false);
+    };
+    document.addEventListener('pointerdown', outside, true);
+    return () => document.removeEventListener('pointerdown', outside, true);
+  }, [focused, modelMenu]);
 
   if (
     readiness.state === 'loading' ||
@@ -148,10 +165,33 @@ export function AssistantDock(): ReactElement | null {
 
   return (
     <TooltipProvider>
+      {/* While the box is in use, a veil over the page under it, drawn as a
+          dialog's backdrop (2026-10-16, as NocoCRM's): a press beside the
+          box lands on the veil and only closes the box, rather than on the
+          list or the board behind it. */}
+      {focused && !isMobile && !panelOpen ? (
+        <div
+          aria-hidden
+          data-dock-veil=''
+          // Drawn as a dialog's backdrop (ui/dialog.tsx).
+          className='fixed inset-0 z-40 bg-black/10 duration-100 animate-in fade-in-0 supports-backdrop-filter:backdrop-blur-xs'
+          // Closed on its own click, so the press's click lands here and
+          // never reaches the row it covers.
+          onClick={() => {
+            if (dockRef.current?.contains(document.activeElement))
+              (document.activeElement as HTMLElement | null)?.blur();
+            setFocused(false);
+          }}
+        />
+      ) : null}
       <div
         // Over the bottom of the main column, below the header and every
-        // overlay, above a page's sticky bars (z-10).
-        className='pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-end px-4 md:justify-center'
+        // overlay, above a page's sticky bars (z-10); while in use, over its
+        // veil, which covers the header (z-40) as a dialog's backdrop does,
+        // every overlay (z-50) still above.
+        className={`pointer-events-none absolute inset-x-0 bottom-4 flex justify-end px-4 md:justify-center ${
+          focused && !isMobile ? 'z-40' : 'z-20'
+        }`}
         hidden={panelOpen}
       >
         {isMobile ? (
