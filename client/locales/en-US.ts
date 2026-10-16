@@ -451,10 +451,11 @@ const messages = {
       leftOnLeaveDate: 'Leave date {{date}} reached; marked as left',
       recoveryPrepared:
         'Recovery listed: {{devices}} devices, {{stock}} stock, {{seats}} seats',
-      seatAssign: 'Seat assigned to {{target}}',
-      seatAssigned: 'Seat on {{target}}',
-      seatReclaim: 'Seat reclaimed from {{target}}',
-      seatReclaimed: 'Seat on {{target}} reclaimed',
+      // The type already says Seat assigned / reclaimed: only whom or which.
+      seatAssign: 'to {{target}}',
+      seatAssigned: 'on {{target}}',
+      seatReclaim: 'from {{target}}',
+      seatReclaimed: 'on {{target}}',
       attachmentAdded: 'added {{name}}',
       attachmentRemoved: 'removed {{name}}',
       productKeySet: 'set',

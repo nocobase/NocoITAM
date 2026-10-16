@@ -440,10 +440,11 @@ const zhCN: AppResource = {
       leftOnLeaveDate: '离职日期 {{date}} 已到，自动标记为离职',
       recoveryPrepared:
         '已整理待回收清单：设备 {{devices}}、库存 {{stock}}、席位 {{seats}}',
-      seatAssign: '席位分配给 {{target}}',
-      seatAssigned: '获得 {{target}} 的席位',
-      seatReclaim: '从 {{target}} 收回席位',
-      seatReclaimed: '收回 {{target}} 的席位',
+      // The type already says 席位分配 / 席位收回: only whom or which.
+      seatAssign: '给 {{target}}',
+      seatAssigned: '{{target}}',
+      seatReclaim: '从 {{target}}',
+      seatReclaimed: '{{target}}',
       attachmentAdded: '添加 {{name}}',
       attachmentRemoved: '删除 {{name}}',
       productKeySet: '已设置',

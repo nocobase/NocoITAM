@@ -37,10 +37,13 @@ export type TimelineEntry<T extends LayoutItem> =
 
 /** Edits by one person this close together read as one sitting. */
 export const EDIT_WINDOW_MS = 10 * 60 * 1000;
-/** A run of changes longer than this between comments folds… */
-export const RUN_LIMIT = 6;
+/**
+ * A run of changes longer than this between comments folds… (2026-10-16:
+ * 10 and 5, from 6 and 3, which left a busy record showing three lines)
+ */
+export const RUN_LIMIT = 10;
 /** …keeping this many in view. */
-export const RUN_KEEP = 3;
+export const RUN_KEEP = 5;
 
 const isComment = (item: LayoutItem): boolean => item.event?.type === 'comment';
 
@@ -115,7 +118,8 @@ const createdAtOf = <T extends LayoutItem>(unit: TimelineUnit<T>): string =>
 /**
  * The lines in order with day headings among them, and each run of more
  * than `RUN_LIMIT` changes between comments cut to its first `RUN_KEEP`
- * behind a fold — unless the reader opened that fold (`opened`).
+ * behind a fold — unless the reader opened that fold (`opened`). With no
+ * comment to keep in reach, nothing folds: the changes are all there is.
  */
 export function layoutTimeline<T extends LayoutItem>(
   units: readonly TimelineUnit<T>[],
@@ -131,9 +135,12 @@ export function layoutTimeline<T extends LayoutItem>(
       }
   )[] = [];
   let run: TimelineUnit<T>[] = [];
+  const commented = units.some(
+    (unit) => unit.kind === 'item' && isComment(unit.item),
+  );
   const flush = () => {
     const foldId = run[RUN_KEEP] ? `fold:${run[RUN_KEEP].id}` : '';
-    if (run.length > RUN_LIMIT && !opened.has(foldId)) {
+    if (commented && run.length > RUN_LIMIT && !opened.has(foldId)) {
       for (const unit of run.slice(0, RUN_KEEP))
         visible.push({ kind: 'unit', unit });
       visible.push({ kind: 'fold', id: foldId, units: run.slice(RUN_KEEP) });
