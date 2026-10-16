@@ -1414,7 +1414,7 @@ const messages = {
     reservedShort: 'Reserved',
     assignedSince: ', since {{date}}',
     followsModel: 'Set by the model',
-    startAssignee: 'Used by',
+    startBorrower: 'Borrowed by',
     followsOrder: 'Set by the purchase order',
     replacementRule:
       "Computed from the purchase date plus the category's replacement cycle",

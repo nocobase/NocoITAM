@@ -5,6 +5,7 @@ import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { useItamMutations, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import {
+  ASSIGNEE_TYPES,
   DEVICE_CREATE_FIELDS,
   DEVICE_FIELDS,
   DEVICE_STATUS_OPTIONS,
@@ -21,6 +22,15 @@ import { useCurrentUserId } from '@/lib/itam/permissions';
  * column: 使用中 is sent as `assignTo`, 借出 as `loanTo`, and the server
  * assigns or loans in the same step.
  */
+const inUse = (values: Readonly<Record<string, unknown>>) =>
+  values.startStatus === 'inUse';
+const onLoan = (values: Readonly<Record<string, unknown>>) =>
+  values.startStatus === 'onLoan';
+/** 使用中 goes to a person, a place or another device; a loan to a person. */
+const targetIs =
+  (type: string) => (values: Readonly<Record<string, unknown>>) =>
+    inUse(values) && values.startTargetType === type;
+
 const START_FIELDS: readonly FieldDefinition[] = [
   {
     key: 'startStatus',
@@ -33,25 +43,56 @@ const START_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.basic',
   },
   {
+    key: 'startTargetType',
+    label: 'fields.assigneeType',
+    type: 'select',
+    options: ASSIGNEE_TYPES.map((value) => ({
+      value,
+      label: `enums.assigneeType.${value}`,
+    })),
+    visibleWhen: inUse,
+    requiredWhen: inUse,
+    group: 'groups.basic',
+  },
+  {
     key: 'assigneeId',
-    label: 'devices.startAssignee',
+    label: 'devices.holding',
+    // A loan's person borrows it rather than holds it.
+    labelWhen: (values) =>
+      onLoan(values) ? 'devices.startBorrower' : undefined,
     type: 'reference',
     reference: {
       collection: 'people',
       filter: { 'employmentStatus:ne': 'left' },
     },
-    visibleWhen: (values) =>
-      values.startStatus === 'inUse' || values.startStatus === 'onLoan',
-    requiredWhen: (values) =>
-      values.startStatus === 'inUse' || values.startStatus === 'onLoan',
+    visibleWhen: (values) => targetIs('person')(values) || onLoan(values),
+    requiredWhen: (values) => targetIs('person')(values) || onLoan(values),
+    group: 'groups.basic',
+  },
+  {
+    key: 'startLocationId',
+    label: 'devices.holding',
+    type: 'reference',
+    reference: { collection: 'locations' },
+    visibleWhen: targetIs('location'),
+    requiredWhen: targetIs('location'),
+    group: 'groups.basic',
+  },
+  {
+    key: 'startDeviceId',
+    label: 'devices.holding',
+    type: 'reference',
+    reference: { collection: 'devices' },
+    visibleWhen: targetIs('device'),
+    requiredWhen: targetIs('device'),
     group: 'groups.basic',
   },
   {
     key: 'startReturnDate',
     label: 'fields.expectedReturnDate',
     type: 'date',
-    visibleWhen: (values) => values.startStatus === 'onLoan',
-    requiredWhen: (values) => values.startStatus === 'onLoan',
+    visibleWhen: onLoan,
+    requiredWhen: onLoan,
     group: 'groups.basic',
   },
 ];
@@ -116,6 +157,7 @@ export function DeviceCreateDialog({
       initial={{
         ...(currentUserId ? { ownerId: currentUserId } : {}),
         startStatus: 'inStock',
+        startTargetType: 'person',
         ...initial,
       }}
       derive={(change, values) => {
@@ -156,18 +198,30 @@ export function DeviceCreateDialog({
       error={mutations.create.error}
       onSubmit={async ({
         startStatus,
+        startTargetType,
         assigneeId,
+        startLocationId,
+        startDeviceId,
         startReturnDate,
         ...values
       }) => {
-        const target = { targetType: 'person', targetId: assigneeId };
+        const targetId =
+          startStatus === 'onLoan' || startTargetType === 'person'
+            ? assigneeId
+            : startTargetType === 'location'
+              ? startLocationId
+              : startDeviceId;
         const created = await mutations.create.mutateAsync({
           ...values,
-          ...(startStatus === 'inUse' && assigneeId
-            ? { assignTo: target }
-            : startStatus === 'onLoan' && assigneeId
+          ...(startStatus === 'inUse' && targetId
+            ? { assignTo: { targetType: startTargetType, targetId } }
+            : startStatus === 'onLoan' && targetId
               ? {
-                  loanTo: { ...target, expectedReturnDate: startReturnDate },
+                  loanTo: {
+                    targetType: 'person',
+                    targetId,
+                    expectedReturnDate: startReturnDate,
+                  },
                 }
               : {}),
         });

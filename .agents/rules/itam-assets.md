@@ -237,8 +237,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `ADDED_FIELDS` in `reconcile-grants.ts` is what an existing database
   learns it from.
 - **A new device starts 库存中, 使用中 or 借出中** (2026-10-16): 创建设备
-  asks for the status, then the person (and for a loan the expected return
-  date), then the 负责人; sent as `assignTo` / `loanTo` with
+  asks for the status, then where it goes — 使用中 to a person, a place or
+  another device (去向类型, 去向), 借出中 to a person (借用人) until an
+  expected return date, as the 分配 and 借出 dialogs allow — then the
+  负责人; sent as `assignTo` / `loanTo` with
   `POST /itam/devices`, the service assigns or loans in the create's
   transaction (`create(…, start)`, which also takes that action), so a
   refused one leaves no device. Other statuses need more (a repair order,
