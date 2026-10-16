@@ -29,16 +29,15 @@ export function FieldActions({
     });
   };
   const icon =
-    'inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none';
+    'inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none';
   return (
     // The icons float at the value's top right on hover rather than taking
-    // width from it (2026-10-16), on the card's ground so they read over
-    // the text.
+    // width from it (2026-10-16), inside the field's hover ground.
     <div className='group/field relative'>
       <div ref={valueRef} className='min-w-0'>
         {children}
       </div>
-      <div className='pointer-events-none absolute -top-0.5 right-0 flex items-center rounded-md bg-card/95 opacity-0 shadow-xs ring-1 ring-border/60 transition-opacity group-focus-within/field:pointer-events-auto group-focus-within/field:opacity-100 group-hover/field:pointer-events-auto group-hover/field:opacity-100'>
+      <div className='pointer-events-none absolute top-0 right-0 flex items-center rounded-md bg-muted opacity-0 transition-opacity group-focus-within/field:pointer-events-auto group-focus-within/field:opacity-100 group-hover/field:pointer-events-auto group-hover/field:opacity-100'>
         {onEdit ? (
           <button
             type='button'
@@ -47,7 +46,7 @@ export function FieldActions({
             title={t('actions.edit')}
             onClick={onEdit}
           >
-            <Pencil className='size-3.5' aria-hidden />
+            <Pencil className='size-3' aria-hidden />
           </button>
         ) : null}
         <button
@@ -58,9 +57,9 @@ export function FieldActions({
           onClick={copy}
         >
           {copied ? (
-            <Check className='size-3.5' aria-hidden />
+            <Check className='size-3' aria-hidden />
           ) : (
-            <Copy className='size-3.5' aria-hidden />
+            <Copy className='size-3' aria-hidden />
           )}
         </button>
       </div>
