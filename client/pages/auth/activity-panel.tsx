@@ -110,14 +110,44 @@ const ZONES: Readonly<Record<Zone, ZoneBox>> = {
 const ZONE_KEYS = Object.keys(ZONES) as Zone[];
 
 /** The centre of a zone's place, in percent of the plan. */
+// The plan's proportions, so that one padding reads the same across and
+// down: percent of the width converts to percent of the height by 16 / 11.
+const ASPECT = 16 / 11;
+/** The padding inside a zone, in percent of the plan's width and height. */
+const PAD_X = 2.8;
+const PAD_Y = PAD_X * ASPECT;
+/** The zone's name above its places, in percent of the plan's height. */
+const HEAD = 13;
+/** The gap between two places, in percent of the plan's width. */
+const GAP = 1.2;
+
+/** The grid of places inside a zone, in percent of the plan. */
+function gridOf(zone: Zone): {
+  readonly left: number;
+  readonly top: number;
+  readonly colW: number;
+  readonly rowH: number;
+} {
+  const box = ZONES[zone];
+  // Half a gap beyond the padding, so a place's edge meets the padding.
+  const left = box.x + PAD_X - GAP / 2;
+  const top = box.y + HEAD - (GAP * ASPECT) / 2;
+  return {
+    left,
+    top,
+    colW: (box.w - 2 * PAD_X + GAP) / box.cols,
+    rowH: (box.h - HEAD - PAD_Y + GAP * ASPECT) / box.rows,
+  };
+}
+
 function placeOf(zone: Zone, slot: number): { x: number; y: number } {
   const box = ZONES[zone];
+  const grid = gridOf(zone);
   const column = slot % box.cols;
   const row = Math.floor(slot / box.cols);
-  const step = (box.w - 6) / box.cols;
   return {
-    x: box.x + 3 + step * (column + 0.5),
-    y: box.y + (box.inside ? 24 : 16) + row * 15,
+    x: grid.left + grid.colW * (column + 0.5),
+    y: grid.top + grid.rowH * (row + 0.5),
   };
 }
 
@@ -151,8 +181,7 @@ const DEVICES: readonly Device[] = [
 const STATUS_STYLE: Readonly<Record<Status, string>> = {
   inUse: 'bg-primary text-primary-foreground shadow-sm',
   inStock: 'bg-card text-foreground shadow-sm ring-1 ring-border',
-  ordered:
-    'border border-dashed border-muted-foreground/50 bg-background text-muted-foreground',
+  ordered: 'bg-muted text-muted-foreground opacity-60',
   inRepair: 'bg-warning text-warning-foreground shadow-sm',
   disposal: 'bg-destructive text-destructive-foreground shadow-sm',
 };
@@ -321,7 +350,7 @@ function ZoneArea({
       className={`absolute overflow-hidden rounded-xl border transition-colors duration-700 ${
         box.inside
           ? 'border-border bg-background/80'
-          : 'border-dashed border-muted-foreground/30 bg-muted/40'
+          : 'border-border/70 bg-muted/50'
       } ${counted ? 'border-success-foreground/40 bg-success' : ''}`}
       style={{
         left: `${String(box.x)}%`,
@@ -330,39 +359,42 @@ function ZoneArea({
         height: `${String(box.h)}%`,
       }}
     >
-      <span className='absolute top-2 left-2.5 inline-flex items-center gap-1.5 text-[0.6875rem] font-medium text-muted-foreground'>
+      <span
+        className='absolute inline-flex items-center gap-1.5 text-[0.6875rem] font-medium text-muted-foreground'
+        style={{
+          left: `${String((PAD_X / box.w) * 100)}%`,
+          top: `${String((PAD_Y / box.h) * 100)}%`,
+        }}
+      >
         <Icon className='size-3.5' />
         {t(`loginActivity.zones.${zone}`)}
         {counted ? (
           <Check className='size-3.5 animate-in text-success-foreground duration-300 zoom-in-50 motion-reduce:animate-none' />
         ) : null}
       </span>
-      {zone === 'warehouse'
-        ? // Shelves under each row of stock.
-          [0, 1, 2].map((row) => (
+      {
+        // A place at every slot, taken or not — a desk on the floor, a bay
+        // on the warehouse's shelves, a spot outside — so every room lays
+        // out on the same grid and the same padding.
+        places.map((slot) => {
+          const at = placeOf(zone, slot);
+          const grid = gridOf(zone);
+          return (
             <span
-              className='absolute right-3 left-3 h-1 rounded-full bg-muted-foreground/15'
-              key={row}
-              style={{ top: `${String(((24 + row * 15 + 6) / box.h) * 100)}%` }}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-md ${
+                box.inside ? 'bg-muted/70' : 'bg-background/60'
+              }`}
+              key={slot}
+              style={{
+                left: `${String(((at.x - box.x) / box.w) * 100)}%`,
+                top: `${String(((at.y - box.y) / box.h) * 100)}%`,
+                width: `${String(((grid.colW - GAP) / box.w) * 100)}%`,
+                height: `${String(((grid.rowH - GAP * ASPECT) / box.h) * 100)}%`,
+              }}
             />
-          ))
-        : null}
-      {zone === 'floor'
-        ? // A desk at every place, taken or not.
-          places.map((slot) => {
-            const at = placeOf('floor', slot);
-            return (
-              <span
-                className='absolute h-[22%] w-[15%] -translate-x-1/2 -translate-y-1/2 rounded-md border border-dashed border-muted-foreground/20'
-                key={slot}
-                style={{
-                  left: `${String(((at.x - box.x) / box.w) * 100)}%`,
-                  top: `${String(((at.y - box.y) / box.h) * 100)}%`,
-                }}
-              />
-            );
-          })
-        : null}
+          );
+        })
+      }
       {syncing ? (
         // The MDM's sweep across the desks.
         <span className='auth-sync-sweep pointer-events-none absolute inset-y-0 w-1/3' />
@@ -427,8 +459,8 @@ export function ActivityPanel(): ReactElement {
                   />
                 ))}
                 {/* The company's wall: inside above, outside below. */}
-                <span className='absolute top-[67%] right-0 left-0 border-t border-dashed border-muted-foreground/30' />
-                <span className='absolute top-[67%] left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-[0.625rem] tracking-wider text-muted-foreground uppercase'>
+                <span className='absolute top-[67%] right-0 left-0 h-px bg-gradient-to-r from-transparent via-border to-transparent' />
+                <span className='absolute top-[67%] left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-card px-2.5 py-0.5 text-[0.625rem] text-muted-foreground'>
                   {t('loginActivity.outside')}
                 </span>
                 {/* Each move's trail, from where the device was. */}
@@ -451,10 +483,10 @@ export function ActivityPanel(): ReactElement {
                           )} ${String(lift)} ${String(device.x)} ${String(device.y)}`}
                           fill='none'
                           key={`${latest?.id ?? ''}-${device.id}`}
+                          pathLength={1}
                           stroke='currentColor'
-                          strokeDasharray='4 4'
                           strokeLinecap='round'
-                          strokeWidth='1.5'
+                          strokeWidth='2'
                           vectorEffect='non-scaling-stroke'
                         />
                       );
