@@ -21,6 +21,18 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
   through `admin.sets.pages`, since neither has a menu entry any more. A
   link written for the old `?tab=` still lands (`MOVED` in
   `itam-settings.tsx`).
+- 权限集 follows NocoCRM's current pages (2026-10-16): each row of the list
+  opens two drawers over it, 权限 at `…/:setKey/permissions/:section` and 成员
+  at `…/:setKey/members` (the set's address alone opens 权限), and the
+  permissions show in three tabs by area — 页面, 业务操作, 管理
+  (`detail/areas.ts`) — over one draft the drawer keeps while the tabs
+  change, saved from its footer, asking before it closes with unsaved
+  changes. `client/pages/settings/permission-sets/`,
+  `client/components/permission-editor.tsx` and `client/pages/settings/
+shared.tsx` are NocoCRM's files with this application's adaptations: the
+  `admin.*` namespace rather than `crm.admin.*`, `ToneBadge` for tags, the
+  settings' own `sortable-table` and `auto-load`, and the bordered card
+  `shared.tsx` draws on `bg-card`. Port a later CRM change the same way.
 - An asset-type tag is outlined, not filled: the contract
   `[data-slot='badge'][data-tag='kind']` in `client/styles.css` gives it a
   border and no background, which is what tells it apart from a status tag

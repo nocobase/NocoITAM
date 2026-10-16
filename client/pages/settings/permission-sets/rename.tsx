@@ -1,6 +1,5 @@
 // Rename permission set: from a row's menu (/settings/permission-sets/
-// edit/:setKey) or a set's page header (…/:setKey/<tab>/edit). Only the
-// title is sent, so a rename never touches the set's grants (guideline R1);
+// edit/:setKey). Only the title is sent, so a rename never touches the set's grants (guideline R1);
 // a set's key does not change.
 import { useApiClient, useToaster } from '@nocobase/app-client';
 import { useAuthorizationClient } from '@nocobase/app-plugin-authorization/client';

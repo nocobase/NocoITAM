@@ -140,19 +140,6 @@ const domainRoute = (
   ],
 });
 
-// The overlays a permission set's header opens, declared under each of its
-// tabs, so they stack on the tab being shown; `tab` is that tab's route name.
-function permissionSetHeaderRoutes(tab: string): AppClientRouteDefinition[] {
-  return [
-    {
-      name: `${tab}-rename`,
-      path: 'edit',
-      componentLoader: () =>
-        import('./pages/settings/permission-sets/rename.js'),
-    },
-  ];
-}
-
 /**
  * Page authorization arrived with template beta.43: an App page with no rule
  * of its own checks a page grant named after its route. Every page this
@@ -728,21 +715,30 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
                 import('./pages/settings/permission-sets/rename.js'),
             },
             {
-              // A set's own page, covering the list, with its two tabs; the
-              // header's Rename is declared under each tab.
+              // A set's address: its permissions and its members are drawers
+              // over the list (pages/settings/permission-sets/detail/, after
+              // NocoCRM's, 2026-10-16); the address alone opens the
+              // permissions.
               name: 'settings-permission-set',
               path: ':setKey',
               componentLoader: () =>
                 import('./pages/settings/permission-sets/detail/index.js'),
               children: [
                 {
+                  // One draft for the three areas: the drawer stays mounted
+                  // while :section changes.
                   name: 'settings-permission-set-permissions',
                   path: 'permissions',
                   componentLoader: () =>
                     import('./pages/settings/permission-sets/detail/permissions.js'),
-                  children: permissionSetHeaderRoutes(
-                    'settings-permission-set-permissions',
-                  ),
+                  children: [
+                    {
+                      name: 'settings-permission-set-area',
+                      path: ':section',
+                      componentLoader: () =>
+                        import('./pages/settings/permission-sets/detail/area.js'),
+                    },
+                  ],
                 },
                 {
                   name: 'settings-permission-set-members',
@@ -750,9 +746,6 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
                   componentLoader: () =>
                     import('./pages/settings/permission-sets/detail/members.js'),
                   children: [
-                    ...permissionSetHeaderRoutes(
-                      'settings-permission-set-members',
-                    ),
                     {
                       name: 'settings-permission-set-members-add',
                       path: 'add',

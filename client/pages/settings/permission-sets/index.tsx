@@ -1,5 +1,6 @@
-// Settings → Permission sets: the roles people hold. The list opens a set's
-// own page (its permissions and members, covering the list); a set is
+// Settings → Permission sets: the roles people hold. Each row opens the
+// set's permissions and its members in drawers over the list
+// (detail/permissions.tsx, detail/members.tsx); a set is
 // created, renamed and deleted here. Built on the authorization plugin's
 // `/api/authorization/permissionSets`, which checks the settings item
 // `authorization.permission-sets` for every call.
@@ -11,10 +12,12 @@ import {
   MoreHorizontalIcon,
   PencilIcon,
   PlusIcon,
+  ShieldCheckIcon,
   Trash2Icon,
+  UsersRoundIcon,
 } from 'lucide-react';
-import { useMemo, useRef, useState, type ReactElement } from 'react';
-import { Link, Outlet, useLocation } from 'react-router';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { Link, Outlet, useLocation, useResolvedPath } from 'react-router';
 
 import { PageContainer } from '#components/page-container';
 import { PageHeader } from '#components/page-header';
@@ -88,6 +91,21 @@ export default function PermissionSetsPage(): ReactElement {
     readonly set: PermissionSet | null;
   }>({ open: false, set: null });
   const link = (pathname: string) => ({ pathname, search: location.search });
+  // A drawer opened by its address has no opener to give focus back to, nor
+  // has one left by "Back to the list": focus lands on the list's title
+  // rather than the page (guideline A6).
+  const own = useResolvedPath('.');
+  const atList = location.pathname.replace(/\/$/u, '') === own.pathname;
+  const wasAtListRef = useRef(atList);
+  useEffect(() => {
+    const returned = atList && !wasAtListRef.current;
+    wasAtListRef.current = atList;
+    if (!returned) return;
+    const timer = window.setTimeout(() => {
+      if (document.activeElement === document.body) titleRef.current?.focus();
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [atList]);
 
   let content: ReactElement;
   if (sets.error && !sets.data) {
@@ -127,8 +145,10 @@ export default function PermissionSetsPage(): ReactElement {
                 <TableRow key={set.key}>
                   <TableCell className='max-w-72'>
                     <Link
-                      to={link(`${encodeURIComponent(set.key)}/permissions`)}
-                      className='block font-medium hover:text-primary'
+                      to={link(
+                        `${encodeURIComponent(set.key)}/permissions/pages`,
+                      )}
+                      className='block font-medium underline-offset-4 hover:underline'
                     >
                       <TruncatedText>{name}</TruncatedText>
                     </Link>
@@ -152,54 +172,94 @@ export default function PermissionSetsPage(): ReactElement {
                     )}
                   </TableCell>
                   <TableCell className='w-0 text-right'>
-                    {rename || remove ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <Button
-                              variant='ghost'
-                              size='icon-sm'
-                              aria-label={text('common.actionsFor', { name })}
-                            />
-                          }
-                        >
-                          <MoreHorizontalIcon />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align='end'
-                          className='w-auto min-w-40'
-                        >
-                          {rename ? (
-                            <DropdownMenuGroup>
-                              <DropdownMenuItem
-                                render={
-                                  <Link
-                                    to={link(
-                                      `edit/${encodeURIComponent(set.key)}`,
-                                    )}
-                                  />
-                                }
-                              >
-                                <PencilIcon />
-                                {text('sets.rename')}
-                              </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                          ) : null}
-                          {rename && remove ? <DropdownMenuSeparator /> : null}
-                          {remove ? (
-                            <DropdownMenuGroup>
-                              <DropdownMenuItem
-                                variant='destructive'
-                                onClick={() => setDeletion({ open: true, set })}
-                              >
-                                <Trash2Icon />
-                                {text('sets.delete')}
-                              </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                          ) : null}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : null}
+                    <div className='flex items-center justify-end gap-1'>
+                      {/* The set's two views, each a drawer over the list. */}
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        nativeButton={false}
+                        aria-label={text('sets.permissionsOf', { name })}
+                        render={
+                          <Link
+                            to={link(
+                              `${encodeURIComponent(set.key)}/permissions/pages`,
+                            )}
+                          />
+                        }
+                      >
+                        <ShieldCheckIcon data-icon='inline-start' />
+                        {text('sets.openPermissions')}
+                      </Button>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        nativeButton={false}
+                        aria-label={text('sets.membersOf', { name })}
+                        render={
+                          <Link
+                            to={link(`${encodeURIComponent(set.key)}/members`)}
+                          />
+                        }
+                      >
+                        <UsersRoundIcon data-icon='inline-start' />
+                        {text('sets.openMembers')}
+                      </Button>
+                      {rename || remove ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button
+                                variant='ghost'
+                                size='icon-sm'
+                                aria-label={text('common.actionsFor', { name })}
+                              />
+                            }
+                          >
+                            <MoreHorizontalIcon />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align='end'
+                            className='w-auto min-w-40'
+                          >
+                            {rename ? (
+                              <DropdownMenuGroup>
+                                <DropdownMenuItem
+                                  render={
+                                    <Link
+                                      to={link(
+                                        `edit/${encodeURIComponent(set.key)}`,
+                                      )}
+                                    />
+                                  }
+                                >
+                                  <PencilIcon />
+                                  {text('sets.rename')}
+                                </DropdownMenuItem>
+                              </DropdownMenuGroup>
+                            ) : null}
+                            {rename && remove ? (
+                              <DropdownMenuSeparator />
+                            ) : null}
+                            {remove ? (
+                              <DropdownMenuGroup>
+                                <DropdownMenuItem
+                                  variant='destructive'
+                                  onClick={() =>
+                                    setDeletion({ open: true, set })
+                                  }
+                                >
+                                  <Trash2Icon />
+                                  {text('sets.delete')}
+                                </DropdownMenuItem>
+                              </DropdownMenuGroup>
+                            ) : null}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        // The menu's room, so the buttons line up row to row.
+                        <span aria-hidden className='size-7 shrink-0' />
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );

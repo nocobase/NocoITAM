@@ -43,22 +43,11 @@ export function useMembersKey(setKey: string): readonly string[] {
   return useMemo(() => [...base, 'members', setKey], [base, setKey]);
 }
 
-export interface MembersOutletContext extends PermissionSetPageContext {
+/** What the Members drawer passes its Add members dialog. */
+export interface MembersOutletContext {
+  readonly set: PermissionSet;
   readonly members: readonly PermissionSetAssignment[];
   readonly reloadMembers: () => void;
-}
-
-export interface PermissionSetPageContext {
-  readonly set: PermissionSet;
-  /** Refetches the set and the list behind it. */
-  readonly reload: () => void;
-  /**
-   * Lets the next navigation pass the Permissions tab's unsaved-changes guard: one the page means, such as opening
-   * Rename over the tab (the draft stays mounted under it) or leaving for the list after the set was deleted.
-   */
-  readonly allowNavigation: () => void;
-  /** True once, after `allowNavigation`; the guard reads it. */
-  readonly consumeAllowedNavigation: () => boolean;
 }
 
 /** A set's members with their names (the assignments, and the users they name, resolved). */

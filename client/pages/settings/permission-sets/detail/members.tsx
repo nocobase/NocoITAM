@@ -1,7 +1,7 @@
-// A permission set's Members tab: who holds it, people and "all signed-in
-// users", added through the Add members dialog and removed after a
-// confirmation. The authorization plugin keeps the last administrator
-// (LAST_ASSIGNMENT).
+// A permission set's Members drawer, over the list (…/:setKey/members): who
+// holds it, people and "all signed-in users", added through the Add members
+// dialog stacked on the drawer and removed after a confirmation. The
+// authorization plugin keeps the last administrator (LAST_ASSIGNMENT).
 import { useToaster } from '@nocobase/app-client';
 import {
   useAuthorizationClient,
@@ -14,9 +14,17 @@ import {
   UserPlusIcon,
   UsersRoundIcon,
 } from 'lucide-react';
-import { useMemo, useRef, useState, type ReactElement } from 'react';
-import { Link, Outlet, useLocation, useOutletContext } from 'react-router';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import {
+  Link,
+  Outlet,
+  useLocation,
+  useOutletContext,
+  useParams,
+  useResolvedPath,
+} from 'react-router';
 
+import { RouteDrawer } from '#components/route-drawer';
 import { Button } from '#components/ui/button';
 import {
   DropdownMenu,
@@ -47,23 +55,78 @@ import {
   TableSkeleton,
   TruncatedText,
 } from '../../shared.js';
-import { useAdminText, useLocalized } from '../../hooks.js';
+import { errorStatus, useAdminText, useLocalized } from '../../hooks.js';
 import {
   canRevoke,
   setFailure,
   useMembers,
   useMembersKey,
+  usePermissionSet,
   useSetActions,
   useSetTitle,
   type MembersOutletContext,
-  type PermissionSetPageContext,
+  type PermissionSetsOutletContext,
 } from '../data.js';
 
 const AUTHENTICATED = 'authenticated';
 
-export default function MembersTab(): ReactElement {
-  const context = useOutletContext<PermissionSetPageContext>();
-  const { set } = context;
+export default function MembersDrawer(): ReactElement {
+  const { setKey = '' } = useParams();
+  const { reload: reloadList } =
+    useOutletContext<PermissionSetsOutletContext>();
+  const { text } = useAdminText();
+  const location = useLocation();
+  const own = useResolvedPath('.');
+  // The list this drawer opened over, with its search (not the set's own
+  // address, which opens its permissions).
+  const listPath = own.pathname.replace(/\/[^/]+\/members$/u, '');
+  const set = usePermissionSet(setKey);
+  const title = useSetTitle();
+  const missing = set.error !== null && errorStatus(set.error) === 404;
+  useEffect(() => {
+    if (missing) reloadList();
+  }, [missing, reloadList]);
+  const name = set.data ? title(set.data) : undefined;
+
+  return (
+    <RouteDrawer
+      className='sm:max-w-2xl'
+      closeTo={{ pathname: listPath, search: location.search }}
+      title={name ?? (set.error ? setKey : text('common.loading'))}
+      description={
+        set.data ? (
+          <>
+            <code className='font-mono text-xs'>{set.data.key}</code>
+            {' · '}
+            {text('sets.members.heading')}
+          </>
+        ) : undefined
+      }
+    >
+      {set.error && !set.data ? (
+        <LoadFailure
+          error={set.error}
+          what={text('sets.whatOne')}
+          onRetry={() => void set.refetch()}
+          back={{
+            to: listPath + location.search,
+            label: text('common.backToList'),
+          }}
+        />
+      ) : !set.data ? (
+        <TableSkeleton columns={2} rows={3} />
+      ) : (
+        <Members set={set.data} />
+      )}
+    </RouteDrawer>
+  );
+}
+
+function Members({
+  set,
+}: {
+  readonly set: MembersOutletContext['set'];
+}): ReactElement {
   const { text } = useAdminText();
   const localized = useLocalized();
   const title = useSetTitle();
@@ -80,12 +143,12 @@ export default function MembersTab(): ReactElement {
     void queryClient.invalidateQueries({ queryKey: membersKey });
   const outletContext = useMemo<MembersOutletContext>(
     () => ({
-      ...context,
+      set,
       members: members.data?.assignments ?? [],
       reloadMembers: () =>
         void queryClient.invalidateQueries({ queryKey: membersKey }),
     }),
-    [context, members.data, queryClient, membersKey],
+    [set, members.data, queryClient, membersKey],
   );
 
   const mayAssign = can('assign', set);
@@ -120,7 +183,7 @@ export default function MembersTab(): ReactElement {
     body = <TableSkeleton columns={2} rows={3} />;
   } else if (rows.length === 0) {
     body = (
-      <Empty className='min-h-48 border border-dashed'>
+      <Empty className='min-h-40 border border-dashed p-6 md:p-6'>
         <EmptyHeader>
           <EmptyMedia variant='icon'>
             <UsersRoundIcon />
@@ -218,12 +281,14 @@ export default function MembersTab(): ReactElement {
   return (
     <div className='flex flex-col gap-4'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
+        {/* Where focus lands after a removal; the drawer's description says
+            what the list is. */}
         <p
           ref={headingRef}
           tabIndex={-1}
-          className='text-sm text-muted-foreground outline-none'
+          className='text-sm font-medium outline-none'
         >
-          {text('sets.members.heading')}
+          {text('sets.openMembers')}
         </p>
         {mayAssign && rows && rows.length > 0 ? (
           <Button
@@ -261,7 +326,7 @@ export default function MembersTab(): ReactElement {
         failure={(error) => setFailure(error, text)}
         finalFocus={() => headingRef.current}
       />
-      {/* Add members, and the header's Rename, render here, over this tab. */}
+      {/* Add members renders here, stacked on the drawer. */}
       <Outlet context={outletContext} />
     </div>
   );

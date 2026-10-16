@@ -1,41 +1,79 @@
-// A permission set's Permissions tab: everything the catalog offers, as
-// switch rows under their sections (Pages, Business operations,
-// Administration), a data-scoped business action with how far it reaches.
-// Switching edits a draft; the sticky bar saves the whole set, after
-// checking nobody changed it since it was loaded (guideline R1). Leaving
-// with unsaved changes asks first (the application's synchronous
-// navigation guard, so the browser's confirm; and `beforeunload`).
+// A permission set's Permissions drawer, over the list
+// (…/:setKey/permissions/:section): everything the catalog offers, as switch
+// rows, in three tabs by area (Pages, Business operations, Administration),
+// a data-scoped business action with how far it reaches. Switching edits one
+// draft for all three areas, kept while the tabs change, since this
+// component stays mounted under them (area.tsx only checks the address). The
+// footer saves the whole set, after checking nobody changed it since it was
+// loaded (guideline R1), and the drawer stays open, as the user asked, to go
+// on with another area. Closing with unsaved changes asks in the drawer;
+// leaving any other way asks through the application's synchronous
+// navigation guard (the browser's confirm) and `beforeunload`.
 import { useNavigationGuard, useToaster } from '@nocobase/app-client';
 import {
   useAuthorizationClient,
   type PermissionGrant,
 } from '@nocobase/app-plugin-authorization/client';
-import { AlertCircleIcon, InfoIcon } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import { Outlet, useOutletContext } from 'react-router';
+import { AlertCircleIcon, InfoIcon, ShieldCheckIcon } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+} from 'react';
+import {
+  Navigate,
+  Outlet,
+  useLocation,
+  useOutletContext,
+  useParams,
+  useResolvedPath,
+} from 'react-router';
 
 import {
   PermissionEditor,
   type PermissionEditorGroup,
   type PermissionEditorSection,
 } from '#components/permission-editor';
+import { RouteDrawer } from '#components/route-drawer';
 import { Alert, AlertAction, AlertDescription } from '#components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '#components/ui/alert-dialog';
 import { Button } from '#components/ui/button';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '#components/ui/empty';
 import { Skeleton } from '#components/ui/skeleton';
 import { Spinner } from '#components/ui/spinner';
 
-import { LoadFailure } from '../../shared.js';
+import { LoadFailure, RouteTabs } from '../../shared.js';
 import { errorStatus, useAdminText, useLocalized } from '../../hooks.js';
 import {
   grantsSignature,
   setFailure,
   useGrantablePages,
   useOptions,
+  usePermissionSet,
   useSetActions,
   useSetTitle,
   type Options,
-  type PermissionSetPageContext,
+  type PermissionSetsOutletContext,
 } from '../data.js';
+import { AREAS, isArea, type Area } from './areas.js';
 import { isOn, levelOf, setLevel, toggle, type DataScope } from './grants.js';
 
 /** What a row of the editor stands for. */
@@ -46,135 +84,22 @@ interface RowTarget {
   readonly scope?: DataScope;
 }
 
-export default function PermissionsTab(): ReactElement {
-  const context = useOutletContext<PermissionSetPageContext>();
-  const { text } = useAdminText();
-  const options = useOptions();
-  const can = useSetActions();
-  const { set } = context;
-
-  let body: ReactElement;
-  if (set.unrestricted) {
-    body = (
-      <Alert>
-        <InfoIcon />
-        <AlertDescription>{text('sets.unrestricted')}</AlertDescription>
-      </Alert>
-    );
-  } else if (options.error && !options.data) {
-    body = (
-      <LoadFailure
-        error={options.error}
-        what={text('sets.whatOne')}
-        onRetry={() => void options.refetch()}
-      />
-    );
-  } else if (!options.data) {
-    body = (
-      <div
-        role='status'
-        aria-label={text('common.loading')}
-        className='flex flex-col gap-3'
-      >
-        <Skeleton className='h-6 w-32' />
-        <Skeleton className='h-40 w-full' />
-        <Skeleton className='h-40 w-full' />
-      </div>
-    );
-  } else {
-    body = (
-      <GrantsEditor
-        // A set saved elsewhere starts the editor over (see below).
-        key={set.key}
-        context={context}
-        options={options.data}
-        readOnly={!can('update', set)}
-      />
-    );
-  }
-
-  return (
-    <div className='flex max-w-4xl flex-col gap-6'>
-      {body}
-      {/* The header's Rename renders here, over this tab. */}
-      <Outlet context={context} />
-    </div>
-  );
+interface Heading {
+  readonly name: string;
+  readonly sections: PermissionEditorSection[];
 }
 
-function GrantsEditor({
-  context,
-  options,
-  readOnly,
-}: {
-  readonly context: PermissionSetPageContext;
-  readonly options: Options;
-  readonly readOnly: boolean;
-}): ReactElement {
-  const { set, reload } = context;
-  const { text } = useAdminText();
+/** The editor's rows by area, and what each row stands for; row ids are DOM ids, so they are counters. */
+function useRows(options: Options | undefined): {
+  readonly headings: readonly Heading[];
+  readonly targets: ReadonlyMap<string, RowTarget>;
+} {
   const localized = useLocalized();
-  const title = useSetTitle();
-  const authz = useAuthorizationClient();
-  const toaster = useToaster();
+  const { text } = useAdminText();
   const pages = useGrantablePages();
-
-  // What the draft started from, and the draft.
-  const [baseline, setBaseline] = useState<readonly PermissionGrant[]>(
-    set.grants,
-  );
-  const [draft, setDraft] = useState<readonly PermissionGrant[]>(set.grants);
-  const dirty = grantsSignature(draft) !== grantsSignature(baseline);
-  // The page refetched the set (after a rename, or a save): start over from it while nothing is being changed.
-  const [seen, setSeen] = useState(() => grantsSignature(set.grants));
-  const incoming = grantsSignature(set.grants);
-  if (incoming !== seen) {
-    setSeen(incoming);
-    if (!dirty) {
-      setBaseline(set.grants);
-      setDraft(set.grants);
-    }
-  }
-
-  const [saving, setSaving] = useState(false);
-  const [failureText, setFailureText] = useState<string>();
-  const [stale, setStale] = useState(false);
-
-  // Leaving with unsaved changes asks; a reload warns.
-  const dirtyRef = useRef(dirty);
-  useEffect(() => {
-    dirtyRef.current = dirty;
-  }, [dirty]);
-  // Only leaving asks: the page's own moves (opening Rename over this tab, the way back after a delete) are let
-  // through, as is closing that overlay, which returns to this tab with the draft still here.
-  useNavigationGuard(
-    () =>
-      !dirtyRef.current ||
-      context.consumeAllowedNavigation() ||
-      window.location.pathname.endsWith('/permissions/edit') ||
-      window.confirm(text('sets.leaveConfirm')),
-  );
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent): void => event.preventDefault();
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [dirty]);
-
-  const recordAccessTitle = useMemo(
-    () =>
-      new Map(
-        options.recordAccess.map((item) => [
-          item.key,
-          localized(item.title, item.key),
-        ]),
-      ),
-    [options.recordAccess, localized],
-  );
-
-  // The editor's rows, and what each stands for; row ids are DOM ids, so they are counters.
-  const { headings, targets } = useMemo(() => {
+  return useMemo(() => {
     const targets = new Map<string, RowTarget>();
+    if (!options) return { headings: [], targets };
     const rowId = (target: RowTarget): string => {
       const id = `permission-row-${targets.size + 1}`;
       targets.set(id, target);
@@ -207,7 +132,9 @@ function GrantsEditor({
             const group = byGroup.get(key)!;
             groups.push({
               id: `${subsection.name}-${key || 'top'}`,
-              title: group.title,
+              // The pages at the top of the menu sit under no heading there;
+              // here every group has one.
+              title: key ? group.title : text('sets.topPages'),
               rows: group.rows,
             });
           }
@@ -244,33 +171,278 @@ function GrantsEditor({
             groups,
           });
       }
-      return {
-        name: section.name,
-        title:
-          section.name === 'pages' ||
-          section.name === 'business' ||
-          section.name === 'administration'
-            ? text(`sets.headings.${section.name}`)
-            : localized(section.title, section.name),
-        sections: editorSections,
-      };
+      return { name: section.name, sections: editorSections };
     });
     return { headings, targets };
-  }, [options.sections, pages, localized, text]);
+  }, [options, pages, localized, text]);
+}
 
-  // The rows as the draft has them now.
-  const live = headings.map((heading) => ({
-    ...heading,
-    sections: heading.sections.map((section) => ({
+/** How a row reads in a list of grants: off, on, or on at a scope. */
+function stateOf(
+  grants: readonly PermissionGrant[],
+  target: RowTarget,
+): string {
+  if (!isOn(grants, target.type, target.id, target.action)) return 'off';
+  return target.scope
+    ? `on:${levelOf(grants, target.type, target.id, target.action, target.scope)}`
+    : 'on';
+}
+
+export default function PermissionsDrawer(): ReactElement {
+  const { setKey = '' } = useParams();
+  const { reload: reloadList } =
+    useOutletContext<PermissionSetsOutletContext>();
+  const { text } = useAdminText();
+  const location = useLocation();
+  const own = useResolvedPath('.');
+  // The list this drawer opened over, with its search: where closing goes,
+  // not the set's own address, which would open the drawer again.
+  const listPath = own.pathname.replace(/\/[^/]+\/permissions$/u, '');
+  const closeTo = { pathname: listPath, search: location.search };
+  const segment = location.pathname
+    .slice(own.pathname.length)
+    .split('/')
+    .find(Boolean);
+  const area: Area = isArea(segment) ? segment : 'pages';
+
+  const set = usePermissionSet(setKey);
+  const options = useOptions();
+  const can = useSetActions();
+  const title = useSetTitle();
+  const authz = useAuthorizationClient();
+  const toaster = useToaster();
+  const { headings, targets } = useRows(options.data);
+  const localized = useLocalized();
+
+  // What the draft started from, and the draft; set once the set loads.
+  const [baseline, setBaseline] = useState<readonly PermissionGrant[]>();
+  const [draft, setDraft] = useState<readonly PermissionGrant[]>();
+  const dirty =
+    baseline !== undefined &&
+    draft !== undefined &&
+    grantsSignature(draft) !== grantsSignature(baseline);
+  // The set was fetched again (after a save, or Reload): start over from it while nothing is being changed.
+  const [seen, setSeen] = useState<string>();
+  const loaded = set.data?.grants;
+  if (loaded) {
+    const incoming = grantsSignature(loaded);
+    if (incoming !== seen) {
+      setSeen(incoming);
+      if (!dirty) {
+        setBaseline(loaded);
+        setDraft(loaded);
+      }
+    }
+  }
+
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [failureText, setFailureText] = useState<string>();
+  const [stale, setStale] = useState(false);
+
+  // The drawer's own moves (its tabs, closing after Discard) pass the
+  // navigation guard once; anything else with unsaved changes asks.
+  const dirtyRef = useRef(dirty);
+  useEffect(() => {
+    dirtyRef.current = dirty;
+  }, [dirty]);
+  const allowedRef = useRef(false);
+  const allowNavigation = useCallback(() => {
+    allowedRef.current = true;
+  }, []);
+  useNavigationGuard(() => {
+    // Spent on the next navigation, whether or not anything was unsaved.
+    const allowed = allowedRef.current;
+    allowedRef.current = false;
+    if (!dirtyRef.current || allowed) return true;
+    return window.confirm(text('sets.leaveConfirm'));
+  });
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent): void => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+
+  // While asking "Discard changes?", answers the drawer's beforeClose.
+  const [discardPrompt, setDiscardPrompt] = useState<{
+    readonly answer: (discard: boolean) => void;
+  }>();
+  function answerDiscard(discard: boolean): void {
+    if (discard) allowNavigation();
+    discardPrompt?.answer(discard);
+    setDiscardPrompt(undefined);
+  }
+
+  // A set someone deleted: the list behind loses its row too.
+  // Found missing on loading, or by a save: someone deleted it.
+  const [gone, setGone] = useState(false);
+  const missing =
+    gone || (set.error !== null && errorStatus(set.error) === 404);
+  useEffect(() => {
+    if (missing) reloadList();
+  }, [missing, reloadList]);
+
+  const recordAccessTitle = useMemo(
+    () =>
+      new Map(
+        (options.data?.recordAccess ?? []).map((item) => [
+          item.key,
+          localized(item.title, item.key),
+        ]),
+      ),
+    [options.data, localized],
+  );
+
+  // Which areas hold unsaved changes, for the tabs' dots.
+  const changedAreas = useMemo(() => {
+    const changed = new Set<string>();
+    if (!dirty || !draft || !baseline) return changed;
+    for (const heading of headings)
+      for (const section of heading.sections)
+        for (const group of section.groups)
+          for (const row of group.rows) {
+            const target = targets.get(row.id);
+            if (target && stateOf(draft, target) !== stateOf(baseline, target))
+              changed.add(heading.name);
+          }
+    return changed;
+  }, [dirty, draft, baseline, headings, targets]);
+
+  // Where focus goes when the control that had it goes away (Discard,
+  // Reload) or is disabled (Save): the area being shown (guideline A6).
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const focusArea = (): void => {
+    window.setTimeout(() =>
+      tabsRef.current
+        ?.querySelector<HTMLElement>('[aria-current="page"]')
+        ?.focus(),
+    );
+  };
+
+  if (!segment)
+    return (
+      <Navigate to={{ pathname: 'pages', search: location.search }} replace />
+    );
+
+  const name = set.data && !gone ? title(set.data) : undefined;
+  const readOnly = set.data ? !can('update', set.data) : true;
+  // Why a set is read only: the viewer may change no set, or this one is
+  // the application's.
+  const readOnlyNotice = can('update') ? 'sets.readOnly' : 'sets.noUpdate';
+
+  const editable =
+    !missing &&
+    set.data !== undefined &&
+    !set.data.unrestricted &&
+    !readOnly &&
+    options.data !== undefined &&
+    draft !== undefined;
+  const locked = readOnly || saving;
+
+  async function save(): Promise<void> {
+    if (!set.data || !draft || !baseline) return;
+    savingRef.current = true;
+    setSaving(true);
+    setFailureText(undefined);
+    try {
+      // Written from the latest version only (guideline R1).
+      const fresh = await authz.getPermissionSet(set.data.key);
+      if (grantsSignature(fresh.grants) !== grantsSignature(baseline)) {
+        setStale(true);
+        return;
+      }
+      const saved = await authz.updatePermissionSet(set.data.key, {
+        key: set.data.key,
+        ...(fresh.title === undefined ? {} : { title: fresh.title }),
+        grants: draft,
+      });
+      authz.invalidate();
+      setBaseline(saved.grants);
+      setDraft(saved.grants);
+      setSeen(grantsSignature(saved.grants));
+      toaster.show({
+        type: 'success',
+        title: text('sets.toasts.saved', { name: title(saved) }),
+      });
+      reloadList();
+      focusArea();
+    } catch (caught: unknown) {
+      if (errorStatus(caught) === 404) {
+        // Deleted meanwhile: the drawer says so, with the way back (R3).
+        setGone(true);
+        setDraft(baseline);
+        reloadList();
+        return;
+      }
+      setFailureText(setFailure(caught, text));
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
+
+  let body: ReactElement;
+  if (missing || (set.error && !set.data)) {
+    body = (
+      <LoadFailure
+        notFound={missing}
+        error={set.error}
+        what={text('sets.whatOne')}
+        onRetry={() => void set.refetch()}
+        back={{
+          to: listPath + location.search,
+          label: text('common.backToList'),
+        }}
+      />
+    );
+  } else if (set.data?.unrestricted) {
+    body = (
+      <Alert>
+        <InfoIcon />
+        <AlertDescription>{text('sets.unrestricted')}</AlertDescription>
+      </Alert>
+    );
+  } else if (options.error && !options.data) {
+    body = (
+      <LoadFailure
+        error={options.error}
+        what={text('sets.whatOne')}
+        onRetry={() => void options.refetch()}
+      />
+    );
+  } else if (!set.data || !options.data || !draft) {
+    body = (
+      <div
+        role='status'
+        aria-label={text('common.loading')}
+        className='flex flex-col gap-4'
+      >
+        <div className='flex gap-5'>
+          <Skeleton className='h-6 w-16' />
+          <Skeleton className='h-6 w-28' />
+          <Skeleton className='h-6 w-24' />
+        </div>
+        <Skeleton className='h-40 w-full' />
+        <Skeleton className='h-40 w-full' />
+      </div>
+    );
+  } else {
+    const current = draft;
+    const heading = headings.find((candidate) => candidate.name === area);
+    const areaSections = heading?.sections ?? [];
+    const sections = areaSections.map((section) => ({
       ...section,
+      // An area of one section: its heading would only repeat the tab.
+      title: areaSections.length === 1 ? undefined : section.title,
       groups: section.groups.map((group) => ({
         ...group,
         rows: group.rows.map((row) => {
           const target = targets.get(row.id)!;
-          const enabled = isOn(draft, target.type, target.id, target.action);
+          const enabled = isOn(current, target.type, target.id, target.action);
           if (!target.scope) return { ...row, enabled };
           const level = levelOf(
-            draft,
+            current,
             target.type,
             target.id,
             target.action,
@@ -290,142 +462,197 @@ function GrantsEditor({
           return { ...row, enabled, levels, level };
         }),
       })),
-    })),
-  }));
-
-  async function save(): Promise<void> {
-    setSaving(true);
-    setFailureText(undefined);
-    try {
-      // Written from the latest version only (guideline R1).
-      const fresh = await authz.getPermissionSet(set.key);
-      if (grantsSignature(fresh.grants) !== grantsSignature(baseline)) {
-        setStale(true);
-        return;
-      }
-      const saved = await authz.updatePermissionSet(set.key, {
-        key: set.key,
-        ...(fresh.title === undefined ? {} : { title: fresh.title }),
-        grants: draft,
-      });
-      authz.invalidate();
-      setBaseline(saved.grants);
-      setDraft(saved.grants);
-      setSeen(grantsSignature(saved.grants));
-      toaster.show({
-        type: 'success',
-        title: text('sets.toasts.saved', { name: title(saved) }),
-      });
-      reload();
-    } catch (caught: unknown) {
-      if (errorStatus(caught) === 404) reload();
-      setFailureText(setFailure(caught, text));
-    } finally {
-      setSaving(false);
-    }
+    }));
+    body = (
+      <div className='flex flex-col gap-4'>
+        {/* The areas stay in view as the body scrolls: the drawer's header
+            holds only a title and a description. */}
+        <div
+          ref={tabsRef}
+          className='sticky -top-4 z-10 -mx-4 -mt-4 bg-popover px-4 pt-2'
+        >
+          <RouteTabs
+            label={text('sets.permissionsOf', { name })}
+            replace
+            onNavigate={allowNavigation}
+            tabs={AREAS.map((candidate) => ({
+              to: { pathname: candidate, search: location.search },
+              label: text(`sets.headings.${candidate}`),
+              active: candidate === area,
+              ...(changedAreas.has(candidate)
+                ? { marked: text('sets.unsaved') }
+                : {}),
+            }))}
+          />
+        </div>
+        {failureText ? (
+          <Alert variant='destructive'>
+            <AlertCircleIcon />
+            <AlertDescription>{failureText}</AlertDescription>
+          </Alert>
+        ) : null}
+        {stale ? (
+          <Alert variant='destructive'>
+            <AlertCircleIcon />
+            <AlertDescription>{text('sets.stale')}</AlertDescription>
+            <AlertAction>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => {
+                  setStale(false);
+                  focusArea();
+                  setBaseline(set.data?.grants);
+                  setDraft(set.data?.grants);
+                  void set.refetch();
+                }}
+              >
+                {text('sets.reload')}
+              </Button>
+            </AlertAction>
+          </Alert>
+        ) : null}
+        {readOnly ? (
+          <Alert>
+            <InfoIcon />
+            <AlertDescription>{text(readOnlyNotice)}</AlertDescription>
+          </Alert>
+        ) : null}
+        {sections.length === 0 ? (
+          <Empty className='min-h-40 border border-dashed p-6 md:p-6'>
+            <EmptyHeader>
+              <EmptyMedia variant='icon'>
+                <ShieldCheckIcon />
+              </EmptyMedia>
+              <EmptyTitle>{text('sets.areaEmptyTitle')}</EmptyTitle>
+              <EmptyDescription>{text('sets.areaEmptyBody')}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <PermissionEditor
+            sections={sections}
+            readOnly={locked}
+            labels={{
+              levelFor: (label) => text('sets.levelFor', { name: label }),
+            }}
+            onEnabledChange={(id, on) => {
+              const target = targets.get(id);
+              if (!target) return;
+              setDraft((grants) =>
+                toggle(
+                  grants ?? [],
+                  target.type,
+                  target.id,
+                  target.action,
+                  on,
+                  target.scope,
+                ),
+              );
+            }}
+            onLevelChange={(id, level) => {
+              const target = targets.get(id);
+              if (!target?.scope) return;
+              const scope = target.scope;
+              setDraft((grants) =>
+                setLevel(
+                  grants ?? [],
+                  target.type,
+                  target.id,
+                  target.action,
+                  scope,
+                  level,
+                ),
+              );
+            }}
+          />
+        )}
+      </div>
+    );
   }
 
-  const locked = readOnly || saving;
   return (
-    <>
-      {readOnly && set.protection ? (
-        <Alert>
-          <InfoIcon />
-          <AlertDescription>{text('sets.readOnly')}</AlertDescription>
-        </Alert>
-      ) : null}
-      {stale ? (
-        <Alert variant='destructive'>
-          <AlertCircleIcon />
-          <AlertDescription>{text('sets.stale')}</AlertDescription>
-          <AlertAction>
+    <RouteDrawer
+      className='sm:max-w-2xl'
+      closeTo={closeTo}
+      title={name ?? (missing || set.error ? setKey : text('common.loading'))}
+      description={
+        set.data ? (
+          <>
+            <code className='font-mono text-xs'>{set.data.key}</code>
+            {' · '}
+            {text('sets.permissionsDescription')}
+          </>
+        ) : undefined
+      }
+      beforeClose={() => {
+        if (savingRef.current) return false;
+        if (!dirtyRef.current) return true;
+        return new Promise<boolean>((resolve) => {
+          setDiscardPrompt({ answer: resolve });
+        });
+      }}
+      footer={
+        editable ? (
+          <>
+            {dirty ? (
+              <span className='mr-auto self-center text-sm text-muted-foreground'>
+                {text('sets.unsaved')}
+              </span>
+            ) : null}
+            {dirty ? (
+              <Button
+                variant='outline'
+                disabled={saving}
+                onClick={() => {
+                  setDraft(baseline);
+                  setFailureText(undefined);
+                  focusArea();
+                }}
+              >
+                {text('sets.discard')}
+              </Button>
+            ) : null}
             <Button
-              variant='outline'
-              size='sm'
-              onClick={() => {
-                setStale(false);
-                setBaseline(set.grants);
-                setDraft(set.grants);
-                reload();
-              }}
+              disabled={!dirty || saving || stale}
+              onClick={() => void save()}
             >
-              {text('sets.reload')}
-            </Button>
-          </AlertAction>
-        </Alert>
-      ) : null}
-      {live.map((heading) =>
-        heading.sections.length === 0 ? null : (
-          <section key={heading.name} className='flex flex-col gap-3'>
-            <h2 className='text-base font-medium'>{heading.title}</h2>
-            <PermissionEditor
-              sections={heading.sections}
-              readOnly={locked}
-              labels={{
-                levelFor: (label) => text('sets.levelFor', { name: label }),
-              }}
-              onEnabledChange={(id, on) => {
-                const target = targets.get(id);
-                if (!target) return;
-                setDraft((current) =>
-                  toggle(
-                    current,
-                    target.type,
-                    target.id,
-                    target.action,
-                    on,
-                    target.scope,
-                  ),
-                );
-              }}
-              onLevelChange={(id, level) => {
-                const target = targets.get(id);
-                if (!target?.scope) return;
-                const scope = target.scope;
-                setDraft((current) =>
-                  setLevel(
-                    current,
-                    target.type,
-                    target.id,
-                    target.action,
-                    scope,
-                    level,
-                  ),
-                );
-              }}
-            />
-          </section>
-        ),
-      )}
-      {dirty && !readOnly ? (
-        <div className='sticky bottom-0 z-10 -mx-1 flex flex-col gap-2 border-t border-border bg-background/95 px-1 py-3 backdrop-blur'>
-          {failureText ? (
-            <Alert variant='destructive'>
-              <AlertCircleIcon />
-              <AlertDescription>{failureText}</AlertDescription>
-            </Alert>
-          ) : null}
-          <div className='flex flex-wrap items-center justify-end gap-2'>
-            <span className='mr-auto text-sm text-muted-foreground'>
-              {text('sets.unsaved')}
-            </span>
-            <Button
-              variant='outline'
-              disabled={saving}
-              onClick={() => {
-                setDraft(baseline);
-                setFailureText(undefined);
-              }}
-            >
-              {text('sets.discard')}
-            </Button>
-            <Button disabled={saving || stale} onClick={() => void save()}>
               {saving ? <Spinner data-icon='inline-start' /> : null}
               {text('common.save')}
             </Button>
-          </div>
-        </div>
-      ) : null}
-    </>
+          </>
+        ) : undefined
+      }
+    >
+      {body}
+      {/* The area's route: it only checks the address. */}
+      <Outlet />
+      {/* Inside the drawer, so Esc closes only the question. */}
+      <AlertDialog
+        open={discardPrompt !== undefined}
+        onOpenChange={(open) => {
+          if (!open) answerDiscard(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {text('sets.discardTitle', { name: name ?? '' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {text('sets.discardBody')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{text('sets.keepEditing')}</AlertDialogCancel>
+            <AlertDialogAction
+              variant='destructive'
+              onClick={() => answerDiscard(true)}
+            >
+              {text('sets.discard')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </RouteDrawer>
   );
 }

@@ -155,9 +155,12 @@ export function RouteOverlay({
                 className,
               )}
             >
+              {/* Application change (ITAM, after NocoCRM's): the
+                  description sits close under the title (gap-1, the
+                  library's gap-2). */}
               <header
                 data-slot='route-overlay-header'
-                className='flex shrink-0 flex-col gap-2 border-b p-6 pr-14'
+                className='flex shrink-0 flex-col gap-1 border-b p-6 pr-14'
               >
                 <DialogTitle>{title}</DialogTitle>
                 {description != null && (

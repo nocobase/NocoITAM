@@ -251,7 +251,6 @@ export const adminWording = {
     rename: ['Rename', '重命名'],
     renameTitle: ['Rename permission set', '重命名权限集'],
     delete: ['Delete', '删除'],
-    more: ['More actions', '更多操作'],
     columns: {
       name: ['Name', '名称'],
       key: ['Key', '标识'],
@@ -261,10 +260,36 @@ export const adminWording = {
       unrestricted: ['Unrestricted', '不受限'],
       builtIn: ['Built-in', '内置'],
     },
-    tabs: {
-      permissions: ['Permissions', '权限'],
-      members: ['Members', '成员'],
-    },
+    // A row's two views of a set, each a drawer over the list.
+    openPermissions: ['Permissions', '权限'],
+    openMembers: ['Members', '成员'],
+    permissionsOf: ['Permissions of "{{name}}"', '“{{name}}”的权限'],
+    membersOf: ['Members of "{{name}}"', '“{{name}}”的成员'],
+    permissionsDescription: [
+      'Which pages, business operations and administration this permission set grants.',
+      '这个权限集可以访问的页面、业务操作和管理功能。',
+    ],
+    areaEmptyTitle: ['Nothing to grant here', '这里没有可授予的权限'],
+    areaEmptyBody: [
+      'The application offers no permissions in this area.',
+      '应用在这一部分没有提供可授予的权限。',
+    ],
+    noUpdate: [
+      'You can view this permission set but not change its permissions.',
+      '你可以查看这个权限集，但不能修改它的权限。',
+    ],
+    discardTitle: [
+      'Discard changes to "{{name}}"?',
+      '放弃对“{{name}}”的更改？',
+    ],
+    discardBody: [
+      'Your changes to its permissions will be lost.',
+      '你对它的权限所做的更改将丢失。',
+    ],
+    keepEditing: ['Keep editing', '继续编辑'],
+    // The Pages area's first group: the menu's entries above its headings,
+    // and the pages no menu entry names.
+    topPages: ['Essentials', '基础'],
     headings: {
       pages: ['Pages', '页面'],
       business: ['Business operations', '业务操作'],
