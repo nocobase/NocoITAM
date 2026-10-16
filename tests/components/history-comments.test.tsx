@@ -78,7 +78,10 @@ const comment = {
       payload: {
         body: 'Filed yesterday',
         mentions: [],
-        files: [],
+        files: [
+          { id: 'f1', filename: 'quote.pdf', ext: 'pdf', size: 2048 },
+          { id: 'f2', filename: 'sheet.xlsx', ext: 'xlsx', size: 1024 },
+        ],
         replyToId: 'c1',
       },
     },
@@ -163,6 +166,28 @@ it('replies in the thread', async () => {
         json: expect.objectContaining({ body: 'Thanks', replyToId: 'c1' }),
       }),
     ),
+  );
+});
+
+it('keeps a comment’s files in view while it is edited, and saves those kept', async () => {
+  renderTimeline();
+  fireEvent.click(screen.getByRole('button', { name: 'common.more' }));
+  fireEvent.click(
+    await screen.findByRole('menuitem', { name: 'actions.edit' }),
+  );
+  // Both files show as chips under the box, each to be taken off.
+  expect(screen.getByText('quote.pdf')).toBeVisible();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'comments.removeFile: sheet.xlsx' }),
+  );
+  expect(screen.queryByText('sheet.xlsx')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'actions.save' }));
+  await waitFor(() =>
+    expect(state.request).toHaveBeenCalledWith({
+      path: 'itam/comments/r1',
+      method: 'PATCH',
+      json: { body: 'Filed yesterday', mentions: [], keepFileIds: ['f1'] },
+    }),
   );
 });
 

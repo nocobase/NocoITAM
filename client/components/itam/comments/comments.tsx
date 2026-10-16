@@ -443,6 +443,8 @@ function Message({
   const [mentions, setMentions] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
   const [unfiling, setUnfiling] = useState<CommentFile>();
+  // The files an edit keeps: all of them until one is taken off.
+  const [keptIds, setKeptIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const author =
@@ -476,6 +478,7 @@ function Message({
                 : {
                     body: draft,
                     mentions: mentionsIn(draft, mentions, scope.colleagues),
+                    keepFileIds: keptIds,
                   },
             }
           : {}),
@@ -553,6 +556,7 @@ function Message({
                           ? event.payload.mentions.map(text)
                           : [],
                       );
+                      setKeptIds(filesOf(event).map((file) => file.id));
                       setEditing(true);
                     }}
                   >
@@ -590,6 +594,14 @@ function Message({
                 if (keys.key === 'Escape') setEditing(false);
               }}
             />
+            {/* The comment's files stay in view while it is edited, each
+                to be taken off with the text's change (2026-10-16). */}
+            <FileChips
+              files={filesOf(event).filter((file) => keptIds.includes(file.id))}
+              onRemove={(file) =>
+                setKeptIds((ids) => ids.filter((id) => id !== file.id))
+              }
+            />
             <div className='flex justify-end gap-2'>
               <Button
                 size='sm'
@@ -600,7 +612,7 @@ function Message({
               </Button>
               <Button
                 size='sm'
-                disabled={busy || (!draft.trim() && !filesOf(event).length)}
+                disabled={busy || (!draft.trim() && !keptIds.length)}
                 onClick={() => void write('PATCH')}
               >
                 {t('actions.save')}
