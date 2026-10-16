@@ -8,7 +8,6 @@ const state = vi.hoisted(() => ({
   decide: vi.fn(),
   dismiss: vi.fn(),
   ask: vi.fn(),
-  discuss: vi.fn(),
 }));
 vi.mock('../../client/lib/itam/agents.js', () => ({
   useDecideReview: () => ({
@@ -23,9 +22,6 @@ vi.mock('../../client/lib/itam/agents.js', () => ({
   }),
   useAskReview: () => ({ mutate: state.ask, isPending: false, error: null }),
   useLatestReview: () => ({ data: null, isLoading: false }),
-}));
-vi.mock('../../client/lib/itam/ask.js', () => ({
-  useDiscuss: () => state.discuss,
 }));
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCurrentUserId: () => 'ann',
@@ -79,7 +75,7 @@ beforeEach(() => {
 });
 
 // The approver's decision card: the recommended decision leads, the comment
-// drafted is theirs to edit, and setting it aside or discussing it are a
+// drafted is theirs to edit, and setting it aside or revising it are a
 // click away; while it works it says so, and a failure offers to try again.
 it('leads with the recommended decision and sends the comment as edited', () => {
   render(<ApprovalReviewCard run={run()} />);
@@ -103,14 +99,11 @@ it('leads with the recommended decision and sends the comment as edited', () => 
   );
 });
 
-it('sets the review aside, or opens a conversation about the request', () => {
+it('sets the review aside, and offers no conversation about it', () => {
   render(<ApprovalReviewCard run={run()} />);
   fireEvent.click(screen.getByRole('button', { name: 'review.dismiss' }));
   expect(state.dismiss).toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'review.discuss' }));
-  expect(state.discuss).toHaveBeenCalledWith([
-    { kind: 'purchaseOrders', id: 'po-1', label: 'PO-000031 newHire' },
-  ]);
+  expect(screen.queryByRole('button', { name: 'review.discuss' })).toBeNull();
 });
 
 it('redoes the review in the approver’s words', () => {

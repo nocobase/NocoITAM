@@ -19,7 +19,6 @@ import {
   type ApprovalReviewRun,
   type ApprovalReviewResult,
 } from '@/lib/itam/agents';
-import { useDiscuss } from '@/lib/itam/ask';
 import { relativeTime } from '@/lib/itam/format';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 
@@ -48,7 +47,6 @@ export function ApprovalReviewCard({
   const decide = useDecideReview();
   const dismiss = useDismissReview();
   const ask = useAskReview();
-  const discuss = useDiscuss();
   const result = run.result;
   const [comment, setComment] = useState(result?.comment ?? '');
   // The comment the review drafted, once its result arrives on a card
@@ -182,21 +180,12 @@ export function ApprovalReviewCard({
             >
               {t('review.dismiss')}
             </Button>
+            {/* 修改 alone (2026-10-16): 讨论, a conversation about the
+                request, went — the review is changed here, in words. */}
             <AiShortcut
               className='ml-auto'
-              onClick={() =>
-                discuss([
-                  {
-                    kind: run.subjectType,
-                    id: run.subjectId,
-                    label: run.title ?? run.subjectId,
-                  },
-                ])
-              }
+              onClick={() => setRedoing((open) => !open)}
             >
-              {t('review.discuss')}
-            </AiShortcut>
-            <AiShortcut onClick={() => setRedoing((open) => !open)}>
               {t('review.redo')}
             </AiShortcut>
           </div>

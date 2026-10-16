@@ -207,8 +207,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     else). Deciding from the review is the request's own decision under its
     `approve` grant (`POST /itam/agentRuns/:id/decide`, the run accepted
     first so its own `settled` leaves it so, reopened when the decision is
-    refused); 忽略 leaves the request waiting; 按我的意思重做 runs again with
-    the approver's words, replacing the waiting one.
+    refused); 忽略 leaves the request waiting; 修改 (按我的意思重做 until
+    2026-10-16) runs again with the approver's words, replacing the waiting
+    one. The card offers no 讨论: a conversation about the request went the
+    same day.
   - **Where it shows** (`frontend-standard.md` §S1–S4): 收件箱 (`/inbox`,
     first in the menu, its badge the runs waiting, `useInboxCount`) is the
     template's inbox block with the reviews added to its To do view as a

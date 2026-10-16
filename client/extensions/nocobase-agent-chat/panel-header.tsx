@@ -7,6 +7,7 @@
  */
 import {
   AgentAvatar,
+  newConversationAgent,
   useAgentText,
   useChatAgents,
   useChatPanel,
@@ -94,10 +95,13 @@ export function PanelHeader({
   const agents = useChatAgents();
   const actions = useConversationActions();
   // The conversation's agent, else the one a new conversation starts with;
-  // what it does comes from the agents' list.
+  // what it does comes from the agents' list. Application change (ITAM,
+  // 2026-10-16): a new conversation names the agent its composer has chosen
+  // (`newConversationAgent`, as the conversation view does), not the list's
+  // first, which named a work agent over the default assistant.
   const listed = conversation
     ? agents.data?.find((entry) => entry.id === conversation.agent.id)
-    : agents.data?.[0];
+    : newConversationAgent(agents.data, panel.newAgentId);
   const named = conversation?.agent ?? listed ?? null;
   const name = (named ? agentText.name(named) : null) ?? t('chat.title');
   const role = listed ? agentText.description(listed) : null;

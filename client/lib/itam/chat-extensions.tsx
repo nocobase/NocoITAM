@@ -26,6 +26,10 @@ function usePlans(conversationId: string, revision: number) {
           query: { conversationId, pageSize: '100' },
         })
       ).data,
+    // A new conversation has no id yet, and the list unfiltered is every
+    // plan the reader may see (2026-10-16: 讨论 opened on someone's MDM
+    // plans).
+    enabled: conversationId !== '',
     staleTime: 5_000,
     placeholderData: (previous) => previous,
   });
@@ -36,6 +40,7 @@ function usePlanTimeline(
   revision: number,
 ): readonly ChatTimelineItem[] {
   const plans = usePlans(conversationId, revision);
+  if (!conversationId) return [];
   return (plans.data ?? []).map((plan) => ({
     key: `itam-plan-${plan.id}`,
     at: plan.createdAt,
