@@ -3,6 +3,7 @@ import { authorizationToken } from '@nocobase/app-plugin-authorization';
 import { databaseManagerToken } from '@nocobase/db';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { agentRunServiceToken } from '../../server/providers/itam/agent-runs.js';
 import { approvalServiceToken } from '../../server/providers/itam/approvals.js';
 import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.js';
 import type { OperationContext } from '../../server/providers/itam/devices.js';
@@ -165,9 +166,40 @@ describe('the demo’s AI suggestions', () => {
     ).toBe(true);
   }, 120_000);
 
-  it('clears them with the demo', async () => {
+  it('clears them with the demo, and any run about records that are gone', async () => {
     await generate('en-US');
     expect((await rows('itamAgentRuns')).length).toBeGreaterThan(0);
+    // Left by an import before the demo tracked its runs: a review of a
+    // request and a follow-up on a device that are gone, and a failure.
+    const runs = app.container.resolve(agentRunServiceToken);
+    const stray = async (
+      agent: 'approvalReview' | 'deviceSync',
+      subjectId: string,
+      result: Record<string, unknown> | null,
+    ) => {
+      const run = await runs.start({
+        agent,
+        trigger: agent === 'deviceSync' ? 'synced' : 'submitted',
+        startedById: null,
+        subjectType: agent === 'deviceSync' ? 'deviceSync' : 'purchaseOrders',
+        subjectId,
+        deciderId: 'mia',
+      });
+      await runs.finish(
+        run.id,
+        result
+          ? { status: 'pending', result }
+          : { status: 'failed', failure: 'unavailable' },
+      );
+    };
+    await stray('approvalReview', 'po-gone', null);
+    await stray('deviceSync', 'owner:mia', {
+      items: [{ key: 'x', kind: 'stale', subject: 'device-gone', label: 'x' }],
+      planId: null,
+      notes: [],
+      summary: '',
+    });
+    await stray('deviceSync', 'shared:mia', null);
     expect(
       (await app.request('/api/itam/demo/clear', { ...json({}), ...manager }))
         .status,

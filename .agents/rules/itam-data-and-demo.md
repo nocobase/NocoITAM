@@ -70,7 +70,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   than one, and Asset Steward's picks for the two joiners, which pass
   over SG-LT-050, SG-LT-053 and SG-MON-006. The runs and plans are
   tracked (`itamAgentRuns`, `itamPlans`, first in `ORDER`), and runs on
-  the demo's requests go with them (`DEPENDENTS`). Each part is extra:
+  the demo's requests go with them (`DEPENDENTS`). Clearing also sweeps
+  any run whose records are gone — a review of a request, an MDM
+  follow-up none of whose devices is left, a failed follow-up — with its
+  plan, which an import before this tracking left behind. Each part is extra:
   one that fails leaves the demo without it rather than failing the
   import.
   Every department has a default 入职配置 once the demo is in (2026-10-06):

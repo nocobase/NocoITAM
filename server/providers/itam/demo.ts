@@ -5770,6 +5770,71 @@ export function createDemoService(dependencies: {
         // held only the demo), so the demo reads the same every time instead
         // of climbing with each import.
         await dependencies.numbering?.rewind({ connection });
+        // The agents' runs about records that are gone, whoever made them
+        // (2026-10-16): an import before the demo tracked its runs left
+        // reviews and MDM follow-ups behind, shown in 收件箱 under a bare id
+        // or naming devices that no longer exist. A follow-up is gone once
+        // none of its items' devices or platform records is left; a run
+        // that failed with nothing to show goes too. Their plans go with
+        // them.
+        const runs = await connection.query
+          .selectFrom('itamAgentRuns')
+          .select(['id', 'agent', 'status', 'subjectId', 'result'])
+          .execute<Row>();
+        const exists = async (table: string, ids: readonly string[]) =>
+          ids.length
+            ? new Set(
+                (
+                  await connection.query
+                    .selectFrom(table)
+                    .select('id')
+                    .where('id', 'in', [...ids])
+                    .execute<{ id: unknown }>()
+                ).map((row) => String(row.id)),
+              )
+            : new Set<string>();
+        const subjectsOf = (run: Row): string[] => {
+          const result =
+            typeof run.result === 'string'
+              ? (JSON.parse(run.result) as Row)
+              : (run.result as Row | null);
+          const items = Array.isArray(result?.items) ? result.items : [];
+          return items.map((item) => String((item as Row).subject));
+        };
+        const requests = runs.filter((run) => run.agent === 'approvalReview');
+        const followUps = runs.filter((run) => run.agent === 'deviceSync');
+        const subjects = followUps.flatMap(subjectsOf);
+        const present = new Set([
+          ...(await exists(
+            'purchaseOrders',
+            requests.map((run) => String(run.subjectId)),
+          )),
+          ...(await exists(
+            'disposals',
+            requests.map((run) => String(run.subjectId)),
+          )),
+          ...(await exists('devices', subjects)),
+          ...(await exists('managedDevices', subjects)),
+        ]);
+        const gone = [
+          ...requests.filter((run) => !present.has(String(run.subjectId))),
+          ...followUps.filter((run) => {
+            const items = subjectsOf(run);
+            return items.length
+              ? !items.some((id) => present.has(id))
+              : run.status === 'failed';
+          }),
+        ].map((run) => String(run.id));
+        if (gone.length) {
+          await connection.query
+            .deleteFrom('itamPlans')
+            .where('runId', 'in', gone)
+            .execute();
+          await connection.query
+            .deleteFrom('itamAgentRuns')
+            .where('id', 'in', gone)
+            .execute();
+        }
       });
       // The notifications the demo's requests sent (2026-10-16): they name
       // records that are gone, and the importer's inbox kept each import's
