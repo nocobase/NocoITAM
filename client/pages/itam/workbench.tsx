@@ -211,35 +211,31 @@ function WorkCounts({
 }): ReactElement | null {
   const waiting = cards.filter((card) => card.count > 0);
   if (waiting.length === 0) return null;
+  // Each a small capsule (2026-10-17): the name, then its count in the pill
+  // the columns' headings wear, so the line reads as the columns it leads to.
   return (
-    <nav className='flex flex-wrap items-center gap-x-1 gap-y-1 text-sm'>
-      {waiting.map((card, index) => (
-        <span key={card.key} className='flex items-center gap-1'>
-          {index > 0 ? (
-            <span aria-hidden='true' className='text-muted-foreground/50'>
-              ·
-            </span>
-          ) : null}
-          <button
-            type='button'
-            className='flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
-            onClick={() => {
-              const target = document.getElementById(`work-${card.key}`);
-              if (!target) return;
-              target.style.scrollMarginTop = `${String(offset)}px`;
-              target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-                inline: 'start',
-              });
-            }}
-          >
-            {card.label}
-            <span className='font-semibold text-foreground tabular-nums'>
-              {card.count}
-            </span>
-          </button>
-        </span>
+    <nav className='flex flex-wrap items-center gap-1.5'>
+      {waiting.map((card) => (
+        <button
+          key={card.key}
+          type='button'
+          className='flex h-7 items-center gap-1.5 rounded-full border border-border/60 bg-card pr-1 pl-3 text-xs text-muted-foreground shadow-xs transition-colors hover:border-border hover:text-foreground'
+          onClick={() => {
+            const target = document.getElementById(`work-${card.key}`);
+            if (!target) return;
+            target.style.scrollMarginTop = `${String(offset)}px`;
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+              inline: 'start',
+            });
+          }}
+        >
+          {card.label}
+          <span className='rounded-full bg-muted px-1.5 leading-5 font-semibold text-foreground tabular-nums'>
+            {card.count}
+          </span>
+        </button>
       ))}
     </nav>
   );
