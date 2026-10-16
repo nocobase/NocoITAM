@@ -126,12 +126,22 @@ export function AssistantDock(): ReactElement | null {
     return () => document.removeEventListener('pointerdown', outside, true);
   }, [focused, modelMenu]);
 
-  if (
+  const absent =
     readiness.state === 'loading' ||
     hiddenOn(pathname) ||
-    settings.data?.ai.assistantDock === false
-  )
-    return null;
+    settings.data?.ai.assistantDock === false;
+  // Pages keep room at their foot for the box only while it is there
+  // (`Page` in page-header.tsx reads this mark, 2026-10-16): switched off,
+  // on a page without it, or under the open panel, the room was empty.
+  const shown = !absent && !panelOpen;
+  useEffect(() => {
+    if (!shown) return;
+    document.documentElement.dataset.askDock = '';
+    return () => {
+      delete document.documentElement.dataset.askDock;
+    };
+  }, [shown]);
+  if (absent) return null;
   const questions = record
     ? (RECORD_QUESTIONS[record.kind] ?? [])
     : (PAGE_QUESTIONS[pathname] ?? []);
