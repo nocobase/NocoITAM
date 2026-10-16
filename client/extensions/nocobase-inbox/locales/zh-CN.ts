@@ -3,8 +3,9 @@ import type { InboxLocale } from './en-US.js';
 const zhCN: InboxLocale = {
   'inbox.title': '收件箱',
   'inbox.description': '发给你的通知和请求。',
-  'inbox.views.all': '全部',
-  'inbox.views.todo': '待处理',
+  // Application change (ITAM, 2026-10-16, after NocoCRM's): the views are the notifications and the work agents' suggestions waiting on the reader.
+  'inbox.views.all': '通知',
+  'inbox.views.todo': 'AI 建议',
   'inbox.kinds.label': '类型',
   'inbox.kinds.all': '全部类型',
   'inbox.kinds.decision': '决定',

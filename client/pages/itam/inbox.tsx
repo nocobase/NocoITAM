@@ -23,7 +23,9 @@ import {
  * 收件箱 (2026-10-16, plan "Work agents", step 1; `frontend-standard.md`
  * §S1–S2, after NocoCRM's `pages/inbox.tsx`): the UI Library's inbox block
  * over the in-app notification plugin, first in the menu, its count the
- * runs waiting on the reader. Application change: its registry adds the
+ * runs waiting on the reader. Its two views are AI 建议 (first, the
+ * default, shown only while there is one) and 通知 — the block's To do and
+ * All, relabelled — with NocoCRM's application changes to the block. Application change: its registry adds the
  * work agents' suggestions waiting on the reader — 审批审阅's reviews — to
  * the To do view, as a collection category read from ITAM's API, listed
  * waiting first and then those handled lately, decided on the right with
@@ -46,7 +48,8 @@ export default function InboxPage(): ReactElement {
     }),
     [label],
   );
-  return <InboxBlock registry={registry} />;
+  // No line under the heading, as NocoCRM's inbox has none.
+  return <InboxBlock registry={registry} description='' />;
 }
 
 function reviewsCategory(label: string): InboxCollectionCategory {
@@ -110,6 +113,8 @@ function useReviewsCollection({
     // ones stays in reach when nothing waits.
     count: items.length,
     loaded: !inbox.isLoading,
+    // What waits on the reader, counted on the AI 建议 tab.
+    waiting: items.filter((run) => run.status === 'pending').length,
     group: list,
     list,
   };

@@ -56,8 +56,9 @@ export interface InboxLocale {
 const enUS: InboxLocale = {
   'inbox.title': 'Inbox',
   'inbox.description': 'Notifications and requests sent to you.',
-  'inbox.views.all': 'All',
-  'inbox.views.todo': 'To do',
+  // Application change (ITAM, 2026-10-16, after NocoCRM's): the views are the notifications and the work agents' suggestions waiting on the reader.
+  'inbox.views.all': 'Notifications',
+  'inbox.views.todo': 'AI suggestions',
   'inbox.kinds.label': 'Type',
   'inbox.kinds.all': 'All types',
   'inbox.kinds.decision': 'Decisions',

@@ -3141,8 +3141,10 @@ has eight cases.
 Decisions taken while building it:
 
 - **收件箱 is the template's inbox block**, as NocoCRM's is, not a page of
-  ITAM's own: the reviews are a collection category of its 待处理 view, and
-  the in-app notifications stay its 全部 view. It is first in the menu (§S1),
+  ITAM's own: the reviews are a collection category of its To do view and
+  the in-app notifications its All view, labelled AI 建议 and 通知 with
+  NocoCRM's application changes to the block (AI 建议 first and the default,
+  全部标为已读 on the 通知 tab). It is first in the menu (§S1),
   above 待办; `/notifications` and the bell lead to it. 待办's 待审批 column
   stays for now: it lists requests, the inbox lists reviews of them.
 - **The approver decides on the review**, as NocoCRM's approver does: the

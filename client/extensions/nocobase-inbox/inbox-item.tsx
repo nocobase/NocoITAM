@@ -1,6 +1,7 @@
 import { CheckCircle2Icon, MoreHorizontalIcon } from 'lucide-react';
 import { createElement, type KeyboardEvent, type ReactElement } from 'react';
 
+import { StatusBadge } from '#components/status-badge';
 import { Button } from '#components/ui/button';
 import {
   ContextMenu,
@@ -95,12 +96,10 @@ export function InboxItemCard(props: InboxItemCardProps): ReactElement {
 }
 
 /**
- * One compact card of the inbox list. Clicking anywhere on it shows it in the detail pane (and marks it read); Enter on
- * a focused card opens its route. The card reads: its title, ×N and time, then one line of particulars: whether it was
- * handled, its type, what it is about (an issue's identifier) and one sentence, as its contributor words them. A
- * decision that still waits carries an amber bar, an unread card a fainter bar and a bold title, a settled decision is
- * dimmed with a check, and an item that arrived after the list loaded slides in. The menu button, in the time's place
- * while the card is hovered, and a right-click offer read / unread and delete.
+ * One compact card of the inbox list. Clicking anywhere on it shows it in the detail pane (and marks it read); Enter on a focused card opens its route. The card reads: what it is about (an issue's identifier), type, ×N and time, then its title
+ * and, after it on the same line, one sentence, as its contributor words them. A decision that still waits carries an amber bar, an unread card a
+ * dot and a bold title, a settled decision is dimmed with a check, and an item that arrived after the list loaded
+ * slides in. The menu button and a right-click offer read / unread and delete.
  */
 function ItemCard({
   entry,
@@ -155,15 +154,23 @@ function ItemCard({
         data-inbox-item={item.id}
         data-selected={selected ? 'true' : undefined}
         className={cn(
-          // Pulled out by its padding and border, so its words start where the tabs' labels do and its bar sits in the
-          // list's gutter.
-          'group relative -mx-[calc(--spacing(3)+1px)] flex items-start gap-3 rounded-lg border border-transparent p-3 transition-[background-color,border-color,opacity] duration-200',
+          // Application change: pulled out by its padding and border, so its
+          // words start under the tabs' icons, its bar in the gutter
+          // (inbox-decisions-view.tsx).
+          'group relative flex items-start gap-3 rounded-lg border border-transparent -mx-[calc(--spacing(3)+1px)] p-3 transition-[background-color,border-color,opacity] duration-200',
+          // Application change: the selected card without a border, on the
+          // menu's own grey, the list being white.
           selected ? 'bg-hover' : 'hover:bg-hover',
           settled && 'opacity-55',
           fresh &&
             'animate-in duration-200 fade-in slide-in-from-top-1 motion-reduce:animate-none',
         )}
       >
+        {/* Application change: laid out as the AI suggestions' cards
+            (inbox-decisions-view.tsx): no icon, the bar at the card's edge
+            marking what is unread, then two lines, the title and the time,
+            then the sentence; no kind tag, the title saying what happened
+            and to what. */}
         <span
           aria-hidden='true'
           className={cn(
@@ -177,17 +184,14 @@ function ItemCard({
                   : 'bg-transparent',
           )}
         />
-        <Button
-          variant='ghost'
+        <button
           type='button'
           aria-current={selected ? 'true' : undefined}
           // Stretched over the whole card, so a click anywhere on it selects the item.
-          className="grid h-auto min-w-0 flex-1 cursor-pointer grid-cols-[minmax(0,1fr)] gap-1 rounded-none border-0 bg-transparent p-0 text-left font-normal whitespace-normal hover:bg-transparent active:translate-y-0 after:absolute after:inset-0 after:rounded-lg after:content-[''] focus-visible:outline-none"
+          className="grid min-w-0 flex-1 cursor-pointer gap-1 text-left after:absolute after:inset-0 after:rounded-lg after:content-[''] focus-visible:outline-none"
           onClick={() => onSelect(entry)}
           onKeyDown={onKeyDown}
         >
-          {/* The title, bold while unread, with the time at the right; the menu button takes the time's place while
-              the card is hovered or its menu open. */}
           <span className='flex min-w-0 items-baseline gap-1.5'>
             <span
               className={cn(
@@ -211,6 +215,9 @@ function ItemCard({
               </span>
             ) : null}
             {/* The latest notice's time: a merged item (×N) is sent anew, replacing the previous one. */}
+            {/* Application change: the menu button takes the time's place
+                while the card is hovered or its menu open, rather than a
+                column of its own at the card's right. */}
             <time
               className='ml-auto shrink-0 text-xs text-muted-foreground tabular-nums group-has-focus-visible:invisible group-hover:invisible group-has-data-popup-open:invisible'
               dateTime={item.createdAt}
@@ -219,18 +226,24 @@ function ItemCard({
               {relativeTime(item.createdAt, language)}
             </time>
           </span>
-          {/* Then one line of particulars: whether it was handled, its kind and what it is about, and its sentence. */}
-          <span className='line-clamp-1 text-xs text-muted-foreground wrap-anywhere'>
-            {settled
-              ? `${t('inbox.resolved', { defaultValue: 'Handled' })} · `
-              : null}
-            {wording.label(entry)}
-            {notice?.subject?.label ? (
-              <span className='font-mono'> {notice.subject.label}</span>
-            ) : null}
-            {sentence ? ` · ${sentence}` : null}
-          </span>
-        </Button>
+          {sentence || settled || notice?.subject?.label ? (
+            <span className='line-clamp-1 text-xs text-muted-foreground'>
+              {settled ? (
+                <>
+                  {/* Application change (ITAM): ITAM's status tag, its
+                      shadcn badge having no success variant. */}
+                  <StatusBadge tone='success' size='sm'>
+                    {t('inbox.resolved', { defaultValue: 'Handled' })}
+                  </StatusBadge>{' '}
+                </>
+              ) : null}
+              {notice?.subject?.label ? (
+                <span className='font-mono'>{notice.subject.label} </span>
+              ) : null}
+              {sentence}
+            </span>
+          ) : null}
+        </button>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={

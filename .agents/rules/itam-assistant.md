@@ -192,9 +192,12 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     the approver's words, replacing the waiting one.
   - **Where it shows** (`frontend-standard.md` §S1–S4): 收件箱 (`/inbox`,
     first in the menu, its badge the runs waiting, `useInboxCount`) is the
-    template's inbox block with the reviews added to its 待处理 view as a
-    collection category (`client/pages/itam/inbox.tsx`); `/notifications`
-    and the bell lead there. The request's page shows 等你决定 under its
+    template's inbox block with the reviews added to its To do view as a
+    collection category (`client/pages/itam/inbox.tsx`), and NocoCRM's
+    application changes to the block (`client/extensions/nocobase-inbox/`,
+    each marked): the two views are tabs labelled AI 建议 (first, the
+    default, counting what waits) and 通知 (with 全部标为已读 at its head);
+    `/notifications` and the bell open 通知 (`?view=all`). The request's page shows 等你决定 under its
     title (`DomainConfig.Decisions` → `DetailPage`'s `decisions`, built by
     `createApprovalDecisions`), with one line offering 让 Noco 审阅 while the
     request waits on the reader and no review is open. Both use

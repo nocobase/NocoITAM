@@ -78,6 +78,11 @@ export interface InboxPageProps {
   readonly detailToolbar?: (input: InboxDetailToolbarInput) => ReactNode;
   /** Beside the kind filter, such as a sound reminder switch. */
   readonly listFooter?: ReactNode;
+  /**
+   * Application change: adds to the address when an item is picked, as the record drawer over the inbox shows what
+   * a notification is about.
+   */
+  readonly selectParams?: (entry: InboxEntry, params: URLSearchParams) => void;
   /** Called with what waits on the viewer, the count on To do, whenever it changes once loaded. */
   readonly onPendingChange?: (count: number) => void;
   /** The application's toasts; the application toaster when left out. */
@@ -153,6 +158,7 @@ function InboxPageContent({
   description,
   detailToolbar,
   listFooter,
+  selectParams,
   onPendingChange,
   notify: givenNotify,
   pageSize,
@@ -209,9 +215,6 @@ function InboxPageContent({
     0,
   );
   const waitingCounts = waitingByCategory(groups, categories, pending.data);
-  const pendingTotal =
-    Object.values(waitingCounts).reduce((sum, count) => sum + count, 0) +
-    feedCount;
   const visible = shownEntries(filter, groups, categories);
 
   function replaceParams(next: URLSearchParams): void {
@@ -249,6 +252,14 @@ function InboxPageContent({
       params,
       onParams: replaceParams,
     });
+  // Application change: what a collection says waits is counted on To do too (`InboxCollectionState.waiting`).
+  const pendingTotal =
+    Object.values(waitingCounts).reduce((sum, count) => sum + count, 0) +
+    feedCount +
+    Object.values(collectionStates).reduce(
+      (sum, state) => sum + (state.waiting ?? 0),
+      0,
+    );
   const listCollections: Record<string, InboxListCollection> = {};
   for (const [id, state] of Object.entries(collectionStates))
     listCollections[id] = {
@@ -341,6 +352,7 @@ function InboxPageContent({
   function select(entry: InboxEntry): void {
     const next = withoutSelection();
     next.set('item', entry.item.id);
+    selectParams?.(entry, next);
     replaceParams(next);
     if (!entry.item.readAt) act(entry, 'read');
   }
@@ -412,16 +424,13 @@ function InboxPageContent({
   return (
     <div className='flex h-full min-h-0 flex-col'>
       <div className='shrink-0 border-b px-6 py-5 md:px-8'>
+        {/* Application change: the refresh spinner beside the title rather
+            than as the header's actions, which on a phone take a row of
+            their own under it, a gap even while empty. */}
         <PageHeader
-          title={title ?? t('inbox.title', { defaultValue: 'Inbox' })}
-          description={
-            description ??
-            t('inbox.description', {
-              defaultValue: 'Notifications and requests sent to you.',
-            })
-          }
-          actions={
-            <>
+          title={
+            <span className='inline-flex items-center gap-3'>
+              {title ?? t('inbox.title', { defaultValue: 'Inbox' })}
               {(pages.isFetching || notices.isFetching || waiting.isFetching) &&
               pages.data ? (
                 <Spinner
@@ -429,26 +438,22 @@ function InboxPageContent({
                   aria-label={t('inbox.loading', { defaultValue: 'Loading' })}
                 />
               ) : null}
-              <Button
-                variant='outline'
-                disabled={readAll.isPending || unreadShown === 0}
-                onClick={() => readAll.mutate()}
-              >
-                {readAll.isPending ? (
-                  <Spinner data-icon='inline-start' />
-                ) : (
-                  <CheckCheckIcon data-icon='inline-start' />
-                )}
-                {t('inbox.readAll', { defaultValue: 'Mark all as read' })}
-              </Button>
-            </>
+            </span>
+          }
+          description={
+            description ??
+            t('inbox.description', {
+              defaultValue: 'Notifications and requests sent to you.',
+            })
           }
         />
       </div>
       <div className='flex min-h-0 flex-1'>
         <div
           className={cn(
-            'flex min-h-0 w-full flex-col border-r bg-sidebar/60 lg:w-[26rem] lg:shrink-0',
+            // Application change: the list on the card's white, its selected
+            // item on the grey a hovered one takes, a shade deeper.
+            'flex min-h-0 w-full flex-col border-r bg-card lg:w-96 lg:shrink-0',
             showsDetail ? 'max-lg:hidden' : undefined,
           )}
         >
@@ -499,6 +504,32 @@ function InboxPageContent({
             }
             collections={listCollections}
             footer={listFooter}
+            // Application change: "Mark all as read" acts on notifications
+            // only, so it heads their tab's list, at its left, rather than
+            // sitting in the page's header for every tab.
+            head={
+              view === 'all' ? (
+                // As far under the tabs' rule as the first item's title is under it.
+                <div className='flex shrink-0 justify-start pt-1.5'>
+                  <Button
+                    variant='ghost'
+                    size='xs'
+                    // Its icon on the line the items' titles start at: back by
+                    // the button's own padding and border.
+                    className='-ml-[calc(--spacing(1.5)+1px)]'
+                    disabled={readAll.isPending || unreadShown === 0}
+                    onClick={() => readAll.mutate()}
+                  >
+                    {readAll.isPending ? (
+                      <Spinner data-icon='inline-start' />
+                    ) : (
+                      <CheckCheckIcon data-icon='inline-start' />
+                    )}
+                    {t('inbox.readAll', { defaultValue: 'Mark all as read' })}
+                  </Button>
+                </div>
+              ) : undefined
+            }
             idPrefix={idPrefix}
             onSelect={select}
             onOpen={open}
