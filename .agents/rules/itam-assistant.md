@@ -89,7 +89,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   at the bottom of the main column (`AssistantDock` in
   `client/components/itam/ai/assistant-dock.tsx`, ported from NocoCRM's dock
   on 2026-10-16, mounted inside `<main>` in `app-layout.tsx`): one line
-  ("问任何问题…", or "问关于「…」的问题…" on a record's page) until focused,
+  ("问任何问题…", on a record's page too — its name wrapped the box) until focused,
   then the ask composer (`ask-composer.tsx`) with files and the model, and
   while in use a veil over the whole page under it, drawn as a dialog's backdrop, so a press beside it only closes it (2026-10-16, as NocoCRM's), and the page's suggested questions above it (`RECORD_QUESTIONS` by the kind
   of record the page offers, else `PAGE_QUESTIONS` by path; `ai.dock.q.*`).
