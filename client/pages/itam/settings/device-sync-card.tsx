@@ -65,7 +65,8 @@ export function DeviceSyncCard(): ReactElement {
           it followed the title until then). */}
       <CardHeader>
         <CardTitle>{t('settings.deviceSync.cardTitle')}</CardTitle>
-        <CardAction>
+        {/* Beside the title only: the description below takes the whole width. */}
+        <CardAction className='row-span-1'>
           <Button
             disabled={!configured || running || start.isPending}
             onClick={() => start.mutate()}
@@ -82,7 +83,7 @@ export function DeviceSyncCard(): ReactElement {
             )}
           </Button>
         </CardAction>
-        <CardDescription>
+        <CardDescription className='col-span-2'>
           {t('settings.deviceSync.description')}
         </CardDescription>
       </CardHeader>
