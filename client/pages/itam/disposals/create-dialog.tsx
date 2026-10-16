@@ -118,9 +118,15 @@ export function DisposalCreateDialog({
       };
     return { [field.key]: value };
   };
+  // A pair is answered by either half: a vendor or a typed name.
   const complete =
     shownFields.every(
-      (field) => !field.required || Boolean(valueOf(field.key)),
+      (field) =>
+        !field.required ||
+        Boolean(valueOf(field.key)) ||
+        Boolean(
+          field.alternateField && text(valueOf(field.alternateField)).trim(),
+        ),
     ) && deviceIds.length > 0;
   return (
     <ConfirmDialog

@@ -201,6 +201,7 @@ describe('repairs, audits and disposals', () => {
     const device = await createDevice();
     const disposal = await data<{ id: string; disposalNo: string }>(
       await post('disposals', {
+        recipientName: 'Recycler',
         method: 'scrap',
         reason: 'damaged',
         deviceIds: [device.id],
@@ -248,6 +249,7 @@ describe('repairs, audits and disposals', () => {
     const device = await createDevice();
     const disposal = await data<{ id: string }>(
       await post('disposals', {
+        recipientName: 'Recycler',
         method: 'scrap',
         reason: 'damaged',
         deviceIds: [device.id],
@@ -339,10 +341,25 @@ describe('repairs, audits and disposals', () => {
     expect(corrected.status).toBe(200);
   });
 
+  it('refuses a disposal that does not say where the devices go', async () => {
+    const device = await createDevice();
+    const refused = await post('disposals', {
+      method: 'scrap',
+      reason: 'damaged',
+      deviceIds: [device.id],
+    });
+    expect(refused.status).toBe(400);
+    expect(await refused.json()).toMatchObject({
+      code: 'VALIDATION',
+      field: 'recipientVendorId',
+    });
+  });
+
   it('lists the disposals a device is on, newest first, for its page', async () => {
     const device = await createDevice();
     const first = await data(
       await post('disposals', {
+        recipientName: 'Recycler',
         method: 'scrap',
         reason: 'damaged',
         deviceIds: [device.id],
@@ -355,6 +372,7 @@ describe('repairs, audits and disposals', () => {
     });
     const second = await data(
       await post('disposals', {
+        recipientName: 'Recycler',
         method: 'sale',
         reason: 'endOfLife',
         deviceIds: [device.id],
@@ -818,6 +836,7 @@ describe('repairs, audits and disposals', () => {
     expect(
       (
         await post('disposals', {
+          recipientName: 'Recycler',
           method: 'sale',
           reason: 'other',
           deviceIds: [device.id],

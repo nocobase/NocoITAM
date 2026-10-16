@@ -458,6 +458,7 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
   },
   {
     key: 'requestedAt',
+    required: true,
     // After 报废方式, 报废原因 and 说明 (2026-10-05): the 申请信息 group went
     // once 负责人 moved to the top of 基本信息, as on a purchase order.
     detailOrder: 20,
@@ -500,6 +501,8 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
     // Or a name typed in for anyone who is not a vendor on the books: one
     // row, one answer, editable either way.
     alternateField: 'recipientName',
+    // Stated with the request (2026-10-16): a vendor or a typed name.
+    required: true,
     group: 'groups.execution',
   },
   {

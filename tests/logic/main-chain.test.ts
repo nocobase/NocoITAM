@@ -213,6 +213,7 @@ describe('main chain', () => {
     await ok(await post(`devices/${deviceId}/return`, {}));
     const disposal = await ok<{ id: string }>(
       await post('disposals', {
+        recipientName: 'Recycler',
         method: 'scrap',
         reason: 'damaged',
         deviceIds: [deviceId],

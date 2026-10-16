@@ -531,6 +531,16 @@ export function createDisposalService(dependencies: {
     async create(input, context, conditions) {
       const { deviceIds, ...fields } = input;
       assertInputFields(fields, conditions.fieldAccess?.input ?? '*');
+      // Where the devices go is stated with the request, draft or not
+      // (2026-10-16), rather than first asked at execution.
+      if (
+        !input.recipientVendorId &&
+        !(typeof input.recipientName === 'string' && input.recipientName.trim())
+      )
+        throw new ValidationError(
+          'Name the recipient: a vendor or a name',
+          'recipientVendorId',
+        );
       const created = await database.transaction((connection) =>
         createIn(connection, { ...fields, deviceIds }, context),
       );
