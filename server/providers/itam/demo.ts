@@ -5639,33 +5639,44 @@ export function createDemoService(dependencies: {
       if (allIds.length > 0)
         await database
           .transaction(async (connection) => {
-            const dispatches = connection.query
-              .selectFrom('notificationDispatches')
-              .select('id')
-              .where('sourceReferenceId', 'in', allIds);
-            const deliveries = connection.query
-              .selectFrom('notificationDeliveries')
-              .select('id')
-              .where('notificationId', 'in', dispatches);
+            // Ids first: the query layer takes a list, not a subquery.
+            const idsOf = (rows: readonly { id: unknown }[]) =>
+              rows.map((row) => String(row.id));
+            const dispatches = idsOf(
+              await connection.query
+                .selectFrom('notificationDispatches')
+                .select('id')
+                .where('sourceReferenceId', 'in', allIds)
+                .execute<{ id: unknown }>(),
+            );
+            if (dispatches.length === 0) return;
+            const deliveries = idsOf(
+              await connection.query
+                .selectFrom('notificationDeliveries')
+                .select('id')
+                .where('notificationId', 'in', dispatches)
+                .execute<{ id: unknown }>(),
+            );
             await connection.query
               .deleteFrom('notificationInAppItems')
               .where('notificationId', 'in', dispatches)
               .execute();
-            for (const table of [
-              'notificationDeliveryAttempts',
-              'notificationDeliveryRetryAudits',
-            ])
-              await connection.query
-                .deleteFrom(table)
-                .where('deliveryId', 'in', deliveries)
-                .execute();
+            if (deliveries.length > 0)
+              for (const table of [
+                'notificationDeliveryAttempts',
+                'notificationDeliveryRetryAudits',
+              ])
+                await connection.query
+                  .deleteFrom(table)
+                  .where('deliveryId', 'in', deliveries)
+                  .execute();
             await connection.query
               .deleteFrom('notificationDeliveries')
               .where('notificationId', 'in', dispatches)
               .execute();
             await connection.query
               .deleteFrom('notificationDispatches')
-              .where('sourceReferenceId', 'in', allIds)
+              .where('id', 'in', dispatches)
               .execute();
           })
           .catch(() => undefined);
