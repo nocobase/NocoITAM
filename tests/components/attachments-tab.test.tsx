@@ -74,13 +74,17 @@ it('shows readable file metadata, previews the file and unlinks the selected att
   render(<AttachmentsTab ownerType='devices' ownerId='ticket' />);
   expect(screen.getByText('Alex')).toBeVisible();
   expect(screen.queryByRole('heading', { name: 'attachments.own' })).toBeNull();
-  expect(screen.getByText('2.0 KB')).toBeVisible();
+  expect(screen.getByText('2 KB')).toBeVisible();
   expect(
     screen.getByRole('link', {
       name: 'attachments.download: Warranty report.pdf',
     }),
   ).toHaveAttribute('href', '/main/uploads/file.pdf');
-  fireEvent.click(screen.getByRole('button', { name: 'Warranty report.pdf' }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'attachments.preview: Warranty report.pdf',
+    }),
+  );
   expect(screen.getByRole('dialog')).toHaveTextContent('Warranty report.pdf');
   fireEvent.click(
     screen.getByRole('button', { name: 'actions.delete: Warranty report.pdf' }),
