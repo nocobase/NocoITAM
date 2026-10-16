@@ -63,6 +63,8 @@ export interface DemoSummary {
   >;
   /** An import under way in this process: how far it has got, 0 to 100. */
   readonly importing: { readonly percent: number } | null;
+  /** Why the last import started in the background stopped, if it did. */
+  readonly failure: { readonly code?: string; readonly message: string } | null;
 }
 
 /**
@@ -71,11 +73,21 @@ export interface DemoSummary {
  * undefined while none runs here (2026-10-16).
  */
 let importPercent: number | undefined;
+/** Why the last import `start` began failed; cleared by the next one. */
+let importFailure: DemoSummary['failure'] = null;
 
 export interface DemoService {
   status(): Promise<DemoSummary>;
   /** Without a language, the demo follows the deployment's default locale. */
   generate(actorId: string, language?: DemoLanguage): Promise<DemoSummary>;
+  /**
+   * Starts `generate` without waiting for it (2026-10-16): the import takes
+   * minutes on a slow disk, longer than a proxy in front of the application
+   * holds a request open (Studio answered 502 and the page never learned how
+   * it ended). Refuses as `generate` does; afterwards `status()` tells how
+   * far it got, and `failure` why it stopped.
+   */
+  start(actorId: string, language?: DemoLanguage): Promise<DemoSummary>;
   clear(actorId: string): Promise<DemoSummary>;
 }
 
@@ -964,6 +976,7 @@ export function createDemoService(dependencies: {
           accounts: [],
           accountsByLanguage,
           importing,
+          failure: importFailure,
         };
       const first = await database
         .query()
@@ -1001,7 +1014,31 @@ export function createDemoService(dependencies: {
           language && result.accounts ? accountsByLanguage[language] : [],
         accountsByLanguage,
         importing,
+        failure: importFailure,
       };
+    },
+
+    async start(actorId, language) {
+      if (importPercent !== undefined)
+        throw new BusinessRuleError(
+          'Demo data is being imported',
+          'DEMO_IMPORTING',
+        );
+      if ((await this.status()).generated)
+        throw new BusinessRuleError(
+          'Demo data already exists; clear it first',
+          'DEMO_EXISTS',
+        );
+      importFailure = null;
+      void this.generate(actorId, language).catch((error: unknown) => {
+        importFailure = {
+          ...(error instanceof BusinessRuleError ? { code: error.rule } : {}),
+          message: error instanceof Error ? error.message : String(error),
+        };
+      });
+      // `generate` marks itself running after its own first query; the
+      // answer says so already, so the page polls from the first moment.
+      return { ...(await this.status()), importing: { percent: 0 } };
     },
 
     async generate(actorId, language) {

@@ -211,8 +211,10 @@ export const dataRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
         const input = demoInput.safeParse(await readJsonObject(context));
         if (!input.success)
           throw new ValidationError('Unknown demo language', 'language');
+        // Started rather than awaited: the page polls `GET /demo` for its
+        // progress (2026-10-16).
         return context.json({
-          data: await demo.generate(principalId(context), input.data.language),
+          data: await demo.start(principalId(context), input.data.language),
         });
       } catch (error) {
         return errorResponse(context, error);

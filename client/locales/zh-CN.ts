@@ -2639,6 +2639,7 @@ const zhCN: AppResource = {
       banner:
         '还没有演示数据。导入一家示例公司，用真实感的记录体验采购、分配、维修、盘点和离职交接。',
       importing: '正在导入演示数据…',
+      failed: '导入没有完成：{{message}}',
       bannerAction: '导入演示数据',
       bannerDismiss: '不再显示',
     },

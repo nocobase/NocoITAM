@@ -48,6 +48,21 @@ describe('CSV import / export and demo data', () => {
   const data = async <T = Record<string, unknown>>(
     response: Response,
   ): Promise<T> => ((await response.json()) as { data: T }).data;
+  // An import is started and runs in the background (2026-10-16): this
+  // waits for it, and answers the status it ends on, or the refusal.
+  const generateDemo = async (body: Record<string, unknown> = {}) => {
+    const started = await post('demo/generate', body);
+    if (started.status !== 200) return started;
+    for (;;) {
+      const status = await get('demo');
+      const summary = (await status.clone().json()) as {
+        data: { importing: unknown; failure: { message: string } | null };
+      };
+      if (summary.data.failure) throw new Error(summary.data.failure.message);
+      if (!summary.data.importing) return status;
+      await new Promise((done) => setTimeout(done, 20));
+    }
+  };
 
   beforeEach(async () => {
     app = await createTestApp({ seeds: true });
@@ -328,9 +343,7 @@ describe('CSV import / export and demo data', () => {
   });
 
   it('shows the demo’s platforms as connected and syncs them from the demo', async () => {
-    expect((await post('demo/generate', { language: 'zh-CN' })).status).toBe(
-      200,
-    );
+    expect((await generateDemo({ language: 'zh-CN' })).status).toBe(200);
     const connections = app.container.resolve(deviceConnectionsServiceToken);
     expect(
       (await connections.describe()).map((row) => [row.source, row.origin]),
@@ -387,7 +400,7 @@ describe('CSV import / export and demo data', () => {
       400,
     );
     const summary = await data<{ language: string | null }>(
-      await post('demo/generate', { language: 'zh-CN' }),
+      await generateDemo({ language: 'zh-CN' }),
     );
     expect(summary.language).toBe('zh-CN');
     const people = await data<
@@ -406,8 +419,9 @@ describe('CSV import / export and demo data', () => {
       generated: boolean;
       importing: { percent: number } | null;
     };
-    const running = post('demo/generate', { language: 'en-US' });
-    // Under way as soon as the request is in.
+    const started = await post('demo/generate', { language: 'en-US' });
+    // Under way as soon as the request is answered.
+    expect((await data<Status>(started)).importing).toEqual({ percent: 0 });
     let status = await data<Status>(await get('demo'));
     for (let tries = 0; !status.importing && tries < 50; tries += 1) {
       await new Promise((done) => setTimeout(done, 5));
@@ -419,8 +433,10 @@ describe('CSV import / export and demo data', () => {
     expect((await post('demo/generate', { language: 'en-US' })).status).toBe(
       422,
     );
-    expect((await running).status).toBe(200);
-    status = await data<Status>(await get('demo'));
+    while (status.importing) {
+      await new Promise((done) => setTimeout(done, 20));
+      status = await data<Status>(await get('demo'));
+    }
     expect(status).toMatchObject({ generated: true, importing: null });
   });
 
@@ -433,7 +449,7 @@ describe('CSV import / export and demo data', () => {
         items: [],
       }),
     );
-    expect((await post('demo/generate')).status).toBe(200);
+    expect((await generateDemo()).status).toBe(200);
     const kits = async () =>
       (
         (await (await get('master/onboardingKits?pageSize=200')).json()) as {
@@ -454,7 +470,7 @@ describe('CSV import / export and demo data', () => {
   });
 
   it('generates the demo chain with its problem records and clears it without a trace', async () => {
-    const generated = await post('demo/generate');
+    const generated = await generateDemo();
     expect(generated.status).toBe(200);
     const summary = await data<{
       generated: boolean;
@@ -1000,5 +1016,6 @@ describe('CSV import / export and demo data', () => {
     await demo.generate('admin', 'en-US');
     await demo.clear('admin');
     expect(revoked).toEqual(['assignment-1']);
-  });
+    // Two whole imports and two clearings.
+  }, 120_000);
 });

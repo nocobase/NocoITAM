@@ -62,6 +62,11 @@ interface DemoSummary {
   >;
   /** An import under way: how far it has got, 0 to 100. */
   readonly importing: { readonly percent: number } | null;
+  /** Why the last import stopped, if it did. */
+  readonly failure?: {
+    readonly code?: string;
+    readonly message: string;
+  } | null;
 }
 
 /**
@@ -83,8 +88,19 @@ function DemoCard(): ReactElement {
   );
   const status = useQuery({
     queryKey: ['itam', 'demo'],
-    queryFn: async () =>
-      (await api.request<{ data: DemoSummary }>({ path: 'itam/demo' })).data,
+    queryFn: async () => {
+      const before = queryClient.getQueryData<DemoSummary>(['itam', 'demo']);
+      const next = (
+        await api.request<{ data: DemoSummary }>({ path: 'itam/demo' })
+      ).data;
+      // The import ended: everything it wrote is new to the other pages.
+      if (before?.importing && !next.importing)
+        void queryClient.invalidateQueries({
+          queryKey: ['itam'],
+          predicate: (query) => query.queryKey[1] !== 'demo',
+        });
+      return next;
+    },
     // How far an import has got, asked every second while one runs.
     refetchInterval: (query) => (query.state.data?.importing ? 1000 : false),
   });
@@ -108,20 +124,29 @@ function DemoCard(): ReactElement {
     onError: async () => {
       await queryClient.invalidateQueries({ queryKey: ['itam', 'demo'] });
     },
-    onSuccess: async (_result, action) => {
+    onSuccess: async (result, action) => {
       setConfirming(undefined);
-      setNotice(
-        t(
-          action === 'generate'
-            ? 'settings.demo.generated'
-            : 'settings.demo.cleared',
-        ),
-      );
+      // An import only starts here (2026-10-16): the server runs it in the
+      // background and the status, polled while it runs, says when it ends.
+      if (action === 'generate') {
+        queryClient.setQueryData(['itam', 'demo'], result.data);
+        return;
+      }
+      setNotice(t('settings.demo.cleared'));
       await queryClient.invalidateQueries({ queryKey: ['itam'] });
     },
   });
   const demo = status.data;
   const importing = demo?.importing ?? null;
+  // The import this page watched ended: say so, adjusting state while
+  // rendering rather than in an effect.
+  const [watching, setWatching] = useState(false);
+  if (importing && !watching) setWatching(true);
+  if (!importing && watching && demo) {
+    setWatching(false);
+    if (demo.generated && !demo.failure)
+      setNotice(t('settings.demo.generated'));
+  }
   const accounts = demo
     ? demo.generated
       ? demo.accounts
@@ -191,6 +216,10 @@ function DemoCard(): ReactElement {
         {act.error && act.variables === 'generate' && !confirming ? (
           <p className='text-sm text-destructive'>
             {apiErrorBody(act.error)?.message ?? errorMessage(act.error)}
+          </p>
+        ) : !importing && demo?.failure ? (
+          <p className='text-sm text-destructive'>
+            {t('settings.demo.failed', { message: demo.failure.message })}
           </p>
         ) : null}
         <p className='text-sm'>

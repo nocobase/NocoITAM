@@ -2797,6 +2797,7 @@ const messages = {
       banner:
         'No demo data yet. Import a sample company to try purchasing, assignment, repairs, stocktakes and offboarding with realistic records.',
       importing: 'Importing demo data…',
+      failed: 'The import did not finish: {{message}}',
       bannerAction: 'Import demo data',
       bannerDismiss: 'Dismiss',
     },
