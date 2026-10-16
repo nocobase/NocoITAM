@@ -413,8 +413,9 @@ function TimelineRow({
                   <span className='text-foreground/80'>
                     {event.type === 'quickAction' ? '' : ' '}
                     {target ? (
-                      // The record the summary names opens where it is named; such a
-                      // summary is a sentence around a name, never long free text.
+                      // The record the summary names opens where it is named. What
+                      // follows the name may be typed — a return's condition — so
+                      // it folds like any other summary (2026-10-16).
                       <>
                         {summaryParts?.before}
                         <RecordLink
@@ -423,7 +424,9 @@ function TimelineRow({
                         >
                           {target.label}
                         </RecordLink>
-                        {summaryParts?.after}
+                        {summaryParts?.after ? (
+                          <CollapsibleText text={summaryParts.after} />
+                        ) : null}
                       </>
                     ) : (
                       // A note, a cancellation reason, an approver's comment: any

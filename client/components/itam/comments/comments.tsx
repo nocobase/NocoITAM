@@ -12,7 +12,13 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
+import {
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +37,7 @@ import {
 } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
 
+import { COLLAPSE_CHARS, COLLAPSE_LINES } from '../collapsible-text.js';
 import { ConfirmDialog } from '../confirm-dialog.js';
 import {
   initials,
@@ -541,13 +548,13 @@ function Message({
         ) : (
           <>
             {bodyOf(event) ? (
-              <p className='text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere'>
+              <CommentBody text={bodyOf(event)}>
                 {withMentions(
                   bodyOf(event),
                   event.payload?.mentions,
                   scope.people,
                 )}
-              </p>
+              </CommentBody>
             ) : null}
             <CommentFiles files={filesOf(event)} />
           </>
@@ -615,6 +622,45 @@ export function CommentThread({
             onDone={() => setReplying(false)}
           />
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * A comment folded past the length history folds a summary at
+ * (`CollapsibleText`'s limits, 2026-10-16), by lines rather than by
+ * characters since it carries its mentions as links.
+ */
+function CommentBody({
+  text,
+  children,
+}: {
+  readonly text: string;
+  readonly children: ReactNode;
+}): ReactElement {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const long =
+    text.length > COLLAPSE_CHARS || text.split('\n').length > COLLAPSE_LINES;
+  return (
+    <div className='text-sm leading-relaxed'>
+      <p
+        className={cn(
+          'whitespace-pre-wrap wrap-anywhere',
+          long && !open && 'line-clamp-6',
+        )}
+      >
+        {children}
+      </p>
+      {long ? (
+        <button
+          type='button'
+          className='text-link underline-offset-4 hover:underline'
+          onClick={() => setOpen((current) => !current)}
+        >
+          {open ? t('common.showLess') : t('common.showMore')}
+        </button>
       ) : null}
     </div>
   );

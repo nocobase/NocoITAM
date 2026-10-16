@@ -204,7 +204,8 @@ export function AssignDialog({
           {locked ? null : (
             <div className='grid gap-1.5'>
               <Label htmlFor='assign-target'>
-                {t(`enums.assigneeType.${targetType}`)}
+                {t(`enums.assigneeType.${targetType}`)}{' '}
+                <span className='text-destructive'>*</span>
               </Label>
               <ReferenceSelect
                 id='assign-target'
@@ -243,23 +244,22 @@ export function AssignDialog({
               </p>
             </div>
           ) : null}
-          <div className='grid gap-4 sm:grid-cols-2'>
-            {mode === 'loan' ? (
-              <div className='grid gap-1.5'>
-                <Label htmlFor='assign-return'>
-                  {t('fields.expectedReturnDate')}{' '}
-                  <span className='text-destructive'>*</span>
-                </Label>
-                <DateField
-                  id='assign-return'
-                  min={todayIso()}
-                  required
-                  value={expectedReturnDate}
-                  onChange={(next) => setExpectedReturnDate(next ?? '')}
-                />
-              </div>
-            ) : null}
-          </div>
+          {/* Full width, as the fields above it (2026-10-16). */}
+          {mode === 'loan' ? (
+            <div className='grid gap-1.5'>
+              <Label htmlFor='assign-return'>
+                {t('fields.expectedReturnDate')}{' '}
+                <span className='text-destructive'>*</span>
+              </Label>
+              <DateField
+                id='assign-return'
+                min={todayIso()}
+                required
+                value={expectedReturnDate}
+                onChange={(next) => setExpectedReturnDate(next ?? '')}
+              />
+            </div>
+          ) : null}
           {message ? (
             <p className='text-sm text-destructive'>{message}</p>
           ) : null}
