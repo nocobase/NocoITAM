@@ -1,12 +1,3 @@
-.auth-brand-panel {
-  background: var(--auth-brand-background);
-  background-image: radial-gradient(
-    ellipse at top right,
-    color-mix(in srgb, var(--auth-brand-highlight) 8%, transparent),
-    transparent 65%
-  );
-}
-
 /* Authentication surfaces have their own palette; application pages keep the selected theme. */
 .dark .auth-page {
   --background: #141923;
@@ -18,9 +9,6 @@
   --border: #30394b;
   --input: #3b475c;
   --ring: #8198ed;
-  --auth-brand-background: #192130;
-  --auth-brand-highlight: #a2b3ec;
-  --auth-brand-muted: #aab5c9;
 }
 
 .dark .auth-page > aside {
@@ -34,4 +22,54 @@
 
 .dark .auth-page [data-slot='input-group'] input {
   background-color: transparent;
+}
+
+/* The sign-in aside draws its own backdrop of IT devices (activity-panel.tsx), in place of the layout's dot pattern,
+   its first child. */
+.auth-page > aside > div:first-child {
+  display: none;
+}
+
+/* The MDM sync sweeping the floor plan's desks, left to right. */
+.auth-sync-sweep {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--primary) 22%, transparent),
+    transparent
+  );
+  animation: auth-sync-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes auth-sync-sweep {
+  from {
+    left: -35%;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+/* The backdrop's devices drift a little, each in its own time. */
+.auth-backdrop-drift {
+  animation: auth-backdrop-drift 6s ease-in-out infinite alternate;
+}
+
+@keyframes auth-backdrop-drift {
+  from {
+    transform: translateY(-4px);
+  }
+  to {
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-sync-sweep {
+    animation: none;
+    left: 0;
+  }
+  .auth-backdrop-drift {
+    animation: none;
+  }
 }

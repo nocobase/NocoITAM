@@ -3575,6 +3575,66 @@ const messages = {
     failedHint:
       'Nothing was sorted this time; look on MDM 核对, or wait for the next sync.',
   },
+  loginActivity: {
+    heading: 'Where every device is, and who has it.',
+    description:
+      'Deliveries, handovers, repairs and disposals each go on the register as they happen; MDM syncs and stocktakes keep the books and the hardware in step.',
+    zones: {
+      warehouse: 'Warehouse',
+      floor: 'Floor 3 desks',
+      supplier: 'Supplier',
+      repair: 'Repair shop',
+      recycler: 'Recycler',
+    },
+    site: 'Shanghai office · Floor plan',
+    live: 'Live',
+    justNow: 'just now',
+    outside: 'Outside',
+    idle: 'The register is ready',
+    statuses: {
+      inUse: 'In use',
+      inStock: 'In stock',
+      inRepair: 'In repair',
+      disposal: 'To dispose',
+    },
+    events: {
+      received: {
+        device: 'PO-000052',
+        what: 'two monitors received by delivery note',
+        by: 'Emily Carter · received by delivery note',
+      },
+      assigned: {
+        device: 'SG-LT-061',
+        what: 'handed to new hire Noah Harris',
+        by: 'Ryan Mitchell · onboarding handover',
+      },
+      repair: {
+        device: 'SG-LT-018',
+        what: 'cracked screen, sent for repair',
+        by: 'Ryan Mitchell · repair RP-000012',
+      },
+      synced: {
+        device: 'Intune',
+        what: 'synced, devices in use match',
+        by: 'MDM sync',
+      },
+      repaired: {
+        device: 'SG-LT-018',
+        what: 'repaired, back at its desk',
+        by: 'Ryan Mitchell · repair done',
+      },
+      disposed: {
+        device: 'SG-PR-002',
+        what: 'disposed of, to the recycler',
+        by: 'Approved by Daniel Brooks · disposal DP-000005',
+      },
+      counted: {
+        device: 'Stocktake',
+        what: 'warehouse and Floor 3 all match',
+        by: 'Q3 stocktake · Ryan Mitchell',
+      },
+    },
+  },
 };
 
 // The sign-in pages' own strings (template beta.53), under the keys their
