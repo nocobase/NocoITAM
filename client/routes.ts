@@ -255,12 +255,17 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       path: '/agent-chat',
       auth: 'required',
       componentLoader: () => import('./pages/itam/agent-chat.js'),
-    },
-    {
-      name: 'agent-chat',
-      path: '/agent-chat/:conversationId',
-      auth: 'required',
-      componentLoader: () => import('./pages/itam/agent-chat.js'),
+      // One page for the list and the conversation open beside it, as
+      // NocoCRM's (2026-10-16): the conversation's address is a child that
+      // renders nothing, so moving between conversations keeps the page,
+      // its list's scroll and where 收起 returns to.
+      children: [
+        {
+          name: 'agent-chat',
+          path: ':conversationId',
+          componentLoader: () => import('./pages/itam/route-address.js'),
+        },
+      ],
     },
     {
       name: 'notifications',

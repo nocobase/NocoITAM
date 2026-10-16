@@ -23,7 +23,12 @@ import type {
   ConversationDetail,
   ConversationMessage,
 } from '@nocobase/app-plugin-agents/shared/conversations';
-import { BotMessageSquareIcon, PaperclipIcon } from 'lucide-react';
+import {
+  ArchiveRestoreIcon,
+  BotMessageSquareIcon,
+  InfoIcon,
+  PaperclipIcon,
+} from 'lucide-react';
 import {
   useCallback,
   useContext,
@@ -66,8 +71,11 @@ function noTimelineItems(): readonly ChatTimelineItem[] {
 
 export type ConversationVariant = 'panel' | 'page';
 
-/** The full-page view's column: the messages and the composer at a readable width, centred. */
-export const PAGE_COLUMN = 'mx-auto w-full max-w-3xl px-4 sm:px-6';
+/**
+ * The full-page view's column. Application change (ITAM, 2026-10-16, as NocoCRM's conversations page): the
+ * conversation's whole width, the page around it giving the margins; it was a readable width, centred.
+ */
+export const PAGE_COLUMN = 'w-full';
 
 export function ConversationView({
   conversationId,
@@ -358,26 +366,13 @@ function ConversationBody({
           className={cn(
             'flex min-h-full flex-col',
             // Application change (ITAM, after NocoCRM's panel): py-4.
-            page ? cn(PAGE_COLUMN, 'py-6') : 'py-4',
+            page ? cn(PAGE_COLUMN, 'py-4') : 'py-4',
           )}
         >
-          {/* Application change (ITAM, after NocoCRM's panel): a new
-              conversation in the panel is the empty view and the box, with
-              no greeting. */}
-          {empty && !page ? null : empty ? (
-            <div className='flex flex-1 flex-col items-center justify-center gap-2 px-6 py-10 text-center'>
-              <BotMessageSquareIcon
-                className='size-8 text-muted-foreground'
-                aria-hidden='true'
-              />
-              <p className='text-sm font-medium'>
-                {t('chat.emptyTitle', { name: currentName })}
-              </p>
-              <p className='text-sm text-muted-foreground'>
-                {t('chat.emptyDescription')}
-              </p>
-            </div>
-          ) : (
+          {/* Application change (ITAM, after NocoCRM's panel and, from
+              2026-10-16, its conversations page): a new conversation is the
+              empty view and the box, with no greeting. */}
+          {empty ? null : (
             <>
               {messages.hasMore ? (
                 <div className='flex justify-center pb-2'>
@@ -435,77 +430,101 @@ function ConversationBody({
         </div>
       </div>
       <TurnAnnouncer running={running} />
-      <div className={page ? cn(PAGE_COLUMN, 'pt-2 pb-4') : 'pt-3 pb-4'}>
-        <Composer
-          variant={variant}
-          running={running}
-          stopping={actions.stop.isPending}
-          onStop={() => {
-            if (conversationId) actions.stop.mutate(conversationId);
-          }}
-          onSend={(content, context, attachments) => {
-            void send({ content, context, attachments }).then(() =>
-              focusComposer(),
-            );
-            return true;
-          }}
-          registerAddFiles={registerAddFiles}
-          toolbar={
-            conversation ? (
-              <ModelPicker
-                conversation={conversation}
-                disabled={actions.chooseModel.isPending}
-                onChange={(model) =>
-                  actions.chooseModel.mutate({
-                    id: conversation.id,
-                    model: modelRef(model),
-                  })
-                }
-              />
-            ) : (
-              // Before the first message: who the conversation goes to, and the model of an online agent.
-              <NewChatChoice
-                agents={agents.data ?? []}
-                agent={target}
-                onAgentChange={(agentId) => {
-                  selectConversation(null, agentId);
-                  focusComposer();
-                }}
-                model={chosenModel}
-                onModelChange={(model) => {
-                  if (target) setNewModel({ agentId: target.id, model });
-                }}
-              />
-            )
-          }
-          notice={
-            conversation ? (
-              <AgentNotice
-                conversation={conversation}
-                busy={actions.fallback.isPending || actions.restore.isPending}
-                onFallback={() => actions.fallback.mutate(conversation.id)}
-                onRestore={() => actions.restore.mutate(conversation.id)}
-              />
-            ) : target === null && agents.isSuccess ? (
-              (agents.data?.length ?? 0) > 0 ? (
-                <p
-                  className='text-xs text-muted-foreground'
-                  data-testid='chat-choose-agent'
-                >
-                  {t('chat.chooseAgent')}
-                </p>
+      {/* Application change (ITAM, 2026-10-16, as NocoCRM's): an archived
+          conversation says so in place of the composer and offers to bring
+          it back. */}
+      {conversation?.archivedAt ? (
+        <div className='flex flex-wrap items-center gap-3 pt-3 pb-4'>
+          <InfoIcon className='size-4 text-muted-foreground' aria-hidden />
+          <span className='text-sm text-muted-foreground'>
+            {t('chat.archivedNote')}
+          </span>
+          <Button
+            variant='outline'
+            size='sm'
+            className='ml-auto'
+            disabled={actions.archive.isPending}
+            onClick={() =>
+              actions.archive.mutate({ id: conversation.id, archived: false })
+            }
+          >
+            <ArchiveRestoreIcon />
+            {t('chat.unarchive')}
+          </Button>
+        </div>
+      ) : (
+        <div className={page ? cn(PAGE_COLUMN, 'pt-2 pb-4') : 'pt-3 pb-4'}>
+          <Composer
+            variant={variant}
+            running={running}
+            stopping={actions.stop.isPending}
+            onStop={() => {
+              if (conversationId) actions.stop.mutate(conversationId);
+            }}
+            onSend={(content, context, attachments) => {
+              void send({ content, context, attachments }).then(() =>
+                focusComposer(),
+              );
+              return true;
+            }}
+            registerAddFiles={registerAddFiles}
+            toolbar={
+              conversation ? (
+                <ModelPicker
+                  conversation={conversation}
+                  disabled={actions.chooseModel.isPending}
+                  onChange={(model) =>
+                    actions.chooseModel.mutate({
+                      id: conversation.id,
+                      model: modelRef(model),
+                    })
+                  }
+                />
               ) : (
-                <p
-                  className='text-xs text-destructive'
-                  data-testid='chat-no-agent'
-                >
-                  {t('chat.noAgent')}
-                </p>
+                // Before the first message: who the conversation goes to, and the model of an online agent.
+                <NewChatChoice
+                  agents={agents.data ?? []}
+                  agent={target}
+                  onAgentChange={(agentId) => {
+                    selectConversation(null, agentId);
+                    focusComposer();
+                  }}
+                  model={chosenModel}
+                  onModelChange={(model) => {
+                    if (target) setNewModel({ agentId: target.id, model });
+                  }}
+                />
               )
-            ) : null
-          }
-        />
-      </div>
+            }
+            notice={
+              conversation ? (
+                <AgentNotice
+                  conversation={conversation}
+                  busy={actions.fallback.isPending || actions.restore.isPending}
+                  onFallback={() => actions.fallback.mutate(conversation.id)}
+                  onRestore={() => actions.restore.mutate(conversation.id)}
+                />
+              ) : target === null && agents.isSuccess ? (
+                (agents.data?.length ?? 0) > 0 ? (
+                  <p
+                    className='text-xs text-muted-foreground'
+                    data-testid='chat-choose-agent'
+                  >
+                    {t('chat.chooseAgent')}
+                  </p>
+                ) : (
+                  <p
+                    className='text-xs text-destructive'
+                    data-testid='chat-no-agent'
+                  >
+                    {t('chat.noAgent')}
+                  </p>
+                )
+              ) : null
+            }
+          />
+        </div>
+      )}
     </section>
   );
 }

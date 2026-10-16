@@ -11,17 +11,18 @@ import {
   CHAT_PANEL_ATTRIBUTE,
   CHAT_PANEL_ID,
   useChatPanel,
+  useConversationList,
 } from '@nocobase/app-plugin-agents/client/chat';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 
 import { useNavigate } from 'react-router';
 
+import { ConversationList } from '#components/itam/ai/conversation-list';
 import { Button } from '#components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '#components/ui/dialog';
 
 import { useChatTranslation } from './chat-i18n.js';
 import { ConversationView } from './conversation-view.js';
-import { HistoryList } from './history-list.js';
 import { PanelHeader } from './panel-header.js';
 import { useMediaQuery } from './use-media-query.js';
 
@@ -116,19 +117,23 @@ function PanelBody(): ReactElement {
   const { t } = useChatTranslation();
   const panel = useChatPanel();
   const navigate = useNavigate();
+  const list = useConversationList({});
   return (
     // Application change (ITAM): NocoCRM's margins, px-4.
     <div className='flex min-h-0 flex-1 flex-col px-4'>
       {panel.view === 'history' ? (
         <>
-          <div className='min-h-0 flex-1 overflow-y-auto pt-3'>
-            <HistoryList
-              activeId={panel.conversationId}
+          {/* Application change (ITAM, 2026-10-16): NocoCRM's list, the
+              conversations page's (`ConversationList`), each row opening its
+              conversation in place; no search or filters. */}
+          <div className='-mx-2 flex min-h-0 flex-1 flex-col pt-1'>
+            <ConversationList
+              query={list}
+              openId={panel.conversationId}
               onOpen={(id) => {
                 panel.selectConversation(id);
                 panel.focusComposer();
               }}
-              onOpenPage={panel.openPage}
             />
           </div>
           {/* Application change (ITAM, 2026-10-16): the conversations page

@@ -15,6 +15,8 @@ export interface AgentChatLocale {
     readonly renameHint: string;
     readonly archive: string;
     readonly unarchive: string;
+    /** Application change (ITAM, 2026-10-16): in place of the composer of an archived conversation. */
+    readonly archivedNote: string;
     readonly you: string;
     readonly agentGone: string;
     readonly anyAgent: string;
@@ -228,6 +230,7 @@ const agentChatEnUS: AgentChatLocale = {
     renameHint: '{{title}} (click to rename)',
     archive: 'Archive',
     unarchive: 'Unarchive',
+    archivedNote: 'This conversation is archived.',
     you: 'You',
     agentGone: 'Deleted agent',
     anyAgent: 'Agent',

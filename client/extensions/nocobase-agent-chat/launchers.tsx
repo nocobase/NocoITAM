@@ -26,6 +26,8 @@ import {
 } from '#components/ui/tooltip';
 import { cn } from 'cn';
 
+import { useToggleAssistant } from '@/lib/itam/conversations';
+
 import { useChatTranslation } from './chat-i18n.js';
 import {
   FLOATING_BUTTON,
@@ -112,7 +114,7 @@ export function ChatFloatingButton(): ReactElement | null {
 
 function FloatingButton(): ReactElement {
   const { t } = useChatTranslation();
-  const panel = useChatPanel();
+  const toggle = useToggleAssistant();
   const replying = useReplying();
   const [button, setButton] = useState<HTMLButtonElement | null>(null);
   const bottom = useFloatingButtonBottom(button);
@@ -129,7 +131,9 @@ function FloatingButton(): ReactElement {
       aria-label={t('chat.title')}
       aria-controls={CHAT_PANEL_ID}
       aria-expanded={false}
-      onClick={() => panel.openChat()}
+      // Application change (ITAM, 2026-10-16): on the latest conversation
+      // when the panel holds none, as the header's ✨ button.
+      onClick={toggle}
       data-testid='chat-floating-button'
     >
       <BotMessageSquareIcon className='size-5' />

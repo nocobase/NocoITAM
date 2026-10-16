@@ -16,6 +16,7 @@ const agentChatZhCN: AgentChatLocale = {
     renameHint: '{{title}}（点击改标题）',
     archive: '归档',
     unarchive: '取消归档',
+    archivedNote: '这个对话已归档。',
     you: '我',
     agentGone: '已删除的 Agent',
     anyAgent: 'Agent',

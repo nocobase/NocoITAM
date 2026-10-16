@@ -10,6 +10,7 @@ import type { ReactElement, ReactNode } from 'react';
 
 import { useAiStatus } from '@/lib/itam/ai';
 import { ITAM_CHAT_EXTENSIONS } from '@/lib/itam/chat-extensions';
+import { useToggleAssistant } from '@/lib/itam/conversations';
 import { ChatPanel } from '#extensions/nocobase-agent-chat/chat-panel';
 import { ChatFloatingButton } from '#extensions/nocobase-agent-chat/launchers';
 import { Button } from '#components/ui/button';
@@ -53,13 +54,15 @@ export function AgentChatShell({
  * The header's entry to the assistant (2026-10-16, after NocoCRM's ✨
  * button): first of the header's actions, in the frame the theme button
  * wears with the sparkle in the primary colour, on every page. It toggles
- * the panel as ⌘J does, back where it was left. While the assistant cannot
+ * the panel as ⌘J does, back where it was left — on the latest
+ * conversation when it holds none (`useToggleAssistant`). While the assistant cannot
  * answer (no usable model, Noco switched off) it stays, disabled, and says
  * why.
  */
 export function AgentChatButton(): ReactElement | null {
   const { t } = useTranslation();
   const panel = useChatPanel();
+  const toggle = useToggleAssistant();
   const status = useAiStatus();
   if (!panel.available || status.isLoading) return null;
   const ready = status.data?.available === true;
@@ -82,7 +85,7 @@ export function AgentChatButton(): ReactElement | null {
           aria-controls={CHAT_PANEL_ID}
           aria-keyshortcuts='Meta+J Control+J'
           disabled={!ready}
-          onClick={panel.toggleChat}
+          onClick={toggle}
         >
           <Sparkles className='size-5 text-primary' aria-hidden='true' />
         </Button>

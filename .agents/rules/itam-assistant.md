@@ -81,7 +81,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   buttons (`client/components/agent-composer.tsx`, its panel form). The
   header's ✨ button (`AgentChatButton`) leads the header's actions in the
   theme button's frame with the sparkle in the primary colour, toggles the
-  panel as ⌘J does, and while `/itam/ai/status` says the assistant cannot
+  panel as ⌘J does — opening on the latest conversation when the panel holds
+  none, as on arriving (`useToggleAssistant` in `client/lib/itam/conversations.ts`,
+  2026-10-16; the phone's round button too, a new conversation being the
+  panel's +) — and while `/itam/ai/status` says the assistant cannot
   answer stays, disabled, saying why (`ai.unavailable`). An ask box floats
   at the bottom of the main column (`AssistantDock` in
   `client/components/itam/ai/assistant-dock.tsx`, ported from NocoCRM's dock
@@ -102,15 +105,27 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (`useAiPageContext` with `recordKindOf`, `client/lib/itam/record-kind.ts`)
   so the box, and the panel's composer, know it. The conversations have a
   page of their own (`client/pages/itam/agent-chat.tsx`, 2026-10-16, laid
-  out as NocoCRM's): `/agent-chat` with the block's list (search, filters)
-  in a column at the left and the conversation open beside it
-  (`/agent-chat/:conversationId`), `/agent-chat/new` starting one — the
-  block's `ChatConversationPage` takes a null conversation and `history:
-false` for this, and the first message moves the address within the same
-  route, so the view stays. The global search's 问 AI answers in its own
+  out as NocoCRM's): `/agent-chat`, its heading over a rule with 收起 (back
+  to the page the reader came from, the conversation in the panel) and
+  新对话, the list in a column at the left and the conversation open beside
+  it; `/agent-chat/:conversationId` is a child route rendering nothing
+  (`route-address.tsx`), so the page stays mounted between conversations,
+  and `/agent-chat/new` starts one — the block's `ChatConversationPage`
+  takes a null conversation, and the first message moves the address
+  within the same route, so the view stays. The list is NocoCRM's
+  (`ConversationList` in `client/components/itam/ai/conversation-list.tsx`,
+  also the panel's history): each row the agent's avatar, the title, the
+  time and the latest message (`你：`, or the agent's name, first; the
+  plugin's list has no preview, so each row reads its last message), a dot
+  while a reply is unread, no search or filters; the archived ones behind
+  显示已归档 at its foot (`?archived=1`). With no conversation the page is an
+  empty state. The conversation fills the column under a header of the
+  avatar, the title (click to rename) over "Noco · what it does" and a ⋯
+  menu (archive), over a rule, with no greeting on a new one; an archived
+  conversation shows 这个对话已归档。 and 取消归档 in place of the composer. The global search's 问 AI answers in its own
   dialog on a conversation listed nowhere until the reader goes on asking
   in it (2026-10-16; see the global search in `itam-ui.md`). It has no menu entry: the panel's history ends
-  in a link to it, and a conversation's page button lands there. A page offers what it
+  in a link to it, and the panel's 全屏打开 lands there. A page offers what it
   shows through `useAiPageContext({ kind, id, label })`
   (`client/lib/itam/ai-chat.tsx`): the record's chip sits above the composer
   and `ask(prompt)` starts a conversation with it pinned. A page context
