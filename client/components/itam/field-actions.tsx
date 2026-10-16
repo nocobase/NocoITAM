@@ -31,11 +31,13 @@ export function FieldActions({
   const icon =
     'inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none';
   return (
-    <div className='group/field flex items-start gap-1'>
-      <div ref={valueRef} className='min-w-0 flex-1'>
+    // The icons float over the value's end rather than taking width from it
+    // (2026-10-16), on the card's ground so they read over the text.
+    <div className='group/field relative'>
+      <div ref={valueRef} className='min-w-0'>
         {children}
       </div>
-      <div className='flex shrink-0 items-center opacity-0 transition-opacity group-focus-within/field:opacity-100 group-hover/field:opacity-100'>
+      <div className='pointer-events-none absolute top-1/2 right-0 flex -translate-y-1/2 items-center rounded-md bg-card/95 opacity-0 shadow-xs ring-1 ring-border/60 transition-opacity group-focus-within/field:pointer-events-auto group-focus-within/field:opacity-100 group-hover/field:pointer-events-auto group-hover/field:opacity-100'>
         {onEdit ? (
           <button
             type='button'
