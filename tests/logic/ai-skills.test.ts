@@ -5,7 +5,10 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { METHOD_SKILLS } from '../../server/providers/itam-agents/skill.js';
+import {
+  METHOD_SKILLS,
+  WORK_SKILLS,
+} from '../../server/providers/itam-agents/skill.js';
 
 const skillsDir = path.resolve(process.cwd(), 'ai/skills');
 
@@ -24,7 +27,10 @@ describe('the skills this Solution delivers', () => {
     .map((entry) => entry.name);
 
   it('are exactly the ones put into the library', () => {
-    expect([...directories].sort()).toEqual([...METHOD_SKILLS].sort());
+    // Noco's method skills and the work agents' (2026-10-16).
+    expect([...directories].sort()).toEqual(
+      [...METHOD_SKILLS, ...WORK_SKILLS].sort(),
+    );
   });
 
   it('each carry a SKILL.md whose name matches its directory', () => {

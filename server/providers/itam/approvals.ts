@@ -79,6 +79,14 @@ export interface ApprovalService {
     context: OperationContext,
     connection: DatabaseConnection,
   ): Promise<Row>;
+  /**
+   * Told once a request's transaction has committed (2026-10-16): the work
+   * agents review it for its approver (`itam/approval-review.ts`). Set by
+   * the agents' provider; a failure in it never reaches the request.
+   */
+  onRequested?: (approval: Row) => void;
+  /** Told once a decision or a withdrawal has committed: a review waiting on it is over. */
+  onSettled?: (approval: Row) => void;
 }
 
 export const approvalServiceToken: ServiceToken<ApprovalService> =
@@ -93,7 +101,22 @@ export function createApprovalService(
   const definition = APPROVALS_COLLECTION;
   const decode = (row: Row): Row => decodeRow(row, { jsonFields: JSON_FIELDS });
 
-  return {
+  // Each hook runs after the transaction that wrote the row commits, so
+  // whatever it starts reads the request as it now stands.
+  const announce = (
+    connection: DatabaseConnection,
+    hook: 'onRequested' | 'onSettled',
+    approval: Row,
+  ): void =>
+    connection.afterCommit(() => {
+      try {
+        service[hook]?.(approval);
+      } catch {
+        // A listener's failure is its own.
+      }
+    });
+
+  const service: ApprovalService = {
     list: (options, conditions) =>
       listCollection(database, definition, options, conditions, {
         jsonFields: JSON_FIELDS,
@@ -189,6 +212,7 @@ export function createApprovalService(
         },
         connection,
       );
+      announce(connection, 'onRequested', decode(values));
       return decode(values);
     },
 
@@ -229,6 +253,10 @@ export function createApprovalService(
         },
         connection,
       );
+      announce(connection, 'onSettled', {
+        ...decode(open),
+        status: 'withdrawn',
+      });
     },
 
     async decide(id, decision, comment, context, connection) {
@@ -280,7 +308,9 @@ export function createApprovalService(
         .selectAll()
         .where('id', '=', id)
         .executeTakeFirst<Row>();
+      announce(connection, 'onSettled', decode(after ?? row));
       return decode(after ?? row);
     },
   };
+  return service;
 }

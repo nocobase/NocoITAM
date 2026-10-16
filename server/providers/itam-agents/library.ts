@@ -7,7 +7,7 @@ import type { DatabaseManager } from '@nocobase/db';
 
 import { assistantId } from './assistant.js';
 import { claimMarker, readMarker, writeMarker } from './markers.js';
-import { METHOD_SKILLS } from './skill.js';
+import { METHOD_SKILLS, WORK_SKILLS } from './skill.js';
 
 /**
  * @temporary(nocobase-official): an application cannot ship skills into the
@@ -18,7 +18,8 @@ import { METHOD_SKILLS } from './skill.js';
  * ITAM's method skills (ai/skills: onboarding, offboarding, receiving,
  * catalog, device-sync) as skills of the library, where people read and edit them under
  * AI → 技能: each is added once, from its SKILL.md as shipped, and attached
- * to Noco; the marker keeps their ids, so a skill an administrator edited,
+ * to Noco — a work agent's skill (approval-review) to its agent instead
+ * (work-agents.ts); the marker keeps their ids, so a skill an administrator edited,
  * detached or deleted stays as they left it, and a later SKILL.md shipped
  * with the code does not replace the library's. The background work reads
  * the library's current version (`readSkill` in ai-model.ts).
@@ -49,7 +50,9 @@ export async function provisionSkills(
   )
     return;
   const known = skillIdsOf(marker);
-  const missing = METHOD_SKILLS.filter((slug) => !known[slug]);
+  const missing = [...METHOD_SKILLS, ...WORK_SKILLS].filter(
+    (slug) => !known[slug],
+  );
   if (!missing.length) return;
   // One a person added under the same name before is taken as it is.
   const library = new Map(
@@ -71,12 +74,15 @@ export async function provisionSkills(
   }
   if (!Object.keys(added).length) return;
   const agentId = await assistantId(database);
-  if (agentId) {
+  const forNoco = Object.entries(added)
+    .filter(([slug]) => (METHOD_SKILLS as readonly string[]).includes(slug))
+    .map(([, id]) => id);
+  if (agentId && forNoco.length) {
     const target = { scope: 'agent', scopeId: agentId } as const;
     const attached = await agents.skills.attached(target).catch(() => null);
     if (attached)
       await agents.skills.attach(target, [
-        ...new Set([...attached, ...Object.values(added)]),
+        ...new Set([...attached, ...forNoco]),
       ]);
   }
   await writeMarker(database, SKILLS_MARKER, {
@@ -84,7 +90,7 @@ export async function provisionSkills(
   });
 }
 
-function skillIdsOf(
+export function skillIdsOf(
   marker: Record<string, unknown> | null,
 ): Record<string, string> {
   const ids = marker?.skillIds;

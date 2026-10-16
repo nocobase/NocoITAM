@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 import type { ModelSession } from './ai-model.js';
+import { reviewPrompt, reviewShape } from './approval-review.js';
+import { APPROVAL_REVIEW_EVALS } from './evals/approval-review.js';
 import { DEVICE_SYNC_EVALS } from './evals/device-sync.js';
 
 /**
@@ -55,9 +57,10 @@ export interface EvalCaseResult {
   readonly id: string;
   readonly title: string;
   readonly passed: boolean;
-  readonly expected: readonly EvalDecision[];
+  /** The standard answer: decisions, or the recommendations that pass (审批审阅). */
+  readonly expected: readonly EvalDecision[] | readonly string[];
   /** What the model decided; null when it gave no usable answer. */
-  readonly got: readonly EvalDecision[] | null;
+  readonly got: readonly EvalDecision[] | readonly string[] | null;
   /** The decisions that did not match, by subject. */
   readonly misses: readonly string[];
 }
@@ -73,6 +76,16 @@ export interface EvalReport {
 export const SKILL_EVALS: Readonly<Record<string, readonly EvalCase[]>> = {
   'device-sync': DEVICE_SYNC_EVALS,
 };
+
+/**
+ * Every skill with an eval set: the device-sync decisions above, and
+ * 审批审阅's recommendations (2026-10-16), scored on the recommendation
+ * alone.
+ */
+export const EVAL_SKILLS: readonly string[] = [
+  ...Object.keys(SKILL_EVALS),
+  'approval-review',
+];
 
 const DECISIONS = z.object({
   decisions: z
@@ -136,6 +149,7 @@ export async function runEval(options: {
   readonly open: (system: string) => Promise<ModelSession | null>;
   readonly signal?: AbortSignal;
 }): Promise<EvalReport> {
+  if (options.skill === 'approval-review') return runReviewEval(options);
   const cases = SKILL_EVALS[options.skill] ?? [];
   const results: EvalCaseResult[] = [];
   for (const item of cases) {
@@ -156,6 +170,58 @@ export async function runEval(options: {
   }
   return {
     skill: options.skill,
+    passed: results.filter((result) => result.passed).length,
+    total: results.length,
+    cases: results,
+    ranAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * 审批审阅's eval set: each case asked as a real review asks it
+ * (`reviewPrompt`, with the skill's text), passing when the
+ * recommendation is one the case accepts.
+ */
+async function runReviewEval(options: {
+  readonly instructions: string;
+  readonly open: (system: string) => Promise<ModelSession | null>;
+  readonly signal?: AbortSignal;
+}): Promise<EvalReport> {
+  const results: EvalCaseResult[] = [];
+  for (const item of APPROVAL_REVIEW_EVALS) {
+    const session = await options.open('');
+    if (!session) throw new Error('No model to ask');
+    let got: string | null;
+    try {
+      const answer = await session.askJson(
+        reviewPrompt({
+          skill: options.instructions,
+          subject: item.subject,
+          material: item.material,
+          currency: 'CNY',
+          today: '2026-10-16',
+          language: 'Chinese',
+          revision: null,
+        }),
+        reviewShape,
+        options.signal,
+      );
+      got = answer?.recommendation ?? null;
+    } catch {
+      got = null;
+    }
+    const passed = got !== null && item.expect.includes(got as never);
+    results.push({
+      id: item.id,
+      title: item.title,
+      passed,
+      expected: item.expect,
+      got: got === null ? null : [got],
+      misses: passed ? [] : [item.id],
+    });
+  }
+  return {
+    skill: 'approval-review',
     passed: results.filter((result) => result.passed).length,
     total: results.length,
     cases: results,

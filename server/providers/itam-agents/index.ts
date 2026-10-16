@@ -3,6 +3,7 @@ import {
   agentsToken,
 } from '@nocobase/app-plugin-agents/server/tokens';
 import type { Application } from '@nocobase/app-server/application';
+import { jobExecutorServiceToken } from '@nocobase/app-server/jobs';
 import { loggingToken } from '@nocobase/app-server/logging';
 import { databaseManagerToken } from '@nocobase/db';
 import {
@@ -11,6 +12,10 @@ import {
   type ServiceToken,
 } from '@nocobase/service-provider';
 
+import { AGENT_JOBS, createAgentJob, oncePerRun } from '../itam/agent-jobs.js';
+import { agentRunServiceToken } from '../itam/agent-runs.js';
+import { approvalReviewerToken } from '../itam/approval-review.js';
+import { approvalServiceToken } from '../itam/approvals.js';
 import { planServiceToken } from '../itam/plans.js';
 import { settingsServiceToken } from '../itam/settings.js';
 import { agentActionOptions, PLAN_ACTION, VIEW_ACTION } from './actions.js';
@@ -28,6 +33,7 @@ import { ITAM_ASSISTANT_INSTRUCTIONS } from './preset.js';
 import { itamConversationRules } from './rules.js';
 import { registerItamSkill } from './skill.js';
 import { SEARCH_SOURCE } from './search-answers.js';
+import { provisionWorkAgents } from './work-agents.js';
 
 /** Which collections each person could read when they last loaded a page. */
 export const readSnapshotsToken: ServiceToken<ReadSnapshots> =
@@ -61,8 +67,8 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
     );
   }
 
-  public override boot(): Promise<void> {
-    if (!this.app.container.has(agentsToken)) return Promise.resolve();
+  public override async boot(): Promise<void> {
+    if (!this.app.container.has(agentsToken)) return;
     const agents = this.app.container.resolve(agentsToken);
     agents.actions.provide(agentActionOptions);
     agents.gate.set(itamActionGate());
@@ -100,7 +106,68 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
       key: SEARCH_SOURCE,
       title: { key: 'ai.searchSource', ns: 'itam' },
     });
-    return Promise.resolve();
+    await this.startWorkAgents();
+  }
+
+  /**
+   * The work agents (2026-10-16, plan "Work agents"): 审批审阅 reviews each
+   * approval request for its approver once it is committed, and a decision
+   * or a withdrawal retires a review still open. Their runs are tasks of the
+   * jobs service (`itamAgentRuns`), kept across a restart; without it they
+   * run in this process in turn.
+   */
+  private async startWorkAgents(): Promise<void> {
+    const container = this.app.container;
+    const reviewer = container.resolve(approvalReviewerToken);
+    const approvals = container.resolve(approvalServiceToken);
+    const warn = (error: unknown, message: string) => {
+      if (container.has(loggingToken))
+        container
+          .resolve(loggingToken)
+          .getLogger('itam')
+          .warn({ err: error }, message);
+    };
+    approvals.onRequested = (approval) =>
+      void reviewer
+        .request({
+          approvalId: String(approval.id),
+          trigger: 'submitted',
+          by: null,
+        })
+        .catch((error: unknown) =>
+          warn(error, 'The approval review did not start'),
+        );
+    approvals.onSettled = (approval) =>
+      void reviewer.settled(approval).catch(() => undefined);
+    if (!container.has(jobExecutorServiceToken)) return;
+    const executor = container
+      .resolve(jobExecutorServiceToken)
+      .getJobExecutor('itam', AGENT_JOBS);
+    const AgentRunJob = createAgentJob(
+      oncePerRun((runId, signal) => reviewer.runEntry(runId, signal)),
+    );
+    executor.registerJob(AgentRunJob);
+    await executor.setup();
+    const dispatch = async (runId: string): Promise<void> => {
+      await executor.addJob(new AgentRunJob({ runId }));
+    };
+    reviewer.useJobs(dispatch);
+    // The runs a shutdown cut short left running, queued again: only on the
+    // memory queue, which this process alone holds; a shared one (Redis)
+    // keeps its tasks through any exit, and another instance may be running
+    // them.
+    const adapter =
+      this.app.config?.get<Record<string, { adapter?: string } | undefined>>(
+        'jobs',
+      )?.[AGENT_JOBS]?.adapter ?? 'memory';
+    if (adapter === 'memory')
+      void container
+        .resolve(agentRunServiceToken)
+        .running()
+        .then(async (running) => {
+          for (const run of running) await dispatch(run.id);
+        })
+        .catch(() => undefined);
   }
 
   public override async start(): Promise<void> {
@@ -132,6 +199,7 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
       await provisionModelServices(this.app, agents);
       await provisionAssistant(agents, database, PRESET_ACTIONS);
       await provisionSkills(agents, database);
+      await provisionWorkAgents(agents, database);
     } catch (error) {
       if (this.app.container.has(loggingToken))
         this.app.container

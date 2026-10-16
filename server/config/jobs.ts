@@ -22,6 +22,17 @@ const jobs: AppConfigFactory<AppJobsConfig> = defineAppConfig(({ paths }) => ({
     removeOnComplete: { count: 1000 },
     removeOnFail: { age: 604_800 },
   },
+  // ITAM's work agents' runs (an application addition,
+  // server/providers/itam/agent-jobs.ts): two at a time, each a model call
+  // of up to minutes. A deployment raises `concurrency` in config.yml, or
+  // moves them to Redis (`adapter: redis` and a connection) to run them
+  // across instances; a failure is the run's own, so one attempt.
+  itamAgentRuns: {
+    adapter: 'memory',
+    concurrency: 2,
+    attempts: 1,
+    persistence: { path: paths.storage('jobs') },
+  },
 }));
 
 export default jobs;
