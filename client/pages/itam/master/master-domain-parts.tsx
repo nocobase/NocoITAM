@@ -122,9 +122,10 @@ function TreePanes({
   });
   return (
     // As tall as the page leaves (`treeFills`): each pane scrolls on its
-    // own, so a long tree never pushes the record out of view.
+    // own, so a long tree never pushes the record out of view; each keeps
+    // room at its end for the ask box over the page's foot (page-header.tsx).
     <div className='grid min-h-80 flex-1 gap-4 @xl:grid-cols-[minmax(13rem,17rem)_minmax(0,1fr)] @xl:grid-rows-[minmax(0,1fr)]'>
-      <div className='min-h-0 overflow-y-auto'>
+      <div className='min-h-0 overflow-y-auto [:root[data-ask-dock]_&]:pb-16'>
         <MasterDataTree
           collection={collection}
           compact
@@ -155,7 +156,7 @@ function TreePanes({
         />
       </div>
       {selected ? (
-        <section className='min-h-0 min-w-0 overflow-y-auto rounded-lg border border-border bg-card'>
+        <section className='min-h-0 min-w-0 overflow-y-auto rounded-lg border border-border bg-card [:root[data-ask-dock]_&]:pb-16'>
           {/* The tree beside says where it sits: no breadcrumb here. */}
           <HideBreadcrumbContext.Provider value>
             <RecordPane

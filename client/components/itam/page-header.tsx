@@ -77,12 +77,14 @@ export function Page({
     <section
       // A filled page is a board: it takes the window's whole width, since
       // every column more on screen is a status the reader need not scroll
-      // to, where a form or a table reads best at a measured width. Its
+      // to, where a form or a table reads best at a measured width. The
       // foot keeps room for the ask box floating over the bottom of the
       // page (assistant-dock.tsx), so the last row scrolls clear of it —
-      // only while the box is there, which it marks on the root, and on a
-      // board just enough to clear it (2026-10-16).
-      className={`@container mx-auto w-full space-y-6 p-6 ${fill ? 'flex h-full flex-col [:root[data-ask-dock]_&]:pb-16' : wide ? 'flex flex-col [:root[data-ask-dock]_&]:pb-16' : 'max-w-7xl [:root[data-ask-dock]_&]:pb-24'}`}
+      // only while the box is there, which it marks on the root. A filled
+      // page runs to the foot under the box (2026-10-16: the band left for
+      // it read as a gap), and its panes keep the room inside what they
+      // scroll instead, as NocoCRM's board columns do.
+      className={`@container mx-auto w-full space-y-6 p-6 ${fill ? 'flex h-full flex-col' : wide ? 'flex flex-col [:root[data-ask-dock]_&]:pb-16' : 'max-w-7xl [:root[data-ask-dock]_&]:pb-24'}`}
     >
       {children}
     </section>

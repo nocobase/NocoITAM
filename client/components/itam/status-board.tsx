@@ -98,7 +98,9 @@ export function createStatusBoard(
           <span className='truncate text-sm font-semibold'>{statusLabel}</span>
           {list.data ? <CountPill>{total}</CountPill> : null}
         </header>
-        <div className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2'>
+        {/* Room under the last card for the ask box floating over the
+            board's foot (page-header.tsx). */}
+        <div className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2 [:root[data-ask-dock]_&]:pb-16'>
           {list.isLoading ? (
             <Skeleton className='h-24 w-full rounded-lg' />
           ) : rows.length === 0 ? (
