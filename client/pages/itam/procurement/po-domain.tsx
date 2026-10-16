@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { createApprovalDecisions } from '@/components/itam/ai/approval-decisions';
 import { CellText } from '@/components/itam/cell-text';
 import { PURCHASE_ORDER_CARD } from '@/components/itam/board-card-specs';
 import { createStatusBoard } from '@/components/itam/status-board';
@@ -132,6 +133,8 @@ export const purchaseOrderDomain: DomainConfig = {
     label: 'procurement.myApproval',
   }),
   Actions: PurchaseOrderActions,
+  // 等你决定: 审批审阅's review for the approver (2026-10-16).
+  Decisions: createApprovalDecisions('purchaseOrders', PURCHASE_ORDERS_PATH),
   summary: RECORD_SUMMARIES.purchaseOrders.items,
 };
 

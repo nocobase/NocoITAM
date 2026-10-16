@@ -255,6 +255,7 @@ export function DomainDetailPage({
   }
   const Actions = domain.Actions;
   const Notice = domain.Notice;
+  const Decisions = domain.Decisions;
   const Aside = domain.Aside;
   const InfoLead = domain.InfoLead;
   const BasicLead = domain.BasicLead;
@@ -421,6 +422,7 @@ export function DomainDetailPage({
           },
         }}
         notice={Notice ? <Notice record={data} /> : undefined}
+        decisions={Decisions ? <Decisions record={data} /> : undefined}
         aside={Aside ? <Aside record={data} /> : undefined}
         subtitle={domain.subtitle?.(data, nameOf, t)}
         actions={

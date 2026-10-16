@@ -25,6 +25,7 @@ import {
   Database,
   FolderTree,
   Factory,
+  Inbox,
   KeyRound,
   LayoutDashboard,
   Laptop,
@@ -38,6 +39,7 @@ import {
   ShoppingCart,
   Store,
   Users,
+  Workflow,
   Wrench,
 } from 'lucide-react';
 
@@ -214,6 +216,18 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       componentLoader: () => import('./pages/auth/device.js'),
       name: 'device',
       path: '/device',
+    },
+    // 收件箱 (2026-10-16, plan "Work agents"; `frontend-standard.md` §S1):
+    // first in the menu, its count the runs waiting on the reader. Everyone
+    // has one and it shows only the reader's own, so it checks no page
+    // grant; `/notifications`, where the bell led, opens its 通知 tab.
+    {
+      name: 'inbox',
+      path: '/inbox',
+      auth: 'required',
+      authz: 'skip',
+      navigation: { title: 'navigation.inbox', icon: Inbox },
+      componentLoader: () => import('./pages/itam/inbox.js'),
     },
     {
       name: 'workbench',
@@ -598,6 +612,15 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       name: 'ai-group',
       navigation: { title: 'navigation.aiGroup', icon: Bot },
       children: [
+        // What the work agents do on their own (2026-10-16, plan "Work
+        // agents"); the page grant `agent-work` both IT roles hold.
+        {
+          name: 'agent-work',
+          path: '/agent-work',
+          auth: 'required',
+          navigation: { title: 'navigation.agentWork', icon: Workflow },
+          componentLoader: () => import('./pages/itam/agent-work.js'),
+        },
         {
           ...agentsRoute,
           navigation: { title: 'navigation.agents', icon: Bot },

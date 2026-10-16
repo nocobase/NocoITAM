@@ -51,7 +51,7 @@ export function NotificationBell({
   return (
     <Tooltip>
       <TooltipTrigger
-        render={<Link to='/notifications' className={className} />}
+        render={<Link to='/inbox?tab=notifications' className={className} />}
         aria-label={label}
       >
         <span className='relative flex'>

@@ -151,6 +151,59 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   A purchase reading is given the models and products on the books to pick
   ids from. Documents are read as text on the server (`document-text.ts`:
   exceljs, mammoth, unpdf); a picture is not read.
+- **Work agents** (2026-10-16, plan "Work agents", step 1, after
+  NocoCRM's): agents that work on a record without being asked in a
+  conversation, and only suggest. One plugin agent per work, created once
+  at start (`server/providers/itam-agents/work-agents.ts`, marker
+  `agents-work-v1`, owner-only, no actions, its method skill attached —
+  `WORK_SKILLS` in `skill.ts` go into the library but not onto Noco), is how
+  an administrator sets its model and instructions on AI → 智能体; a run
+  asks the gateway with them (`openSession({ work })`, falling back to
+  Noco's model) and its use shows under the agent's name on 用量. Each run
+  is a row of `itamAgentRuns` (migration `202610160001_agent_runs`,
+  `server/providers/itam/agent-runs.ts`): running → pending with its
+  structured result, or failed with a reason code shown where the result
+  would be (`unavailable`, `unreadable`, `timedOut`, `notFound`); accepted or
+  dismissed by its decider; superseded by a newer run on the record or the
+  record decided elsewhere. A run left running past 10 minutes (or queued a
+  day) reads as failed. Runs are tasks of the jobs service, queue
+  `itamAgentRuns` (`agent-jobs.ts`, `server/config/jobs.ts`, two at a time),
+  queued again at start on the memory queue. Each agent and trigger has a
+  switch (`agent-switches.ts`, an `itamSettings` row; changing one needs the
+  `itam.settings` update); an automatic start asks it, a person asking by
+  hand never does.
+  - **审批审阅** (`server/providers/itam/approval-review.ts`, skill
+    `ai/skills/approval-review`, eval set `evals/approval-review.ts`, run
+    through `POST /itam/ai/evals/approval-review`): the approvals service
+    announces a request, a decision and a withdrawal once their transaction
+    commits (`onRequested` / `onSettled`, `connection.afterCommit`), and the
+    agents' provider starts a review on each request. It reads as the
+    approver (`readerFor`): the order with its lines, in-stock and idle
+    devices of the same models and categories, earlier prices the approver
+    may read, or a disposal's devices with book value and repairs, and the
+    last decided requests of the kind; it returns a recommendation (approve,
+    conditional, reject, needMore), the calculation, the basis, what could
+    serve instead, risks, what is missing, and a drafted comment. Only the
+    approver sees the result (`/itam/agentRuns/latest` blanks it for anyone
+    else). Deciding from the review is the request's own decision under its
+    `approve` grant (`POST /itam/agentRuns/:id/decide`, the run accepted
+    first so its own `settled` leaves it so, reopened when the decision is
+    refused); 忽略 leaves the request waiting; 按我的意思重做 runs again with
+    the approver's words, replacing the waiting one.
+  - **Where it shows** (`frontend-standard.md` §S1–S4): 收件箱 (`/inbox`,
+    first in the menu, its badge the runs waiting, `useInboxCount`) is the
+    template's inbox block with the reviews added to its 待处理 view as a
+    collection category (`client/pages/itam/inbox.tsx`); `/notifications`
+    and the bell lead there. The request's page shows 等你决定 under its
+    title (`DomainConfig.Decisions` → `DetailPage`'s `decisions`, built by
+    `createApprovalDecisions`), with one line offering 让 Noco 审阅 while the
+    request waits on the reader and no review is open. Both use
+    `ApprovalReviewCard` (`client/components/itam/ai/approval-review.tsx`):
+    an amber edge, the recommendation as a tag, what is asked, the basis
+    folded, the comment to edit, the recommended decision as the solid
+    button. 智能体工作 (`/agent-work`, page grant `agent-work` for both IT
+    roles via `ADDED_PAGES`) shows each agent's switches, 7/30-day counts
+    with the acceptance rate, and its runs on records the reader may read.
 - An AI create meets the page dialog's bar: `REQUIRED_ON_CREATE` in
   `server/routes/itam/ai-records.ts` lists what each create dialog requires
   beyond its input schema (conditional ones included, and a device's serial

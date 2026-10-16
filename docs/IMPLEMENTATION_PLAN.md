@@ -3125,6 +3125,44 @@ Each step is its own change: migration, service, routes, pages, skill, eval
 set, tests and the rules files (`itam-assistant.md`, `itam-workbench.md`).
 Each ends with the usual checks and a browser run against the demo.
 
+### 2026-10-16 Work agents, step 1: the runs, 收件箱, 智能体工作 and 审批审阅
+
+Built as planned above. `itamAgentRuns` (migration
+`202610160001_agent_runs`) holds every run; the work agent 审批审阅 is
+created once at start beside Noco and reviews each purchase order and
+disposal sent for approval, for the approver alone, from what the approver
+may read. The approver decides from the review with the request's own
+grant, sets it aside, or has it redone in their words; a decision on the
+request's page or a withdrawal retires it. Runs go through the jobs queue
+`itamAgentRuns`. The agent and its one trigger have switches on 智能体工作,
+which also counts its runs over 7 and 30 days and lists them. The eval set
+has eight cases.
+
+Decisions taken while building it:
+
+- **收件箱 is the template's inbox block**, as NocoCRM's is, not a page of
+  ITAM's own: the reviews are a collection category of its 待处理 view, and
+  the in-app notifications stay its 全部 view. It is first in the menu (§S1),
+  above 待办; `/notifications` and the bell lead to it. 待办's 待审批 column
+  stays for now: it lists requests, the inbox lists reviews of them.
+- **The approver decides on the review**, as NocoCRM's approver does: the
+  card's 同意 and 驳回 call the request's own decision under its `approve`
+  grant, so the review is a 决定卡 (§S2.3) beside the request rather than a
+  suggestion that changes nothing until applied. The AI still decides
+  nothing: the approver presses the button with the comment as they left
+  it.
+- **Usage is recorded by the gateway** under the agent's name (`source`),
+  so NocoCRM's hand-written `recordUse` was not needed. Its
+  `generateQuietly` (reasoning off) was not ported either: ITAM's runs use
+  the gateway's `generate` as its other model calls do.
+
+Temporary implementations added (`@temporary(nocobase-official)`): the work
+agent created from code (`work-agents.ts`), its translated name written on
+the plugin's row, and the skill put into the library from code (as before).
+
+Still to do for this step: the specification's P6 (`SPEC.md`, a
+NocoSolution pull request).
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

@@ -31,6 +31,10 @@ vi.mock('../../client/lib/itam/api.js', () => ({
   useRowCounts: () => [],
 }));
 // The page offers its record to the assistant, whose runtime is not mounted.
+// 等你决定 asks the work agents' API; these pages' tests are about the record.
+vi.mock('../../client/components/itam/ai/approval-decisions.js', () => ({
+  createApprovalDecisions: () => () => null,
+}));
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useAiPageContext: () => ({ available: false, ask: () => undefined }),
 }));
