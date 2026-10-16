@@ -14,7 +14,7 @@ import {
 } from '@/components/itam/global-search';
 import { DemoBanner } from '@/components/itam/demo-banner';
 import { RecordDrawerProvider } from '@/components/itam/record-drawer';
-import { useInboxCount } from '@/lib/itam/agents';
+import { useNavigationCounts } from '@/lib/itam/navigation-counts';
 import { useLiveWork } from '@/lib/itam/live-work';
 
 import { RouteTreeProvider } from '../routing/route-context.js';
@@ -48,7 +48,8 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
   useSyncServerLocale();
   // Application change (ITAM): to-dos stay current while a page is open.
   useLiveWork();
-  const inboxCount = useInboxCount().data ?? 0;
+  // Application change (ITAM): the numbers beside 待办 and 收件箱.
+  const counts = useNavigationCounts();
 
   const { t } = useTranslation();
   const { items: menuItems, denied } = useRouteNavigation(routes);
@@ -86,10 +87,10 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                   items={menuItems}
                   label={navigationLabel}
                   selectedKey={selectedKey}
-                  // Application change (ITAM, 2026-10-16): 收件箱 counts
-                  // what waits on the reader's decision (frontend standard
-                  // §S1: decisions only, never notifications).
-                  badges={inboxCount ? { inbox: inboxCount } : undefined}
+                  // Application change (ITAM, 2026-10-17): 待办 counts the
+                  // board's to-dos, 收件箱 the decisions and unread notices
+                  // waiting on the reader (navigation-counts.ts).
+                  badges={{ workbench: counts.workbench, inbox: counts.inbox }}
                   sections
                   after={{ inbox: <SearchNavButton /> }}
                 />

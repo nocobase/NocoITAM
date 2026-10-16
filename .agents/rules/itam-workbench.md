@@ -90,7 +90,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   card back to the reader's part by the rules below. A row's buttons keep
   their own rules either way — another person's approval is still only
   theirs to decide — so 待审批 (no longer 待我审批) links to every pending
-  request in the team view. The sidebar entry carries no count. The
+  request in the team view. The sidebar's 待办 carries the board's total, in the scope the workbench is set to, and 收件箱 the decisions waiting plus the unread notifications (`useNavigationCounts`, 2026-10-17, the product owner's request — a departure from frontend-standard §S1, which counts decisions only). The
   queue is **live**: every successful write through `/api/itam`
   (`server/itam-changes.ts`, an application-wide HTTP middleware
   registered in `server/app.ts`), every confirmed AI write and every
