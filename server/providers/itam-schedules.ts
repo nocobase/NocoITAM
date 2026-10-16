@@ -9,7 +9,6 @@ import {
 } from './itam/maintenance.js';
 import { itamChangesToken } from './itam/changes.js';
 import { deviceSyncServiceToken } from './itam/device-sync.js';
-import { renewalReviewerToken } from './itam/renewal-review.js';
 import { settingsServiceToken } from './itam/settings.js';
 
 /** What each task is called on 设置 → 自动化 → 定时任务, in the deployment's language. */
@@ -47,7 +46,9 @@ const TITLES: Readonly<
 // went on 2026-10-06: Noco chooses only when the 入职负责人 asks. A database
 // that synchronised it keeps the definition until `scheduler sync
 // --finalize` deactivates it; a firing before then finds no definition and
-// runs nothing.
+// runs nothing. The work agents' daily pass (`itam.agent-passes`, 02:30,
+// target `app.itam.agents`) went the same way on 2026-10-17 with the agents
+// it ran (离职回收, 授权续费).
 const SCHEDULES: readonly {
   readonly key: string;
   readonly job: MaintenanceJob;
@@ -76,28 +77,6 @@ const SYNC_TITLES: Readonly<Record<string, readonly [string, string]>> = {
   'en-US': [
     'Device sync',
     'Pulls the device list from the connected management platforms (Intune, Jamf Pro), updates what each platform reports and links the register devices by serial number; does nothing when no platform is connected',
-  ],
-};
-
-/**
- * The work agents' daily passes (2026-10-17, plan "Work agents", step 2):
- * 离职回收 over leavers who still hold something and 授权续费 over what
- * comes up for renewal, each at most 20 runs and skipping what it reviewed
- * lately. 02:30, after the daily maintenance has settled the day's leavers
- * and renewals. Its own target: it starts runs on the jobs queue rather
- * than recomputing the register, and each agent's switch on Agent 工作 can
- * keep its pass from starting anything.
- */
-const AGENTS_TARGET_TYPE = 'app.itam.agents';
-const AGENTS_SCHEDULE = { key: 'itam.agent-passes', cron: '30 2 * * *' };
-const AGENTS_TITLES: Readonly<Record<string, readonly [string, string]>> = {
-  'zh-CN': [
-    'Agent 每日检查',
-    '授权续费：为快到续费或到期日的授权整理续费建议。只提建议，由负责人在收件箱里决定；在「Agent 工作」里可以关闭',
-  ],
-  'en-US': [
-    'Agents daily check',
-    'Renewal review: suggests whether to renew what comes up for renewal. It only suggests, for the person responsible to decide in their inbox; switched off on Agent work',
   ],
 };
 
@@ -202,30 +181,6 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
       },
     });
 
-    scheduler.registerTarget<Record<string, never>>({
-      type: AGENTS_TARGET_TYPE,
-      title: 'ITAM agents',
-      validate: () => ({ valid: true }),
-      async start() {
-        try {
-          return {
-            state: 'completed',
-            outcome: 'succeeded',
-            result: {
-              renewalReview: await container
-                .resolve(renewalReviewerToken)
-                .dailyPass(),
-            },
-          };
-        } catch (error) {
-          return {
-            state: 'failed',
-            reason: error instanceof Error ? error.message : String(error),
-          };
-        }
-      },
-    });
-
     // Settings live in a table, so a database whose migrations have not run
     // yet has none; the tasks then keep UTC until the next start.
     let timezone = 'UTC';
@@ -258,15 +213,6 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
       description: syncDescription,
       schedule: { cron: SYNC_SCHEDULE.cron, timezone },
       target: { type: SYNC_TARGET_TYPE, config: {} },
-    });
-    const [agentsTitle, agentsDescription] =
-      AGENTS_TITLES[locale] ?? AGENTS_TITLES['en-US'];
-    scheduler.defineSchedule({
-      key: AGENTS_SCHEDULE.key,
-      title: agentsTitle,
-      description: agentsDescription,
-      schedule: { cron: AGENTS_SCHEDULE.cron, timezone },
-      target: { type: AGENTS_TARGET_TYPE, config: {} },
     });
   }
 }

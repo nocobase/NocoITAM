@@ -9,7 +9,7 @@ import type { DeviceService } from './devices.js';
 import { asText, type Row } from './collection-query.js';
 import { recoveryPlan } from './recovery.js';
 import type { SettingsService } from './settings.js';
-import { endedWhere, expiringWhere } from './entitlements.js';
+import { endedWhere, expiringWhere, leaverSeatCounts } from './entitlements.js';
 import type { EntitlementService } from './entitlements.js';
 import type { MasterDataService } from './master-data.js';
 import type { HistoryService } from './history.js';
@@ -56,6 +56,11 @@ export interface ReminderPreview {
   readonly label: string;
   readonly date?: string | null;
   readonly figures?: readonly [number, number];
+  /**
+   * Seats people who have left still hold, on an entitlement coming up for
+   * renewal: the first thing to take back before deciding (2026-10-17).
+   */
+  readonly leavers?: number;
 }
 
 export interface ReminderSummary {
@@ -323,8 +328,16 @@ export function createMaintenanceService(dependencies: {
             'name',
             'expiryDate',
             'maintenanceExpiryDate',
+            'seatCount',
+            'assignedCount',
           ]),
       ).execute<Row>();
+      // The seats in use and those leavers still hold: what deciding the
+      // renewal turns on, now that there is no usage data (2026-10-17).
+      const leavers = await leaverSeatCounts(
+        database,
+        found.map((entitlement) => String(entitlement.id)),
+      );
       for (const entitlement of found)
         rows.push({
           kind: entry.kind,
@@ -335,6 +348,9 @@ export function createMaintenanceService(dependencies: {
             name: entitlement.name,
             kind: entitlement.kind,
             date: entitlement[entry.dateField],
+            seatCount: entitlement.seatCount,
+            assignedCount: entitlement.assignedCount,
+            leaverSeats: leavers.get(String(entitlement.id)) ?? 0,
           },
         });
     }
@@ -461,6 +477,13 @@ export function createMaintenanceService(dependencies: {
     return rows;
   };
 
+  /** The reminders of an entitlement coming up for renewal or support. */
+  const RENEWAL_KINDS: ReadonlySet<ReminderKind> = new Set([
+    'entitlementRenewing',
+    'entitlementEnding',
+    'entitlementMaintenance',
+  ]);
+
   /** How a found record reads on 需要关注's card. */
   const previewOf = (row: ReminderRow): ReminderPreview => {
     const data = row.data;
@@ -470,18 +493,23 @@ export function createMaintenanceService(dependencies: {
       row.subjectType === 'devices'
         ? (asText(data.name) ?? asText(data.deviceNo) ?? row.subjectId)
         : (asText(data.name) ?? row.subjectId);
+    const coming = RENEWAL_KINDS.has(row.kind);
     const figures: readonly [number, number] | undefined =
-      row.kind === 'entitlementOverAllocated'
+      row.kind === 'entitlementOverAllocated' ||
+      // Seats in use against those bought, where it counts seats.
+      (coming && data.seatCount !== null && data.seatCount !== undefined)
         ? [Number(data.assignedCount ?? 0), Number(data.seatCount ?? 0)]
         : Object.values(LOW_STOCK_KIND).includes(row.kind)
           ? [Number(data.available ?? 0), Number(data.minimum ?? 0)]
           : undefined;
+    const leavers = coming ? Number(data.leaverSeats ?? 0) : 0;
     return {
       subjectType: row.subjectType,
       subjectId: row.subjectId,
       label,
       ...(data.date === undefined ? {} : { date: asText(data.date) ?? null }),
       ...(figures ? { figures } : {}),
+      ...(leavers > 0 ? { leavers } : {}),
     };
   };
 

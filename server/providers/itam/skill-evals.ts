@@ -4,8 +4,6 @@ import type { ModelSession } from './ai-model.js';
 import { reviewPrompt, reviewShape } from './approval-review.js';
 import { APPROVAL_REVIEW_EVALS } from './evals/approval-review.js';
 import { DEVICE_SYNC_EVALS } from './evals/device-sync.js';
-import { RENEWAL_REVIEW_EVALS } from './evals/renewal-review.js';
-import { renewalPrompt, renewalShape } from './renewal-review.js';
 
 /**
  * Eval sets for ITAM's method skills (device sync, step 4, 2026-10-15; the
@@ -80,14 +78,13 @@ export const SKILL_EVALS: Readonly<Record<string, readonly EvalCase[]>> = {
 };
 
 /**
- * Every skill with an eval set: the device-sync decisions above,
- * 审批审阅's recommendations (2026-10-16) and 授权续费's (2026-10-17),
- * scored on the recommendation alone, each asked as its work agent asks.
+ * Every skill with an eval set: the device-sync decisions above, and
+ * 审批审阅's recommendations (2026-10-16), scored on the recommendation
+ * alone.
  */
 export const EVAL_SKILLS: readonly string[] = [
   ...Object.keys(SKILL_EVALS),
   'approval-review',
-  'renewal-review',
 ];
 
 const DECISIONS = z.object({
@@ -153,7 +150,6 @@ export async function runEval(options: {
   readonly signal?: AbortSignal;
 }): Promise<EvalReport> {
   if (options.skill === 'approval-review') return runReviewEval(options);
-  if (options.skill === 'renewal-review') return runRenewalEval(options);
   const cases = SKILL_EVALS[options.skill] ?? [];
   const results: EvalCaseResult[] = [];
   for (const item of cases) {
@@ -231,60 +227,4 @@ async function runReviewEval(options: {
     cases: results,
     ranAt: new Date().toISOString(),
   };
-}
-
-function reportOf(
-  skill: string,
-  results: readonly EvalCaseResult[],
-): EvalReport {
-  return {
-    skill,
-    passed: results.filter((result) => result.passed).length,
-    total: results.length,
-    cases: results,
-    ranAt: new Date().toISOString(),
-  };
-}
-
-/**
- * 授权续费's eval set: each case asked as a real review asks it
- * (`renewalPrompt`), passing when the recommendation is one the case
- * accepts.
- */
-async function runRenewalEval(options: {
-  readonly instructions: string;
-  readonly open: (system: string) => Promise<ModelSession | null>;
-  readonly signal?: AbortSignal;
-}): Promise<EvalReport> {
-  const results: EvalCaseResult[] = [];
-  for (const item of RENEWAL_REVIEW_EVALS) {
-    const session = await options.open('');
-    if (!session) throw new Error('No model to ask');
-    let got: string | null;
-    try {
-      const answer = await session.askJson(
-        renewalPrompt({
-          skill: options.instructions,
-          material: item.material,
-          language: 'Chinese',
-          revision: null,
-        }),
-        renewalShape,
-        options.signal,
-      );
-      got = answer?.recommendation ?? null;
-    } catch {
-      got = null;
-    }
-    const passed = got !== null && item.expect.includes(got as never);
-    results.push({
-      id: item.id,
-      title: item.title,
-      passed,
-      expected: item.expect,
-      got: got === null ? null : [got],
-      misses: passed ? [] : [item.id],
-    });
-  }
-  return reportOf('renewal-review', results);
 }

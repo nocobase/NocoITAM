@@ -87,6 +87,8 @@ export interface ReminderPreview {
   readonly date?: string | null;
   /** Used against total, where that is the point (超量, 低于水位). */
   readonly figures?: readonly [number, number];
+  /** Seats leavers still hold, on an entitlement coming up for renewal. */
+  readonly leavers?: number;
 }
 
 export interface ReminderSummary {

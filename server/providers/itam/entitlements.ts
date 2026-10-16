@@ -1278,16 +1278,26 @@ export function createEntitlementService(
       ),
 
     async seats(id) {
-      return (
-        await database
-          .query()
-          .selectFrom('entitlementSeats')
-          .selectAll()
-          .where('entitlementId', '=', id)
-          .where('releasedAt', 'is', null)
-          .orderBy('assignedAt', 'desc')
-          .execute<Row>()
-      ).map((row) => maskSeatKey(decodeRow(row)));
+      const rows = await database
+        .query()
+        .selectFrom('entitlementSeats')
+        .selectAll()
+        .where('entitlementId', '=', id)
+        .where('releasedAt', 'is', null)
+        .orderBy('assignedAt', 'desc')
+        .execute<Row>();
+      // Whether a person holding a seat has left (2026-10-17).
+      const left = await leftAmong(
+        database,
+        rows
+          .filter((row) => row.holderType === 'person')
+          .map((row) => asText(row.holderId) ?? ''),
+      );
+      return rows.map((row) => ({
+        ...maskSeatKey(decodeRow(row)),
+        holderLeft:
+          row.holderType === 'person' && left.has(String(row.holderId)),
+      }));
     },
 
     async seatsOf(holderType, holderId) {
@@ -1438,6 +1448,56 @@ export function createEntitlementService(
       return due.length;
     },
   };
+}
+
+/**
+ * The ids of people among `personIds` who have left. A seat they still
+ * hold is the first thing to take back before a renewal (2026-10-17, in
+ * place of the 授权续费 agent): the seats tab marks it, and 需要关注 counts
+ * it on each entitlement coming up.
+ */
+export async function leftAmong(
+  database: DatabaseManager,
+  personIds: readonly string[],
+): Promise<ReadonlySet<string>> {
+  const wanted = [...new Set(personIds.filter(Boolean))];
+  if (!wanted.length) return new Set();
+  const rows = await database
+    .query()
+    .selectFrom('people')
+    .select(['id'])
+    .where('id', 'in', wanted)
+    .where('employmentStatus', '=', 'left')
+    .execute<{ id: unknown }>();
+  return new Set(rows.map((row) => String(row.id)));
+}
+
+/** How many seats of each entitlement people who have left still hold. */
+export async function leaverSeatCounts(
+  database: DatabaseManager,
+  entitlementIds: readonly string[],
+): Promise<ReadonlyMap<string, number>> {
+  if (!entitlementIds.length) return new Map();
+  const seats = await database
+    .query()
+    .selectFrom('entitlementSeats')
+    .select(['entitlementId', 'holderId'])
+    .where('entitlementId', 'in', [...entitlementIds])
+    .where('holderType', '=', 'person')
+    .where('releasedAt', 'is', null)
+    .execute<{ entitlementId: unknown; holderId: unknown }>();
+  const left = await leftAmong(
+    database,
+    seats.map((seat) => asText(seat.holderId) ?? ''),
+  );
+  const counts = new Map<string, number>();
+  for (const seat of seats)
+    if (left.has(String(seat.holderId)))
+      counts.set(
+        String(seat.entitlementId),
+        (counts.get(String(seat.entitlementId)) ?? 0) + 1,
+      );
+  return counts;
 }
 
 /**

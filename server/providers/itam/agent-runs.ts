@@ -18,13 +18,11 @@ import { dbDateTime } from './dates.js';
  * the person who asked, or the trigger an administrator left switched on.
  */
 
-export const AGENTS = [
-  'approvalReview',
-  // Step 2 (2026-10-17): a renewal weighed. 离职回收 was built in the
-  // same step and removed the same day: what a leaver hands back is a rule
-  // (`recovery.ts`), not a judgement.
-  'renewalReview',
-] as const;
+// 离职回收 and 授权续费 (plan "Work agents", step 2) were built on
+// 2026-10-17 and removed the same day: what a leaver hands back and what a
+// renewal needs are rules (`recovery.ts`, the renewal reminders), not
+// judgements a model adds to.
+export const AGENTS = ['approvalReview'] as const;
 export type AgentName = (typeof AGENTS)[number];
 
 export const RUN_STATUSES = [
@@ -68,8 +66,6 @@ export interface AgentRun {
   readonly decidedById: string | null;
   readonly decidedAt: string | null;
   readonly model: string | null;
-  /** The plan accepting it became (step 2); null before, or for a review. */
-  readonly planId: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly startedAt: string | null;
@@ -106,15 +102,6 @@ export interface AgentRunService {
     subjectType: string,
     subjectId: string,
   ): Promise<AgentRun | undefined>;
-  /** Whether the agent has run on the record since `since`, or has one open (a daily pass skips it). */
-  reviewedSince(
-    agent: AgentName,
-    subjectType: string,
-    subjectId: string,
-    since: Date,
-  ): Promise<boolean>;
-  /** Names the plan an accepted suggestion became. */
-  setPlan(id: string, planId: string): Promise<void>;
   /** Marks a run as being worked on (`started`), or handed back to the queue. */
   markStarted(id: string, started: boolean): Promise<void>;
   /** Settles a running run: its result waiting, or why there is none. Nothing when it is no longer running. */
@@ -226,7 +213,6 @@ export function decodeRun(row: Record<string, unknown>): AgentRun {
     decidedById: text(row.decidedById),
     decidedAt: iso(row.decidedAt),
     model: text(row.model),
-    planId: text(row.planId),
     createdAt: iso(row.createdAt) ?? '',
     updatedAt: iso(row.updatedAt) ?? '',
     startedAt: iso(row.startedAt),
@@ -271,7 +257,6 @@ export function createAgentRunService(
         decidedById: null,
         decidedAt: null,
         model: null,
-        planId: null,
         createdAt: now,
         updatedAt: now,
         startedAt: null,
@@ -307,33 +292,6 @@ export function createAgentRunService(
         .orderBy('createdAt', 'desc')
         .executeTakeFirst<Record<string, unknown>>();
       return row ? decodeRun(row) : undefined;
-    },
-
-    async reviewedSince(agent, subjectType, subjectId, since) {
-      const row = await database
-        .query()
-        .selectFrom('itamAgentRuns')
-        .select('id')
-        .where('agent', '=', agent)
-        .where('subjectType', '=', subjectType)
-        .where('subjectId', '=', subjectId)
-        .where((eb) =>
-          eb.or([
-            eb('createdAt', '>=', dbDateTime(since)),
-            eb('status', 'in', ['running', 'pending']),
-          ]),
-        )
-        .executeTakeFirst();
-      return Boolean(row);
-    },
-
-    async setPlan(id, planId) {
-      await database
-        .query()
-        .updateTable('itamAgentRuns')
-        .set({ planId, updatedAt: new Date() })
-        .where('id', '=', id)
-        .execute();
     },
 
     async markStarted(id, started) {
@@ -465,7 +423,7 @@ export function createAgentRunService(
         .selectFrom('itamAgentRuns')
         .selectAll()
         .where('deciderId', '=', deciderId)
-        // Runs of a work no longer done (离职回收) are not shown.
+        // Runs of a work no longer done (离职回收, 授权续费) are not shown.
         .where('agent', 'in', [...AGENTS])
         .where('status', 'in', ['running', 'pending', 'failed'])
         // A failure stays in front of its decider for as long as the
@@ -484,7 +442,7 @@ export function createAgentRunService(
         .selectFrom('itamAgentRuns')
         .selectAll()
         .where('deciderId', '=', deciderId)
-        // Runs of a work no longer done (离职回收) are not shown.
+        // Runs of a work no longer done (离职回收, 授权续费) are not shown.
         .where('agent', 'in', [...AGENTS])
         .where('status', 'in', [...HANDLED])
         .where('updatedAt', '>=', dbDateTime(since))
@@ -501,7 +459,7 @@ export function createAgentRunService(
         .selectFrom('itamAgentRuns')
         .select((eb) => [eb.fn.countAll().as('count')])
         .where('deciderId', '=', deciderId)
-        // Runs of a work no longer done (离职回收) are not shown.
+        // Runs of a work no longer done (离职回收, 授权续费) are not shown.
         .where('agent', 'in', [...AGENTS])
         .where('status', '=', 'pending')
         .executeTakeFirst<{ count: unknown }>();

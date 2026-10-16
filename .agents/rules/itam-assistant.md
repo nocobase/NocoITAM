@@ -208,38 +208,18 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     button. 智能体工作 (`/agent-work`, page grant `agent-work` for both IT
     roles via `ADDED_PAGES`) shows each agent's switches, 7/30-day counts
     with the acceptance rate, and its runs on records the reader may read.
-  - **授权续费** (2026-10-17, step 2) only suggests. Its
-    result is a `Suggestion` (`server/providers/itam/agent-suggestions.ts`):
-    a summary, changes (each a plan op with its params, plus what the card
-    shows: kind, action, subject, quantity, reason),
-    notes and risks. `POST /itam/agentRuns/:id/accept { keep }` turns the
-    kept changes into a plan proposed as the decider and executes it at
-    once (`suggestionDecisions.accept`). A step the decider may not do
-    refuses the plan, a 422 with its rule, and the run stays waiting. The
-    run then names the plan (`planId`), and `GET /itam/agentRuns/:id/plan`
-    serves it to the decider. With no changes, accepting is agreeing, with
-    no plan. 授权续费 (`renewal-review.ts`, skill
-    `ai/skills/renewal-review`) is for an entitlement's 负责人 alone, from a
-    daily pass over what is due within the reminder days (at least 30), run
-    from schedule `itam.agent-passes`, target `app.itam.agents`
-    (`itam-schedules.ts`).
-    The card is `SuggestionCard` (`client/components/itam/ai/suggestion-card.tsx`),
-    with every change ticked, then 执行 N 项, 忽略, 讨论 and 按我的意思重做;
-    once accepted, the plan's steps. It is used in 收件箱 and in
-    `SuggestionBlock` on the entitlement's page (`DomainConfig.Decisions`:
-    `RenewalDecisions`).
-    How a run reads in a list (its page, its line) is in
-    `client/lib/itam/agent-run-view.ts`, shared by the inbox and 智能体工作.
-    A new agent adds its strings under `suggestion.*` and
-    `agentWork.<agent>.*` (with `byHand`), and its eval runner to
-    `skill-evals.ts`.
-  - **No agent for what a rule decides** (2026-10-17). 离职回收 was built
-    as a work agent and removed the same day: what a leaver hands back is
-    the rule in `recovery.ts`. A work agent is for a judgement a rule cannot
-    make (approving a request, sizing a renewal). Removing one takes it out
-    of `AGENTS` and `WORK_AGENTS`; `provisionWorkAgents` archives its plugin
-    agent and drops it from the marker, and 收件箱 and its count read only
-    the agents in `AGENTS`, so its old runs stop showing.
+  - **No agent for what a rule decides** (2026-10-17). 离职回收 and
+    授权续费 were built as work agents and removed the same day: what a
+    leaver hands back is the rule in `recovery.ts`, and what a renewal
+    turns on (seats in use, seats leavers hold) is counted, not judged —
+    the model could only guess what the register does not hold (who will
+    need the software). A work agent is for a judgement a rule cannot make
+    and the register holds the material for, as 审批审阅 has. Removing one
+    takes it out of `AGENTS` and `WORK_AGENTS`; `provisionWorkAgents`
+    archives its plugin agent and drops it from the marker, and 收件箱 and
+    its count read only the agents in `AGENTS`, so its old runs stop
+    showing. The plan operations they added (`adjust_entitlement_seats`,
+    `set_entitlement_auto_renew`) stay for Noco.
 - An AI create meets the page dialog's bar: `REQUIRED_ON_CREATE` in
   `server/routes/itam/ai-records.ts` lists what each create dialog requires
   beyond its input schema (conditional ones included, and a device's serial
