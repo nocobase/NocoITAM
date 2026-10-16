@@ -282,6 +282,10 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   { table: 'repairs', column: 'deviceId' },
   // Asset Steward's background suggestions for the demo's joiners.
   { table: 'onboardingRuns', column: 'personId' },
+  // The agents' runs on the demo's records (2026-10-16): the approval
+  // assistant's suggestions outlived their requests and showed in 收件箱
+  // under a bare id once the demo was cleared.
+  { table: 'itamAgentRuns', column: 'subjectId' },
   // 忽略 on the demo's differences (device sync, 2026-10-15).
   { table: 'deviceSyncDismissals', column: 'deviceId' },
   // 不需要纳管 on the demo's test phone (2026-10-15).

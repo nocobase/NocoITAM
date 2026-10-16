@@ -865,6 +865,27 @@ describe('CSV import / export and demo data', () => {
     });
     expect(reassigned.length).toBeGreaterThanOrEqual(2);
 
+    // An agent's suggestion on one of its requests goes with it too.
+    const database = app.container.resolve(databaseManagerToken);
+    const order = await database
+      .query()
+      .selectFrom('purchaseOrders')
+      .select('id')
+      .executeTakeFirstOrThrow<{ id: string }>();
+    await database
+      .query()
+      .insertInto('itamAgentRuns')
+      .values({
+        id: 'demo-run',
+        agent: 'approvalReview',
+        trigger: 'event',
+        subjectType: 'purchaseOrders',
+        subjectId: order.id,
+        status: 'pending',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .execute();
     const cleared = await data<{ generated: boolean }>(
       await post('demo/clear'),
     );
@@ -874,6 +895,7 @@ describe('CSV import / export and demo data', () => {
       'stockMovements',
       'stockHoldings',
       'entitlementSeats',
+      'itamAgentRuns',
     ])
       expect(
         (
