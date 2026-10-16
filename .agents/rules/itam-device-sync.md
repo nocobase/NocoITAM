@@ -243,8 +243,9 @@ product or in release notes, until it is listed here.
   `link_managed_device`, `unlink_managed_device` (devices `update`) and
   `ignore_managed_device` (devices `create`), whose history reads origin
   `agent`. A device a plan creates through `create_record` is matched by
-  serial at once, as on its page. Entry points: 让 Noco 看看 on a
-  difference's notice, and 让 Noco 解释这些差异 / 整理这批设备 on MDM 核对.
+  serial at once, as on its page. Entry points: 看看 on a
+  difference's notice, and 解释这些差异 / 整理这批设备 on MDM 核对
+  (the AI shortcuts dropped 让 Noco from their labels, 2026-10-17).
 - **Eval set** (step 4): `server/providers/itam/evals/device-sync.ts` holds
   the cases — what the commands show, the question, and the decision a
   person who knows the method would make per item (transfer, assign,

@@ -951,7 +951,7 @@ const zhCN: AppResource = {
     title: '入职配备',
     joins: '{{date}} 入职',
     noKit: '该人员的部门和职位没有适用的入职配置。',
-    askAi: '让 Noco 准备',
+    askAi: '准备',
     needsAccount: '订阅席位需要账号：先给这个人填写邮箱，或到授权页分配',
     change: '更换',
     order: '{{orderNo}} {{status}}',
@@ -994,7 +994,7 @@ const zhCN: AppResource = {
       ready: 'Noco 已挑选（{{date}}）',
       failed: 'Noco 这次没挑成。',
       conversation: '查看过程',
-      first: '让 Noco 挑选',
+      first: '挑选',
       again: '重新建议',
       notStarted: {
         disabled: '入职建议已在设置中关闭',
@@ -1978,10 +1978,10 @@ const zhCN: AppResource = {
     notOnRegister: '（台账未登记）',
     unknownDevice: '未知设备',
     prompts: {
-      checksAction: '让 Noco 解释这些差异',
+      checksAction: '解释这些差异',
       checks:
         '请按「MDM 核对」技能（device-sync）看看现在所有 MDM 信息不一致的设备：最要紧的先说，每条说明最可能的原因和怎么核实；能在台账上处理的，整理成一份计划。',
-      unregisteredAction: '让 Noco 整理这批设备',
+      unregisteredAction: '整理这批设备',
       unregistered:
         '请按「MDM 核对」技能（device-sync）处理 MDM 里有、台账未登记的设备：能补登记的补登记，序列号重复的找出该关联的那台，不该进台账的标为不纳入台账，整理成一份计划；拿不准的单独列出来问我。',
     },
@@ -2555,7 +2555,7 @@ const zhCN: AppResource = {
         'AI 助手 Noco 在后台做的事；业务指导在「Agent 团队 → 业务指导」，它的模型和能做的事在「Agent 团队 → Agent」中配置，模型服务在「Agent 团队 → 模型」',
       onboardingAdvice: '入职建议',
       onboardingAdviceHint:
-        '入职负责人可以在新人的入职配备卡片上点「让 Noco 挑选」，Noco 在后台从库存里为新人挑选设备、配件和授权并写明理由，由他确认或更换。关闭后只在对话中准备。',
+        '入职负责人可以在新人的入职配备卡片上点「挑选」，Noco 在后台从库存里为新人挑选设备、配件和授权并写明理由，由他确认或更换。关闭后只在对话中准备。',
       assistantDock: '页面底部的 AI 对话框',
       assistantDockHint: '对所有人生效。关闭后，从右上角的 ✨ 按钮使用 AI。',
     },
@@ -2612,7 +2612,7 @@ const zhCN: AppResource = {
       repairs_other: '修过 {{count}} 次',
     },
     triage: {
-      ask: '让 Noco 看看',
+      ask: '看看',
       hint: '选好设备、写下故障描述后，Noco 可以判断故障类型，并建议修还是换。',
       working: 'Noco 正在看…',
       nothing: 'Noco 没能给出建议，请按情况填写。',
@@ -3205,7 +3205,7 @@ const zhCN: AppResource = {
     waiting: '等你决定',
     working: '审批助手正在看这份申请…',
     waitingNoReview: '这份申请在等你审批。',
-    ask: '让 Noco 审阅',
+    ask: '审阅',
     askAgain: '重新审阅',
     recommendation: {
       approve: '建议同意',
@@ -3259,7 +3259,7 @@ const zhCN: AppResource = {
     configure: '设置模型和说明',
     whenItRuns: '什么时候运行',
     runsOnItsOwn: '自动运行',
-    byHand: '不论开关如何，审批人都可以在申请上手动让 Noco 审阅。',
+    byHand: '不论开关如何，审批人都可以在申请上点「审阅」手动发起。',
     howItDid: '运行情况',
     last7: '近 7 天',
     last30: '近 30 天',

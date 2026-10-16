@@ -153,7 +153,7 @@ waive`, people `update`, `people.onboardingWaived`, migration
   with one 新员工配备 `create_purchase_order` for the shortfall, asking for
   the vendor, which is why that step is Noco's and not a button (`itemType`
   on each plan line says what the line would be bought as). The 入职配备
-  card's AI shortcut (让 Noco 准备) asks with the person pinned. A seat proposed to a
+  card's AI shortcut (准备) asks with the person pinned. A seat proposed to a
   person always names them as holder: the seat card shows 持有人 even when
   empty (`always` on the card's row), since an account-only subscription
   seat looked complete on the card while it belonged to nobody (found

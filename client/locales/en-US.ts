@@ -962,7 +962,7 @@ const messages = {
     joins: 'Joins {{date}}',
     noKit:
       'No onboarding kit applies to this person’s department and position.',
-    askAi: 'Have Noco prepare',
+    askAi: 'Prepare',
     needsAccount:
       'A subscription seat needs an account: give this person an e-mail, or assign it on the entitlement',
     change: 'Change',
@@ -1008,7 +1008,7 @@ const messages = {
       ready: 'Chosen by Noco ({{date}})',
       failed: 'Noco could not choose this time.',
       conversation: 'See how',
-      first: 'Have Noco choose',
+      first: 'Choose',
       again: 'Suggest again',
       notStarted: {
         disabled: 'Onboarding suggestions are switched off in the settings',
@@ -2068,10 +2068,10 @@ const messages = {
     notOnRegister: '(not on the register)',
     unknownDevice: 'Unknown device',
     prompts: {
-      checksAction: 'Let Noco explain these',
+      checksAction: 'Explain these',
       checks:
         'Using the device sync method, go through every device where MDM and the register disagree: the most urgent first, each with its most likely cause and how to check it; put what can be settled on the register into one plan.',
-      unregisteredAction: 'Let Noco sort these out',
+      unregisteredAction: 'Sort these out',
       unregistered:
         'Using the device sync method, handle the platform devices the register lacks: register what can be registered, find the right device for shared serials, keep off the register what does not belong there, all in one plan; list anything you are unsure of and ask me.',
     },
@@ -2768,7 +2768,7 @@ const messages = {
       repairs_other: 'Repaired {{count}} times',
     },
     triage: {
-      ask: 'Ask Noco',
+      ask: 'Take a look',
       hint: 'Once the device is picked and the fault described, Noco can tell the kind of fault and suggest repairing or replacing.',
       working: 'Noco is looking…',
       nothing: 'Noco gave no suggestion; fill it in as you see fit.',
@@ -3393,7 +3393,7 @@ const messages = {
     waiting: 'Waiting on you',
     working: 'The approval assistant is reading this request…',
     waitingNoReview: 'This request waits for your approval.',
-    ask: 'Ask Noco to review',
+    ask: 'Review',
     askAgain: 'Review again',
     recommendation: {
       approve: 'Recommends approving',

@@ -210,7 +210,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     default, counting what waits) and 通知 (with 全部标为已读 at its head);
     `/notifications` and the bell open 通知 (`?view=all`). The request's page shows 等你决定 under its
     title (`DomainConfig.Decisions` → `DetailPage`'s `decisions`, built by
-    `createApprovalDecisions`), with one line offering 让 Noco 审阅 while the
+    `createApprovalDecisions`), with one line offering 审阅 while the
     request waits on the reader and no review is open. Both use
     `ApprovalReviewCard` (`client/components/itam/ai/approval-review.tsx`):
     an amber edge, the recommendation as a tag, what is asked, the basis
@@ -263,7 +263,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   latest finished run) is **held back** from every other joiner's
   candidates and proposals (`heldForOthers`), or two joiners of one
   department were both offered the laptop it had just chosen for the first.
-  A run starts **only when the 入职负责人 asks** — 让 Noco 挑选 / 重新建议
+  A run starts **only when the 入职负责人 asks** — 挑选 / 重新建议
   on the card, which only they may press (`advise`, `POST /itam/master/people/:id/onboarding/advise`,
   `NOT_OWNER`) — for a joiner not yet equipped, however far off their
   first day, when Noco has a choice (some item with more candidates than it
