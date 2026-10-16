@@ -14,6 +14,7 @@ import {
 } from '../../providers/index.js';
 import {
   REPAIR_DISPOSITIONS,
+  REPAIR_FAULT_CATEGORIES,
   REPAIR_METHODS,
   REPAIR_RESULTS,
 } from '../../providers/itam/repairs.js';
@@ -29,6 +30,7 @@ export const repairSchema = z.object({
   method: z.enum(REPAIR_METHODS),
   vendorId: id.nullable().optional(),
   faultDescription: z.string().trim().min(1).max(20000),
+  faultCategory: z.enum(REPAIR_FAULT_CATEGORIES).nullable().optional(),
   sentAt: date.optional(),
   expectedReturnAt: date.nullable().optional(),
   cost: z.number().min(0).nullable().optional(),

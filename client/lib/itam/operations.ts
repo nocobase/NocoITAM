@@ -26,6 +26,19 @@ export const REPAIR_RESULTS = [
 ] as const;
 /** Where the device goes when a repair ends. */
 export const REPAIR_DISPOSITIONS = ['return', 'dispose'] as const;
+/** The kinds of fault a repair is filed under (2026-10-17). */
+export const REPAIR_FAULT_CATEGORIES = [
+  'screen',
+  'keyboard',
+  'battery',
+  'power',
+  'storage',
+  'network',
+  'system',
+  'peripheral',
+  'physical',
+  'other',
+] as const;
 
 export const REPAIR_FIELDS: readonly FieldDefinition[] = [
   {
@@ -68,6 +81,13 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.faultDescription',
     type: 'textarea',
     required: true,
+  },
+  {
+    key: 'faultCategory',
+    label: 'fields.faultCategory',
+    type: 'select',
+    options: options('faultCategory', REPAIR_FAULT_CATEGORIES),
+    column: true,
   },
   { key: 'sentAt', label: 'fields.sentAt', type: 'date', column: true },
   {
@@ -143,6 +163,7 @@ export const REPAIR_CREATE_FIELDS: readonly string[] = [
   'method',
   'vendorId',
   'faultDescription',
+  'faultCategory',
   'sentAt',
   'expectedReturnAt',
   'ownerId',

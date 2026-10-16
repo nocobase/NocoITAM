@@ -513,6 +513,7 @@ export const REPAIRS_COLLECTION: ItamCollectionDefinition = {
     'method',
     'vendorId',
     'faultDescription',
+    'faultCategory',
     'sentAt',
     'expectedReturnAt',
     'actualReturnAt',

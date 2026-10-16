@@ -172,6 +172,16 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   before these were request fields refuses the form with a bare "Not
   allowed", so `reconcile-grants.ts` adds them to the stored policies
   (`ADDED_FIELDS`, which covers `read` as well as the writes) — the seeds cannot, they only add whole resources.
+- A repair is filed under a kind of fault (`faultCategory`, 2026-10-17,
+  migration `202610170003_repair_fault_category`, optional): screen,
+  keyboard, battery, power, storage, network, system, peripheral,
+  physical, other — `REPAIR_FAULT_CATEGORIES` in `repairs.ts` and
+  `operations.ts`, which must agree. The new repair form
+  (`RepairCreateDialog`, from the device page and, as `Create`, the repairs
+  list) says above its fields, without a model, the device's warranty, age,
+  book value and repair count, and starts a device under warranty as a
+  warranty repair to its own vendor; 让 Noco 看看 beside it is 维修单整理
+  (see `itam-assistant.md`).
 - A repair belongs to its 负责人 (`ownerId`, 2026-09-28, migration
   `202609280005_repair_owner`): it starts at whoever files the repair and
   may be reassigned. **Its 负责人 completes it — or a supervisor**

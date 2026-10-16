@@ -6,6 +6,7 @@ import { useParams } from 'react-router';
 import { AttachmentsTab } from '@/components/itam/attachments-tab';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
 import { RepairCompleteDialog } from '@/components/itam/repair-complete';
+import { RepairCreateDialog } from '@/components/itam/repair-create-dialog';
 import { Button } from '@/components/ui/button';
 import type { ItamRecord } from '@/lib/itam/api';
 import { text } from '@/lib/itam/format';
@@ -42,6 +43,15 @@ export const repairDomain: DomainConfig = {
   deleteInMenu: true,
   tabs: [{ key: 'attachments', label: 'tabs.attachments' }],
   Actions: RepairActions,
+  // The device's facts and 维修单整理 beside the form, as from a device's
+  // page (2026-10-17).
+  Create: ({ open, onOpenChange, onCreated }) => (
+    <RepairCreateDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      onCreated={onCreated}
+    />
+  ),
   summaryTimestamps: false,
   summary: RECORD_SUMMARIES.repairs.items,
 };

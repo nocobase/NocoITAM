@@ -151,6 +151,16 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   A purchase reading is given the models and products on the books to pick
   ids from. Documents are read as text on the server (`document-text.ts`:
   exceljs, mammoth, unpdf); a picture is not read.
+- **维修单整理** (2026-10-17, task `repairTriage`, grant `repairs.create`):
+  the fault description is the material and the page sends only
+  `deviceId`; the server reads the device as the person (`repairFacts` in
+  `ai-reading.ts`: model, age, warranty, book value when they may see
+  costs, the last repairs, and how often its model was repaired in the last
+  year by kind) and the model answers the kind of fault, repair / replace /
+  inspect and at most three reasons. The form fills the kind, marked
+  请核对, and shows the rest beside it; the person decides. Chosen over a
+  background agent because it is asked at the moment a repair is filed,
+  with the material on screen.
 - **Work agents** (2026-10-16, plan "Work agents", step 1, after
   NocoCRM's): agents that work on a record without being asked in a
   conversation, and only suggest. One plugin agent per work, created once
