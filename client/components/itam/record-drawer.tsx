@@ -186,7 +186,11 @@ export function RecordPane({
   /** Shown when the link names no detail page. */
   readonly fallback?: ReactNode;
 }): ReactElement | null {
-  const target = recordTarget(to);
+  // A link may name the record's tab (`/audits/1/history?focus=…`, as a
+  // notification does): the page is the record's, opened on that tab.
+  const target =
+    recordTarget(to) ??
+    recordTarget(to.replace(/^(\/[^/?#]+\/[^/?#]+)\/[^/?#]+/, '$1'));
   const page = target ? recordPage(target.route) : undefined;
   if (!target || !page) return <>{fallback}</>;
   return (

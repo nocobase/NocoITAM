@@ -14,6 +14,7 @@ import { repairRoutes } from './itam/repairs.js';
 import { reportRoutes } from './itam/reports.js';
 import { userDirectoryRoutes } from './itam/users.js';
 import { workbenchRoutes } from './itam/workbench.js';
+import { noticeRoutes } from './itam/notices.js';
 import {
   attachmentFileRoutes,
   attachmentLinkRoutes,
@@ -29,6 +30,7 @@ const routes: readonly AppRouteContribution<Application>[] = [
   settingsRoutes,
   userDirectoryRoutes,
   workbenchRoutes,
+  noticeRoutes,
   reportRoutes,
   aiRoutes,
   agentCommandRoutes,

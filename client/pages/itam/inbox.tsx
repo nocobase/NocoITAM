@@ -1,9 +1,15 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { Check } from 'lucide-react';
 import { useEffect, useMemo, useRef, type ReactElement } from 'react';
+import { useNavigate } from 'react-router';
 
 import { ApprovalReviewCard } from '@/components/itam/ai/approval-review';
 import { DeviceSyncRunCard } from '@/components/itam/ai/device-sync-run';
+import {
+  itamInboxSource,
+  itamNoticeRenderer,
+} from '@/components/itam/inbox-notices';
+import { noticePath } from '@/lib/itam/inbox-notices';
 import { RecordLink } from '@/components/itam/record-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInbox, type AgentRun } from '@/lib/itam/agents';
@@ -11,6 +17,7 @@ import { relativeTime } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
 import { InboxPage as InboxBlock } from '#extensions/nocobase-inbox/inbox-page';
 import type {
+  InboxEntry,
   InboxCollectionCategory,
   InboxCollectionInput,
   InboxCollectionState,
@@ -32,7 +39,9 @@ import {
  * waiting first and then those handled lately, decided on the right with
  * the same card as on the request's page. The template's own decision
  * category is left out: nothing in ITAM sends a notice of kind decision.
- * `/notifications`, where the bell led, opens here.
+ * `/notifications`, where the bell led, opens here. ITAM's own
+ * notifications show the record they are about beside the list, at the
+ * comment they concern (`inbox-notices.ts`, 2026-10-16, after NocoCRM's).
  */
 
 const REVIEWS_CATEGORY = 'itam-reviews';
@@ -41,16 +50,31 @@ const REVIEW_PARAM = 'review';
 export default function InboxPage(): ReactElement {
   const { t } = useTranslation();
   const label = t('agentInbox.category');
+  const navigate = useNavigate();
   const registry = useMemo<InboxRegistry>(
     () => ({
-      renderers: [],
+      renderers: [itamNoticeRenderer],
       feeds: [],
       categories: [reviewsCategory(label), infoCategory],
     }),
     [label],
   );
+  // On a phone, whose list and pane take turns, a notification opens the
+  // record's own page, at the comment it is about.
+  const selectParams = (entry: InboxEntry): void => {
+    const path = noticePath(entry);
+    if (!path || !window.matchMedia?.('(max-width: 767px)').matches) return;
+    setTimeout(() => void navigate(path));
+  };
   // No line under the heading, as NocoCRM's inbox has none.
-  return <InboxBlock registry={registry} description='' />;
+  return (
+    <InboxBlock
+      registry={registry}
+      source={itamInboxSource}
+      selectParams={selectParams}
+      description=''
+    />
+  );
 }
 
 function reviewsCategory(label: string): InboxCollectionCategory {

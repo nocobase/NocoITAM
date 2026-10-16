@@ -216,7 +216,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     application changes to the block (`client/extensions/nocobase-inbox/`,
     each marked): the two views are tabs labelled AI 建议 (first, the
     default, counting what waits) and 通知 (with 全部标为已读 at its head);
-    `/notifications` and the bell open 通知 (`?view=all`). The request's page shows 等你决定 under its
+    `/notifications` and the bell open 通知 (`?view=all`). A notification
+    ITAM sent shows the record it is about beside the list — the record's
+    own page through `RecordPane`, at the comment its `?focus=` names — and
+    on a phone opens that page (2026-10-16, after NocoCRM's): the block's
+    source asks `/api/itam/notices` which record each of the reader's own
+    in-app items opens (`server/providers/itam/notices.ts`), and the
+    renderer is `client/components/itam/inbox-notices.ts`. The request's page shows 等你决定 under its
     title (`DomainConfig.Decisions` → `DetailPage`'s `decisions`, built by
     `createApprovalDecisions`), with one line offering 审阅 while the
     request waits on the reader and no review is open. Both use
