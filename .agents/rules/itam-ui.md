@@ -43,7 +43,11 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   two-attribute selector already there, and this theme is **monochrome** —
   `--primary` / `--secondary` / `--muted` / `--accent` all carry zero chroma,
   so `bg-primary/10` is grey. Only `--info` / `--success` / `--warning` /
-  `--destructive` have colour.
+  `--destructive` have colour. A work document's kind tag (`DocumentTypeBadge`) is
+  outlined in a hue of its own per kind (`data-kind`, 2026-10-17): 采购 info,
+  维修 warning, 盘点 success, 报废 destructive — still outlined, so it never
+  reads as a filled status tag. On the workbench, 人员变动's 离职 / 入职 tags
+  are filled destructive / success.
 - A value with no spaces in it — an e-mail address, a serial — needs
   `wrap-anywhere` **and** a `min-w-0` on every flex ancestor: `break-words`
   does not break it and a flex child refuses to shrink below its content

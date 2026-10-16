@@ -38,8 +38,15 @@ export function DocumentTypeBadge({
   const { icon: Icon, label } = DOCUMENTS[kind];
   return (
     // The asset-type tag's own contract (`styles.css`): outlined, because it
-    // says what kind of thing this is rather than what state it is in.
-    <Badge variant='secondary' data-tag='kind' className={className}>
+    // says what kind of thing this is rather than what state it is in — in
+    // a colour of its own per kind (`data-kind`, 2026-10-17), so 采购, 维修,
+    // 盘点 and 报废 are told apart before they are read.
+    <Badge
+      variant='secondary'
+      data-tag='kind'
+      data-kind={kind}
+      className={className}
+    >
       <Icon className='size-3' aria-hidden='true' />
       {t(label)}
     </Badge>

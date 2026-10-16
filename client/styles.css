@@ -249,6 +249,21 @@
   @apply border border-border bg-transparent text-muted-foreground;
 }
 
+/* A work document's kind, each in a hue of its own (2026-10-17): still
+   outlined, so it never reads as a status, whose tags are filled. */
+[data-slot='badge'][data-tag='kind'][data-kind='purchaseOrders'] {
+  @apply border-info-foreground/35 text-info-foreground;
+}
+[data-slot='badge'][data-tag='kind'][data-kind='repairs'] {
+  @apply border-warning-foreground/35 text-warning-foreground;
+}
+[data-slot='badge'][data-tag='kind'][data-kind='auditTasks'] {
+  @apply border-success-foreground/35 text-success-foreground;
+}
+[data-slot='badge'][data-tag='kind'][data-kind='disposals'] {
+  @apply border-destructive/35 text-destructive;
+}
+
 /* One focus for every control, across the application and the plugins'
    pages: a half-strength border and a 2px halo at a fifth of the ring colour,
    in place of the 3px ring at half of it that the primitives and pages draw,
