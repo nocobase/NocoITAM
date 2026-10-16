@@ -81,8 +81,9 @@ export function DatePicker({
             variant='outline'
             disabled={disabled}
             aria-label={ariaLabel}
+            // The field border, as an input has (ITAM, 2026-10-16).
             className={cn(
-              'justify-start font-normal',
+              'justify-start border-input font-normal',
               !day && 'text-muted-foreground',
               className,
             )}

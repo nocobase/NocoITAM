@@ -178,8 +178,10 @@ export function ReferenceSelect({
             role='combobox'
             aria-expanded={open}
             disabled={disabled}
+            // The field border (`--input`), as an input and a select have,
+            // not the outline button's lighter one (2026-10-16).
             className={cn(
-              'w-full justify-between font-normal',
+              'w-full justify-between border-input font-normal',
               !value && 'text-muted-foreground',
               className,
             )}
