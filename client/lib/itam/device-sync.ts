@@ -239,6 +239,9 @@ export interface DeviceCheck {
   readonly goneAt: string | null;
   readonly personId: string | null;
   readonly userName: string | null;
+  /** Among the ignored (2026-10-16): who ignored it, and when. */
+  readonly dismissedById?: string | null;
+  readonly dismissedAt?: string | null;
 }
 
 /** A platform record no register device answers to. */
@@ -304,10 +307,11 @@ export const REVIEW_VIEWS = [
   'unmanaged',
   'ignored',
   'exempted',
+  'dismissed',
 ] as const;
 export type ReviewView = (typeof REVIEW_VIEWS)[number];
 
-type ReviewRow<V extends ReviewView> = V extends 'checks'
+type ReviewRow<V extends ReviewView> = V extends 'checks' | 'dismissed'
   ? DeviceCheck
   : V extends 'unmanaged'
     ? UnmanagedDevice
@@ -334,7 +338,7 @@ export function useDeviceReview<V extends ReviewView>(
 
 /**
  * A decision about a platform record or a difference: link, unlink, keep
- * off the register, take back, or 以台账为准. Everything under `['itam']`
+ * off the register, take back, or 忽略 a difference. Everything under `['itam']`
  * is read again, since the board, 需要关注 and the device pages all show it.
  */
 export function useDeviceReviewAction() {
@@ -348,6 +352,7 @@ export function useDeviceReviewAction() {
         | { kind: 'ignore'; managedId: string; reason: string }
         | { kind: 'restore'; managedId: string }
         | { kind: 'dismiss'; deviceId: string; check: CheckKind }
+        | { kind: 'undismiss'; deviceId: string; check: CheckKind }
         | { kind: 'exempt'; deviceId: string; reason: string }
         | { kind: 'unexempt'; deviceId: string },
     ) => {
@@ -358,9 +363,9 @@ export function useDeviceReviewAction() {
           method: 'POST',
           json: action.kind === 'exempt' ? { reason: action.reason } : {},
         });
-      if (action.kind === 'dismiss')
+      if (action.kind === 'dismiss' || action.kind === 'undismiss')
         return api.request({
-          path: `${DEVICE_SYNC_PATH}/checks/${action.deviceId}/dismiss`,
+          path: `${DEVICE_SYNC_PATH}/checks/${action.deviceId}/${action.kind}`,
           method: 'POST',
           json: { kind: action.check },
         });

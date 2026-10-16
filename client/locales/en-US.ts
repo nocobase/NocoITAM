@@ -282,7 +282,8 @@ const messages = {
       counted: 'Results recorded',
       managedLinked: 'Linked to a management platform',
       managedUnlinked: 'Unlinked from a management platform',
-      managedDismissed: 'Register kept',
+      managedDismissed: 'Difference ignored',
+      managedUndismissed: 'Difference raised again',
       managedExempted: 'Not to be managed',
       managedUnexempted: 'To be managed again',
       unregisteredFound: 'Unregistered device found',
@@ -409,7 +410,8 @@ const messages = {
       managedLinked: 'Linked to {{source}} device {{target}} by serial number',
       managedLinkedManual: 'Linked to {{source}} device {{target}} by hand',
       managedUnlinked: 'Unlinked from {{source}} device {{target}}',
-      managedDismissed: '{{check}}: the register kept',
+      managedDismissed: '{{check}}',
+      managedUndismissed: '{{check}}',
       managedExempted: 'Reason: {{reason}}',
       managedUnexempted: 'Listed as only on the register again',
       leftOnLeaveDate: 'Leave date {{date}} reached; marked as left',
@@ -2040,10 +2042,10 @@ const messages = {
       transferTo: 'Transfer to {{user}}',
       assignTo: 'Assign to {{user}}',
       restore: 'Restore to stock',
-      keepRegister: 'Keep the register',
-      keepRegisterTitle: 'Keep the register',
+      keepRegister: 'Ignore',
+      keepRegisterTitle: 'Ignore this difference',
       keepRegisterDescription:
-        '“{{kind}}” on “{{device}}” will no longer be raised. It comes back if what MDM reports changes.',
+        '“{{kind}}” on “{{device}}” will no longer be raised; it is listed under Ignored below and can be restored. It comes back if what MDM reports changes.',
       platformUser: 'Platform user: {{user}}',
     },
     unlink: 'Unlink',
@@ -2065,7 +2067,7 @@ const messages = {
       },
       hints: {
         checks:
-          'On the register and in MDM, but they disagree: silent, with another user, or online against their status. Settle each on its page, or keep the register.',
+          'On the register and in MDM, but they disagree: silent, with another user, or online against their status. Settle each on its page, or ignore it.',
         unregistered:
           'Devices a platform reports that the register lacks. Register one, link it to a device, or keep it off the register.',
         unmanaged:
@@ -2122,6 +2124,9 @@ const messages = {
         '“{{name}}” will no longer be listed as only on the register.',
       exemptPlaceholder: 'e.g. Linux workstation that cannot enrol in MDM',
       exemptedHeading: 'Not to be managed ({{count}})',
+      dismissedHeading: 'Ignored ({{count}})',
+      dismissedHint:
+        'No longer raised; they come back if what MDM reports changes. Restore lists one again.',
       exemptedHint:
         'No longer listed as only on the register; the mark lapses once MDM reports the device. Restore lists it again.',
     },

@@ -65,6 +65,7 @@ const HISTORY_ICONS: Readonly<Record<string, LucideIcon>> = {
   managedLinked: MonitorSmartphone,
   managedUnlinked: MonitorSmartphone,
   managedDismissed: MonitorSmartphone,
+  managedUndismissed: MonitorSmartphone,
   managedExempted: MonitorSmartphone,
   managedUnexempted: MonitorSmartphone,
   devicesChanged: ListChecks,

@@ -157,6 +157,62 @@ describe('MDM 核对 → 只在台账', () => {
   });
 });
 
+describe('MDM 核对 → 信息不一致: 已忽略', () => {
+  const check = {
+    kind: 'stale',
+    critical: false,
+    deviceId: 'd9',
+    deviceNo: 'DE-000009',
+    deviceName: 'SG-LT-009',
+    status: 'inUse',
+    ownerId: 'mia',
+    assigneeType: 'person',
+    assigneeId: 'pat',
+    managedDeviceId: 'm9',
+    source: 'intune',
+    lastSyncAt: '2026-08-29T06:10:00.000',
+    goneAt: null,
+    personId: null,
+    userName: null,
+  };
+
+  beforeEach(() => {
+    state.action.mockReset();
+  });
+
+  it('lists the differences a person ignored beneath, with 恢复', () => {
+    state.views = {
+      checks: [],
+      dismissed: [
+        {
+          ...check,
+          dismissedById: 'mia',
+          dismissedAt: '2026-10-16T09:00:00.000',
+        },
+      ],
+    };
+    render(
+      <MemoryRouter initialEntries={['/device-sync']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    const section = screen
+      .getByText('deviceSync.review.dismissedHeading:1')
+      .closest('section')!;
+    expect(within(section).getByText('Mia')).toBeInTheDocument();
+    fireEvent.click(
+      within(section).getByRole('button', {
+        name: 'deviceSync.review.restore',
+      }),
+    );
+    expect(state.action).toHaveBeenCalledWith({
+      kind: 'undismiss',
+      deviceId: 'd9',
+      check: 'stale',
+    });
+  });
+});
+
 describe('MDM 核对 → 只在 MDM: 补登记', () => {
   const record = (serialNo: string | null) => ({
     id: 'm1',

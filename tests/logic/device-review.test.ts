@@ -493,6 +493,45 @@ describe('device review', () => {
     expect(await kinds(linux)).toEqual([[linux, 'stale', false]]);
   });
 
+  it('lists an ignored difference under 已忽略 with who and when, and raises it again on 恢复', async () => {
+    const pat = await person('Pat Lee', 'pat@example.com');
+    const laptop = await device('IGN-1');
+    await assign(laptop, pat);
+    await pull(observed('i', { serialNo: 'IGN-1', lastSyncAt: ago(40) }));
+    expect(await kinds(laptop)).toEqual([[laptop, 'stale', false]]);
+    expect(
+      (
+        await request(`device-sync/checks/${laptop}/dismiss`, {
+          kind: 'stale',
+        })
+      ).status,
+    ).toBe(200);
+    expect(await kinds(laptop)).toEqual([]);
+    const listed = await request('device-sync/review?view=dismissed');
+    expect(await listed.json()).toMatchObject({
+      data: [{ deviceId: laptop, kind: 'stale', dismissedById: 'mia' }],
+    });
+    const undo = (who = manager) =>
+      request(`device-sync/checks/${laptop}/undismiss`, { kind: 'stale' }, who);
+    expect(
+      (
+        await app.request(`/api/itam/device-sync/checks/${laptop}/undismiss`, {
+          ...json({ kind: 'stale' }),
+        })
+      ).status,
+    ).toBe(401);
+    expect((await undo(employee)).status).toBe(403);
+    expect((await undo()).status).toBe(200);
+    expect(await kinds(laptop)).toEqual([[laptop, 'stale', false]]);
+    expect(await review.checks({ dismissed: true })).toEqual([]);
+    const events = await app.container
+      .resolve(historyServiceToken)
+      .events({ subjectType: 'devices', subjectId: laptop });
+    expect(events.data.map((event) => event.type)).toEqual(
+      expect.arrayContaining(['managedDismissed', 'managedUndismissed']),
+    );
+  });
+
   it('lists a device the platform stopped reporting as 失联 only, and as 只在台账 once the register is kept', async () => {
     const pat = await person('Pat Lee', 'pat@example.com');
     const laptop = await device('GONE-1');

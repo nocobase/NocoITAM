@@ -19,7 +19,8 @@ import type { ItamSettings, SettingsService } from './settings.js';
  * difference goes the moment either side changes. Nothing writes the
  * register except through the register's own operations, which the pages
  * call; this service records only the decisions about the platforms' rows:
- * a link, an unlink, a record kept off the register, and 以台账为准.
+ * a link, an unlink, a record kept off the register, and 忽略 on a
+ * difference (以台账为准 until 2026-10-16).
  */
 
 /** A difference about one register device. */
@@ -44,8 +45,11 @@ export interface DeviceCheck {
   /** The platform's primary user, matched to a person or as it reads. */
   readonly personId: string | null;
   readonly userName: string | null;
-  /** What a 以台账为准 on it keeps: the value that was seen. */
+  /** What a 忽略 on it keeps: the value that was seen. */
   readonly value: string;
+  /** Listed among the ignored (`dismissed: true`): who ignored it, and when. */
+  readonly dismissedById?: string | null;
+  readonly dismissedAt?: string | null;
 }
 
 /** A platform record no register device answers to. */
@@ -124,10 +128,15 @@ export interface DeviceReviewService {
    * nothing to compare, and the rules, the column and the tags stay away.
    */
   active(): Promise<boolean>;
-  /** The differences on register devices, or on the devices given. */
+  /**
+   * The differences on register devices, or on the devices given; with
+   * `dismissed`, instead the ones a person ignored that still hold — the
+   * same difference with the same value — which 已忽略 lists (2026-10-16).
+   */
   checks(options?: {
     readonly deviceIds?: readonly string[];
     readonly now?: Date;
+    readonly dismissed?: boolean;
   }): Promise<DeviceCheck[]>;
   /** Platform records nobody has put on the register or kept off it. */
   unregistered(now?: Date): Promise<UnregisteredDevice[]>;
@@ -177,8 +186,10 @@ export interface DeviceReviewService {
   ignore(managedId: string, reason: string, actorId: string): Promise<Row>;
   /** Takes a kept-off record back: it is matched again at once. */
   restore(managedId: string, actorId: string): Promise<Row>;
-  /** 以台账为准: this difference, with this value, is not raised again. */
+  /** 忽略: this difference, with this value, is not raised again. */
   dismiss(deviceId: string, kind: CheckKind, actorId: string): Promise<void>;
+  /** Takes 忽略 back: the difference is raised again while it holds. */
+  undismiss(deviceId: string, kind: CheckKind, actorId: string): Promise<void>;
   /**
    * The devices in one sync state, for the device list's 同步状态 filter
    * (2026-10-15): on a platform (`linked`), in use and on none
@@ -334,7 +345,7 @@ export function createDeviceReviewService(deps: {
     // A device a platform stopped reporting is 失联 (2026-10-16): it was on
     // one, and what is asked is why it left, not to enrol it. Listing it as
     // 只在台账 as well showed one device twice and counted it twice on 待办.
-    // Once a person keeps the register (以台账为准), it is no longer 失联
+    // Once a person ignores it (忽略), it is no longer 失联
     // and is 只在台账 like any other.
     const dropped = new Set(
       (await self.checks())
@@ -648,11 +659,14 @@ export function createDeviceReviewService(deps: {
       const dismissals = await database
         .query()
         .selectFrom('deviceSyncDismissals')
-        .select(['deviceId', 'kind', 'value'])
+        .select(['deviceId', 'kind', 'value', 'dismissedById', 'createdAt'])
         .where('deviceId', 'in', [...byDevice.keys()])
-        .execute<{ deviceId: string; kind: string; value: string }>();
-      const dismissed = new Set(
-        dismissals.map((row) => `${row.deviceId}|${row.kind}|${row.value}`),
+        .execute<Row>();
+      const dismissed = new Map(
+        dismissals.map((row) => [
+          `${String(row.deviceId)}|${String(row.kind)}|${String(row.value)}`,
+          row,
+        ]),
       );
       const result: DeviceCheck[] = [];
       for (const device of devices) {
@@ -683,7 +697,17 @@ export function createDeviceReviewService(deps: {
             asText(latest.userName) ?? asText(latest.userPrincipal) ?? null,
         };
         const push = (kind: CheckKind, value: string, critical = false) => {
-          if (!dismissed.has(`${id}|${kind}|${value}`))
+          const ignored = dismissed.get(`${id}|${kind}|${value}`);
+          if (options.dismissed && ignored)
+            result.push({
+              ...base,
+              kind,
+              value,
+              critical,
+              dismissedById: asText(ignored.dismissedById) ?? null,
+              dismissedAt: iso(ignored.createdAt),
+            });
+          else if (!options.dismissed && !ignored)
             result.push({ ...base, kind, value, critical });
         };
         const fresh =
@@ -1015,6 +1039,26 @@ export function createDeviceReviewService(deps: {
         origin: 'human',
         sourceType: 'managedDevices',
         sourceId: check.managedDeviceId,
+        actorId,
+      });
+      deps.touched?.();
+    },
+
+    async undismiss(deviceId, kind, actorId) {
+      const removed = await database
+        .query()
+        .deleteFrom('deviceSyncDismissals')
+        .where('deviceId', '=', deviceId)
+        .where('kind', '=', kind)
+        .execute();
+      if (!removed.deletedCount) return;
+      await history.record({
+        subjectType: 'devices',
+        subjectId: deviceId,
+        type: 'managedUndismissed',
+        summary: `Raised again (${kind})`,
+        payload: { kind },
+        origin: 'human',
         actorId,
       });
       deps.touched?.();

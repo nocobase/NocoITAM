@@ -75,19 +75,24 @@ export default function DeviceSyncReviewPage(): ReactElement {
       ? 'unregistered'
       : requested === 'exempted'
         ? 'unmanaged'
-        : TABS.includes(requested as (typeof TABS)[number])
-          ? (requested as (typeof TABS)[number])
-          : 'checks';
+        : requested === 'dismissed'
+          ? 'checks'
+          : TABS.includes(requested as (typeof TABS)[number])
+            ? (requested as (typeof TABS)[number])
+            : 'checks';
   const ignoredRef = useRef<HTMLElement>(null);
   const ignoredShown = view === 'unregistered' && (counts.ignored ?? 0) > 0;
   const exemptedShown = view === 'unmanaged' && (counts.exempted ?? 0) > 0;
+  // The differences a person ignored, under 信息不一致 (2026-10-16).
+  const dismissedShown = view === 'checks' && (counts.dismissed ?? 0) > 0;
   useEffect(() => {
     if (
       (requested === 'ignored' && ignoredShown) ||
-      (requested === 'exempted' && exemptedShown)
+      (requested === 'exempted' && exemptedShown) ||
+      (requested === 'dismissed' && dismissedShown)
     )
       ignoredRef.current?.scrollIntoView({ block: 'start' });
-  }, [requested, ignoredShown, exemptedShown]);
+  }, [requested, ignoredShown, exemptedShown, dismissedShown]);
   return (
     <Page>
       <HistoryBackButton fallback='/' />
@@ -185,6 +190,24 @@ export default function DeviceSyncReviewPage(): ReactElement {
           <RecordsView view='ignored' />
         </section>
       ) : null}
+      {dismissedShown ? (
+        <section
+          ref={ignoredRef}
+          className='mt-4 flex scroll-mt-4 flex-col gap-3'
+        >
+          <div className='space-y-1'>
+            <h2 className='font-medium'>
+              {t('deviceSync.review.dismissedHeading', {
+                count: counts.dismissed,
+              })}
+            </h2>
+            <p className='text-sm text-muted-foreground'>
+              {t('deviceSync.review.dismissedHint')}
+            </p>
+          </div>
+          <DismissedView />
+        </section>
+      ) : null}
       {exemptedShown ? (
         <section
           ref={ignoredRef}
@@ -219,6 +242,7 @@ function useReviewCounts(): Partial<
   const unmanaged = useDeviceReview('unmanaged');
   const ignored = useDeviceReview('ignored');
   const exempted = useDeviceReview('exempted');
+  const dismissed = useDeviceReview('dismissed');
   const byRule = ignored.data?.filter((row) => row.ignoredByRule).length;
   return {
     checks: checks.data?.length,
@@ -226,6 +250,7 @@ function useReviewCounts(): Partial<
     unmanaged: unmanaged.data?.length,
     ignored: ignored.data?.length,
     exempted: exempted.data?.length,
+    dismissed: dismissed.data?.length,
     // 已忽略's two kinds: kept off by a person, or by 忽略个人设备.
     ignoredByRule: byRule,
     ignoredManual:
@@ -251,7 +276,7 @@ const deviceLabel = (row: {
 function ChecksView(): ReactElement {
   const { t } = useTranslation();
   const review = useDeviceReview('checks');
-  // 以台账为准 asks first (2026-10-16): the difference is not raised again.
+  // 忽略 asks first (2026-10-16): the difference is not raised again.
   const [keeping, setKeeping] = useState<DeviceCheck>();
   const rows = review.data ?? [];
   const people = useReferenceNames([
@@ -341,6 +366,89 @@ function ChecksView(): ReactElement {
         onClose={() => setKeeping(undefined)}
       />
     </>
+  );
+}
+
+/**
+ * The differences a person ignored that still hold (2026-10-16): who and
+ * when, and 恢复, which raises the difference again.
+ */
+function DismissedView(): ReactElement {
+  const { t } = useTranslation();
+  const review = useDeviceReview('dismissed');
+  const action = useDeviceReviewAction();
+  const rows = review.data ?? [];
+  const people = useReferenceNames([
+    {
+      collection: 'users',
+      ids: rows.flatMap((row) =>
+        row.dismissedById ? [row.dismissedById] : [],
+      ),
+    },
+  ]);
+  if (review.isLoading) return <Skeleton className='h-40 w-full rounded-xl' />;
+  if (rows.length === 0) return <Empty />;
+  return (
+    <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
+            <TableHead>{t('deviceSync.review.columns.difference')}</TableHead>
+            <TableHead>{t('deviceSync.review.columns.markedBy')}</TableHead>
+            <TableHead>{t('deviceSync.review.columns.markedAt')}</TableHead>
+            <TableHead className='text-right'>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={`${row.deviceId}:${row.kind}`}>
+              <TableCell>
+                <CellText>
+                  <RecordLink
+                    to={`/devices/${row.deviceId}`}
+                    className='font-medium text-foreground hover:underline'
+                  >
+                    {deviceLabel(row)}
+                  </RecordLink>
+                </CellText>
+              </TableCell>
+              <TableCell>
+                <Badge variant='outline'>
+                  {t(`deviceSync.checks.kinds.${row.kind}`)}
+                </Badge>
+              </TableCell>
+              <TableCell className='text-muted-foreground'>
+                <CellText className='max-w-48'>
+                  {row.dismissedById
+                    ? (people.users?.get(row.dismissedById) ?? '…')
+                    : '—'}
+                </CellText>
+              </TableCell>
+              <TableCell className='text-muted-foreground tabular-nums'>
+                {formatDate(row.dismissedAt ?? null)}
+              </TableCell>
+              <TableCell className='text-right'>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  disabled={action.isPending}
+                  onClick={() =>
+                    action.mutate({
+                      kind: 'undismiss',
+                      deviceId: row.deviceId,
+                      check: row.kind,
+                    })
+                  }
+                >
+                  {t('deviceSync.review.restore')}
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 

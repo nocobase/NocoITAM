@@ -118,10 +118,15 @@ product or in release notes, until it is listed here.
   MDM 核对 column (`MyWorkItem.summary`), so MDM is one place on the board.
   Without a platform (`review.active()`) the column is absent and no
   leaver is tagged.
-- **以台账为准** writes `deviceSyncDismissals` (device, kind, the value that
-  was seen: the last sync, the other person, the register status) and a
-  `managedDismissed` event; the same difference with another value is
-  raised again (guideline 3.4). **不纳入台账** sets the record `ignored`
+- **忽略** (以台账为准 until 2026-10-16; the code still says `dismiss`)
+  writes `deviceSyncDismissals` (device, kind, the value that was seen:
+  the last sync, the other person, the register status) and a
+  `managedDismissed` event, after a confirmation; the same difference with
+  another value is raised again (guideline 3.4). An ignored difference
+  that still holds is listed, not lost: `checks({ dismissed: true })`
+  (view `dismissed`) is 信息不一致's 已忽略 section, with who and when and
+  恢复 (`POST …/checks/:deviceId/undismiss`, the device's `update`, a
+  `managedUndismissed` event), as 只在 MDM and 只在台账 list theirs. **不纳入台账** sets the record `ignored`
   with a reason; 恢复 matches it again at once. A person's **link** and
   **unlink** set `matchedBy: manual`, which the next pull keeps — an unlink
   is not undone by a matching serial. Each writes `managedLinked` /
