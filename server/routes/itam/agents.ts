@@ -36,16 +36,9 @@ import {
   saveAgentSwitch,
 } from '../../providers/itam/agent-switches.js';
 import { workRun } from '../../providers/itam/ai-model.js';
-import { suggestionDecisionsToken } from '../../providers/itam/agent-suggestions.js';
 import { approvalReviewerToken } from '../../providers/itam/approval-review.js';
-import { PlanError } from '../../providers/itam/plans.js';
-import { renewalReviewerToken } from '../../providers/itam/renewal-review.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
-import { asText } from '../../providers/itam/collection-query.js';
-import {
-  BusinessRuleError,
-  RecordNotFoundError,
-} from '../../providers/itam/errors.js';
+import { RecordNotFoundError } from '../../providers/itam/errors.js';
 import {
   decideCollection,
   errorResponse,
@@ -73,22 +66,6 @@ import {
  */
 
 const tags = ['ITAM agents'];
-
-/** A plan the suggestion could not become (a step refused), as a 422; anything else as usual. */
-function planErrorResponse(context: ItamContext, error: unknown): Response {
-  if (error instanceof PlanError)
-    return context.json(
-      {
-        code: 'BUSINESS_RULE',
-        rule: error.code,
-        message: error.detail
-          ? `${error.message}: ${error.detail}`
-          : error.message,
-      },
-      error.code === 'NOT_FOUND' ? 404 : 422,
-    );
-  return errorResponse(context, error);
-}
 const AgentParam = z.enum(AGENTS);
 const DAY = 24 * 60 * 60_000;
 
@@ -116,48 +93,15 @@ export const agentRoutes: AppApiRouteContribution<Application> =
     const subjectsOf = async (
       list: readonly AgentRun[],
     ): Promise<Map<string, string>> => {
-      // By run: a review is named by its approval's title, a renewal by
-      // the entitlement.
-      const named = async (
-        table: 'approvals' | 'entitlements',
-        field: 'title' | 'name',
-        ids: readonly string[],
-      ): Promise<Map<string, string>> => {
-        const wanted = [...new Set(ids.filter(Boolean))];
-        if (!wanted.length) return new Map();
-        const rows = await database()
-          .query()
-          .selectFrom(table)
-          .select(['id', field])
-          .where('id', 'in', wanted)
-          .execute<Record<string, unknown>>();
-        return new Map(
-          rows.map((row) => [String(row.id), asText(row[field]) ?? '']),
-        );
-      };
-      const approvals = await named(
-        'approvals',
-        'title',
-        list.flatMap((run) => (run.refId ? [run.refId] : [])),
-      );
-      const entitlements = await named(
-        'entitlements',
-        'name',
-        list
-          .filter((run) => run.subjectType === 'entitlements')
-          .map((run) => run.subjectId),
-      );
-      return new Map(
-        list.flatMap((run) => {
-          const title =
-            run.subjectType === 'entitlements'
-              ? entitlements.get(run.subjectId)
-              : run.refId
-                ? approvals.get(run.refId)
-                : undefined;
-          return title ? [[run.id, title] as const] : [];
-        }),
-      );
+      const ids = [...new Set(list.map((run) => run.refId).filter(Boolean))];
+      if (!ids.length) return new Map();
+      const rows = await database()
+        .query()
+        .selectFrom('approvals')
+        .select(['id', 'title'])
+        .where('id', 'in', ids as string[])
+        .execute<{ id: unknown; title: unknown }>();
+      return new Map(rows.map((row) => [String(row.id), String(row.title)]));
     };
 
     /** A run as the reader may see it: its result only when they decide it. */
@@ -170,7 +114,7 @@ export const agentRoutes: AppApiRouteContribution<Application> =
       result: run.deciderId === reader ? run.result : null,
       comment: run.deciderId === reader ? run.comment : null,
       instruction: run.deciderId === reader ? run.instruction : null,
-      title: titles.get(run.id) ?? null,
+      title: (run.refId && titles.get(run.refId)) ?? null,
     });
 
     agents.get(
@@ -354,11 +298,7 @@ export const agentRoutes: AppApiRouteContribution<Application> =
           const query = z
             .object({
               agent: AgentParam,
-              subjectType: z.enum([
-                'purchaseOrders',
-                'disposals',
-                'entitlements',
-              ]),
+              subjectType: z.enum(['purchaseOrders', 'disposals']),
               subjectId: z.string().min(1).max(64),
             })
             .parse(context.req.query());
@@ -391,53 +331,25 @@ export const agentRoutes: AppApiRouteContribution<Application> =
         summary: 'Ask for a review',
         operationId: 'itamAskAgentRun',
         description:
-          'A person asks an agent to review a record they decide on — the approver a request waiting on them, the 负责人 an entitlement — or redoes a waiting one with their own words (`revise`).',
+          'The approver asks for a review of a request waiting on them, or redoes a waiting one with their own words (`revise`).',
       }),
       async (context) => {
         try {
-          const revise = z
+          const input = z
             .object({
-              runId: z.string().min(1).max(64),
-              instruction: z.string().min(1).max(1000),
+              agent: z.literal('approvalReview'),
+              subjectType: z.enum(['purchaseOrders', 'disposals']),
+              subjectId: z.string().min(1).max(64),
+              revise: z
+                .object({
+                  runId: z.string().min(1).max(64),
+                  instruction: z.string().min(1).max(1000),
+                })
+                .strict()
+                .optional(),
             })
             .strict()
-            .optional();
-          const input = z
-            .discriminatedUnion('agent', [
-              z
-                .object({
-                  agent: z.literal('approvalReview'),
-                  subjectType: z.enum(['purchaseOrders', 'disposals']),
-                  subjectId: z.string().min(1).max(64),
-                  revise,
-                })
-                .strict(),
-              z
-                .object({
-                  agent: z.literal('renewalReview'),
-                  subjectType: z.literal('entitlements'),
-                  subjectId: z.string().min(1).max(64),
-                  revise,
-                })
-                .strict(),
-            ])
             .parse(await readJsonObject(context));
-          const me = principalId(context);
-          if (input.agent === 'renewalReview') {
-            await decideCollection(context, 'entitlements', 'update');
-            const run = await container.resolve(renewalReviewerToken).request({
-              entitlementId: input.subjectId,
-              trigger: 'asked',
-              by: me,
-              ...(input.revise ? { revise: input.revise } : {}),
-            });
-            if (!run)
-              throw new BusinessRuleError(
-                'It has no 负责人 to review it for',
-                'NOTHING_TO_REVIEW',
-              );
-            return context.json({ data: run }, 201);
-          }
           await decideCollection(context, input.subjectType, 'approve');
           const approval = await database()
             .query()
@@ -458,63 +370,10 @@ export const agentRoutes: AppApiRouteContribution<Application> =
           const run = await container.resolve(approvalReviewerToken).request({
             approvalId: String(approval.id),
             trigger: 'asked',
-            by: me,
+            by: principalId(context),
             ...(input.revise ? { revise: input.revise } : {}),
           });
           return context.json({ data: run }, 201);
-        } catch (error) {
-          return errorResponse(context, error);
-        }
-      },
-    );
-
-    agentRuns.post(
-      '/:id/accept',
-      describeRoute({
-        tags,
-        summary: 'Accept a suggestion',
-        operationId: 'itamAcceptAgentRun',
-        description:
-          "Its decider carries out the changes they kept (`keep`, the changes' indexes) as a plan proposed and carried out as them, each step screened under their grants. Answers the run and the plan, whose steps say what was done.",
-      }),
-      async (context) => {
-        try {
-          const input = z
-            .object({ keep: z.array(z.number().int().min(0)).max(30) })
-            .strict()
-            .parse(await readJsonObject(context));
-          const accepted = await container
-            .resolve(suggestionDecisionsToken)
-            .accept(context.req.param('id'), principalId(context), input.keep);
-          return context.json({ data: accepted });
-        } catch (error) {
-          return planErrorResponse(context, error);
-        }
-      },
-    );
-
-    agentRuns.get(
-      '/:id/plan',
-      describeRoute({
-        tags,
-        summary: 'The plan a suggestion became',
-        operationId: 'itamAgentRunPlan',
-        description:
-          'The plan an accepted suggestion became, with each step done or refused; for its decider alone. Null before it is accepted.',
-      }),
-      async (context) => {
-        try {
-          const run = await runs().get(context.req.param('id'));
-          if (!run)
-            throw new RecordNotFoundError(
-              'itamAgentRuns',
-              context.req.param('id'),
-            );
-          return context.json({
-            data: await container
-              .resolve(suggestionDecisionsToken)
-              .planOf(run, principalId(context)),
-          });
         } catch (error) {
           return errorResponse(context, error);
         }
@@ -569,24 +428,17 @@ export const agentRoutes: AppApiRouteContribution<Application> =
       '/:id/dismiss',
       describeRoute({
         tags,
-        summary: 'Set a run aside',
+        summary: 'Set a review aside',
         operationId: 'itamDismissAgentRun',
         description:
-          'Its decider sets a review or a suggestion aside; nothing changes, and a request still waits on them.',
+          'The approver sets the review aside; the request still waits on them.',
       }),
       async (context) => {
         try {
-          const id = context.req.param('id');
-          const run = await runs().get(id);
-          if (!run) throw new RecordNotFoundError('itamAgentRuns', id);
-          const me = principalId(context);
-          const dismissed =
-            run.agent === 'approvalReview'
-              ? await container.resolve(approvalReviewerToken).dismiss(id, me)
-              : await container
-                  .resolve(suggestionDecisionsToken)
-                  .dismiss(id, me);
-          return context.json({ data: dismissed });
+          const run = await container
+            .resolve(approvalReviewerToken)
+            .dismiss(context.req.param('id'), principalId(context));
+          return context.json({ data: run });
         } catch (error) {
           return errorResponse(context, error);
         }

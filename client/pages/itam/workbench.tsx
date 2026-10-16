@@ -695,10 +695,18 @@ function PreviewLine({
   const { t } = useTranslation();
   if (entry.preview.length === 0) return null;
   const first = entry.preview[0];
+  // An entitlement coming up says how many seats are used, and how many
+  // of those leavers hold (2026-10-17): Figma 3/6 (离职 1).
   const names = entry.preview.map((item) =>
-    item.figures
-      ? `${item.label} ${item.figures[0]}/${item.figures[1]}`
-      : item.label,
+    [
+      item.label,
+      item.figures ? `${item.figures[0]}/${item.figures[1]}` : null,
+      item.leavers
+        ? t('workbench.attentionLeavers', { count: item.leavers })
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' '),
   );
   const more = entry.count - entry.preview.length;
   // 最早 only when there are several to be soonest among.

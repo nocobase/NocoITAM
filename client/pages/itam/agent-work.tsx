@@ -22,13 +22,12 @@ import {
   type RunCounts,
   type RunStatus,
 } from '@/lib/itam/agents';
-import { runFailure, runPath, runVerdict } from '@/lib/itam/agent-run-view';
 import { relativeTime } from '@/lib/itam/format';
 
 /**
  * 智能体工作 (2026-10-16, plan "Work agents", step 1; after NocoCRM's Agent
  * work page): what the work agents do on their own. A tab per agent — so
- * 审批审阅, 离职回收 and 授权续费 — with what it does and that it only suggests, its model and
+ * far 审批审阅 — with what it does and that it only suggests, its model and
  * skill and where to change them (AI → 智能体, AI → 技能), whether it runs
  * on its own and on which triggers, how it did over 7 or 30 days, and its
  * runs of the last 90 days on records the reader may read, by status.
@@ -190,7 +189,7 @@ function AgentPanel({
               ))}
             </ul>
             <p className='text-xs text-muted-foreground'>
-              {t(`agentWork.${agent.agent}.byHand`)}
+              {t('agentWork.byHand', { name })}
             </p>
             {save.error ? (
               <p className='text-destructive'>{save.error.message}</p>
@@ -316,7 +315,7 @@ function RunRow({
   readonly redone: boolean;
 }): ReactElement {
   const { t } = useTranslation();
-  const to = runPath(run);
+  const to = `${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`;
   return (
     <li className='flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm'>
       <div className='min-w-0 flex-1 space-y-0.5'>
@@ -325,9 +324,11 @@ function RunRow({
         </RecordLink>
         <p className='truncate text-muted-foreground'>
           {run.result
-            ? runVerdict(run, t)
+            ? `${t(`review.recommendation.${run.result.recommendation}`)} · ${run.result.summary}`
             : run.status === 'failed'
-              ? runFailure(run, t)
+              ? t(`review.failed.${run.failure ?? 'failed'}`, {
+                  defaultValue: t('review.failed.failed'),
+                })
               : null}
         </p>
       </div>

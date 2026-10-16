@@ -90,4 +90,4 @@ export const METHOD_SKILLS = [
  * library like the others, but attached to their work agent rather than to
  * Noco — nobody asks Noco to review an approval.
  */
-export const WORK_SKILLS = ['approval-review', 'renewal-review'] as const;
+export const WORK_SKILLS = ['approval-review'] as const;

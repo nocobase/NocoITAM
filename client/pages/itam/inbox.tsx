@@ -3,10 +3,8 @@ import { Check } from 'lucide-react';
 import { useEffect, useMemo, useRef, type ReactElement } from 'react';
 
 import { ApprovalReviewCard } from '@/components/itam/ai/approval-review';
-import { SuggestionCard } from '@/components/itam/ai/suggestion-card';
 import { RecordLink } from '@/components/itam/record-link';
 import { Skeleton } from '@/components/ui/skeleton';
-import { runAgentLabel, runLine, runPath } from '@/lib/itam/agent-run-view';
 import { useInbox, type AgentRun } from '@/lib/itam/agents';
 import { relativeTime } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
@@ -28,8 +26,7 @@ import {
  * runs waiting on the reader. Its two views are AI 建议 (first, the
  * default, shown only while there is one) and 通知 — the block's To do and
  * All, relabelled — with NocoCRM's application changes to the block. Application change: its registry adds the
- * work agents' suggestions waiting on the reader — 审批审阅's reviews, and
- * since step 2 离职回收's and 授权续费's suggestions — to
+ * work agents' suggestions waiting on the reader — 审批审阅's reviews — to
  * the To do view, as a collection category read from ITAM's API, listed
  * waiting first and then those handled lately, decided on the right with
  * the same card as on the request's page. The template's own decision
@@ -171,7 +168,7 @@ function ReviewList({
                     aria-hidden
                   />
                 )}
-                {runAgentLabel(run, t)}
+                {t('review.title')}
                 <span className='ml-auto tabular-nums'>
                   {relativeTime(
                     run.updatedAt,
@@ -184,7 +181,7 @@ function ReviewList({
                 {run.title ?? run.subjectId}
               </span>
               <span className='truncate text-xs text-muted-foreground'>
-                {redone.has(run.id) ? t('review.redone') : runLine(run, t)}
+                {redone.has(run.id) ? t('review.redone') : lineOf(run, t)}
               </span>
             </button>
           </li>
@@ -192,6 +189,25 @@ function ReviewList({
       })}
     </ul>
   );
+}
+
+/** One line saying where a review stands. */
+function lineOf(
+  run: AgentRun,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  if (run.status === 'running') return t('review.working');
+  if (run.status === 'failed')
+    return t(`review.failed.${run.failure ?? 'failed'}`, {
+      defaultValue: t('review.failed.failed'),
+    });
+  if (run.status === 'accepted')
+    return t(`review.decided.${run.decision ?? 'approved'}`);
+  if (run.status === 'dismissed') return t('review.dismissed');
+  if (run.status === 'superseded') return t('review.superseded');
+  return run.result
+    ? `${t(`review.recommendation.${run.result.recommendation}`)} · ${run.result.summary}`
+    : '';
 }
 
 function ReviewDetail({
@@ -218,15 +234,14 @@ function ReviewDetail({
         <h2 className='text-base font-semibold'>
           {run.title ?? run.subjectId}
         </h2>
-        <RecordLink to={runPath(run)} className='text-sm'>
+        <RecordLink
+          to={`${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`}
+          className='text-sm'
+        >
           {t('agentInbox.openRecord')}
         </RecordLink>
       </div>
-      {run.agent === 'approvalReview' ? (
-        <ApprovalReviewCard key={run.id} run={run} />
-      ) : (
-        <SuggestionCard key={run.id} run={run} />
-      )}
+      <ApprovalReviewCard key={run.id} run={run} />
     </article>
   );
 }

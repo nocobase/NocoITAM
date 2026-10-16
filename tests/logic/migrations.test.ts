@@ -379,7 +379,7 @@ describe('ITAM migrations', () => {
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(104);
+    expect(rolledBack.rolledBack.length).toBe(105);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

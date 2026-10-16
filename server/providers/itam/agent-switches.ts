@@ -20,8 +20,6 @@ import { AGENTS, type AgentName } from './agent-runs.js';
 export const AGENT_TRIGGERS: Readonly<Record<AgentName, readonly string[]>> = {
   // A purchase order or a disposal sent for approval.
   approvalReview: ['submitted'],
-  // A daily pass over the entitlements 需要关注 shows renewing or ending.
-  renewalReview: ['daily'],
 };
 
 export interface AgentSwitch {

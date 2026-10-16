@@ -15,7 +15,6 @@ import {
 import { AGENT_JOBS, createAgentJob, oncePerRun } from '../itam/agent-jobs.js';
 import { agentRunServiceToken } from '../itam/agent-runs.js';
 import { approvalReviewerToken } from '../itam/approval-review.js';
-import { renewalReviewerToken } from '../itam/renewal-review.js';
 import { approvalServiceToken } from '../itam/approvals.js';
 import { planServiceToken } from '../itam/plans.js';
 import { settingsServiceToken } from '../itam/settings.js';
@@ -140,23 +139,12 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
         );
     approvals.onSettled = (approval) =>
       void reviewer.settled(approval).catch(() => undefined);
-    // 授权续费 (step 2, 2026-10-17).
-    const renewals = container.resolve(renewalReviewerToken);
     if (!container.has(jobExecutorServiceToken)) return;
     const executor = container
       .resolve(jobExecutorServiceToken)
       .getJobExecutor('itam', AGENT_JOBS);
-    // One queue for every agent: a task names its run, whose agent says
-    // which reviewer works it.
-    const runs = container.resolve(agentRunServiceToken);
     const AgentRunJob = createAgentJob(
-      oncePerRun(async (runId, signal) => {
-        const run = await runs.get(runId);
-        if (!run) return;
-        if (run.agent === 'renewalReview')
-          await renewals.runEntry(runId, signal);
-        else await reviewer.runEntry(runId, signal);
-      }),
+      oncePerRun((runId, signal) => reviewer.runEntry(runId, signal)),
     );
     executor.registerJob(AgentRunJob);
     await executor.setup();
@@ -164,7 +152,6 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
       await executor.addJob(new AgentRunJob({ runId }));
     };
     reviewer.useJobs(dispatch);
-    renewals.useJobs(dispatch);
     // The runs a shutdown cut short left running, queued again: only on the
     // memory queue, which this process alone holds; a shared one (Redis)
     // keeps its tasks through any exit, and another instance may be running
@@ -174,7 +161,8 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
         'jobs',
       )?.[AGENT_JOBS]?.adapter ?? 'memory';
     if (adapter === 'memory')
-      void runs
+      void container
+        .resolve(agentRunServiceToken)
         .running()
         .then(async (running) => {
           for (const run of running) await dispatch(run.id);

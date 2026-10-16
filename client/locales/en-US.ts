@@ -1406,6 +1406,17 @@ const messages = {
     endedSeats_other:
       '{{count}} seats are still held; reclaim them in the seats tab.',
     endedNoSeats: 'Every seat has been reclaimed.',
+    leaverSeatsTitle_one:
+      '{{count}} seat is still held by someone who has left',
+    leaverSeatsTitle_other:
+      '{{count}} seats are still held by people who have left',
+    leaverSeatsHint:
+      'Reclaimed, they can go to someone else; reclaim them before renewing to see how many you really need.',
+    reclaimLeaverSeats: 'Reclaim them all',
+    reclaimLeaverSeatsConfirm_one:
+      "Reclaim the seat a leaver holds? The account on the vendor's side has to be closed separately.",
+    reclaimLeaverSeatsConfirm_other:
+      "Reclaim the {{count}} seats leavers hold? The accounts on the vendor's side have to be closed separately.",
     annualCostHint:
       'Computed: per seat, unit price × total seats × cycles per year; flat, price per cycle × cycles per year. Counts the seats bought, not those assigned',
   },
@@ -1854,6 +1865,7 @@ const messages = {
     scope: { label: 'Whose to-dos to show', all: 'All', mine: 'Mine' },
     seeAll: 'See all',
     nothingPending: 'Nothing waiting',
+    attentionLeavers: '({{count}} held by leavers)',
     attentionSoonest: 'Soonest {{date}}',
     attentionMore_one: '{{count}} more',
     attentionMore_other: '{{count}} more',
@@ -3331,7 +3343,7 @@ const messages = {
     category: 'AI suggestions',
     waiting: 'To do',
     handled: 'Handled',
-    openRecord: 'Open the record',
+    openRecord: 'Open the request',
     nothingPicked: 'Pick an AI suggestion to read it.',
   },
   review: {
@@ -3380,53 +3392,6 @@ const messages = {
     superseded: 'Handled elsewhere',
     redone: 'Redone',
   },
-  suggestion: {
-    agents: {
-      renewalReview: 'Renewal review',
-    },
-    working: 'Noco is drafting a suggestion…',
-    askAgain: 'Draft it again',
-    recommendation: {
-      renew: 'Renew as it is',
-      reduce: 'Renew with fewer seats',
-      lapse: 'Let it lapse',
-    },
-    saving: 'Saves a year',
-    changes: 'Changes to make',
-    nothingToChange: 'Nothing needs to change.',
-    change: {
-      reclaim: 'Reclaim the seat: {{subject}}',
-      adjustSeats: 'Set the seat count to {{quantity}}',
-      stopAutoRenew: 'Turn off auto-renewal of {{subject}}',
-      startAutoRenew: 'Turn on auto-renewal of {{subject}}',
-    },
-    basis: 'Basis and details',
-    reasons: 'Reasons',
-    notes: 'Left to people',
-    risks: 'Risks',
-    execute: 'Carry out {{count}}',
-    agree: 'Agree',
-    accepted: 'Suggestion carried out',
-    stoppedAt: 'Step {{position}} did not finish: {{message}}',
-    redoPlaceholder: {
-      renewalReview: 'Say what to change, such as "keep 20 seats"',
-    },
-    ask: {
-      renewalReview: 'Ask Noco about renewing',
-    },
-    offer: {
-      renewal: 'This subscription ends on {{date}}.',
-      maintenance: "This licence's maintenance ends on {{date}}.",
-    },
-    failed: {
-      unavailable: 'No model is available; the suggestion was not drafted.',
-      unreadable:
-        "The model's reply could not be read; the suggestion was not drafted.",
-      timedOut: 'Drafting the suggestion timed out.',
-      notFound: 'This record is gone.',
-      failed: 'The suggestion was not drafted.',
-    },
-  },
   agentWork: {
     title: 'Agent work',
     description:
@@ -3441,6 +3406,8 @@ const messages = {
     configure: 'Set its model and instructions',
     whenItRuns: 'When it runs',
     runsOnItsOwn: 'Runs on its own',
+    byHand:
+      'Whatever is switched off, an approver can always ask Noco to review a request.',
     howItDid: 'How it did',
     last7: 'Last 7 days',
     last30: 'Last 30 days',
@@ -3453,7 +3420,7 @@ const messages = {
       acceptance: 'Acceptance rate',
     },
     runs: 'Runs',
-    runsHint: 'Last 90 days, on records you may read',
+    runsHint: 'Last 90 days, on requests you may read',
     filters: {
       all: 'All',
       pending: 'Waiting',
@@ -3466,7 +3433,6 @@ const messages = {
     startedBy: {
       submitted: 'Sent for approval',
       asked: 'Asked by a person',
-      daily: 'Daily check',
     },
     status: {
       running: 'Running',
@@ -3484,21 +3450,6 @@ const messages = {
         submitted: {
           title: 'Sent for approval',
           hint: 'A purchase order or a disposal goes to its approver.',
-        },
-      },
-      byHand:
-        'Whatever is switched off, an approver can always ask Noco to review a request.',
-    },
-    renewalReview: {
-      name: 'Renewal review',
-      description:
-        "Before a subscription ends or a perpetual licence's maintenance does, works out the seats and the money for its owner — how many leavers still hold seats, how many people are joining — recommends renewing as it is, renewing with fewer seats or letting it lapse, and lists the changes to make first.",
-      byHand:
-        "Whatever is switched off, its owner can always ask Noco about renewing on the entitlement's page.",
-      triggers: {
-        daily: {
-          title: 'Daily check',
-          hint: 'Each day, entitlements due soon (the reminder days in Settings, at least 30; each at most once a month).',
         },
       },
     },

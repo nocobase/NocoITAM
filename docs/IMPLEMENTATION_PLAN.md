@@ -131,7 +131,7 @@ plus a browser check.
 | **P5 Automation & reports**               | Cron jobs, full workbench, ten reports, settings pages                                                                                                                                                    |
 | **P6 AI**                                 | Chat panel, employee and tools, action center, quick entries, embedded capabilities, daily AI inspection, employee self-service guidance                                                                  |
 | **P7 Import/export & demo**               | CSV import wizard, discovery reconciliation, barcode labels and scanning, demo data command with deliberate "problem" records, sample PDF / CSV, e2e over the main chain                                  |
-| **P8 Work agents**                        | Agents that work unasked and only suggest: runs, 收件箱, 智能体工作, then 审批审阅, 授权续费, MDM 核对, 入职准备 (see 2026-10-16 Work agents)                                                             |
+| **P8 Work agents**                        | Agents that work unasked and only suggest: runs, 收件箱, 智能体工作, then 审批审阅, MDM 核对, 入职准备 (see 2026-10-16 Work agents)                                                                       |
 
 Tests per phase: migration up / down against the real database; each service's
 state transitions including rejected transitions and rollback; every route's
@@ -3170,53 +3170,46 @@ the plugin's row, and the skill put into the library from code (as before).
 Still to do for this step: the specification's P6 (`SPEC.md`, a
 NocoSolution pull request).
 
-### 2026-10-17 Work agents, step 2: 授权续费
+### 2026-10-17 Work agents, step 2: built, then replaced by rules
 
-Built as planned above, with the changes below. The agent only suggests. A
-suggestion is a list of changes, each a plan step with its reason. The
-decider ticks the ones they keep and presses 执行: the kept changes become an
-ordinary plan (`itamPlans`), proposed and carried out at once as the
-decider, and each step is screened under the decider's grants as it is when
-Noco proposes one. The ticks are the confirmation, so the plan is not
-confirmed a second time. The run names the plan (`planId`, migration
-`202610170001_agent_run_plans`), and the card then shows what each step did.
-A suggestion that changes nothing, such as renewing as it is, is agreed to
-with no plan.
+离职回收 and 授权续费 were built as planned above (PR #112) and removed the
+same day (PR #113 and this change), after looking at what each added over a
+rule:
 
-- **离职回收** was built here and removed the same day (2026-10-17). What a
-  leaver hands back is decided by the rule in `recovery.ts` (return, wait
-  for the repair, take back, confirm consumed, reclaim); the model only
-  added which status a returned device goes to and whether it could go
-  straight to a joiner. That is not worth a model call and a trip to
-  收件箱 per leaver, as decided once before (2026-10-05, 到货入库 became the
-  first agent-carried work because 离职回收 is deterministic). The leaver's
-  page and 离职交接 keep the rule's own buttons. A database that ran it
-  keeps its runs, which 收件箱 no longer shows, and its plugin agent, which
-  is archived at the next start.
-- **授权续费** (`renewal-review.ts`, new skill `renewal-review`).
-  - _Trigger:_ a daily pass over subscriptions ending, and perpetual
-    licences' maintenance ending, within the reminder days in 设置 (at least
-    30), each at most once a month. Only an entitlement with a 负责人 is
-    reviewed, for that 负责人; only they may ask by hand.
-  - _No usage data:_ the import was dropped on 2026-09-25. The review weighs
-    the seats against those assigned, those held by leavers, and the
-    joiners of the next 90 days.
-  - _Changes:_ reclaim the leavers' seats; set the seat count (only when
-    reducing, and never below what stays assigned); turn auto-renewal off
-    when letting a subscription lapse, or on when keeping one that would
-    otherwise stop. The two new plan operations are
-    `adjust_entitlement_seats` and `set_entitlement_auto_renew`. Not
-    renewing a licence's maintenance has no field to change, so it is a
-    note.
-  - It goes on the entitlement's page as 等你决定, with 让 Noco 看看续费 for
-    its 负责人 within 90 days of the date.
-- Its daily pass runs from schedule `itam.agent-passes` (02:30, after the
-  daily maintenance). Its eval set is `evals/renewal-review.ts`.
-- The agents' run queries now compare datetimes through `dbDateTime()`.
-  Step 1's counts, run lists and the inbox's 30-day window bound a `Date`,
-  which matches nothing on SQLite (`.agents/rules/itam-foundations.md`).
-- A new run on a record now also retires an earlier failed one, which
-  otherwise stayed in 收件箱 after a successful retry.
+- **离职回收**: what a leaver hands back is decided by the rule in
+  `recovery.ts` (return, wait for the repair, take back, confirm consumed,
+  reclaim). The model only added which status a returned device goes to
+  and whether it could go straight to a joiner: not worth a model call and
+  a trip to 收件箱 per leaver, as decided once before (2026-10-05, 到货入库
+  became the first agent-carried work because 离职回收 is deterministic).
+  The leaver's page and 离职交接 keep the rule's own buttons.
+- **授权续费**: with usage data gone (2026-09-25), a renewal turns on seats
+  in use and seats leavers hold, both counts. What the model added — how
+  many joiners need the software, whether to drop the product — is what
+  the register does not hold, so it guessed. In its place, as rules:
+  - 需要关注's renewing, ending and maintenance cards show each
+    entitlement's seats in use against those bought, and how many leavers
+    hold (Figma 3/6（离职 1）);
+  - the seats API marks a seat whose holder has left, the 席位 tab tags it
+    已离职, and the entitlement page offers 全部收回 for those seats.
+
+What stays from the step:
+
+- The two plan operations, `adjust_entitlement_seats` and
+  `set_entitlement_auto_renew`, which Noco can use in a conversation.
+- The agents' run queries compare datetimes through `dbDateTime()`; step
+  1's counts, run lists and the inbox's 30-day window bound a `Date`,
+  which matches nothing on SQLite.
+- A new run on a record retires an earlier failed one, which otherwise
+  stayed in 收件箱 after a successful retry.
+- `provisionWorkAgents` archives a work agent no longer listed and drops
+  it from the marker; 收件箱 shows only the listed agents' runs.
+- 审批审阅 is shown as 审批助手.
+
+Migration `202610170001_agent_run_plans` (the plan a suggestion became)
+is undone by `202610170002_drop_agent_run_plans`. The schedule
+`itam.agent-passes` is no longer defined; a database that synchronised it
+keeps it until `scheduler sync --finalize` deactivates it.
 
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 

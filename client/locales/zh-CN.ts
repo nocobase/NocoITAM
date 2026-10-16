@@ -1356,6 +1356,14 @@ const zhCN: AppResource = {
     endedSeats_one: '还有 {{count}} 个席位未回收，请在席位页签回收。',
     endedSeats_other: '还有 {{count}} 个席位未回收，请在席位页签回收。',
     endedNoSeats: '席位已全部回收。',
+    leaverSeatsTitle_one: '{{count}} 个席位还在离职人员手上',
+    leaverSeatsTitle_other: '{{count}} 个席位还在离职人员手上',
+    leaverSeatsHint: '收回后可以分配给别人；续费前先收回，就知道实际要续多少。',
+    reclaimLeaverSeats: '全部收回',
+    reclaimLeaverSeatsConfirm_one:
+      '收回离职人员占用的 {{count}} 个席位？供应商那边的账号要另外停用。',
+    reclaimLeaverSeatsConfirm_other:
+      '收回离职人员占用的 {{count}} 个席位？供应商那边的账号要另外停用。',
     annualCostHint:
       '系统计算：按席位为 单价 × 总席位 × 每年期数；固定费用为 每期费用 × 每年期数。按购买的席位算，不按已分配',
   },
@@ -1771,6 +1779,7 @@ const zhCN: AppResource = {
     scope: { label: '显示谁的待办', all: '全部', mine: '我负责的' },
     seeAll: '查看全部',
     nothingPending: '暂无待办',
+    attentionLeavers: '（离职 {{count}}）',
     attentionSoonest: '最早 {{date}}',
     attentionMore_one: '另 {{count}} 个',
     attentionMore_other: '另 {{count}} 个',
@@ -3141,7 +3150,7 @@ const zhCN: AppResource = {
     category: 'AI 建议',
     waiting: '待处理',
     handled: '已处理',
-    openRecord: '打开记录',
+    openRecord: '打开申请',
     nothingPicked: '选一条 AI 建议查看。',
   },
   review: {
@@ -3189,52 +3198,6 @@ const zhCN: AppResource = {
     superseded: '已在别处处理',
     redone: '已重做',
   },
-  suggestion: {
-    agents: {
-      renewalReview: '授权续费',
-    },
-    working: 'Noco 正在拟建议…',
-    askAgain: '重新拟建议',
-    recommendation: {
-      renew: '照常续费',
-      reduce: '减少席位后续费',
-      lapse: '不再续费',
-    },
-    saving: '每年能省',
-    changes: '要做的改动',
-    nothingToChange: '不需要改动。',
-    change: {
-      reclaim: '收回席位：{{subject}}',
-      adjustSeats: '席位数调到 {{quantity}}',
-      stopAutoRenew: '关闭 {{subject}} 的自动续费',
-      startAutoRenew: '打开 {{subject}} 的自动续费',
-    },
-    basis: '依据与细节',
-    reasons: '依据',
-    notes: '留给人处理的',
-    risks: '风险',
-    execute: '执行 {{count}} 项',
-    agree: '同意',
-    accepted: '已执行建议',
-    stoppedAt: '第 {{position}} 步没有完成：{{message}}',
-    redoPlaceholder: {
-      renewalReview: '说说要改什么，比如「保留 20 个席位」',
-    },
-    ask: {
-      renewalReview: '让 Noco 看看续费',
-    },
-    offer: {
-      renewal: '这份订阅 {{date}} 到期。',
-      maintenance: '这份授权的维保 {{date}} 到期。',
-    },
-    failed: {
-      unavailable: '没有可用的模型，建议没有拟好。',
-      unreadable: '模型的回复读不懂，建议没有拟好。',
-      timedOut: '拟建议超时了。',
-      notFound: '这条记录已经不在了。',
-      failed: '建议没有拟好。',
-    },
-  },
   agentWork: {
     title: 'Agent 工作',
     description:
@@ -3249,6 +3212,7 @@ const zhCN: AppResource = {
     configure: '设置模型和说明',
     whenItRuns: '什么时候运行',
     runsOnItsOwn: '自动运行',
+    byHand: '不论开关如何，审批人都可以在申请上手动让 Noco 审阅。',
     howItDid: '运行情况',
     last7: '近 7 天',
     last30: '近 30 天',
@@ -3261,7 +3225,7 @@ const zhCN: AppResource = {
       acceptance: '采纳率',
     },
     runs: '运行记录',
-    runsHint: '近 90 天、你能看到的记录',
+    runsHint: '近 90 天、你能看到的申请',
     filters: {
       all: '全部',
       pending: '待处理',
@@ -3274,7 +3238,6 @@ const zhCN: AppResource = {
     startedBy: {
       submitted: '提交审批',
       asked: '有人要求',
-      daily: '每日检查',
     },
     status: {
       running: '运行中',
@@ -3292,19 +3255,6 @@ const zhCN: AppResource = {
         submitted: {
           title: '提交审批',
           hint: '采购单或报废单发给审批人时。',
-        },
-      },
-      byHand: '不论开关如何，审批人都可以在申请上手动让 Noco 审阅。',
-    },
-    renewalReview: {
-      name: '授权续费',
-      description:
-        '订阅快到期、永久授权的维保快到期时，替授权的负责人算清席位和钱：离职人员还占着几个、接下来要入职几个，建议照常续费、减少席位后续费或不再续费，并列出续费前要做的改动。',
-      byHand: '不论开关如何，负责人都可以在授权页面上手动让 Noco 看看续费。',
-      triggers: {
-        daily: {
-          title: '每日检查',
-          hint: '每天检查快到期的授权（按设置里的提醒天数，至少 30 天；同一份 30 天内只看一次）。',
         },
       },
     },

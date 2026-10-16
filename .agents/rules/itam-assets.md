@@ -67,6 +67,15 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `adjust` movement, authorized as `update` like an entitlement's
   调整席位; a decrease stops at what is in stock — what a holder has is
   taken back first.
+- A renewal is decided on two counts (2026-10-17, in place of the 授权续费
+  agent): seats in use against seats bought, and seats people who have
+  left still hold. 需要关注's renewing, ending and maintenance cards show
+  both on each entitlement (`ReminderPreview.figures` and `leavers`,
+  `leaverSeatCounts` in `entitlements.ts`); the seats API marks a seat
+  whose holder has left (`holderLeft`), the 席位 tab tags it 已离职, and
+  the entitlement page's notice offers 全部收回 for those seats while any
+  is held. There is no usage data to weigh beyond that (dropped
+  2026-09-25).
 - Software entitlements are one collection, `entitlements`, with
   `kind = perpetual | subscription` (merged 2026-09-20, migration
   `202609200002_merge_entitlements`); seats live in `entitlementSeats`
