@@ -1,6 +1,7 @@
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import type { SummaryItem } from '@/components/itam/detail-page';
 import { DeviceDisposalSummary } from '@/components/itam/device-disposal-summary';
+import { DeviceRepairSummary } from '@/components/itam/device-repair-summary';
 import { DeviceRelation } from '@/components/itam/device-relation';
 import { OverdueBadge } from '@/components/itam/overdue-badge';
 import { RecordApprover } from '@/components/itam/record-approver';
@@ -11,10 +12,10 @@ import {
   PurchaseOrderStatusBadge,
 } from '@/components/itam/status-badge';
 import { Badge } from '@/components/ui/badge';
-import type { ItamRecord } from '@/lib/itam/api';
+import { useItamList, type ItamRecord } from '@/lib/itam/api';
 import { useDeviceDisposals } from '@/lib/itam/device-disposals';
 import { deviceRelationLabel } from '@/lib/itam/devices';
-import { DISPOSALS_PATH } from '@/lib/itam/operations';
+import { DISPOSALS_PATH, REPAIRS_PATH } from '@/lib/itam/operations';
 import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
 import { formatMoney, text } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
@@ -33,6 +34,20 @@ export interface RecordSummary {
 
 function useDeviceSummary(record: ItamRecord, t: Translate): SummaryItem[] {
   const permissions = useCollectionPermissions('disposals', ['read']);
+  const repairPermissions = useCollectionPermissions('repairs', ['read']);
+  // The repair a device in repair is out on (2026-10-16), as a disposal
+  // shows for one being disposed of.
+  const inRepair = text(record.status) === 'inRepair';
+  const repairs = useItamList(
+    REPAIRS_PATH,
+    {
+      filter: { deviceId: text(record.id), result: 'inProgress' },
+      page: 1,
+      pageSize: 1,
+    },
+    { enabled: inRepair && Boolean(repairPermissions.read) },
+  );
+  const repair = inRepair ? repairs.data?.data[0] : undefined;
   const disposals = useDeviceDisposals(
     text(record.id),
     Boolean(permissions.read),
@@ -49,6 +64,15 @@ function useDeviceSummary(record: ItamRecord, t: Translate): SummaryItem[] {
       label: t('fields.status'),
       value: <DeviceStatusBadge status={text(record.status)} />,
     },
+    ...(repair
+      ? [
+          {
+            key: 'repair',
+            label: t('references.repairs'),
+            value: <DeviceRepairSummary repair={repair} />,
+          },
+        ]
+      : []),
     ...(disposal
       ? [
           {

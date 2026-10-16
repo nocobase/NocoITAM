@@ -2553,6 +2553,8 @@ const zhCN: AppResource = {
     object: '维修单',
     resultNotes: '维修备注',
     expectedBack: '预计 {{date}} 取回',
+    overdueDays_one: '逾期 {{count}} 天',
+    overdueDays_other: '逾期 {{count}} 天',
     delete: '删除维修单',
     deleteDescription:
       '只用于建错的记录：设备回到送修前的状态（原使用人或库存）；已产生的费用和过程不会保留',

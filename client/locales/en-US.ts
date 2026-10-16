@@ -2712,6 +2712,8 @@ const messages = {
     object: 'repair',
     resultNotes: 'Result notes',
     expectedBack: 'expected back {{date}}',
+    overdueDays_one: '{{count}} day overdue',
+    overdueDays_other: '{{count}} days overdue',
     delete: 'Delete repair record',
     deleteDescription:
       'For a record created by mistake: the device goes back to where it was before the repair; nothing of the repair is kept.',
