@@ -321,7 +321,9 @@ export function InfoRow({
   readonly children: ReactNode;
 }): ReactElement {
   return (
-    <div className='grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-start gap-3 text-sm'>
+    // Two fifths for the label (2026-10-16; a third broke 使用年限（月）
+    // and its like onto two lines).
+    <div className='grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-start gap-3 text-sm'>
       <dt className='text-muted-foreground'>{label}</dt>
       <dd className='min-w-0'>{children}</dd>
     </div>
