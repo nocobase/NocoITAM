@@ -38,7 +38,7 @@ export const WORK_AGENTS: Readonly<
   >
 > = {
   approvalReview: {
-    name: 'Approval review',
+    name: 'Approval assistant',
     skill: 'approval-review',
     task: 'reviewing purchase orders and disposals sent for approval, for the person asked to approve them',
   },
@@ -131,7 +131,7 @@ export async function provisionWorkAgents(
 }
 
 /**
- * A work agent named in the viewer's language (审批审阅 / Approval review).
+ * A work agent named in the viewer's language (审批助手 / Approval assistant).
  * @temporary(nocobase-official): `agents.create` takes no name translation,
  * so it is written on the plugin's row, while the name is still the one
  * given.

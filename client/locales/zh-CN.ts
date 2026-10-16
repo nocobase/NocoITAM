@@ -3143,9 +3143,9 @@ const zhCN: AppResource = {
     nothingPicked: '选一条 AI 建议查看。',
   },
   review: {
-    title: '审批审阅',
+    title: '审批助手',
     waiting: '等你决定',
-    working: '审批审阅正在看这份申请…',
+    working: '审批助手正在看这份申请…',
     waitingNoReview: '这份申请在等你审批。',
     ask: '让 Noco 审阅',
     askAgain: '重新审阅',
@@ -3283,7 +3283,7 @@ const zhCN: AppResource = {
       superseded: '已在别处处理',
     },
     approvalReview: {
-      name: '审批审阅',
+      name: '审批助手',
       description:
         '采购单、报废单提交审批后，替审批人看清要什么、花多少钱、库存或闲置能否顶上、以前怎么批的，给出同意、有条件同意、驳回或补充材料的建议，并起草审批意见。',
       triggers: {

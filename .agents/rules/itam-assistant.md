@@ -172,7 +172,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   switch (`agent-switches.ts`, an `itamSettings` row; changing one needs the
   `itam.settings` update); an automatic start asks it, a person asking by
   hand never does.
-  - **审批审阅** (`server/providers/itam/approval-review.ts`, skill
+  - **审批审阅**, shown as 审批助手 since 2026-10-17
+    (`server/providers/itam/approval-review.ts`, skill
     `ai/skills/approval-review`, eval set `evals/approval-review.ts`, run
     through `POST /itam/ai/evals/approval-review`): the approvals service
     announces a request, a decision and a withdrawal once their transaction

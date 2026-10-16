@@ -3333,9 +3333,9 @@ const messages = {
     nothingPicked: 'Pick an AI suggestion to read it.',
   },
   review: {
-    title: 'Approval review',
+    title: 'Approval assistant',
     waiting: 'Waiting on you',
-    working: 'Approval review is reading this request…',
+    working: 'The approval assistant is reading this request…',
     waitingNoReview: 'This request waits for your approval.',
     ask: 'Ask Noco to review',
     askAgain: 'Review again',
@@ -3475,7 +3475,7 @@ const messages = {
       superseded: 'Handled elsewhere',
     },
     approvalReview: {
-      name: 'Approval review',
+      name: 'Approval assistant',
       description:
         'Once a purchase order or a disposal is sent for approval, reads it for the approver — what is asked and what it costs, whether stock or idle devices could serve, how such requests went before — recommends approving, approving on conditions, rejecting or asking for more, and drafts the decision comment.',
       triggers: {
