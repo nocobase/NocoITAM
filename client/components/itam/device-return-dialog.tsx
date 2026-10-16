@@ -3,8 +3,8 @@ import { useState, type ReactElement, type ReactNode } from 'react';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -111,7 +111,8 @@ export function DeviceReturnDialog({
         <Label htmlFor='return-condition'>
           {t('deviceActions.return.condition')}
         </Label>
-        <Input
+        {/* A conclusion can run to a few lines (2026-10-16). */}
+        <Textarea
           id='return-condition'
           value={condition}
           onChange={(event) => setCondition(event.target.value)}
