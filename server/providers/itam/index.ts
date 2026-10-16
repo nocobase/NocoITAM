@@ -1,3 +1,7 @@
+import {
+  createQuoteComparisonService,
+  quoteComparisonServiceToken,
+} from './quote-comparisons.js';
 import { userAdministrationServiceToken } from '@nocobase/app-plugin-authentication';
 import { userManagementServiceToken } from '@nocobase/app-plugin-users/server/tokens';
 
@@ -433,6 +437,10 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // and gives it the jobs service.
     container.singleton(agentRunServiceToken, () =>
       createAgentRunService(container.resolve(databaseManagerToken)),
+    );
+    // 报价比较 (2026-10-17): the quotes a purchase order was weighed against.
+    container.singleton(quoteComparisonServiceToken, () =>
+      createQuoteComparisonService(container.resolve(databaseManagerToken)),
     );
     container.singleton(approvalReviewerToken, () =>
       createApprovalReviewer({
