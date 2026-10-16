@@ -9,6 +9,7 @@ import { MultiReferenceInput } from '@/components/itam/multi-reference';
 import { Label } from '@/components/ui/label';
 import { useApi, type ItamRecord } from '@/lib/itam/api';
 import { text, todayIso } from '@/lib/itam/format';
+import { cn } from '@/lib/utils';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 import { resolveFormField, type FieldDefinition } from '@/lib/itam/fields';
 import {
@@ -81,7 +82,12 @@ export function DisposalCreateDialog({
   // empty choice out of a select (清除方式 once something was wiped).
   const shownFields = HEADER_FIELDS.map((field) =>
     resolveFormField(field, values),
-  ).filter((field) => !field.visibleWhen || field.visibleWhen(values));
+  ).filter(
+    // `form: false` is the other half of a pair edited together (the
+    // recipient typed in), never a field of its own (2026-10-16).
+    (field) =>
+      field.form !== false && (!field.visibleWhen || field.visibleWhen(values)),
+  );
   // A field that edits two halves at once passes and takes the pair.
   const pairValue = (field: FieldDefinition): unknown =>
     field.alternateField
@@ -133,62 +139,72 @@ export function DisposalCreateDialog({
       onConfirm={() => create.mutate(true)}
       secondaryLabel={t('procurement.saveDraft')}
       onSecondary={() => create.mutate(false)}
+      size='form'
     >
-      {shownFields.map((field) => (
-        <Fragment key={field.key}>
-          <div className='grid gap-1.5'>
-            <Label htmlFor={`disposal-${field.key}`}>
-              {t(field.label)}
-              {field.required ? (
-                <span className='text-destructive'> *</span>
-              ) : null}
-            </Label>
-            <FieldInput
-              id={`disposal-${field.key}`}
-              field={field}
-              value={pairValue(field)}
-              onChange={(value) =>
-                setValues((current) => ({
-                  ...current,
-                  ...splitPair(field, value),
-                }))
-              }
-            />
-          </div>
-          {/* What is being scrapped reads with why it is: the devices come
-              straight after the reason, before the rest of the request. */}
-          {field.key === 'reason' ? (
-            <div className='grid gap-1.5'>
-              <Label htmlFor='disposal-devices'>
-                {t('disposals.devices')}
-                <span className='text-destructive'> *</span>
+      {/* Two fields to a row (2026-10-16); a long text and the devices
+          take the whole row. */}
+      <div className='grid gap-4 sm:grid-cols-2'>
+        {shownFields.map((field) => (
+          <Fragment key={field.key}>
+            <div
+              className={cn(
+                'grid content-start gap-1.5',
+                field.type === 'textarea' && 'sm:col-span-2',
+              )}
+            >
+              <Label htmlFor={`disposal-${field.key}`}>
+                {t(field.label)}
+                {field.required ? (
+                  <span className='text-destructive'> *</span>
+                ) : null}
               </Label>
-              <MultiReferenceInput
-                id='disposal-devices'
-                reference={{ collection: 'devices' }}
-                value={deviceIds}
-                onChange={setDeviceIds}
+              <FieldInput
+                id={`disposal-${field.key}`}
+                field={field}
+                value={pairValue(field)}
+                onChange={(value) =>
+                  setValues((current) => ({
+                    ...current,
+                    ...splitPair(field, value),
+                  }))
+                }
               />
             </div>
-          ) : null}
-        </Fragment>
-      ))}
-      <div className='grid gap-1.5'>
-        <Label htmlFor='disposal-create-approver'>
-          {t('procurement.approver')}
-        </Label>
-        <ReferenceSelect
-          id='disposal-create-approver'
-          reference={{
-            collection: 'approvers',
-            filter: { subject: 'disposal' },
-          }}
-          value={approverId}
-          onChange={setApproverId}
-        />
-        <p className='text-xs text-muted-foreground'>
-          {t('disposals.approverForSubmit')}
-        </p>
+            {/* What is being scrapped reads with why it is: the devices come
+              straight after the reason, before the rest of the request. */}
+            {field.key === 'reason' ? (
+              <div className='grid gap-1.5 sm:col-span-2'>
+                <Label htmlFor='disposal-devices'>
+                  {t('disposals.devices')}
+                  <span className='text-destructive'> *</span>
+                </Label>
+                <MultiReferenceInput
+                  id='disposal-devices'
+                  reference={{ collection: 'devices' }}
+                  value={deviceIds}
+                  onChange={setDeviceIds}
+                />
+              </div>
+            ) : null}
+          </Fragment>
+        ))}
+        <div className='grid content-start gap-1.5'>
+          <Label htmlFor='disposal-create-approver'>
+            {t('procurement.approver')}
+          </Label>
+          <ReferenceSelect
+            id='disposal-create-approver'
+            reference={{
+              collection: 'approvers',
+              filter: { subject: 'disposal' },
+            }}
+            value={approverId}
+            onChange={setApproverId}
+          />
+          <p className='text-xs text-muted-foreground'>
+            {t('disposals.approverForSubmit')}
+          </p>
+        </div>
       </div>
     </ConfirmDialog>
   );

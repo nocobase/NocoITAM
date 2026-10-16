@@ -49,7 +49,7 @@ export interface ConfirmDialogProps {
    * `wide` for a form that carries a table, such as an order's lines;
    * `wider` for that form with a column beside it (AI 整理's result).
    */
-  readonly size?: 'default' | 'wide' | 'wider';
+  readonly size?: 'default' | 'form' | 'wide' | 'wider';
 }
 
 /** A small dialog with optional inputs and one confirming action. */
@@ -92,7 +92,10 @@ export function ConfirmDialog({
             ? 'sm:max-w-5xl'
             : size === 'wide'
               ? 'sm:max-w-3xl'
-              : 'sm:max-w-md',
+              : // Two fields to a row, as a longer record form (2026-10-16).
+                size === 'form'
+                ? 'sm:max-w-2xl'
+                : 'sm:max-w-md',
         )}
       >
         <DialogHeader>
