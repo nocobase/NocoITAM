@@ -151,13 +151,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   anybody that. The owner scope also disagreed with the progress beside it
   — returning one thing emptied the reader's share and the whole person
   left their queue at 已处理 1 / 8.
-- There is no 收件箱 / 待办 page any more (2026-10-05): the to-dos are the
-  workbench's board, and 通知 opens from a bell in the header
-  (`client/components/itam/notification-bell.tsx`, a dot while anything is
-  unread, shown by `HeaderActions` only in the app layout). The `/notifications`
-  route stays, without a menu entry, so it checks no page grant;
-  `reconcile-grants.ts` strips the stored `inbox` and `notifications` page
-  grants (`STALE_PAGES`).
+- The to-dos are the workbench's board (2026-10-05). Notices are read in
+  收件箱 (2026-10-16), whose sidebar entry counts the decisions waiting and
+  the unread notices; the header's 通知 bell went on 2026-10-17. The
+  `/notifications` route stays, without a menu entry, so it checks no page
+  grant.
 - The workbench **is** the to-do board (2026-10-05,
   `client/pages/itam/workbench.tsx`) and nothing else: 需要关注 as the first
   column, then one column per kind of to-do (`useWorkCards` in

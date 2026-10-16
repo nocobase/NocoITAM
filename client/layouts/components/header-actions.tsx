@@ -1,18 +1,9 @@
 import type { ReactElement } from 'react';
 import { TooltipProvider } from '#components/ui/tooltip';
 
-import { NotificationBell } from '@/components/itam/notification-bell';
-
 import { ThemeSettings } from '../../theme/index.js';
 import { AgentChatButton } from '../agent-chat.js';
 import { UserMenu } from './user-menu.js';
-
-/**
- * Application change (ITAM): the header's own buttons share one frame — 通知
- * beside the theme and the reader's menu.
- */
-const ACTION_LINK_CLASS =
-  'inline-flex size-10 items-center justify-center rounded-xl border border-border/70 bg-card/60 text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50';
 
 /** The header's right-hand actions, shared by every authenticated page. */
 export function HeaderActions(): ReactElement {
@@ -23,9 +14,8 @@ export function HeaderActions(): ReactElement {
             (2026-10-16, after NocoCRM's); it opens the Agents plugin's chat
             panel where it was left and closes it again. */}
         <AgentChatButton />
-        {/* Application change (ITAM): 通知 lives here since it left the
-            sidebar with the 待办 page (2026-10-05). */}
-        <NotificationBell className={ACTION_LINK_CLASS} />
+        {/* Application change (ITAM, 2026-10-17): no 通知 bell — notices
+            are read in 收件箱, whose sidebar entry counts the unread. */}
         <ThemeSettings />
         <UserMenu />
       </div>
