@@ -329,4 +329,7 @@ template's roomier spacing narrowed the column's text.
   and its 离职 / 入职 tag, each to-do keeping its own grant, scope and "see
   all". 看板 / 列表 beside 全部 / 我负责的 (`WorkViewToggle`, remembered per
   browser): the list runs the columns down the page as sections, their
-  cards in a grid.
+  cards in a grid. The workbench is a `Page wide` — a board's width, the
+  page's own height — so the band and the counts scroll away with the page
+  and the board, one window tall, then fills it, its columns still
+  scrolling their own cards.

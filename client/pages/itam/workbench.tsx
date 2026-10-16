@@ -90,7 +90,7 @@ export default function WorkbenchPage(): ReactElement {
     ))
   );
   return (
-    <Page fill>
+    <Page wide>
       <PageHeader
         title={t('workbench.title')}
         actions={
@@ -117,11 +117,12 @@ export default function WorkbenchPage(): ReactElement {
       <AttentionBand />
       {loading ? null : <WorkCounts cards={cards} />}
       {view === 'board' ? (
-        // The board takes the rest of the page's height, so each column
-        // scrolls its own cards and the sideways scrollbar sits at the foot
-        // of the page — as the status boards do.
+        // The board is one window tall (less the header) and scrolls with
+        // the page (2026-10-17): scrolled past the band and the counts, it
+        // has the whole window, each column scrolling its own cards and the
+        // sideways scrollbar at its foot — as the status boards do.
         <div
-          className='scroll-shown -mx-1 flex min-h-80 flex-1 cursor-grab gap-3 overflow-x-auto px-1 pb-2 data-[panning]:cursor-grabbing data-[panning]:select-none'
+          className='scroll-shown -mx-1 flex h-[calc(100dvh_-_var(--spacing)*16)] min-h-80 shrink-0 cursor-grab gap-3 overflow-x-auto px-1 pb-2 data-[panning]:cursor-grabbing data-[panning]:select-none'
           {...pan}
         >
           {columns}
@@ -129,9 +130,7 @@ export default function WorkbenchPage(): ReactElement {
       ) : (
         // 列表: every column a section down the page, its cards across, so
         // nothing hides past the right edge (2026-10-17).
-        <div className='min-h-0 flex-1 space-y-4 overflow-y-auto'>
-          {columns}
-        </div>
+        <div className='space-y-4'>{columns}</div>
       )}
     </Page>
   );

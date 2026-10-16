@@ -62,9 +62,16 @@ export function PageHeader({
 export function Page({
   children,
   fill = false,
+  wide = false,
 }: {
   readonly children: ReactNode;
   readonly fill?: boolean;
+  /**
+   * A board's width with the page's own height (the workbench, 2026-10-17):
+   * what sits above the board scrolls away with the page, and the board,
+   * one window tall, then has the whole of it.
+   */
+  readonly wide?: boolean;
 }): ReactElement {
   return (
     <section
@@ -75,7 +82,7 @@ export function Page({
       // page (assistant-dock.tsx), so the last row scrolls clear of it —
       // only while the box is there, which it marks on the root, and on a
       // board just enough to clear it (2026-10-16).
-      className={`@container mx-auto w-full space-y-6 p-6 ${fill ? 'flex h-full flex-col [:root[data-ask-dock]_&]:pb-16' : 'max-w-7xl [:root[data-ask-dock]_&]:pb-24'}`}
+      className={`@container mx-auto w-full space-y-6 p-6 ${fill ? 'flex h-full flex-col [:root[data-ask-dock]_&]:pb-16' : wide ? 'flex flex-col [:root[data-ask-dock]_&]:pb-16' : 'max-w-7xl [:root[data-ask-dock]_&]:pb-24'}`}
     >
       {children}
     </section>
