@@ -146,18 +146,26 @@ export interface DeviceService {
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Readonly<Record<string, number>>>;
   /**
-   * With `assign`, the new device goes straight into use (2026-10-16): it is
-   * assigned in the same transaction, so a refused assignment leaves no
-   * device behind; the caller decided `assign` for `assign.conditions`.
+   * With `start`, the new device goes straight into use or out on loan
+   * (2026-10-16): assigned or loaned in the same transaction, so a refused
+   * one leaves no device behind; the caller decided that action for
+   * `start.conditions`.
    */
   create(
     input: DeviceInput,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
-    assign?: {
-      readonly input: AssignInput;
-      readonly conditions: DatabaseAuthorizationConditions;
-    },
+    start?:
+      | {
+          readonly action: 'assign';
+          readonly input: AssignInput;
+          readonly conditions: DatabaseAuthorizationConditions;
+        }
+      | {
+          readonly action: 'loan';
+          readonly input: LoanInput;
+          readonly conditions: DatabaseAuthorizationConditions;
+        },
   ): Promise<Row>;
   /** Creates inside a caller-owned transaction (receiving a purchase order); the caller authorized. */
   createWithin(
@@ -1237,21 +1245,23 @@ export function createDeviceService(
       return decode(values);
     },
 
-    async create(input, context, conditions, assign) {
+    async create(input, context, conditions, start) {
       assertInputFields(input, conditions.fieldAccess?.input ?? '*');
       let id = '';
       await database.transaction(async (connection) => {
         const values = await buildCreateValues(connection, input, context);
         id = String(values.id);
         await insert(connection, values, context);
-        if (assign)
+        if (start?.action === 'assign')
           await assignOp(
             id,
-            assign.input,
+            start.input,
             context,
-            assign.conditions,
+            start.conditions,
             connection,
           );
+        else if (start?.action === 'loan')
+          await loanOp(id, start.input, context, start.conditions, connection);
       });
       const created = await findRaw(id);
       return shape(created ?? {}, conditions);

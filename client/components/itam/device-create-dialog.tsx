@@ -14,11 +14,12 @@ import { addMonths, text } from '@/lib/itam/format';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 
 /**
- * Where the new device starts (2026-10-16): on the shelf, or in use by a
- * person, who is then required. The other statuses each need their own
- * details (a loan's return date, a repair) and stay the device page's acts.
- * Neither field is a device column: 使用中 is sent as `assignTo`, and the
- * server assigns in the same step.
+ * Where the new device starts (2026-10-16): on the shelf, in use by a
+ * person, or on loan to one until a date; the person, and for a loan the
+ * date, are then required. The other statuses need more (a repair order, a
+ * disposal) and stay the device page's acts. None of these is a device
+ * column: 使用中 is sent as `assignTo`, 借出 as `loanTo`, and the server
+ * assigns or loans in the same step.
  */
 const START_FIELDS: readonly FieldDefinition[] = [
   {
@@ -27,7 +28,7 @@ const START_FIELDS: readonly FieldDefinition[] = [
     type: 'select',
     required: true,
     options: DEVICE_STATUS_OPTIONS.filter((option) =>
-      ['inStock', 'inUse'].includes(option.value),
+      ['inStock', 'inUse', 'onLoan'].includes(option.value),
     ),
     group: 'groups.basic',
   },
@@ -39,8 +40,18 @@ const START_FIELDS: readonly FieldDefinition[] = [
       collection: 'people',
       filter: { 'employmentStatus:ne': 'left' },
     },
-    visibleWhen: (values) => values.startStatus === 'inUse',
-    requiredWhen: (values) => values.startStatus === 'inUse',
+    visibleWhen: (values) =>
+      values.startStatus === 'inUse' || values.startStatus === 'onLoan',
+    requiredWhen: (values) =>
+      values.startStatus === 'inUse' || values.startStatus === 'onLoan',
+    group: 'groups.basic',
+  },
+  {
+    key: 'startReturnDate',
+    label: 'fields.expectedReturnDate',
+    type: 'date',
+    visibleWhen: (values) => values.startStatus === 'onLoan',
+    requiredWhen: (values) => values.startStatus === 'onLoan',
     group: 'groups.basic',
   },
 ];
@@ -95,8 +106,12 @@ export function DeviceCreateDialog({
         const shown = hint
           ? { ...field, readonlyWhen: () => true, readonlyHint: hint }
           : field;
-        // Where it starts, right after its name.
-        return key === 'name' ? [shown, ...START_FIELDS] : [shown];
+        // Where it starts, right after its name — the status and what it
+        // asks for — then its 负责人 (2026-10-16).
+        if (key === 'ownerId') return [];
+        if (key !== 'name') return [shown];
+        const owner = DEVICE_FIELDS.find((entry) => entry.key === 'ownerId')!;
+        return [shown, ...START_FIELDS, owner];
       })}
       initial={{
         ...(currentUserId ? { ownerId: currentUserId } : {}),
@@ -139,12 +154,22 @@ export function DeviceCreateDialog({
       }}
       submitting={mutations.create.isPending}
       error={mutations.create.error}
-      onSubmit={async ({ startStatus, assigneeId, ...values }) => {
+      onSubmit={async ({
+        startStatus,
+        assigneeId,
+        startReturnDate,
+        ...values
+      }) => {
+        const target = { targetType: 'person', targetId: assigneeId };
         const created = await mutations.create.mutateAsync({
           ...values,
           ...(startStatus === 'inUse' && assigneeId
-            ? { assignTo: { targetType: 'person', targetId: assigneeId } }
-            : {}),
+            ? { assignTo: target }
+            : startStatus === 'onLoan' && assigneeId
+              ? {
+                  loanTo: { ...target, expectedReturnDate: startReturnDate },
+                }
+              : {}),
         });
         onOpenChange(false);
         await onCreated(created);

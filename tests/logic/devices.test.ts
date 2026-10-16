@@ -227,6 +227,19 @@ describe('devices', () => {
       assigneeType: 'person',
       assigneeId: fixture.personId,
     });
+    // Or out on loan until a date.
+    const loaned = await createDevice({
+      loanTo: {
+        targetType: 'person',
+        targetId: fixture.otherPersonId,
+        expectedReturnDate: '2026-12-31',
+      },
+    });
+    expect(loaned).toMatchObject({
+      status: 'onLoan',
+      assigneeId: fixture.otherPersonId,
+      expectedReturnDate: '2026-12-31',
+    });
     // An assignment refused leaves no device behind.
     const refused = await post('', {
       modelId: fixture.modelId,
