@@ -334,7 +334,7 @@ function WorkColumn({
         card.records.some((record) => record.origin === 'pendingOnboarding') ? (
           <Link
             to='/onboarding-supply'
-            className='flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground'
+            className='flex items-center gap-0.5 text-xs text-link underline-offset-4 hover:underline'
           >
             {t('onboarding.supply.link')}
             <ArrowRight aria-hidden='true' className='size-3' />
@@ -345,7 +345,7 @@ function WorkColumn({
         card.key === 'deviceChecks' ? (
           <Link
             to='/device-sync'
-            className='flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground'
+            className='flex items-center gap-0.5 text-xs text-link underline-offset-4 hover:underline'
           >
             {t('workbench.seeAll')}
             <ArrowRight aria-hidden='true' className='size-3' />
@@ -359,7 +359,7 @@ function WorkColumn({
               <Link
                 key={link.url}
                 to={link.url}
-                className='flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground'
+                className='flex items-center gap-1 text-xs text-link underline-offset-4 hover:underline'
               >
                 {link.label}
                 <ArrowRight aria-hidden='true' className='size-3' />
