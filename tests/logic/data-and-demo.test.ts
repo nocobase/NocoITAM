@@ -999,7 +999,7 @@ describe('CSV import / export and demo data', () => {
           .where('ownerId', '=', 'admin')
           .execute()
       ).length;
-    expect(await owned('purchaseOrders')).toBe(2);
+    expect(await owned('purchaseOrders')).toBe(4);
     expect(await owned('repairs')).toBe(1);
     expect(await owned('disposals')).toBe(1);
     // And its records carry comment threads, three of which mention it.

@@ -4180,6 +4180,8 @@ export function createDemoService(dependencies: {
           quantity,
           unitPrice,
         });
+        // The two drafts are the importer's (2026-10-16), so 比较报价 — offered
+        // only to a draft's 负责人 or writer — is there to try.
         await queuedOrder({
           description: texts.itSpareOrder,
           reason: 'batchReplacement',
@@ -4188,6 +4190,7 @@ export function createDemoService(dependencies: {
           lines: [line('device', thinkpad, 2, 9999)],
           stage: 'draft',
           raisedDaysAgo: 3,
+          ownerId: importerId,
         });
         await queuedOrder({
           description: texts.salesPhoneOrder,
@@ -4197,6 +4200,7 @@ export function createDemoService(dependencies: {
           lines: [line('device', iphone, 3, 5999)],
           stage: 'draft',
           raisedDaysAgo: 2,
+          ownerId: importerId,
         });
         await queuedOrder({
           description: texts.airOrder,

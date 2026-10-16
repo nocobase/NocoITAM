@@ -118,8 +118,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   clearing, and an importer that held the set already keeps it. With the set
   it answers for a share of the to-dos (`importerId`, 2026-10-16), so its
   我负责的 is not empty: it decides one order and one disposal, owns two
-  orders awaiting receipt, an in-house repair and the disposal to carry
-  out, and counts in the open stocktake — the demo is written as 吴静 (`writerId`), who
+  orders awaiting receipt and the two drafts (so it can try 比较报价,
+  offered only to a draft's 负责人 or writer), an in-house repair and the
+  disposal to carry out, and counts in the open stocktake — the demo is written as 吴静 (`writerId`), who
   raises the requests 孙强 decides; repairs and audits are 周宇's. `demoAccountUsernames()`
   keeps the retired `manager` / `support`, and the pinyin usernames an English
   demo had before 2026-10-06, so a reset still removes them.
