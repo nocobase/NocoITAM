@@ -1,60 +1,66 @@
 # NocoITAM
 
-An IT asset management system built on [NocoBase 3](https://www.nocobase.com), the open-source enterprise application development platform built for AI. It covers devices, accessories, consumables, components and software entitlements, from purchase through assignment, loans, repairs, audits and disposal. It also handles joiners and leavers: what to issue to a new employee, and what to recover from one who is leaving. The workbench lists what the team has to do next. An AI assistant answers from the records a user may see and proposes every change for the user to confirm.
+English | [中文](README.zh-CN.md)
 
-## What NocoITAM does
-
-- **The register.** Five asset types, each on its own page:
-  - devices, tracked one by one, with asset tag, serial number, holder, location, warranty and depreciation;
-  - accessories, consumables and components, tracked as quantities in stock with a minimum level;
-  - software entitlements: perpetual licences and subscriptions, with seats, keys, renewal dates and compliance.
-
-  Every record has a page with its timeline, attachments and the records related to it. A category defines extra fields, which models of that category fill in as defaults for new devices.
-
-- **Lifecycle.**
-  - Devices can be assigned, loaned with a due date, reserved, transferred and returned.
-  - Stock is issued and taken back, and corrected with a reason.
-  - Seats are assigned and reclaimed.
-  - Repairs have an owner who completes them.
-  - Audits are counted one device at a time, and each difference is resolved on the device.
-  - Disposals go through approval before they are carried out, with the data wipe recorded.
-- **Procurement.** Purchase orders are raised, approved by a named approver, placed and received in one batch. Serial numbers can be pasted or scanned in. A new order can be filled by the assistant from pasted text or an uploaded quote. An order can also be received from a delivery note the assistant reads; nothing is written until the receiver confirms.
-- **Joiners and leavers.**
-  - **Joiners.**
-    - Each department has a standard onboarding kit, and each position can have its own.
-    - A joiner's card shows which device, stock item and seat they would get, one button each.
-    - Every joiner is planned together, earliest start date first. The plan counts stock, orders on their way and what leavers will hand back, and gives the last day to order anything still short.
-    - **Onboarding supply** lists every joiner and what must be bought.
-  - **Leavers.**
-    - A leaver's belongings tab lists everything still in their name, and can return items in batches.
-    - Requests they own are handed over to someone else.
-    - Their sign-in is disabled on the day they leave.
-- **Workbench.** The risks to look at come first: warranties and subscriptions about to end, over-allocated licences, stock below its minimum and devices not audited. Then come the team's to-dos, each with its own column: handovers, joiners to equip, approvals, orders to place and receive, disposals, repairs, overdue loans and audits in progress. A switch narrows the board to the reader's own work.
-- **Reports.** The reports cover the overview, the asset ledger, distribution, costs and depreciation, IT cost per person, warranty and expiry, software compliance, repairs, audit results and changes. Every table exports as CSV.
-- **Search and import.** One search covers every list, and can also hand a question to the assistant. CSV import and export work on the registers and the reference data.
-- **The AI assistant, Asset Steward.**
-  - **Chat.** A chat panel on every page answers from the records the user may read, through the application's `itam` commands. Every change it proposes is one plan the user confirms on a card, carried out as that user and never beyond their permissions.
-  - **Capture.** It fills a new purchase order from text or a document, and a new model or software product from what it knows.
-  - **Onboarding.** It reads delivery notes for receiving. When asked, it chooses among identical devices for a joiner, giving its reasons.
-  - **Skills.** How it works is written down in `ai/skills/`: catalog, receiving, onboarding and offboarding, put into the skill library on **AI → Skills** at the first start. The business notes on **Settings → System settings → AI assistant** add the company's own rules.
-- **Languages.** The interface is in Chinese or English.
+NocoITAM is an IT asset management system for IT teams, built on [NocoBase 3](https://www.nocobase.com). It keeps devices, accessories, consumables, components and software entitlements on one register, from purchase through assignment, loans, repairs, stocktakes and disposal; it equips joiners and recovers what leavers hold; and it checks the register against Microsoft Intune and Jamf Pro. It gives the team a set of AI agents: an assistant to talk to, and agents that review approvals and follow up the differences an MDM sync finds. Every agent works within the permissions of the person it works for, and every change it suggests waits for a person to accept it.
 
 ## Built on NocoBase 3
 
-NocoBase 3 provides the NocoBase App Foundation, which is the application infrastructure coding agents do not need to rebuild. It also provides NocoBase Solutions: complete applications to start from. NocoITAM is one of those Solutions. It was generated from NocoBase's application template and adds its own data model, services, API and pages on top of the App Foundation, which supplies:
+NocoBase 3 is an application foundation for building business software with coding agents. Its App Foundation provides the infrastructure every business application needs, so an application does not build it again. NocoITAM is a NocoBase Solution: a complete application generated from the NocoBase application template, with its own data model, services, API and pages on top of the foundation.
 
-| From the App Foundation                    | Used by NocoITAM for                                                                         |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| Application server, database layer and CLI | The server, migrations, configuration, builds and deployment                                 |
-| Application template and UI Library        | Layouts, routing, theme, sign-in pages and the components every page is built from           |
-| Authentication, users and authorization    | Sign-in, user management, and the roles as permission sets with record and field permissions |
-| Agents plugin                              | The assistant Asset Steward, its chat panel, model services, skills and usage                |
-| Notification and scheduler plugins         | The in-app inbox and the nightly tasks: employment status, maintenance, depreciation         |
-| File and i18n plugins                      | Attachments, model pictures and delivery notes, the interface languages                      |
+| From NocoBase 3                                      | What NocoITAM uses it for                                                                       |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Application server, database layer and CLI           | The server, migrations and seeds, configuration, builds and deployment                          |
+| Application template and UI Library                  | Layouts, routing, themes, sign-in pages, and the components every page is built from            |
+| Authentication, users and API keys                   | Sign-in, the IT team's accounts and personal API keys                                           |
+| Authorization (permission sets, record access rules) | The three roles, record and field permissions, page grants, and the Permission sets settings    |
+| Agents plugin                                        | Asset Steward, conversations, skills, model services, usage, and ITAM's own commands for agents |
+| Notification plugins                                 | The in-app inbox                                                                                |
+| Scheduler                                            | The nightly MDM sync, employment status updates, daily maintenance and monthly depreciation     |
+| File and i18n plugins                                | Attachments, model pictures and delivery notes, English and Chinese                             |
+
+## Agents
+
+All of ITAM's AI is built on the Agents plugin, and runs on the model services configured for the application (see [Configuration](#configuration)).
+
+**Asset Steward.** A chat panel opens from every page, and past conversations stay with it. Asset Steward answers from the records the person may read, reads attached files, and knows the record the person is looking at. When something should change, it proposes a plan (assign a device, raise an order, hand a leaver's records over) that the person confirms on a card. It acts as that person and never beyond their permissions. It also does the work that needs reading or judging, where that work is done:
+
+- fills a new purchase order from pasted text or an uploaded quote, and a new model or software product from what it knows;
+- compares suppliers' quotes for an order and suggests which to take;
+- reads a delivery note to receive an order against its lines (how far it may go is set on **Settings → Receiving from delivery notes**);
+- chooses a joiner's equipment from stock, with its reasons, when the onboarding owner asks;
+- judges a repair's fault and suggests whether to repair or replace;
+- sorts a batch of devices on **MDM review**.
+
+**Agent work.** Two agents work in the background, each started by events and switched on or off on **Agent team → Agent work**:
+
+| Agent              | Started by                                                   | What it produces                                                                                                                                                       |
+| ------------------ | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Approval assistant | A purchase order or a disposal sent for approval             | A review for the approver: what is asked and what it costs, whether stock or idle devices could serve, how such requests went before, a suggested decision and comment |
+| MDM follow-up      | Each MDM sync: the nightly one, and **Sync now** in Settings | A plan for the new differences: a device whose platform user is not its holder goes to its owner, a platform record the register lacks to the asset managers           |
+
+Their suggestions land in the person's **Inbox → AI suggestions**, where each is accepted or dismissed; nothing changes until a person decides.
+
+**Making it yours.** The method each agent follows is a skill, edited on **Agent team → Skills** (the starting ones are in `ai/skills/`); the company's own rules (what it buys and from whom, when a device is replaced, what needs approval) are the **business guidance** on **Agent team → Business guidance**. The agents, their models and the token usage are on **Agent team → Agents**, **Models** and **Usage**.
+
+## Other features
+
+- **The register.** Five asset types, each with its own list and record pages: devices, tracked one by one with asset tag, serial number, holder, location, warranty and depreciation; accessories, consumables and components, tracked as quantities with a minimum level; and software entitlements — perpetual licences and subscriptions — with seats, keys, renewal dates and compliance. A category defines extra fields, which its models fill in as defaults for new devices.
+- **Lifecycle.** Devices are assigned, loaned with a due date, reserved, transferred and returned; stock is issued, taken back and corrected with a reason; seats are assigned and reclaimed. Repairs have an owner who completes them, stocktakes are counted one device at a time with each difference resolved, and disposals are approved before they are carried out, with the data wipe recorded.
+- **Procurement.** Purchase orders are raised, approved by a named approver, placed and received, with serial numbers pasted or scanned in.
+- **Joiners and leavers.** Each department, and each position, has an onboarding kit. A joiner's card shows the device, stock and seats they would get; every joiner is planned together, counting stock, orders on their way and what leavers will hand back, and **Onboarding supply** lists what must still be bought. A leaver's belongings tab lists everything still in their name and returns it in batches, the records they own are handed over, and their sign-in is disabled on their last day.
+- **MDM.** Microsoft Intune and Jamf Pro are read every night and matched to the register by serial number. **MDM review** lists what disagrees — a different user or status, a device silent too long, a platform record not on the register, a device the platform does not manage — to link, register, exempt or dismiss, and each device's page shows what its platform reports.
+- **To-dos.** The risks first — warranties and subscriptions ending, over-allocated licences, stock below its minimum, devices not counted — then the team's work in columns: handovers, joiners to equip, approvals, orders to place and receive, disposals, repairs, overdue loans and stocktakes in progress, for the reader's own or the team's.
+- **Inbox.** AI suggestions waiting on the reader, and the notifications: approvals, decisions, mentions, replies, stocktakes and overdue loans.
+- **Comments.** Every record's history takes comments with @-mentions and files.
+- **Reports.** Overview, asset ledger, distribution, costs and depreciation, IT cost per person, warranty and expiry, software compliance, repairs, stocktake results and changes; every table exports as CSV.
+- **Global search.** ⌘K / Ctrl+K searches every kind of record, and hands a question to Asset Steward.
+- **Import and export.** CSV on the registers and the reference data.
+- **Languages.** The interface is in English or Chinese.
 
 ## Quick start
 
-Use Node 24 or later and pnpm 10 or later.
+Use Node 24 or later and the pnpm version pinned in `package.json`.
 
 ```bash
 pnpm install
@@ -62,20 +68,26 @@ pnpm nocobase config init
 pnpm dev
 ```
 
-`config init` writes `config.yml` from `config.example.yml` with fresh secrets. `pnpm dev` prints the URL to open, which is `http://127.0.0.1:13000/main/` by default. Sign in with the initial administrator set under `users.initialAdmin` in `config.yml`. That is `nocobase` / `admin123` unless changed; change it before the first start of a real deployment.
+`config init` writes `config.yml` from `config.example.yml` with a new master key under `secrets.keys`. Keep that key: what the application stores encrypted (model keys, MDM credentials) cannot be read without it. `pnpm dev` prints the address to open, `http://127.0.0.1:13000/main/` by default. Sign in with the initial administrator from `config.yml` (`nocobase` / `admin123` unless changed; change it before a real deployment).
 
-A banner then offers the **demo data**: a sample dataset in Chinese or English, imported from **Settings → System settings → Demo data** and removable there. It comes with its own IT accounts, whose password is the username followed by `123`:
+### Demo data
+
+A banner offers the **demo data**, imported and removed on **Settings → Demo data**, in English or Chinese: a company of about forty people, its devices, stock and licences with years of history, purchase orders, repairs, stocktakes and disposals, a leaver and two joiners, and demo Intune and Jamf platforms, so the MDM features can be tried without connecting anything. It brings IT accounts whose password is the username followed by `123`:
 
 | Language | IT asset managers                                | IT support             | Leaver (sign-in disabled) |
 | -------- | ------------------------------------------------ | ---------------------- | ------------------------- |
-| Chinese  | `sunqiang` (孙强), `wujing` (吴静)               | `zhouyu` (周宇)        | `chenjie` (陈杰)          |
 | English  | `daniel` (Daniel Brooks), `emily` (Emily Carter) | `ryan` (Ryan Mitchell) | `mark` (Mark Taylor)      |
+| Chinese  | `sunqiang` (孙强), `wujing` (吴静)               | `zhouyu` (周宇)        | `chenjie` (陈杰)          |
 
-Only IT signs in. Employees are people in the register: they hold devices, seats and stock, but they have no accounts. Other accounts are created on **Settings → Users**, each with one or more roles; there is no self-registration.
+The administrator who imports it becomes an IT asset manager too, with approvals, orders, a repair and a stocktake of their own. Removing the demo data removes all of it, its accounts and its notifications.
+
+### Roles
+
+Only IT signs in: employees are people in the register who hold devices, seats and stock, without accounts. Accounts are created on **Settings → Users**, each with one or more roles.
 
 | Role             | What it can do                                                                                     |
 | ---------------- | -------------------------------------------------------------------------------------------------- |
-| Administrator    | Configures the system and sees everything                                                          |
+| Administrator    | Configures ITAM, its agents and its integrations, and sees everything                              |
 | IT asset manager | Everything in the register, including approving purchase orders and disposals and deleting records |
 | IT support       | The same work as the asset manager, without approving or deleting                                  |
 
@@ -83,20 +95,11 @@ The roles can be adjusted on **Settings → Permission sets**.
 
 ## Configuration
 
-`config.yml` is gitignored because it holds the secrets; `config.example.yml` documents every option. Change a value with `pnpm nocobase config set key=value`.
+`config.yml` holds the secrets and is not committed; `config.example.yml` documents every option. Change a value with `pnpm nocobase config set key=value`.
 
-**Language.** `i18n.defaultLocale` (`zh-CN` or `en-US`) is the language the application starts in. It is also the language the seeded categories, departments and business notes are written in when a new database is created. Choose it before the first start.
+**Language.** `i18n.defaultLocale` (`en-US` or `zh-CN`, or `APP_DEFAULT_LOCALE`) is the language the application starts in, and the language the seeded categories, locations, departments and business guidance are written in when a database is created. Choose it before the first start.
 
-**Secrets.** `secrets.keys` holds the master key the application encrypts stored credentials with, the model services' keys among them; `config init` writes one. A configuration written before this needs one added (`openssl rand -hex 32`), or the assistant's model services cannot be saved:
-
-```yaml
-secrets:
-  keys:
-    - version: 1
-      key: <64 hex characters>
-```
-
-**AI.** Declare at least one LLM service in `config.yml`, with its key written as the value itself. At the first start each becomes a model service on **AI → Model services**, and the assistant Asset Steward is created on **AI → Agents** with every chat model, in the order of `sort`, its first the default:
+**AI.** Declare at least one model service under `ai.llmServices` in `config.yml`, with its key written as the value itself (a `${NAME}` placeholder is not expanded; `pnpm nocobase config set --from-env ai.llmServices.deepseek.options.apiKey=DEEPSEEK_API_KEY` takes it from the environment):
 
 ```yaml
 ai:
@@ -113,28 +116,17 @@ ai:
         apiKey: <key>
 ```
 
-A `${NAME}` placeholder is not expanded and would be sent as the key. To take a key from the environment, run `pnpm nocobase config set --from-env ai.llmServices.deepseek.options.apiKey=DEEPSEEK_API_KEY`. After the first start the services and Asset Steward belong to their pages: a service or agent changed there is never overwritten from `config.yml`.
+On start, a service not yet on **Agent team → Models** is created there, and the page manages it afterwards; other providers are added on that page with their key. Asset Steward uses the services in the order of `sort`, the first as its default.
 
-**Notifications.** In-app notifications need a channel named `in-app`:
+**Notifications.** The in-app inbox needs the channel `in-app` (`notification.channels.in-app: { provider: in-app }`, already in `config.example.yml`).
 
-```yaml
-notification:
-  channels:
-    in-app:
-      provider: in-app
-```
+**MDM.** Connect Intune and Jamf Pro on **Settings → MDM**, or under `deviceSync` in `config.yml` (`INTUNE_TENANT_ID`, `INTUNE_CLIENT_ID`, `INTUNE_CLIENT_SECRET`, `JAMF_URL`, `JAMF_CLIENT_ID`, `JAMF_CLIENT_SECRET`), which then wins and shows read-only. Intune needs an Entra ID app registration with the Microsoft Graph application permission `DeviceManagementManagedDevices.Read.All`; Jamf Pro 10.49 or later an API client whose role holds only Read Computers and Read Mobile Devices.
 
-**Scheduled tasks.** Three run every night and need no setup:
+**Scheduled tasks.** Four run every night and need no setup: the MDM sync at 01:30, employment status at 01:50 (joiners start on their first day, leavers leave on their last), the daily maintenance at 02:00 (renewals, lapsed reservations, overdue loans), and depreciation at 03:00 on the first of each month. Each run shows on **Settings → Scheduled tasks**; the time zone, thresholds, numbering and onboarding lead times are on **Settings → General**.
 
-- updating employment status at 01:50: joiners start on their first day, leavers leave on their last;
-- the daily maintenance at 02:00: renewals, lapsed reservations, overdue loans;
-- depreciation at 03:00 on the first of each month.
+**Where it is served.** `APP_BASE_PATH` is the mount path (`/main` by default) and `APP_PUBLIC_ORIGIN` the public origin without the path. A deployment must set the origin: without it, the browser's writes are refused with `403`.
 
-Each run shows on **Settings → Scheduled tasks**. The time zone, thresholds, numbering and the onboarding lead times are on **Settings → System settings**.
-
-**Where it is served.** `APP_BASE_PATH` is the mount path (`/main` by default). `app.publicOrigin`, or `APP_PUBLIC_ORIGIN`, is the public origin the browser sees: the scheme and host, without the path. A deployment must set it. Without it, the browser's writes — saving a record, importing the demo — are refused with `403`.
-
-**Database.** SQLite is the default; migrations and seeds run on startup. For PostgreSQL, add `@nocobase/db-postgres` and run `pnpm nocobase config init --dialect postgres --force`.
+**Database.** SQLite under `storage/` by default; migrations and seeds run on start. For PostgreSQL, add `@nocobase/db-postgres` and run `pnpm nocobase config init --dialect postgres --force`.
 
 ## Deployment
 
@@ -144,21 +136,21 @@ Build an archive for the server. It holds the code and its production dependenci
 pnpm build --target linux-x64 --tar   # writes storage/exports/dist.tar.gz
 ```
 
-- **On your own server, with the NocoBase app-installer (recommended).** The server needs Node.js 24 and a global pm2. The installer unpacks the archive into its own directory, writes `config.yml`, applies the migrations and runs the application under pm2. An upgrade backs up the SQLite databases first and rolls back when the new release fails to start.
+- **With the NocoBase app-installer (recommended).** The server needs Node.js 24 and a global pm2. The installer unpacks the archive, writes `config.yml`, applies the migrations and runs the application under pm2; an upgrade backs up the SQLite databases first and rolls back if the new release fails to start.
 
   ```bash
-  npx @nocobase/app-installer install /srv/nocobase/itam --archive dist.tar.gz --origin https://itam.example.com --base-path /itam
-  npx @nocobase/app-installer upgrade --dir /srv/nocobase/itam --archive dist.tar.gz
+  npx @nocobase/app-installer@beta install /srv/nocobase/itam --archive dist.tar.gz --origin https://itam.example.com --base-path /itam
+  npx @nocobase/app-installer@beta upgrade --dir /srv/nocobase/itam --archive dist.tar.gz
   ```
 
-- **By hand.** Unpack the archive. Inside `dist/`, run `pnpm nocobase config init` and `pnpm nocobase config check`. Then run `node ./dist/server/standalone.js` under a service manager, keeping `config.yml` and `storage/` beside `dist/` across updates.
-- **Docker.** Build with `docker build -t nocoitam .`. Mount `config.yml` read-only at `/app/config.yml` and a volume at `/app/storage`, and choose the path with `-e APP_BASE_PATH=/itam`.
+- **By hand.** Unpack the archive, run `pnpm nocobase config init` and `pnpm nocobase config check` inside `dist/`, and run `node ./dist/server/standalone.js` under a service manager, keeping `config.yml` and `storage/` beside `dist/` across updates.
+- **Docker.** Build with `docker build -t nocoitam .`, mount `config.yml` read-only at `/app/config.yml` and a volume at `/app/storage`, and choose the path with `-e APP_BASE_PATH=/itam`.
 
-Behind a reverse proxy, keep the public host and protocol and pass WebSocket upgrades. After deploying, check `/<base path>/api/healthz` and set the AI keys. Back up the database and `storage/` before upgrading.
+Behind a reverse proxy, keep the public host and protocol and pass WebSocket upgrades. After deploying, set the AI keys and check `<base path>/api/healthz`. Back up the database and `storage/` before upgrading.
 
 ## Development
 
-`AGENTS.md` is the guide for working on the code, with Claude Code or any other agent, and `.agents/rules/` holds the rules for each area it indexes; `docs/IMPLEMENTATION_PLAN.md` records the decisions taken. The main commands:
+`AGENTS.md` is the guide for working on the code, with Claude Code or any other coding agent; `.agents/rules/` holds the rules for each area it indexes, and `docs/IMPLEMENTATION_PLAN.md` the decisions taken. The main commands:
 
 | Command                           | What it does                                                         |
 | --------------------------------- | -------------------------------------------------------------------- |
