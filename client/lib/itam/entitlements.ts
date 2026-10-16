@@ -132,6 +132,8 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     // quantity works the same way.
     readonlyWhen: (values) => values.id !== undefined,
     column: true,
+    // Leads 基本信息 on the detail page (`EntitlementLead`).
+    detail: false,
     group: 'groups.seats',
   },
   {
@@ -140,6 +142,8 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     type: 'number',
     form: false,
     column: true,
+    // Leads 基本信息 on the detail page (`EntitlementLead`).
+    detail: false,
     group: 'groups.seats',
   },
   {
@@ -149,6 +153,8 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.availableSeats',
     type: 'number',
     form: false,
+    // Leads 基本信息 on the detail page (`EntitlementLead`).
+    detail: false,
     group: 'groups.seats',
   },
   {
@@ -158,6 +164,8 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     options: options('complianceStatus', COMPLIANCE_STATUSES),
     column: true,
     form: false,
+    // Leads 基本信息 on the detail page (`EntitlementLead`).
+    detail: false,
     group: 'groups.seats',
   },
   {

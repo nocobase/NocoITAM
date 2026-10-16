@@ -5,6 +5,7 @@ import { useState, type ReactElement } from 'react';
 import { useParams } from 'react-router';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
+import { InfoRow } from '@/components/itam/detail-page';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { purchasesRequest } from '@/lib/itam/purchases';
 import { DataTable } from '@/components/itam/data-table';
@@ -112,6 +113,9 @@ export const entitlementDomain: DomainConfig = {
   // the maintenance date all have a row in the information card, and a strip
   // repeating them only pushed the card down.
   summaryTimestamps: false,
+  // 合规状态, the seat counts and who holds the seats lead 基本信息
+  // (2026-10-16), as a device's status and holder do.
+  BasicLead: EntitlementLead,
   // Assigning a seat is what this page is for; deletion sits in the "more"
   // menu, as it does on a device or a stock item.
   deleteInMenu: true,
@@ -580,5 +584,92 @@ export default function EntitlementSeatsTab(): ReactElement {
         )}
       />
     </div>
+  );
+}
+
+/** Seat holders named on the card before 等 N 个 sends the reader to 席位. */
+const LEAD_HOLDERS = 5;
+
+/**
+ * The top of an entitlement's 基本信息, above 负责人: whether its seats
+ * are in order, how many there are, are taken and are free, and who holds
+ * them — the first few by name, the rest counted.
+ */
+function EntitlementLead({
+  record,
+}: {
+  readonly record: ItamRecord;
+}): ReactElement {
+  const { t } = useTranslation();
+  const api = useApi();
+  const id = text(record.id);
+  const seats = useQuery({
+    queryKey: ['itam', ENTITLEMENTS_PATH, 'seats', id],
+    queryFn: async () =>
+      (
+        await api.request<{
+          data: { seats: ItamRecord[] };
+        }>({ path: `${ENTITLEMENTS_PATH}/${id}/seats` })
+      ).data,
+    enabled: Boolean(id),
+  });
+  const held = seats.data?.seats ?? [];
+  const shown = held.slice(0, LEAD_HOLDERS);
+  const idsOf = (type: string) =>
+    shown
+      .filter((seat) => seat.holderType === type && seat.holderId)
+      .map((seat) => text(seat.holderId));
+  const names = useReferenceNames([
+    { collection: 'people', ids: idsOf('person') },
+    { collection: 'devices', ids: idsOf('device') },
+  ]);
+  const count = (value: unknown) =>
+    value === null || value === undefined || value === '' ? '—' : text(value);
+  const compliance = text(record.complianceStatus);
+  return (
+    <>
+      <InfoRow label={t('fields.complianceStatus')}>
+        {compliance ? t(`enums.complianceStatus.${compliance}`) : '—'}
+      </InfoRow>
+      <InfoRow label={t('fields.seatCount')}>{count(record.seatCount)}</InfoRow>
+      <InfoRow label={t('fields.assignedCount')}>
+        {count(record.assignedCount)}
+      </InfoRow>
+      <InfoRow label={t('fields.availableSeats')}>
+        {count(record.availableSeats)}
+      </InfoRow>
+      <InfoRow label={t('stock.holder')}>
+        {held.length === 0 ? (
+          '—'
+        ) : (
+          <span className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+            {shown.map((seat) =>
+              seat.holderId ? (
+                <HolderCell
+                  key={text(seat.id)}
+                  holderType={text(seat.holderType)}
+                  holderId={text(seat.holderId)}
+                  names={
+                    names[seat.holderType === 'device' ? 'devices' : 'people']
+                  }
+                />
+              ) : (
+                // A subscription seat may name an account and nobody yet.
+                <span key={text(seat.id)} className='wrap-anywhere'>
+                  {text(seat.account) || '—'}
+                </span>
+              ),
+            )}
+            {held.length > shown.length ? (
+              <span className='text-muted-foreground'>
+                {t('entitlements.moreHolders', {
+                  count: held.length - shown.length,
+                })}
+              </span>
+            ) : null}
+          </span>
+        )}
+      </InfoRow>
+    </>
   );
 }

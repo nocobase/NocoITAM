@@ -1358,6 +1358,7 @@ const messages = {
     },
   },
   entitlements: {
+    moreHolders: 'and {{count}} more',
     title: 'Entitlements',
     object: 'entitlement',
     new: 'New entitlement',

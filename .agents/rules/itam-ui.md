@@ -101,7 +101,10 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   summary strip (2026-10-16). A stock item does the same through the
   domain's `BasicLead` slot (`StockLead` in `stock-domain.tsx`): 在库, 在外
   (累计消耗 for a consumable) and, for what comes back, 持有人 with how many
-  each, above 负责人; the 数量 group keeps 累计入库 and the minimum. It used to sit at the foot of 系统 with the stamps nobody
+  each, above 负责人; the 数量 group keeps 累计入库 and the minimum. An
+  entitlement too (`EntitlementLead` in `entitlement-domain.tsx`): 合规状态,
+  总席位, 已分配, 可分配 and 持有人 — the first five, then 等 N 个 — so it
+  has no 席位 group. It used to sit at the foot of 系统 with the stamps nobody
   edits, and went unseen; for a day it was in the summary strip, which was
   given back to where the record stands. It is edited in place like any
   row, so the handover rule and the read-only cases are unchanged. Neither the purchase order nor the disposal has a

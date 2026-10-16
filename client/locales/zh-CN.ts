@@ -1312,6 +1312,7 @@ const zhCN: AppResource = {
     },
   },
   entitlements: {
+    moreHolders: '等 {{count}} 个',
     title: '授权',
     object: '授权',
     new: '创建授权',
