@@ -290,6 +290,7 @@ function DevicesList(): ReactElement {
           header, so they open below the title rather than beside it. */}
       <SearchBar
         value={q}
+        placeholder={t('common.filterIn', { list: t('devices.title') })}
         open={searchOpen}
         onOpenChange={setSearchOpen}
         forceOpen={Boolean(

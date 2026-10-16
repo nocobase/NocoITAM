@@ -407,6 +407,7 @@ function DomainList({
           opens below the title rather than beside it. */}
       <SearchBar
         value={q}
+        placeholder={t('common.filterIn', { list: t(`${domain.i18n}.title`) })}
         open={searchOpen}
         onOpenChange={setSearchOpen}
         forceOpen={filterActive}
