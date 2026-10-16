@@ -659,7 +659,7 @@ function TimelineRow({
                   </span>
                 ) : null}
                 {item.origin && item.origin !== 'human' ? (
-                  <span className='ml-1.5 text-xs text-muted-foreground'>
+                  <span className='ml-1.5 text-muted-foreground'>
                     · {t(`history.origin.${item.origin}`)}
                   </span>
                 ) : null}
