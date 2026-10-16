@@ -282,6 +282,13 @@ be read whole. The settings pages the template owns (users, permission
 sets, API keys, scheduled tasks) have their own `TruncatedText` with the
 bound on the cell.
 
+## A label's qualifier
+
+A Chinese label that carries a unit or a qualifier writes it after a space in
+half-width brackets — 更换周期 (月), 授权 (订阅), 附件 (可选), 全部执行 (3) —
+not in full-width ones (2026-10-16). A sentence keeps full-width brackets
+around an aside, as Chinese prose does.
+
 ## Menus and destructive actions
 
 `DropdownMenuContent` sizes to its content and never goes below the trigger
