@@ -2781,7 +2781,7 @@ const zhCN: AppResource = {
   ai: {
     ask: '问 AI',
     conversations: {
-      title: 'AI 对话',
+      title: '全部对话',
       new: '新对话',
       nothingOpen: '从左边选一个对话，或者开始新对话',
       viewAll: '在页面中查看全部对话',

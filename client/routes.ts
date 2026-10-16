@@ -254,6 +254,8 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       name: 'agent-chat-list',
       path: '/agent-chat',
       auth: 'required',
+      // No menu entry, so the header's trail names it here, as NocoCRM's.
+      breadcrumb: { title: 'ai.conversations.title' },
       componentLoader: () => import('./pages/itam/agent-chat.js'),
       // One page for the list and the conversation open beside it, as
       // NocoCRM's (2026-10-16): the conversation's address is a child that
