@@ -212,6 +212,13 @@ export interface PeopleStats {
 }
 
 export interface MasterDataService {
+  /**
+   * Told when someone has just left — by the button, an edit of the leave
+   * date or the nightly job — once it is committed (2026-10-17): the
+   * offboarding work agent reviews what they hold. Set by the agents'
+   * provider; its failure is its own.
+   */
+  onLeft?: (personId: string, actorId: string | null) => void;
   definition(collection: string): ItamCollectionDefinition | undefined;
   list(
     collection: string,
@@ -1055,9 +1062,14 @@ export function createMasterDataService(
         if (
           values.employmentStatus === 'left' &&
           previous.employmentStatus !== 'left'
-        )
+        ) {
           await leavers?.left(id, actorId);
-        else if (
+          try {
+            this.onLeft?.(id, actorId);
+          } catch {
+            // The listener's failure is its own.
+          }
+        } else if (
           values.employmentStatus !== 'left' &&
           previous.employmentStatus === 'left'
         )
@@ -1460,6 +1472,11 @@ export function createMasterDataService(
         await this.snapshotBelongings(id, connection);
       });
       await leavers?.left(id, actorId);
+      try {
+        this.onLeft?.(id, actorId);
+      } catch {
+        // The listener's failure is its own.
+      }
       return this.personHoldings(id);
     },
 
@@ -1503,6 +1520,11 @@ export function createMasterDataService(
           await this.snapshotBelongings(id, connection);
         });
         await leavers?.left(id);
+        try {
+          this.onLeft?.(id, null);
+        } catch {
+          // The listener's failure is its own.
+        }
       }
       // The other direction, which was missing: a leave date cleared or moved
       // out again leaves somebody marked as left for ever, and extending a
@@ -1659,7 +1681,11 @@ export function createMasterDataService(
         for (const condition of related.where ?? [])
           query =
             condition.value === null
-              ? query.where(condition.field, condition.not ? 'is not' : 'is', null)
+              ? query.where(
+                  condition.field,
+                  condition.not ? 'is not' : 'is',
+                  null,
+                )
               : query.where(
                   condition.field,
                   condition.not ? '!=' : '=',

@@ -42,6 +42,18 @@ export const WORK_AGENTS: Readonly<
     skill: 'approval-review',
     task: 'reviewing purchase orders and disposals sent for approval, for the person asked to approve them',
   },
+  // Step 2 (2026-10-17). The offboarding skill is Noco's as well: the
+  // same method, asked in a conversation or run on its own.
+  offboarding: {
+    name: 'Offboarding',
+    skill: 'offboarding',
+    task: 'taking back what a leaver holds: for each device, stock item and seat, where it goes, for the IT person it belongs to',
+  },
+  renewalReview: {
+    name: 'Renewal review',
+    skill: 'renewal-review',
+    task: 'weighing a licence or subscription coming up for renewal: renew, renew with fewer seats, or let it lapse, for its 负责人',
+  },
 };
 
 /** A work agent's instructions: what it does, then the rules every work keeps. */

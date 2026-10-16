@@ -4,6 +4,13 @@ import type { ModelSession } from './ai-model.js';
 import { reviewPrompt, reviewShape } from './approval-review.js';
 import { APPROVAL_REVIEW_EVALS } from './evals/approval-review.js';
 import { DEVICE_SYNC_EVALS } from './evals/device-sync.js';
+import {
+  OFFBOARDING_EVALS,
+  type OffboardingChange,
+} from './evals/offboarding.js';
+import { RENEWAL_REVIEW_EVALS } from './evals/renewal-review.js';
+import { offboardingPrompt, offboardingShape } from './offboarding-review.js';
+import { renewalPrompt, renewalShape } from './renewal-review.js';
 
 /**
  * Eval sets for ITAM's method skills (device sync, step 4, 2026-10-15; the
@@ -78,13 +85,16 @@ export const SKILL_EVALS: Readonly<Record<string, readonly EvalCase[]>> = {
 };
 
 /**
- * Every skill with an eval set: the device-sync decisions above, and
+ * Every skill with an eval set: the device-sync decisions above,
  * 审批审阅's recommendations (2026-10-16), scored on the recommendation
- * alone.
+ * alone, and 离职回收's changes and 授权续费's recommendations
+ * (2026-10-17), each asked as its work agent asks.
  */
 export const EVAL_SKILLS: readonly string[] = [
   ...Object.keys(SKILL_EVALS),
   'approval-review',
+  'offboarding',
+  'renewal-review',
 ];
 
 const DECISIONS = z.object({
@@ -150,6 +160,8 @@ export async function runEval(options: {
   readonly signal?: AbortSignal;
 }): Promise<EvalReport> {
   if (options.skill === 'approval-review') return runReviewEval(options);
+  if (options.skill === 'renewal-review') return runRenewalEval(options);
+  if (options.skill === 'offboarding') return runOffboardingEval(options);
   const cases = SKILL_EVALS[options.skill] ?? [];
   const results: EvalCaseResult[] = [];
   for (const item of cases) {
@@ -227,4 +239,153 @@ async function runReviewEval(options: {
     cases: results,
     ranAt: new Date().toISOString(),
   };
+}
+
+function reportOf(
+  skill: string,
+  results: readonly EvalCaseResult[],
+): EvalReport {
+  return {
+    skill,
+    passed: results.filter((result) => result.passed).length,
+    total: results.length,
+    cases: results,
+    ranAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * 授权续费's eval set: each case asked as a real review asks it
+ * (`renewalPrompt`), passing when the recommendation is one the case
+ * accepts.
+ */
+async function runRenewalEval(options: {
+  readonly instructions: string;
+  readonly open: (system: string) => Promise<ModelSession | null>;
+  readonly signal?: AbortSignal;
+}): Promise<EvalReport> {
+  const results: EvalCaseResult[] = [];
+  for (const item of RENEWAL_REVIEW_EVALS) {
+    const session = await options.open('');
+    if (!session) throw new Error('No model to ask');
+    let got: string | null;
+    try {
+      const answer = await session.askJson(
+        renewalPrompt({
+          skill: options.instructions,
+          material: item.material,
+          language: 'Chinese',
+          revision: null,
+        }),
+        renewalShape,
+        options.signal,
+      );
+      got = answer?.recommendation ?? null;
+    } catch {
+      got = null;
+    }
+    const passed = got !== null && item.expect.includes(got as never);
+    results.push({
+      id: item.id,
+      title: item.title,
+      passed,
+      expected: item.expect,
+      got: got === null ? null : [got],
+      misses: passed ? [] : [item.id],
+    });
+  }
+  return reportOf('renewal-review', results);
+}
+
+/** A change as the report shows it: `return:inRepair`, `transfer:p-join`. */
+function changeLabel(itemId: string, change: OffboardingChange): string {
+  const detail = change.nextStatus ?? change.targetPersonId;
+  return `${itemId}=${change.action}${detail ? `:${detail}` : ''}`;
+}
+
+/**
+ * 离职回收's eval set: each case asked as a real review asks it
+ * (`offboardingPrompt`). A case passes when every item the case names got
+ * one of the changes it accepts — the same action, and the next status or
+ * the joiner where the accepted change gives one — and an item that must
+ * get none got none.
+ */
+async function runOffboardingEval(options: {
+  readonly instructions: string;
+  readonly open: (system: string) => Promise<ModelSession | null>;
+  readonly signal?: AbortSignal;
+}): Promise<EvalReport> {
+  const results: EvalCaseResult[] = [];
+  for (const item of OFFBOARDING_EVALS) {
+    const session = await options.open('');
+    if (!session) throw new Error('No model to ask');
+    let changes: readonly {
+      itemId: string;
+      action: OffboardingChange['action'];
+      nextStatus: string | null;
+      targetPersonId: string | null;
+    }[] = [];
+    let answered = false;
+    try {
+      const answer = await session.askJson(
+        offboardingPrompt({
+          skill: options.instructions,
+          material: item.material,
+          language: 'Chinese',
+          revision: null,
+        }),
+        offboardingShape,
+        options.signal,
+      );
+      if (answer) {
+        changes = answer.changes;
+        answered = true;
+      }
+    } catch {
+      answered = false;
+    }
+    const misses = Object.entries(item.expect)
+      .filter(([itemId, accepted]) => {
+        const made = changes.filter((change) => change.itemId === itemId);
+        if (!accepted.length) return made.length > 0;
+        if (made.length !== 1) return true;
+        const [change] = made;
+        return !accepted.some(
+          (ok) =>
+            ok.action === change.action &&
+            (!ok.nextStatus ||
+              (change.nextStatus ?? 'inStock') === ok.nextStatus) &&
+            (!ok.targetPersonId || change.targetPersonId === ok.targetPersonId),
+        );
+      })
+      .map(([itemId]) => itemId);
+    results.push({
+      id: item.id,
+      title: item.title,
+      passed: answered && misses.length === 0,
+      expected: Object.entries(item.expect).flatMap(([itemId, accepted]) =>
+        accepted.length
+          ? accepted.map((change) => changeLabel(itemId, change))
+          : [`${itemId}=none`],
+      ),
+      got: answered
+        ? changes.map((change) =>
+            changeLabel(change.itemId, {
+              action: change.action,
+              ...(change.nextStatus
+                ? {
+                    nextStatus:
+                      change.nextStatus as OffboardingChange['nextStatus'],
+                  }
+                : {}),
+              ...(change.targetPersonId
+                ? { targetPersonId: change.targetPersonId }
+                : {}),
+            }),
+          )
+        : null,
+      misses,
+    });
+  }
+  return reportOf('offboarding', results);
 }

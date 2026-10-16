@@ -3130,6 +3130,8 @@ const messages = {
         correct_device_status: 'Correct a device status',
         assign_seat: 'Assign a seat',
         reclaim_seats: 'Reclaim seats',
+        adjust_entitlement_seats: 'Change the seat count',
+        set_entitlement_auto_renew: 'Change auto-renewal',
         create_purchase_order: 'Draft a purchase order',
         create_disposal: 'Draft a disposal',
         update_master_record: 'Update a model or software product',
@@ -3308,7 +3310,7 @@ const messages = {
     category: 'AI suggestions',
     waiting: 'To do',
     handled: 'Handled',
-    openRecord: 'Open the request',
+    openRecord: 'Open the record',
     nothingPicked: 'Pick an AI suggestion to read it.',
   },
   review: {
@@ -3357,6 +3359,66 @@ const messages = {
     superseded: 'Handled elsewhere',
     redone: 'Redone',
   },
+  suggestion: {
+    agents: {
+      offboarding: 'Offboarding',
+      renewalReview: 'Renewal review',
+    },
+    working: 'Noco is drafting a suggestion…',
+    askAgain: 'Draft it again',
+    recommendation: {
+      renew: 'Renew as it is',
+      reduce: 'Renew with fewer seats',
+      lapse: 'Let it lapse',
+    },
+    saving: 'Saves a year',
+    changes: 'Changes to make',
+    nothingToChange: 'Nothing needs to change.',
+    change: {
+      return: 'Return {{subject}} as {{status}}',
+      transfer: 'Hand {{subject}} to {{target}}',
+      takeBack: 'Take back {{subject}} × {{quantity}}',
+      reclaim: 'Reclaim the seat: {{subject}}',
+      adjustSeats: 'Set the seat count to {{quantity}}',
+      stopAutoRenew: 'Turn off auto-renewal of {{subject}}',
+      startAutoRenew: 'Turn on auto-renewal of {{subject}}',
+    },
+    nextStatus: {
+      inStock: 'in stock',
+      inRepair: 'in repair',
+      pendingDisposal: 'pending disposal',
+    },
+    basis: 'Basis and details',
+    reasons: 'Reasons',
+    notes: 'Left to people',
+    risks: 'Risks',
+    execute: 'Carry out {{count}}',
+    agree: 'Agree',
+    accepted: 'Suggestion carried out',
+    stoppedAt: 'Step {{position}} did not finish: {{message}}',
+    redoPlaceholder: {
+      offboarding:
+        'Say what to change, such as "send the laptop for repair first"',
+      renewalReview: 'Say what to change, such as "keep 20 seats"',
+    },
+    ask: {
+      offboarding: 'Ask Noco for a recovery plan',
+      renewalReview: 'Ask Noco about renewing',
+    },
+    offer: {
+      offboarding: 'This leaver still holds things.',
+      renewal: 'This subscription ends on {{date}}.',
+      maintenance: "This licence's maintenance ends on {{date}}.",
+    },
+    failed: {
+      unavailable: 'No model is available; the suggestion was not drafted.',
+      unreadable:
+        "The model's reply could not be read; the suggestion was not drafted.",
+      timedOut: 'Drafting the suggestion timed out.',
+      notFound: 'This record is gone.',
+      failed: 'The suggestion was not drafted.',
+    },
+  },
   agentWork: {
     title: 'Agent work',
     description:
@@ -3371,8 +3433,6 @@ const messages = {
     configure: 'Set its model and instructions',
     whenItRuns: 'When it runs',
     runsOnItsOwn: 'Runs on its own',
-    byHand:
-      'Whatever is switched off, an approver can always ask Noco to review a request.',
     howItDid: 'How it did',
     last7: 'Last 7 days',
     last30: 'Last 30 days',
@@ -3385,7 +3445,7 @@ const messages = {
       acceptance: 'Acceptance rate',
     },
     runs: 'Runs',
-    runsHint: 'Last 90 days, on requests you may read',
+    runsHint: 'Last 90 days, on records you may read',
     filters: {
       all: 'All',
       pending: 'Waiting',
@@ -3398,6 +3458,8 @@ const messages = {
     startedBy: {
       submitted: 'Sent for approval',
       asked: 'Asked by a person',
+      left: 'Marked as left',
+      daily: 'Daily check',
     },
     status: {
       running: 'Running',
@@ -3415,6 +3477,38 @@ const messages = {
         submitted: {
           title: 'Sent for approval',
           hint: 'A purchase order or a disposal goes to its approver.',
+        },
+      },
+      byHand:
+        'Whatever is switched off, an approver can always ask Noco to review a request.',
+    },
+    offboarding: {
+      name: 'Offboarding',
+      description:
+        'Once someone leaves, goes through what they hold for the people who answer for it — which devices go back to stock, for repair or for disposal, which can go straight to someone joining, which seats to reclaim — and drafts a recovery list to carry out in one go. Each person gets only their own part.',
+      byHand:
+        "Whatever is switched off, whoever answers for a leaver's things can always ask Noco for a recovery plan on the leaver's page.",
+      triggers: {
+        left: {
+          title: 'Marked as left',
+          hint: 'Someone is marked as left, or their leaving date arrives.',
+        },
+        daily: {
+          title: 'Daily check',
+          hint: 'Each day, leavers who still hold things (each at most once a week).',
+        },
+      },
+    },
+    renewalReview: {
+      name: 'Renewal review',
+      description:
+        "Before a subscription ends or a perpetual licence's maintenance does, works out the seats and the money for its owner — how many leavers still hold seats, how many people are joining — recommends renewing as it is, renewing with fewer seats or letting it lapse, and lists the changes to make first.",
+      byHand:
+        "Whatever is switched off, its owner can always ask Noco about renewing on the entitlement's page.",
+      triggers: {
+        daily: {
+          title: 'Daily check',
+          hint: 'Each day, entitlements due soon (the reminder days in Settings, at least 30; each at most once a month).',
         },
       },
     },
