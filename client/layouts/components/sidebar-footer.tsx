@@ -5,6 +5,14 @@ import { ShieldCheck } from 'lucide-react';
 import type { ReactElement } from 'react';
 
 import { SidebarFooter, useSidebar } from '#components/ui/sidebar';
+// Application change (2026-10-16, as NocoCRM's): the name and version the
+// build was made from, for a host that publishes none (NocoBase Studio's app
+// host serves the page without the application's package.json, which left
+// "Default Template v0.0.0" here). Vite inlines the two fields alone.
+import {
+  displayName as builtName,
+  version as builtVersion,
+} from '../../../package.json';
 import {
   Tooltip,
   TooltipContent,
@@ -21,8 +29,8 @@ export function AppSidebarFooter(): ReactElement {
   const iconOnly = state === 'collapsed' && !isMobile;
   // Published by the server from the application's package.json.
   const publicConfig = useClientApplication().config.public;
-  const templateName = publicConfig.get('app.displayName', 'Default Template');
-  const templateVersion = publicConfig.get('app.version', '0.0.0');
+  const templateName = publicConfig.get('app.displayName', builtName);
+  const templateVersion = publicConfig.get('app.version', builtVersion);
   const versionLabel = `v${templateVersion}`;
   const buildFreely = t('shell.buildFreely', {
     defaultValue: 'AI builds freely.',
