@@ -6,6 +6,7 @@ import type { FieldDefinition } from '@/lib/itam/fields';
 import { errorMessage, text } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
 
+import { FieldActions } from './field-actions.js';
 import { FieldInput } from './field-input.js';
 import { LongTextField } from './long-text-field.js';
 
@@ -92,7 +93,12 @@ export function InlineField({
       />
     );
 
-  if (!editable) return <div>{display}</div>;
+  if (!editable)
+    return (
+      <FieldActions>
+        <div className='min-w-0'>{display}</div>
+      </FieldActions>
+    );
 
   if (editing) {
     /**
@@ -238,19 +244,21 @@ export function InlineField({
   }
 
   return (
-    <div
-      role='button'
-      tabIndex={0}
-      title={t('common.doubleClickToEdit')}
-      className={cn(
-        '-mx-1.5 -my-0.5 rounded-md px-1.5 py-0.5 transition-colors hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none',
-      )}
-      onDoubleClick={startEditing}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === 'F2') startEditing();
-      }}
-    >
-      {display}
-    </div>
+    <FieldActions onEdit={startEditing}>
+      <div
+        role='button'
+        tabIndex={0}
+        title={t('common.doubleClickToEdit')}
+        className={cn(
+          '-mx-1.5 -my-0.5 min-w-0 rounded-md px-1.5 py-0.5 transition-colors hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none',
+        )}
+        onDoubleClick={startEditing}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === 'F2') startEditing();
+        }}
+      >
+        {display}
+      </div>
+    </FieldActions>
   );
 }

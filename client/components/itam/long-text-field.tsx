@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { errorMessage } from '@/lib/itam/format';
+import { FieldActions } from './field-actions.js';
 
 /**
  * A long text in a record's information column (a description, notes), as
@@ -71,95 +72,111 @@ export function LongTextField({
   if (blank && !editable)
     return <span className='text-muted-foreground'>—</span>;
   return (
-    <Popover
-      open={open}
-      onOpenChange={(next, details) => {
-        if (next) {
-          setOpen(true);
-          if (blank) edit();
-          return;
-        }
-        // Escape leaves the text as it was; any other way out saves it,
-        // staying open on the editor while it cannot be saved.
-        if (!editing || details.reason === 'escape-key') {
-          setEditing(false);
-          setError(undefined);
-          setOpen(false);
-          return;
-        }
-        void save().then((saved) => {
-          if (saved) setOpen(false);
-        });
-      }}
-    >
-      <PopoverTrigger
-        nativeButton={false}
-        aria-label={label}
-        render={<div />}
-        title={editable ? t('common.doubleClickToEdit') : undefined}
-        className='-mx-1.5 -my-0.5 block cursor-pointer rounded-md px-1.5 py-0.5 text-left transition-colors hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none'
-      >
-        {blank ? (
-          <span className='text-muted-foreground'>—</span>
-        ) : (
-          <FadePreview>{value}</FadePreview>
-        )}
-      </PopoverTrigger>
-      {/* Beside the column, toward the page's middle; a very long text
-          scrolls inside. */}
-      <PopoverContent
-        side='right'
-        align='start'
-        sideOffset={8}
-        // An empty one opens on its editor, which takes the keys.
-        initialFocus={blank ? editorRef : true}
-        className='max-h-[min(36rem,70vh)] w-[28rem] max-w-[calc(100vw-2rem)] gap-2 overflow-y-auto p-4'
-      >
-        <span className='truncate text-xs font-medium text-muted-foreground'>
-          {label}
-        </span>
-        {editing ? (
-          <>
-            <Textarea
-              ref={editorRef}
-              aria-label={label}
-              autoFocus
-              rows={10}
-              value={draft}
-              disabled={saving}
-              className='max-h-[50vh] text-sm leading-relaxed'
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                  event.preventDefault();
-                  void save().then((saved) => {
-                    if (saved) setOpen(false);
-                  });
-                }
-              }}
-            />
-            {error ? (
-              <span className='text-xs text-destructive'>{error}</span>
-            ) : null}
-          </>
-        ) : (
-          // A double-click edits it too, as it does every other field.
-          <div
-            className={`text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere ${
-              editable ? 'cursor-text' : ''
-            }`}
-            onDoubleClick={() => {
-              if (!editable) return;
-              // The double-click also selected the word under it.
-              window.getSelection()?.removeAllRanges();
+    // 编辑 and 复制 on hover, as every other field has (2026-10-16).
+    <FieldActions
+      copyText={value}
+      onEdit={
+        editable
+          ? () => {
+              setOpen(true);
               edit();
-            }}
-          >
-            {value}
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
+            }
+          : undefined
+      }
+    >
+      <Popover
+        open={open}
+        onOpenChange={(next, details) => {
+          if (next) {
+            setOpen(true);
+            if (blank) edit();
+            return;
+          }
+          // Escape leaves the text as it was; any other way out saves it,
+          // staying open on the editor while it cannot be saved.
+          if (!editing || details.reason === 'escape-key') {
+            setEditing(false);
+            setError(undefined);
+            setOpen(false);
+            return;
+          }
+          void save().then((saved) => {
+            if (saved) setOpen(false);
+          });
+        }}
+      >
+        <PopoverTrigger
+          nativeButton={false}
+          aria-label={label}
+          render={<div />}
+          title={editable ? t('common.doubleClickToEdit') : undefined}
+          className='-mx-1.5 -my-0.5 block cursor-pointer rounded-md px-1.5 py-0.5 text-left transition-colors hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none'
+        >
+          {blank ? (
+            <span className='text-muted-foreground'>—</span>
+          ) : (
+            <FadePreview>{value}</FadePreview>
+          )}
+        </PopoverTrigger>
+        {/* Beside the column, toward the page's middle; a very long text
+          scrolls inside. */}
+        <PopoverContent
+          side='right'
+          align='start'
+          sideOffset={8}
+          // An empty one opens on its editor, which takes the keys.
+          initialFocus={blank ? editorRef : true}
+          className='max-h-[min(36rem,70vh)] w-[28rem] max-w-[calc(100vw-2rem)] gap-2 overflow-y-auto p-4'
+        >
+          <span className='truncate text-xs font-medium text-muted-foreground'>
+            {label}
+          </span>
+          {editing ? (
+            <>
+              <Textarea
+                ref={editorRef}
+                aria-label={label}
+                autoFocus
+                rows={10}
+                value={draft}
+                disabled={saving}
+                className='max-h-[50vh] text-sm leading-relaxed'
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === 'Enter' &&
+                    (event.metaKey || event.ctrlKey)
+                  ) {
+                    event.preventDefault();
+                    void save().then((saved) => {
+                      if (saved) setOpen(false);
+                    });
+                  }
+                }}
+              />
+              {error ? (
+                <span className='text-xs text-destructive'>{error}</span>
+              ) : null}
+            </>
+          ) : (
+            // A double-click edits it too, as it does every other field.
+            <div
+              className={`text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere ${
+                editable ? 'cursor-text' : ''
+              }`}
+              onDoubleClick={() => {
+                if (!editable) return;
+                // The double-click also selected the word under it.
+                window.getSelection()?.removeAllRanges();
+                edit();
+              }}
+            >
+              {value}
+            </div>
+          )}
+        </PopoverContent>
+      </Popover>
+    </FieldActions>
   );
 }
 
