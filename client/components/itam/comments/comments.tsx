@@ -1,4 +1,5 @@
 import { resolveAppUrl, useService } from '@nocobase/app-client';
+import { useAuthentication } from '@nocobase/app-plugin-authentication/client';
 import { clientFileRepositoryManagerToken } from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -173,7 +174,15 @@ export function CommentComposer({
   const [error, setError] = useState<string>();
   const uploads = useUploads();
   const pickerRef = useRef<HTMLInputElement>(null);
-  const me = scope.people.find((person) => person.id === scope.me)?.name ?? '';
+  // The writer is looked up among the colleagues; an account holding no
+  // permission set of this application (the administrator) is not one, so
+  // its own name answers, as the account menu's does (2026-10-16).
+  const { session } = useAuthentication();
+  const me =
+    scope.people.find((person) => person.id === scope.me)?.name ||
+    session?.user.name ||
+    session?.user.email ||
+    '';
   const ready =
     (draft.trim() !== '' || uploads.files.length > 0) && !uploads.uploading;
   const post = async (): Promise<void> => {

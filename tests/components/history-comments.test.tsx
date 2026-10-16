@@ -8,6 +8,11 @@ const state = vi.hoisted(() => ({
   request: vi.fn((_input: unknown) => Promise.resolve({ data: {} })),
   items: [] as unknown[],
 }));
+// The signed-in account, which the writer's avatar falls back to when
+// they are not among the colleagues.
+vi.mock('@nocobase/app-plugin-authentication/client', () => ({
+  useAuthentication: () => ({ session: null }),
+}));
 vi.mock('@nocobase/app-client', () => ({
   useService: () => ({ repository: () => ({}) }),
   resolveAppUrl: (path: string) => `/main${path}`,
