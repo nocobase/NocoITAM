@@ -43,6 +43,7 @@ import { addMonths, isoDate, today } from './dates.js';
 import type { HistoryService, HistorySource } from './history.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
+import { normalizeSerial } from './device-sources.js';
 
 /**
  * Individually tracked devices: creation with category / model defaults, the
@@ -790,6 +791,29 @@ export function createDeviceService(
     return shape(after ?? {}, conditions);
   };
 
+  /**
+   * Whether another device already has this serial (2026-10-16): compared
+   * as MDM matching compares them — trimmed, ignoring case — and across
+   * makers, since a platform record is matched by serial alone. A
+   * placeholder serial (To be filled by O.E.M.) is no serial.
+   */
+  const serialTaken = async (
+    connection: DatabaseConnection,
+    serial: string | null | undefined,
+    exceptId?: string,
+  ): Promise<boolean> => {
+    const key = normalizeSerial(serial);
+    if (!key) return false;
+    const rows = await connection.query
+      .selectFrom('devices')
+      .select(['id', 'serialNo'])
+      .where('serialNo', 'is not', null)
+      .execute<{ id: string; serialNo: string | null }>();
+    return rows.some(
+      (row) => row.id !== exceptId && normalizeSerial(row.serialNo) === key,
+    );
+  };
+
   const buildCreateValues = async (
     connection: DatabaseConnection,
     input: DeviceInput,
@@ -833,15 +857,8 @@ export function createDeviceService(
         'serialNo',
       );
     }
-    if (serialNo) {
-      const duplicate = await connection.query
-        .selectFrom('devices')
-        .select('id')
-        .where('serialNo', '=', serialNo)
-        .where('manufacturerId', '=', String(model.manufacturerId))
-        .executeTakeFirst();
-      if (duplicate) throw new DuplicateValueError('serialNo', serialNo);
-    }
+    if (await serialTaken(connection, serialNo))
+      throw new DuplicateValueError('serialNo', serialNo ?? '');
     const ownership = input.ownership ?? 'owned';
     if (
       (ownership === 'leased' || ownership === 'borrowed') &&
@@ -1279,9 +1296,11 @@ export function createDeviceService(
         );
       }
       const serials = (input.serialNos ?? []).map((serial) => serial.trim());
-      if (
-        new Set(serials.filter(Boolean)).size !== serials.filter(Boolean).length
-      ) {
+      // The same serial twice in one batch, compared as `serialTaken` does.
+      const keys = serials
+        .map((serial) => normalizeSerial(serial))
+        .filter((key): key is string => Boolean(key));
+      if (new Set(keys).size !== keys.length) {
         throw new ValidationError(
           'Duplicate serial numbers in the batch',
           'serialNos',
@@ -1437,18 +1456,7 @@ export function createDeviceService(
             typeof input.serialNo === 'string' &&
             input.serialNo !== device.serialNo
           ) {
-            const duplicate = await connection.query
-              .selectFrom('devices')
-              .select('id')
-              .where('serialNo', '=', input.serialNo)
-              .where(
-                'manufacturerId',
-                '=',
-                String(values.manufacturerId ?? device.manufacturerId),
-              )
-              .where('id', '!=', id)
-              .executeTakeFirst();
-            if (duplicate)
+            if (await serialTaken(connection, input.serialNo, id))
               throw new DuplicateValueError('serialNo', input.serialNo);
           }
           const merged = { ...device, ...values };

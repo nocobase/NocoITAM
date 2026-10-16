@@ -218,6 +218,19 @@ describe('devices', () => {
     expect(backOn.status).toBe(400);
   });
 
+  it('refuses a serial another device has, ignoring case and maker', async () => {
+    await createDevice({ serialNo: 'ABC-123' });
+    const again = (serialNo: string) =>
+      post('', {
+        modelId: fixture.modelId,
+        locationId: fixture.locationId,
+        serialNo,
+      });
+    expect((await again(' abc-123 ')).status).toBe(409);
+    // A placeholder is no serial, so it is never a duplicate.
+    expect((await again('To be filled by O.E.M.')).status).toBe(201);
+  });
+
   it('creates a device in use by a person in one step, or none at all', async () => {
     const device = await createDevice({
       assignTo: { targetType: 'person', targetId: fixture.personId },

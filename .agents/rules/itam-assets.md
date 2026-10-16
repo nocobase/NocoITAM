@@ -236,6 +236,12 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   is not enough on its own: every stored grant states an explicit list, so
   `ADDED_FIELDS` in `reconcile-grants.ts` is what an existing database
   learns it from.
+- **A serial belongs to one device** (2026-10-16): create, batch create,
+  receiving and edit refuse a serial another device has, compared as MDM
+  matching compares them — trimmed, ignoring case (`normalizeSerial`) — and
+  across makers (`serialTaken` in `devices.ts`); a placeholder serial is no
+  serial. It was an exact match within one maker, so a lower-case copy got
+  in. Serials two devices share from before are still MDM's `ambiguous`.
 - **A new device starts 库存中, 使用中 or 借出中** (2026-10-16): 创建设备
   asks for the status, then where it goes — 使用中 to a person, a place or
   another device (去向类型, 去向), 借出中 to a person (借用人) until an

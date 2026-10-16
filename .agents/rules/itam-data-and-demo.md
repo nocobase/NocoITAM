@@ -139,9 +139,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   user, on the shelf yet online, disposed yet online (critical), no longer
   reported (a second Intune pull leaves it out), non-compliant and
   unencrypted; a new laptop of a known model, a contractor's of an unknown
-  one, a serial two register devices share (the second entered in lower
-  case: the register refuses an equal serial, matching ignores case), a
-  virtual machine; a personal phone and a meeting room computer kept off by
+  one, a virtual machine (a serial two register devices share
+  went on 2026-10-16, when the register stopped taking a serial twice); a personal phone and a meeting room computer kept off by
   a person; and, on the register's side, laptops in use on no platform
   (只在台账) and a test phone marked 不需要纳管 with its reason
   (`deviceSyncExemptions`, cleared through `DEPENDENTS`). The computers on

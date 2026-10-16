@@ -138,8 +138,15 @@ describe('device sync', () => {
   });
 
   it('never matches a placeholder serial, and leaves a serial two devices share to a person', async () => {
+    // Two devices sharing a serial: the register refuses that since
+    // 2026-10-16, so one is written as data from before.
     await device('DUP-1', 'model-thinkpad-t14-gen5');
-    await device('DUP-1', 'model-macbook-pro-14-m3');
+    const second = await device('DUP-2', 'model-macbook-pro-14-m3');
+    await query()
+      .updateTable('devices')
+      .set({ serialNo: 'DUP-1' })
+      .where('id', '=', second)
+      .execute();
     await sync.ingest(
       'intune',
       pagesOf([

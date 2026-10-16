@@ -360,7 +360,6 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     syncMeetingRoom:
       'Meeting room computer run by Administration; not on the IT register',
     syncContractor: 'Li Gong (contractor)',
-    syncDuplicate: 'Entered twice by mistake',
     syncTestPhone: 'Test phone, wiped for every release; not enrolled in MDM',
     itSpareOrder: 'Spare laptops for IT',
     salesPhoneOrder: 'Phones for the new sales hires',
@@ -421,7 +420,6 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     extraDockCancel: '现有库存已够用，无需再采购',
     syncMeetingRoom: '会议室公用电脑，由行政部管理，不入 IT 资产台账',
     syncContractor: '李工（外包）',
-    syncDuplicate: '重复录入的设备',
     syncTestPhone: '研发测试机，每次发版都要刷机，不注册 MDM',
     itSpareOrder: 'IT 备用笔记本',
     salesPhoneOrder: '销售新员工手机',
@@ -3545,35 +3543,14 @@ export function createDemoService(dependencies: {
               model: 'OptiPlex 7020 Micro',
             }),
           );
-          // A laptop on the shelf entered twice, the second time in lower case
-          // — the register takes it as another serial, matching ignores case —
-          // so the platform's serial is on two register devices and a person
-          // picks which one it is.
-          const shared = onShelf[1];
-          if (shared) {
-            await device({
-              modelId: shared.modelId,
-              serialNo: String(shared.serialNo).toLowerCase(),
-              name: texts.syncDuplicate,
-            });
-            observed.push(
-              extra('demo-shared-serial', {
-                serialNo: String(shared.serialNo),
-                deviceName: `LAPTOP-${String(shared.serialNo)}`,
-                manufacturer: (shared.manufacturer as string | null) ?? null,
-                model: (shared.model as string | null) ?? null,
-                userPrincipal: (inUse[0]?.email as string | null) ?? null,
-                userName: (inUse[0]?.personName as string | null) ?? null,
-              }),
-            );
-          }
           // The computers on the shelf or at the repairer are on Intune too
           // (2026-10-16), as a returned laptop stays enrolled, with no user and
           // a sync weeks back — long enough not to read as 状态不符. Not the
-          // two the cases above use, nor the last two on the shelf: new, and
-          // not set up yet.
+          // one the case above uses, nor the last two on the shelf: new, and
+          // not set up yet. (A serial two devices share went on 2026-10-16:
+          // the register no longer takes the same serial twice.)
           const resting = [
-            ...onShelf.slice(2, -2),
+            ...onShelf.slice(1, -2),
             ...computers.filter((row) => row.status === 'inRepair'),
           ];
           resting.forEach((row, index) =>
