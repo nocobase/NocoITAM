@@ -481,7 +481,7 @@ describe('device review', () => {
     expect(await review.exempted()).toEqual([]);
 
     // Enrolled after all: the mark lapses, and does not come back should
-    // the device drop off the platform again.
+    // the device drop off the platform again — it is 失联 then.
     await exempt(linux);
     await pull(
       observed('on', { serialNo: 'ON-1' }),
@@ -489,7 +489,27 @@ describe('device review', () => {
     );
     expect(await review.exemptionOf(linux)).toBeNull();
     await pull(observed('on', { serialNo: 'ON-1' }));
-    expect((await review.unmanaged()).map((row) => row.id)).toEqual([linux]);
+    expect(await review.exemptionOf(linux)).toBeNull();
+    expect(await kinds(linux)).toEqual([[linux, 'stale', false]]);
+  });
+
+  it('lists a device the platform stopped reporting as 失联 only, and as 只在台账 once the register is kept', async () => {
+    const pat = await person('Pat Lee', 'pat@example.com');
+    const laptop = await device('GONE-1');
+    const other = await device('STAY-1');
+    for (const id of [laptop, other]) await assign(id, pat);
+    await pull(
+      observed('g', { serialNo: 'GONE-1' }),
+      observed('s', { serialNo: 'STAY-1' }),
+    );
+    await pull(observed('s', { serialNo: 'STAY-1' }));
+    expect(await kinds(laptop)).toEqual([[laptop, 'stale', false]]);
+    expect(await review.unmanaged()).toEqual([]);
+    const dismissed = await request(`device-sync/checks/${laptop}/dismiss`, {
+      kind: 'stale',
+    });
+    expect(dismissed.status).toBe(200);
+    expect((await review.unmanaged()).map((row) => row.id)).toEqual([laptop]);
   });
 
   it("counts a leaver's devices that synced after the leave date", async () => {

@@ -110,7 +110,10 @@ product or in release notes, until it is listed here.
   Personal records count only when `ignorePersonal` is off. The
   whole-register ones are `unregistered()` (unlinked or ambiguous company
   records synced within `staleDays`) and `unmanaged()` (in use, in a
-  `managedCategoryIds` category or under one, on no platform). They were
+  `managedCategoryIds` category or under one, on no platform — but not
+  one a platform stopped reporting, which is 失联 until a person keeps the
+  register, 2026-10-16: one device was listed in two tabs and counted twice
+  on 待办). They were
   two 需要关注 rules for a day; since 2026-10-15 they are counts on 待办's
   MDM 核对 column (`MyWorkItem.summary`), so MDM is one place on the board.
   Without a platform (`review.active()`) the column is absent and no

@@ -331,8 +331,21 @@ export function createDeviceReviewService(deps: {
       .where('categoryId', 'in', [...categories])
       .orderBy('deviceNo')
       .execute<Row>();
+    // A device a platform stopped reporting is 失联 (2026-10-16): it was on
+    // one, and what is asked is why it left, not to enrol it. Listing it as
+    // 只在台账 as well showed one device twice and counted it twice on 待办.
+    // Once a person keeps the register (以台账为准), it is no longer 失联
+    // and is 只在台账 like any other.
+    const dropped = new Set(
+      (await self.checks())
+        .filter((check) => check.kind === 'stale' && check.goneAt)
+        .map((check) => check.deviceId),
+    );
     return devices
-      .filter((device) => !onPlatform.has(String(device.id)))
+      .filter(
+        (device) =>
+          !onPlatform.has(String(device.id)) && !dropped.has(String(device.id)),
+      )
       .map((device) => ({
         id: String(device.id),
         deviceNo: asText(device.deviceNo) ?? null,
