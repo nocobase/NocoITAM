@@ -248,22 +248,27 @@ product or in release notes, until it is listed here.
   (the AI shortcuts dropped 让 Noco from their labels, 2026-10-17).
 - **MDM 跟进** (2026-10-17, `server/providers/itam/device-sync-followup.ts`,
   work agent `deviceSync`, trigger `synced`): after a pull that read every
-  page (`DeviceSyncService.onSynced`, set by the agents' provider; not the
-  demo's ingest), the new 使用人不一致 and 只在 MDM are worked out by Asset
-  Steward with the `device-sync` skill (one call, the eval set's prompt and
-  decisions shape, material from `deviceSyncReview` read as the person) and
-  left as a plan in 收件箱: a run per device 负责人 for its devices
-  (`owner:<id>`), and one per holder of the asset manager set for the
-  records nobody owns (`shared:<id>`, the others superseded once one is
-  decided). Steps are `transfer_device` / `assign_device` /
-  `link_managed_device` / `ignore_managed_device`; register, keep, restore,
-  verify and escalate are notes, as is a step the plan screen refuses. A
-  difference is new until a run holding it was carried out or set aside
-  (90 days); a waiting run is replaced by the next pull's, since a plan
-  lasts a day. Carrying out or withdrawing the plan settles the run
-  (`PlanService.onDecided`, composed with the conversation news); 忽略
-  withdraws the plan. 失联, 状态不符 and 只在台账 are a rule's and stay on
-  待办.
+  page (`DeviceSyncService.onSynced`, set by the agents' provider, which
+  waits 15 s for the other platforms' pulls; not the demo's ingest), every
+  item MDM 核对 lists — 失联, 使用人不一致, 状态不符, 只在台账, 只在 MDM — is
+  worked out by Asset Steward with the `device-sync` skill (one call; each
+  item under a short ref, material from `deviceSyncReview` read as the
+  person; a decision per item with its reason) and left as a plan in 收件箱:
+  a run per device 负责人 for its devices (`owner:<id>`), and one per holder
+  of the asset manager set for the platform records and the devices nobody
+  owns (`shared:<id>`, the others superseded once one is decided). Steps:
+  `create_record` (+ `assign_device` to the platform user; the place is the
+  user's, else where most devices are kept), `link_managed_device`,
+  `ignore_managed_device`, `transfer_device` / `assign_device`,
+  `correct_device_status` (never to lost), `dismiss_device_difference`
+  (忽略 a difference) and `exempt_device` (不需要纳管) — the last two added
+  for it, under the device's `update` like their buttons. Verify and
+  escalate (and enrolling a device on a platform) are notes, as is a step
+  the plan screen refuses, with whatever followed from it. An item is new
+  until a run holding it was carried out or set aside (90 days); a waiting
+  run is replaced by the next pull's, since a plan lasts a day. Carrying
+  out or withdrawing the plan settles the run (`PlanService.onDecided`,
+  composed with the conversation news); 忽略 withdraws the plan.
 - **Eval set** (step 4): `server/providers/itam/evals/device-sync.ts` holds
   the cases — what the commands show, the question, and the decision a
   person who knows the method would make per item (transfer, assign,

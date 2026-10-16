@@ -3277,6 +3277,21 @@ every sync, for what is new.
   sync. 失联, 状态不符 and 只在台账 stay on 待办.
 - A switch on Agent 工作, like 审批助手's.
 
+### 2026-10-17 MDM 跟进 covers every item on MDM 核对
+
+The first version looked only at 使用人不一致 and 只在 MDM, leaving 失联,
+状态不符 and 只在台账 to 待办 as a rule's; MDM 核对 then showed items with
+a suggestion beside items without one. Every item now has one, sent to
+the device's 负责人 (or the asset managers for platform records and devices
+nobody owns), and what a person would do with a button is a plan step:
+register a record (created and assigned to its platform user), correct a
+status, ignore a difference, mark a device as needing no platform — the
+last two new plan operations, `dismiss_device_difference` and
+`exempt_device`. The `device-sync` skill lets Asset Steward propose them
+for the person to confirm; it still never marks a device lost. Finding a
+silent device or enrolling one on a platform stays a note. The first run
+looks at everything MDM 核对 lists; later ones at what is new.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

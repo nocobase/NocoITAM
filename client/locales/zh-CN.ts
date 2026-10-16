@@ -3073,6 +3073,8 @@ const zhCN: AppResource = {
         link_managed_device: '关联 MDM 设备',
         unlink_managed_device: '解除 MDM 关联',
         ignore_managed_device: 'MDM 设备不纳入台账',
+        dismiss_device_difference: '忽略 MDM 差异',
+        exempt_device: '设备不需要纳管',
         reserve_device: '预留设备',
         correct_device_status: '更正设备状态',
         assign_seat: '分配席位',

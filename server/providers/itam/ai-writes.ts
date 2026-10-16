@@ -122,6 +122,25 @@ export const AI_WRITE_SCHEMAS = {
     title,
     managedDeviceId: id,
   }),
+  // MDM 跟进 (2026-10-17): the two decisions MDM 核对 offers on a device
+  // that were a person's button only — as plan steps the person confirms.
+  // 忽略 a difference: this one, with what was seen, is not raised again.
+  itam_dismiss_device_difference: z.object({
+    title,
+    deviceId: id,
+    kind: z.enum(['stale', 'userMismatch', 'statusMismatch']),
+  }),
+  // 不需要纳管: a 只在台账 device that rightly is on no platform.
+  itam_exempt_device: z.object({
+    title,
+    deviceId: id,
+    reason: z
+      .string()
+      .trim()
+      .min(1)
+      .max(500)
+      .describe('Why it needs no platform, in the user’s language.'),
+  }),
   itam_ignore_managed_device: z.object({
     title,
     managedDeviceId: id,
@@ -274,6 +293,9 @@ const PERMISSIONS: Readonly<
   itam_unlink_managed_device: [['devices', 'update']],
   // Keeping a platform record off the register stands in for creating it.
   itam_ignore_managed_device: [['devices', 'create']],
+  // A decision about the device, so its `update`, as on MDM 核对.
+  itam_dismiss_device_difference: [['devices', 'update']],
+  itam_exempt_device: [['devices', 'update']],
   itam_reserve_device: [['devices', 'reserve']],
   itam_correct_device_status: [['devices', 'correctStatus']],
   itam_assign_seat: [['entitlements', 'assignSeat']],
@@ -491,6 +513,28 @@ async function execute(
         .resolve(deviceReviewServiceToken)
         .unlink(args.managedDeviceId, scope.actorId, 'agent');
       return { id: row.id, matchState: row.matchState };
+    }
+    case 'itam_dismiss_device_difference': {
+      const args = AI_WRITE_SCHEMAS[tool].parse(raw);
+      if (
+        !(await devices.get(args.deviceId, await decide('devices', 'update')))
+      )
+        throw new RecordNotFoundError('devices', args.deviceId);
+      await container
+        .resolve(deviceReviewServiceToken)
+        .dismiss(args.deviceId, args.kind, scope.actorId);
+      return { deviceId: args.deviceId, kind: args.kind };
+    }
+    case 'itam_exempt_device': {
+      const args = AI_WRITE_SCHEMAS[tool].parse(raw);
+      if (
+        !(await devices.get(args.deviceId, await decide('devices', 'update')))
+      )
+        throw new RecordNotFoundError('devices', args.deviceId);
+      await container
+        .resolve(deviceReviewServiceToken)
+        .exempt(args.deviceId, args.reason, scope.actorId);
+      return { deviceId: args.deviceId };
     }
     case 'itam_ignore_managed_device': {
       const args = AI_WRITE_SCHEMAS[tool].parse(raw);
