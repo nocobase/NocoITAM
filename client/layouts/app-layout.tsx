@@ -50,11 +50,11 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
 
   const { t } = useTranslation();
   const { items: menuItems, denied } = useRouteNavigation(routes);
-  const selectedKey = selectedNavigationId(
-    routes,
-    useLocation().pathname,
-    denied,
-  );
+  const { pathname } = useLocation();
+  const selectedKey = selectedNavigationId(routes, pathname, denied);
+  // Application change (ITAM, 2026-10-16): the brand tint and watermark on
+  // the workbench alone, as NocoCRM has them on its overview.
+  const brandSurface = pathname === '/';
   const navigationLabel = t('navigation.label', {
     defaultValue: 'Application navigation',
   });
@@ -109,8 +109,17 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                     it while none is (after NocoCRM's). */}
                 <DemoBanner />
                 <div className='relative flex min-h-0 flex-1'>
-                  <main className='app-brand-surface relative isolate min-w-0 flex-1 overflow-hidden'>
-                    <BrandWatermark className='-z-10' />
+                  {/* Application change (ITAM, 2026-10-16, as NocoCRM
+                      does): the brand tint and watermark on the workbench
+                      alone; every other page has the plain light grey. */}
+                  <main
+                    className={
+                      brandSurface
+                        ? 'app-brand-surface relative isolate min-w-0 flex-1 overflow-hidden'
+                        : 'relative min-w-0 flex-1 overflow-hidden'
+                    }
+                  >
+                    {brandSurface ? <BrandWatermark className='-z-10' /> : null}
                     {/* main only positions; the page scrolls in here, so a child page layer laid over main is neither
                       moved by the page's scrolling nor stretched by its height. */}
                     <div className='h-full overflow-y-auto'>

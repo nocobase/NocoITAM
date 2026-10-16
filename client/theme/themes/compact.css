@@ -46,9 +46,10 @@
     0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   --radius: 0.5rem;
-  /* Application change (ITAM): a shade darker than the template, so white
-     cards stand off the page. */
-  --background: oklch(0.97 0 0);
+  /* Application change (ITAM, 2026-10-16): NocoCRM's light grey, a shade
+     darker than the template, so white cards stand off the page. Until then
+     ITAM's was darker still, oklch(0.97). */
+  --background: oklch(0.985 0 0);
   --foreground: oklch(0.16 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.16 0 0);
