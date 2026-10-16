@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -60,11 +61,11 @@ export function DeviceSyncCard(): ReactElement {
     : null;
   return (
     <Card>
-      {/* 立即同步 follows the title, as each platform's buttons follow its
-          name and status below; the description runs the full width. */}
+      {/* 立即同步 at the card's top right, the card's own action (2026-10-16;
+          it followed the title until then). */}
       <CardHeader>
-        <div className='flex flex-wrap items-center gap-2'>
-          <CardTitle>{t('settings.deviceSync.cardTitle')}</CardTitle>
+        <CardTitle>{t('settings.deviceSync.cardTitle')}</CardTitle>
+        <CardAction>
           <Button
             disabled={!configured || running || start.isPending}
             onClick={() => start.mutate()}
@@ -80,7 +81,7 @@ export function DeviceSyncCard(): ReactElement {
                 : 'settings.deviceSync.syncNow',
             )}
           </Button>
-        </div>
+        </CardAction>
         <CardDescription>
           {t('settings.deviceSync.description')}
         </CardDescription>
