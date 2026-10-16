@@ -5,7 +5,7 @@ import {
 } from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Download, FileText, Image, Paperclip, Trash2 } from 'lucide-react';
+import { Paperclip } from 'lucide-react';
 import { useMemo, useState, type ReactElement } from 'react';
 
 import {
@@ -13,12 +13,12 @@ import {
   FileUploadField,
 } from '@/extensions/nocobase-file-component-ui';
 import { EmptyState } from '@/components/itam/empty-state';
+import { FileRows } from '@/components/itam/file-cards';
 import { Paged } from '@/components/itam/paged';
-import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApi } from '@/lib/itam/api';
 import { useAttachmentGroups } from '@/lib/itam/attachments';
-import { errorMessage, formatDate } from '@/lib/itam/format';
+import { errorMessage } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 
 import { useReferenceNames } from '@/lib/itam/references';
@@ -30,14 +30,6 @@ import { useConfirm } from '@/lib/itam/use-confirm';
  * to the record in a second request.
  */
 /** A file's size reads as bytes, KB or MB; the file plugin may send it as text. */
-function fileSize(value: string | number): string {
-  const bytes = Number(value);
-  if (!Number.isFinite(bytes)) return '—';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1048576).toFixed(1)} MB`;
-}
-
 export function AttachmentsTab({
   ownerType,
   ownerId,
@@ -180,85 +172,42 @@ export function AttachmentsTab({
           ) : (
             <Paged rows={group.files}>
               {(pageRows) => (
-                <ul className='divide-y divide-border rounded-lg border border-border bg-card text-sm'>
-                  {pageRows.map((file, fileIndex) => {
-                    const Icon = file.mimeType.startsWith('image/')
-                      ? Image
-                      : FileText;
-                    return (
-                      <li
-                        key={file.linkId}
-                        className='flex items-center gap-3 p-3 transition-colors hover:bg-muted/30'
-                      >
-                        <span className='flex size-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground'>
-                          <Icon className='size-5' aria-hidden='true' />
-                        </span>
-                        <div className='min-w-0 flex-1 space-y-1'>
-                          <button
-                            type='button'
-                            className='block max-w-full rounded-sm text-left font-medium break-all underline-offset-4 hover:text-link hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                            onClick={() =>
-                              setPreview({
-                                files: group.files,
-                                index: fileIndex,
-                              })
-                            }
-                          >
-                            {file.filename}
-                          </button>
-                          <div className='flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground'>
-                            <span>{fileSize(file.size)}</span>
-                            <span>{formatDate(file.linkedAt, true)}</span>
-                            {file.uploadedById &&
-                            names.users?.get(file.uploadedById) ? (
-                              <span>{names.users.get(file.uploadedById)}</span>
-                            ) : null}
-                          </div>
-                        </div>
-                        <div className='flex shrink-0 items-center gap-1'>
-                          {file.contentUrl ? (
-                            <a
-                              className={buttonVariants({
-                                size: 'icon-sm',
-                                variant: 'ghost',
-                              })}
-                              href={file.contentUrl}
-                              download={file.filename}
-                              aria-label={`${t('attachments.download')}: ${file.filename}`}
-                              title={t('attachments.download')}
-                            >
-                              <Download aria-hidden='true' />
-                            </a>
-                          ) : null}
-                          {permissions.update ? (
-                            <Button
-                              size='icon-sm'
-                              variant='ghost'
-                              className='text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
-                              aria-label={`${t('actions.delete')}: ${file.filename}`}
-                              title={t('actions.delete')}
-                              disabled={unlink.isPending}
-                              onClick={() =>
-                                confirm.ask({
-                                  title: t('actions.delete'),
-                                  description: t(
-                                    'confirmations.removeAttachment',
-                                    { name: file.filename },
-                                  ),
-                                  confirmLabel: t('actions.delete'),
-                                  destructive: true,
-                                  action: () => unlink.mutateAsync(file.linkId),
-                                })
-                              }
-                            >
-                              <Trash2 aria-hidden='true' />
-                            </Button>
-                          ) : null}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <FileRows
+                  files={pageRows.map((file) => ({
+                    id: file.linkId,
+                    filename: file.filename,
+                    mimeType: file.mimeType,
+                    size: file.size,
+                    url: file.contentUrl,
+                    date: file.linkedAt,
+                  }))}
+                  onOpen={(_card, fileIndex) =>
+                    setPreview({
+                      files: group.files,
+                      index: group.files.indexOf(pageRows[fileIndex]),
+                    })
+                  }
+                  detail={(card) => {
+                    const by = pageRows.find(
+                      (file) => file.linkId === card.id,
+                    )?.uploadedById;
+                    return by ? names.users?.get(by) : undefined;
+                  }}
+                  onRemove={
+                    permissions.update
+                      ? (card) =>
+                          confirm.ask({
+                            title: t('actions.delete'),
+                            description: t('confirmations.removeAttachment', {
+                              name: card.filename,
+                            }),
+                            confirmLabel: t('actions.delete'),
+                            destructive: true,
+                            action: () => unlink.mutateAsync(card.id),
+                          })
+                      : undefined
+                  }
+                />
               )}
             </Paged>
           )}

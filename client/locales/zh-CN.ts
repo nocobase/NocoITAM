@@ -1669,6 +1669,7 @@ const zhCN: AppResource = {
     runJob: '立即运行「{{job}}」，结果记入运行记录。',
   },
   attachments: {
+    preview: '预览',
     optional: '附件（可选）',
     previousFile: '上一个文件',
     nextFile: '下一个文件',

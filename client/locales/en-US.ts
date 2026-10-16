@@ -1746,6 +1746,7 @@ const messages = {
     runJob: 'Run "{{job}}" now; the result is recorded in the run log.',
   },
   attachments: {
+    preview: 'Preview',
     optional: 'Attachments (optional)',
     previousFile: 'Previous file',
     nextFile: 'Next file',

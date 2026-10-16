@@ -10,7 +10,6 @@ import {
   Reply,
   Send,
   Trash2,
-  X,
 } from 'lucide-react';
 import {
   useRef,
@@ -28,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
+import { FileChips, FileRows } from '@/components/itam/file-cards';
 import { useApi } from '@/lib/itam/api';
 import { useFileDrag } from '@/lib/itam/file-drag';
 import {
@@ -60,7 +60,15 @@ interface CommentFile {
   readonly id: string;
   readonly filename: string;
   readonly ext: string;
+  /** Known for a file uploaded in this box; a posted one may not say. */
+  readonly size?: string | number | null;
+  readonly mimeType?: string | null;
 }
+
+const fileUrl = (file: CommentFile): string =>
+  resolveAppUrl(
+    `/uploads/itam/${encodeURIComponent(file.id)}${file.ext ? `.${encodeURIComponent(file.ext)}` : ''}`,
+  );
 
 /** Where comments are written, and who may be named in them. */
 export interface CommentScope {
@@ -138,6 +146,8 @@ function useUploads() {
             id: text(record.id),
             filename: text(record.filename),
             ext: text(record.ext),
+            size: record.size,
+            mimeType: text(record.mimeType) || null,
           });
         }
         setFiles((current) => [...current, ...uploaded]);
@@ -310,29 +320,11 @@ export function CommentComposer({
           </span>
         </div>
       </div>
-      {uploads.files.length ? (
-        <ul
-          className={cn('flex flex-wrap gap-1.5', replyToId ? 'pl-9' : 'pl-11')}
-        >
-          {uploads.files.map((file) => (
-            <li
-              key={file.id}
-              className='flex max-w-full items-center gap-1 rounded-md border border-border px-2 py-0.5 text-xs'
-            >
-              <Paperclip className='size-3 shrink-0 text-muted-foreground' />
-              <span className='min-w-0 truncate'>{file.filename}</span>
-              <button
-                type='button'
-                className='text-muted-foreground hover:text-foreground'
-                aria-label={`${t('comments.removeFile')}: ${file.filename}`}
-                onClick={() => uploads.remove(file.id)}
-              >
-                <X className='size-3' />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <FileChips
+        files={uploads.files}
+        onRemove={(file) => uploads.remove(file.id)}
+        className={replyToId ? 'pl-9' : 'pl-11'}
+      />
       {draft.trim() || uploads.files.length ? (
         <div className='flex items-center justify-end gap-3'>
           <span className='text-xs text-muted-foreground'>
@@ -360,31 +352,17 @@ export function CommentComposer({
   );
 }
 
-/** A comment's files: each a link that downloads it. */
+/** A comment's files, one a row, as a record's attachments read. */
 function CommentFiles({
   files,
 }: {
   readonly files: readonly CommentFile[];
 }): ReactElement | null {
-  if (!files.length) return null;
   return (
-    <ul className='mt-1.5 flex flex-wrap gap-1.5'>
-      {files.map((file) => (
-        <li key={file.id}>
-          <a
-            href={resolveAppUrl(
-              `/uploads/itam/${encodeURIComponent(file.id)}${file.ext ? `.${encodeURIComponent(file.ext)}` : ''}`,
-            )}
-            target='_blank'
-            rel='noreferrer'
-            className='flex max-w-64 items-center gap-1 rounded-md border border-border px-2 py-0.5 text-xs hover:bg-muted/70'
-          >
-            <Paperclip className='size-3 shrink-0 text-muted-foreground' />
-            <span className='min-w-0 truncate'>{file.filename}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
+    <FileRows
+      className='mt-2'
+      files={files.map((file) => ({ ...file, url: fileUrl(file) }))}
+    />
   );
 }
 
