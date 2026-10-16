@@ -226,6 +226,13 @@ const HANDLED: readonly RunStatus[] = ['accepted', 'dismissed', 'superseded'];
 
 export function createAgentRunService(
   database: DatabaseManager,
+  /**
+   * Signals a change to the pages kept live (`itam:changes`): 收件箱's
+   * count and list follow a run as it starts, settles and is decided
+   * (2026-10-17). Runs are worked in the background, not in a request, so
+   * the routes' own signal does not cover them.
+   */
+  touched: () => void = () => undefined,
 ): AgentRunService {
   const query = (connection?: DatabaseConnection) =>
     connection ? connection.query : database.query();
@@ -267,6 +274,7 @@ export function createAgentRunService(
         .insertInto('itamAgentRuns')
         .values(values)
         .execute();
+      touched();
       return decodeRun(values);
     },
 
@@ -322,7 +330,9 @@ export function createAgentRunService(
         // Decided, withdrawn or asked again meanwhile: left as it is.
         .where('status', '=', 'running')
         .execute();
-      return (result.updatedCount ?? 0) > 0;
+      const changed = (result.updatedCount ?? 0) > 0;
+      if (changed) touched();
+      return changed;
     },
 
     async decide(id, input, connection) {
@@ -340,7 +350,9 @@ export function createAgentRunService(
         .where('id', '=', id)
         .where('status', '=', 'pending')
         .execute();
-      return (result.updatedCount ?? 0) > 0;
+      const changed = (result.updatedCount ?? 0) > 0;
+      if (changed) touched();
+      return changed;
     },
 
     async reopen(id) {
@@ -358,6 +370,7 @@ export function createAgentRunService(
         .where('id', '=', id)
         .where('status', 'in', ['accepted', 'dismissed'])
         .execute();
+      touched();
     },
 
     async supersede(agent, subjectType, subjectId, connection) {
@@ -371,6 +384,7 @@ export function createAgentRunService(
         // it no longer waits on anyone (2026-10-17).
         .where('status', 'in', [...OPEN, 'failed'])
         .execute();
+      touched();
     },
 
     async expireStale(now = new Date()) {
@@ -399,6 +413,7 @@ export function createAgentRunService(
         )
         .execute()
         .catch(() => ({ updatedCount: 0 }));
+      if (result.updatedCount) touched();
       return result.updatedCount ?? 0;
     },
 

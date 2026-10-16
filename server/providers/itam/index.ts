@@ -440,7 +440,10 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // plan "Work agents"); the agents' provider starts it on each request
     // and gives it the jobs service.
     container.singleton(agentRunServiceToken, () =>
-      createAgentRunService(container.resolve(databaseManagerToken)),
+      createAgentRunService(container.resolve(databaseManagerToken), () => {
+        if (container.has(itamChangesToken))
+          container.resolve(itamChangesToken).touched();
+      }),
     );
     // 报价比较 (2026-10-17): the quotes a purchase order was weighed against.
     container.singleton(quoteComparisonServiceToken, () =>

@@ -2,6 +2,7 @@ import { realtimeClientToken, useService } from '@nocobase/app-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import { AGENT_RUNS_PATH, INBOX_PATH } from './agents.js';
 import { WORKBENCH_PATH } from './workbench.js';
 
 /**
@@ -12,7 +13,7 @@ import { WORKBENCH_PATH } from './workbench.js';
 const ITAM_CHANGES_TOPIC = 'itam:changes';
 
 /**
- * Keeps 我的待办 and 需要关注 current while a page stays open (2026-10-05):
+ * Keeps 我的待办, 需要关注 and 收件箱 current while a page stays open (2026-10-05):
  * on a change signal, and whenever the realtime connection (re)opens —
  * signals sent while it was down are not replayed — the workbench queries
  * are marked stale, so the ones on screen fetch again and the rest do when
@@ -22,10 +23,12 @@ export function useLiveWork(): void {
   const realtime = useService(realtimeClientToken);
   const queryClient = useQueryClient();
   useEffect(() => {
-    const refresh = () =>
-      void queryClient.invalidateQueries({
-        queryKey: ['itam', WORKBENCH_PATH],
-      });
+    // 收件箱 too (2026-10-17): its count in the menu and its list follow the
+    // agents' runs, which the server signals as they start and settle.
+    const refresh = () => {
+      for (const path of [WORKBENCH_PATH, INBOX_PATH, AGENT_RUNS_PATH])
+        void queryClient.invalidateQueries({ queryKey: ['itam', path] });
+    };
     const stopOpen = realtime.onOpen(refresh);
     const stopTopic = realtime.subscribe(ITAM_CHANGES_TOPIC, refresh);
     return () => {

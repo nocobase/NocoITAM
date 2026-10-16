@@ -60,3 +60,43 @@ describe('ITAM change signal', () => {
     expect(touched).toHaveBeenCalledTimes(1);
   });
 });
+
+// 收件箱 follows the agents' runs, which are worked in the background and
+// so outside the routes' own signal (2026-10-17).
+describe('agent runs and the change signal', () => {
+  it('signals when a run starts, settles and is decided', async () => {
+    const { createTestApp } = await import('../support/test-app.js');
+    const { databaseManagerToken } = await import('@nocobase/db');
+    const { createAgentRunService } =
+      await import('../../server/providers/itam/agent-runs.js');
+    const app = await createTestApp({ seeds: false });
+    try {
+      const touched = vi.fn();
+      const runs = createAgentRunService(
+        app.container.resolve(databaseManagerToken),
+        touched,
+      );
+      const run = await runs.start({
+        agent: 'approvalReview',
+        trigger: 'asked',
+        startedById: 'mia',
+        subjectType: 'purchaseOrders',
+        subjectId: 'po-1',
+        deciderId: 'mia',
+      });
+      const started = touched.mock.calls.length;
+      expect(started).toBeGreaterThan(0);
+      await runs.finish(run.id, { status: 'pending', result: { a: 1 } });
+      expect(touched.mock.calls.length).toBeGreaterThan(started);
+      const settled = touched.mock.calls.length;
+      await runs.decide(run.id, { status: 'dismissed', decidedById: 'mia' });
+      expect(touched.mock.calls.length).toBeGreaterThan(settled);
+      // Nothing changes, nothing is signalled.
+      const decided = touched.mock.calls.length;
+      await runs.decide(run.id, { status: 'dismissed', decidedById: 'mia' });
+      expect(touched.mock.calls.length).toBe(decided);
+    } finally {
+      await app.destroy();
+    }
+  });
+});
