@@ -40,6 +40,10 @@ import appRuntime from '../server/runtime.js';
  * developer stays signed in with the same roles.
  */
 const ITAM_TABLES = [
+  // Work agents' runs and the plans Noco and they proposed (2026-10-17).
+  'itamAgentRuns',
+  'itamPlanSteps',
+  'itamPlans',
   // Device sync (2026-10-14, 2026-10-15).
   'deviceSyncDismissals',
   'deviceSyncExemptions',
@@ -78,8 +82,16 @@ const ITAM_TABLES = [
   'vendors',
   'categories',
   'numberSequences',
-  'itamSettings',
 ] as const;
+
+/**
+ * `itamSettings` rows that stay: the markers of what ITAM created in the
+ * Agents plugin (Noco, the work agents, the skills). The plugin's own
+ * tables are not wiped, so without its marker the next start would create
+ * a second Noco beside the first, as a development database once did
+ * (2026-10-17). Every other settings row is wiped as before.
+ */
+const KEPT_SETTINGS_PREFIX = 'agents-';
 
 function fail(message: string): never {
   console.error(message);
@@ -106,6 +118,11 @@ async function main(): Promise<void> {
   try {
     for (const table of ITAM_TABLES)
       await database.query().deleteFrom(table).allowAllRows().execute();
+    await database
+      .query()
+      .deleteFrom('itamSettings')
+      .where('key', 'not like', `${KEPT_SETTINGS_PREFIX}%`)
+      .execute();
     await database
       .query()
       .deleteFrom('__nocobase_seeds' as never)
@@ -183,7 +200,7 @@ async function main(): Promise<void> {
       .where('key' as never, 'in', sets as never)
       .execute();
     console.log(
-      `Wiped ${ITAM_TABLES.length} ITAM tables, the seed history, ${accounts.length} demo accounts and ${sets.length} permission sets.`,
+      `Wiped ${ITAM_TABLES.length} ITAM tables, the settings but the Agents markers, the seed history, ${accounts.length} demo accounts and ${sets.length} permission sets.`,
     );
   } finally {
     await database.destroy();
