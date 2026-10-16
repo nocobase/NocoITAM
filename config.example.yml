@@ -25,7 +25,7 @@
 # Values under client are public and embedded in the SPA HTML.
 client:
   app:
-    title: NocoBase
+    title: NocoITAM
     # Defaults apply only when no valid browser-local choice is saved.
     # defaultColorScheme: system # light | dark | system
     # defaultTheme: compact # ID from client/theme/theme-presets.ts
@@ -58,7 +58,9 @@ auth:
 
 notification:
   channels:
-    inbox:
+    # The ITAM notifier sends through the channel named in-app; another name
+    # leaves every notification undelivered.
+    in-app:
       provider: in-app
 
     # Uncomment and configure independent email Channels.
