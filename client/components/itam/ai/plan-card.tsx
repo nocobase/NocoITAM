@@ -40,6 +40,9 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
   const client = useQueryClient();
   const toaster = useToaster();
   const [skipped, setSkipped] = useState<ReadonlySet<number>>(() => new Set());
+  // Each step's line already says what it does; the raw parameters behind it
+  // (ids, references, JSON) stay folded until asked for (2026-10-16).
+  const [showParams, setShowParams] = useState(false);
   const pending = plan.status === 'pending';
   const decide = useMutation({
     mutationFn: async (decision: 'execute' | 'void') =>
@@ -70,6 +73,18 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
     },
   });
   const steps = plan.steps;
+  const hasParams = steps.some((step) => step.check?.fields.length);
+  const toggleParams = hasParams ? (
+    <Button
+      size='sm'
+      variant='link'
+      className='mr-auto h-auto px-0 text-xs text-muted-foreground'
+      aria-expanded={showParams}
+      onClick={() => setShowParams((shown) => !shown)}
+    >
+      {t(showParams ? 'ai.plans.hideParams' : 'ai.plans.showParams')}
+    </Button>
+  ) : null;
   const left = steps.filter((step) => !skipped.has(step.position)).length;
   return (
     <div className='my-2 rounded-lg border border-border bg-card p-3 text-sm'>
@@ -120,7 +135,7 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
               >
                 {step.check?.title || t(`ai.plans.ops.${step.op}`)}
               </div>
-              {step.check?.fields.length ? (
+              {showParams && step.check?.fields.length ? (
                 <div className='mt-0.5 text-xs wrap-anywhere text-muted-foreground'>
                   {step.check.fields
                     .map((field) => `${field.field}: ${fieldText(field)}`)
@@ -138,6 +153,7 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
       </ol>
       {pending ? (
         <div className='mt-3 flex flex-wrap items-center justify-end gap-2'>
+          {toggleParams}
           <Button
             size='sm'
             variant='ghost'
@@ -154,9 +170,10 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
             {t('ai.plans.execute', { count: left })}
           </Button>
         </div>
-      ) : plan.decidedAt ? (
-        <div className='mt-2 text-right text-xs text-muted-foreground'>
-          {formatDate(plan.decidedAt, true)}
+      ) : plan.decidedAt || hasParams ? (
+        <div className='mt-2 flex items-center justify-end gap-2 text-xs text-muted-foreground'>
+          {toggleParams}
+          {plan.decidedAt ? formatDate(plan.decidedAt, true) : null}
         </div>
       ) : null}
     </div>
