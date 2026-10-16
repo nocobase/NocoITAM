@@ -86,10 +86,16 @@ export function ManagedPlatforms({
               key={record.id}
               record={record}
               editable={actions?.editable ?? false}
-              silent={checks.some(
-                (check) =>
-                  check.kind === 'stale' && check.managedDeviceId === record.id,
-              )}
+              // A record gone from its platform says so by its name; only
+              // one still reported but long silent marks its last sync.
+              silent={
+                !record.goneAt &&
+                checks.some(
+                  (check) =>
+                    check.kind === 'stale' &&
+                    check.managedDeviceId === record.id,
+                )
+              }
               otherUser={checks.some(
                 (check) =>
                   check.kind === 'userMismatch' &&
@@ -365,7 +371,9 @@ function LastSync({
       {formatDate(value, true)}
       {silent ? (
         <DifferenceTag className='ml-2'>
-          {t('deviceSync.daysAgo', { count: days })}
+          {days <= 0
+            ? t('deviceSync.today')
+            : t('deviceSync.daysAgo', { count: days })}
         </DifferenceTag>
       ) : (
         <span className='ml-2 text-muted-foreground'>
