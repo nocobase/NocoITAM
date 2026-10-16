@@ -1,8 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { AlertTriangle, ExternalLink, Unlink } from 'lucide-react';
+import { ExternalLink, Unlink } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from './confirm-dialog.js';
@@ -58,15 +57,10 @@ export function ManagedPlatforms({
   const exemption = managed.data.exemption ?? null;
   return (
     <InfoSection title={t('deviceSync.group')}>
-      {/* Where the platforms and the register disagree (step 2), first. */}
-      {/* A notice only for 状态不符 (2026-10-16): silence is the record's
-          own last sync, marked, and another user its primary user, marked
-          with 调拨 beside it. */}
-      {checks
-        .filter((check) => check.kind === 'statusMismatch')
-        .map((check) => (
-          <CheckNotice key={check.kind} check={check} actions={actions} />
-        ))}
+      {/* Where the platforms and the register disagree is marked on the
+          record itself (2026-10-16), each with the register's own act
+          beside it: silence on its last sync, another user on its primary
+          user, an off-duty status on its last sync. */}
       {records.length === 0 && exemption ? (
         <ExemptionNotice
           deviceId={deviceId}
@@ -106,6 +100,17 @@ export function ManagedPlatforms({
                   ? () => actions.onTransfer(record.personId!)
                   : undefined
               }
+              offDuty={checks.find(
+                (check) =>
+                  check.kind === 'statusMismatch' &&
+                  check.managedDeviceId === record.id,
+              )}
+              onAssign={
+                actions?.editable && record.personId
+                  ? () => actions.onAssign(record.personId!)
+                  : undefined
+              }
+              onRestore={actions?.editable ? actions.onRestore : undefined}
             />
           ))}
         </div>
@@ -164,78 +169,15 @@ function ExemptionNotice({
   );
 }
 
-/**
- * One difference, said in a sentence, with the act that settles it on the
- * register's side and 忽略 for when the register is right.
- */
-function CheckNotice({
-  check,
-  actions,
-}: {
-  readonly check: DeviceCheck;
-  readonly actions?: CheckActions;
-}): ReactElement {
-  const { t } = useTranslation();
-  const source = t(`deviceSync.sources.${check.source}`);
-  const user = check.userName ?? '';
-  // Only 状态不符 has a notice: 失联 and another user are marked on the
-  // record itself (2026-10-16).
-  const sentence = t('deviceSync.checks.statusSentence', {
-    status: t(`enums.deviceStatus.${check.status}`),
-    date: formatDate(check.lastSyncAt),
-    source,
-  });
-  const editable = actions?.editable ?? false;
-  return (
-    <Alert
-      variant={check.critical ? 'destructive' : 'default'}
-      // The theme's 注意 tone, or 错 for a device that should not be online.
-      className={
-        check.critical
-          ? 'mb-3 border-destructive/40'
-          : 'mb-3 border-warning-foreground/25 bg-warning text-warning-foreground'
-      }
-    >
-      <AlertTriangle />
-      <AlertDescription className='flex flex-col gap-2'>
-        <span>{sentence}</span>
-        {/* The register's own acts only (2026-10-16): 忽略 is MDM 核对's,
-            where what was ignored is listed and taken back. */}
-        {editable &&
-        ((check.status === 'inStock' && check.personId) ||
-          check.status === 'lost') ? (
-          <span className='flex flex-wrap gap-2'>
-            {check.status === 'inStock' && check.personId ? (
-              <Button
-                size='sm'
-                variant='outline'
-                onClick={() => actions?.onAssign(check.personId!)}
-              >
-                {t('deviceSync.checks.assignTo', { user })}
-              </Button>
-            ) : null}
-            {check.status === 'lost' ? (
-              <Button
-                size='sm'
-                variant='outline'
-                onClick={() => actions?.onRestore()}
-              >
-                {t('deviceSync.checks.restore')}
-              </Button>
-            ) : null}
-          </span>
-        ) : null}
-      </AlertDescription>
-    </Alert>
-  );
-}
-
 function PlatformRecord({
   record,
   editable,
   silent = false,
   otherUser = false,
   onTransfer,
+  offDuty,
+  onAssign,
+  onRestore,
 }: {
   readonly record: ManagedDevice;
   readonly editable: boolean;
@@ -245,6 +187,12 @@ function PlatformRecord({
   readonly otherUser?: boolean;
   /** Opens 调拨 to the primary user, for whoever may. */
   readonly onTransfer?: () => void;
+  /** 状态不符 read from this record: the register says it is off duty. */
+  readonly offDuty?: DeviceCheck;
+  /** Opens 分配 to the primary user, for a device on the shelf. */
+  readonly onAssign?: () => void;
+  /** Opens 恢复为库存中, for a device marked lost. */
+  readonly onRestore?: () => void;
 }): ReactElement {
   const { t } = useTranslation();
   const review = useDeviceReviewAction();
@@ -295,7 +243,37 @@ function PlatformRecord({
     ],
     [
       'deviceSync.fields.lastSync',
-      <LastSync key='lastSync' value={record.lastSyncAt} silent={silent} />,
+      <span key='lastSync' className='inline-flex flex-wrap items-center gap-2'>
+        <LastSync value={record.lastSyncAt} silent={silent} />
+        {offDuty ? (
+          <>
+            <Badge
+              data-size='sm'
+              className={
+                offDuty.critical
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-warning text-warning-foreground'
+              }
+            >
+              {t('deviceSync.checks.statusTag', {
+                status: t(`enums.deviceStatus.${offDuty.status}`),
+              })}
+            </Badge>
+            {offDuty.status === 'inStock' && onAssign ? (
+              <Button size='sm' variant='outline' onClick={onAssign}>
+                {t('deviceSync.checks.assignTo', {
+                  user: record.userName ?? '',
+                })}
+              </Button>
+            ) : null}
+            {offDuty.status === 'lost' && onRestore ? (
+              <Button size='sm' variant='outline' onClick={onRestore}>
+                {t('deviceSync.checks.restore')}
+              </Button>
+            ) : null}
+          </>
+        ) : null}
+      </span>,
     ],
     ['deviceSync.fields.enrolledAt', formatDate(record.enrolledAt)],
     [

@@ -307,10 +307,13 @@ describe("a device's differences with the platform", () => {
         <ManagedPlatforms deviceId='d1' actions={actions} />
       </MemoryRouter>,
     );
+    // Tagged on the record's last sync, not a notice (2026-10-16).
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('deviceSync.checks.statusTag')).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('button', { name: 'deviceSync.checks.assignTo' }),
     );
-    expect(actions.onAssign).toHaveBeenCalledWith('person-b');
+    expect(actions.onAssign).toHaveBeenCalledWith(record.personId);
   });
 
   it('offers nothing to a reader who may not change the device', () => {
