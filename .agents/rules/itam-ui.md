@@ -96,7 +96,9 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
 - 负责人 (`ownerId`) is the **first row of 基本信息** on every detail page
   of a record that has one (2026-10-05): `domain-detail.tsx` places it
   there whatever group its field names (`OWNER_FIRST`), and the device page
-  does the same. It used to sit at the foot of 系统 with the stamps nobody
+  does the same — below its 状态 and who holds it (分配给 / 借给 / 预留给),
+  which lead 基本信息 there instead of sitting in the summary strip
+  (2026-10-16; the strip keeps only a disposal). It used to sit at the foot of 系统 with the stamps nobody
   edits, and went unseen; for a day it was in the summary strip, which was
   given back to where the record stands. It is edited in place like any
   row, so the handover rule and the read-only cases are unchanged. Neither the purchase order nor the disposal has a
