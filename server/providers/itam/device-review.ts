@@ -172,6 +172,12 @@ export interface DeviceReviewService {
   /** The devices marked 不需要纳管 that still are on no platform. */
   exempted(): Promise<ExemptDevice[]>;
   /** The reason a device is marked 不需要纳管, if it is. */
+  /**
+   * Whether a device's category is one that should be on a platform
+   * (`managedCategoryIds`, with their subcategories), for the device page
+   * to say why one that is not is on none (2026-10-16).
+   */
+  inManagedCategory(deviceId: string): Promise<boolean>;
   exemptionOf(deviceId: string): Promise<{
     readonly reason: string;
     readonly exemptedById: string | null;
@@ -906,6 +912,21 @@ export function createDeviceReviewService(deps: {
         const row = exempt.get(device.id);
         return row ? [{ ...device, ...row }] : [];
       });
+    },
+
+    async inManagedCategory(deviceId) {
+      const config = limits(await settings.get('deviceSync'));
+      if (config.managedCategoryIds.length === 0) return false;
+      const device = await database
+        .query()
+        .selectFrom('devices')
+        .select('categoryId')
+        .where('id', '=', deviceId)
+        .executeTakeFirst<{ categoryId: string | null }>();
+      if (!device?.categoryId) return false;
+      return (await withSubcategories(config.managedCategoryIds)).has(
+        device.categoryId,
+      );
     },
 
     async exemptionOf(deviceId) {

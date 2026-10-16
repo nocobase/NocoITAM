@@ -2159,6 +2159,8 @@ const messages = {
     notFound: 'Not found on the connected management platforms',
     notFoundIdle:
       'Not on the connected management platforms (a device not in use need not be)',
+    notFoundUnmanaged:
+      'Its category need not be on a platform (changed in the MDM settings)',
     exempted: 'Not to be managed: {{reason}}',
     sources: { intune: 'Intune', jamf: 'Jamf' },
     sourceNames: { intune: 'Microsoft Intune', jamf: 'Jamf Pro' },

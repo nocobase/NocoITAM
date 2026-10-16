@@ -73,9 +73,13 @@ export function ManagedPlatforms({
       ) : records.length === 0 ? (
         <p className='text-sm text-muted-foreground'>
           {t(
-            status && !['inUse', 'onLoan'].includes(status)
-              ? 'deviceSync.notFoundIdle'
-              : 'deviceSync.notFound',
+            // A category that need not be on a platform says so first
+            // (2026-10-16): a monitor is not missing from MDM.
+            managed.data.managedCategory === false
+              ? 'deviceSync.notFoundUnmanaged'
+              : status && !['inUse', 'onLoan'].includes(status)
+                ? 'deviceSync.notFoundIdle'
+                : 'deviceSync.notFound',
           )}
         </p>
       ) : (

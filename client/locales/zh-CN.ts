@@ -2057,6 +2057,7 @@ const zhCN: AppResource = {
     group: 'MDM',
     notFound: '未在已连接的 MDM 中找到',
     notFoundIdle: '不在已连接的 MDM 中（不在用的设备不需要纳管）',
+    notFoundUnmanaged: '这个分类不需要纳管（可在 MDM 设置中修改）',
     exempted: '不需要纳管：{{reason}}',
     sources: { intune: 'Intune', jamf: 'Jamf' },
     sourceNames: { intune: 'Microsoft Intune', jamf: 'Jamf Pro' },

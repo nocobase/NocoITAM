@@ -21,6 +21,7 @@ const state = vi.hoisted(() => ({
         connected: boolean;
         checks?: DeviceCheck[];
         exemption?: Exemption | null;
+        managedCategory?: boolean;
       }
     | undefined,
   review: vi.fn(),
@@ -149,6 +150,14 @@ describe("a device's MDM group", () => {
     render(<ManagedPlatforms deviceId='d1' />);
     expect(screen.getByText('deviceSync.group')).toBeInTheDocument();
     expect(screen.getByText('deviceSync.notFound')).toBeInTheDocument();
+  });
+
+  it('says a category that need not be on a platform is not missing', () => {
+    state.managed = { data: [], connected: true, managedCategory: false };
+    render(<ManagedPlatforms deviceId='d1' status='inUse' />);
+    expect(
+      screen.getByText('deviceSync.notFoundUnmanaged'),
+    ).toBeInTheDocument();
   });
 
   it('says it calmly for a device not in use, which need not be on one', () => {

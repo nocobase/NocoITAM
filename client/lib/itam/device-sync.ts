@@ -81,6 +81,7 @@ export function useManagedDevices(
   connected: boolean;
   checks: DeviceCheck[];
   exemption: Exemption | null;
+  managedCategory: boolean;
 }> {
   const api = useApi();
   return useQuery({
@@ -91,6 +92,7 @@ export function useManagedDevices(
         connected: boolean;
         checks: DeviceCheck[];
         exemption: Exemption | null;
+        managedCategory: boolean;
       }>({
         path: `${DEVICES_PATH}/${deviceId}/managed`,
       }),

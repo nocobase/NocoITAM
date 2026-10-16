@@ -424,6 +424,15 @@ describe('device review', () => {
     expect((await review.unmanaged()).map((row) => row.id)).toEqual([
       unmanaged,
     ]);
+    // The device page says which categories need no platform at all.
+    const page = async (id: string) =>
+      (
+        (await (await request(`devices/${id}/managed`)).json()) as {
+          managedCategory: boolean;
+        }
+      ).managedCategory;
+    expect(await page(unmanaged)).toBe(true);
+    expect(await page(monitor)).toBe(false);
   });
 
   it('marks a 只在台账 device 不需要纳管 with a reason, takes it back, and lets it lapse once a platform reports it', async () => {

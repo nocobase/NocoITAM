@@ -227,6 +227,8 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
           checks: await review.checks({ deviceIds: [deviceId] }),
           // 不需要纳管, with the reason (2026-10-15).
           exemption: await review.exemptionOf(deviceId),
+          // Whether its category should be on a platform at all (2026-10-16).
+          managedCategory: await review.inManagedCategory(deviceId),
         });
       } catch (error) {
         return errorResponse(context, error);
