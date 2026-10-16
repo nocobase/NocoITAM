@@ -3333,6 +3333,7 @@ const zhCN: AppResource = {
     startedBy: {
       submitted: '提交审批',
       asked: '有人要求',
+      synced: 'MDM 同步后',
     },
     status: {
       running: '运行中',
@@ -3353,6 +3354,30 @@ const zhCN: AppResource = {
         },
       },
     },
+    deviceSync: {
+      name: 'MDM 跟进',
+      description:
+        '每次从 MDM 同步后，把新出现、需要判断的差异整理成处理方案：MDM 上的使用人和台账不一致的设备，交给设备负责人；只在 MDM、台账里没有的记录，交给资产管理员。每项附理由，拿不准的留给人看；方案在收件箱里勾选后执行。',
+      triggers: {
+        synced: {
+          title: 'MDM 同步后',
+          hint: '每晚 01:30 的同步，以及在设置里点「立即同步」后；只看新出现的差异。',
+        },
+      },
+      byHand: '不论开关如何，都可以在 MDM 核对页让资产管家「整理这批设备」。',
+    },
+  },
+  deviceSyncRun: {
+    title: 'MDM 跟进',
+    afterSync: 'MDM 同步后的差异',
+    differences_one: 'MDM 同步：{{count}} 处新差异',
+    differences_other: 'MDM 同步：{{count}} 处新差异',
+    working: '资产管家正在整理同步后的差异…',
+    accepted: '已按方案处理',
+    notes: '需要你看一下',
+    openReview: '去 MDM 核对',
+    failedHint:
+      '这次没整理出来，可以到 MDM 核对页查看，或者等下次同步后再整理。',
   },
 };
 

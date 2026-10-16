@@ -20,6 +20,8 @@ import { AGENTS, type AgentName } from './agent-runs.js';
 export const AGENT_TRIGGERS: Readonly<Record<AgentName, readonly string[]>> = {
   // A purchase order or a disposal sent for approval.
   approvalReview: ['submitted'],
+  // After each pull from a device platform (the 01:30 job, 立即同步).
+  deviceSync: ['synced'],
 };
 
 export interface AgentSwitch {

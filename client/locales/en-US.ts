@@ -3524,6 +3524,7 @@ const messages = {
     startedBy: {
       submitted: 'Sent for approval',
       asked: 'Asked by a person',
+      synced: 'After an MDM sync',
     },
     status: {
       running: 'Running',
@@ -3544,6 +3545,31 @@ const messages = {
         },
       },
     },
+    deviceSync: {
+      name: 'MDM follow-up',
+      description:
+        "After each pull from a device platform, works the new differences that need a judgement into a plan: a device whose platform user is not its holder goes to the device's owner; a platform record the register lacks goes to the asset managers. Each with its reason, the uncertain ones left to a person; the plan is carried out from the inbox.",
+      triggers: {
+        synced: {
+          title: 'After an MDM sync',
+          hint: 'The 01:30 sync, and 立即同步 in Settings; only new differences.',
+        },
+      },
+      byHand:
+        'Whatever is switched off, Asset Steward can always be asked on MDM 核对 to sort a batch of devices.',
+    },
+  },
+  deviceSyncRun: {
+    title: 'MDM follow-up',
+    afterSync: 'Differences after an MDM sync',
+    differences_one: 'MDM sync: {{count}} new difference',
+    differences_other: 'MDM sync: {{count}} new differences',
+    working: 'Asset Steward is sorting what the sync left…',
+    accepted: 'Carried out',
+    notes: 'For you to look at',
+    openReview: 'Open MDM 核对',
+    failedHint:
+      'Nothing was sorted this time; look on MDM 核对, or wait for the next sync.',
   },
 };
 

@@ -1,4 +1,8 @@
 import {
+  createDeviceSyncFollowUp,
+  deviceSyncFollowUpToken,
+} from './device-sync-followup.js';
+import {
   createQuoteComparisonService,
   quoteComparisonServiceToken,
 } from './quote-comparisons.js';
@@ -446,6 +450,23 @@ export default class ItamProvider extends ServiceProvider<Application> {
       createApprovalReviewer({
         container,
         // The test harness has no config; the seeds' env override applies.
+        locale: () =>
+          process.env.APP_DEFAULT_LOCALE ??
+          this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??
+          'en-US',
+        warn: (detail, message) => {
+          if (container.has(loggingToken))
+            container
+              .resolve(loggingToken)
+              .getLogger('itam')
+              .warn(detail, message);
+        },
+      }),
+    );
+    // MDM 跟进 (2026-10-17): what a device sync leaves for a person.
+    container.singleton(deviceSyncFollowUpToken, () =>
+      createDeviceSyncFollowUp({
+        container,
         locale: () =>
           process.env.APP_DEFAULT_LOCALE ??
           this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??

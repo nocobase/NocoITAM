@@ -189,7 +189,9 @@ function AgentPanel({
               ))}
             </ul>
             <p className='text-xs text-muted-foreground'>
-              {t('agentWork.byHand', { name })}
+              {t(`agentWork.${agent.agent}.byHand`, {
+                defaultValue: t('agentWork.byHand', { name }),
+              })}
             </p>
             {save.error ? (
               <p className='text-destructive'>{save.error.message}</p>
@@ -315,16 +317,22 @@ function RunRow({
   readonly redone: boolean;
 }): ReactElement {
   const { t } = useTranslation();
-  const to = `${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`;
+  // MDM 跟进's runs are about a sync, settled on MDM 核对 (2026-10-17).
+  const sync = run.agent === 'deviceSync';
+  const to = sync
+    ? '/device-sync'
+    : `${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`;
   return (
     <li className='flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm'>
       <div className='min-w-0 flex-1 space-y-0.5'>
         <RecordLink to={to} className='font-medium'>
-          {run.title ?? run.subjectId}
+          {sync ? t('deviceSyncRun.afterSync') : (run.title ?? run.subjectId)}
         </RecordLink>
         <p className='truncate text-muted-foreground'>
           {run.result
-            ? `${t(`review.recommendation.${run.result.recommendation}`)} · ${run.result.summary}`
+            ? run.agent === 'deviceSync'
+              ? run.result.summary
+              : `${t(`review.recommendation.${run.result.recommendation}`)} · ${run.result.summary}`
             : run.status === 'failed'
               ? t(`review.failed.${run.failure ?? 'failed'}`, {
                   defaultValue: t('review.failed.failed'),

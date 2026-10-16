@@ -3254,6 +3254,28 @@ own; it comes before approval, by the requester, not with it.
   `202610170004_purchase_quote_comparisons`); read-only once it is sent,
   and read by the approval assistant.
 
+### 2026-10-17 MDM 跟进: following up each device sync
+
+Step 3's MDM 核对, built as a work agent after all: the sync itself is
+rules, but two of what it leaves need a judgement the register holds the
+material for — a device whose platform user is not its holder (transfer,
+or the platform is wrong), and a platform record the register lacks
+(register, link to a device that did not match, or keep off). Asset
+Steward already settles them when asked on MDM 核对; this asks it after
+every sync, for what is new.
+
+- **Who**: a 使用人不一致 goes to the device's 负责人; 只在 MDM, which has
+  no 负责人, to each holder of the asset manager set, the first to decide
+  settling it for the rest.
+- **What**: a plan in 收件箱 of transfers, assignments, links and records
+  kept off, with notes for what a plan cannot do (register, verify, ask
+  the platform's administrator). The person ticks and carries it out on
+  the plan's own card, or sets it aside.
+- **Only what is new**: a difference in a suggestion carried out or set
+  aside is not raised again; one left waiting comes back with the next
+  sync. 失联, 状态不符 and 只在台账 stay on 待办.
+- A switch on Agent 工作, like 审批助手's.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became
