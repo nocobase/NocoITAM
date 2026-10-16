@@ -91,7 +91,7 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                   // §S1: decisions only, never notifications).
                   badges={inboxCount ? { inbox: inboxCount } : undefined}
                   sections
-                  after={{ workbench: <SearchNavButton /> }}
+                  after={{ inbox: <SearchNavButton /> }}
                 />
               </AppSidebar>
               {/* Application change (ITAM): `itam-page-main` makes room for

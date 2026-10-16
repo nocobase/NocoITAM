@@ -239,8 +239,16 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       name: 'device',
       path: '/device',
     },
+    {
+      name: 'workbench',
+      path: '/',
+      auth: 'required',
+      navigation: { title: 'navigation.workbench', icon: LayoutDashboard },
+      componentLoader: () => import('./pages/itam/workbench.js'),
+    },
     // 收件箱 (2026-10-16, plan "Work agents"; `frontend-standard.md` §S1):
-    // first in the menu, its count the runs waiting on the reader. Everyone
+    // under 待办 in the menu (2026-10-17; it was first), its count the runs
+    // waiting on the reader. Everyone
     // has one and it shows only the reader's own, so it checks no page
     // grant; `/notifications`, where the bell led, opens its 通知 tab.
     {
@@ -250,13 +258,6 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       authz: 'skip',
       navigation: { title: 'navigation.inbox', icon: Inbox },
       componentLoader: () => import('./pages/itam/inbox.js'),
-    },
-    {
-      name: 'workbench',
-      path: '/',
-      auth: 'required',
-      navigation: { title: 'navigation.workbench', icon: LayoutDashboard },
-      componentLoader: () => import('./pages/itam/workbench.js'),
     },
     // 通知 has no menu entry: it opens from the bell in the header
     // (2026-10-05), and 待办 is the workbench's board rather than a page of
