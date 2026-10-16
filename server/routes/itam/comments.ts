@@ -49,6 +49,7 @@ const editSchema = z
     body: z.string().max(COMMENT_LIMIT),
     mentions,
     keepFileIds: z.array(z.string().max(64)).max(50).optional(),
+    fileIds: z.array(z.string().max(64)).max(50).optional(),
   })
   .strict();
 

@@ -448,6 +448,10 @@ function Message({
   const [keptIds, setKeptIds] = useState<string[]>([]);
   // A file the edit is about to drop, asked about first.
   const [dropping, setDropping] = useState<CommentFile>();
+  // Files added while editing: uploaded at once, joined when it is saved.
+  const additions = useUploads();
+  const editDrag = useFileDrag();
+  const editPickerRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const author =
@@ -486,6 +490,9 @@ function Message({
                     body: draft,
                     mentions: mentionsIn(draft, mentions, scope.colleagues),
                     keepFileIds: keptIds,
+                    ...(additions.files.length
+                      ? { fileIds: additions.files.map((file) => file.id) }
+                      : {}),
                   },
             }
           : {}),
@@ -494,6 +501,7 @@ function Message({
       setEditing(false);
       setDeleting(false);
       setUnfiling(undefined);
+      additions.clear();
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -564,6 +572,7 @@ function Message({
                           : [],
                       );
                       setKeptIds(filesOf(event).map((file) => file.id));
+                      additions.clear();
                       setEditing(true);
                     }}
                   >
@@ -583,7 +592,24 @@ function Message({
           </span>
         </div>
         {editing ? (
-          <div className='mt-1 grid gap-2'>
+          <div
+            className='mt-1 grid gap-2'
+            {...editDrag.bind}
+            onDragOver={(dragged) => {
+              if (dragged.dataTransfer.types.includes('Files'))
+                dragged.preventDefault();
+            }}
+            onDrop={(dropped) => {
+              if (!dropped.dataTransfer.files.length) return;
+              dropped.preventDefault();
+              additions.add([...dropped.dataTransfer.files]);
+            }}
+            onPaste={(pasted) => {
+              if (!pasted.clipboardData.files.length) return;
+              pasted.preventDefault();
+              additions.add([...pasted.clipboardData.files]);
+            }}
+          >
             <MentionTextarea
               aria-label={t('comments.label')}
               value={draft}
@@ -591,7 +617,10 @@ function Message({
               onMentionsChange={setMentions}
               colleagues={scope.colleagues}
               autoFocus
-              className='max-h-[50vh] min-h-16 text-sm'
+              className={cn(
+                'max-h-[50vh] min-h-16 text-sm',
+                editDrag.over && 'border-ring ring-2 ring-ring/30',
+              )}
               onChange={setDraft}
               onKeyDown={(keys) => {
                 if (sendsOnEnter(keys)) {
@@ -604,12 +633,49 @@ function Message({
             {/* The comment's files stay in view while it is edited, each
                 to be taken off with the text's change (2026-10-16). */}
             <FileChips
-              files={filesOf(event).filter((file) => keptIds.includes(file.id))}
-              onRemove={(card) =>
-                setDropping(filesOf(event).find((file) => file.id === card.id))
-              }
+              files={[
+                ...filesOf(event).filter((file) => keptIds.includes(file.id)),
+                ...additions.files,
+              ]}
+              onRemove={(card) => {
+                // One just added goes at once; one it already had is asked.
+                if (additions.files.some((file) => file.id === card.id))
+                  additions.remove(card.id);
+                else
+                  setDropping(
+                    filesOf(event).find((file) => file.id === card.id),
+                  );
+              }}
             />
-            <div className='flex justify-end gap-2'>
+            {additions.error ? (
+              <p className='text-xs text-destructive'>{additions.error}</p>
+            ) : null}
+            <div className='flex items-center justify-end gap-2'>
+              <input
+                ref={editPickerRef}
+                type='file'
+                multiple
+                hidden
+                onChange={(picked) => {
+                  additions.add([...(picked.target.files ?? [])]);
+                  picked.target.value = '';
+                }}
+              />
+              <Button
+                type='button'
+                size='sm'
+                variant='ghost'
+                className='mr-auto text-muted-foreground'
+                disabled={additions.uploading}
+                onClick={() => editPickerRef.current?.click()}
+              >
+                {additions.uploading ? (
+                  <Spinner data-icon='inline-start' />
+                ) : (
+                  <Paperclip data-icon='inline-start' />
+                )}
+                {t('comments.attach')}
+              </Button>
               <Button
                 size='sm'
                 variant='ghost'
@@ -619,7 +685,11 @@ function Message({
               </Button>
               <Button
                 size='sm'
-                disabled={busy || (!draft.trim() && !keptIds.length)}
+                disabled={
+                  busy ||
+                  additions.uploading ||
+                  (!draft.trim() && !keptIds.length && !additions.files.length)
+                }
                 onClick={() => void write('PATCH')}
               >
                 {t('actions.save')}

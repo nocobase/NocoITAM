@@ -271,6 +271,47 @@ describe('comments', () => {
       files: [expect.objectContaining({ id: 'two' })],
     });
 
+    // Files uploaded while editing join the ones it keeps.
+    await app.db.database
+      .query()
+      .insertInto('itamFiles')
+      .values({
+        id: 'three',
+        disk: 'local',
+        key: 'three',
+        filename: 'three.pdf',
+        ext: 'pdf',
+        mimeType: 'application/pdf',
+        size: 10,
+        createdAt: stamp,
+        updatedAt: stamp,
+      })
+      .execute();
+    const added = await app.request(`/api/itam/comments/${id}`, {
+      ...json({
+        body: 'Quotes',
+        mentions: [],
+        keepFileIds: ['two'],
+        fileIds: ['three'],
+      }),
+      method: 'PATCH',
+      user: 'mia',
+      role: 'manager',
+    });
+    expect(added.status).toBe(200);
+    expect(
+      (
+        (await timeline()).find((entry) => entry.event?.type === 'comment')
+          ?.event?.payload?.files as { id: string }[]
+      ).map((file) => file.id),
+    ).toEqual(['two', 'three']);
+    await app.request(`/api/itam/comments/${id}`, {
+      ...json({ body: 'Quotes', mentions: [], keepFileIds: ['two'] }),
+      method: 'PATCH',
+      user: 'mia',
+      role: 'manager',
+    });
+
     // The attachments tab lists them in a group of their own.
     const groups = await app.container
       .resolve(attachmentServiceToken)

@@ -111,6 +111,8 @@ export interface CommentService {
       readonly mentions?: readonly string[];
       /** The files it keeps, of those it has; absent keeps them all. */
       readonly keepFileIds?: readonly string[];
+      /** Files uploaded while editing it, joined to the kept ones. */
+      readonly fileIds?: readonly string[];
     },
   ): Promise<HistoryEventRecord>;
   remove(actorId: string, id: string): Promise<void>;
@@ -416,10 +418,12 @@ export function createCommentService(
           'The comment was deleted',
           'COMMENT_DELETED',
         );
-      // Its author may take a file off it (2026-10-16), never add one here.
-      const files = input.keepFileIds
+      // Its author may take a file off it, and add files just uploaded,
+      // held to the same rules as a new comment's (2026-10-16).
+      const kept = input.keepFileIds
         ? before.files.filter((file) => input.keepFileIds?.includes(file.id))
         : before.files;
+      const files = [...kept, ...(await freshFiles(input.fileIds ?? []))];
       const body = bodyOf(input.body, files.length);
       const mentions = await accounts(input.mentions ?? [], actorId);
       const payload: CommentPayload = {
