@@ -46,36 +46,37 @@ vi.mock('@nocobase/i18n/client', () => ({
 
 const run = (overrides: Partial<SuggestionRun> = {}): SuggestionRun => ({
   id: 'run-1',
-  agent: 'offboarding',
-  trigger: 'left',
-  startedById: 'mia',
-  subjectType: 'people',
-  subjectId: 'p-1',
+  agent: 'renewalReview',
+  trigger: 'daily',
+  startedById: null,
+  subjectType: 'entitlements',
+  subjectId: 'e-1',
   refId: null,
   deciderId: 'mia',
   status: 'pending',
   result: {
-    title: '离职回收：Li Na',
-    summary: 'Take back the laptop and the seat',
+    title: '授权续费：Figma',
+    summary: 'Reclaim the leaver’s seat and renew with 4',
     changes: [
-      {
-        op: 'return_devices',
-        kind: 'device',
-        action: 'return',
-        subject: 'DE-000004 / MacBook Pro 14',
-        nextStatus: 'inStock',
-        reason: 'In good order',
-      },
       {
         op: 'reclaim_seats',
         kind: 'seat',
         action: 'reclaim',
         subject: 'Figma · li.na@example.com',
-        reason: 'She has left',
+        reason: 'Its holder has left',
+      },
+      {
+        op: 'adjust_entitlement_seats',
+        kind: 'entitlement',
+        action: 'adjustSeats',
+        subject: 'Figma',
+        quantity: 4,
+        reason: '2 × 1,200 = 2,400 a year',
       },
     ],
-    notes: ['Confirm the mouse was used up'],
+    notes: ['Close the account in Figma'],
     risks: [],
+    recommendation: 'reduce',
   },
   planId: null,
   failure: null,
@@ -88,7 +89,7 @@ const run = (overrides: Partial<SuggestionRun> = {}): SuggestionRun => ({
   model: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-  title: 'Li Na',
+  title: 'Figma',
   ...overrides,
 });
 
@@ -103,7 +104,7 @@ beforeEach(() => {
 it('carries out the changes left ticked', () => {
   render(<SuggestionCard run={run()} />);
   expect(
-    screen.getByText('suggestion.change.return:DE-000004 / MacBook Pro 14'),
+    screen.getByText('suggestion.change.reclaim:Figma · li.na@example.com'),
   ).toBeInTheDocument();
   expect(
     screen.getByRole('button', { name: 'suggestion.execute:2' }),
@@ -126,8 +127,6 @@ it('cannot carry out nothing; one with no changes is agreed to', () => {
     <SuggestionCard
       run={run({
         id: 'run-2',
-        agent: 'renewalReview',
-        subjectType: 'entitlements',
         result: {
           title: '授权续费：Figma',
           summary: 'Renew as it is',
@@ -149,26 +148,26 @@ it('cannot carry out nothing; one with no changes is agreed to', () => {
   );
 });
 
-it('sets it aside, discusses the leaver, or redoes it in the decider’s words', () => {
+it('sets it aside, discusses the entitlement, or redoes it in the decider’s words', () => {
   render(<SuggestionCard run={run()} />);
   fireEvent.click(screen.getByRole('button', { name: 'review.dismiss' }));
   expect(state.dismiss).toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'review.discuss' }));
   expect(state.discuss).toHaveBeenCalledWith([
-    { kind: 'people', id: 'p-1', label: 'Li Na' },
+    { kind: 'entitlements', id: 'e-1', label: 'Figma' },
   ]);
   fireEvent.click(screen.getByRole('button', { name: 'review.redo' }));
   fireEvent.change(
-    screen.getByPlaceholderText('suggestion.redoPlaceholder.offboarding'),
-    { target: { value: 'Send the laptop for repair' } },
+    screen.getByPlaceholderText('suggestion.redoPlaceholder.renewalReview'),
+    { target: { value: 'Keep 5 seats' } },
   );
   fireEvent.click(screen.getByRole('button', { name: 'review.redoSend' }));
   expect(state.ask).toHaveBeenCalledWith(
     {
-      agent: 'offboarding',
-      subjectType: 'people',
-      subjectId: 'p-1',
-      revise: { runId: 'run-1', instruction: 'Send the laptop for repair' },
+      agent: 'renewalReview',
+      subjectType: 'entitlements',
+      subjectId: 'e-1',
+      revise: { runId: 'run-1', instruction: 'Keep 5 seats' },
     },
     expect.anything(),
   );
@@ -183,16 +182,16 @@ it('shows what each step did once accepted', () => {
       {
         id: 's1',
         position: 0,
-        op: 'return_devices',
-        check: { title: 'return: DE-000004', fields: [] },
+        op: 'reclaim_seats',
+        check: { title: '收回席位: Figma · li.na', fields: [] },
         status: 'done',
         result: null,
       },
       {
         id: 's2',
         position: 1,
-        op: 'reclaim_seats',
-        check: { title: 'reclaim: Figma', fields: [] },
+        op: 'adjust_entitlement_seats',
+        check: { title: '调整席位数: Figma → 4', fields: [] },
         status: 'failed',
         result: null,
       },
@@ -202,6 +201,6 @@ it('shows what each step did once accepted', () => {
     <SuggestionCard run={run({ status: 'accepted', planId: 'plan-1' })} />,
   );
   expect(screen.getByText('suggestion.accepted')).toBeInTheDocument();
-  expect(screen.getByText('return: DE-000004')).toBeInTheDocument();
+  expect(screen.getByText('收回席位: Figma · li.na')).toBeInTheDocument();
   expect(screen.getByText('suggestion.stoppedAt')).toBeInTheDocument();
 });

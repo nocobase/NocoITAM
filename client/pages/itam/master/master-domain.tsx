@@ -24,8 +24,6 @@ import {
   PeopleStats,
   RelatedCountCell,
 } from './master-domain-parts.js';
-import { OffboardingDecisions } from '../people/offboarding-decisions.js';
-
 import {
   kindOfAppliesTo,
   statsRequest,
@@ -208,8 +206,6 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
     Actions: ({ record }) => (
       <MasterActions collection={collection} record={record} />
     ),
-    // 离职回收's suggestion on a leaver's page (2026-10-17, plan "Work agents").
-    Decisions: collection.name === 'people' ? OffboardingDecisions : undefined,
     // A sub-category takes its parent's asset type (the service does the
     // same on save): the field turns read-only once a parent is chosen, so
     // the form fills it rather than leaving a required field nobody can

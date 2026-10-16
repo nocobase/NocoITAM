@@ -29,10 +29,6 @@ import {
   suggestionDecisionsToken,
 } from './agent-suggestions.js';
 import {
-  createOffboardingReviewer,
-  offboardingReviewerToken,
-} from './offboarding-review.js';
-import {
   createRenewalReviewer,
   renewalReviewerToken,
 } from './renewal-review.js';
@@ -473,13 +469,6 @@ export default class ItamProvider extends ServiceProvider<Application> {
       if (container.has(loggingToken))
         container.resolve(loggingToken).getLogger('itam').warn(detail, message);
     };
-    container.singleton(offboardingReviewerToken, () =>
-      createOffboardingReviewer({
-        container,
-        locale: agentLocale,
-        warn: agentWarn,
-      }),
-    );
     container.singleton(renewalReviewerToken, () =>
       createRenewalReviewer({
         container,

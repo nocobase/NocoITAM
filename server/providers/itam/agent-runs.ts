@@ -20,8 +20,9 @@ import { dbDateTime } from './dates.js';
 
 export const AGENTS = [
   'approvalReview',
-  // Step 2 (2026-10-17): a leaver's things back, and a renewal weighed.
-  'offboarding',
+  // Step 2 (2026-10-17): a renewal weighed. 离职回收 was built in the
+  // same step and removed the same day: what a leaver hands back is a rule
+  // (`recovery.ts`), not a judgement.
   'renewalReview',
 ] as const;
 export type AgentName = (typeof AGENTS)[number];
@@ -85,12 +86,6 @@ export interface StartRun {
   readonly deciderId: string | null;
   readonly revisesId?: string | null;
   readonly instruction?: string | null;
-  /**
-   * Whether it replaces only the open run its own decider holds on the
-   * record (a leaver's things are reviewed once per 负责人); otherwise any
-   * open run of the agent on the record.
-   */
-  readonly perDecider?: boolean;
 }
 
 export interface RunCounts {
@@ -105,12 +100,11 @@ export interface AgentRunService {
   /** A new run, running; any earlier one of the agent on the record still open is superseded. */
   start(input: StartRun, connection?: DatabaseConnection): Promise<AgentRun>;
   get(id: string): Promise<AgentRun | undefined>;
-  /** The newest run of the agent on a record; with `deciderId`, the newest that person decides. */
+  /** The newest run of the agent on a record. */
   latest(
     agent: AgentName,
     subjectType: string,
     subjectId: string,
-    deciderId?: string,
   ): Promise<AgentRun | undefined>;
   /** Whether the agent has run on the record since `since`, or has one open (a daily pass skips it). */
   reviewedSince(
@@ -153,7 +147,6 @@ export interface AgentRunService {
     subjectType: string,
     subjectId: string,
     connection?: DatabaseConnection,
-    deciderId?: string | null,
   ): Promise<void>;
   /** Runs left running too long, failed `timedOut`. */
   expireStale(now?: Date): Promise<number>;
@@ -257,7 +250,6 @@ export function createAgentRunService(
         input.subjectType,
         input.subjectId,
         connection,
-        input.perDecider ? input.deciderId : undefined,
       );
       const now = new Date();
       const values = {
@@ -303,17 +295,15 @@ export function createAgentRunService(
       return row ? decodeRun(row) : undefined;
     },
 
-    async latest(agent, subjectType, subjectId, deciderId) {
+    async latest(agent, subjectType, subjectId) {
       await service.expireStale();
-      let rows = database
+      const row = await database
         .query()
         .selectFrom('itamAgentRuns')
         .selectAll()
         .where('agent', '=', agent)
         .where('subjectType', '=', subjectType)
-        .where('subjectId', '=', subjectId);
-      if (deciderId) rows = rows.where('deciderId', '=', deciderId);
-      const row = await rows
+        .where('subjectId', '=', subjectId)
         .orderBy('createdAt', 'desc')
         .executeTakeFirst<Record<string, unknown>>();
       return row ? decodeRun(row) : undefined;
@@ -411,8 +401,8 @@ export function createAgentRunService(
         .execute();
     },
 
-    async supersede(agent, subjectType, subjectId, connection, deciderId) {
-      let update = query(connection)
+    async supersede(agent, subjectType, subjectId, connection) {
+      await query(connection)
         .updateTable('itamAgentRuns')
         .set({ status: 'superseded', updatedAt: new Date() })
         .where('agent', '=', agent)
@@ -420,9 +410,8 @@ export function createAgentRunService(
         .where('subjectId', '=', subjectId)
         // A failure too: once the record has a newer run, or is decided,
         // it no longer waits on anyone (2026-10-17).
-        .where('status', 'in', [...OPEN, 'failed']);
-      if (deciderId) update = update.where('deciderId', '=', deciderId);
-      await update.execute();
+        .where('status', 'in', [...OPEN, 'failed'])
+        .execute();
     },
 
     async expireStale(now = new Date()) {
@@ -476,6 +465,8 @@ export function createAgentRunService(
         .selectFrom('itamAgentRuns')
         .selectAll()
         .where('deciderId', '=', deciderId)
+        // Runs of a work no longer done (离职回收) are not shown.
+        .where('agent', 'in', [...AGENTS])
         .where('status', 'in', ['running', 'pending', 'failed'])
         // A failure stays in front of its decider for as long as the
         // record waits on them, and not past the window.
@@ -493,6 +484,8 @@ export function createAgentRunService(
         .selectFrom('itamAgentRuns')
         .selectAll()
         .where('deciderId', '=', deciderId)
+        // Runs of a work no longer done (离职回收) are not shown.
+        .where('agent', 'in', [...AGENTS])
         .where('status', 'in', [...HANDLED])
         .where('updatedAt', '>=', dbDateTime(since))
         .orderBy('updatedAt', 'desc')
@@ -508,6 +501,8 @@ export function createAgentRunService(
         .selectFrom('itamAgentRuns')
         .select((eb) => [eb.fn.countAll().as('count')])
         .where('deciderId', '=', deciderId)
+        // Runs of a work no longer done (离职回收) are not shown.
+        .where('agent', 'in', [...AGENTS])
         .where('status', '=', 'pending')
         .executeTakeFirst<{ count: unknown }>();
       return Number(row?.count ?? 0);

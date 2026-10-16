@@ -7,33 +7,24 @@ import {
   type AgentRun,
 } from '../../server/providers/itam/agent-runs.js';
 import { addDays, today } from '../../server/providers/itam/dates.js';
-import { masterDataServiceToken } from '../../server/providers/itam/master-data.js';
-import { offboardingReviewerToken } from '../../server/providers/itam/offboarding-review.js';
 import { renewalReviewerToken } from '../../server/providers/itam/renewal-review.js';
 import { agentRoutes } from '../../server/routes/itam/agents.js';
-import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
 
-// The model each agent asks: the reply is the test's, chosen by which
-// agent's prompt it is, and what it was asked is kept. There is no Agents
-// plugin in the test harness.
-const model = vi.hoisted(() => ({
-  replies: {} as Record<'offboarding' | 'renewal', string>,
-  asked: [] as string[],
-}));
+// The model the agent asks: the reply is the test's, and what it was asked
+// is kept. There is no Agents plugin in the test harness.
+const model = vi.hoisted(() => ({ reply: '', asked: [] as string[] }));
 vi.mock('../../server/providers/itam/ai-model.js', async (importOriginal) => ({
   ...(await importOriginal<
     typeof import('../../server/providers/itam/ai-model.js')
   >()),
-  openSession: async (_container: unknown, input: { work?: string }) => ({
+  openSession: async () => ({
     model: { modelService: 'test', model: 'suggester' },
     ask: async (content: string) => {
       model.asked.push(content);
-      return input.work === 'renewalReview'
-        ? model.replies.renewal
-        : model.replies.offboarding;
+      return model.reply;
     },
     askJson: async () => null,
   }),
@@ -54,16 +45,13 @@ interface SuggestionRun extends AgentRun {
 }
 
 /**
- * 离职回收 and 授权续费 (plan "Work agents", step 2): they only suggest. A
- * leaver's things are reviewed once per 负责人, each for their own part; an
- * entitlement due soon is reviewed for its 负责人. Accepting carries out the
- * changes kept as a plan, as the decider, and the run names it.
+ * 授权续费 (plan "Work agents", step 2): it only suggests. An entitlement
+ * due soon is reviewed for its 负责人. Accepting carries out the changes
+ * kept as a plan, as the decider, and the run names it.
  */
-describe('work agents that suggest', () => {
+describe('a work agent that suggests', () => {
   let app: TestApp;
   let personId: string;
-  let modelId: string;
-  let locationId: string;
   let productId: string;
   type Who = typeof mia;
   const call = (
@@ -106,68 +94,15 @@ describe('work agents that suggest', () => {
       .selectAll()
       .where('id', '=', id)
       .executeTakeFirst()) as Record<string, unknown>;
-  const device = async (serialNo: string, ownerId: string) => {
-    const id = await created('devices', {
-      modelId,
-      locationId,
-      serialNo,
-      ownerId,
-    });
-    const assigned = await call(
-      'POST',
-      `devices/${id}/assign`,
-      { targetType: 'person', targetId: personId },
-      mia,
-    );
-    if (assigned.status !== 200) throw new Error(await assigned.text());
-    return id;
-  };
-
   beforeEach(async () => {
     model.asked = [];
-    model.replies = {
-      offboarding: JSON.stringify({
-        summary: '收回笔记本，入库',
-        changes: [],
-        notes: [],
-        risks: [],
-      }),
-      renewal: JSON.stringify({
-        recommendation: 'renew',
-        summary: '照常续费',
-      }),
-    };
+    model.reply = JSON.stringify({
+      recommendation: 'renew',
+      summary: '照常续费',
+    });
     app = await createTestApp({ seeds: true });
-    for (const routes of [
-      masterDataRoutes,
-      deviceRoutes,
-      entitlementRoutes,
-      agentRoutes,
-    ])
+    for (const routes of [masterDataRoutes, entitlementRoutes, agentRoutes])
       await app.mount(routes);
-    // What the agents' provider wires at boot.
-    const offboarding = app.container.resolve(offboardingReviewerToken);
-    app.container.resolve(masterDataServiceToken).onLeft = (id, actorId) =>
-      void offboarding
-        .request({ personId: id, trigger: 'left', by: actorId })
-        .catch(() => undefined);
-
-    const manufacturerId = await created('master/manufacturers', {
-      name: 'Test Maker',
-    });
-    const categoryId = await created('master/categories', {
-      name: 'Test Laptop',
-      appliesTo: 'device',
-    });
-    modelId = await created('master/models', {
-      name: 'Test Book 14',
-      categoryId,
-      manufacturerId,
-    });
-    locationId = await created('master/locations', {
-      name: 'HQ',
-      type: 'company',
-    });
     const departmentId = await created('master/departments', { name: 'R&D' });
     personId = await created('master/people', { name: 'Li Na', departmentId });
     const softwareCategoryId = await created('master/categories', {
@@ -183,87 +118,6 @@ describe('work agents that suggest', () => {
 
   afterEach(async () => {
     await app.destroy();
-  });
-
-  it('reviews a leaver once per 负责人, and carries out what one keeps', async () => {
-    const mine = await device('SN-MIA', 'mia');
-    const anns = await device('SN-ANN', 'ann');
-    const marked = await call(
-      'POST',
-      `master/people/${personId}/mark-left`,
-      {},
-      mia,
-    );
-    expect(marked.status).toBe(200);
-
-    const forMia = await settled(() =>
-      runs().latest('offboarding', 'people', personId, 'mia'),
-    );
-    const forAnn = await settled(() =>
-      runs().latest('offboarding', 'people', personId, 'ann'),
-    );
-    expect(forMia.id).not.toBe(forAnn.id);
-    // Each read their own part only: Ann's laptop is not in Mia's prompt.
-    expect(model.asked.find((ask) => ask.includes('SN-MIA'))).not.toContain(
-      'SN-ANN',
-    );
-    // An item the model left out still gets its default change.
-    expect(forMia.result?.changes).toEqual([
-      expect.objectContaining({ op: 'return_devices', action: 'return' }),
-    ]);
-
-    // Through the route, each reader sees their own.
-    const latest = await data<AgentRun>(
-      await call(
-        'GET',
-        `agentRuns/latest?agent=offboarding&subjectType=people&subjectId=${personId}`,
-        undefined,
-        ann,
-      ),
-    );
-    expect(latest.id).toBe(forAnn.id);
-
-    // Only its decider accepts it.
-    const refused = await call(
-      'POST',
-      `agentRuns/${forMia.id}/accept`,
-      { keep: [0] },
-      ann,
-    );
-    expect(refused.status).toBe(422);
-
-    const accepted = await data<{
-      run: AgentRun & { planId: string };
-      plan: { status: string; steps: { status: string }[] };
-    }>(await call('POST', `agentRuns/${forMia.id}/accept`, { keep: [0] }, mia));
-    expect(accepted.run.status).toBe('accepted');
-    expect(accepted.plan).toMatchObject({
-      status: 'executed',
-      steps: [{ status: 'done' }],
-    });
-    expect(await row('devices', mine)).toMatchObject({
-      status: 'inStock',
-      assigneeId: null,
-    });
-    // Ann's part is untouched until she decides.
-    expect(await row('devices', anns)).toMatchObject({ assigneeId: personId });
-
-    const plan = await data<{ id: string } | null>(
-      await call('GET', `agentRuns/${forMia.id}/plan`, undefined, mia),
-    );
-    expect(plan?.id).toBe(accepted.run.planId);
-    // Nobody else reads it.
-    expect(
-      await data(
-        await call('GET', `agentRuns/${forMia.id}/plan`, undefined, ann),
-      ),
-    ).toBeNull();
-
-    // Ann sets hers aside: nothing changes.
-    expect(
-      (await call('POST', `agentRuns/${forAnn.id}/dismiss`, {}, ann)).status,
-    ).toBe(200);
-    expect(await row('devices', anns)).toMatchObject({ assigneeId: personId });
   });
 
   it('suggests fewer seats before a renewal, and reclaims a leaver’s', async () => {
@@ -304,7 +158,7 @@ describe('work agents that suggest', () => {
       .set({ employmentStatus: 'left' })
       .where('id', '=', personId)
       .execute();
-    model.replies.renewal = JSON.stringify({
+    model.reply = JSON.stringify({
       recommendation: 'reduce',
       summary: '离职 1 人，减到 2 个席位',
       seatCount: 2,
@@ -347,10 +201,28 @@ describe('work agents that suggest', () => {
       ).status,
     ).toBe(422);
 
-    const accepted = await data<{ plan: { status: string } }>(
-      await call('POST', `agentRuns/${run.id}/accept`, { keep: [0, 1] }, mia),
+    // Only its decider accepts it.
+    expect(
+      (await call('POST', `agentRuns/${run.id}/accept`, { keep: [0, 1] }, ann))
+        .status,
+    ).toBe(422);
+    const accepted = await data<{
+      run: AgentRun & { planId: string };
+      plan: { status: string; steps: { status: string }[] };
+    }>(await call('POST', `agentRuns/${run.id}/accept`, { keep: [0, 1] }, mia));
+    expect(accepted.run.status).toBe('accepted');
+    expect(accepted.plan).toMatchObject({
+      status: 'executed',
+      steps: [{ status: 'done' }, { status: 'done' }],
+    });
+    // The plan it became, for its decider alone.
+    const plan = await data<{ id: string } | null>(
+      await call('GET', `agentRuns/${run.id}/plan`, undefined, mia),
     );
-    expect(accepted.plan.status).toBe('executed');
+    expect(plan?.id).toBe(accepted.run.planId);
+    expect(
+      await data(await call('GET', `agentRuns/${run.id}/plan`, undefined, ann)),
+    ).toBeNull();
     expect(await row('entitlements', entitlementId)).toMatchObject({
       seatCount: 2,
     });
@@ -375,7 +247,7 @@ describe('work agents that suggest', () => {
     });
     // A reply that cannot be read fails the run, which waits in the
     // inbox until a newer run replaces it.
-    model.replies.renewal = 'not json';
+    model.reply = 'not json';
     const ask = () =>
       call(
         'POST',
@@ -392,7 +264,7 @@ describe('work agents that suggest', () => {
       () => runs().latest('renewalReview', 'entitlements', entitlementId),
       'failed',
     );
-    model.replies.renewal = JSON.stringify({
+    model.reply = JSON.stringify({
       recommendation: 'lapse',
       summary: '没人在用，不再续费',
     });
@@ -424,7 +296,7 @@ describe('work agents that suggest', () => {
 
     // Asked again: renewing as it is would turn auto-renewal back on; Mia
     // keeps none of it, which is refused, and then agrees to a plain renew.
-    model.replies.renewal = JSON.stringify({
+    model.reply = JSON.stringify({
       recommendation: 'renew',
       summary: '照常续费',
     });
@@ -484,7 +356,7 @@ describe('work agents that suggest', () => {
   });
 });
 
-describe('the offboarding and renewal-review eval sets', () => {
+describe('the renewal-review eval set', () => {
   it('scores each renewal on its recommendation, asked as a real review asks', async () => {
     const { RENEWAL_REVIEW_EVALS } =
       await import('../../server/providers/itam/evals/renewal-review.js');
@@ -516,57 +388,5 @@ describe('the offboarding and renewal-review eval sets', () => {
     expect(report.passed).toBe(RENEWAL_REVIEW_EVALS.length - 1);
     expect(report.cases[0]).toMatchObject({ passed: false, got: ['lapse'] });
     expect(prompts.every((prompt) => prompt.includes('METHOD'))).toBe(true);
-  });
-
-  it('scores each leaver on the change for every item, none where none is due', async () => {
-    const { OFFBOARDING_EVALS } =
-      await import('../../server/providers/itam/evals/offboarding.js');
-    const { runEval } =
-      await import('../../server/providers/itam/skill-evals.js');
-    // The first accepted change for every item; the last case also changes
-    // the laptop at the repair shop, which must fail it.
-    const report = await runEval({
-      skill: 'offboarding',
-      instructions: 'METHOD',
-      open: async () => ({
-        ask: async () => '',
-        askJson: async (content: string) => {
-          const item = OFFBOARDING_EVALS.find((candidate) =>
-            content.includes(JSON.stringify(candidate.material.items, null, 2)),
-          )!;
-          const changes = Object.entries(item.expect).flatMap(
-            ([itemId, accepted]) =>
-              accepted.length
-                ? [
-                    {
-                      itemId,
-                      action: accepted[0]!.action,
-                      nextStatus: accepted[0]!.nextStatus ?? null,
-                      targetPersonId: accepted[0]!.targetPersonId ?? null,
-                      reason: '',
-                    },
-                  ]
-                : item === OFFBOARDING_EVALS.at(-1)
-                  ? [
-                      {
-                        itemId,
-                        action: 'return',
-                        nextStatus: 'inStock',
-                        targetPersonId: null,
-                        reason: '',
-                      },
-                    ]
-                  : [],
-          );
-          return { summary: '', changes, notes: [], risks: [] } as never;
-        },
-      }),
-    });
-    expect(report.total).toBe(OFFBOARDING_EVALS.length);
-    expect(report.passed).toBe(OFFBOARDING_EVALS.length - 1);
-    expect(report.cases.at(-1)).toMatchObject({
-      passed: false,
-      misses: ['d9'],
-    });
   });
 });

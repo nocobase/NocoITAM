@@ -39,13 +39,13 @@ import { AiShortcut } from './ai-shortcut.js';
 
 /**
  * The card of a work agent that suggests (2026-10-17, plan "Work agents",
- * step 2: 离职回收 and 授权续费; `frontend-standard.md` §S2.3, §S4.5): what
+ * step 2: 授权续费; `frontend-standard.md` §S2.3, §S4.5): what
  * it suggests in one line, the changes it proposes each with a tick and its
  * reason, what it leaves to people and its risks folded away; 执行 carries
  * out the ticked changes as a plan, the ticks being the confirmation, then
  * 忽略, 讨论 and redoing it in the decider's words. Once accepted it shows
- * what each step did. Shown in 收件箱 and on the leaver's or the
- * entitlement's page (`SuggestionBlock`).
+ * what each step did. Shown in 收件箱 and on the entitlement's page
+ * (`SuggestionBlock`).
  */
 export function SuggestionCard({
   run,
@@ -378,11 +378,11 @@ function Basis({
 }
 
 /**
- * 等你决定 on a leaver's or an entitlement's page (`frontend-standard.md`
+ * 等你决定 on an entitlement's page (`frontend-standard.md`
  * §S3.2): the reader's newest suggestion under the title while it waits,
  * and once accepted here what it did. With none open, one line offers to
- * ask for one when `offer` says the record calls for it (someone who has
- * left; an entitlement the reader answers for, due soon).
+ * ask for one when `offer` says the record calls for it (an entitlement
+ * the reader answers for, due soon).
  */
 export function SuggestionBlock({
   agent,
@@ -392,7 +392,7 @@ export function SuggestionBlock({
   offerText,
 }: {
   readonly agent: SuggestingAgent;
-  readonly subjectType: 'people' | 'entitlements';
+  readonly subjectType: 'entitlements';
   readonly subjectId: string;
   readonly offer: boolean;
   readonly offerText: string;

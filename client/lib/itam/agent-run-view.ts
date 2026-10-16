@@ -11,7 +11,6 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 const SUBJECT_ROUTES: Readonly<Record<AgentRun['subjectType'], string>> = {
   purchaseOrders: 'procurement',
   disposals: 'disposals',
-  people: 'people',
   entitlements: 'entitlements',
 };
 
@@ -66,12 +65,6 @@ export function runLine(run: AgentRun, t: Translate): string {
 export function changeText(change: SuggestedChange, t: Translate): string {
   return t(`suggestion.change.${change.action}`, {
     subject: change.subject,
-    target: change.target?.name ?? '',
-    status: change.nextStatus
-      ? t(`suggestion.nextStatus.${change.nextStatus}`, {
-          defaultValue: change.nextStatus,
-        })
-      : '',
     quantity: change.quantity ?? '',
   });
 }

@@ -131,7 +131,7 @@ plus a browser check.
 | **P5 Automation & reports**               | Cron jobs, full workbench, ten reports, settings pages                                                                                                                                                    |
 | **P6 AI**                                 | Chat panel, employee and tools, action center, quick entries, embedded capabilities, daily AI inspection, employee self-service guidance                                                                  |
 | **P7 Import/export & demo**               | CSV import wizard, discovery reconciliation, barcode labels and scanning, demo data command with deliberate "problem" records, sample PDF / CSV, e2e over the main chain                                  |
-| **P8 Work agents**                        | Agents that work unasked and only suggest: runs, 收件箱, 智能体工作, then 审批审阅, 离职回收, 授权续费, MDM 核对, 入职准备 (see 2026-10-16 Work agents)                                                   |
+| **P8 Work agents**                        | Agents that work unasked and only suggest: runs, 收件箱, 智能体工作, then 审批审阅, 授权续费, MDM 核对, 入职准备 (see 2026-10-16 Work agents)                                                             |
 
 Tests per phase: migration up / down against the real database; each service's
 state transitions including rejected transitions and rollback; every route's
@@ -3170,9 +3170,9 @@ the plugin's row, and the skill put into the library from code (as before).
 Still to do for this step: the specification's P6 (`SPEC.md`, a
 NocoSolution pull request).
 
-### 2026-10-17 Work agents, step 2: 离职回收 and 授权续费
+### 2026-10-17 Work agents, step 2: 授权续费
 
-Built as planned above, with the changes below. Both agents only suggest. A
+Built as planned above, with the changes below. The agent only suggests. A
 suggestion is a list of changes, each a plan step with its reason. The
 decider ticks the ones they keep and presses 执行: the kept changes become an
 ordinary plan (`itamPlans`), proposed and carried out at once as the
@@ -3183,23 +3183,16 @@ confirmed a second time. The run names the plan (`planId`, migration
 A suggestion that changes nothing, such as renewing as it is, is agreed to
 with no plan.
 
-- **离职回收** (`offboarding-review.ts`, the existing `offboarding` skill).
-  - _Triggers:_ 标记离职, a leave date entered in the past, and the nightly
-    job marking someone left (`MasterDataService.onLeft`, after the
-    transaction commits, beside the leaver's account); also a daily pass
-    over leavers who still hold things, each at most once a week.
-  - _One suggestion per 负责人 per leaver_, not one per leaver: the same
-    split as the leaver notification and the 离职交接 card, so each IT
-    person decides only what they answer for. Things nobody answers for go
-    to whoever marked the person left. On the nightly job they stay on the
-    team's 离职交接 card.
-  - _Changes:_ a device returned to stock, to repair or to disposal, or
-    transferred straight to a joiner of the next 60 days; stock taken back;
-    a seat reclaimed. An item at the repair shop, or a consumable, gets a
-    note, not a change. An item the model leaves out still gets the rule's
-    own change, so nothing is forgotten.
-  - It goes on a leaver's page as 等你决定, with 让 Noco 拟回收方案 while
-    they still hold anything.
+- **离职回收** was built here and removed the same day (2026-10-17). What a
+  leaver hands back is decided by the rule in `recovery.ts` (return, wait
+  for the repair, take back, confirm consumed, reclaim); the model only
+  added which status a returned device goes to and whether it could go
+  straight to a joiner. That is not worth a model call and a trip to
+  收件箱 per leaver, as decided once before (2026-10-05, 到货入库 became the
+  first agent-carried work because 离职回收 is deterministic). The leaver's
+  page and 离职交接 keep the rule's own buttons. A database that ran it
+  keeps its runs, which 收件箱 no longer shows, and its plugin agent, which
+  is archived at the next start.
 - **授权续费** (`renewal-review.ts`, new skill `renewal-review`).
   - _Trigger:_ a daily pass over subscriptions ending, and perpetual
     licences' maintenance ending, within the reminder days in 设置 (at least
@@ -3217,9 +3210,8 @@ with no plan.
     note.
   - It goes on the entitlement's page as 等你决定, with 让 Noco 看看续费 for
     its 负责人 within 90 days of the date.
-- Both run in one schedule, `itam.agent-passes` (02:30, after the daily
-  maintenance). Each has its eval set (`evals/offboarding.ts`,
-  `evals/renewal-review.ts`).
+- Its daily pass runs from schedule `itam.agent-passes` (02:30, after the
+  daily maintenance). Its eval set is `evals/renewal-review.ts`.
 - The agents' run queries now compare datetimes through `dbDateTime()`.
   Step 1's counts, run lists and the inbox's 30-day window bound a `Date`,
   which matches nothing on SQLite (`.agents/rules/itam-foundations.md`).

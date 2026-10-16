@@ -3181,7 +3181,6 @@ const zhCN: AppResource = {
   },
   suggestion: {
     agents: {
-      offboarding: '离职回收',
       renewalReview: '授权续费',
     },
     working: 'Noco 正在拟建议…',
@@ -3195,18 +3194,10 @@ const zhCN: AppResource = {
     changes: '要做的改动',
     nothingToChange: '不需要改动。',
     change: {
-      return: '归还 {{subject}}，转为{{status}}',
-      transfer: '{{subject}} 转给 {{target}}',
-      takeBack: '收回 {{subject}} × {{quantity}}',
       reclaim: '收回席位：{{subject}}',
       adjustSeats: '席位数调到 {{quantity}}',
       stopAutoRenew: '关闭 {{subject}} 的自动续费',
       startAutoRenew: '打开 {{subject}} 的自动续费',
-    },
-    nextStatus: {
-      inStock: '在库',
-      inRepair: '维修中',
-      pendingDisposal: '待处置',
     },
     basis: '依据与细节',
     reasons: '依据',
@@ -3217,15 +3208,12 @@ const zhCN: AppResource = {
     accepted: '已执行建议',
     stoppedAt: '第 {{position}} 步没有完成：{{message}}',
     redoPlaceholder: {
-      offboarding: '说说要改什么，比如「笔记本先送修」',
       renewalReview: '说说要改什么，比如「保留 20 个席位」',
     },
     ask: {
-      offboarding: '让 Noco 拟回收方案',
       renewalReview: '让 Noco 看看续费',
     },
     offer: {
-      offboarding: '这位离职人员手上还有东西。',
       renewal: '这份订阅 {{date}} 到期。',
       maintenance: '这份授权的维保 {{date}} 到期。',
     },
@@ -3276,7 +3264,6 @@ const zhCN: AppResource = {
     startedBy: {
       submitted: '提交审批',
       asked: '有人要求',
-      left: '标记离职',
       daily: '每日检查',
     },
     status: {
@@ -3298,23 +3285,6 @@ const zhCN: AppResource = {
         },
       },
       byHand: '不论开关如何，审批人都可以在申请上手动让 Noco 审阅。',
-    },
-    offboarding: {
-      name: '离职回收',
-      description:
-        '有人离职后，替负责的人把他手上的设备、物品和席位理一遍：哪些归还入库、哪些送修或待处置、哪些可以直接转给要入职的人，哪些席位收回；拟成一份回收清单，勾选后一键执行。每位负责人只收到自己负责的那部分。',
-      byHand:
-        '不论开关如何，负责的人都可以在离职人员页面上手动让 Noco 拟回收方案。',
-      triggers: {
-        left: {
-          title: '标记离职',
-          hint: '有人被标记为离职，或到了离职日期时。',
-        },
-        daily: {
-          title: '每日检查',
-          hint: '每天检查一遍还有东西没收回的离职人员（同一人 7 天内只看一次）。',
-        },
-      },
     },
     renewalReview: {
       name: '授权续费',

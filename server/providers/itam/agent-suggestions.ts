@@ -20,7 +20,7 @@ import { settingsServiceToken } from './settings.js';
 
 /**
  * What the work agents that only suggest share (2026-10-17, plan "Work
- * agents", step 2: 离职回收 and 授权续费). A run's result is a
+ * agents", step 2: 授权续费). A run's result is a
  * `Suggestion`: a one-line summary, the changes it proposes — each one plan
  * step, with what the card shows of it — and what it cannot change
  * (notes) or worries about (risks). Accepting turns the changes the decider
@@ -37,20 +37,12 @@ export interface SuggestedChange {
   readonly op: string;
   readonly params: Readonly<Record<string, unknown>>;
   /** What it acts on and what it does, for the card's line. */
-  readonly kind: 'device' | 'stock' | 'seat' | 'entitlement';
+  readonly kind: 'seat' | 'entitlement';
   readonly action:
-    | 'return'
-    | 'transfer'
-    | 'takeBack'
-    | 'reclaim'
-    | 'adjustSeats'
-    | 'stopAutoRenew'
-    | 'startAutoRenew';
-  /** The thing's own label (DE-000004 / MacBook Pro 14, a seat's holder). */
+    'reclaim' | 'adjustSeats' | 'stopAutoRenew' | 'startAutoRenew';
+  /** The thing's own label (the entitlement, a seat's holder). */
   readonly subject: string;
-  /** The device's next status, the person it goes to, a seat count. */
-  readonly nextStatus?: string | null;
-  readonly target?: { readonly id: string; readonly name: string } | null;
+  /** The seat count it sets. */
   readonly quantity?: number | null;
   readonly reason: string;
 }
@@ -60,7 +52,7 @@ export interface Suggestion {
   readonly title: string;
   readonly summary: string;
   readonly changes: readonly SuggestedChange[];
-  /** What it leaves to people: a repair to wait for, records to hand over. */
+  /** What it leaves to people: a contract to check, an account to close. */
   readonly notes: readonly string[];
   readonly risks: readonly string[];
   /** What else an agent says (授权续费's recommendation, seats, saving). */
@@ -154,10 +146,7 @@ export const suggestionDecisionsToken: ServiceToken<SuggestionDecisions> =
   createServiceToken<SuggestionDecisions>('itam/suggestion-decisions');
 
 /** The agents whose results are suggestions accepted as plans. */
-export const SUGGESTING: ReadonlySet<AgentName> = new Set([
-  'offboarding',
-  'renewalReview',
-]);
+export const SUGGESTING: ReadonlySet<AgentName> = new Set(['renewalReview']);
 
 export function createSuggestionDecisions(
   container: ServiceContainer,
@@ -278,31 +267,19 @@ export function createSuggestionDecisions(
 }
 
 const STEP_WORDS: Readonly<
-  Record<'zh' | 'en', Readonly<Record<string, string>>>
+  Record<'zh' | 'en', Readonly<Record<SuggestedChange['action'], string>>>
 > = {
   zh: {
-    return: '归还',
-    transfer: '转交',
-    takeBack: '收回',
     reclaim: '收回席位',
     adjustSeats: '调整席位数',
     stopAutoRenew: '关闭自动续费',
     startAutoRenew: '打开自动续费',
-    inStock: '在库',
-    inRepair: '维修中',
-    pendingDisposal: '待处置',
   },
   en: {
-    return: 'Return',
-    transfer: 'Hand over',
-    takeBack: 'Take back',
     reclaim: 'Reclaim the seat',
     adjustSeats: 'Set the seat count',
     stopAutoRenew: 'Turn off auto-renewal',
     startAutoRenew: 'Turn on auto-renewal',
-    inStock: 'in stock',
-    inRepair: 'in repair',
-    pendingDisposal: 'pending disposal',
   },
 };
 
@@ -311,18 +288,10 @@ const STEP_WORDS: Readonly<
  * written into a record is: what it does to what.
  */
 function stepTitle(change: SuggestedChange, locale: string): string {
-  const words = STEP_WORDS[locale.startsWith('zh') ? 'zh' : 'en'];
-  const word = (key: string) => words[key] ?? key;
-  const to = change.target ? ` → ${change.target.name}` : '';
-  const status = change.nextStatus ? ` (${word(change.nextStatus)})` : '';
+  const word = STEP_WORDS[locale.startsWith('zh') ? 'zh' : 'en'][change.action];
   const quantity =
     change.quantity !== null && change.quantity !== undefined
-      ? change.action === 'adjustSeats'
-        ? ` → ${String(change.quantity)}`
-        : ` × ${String(change.quantity)}`
+      ? ` → ${String(change.quantity)}`
       : '';
-  return `${word(change.action)}: ${change.subject}${to}${status}${quantity}`.slice(
-    0,
-    200,
-  );
+  return `${word}: ${change.subject}${quantity}`.slice(0, 200);
 }
