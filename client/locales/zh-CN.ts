@@ -1365,6 +1365,7 @@ const zhCN: AppResource = {
     reservedShort: '已预留',
     assignedSince: '，{{date}} 分配',
     followsModel: '随型号',
+    startAssignee: '使用人',
     followsOrder: '随采购单',
     replacementRule: '由 采购日期 + 分类更换周期 自动计算',
     returnExpected: '，预计 {{date}} 归还',

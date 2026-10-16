@@ -4,9 +4,46 @@ import { useRef, type ReactElement } from 'react';
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { useItamMutations, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
-import { DEVICE_CREATE_FIELDS, DEVICE_FIELDS } from '@/lib/itam/devices';
+import {
+  DEVICE_CREATE_FIELDS,
+  DEVICE_FIELDS,
+  DEVICE_STATUS_OPTIONS,
+} from '@/lib/itam/devices';
+import type { FieldDefinition } from '@/lib/itam/fields';
 import { addMonths, text } from '@/lib/itam/format';
 import { useCurrentUserId } from '@/lib/itam/permissions';
+
+/**
+ * Where the new device starts (2026-10-16): on the shelf, or in use by a
+ * person, who is then required. The other statuses each need their own
+ * details (a loan's return date, a repair) and stay the device page's acts.
+ * Neither field is a device column: 使用中 is sent as `assignTo`, and the
+ * server assigns in the same step.
+ */
+const START_FIELDS: readonly FieldDefinition[] = [
+  {
+    key: 'startStatus',
+    label: 'fields.status',
+    type: 'select',
+    required: true,
+    options: DEVICE_STATUS_OPTIONS.filter((option) =>
+      ['inStock', 'inUse'].includes(option.value),
+    ),
+    group: 'groups.basic',
+  },
+  {
+    key: 'assigneeId',
+    label: 'devices.startAssignee',
+    type: 'reference',
+    reference: {
+      collection: 'people',
+      filter: { 'employmentStatus:ne': 'left' },
+    },
+    visibleWhen: (values) => values.startStatus === 'inUse',
+    requiredWhen: (values) => values.startStatus === 'inUse',
+    group: 'groups.basic',
+  },
+];
 
 /**
  * 创建设备, wherever a device is put on the register: the device list, and
@@ -52,15 +89,18 @@ export function DeviceCreateDialog({
         if (!next) mutations.create.reset();
       }}
       title={t('devices.new')}
-      fields={DEVICE_CREATE_FIELDS.map((key) => {
+      fields={DEVICE_CREATE_FIELDS.flatMap((key) => {
         const field = DEVICE_FIELDS.find((entry) => entry.key === key)!;
         const hint = locked?.[key];
-        return hint
+        const shown = hint
           ? { ...field, readonlyWhen: () => true, readonlyHint: hint }
           : field;
+        // Where it starts, right after its name.
+        return key === 'name' ? [shown, ...START_FIELDS] : [shown];
       })}
       initial={{
         ...(currentUserId ? { ownerId: currentUserId } : {}),
+        startStatus: 'inStock',
         ...initial,
       }}
       derive={(change, values) => {
@@ -99,8 +139,13 @@ export function DeviceCreateDialog({
       }}
       submitting={mutations.create.isPending}
       error={mutations.create.error}
-      onSubmit={async (values) => {
-        const created = await mutations.create.mutateAsync(values);
+      onSubmit={async ({ startStatus, assigneeId, ...values }) => {
+        const created = await mutations.create.mutateAsync({
+          ...values,
+          ...(startStatus === 'inUse' && assigneeId
+            ? { assignTo: { targetType: 'person', targetId: assigneeId } }
+            : {}),
+        });
         onOpenChange(false);
         await onCreated(created);
       }}

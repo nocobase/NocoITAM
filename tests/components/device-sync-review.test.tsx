@@ -255,6 +255,17 @@ describe('MDM 核对 → 只在 MDM: 补登记', () => {
     });
   });
 
+  it('starts it in use by the primary user when they are a person on the register', () => {
+    state.views = {
+      unregistered: [{ ...record('PF5DEMO01'), personId: 'p1' }],
+    };
+    open();
+    expect(state.create?.initial).toMatchObject({
+      startStatus: 'inUse',
+      assigneeId: 'p1',
+    });
+  });
+
   it('leaves it to be typed when the platform has none', () => {
     state.views = { unregistered: [record(null)] };
     open();

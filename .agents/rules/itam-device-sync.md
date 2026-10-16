@@ -153,11 +153,13 @@ product or in release notes, until it is listed here.
 - **Acts on the register stay the register's**: the MDM group offers
   调拨给 / 分配给 the platform user and 恢复为库存中 by opening the device
   page's own dialogs, prefilled (`ManagedPlatforms`' `actions`). 补登记
-  opens the device list's create form through `?new=1&init.…` (the list
-  learned the prefill the generic lists had), with the model matched by
-  name or part code and its category and maker; `POST /itam/devices` then
-  calls `matchDevice`, so the new device is linked at once rather than at
-  the next pull.
+  opens `DeviceCreateDialog` in place (since 2026-10-15), with the model
+  matched by name or part code and its category and maker, the serial
+  locked (it is what links the record), and — when the primary user is a
+  person on the register — 使用中 for that person (2026-10-16), so the new
+  device does not come straight back as 状态不符. `POST /itam/devices`
+  then calls `matchDevice`, so the new device is linked at once rather
+  than at the next pull.
 - **Where it shows**: 待办's MDM 核对 column (`deviceChecks`, devices
   `read` and `update` to see it): the differences as device cards, a
   device's 负责人 for 我负责的, then one card each for 只在 MDM (devices

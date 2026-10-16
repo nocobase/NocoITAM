@@ -1,3 +1,4 @@
+import { databaseManagerToken } from '@nocobase/db';
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -215,6 +216,33 @@ describe('devices', () => {
       ...manager,
     });
     expect(backOn.status).toBe(400);
+  });
+
+  it('creates a device in use by a person in one step, or none at all', async () => {
+    const device = await createDevice({
+      assignTo: { targetType: 'person', targetId: fixture.personId },
+    });
+    expect(device).toMatchObject({
+      status: 'inUse',
+      assigneeType: 'person',
+      assigneeId: fixture.personId,
+    });
+    // An assignment refused leaves no device behind.
+    const refused = await post('', {
+      modelId: fixture.modelId,
+      locationId: fixture.locationId,
+      serialNo: 'SN-REFUSED',
+      assignTo: { targetType: 'person', targetId: 'nobody' },
+    });
+    expect(refused.status).toBeGreaterThanOrEqual(400);
+    const left = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('devices')
+      .select('id')
+      .where('serialNo', '=', 'SN-REFUSED')
+      .execute();
+    expect(left).toEqual([]);
   });
 
   it('starts a new device with its model’s extended fields, then lets each change alone', async () => {
