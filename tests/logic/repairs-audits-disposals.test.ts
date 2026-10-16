@@ -922,5 +922,47 @@ describe('repairs, audits and disposals', () => {
       await get(`disposals/${disposal.id}/approvals`),
     );
     expect(approvals[0]?.status).toBe('approved');
+
+    // Its lifecycle, as the flowchart reads it: every move it made, by whom,
+    // with nothing left to do from a final state, and the notifications the
+    // moves owed, sent.
+    const lifecycle = await data<{
+      state: string;
+      version: number;
+      available: unknown[];
+      history: { transition: string; from: string | null; actorId: string }[];
+      effects: { effect: string; status: string }[];
+    }>(await get(`disposals/${disposal.id}/lifecycle`));
+    expect(lifecycle.state).toBe('executed');
+    expect(
+      lifecycle.history.map((entry) => [entry.transition, entry.actorId]),
+    ).toEqual([
+      ['$create', manager.user],
+      ['submit', manager.user],
+      ['approve', approver.user],
+      ['execute', manager.user],
+    ]);
+    // Creation is a version of its own.
+    expect(lifecycle.version).toBe(4);
+    expect(lifecycle.available).toEqual([]);
+    expect(lifecycle.effects.map((run) => [run.effect, run.status])).toEqual([
+      ['disposals.notifyApprover', 'succeeded'],
+      ['disposals.notifyDecision', 'succeeded'],
+    ]);
+    const described = await data<{
+      description: { stateInfo: { name: string }[] };
+    }>(await get('disposals/lifecycle'));
+    expect(described.description.stateInfo.map((state) => state.name)).toEqual([
+      'draft',
+      'pendingApproval',
+      'approved',
+      'rejected',
+      'executed',
+    ]);
+    expect(
+      (await app.request(`/api/itam/disposals/${disposal.id}/lifecycle`))
+        .status,
+    ).toBe(401);
+    expect((await get('disposals/missing/lifecycle')).status).toBe(404);
   });
 });

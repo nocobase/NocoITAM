@@ -4,6 +4,7 @@ import {
   Backpack,
   Boxes,
   FileText,
+  GitBranch,
   History,
   KeyRound,
   Link2,
@@ -55,4 +56,6 @@ export const TAB_ICONS: Readonly<Record<string, LucideIcon>> = {
   generated: PackageCheck,
   holdings: Backpack,
   onboarding: UserPlus,
+  // A record's lifecycle drawn (2026-10-18).
+  flow: GitBranch,
 };

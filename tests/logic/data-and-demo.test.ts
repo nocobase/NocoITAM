@@ -896,6 +896,9 @@ describe('CSV import / export and demo data', () => {
       'stockHoldings',
       'entitlementSeats',
       'itamAgentRuns',
+      // The lifecycle log of its disposals (2026-10-18).
+      'lifecycleTransitions',
+      'lifecycleEffectRuns',
     ])
       expect(
         (

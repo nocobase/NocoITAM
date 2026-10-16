@@ -1,9 +1,23 @@
 # ITAM: server and data foundations
 
-Read this before writing a service, a route, a transaction, a query on dates or JSON, a notification, an import or export, or anything that reads `config.yml`.
+Read this before writing a service, a route, a transaction, a query on dates or JSON, a notification, an import or export, a record lifecycle, or anything that reads `config.yml`.
 
 Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small; each rule is as it was written, with the date it was decided.
 
+- **A record lifecycle** (2026-10-18, [ADR 0001](../../docs/adr/0001-record-lifecycles.md)):
+  disposals move only through `@nocobase/lifecycle` — the definition in
+  `server/lifecycles/disposals.ts`, the one runtime in
+  `server/providers/itam/lifecycles.ts`. A service fires the transition
+  inside its own transaction (`transaction: connection`) and writes what the
+  move carries along beside it; nothing else writes `status`,
+  `statusChangedAt` or `lifecycleVersion`. A guard reads other tables through
+  the services factory's handle, never `database.query()`. An effect reads
+  what it needs from the transition's input, and notifies through
+  `notifier.deliver()`, which throws so the run is retried. Refusals reach the
+  routes through `lifecycleRefusal()` as the `BUSINESS_RULE` codes they always
+  had. Deleting such a record deletes its rows in `lifecycleTransitions` and
+  `lifecycleEffectRuns`; the demo lists both as dependents. Read the
+  development guide's `references/lifecycle.md` before adding the next one.
 - Inside `database.transaction(async (connection) => …)` every read and write,
   including calls into other services, must go through `connection.query`. The
   SQLite pool holds one connection, so a read through `database.query()` while

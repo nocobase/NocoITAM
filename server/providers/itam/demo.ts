@@ -290,6 +290,10 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   { table: 'deviceSyncDismissals', column: 'deviceId' },
   // 不需要纳管 on the demo's test phone (2026-10-15).
   { table: 'deviceSyncExemptions', column: 'deviceId' },
+  // The lifecycle log of the demo's disposals (2026-10-18): the moves they
+  // made, and the notifications those owed.
+  { table: 'lifecycleEffectRuns', column: 'recordId' },
+  { table: 'lifecycleTransitions', column: 'recordId' },
 ];
 
 /** Deleted in dependency order: children before the master data they reference. */

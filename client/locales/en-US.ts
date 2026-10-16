@@ -215,6 +215,7 @@ const messages = {
   },
   tabs: {
     history: 'History',
+    flow: 'Flow',
     children: 'Sub-items',
     holdings: 'In their name',
     relatedAssets: 'Related assets',
@@ -2924,6 +2925,30 @@ const messages = {
     noneForDevice: 'This device has never been on a disposal',
     approverForSubmit:
       'Needed to submit for approval; a draft can be saved without one.',
+    // The moves on its Flow tab, by the lifecycle's transition names.
+    transitions: {
+      $create: 'Create',
+      submit: 'Submit',
+      withdraw: 'Withdraw',
+      approve: 'Approve',
+      reject: 'Reject',
+      execute: 'Carry out',
+    },
+  },
+  // A record's Flow tab (2026-10-18).
+  lifecycle: {
+    diagram: 'Flowchart',
+    end: 'End',
+    undelivered_one: '{{count}} notification could not be delivered',
+    undelivered_other: '{{count}} notifications could not be delivered',
+  },
+  // The UI Library's diagram component.
+  flowDiagram: {
+    empty: 'No states to display.',
+    failed: 'Unable to lay out this diagram.',
+    loading: 'Laying out diagram…',
+    nodeHelp: 'Press Enter or Space to select a state.',
+    edgeHelp: 'Press Enter or Space to select a transition.',
   },
   reports: {
     unassigned: 'Not set',
