@@ -3,6 +3,7 @@ import { isAssetTypeField } from '@/lib/itam/fields';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
+import { ChevronDown } from 'lucide-react';
 import {
   createContext,
   useContext,
@@ -425,14 +426,28 @@ function EditsRow({
             <span className='text-muted-foreground'>
               {rest.t('history.editedFields', { count })}
             </span>{' '}
+            {/* A chevron rather than a word (2026-10-16): the line is short,
+                and a link after it read as part of the sentence. */}
             <button
               type='button'
-              className='text-xs text-link underline-offset-4 hover:underline'
+              aria-expanded={open}
+              aria-label={
+                open
+                  ? rest.t('history.hideFields')
+                  : rest.t('history.showEdits')
+              }
+              title={
+                open
+                  ? rest.t('history.hideFields')
+                  : rest.t('history.showEdits')
+              }
+              className='inline-flex size-5 items-center justify-center rounded align-middle text-muted-foreground hover:bg-accent hover:text-foreground'
               onClick={() => setOpen((current) => !current)}
             >
-              {open
-                ? rest.t('history.hideFields')
-                : rest.t('history.showEdits')}
+              <ChevronDown
+                className={`size-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
+                aria-hidden='true'
+              />
             </button>
           </p>
           <time
@@ -451,7 +466,7 @@ function EditsRow({
       {open ? (
         <ol className='mt-1 ml-8 border-l border-border pl-3'>
           {items.map((item) => (
-            <TimelineRow key={item.id} item={item} {...rest} />
+            <TimelineRow key={item.id} item={item} {...rest} nested />
           ))}
         </ol>
       ) : null}
@@ -497,8 +512,14 @@ function TimelineRow({
   statusEnum,
   language,
   t,
+  nested,
 }: {
   readonly item: TimelineItem;
+  /**
+   * Inside a folded sitting's edits (`EditsRow`), whose line already names
+   * who and wears the icon: each edit says only what changed (2026-10-16).
+   */
+  readonly nested?: boolean;
   readonly scope: CommentScope | undefined;
   readonly language: string;
   readonly fieldByKey: ReadonlyMap<string, FieldDefinition>;
@@ -570,17 +591,21 @@ function TimelineRow({
   // Done by a job or a sync rather than a person: quieter still.
   const automatic = item.origin === 'schedule' || item.origin === 'sync';
   return (
-    <li className='flex gap-3 py-1.5'>
+    <li className={cn('flex gap-3', nested ? 'py-0.5' : 'py-1.5')}>
       {/* Each line's icon, on no rail: the day headings carry the order. */}
-      <span className='flex h-6 w-5 shrink-0 items-center justify-center'>
-        <HistoryIcon
-          type={event?.type}
-          className={cn(
-            'size-3.5',
-            item.origin === 'agent' ? 'text-primary' : 'text-muted-foreground',
-          )}
-        />
-      </span>
+      {nested ? null : (
+        <span className='flex h-6 w-5 shrink-0 items-center justify-center'>
+          <HistoryIcon
+            type={event?.type}
+            className={cn(
+              'size-3.5',
+              item.origin === 'agent'
+                ? 'text-primary'
+                : 'text-muted-foreground',
+            )}
+          />
+        </span>
+      )}
       <div className={cn('min-w-0 flex-1 text-sm', automatic && 'opacity-80')}>
         {
           <>
@@ -588,7 +613,9 @@ function TimelineRow({
               {/* A sentence: who, what they did, what changed. Inline text,
                   so it wraps like one. */}
               <p className='min-w-0 flex-1 leading-6 whitespace-pre-wrap'>
-                {actor ? <span className='font-semibold'>{actor} </span> : null}
+                {actor && !nested ? (
+                  <span className='font-semibold'>{actor} </span>
+                ) : null}
                 <span className='text-muted-foreground'>
                   {event
                     ? t(`history.types.${event.type}`, {
