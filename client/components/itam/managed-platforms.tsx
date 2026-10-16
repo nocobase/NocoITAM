@@ -145,7 +145,7 @@ function ExemptionNotice({
 
 /**
  * One difference, said in a sentence, with the act that settles it on the
- * register's side and 以台账为准 for when the register is right.
+ * register's side and 忽略 for when the register is right.
  */
 function CheckNotice({
   check,
@@ -388,7 +388,8 @@ function LastSync({ value }: { readonly value: string | null }): ReactElement {
 }
 
 /**
- * 以台账为准, asked first (2026-10-16): the register is right, so this
+ * 忽略, asked first (2026-10-16; 以台账为准 until then): the register is
+ * right, so this
  * difference, with what the platform showed, is not raised again — only a
  * new value brings it back. Shared by MDM 核对 and the device page.
  */

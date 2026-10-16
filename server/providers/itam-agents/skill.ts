@@ -24,7 +24,7 @@ description: How to look things up in the IT asset register with the itam comman
 - \`itam availability\` — what is in stock for a model or category, stock quantities by name, free seats of a product.
 - \`itam model match --text "MacBook Pro 14"\` turns a description into model, category or product ids.
 - \`itam onboarding plan <personId>\` — a joiner's kit, what they have and the system's proposal for the rest.
-- \`itam device-sync review --view checks|unregistered|unmanaged|ignored|exempted\` — where the device management platforms (Intune, Jamf Pro) and the register disagree; \`--device-id <id>\` for one device's platform records and differences.
+- \`itam device-sync review --view checks|unregistered|unmanaged|ignored|exempted|dismissed\` — where the device management platforms (Intune, Jamf Pro) and the register disagree; \`--device-id <id>\` for one device's platform records and differences.
 
 Every command prints \`{ ok, result: { data } }\`; a search's rows are \`.result.data.rows[]\` with a \`…Name\` beside each id. Cut output with jq or \`head -n\`, never \`head -c\`, which splits Chinese characters.
 

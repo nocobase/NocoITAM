@@ -41,6 +41,8 @@ const VIEWS = [
   'ignored',
   // 不需要纳管 (2026-10-15), listed under 只在台账.
   'exempted',
+  // 忽略 on a difference (2026-10-16), listed under 信息不一致.
+  'dismissed',
 ] as const;
 const CHECK_KINDS = ['stale', 'userMismatch', 'statusMismatch'] as const;
 
@@ -49,7 +51,7 @@ const CHECK_KINDS = ['stale', 'userMismatch', 'statusMismatch'] as const;
  * and a pull started by hand (2026-10-14, both on 设置 → 设备同步 and so
  * under the settings grant), and — step 2, 2026-10-15 — where the platforms
  * and the register disagree and what a person decides about it. Those are
- * the devices' business: a list takes devices `read`, a link or 以台账为准
+ * the devices' business: a list takes devices `read`, a link or 忽略
  * the device's `update`, and keeping a platform record off the register
  * (or taking it back) devices `create`, the act it stands in for.
  */
@@ -198,8 +200,10 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
         const view = z
           .enum(VIEWS)
           .parse(new URL(context.req.url).searchParams.get('view') ?? 'checks');
-        if (view === 'checks') {
-          const checks = await review.checks();
+        if (view === 'checks' || view === 'dismissed') {
+          const checks = await review.checks({
+            dismissed: view === 'dismissed',
+          });
           const visible = await devicesInScope(
             context,
             'read',
@@ -301,7 +305,7 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
       }
     });
 
-    // 以台账为准: this difference, with what was seen, is not raised again.
+    // 忽略: this difference, with what was seen, is not raised again.
     routes.post('/checks/:deviceId/dismiss', async (context) => {
       try {
         const deviceId = context.req.param('deviceId') ?? '';
@@ -310,6 +314,21 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
           .parse(await readJsonObject(context));
         await requireDevice(context, 'update', deviceId);
         await review.dismiss(deviceId, kind, principalId(context));
+        return context.json({ data: { deviceId, kind } });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // Taking 忽略 back (2026-10-16): the difference is raised again.
+    routes.post('/checks/:deviceId/undismiss', async (context) => {
+      try {
+        const deviceId = context.req.param('deviceId') ?? '';
+        const { kind } = z
+          .object({ kind: z.enum(CHECK_KINDS) })
+          .parse(await readJsonObject(context));
+        await requireDevice(context, 'update', deviceId);
+        await review.undismiss(deviceId, kind, principalId(context));
         return context.json({ data: { deviceId, kind } });
       } catch (error) {
         return errorResponse(context, error);

@@ -42,4 +42,3 @@ export function useDeviceOperation() {
       queryClient.invalidateQueries({ queryKey: ['itam', DEVICES_PATH] }),
   });
 }
-

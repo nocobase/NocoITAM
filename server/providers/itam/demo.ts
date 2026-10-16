@@ -253,7 +253,7 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   { table: 'repairs', column: 'deviceId' },
   // Noco's background suggestions for the demo's joiners.
   { table: 'onboardingRuns', column: 'personId' },
-  // 以台账为准 on the demo's devices (device sync, 2026-10-15).
+  // 忽略 on the demo's differences (device sync, 2026-10-15).
   { table: 'deviceSyncDismissals', column: 'deviceId' },
   // 不需要纳管 on the demo's test phone (2026-10-15).
   { table: 'deviceSyncExemptions', column: 'deviceId' },

@@ -528,7 +528,14 @@ export async function onboardingPlan(
 /** What `itam device-sync review` reads (device sync, step 4). */
 export const DeviceSyncReviewInput = z.object({
   view: z
-    .enum(['checks', 'unregistered', 'unmanaged', 'ignored', 'exempted'])
+    .enum([
+      'checks',
+      'unregistered',
+      'unmanaged',
+      'ignored',
+      'exempted',
+      'dismissed',
+    ])
     .default('checks'),
   deviceId: z.string().min(1).max(64).optional(),
 });
@@ -571,8 +578,10 @@ export async function deviceSyncReview(
       .execute<{ id: string }>();
     return new Set(rows.map((row) => row.id));
   };
-  if (input.view === 'checks') {
-    const checks = await review.checks();
+  if (input.view === 'checks' || input.view === 'dismissed') {
+    const checks = await review.checks({
+      dismissed: input.view === 'dismissed',
+    });
     const visible = await inScope(checks.map((check) => check.deviceId));
     return {
       connected: true,

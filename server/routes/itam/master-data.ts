@@ -21,10 +21,7 @@ import {
   BusinessRuleError,
   ValidationError,
 } from '../../providers/itam/errors.js';
-import {
-  OWNED_BY_USER,
-  recoveryPlan,
-} from '../../providers/itam/recovery.js';
+import { OWNED_BY_USER, recoveryPlan } from '../../providers/itam/recovery.js';
 import {
   errorResponse,
   parseListOptions,

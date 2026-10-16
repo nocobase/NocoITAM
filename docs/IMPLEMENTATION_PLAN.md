@@ -2922,6 +2922,14 @@ Kept in a table of its own (`deviceSyncExemptions`), not a device field.
 The demo marks its unmanaged test phone. Noco's `device-sync` skill text is
 updated, which reaches only a skill library seeded after this change.
 
+### 2026-10-16 Device sync: 以台账为准 is 忽略, and ignored differences stay listed
+
+以台账为准 is renamed 忽略 and asks first. What it ignores was gone from
+sight, unlike the other two tabs' kept-off records; it is now listed in a
+「已忽略」 section under 信息不一致 with who, when and 恢复, which raises the
+difference again. The storage and the rule are unchanged: an ignored
+difference returns by itself when the platform reports another value.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

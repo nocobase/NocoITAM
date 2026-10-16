@@ -149,9 +149,11 @@ export function describeEvent(
           target: label('targetLabel'),
         },
       );
-    // 以台账为准 on a difference the platforms showed (step 2).
+    // 忽略 on a difference the platforms showed (step 2), and taking it
+    // back (2026-10-16).
+    case 'managedUndismissed':
     case 'managedDismissed':
-      return t('history.summaries.managedDismissed', {
+      return t(`history.summaries.${row.type}`, {
         check: t(`deviceSync.checks.kinds.${label('kind')}`, {
           defaultValue: label('kind'),
         }),

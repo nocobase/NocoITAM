@@ -275,7 +275,8 @@ const zhCN: AppResource = {
       counted: '录入盘点结果',
       managedLinked: '关联 MDM',
       managedUnlinked: '解除 MDM 关联',
-      managedDismissed: '以台账为准',
+      managedDismissed: '忽略差异',
+      managedUndismissed: '恢复差异',
       managedExempted: '不需要纳管',
       managedUnexempted: '恢复纳管',
       unregisteredFound: '发现账外设备',
@@ -399,7 +400,8 @@ const zhCN: AppResource = {
       managedLinked: '与 {{source}} 设备 {{target}} 关联（序列号一致）',
       managedLinkedManual: '手动关联 {{source}} 设备 {{target}}',
       managedUnlinked: '解除与 {{source}} 设备 {{target}} 的关联',
-      managedDismissed: '{{check}}：以台账为准',
+      managedDismissed: '{{check}}',
+      managedUndismissed: '{{check}}',
       managedExempted: '原因：{{reason}}',
       managedUnexempted: '重新列入只在台账',
       leftOnLeaveDate: '离职日期 {{date}} 已到，自动标记为离职',
@@ -1945,10 +1947,10 @@ const zhCN: AppResource = {
       transferTo: '调拨给 {{user}}',
       assignTo: '分配给 {{user}}',
       restore: '恢复为库存中',
-      keepRegister: '以台账为准',
-      keepRegisterTitle: '以台账为准',
+      keepRegister: '忽略',
+      keepRegisterTitle: '忽略这条差异',
       keepRegisterDescription:
-        '「{{device}}」的「{{kind}}」不再提示。MDM 里的信息再变化时会重新出现。',
+        '「{{device}}」的「{{kind}}」不再提示，列在下方「已忽略」里，可以恢复。MDM 里的信息再变化时会重新出现。',
       platformUser: '平台主用户：{{user}}',
     },
     unlink: '解除关联',
@@ -1969,7 +1971,7 @@ const zhCN: AppResource = {
       },
       hints: {
         checks:
-          '台账和 MDM 都有，但信息对不上：失联、使用人不一致、状态不符。到设备页处理，或以台账为准。',
+          '台账和 MDM 都有，但信息对不上：失联、使用人不一致、状态不符。到设备页处理，或忽略。',
         unregistered:
           'MDM 里有、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
         unmanaged:
@@ -2023,6 +2025,9 @@ const zhCN: AppResource = {
       exemptDescription: '「{{name}}」不会再出现在只在台账里。',
       exemptPlaceholder: '例如：Linux 工作站，不支持注册 MDM',
       exemptedHeading: '不需要纳管 {{count}} 台',
+      dismissedHeading: '已忽略 {{count}} 条',
+      dismissedHint:
+        '以后不再提示；MDM 里的信息变化时会重新出现。点「恢复」重新列入。',
       exemptedHint:
         '以后不再列入只在台账；设备出现在 MDM 里后自动失效。点「恢复」重新列入。',
     },
