@@ -2011,6 +2011,10 @@ const zhCN: AppResource = {
       byRule: '个人设备',
       linkTitle: '关联到已有设备',
       linkDescription: '把 MDM 设备「{{name}}」关联到台账里的一台设备。',
+      serialMismatch:
+        '这台设备的序列号是 {{own}}，和 MDM 里的 {{platform}} 不一致。确认是同一台再关联。',
+      serialMissing:
+        '这台设备在台账里没有序列号，MDM 里是 {{platform}}。确认是同一台再关联。',
       candidates: '序列号相同的设备',
       pickDevice: '台账设备',
       ignoreTitle: '不纳入台账',

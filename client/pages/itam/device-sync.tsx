@@ -39,7 +39,8 @@ import {
   type UnmanagedDevice,
   type UnregisteredDevice,
 } from '@/lib/itam/device-sync';
-import type { ItamRecord } from '@/lib/itam/api';
+import { useItamRecord, type ItamRecord } from '@/lib/itam/api';
+import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
@@ -369,6 +370,38 @@ function ChecksView(): ReactElement {
         </Table>
       </div>
     </>
+  );
+}
+
+/**
+ * 关联到已有设备 takes any device (2026-10-16): a serial typed wrong or a
+ * board replaced is why a person links by hand. When the chosen device's
+ * serial is not the platform's, it says so, as the link is kept by every
+ * later pull and a wrong one is not undone by itself.
+ */
+function SerialMismatch({
+  deviceId,
+  serialNo,
+}: {
+  readonly deviceId: string | null;
+  readonly serialNo: string | null | undefined;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const device = useItamRecord(DEVICES_PATH, deviceId ?? undefined);
+  const normalize = (value: unknown) =>
+    (typeof value === 'string' ? value : '').replace(/\s+/g, '').toUpperCase();
+  if (!deviceId || !serialNo || !device.data) return null;
+  const own = normalize(device.data.serialNo);
+  if (own === normalize(serialNo)) return null;
+  return (
+    <p className='text-sm text-warning-foreground'>
+      {own
+        ? t('deviceSync.review.serialMismatch', {
+            own: device.data.serialNo as string,
+            platform: serialNo,
+          })
+        : t('deviceSync.review.serialMissing', { platform: serialNo })}
+    </p>
   );
 }
 
@@ -979,6 +1012,7 @@ function RecordsView({
             onChange={(value) => setTarget(value)}
             initialSearch={linking?.serialNo ?? ''}
           />
+          <SerialMismatch deviceId={target} serialNo={linking?.serialNo} />
         </div>
       </ConfirmDialog>
 

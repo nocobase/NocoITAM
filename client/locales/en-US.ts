@@ -2109,6 +2109,10 @@ const messages = {
       linkTitle: 'Link to a device',
       linkDescription:
         'Link the platform device “{{name}}” to a device on the register.',
+      serialMismatch:
+        'This device’s serial is {{own}}, not {{platform}} as MDM reports. Link it only if it is the same device.',
+      serialMissing:
+        'This device has no serial on the register; MDM reports {{platform}}. Link it only if it is the same device.',
       candidates: 'Devices with this serial',
       pickDevice: 'Register device',
       ignoreTitle: 'Keep off the register',

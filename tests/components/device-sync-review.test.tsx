@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   views: {} as Record<string, unknown[]>,
   action: vi.fn(),
   create: undefined as Record<string, unknown> | undefined,
+  device: undefined as Record<string, unknown> | undefined,
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -40,6 +41,11 @@ vi.mock('../../client/lib/itam/device-sync.js', () => ({
     },
     isPending: false,
     error: null,
+  }),
+}));
+vi.mock('../../client/lib/itam/api.js', () => ({
+  useItamRecord: (_path: string, id: string | undefined) => ({
+    data: id ? state.device : undefined,
   }),
 }));
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
@@ -264,6 +270,44 @@ describe('MDM 核对 → 只在 MDM: 补登记', () => {
       startStatus: 'inUse',
       assigneeId: 'p1',
     });
+  });
+
+  it('warns when the device picked to link has another serial', () => {
+    state.views = {
+      unregistered: [
+        { ...record('PF5DEMO01'), candidates: [{ id: 'd1', label: 'X' }] },
+      ],
+    };
+    state.device = { id: 'd1', serialNo: 'OTHER-1' };
+    render(
+      <MemoryRouter initialEntries={['/device-sync?view=unregistered']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.review.link' }),
+    );
+    expect(
+      screen.getByText('deviceSync.review.serialMismatch'),
+    ).toBeInTheDocument();
+  });
+
+  it('says nothing when it is the same serial, written otherwise', () => {
+    state.views = {
+      unregistered: [
+        { ...record('PF5DEMO01'), candidates: [{ id: 'd1', label: 'X' }] },
+      ],
+    };
+    state.device = { id: 'd1', serialNo: ' pf5demo01 ' };
+    render(
+      <MemoryRouter initialEntries={['/device-sync?view=unregistered']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.review.link' }),
+    );
+    expect(screen.queryByText('deviceSync.review.serialMismatch')).toBeNull();
   });
 
   it('leaves it to be typed when the platform has none', () => {
