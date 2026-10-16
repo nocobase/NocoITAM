@@ -37,7 +37,7 @@ export function FieldActions({
       <div ref={valueRef} className='min-w-0'>
         {children}
       </div>
-      <div className='pointer-events-none absolute top-0 right-0 flex items-center rounded-md bg-muted opacity-0 transition-opacity group-focus-within/field:pointer-events-auto group-focus-within/field:opacity-100 group-hover/field:pointer-events-auto group-hover/field:opacity-100'>
+      <div className='pointer-events-none absolute top-0 right-0 flex items-center rounded-md bg-[color-mix(in_oklab,var(--muted)_70%,var(--card))] opacity-0 transition-opacity group-focus-within/field:pointer-events-auto group-focus-within/field:opacity-100 group-hover/field:pointer-events-auto group-hover/field:opacity-100'>
         {onEdit ? (
           <button
             type='button'
