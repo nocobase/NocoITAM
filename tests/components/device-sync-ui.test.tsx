@@ -260,19 +260,7 @@ describe("a device's differences with the platform", () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'deviceSync.checks.keepRegister' }),
     );
-    // Asked first: nothing is kept until it is confirmed.
-    expect(state.review).not.toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'dismiss' }),
-    );
-    const dialog = screen.getByRole('dialog');
-    expect(
-      within(dialog).getByText('deviceSync.checks.keepRegisterDescription'),
-    ).toBeInTheDocument();
-    fireEvent.click(
-      within(dialog).getByRole('button', {
-        name: 'deviceSync.checks.keepRegister',
-      }),
-    );
+    // At once: it is listed under 已忽略, where 恢复 takes it back.
     expect(state.review).toHaveBeenCalledWith({
       kind: 'dismiss',
       deviceId: 'd1',

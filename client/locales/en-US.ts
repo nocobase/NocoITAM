@@ -2043,9 +2043,6 @@ const messages = {
       assignTo: 'Assign to {{user}}',
       restore: 'Restore to stock',
       keepRegister: 'Ignore',
-      keepRegisterTitle: 'Ignore this difference',
-      keepRegisterDescription:
-        '“{{kind}}” on “{{device}}” will no longer be raised; it is listed under Ignored below and can be restored. It comes back if what MDM reports changes.',
       platformUser: 'Platform user: {{user}}',
     },
     unlink: 'Unlink',

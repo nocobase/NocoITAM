@@ -121,7 +121,8 @@ product or in release notes, until it is listed here.
 - **忽略** (以台账为准 until 2026-10-16; the code still says `dismiss`)
   writes `deviceSyncDismissals` (device, kind, the value that was seen:
   the last sync, the other person, the register status) and a
-  `managedDismissed` event, after a confirmation; the same difference with
+  `managedDismissed` event, at one click (no confirmation since 2026-10-16:
+  恢复 takes it back); the same difference with
   another value is raised again (guideline 3.4). An ignored difference
   that still holds is listed, not lost: `checks({ dismissed: true })`
   (view `dismissed`) is 信息不一致's 已忽略 section, with who and when and

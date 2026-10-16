@@ -11,7 +11,6 @@ import { EmptyState } from '@/components/itam/empty-state';
 import { HistoryBackButton } from '@/components/itam/history-back-button';
 import { CellText } from '@/components/itam/cell-text';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
-import { KeepRegisterDialog } from '@/components/itam/managed-platforms';
 import { HolderLink } from '@/components/itam/holder-link';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { RecordLink } from '@/components/itam/record-link';
@@ -276,8 +275,9 @@ const deviceLabel = (row: {
 function ChecksView(): ReactElement {
   const { t } = useTranslation();
   const review = useDeviceReview('checks');
-  // 忽略 asks first (2026-10-16): the difference is not raised again.
-  const [keeping, setKeeping] = useState<DeviceCheck>();
+  // 忽略 at once (2026-10-16): it is listed under 已忽略 and 恢复 takes
+  // it back, so nothing is lost by a wrong click.
+  const action = useDeviceReviewAction();
   const rows = review.data ?? [];
   const people = useReferenceNames([
     {
@@ -351,7 +351,14 @@ function ChecksView(): ReactElement {
                   <Button
                     size='sm'
                     variant='outline'
-                    onClick={() => setKeeping(row)}
+                    disabled={action.isPending}
+                    onClick={() =>
+                      action.mutate({
+                        kind: 'dismiss',
+                        deviceId: row.deviceId,
+                        check: row.kind,
+                      })
+                    }
                   >
                     {t('deviceSync.checks.keepRegister')}
                   </Button>
@@ -361,10 +368,6 @@ function ChecksView(): ReactElement {
           </TableBody>
         </Table>
       </div>
-      <KeepRegisterDialog
-        check={keeping}
-        onClose={() => setKeeping(undefined)}
-      />
     </>
   );
 }
