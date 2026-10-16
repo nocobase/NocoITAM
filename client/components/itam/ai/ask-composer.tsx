@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
 } from '#components/ui/tooltip';
 import { modelKey, type AskFile } from '@/lib/itam/ask';
+import { useFileDrag } from '@/lib/itam/file-drag';
 
 import type { AskDraft } from './ask-draft.js';
 
@@ -71,6 +72,7 @@ export function AskComposer({
   onModelMenu?: (open: boolean) => void;
 }): ReactElement {
   const { t } = useTranslation();
+  const drag = useFileDrag(!disabled);
   const fileRef = useRef<HTMLInputElement>(null);
   const { files, model } = draft;
   // The models by service, as the select groups them.
@@ -118,7 +120,8 @@ export function AskComposer({
         // cannot send yet fades here.
         className={`itam-ai-border has-disabled:bg-card dark:bg-card dark:has-disabled:bg-card ${
           disabled ? 'opacity-60' : 'has-disabled:opacity-100'
-        } ${className}`}
+        } ${drag.over ? 'ring-2 ring-ring/30' : ''} ${className}`}
+        {...drag.bind}
         onDragOver={(event) => {
           if (!disabled && event.dataTransfer.types.includes('Files'))
             event.preventDefault();

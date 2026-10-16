@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { useApi } from '@/lib/itam/api';
+import { useFileDrag } from '@/lib/itam/file-drag';
 import {
   errorMessage,
   formatDate,
@@ -183,6 +184,7 @@ export function CommentComposer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const uploads = useUploads();
+  const drag = useFileDrag();
   const pickerRef = useRef<HTMLInputElement>(null);
   // The writer is looked up among the colleagues; an account holding no
   // permission set of this application (the administrator) is not one, so
@@ -237,6 +239,7 @@ export function CommentComposer({
         />
         <div
           className='relative min-w-0 flex-1'
+          {...drag.bind}
           onDragOver={(event) => {
             if (event.dataTransfer.types.includes('Files'))
               event.preventDefault();
@@ -263,7 +266,12 @@ export function CommentComposer({
               replyToId ? 'comments.replyPlaceholder' : 'comments.placeholder',
             )}
             rows={1}
-            className='max-h-[50vh] min-h-8 resize-none border-border py-1.5 pr-10 text-sm shadow-xs focus-visible:border-ring/50 focus-visible:ring-2 focus-visible:ring-ring/20'
+            className={cn(
+              'max-h-[50vh] min-h-8 resize-none border-border py-1.5 pr-10 text-sm shadow-xs focus-visible:border-ring/50 focus-visible:ring-2 focus-visible:ring-ring/20',
+              // Files dragged over it: lit as when it has focus, a step
+              // stronger, so the drop reads as taken.
+              drag.over && 'border-ring ring-2 ring-ring/30',
+            )}
             onChange={setDraft}
             onKeyDown={(event) => {
               if (sendsOnEnter(event)) {
