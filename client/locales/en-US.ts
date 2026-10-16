@@ -232,6 +232,8 @@ const messages = {
     auditItems: 'Audit items',
   },
   comments: {
+    earlierReplies_one: 'Show {{count}} earlier reply',
+    earlierReplies_other: 'Show {{count}} earlier replies',
     label: 'Comment',
     placeholder: 'Write a comment; @ to mention a colleague',
     replyPlaceholder: 'Write a reply…',
@@ -252,6 +254,18 @@ const messages = {
     deleteDescription: 'Its text and files go; replies to it stay.',
   },
   history: {
+    today: 'Today',
+    yesterday: 'Yesterday',
+    editedFields_one: 'changed {{count}} field',
+    editedFields_other: 'changed {{count}} fields',
+    showEdits: 'Show',
+    moreChanges_one: 'Show {{count}} more change',
+    moreChanges_other: 'Show {{count}} more changes',
+    filter: {
+      all: 'All',
+      comments: 'Comments',
+      changes: 'Changes',
+    },
     origin: {
       agent: 'proposed by Noco',
       import: 'through a data import',

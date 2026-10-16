@@ -225,6 +225,8 @@ const zhCN: AppResource = {
     auditItems: '盘点明细',
   },
   comments: {
+    earlierReplies_one: '查看更早的 {{count}} 条回复',
+    earlierReplies_other: '查看更早的 {{count}} 条回复',
     label: '评论',
     placeholder: '写评论，输入 @ 提及同事',
     replyPlaceholder: '写回复…',
@@ -244,6 +246,18 @@ const zhCN: AppResource = {
     deleteDescription: '评论的文字和附件会删除，回复会保留。',
   },
   history: {
+    today: '今天',
+    yesterday: '昨天',
+    editedFields_one: '修改了 {{count}} 项',
+    editedFields_other: '修改了 {{count}} 项',
+    showEdits: '展开',
+    moreChanges_one: '显示其余 {{count}} 条变更',
+    moreChanges_other: '显示其余 {{count}} 条变更',
+    filter: {
+      all: '全部',
+      comments: '评论',
+      changes: '变更',
+    },
     origin: {
       agent: '经 Noco 提议',
       import: '经数据导入',

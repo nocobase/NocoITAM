@@ -14,6 +14,7 @@ import {
   Send,
   Trash2,
 } from 'lucide-react';
+import { useSearchParams } from 'react-router';
 import {
   useRef,
   useState,
@@ -709,6 +710,9 @@ function Message({
  * its own, people talking set apart from what happened around them. Reply
  * opens a box at the thread's foot.
  */
+/** The replies a thread shows before folding the earlier ones. */
+const REPLIES_SHOWN = 2;
+
 export function CommentThread({
   comment,
   replies = [],
@@ -718,9 +722,26 @@ export function CommentThread({
   readonly replies?: readonly CommentEvent[];
   readonly scope: CommentScope;
 }): ReactElement {
+  const { t } = useTranslation();
   const [replying, setReplying] = useState(false);
+  // Past two, the earlier replies fold behind a count — unless one of them
+  // is what a notification opened the history at.
+  const [search] = useSearchParams();
+  const focus = search.get('focus');
+  const [allReplies, setAllReplies] = useState(() =>
+    replies
+      .slice(0, -REPLIES_SHOWN)
+      .some(
+        (reply) => `${reply.id}` === focus || `event:${reply.id}` === focus,
+      ),
+  );
+  const hiddenReplies = allReplies
+    ? 0
+    : Math.max(0, replies.length - REPLIES_SHOWN);
   return (
-    <div className='grid gap-3 rounded-xl border border-border bg-card px-3 py-2.5 shadow-xs'>
+    // A tinted card with no border (2026-10-16): what people wrote, set
+    // apart from the quiet change lines around it without boxing it in.
+    <div className='grid gap-3 rounded-xl bg-muted/60 px-3 py-2.5'>
       <Message
         event={comment}
         scope={scope}
@@ -728,7 +749,16 @@ export function CommentThread({
       />
       {replies.length ? (
         <div className='grid gap-3 pl-11'>
-          {replies.map((reply) => (
+          {hiddenReplies > 0 ? (
+            <button
+              type='button'
+              className='w-fit text-xs text-link underline-offset-4 hover:underline'
+              onClick={() => setAllReplies(true)}
+            >
+              {t('comments.earlierReplies', { count: hiddenReplies })}
+            </button>
+          ) : null}
+          {replies.slice(hiddenReplies).map((reply) => (
             <Message
               key={reply.id}
               event={reply}

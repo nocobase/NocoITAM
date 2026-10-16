@@ -14,10 +14,17 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApi } from '@/lib/itam/api';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { formatDate, formatMoney, relativeTime, text } from '@/lib/itam/format';
 import { HistoryIcon } from '@/lib/itam/history-icons';
+import {
+  dayOf,
+  groupEdits,
+  layoutTimeline,
+  type TimelineUnit,
+} from '@/lib/itam/history-layout';
 import { recordKindOf } from '@/lib/itam/record-kind';
 import { referenceRoute, useReferenceNames } from '@/lib/itam/references';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
@@ -108,6 +115,57 @@ type DisplayValue = (
 ) => ReactNode | undefined;
 const DisplayContext = createContext<DisplayValue | undefined>(undefined);
 
+/** What the history shows: everything, what people wrote, or what changed. */
+type HistoryFilter = 'all' | 'comments' | 'changes';
+const HISTORY_FILTERS: readonly HistoryFilter[] = [
+  'all',
+  'comments',
+  'changes',
+];
+// Remembered in this browser, a convenience: blocked storage only means the
+// history opens on everything.
+const FILTER_KEY = 'nocoitam:history-filter';
+function readFilter(): HistoryFilter {
+  try {
+    const stored = localStorage.getItem(FILTER_KEY);
+    return HISTORY_FILTERS.find((filter) => filter === stored) ?? 'all';
+  } catch {
+    return 'all';
+  }
+}
+
+/**
+ * A line's time: how long ago, today; the time of day on an earlier day,
+ * whose heading already says which; the full stamp on hover either way.
+ */
+function timeLabel(iso: string, language: string, justNow: string): string {
+  if (dayOf(iso) === dayOf(new Date().toISOString()))
+    return relativeTime(iso, language, justNow);
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime())
+    ? iso
+    : new Intl.DateTimeFormat(language, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(date);
+}
+
+/** A day heading: 今天, 昨天, else the date, with its year when not this one. */
+function dayLabel(day: string, language: string, t: Translate): string {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (day === dayOf(today.toISOString())) return t('history.today');
+  if (day === dayOf(yesterday.toISOString())) return t('history.yesterday');
+  const [year, month, date] = day.split('-').map(Number);
+  return new Intl.DateTimeFormat(language, {
+    ...(year === today.getFullYear() ? {} : { year: 'numeric' }),
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(year ?? 0, (month ?? 1) - 1, date ?? 1));
+}
+
 export function HistoryTimeline({
   path,
   id,
@@ -132,6 +190,9 @@ export function HistoryTimeline({
   const colleagues = useColleagues();
   const subjectType = recordKindOf(path);
   const [pages, setPages] = useState(1);
+  const [filter, setFilter] = useState<HistoryFilter>(readFilter);
+  // The folds the reader opened, by id; one opened stays open.
+  const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set());
   const pageSize = 30;
   const query = useQuery({
     queryKey: ['itam', path, 'history', id, 'all', pages],
@@ -228,38 +289,178 @@ export function HistoryTimeline({
       }
     : undefined;
 
-  // NocoCRM's 动态 (2026-10-14): the comment box atop, then one list, newest
-  // first, each line on a rail of icons — who, what they did, what changed,
-  // how long ago on the right — and comments as cards among them.
+  // The history (2026-10-16, after Linear's and Attio's activity rather than
+  // NocoCRM's 动态 it started from): the comment box atop, a 全部 / 评论 /
+  // 变更 switch, then the lines newest first under day headings — changes as
+  // quiet single lines, a person's edits of one sitting folded into one,
+  // long runs of changes between comments folded behind a count, and
+  // comments as tinted cards among them.
+  const shown = items.filter(
+    (item) =>
+      filter === 'all' ||
+      (filter === 'comments') === (item.event?.type === 'comment'),
+  );
+  const entries = layoutTimeline(groupEdits(shown), opened);
+  const row = (unit: TimelineUnit<TimelineItem>) =>
+    unit.kind === 'item' ? (
+      <TimelineRow
+        key={unit.id}
+        item={unit.item}
+        scope={scope}
+        fieldByKey={fieldByKey}
+        keyLabels={keyLabels}
+        names={names}
+        statusEnum={statusEnum}
+        language={i18n.language}
+        t={t}
+      />
+    ) : (
+      <EditsRow
+        key={unit.id}
+        items={unit.items}
+        scope={scope}
+        fieldByKey={fieldByKey}
+        keyLabels={keyLabels}
+        names={names}
+        statusEnum={statusEnum}
+        language={i18n.language}
+        t={t}
+      />
+    );
   return (
     <CurrencyContext.Provider value={currency}>
       <DisplayContext.Provider value={displayValue}>
-        <div className='space-y-5'>
+        <div className='space-y-4'>
           {scope ? <CommentComposer scope={scope} /> : null}
-          {items.length === 0 ? (
+          {items.length > 0 ? (
+            <Tabs
+              value={filter}
+              onValueChange={(value) => {
+                const next = value as HistoryFilter;
+                setFilter(next);
+                try {
+                  localStorage.setItem(FILTER_KEY, next);
+                } catch {
+                  // Storage unavailable: kept until the page is left.
+                }
+              }}
+            >
+              <TabsList>
+                {HISTORY_FILTERS.map((value) => (
+                  <TabsTrigger key={value} value={value}>
+                    {t(`history.filter.${value}`)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          ) : null}
+          {shown.length === 0 ? (
             <EmptyState title={t('history.empty')} />
           ) : (
             <ol>
-              {items.map((item, index) => (
-                <TimelineRow
-                  key={item.id}
-                  item={item}
-                  last={index === items.length - 1}
-                  scope={scope}
-                  fieldByKey={fieldByKey}
-                  keyLabels={keyLabels}
-                  names={names}
-                  statusEnum={statusEnum}
-                  language={i18n.language}
-                  t={t}
-                />
-              ))}
+              {entries.map((entry) =>
+                entry.kind === 'day' ? (
+                  <li
+                    key={entry.id}
+                    className='pt-4 pb-1.5 text-xs font-medium text-muted-foreground first:pt-0'
+                  >
+                    {dayLabel(entry.day, i18n.language, t)}
+                  </li>
+                ) : entry.kind === 'fold' ? (
+                  <li key={entry.id} className='flex gap-3 py-1'>
+                    <span className='w-5 shrink-0' />
+                    <button
+                      type='button'
+                      className='text-xs text-link underline-offset-4 hover:underline'
+                      onClick={() =>
+                        setOpened((current) => new Set([...current, entry.id]))
+                      }
+                    >
+                      {t('history.moreChanges', {
+                        count: entry.units.reduce(
+                          (sum, unit) =>
+                            sum +
+                            (unit.kind === 'item' ? 1 : unit.items.length),
+                          0,
+                        ),
+                      })}
+                    </button>
+                  </li>
+                ) : (
+                  row(entry.unit)
+                ),
+              )}
             </ol>
           )}
           {loadMore}
         </div>
       </DisplayContext.Provider>
     </CurrencyContext.Provider>
+  );
+}
+
+/**
+ * A person's field edits of one sitting, folded: who, how many things they
+ * changed, when; opened, each edit as its own line beneath.
+ */
+function EditsRow({
+  items,
+  ...rest
+}: Omit<Parameters<typeof TimelineRow>[0], 'item'> & {
+  readonly items: readonly TimelineItem[];
+}): ReactElement {
+  const [open, setOpen] = useState(false);
+  const first = items[0];
+  const actor = first.actorId
+    ? (rest.names.users?.get(first.actorId) ?? first.actorId)
+    : undefined;
+  const count = items.reduce((sum, item) => sum + item.changes.length, 0);
+  return (
+    <li className='py-1.5'>
+      <div className='flex gap-3'>
+        <span className='flex h-6 w-5 shrink-0 items-center justify-center'>
+          <HistoryIcon
+            type={undefined}
+            className='size-3.5 text-muted-foreground'
+          />
+        </span>
+        <div className='flex min-w-0 flex-1 items-start gap-3 text-sm'>
+          <p className='min-w-0 flex-1 leading-6'>
+            {actor ? <span className='font-semibold'>{actor} </span> : null}
+            <span className='text-muted-foreground'>
+              {rest.t('history.editedFields', { count })}
+            </span>{' '}
+            <button
+              type='button'
+              className='text-xs text-link underline-offset-4 hover:underline'
+              onClick={() => setOpen((current) => !current)}
+            >
+              {open
+                ? rest.t('history.hideFields')
+                : rest.t('history.showEdits')}
+            </button>
+          </p>
+          <time
+            dateTime={first.createdAt}
+            title={formatDate(first.createdAt, true)}
+            className='shrink-0 text-xs leading-6 text-muted-foreground/80 tabular-nums'
+          >
+            {timeLabel(
+              first.createdAt,
+              rest.language,
+              rest.t('comments.justNow'),
+            )}
+          </time>
+        </div>
+      </div>
+      {open ? (
+        <ol className='mt-1 ml-8 border-l border-border pl-3'>
+          {items.map((item) => (
+            <TimelineRow key={item.id} item={item} {...rest} />
+          ))}
+        </ol>
+      ) : null}
+    </li>
   );
 }
 
@@ -294,7 +495,6 @@ const IMPLIED_FIELDS: Readonly<Record<string, readonly string[]>> = {
 /** One line, with its field changes folded in until they are asked for. */
 function TimelineRow({
   item,
-  last,
   scope,
   fieldByKey,
   keyLabels,
@@ -304,7 +504,6 @@ function TimelineRow({
   t,
 }: {
   readonly item: TimelineItem;
-  readonly last: boolean;
   readonly scope: CommentScope | undefined;
   readonly language: string;
   readonly fieldByKey: ReadonlyMap<string, FieldDefinition>;
@@ -366,32 +565,29 @@ function TimelineRow({
           !(IMPLIED_FIELDS[event?.type ?? ''] ?? []).includes(change.field),
       );
   const comment = event?.type === 'comment' && scope ? event : undefined;
+  // A comment is a card of its own, its writer's round in place of an icon.
+  if (comment && scope)
+    return (
+      <li className='py-2'>
+        <CommentThread comment={comment} replies={item.replies} scope={scope} />
+      </li>
+    );
+  // Done by a job or a sync rather than a person: quieter still.
+  const automatic = item.origin === 'schedule' || item.origin === 'sync';
   return (
-    <li className='flex gap-3'>
-      {/* The icons on no rail of their own, joined by a hairline from one
-          line to the next. */}
-      <div className='flex w-5 shrink-0 flex-col items-center'>
-        <span className='flex h-6 items-center justify-center'>
-          <HistoryIcon
-            type={event?.type}
-            className={cn(
-              'size-3.5',
-              item.origin === 'agent'
-                ? 'text-primary'
-                : 'text-muted-foreground',
-            )}
-          />
-        </span>
-        {last ? null : <span className='min-h-3 w-px flex-1 bg-border' />}
-      </div>
-      <div className={cn('min-w-0 flex-1 text-sm', last ? '' : 'pb-5')}>
-        {comment && scope ? (
-          <CommentThread
-            comment={comment}
-            replies={item.replies}
-            scope={scope}
-          />
-        ) : (
+    <li className='flex gap-3 py-1.5'>
+      {/* Each line's icon, on no rail: the day headings carry the order. */}
+      <span className='flex h-6 w-5 shrink-0 items-center justify-center'>
+        <HistoryIcon
+          type={event?.type}
+          className={cn(
+            'size-3.5',
+            item.origin === 'agent' ? 'text-primary' : 'text-muted-foreground',
+          )}
+        />
+      </span>
+      <div className={cn('min-w-0 flex-1 text-sm', automatic && 'opacity-80')}>
+        {
           <>
             <div className='flex items-start gap-3'>
               {/* A sentence: who, what they did, what changed. Inline text,
@@ -479,7 +675,7 @@ function TimelineRow({
                 title={formatDate(item.createdAt, true)}
                 className='shrink-0 text-xs leading-6 text-muted-foreground/80 tabular-nums'
               >
-                {relativeTime(item.createdAt, language, t('comments.justNow'))}
+                {timeLabel(item.createdAt, language, t('comments.justNow'))}
               </time>
             </div>
             {folded.length > 0 ? (
@@ -518,13 +714,23 @@ function TimelineRow({
               </>
             ) : null}
           </>
-        )}
+        }
       </div>
     </li>
   );
 }
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/**
+ * The value a change replaced: struck through and quiet, so the line reads
+ * as old → new at a glance (2026-10-16, as Attio's and Jira's history do).
+ * An empty one stays a plain dash.
+ */
+const OLD_VALUE =
+  'text-muted-foreground line-through decoration-muted-foreground/50';
+const oldClass = (shown: unknown): string =>
+  shown === '—' || shown === undefined ? 'text-muted-foreground' : OLD_VALUE;
 
 const isEmpty = (value: unknown) =>
   value === null || value === undefined || value === '';
@@ -599,7 +805,13 @@ function ChangeValue({
   if (ownFrom !== undefined || ownTo !== undefined)
     return (
       <span className='inline-flex flex-wrap items-baseline gap-x-2 break-words'>
-        <span className='text-muted-foreground'>{ownFrom ?? '—'}</span>
+        <span
+          className={
+            ownFrom === undefined ? 'text-muted-foreground' : OLD_VALUE
+          }
+        >
+          {ownFrom ?? '—'}
+        </span>
         <span aria-hidden='true' className='text-muted-foreground'>
           →
         </span>
@@ -632,7 +844,7 @@ function ChangeValue({
           ) : null}
           {line.from !== undefined ? (
             <>
-              <span className='text-muted-foreground'>{line.from}</span>
+              <span className={oldClass(line.from)}>{line.from}</span>
               <span aria-hidden='true' className='text-muted-foreground'>
                 →
               </span>
@@ -655,7 +867,7 @@ function ChangeValue({
             ) : null}
             {line.from !== undefined ? (
               <>
-                <span className='text-muted-foreground'>{line.from}</span>
+                <span className={oldClass(line.from)}>{line.from}</span>
                 <span aria-hidden='true' className='text-muted-foreground'>
                   →
                 </span>
@@ -693,13 +905,14 @@ function ChangeValue({
       typeof value !== 'string' ||
       !value
     )
-      return (
-        <span className={muted ? 'text-muted-foreground' : ''}>{label}</span>
-      );
+      return <span className={muted ? oldClass(label) : ''}>{label}</span>;
     return (
       <RecordLink
         to={`/${referenceRoute(collection)}/${value}`}
-        className='text-link underline-offset-4 hover:underline'
+        className={cn(
+          'text-link underline-offset-4 hover:underline',
+          muted && 'line-through decoration-link/50 opacity-70',
+        )}
       >
         {label}
       </RecordLink>
@@ -708,7 +921,7 @@ function ChangeValue({
   return (
     <span className='inline-flex flex-wrap items-baseline gap-x-2 break-words'>
       {long ? (
-        <CollapsibleText text={from} className='text-muted-foreground' />
+        <CollapsibleText text={from} className={oldClass(from)} />
       ) : (
         reference(oldValue, from, true)
       )}
