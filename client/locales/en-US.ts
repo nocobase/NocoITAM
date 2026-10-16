@@ -2083,6 +2083,8 @@ const messages = {
         holder: 'Assigned to',
         platformModel: 'Model on the platform',
         reason: 'Reason',
+        markedBy: 'Marked by',
+        markedAt: 'Marked on',
       },
       sharedSerial_one: '{{count}} register device has this serial',
       sharedSerial_other: '{{count}} register devices have this serial',

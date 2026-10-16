@@ -385,8 +385,18 @@ function UnmanagedView({
               <TableHead>{t('fields.serialNo')}</TableHead>
               <TableHead>{t('fields.model')}</TableHead>
               <TableHead>{t('deviceSync.review.columns.holder')}</TableHead>
+              {/* Who said so and when in columns of their own (2026-10-16):
+                  under the reason they made the row two lines tall. */}
               {view === 'exempted' ? (
-                <TableHead>{t('deviceSync.review.columns.reason')}</TableHead>
+                <>
+                  <TableHead>{t('deviceSync.review.columns.reason')}</TableHead>
+                  <TableHead>
+                    {t('deviceSync.review.columns.markedBy')}
+                  </TableHead>
+                  <TableHead>
+                    {t('deviceSync.review.columns.markedAt')}
+                  </TableHead>
+                </>
               ) : null}
               <TableHead className='text-right'>
                 {t('common.actions')}
@@ -429,19 +439,21 @@ function UnmanagedView({
                   </CellText>
                 </TableCell>
                 {view === 'exempted' ? (
-                  <TableCell className='text-sm'>
-                    <CellText>{row.reason}</CellText>
-                    <span className='block text-xs text-muted-foreground'>
-                      {[
-                        row.exemptedById
+                  <>
+                    <TableCell>
+                      <CellText className='max-w-md'>{row.reason}</CellText>
+                    </TableCell>
+                    <TableCell className='text-muted-foreground'>
+                      <CellText className='max-w-48'>
+                        {row.exemptedById
                           ? (names.users?.get(row.exemptedById) ?? '…')
-                          : null,
-                        formatDate(row.exemptedAt ?? null),
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
-                  </TableCell>
+                          : '—'}
+                      </CellText>
+                    </TableCell>
+                    <TableCell className='text-muted-foreground tabular-nums'>
+                      {formatDate(row.exemptedAt ?? null)}
+                    </TableCell>
+                  </>
                 ) : null}
                 <TableCell>
                   <span className='flex justify-end'>
@@ -632,11 +644,19 @@ function RecordsView({
                 {t('deviceSync.review.columns.platformModel')}
               </TableHead>
               <TableHead>{t('deviceSync.fields.user')}</TableHead>
-              <TableHead>
-                {view === 'ignored'
-                  ? t('deviceSync.review.columns.reason')
-                  : t('deviceSync.fields.lastSync')}
-              </TableHead>
+              {view === 'ignored' ? (
+                <>
+                  <TableHead>{t('deviceSync.review.columns.reason')}</TableHead>
+                  <TableHead>
+                    {t('deviceSync.review.columns.markedBy')}
+                  </TableHead>
+                  <TableHead>
+                    {t('deviceSync.review.columns.markedAt')}
+                  </TableHead>
+                </>
+              ) : (
+                <TableHead>{t('deviceSync.fields.lastSync')}</TableHead>
+              )}
               <TableHead className='text-right'>
                 {t('common.actions')}
               </TableHead>
@@ -704,29 +724,33 @@ function RecordsView({
                     )}
                   </CellText>
                 </TableCell>
-                <TableCell className='text-sm'>
-                  {view === 'ignored' && row.ignoredByRule ? (
-                    <span>{t('deviceSync.review.byRule')}</span>
-                  ) : view === 'ignored' ? (
-                    <span>
-                      <CellText>{row.ignoreReason}</CellText>
-                      <span className='block text-xs text-muted-foreground'>
-                        {[
-                          row.ignoredById
-                            ? (people.users?.get(row.ignoredById) ?? '…')
-                            : null,
-                          formatDate(row.ignoredAt),
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className='whitespace-nowrap tabular-nums'>
-                      {formatDate(row.lastSyncAt, true)}
-                    </span>
-                  )}
-                </TableCell>
+                {view === 'ignored' ? (
+                  <>
+                    <TableCell>
+                      <CellText className='max-w-md'>
+                        {row.ignoredByRule
+                          ? t('deviceSync.review.byRule')
+                          : row.ignoreReason}
+                      </CellText>
+                    </TableCell>
+                    {/* A personal device is kept off by the rule, not by
+                        anybody, on no particular day. */}
+                    <TableCell className='text-muted-foreground'>
+                      <CellText className='max-w-48'>
+                        {row.ignoredById
+                          ? (people.users?.get(row.ignoredById) ?? '…')
+                          : '—'}
+                      </CellText>
+                    </TableCell>
+                    <TableCell className='text-muted-foreground tabular-nums'>
+                      {row.ignoredAt ? formatDate(row.ignoredAt) : '—'}
+                    </TableCell>
+                  </>
+                ) : (
+                  <TableCell className='tabular-nums'>
+                    {formatDate(row.lastSyncAt, true)}
+                  </TableCell>
+                )}
                 <TableCell>
                   <span className='flex justify-end gap-1'>
                     {/* The rule brings a personal device back, not a row. */}

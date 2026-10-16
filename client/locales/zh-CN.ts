@@ -1987,6 +1987,8 @@ const zhCN: AppResource = {
         holder: '分配给',
         platformModel: '平台上的型号',
         reason: '原因',
+        markedBy: '标记人',
+        markedAt: '标记日期',
       },
       sharedSerial_one: '{{count}} 台台账设备用了这个序列号',
       sharedSerial_other: '{{count}} 台台账设备用了这个序列号',
