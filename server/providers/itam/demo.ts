@@ -8,6 +8,7 @@ import type { DeviceService, OperationContext } from './devices.js';
 import type { ObservedDevice } from './device-sources.js';
 import type { DeviceSyncService } from './device-sync.js';
 import type { AuditService, CountInput } from './audits.js';
+import type { CommentService } from './comments.js';
 import { unrestricted } from './authz-filter.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
 import type { DisposalService } from './disposals.js';
@@ -337,6 +338,22 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairKeyboard: 'Several keys do not respond',
     repairPanel: 'Panel shows a vertical line',
     repairScreen: 'Cracked screen; replace the panel',
+    commentMonitorAsk:
+      '@{importer} Three new starters join sales next Monday. Could the monitors be approved this week?',
+    commentMonitorBudget:
+      "Sales still has budget left this quarter, it's fine to approve.",
+    commentAuditProgress:
+      'East side of floor 3 is done; the west desks continue Thursday afternoon. @{importer} could you confirm where the two meeting-room devices are?',
+    commentAuditReply: "Sure, I'll check them before Wednesday.",
+    commentPrinter:
+      'The vendor has fixed the paper jam three times and says the board is ageing — not worth another repair.',
+    commentSwollen:
+      'Battery is swollen. Unplugged and locked in the warehouse cabinet — do not lend it out.',
+    commentSwollenReply: 'Noted, I have raised a disposal for it.',
+    commentExpired:
+      'Out of warranty, so this repair is charged to the IT budget.',
+    commentLeaver:
+      '@{importer} {leaver} leaves next Friday and still has devices and a draft disposal in their name. Please plan the handover.',
     repairFan: 'Fan grinds under load; clean it and replace if worn',
     repairNotes: 'Replaced under warranty',
     repairFault: 'Battery swollen; replace battery',
@@ -421,6 +438,18 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairKeyboard: '键盘部分按键失灵',
     repairPanel: '面板出现竖线',
     repairScreen: '屏幕碎裂，更换面板',
+    commentMonitorAsk:
+      '@{importer} 销售部下周一有三位新人到岗，显示器能否这周批下来？',
+    commentMonitorBudget: '销售部这个季度的预算还有余量，可以批。',
+    commentAuditProgress:
+      '3 楼东区已盘完，西区工位周四下午继续。@{importer} 会议室那两台设备麻烦帮忙确认一下位置。',
+    commentAuditReply: '好的，周三前确认。',
+    commentPrinter: '厂家已经修过三次卡纸，说主板老化，不建议再修。',
+    commentSwollen: '电池鼓包，已断电放进仓库隔离柜，不要再借出。',
+    commentSwollenReply: '收到，已经提了报废单。',
+    commentExpired: '已过保，这次维修费用走 IT 部门预算。',
+    commentLeaver:
+      '@{importer} {leaver} 下周五最后一天，名下还有设备和一张报废草稿，记得安排交接。',
     repairFan: '高负载时风扇异响，清灰，磨损则更换',
     repairNotes: '保内更换',
     defaultKit: '{name}标准配置',
@@ -602,6 +631,8 @@ export function createDemoService(dependencies: {
   numbering?: NumberingService;
   /** What the demo's Intune reports goes through the real matching. */
   deviceSync?: DeviceSyncService;
+  /** Writes the demo's comment threads; absent in a bare harness. */
+  comments?: CommentService;
 }): DemoService {
   const {
     database,
@@ -4015,6 +4046,103 @@ export function createDemoService(dependencies: {
           all('disposals', 'execute'),
         );
 
+        // A few comment threads (2026-10-16), so the 动态 of the records
+        // being worked on reads as a team talking, and the importer is
+        // @-mentioned on two of them — which lands in its 通知 — and answers
+        // one itself. Needs the sign-ins: a comment is written by an account.
+        if (dependencies.comments && importerId) {
+          const comments = dependencies.comments;
+          const importerName =
+            (await dependencies.accounts?.describe(actorId))?.name ??
+            'nocobase';
+          const say = (template: string): string =>
+            template
+              .replace('{importer}', importerName)
+              .replace('{leaver}', asText(chenJie.name) ?? '');
+          const comment = async (
+            day: number,
+            author: string | undefined,
+            subjectType: string,
+            subject: Row,
+            body: string,
+            options: { mention?: boolean; replyTo?: string } = {},
+          ): Promise<string> => {
+            await on(day);
+            const written = await comments.add(author ?? writerId, {
+              subjectType,
+              subjectId: String(subject.id),
+              body: say(body),
+              ...(options.mention ? { mentions: [actorId] } : {}),
+              ...(options.replyTo ? { replyToId: options.replyTo } : {}),
+            });
+            return String(written.id);
+          };
+          const monitorAsk = await comment(
+            -14,
+            writerId,
+            'purchaseOrders',
+            monitorOrder,
+            texts.commentMonitorAsk,
+            { mention: true },
+          );
+          await comment(
+            -13,
+            managerUserId,
+            'purchaseOrders',
+            monitorOrder,
+            texts.commentMonitorBudget,
+            { replyTo: monitorAsk },
+          );
+          const auditAsk = await comment(
+            -2,
+            supportUserId,
+            'auditTasks',
+            audit,
+            texts.commentAuditProgress,
+            { mention: true },
+          );
+          await comment(
+            -2,
+            actorId,
+            'auditTasks',
+            audit,
+            texts.commentAuditReply,
+            { replyTo: auditAsk },
+          );
+          await comment(
+            -4,
+            supportUserId,
+            'disposals',
+            printerDisposal,
+            texts.commentPrinter,
+          );
+          const swollen = await comment(
+            -6,
+            supportUserId,
+            'devices',
+            swollenLaptop,
+            texts.commentSwollen,
+          );
+          await comment(
+            -5,
+            writerId,
+            'devices',
+            swollenLaptop,
+            texts.commentSwollenReply,
+            { replyTo: swollen },
+          );
+          await comment(
+            -3,
+            writerId,
+            'devices',
+            expiredLaptop,
+            texts.commentExpired,
+          );
+          await comment(-1, writerId, 'people', chenJie, texts.commentLeaver, {
+            mention: true,
+          });
+        }
+
         await reached(90);
         // What follows happens today: the leaver leaves, the joiners are
         // entered, Intune and Jamf report.
@@ -4750,6 +4878,44 @@ export function createDemoService(dependencies: {
         // of climbing with each import.
         await dependencies.numbering?.rewind({ connection });
       });
+      // The notifications the demo's requests sent (2026-10-16): they name
+      // records that are gone, and the importer's inbox kept each import's
+      // copy beside the next one's. They are the notification plugins'
+      // tables, keyed by the source the notifier gave them; an application
+      // without those plugins has nothing to remove.
+      if (allIds.length > 0)
+        await database
+          .transaction(async (connection) => {
+            const dispatches = connection.query
+              .selectFrom('notificationDispatches')
+              .select('id')
+              .where('sourceReferenceId', 'in', allIds);
+            const deliveries = connection.query
+              .selectFrom('notificationDeliveries')
+              .select('id')
+              .where('notificationId', 'in', dispatches);
+            await connection.query
+              .deleteFrom('notificationInAppItems')
+              .where('notificationId', 'in', dispatches)
+              .execute();
+            for (const table of [
+              'notificationDeliveryAttempts',
+              'notificationDeliveryRetryAudits',
+            ])
+              await connection.query
+                .deleteFrom(table)
+                .where('deliveryId', 'in', deliveries)
+                .execute();
+            await connection.query
+              .deleteFrom('notificationDeliveries')
+              .where('notificationId', 'in', dispatches)
+              .execute();
+            await connection.query
+              .deleteFrom('notificationDispatches')
+              .where('sourceReferenceId', 'in', allIds)
+              .execute();
+          })
+          .catch(() => undefined);
       // The sign-ins go last, once the people that referenced them are gone,
       // and through the users plugin rather than the table: removing an
       // account also ends its sessions and permission-set assignments.

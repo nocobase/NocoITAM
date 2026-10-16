@@ -7,6 +7,7 @@ import {
   numberingServiceToken,
 } from '../../server/providers/index.js';
 import { parseCsv, toCsv } from '../../server/providers/itam/csv.js';
+import type { CommentInput } from '../../server/providers/itam/comments.js';
 import { createDemoService } from '../../server/providers/itam/demo.js';
 import {
   auditServiceToken,
@@ -915,6 +916,7 @@ describe('CSV import / export and demo data', () => {
     const revoked: string[] = [];
     let created = 0;
     let held = false;
+    const written: { actor: string; mentions: readonly string[] }[] = [];
     const resolve = app.container.resolve.bind(app.container);
     const demo = createDemoService({
       database: resolve(databaseManagerToken),
@@ -927,6 +929,17 @@ describe('CSV import / export and demo data', () => {
       audits: resolve(auditServiceToken),
       disposals: resolve(disposalServiceToken),
       numbering: resolve(numberingServiceToken),
+      // The comment service needs the users table, which this harness has
+      // not; a recorder stands in for it.
+      comments: {
+        add: async (actor: string, input: CommentInput) => {
+          written.push({ actor, mentions: input.mentions ?? [] });
+          return { id: `comment-${String(written.length)}` } as never;
+        },
+        edit: async () => ({}) as never,
+        remove: async () => undefined,
+        subjectOf: async () => ({ subjectType: '', subjectId: '' }),
+      },
       accounts: {
         create: async () => `staff-${String((created += 1))}`,
         remove: async () => undefined,
@@ -955,6 +968,12 @@ describe('CSV import / export and demo data', () => {
     expect(await owned('purchaseOrders')).toBe(2);
     expect(await owned('repairs')).toBe(1);
     expect(await owned('disposals')).toBe(1);
+    // And its records carry comment threads, three of which mention it.
+    expect(written.length).toBeGreaterThanOrEqual(8);
+    expect(written.filter((entry) => entry.actor === 'admin')).toHaveLength(1);
+    expect(
+      written.filter((entry) => entry.mentions.includes('admin')),
+    ).toHaveLength(3);
     await demo.clear('admin');
     expect(revoked).toEqual(['assignment-1']);
 
