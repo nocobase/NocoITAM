@@ -9,7 +9,6 @@ import {
 } from './itam/maintenance.js';
 import { itamChangesToken } from './itam/changes.js';
 import { deviceSyncServiceToken } from './itam/device-sync.js';
-import { offboardingReviewerToken } from './itam/offboarding-review.js';
 import { renewalReviewerToken } from './itam/renewal-review.js';
 import { settingsServiceToken } from './itam/settings.js';
 
@@ -94,11 +93,11 @@ const AGENTS_SCHEDULE = { key: 'itam.agent-passes', cron: '30 2 * * *' };
 const AGENTS_TITLES: Readonly<Record<string, readonly [string, string]>> = {
   'zh-CN': [
     'Agent 每日检查',
-    '离职回收：为仍持有资产的离职人员整理回收建议；授权续费：为快到续费或到期日的授权整理续费建议。只提建议，由负责人在收件箱里决定；在「Agent 工作」里可以关闭',
+    '授权续费：为快到续费或到期日的授权整理续费建议。只提建议，由负责人在收件箱里决定；在「Agent 工作」里可以关闭',
   ],
   'en-US': [
     'Agents daily check',
-    'Offboarding: suggests how to take back what leavers still hold; renewal review: suggests whether to renew what comes up for renewal. They only suggest, for the people responsible to decide in their inbox; switched off on Agent work',
+    'Renewal review: suggests whether to renew what comes up for renewal. It only suggests, for the person responsible to decide in their inbox; switched off on Agent work',
   ],
 };
 
@@ -213,9 +212,6 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
             state: 'completed',
             outcome: 'succeeded',
             result: {
-              offboarding: await container
-                .resolve(offboardingReviewerToken)
-                .dailyPass(),
               renewalReview: await container
                 .resolve(renewalReviewerToken)
                 .dailyPass(),

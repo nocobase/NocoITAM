@@ -3371,7 +3371,6 @@ const messages = {
   },
   suggestion: {
     agents: {
-      offboarding: 'Offboarding',
       renewalReview: 'Renewal review',
     },
     working: 'Noco is drafting a suggestion…',
@@ -3385,18 +3384,10 @@ const messages = {
     changes: 'Changes to make',
     nothingToChange: 'Nothing needs to change.',
     change: {
-      return: 'Return {{subject}} as {{status}}',
-      transfer: 'Hand {{subject}} to {{target}}',
-      takeBack: 'Take back {{subject}} × {{quantity}}',
       reclaim: 'Reclaim the seat: {{subject}}',
       adjustSeats: 'Set the seat count to {{quantity}}',
       stopAutoRenew: 'Turn off auto-renewal of {{subject}}',
       startAutoRenew: 'Turn on auto-renewal of {{subject}}',
-    },
-    nextStatus: {
-      inStock: 'in stock',
-      inRepair: 'in repair',
-      pendingDisposal: 'pending disposal',
     },
     basis: 'Basis and details',
     reasons: 'Reasons',
@@ -3407,16 +3398,12 @@ const messages = {
     accepted: 'Suggestion carried out',
     stoppedAt: 'Step {{position}} did not finish: {{message}}',
     redoPlaceholder: {
-      offboarding:
-        'Say what to change, such as "send the laptop for repair first"',
       renewalReview: 'Say what to change, such as "keep 20 seats"',
     },
     ask: {
-      offboarding: 'Ask Noco for a recovery plan',
       renewalReview: 'Ask Noco about renewing',
     },
     offer: {
-      offboarding: 'This leaver still holds things.',
       renewal: 'This subscription ends on {{date}}.',
       maintenance: "This licence's maintenance ends on {{date}}.",
     },
@@ -3468,7 +3455,6 @@ const messages = {
     startedBy: {
       submitted: 'Sent for approval',
       asked: 'Asked by a person',
-      left: 'Marked as left',
       daily: 'Daily check',
     },
     status: {
@@ -3491,23 +3477,6 @@ const messages = {
       },
       byHand:
         'Whatever is switched off, an approver can always ask Noco to review a request.',
-    },
-    offboarding: {
-      name: 'Offboarding',
-      description:
-        'Once someone leaves, goes through what they hold for the people who answer for it — which devices go back to stock, for repair or for disposal, which can go straight to someone joining, which seats to reclaim — and drafts a recovery list to carry out in one go. Each person gets only their own part.',
-      byHand:
-        "Whatever is switched off, whoever answers for a leaver's things can always ask Noco for a recovery plan on the leaver's page.",
-      triggers: {
-        left: {
-          title: 'Marked as left',
-          hint: 'Someone is marked as left, or their leaving date arrives.',
-        },
-        daily: {
-          title: 'Daily check',
-          hint: 'Each day, leavers who still hold things (each at most once a week).',
-        },
-      },
     },
     renewalReview: {
       name: 'Renewal review',

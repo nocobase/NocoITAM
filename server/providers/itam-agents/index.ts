@@ -15,8 +15,6 @@ import {
 import { AGENT_JOBS, createAgentJob, oncePerRun } from '../itam/agent-jobs.js';
 import { agentRunServiceToken } from '../itam/agent-runs.js';
 import { approvalReviewerToken } from '../itam/approval-review.js';
-import { masterDataServiceToken } from '../itam/master-data.js';
-import { offboardingReviewerToken } from '../itam/offboarding-review.js';
 import { renewalReviewerToken } from '../itam/renewal-review.js';
 import { approvalServiceToken } from '../itam/approvals.js';
 import { planServiceToken } from '../itam/plans.js';
@@ -142,15 +140,8 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
         );
     approvals.onSettled = (approval) =>
       void reviewer.settled(approval).catch(() => undefined);
-    // 离职回收 (step 2, 2026-10-17): someone has just left.
-    const offboarding = container.resolve(offboardingReviewerToken);
+    // 授权续费 (step 2, 2026-10-17).
     const renewals = container.resolve(renewalReviewerToken);
-    container.resolve(masterDataServiceToken).onLeft = (personId, actorId) =>
-      void offboarding
-        .request({ personId, trigger: 'left', by: actorId })
-        .catch((error: unknown) =>
-          warn(error, 'The offboarding review did not start'),
-        );
     if (!container.has(jobExecutorServiceToken)) return;
     const executor = container
       .resolve(jobExecutorServiceToken)
@@ -162,9 +153,7 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
       oncePerRun(async (runId, signal) => {
         const run = await runs.get(runId);
         if (!run) return;
-        if (run.agent === 'offboarding')
-          await offboarding.runEntry(runId, signal);
-        else if (run.agent === 'renewalReview')
+        if (run.agent === 'renewalReview')
           await renewals.runEntry(runId, signal);
         else await reviewer.runEntry(runId, signal);
       }),
@@ -175,7 +164,6 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
       await executor.addJob(new AgentRunJob({ runId }));
     };
     reviewer.useJobs(dispatch);
-    offboarding.useJobs(dispatch);
     renewals.useJobs(dispatch);
     // The runs a shutdown cut short left running, queued again: only on the
     // memory queue, which this process alone holds; a shared one (Redis)

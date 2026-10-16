@@ -38,7 +38,6 @@ import {
 import { workRun } from '../../providers/itam/ai-model.js';
 import { suggestionDecisionsToken } from '../../providers/itam/agent-suggestions.js';
 import { approvalReviewerToken } from '../../providers/itam/approval-review.js';
-import { offboardingReviewerToken } from '../../providers/itam/offboarding-review.js';
 import { PlanError } from '../../providers/itam/plans.js';
 import { renewalReviewerToken } from '../../providers/itam/renewal-review.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
@@ -117,10 +116,10 @@ export const agentRoutes: AppApiRouteContribution<Application> =
     const subjectsOf = async (
       list: readonly AgentRun[],
     ): Promise<Map<string, string>> => {
-      // By run: a review is named by its approval's title, a leaver's
-      // things by the person, a renewal by the entitlement.
+      // By run: a review is named by its approval's title, a renewal by
+      // the entitlement.
       const named = async (
-        table: 'approvals' | 'people' | 'entitlements',
+        table: 'approvals' | 'entitlements',
         field: 'title' | 'name',
         ids: readonly string[],
       ): Promise<Map<string, string>> => {
@@ -141,13 +140,6 @@ export const agentRoutes: AppApiRouteContribution<Application> =
         'title',
         list.flatMap((run) => (run.refId ? [run.refId] : [])),
       );
-      const people = await named(
-        'people',
-        'name',
-        list
-          .filter((run) => run.subjectType === 'people')
-          .map((run) => run.subjectId),
-      );
       const entitlements = await named(
         'entitlements',
         'name',
@@ -158,13 +150,11 @@ export const agentRoutes: AppApiRouteContribution<Application> =
       return new Map(
         list.flatMap((run) => {
           const title =
-            run.subjectType === 'people'
-              ? people.get(run.subjectId)
-              : run.subjectType === 'entitlements'
-                ? entitlements.get(run.subjectId)
-                : run.refId
-                  ? approvals.get(run.refId)
-                  : undefined;
+            run.subjectType === 'entitlements'
+              ? entitlements.get(run.subjectId)
+              : run.refId
+                ? approvals.get(run.refId)
+                : undefined;
           return title ? [[run.id, title] as const] : [];
         }),
       );
@@ -367,7 +357,6 @@ export const agentRoutes: AppApiRouteContribution<Application> =
               subjectType: z.enum([
                 'purchaseOrders',
                 'disposals',
-                'people',
                 'entitlements',
               ]),
               subjectId: z.string().min(1).max(64),
@@ -380,12 +369,10 @@ export const agentRoutes: AppApiRouteContribution<Application> =
             .catch(() => undefined);
           if (!record)
             throw new RecordNotFoundError(query.subjectType, query.subjectId);
-          // A leaver's things are reviewed once per 负责人: the reader's own.
           const run = await runs().latest(
             query.agent,
             query.subjectType,
             query.subjectId,
-            query.agent === 'offboarding' ? me : undefined,
           );
           if (!run) return context.json({ data: null });
           return context.json({
@@ -404,7 +391,7 @@ export const agentRoutes: AppApiRouteContribution<Application> =
         summary: 'Ask for a review',
         operationId: 'itamAskAgentRun',
         description:
-          "A person asks an agent to review a record they decide on — the approver a request waiting on them, a leaver's things that are theirs, the 负责人 an entitlement — or redoes a waiting one with their own words (`revise`).",
+          'A person asks an agent to review a record they decide on — the approver a request waiting on them, the 负责人 an entitlement — or redoes a waiting one with their own words (`revise`).',
       }),
       async (context) => {
         try {
@@ -427,14 +414,6 @@ export const agentRoutes: AppApiRouteContribution<Application> =
                 .strict(),
               z
                 .object({
-                  agent: z.literal('offboarding'),
-                  subjectType: z.literal('people'),
-                  subjectId: z.string().min(1).max(64),
-                  revise,
-                })
-                .strict(),
-              z
-                .object({
                   agent: z.literal('renewalReview'),
                   subjectType: z.literal('entitlements'),
                   subjectId: z.string().min(1).max(64),
@@ -444,24 +423,6 @@ export const agentRoutes: AppApiRouteContribution<Application> =
             ])
             .parse(await readJsonObject(context));
           const me = principalId(context);
-          if (input.agent === 'offboarding') {
-            await decideCollection(context, 'people', 'read');
-            const started = await container
-              .resolve(offboardingReviewerToken)
-              .request({
-                personId: input.subjectId,
-                trigger: 'asked',
-                by: me,
-                deciderId: me,
-                ...(input.revise ? { revise: input.revise } : {}),
-              });
-            if (!started.length)
-              throw new BusinessRuleError(
-                'Nothing of theirs is yours to take back',
-                'NOTHING_TO_REVIEW',
-              );
-            return context.json({ data: started[0] }, 201);
-          }
           if (input.agent === 'renewalReview') {
             await decideCollection(context, 'entitlements', 'update');
             const run = await container.resolve(renewalReviewerToken).request({

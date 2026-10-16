@@ -42,13 +42,7 @@ export const WORK_AGENTS: Readonly<
     skill: 'approval-review',
     task: 'reviewing purchase orders and disposals sent for approval, for the person asked to approve them',
   },
-  // Step 2 (2026-10-17). The offboarding skill is Noco's as well: the
-  // same method, asked in a conversation or run on its own.
-  offboarding: {
-    name: 'Offboarding',
-    skill: 'offboarding',
-    task: 'taking back what a leaver holds: for each device, stock item and seat, where it goes, for the IT person it belongs to',
-  },
+  // Step 2 (2026-10-17).
   renewalReview: {
     name: 'Renewal review',
     skill: 'renewal-review',
@@ -88,7 +82,23 @@ export async function provisionWorkAgents(
     !(await claimMarker(database, WORK_AGENTS_MARKER, { agentIds: {} }))
   )
     return;
-  const known = idsOf(marker);
+  let known = idsOf(marker);
+  // A work no longer done (离职回收, removed 2026-10-17): its agent is
+  // archived, so it leaves the agents' list, and the marker forgets it.
+  const retired = Object.keys(known).filter(
+    (agent) => !(AGENTS as readonly string[]).includes(agent),
+  );
+  if (retired.length) {
+    const creator = await firstAccount(database);
+    for (const agent of retired) {
+      const id = known[agent as AgentName];
+      if (id) await agents.agents.archive(id, creator).catch(() => undefined);
+    }
+    known = Object.fromEntries(
+      Object.entries(known).filter(([agent]) => !retired.includes(agent)),
+    );
+    await writeMarker(database, WORK_AGENTS_MARKER, { agentIds: known });
+  }
   const missing = AGENTS.filter((agent) => !known[agent]);
   if (!missing.length) return;
   const creator = await firstAccount(database);

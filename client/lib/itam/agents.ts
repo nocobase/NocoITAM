@@ -23,10 +23,9 @@ export const AGENTS_PATH = 'itam/agents';
 export const INBOX_PATH = 'itam/inbox';
 export const AGENT_RUNS_PATH = 'itam/agentRuns';
 
-export type AgentName = 'approvalReview' | 'offboarding' | 'renewalReview';
-export type SuggestingAgent = 'offboarding' | 'renewalReview';
-export type SubjectType =
-  'purchaseOrders' | 'disposals' | 'people' | 'entitlements';
+export type AgentName = 'approvalReview' | 'renewalReview';
+export type SuggestingAgent = 'renewalReview';
+export type SubjectType = 'purchaseOrders' | 'disposals' | 'entitlements';
 export type RunStatus =
   'running' | 'pending' | 'accepted' | 'dismissed' | 'failed' | 'superseded';
 
@@ -46,23 +45,15 @@ export interface ApprovalReviewResult {
 /** One change a suggestion proposes, as its card lists it. */
 export interface SuggestedChange {
   readonly op: string;
-  readonly kind: 'device' | 'stock' | 'seat' | 'entitlement';
+  readonly kind: 'seat' | 'entitlement';
   readonly action:
-    | 'return'
-    | 'transfer'
-    | 'takeBack'
-    | 'reclaim'
-    | 'adjustSeats'
-    | 'stopAutoRenew'
-    | 'startAutoRenew';
+    'reclaim' | 'adjustSeats' | 'stopAutoRenew' | 'startAutoRenew';
   readonly subject: string;
-  readonly nextStatus?: string | null;
-  readonly target?: { readonly id: string; readonly name: string } | null;
   readonly quantity?: number | null;
   readonly reason: string;
 }
 
-/** What 离职回收 and 授权续费 hand back. */
+/** What 授权续费 hands back. */
 export interface SuggestionResult {
   readonly title: string;
   readonly summary: string;
@@ -107,7 +98,7 @@ export interface ApprovalReviewRun extends RunBase {
 
 export interface SuggestionRun extends RunBase {
   readonly agent: SuggestingAgent;
-  readonly subjectType: 'people' | 'entitlements';
+  readonly subjectType: 'entitlements';
   /** For the run's decider alone; null for anyone else. */
   readonly result: SuggestionResult | null;
   /** The plan it became once accepted. */
@@ -340,7 +331,7 @@ export function useAcceptSuggestion(): UseMutationResult<
           json: { keep },
         })
       ).data,
-    // Devices, stock, seats and people all may have changed.
+    // Seats and the entitlement have changed, and its history.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itam'] }),
   });
 }
