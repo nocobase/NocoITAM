@@ -92,6 +92,10 @@ vi.mock('../../client/lib/itam/ai-chat.js', () => ({
 // The reference pickers fetch their own options; the line's own behaviour is
 // what this covers.
 // Creating a model from a line's picker is the master data's own form.
+// 报价比较 has tests of its own (quote-comparison.test.tsx).
+vi.mock('../../client/pages/itam/procurement/quote-comparison.js', () => ({
+  QuoteComparisonEntry: () => null,
+}));
 vi.mock('../../client/components/itam/quick-create-dialog.js', () => ({
   QuickCreateDialog: () => null,
 }));

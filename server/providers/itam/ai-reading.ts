@@ -34,6 +34,10 @@ export const READING_TASKS = [
   'deliveryDocument',
   // 维修单整理 (2026-10-17): the kind of fault, and whether to repair at all.
   'repairTriage',
+  // 报价比较 (2026-10-17): one quote against the order's lines, then which
+  // of the quotes to take.
+  'purchaseQuote',
+  'quoteRecommendation',
 ] as const;
 export type ReadingTask = (typeof READING_TASKS)[number];
 
@@ -53,6 +57,8 @@ export const READING_GRANTS: Readonly<
   ],
   deliveryDocument: [['purchaseOrders', 'receive']],
   repairTriage: [['repairs', 'create']],
+  purchaseQuote: [['purchaseOrders', 'update']],
+  quoteRecommendation: [['purchaseOrders', 'update']],
 };
 
 export interface ReadingInput {
@@ -149,6 +155,29 @@ const SHAPES: Readonly<Record<ReadingTask, z.ZodType>> = {
   // Loose like the other shapes: a model that writes the kind as a label,
   // or leaves the reasons out, still answers; the form takes only the
   // values it knows (`repair-create-dialog.tsx`).
+  purchaseQuote: z.object({
+    vendorName: text,
+    currency: text,
+    validUntil: text,
+    deliveryDays: lax,
+    deliveryDate: text,
+    warranty: text,
+    paymentTerms: text,
+    notes: text,
+    lines: z.array(
+      z.object({
+        lineId: z.string().nullable().optional(),
+        description: text,
+        partCode: text,
+        quantity: lax,
+        unitPrice: lax,
+      }),
+    ),
+  }),
+  quoteRecommendation: z.object({
+    quoteIndex: lax,
+    reasons: z.array(z.string()).optional(),
+  }),
   repairTriage: z.object({
     faultCategory: z.string().nullable().optional(),
     recommendation: z.string(),
@@ -166,6 +195,8 @@ const TASKS: Readonly<Record<ReadingTask, string>> = {
   model: `Fill the new model form for the model the material names, following the catalog method below. You cannot search the web: use only what you know reliably, put every field you are not certain of in \`uncertain\`, never estimate a date, and leave \`sources\` empty. categoryId: one of the context's \`categories\` ids (the closest; mark it uncertain when unsure). attributes: by the keys of that category's \`fields\`. manufacturerName as the maker is called. A model you cannot confirm is still answered with what the material gives — name, maker, the closest category, marked uncertain — and nothing else. In \`said\`, one plain sentence: what you could not fill and what to check.`,
   softwareProduct: `Fill the new software product form for the product the material names, following the catalog method below. You cannot search the web: use only what you know reliably, put every field you are not certain of in \`uncertain\`, and leave \`sources\` empty. categoryId: one of the context's \`categories\` ids. deliveryMethod: onPremise, saas or both. In \`said\`, one plain sentence: what you could not fill and what to check.`,
   repairTriage: `The material is how a person describes a device's fault, for a new repair. The context's \`device\` is that device as the register has it: its model, age, warranty, book value (when the person may see costs), its earlier repairs, and how often devices of the same model were repaired in the last year. faultCategory: the kind of fault, exactly one of these values: ${REPAIR_FAULT_CATEGORIES.join(', ')}. screen for the display, keyboard for keys and the touchpad, battery for charge holding, power for not starting or not charging, storage for disks and lost data, network for Wi-Fi, Ethernet and Bluetooth, system for the operating system and software, peripheral for ports, cameras, speakers and docks, physical for a broken case, hinge or liquid damage, other for anything else; null when the description says too little. recommendation: exactly one of repair, replace, inspect — repair when it is worth fixing (under warranty, or young with book value left, or a cheap part); replace when fixing is likely to cost more than the device is worth — old, past its useful life or planned replacement date, out of warranty with little book value, repaired again and again, or physically wrecked; inspect when the description cannot tell (a vague complaint, or a fault that may be software). reasons: at most three, each one short sentence with the fact from the device it rests on (a date, an age, a count, a value), never a fact the context does not give. In \`said\`, one plain sentence for the person filing the repair: what to check or ask the user before sending it.`,
+  purchaseQuote: `Read one supplier's quote (the material) for the purchase order whose lines are in the context's \`lines\` (each with its id, what it buys, its code when it has one, and the quantity asked for). vendorName: the supplier issuing the quote, as printed. currency: the ISO code of its prices (CNY for 元 or RMB). validUntil: the date the quote holds until (YYYY-MM-DD) when printed. deliveryDays: the lead time in days when given as a duration; deliveryDate (YYYY-MM-DD) when given as a date. warranty and paymentTerms as printed, short. notes: anything else that changes the comparison (a minimum order, a shipping charge, a different model offered), short. lines: one per priced item of the quote. lineId: the id of the order's line it prices — the same item, or what the supplier offers in its place; null when it matches none of them (an extra the order does not ask for). description as printed, partCode the part number printed, quantity as quoted, unitPrice per unit before any overall discount, in the quote's currency (not the line total). Never invent a price or a date the quote does not print. In \`said\`, one plain sentence: what the person must check, especially a line matched to something that is not quite the same item.`,
+  quoteRecommendation: `The material is the comparison of a purchase order's quotes, counted by the application: \`quotes\` (each supplier with its validity, delivery, warranty, payment terms, notes and lines), \`rows\` (each of the order's lines with every quote's price, the lowest, and the last price paid for the same item) and \`totals\` (each quote's total, how many of the order's lines it prices, misses or adds). The context gives the order (why it is bought, what for, when it is needed) and today. Recommend which quote to take: quoteIndex is its index in \`quotes\` (0 is the first), or null when none can be taken as it is. Weigh the total for the same items first, then a quote that leaves lines out (it cannot be compared on its total), a line priced for something that is not the same item (the descriptions and part codes say), delivery against when the order is needed, warranty, validity against today, and prices well above the last paid. reasons: at most three, each one short sentence with its numbers (a total, a difference, a date), never a fact the material does not give. Name a quote by its supplier (vendorName), never by its index or as "quote 0"; name a line by what it buys. In \`said\`, one plain sentence: what to ask a supplier before ordering, or nothing to add.`,
   deliveryDocument: `Read the delivery document against the purchase order in the context, following the receiving method below. One entry in \`rows\` per goods row of the document: lineId is the order line it matches (an id from the context's \`lines\`, or null when it matches none), description the row as printed, partCode the part number printed on it, quantity the quantity delivered, serialNos every serial number of that row, source where the row is ("Sheet1 row 4", "page 2 line 3"); warrantyMonths when the document states a warranty period covering the row, or warrantyEndDate (YYYY-MM-DD) when it prints an end date. deliveryNo, deliveryDate (YYYY-MM-DD) and vendorName from the header when printed. When the document cannot be read as a delivery of goods, return no rows and say why. In \`said\`, one or two plain sentences: how many rows were read and matched, and what the receiver must look at.`,
 };
 

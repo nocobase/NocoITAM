@@ -3233,6 +3233,27 @@ form, when the repair is filed.
   most three reasons with the facts they rest on. The person decides.
 - The repairs list creates through the same dialog as the device page.
 
+### 2026-10-17 报价比较: comparing quotes before a purchase
+
+The second AI work chosen by the rule of step 2: reading quotes is
+unstructured material a rule cannot read, and choosing among them weighs
+more than the price. Asked from a draft order's lines card, not run on its
+own; it comes before approval, by the requester, not with it.
+
+- **Up to five quotes** (documents or pasted text). Each is read by Noco
+  against the order's lines (task `purchaseQuote`): supplier, validity,
+  delivery, warranty, payment terms, and each item's price matched to a
+  line, or marked as an extra.
+- **Counted by rules** on the server: each line's price per supplier and
+  the lowest, what a quote leaves out or adds, each quote's total, and the
+  last price paid for the same item.
+- **Recommended by Noco** (task `quoteRecommendation`) from that table and
+  the order's purpose and date: which quote, or none, with reasons.
+- **Taking a quote** sets the order's vendor and the lines' unit prices.
+- **Kept with the order** (migration
+  `202610170004_purchase_quote_comparisons`); read-only once it is sent,
+  and read by the approval assistant.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

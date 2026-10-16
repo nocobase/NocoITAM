@@ -151,3 +151,22 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   that names **no** approver. Excluding them from their own addressed
   approval left it decidable from the record page alone, while 待我审批 and
   the list's 待我审批 view both reported nothing waiting.
+- **报价比较** (2026-10-17, `server/providers/itam/quote-comparisons.ts`,
+  table `purchaseQuoteComparisons`, one row per order, replaced when
+  redone): the quotes a draft or rejected order is weighed against, saved
+  by its requester (`POST /:id/quote-comparison`, under `update`, refused
+  past the draft like its lines) and read with the order
+  (`GET /:id/quote-comparison`, prices only for a reader who may read the
+  lines' unit prices). Each quote is read from its document by Noco
+  (task `purchaseQuote`, its lines matched to the order's by line id; the
+  document is linked to the order and read with `/:id/document-text`, as
+  解析单据 does). What is counted is the server's, never the model's: each
+  line's price per quote, the lowest when two priced it, what a quote
+  leaves out or adds, its total, and the last price paid for the same model
+  or product on an approved order. Noco then recommends one (task
+  `quoteRecommendation`, given that table). Taking a quote sets the order's
+  vendor (by its exact name among the vendors, else the requester picks
+  one) and the unit prices of the lines it priced, through the order's own
+  update and lines routes. The approval assistant reads the comparison
+  (`quoteComparison` in its material). The entry is in the lines card
+  (`QuoteComparisonEntry`, `client/pages/itam/procurement/quote-comparison.tsx`).

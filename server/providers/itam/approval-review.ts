@@ -25,11 +25,13 @@ import {
 } from './agent-runs.js';
 import { jsonIn, openSession, readSkill, shapeOf } from './ai-model.js';
 import { approvalServiceToken, type ApprovalDecision } from './approvals.js';
+import { outputFields } from './authz-filter.js';
 import { asText, type Row } from './collection-query.js';
 import type { OperationContext } from './devices.js';
 import { disposalServiceToken } from './disposals.js';
 import { BusinessRuleError, RecordNotFoundError } from './errors.js';
 import { procurementServiceToken } from './procurement.js';
+import { quoteComparisonServiceToken } from './quote-comparisons.js';
 import { repairServiceToken } from './repairs.js';
 import { settingsServiceToken } from './settings.js';
 
@@ -531,11 +533,24 @@ async function materialOf(
       );
       alternatives.push({ categoryId, sameCategory: available });
     }
+    // 报价比较 (2026-10-17): the quotes the requester weighed, with the
+    // prices only when the approver may read the lines' unit prices.
+    const linePrices = await reader.scope.may('purchaseOrderLines', 'read');
+    const quoteComparison = await container
+      .resolve(quoteComparisonServiceToken)
+      .view(subjectId, {
+        prices: Boolean(
+          linePrices &&
+          outputFields(['unitPrice'], linePrices).includes('unitPrice'),
+        ),
+      })
+      .catch(() => null);
     return {
       request,
       purchaseOrder: order,
       inStockOrIdle: alternatives,
       earlierPrices: await earlierPrices(reader, [...models], subjectId),
+      ...(quoteComparison ? { quoteComparison } : {}),
       precedents,
     };
   }
