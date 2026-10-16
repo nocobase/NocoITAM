@@ -93,9 +93,11 @@ const sendsOnEnter = (event: KeyboardEvent<HTMLTextAreaElement>): boolean =>
 function Avatar({
   name,
   small = false,
+  className,
 }: {
   readonly name: string;
   readonly small?: boolean;
+  readonly className?: string;
 }): ReactElement {
   return (
     <span
@@ -103,6 +105,7 @@ function Avatar({
       className={cn(
         'grid shrink-0 place-items-center rounded-full bg-muted font-medium text-muted-foreground',
         small ? 'size-6 text-[10px]' : 'size-8 text-xs',
+        className,
       )}
     >
       {initials(name)}
@@ -225,7 +228,13 @@ export function CommentComposer({
   return (
     <div className='grid gap-2'>
       <div className='flex items-start gap-3'>
-        <Avatar name={me} small={Boolean(replyToId)} />
+        {/* Centred on the box's first line, which is a little taller than
+            the round; the row stays top-aligned for a box grown to several. */}
+        <Avatar
+          name={me}
+          small={Boolean(replyToId)}
+          className={replyToId ? 'mt-1.5' : 'mt-0.5'}
+        />
         <div
           className='relative min-w-0 flex-1'
           onDragOver={(event) => {
