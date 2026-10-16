@@ -71,30 +71,39 @@ function checkSource<K extends string>(
  * `secrets.keys`. Either way the credential stays on the machine that runs
  * the application (NocoSolution guideline 1.5). A secret is written as the
  * value itself — a `${NAME}` placeholder is not expanded — or set from the
- * environment variables below.
+ * environment variables below. None of them is required (2026-10-16): with
+ * no code default and nothing in `config.example.yml`, the build's
+ * `variables.json` listed all six as required, and a deployment platform
+ * refused to start the application until they were set.
  */
 const deviceSync: AppConfigFactory<DeviceSyncConfig> =
   defineAppConfig<DeviceSyncConfig>({
     env: {
       INTUNE_TENANT_ID: envString('intune.tenantId', {
         description: 'The Entra ID tenant whose Intune devices ITAM reads.',
+        required: false,
       }),
       INTUNE_CLIENT_ID: envString('intune.clientId', {
         description: 'The Entra ID app registration ITAM reads Intune with.',
+        required: false,
       }),
       INTUNE_CLIENT_SECRET: envString('intune.clientSecret', {
         description: "The app registration's client secret.",
         secret: true,
+        required: false,
       }),
       JAMF_URL: envString('jamf.url', {
         description: 'The Jamf Pro server ITAM reads devices from.',
+        required: false,
       }),
       JAMF_CLIENT_ID: envString('jamf.clientId', {
         description: 'The Jamf Pro API client ITAM reads with.',
+        required: false,
       }),
       JAMF_CLIENT_SECRET: envString('jamf.clientSecret', {
         description: "The Jamf Pro API client's secret.",
         secret: true,
+        required: false,
       }),
     },
     defaults: {},
