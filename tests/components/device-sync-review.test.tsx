@@ -11,6 +11,7 @@ import type {
 const state = vi.hoisted(() => ({
   views: {} as Record<string, unknown[]>,
   action: vi.fn(),
+  create: undefined as Record<string, unknown> | undefined,
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -56,7 +57,10 @@ vi.mock('../../client/components/itam/holder-link.js', () => ({
   ),
 }));
 vi.mock('../../client/components/itam/device-create-dialog.js', () => ({
-  DeviceCreateDialog: () => null,
+  DeviceCreateDialog: (props: Record<string, unknown>) => {
+    state.create = props.open ? props : undefined;
+    return null;
+  },
 }));
 vi.mock('../../client/components/itam/reference-select.js', () => ({
   ReferenceSelect: () => null,
@@ -150,5 +154,54 @@ describe('MDM 核对 → 只在台账', () => {
     expect(
       screen.queryByText(/deviceSync\.review\.exemptedHeading/),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('MDM 核对 → 只在 MDM: 补登记', () => {
+  const record = (serialNo: string | null) => ({
+    id: 'm1',
+    source: 'intune',
+    sources: ['intune'],
+    externalId: 'demo-x',
+    serialNo,
+    deviceName: 'LAPTOP-X',
+    manufacturer: 'Lenovo',
+    model: 'ThinkPad T14 Gen 5',
+    userName: null,
+    personId: null,
+    osName: 'Windows',
+    osVersion: '11',
+    ownership: 'company',
+    lastSyncAt: '2026-10-16T06:10:00.000',
+    matchState: 'unlinked',
+    candidates: [],
+    suggestedModelId: null,
+    ignoredByRule: false,
+    consoleUrl: null,
+  });
+  const open = () => {
+    render(
+      <MemoryRouter initialEntries={['/device-sync?view=unregistered']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.review.register' }),
+    );
+  };
+
+  it('locks the serial the new device will be linked by', () => {
+    state.views = { unregistered: [record('PF5DEMO01')] };
+    open();
+    expect(state.create).toMatchObject({
+      initial: { serialNo: 'PF5DEMO01' },
+      locked: { serialNo: 'deviceSync.review.serialFromPlatform' },
+    });
+  });
+
+  it('leaves it to be typed when the platform has none', () => {
+    state.views = { unregistered: [record(null)] };
+    open();
+    expect(state.create?.locked).toBeUndefined();
   });
 });

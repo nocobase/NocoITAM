@@ -602,6 +602,13 @@ function RecordsView({
       open={Boolean(registering)}
       onOpenChange={(open) => !open && setRegistering(undefined)}
       initial={registering ? registerValues(registering) : undefined}
+      // The serial links the new device to this record once saved, so it
+      // is not to be changed here (2026-10-16); without one, it is typed.
+      locked={
+        registering?.serialNo
+          ? { serialNo: 'deviceSync.review.serialFromPlatform' }
+          : undefined
+      }
       onCreated={async (created) => {
         setRegistered(created);
         await queryClient.invalidateQueries({

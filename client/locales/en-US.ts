@@ -2089,6 +2089,8 @@ const messages = {
       sharedSerial_one: '{{count}} register device has this serial',
       sharedSerial_other: '{{count}} register devices have this serial',
       register: 'Register',
+      serialFromPlatform:
+        'From MDM; the device is linked by this serial once saved',
       registered: 'Registered and linked to MDM by its serial:',
       registerNotes: {
         source: 'Registered from {{source}}',

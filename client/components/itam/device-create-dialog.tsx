@@ -20,12 +20,19 @@ export function DeviceCreateDialog({
   open,
   onOpenChange,
   initial,
+  locked,
   onCreated,
 }: {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   /** Values the form opens with, the signed-in user as owner beneath them. */
   readonly initial?: Readonly<Record<string, unknown>>;
+  /**
+   * Fields the form shows but does not let be changed, each with the
+   * translation key of why: 补登记's serial (2026-10-16), which is what links
+   * the new device to its platform record once saved.
+   */
+  readonly locked?: Readonly<Record<string, string>>;
   readonly onCreated: (created: ItamRecord) => void | Promise<void>;
 }): ReactElement {
   const { t } = useTranslation();
@@ -45,9 +52,13 @@ export function DeviceCreateDialog({
         if (!next) mutations.create.reset();
       }}
       title={t('devices.new')}
-      fields={DEVICE_CREATE_FIELDS.map((key) =>
-        DEVICE_FIELDS.find((field) => field.key === key)!,
-      )}
+      fields={DEVICE_CREATE_FIELDS.map((key) => {
+        const field = DEVICE_FIELDS.find((entry) => entry.key === key)!;
+        const hint = locked?.[key];
+        return hint
+          ? { ...field, readonlyWhen: () => true, readonlyHint: hint }
+          : field;
+      })}
       initial={{
         ...(currentUserId ? { ownerId: currentUserId } : {}),
         ...initial,

@@ -1993,6 +1993,7 @@ const zhCN: AppResource = {
       sharedSerial_one: '{{count}} 台台账设备用了这个序列号',
       sharedSerial_other: '{{count}} 台台账设备用了这个序列号',
       register: '补登记',
+      serialFromPlatform: '来自 MDM，保存后按序列号自动关联',
       registered: '已登记，并按序列号关联了 MDM：',
       registerNotes: {
         source: '从 {{source}} 补登记',
