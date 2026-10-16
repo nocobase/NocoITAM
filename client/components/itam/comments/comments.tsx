@@ -274,7 +274,9 @@ export function CommentComposer({
                 onDone?.();
             }}
           />
-          <span className='absolute top-0.5 right-1'>
+          {/* As far from the top as from the right: centred on the box's
+              first line, which is a little taller than the button. */}
+          <span className='absolute top-1 right-1'>
             <Button
               type='button'
               size='icon-sm'
