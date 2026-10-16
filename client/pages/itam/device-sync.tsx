@@ -39,10 +39,14 @@ import {
   type UnmanagedDevice,
   type UnregisteredDevice,
 } from '@/lib/itam/device-sync';
-import { useItamRecord, type ItamRecord } from '@/lib/itam/api';
+import {
+  useItamRecord,
+  useItamSettings,
+  type ItamRecord,
+} from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { useItamAi } from '@/lib/itam/ai-chat';
-import { formatDate } from '@/lib/itam/format';
+import { formatDate, text } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
 import { cn } from '@/lib/utils';
 
@@ -373,35 +377,111 @@ function ChecksView(): ReactElement {
   );
 }
 
+/** Statuses whose device should be on a platform, and those it should not. */
+const IN_USE_STATUSES = ['inUse', 'onLoan'];
+const OFF_DUTY_STATUSES = [
+  'inStock',
+  'retired',
+  'pendingDisposal',
+  'disposed',
+  'lost',
+];
+
+type LinkConflict =
+  | 'serialMismatch'
+  | 'serialMissing'
+  | 'userMismatch'
+  | 'statusMismatch'
+  | 'stale';
+
 /**
- * 关联到已有设备 takes any device (2026-10-16): a serial typed wrong or a
- * board replaced is why a person links by hand. When the chosen device's
- * serial is not the platform's, it says so, as the link is kept by every
- * later pull and a wrong one is not undone by itself.
+ * What linking this record to this device would bring up (2026-10-16): the
+ * serial not the platform's, and the differences MDM 核对 would then list —
+ * by the same rules as the server's checks, so the person sees them before
+ * the link rather than after.
  */
-function SerialMismatch({
-  deviceId,
-  serialNo,
-}: {
-  readonly deviceId: string | null;
-  readonly serialNo: string | null | undefined;
-}): ReactElement | null {
-  const { t } = useTranslation();
-  const device = useItamRecord(DEVICES_PATH, deviceId ?? undefined);
+function linkConflicts(
+  device: ItamRecord,
+  row: UnregisteredDevice,
+  rules:
+    { readonly staleDays: number; readonly recentDays: number } | undefined,
+  now: number,
+): LinkConflict[] {
   const normalize = (value: unknown) =>
     (typeof value === 'string' ? value : '').replace(/\s+/g, '').toUpperCase();
-  if (!deviceId || !serialNo || !device.data) return null;
-  const own = normalize(device.data.serialNo);
-  if (own === normalize(serialNo)) return null;
+  const conflicts: LinkConflict[] = [];
+  if (row.serialNo && normalize(device.serialNo) !== normalize(row.serialNo))
+    conflicts.push(device.serialNo ? 'serialMismatch' : 'serialMissing');
+  const synced = row.lastSyncAt ? Date.parse(row.lastSyncAt) : Number.NaN;
+  const days = Number.isNaN(synced) ? Infinity : (now - synced) / 86_400_000;
+  const status = text(device.status);
+  if (IN_USE_STATUSES.includes(status)) {
+    if (days > (rules?.staleDays ?? 30)) conflicts.push('stale');
+    else if (
+      device.assigneeType === 'person' &&
+      row.personId &&
+      device.assigneeId !== row.personId
+    )
+      conflicts.push('userMismatch');
+  } else if (
+    OFF_DUTY_STATUSES.includes(status) &&
+    days <= (rules?.recentDays ?? 7)
+  )
+    conflicts.push('statusMismatch');
+  return conflicts;
+}
+
+/**
+ * The device picked to link, beside what the platform says (2026-10-16):
+ * its status and where it is, the platform's primary user and last sync,
+ * and what the link would bring up.
+ */
+function LinkPreview({
+  device,
+  row,
+  conflicts,
+}: {
+  readonly device: ItamRecord;
+  readonly row: UnregisteredDevice;
+  readonly conflicts: readonly LinkConflict[];
+}): ReactElement {
+  const { t } = useTranslation();
+  const status = text(device.status);
   return (
-    <p className='text-sm text-warning-foreground'>
-      {own
-        ? t('deviceSync.review.serialMismatch', {
-            own: device.data.serialNo as string,
-            platform: serialNo,
-          })
-        : t('deviceSync.review.serialMissing', { platform: serialNo })}
-    </p>
+    <div className='flex flex-col gap-1.5 rounded-lg bg-muted/50 px-3 py-2 text-sm'>
+      <p className='flex flex-wrap items-center gap-x-1.5'>
+        <span className='text-muted-foreground'>
+          {t('deviceSync.review.linkRegister')}
+        </span>
+        {t(`enums.deviceStatus.${status}`, { defaultValue: status })}
+        {device.assigneeType && device.assigneeId ? (
+          <>
+            <span className='text-muted-foreground'>·</span>
+            <HolderLink
+              holderType={text(device.assigneeType)}
+              holderId={text(device.assigneeId)}
+            />
+          </>
+        ) : null}
+      </p>
+      <p className='flex flex-wrap items-center gap-x-1.5'>
+        <span className='text-muted-foreground'>
+          {t('deviceSync.review.linkPlatform')}
+        </span>
+        {row.userName ?? '—'}
+        <span className='text-muted-foreground'>·</span>
+        {formatDate(row.lastSyncAt, true)}
+      </p>
+      {conflicts.map((conflict) => (
+        <p key={conflict} className='text-warning-foreground'>
+          {t(`deviceSync.review.linkConflicts.${conflict}`, {
+            own: text(device.serialNo),
+            platform: row.serialNo ?? '',
+            status: t(`enums.deviceStatus.${status}`, { defaultValue: status }),
+          })}
+        </p>
+      ))}
+    </div>
   );
 }
 
@@ -694,6 +774,8 @@ function RecordsView({
   const action = useDeviceReviewAction();
   const [linking, setLinking] = useState<UnregisteredDevice>();
   const [target, setTarget] = useState<string | null>(null);
+  // Read once, for how long ago the platform last heard from a record.
+  const [now] = useState(() => Date.now());
   const [ignoring, setIgnoring] = useState<UnregisteredDevice>();
   const [reason, setReason] = useState('');
   const rows = review.data ?? [];
@@ -710,7 +792,15 @@ function RecordsView({
   // maker by name otherwise, the user's department, and a note of where it
   // came from. Saved, the device is linked by its serial and the row goes.
   const [registering, setRegistering] = useState<UnregisteredDevice>();
-  const [registered, setRegistered] = useState<ItamRecord>();
+  // What was just put right, with the way to it: the row itself is gone —
+  // registered, or linked (2026-10-16), and whether it now differs.
+  const [done, setDone] = useState<{
+    readonly kind: 'registered' | 'linked';
+    readonly record: ItamRecord;
+    readonly differs?: boolean;
+  }>();
+  const picked = useItamRecord(DEVICES_PATH, target ?? undefined);
+  const settings = useItamSettings();
   const queryClient = useQueryClient();
   const registerValues = (row: UnregisteredDevice) => {
     const notes = [
@@ -760,7 +850,7 @@ function RecordsView({
           : undefined
       }
       onCreated={async (created) => {
-        setRegistered(created);
+        setDone({ kind: 'registered', record: created });
         await queryClient.invalidateQueries({
           queryKey: ['itam', DEVICE_SYNC_PATH],
         });
@@ -768,17 +858,31 @@ function RecordsView({
     />
   );
   // What was just registered, with the way to it: the row itself is gone.
-  const notice = registered ? (
+  const notice = done ? (
     <p className='text-sm'>
-      {t('deviceSync.review.registered')}{' '}
-      <RecordLink to={`/devices/${String(registered.id)}`}>
-        {[registered.deviceNo, registered.name]
+      {t(
+        done.kind === 'registered'
+          ? 'deviceSync.review.registered'
+          : 'deviceSync.review.linked',
+      )}{' '}
+      <RecordLink to={`/devices/${String(done.record.id)}`}>
+        {[done.record.deviceNo, done.record.name]
           .filter(Boolean)
           .map(String)
           .join(' / ')}
       </RecordLink>
+      {done.differs ? (
+        <span className='text-warning-foreground'>
+          {' '}
+          {t('deviceSync.review.linkedDiffers')}
+        </span>
+      ) : null}
     </p>
   ) : null;
+  const conflicts =
+    linking && picked.data && target
+      ? linkConflicts(picked.data, linking, settings.data?.deviceSync, now)
+      : [];
   if (rows.length === 0)
     return (
       <>
@@ -930,7 +1034,7 @@ function RecordsView({
                             size='sm'
                             variant='outline'
                             onClick={() => {
-                              setRegistered(undefined);
+                              setDone(undefined);
                               setRegistering(row);
                             }}
                           >
@@ -979,9 +1083,18 @@ function RecordsView({
         confirmDisabled={!target}
         onConfirm={() => {
           if (!linking || !target) return;
+          const record = picked.data;
+          const differs = conflicts.some(
+            (conflict) => !conflict.startsWith('serial'),
+          );
           action.mutate(
             { kind: 'link', managedId: linking.id, deviceId: target },
-            { onSuccess: () => setLinking(undefined) },
+            {
+              onSuccess: () => {
+                setLinking(undefined);
+                if (record) setDone({ kind: 'linked', record, differs });
+              },
+            },
           );
         }}
       >
@@ -1012,7 +1125,13 @@ function RecordsView({
             onChange={(value) => setTarget(value)}
             initialSearch={linking?.serialNo ?? ''}
           />
-          <SerialMismatch deviceId={target} serialNo={linking?.serialNo} />
+          {linking && picked.data && target ? (
+            <LinkPreview
+              device={picked.data}
+              row={linking}
+              conflicts={conflicts}
+            />
+          ) : null}
         </div>
       </ConfirmDialog>
 

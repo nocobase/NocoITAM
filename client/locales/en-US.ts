@@ -2109,10 +2109,22 @@ const messages = {
       linkTitle: 'Link to a device',
       linkDescription:
         'Link the platform device “{{name}}” to a device on the register.',
-      serialMismatch:
-        'This device’s serial is {{own}}, not {{platform}} as MDM reports. Link it only if it is the same device.',
-      serialMissing:
-        'This device has no serial on the register; MDM reports {{platform}}. Link it only if it is the same device.',
+      linkRegister: 'Register:',
+      linkPlatform: 'MDM primary user:',
+      linkConflicts: {
+        serialMismatch:
+          'Its serial is {{own}}, not {{platform}} as MDM reports. Link it only if it is the same device.',
+        serialMissing:
+          'It has no serial on the register; MDM reports {{platform}}. Link it only if it is the same device.',
+        userMismatch:
+          'It is assigned to someone other than the MDM primary user; once linked it is listed as another user.',
+        statusMismatch:
+          'It is {{status}} on the register, yet MDM saw it recently; once linked it is listed as a status mismatch.',
+        stale:
+          'It is in use, yet MDM has not heard from it for long; once linked it is listed as silent.',
+      },
+      linked: 'Linked to',
+      linkedDiffers: 'It differs, and is listed under Mismatched.',
       candidates: 'Devices with this serial',
       pickDevice: 'Register device',
       ignoreTitle: 'Keep off the register',

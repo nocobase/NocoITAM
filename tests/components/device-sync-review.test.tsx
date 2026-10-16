@@ -47,6 +47,9 @@ vi.mock('../../client/lib/itam/api.js', () => ({
   useItamRecord: (_path: string, id: string | undefined) => ({
     data: id ? state.device : undefined,
   }),
+  useItamSettings: () => ({
+    data: { deviceSync: { staleDays: 30, recentDays: 7 } },
+  }),
 }));
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useItamAi: () => ({ available: false, ask: vi.fn() }),
@@ -288,7 +291,58 @@ describe('MDM 核对 → 只在 MDM: 补登记', () => {
       screen.getByRole('button', { name: 'deviceSync.review.link' }),
     );
     expect(
-      screen.getByText('deviceSync.review.serialMismatch'),
+      screen.getByText('deviceSync.review.linkConflicts.serialMismatch'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows what the link brings up, and the device it linked to afterwards', () => {
+    state.views = {
+      unregistered: [
+        {
+          ...record('PF5DEMO01'),
+          personId: 'p-mdm',
+          userName: 'Kim',
+          lastSyncAt: new Date().toISOString(),
+          candidates: [{ id: 'd1', label: 'X' }],
+        },
+      ],
+    };
+    state.device = {
+      id: 'd1',
+      deviceNo: 'DE-000001',
+      name: 'SG-LT-001',
+      serialNo: 'PF5DEMO01',
+      status: 'inUse',
+      assigneeType: 'person',
+      assigneeId: 'p-other',
+    };
+    render(
+      <MemoryRouter initialEntries={['/device-sync?view=unregistered']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.review.link' }),
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).getByText('deviceSync.review.linkConflicts.userMismatch'),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'actions.confirm' }),
+    );
+    expect(state.action).toHaveBeenCalledWith({
+      kind: 'link',
+      managedId: 'm1',
+      deviceId: 'd1',
+    });
+    // The row is gone; what it became stays in view.
+    expect(screen.getByText('deviceSync.review.linked')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'DE-000001 / SG-LT-001' }),
+    ).toHaveAttribute('href', '/devices/d1');
+    expect(
+      screen.getByText('deviceSync.review.linkedDiffers'),
     ).toBeInTheDocument();
   });
 
@@ -307,7 +361,9 @@ describe('MDM 核对 → 只在 MDM: 补登记', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'deviceSync.review.link' }),
     );
-    expect(screen.queryByText('deviceSync.review.serialMismatch')).toBeNull();
+    expect(
+      screen.queryByText('deviceSync.review.linkConflicts.serialMismatch'),
+    ).toBeNull();
   });
 
   it('leaves it to be typed when the platform has none', () => {
