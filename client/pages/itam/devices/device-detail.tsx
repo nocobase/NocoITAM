@@ -113,7 +113,6 @@ import {
 import { REPAIRS_PATH } from '@/lib/itam/operations';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { useReferenceNames } from '@/lib/itam/references';
-import { AiQuickEntries } from '@/components/itam/ai/quick-entries';
 import { ManagedPlatforms } from '@/components/itam/managed-platforms';
 
 import { DisposalCreateDialog } from '../disposals/create-dialog.js';
@@ -493,32 +492,6 @@ export default function DeviceDetailPage(): ReactElement {
           editable,
           onSave: (value) => saveField('name', value),
         }}
-        notice={
-          <div className='flex flex-wrap items-center justify-between gap-2'>
-            <AiQuickEntries
-              entries={[
-                {
-                  key: 'inspectDevice',
-                  prompt: t('ai.prompts.inspectDevice', {
-                    device: text(data.deviceNo),
-                  }),
-                },
-                {
-                  key: 'repairOrReplace',
-                  prompt: t('ai.prompts.repairOrReplace', {
-                    device: text(data.deviceNo),
-                  }),
-                },
-                {
-                  key: 'lifecycleInfo',
-                  prompt: t('ai.prompts.lifecycleInfo', {
-                    model: names.models?.get(text(data.modelId)) ?? '',
-                  }),
-                },
-              ]}
-            />
-          </div>
-        }
         actions={
           <>
             {actionButtons}

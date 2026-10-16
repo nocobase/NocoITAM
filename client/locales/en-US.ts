@@ -3143,9 +3143,6 @@ const messages = {
       planToday: "Plan today's work",
       inspectRisks: 'Inspect device risks',
       costAnalysis: 'Cost & optimisation',
-      inspectDevice: 'Check this device',
-      repairOrReplace: 'Repair or replace?',
-      lifecycleInfo: 'Lifecycle & replacement',
     },
     prompts: {
       enrichModel:
@@ -3168,12 +3165,6 @@ const messages = {
         'Run an asset risk inspection: use the reminders and the reports to list the risks (expiring warranties, idle devices, unaudited devices, leavers still holding items, over-allocated entitlements, ended subscriptions still holding seats, low stock, overdue loans), quantify each, and suggest one next step per risk.',
       costAnalysis:
         'Analyse our IT cost: use the costs, per-person cost and software compliance reports to show where the money goes, and propose concrete optimisations (idle seats to reclaim, subscriptions to reduce, devices to retire or reuse).',
-      inspectDevice:
-        'Check device {{device}}: read it, its history and holdings, and tell me what needs attention (warranty, audit, repairs, holder, cost) and what to do about it.',
-      repairOrReplace:
-        'For device {{device}}, should we repair or replace? Use its warranty, age, repair history, book value and the business notes; give a recommendation with reasons and propose the matching action.',
-      lifecycleInfo:
-        'From the records of the model "{{model}}" and its category (warranty months, replacement cycle, and any release / end-of-sale / end-of-support dates filled in) and the devices of that model we hold (how many, purchase dates, age, warranty ends), tell me which are due for replacement and what that means for our replacement plan. Do not state vendor dates the records do not hold.',
     },
   },
   board: {
