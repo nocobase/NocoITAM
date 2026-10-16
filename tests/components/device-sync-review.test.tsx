@@ -222,6 +222,53 @@ describe('MDM 核对 → 信息不一致: 已忽略', () => {
   });
 });
 
+describe('MDM 核对 → 只在 MDM: 手动关联', () => {
+  it('lists records linked by hand with their device, and unlinks one', () => {
+    state.action.mockReset();
+    state.views = {
+      unregistered: [],
+      linked: [
+        {
+          id: 'm7',
+          source: 'intune',
+          sources: ['intune'],
+          externalId: 'demo-x',
+          serialNo: 'MDM-1',
+          deviceName: 'LAPTOP-X',
+          linkedDevice: {
+            id: 'd7',
+            deviceNo: 'DE-000007',
+            name: 'SG-LT-007',
+            serialNo: 'REG-1',
+          },
+        },
+      ],
+    };
+    render(
+      <MemoryRouter initialEntries={['/device-sync?view=unregistered']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    const section = screen
+      .getByText('deviceSync.review.linkedHeading:1')
+      .closest('section')!;
+    expect(
+      within(section).getByRole('link', { name: 'DE-000007 / SG-LT-007' }),
+    ).toHaveAttribute('href', '/devices/d7');
+    // A serial that is not the platform's is marked.
+    expect(within(section).getByText('REG-1').className).toContain(
+      'text-warning-foreground',
+    );
+    fireEvent.click(
+      within(section).getByRole('button', { name: 'deviceSync.unlink' }),
+    );
+    expect(state.action).toHaveBeenCalledWith({
+      kind: 'unlink',
+      managedId: 'm7',
+    });
+  });
+});
+
 describe('MDM 核对 → 只在 MDM: 补登记', () => {
   const record = (serialNo: string | null) => ({
     id: 'm1',

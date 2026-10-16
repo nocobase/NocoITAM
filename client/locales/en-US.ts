@@ -2089,6 +2089,8 @@ const messages = {
         reason: 'Reason',
         markedBy: 'Marked by',
         markedAt: 'Marked on',
+        linkedDevice: 'Linked to',
+        linkedSerial: 'Register serial',
       },
       sharedSerial_one: '{{count}} register device has this serial',
       sharedSerial_other: '{{count}} register devices have this serial',
@@ -2139,6 +2141,9 @@ const messages = {
       exemptPlaceholder: 'e.g. Linux workstation that cannot enrol in MDM',
       exemptedHeading: 'Not to be managed ({{count}})',
       dismissedHeading: 'Ignored ({{count}})',
+      linkedHeading: 'Linked by hand ({{count}})',
+      linkedHint:
+        'MDM records linked here to a register device by hand; a serial that differs is highlighted. Unlink puts a record back in the list above.',
       dismissedHint:
         'No longer raised; they come back if what MDM reports changes. Restore lists one again.',
       exemptedHint:

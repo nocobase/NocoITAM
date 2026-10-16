@@ -122,6 +122,16 @@ export interface ExemptDevice extends UnmanagedDevice {
   readonly exemptedAt: string | null;
 }
 
+/** A platform record linked by hand, and the device it was linked to. */
+export interface LinkedRecord extends UnregisteredDevice {
+  readonly linkedDevice: {
+    readonly id: string;
+    readonly deviceNo: string | null;
+    readonly name: string | null;
+    readonly serialNo: string | null;
+  };
+}
+
 export interface DeviceReviewService {
   /**
    * Whether any platform is connected or has reported: without one there is
@@ -142,6 +152,12 @@ export interface DeviceReviewService {
   unregistered(now?: Date): Promise<UnregisteredDevice[]>;
   /** Platform records a person kept off the register. */
   ignored(): Promise<UnregisteredDevice[]>;
+  /**
+   * Platform records a person linked to a register device by hand
+   * (2026-10-16), with the device: 只在 MDM lists them under its rows so a
+   * link made there does not vanish, and 解除关联 takes it back.
+   */
+  linkedByHand(): Promise<LinkedRecord[]>;
   /**
    * Devices in use, in a category that should be managed, on no platform,
    * and not marked 不需要纳管.
@@ -767,6 +783,49 @@ export function createDeviceReviewService(deps: {
       return fold(
         rows.map((row) => toUnregistered(row, models, shared, urlOf)),
       );
+    },
+
+    async linkedByHand() {
+      const rows = await database
+        .query()
+        .selectFrom('managedDevices')
+        .selectAll()
+        .where('matchState', '=', 'linked')
+        .where('matchedBy', '=', 'manual')
+        .where('goneAt', 'is', null)
+        .orderBy('updatedAt', 'desc')
+        .execute<Row>();
+      const ids = [
+        ...new Set(rows.map((row) => asText(row.deviceId)).filter(Boolean)),
+      ] as string[];
+      const devices = new Map(
+        (ids.length === 0
+          ? []
+          : await database
+              .query()
+              .selectFrom('devices')
+              .select(['id', 'deviceNo', 'name', 'serialNo'])
+              .where('id', 'in', ids)
+              .execute<Row>()
+        ).map((device) => [String(device.id), device]),
+      );
+      const models = await modelIndex();
+      const urlOf = await sync.consoleUrls();
+      return rows.flatMap((row) => {
+        const device = devices.get(String(row.deviceId));
+        if (!device) return [];
+        return [
+          {
+            ...toUnregistered(row, models, new Map(), urlOf),
+            linkedDevice: {
+              id: String(device.id),
+              deviceNo: asText(device.deviceNo) ?? null,
+              name: asText(device.name) ?? null,
+              serialNo: asText(device.serialNo) ?? null,
+            },
+          },
+        ];
+      });
     },
 
     async ignored() {

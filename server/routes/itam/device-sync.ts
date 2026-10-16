@@ -43,6 +43,8 @@ const VIEWS = [
   'exempted',
   // 忽略 on a difference (2026-10-16), listed under 信息不一致.
   'dismissed',
+  // Linked by hand (2026-10-16), listed under 只在 MDM.
+  'linked',
 ] as const;
 const CHECK_KINDS = ['stale', 'userMismatch', 'statusMismatch'] as const;
 
@@ -211,6 +213,17 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
           );
           return context.json({
             data: checks.filter((check) => visible.has(check.deviceId)),
+          });
+        }
+        if (view === 'linked') {
+          const rows = await review.linkedByHand();
+          const visible = await devicesInScope(
+            context,
+            'read',
+            rows.map((row) => row.linkedDevice.id),
+          );
+          return context.json({
+            data: rows.filter((row) => visible.has(row.linkedDevice.id)),
           });
         }
         if (view === 'unmanaged' || view === 'exempted') {

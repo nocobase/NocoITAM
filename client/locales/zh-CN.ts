@@ -1993,6 +1993,8 @@ const zhCN: AppResource = {
         reason: '原因',
         markedBy: '标记人',
         markedAt: '标记日期',
+        linkedDevice: '关联到',
+        linkedSerial: '台账序列号',
       },
       sharedSerial_one: '{{count}} 台台账设备用了这个序列号',
       sharedSerial_other: '{{count}} 台台账设备用了这个序列号',
@@ -2038,6 +2040,9 @@ const zhCN: AppResource = {
       exemptPlaceholder: '例如：Linux 工作站，不支持注册 MDM',
       exemptedHeading: '不需要纳管 {{count}} 台',
       dismissedHeading: '已忽略 {{count}} 条',
+      linkedHeading: '手动关联 {{count}} 台',
+      linkedHint:
+        '在这里手动关联到台账设备的 MDM 记录，序列号不一致的标黄。点「解除关联」会回到上面的列表。',
       dismissedHint:
         '以后不再提示；MDM 里的信息变化时会重新出现。点「恢复」重新列入。',
       exemptedHint:

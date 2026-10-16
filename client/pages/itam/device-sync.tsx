@@ -86,6 +86,8 @@ export default function DeviceSyncReviewPage(): ReactElement {
             : 'checks';
   const ignoredRef = useRef<HTMLElement>(null);
   const ignoredShown = view === 'unregistered' && (counts.ignored ?? 0) > 0;
+  // What was linked here by hand, under 只在 MDM's rows (2026-10-16).
+  const linkedShown = view === 'unregistered' && (counts.linked ?? 0) > 0;
   const exemptedShown = view === 'unmanaged' && (counts.exempted ?? 0) > 0;
   // The differences a person ignored, under 信息不一致 (2026-10-16).
   const dismissedShown = view === 'checks' && (counts.dismissed ?? 0) > 0;
@@ -164,6 +166,19 @@ export default function DeviceSyncReviewPage(): ReactElement {
       ) : (
         <RecordsView view='unregistered' />
       )}
+      {linkedShown ? (
+        <section className='mt-4 flex flex-col gap-3'>
+          <div className='space-y-1'>
+            <h2 className='font-medium'>
+              {t('deviceSync.review.linkedHeading', { count: counts.linked })}
+            </h2>
+            <p className='text-sm text-muted-foreground'>
+              {t('deviceSync.review.linkedHint')}
+            </p>
+          </div>
+          <LinkedView />
+        </section>
+      ) : null}
       {ignoredShown ? (
         <section
           ref={ignoredRef}
@@ -247,6 +262,7 @@ function useReviewCounts(): Partial<
   const ignored = useDeviceReview('ignored');
   const exempted = useDeviceReview('exempted');
   const dismissed = useDeviceReview('dismissed');
+  const linked = useDeviceReview('linked');
   const byRule = ignored.data?.filter((row) => row.ignoredByRule).length;
   return {
     checks: checks.data?.length,
@@ -255,6 +271,7 @@ function useReviewCounts(): Partial<
     ignored: ignored.data?.length,
     exempted: exempted.data?.length,
     dismissed: dismissed.data?.length,
+    linked: linked.data?.length,
     // 已忽略's two kinds: kept off by a person, or by 忽略个人设备.
     ignoredByRule: byRule,
     ignoredManual:
@@ -374,6 +391,88 @@ function ChecksView(): ReactElement {
         </Table>
       </div>
     </>
+  );
+}
+
+/**
+ * The platform records linked here by hand (2026-10-16): the record, the
+ * device it went to — its serial marked when it is not the platform's —
+ * and 解除关联, which puts the record back among 只在 MDM's.
+ */
+function LinkedView(): ReactElement {
+  const { t } = useTranslation();
+  const review = useDeviceReview('linked');
+  const action = useDeviceReviewAction();
+  const rows = review.data ?? [];
+  const same = (a: string | null, b: string | null) =>
+    (a ?? '').replace(/\s+/g, '').toUpperCase() ===
+    (b ?? '').replace(/\s+/g, '').toUpperCase();
+  if (review.isLoading) return <Skeleton className='h-40 w-full rounded-xl' />;
+  return (
+    <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('deviceSync.fields.deviceName')}</TableHead>
+            <TableHead>{t('fields.serialNo')}</TableHead>
+            <TableHead>{t('deviceSync.review.columns.linkedDevice')}</TableHead>
+            <TableHead>{t('deviceSync.review.columns.linkedSerial')}</TableHead>
+            <TableHead className='text-right'>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={row.id}>
+              <TableCell>
+                <CellText>
+                  <span className='font-medium'>
+                    {row.deviceName ?? row.externalId}
+                  </span>{' '}
+                  <span className='text-xs text-muted-foreground'>
+                    {t(`deviceSync.sources.${row.source}`)}
+                  </span>
+                </CellText>
+              </TableCell>
+              <TableCell className='tabular-nums'>
+                {row.serialNo ?? '—'}
+              </TableCell>
+              <TableCell>
+                <CellText>
+                  <RecordLink
+                    to={`/devices/${row.linkedDevice.id}`}
+                    className='font-medium text-foreground hover:underline'
+                  >
+                    {deviceLabel(row.linkedDevice)}
+                  </RecordLink>
+                </CellText>
+              </TableCell>
+              <TableCell
+                className={cn(
+                  'tabular-nums',
+                  row.serialNo &&
+                    !same(row.serialNo, row.linkedDevice.serialNo) &&
+                    'text-warning-foreground',
+                )}
+              >
+                {row.linkedDevice.serialNo ?? '—'}
+              </TableCell>
+              <TableCell className='text-right'>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  disabled={action.isPending}
+                  onClick={() =>
+                    action.mutate({ kind: 'unlink', managedId: row.id })
+                  }
+                >
+                  {t('deviceSync.unlink')}
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 

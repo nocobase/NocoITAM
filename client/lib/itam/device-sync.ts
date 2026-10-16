@@ -301,6 +301,16 @@ export interface Exemption {
 
 export interface ExemptDevice extends UnmanagedDevice, Exemption {}
 
+/** A platform record linked by hand, and its device (2026-10-16). */
+export interface LinkedRecord extends UnregisteredDevice {
+  readonly linkedDevice: {
+    readonly id: string;
+    readonly deviceNo: string | null;
+    readonly name: string | null;
+    readonly serialNo: string | null;
+  };
+}
+
 export const REVIEW_VIEWS = [
   'checks',
   'unregistered',
@@ -308,6 +318,7 @@ export const REVIEW_VIEWS = [
   'ignored',
   'exempted',
   'dismissed',
+  'linked',
 ] as const;
 export type ReviewView = (typeof REVIEW_VIEWS)[number];
 
@@ -317,7 +328,9 @@ type ReviewRow<V extends ReviewView> = V extends 'checks' | 'dismissed'
     ? UnmanagedDevice
     : V extends 'exempted'
       ? ExemptDevice
-      : UnregisteredDevice;
+      : V extends 'linked'
+        ? LinkedRecord
+        : UnregisteredDevice;
 
 /** One view of MDM 核对. */
 export function useDeviceReview<V extends ReviewView>(

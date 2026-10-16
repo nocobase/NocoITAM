@@ -493,6 +493,34 @@ describe('device review', () => {
     expect(await kinds(linux)).toEqual([[linux, 'stale', false]]);
   });
 
+  it('keeps a record linked by hand listed with its device, until it is unlinked', async () => {
+    const laptop = await device('REG-SERIAL');
+    await pull(observed('hand', { serialNo: 'MDM-SERIAL' }));
+    const id = await managedId('hand');
+    expect(
+      (await request(`device-sync/devices/${id}/link`, { deviceId: laptop }))
+        .status,
+    ).toBe(200);
+    expect(await review.unregistered()).toEqual([]);
+    const listed = await request('device-sync/review?view=linked');
+    expect(await listed.json()).toMatchObject({
+      data: [
+        {
+          externalId: 'hand',
+          serialNo: 'MDM-SERIAL',
+          linkedDevice: { id: laptop, serialNo: 'REG-SERIAL' },
+        },
+      ],
+    });
+    expect((await request(`device-sync/devices/${id}/unlink`, {})).status).toBe(
+      200,
+    );
+    expect(await review.linkedByHand()).toEqual([]);
+    expect((await review.unregistered()).map((row) => row.externalId)).toEqual([
+      'hand',
+    ]);
+  });
+
   it('lists an ignored difference under 已忽略 with who and when, and raises it again on 恢复', async () => {
     const pat = await person('Pat Lee', 'pat@example.com');
     const laptop = await device('IGN-1');
