@@ -277,6 +277,7 @@ const messages = {
       import: 'through a data import',
       schedule: 'by a scheduled task',
       sync: 'through device sync',
+      install: 'with the installation',
     },
     fieldsChanged_one: '{{count}} field updated',
     fieldsChanged_other: '{{count}} fields updated',

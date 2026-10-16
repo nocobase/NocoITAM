@@ -239,3 +239,12 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `demoMade`): a seeded or pre-existing record of the same name is left
   alone, since clearing the demo removes only the history of what it
   tracks. Each model the stock needs is entered just before that stock.
+
+- Seeded master data has a creation line (2026-10-16): the seeds write
+  their records straight into the tables, so
+  `202610160001_seed_itam_master_install_history` adds a `create` change log,
+  with no actor and origin `install` (随系统安装), for every master record
+  that has none. A later seed that adds master data needs the same, or a
+  seed of its own like this one. The demo comments on three seeded categories
+  without mentions or replies, tracking each comment as `historyEvents` so
+  clearing removes it, and changes only the webcam category it made.

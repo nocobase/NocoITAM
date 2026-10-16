@@ -32,6 +32,36 @@ describe('ITAM seeds', () => {
     db = undefined;
   });
 
+  // Master data that came with the installation opens its 历史 on a
+  // creation line of its own (2026-10-16), once.
+  it('gives the seeded master data a creation line', async () => {
+    db = await createTestDatabase();
+    const seeder = createSeeder({
+      database: db.database,
+      packageName: 'itam',
+      directory: seedsDirectory,
+    });
+    await seeder.run();
+    await seeder.run();
+    const query = db.database.query();
+    const categories = await query
+      .selectFrom('categories')
+      .select('id')
+      .execute<{ id: string }>();
+    const logs = await query
+      .selectFrom('changeLogs')
+      .select(['subjectId', 'origin', 'actorId'])
+      .where('subjectType', '=', 'categories')
+      .where('action', '=', 'create')
+      .execute<{ subjectId: string; origin: string; actorId: unknown }>();
+    expect(logs).toHaveLength(categories.length);
+    expect(new Set(logs.map((row) => row.subjectId)).size).toBe(
+      categories.length,
+    );
+    expect(logs.every((row) => row.origin === 'install')).toBe(true);
+    expect(logs.every((row) => row.actorId === null)).toBe(true);
+  });
+
   it('seeds settings and categories once', async () => {
     db = await createTestDatabase();
     const seeder = createSeeder({

@@ -278,6 +278,8 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
 
 /** Deleted in dependency order: children before the master data they reference. */
 const ORDER: readonly string[] = [
+  // Comments the demo wrote on records it did not make (seeded categories).
+  'historyEvents',
   // What the demo's Intune reported (device sync, 2026-10-14).
   'managedDevices',
   'deviceSyncRuns',
@@ -354,6 +356,15 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
       'Out of warranty, so this repair is charged to the IT budget.',
     commentLeaver:
       '@{importer} {leaver} leaves next Friday and still has devices and a draft disposal in their name. Please plan the handover.',
+    commentLaptopCycle:
+      'Laptops are replaced every four years; the 2023 MacBook Pro batch comes due together next year, so budget for it in Q1.',
+    commentMonitorRule:
+      'From now on monitors of 27 inches and up are bought with USB-C, so one cable to the dock does it.',
+    commentPhoneRule:
+      'Company phones go to sales and management only; everyone else claims a monthly allowance.',
+    commentWebcamCategory:
+      'Webcams are lent from the meeting rooms first; only people who present every day get one of their own.',
+    commentWebcamCategoryReply: 'Agreed — I set the count cycle to a year.',
     repairFan: 'Fan grinds under load; clean it and replace if worn',
     repairNotes: 'Replaced under warranty',
     repairFault: 'Battery swollen; replace battery',
@@ -468,6 +479,14 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     commentExpired: '已过保，这次维修费用走 IT 部门预算。',
     commentLeaver:
       '@{importer} {leaver} 下周五最后一天，名下还有设备和一张报废草稿，记得安排交接。',
+    commentLaptopCycle:
+      '笔记本按 4 年更换，2023 年那批 MacBook Pro 明年会集中到期，一季度预算要留出来。',
+    commentMonitorRule:
+      '以后 27 寸及以上的显示器统一买带 USB-C 的，一根线接扩展坞。',
+    commentPhoneRule: '公司手机只配给销售和管理层，其他岗位按月报销话费。',
+    commentWebcamCategory:
+      '摄像头先从会议室借，只有每天要做演示的同事才单独配。',
+    commentWebcamCategoryReply: '同意，盘点周期我改成一年了。',
     repairFan: '高负载时风扇异响，清灰，磨损则更换',
     repairNotes: '保内更换',
     defaultKit: '{name}标准配置',
@@ -3055,6 +3074,12 @@ export function createDemoService(dependencies: {
         await revise('manufacturers', duracell, {
           website: 'https://www.duracell.com',
         });
+        // The webcam category the demo made gained a warranty and, once the
+        // meeting rooms lent them, a yearly count (2026-10-16).
+        await on(-660);
+        await revise('categories', webcamCat, { warrantyMonths: 24 });
+        await on(-649);
+        await revise('categories', webcamCat, { auditCycleDays: 365 });
         await on(-300);
         await revise('models', webcamModel, {
           specification: texts.webcamSpecUpdated,
@@ -4845,6 +4870,42 @@ export function createDemoService(dependencies: {
               webcamModel,
               texts.commentWebcam,
             );
+          // On the categories (2026-10-16). The seeded ones are not the
+          // demo's, so their comments are tracked one by one and go when the
+          // demo is cleared; none mentions or answers anybody, which would
+          // send a notification the clearing could not tell from others on
+          // the same category. The webcam category, when the demo made it,
+          // carries a thread like any record of its own.
+          const onSeeded = async (day: number, id: string, body: string) =>
+            track('historyEvents', {
+              id: await comment(
+                day,
+                supportUserId,
+                'categories',
+                await seeded(id),
+                body,
+              ),
+            });
+          await onSeeded(-210, 'cat-laptop', texts.commentLaptopCycle);
+          await onSeeded(-400, 'cat-monitor', texts.commentMonitorRule);
+          await onSeeded(-820, 'cat-phone', texts.commentPhoneRule);
+          if (demoMade.has(String(webcamCat.id))) {
+            const lending = await comment(
+              -650,
+              managerUserId,
+              'categories',
+              webcamCat,
+              texts.commentWebcamCategory,
+            );
+            await comment(
+              -649,
+              writerId,
+              'categories',
+              webcamCat,
+              texts.commentWebcamCategoryReply,
+              { replyTo: lending },
+            );
+          }
         }
 
         await reached(90);

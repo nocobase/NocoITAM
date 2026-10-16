@@ -269,6 +269,7 @@ const zhCN: AppResource = {
       import: '经数据导入',
       schedule: '经定时任务',
       sync: '经设备同步',
+      install: '随系统安装',
     },
     fieldsChanged_one: '更新了 {{count}} 个字段',
     fieldsChanged_other: '更新了 {{count}} 个字段',
