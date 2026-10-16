@@ -1427,23 +1427,6 @@ const messages = {
     noSeats: 'No seats assigned',
     noPurchases: 'No purchase orders; registered by hand',
     followsProduct: 'Follows the software product',
-    endedTitle: 'This subscription ended on {{date}} and does not renew',
-    endedSeats_one:
-      '{{count}} seat is still held; reclaim it in the seats tab.',
-    endedSeats_other:
-      '{{count}} seats are still held; reclaim them in the seats tab.',
-    endedNoSeats: 'Every seat has been reclaimed.',
-    leaverSeatsTitle_one:
-      '{{count}} seat is still held by someone who has left',
-    leaverSeatsTitle_other:
-      '{{count}} seats are still held by people who have left',
-    leaverSeatsHint:
-      'Reclaimed, they can go to someone else; reclaim them before renewing to see how many you really need.',
-    reclaimLeaverSeats: 'Reclaim them all',
-    reclaimLeaverSeatsConfirm_one:
-      "Reclaim the seat a leaver holds? The account on the vendor's side has to be closed separately.",
-    reclaimLeaverSeatsConfirm_other:
-      "Reclaim the {{count}} seats leavers hold? The accounts on the vendor's side have to be closed separately.",
     annualCostHint:
       'Computed: per seat, unit price × total seats × cycles per year; flat, price per cycle × cycles per year. Counts the seats bought, not those assigned',
   },

@@ -1379,18 +1379,6 @@ const zhCN: AppResource = {
     noSeats: '暂未分配席位',
     noPurchases: '没有采购单，为手工登记',
     followsProduct: '随软件产品',
-    endedTitle: '这份订阅已于 {{date}} 结束，不再续订',
-    endedSeats_one: '还有 {{count}} 个席位未回收，请在席位页签回收。',
-    endedSeats_other: '还有 {{count}} 个席位未回收，请在席位页签回收。',
-    endedNoSeats: '席位已全部回收。',
-    leaverSeatsTitle_one: '{{count}} 个席位还在离职人员手上',
-    leaverSeatsTitle_other: '{{count}} 个席位还在离职人员手上',
-    leaverSeatsHint: '收回后可以分配给别人；续费前先收回，就知道实际要续多少。',
-    reclaimLeaverSeats: '全部收回',
-    reclaimLeaverSeatsConfirm_one:
-      '收回离职人员占用的 {{count}} 个席位？供应商那边的账号要另外停用。',
-    reclaimLeaverSeatsConfirm_other:
-      '收回离职人员占用的 {{count}} 个席位？供应商那边的账号要另外停用。',
     annualCostHint:
       '系统计算：按席位为 单价 × 总席位 × 每年期数；固定费用为 每期费用 × 每年期数。按购买的席位算，不按已分配',
   },

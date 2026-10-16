@@ -1,18 +1,11 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  CalendarX,
-  SlidersHorizontal,
-  Undo2,
-  UserPlus,
-  UserX,
-} from 'lucide-react';
+import { SlidersHorizontal, Undo2, UserPlus } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 import { useParams } from 'react-router';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { InfoRow } from '@/components/itam/detail-page';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { purchasesRequest } from '@/lib/itam/purchases';
 import { DataTable } from '@/components/itam/data-table';
 import { HolderCell } from '@/components/itam/holder-link';
@@ -31,7 +24,7 @@ import {
   ENTITLEMENT_FIELDS,
   ENTITLEMENTS_PATH,
 } from '@/lib/itam/entitlements';
-import { formatDate, text, todayIso } from '@/lib/itam/format';
+import { formatDate, text } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 
 import { InlineField } from '@/components/itam/inline-field';
@@ -114,7 +107,6 @@ export const entitlementDomain: DomainConfig = {
         hasKey={Boolean(record.hasProductKey)}
       />
     ) : undefined,
-  Notice: EntitlementNotice,
   Actions: EntitlementActions,
   // No summary strip: the kind, the seat counts, the compliance status and
   // the maintenance date all have a row in the information card, and a strip
@@ -367,125 +359,6 @@ function EntitlementActions({
 }
 
 /**
- * A subscription set not to renew whose date has passed has ended: say so
- * above the page, and how many seats are still held on it.
- */
-function EntitlementNotice({
-  record,
-}: {
-  readonly record: ItamRecord;
-}): ReactElement | null {
-  const { t } = useTranslation();
-  const end = text(record.expiryDate).slice(0, 10);
-  const [today] = useState(todayIso);
-  if (
-    record.kind !== 'subscription' ||
-    record.autoRenew !== false ||
-    !end ||
-    end >= today
-  )
-    return <LeaverSeatsNotice record={record} />;
-  const held = Number(record.assignedCount ?? 0);
-  return (
-    <Alert>
-      <CalendarX />
-      <AlertTitle>
-        {t('entitlements.endedTitle', { date: formatDate(end) })}
-      </AlertTitle>
-      <AlertDescription>
-        {held > 0
-          ? t('entitlements.endedSeats', { count: held })
-          : t('entitlements.endedNoSeats')}
-      </AlertDescription>
-    </Alert>
-  );
-}
-
-/** The seats query the 席位 tab reads; the notice shares it. */
-function useSeats(id: string) {
-  const api = useApi();
-  return useQuery({
-    queryKey: ['itam', ENTITLEMENTS_PATH, 'seats', id],
-    queryFn: async () =>
-      (
-        await api.request<{
-          data: { seats: ItamRecord[] };
-        }>({ path: `${ENTITLEMENTS_PATH}/${id}/seats` })
-      ).data,
-  });
-}
-
-/**
- * Seats people who have left still hold, taken back in one go (2026-10-17,
- * in place of the 授权续费 agent): the first thing to do before a renewal,
- * and before buying more. Above the page while any is held; the button for
- * whoever may reclaim seats.
- */
-function LeaverSeatsNotice({
-  record,
-}: {
-  readonly record: ItamRecord;
-}): ReactElement | null {
-  const { t } = useTranslation();
-  const id = text(record.id);
-  const api = useApi();
-  const seats = useSeats(id);
-  const permissions = useCollectionPermissions('entitlements', ['assignSeat']);
-  const announce = useAnnounce();
-  const confirm = useConfirm();
-  const held = (seats.data?.seats ?? []).filter((seat) => seat.holderLeft);
-  const reclaim = useMutation({
-    mutationFn: async () =>
-      api.request({
-        path: `${ENTITLEMENTS_PATH}/${id}/reclaim-seats`,
-        method: 'POST',
-        json: { seatIds: held.map((seat) => text(seat.id)) },
-      }),
-    onSuccess: async () => {
-      await announce(
-        t('people.recovery.toast.reclaimed', { label: text(record.name) }),
-        held.map((seat) => text(seat.holderId)),
-      );
-    },
-  });
-  if (!held.length) return null;
-  return (
-    <Alert>
-      <UserX />
-      <AlertTitle>
-        {t('entitlements.leaverSeatsTitle', { count: held.length })}
-      </AlertTitle>
-      <AlertDescription>
-        <p>{t('entitlements.leaverSeatsHint')}</p>
-        {permissions.assignSeat ? (
-          <Button
-            size='sm'
-            variant='outline'
-            className='mt-2'
-            disabled={reclaim.isPending}
-            onClick={() =>
-              confirm.ask({
-                title: t('entitlements.reclaimLeaverSeats'),
-                description: t('entitlements.reclaimLeaverSeatsConfirm', {
-                  count: held.length,
-                }),
-                confirmLabel: t('entitlements.reclaimLeaverSeats'),
-                destructive: true,
-                action: () => reclaim.mutateAsync(),
-              })
-            }
-          >
-            <Undo2 data-icon='inline-start' />
-            {t('entitlements.reclaimLeaverSeats')}
-          </Button>
-        ) : null}
-      </AlertDescription>
-      {confirm.dialog}
-    </Alert>
-  );
-}
-
-/**
  * Tab: active seats with reclaim. A seat names its holder (person or
  * device) and, for subscriptions, the account.
  */
@@ -706,4 +579,18 @@ function EntitlementLead({
       </InfoRow>
     </>
   );
+}
+
+/** The seats query the 席位 tab reads, shared by the parts that need it. */
+function useSeats(id: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ['itam', ENTITLEMENTS_PATH, 'seats', id],
+    queryFn: async () =>
+      (
+        await api.request<{
+          data: { seats: ItamRecord[] };
+        }>({ path: `${ENTITLEMENTS_PATH}/${id}/seats` })
+      ).data,
+  });
 }
