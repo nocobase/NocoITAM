@@ -466,10 +466,12 @@ export default function PermissionsDrawer(): ReactElement {
     body = (
       <div className='flex flex-col gap-4'>
         {/* The areas stay in view as the body scrolls: the drawer's header
-            holds only a title and a description. */}
+            holds only a title and a description. Pulled out by the body's
+            padding on three sides, so nothing scrolls past above or beside
+            them: ITAM's overlay body pads p-6, NocoCRM's p-4. */}
         <div
           ref={tabsRef}
-          className='sticky -top-4 z-10 -mx-4 -mt-4 bg-popover px-4 pt-2'
+          className='sticky -top-6 z-10 -mx-6 -mt-6 bg-popover px-6 pt-2'
         >
           <RouteTabs
             label={text('sets.permissionsOf', { name })}
