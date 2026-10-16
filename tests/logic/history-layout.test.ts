@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  bucketOf,
   dayOf,
   groupEdits,
   layoutTimeline,
@@ -48,33 +49,36 @@ describe('history layout', () => {
       ),
       event('c2', at(14, 9), 'comment'),
     ];
-    const entries = layoutTimeline(groupEdits(items), new Set());
+    const now = new Date(2026, 9, 16, 18);
+    const entries = layoutTimeline(groupEdits(items), new Set(), now);
     expect(
       entries.map((entry) =>
         entry.kind === 'day'
-          ? entry.day
+          ? entry.bucket
           : entry.kind === 'fold'
             ? `fold ${String(entry.units.length)}`
             : entry.unit.id,
       ),
-    ).toEqual([
-      '2026-10-16',
-      'c1',
-      '1',
-      '2',
-      '3',
-      'fold 4',
-      '2026-10-14',
-      'c2',
-    ]);
+    ).toEqual(['today', 'c1', '1', '2', '3', 'fold 4', 'week', 'c2']);
     // Opened, the fold shows every line under its own day.
     const fold = entries.find((entry) => entry.kind === 'fold');
     const open = layoutTimeline(
       groupEdits(items),
       new Set([fold?.kind === 'fold' ? fold.id : '']),
+      now,
     );
     expect(open.filter((entry) => entry.kind === 'day')).toHaveLength(3);
     expect(open.some((entry) => entry.kind === 'fold')).toBe(false);
+  });
+
+  it('heads recent lines by day and older ones by month or year', () => {
+    const now = new Date(2026, 9, 16, 18);
+    expect(bucketOf(at(16, 9), now)).toBe('today');
+    expect(bucketOf(at(15, 23), now)).toBe('yesterday');
+    expect(bucketOf(at(11, 9), now)).toBe('week');
+    expect(bucketOf(at(2, 9), now)).toBe('month');
+    expect(bucketOf('2026-07-08T10:00:00.000', now)).toBe('year');
+    expect(bucketOf('2025-09-01T10:00:00.000', now)).toBe('yr-2025');
   });
 
   it('reads a day in the local calendar', () => {

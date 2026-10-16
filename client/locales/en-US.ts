@@ -254,8 +254,14 @@ const messages = {
     deleteDescription: 'Its text and files go; replies to it stay.',
   },
   history: {
-    today: 'Today',
-    yesterday: 'Yesterday',
+    buckets: {
+      today: 'Today',
+      yesterday: 'Yesterday',
+      week: 'Last 7 days',
+      month: 'This month',
+      year: 'This year',
+    },
+    inYear: '{{year}}',
     editedFields_one: 'changed {{count}} field',
     editedFields_other: 'changed {{count}} fields',
     showEdits: 'Show',

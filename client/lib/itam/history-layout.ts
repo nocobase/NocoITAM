@@ -2,7 +2,8 @@
  * How a record's history is laid out (2026-10-16, after Linear's and Attio's
  * activity): consecutive field edits by one person fold into one line, a long
  * run of changes between two comments folds behind a count, and the lines
- * fall under day headings. Pure, so the rules are tested without a page.
+ * fall under headings — today, yesterday, this week, month and year, then
+ * each earlier year. Pure, so the rules are tested without a page.
  */
 
 export interface LayoutItem {
@@ -22,7 +23,11 @@ export type TimelineUnit<T extends LayoutItem> =
     };
 
 export type TimelineEntry<T extends LayoutItem> =
-  | { readonly kind: 'day'; readonly id: string; readonly day: string }
+  | {
+      readonly kind: 'day';
+      readonly id: string;
+      readonly bucket: HistoryBucket;
+    }
   | { readonly kind: 'unit'; readonly unit: TimelineUnit<T> }
   | {
       readonly kind: 'fold';
@@ -38,6 +43,32 @@ export const RUN_LIMIT = 6;
 export const RUN_KEEP = 3;
 
 const isComment = (item: LayoutItem): boolean => item.event?.type === 'comment';
+
+/**
+ * The heading a line falls under (2026-10-17: one per day put a heading over
+ * nearly every line of a quiet record's history): today, yesterday, the last
+ * seven days, this month, this year, then one per earlier year.
+ */
+export type HistoryBucket =
+  'today' | 'yesterday' | 'week' | 'month' | 'year' | `yr-${string}`;
+
+export function bucketOf(iso: string, now: Date = new Date()): HistoryBucket {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'year';
+  const day = (value: Date) =>
+    new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+  const days = Math.round((day(now) - day(date)) / 86_400_000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return 'week';
+  if (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth()
+  )
+    return 'month';
+  if (date.getFullYear() === now.getFullYear()) return 'year';
+  return `yr-${String(date.getFullYear())}`;
+}
 
 /** The local calendar day a timestamp falls on, as YYYY-MM-DD. */
 export function dayOf(iso: string): string {
@@ -89,6 +120,7 @@ const createdAtOf = <T extends LayoutItem>(unit: TimelineUnit<T>): string =>
 export function layoutTimeline<T extends LayoutItem>(
   units: readonly TimelineUnit<T>[],
   opened: ReadonlySet<string>,
+  now: Date = new Date(),
 ): TimelineEntry<T>[] {
   const visible: (
     | { readonly kind: 'unit'; readonly unit: TimelineUnit<T> }
@@ -116,13 +148,13 @@ export function layoutTimeline<T extends LayoutItem>(
   }
   flush();
   const entries: TimelineEntry<T>[] = [];
-  let day = '';
+  let bucket = '';
   for (const entry of visible) {
     if (entry.kind === 'unit') {
-      const next = dayOf(createdAtOf(entry.unit));
-      if (next !== day) {
-        entries.push({ kind: 'day', id: `day:${next}`, day: next });
-        day = next;
+      const next = bucketOf(createdAtOf(entry.unit), now);
+      if (next !== bucket) {
+        entries.push({ kind: 'day', id: `day:${next}`, bucket: next });
+        bucket = next;
       }
     }
     entries.push(entry);

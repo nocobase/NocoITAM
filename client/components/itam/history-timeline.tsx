@@ -20,9 +20,10 @@ import type { FieldDefinition } from '@/lib/itam/fields';
 import { formatDate, formatMoney, relativeTime, text } from '@/lib/itam/format';
 import { HistoryIcon } from '@/lib/itam/history-icons';
 import {
-  dayOf,
+  bucketOf,
   groupEdits,
   layoutTimeline,
+  type HistoryBucket,
   type TimelineUnit,
 } from '@/lib/itam/history-layout';
 import { recordKindOf } from '@/lib/itam/record-kind';
@@ -135,35 +136,28 @@ function readFilter(): HistoryFilter {
 }
 
 /**
- * A line's time: how long ago, today; the time of day on an earlier day,
- * whose heading already says which; the full stamp on hover either way.
+ * A line's time under its heading: how long ago, today; the time of day,
+ * yesterday; the date otherwise (its year is the heading's). The full stamp
+ * shows on hover either way.
  */
 function timeLabel(iso: string, language: string, justNow: string): string {
-  if (dayOf(iso) === dayOf(new Date().toISOString()))
-    return relativeTime(iso, language, justNow);
+  const bucket = bucketOf(iso);
+  if (bucket === 'today') return relativeTime(iso, language, justNow);
   const date = new Date(iso);
-  return Number.isNaN(date.getTime())
-    ? iso
-    : new Intl.DateTimeFormat(language, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }).format(date);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat(
+    language,
+    bucket === 'yesterday'
+      ? { hour: '2-digit', minute: '2-digit', hour12: false }
+      : { month: 'short', day: 'numeric' },
+  ).format(date);
 }
 
-/** A day heading: 今天, 昨天, else the date, with its year when not this one. */
-function dayLabel(day: string, language: string, t: Translate): string {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  if (day === dayOf(today.toISOString())) return t('history.today');
-  if (day === dayOf(yesterday.toISOString())) return t('history.yesterday');
-  const [year, month, date] = day.split('-').map(Number);
-  return new Intl.DateTimeFormat(language, {
-    ...(year === today.getFullYear() ? {} : { year: 'numeric' }),
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(year ?? 0, (month ?? 1) - 1, date ?? 1));
+/** A heading: 今天, 昨天, 最近 7 天, 本月, 今年, or the year. */
+function bucketLabel(bucket: HistoryBucket, t: Translate): string {
+  return bucket.startsWith('yr-')
+    ? t('history.inYear', { year: bucket.slice(3) })
+    : t(`history.buckets.${bucket}`);
 }
 
 export function HistoryTimeline({
@@ -364,7 +358,7 @@ export function HistoryTimeline({
                     key={entry.id}
                     className='pt-4 pb-1.5 text-xs font-medium text-muted-foreground first:pt-0'
                   >
-                    {dayLabel(entry.day, i18n.language, t)}
+                    {bucketLabel(entry.bucket, t)}
                   </li>
                 ) : entry.kind === 'fold' ? (
                   <li key={entry.id} className='flex gap-3 py-1'>
