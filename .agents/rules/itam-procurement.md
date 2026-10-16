@@ -157,13 +157,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   by its requester (`POST /:id/quote-comparison`, under `update`, refused
   past the draft like its lines) and read with the order
   (`GET /:id/quote-comparison`, prices only for a reader who may read the
-  lines' unit prices). Each quote is read from its document by Noco
+  lines' unit prices). Each quote is read from its document by Asset Steward
   (task `purchaseQuote`, its lines matched to the order's by line id; the
   document is linked to the order and read with `/:id/document-text`, as
   解析单据 does). What is counted is the server's, never the model's: each
   line's price per quote, the lowest when two priced it, what a quote
   leaves out or adds, its total, and the last price paid for the same model
-  or product on an approved order. Noco then recommends one (task
+  or product on an approved order. Asset Steward then recommends one (task
   `quoteRecommendation`, given that table). Taking a quote sets the order's
   vendor (by its exact name among the vendors, else the requester picks
   one) and the unit prices of the lines it priced, through the order's own

@@ -1587,7 +1587,7 @@ const zhCN: AppResource = {
     compare: '比较报价',
     title: '比较报价',
     description:
-      '上传几家供应商的报价单（PDF、Excel、Word）或粘贴报价内容，Noco 逐份读出各项价格并对到这张采购单的明细，再建议选哪家。采用一家后，供应商和各行单价会填进采购单。',
+      '上传几家供应商的报价单（PDF、Excel、Word）或粘贴报价内容，资产管家逐份读出各项价格并对到这张采购单的明细，再建议选哪家。采用一家后，供应商和各行单价会填进采购单。',
     readOnly: '提交审批前比较过的报价。',
     addFiles: '上传报价单',
     paste: '粘贴报价内容',
@@ -1595,7 +1595,7 @@ const zhCN: AppResource = {
     pastedLabel: '粘贴的报价',
     read: '读取',
     reading: '正在读取「{{file}}」…',
-    recommending: 'Noco 正在比较…',
+    recommending: '资产管家正在比较…',
     limitHint: '最多 {{count}} 家',
     limit: '最多比较 5 家报价，多出的没有读取。',
     unreadable: '没能从这份报价里读出价格。',

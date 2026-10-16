@@ -52,9 +52,9 @@ import { cn } from '@/lib/utils';
 /**
  * 报价比较 (2026-10-17): the quotes a draft order is weighed against before
  * it goes for approval. Each quote document (or pasted text) is read by
- * Noco against the order's lines (`purchaseQuote`), and the server counts
+ * Asset Steward against the order's lines (`purchaseQuote`), and the server counts
  * the table — each line's price per supplier, the lowest, what a quote
- * leaves out, the totals, the last price paid. Once two are read Noco
+ * leaves out, the totals, the last price paid. Once two are read Asset Steward
  * recommends one (`quoteRecommendation`); the requester takes one, which
  * sets the order's vendor and its lines' unit prices. Kept with the order;
  * the approval assistant reads it. Read-only once the order is sent.

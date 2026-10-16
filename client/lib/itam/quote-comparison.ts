@@ -11,7 +11,7 @@ import { PURCHASE_ORDERS_PATH } from './procurement.js';
 
 /**
  * 报价比较 on the client (2026-10-17; `server/providers/itam/quote-comparisons.ts`):
- * the quotes a draft order is weighed against, as read by Noco and checked
+ * the quotes a draft order is weighed against, as read by Asset Steward and checked
  * by the requester, and the table the server counts from them.
  */
 

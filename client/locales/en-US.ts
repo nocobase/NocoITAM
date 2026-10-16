@@ -1655,7 +1655,7 @@ const messages = {
     compare: 'Compare quotes',
     title: 'Compare quotes',
     description:
-      "Upload suppliers' quotes (PDF, Excel, Word) or paste them. Noco reads each one's prices against this order's lines, then recommends one. Taking a quote sets the order's vendor and its lines' unit prices.",
+      "Upload suppliers' quotes (PDF, Excel, Word) or paste them. Asset Steward reads each one's prices against this order's lines, then recommends one. Taking a quote sets the order's vendor and its lines' unit prices.",
     readOnly: 'The quotes compared before the order was sent for approval.',
     addFiles: 'Upload quotes',
     paste: 'Paste a quote',
@@ -1663,7 +1663,7 @@ const messages = {
     pastedLabel: 'Pasted quote',
     read: 'Read',
     reading: 'Reading "{{file}}"…',
-    recommending: 'Noco is comparing…',
+    recommending: 'Asset Steward is comparing…',
     limitHint: 'Up to {{count}}',
     limit: 'Up to 5 quotes are compared; the rest were not read.',
     unreadable: 'No prices could be read from this quote.',

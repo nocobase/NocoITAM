@@ -11,11 +11,11 @@ import { BusinessRuleError, RecordNotFoundError } from './errors.js';
 /**
  * 报价比较 (2026-10-17): the quotes a purchase order is weighed against
  * before it is sent for approval. Each quote is read from its document by
- * Noco (`ai-reading.ts`, task `purchaseQuote`) and checked by the person;
+ * Asset Steward (`ai-reading.ts`, task `purchaseQuote`) and checked by the person;
  * what is counted is counted here, without a model — each line's price in
  * each quote, the lowest, what a quote left out, every quote's total, and
  * what the same model or product cost on the last order that bought it.
- * Noco's recommendation (task `quoteRecommendation`) and the quote the
+ * Asset Steward's recommendation (task `quoteRecommendation`) and the quote the
  * requester took are kept with it. One comparison per order, replaced when
  * redone, and only while the order is a draft or was sent back, by its
  * requester — as its lines are. The approval assistant reads it.
