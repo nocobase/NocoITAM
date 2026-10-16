@@ -2074,6 +2074,11 @@ const zhCN: AppResource = {
       ownership: '归属',
       compliance: '合规状态',
       encrypted: '已加密',
+      matchedBy: '关联方式',
+    },
+    matchedBy: {
+      serial: '按序列号自动',
+      manual: '手动',
     },
     ownership: {
       company: '公司',

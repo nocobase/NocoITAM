@@ -205,6 +205,8 @@ describe("a device's MDM group", () => {
       screen.getByText('deviceSync.ownership.company'),
     ).toBeInTheDocument();
     expect(screen.getByText('common.yes')).toBeInTheDocument();
+    // How it came to this device.
+    expect(screen.getByText('deviceSync.matchedBy.serial')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: /deviceSync\.openIn/ }),
     ).toHaveAttribute('href', record.consoleUrl);

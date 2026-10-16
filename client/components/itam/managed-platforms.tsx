@@ -273,6 +273,16 @@ function PlatformRecord({
   const source = t(`deviceSync.sources.${record.source}`);
   const rows: [string, ReactNode][] = [
     ['deviceSync.fields.deviceName', record.deviceName],
+    // How the record came to this device (2026-10-16): by its serial on a
+    // pull, or by a person.
+    [
+      'deviceSync.fields.matchedBy',
+      record.matchedBy
+        ? t(`deviceSync.matchedBy.${record.matchedBy}`, {
+            defaultValue: record.matchedBy,
+          })
+        : null,
+    ],
     [
       'deviceSync.fields.os',
       [record.osName, record.osVersion].filter(Boolean).join(' '),

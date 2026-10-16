@@ -2176,6 +2176,11 @@ const messages = {
       ownership: 'Ownership',
       compliance: 'Compliance',
       encrypted: 'Encrypted',
+      matchedBy: 'Linked by',
+    },
+    matchedBy: {
+      serial: 'Serial number, automatically',
+      manual: 'Hand',
     },
     ownership: {
       company: 'Company',
