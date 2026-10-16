@@ -45,7 +45,7 @@ export interface ItamAi {
 }
 
 /** Where ITAM's conversations come from (`itam-agents/index.ts`). */
-const ITAM_SOURCE = 'itam';
+export const ITAM_SOURCE = 'itam';
 
 export function useItamAi(): ItamAi {
   const status = useAiStatus();

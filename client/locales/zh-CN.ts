@@ -2472,6 +2472,8 @@ const zhCN: AppResource = {
       onboardingAdvice: '入职建议',
       onboardingAdviceHint:
         '入职负责人可以在新人的入职配备卡片上点「让 Noco 挑选」，Noco 在后台从库存里为新人挑选设备、配件和授权并写明理由，由他确认或更换。关闭后只在对话中准备。',
+      assistantDock: '页面底部的 AI 对话框',
+      assistantDockHint: '对所有人生效。关闭后，从右上角的 ✨ 按钮使用 AI。',
     },
     demo: {
       title: '演示数据',
@@ -2773,6 +2775,65 @@ const zhCN: AppResource = {
   },
   ai: {
     ask: '问 AI',
+    dock: {
+      placeholder: '问任何问题…',
+      placeholderAbout: '问关于「{{name}}」的问题…',
+      attach: '添加文件',
+      model: '模型',
+      send: '发送',
+      suggestions: '建议的问题',
+      removeFile: '移除 {{name}}',
+      tooManyFiles: '一次最多附 {{count}} 个文件',
+      fileTooLarge: '{{name}} 太大，没有附上',
+      uploadFailed: '{{name}} 上传失败',
+      q: {
+        device: {
+          state: '这台设备现在是什么情况？',
+          repairOrReplace: '这台设备该修还是该换？',
+          history: '总结一下这台设备的经历',
+        },
+        person: {
+          holdings: '他手上有哪些设备和授权？',
+          next: '他接下来需要处理什么？',
+        },
+        order: {
+          state: '这张采购单进行到哪一步了？',
+          arrival: '还有哪些没到货？',
+        },
+        entitlement: {
+          seats: '席位分配得怎么样？',
+          renewal: '这个授权什么时候续订，要不要续？',
+        },
+        stock: {
+          level: '这个物品还够用吗？',
+          low: '哪些物品低于水位，需要补货？',
+        },
+        repair: { state: '这张维修单进展如何？' },
+        disposal: { next: '这张报废单下一步做什么？' },
+        audit: { differences: '这次盘点有哪些差异要处理？' },
+        model: { devices: '这个型号的设备都在哪里、状态如何？' },
+        devices: {
+          idle: '有哪些设备闲置太久？',
+          warranty: '最近有哪些设备过保？',
+        },
+        entitlements: {
+          renewing: '最近有哪些订阅要续费？',
+          overAllocated: '有没有超量分配的授权？',
+        },
+        procurement: {
+          waiting: '有哪些采购单在等我处理？',
+          late: '有哪些采购单到货逾期？',
+        },
+        repairs: { open: '现在有哪些设备在维修，进展如何？' },
+        people: {
+          leavers: '最近离职的人还有哪些东西没收回？',
+          joiners: '新人的入职配备准备好了吗？',
+        },
+        audits: { progress: '进行中的盘点进展如何？' },
+        disposals: { waiting: '有哪些报废单在等处理？' },
+        reports: { summary: '总结一下当前的资产情况' },
+      },
+    },
     unavailable: 'AI 暂不可用：请在「AI → 模型服务」检查模型',
     openChat: '打开 AI 对话',
     closeChat: '收起 AI 对话',

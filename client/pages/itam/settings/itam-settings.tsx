@@ -252,6 +252,25 @@ function AiCard({
           }
         />
       </div>
+      {/* The ask box at the bottom of pages, for everyone (after NocoCRM's
+          Business defaults switch). */}
+      <div className='flex items-start justify-between gap-4'>
+        <div className='grid gap-1'>
+          <Label htmlFor='ai-assistant-dock'>
+            {t('settings.ai.assistantDock')}
+          </Label>
+          <p className='text-xs text-muted-foreground'>
+            {t('settings.ai.assistantDockHint')}
+          </p>
+        </div>
+        <Switch
+          id='ai-assistant-dock'
+          checked={draft.assistantDock !== false}
+          onCheckedChange={(checked) =>
+            setDraft({ ...draft, assistantDock: checked })
+          }
+        />
+      </div>
     </SettingsCard>
   );
 }

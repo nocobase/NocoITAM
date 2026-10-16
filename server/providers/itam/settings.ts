@@ -57,6 +57,12 @@ export interface ItamSettings {
      */
     readonly onboardingAdvice: boolean;
     /**
+     * Whether the ask box floats at the bottom of pages (2026-10-16, after
+     * NocoCRM's); off, the assistant is asked from the header's ✨ button.
+     * For everyone.
+     */
+    readonly assistantDock: boolean;
+    /**
      * Whether the AI plugin's own built-in employees were switched off once,
      * so the application's assistant is the one people meet. Set by the
      * registrar (`ai/index.ts`), not shown on the settings page; an
@@ -116,6 +122,7 @@ export const DEFAULT_ITAM_SETTINGS: ItamSettings = {
   ai: {
     businessNotes: '',
     onboardingAdvice: true,
+    assistantDock: true,
     builtInEmployeesDisabled: false,
     offeredSkills: null,
   },

@@ -76,6 +76,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { useAiPageContext } from '@/lib/itam/ai-chat';
 import { useAnnounce } from '@/lib/itam/announce';
 import {
   apiErrorBody,
@@ -189,6 +190,21 @@ export default function DeviceDetailPage(): ReactElement {
   );
 
   const data = device.data;
+  // The device, offered to the assistant: its chip sits in the chat's
+  // composer, and the ask box at the bottom of the page asks about it
+  // (2026-10-16, after NocoCRM's).
+  useAiPageContext(
+    data
+      ? {
+          kind: 'devices',
+          id,
+          label:
+            [text(data.deviceNo), text(data.name)]
+              .filter(Boolean)
+              .join(' / ') || id,
+        }
+      : null,
+  );
   // The same strip the record drawer shows for a device. Its hooks run on
   // every render, so it sits with the other hooks, above the early returns.
   const summary = RECORD_SUMMARIES.devices.items(data ?? { id }, t);

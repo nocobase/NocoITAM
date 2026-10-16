@@ -51,7 +51,9 @@ import {
   type ItamRecord,
 } from '@/lib/itam/api';
 import { attachmentCount, useAttachmentGroups } from '@/lib/itam/attachments';
+import { useAiPageContext } from '@/lib/itam/ai-chat';
 import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
+import { recordKindOf } from '@/lib/itam/record-kind';
 import type { DomainConfig } from '@/lib/itam/domain';
 import { resolveFormField, type FieldDefinition } from '@/lib/itam/fields';
 import { errorMessage, formatDate, text } from '@/lib/itam/format';
@@ -155,6 +157,19 @@ export function DomainDetailPage({
     [domain.fields, data],
   );
   const names = useReferenceNames(referenceRequests);
+  // The record this page shows, offered to the assistant: its chip sits in
+  // the chat's composer, and the ask box at the bottom of the page asks
+  // about it (2026-10-16, after NocoCRM's).
+  const recordKind = recordKindOf(domain.path);
+  useAiPageContext(
+    recordKind && data
+      ? {
+          kind: recordKind,
+          id,
+          label: text(data[domain.nameField]) || id,
+        }
+      : null,
+  );
   const nameOf = (collection: string, value: unknown) =>
     value ? names[collection]?.get(text(value)) : undefined;
 

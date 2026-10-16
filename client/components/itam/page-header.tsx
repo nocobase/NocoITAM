@@ -75,8 +75,10 @@ export function Page({
     <section
       // A filled page is a board: it takes the window's whole width, since
       // every column more on screen is a status the reader need not scroll
-      // to, where a form or a table reads best at a measured width.
-      className={`@container mx-auto w-full space-y-6 p-6 ${fill ? 'flex h-full flex-col' : 'max-w-7xl'}`}
+      // to, where a form or a table reads best at a measured width. Its
+      // foot keeps room for the ask box floating over the bottom of the
+      // page (assistant-dock.tsx), so the last row scrolls clear of it.
+      className={`@container mx-auto w-full space-y-6 p-6 ${fill ? 'flex h-full flex-col pb-20' : 'max-w-7xl pb-24'}`}
     >
       {children}
     </section>

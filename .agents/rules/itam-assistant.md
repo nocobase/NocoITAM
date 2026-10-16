@@ -82,7 +82,25 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   header's ✨ button (`AgentChatButton`) leads the header's actions in the
   theme button's frame with the sparkle in the primary colour, toggles the
   panel as ⌘J does, and while `/itam/ai/status` says the assistant cannot
-  answer stays, disabled, saying why (`ai.unavailable`). A page offers what it
+  answer stays, disabled, saying why (`ai.unavailable`). An ask box floats
+  at the bottom of the main column (`AssistantDock` in
+  `client/components/itam/ai/assistant-dock.tsx`, ported from NocoCRM's dock
+  on 2026-10-16, mounted inside `<main>` in `app-layout.tsx`): one line
+  ("问任何问题…", or "问关于「…」的问题…" on a record's page) until focused,
+  then the ask composer (`ask-composer.tsx`) with files and the model, and
+  the page's suggested questions above it (`RECORD_QUESTIONS` by the kind
+  of record the page offers, else `PAGE_QUESTIONS` by path; `ai.dock.q.*`).
+  A question starts a new conversation about that record and opens the
+  panel on it (`useAskAgent` in `client/lib/itam/ask.ts`); on a phone it is
+  a round ✨ button that opens the panel with the record pinned. It hides
+  while the panel is open, on the workbench, a conversation's page and
+  设置, and for everyone when 设置 → 通用 → AI 助手 switches it off
+  (`ai.assistantDock`, on by default); its border is `.itam-ai-border` in
+  `client/styles.css`, mixed in oklab since this theme's card colour carries
+  a hue of 0. `Page` and `DetailPage` keep room at their foot for it. The
+  generic detail page and the device page offer their record to the chat
+  (`useAiPageContext` with `recordKindOf`, `client/lib/itam/record-kind.ts`)
+  so the box, and the panel's composer, know it. A page offers what it
   shows through `useAiPageContext({ kind, id, label })`
   (`client/lib/itam/ai-chat.tsx`): the record's chip sits above the composer
   and `ask(prompt)` starts a conversation with it pinned. A page context

@@ -18,6 +18,7 @@ import { useApi } from '@/lib/itam/api';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { formatDate, formatMoney, relativeTime, text } from '@/lib/itam/format';
 import { HistoryIcon } from '@/lib/itam/history-icons';
+import { recordKindOf } from '@/lib/itam/record-kind';
 import { referenceRoute, useReferenceNames } from '@/lib/itam/references';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import {
@@ -85,35 +86,6 @@ export interface TimelineItem {
   readonly replies?: readonly HistoryEvent[];
 }
 
-/**
- * The collection a history's API path writes its comments under — the
- * subjects `server/providers/itam/comments.ts` keeps them on.
- */
-const COMMENT_SUBJECTS: Readonly<Record<string, string>> = {
-  'itam/devices': 'devices',
-  'itam/stock': 'stockItems',
-  'itam/entitlements': 'entitlements',
-  'itam/purchase-orders': 'purchaseOrders',
-  'itam/repairs': 'repairs',
-  'itam/disposals': 'disposals',
-  'itam/audits': 'auditTasks',
-};
-const MASTER_SUBJECTS = new Set([
-  'people',
-  'models',
-  'softwareProducts',
-  'categories',
-  'manufacturers',
-  'vendors',
-  'locations',
-  'departments',
-]);
-function commentSubjectOf(path: string): string | undefined {
-  const master = /^itam\/master\/(\w+)$/.exec(path)?.[1];
-  if (master) return MASTER_SUBJECTS.has(master) ? master : undefined;
-  return COMMENT_SUBJECTS[path];
-}
-
 interface PageResult<T> {
   readonly data: readonly T[];
   readonly total: number;
@@ -158,7 +130,7 @@ export function HistoryTimeline({
   const { t, i18n } = useTranslation();
   const api = useApi();
   const colleagues = useColleagues();
-  const subjectType = commentSubjectOf(path);
+  const subjectType = recordKindOf(path);
   const [pages, setPages] = useState(1);
   const pageSize = 30;
   const query = useQuery({

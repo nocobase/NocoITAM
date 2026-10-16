@@ -273,7 +273,7 @@
   ):focus-visible:not([aria-invalid='true']),
 label:has(> .sr-only:focus-visible),
 [data-slot='rich-text-editor']:focus-within,
-[data-slot='input-group']:has(
+[data-slot='input-group']:not(.itam-ai-border):has(
     [data-slot='input-group-control']:focus-visible
   ):not(:has([aria-invalid='true'])) {
   border-color: color-mix(in oklch, var(--ring) 50%, transparent);
@@ -693,4 +693,32 @@ label:has(> .sr-only:focus-visible),
     right: 28rem;
     transition: right 200ms ease-in-out;
   }
+}
+
+/* Application change (ITAM, 2026-10-16, after NocoCRM's `.crm-ai-border`):
+   the ask box at the bottom of pages (assistant-dock.tsx) — a faint border
+   of the AI colour over the card, with a soft glow, both firmer while it has
+   focus. A floating box adds its lift through `--itam-ai-lift`. The global
+   focus rule above leaves it to this. */
+.itam-ai-border {
+  --itam-ai-line: 32%;
+  /* In oklab, not NocoCRM's oklch: this theme's card is oklch(1 0 0),
+     whose hue of 0 would swing the blue's hue toward red on the way. */
+  border-color: color-mix(
+    in oklab,
+    var(--primary) var(--itam-ai-line),
+    var(--card)
+  );
+  background-color: var(--card);
+  box-shadow:
+    0 0 0 2px color-mix(in oklch, var(--primary) 5%, transparent),
+    0 4px 14px -8px color-mix(in oklch, var(--primary) 24%, transparent),
+    var(--itam-ai-lift, 0 0 #0000);
+}
+.itam-ai-border:focus-within {
+  --itam-ai-line: 55%;
+  box-shadow:
+    0 0 0 2px color-mix(in oklch, var(--primary) 12%, transparent),
+    0 6px 18px -8px color-mix(in oklch, var(--primary) 32%, transparent),
+    var(--itam-ai-lift, 0 0 #0000);
 }

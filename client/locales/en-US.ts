@@ -2628,6 +2628,9 @@ const messages = {
       onboardingAdvice: 'Onboarding suggestions',
       onboardingAdviceHint:
         "On a joiner's onboarding card, their onboarding owner can ask Noco to choose devices, accessories and seats from stock in the background, with a reason for each, then confirm or change them. Off, it prepares them only in a conversation.",
+      assistantDock: 'Ask box at the bottom of pages',
+      assistantDockHint:
+        'For everyone. Off, the AI is asked from the ✨ button at the top right.',
     },
     demo: {
       title: 'Demo data',
@@ -2946,6 +2949,71 @@ const messages = {
   },
   ai: {
     ask: 'Ask AI',
+    dock: {
+      placeholder: 'Ask anything…',
+      placeholderAbout: 'Ask about "{{name}}"…',
+      attach: 'Attach files',
+      model: 'Model',
+      send: 'Send',
+      suggestions: 'Suggested questions',
+      removeFile: 'Remove {{name}}',
+      tooManyFiles: 'At most {{count}} files at a time',
+      fileTooLarge: '{{name}} is too large and was not attached',
+      uploadFailed: '{{name}} could not be uploaded',
+      q: {
+        device: {
+          state: 'Where does this device stand?',
+          repairOrReplace: 'Should this device be repaired or replaced?',
+          history: "Sum up this device's history",
+        },
+        person: {
+          holdings: 'Which devices and seats do they hold?',
+          next: 'What needs doing for them next?',
+        },
+        order: {
+          state: 'How far along is this purchase order?',
+          arrival: 'What has not arrived yet?',
+        },
+        entitlement: {
+          seats: 'How are the seats assigned?',
+          renewal: 'When does this renew, and should it?',
+        },
+        stock: {
+          level: 'Is there enough of this item?',
+          low: 'Which items are below their minimum and need restocking?',
+        },
+        repair: { state: 'How is this repair going?' },
+        disposal: { next: "What is this disposal's next step?" },
+        audit: {
+          differences: 'Which differences of this stocktake need handling?',
+        },
+        model: {
+          devices: 'Where are the devices of this model, and in what state?',
+        },
+        devices: {
+          idle: 'Which devices have been idle too long?',
+          warranty: 'Which devices are going out of warranty soon?',
+        },
+        entitlements: {
+          renewing: 'Which subscriptions are about to renew?',
+          overAllocated: 'Are any entitlements over-allocated?',
+        },
+        procurement: {
+          waiting: 'Which purchase orders are waiting on me?',
+          late: 'Which purchase orders are overdue?',
+        },
+        repairs: {
+          open: 'Which devices are being repaired, and how is it going?',
+        },
+        people: {
+          leavers: 'What have recent leavers not handed back yet?',
+          joiners: "Are the joiners' kits ready?",
+        },
+        audits: { progress: 'How are the stocktakes under way going?' },
+        disposals: { waiting: 'Which disposals are waiting?' },
+        reports: { summary: 'Sum up where the assets stand' },
+      },
+    },
     unavailable: 'AI is unavailable: check the models in AI → Model services',
     openChat: 'Open the AI chat',
     closeChat: 'Close the AI chat',

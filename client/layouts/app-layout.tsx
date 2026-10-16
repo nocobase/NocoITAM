@@ -21,6 +21,7 @@ import { RouteTreeProvider } from '../routing/route-context.js';
 import { PageBreadcrumbProvider } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 
+import { AssistantDock } from '@/components/itam/ai/assistant-dock';
 import { AgentChatShell } from './agent-chat.js';
 import { LayoutHeader } from './components/layout-header.js';
 import {
@@ -122,6 +123,9 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                         <GlobalSearchDialog />
                       </RecordDrawerProvider>
                     </div>
+                    {/* Application change (ITAM): the ask box floating at
+                        the bottom of the main column (after NocoCRM's). */}
+                    <AssistantDock />
                   </main>
                 </div>
               </div>

@@ -89,7 +89,9 @@ export function DetailPage({
       {/* Breakpoints follow the page's own width (container queries), not
           the window's: the same page shown in the record drawer lays out
           like a narrow screen. */}
-      <section className='@container mx-auto w-full max-w-7xl space-y-6 p-6'>
+      {/* pb-24: room at the foot for the ask box floating over the page
+          (assistant-dock.tsx). */}
+      <section className='@container mx-auto w-full max-w-7xl space-y-6 p-6 pb-24'>
         {notice}
         {/* The actions sit beside the title when both fit on one line and
             wrap below it when the title is too long — decided by the

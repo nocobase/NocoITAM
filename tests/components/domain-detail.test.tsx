@@ -30,6 +30,10 @@ vi.mock('../../client/lib/itam/api.js', () => ({
   useRelatedCounts: () => [],
   useRowCounts: () => [],
 }));
+// The page offers its record to the assistant, whose runtime is not mounted.
+vi.mock('../../client/lib/itam/ai-chat.js', () => ({
+  useAiPageContext: () => ({ available: false, ask: () => undefined }),
+}));
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCollectionPermissions: () => ({ update: state.allowed, delete: false }),
   // A purchase order is edited by the side that raised it, so the page has
