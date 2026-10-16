@@ -3383,6 +3383,35 @@ const zhCN: AppResource = {
     failedHint:
       '这次没整理出来，可以到 MDM 核对页查看，或者等下次同步后再整理。',
   },
+  loginActivity: {
+    heading: '每一台设备在哪、谁在用，一目了然。',
+    description:
+      '到货、发放、送修、报废，设备每走一步都记进台账；MDM 同步和盘点随时把账和实物对上。',
+    zones: {
+      warehouse: '仓库',
+      floor: '3 楼工位',
+      supplier: '供应商',
+      repair: '维修商',
+      recycler: '回收商',
+    },
+    outside: '公司外',
+    idle: '台账已就绪',
+    statuses: {
+      inUse: '在用',
+      inStock: '库存',
+      inRepair: '维修中',
+      disposal: '待报废',
+    },
+    events: {
+      received: { device: 'PO-000052', what: '两台显示器到货，按送货单入库' },
+      assigned: { device: 'SG-LT-061', what: '发给新员工孙浩' },
+      repair: { device: 'SG-LT-018', what: '屏幕碎裂，送去维修' },
+      synced: { device: 'Intune', what: '同步完成，在用设备与台账一致' },
+      repaired: { device: 'SG-LT-018', what: '修好了，送回工位' },
+      disposed: { device: 'SG-PR-002', what: '报废，交给回收商' },
+      counted: { device: '盘点', what: '仓库和 3 楼全部对上' },
+    },
+  },
 };
 
 export default zhCN;
