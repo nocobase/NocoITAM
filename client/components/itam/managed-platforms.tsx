@@ -2,9 +2,9 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { ExternalLink, Unlink } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from './confirm-dialog.js';
+import { DifferenceTag } from './difference-tag.js';
 import { HolderLink } from './holder-link.js';
 import { InfoRow, InfoSection } from './detail-page.js';
 import {
@@ -224,12 +224,7 @@ function PlatformRecord({
         )}
         {otherUser ? (
           <>
-            <Badge
-              data-size='sm'
-              className='bg-warning text-warning-foreground'
-            >
-              {t('deviceSync.checks.otherUserTag')}
-            </Badge>
+            <DifferenceTag>{t('deviceSync.checks.otherUserTag')}</DifferenceTag>
             {onTransfer ? (
               <Button size='sm' variant='outline' onClick={onTransfer}>
                 {t('deviceSync.checks.transferTo', {
@@ -247,18 +242,11 @@ function PlatformRecord({
         <LastSync value={record.lastSyncAt} silent={silent} />
         {offDuty ? (
           <>
-            <Badge
-              data-size='sm'
-              className={
-                offDuty.critical
-                  ? 'bg-destructive/10 text-destructive'
-                  : 'bg-warning text-warning-foreground'
-              }
-            >
+            <DifferenceTag critical={offDuty.critical}>
               {t('deviceSync.checks.statusTag', {
                 status: t(`enums.deviceStatus.${offDuty.status}`),
               })}
-            </Badge>
+            </DifferenceTag>
             {offDuty.status === 'inStock' && onAssign ? (
               <Button size='sm' variant='outline' onClick={onAssign}>
                 {t('deviceSync.checks.assignTo', {
@@ -301,9 +289,9 @@ function PlatformRecord({
         <span className='flex items-center gap-2 text-sm font-medium'>
           {source}
           {record.goneAt ? (
-            <Badge variant='outline' data-size='sm'>
+            <DifferenceTag>
               {t('deviceSync.gone', { date: formatDate(record.goneAt) })}
-            </Badge>
+            </DifferenceTag>
           ) : null}
         </span>
         <span className='flex items-center gap-3'>
@@ -376,12 +364,9 @@ function LastSync({
     <span title={formatDate(value, true)}>
       {formatDate(value, true)}
       {silent ? (
-        <Badge
-          data-size='sm'
-          className='ml-2 bg-warning text-warning-foreground'
-        >
+        <DifferenceTag className='ml-2'>
           {t('deviceSync.daysAgo', { count: days })}
-        </Badge>
+        </DifferenceTag>
       ) : (
         <span className='ml-2 text-muted-foreground'>
           {days <= 0

@@ -13,6 +13,7 @@ import {
 } from '@/components/itam/board-card-specs';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
+import { DifferenceTag } from '@/components/itam/difference-tag';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
@@ -389,16 +390,9 @@ function RecordCard({
       {/* 设备核对: what the platform says otherwise (device sync). */}
       {record.check ? (
         <p className='mt-1.5 flex min-w-0 items-center gap-1.5 text-xs'>
-          <span
-            className={cn(
-              'shrink-0 rounded-md px-1.5 py-0.5 font-medium',
-              record.check.critical
-                ? 'bg-destructive/10 text-destructive'
-                : 'bg-warning text-warning-foreground',
-            )}
-          >
+          <DifferenceTag critical={record.check.critical}>
             {t(`deviceSync.checks.kinds.${record.check.kind}`)}
-          </span>
+          </DifferenceTag>
           {record.check.userName ? (
             <span className='min-w-0 truncate text-muted-foreground'>
               {t('deviceSync.checks.platformUser', {

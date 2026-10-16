@@ -10,6 +10,7 @@ import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { EmptyState } from '@/components/itam/empty-state';
 import { HistoryBackButton } from '@/components/itam/history-back-button';
 import { CellText } from '@/components/itam/cell-text';
+import { DifferenceTag } from '@/components/itam/difference-tag';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { HolderLink } from '@/components/itam/holder-link';
 import { Page, PageHeader } from '@/components/itam/page-header';
@@ -357,9 +358,9 @@ function ChecksView(): ReactElement {
                   </CellText>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={row.critical ? 'destructive' : 'outline'}>
+                  <DifferenceTag critical={row.critical}>
                     {t(`deviceSync.checks.kinds.${row.kind}`)}
-                  </Badge>
+                  </DifferenceTag>
                   {row.kind === 'statusMismatch' ? (
                     <span className='ml-2 text-xs text-muted-foreground'>
                       {t(`enums.deviceStatus.${row.status}`)}
@@ -1092,7 +1093,7 @@ function RecordsView({
                           .join(' · ')}
                       </span>
                       {row.ownership === 'personal' ? (
-                        <Badge variant='outline' data-size='sm'>
+                        <Badge variant='outline'>
                           {t('deviceSync.ownership.personal')}
                         </Badge>
                       ) : null}

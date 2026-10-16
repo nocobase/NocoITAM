@@ -150,6 +150,14 @@ product or in release notes, until it is listed here.
   device again should it drop off the platform. Categories stay the coarse
   rule; this is the per-device exception. Noco reads it as
   `--view exempted` and in a device's `exemption`.
+- **One tag for a difference (2026-10-16)**: `DifferenceTag`
+  (`client/components/itam/difference-tag.tsx`) — the 注意 tone, or the
+  destructive tag when critical — marks a difference everywhere: on the
+  device page's MDM records (no notices there any more: 失联 on the last
+  sync's age, 已不在平台中 by the platform's name, another user beside the
+  primary user with 调拨, an off-duty status beside the last sync with 分配
+  or 恢复为库存中), in MDM 核对's 信息不一致 and on 待办's MDM 核对 cards.
+  忽略 and asking Noco are MDM 核对's, not the device page's.
 - **Loose ends closed (2026-10-16)**: a record kept off the register
   (不纳入台账) is linked once the register has one device of its serial —
   by `matchDevice` at once, or by the next pull — and its ignore cleared;
