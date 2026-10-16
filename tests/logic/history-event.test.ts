@@ -48,11 +48,11 @@ it('translates counted events in both languages without rewriting comments', asy
     'Received 2 × Dock',
   );
   expect(describe('created', 'Created with 4 seat(s)', { seatCount: 4 })).toBe(
-    '创建，总席位 4',
+    '总席位 4',
   );
   expect(
     describe('created', 'Created with unlimited seats', { seatCount: null }),
-  ).toBe('创建，席位不限');
+  ).toBe('席位不限');
   expect(describe('note', 'User typed this')).toBe('User typed this');
   await runtime.changeLanguage('en-US');
   expect(describe('seatsAdded', 'Seats added: 2', { quantity: 2 })).toBe(
