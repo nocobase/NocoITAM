@@ -254,7 +254,7 @@ describe("a device's differences with the platform", () => {
     actions.onAssign.mockReset();
   });
 
-  it('offers to transfer to the platform user, or to keep the register', () => {
+  it('offers to transfer to the platform user, and nothing else', () => {
     state.managed = { data: [record], connected: true, checks: [check({})] };
     render(
       <MemoryRouter>
@@ -268,20 +268,30 @@ describe("a device's differences with the platform", () => {
       screen.getByRole('button', { name: 'deviceSync.checks.transferTo' }),
     );
     expect(actions.onTransfer).toHaveBeenCalledWith('person-b');
-    fireEvent.click(
-      screen.getByRole('button', { name: 'deviceSync.checks.keepRegister' }),
+    // 忽略 and Noco are MDM 核对's, not the device page's (2026-10-16).
+    expect(
+      screen.queryByRole('button', { name: 'deviceSync.checks.keepRegister' }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'deviceSync.prompts.checkAction' }),
+    ).toBeNull();
+  });
+
+  it('marks a silent record’s last sync rather than raising a notice', () => {
+    state.managed = {
+      data: [record],
+      connected: true,
+      checks: [check({ kind: 'stale', managedDeviceId: record.id })],
+    };
+    render(
+      <MemoryRouter>
+        <ManagedPlatforms deviceId='d1' actions={actions} />
+      </MemoryRouter>,
     );
-    // At once: it is listed under 已忽略, where 恢复 takes it back.
-    expect(state.review).toHaveBeenCalledWith({
-      kind: 'dismiss',
-      deviceId: 'd1',
-      check: 'userMismatch',
-    });
-    // And asks Noco about it, naming the device and the difference.
-    fireEvent.click(
-      screen.getByRole('button', { name: 'deviceSync.prompts.checkAction' }),
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText(/deviceSync\.daysAgo/).className).toContain(
+      'bg-warning',
     );
-    expect(state.ask).toHaveBeenCalledWith('deviceSync.prompts.check');
   });
 
   it('offers to assign a shelved device to whoever is using it', () => {

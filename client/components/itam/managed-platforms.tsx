@@ -5,7 +5,6 @@ import { useState, type ReactElement, type ReactNode } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AiShortcut } from './ai/ai-shortcut.js';
 import { ConfirmDialog } from './confirm-dialog.js';
 import { HolderLink } from './holder-link.js';
 import { InfoRow, InfoSection } from './detail-page.js';
@@ -17,7 +16,6 @@ import {
   type ManagedDevice,
 } from '@/lib/itam/device-sync';
 import { useReferenceNames } from '@/lib/itam/references';
-import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate, toDate } from '@/lib/itam/format';
 
 /** What the device's page offers to settle a difference with. */
@@ -61,9 +59,13 @@ export function ManagedPlatforms({
   return (
     <InfoSection title={t('deviceSync.group')}>
       {/* Where the platforms and the register disagree (step 2), first. */}
-      {checks.map((check) => (
-        <CheckNotice key={check.kind} check={check} actions={actions} />
-      ))}
+      {/* A notice only for a difference with something to do about it
+          (2026-10-16): silence is the record's own last sync, marked. */}
+      {checks
+        .filter((check) => check.kind !== 'stale')
+        .map((check) => (
+          <CheckNotice key={check.kind} check={check} actions={actions} />
+        ))}
       {records.length === 0 && exemption ? (
         <ExemptionNotice
           deviceId={deviceId}
@@ -89,6 +91,10 @@ export function ManagedPlatforms({
               key={record.id}
               record={record}
               editable={actions?.editable ?? false}
+              silent={checks.some(
+                (check) =>
+                  check.kind === 'stale' && check.managedDeviceId === record.id,
+              )}
             />
           ))}
         </div>
@@ -159,25 +165,17 @@ function CheckNotice({
   readonly actions?: CheckActions;
 }): ReactElement {
   const { t } = useTranslation();
-  const ai = useItamAi();
-  const review = useDeviceReviewAction();
-  const [now] = useState(() => Date.now());
   const source = t(`deviceSync.sources.${check.source}`);
   const user = check.userName ?? '';
-  const synced = toDate(check.lastSyncAt);
-  const days = synced ? Math.floor((now - synced.getTime()) / 86_400_000) : 0;
+  // 失联 has no notice: its record's last sync is marked instead.
   const sentence =
-    check.kind === 'stale'
-      ? check.goneAt
-        ? t('deviceSync.checks.goneSentence', { source })
-        : t('deviceSync.checks.staleSentence', { count: days, source })
-      : check.kind === 'userMismatch'
-        ? t('deviceSync.checks.userSentence', { user, source })
-        : t('deviceSync.checks.statusSentence', {
-            status: t(`enums.deviceStatus.${check.status}`),
-            date: formatDate(check.lastSyncAt),
-            source,
-          });
+    check.kind === 'userMismatch'
+      ? t('deviceSync.checks.userSentence', { user, source })
+      : t('deviceSync.checks.statusSentence', {
+          status: t(`enums.deviceStatus.${check.status}`),
+          date: formatDate(check.lastSyncAt),
+          source,
+        });
   const editable = actions?.editable ?? false;
   return (
     <Alert
@@ -192,7 +190,13 @@ function CheckNotice({
       <AlertTriangle />
       <AlertDescription className='flex flex-col gap-2'>
         <span>{sentence}</span>
-        {editable ? (
+        {/* The register's own acts only (2026-10-16): 忽略 is MDM 核对's,
+            where what was ignored is listed and taken back. */}
+        {editable &&
+        ((check.kind === 'userMismatch' && check.personId) ||
+          (check.kind === 'statusMismatch' &&
+            ((check.status === 'inStock' && check.personId) ||
+              check.status === 'lost'))) ? (
           <span className='flex flex-wrap gap-2'>
             {check.kind === 'userMismatch' && check.personId ? (
               <Button
@@ -223,41 +227,7 @@ function CheckNotice({
                 {t('deviceSync.checks.restore')}
               </Button>
             ) : null}
-            <Button
-              size='sm'
-              variant='outline'
-              disabled={review.isPending}
-              // At once (2026-10-16): 恢复 on MDM 核对 takes it back.
-              onClick={() =>
-                review.mutate({
-                  kind: 'dismiss',
-                  deviceId: check.deviceId,
-                  check: check.kind,
-                })
-              }
-            >
-              {t('deviceSync.checks.keepRegister')}
-            </Button>
           </span>
-        ) : null}
-        {/* Why it is so and what to do, by the device-sync skill (step 4). */}
-        {ai.available ? (
-          <AiShortcut
-            onClick={() =>
-              ai.ask(
-                t('deviceSync.prompts.check', {
-                  device:
-                    [check.deviceNo, check.deviceName]
-                      .filter(Boolean)
-                      .join(' / ') || check.deviceId,
-                  id: check.deviceId,
-                  kind: t(`deviceSync.checks.kinds.${check.kind}`),
-                }),
-              )
-            }
-          >
-            {t('deviceSync.prompts.checkAction')}
-          </AiShortcut>
         ) : null}
       </AlertDescription>
     </Alert>
@@ -267,9 +237,12 @@ function CheckNotice({
 function PlatformRecord({
   record,
   editable,
+  silent = false,
 }: {
   readonly record: ManagedDevice;
   readonly editable: boolean;
+  /** The record a 失联 was read from: its last sync is marked. */
+  readonly silent?: boolean;
 }): ReactElement {
   const { t } = useTranslation();
   const review = useDeviceReviewAction();
@@ -301,7 +274,7 @@ function PlatformRecord({
     ],
     [
       'deviceSync.fields.lastSync',
-      <LastSync key='lastSync' value={record.lastSyncAt} />,
+      <LastSync key='lastSync' value={record.lastSyncAt} silent={silent} />,
     ],
     ['deviceSync.fields.enrolledAt', formatDate(record.enrolledAt)],
     [
@@ -386,7 +359,14 @@ function PlatformRecord({
 }
 
 /** When the platform last heard from the device, and how long ago that is. */
-function LastSync({ value }: { readonly value: string | null }): ReactElement {
+function LastSync({
+  value,
+  silent = false,
+}: {
+  readonly value: string | null;
+  /** Too long ago for a device in use: the age reads as a warning tag. */
+  readonly silent?: boolean;
+}): ReactElement {
   const { t } = useTranslation();
   // The moment the page opened is "now": how long ago need not tick.
   const [now] = useState(() => Date.now());
@@ -396,11 +376,20 @@ function LastSync({ value }: { readonly value: string | null }): ReactElement {
   return (
     <span title={formatDate(value, true)}>
       {formatDate(value, true)}
-      <span className='ml-2 text-muted-foreground'>
-        {days <= 0
-          ? t('deviceSync.today')
-          : t('deviceSync.daysAgo', { count: days })}
-      </span>
+      {silent ? (
+        <Badge
+          data-size='sm'
+          className='ml-2 bg-warning text-warning-foreground'
+        >
+          {t('deviceSync.daysAgo', { count: days })}
+        </Badge>
+      ) : (
+        <span className='ml-2 text-muted-foreground'>
+          {days <= 0
+            ? t('deviceSync.today')
+            : t('deviceSync.daysAgo', { count: days })}
+        </span>
+      )}
     </span>
   );
 }

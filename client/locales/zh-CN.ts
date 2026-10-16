@@ -1924,9 +1924,6 @@ const zhCN: AppResource = {
     notOnRegister: '（台账未登记）',
     unknownDevice: '未知设备',
     prompts: {
-      checkAction: '让 Noco 看看',
-      check:
-        '请按「MDM 核对」技能（device-sync）看看设备 {{device}}（id：{{id}}）的这项差异：{{kind}}。说说最可能是怎么回事、怎么核实；能在台账上处理的，提出一份计划。',
       checksAction: '让 Noco 解释这些差异',
       checks:
         '请按「MDM 核对」技能（device-sync）看看现在所有 MDM 信息不一致的设备：最要紧的先说，每条说明最可能的原因和怎么核实；能在台账上处理的，整理成一份计划。',
@@ -1940,9 +1937,6 @@ const zhCN: AppResource = {
         userMismatch: '使用人不一致',
         statusMismatch: '状态不符',
       },
-      goneSentence: '{{source}} 已不再报告这台设备，台账上它仍在使用',
-      staleSentence_one: '在用设备已 {{count}} 天没有在 {{source}} 同步',
-      staleSentence_other: '在用设备已 {{count}} 天没有在 {{source}} 同步',
       userSentence: '{{source}} 上的主用户是 {{user}}，台账分配给了别人',
       statusSentence:
         '台账状态是「{{status}}」，但 {{date}} 仍在 {{source}} 同步',

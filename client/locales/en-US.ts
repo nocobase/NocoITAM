@@ -2015,9 +2015,6 @@ const messages = {
     notOnRegister: '(not on the register)',
     unknownDevice: 'Unknown device',
     prompts: {
-      checkAction: 'Ask Noco',
-      check:
-        'Using the device sync method, look at device {{device}} (id: {{id}}) and this difference: {{kind}}. Say what most likely happened and how to check it; propose a plan for what can be settled on the register.',
       checksAction: 'Let Noco explain these',
       checks:
         'Using the device sync method, go through every device where MDM and the register disagree: the most urgent first, each with its most likely cause and how to check it; put what can be settled on the register into one plan.',
@@ -2031,12 +2028,6 @@ const messages = {
         userMismatch: 'Other user',
         statusMismatch: 'Status differs',
       },
-      goneSentence:
-        '{{source}} no longer reports this device, which the register has in use',
-      staleSentence_one:
-        'In use, yet not synced with {{source}} for {{count}} day',
-      staleSentence_other:
-        'In use, yet not synced with {{source}} for {{count}} days',
       userSentence:
         'Its primary user on {{source}} is {{user}}; the register has it with someone else',
       statusSentence:
