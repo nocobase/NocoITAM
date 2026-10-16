@@ -8,6 +8,7 @@ import {
   type AgentRun,
 } from '../../server/providers/itam/agent-runs.js';
 import type { ObservedDevice } from '../../server/providers/itam/device-sources.js';
+import { deviceReviewServiceToken } from '../../server/providers/itam/device-review.js';
 import { deviceSyncFollowUpToken } from '../../server/providers/itam/device-sync-followup.js';
 import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.js';
 import { planServiceToken } from '../../server/providers/itam/plans.js';
@@ -17,9 +18,11 @@ import { createTestApp, json, type TestApp } from '../support/test-app.js';
 
 // The model the follow-up asks: it answers with the test's decisions, and
 // what it was asked is kept. There is no Agents plugin in the test harness.
+type Item = Record<string, unknown> & { ref: string; kind: string };
 const model = vi.hoisted(() => ({
   asked: [] as string[],
-  decisions: [] as { subject: string; action: string; target?: string }[],
+  // The decision for each item the prompt lists; none means verify.
+  decide: (() => null) as (item: Item) => Record<string, unknown> | null,
 }));
 vi.mock('../../server/providers/itam/ai-model.js', async (importOriginal) => ({
   ...(await importOriginal<
@@ -30,7 +33,17 @@ vi.mock('../../server/providers/itam/ai-model.js', async (importOriginal) => ({
     ask: async () => '',
     askJson: async (content: string) => {
       model.asked.push(content);
-      return { decisions: model.decisions };
+      const items = JSON.parse(
+        /<items>\n(.*)\n<\/items>/s.exec(content)?.[1] ?? '[]',
+      ) as Item[];
+      return {
+        decisions: items.map((item) => ({
+          item: item.ref,
+          action: 'verify',
+          reason: 'test',
+          ...model.decide(item),
+        })),
+      };
     },
   }),
   readSkill: async () => '# device-sync',
@@ -76,6 +89,7 @@ async function* pagesOf(
 describe('MDM follow-up', () => {
   let app: TestApp;
   let laptop: string;
+  let spare: string;
   let liNa: string;
   let wangWu: string;
   let managers: string[];
@@ -102,22 +116,9 @@ describe('MDM follow-up', () => {
     );
   const latest = (subject: string) =>
     runs().latest('deviceSync', 'deviceSync', subject);
-  const record = async (externalId: string) =>
-    String(
-      (
-        (await app.container
-          .resolve(databaseManagerToken)
-          .query()
-          .selectFrom('managedDevices')
-          .select(['id'])
-          .where('externalId', '=', externalId)
-          .executeTakeFirst()) as { id: unknown }
-      ).id,
-    );
-
   beforeEach(async () => {
     model.asked = [];
-    model.decisions = [];
+    model.decide = () => null;
     managers = ['ann'];
     app = await createTestApp({ seeds: true });
     for (const routes of [masterDataRoutes, deviceRoutes])
@@ -151,6 +152,13 @@ describe('MDM follow-up', () => {
       serialNo: 'SN-LAPTOP',
       ownerId: 'mia',
     });
+    // In stock on the register, yet in use on the platform: 状态不符.
+    spare = await created('devices', {
+      modelId: 'model-thinkpad-t14-gen5',
+      locationId: 'loc-hq',
+      serialNo: 'SN-SPARE',
+      ownerId: 'mia',
+    });
     const assigned = await app.request(`/api/itam/devices/${laptop}/assign`, {
       ...json({ targetType: 'person', targetId: liNa }),
       ...mia,
@@ -166,6 +174,7 @@ describe('MDM follow-up', () => {
           userPrincipal: 'wang.wu@example.com',
           userName: 'Wang Wu',
         }),
+        observed('b', { serialNo: 'SN-SPARE' }),
         observed('x', { serialNo: 'SN-UNKNOWN' }),
       ]),
       'manual',
@@ -177,11 +186,12 @@ describe('MDM follow-up', () => {
   });
 
   it('proposes a plan to the 负责人 and to each asset manager, and carries it out', async () => {
-    const pc = await record('x');
-    model.decisions = [
-      { subject: laptop, action: 'transfer', target: wangWu },
-      { subject: pc, action: 'ignore' },
-    ];
+    model.decide = (item) =>
+      item.kind === 'userMismatch'
+        ? { action: 'transfer', target: wangWu }
+        : item.kind === 'unregistered'
+          ? { action: 'ignore' }
+          : null;
     const started = await followUp().afterSync(null);
     expect(started.map((run) => [run.subjectId, run.deciderId])).toEqual([
       ['owner:mia', 'mia'],
@@ -216,12 +226,11 @@ describe('MDM follow-up', () => {
   });
 
   it('raises nothing again that a person carried out or set aside', async () => {
-    model.decisions = [{ subject: laptop, action: 'verify' }];
     await followUp().afterSync(null);
     const mine = await settled(() => latest('owner:mia'));
-    // Nothing to carry out: a note, no plan.
+    // Nothing to carry out: a note each, no plan.
     expect(mine.result).toMatchObject({ planId: null });
-    expect((mine.result?.notes as string[]).length).toBe(1);
+    expect((mine.result?.notes as string[]).length).toBe(2);
     await followUp().dismiss(mine.id, 'mia');
     const anns = await settled(() => latest('shared:ann'));
     await followUp().dismiss(anns.id, 'ann');
@@ -244,6 +253,50 @@ describe('MDM follow-up', () => {
     // Only its person sets it aside.
     const mine = await settled(() => latest('owner:mia'));
     await expect(followUp().dismiss(mine.id, 'ann')).rejects.toThrow();
+  });
+
+  it('covers every kind: registers a record, and ignores a difference the register has right', async () => {
+    model.decide = (item) =>
+      item.kind === 'statusMismatch'
+        ? { action: 'keep' }
+        : item.kind === 'unregistered'
+          ? { action: 'register', modelId: 'model-thinkpad-t14-gen5' }
+          : null;
+    await followUp().afterSync(null);
+    const mine = await settled(() => latest('owner:mia'));
+    const minePlan = await plans().get('mia', String(mine.result?.planId));
+    expect(minePlan.steps.map((step) => step.op)).toEqual([
+      'dismiss_device_difference',
+    ]);
+    expect(
+      (
+        await plans().execute('mia', minePlan.id, {
+          revision: minePlan.revision,
+        })
+      ).status,
+    ).toBe('executed');
+    const review = app.container.resolve(deviceReviewServiceToken);
+    expect(
+      (await review.checks()).some(
+        (check) => check.deviceId === spare && check.kind === 'statusMismatch',
+      ),
+    ).toBe(false);
+
+    const anns = await settled(() => latest('shared:ann'));
+    const annPlan = await plans().get('ann', String(anns.result?.planId));
+    expect(annPlan.steps.map((step) => step.op)).toEqual(['create_record']);
+    expect(
+      (await plans().execute('ann', annPlan.id, { revision: annPlan.revision }))
+        .status,
+    ).toBe('executed');
+    const registered = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('devices')
+      .select(['locationId'])
+      .where('serialNo', '=', 'SN-UNKNOWN')
+      .executeTakeFirst<{ locationId: unknown }>();
+    expect(registered?.locationId).toBe('loc-hq');
   });
 
   it('runs only while switched on', async () => {

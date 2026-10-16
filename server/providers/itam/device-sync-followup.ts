@@ -16,23 +16,28 @@ import {
 } from './agent-runs.js';
 import { agentOn } from './agent-switches.js';
 import { openSession, readSkill } from './ai-model.js';
+import { z } from 'zod';
 import { asText, type Row } from './collection-query.js';
 import { deviceReviewServiceToken } from './device-review.js';
 import { BusinessRuleError, RecordNotFoundError } from './errors.js';
 import { PlanError, planServiceToken, type PlanOutcome } from './plans.js';
+import { shapeOf } from './ai-model.js';
 import { settingsServiceToken } from './settings.js';
-import { DECISIONS, evalPrompt, type EvalDecision } from './skill-evals.js';
 
 /**
- * MDM 跟进 (2026-10-17): after each pull from a device platform, the
- * differences a person has to judge — a device whose platform user is not
- * its holder (使用人不一致), a platform record the register lacks (只在
- * MDM) — are worked out by Asset Steward with its `device-sync` method and
- * left as a plan waiting in 收件箱, for the person who would settle them on
- * MDM 核对. A 使用人不一致 goes to its device's 负责人; 只在 MDM, which has no
- * 负责人, to each holder of the asset manager permission set, the first to
- * decide settling it for all. The rest of MDM 核对 — 失联, 状态不符, 只在台账
- * — is a rule's to show and stays on 待办.
+ * MDM 跟进 (2026-10-17): after each pull from a device platform, every
+ * item MDM 核对 lists — 失联, 使用人不一致, 状态不符 on a register device,
+ * 只在台账 (a device on no platform), 只在 MDM (a platform record the
+ * register lacks) — is worked out by Asset Steward with its `device-sync`
+ * method and left as a plan waiting in 收件箱, for the person who would
+ * settle it on MDM 核对: a device's items go to its 负责人; a platform record,
+ * which has no 负责人, and a device nobody answers for go to each holder of
+ * the asset manager permission set, the first to decide settling them for
+ * all. What a plan can do is a step — register, link, keep off, transfer,
+ * correct the status, ignore the difference, mark as needing no platform —
+ * each with its reason; what it cannot (find a device that went silent,
+ * enrol one in the platform, ask the platform's administrator) is a note.
+ * It never marks a device lost.
  *
  * Only what is new is looked at: a difference in a suggestion its person
  * carried out or set aside is not raised again; one left waiting comes
@@ -49,14 +54,64 @@ const ASSET_MANAGER_SET = 'itam-asset-manager';
 const HANDLED_DAYS = 90;
 const TURN_MS = 8 * 60_000;
 
+export type FollowUpKind =
+  'stale' | 'userMismatch' | 'statusMismatch' | 'unmanaged' | 'unregistered';
+
 export interface FollowUpItem {
   /** The difference: device, kind and the value seen, or a platform record. */
   readonly key: string;
-  readonly kind: 'userMismatch' | 'unregistered';
-  /** The device (使用人不一致) or the platform record (只在 MDM). */
+  readonly kind: FollowUpKind;
+  /** The device, or the platform record (只在 MDM). */
   readonly subject: string;
   readonly label: string;
 }
+
+/** What the model may decide for an item, and what each becomes. */
+const ACTIONS = [
+  'register',
+  'link',
+  'ignore',
+  'transfer',
+  'assign',
+  'correct',
+  'keep',
+  'exempt',
+  'verify',
+  'escalate',
+] as const;
+
+const ALLOWED: Readonly<Record<FollowUpKind, readonly string[]>> = {
+  stale: ['correct', 'keep', 'verify', 'escalate'],
+  userMismatch: ['transfer', 'assign', 'keep', 'verify', 'escalate'],
+  statusMismatch: ['correct', 'keep', 'verify', 'escalate'],
+  unmanaged: ['exempt', 'verify', 'escalate'],
+  unregistered: ['register', 'link', 'ignore', 'verify'],
+};
+
+/** A status a plan may correct a device to: never lost, which a person finds out. */
+const CORRECT_TO = [
+  'inStock',
+  'inUse',
+  'onLoan',
+  'inRepair',
+  'retired',
+] as const;
+
+const DECIDED = z.object({
+  decisions: z
+    .array(
+      z.object({
+        item: z.string(),
+        action: z.enum(ACTIONS),
+        target: z.string().nullable().optional(),
+        modelId: z.string().nullable().optional(),
+        status: z.string().nullable().optional(),
+        reason: z.string().max(300).nullable().optional(),
+      }),
+    )
+    .max(60),
+});
+type Decision = z.infer<typeof DECIDED>['decisions'][number];
 
 export interface FollowUpResult {
   readonly items: readonly FollowUpItem[];
@@ -80,8 +135,8 @@ export interface DeviceSyncFollowUp {
 export const deviceSyncFollowUpToken: ServiceToken<DeviceSyncFollowUp> =
   createServiceToken<DeviceSyncFollowUp>('itam/device-sync-followup');
 
-const userKey = (deviceId: string, value: unknown) =>
-  `${deviceId}|userMismatch|${asText(value) ?? ''}`;
+const checkKey = (deviceId: string, kind: string, value: unknown) =>
+  `${deviceId}|${kind}|${asText(value) ?? ''}`;
 const recordKey = (id: string, state: unknown) =>
   `${id}|unregistered|${asText(state) ?? ''}`;
 
@@ -149,34 +204,36 @@ export function createDeviceSyncFollowUp(dependencies: {
     const done = await handled();
     const byOwner = new Map<string, FollowUpItem[]>();
     const shared: FollowUpItem[] = [];
-    for (const check of await review().checks()) {
-      if (check.kind !== 'userMismatch') continue;
-      const key = userKey(check.deviceId, check.value);
-      if (done.has(key)) continue;
-      const item: FollowUpItem = {
-        key,
-        kind: 'userMismatch',
-        subject: check.deviceId,
-        label: [check.deviceNo, check.deviceName].filter(Boolean).join(' / '),
-      };
-      const owner = asText(check.ownerId);
-      // A device nobody answers for is the asset managers', as a record
-      // the register lacks is.
+    // A device nobody answers for is the asset managers', as a record the
+    // register lacks is.
+    const add = (owner: string | undefined, item: FollowUpItem) => {
+      if (done.has(item.key)) return;
       if (owner) byOwner.set(owner, [...(byOwner.get(owner) ?? []), item]);
       else shared.push(item);
-    }
-    for (const record of await review().unregistered()) {
-      const key = recordKey(record.id, record.matchState);
-      if (done.has(key)) continue;
-      shared.push({
-        key,
+    };
+    for (const check of await review().checks())
+      add(asText(check.ownerId), {
+        key: checkKey(check.deviceId, check.kind, check.value),
+        kind: check.kind,
+        subject: check.deviceId,
+        label: [check.deviceNo, check.deviceName].filter(Boolean).join(' / '),
+      });
+    for (const device of await review().unmanaged())
+      add(asText(device.ownerId), {
+        key: `${device.id}|unmanaged`,
+        kind: 'unmanaged',
+        subject: device.id,
+        label: [device.deviceNo, device.name].filter(Boolean).join(' / '),
+      });
+    for (const record of await review().unregistered())
+      add(undefined, {
+        key: recordKey(record.id, record.matchState),
         kind: 'unregistered',
         subject: record.id,
         label:
           [record.deviceName, record.serialNo].filter(Boolean).join(' / ') ||
           record.id,
       });
-    }
     return { byOwner, shared };
   };
 
@@ -259,25 +316,62 @@ export function createDeviceSyncFollowUp(dependencies: {
           });
           return;
         }
-        // What Asset Steward's commands would show the person.
+        // What Asset Steward's commands would show the person, one entry
+        // per item under a short ref the answer names it by.
         const reader = readerFor(container, run.deciderId);
-        const differences: unknown[] = [];
-        for (const item of items.filter((i) => i.kind === 'userMismatch'))
-          differences.push(
-            await deviceSyncReview(reader, {
-              view: 'checks',
-              deviceId: item.subject,
-            }).catch(() => null),
-          );
-        const wanted = new Set(
-          items.filter((i) => i.kind === 'unregistered').map((i) => i.subject),
+        const refs = new Map(
+          items.map((item, at) => [`i${String(at + 1)}`, item]),
         );
-        const unregistered = wanted.size
-          ? (
-              (await deviceSyncReview(reader, { view: 'unregistered' }))
-                .rows as Row[]
-            ).filter((row) => wanted.has(String(row.id)))
-          : [];
+        const listed = async (view: 'unmanaged' | 'unregistered') => {
+          const wanted = new Set(
+            items
+              .filter((item) => item.kind === view)
+              .map((item) => item.subject),
+          );
+          if (!wanted.size) return new Map<string, Row>();
+          const rows = (await deviceSyncReview(reader, { view })).rows as Row[];
+          return new Map(
+            rows
+              .filter((row) => wanted.has(String(row.id)))
+              .map((row) => [String(row.id), row]),
+          );
+        };
+        const [unmanaged, unregistered] = await Promise.all([
+          listed('unmanaged'),
+          listed('unregistered'),
+        ]);
+        const material: Record<string, unknown>[] = [];
+        for (const [ref, item] of refs) {
+          if (item.kind === 'unmanaged' || item.kind === 'unregistered') {
+            const row = (
+              item.kind === 'unmanaged' ? unmanaged : unregistered
+            ).get(item.subject);
+            if (row) material.push({ ref, kind: item.kind, ...row });
+            continue;
+          }
+          const found = await deviceSyncReview(reader, {
+            view: 'checks',
+            deviceId: item.subject,
+          }).catch(() => null);
+          if (!found) continue;
+          material.push({
+            ref,
+            kind: item.kind,
+            device: found.device,
+            platformRecords: found.platformRecords,
+            difference: ((found.differences ?? []) as Row[]).find(
+              (difference) => difference.kind === item.kind,
+            ),
+          });
+        }
+        const records = [...unregistered.values()];
+        const prompt = [
+          `The pull from the device platforms left these items on MDM 核对. Following your method, decide each one by its \`ref\` (\`item\`), or say why a person must look first. Allowed per kind — stale: correct, keep, verify, escalate; userMismatch: transfer, assign, keep, verify, escalate; statusMismatch: correct, keep, verify, escalate; unmanaged: exempt, verify, escalate; unregistered: register, link, ignore, verify.`,
+          "What each does: register — put the platform record on the register (modelId: the register model it is, from suggestedModelId or the candidates; the device goes to its platform user when it has one); link — it is the register device `target` (a candidate id); ignore — keep the record off the register (not a company asset); transfer / assign — the device goes to the person `target` (the platform user's personId); correct — set the device's register status to `status` (inStock, inUse, onLoan, inRepair or retired — never lost: a person finds that out); keep — the register is right, ignore this difference; exempt — the device rightly is on no platform; verify — a person must check first (say what); escalate — the platform's administrator must act (say what).",
+          `Every decision has a \`reason\`: one short sentence in ${zh() ? 'Chinese' : 'English'} with the fact it rests on (the platform user, the serial, the last sync, a matching device), never an id. Propose a change only where the evidence is clear; otherwise verify.`,
+          `<items>\n${JSON.stringify(material)}\n</items>`,
+          `Return only one JSON object matching this JSON Schema:\n${shapeOf(DECIDED)}`,
+        ].join('\n\n');
         const settings = container.resolve(settingsServiceToken);
         const [general, ai] = await Promise.all([
           settings.get('general'),
@@ -304,27 +398,12 @@ export function createDeviceSyncFollowUp(dependencies: {
         const turn = signal
           ? AbortSignal.any([AbortSignal.timeout(TURN_MS), signal])
           : AbortSignal.timeout(TURN_MS);
-        const answer = await session.askJson(
-          evalPrompt({
-            id: run.id,
-            title: 'MDM follow-up',
-            question: `The nightly pull from the device platforms left these. Following your method, settle each one, or say why a person must look first. Give every decision a \`reason\`: one short sentence in ${zh() ? 'Chinese' : 'English'} with the fact it rests on (the platform user, the serial, the last sync, a matching device), never an id.`,
-            data: {
-              ...(differences.length
-                ? { differences: differences.filter(Boolean) }
-                : {}),
-              ...(unregistered.length ? { unregistered } : {}),
-            },
-            expect: [],
-          }),
-          DECISIONS,
-          turn,
-        );
+        const answer = await session.askJson(prompt, DECIDED, turn);
         if (!answer) {
           await fail('unreadable', model);
           return;
         }
-        const result = await proposal(run, items, answer.decisions);
+        const result = await proposal(run, refs, records, answer.decisions);
         await runs().finish(
           runId,
           { status: 'pending', result: { ...result } },
@@ -391,22 +470,51 @@ export function createDeviceSyncFollowUp(dependencies: {
     },
   };
 
+  /** Where a registered device is kept: its user's place, else the main one. */
+  const locationFor = async (personId: string | undefined) => {
+    const query = database().query();
+    const person = personId
+      ? await query
+          .selectFrom('people')
+          .select(['locationId'])
+          .where('id', '=', personId)
+          .executeTakeFirst<{ locationId: unknown }>()
+      : undefined;
+    const own = asText(person?.locationId);
+    if (own) return own;
+    // Else where most of the register's devices are kept: the main office.
+    const busiest = await database()
+      .query()
+      .selectFrom('devices')
+      .select((eb) => ['locationId', eb.fn.countAll().as('count')])
+      .where('locationId', 'is not', null)
+      .groupBy('locationId')
+      .orderBy('count', 'desc')
+      .executeTakeFirst<{ locationId: unknown }>();
+    return asText(busiest?.locationId);
+  };
+
   /** The decisions as a plan the person carries out, the rest as notes. */
   const proposal = async (
     run: AgentRun,
-    items: readonly FollowUpItem[],
-    decisions: readonly EvalDecision[],
+    refs: ReadonlyMap<string, FollowUpItem>,
+    records: readonly Row[],
+    decisions: readonly Decision[],
   ): Promise<FollowUpResult> => {
-    const bySubject = new Map(items.map((item) => [item.subject, item]));
+    const items = [...refs.values()];
     const notes: string[] = [];
-    let steps: {
+    type Step = {
       op: string;
+      ref?: string;
       params: Record<string, unknown>;
       item: FollowUpItem;
-    }[] = [];
+    };
+    let steps: Step[] = [];
+    const decided = new Set<string>();
     for (const decision of decisions) {
-      const item = bySubject.get(decision.subject);
-      if (!item) continue;
+      const item = refs.get(decision.item);
+      if (!item || decided.has(item.key)) continue;
+      decided.add(item.key);
       const target = asText(decision.target);
       const why = asText(decision.reason)?.trim().slice(0, 200);
       // The step's line says what it does to what, and why.
@@ -415,103 +523,179 @@ export function createDeviceSyncFollowUp(dependencies: {
           ? `${item.label}（${why}）`
           : `${item.label} (${why})`
         : item.label;
+      const note = (zhText: string, enText: string) =>
+        notes.push(words(`${label}：${zhText}`, `${label}: ${enText}`));
+      if (!ALLOWED[item.kind].includes(decision.action)) {
+        note('请先核实再处理', 'check before anything changes');
+        continue;
+      }
+      const step = (
+        op: string,
+        params: Record<string, unknown>,
+        ref?: string,
+      ) => steps.push({ op, params, item, ...(ref ? { ref } : {}) });
       switch (decision.action) {
         case 'transfer':
         case 'assign':
-          if (item.kind === 'userMismatch' && target)
-            steps.push({
-              op:
-                decision.action === 'transfer'
-                  ? 'transfer_device'
-                  : 'assign_device',
-              params: {
-                title: words(
-                  `把 ${label} 调拨给 MDM 上的使用人`,
-                  `Hand ${label} to its platform user`,
-                ),
-                deviceId: item.subject,
-                targetType: 'person',
-                targetId: target,
-              },
-              item,
-            });
+          if (!target) {
+            note('请先核实再处理', 'check before anything changes');
+            break;
+          }
+          step(
+            decision.action === 'transfer'
+              ? 'transfer_device'
+              : 'assign_device',
+            {
+              title: words(
+                `把 ${label} 交给 MDM 上的使用人`,
+                `Hand ${label} to its platform user`,
+              ),
+              deviceId: item.subject,
+              targetType: 'person',
+              targetId: target,
+            },
+          );
           break;
         case 'link':
-          if (item.kind === 'unregistered' && target)
-            steps.push({
-              op: 'link_managed_device',
-              params: {
-                title: words(
-                  `把 MDM 记录 ${label} 关联到台账设备`,
-                  `Link the platform record ${label} to its register device`,
-                ),
-                managedDeviceId: item.subject,
-                deviceId: target,
-              },
-              item,
-            });
+          if (!target) {
+            note('请先核实再处理', 'check before anything changes');
+            break;
+          }
+          step('link_managed_device', {
+            title: words(
+              `把 MDM 记录 ${label} 关联到台账设备`,
+              `Link the platform record ${label} to its register device`,
+            ),
+            managedDeviceId: item.subject,
+            deviceId: target,
+          });
           break;
         case 'ignore':
-          if (item.kind === 'unregistered')
-            steps.push({
-              op: 'ignore_managed_device',
-              params: {
-                title: words(
-                  `不纳入台账：${label}`,
-                  `Keep ${label} off the register`,
-                ),
-                managedDeviceId: item.subject,
-                reason: words(
-                  'MDM 跟进建议不纳入台账',
-                  'MDM follow-up: not an asset to register',
-                ),
+          step('ignore_managed_device', {
+            title: words(
+              `不纳入台账：${label}`,
+              `Keep ${label} off the register`,
+            ),
+            managedDeviceId: item.subject,
+            reason:
+              why ??
+              words(
+                'MDM 跟进建议不纳入台账',
+                'MDM follow-up: not an asset to register',
+              ),
+          });
+          break;
+        case 'register': {
+          const record = records.find((row) => String(row.id) === item.subject);
+          const modelId =
+            asText(decision.modelId) ?? asText(record?.suggestedModelId);
+          const personId = asText(record?.personId);
+          const locationId = await locationFor(personId);
+          if (!record || !modelId || !locationId) {
+            note(
+              '需要登记为新设备，但型号或存放位置对不上，请在 MDM 核对页补登记',
+              'register it as a new device on MDM 核对: its model or place could not be matched',
+            );
+            break;
+          }
+          const ref = `new${String(steps.length + 1)}`;
+          step(
+            'create_record',
+            {
+              title: words(`登记新设备：${label}`, `Register ${label}`),
+              collection: 'devices',
+              input: {
+                modelId,
+                serialNo: asText(record.serialNo) ?? null,
+                name: asText(record.deviceName) ?? null,
+                locationId,
+                ownership: 'owned',
+                ...(asText(record.suggestedDepartmentId)
+                  ? { departmentId: asText(record.suggestedDepartmentId) }
+                  : {}),
               },
-              item,
+            },
+            ref,
+          );
+          if (personId)
+            step('assign_device', {
+              title: words(
+                `把新登记的 ${item.label} 分配给 MDM 上的使用人`,
+                `Assign the new ${item.label} to its platform user`,
+              ),
+              deviceId: `$${ref}`,
+              targetType: 'person',
+              targetId: personId,
             });
           break;
-        case 'register':
-          notes.push(
-            words(
-              `${label}：需要登记为新设备（在 MDM 核对页补登记）`,
-              `${label}: register it as a new device (on MDM 核对)`,
+        }
+        case 'correct': {
+          const status = CORRECT_TO.find((value) => value === decision.status);
+          if (!status) {
+            note('请先核实再处理', 'check before anything changes');
+            break;
+          }
+          step('correct_device_status', {
+            title: words(
+              `更正 ${label} 的状态`,
+              `Correct the status of ${label}`,
             ),
-          );
+            deviceId: item.subject,
+            status,
+            reason:
+              why ??
+              words(
+                'MDM 跟进建议更正状态',
+                'MDM follow-up: correct the status',
+              ),
+          });
           break;
+        }
         case 'keep':
-          notes.push(
-            words(
-              `${label}：以台账为准，可在 MDM 核对页忽略这处差异`,
-              `${label}: the register is right; ignore the difference on MDM 核对`,
+          if (item.kind === 'unmanaged' || item.kind === 'unregistered') {
+            note('请先核实再处理', 'check before anything changes');
+            break;
+          }
+          step('dismiss_device_difference', {
+            title: words(
+              `以台账为准，忽略这处差异：${label}`,
+              `The register is right; ignore the difference: ${label}`,
             ),
-          );
+            deviceId: item.subject,
+            kind: item.kind,
+          });
           break;
-        case 'restore':
-          notes.push(
-            words(
-              `${label}：在设备页恢复状态`,
-              `${label}: restore its status on the device page`,
-            ),
-          );
+        case 'exempt':
+          step('exempt_device', {
+            title: words(`不需要纳管：${label}`, `Needs no platform: ${label}`),
+            deviceId: item.subject,
+            reason:
+              why ??
+              words(
+                'MDM 跟进建议不需要纳管',
+                'MDM follow-up: needs no platform',
+              ),
+          });
           break;
         case 'escalate':
-          notes.push(
-            words(
-              `${label}：需要平台管理员在 MDM 里处理`,
-              `${label}: the platform's administrator must act`,
-            ),
+          note(
+            '需要平台管理员在 MDM 里处理',
+            "the platform's administrator must act",
           );
           break;
         default:
-          notes.push(
-            words(
-              `${label}：请先核实再处理`,
-              `${label}: check before anything changes`,
-            ),
+          note(
+            item.kind === 'unmanaged'
+              ? '需要在 MDM 平台里注册这台设备'
+              : '请先核实再处理',
+            item.kind === 'unmanaged'
+              ? 'enrol it on the device platform'
+              : 'check before anything changes',
           );
       }
     }
     for (const item of items)
-      if (!decisions.some((decision) => decision.subject === item.subject))
+      if (!decided.has(item.key))
         notes.push(
           words(
             `${item.label}：资产管家没有给出处理，请到 MDM 核对页查看`,
@@ -522,7 +706,8 @@ export function createDeviceSyncFollowUp(dependencies: {
     let planId: string | null = null;
     const agentId = (await workAgentIds(database()))[AGENT] ?? null;
     // A step the person may not take, or that no longer applies, is
-    // refused when proposed: it becomes a note and the rest are proposed.
+    // refused when proposed: its item becomes a note (with any step that
+    // follows from it) and the rest are proposed.
     while (steps.length && run.deciderId) {
       try {
         const plan = await container.resolve(planServiceToken).create(
@@ -532,7 +717,11 @@ export function createDeviceSyncFollowUp(dependencies: {
               `MDM 跟进：${String(items.length)} 处差异`,
               `MDM follow-up: ${String(items.length)} differences`,
             ),
-            steps: steps.map((step) => ({ op: step.op, params: step.params })),
+            steps: steps.map((entry) => ({
+              op: entry.op,
+              ...(entry.ref ? { ref: entry.ref } : {}),
+              params: entry.params,
+            })),
           },
           {
             agentId,
@@ -549,24 +738,24 @@ export function createDeviceSyncFollowUp(dependencies: {
             ? Number(/^steps\.(\d+)/.exec(error.field ?? '')?.[1])
             : NaN;
         if (!Number.isInteger(at) || at < 1 || at > steps.length) throw error;
-        const [dropped] = steps.splice(at - 1, 1);
-        if (dropped)
-          notes.push(
-            words(
-              `${dropped.item.label}：建议的操作现在做不了，请到 MDM 核对页查看`,
-              `${dropped.item.label}: the suggested step cannot be taken now; see MDM 核对`,
-            ),
-          );
+        const dropped = steps[at - 1].item;
+        steps = steps.filter((entry) => entry.item.key !== dropped.key);
+        notes.push(
+          words(
+            `${dropped.label}：建议的操作现在做不了，请到 MDM 核对页查看`,
+            `${dropped.label}: the suggested step cannot be taken now; see MDM 核对`,
+          ),
+        );
       }
     }
-    const planned = steps.length;
+    const planned = new Set(steps.map((entry) => entry.item.key)).size;
     return {
       items,
       planId,
-      notes: notes.slice(0, 40),
+      notes: notes.slice(0, 60),
       summary: words(
-        `${String(items.length)} 处新差异：${String(planned)} 项可直接执行，${String(items.length - planned)} 项需要你看一下。`,
-        `${String(items.length)} new differences: ${String(planned)} can be carried out, ${String(items.length - planned)} need a look.`,
+        `${String(items.length)} 处差异：${String(planned)} 项可直接执行，${String(items.length - planned)} 项需要你看一下。`,
+        `${String(items.length)} differences: ${String(planned)} can be carried out, ${String(items.length - planned)} need a look.`,
       ),
     };
   };

@@ -3253,6 +3253,8 @@ const messages = {
         link_managed_device: 'Link a platform device',
         unlink_managed_device: 'Unlink a platform device',
         ignore_managed_device: 'Keep a platform device off the register',
+        dismiss_device_difference: 'Ignore an MDM difference',
+        exempt_device: 'Mark a device as needing no platform',
         reserve_device: 'Reserve a device',
         correct_device_status: 'Correct a device status',
         assign_seat: 'Assign a seat',
