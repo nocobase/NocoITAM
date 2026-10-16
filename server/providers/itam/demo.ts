@@ -337,6 +337,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairKeyboard: 'Several keys do not respond',
     repairPanel: 'Panel shows a vertical line',
     repairScreen: 'Cracked screen; replace the panel',
+    repairFan: 'Fan grinds under load; clean it and replace if worn',
     repairNotes: 'Replaced under warranty',
     repairFault: 'Battery swollen; replace battery',
     defaultKit: '{name} standard kit',
@@ -420,6 +421,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairKeyboard: '键盘部分按键失灵',
     repairPanel: '面板出现竖线',
     repairScreen: '屏幕碎裂，更换面板',
+    repairFan: '高负载时风扇异响，清灰，磨损则更换',
     repairNotes: '保内更换',
     defaultKit: '{name}标准配置',
     spareKeyboard: '键盘偶发失灵，已两次返修',
@@ -856,9 +858,9 @@ export function createDemoService(dependencies: {
         // Who writes the demo: the second asset manager, so the records read
         // as the IT team's work — she raises the requests the first manager
         // decides, and is the creator, requester or 负责人 wherever a service
-        // takes the actor for one. The account that generated the demo is the
-        // system administrator and answers for nothing (2026-10-05); it only
-        // stands in when the accounts plugins are missing (tests, a reset).
+        // takes the actor for one. The account that generated the demo only
+        // stands in for her when the accounts plugins are missing (tests, a
+        // reset); it answers for its own share of the to-dos below.
         const writerId = deskManagerUserId ?? actorId;
         // The account importing the demo — the system administrator, which
         // holds no ITAM grant of its own — is an asset manager while the demo
@@ -872,6 +874,13 @@ export function createDemoService(dependencies: {
             .catch(() => null);
           if (granted) await track('importerGrants', { id: granted });
         }
+        // The importer's share of the work (2026-10-16): whoever imports the
+        // demo opens 待办 → 我负责的 on something of every kind — a request
+        // to decide, orders to receive, a repair, a count and a disposal to
+        // carry out — rather than an empty board. Only once it is an asset
+        // manager; otherwise those records stay with the demo's staff.
+        const importerId =
+          dependencies.accounts && managerUserId ? actorId : undefined;
         const context: OperationContext = {
           actorId: writerId,
           sourceType: 'demo',
@@ -2936,6 +2945,25 @@ export function createDemoService(dependencies: {
             all('repairs', 'create'),
           ),
         );
+        // The importer's repair: the spare ThinkPad back from a loan of RAM
+        // with a noisy fan, looked at in house.
+        if (importerId)
+          await track(
+            'repairs',
+            await repairs.create(
+              {
+                deviceId: String(thinkpads[1].id),
+                method: 'internal',
+                vendorId: null,
+                faultDescription: texts.repairFan,
+                sentAt: daysFromNow(-1),
+                expectedReturnAt: daysFromNow(2),
+                ownerId: importerId,
+              },
+              context,
+              all('repairs', 'create'),
+            ),
+          );
 
         await reached(60);
         // More purchase orders, one per stage: a draft, one waiting for
@@ -3001,7 +3029,7 @@ export function createDemoService(dependencies: {
         );
         await procurement.submit(
           String(monitorOrder.id),
-          approverId,
+          importerId ?? approverId,
           context,
           all('purchaseOrders', 'submit'),
         );
@@ -3321,6 +3349,9 @@ export function createDemoService(dependencies: {
           readonly why?: string;
           /** When it was raised; it was decided the next day. */
           readonly raisedDaysAgo: number;
+          /** Raised for, and decided by, the importer rather than the staff. */
+          readonly ownerId?: string;
+          readonly approverId?: string;
         }): Promise<void> => {
           await on(-order.raisedDaysAgo);
           const created = await track(
@@ -3332,6 +3363,7 @@ export function createDemoService(dependencies: {
                 neededBy: daysFromNow(order.neededInDays),
                 vendorId: reseller.id,
                 departmentId: order.departmentId,
+                ...(order.ownerId ? { ownerId: order.ownerId } : {}),
               },
               context,
               all('purchaseOrders', 'create'),
@@ -3345,9 +3377,10 @@ export function createDemoService(dependencies: {
             all('purchaseOrders', 'update'),
           );
           if (order.stage === 'draft') return;
+          const decider = order.approverId ?? approverId;
           await procurement.submit(
             id,
-            approverId,
+            decider,
             context,
             all('purchaseOrders', 'submit'),
           );
@@ -3361,7 +3394,7 @@ export function createDemoService(dependencies: {
               id,
               order.stage === 'rejected' ? 'rejected' : 'approved',
               order.stage === 'rejected' ? (order.why ?? '') : texts.approval,
-              { actorId: approverId, sourceType: 'demo' },
+              { actorId: decider, sourceType: 'demo' },
               all('purchaseOrders', 'approve'),
             );
           if (order.stage === 'rejected' || order.stage === 'approved') return;
@@ -3419,6 +3452,7 @@ export function createDemoService(dependencies: {
           lines: [line('device', air, 4, 8999)],
           stage: 'pendingApproval',
           raisedDaysAgo: 5,
+          approverId: importerId,
         });
         await queuedOrder({
           description: texts.switchOrder,
@@ -3437,6 +3471,7 @@ export function createDemoService(dependencies: {
           lines: [line('device', laserjet, 1, 2899)],
           stage: 'approved',
           raisedDaysAgo: 9,
+          ownerId: importerId,
         });
         await queuedOrder({
           description: texts.mouseOrder,
@@ -3455,6 +3490,7 @@ export function createDemoService(dependencies: {
           lines: [line('component', ssdModel, 10, 899)],
           stage: 'ordered',
           raisedDaysAgo: 10,
+          ownerId: importerId,
         });
         // Placed and waiting for delivery, with one line of every kind an
         // order can carry — a device, an accessory, a consumable, a
@@ -3519,7 +3555,10 @@ export function createDemoService(dependencies: {
               scope: { locationIds: [String(floor3.id)] },
               plannedStart: daysFromNow(-3),
               plannedEnd: daysFromNow(10),
-              executorIds: [supportUserId ?? writerId],
+              executorIds: [
+                supportUserId ?? writerId,
+                ...(importerId ? [importerId] : []),
+              ],
               notes: texts.auditNotes,
             },
             context,
@@ -3831,7 +3870,7 @@ export function createDemoService(dependencies: {
         await on(-3);
         await disposals.submit(
           String(printerDisposal.id),
-          approverId,
+          importerId ?? approverId,
           context,
           all('disposals', 'submit'),
         );
@@ -3869,6 +3908,7 @@ export function createDemoService(dependencies: {
               deviceIds: [String(brokenMonitor.id)],
               recipientVendorId: String(recycler.id),
               dataWipe: 'notRequired',
+              ...(importerId ? { ownerId: importerId } : {}),
             },
             context,
             all('disposals', 'create'),

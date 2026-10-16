@@ -942,6 +942,19 @@ describe('CSV import / export and demo data', () => {
     });
     await demo.generate('admin', 'en-US');
     expect(grants).toEqual(['admin:itam-asset-manager']);
+    // And answers for a share of the to-dos, so 我负责的 is not empty.
+    const owned = async (table: string) =>
+      (
+        await resolve(databaseManagerToken)
+          .query()
+          .selectFrom(table)
+          .select('id')
+          .where('ownerId', '=', 'admin')
+          .execute()
+      ).length;
+    expect(await owned('purchaseOrders')).toBe(2);
+    expect(await owned('repairs')).toBe(1);
+    expect(await owned('disposals')).toBe(1);
     await demo.clear('admin');
     expect(revoked).toEqual(['assignment-1']);
 

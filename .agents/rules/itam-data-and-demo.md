@@ -109,12 +109,16 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   is in the deployment's language — because the records they answer for
   name the account. 孙强 and 周宇 (Daniel and Ryan) have a laptop each, 吴静 (Emily) a laptop, a
   monitor and a phone. The account that generated the demo is the system
-  administrator and no employee: it gets no person record and answers for no
-  record, but holds the 资产管理员 set while the demo is there (2026-10-16,
+  administrator and no employee: it gets no person record, but holds the
+  资产管理员 set while the demo is there (2026-10-16,
   as NocoCRM's importer is its sales manager), so it may be named an
   approver or a 负责人 and work the register like the demo's managers; the
   assignment is tracked in `demoRecords` as `importerGrants` and revoked on
-  clearing, and an importer that held the set already keeps it — the demo is written as 吴静 (`writerId`), who
+  clearing, and an importer that held the set already keeps it. With the set
+  it answers for a share of the to-dos (`importerId`, 2026-10-16), so its
+  我负责的 is not empty: it decides one order and one disposal, owns two
+  orders awaiting receipt, an in-house repair and the disposal to carry
+  out, and counts in the open stocktake — the demo is written as 吴静 (`writerId`), who
   raises the requests 孙强 decides; repairs and audits are 周宇's. `demoAccountUsernames()`
   keeps the retired `manager` / `support`, and the pinyin usernames an English
   demo had before 2026-10-06, so a reset still removes them.
