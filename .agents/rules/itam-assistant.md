@@ -240,6 +240,19 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     own (`DeviceSyncRunCard`); see `itam-device-sync.md`. A run of either
     agent goes to the job queue's one handler, which picks the agent's
     worker by `run.agent`.
+  - **The demo never asks a model** (2026-10-16). Importing it filed and
+    decided dozens of requests and pulled from the demo's platforms, and
+    each set an agent to work: a hundred approval reviews, most superseded
+    a moment later, and an MDM follow-up. `onRequested` is now told the
+    request's context and the agents' provider skips `sourceType: 'demo'`;
+    `onSynced` skips a pull with trigger `demo`. The demo writes the
+    suggestions instead (`demo-suggestions.ts`): a review per request
+    still waiting, the MDM follow-up through `afterSync(by, { answerer,
+locale })` — its own plans, the answers given — and the joiners'
+    picks through `advise(personId, { runner, trigger: 'demo' })`. Each
+    reads its numbers and tags from the records, so the text matches
+    whatever the import made. A new agent or a new demo request needs its
+    suggestion written there too.
   - **No agent for what a rule decides** (2026-10-17). 离职回收 and
     授权续费 were built as work agents and removed the same day: what a
     leaver hands back is the rule in `recovery.ts`, and what a renewal

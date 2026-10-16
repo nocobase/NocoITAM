@@ -3292,6 +3292,18 @@ for the person to confirm; it still never marks a device lost. Finding a
 silent device or enrolling one on a platform stays a note. The first run
 looks at everything MDM 核对 lists; later ones at what is new.
 
+### 2026-10-16 The demo comes with AI suggestions, without a model
+
+Importing the demo set the work agents going on everything it filed and
+pulled: about a hundred approval reviews per import, most superseded by
+the demo's own decisions a moment later, and an MDM follow-up — slow,
+paid for, and kept across imports because clearing the demo left the
+runs behind. The demo's requests and pulls now start no agent. The demo
+writes what the agents would have left instead, from the records: a
+review of each of the four requests still waiting, the MDM follow-up on
+every MDM 核对 item with its plans, and the joiners' equipment picks.
+Clearing the demo removes them.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

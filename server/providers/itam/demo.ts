@@ -7,6 +7,7 @@ import {
 import type { DeviceService, OperationContext } from './devices.js';
 import type { ObservedDevice } from './device-sources.js';
 import type { DeviceSyncService } from './device-sync.js';
+import { writeDemoSuggestions, type DemoAgents } from './demo-suggestions.js';
 import type { AuditService, CountInput } from './audits.js';
 import type { CommentService } from './comments.js';
 import { unrestricted } from './authz-filter.js';
@@ -294,6 +295,10 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
 
 /** Deleted in dependency order: children before the master data they reference. */
 const ORDER: readonly string[] = [
+  // The work agents' suggestions the demo wrote (2026-10-16): the plans,
+  // then the runs that proposed them.
+  'itamPlans',
+  'itamAgentRuns',
   // Comments the demo wrote on records it did not make (seeded categories).
   'historyEvents',
   // What the demo's Intune reported (device sync, 2026-10-14).
@@ -935,6 +940,11 @@ export function createDemoService(dependencies: {
   deviceSync?: DeviceSyncService;
   /** Writes the demo's comment threads; absent in a bare harness. */
   comments?: CommentService;
+  /**
+   * The work agents, for the suggestions the demo comes with instead of
+   * asking a model (2026-10-16); absent in a bare harness.
+   */
+  agents?: DemoAgents;
 }): DemoService {
   const {
     database,
@@ -4110,7 +4120,7 @@ export function createDemoService(dependencies: {
           /** Raised for, and decided by, the importer rather than the staff. */
           readonly ownerId?: string;
           readonly approverId?: string;
-        }): Promise<void> => {
+        }): Promise<string> => {
           await on(-order.raisedDaysAgo);
           const created = await track(
             'purchaseOrders',
@@ -4134,7 +4144,7 @@ export function createDemoService(dependencies: {
             context,
             all('purchaseOrders', 'update'),
           );
-          if (order.stage === 'draft') return;
+          if (order.stage === 'draft') return id;
           const decider = order.approverId ?? approverId;
           await procurement.submit(
             id,
@@ -4142,7 +4152,7 @@ export function createDemoService(dependencies: {
             context,
             all('purchaseOrders', 'submit'),
           );
-          if (order.stage === 'pendingApproval') return;
+          if (order.stage === 'pendingApproval') return id;
           await on(-order.raisedDaysAgo + 1);
           if (
             (await procurement.get(id, all('purchaseOrders', 'read')))
@@ -4155,7 +4165,8 @@ export function createDemoService(dependencies: {
               { actorId: decider, sourceType: 'demo' },
               all('purchaseOrders', 'approve'),
             );
-          if (order.stage === 'rejected' || order.stage === 'approved') return;
+          if (order.stage === 'rejected' || order.stage === 'approved')
+            return id;
           if (order.stage === 'cancelled') {
             await procurement.cancel(
               id,
@@ -4163,7 +4174,7 @@ export function createDemoService(dependencies: {
               context,
               all('purchaseOrders', 'cancel'),
             );
-            return;
+            return id;
           }
           await on(-3);
           await procurement.markOrdered(
@@ -4172,6 +4183,7 @@ export function createDemoService(dependencies: {
             context,
             all('purchaseOrders', 'order'),
           );
+          return id;
         };
         const line = (
           itemType: LineItemType,
@@ -4206,7 +4218,7 @@ export function createDemoService(dependencies: {
           raisedDaysAgo: 2,
           ownerId: importerId,
         });
-        await queuedOrder({
+        const airOrderId = await queuedOrder({
           description: texts.airOrder,
           reason: 'newHire',
           departmentId: rnd.id,
@@ -4216,7 +4228,7 @@ export function createDemoService(dependencies: {
           raisedDaysAgo: 5,
           approverId: importerId,
         });
-        await queuedOrder({
+        const switchOrderId = await queuedOrder({
           description: texts.switchOrder,
           reason: 'project',
           departmentId: itDept.id,
@@ -5265,12 +5277,13 @@ export function createDemoService(dependencies: {
         // (`onboarding-advisor.ts`), and entered first it found nothing in
         // stock to choose from, or half of it.
         const productDept = await seededIn('departments', 'dept-product');
+        const joinerIds: string[] = [];
         for (const [index, entry] of (
           JOINER_NAMES[locale] ??
           JOINER_NAMES['en-US'] ??
           []
         ).entries()) {
-          await md('people', {
+          const joiner = await md('people', {
             name: entry.name,
             employeeNo: `EMP-${String(index + 301).padStart(3, '0')}`,
             email: `${entry.mail}@northbridge.example`,
@@ -5279,6 +5292,7 @@ export function createDemoService(dependencies: {
             locationId: floor3.id,
             hireDate: daysFromNow(index === 0 ? 5 : 9),
           });
+          joinerIds.push(String(joiner.id));
         }
 
         // What the demo's Intune reports (device sync, 2026-10-14), read in
@@ -5644,6 +5658,26 @@ export function createDemoService(dependencies: {
               .execute();
         }
 
+        // What the work agents would have left (2026-10-16), written rather
+        // than asked of a model: reviews of the requests still waiting, the
+        // MDM follow-up on the pulls above, and the joiners' picks.
+        if (dependencies.agents)
+          await writeDemoSuggestions({
+            database,
+            agents: dependencies.agents,
+            locale,
+            actorId,
+            track,
+            requests: {
+              monitorOrder: String(monitorOrder.id),
+              airOrder: airOrderId,
+              switchOrder: switchOrderId,
+              internOrder: String(internOrder.id),
+              printerDisposal: String(printerDisposal.id),
+            },
+            joiners: joinerIds,
+          });
+
         importPercent = 100;
         return await this.status();
       } finally {
@@ -5736,6 +5770,71 @@ export function createDemoService(dependencies: {
         // held only the demo), so the demo reads the same every time instead
         // of climbing with each import.
         await dependencies.numbering?.rewind({ connection });
+        // The agents' runs about records that are gone, whoever made them
+        // (2026-10-16): an import before the demo tracked its runs left
+        // reviews and MDM follow-ups behind, shown in 收件箱 under a bare id
+        // or naming devices that no longer exist. A follow-up is gone once
+        // none of its items' devices or platform records is left; a run
+        // that failed with nothing to show goes too. Their plans go with
+        // them.
+        const runs = await connection.query
+          .selectFrom('itamAgentRuns')
+          .select(['id', 'agent', 'status', 'subjectId', 'result'])
+          .execute<Row>();
+        const exists = async (table: string, ids: readonly string[]) =>
+          ids.length
+            ? new Set(
+                (
+                  await connection.query
+                    .selectFrom(table)
+                    .select('id')
+                    .where('id', 'in', [...ids])
+                    .execute<{ id: unknown }>()
+                ).map((row) => String(row.id)),
+              )
+            : new Set<string>();
+        const subjectsOf = (run: Row): string[] => {
+          const result =
+            typeof run.result === 'string'
+              ? (JSON.parse(run.result) as Row)
+              : (run.result as Row | null);
+          const items = Array.isArray(result?.items) ? result.items : [];
+          return items.map((item) => String((item as Row).subject));
+        };
+        const requests = runs.filter((run) => run.agent === 'approvalReview');
+        const followUps = runs.filter((run) => run.agent === 'deviceSync');
+        const subjects = followUps.flatMap(subjectsOf);
+        const present = new Set([
+          ...(await exists(
+            'purchaseOrders',
+            requests.map((run) => String(run.subjectId)),
+          )),
+          ...(await exists(
+            'disposals',
+            requests.map((run) => String(run.subjectId)),
+          )),
+          ...(await exists('devices', subjects)),
+          ...(await exists('managedDevices', subjects)),
+        ]);
+        const gone = [
+          ...requests.filter((run) => !present.has(String(run.subjectId))),
+          ...followUps.filter((run) => {
+            const items = subjectsOf(run);
+            return items.length
+              ? !items.some((id) => present.has(id))
+              : run.status === 'failed';
+          }),
+        ].map((run) => String(run.id));
+        if (gone.length) {
+          await connection.query
+            .deleteFrom('itamPlans')
+            .where('runId', 'in', gone)
+            .execute();
+          await connection.query
+            .deleteFrom('itamAgentRuns')
+            .where('id', 'in', gone)
+            .execute();
+        }
       });
       // The notifications the demo's requests sent (2026-10-16): they name
       // records that are gone, and the importer's inbox kept each import's

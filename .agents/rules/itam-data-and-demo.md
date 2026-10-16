@@ -62,6 +62,20 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   longest warranty) is SG-LT-050, whose keyboard was repaired twice, and
   SG-MON-006, with a dead pixel; SG-LT-053 is due for replacement within
   months.
+  The demo comes with the work agents' suggestions written, never asked
+  of a model (2026-10-16, `demo-suggestions.ts`; see `itam-assistant.md`):
+  the approval assistant's review of each request still waiting (two
+  approve-on-conditions, one ask-for-more, one reject), the MDM follow-up
+  on every item MDM 核对 lists, its plans set to wait 30 days rather
+  than one, and Asset Steward's picks for the two joiners, which pass
+  over SG-LT-050, SG-LT-053 and SG-MON-006. The runs and plans are
+  tracked (`itamAgentRuns`, `itamPlans`, first in `ORDER`), and runs on
+  the demo's requests go with them (`DEPENDENTS`). Clearing also sweeps
+  any run whose records are gone — a review of a request, an MDM
+  follow-up none of whose devices is left, a failed follow-up — with its
+  plan, which an import before this tracking left behind. Each part is extra:
+  one that fails leaves the demo without it rather than failing the
+  import.
   Every department has a default 入职配置 once the demo is in (2026-10-06):
   one without — 技术部, which the seeds skip, or one whose default was
   deleted — gets engineering's kit, its nearest parent's or an office kit,

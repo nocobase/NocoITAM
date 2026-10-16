@@ -600,6 +600,11 @@ export default class ItamProvider extends ServiceProvider<Application> {
         numbering: container.resolve(numberingServiceToken),
         deviceSync: container.resolve(deviceSyncServiceToken),
         comments: container.resolve(commentServiceToken),
+        agents: {
+          runs: container.resolve(agentRunServiceToken),
+          followUp: container.resolve(deviceSyncFollowUpToken),
+          advisor: container.resolve(onboardingAdvisorToken),
+        },
         // Who stands in as the colleague deciding the demo's requests:
         // another account that may approve purchase orders, else any other
         // account. The demo falls back to a stand-in id when it is alone.

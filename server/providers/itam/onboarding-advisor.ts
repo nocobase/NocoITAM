@@ -57,8 +57,15 @@ export type ConsiderResult =
     };
 
 export interface OnboardingAdvisor {
-  /** Starts a run for a joiner, asked by their 入职负责人; never waits for it. */
-  advise(personId: string): Promise<ConsiderResult>;
+  /**
+   * Starts a run for a joiner, asked by their 入职负责人; never waits for it.
+   * The demo passes its own runner, which answers without a model, so its
+   * joiners come with suggestions written (2026-10-16).
+   */
+  advise(
+    personId: string,
+    options?: { readonly runner: AgentRunner; readonly trigger: 'demo' },
+  ): Promise<ConsiderResult>;
   /** Settles once every run started so far has finished. */
   idle(): Promise<void>;
 }
@@ -246,7 +253,7 @@ export function createOnboardingAdvisor(deps: {
   readonly touched?: () => void;
   readonly log?: (message: string, error: unknown) => void;
 }): OnboardingAdvisor {
-  const { database, onboarding, settings, runner } = deps;
+  const { database, onboarding, settings } = deps;
   const q = () => database.query();
   const active = new Set<string>();
   let queue: Promise<void> = Promise.resolve();
@@ -263,7 +270,12 @@ export function createOnboardingAdvisor(deps: {
       .execute();
   };
 
-  const execute = async (runId: string, person: Row, ownerId: string) => {
+  const execute = async (
+    runId: string,
+    person: Row,
+    ownerId: string,
+    runner: AgentRunner,
+  ) => {
     const personId = String(person.id);
     try {
       const plan = await onboarding.plan(personId, { candidates: true });
@@ -335,7 +347,8 @@ export function createOnboardingAdvisor(deps: {
     }
   };
 
-  const advise: OnboardingAdvisor['advise'] = async (personId) => {
+  const advise: OnboardingAdvisor['advise'] = async (personId, options) => {
+    const runner = options?.runner ?? deps.runner;
     const switches = await settings.get('ai');
     if (switches.onboardingAdvice === false)
       return { started: false, reason: 'disabled' };
@@ -408,7 +421,7 @@ export function createOnboardingAdvisor(deps: {
         id: runId,
         personId,
         actorId: ownerId,
-        trigger: 'manual',
+        trigger: options?.trigger ?? 'manual',
         status: 'running',
         inputs,
         createdAt: at,
@@ -418,7 +431,7 @@ export function createOnboardingAdvisor(deps: {
     active.add(runId);
     // One at a time: owners asking for ten joiners at once get ten runs in
     // a row, not ten models at once.
-    queue = queue.then(() => execute(runId, person, ownerId));
+    queue = queue.then(() => execute(runId, person, ownerId, runner));
     return { started: true, runId };
   };
 
