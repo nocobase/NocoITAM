@@ -91,6 +91,11 @@ export function AppThemeProvider({
   }, [presetKey, fallbackPreset]);
   return (
     <NextThemesProvider
+      // next-themes renders an inline no-flash <script>, which a client-only
+      // React render never executes and React reports as an error on every
+      // page. initializeTheme() in client/index.tsx already applies the theme
+      // before mounting, so mark the snippet as an inert data block instead.
+      scriptProps={{ type: 'text/plain' }}
       {...props}
       attribute={attribute}
       defaultTheme={mode}
