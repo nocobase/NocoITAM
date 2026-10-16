@@ -438,53 +438,6 @@ describe('master data routes', () => {
     expect(cycle.status).toBe(400);
   });
 
-  it('counts the people cards', async () => {
-    const manager = { user: 'mia', role: 'manager' } as const;
-    const department = (await (
-      await app.request('/api/itam/master/departments', {
-        ...json({ name: 'R&D' }),
-        ...manager,
-      })
-    ).json()) as { data: { id: string } };
-    const month = new Date().toISOString().slice(0, 7);
-    await app.request('/api/itam/master/people', {
-      ...json({
-        name: 'New Hire',
-        departmentId: department.data.id,
-        hireDate: `${month}-01`,
-      }),
-      ...manager,
-    });
-    await app.request('/api/itam/master/people', {
-      ...json({
-        name: 'Old Hand',
-        departmentId: department.data.id,
-        hireDate: '2020-01-01',
-      }),
-      ...manager,
-    });
-    const stats = (await (
-      await app.request('/api/itam/master/people/stats', manager)
-    ).json()) as {
-      data: {
-        leftHolding: number;
-        hiredThisMonth: number;
-      };
-    };
-    expect(stats.data).toEqual({
-      leftHolding: 0,
-      hiredThisMonth: 1,
-    });
-    expect(
-      (
-        await app.request('/api/itam/master/people/stats', {
-          user: 'eve',
-          role: 'employee',
-        })
-      ).status,
-    ).toBe(403);
-  });
-
   /**
    * The recovery plan a leaver's page reads. What is to be done with each
    * item is unit tested in `leaver-recovery-prepared.test.ts`; this is the

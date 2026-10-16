@@ -204,13 +204,6 @@ export interface MasterDataStats {
   readonly attributeUsage?: Readonly<Record<string, number>>;
 }
 
-export interface PeopleStats {
-  /** Left the company but still hold a device, stock or a seat. */
-  readonly leftHolding: number;
-  /** Hire date in the current calendar month. */
-  readonly hiredThisMonth: number;
-}
-
 export interface MasterDataService {
   definition(collection: string): ItamCollectionDefinition | undefined;
   list(
@@ -247,8 +240,6 @@ export interface MasterDataService {
   listCounts(
     collection: string,
   ): Promise<Record<string, Record<string, number>>>;
-  /** The people page's cards. */
-  peopleStats(): Promise<PeopleStats>;
   /**
    * Places `id` under `parentId` (null for the root) at `index` among its
    * siblings and renumbers that sibling list; a tree view's drag and drop.
@@ -1605,48 +1596,6 @@ export function createMasterDataService(
       });
     },
 
-    async peopleStats() {
-      const query = database.query();
-      const holders = new Set<string>();
-      const collect = async (
-        table: string,
-        idField: string,
-        refine: (q: ReturnType<typeof query.selectFrom>) => typeof q,
-      ) => {
-        const rows = await refine(
-          query.selectFrom(table).select(`${idField} as holder`),
-        ).execute<{ holder: string | null }>();
-        for (const row of rows) if (row.holder) holders.add(row.holder);
-      };
-      await collect('devices', 'assigneeId', (q) =>
-        q.where('assigneeType', '=', 'person'),
-      );
-      await collect('stockHoldings', 'holderId', (q) =>
-        q.where('holderType', '=', 'person').where('quantity', '>', 0),
-      );
-      await collect('entitlementSeats', 'holderId', (q) =>
-        q.where('holderType', '=', 'person').where('releasedAt', 'is', null),
-      );
-      const leftRows = await query
-        .selectFrom('people')
-        .select('id')
-        .where('employmentStatus', '=', 'left')
-        .execute<{ id: string }>();
-      const leftHolding = leftRows.filter((row) => holders.has(row.id)).length;
-
-      const now = new Date();
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-      const hired = await query
-        .selectFrom('people')
-        .select((eb) => [eb.fn.countAll().as('total')])
-        .where('hireDate', '>=', monthStart)
-        .executeTakeFirst<{ total: unknown }>();
-      return {
-        leftHolding,
-        hiredThisMonth: Number(hired?.total ?? 0),
-      };
-    },
-
     async listCounts(collection) {
       require(collection);
       const result: Record<string, Record<string, number>> = {};
@@ -1659,7 +1608,11 @@ export function createMasterDataService(
         for (const condition of related.where ?? [])
           query =
             condition.value === null
-              ? query.where(condition.field, condition.not ? 'is not' : 'is', null)
+              ? query.where(
+                  condition.field,
+                  condition.not ? 'is not' : 'is',
+                  null,
+                )
               : query.where(
                   condition.field,
                   condition.not ? '!=' : '=',

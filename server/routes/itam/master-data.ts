@@ -142,15 +142,6 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
       }
     });
 
-    routes.get('/people/stats', async (context) => {
-      try {
-        await decideCollection(context, 'people', 'read');
-        return context.json({ data: await masterData.peopleStats() });
-      } catch (error) {
-        return errorResponse(context, error);
-      }
-    });
-
     routes.get('/:collection/counts', async (context) => {
       const collection = context.req.param('collection');
       try {
