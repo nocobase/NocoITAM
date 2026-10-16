@@ -11,12 +11,13 @@ import {
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
-import type { ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
 
 import { LinkTabs } from '#components/link-tabs';
 import { Loading } from '#components/loading';
 import { PageFrameContext } from '#components/page-frame';
+import { cn } from '@/lib/utils';
 
 /**
  * 设置, the menu's one entry for it (2026-10-16, after NocoCRM's): the pages
@@ -81,6 +82,19 @@ export default function SettingsPage(): ReactElement {
       action: 'access',
     }),
   };
+  // Whether the page has scrolled, so the tabs are stuck over its content:
+  // the empty line above them has left the scrolling column.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) =>
+      setStuck(entry ? !entry.isIntersecting : false),
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  });
   const pending = Object.values(access).some((check) => check.isPending);
   const tabs = TABS.filter((tab) => access[tab.path]?.can ?? true);
   const current = /\/settings\/([^/]+)/.exec(pathname)?.[1];
@@ -96,9 +110,17 @@ export default function SettingsPage(): ReactElement {
         </h1>
       </div>
       {/* The tabs stick to the top of the layout's scrolling column as the
-          page scrolls, with a band under their rule that the content scrolls
-          beneath; below the covering pages (z-10) a tab opens over itself. */}
-      <div className='sticky top-0 z-[9] bg-background/85 px-6 pt-2 pb-3 backdrop-blur-xl md:px-8'>
+          page scrolls, below the covering pages (z-10) a tab opens over
+          itself. Their band takes a ground only once stuck, for the content
+          to scroll beneath: unstuck it would cover the page's watermark with
+          a grey strip (2026-10-16). */}
+      <div ref={sentinelRef} aria-hidden className='h-0' />
+      <div
+        className={cn(
+          'sticky top-0 z-[9] px-6 pt-2 pb-3 md:px-8',
+          stuck && 'bg-background/85 backdrop-blur-xl',
+        )}
+      >
         <LinkTabs
           label={t('navigation.settingsGroup')}
           tabs={tabs.map((tab) => ({
