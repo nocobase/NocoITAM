@@ -37,7 +37,7 @@ const employee = { user: 'li', role: 'employee' as const };
 
 /**
  * 维修单整理 (2026-10-17): a repair is filed under a kind of fault, and
- * Noco, asked from the new repair form, reads the device as the person —
+ * Asset Steward, asked from the new repair form, reads the device as the person —
  * its warranty, age, repairs and how its model has fared — to fill the kind
  * and say whether to repair it at all.
  */

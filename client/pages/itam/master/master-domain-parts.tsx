@@ -466,8 +466,8 @@ export function MasterActions({
 
 /**
  * AI 补充 on a model's or software product's page (2026-10-06): opens the
- * assistant's panel on a new conversation and asks Noco to check the record
- * under the catalog skill, with the record as page context. Noco says what
+ * assistant's panel on a new conversation and asks Asset Steward to check the record
+ * under the catalog skill, with the record as page context. Asset Steward says what
  * it found and proposes the change as a plan (`update_master_record`), whose
  * card the user confirms or declines. There is no web search on the Agents
  * plugin's chat (template 1.0.0-beta.64). Offered to whoever may edit the

@@ -71,7 +71,7 @@ function DevicesList(): ReactElement {
   const departmentId = params.get('departmentId') ?? undefined;
   // 同步状态 (device sync, 2026-10-15): on a platform, unmanaged or silent.
   const syncState = params.get('syncState') ?? undefined;
-  // The devices Noco found for a question asked on the workbench.
+  // The devices Asset Steward found for a question asked on the workbench.
   const found = foundIds(params);
 
   const setParam = (updates: Record<string, string | undefined>) => {
@@ -243,7 +243,7 @@ function DevicesList(): ReactElement {
               collection='devices'
               exportQuery={{
                 q,
-                // Exporting the devices Noco found exports those devices.
+                // Exporting the devices Asset Steward found exports those devices.
                 ids: found?.join(','),
                 ...Object.fromEntries(
                   [...params.entries()]

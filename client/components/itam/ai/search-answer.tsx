@@ -48,7 +48,7 @@ export function SearchAnswer({
     (message) => message.role === 'assistant' && message.content.content.trim(),
   );
   const name =
-    (conversation?.agent ? agentText.name(conversation.agent) : null) ?? 'Noco';
+    (conversation?.agent ? agentText.name(conversation.agent) : null) ?? t('ai.assistantName');
   return (
     <div className='flex max-h-[min(70svh,40rem)] flex-col'>
       <div className='flex items-start gap-2 border-b border-border px-4 py-3'>

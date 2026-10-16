@@ -141,7 +141,7 @@ export function useSearchResults(
 }
 
 /**
- * The URL parameters a list reads "the records Noco found" from: their ids
+ * The URL parameters a list reads "the records Asset Steward found" from: their ids
  * and the one line saying what they are. A list given `ids` shows those
  * records only, as a table, under a strip that names them and clears them.
  */
@@ -203,12 +203,12 @@ export function searchRowDetail(
     .join(' · ');
 }
 
-/** The records Noco found for a question, as its tool handed them over. */
+/** The records Asset Steward found for a question, as its tool handed them over. */
 export interface FoundRecordSet {
   /** A key of `SEARCH_PAGES`. */
   readonly list: string;
   readonly ids: readonly string[];
-  /** A few words saying what they are, in Noco's words. */
+  /** A few words saying what they are, in Asset Steward's words. */
   readonly title: string;
 }
 

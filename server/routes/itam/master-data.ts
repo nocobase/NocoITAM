@@ -344,7 +344,7 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
       }
     });
 
-    // 重新建议: Noco chooses this joiner's equipment again, in the
+    // 重新建议: Asset Steward chooses this joiner's equipment again, in the
     // background. Only their 入职负责人 may ask, because the run is made as
     // that person, under their grants and in their conversations; anybody
     // else hands the joiner over first. Answers at once — the card follows
@@ -362,7 +362,7 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
         }
         if (person.onboardingOwnerId !== principalId(context))
           throw new BusinessRuleError(
-            'Only the onboarding owner can ask Noco for suggestions',
+            'Only the onboarding owner can ask Asset Steward for suggestions',
             'NOT_OWNER',
           );
         const result = await app.container

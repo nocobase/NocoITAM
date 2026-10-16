@@ -273,7 +273,7 @@ const messages = {
       changes: 'Changes',
     },
     origin: {
-      agent: 'proposed by Noco',
+      agent: 'proposed by Asset Steward',
       import: 'through a data import',
       schedule: 'by a scheduled task',
       sync: 'through device sync',
@@ -1003,22 +1003,22 @@ const messages = {
     runAll_one: 'Do all ({{count}})',
     runAll_other: 'Do all ({{count}})',
     advice: {
-      none: 'Noco has not chosen for them yet; it can go through the stock.',
-      running: 'Noco is choosing from the stock…',
-      ready: 'Chosen by Noco ({{date}})',
-      failed: 'Noco could not choose this time.',
+      none: 'Asset Steward has not chosen for them yet; it can go through the stock.',
+      running: 'Asset Steward is choosing from the stock…',
+      ready: 'Chosen by Asset Steward ({{date}})',
+      failed: 'Asset Steward could not choose this time.',
       conversation: 'See how',
       first: 'Choose',
       again: 'Suggest again',
       notStarted: {
         disabled: 'Onboarding suggestions are switched off in the settings',
         unavailable:
-          'Noco is not available: check the models under Agent team → Models',
-        notJoiner: 'Noco chooses only for joiners not yet equipped',
+          'Asset Steward is not available: check the models under Agent team → Models',
+        notJoiner: 'Asset Steward chooses only for joiners not yet equipped',
         noOwner: 'Give them an onboarding owner first',
         nothingToChoose:
           'Nothing to choose: every item has one candidate or none',
-        running: 'Noco is already choosing',
+        running: 'Asset Steward is already choosing',
       },
     },
     waive: 'Not needed',
@@ -2752,10 +2752,10 @@ const messages = {
     ai: {
       title: 'AI assistant',
       description:
-        'What the assistant Noco does in the background; the business guidance is under Agent team → Business guidance, its model and what it may do under Agent team → Agents, the model services under Agent team → Models.',
+        'What Asset Steward does in the background; the business guidance is under Agent team → Business guidance, its model and what it may do under Agent team → Agents, the model services under Agent team → Models.',
       onboardingAdvice: 'Onboarding suggestions',
       onboardingAdviceHint:
-        "On a joiner's onboarding card, their onboarding owner can ask Noco to choose devices, accessories and seats from stock in the background, with a reason for each, then confirm or change them. Off, it prepares them only in a conversation.",
+        "On a joiner's onboarding card, their onboarding owner can ask Asset Steward to choose devices, accessories and seats from stock in the background, with a reason for each, then confirm or change them. Off, it prepares them only in a conversation.",
       assistantDock: 'Ask box at the bottom of pages',
       assistantDockHint:
         'For everyone. Off, the AI is asked from the ✨ button at the top right.',
@@ -2814,9 +2814,9 @@ const messages = {
     },
     triage: {
       ask: 'Take a look',
-      hint: 'Once the device is picked and the fault described, Noco can tell the kind of fault and suggest repairing or replacing.',
-      working: 'Noco is looking…',
-      nothing: 'Noco gave no suggestion; fill it in as you see fit.',
+      hint: 'Once the device is picked and the fault described, Asset Steward can tell the kind of fault and suggest repairing or replacing.',
+      working: 'Asset Steward is looking…',
+      nothing: 'Asset Steward gave no suggestion; fill it in as you see fit.',
       recommendation: {
         repair: 'Repair it',
         replace: 'Replace it',
@@ -3112,7 +3112,7 @@ const messages = {
       retry: 'Retry',
       empty: 'No conversations yet',
       emptyDescription:
-        'Ask Noco about your asset register; the changes it proposes are made once you confirm them.',
+        'Ask Asset Steward about your asset register; the changes it proposes are made once you confirm them.',
       noArchived: 'No archived conversations',
       showArchived: 'Show archived',
       hideArchived: 'Hide archived',
@@ -3196,6 +3196,8 @@ const messages = {
     sendFailed: 'The question could not be sent. Try again from the chat.',
     conversationSource: 'IT asset management',
     searchSource: 'Global search',
+    // The assistant's name (2026-10-16; it was Noco until then).
+    assistantName: 'Asset Steward',
     agentPreset: {
       name: 'ITAM assistant',
       description:
@@ -3420,7 +3422,7 @@ const messages = {
   guidance: {
     title: 'Business guidance',
     description:
-      'What Noco reads in every conversation and every agent run: who you are, your standard equipment, your budgets, when something needs approval.',
+      'What Asset Steward reads in every conversation and every agent run: who you are, your standard equipment, your budgets, when something needs approval.',
     placeholder:
       'For example:\n- 300 people, head office in Shanghai, a branch in Shenzhen.\n- Standard laptops: MacBook Pro 14 for engineering, Latitude 5440 for everyone else.\n- Laptops are replaced after 4 years, monitors after 6.\n- A purchase order over 50,000 needs the finance director.',
     hint: 'Written in Markdown. Leave it empty for none.',
@@ -3496,7 +3498,7 @@ const messages = {
     whenItRuns: 'When it runs',
     runsOnItsOwn: 'Runs on its own',
     byHand:
-      'Whatever is switched off, an approver can always ask Noco to review a request.',
+      'Whatever is switched off, an approver can always ask Asset Steward to review a request.',
     howItDid: 'How it did',
     last7: 'Last 7 days',
     last30: 'Last 30 days',

@@ -17,7 +17,7 @@ import {
 import type { SettingsService } from './settings.js';
 
 /**
- * Noco choosing a joiner's equipment in the background (2026-10-06): the
+ * Asset Steward choosing a joiner's equipment in the background (2026-10-06): the
  * first thing the assistant does with nobody watching, which reverses the
  * 2026-09-27 rule that nothing AI runs outside a conversation.
  *
@@ -25,7 +25,7 @@ import type { SettingsService } from './settings.js';
  * stock fits; a rule picks among identical laptops by place and warranty.
  * What it cannot weigh is the rest — the one with three repairs behind it,
  * the one due for replacement next spring, what the business notes say
- * designers get — and that is what Noco is asked: for each item, which of
+ * designers get — and that is what Asset Steward is asked: for each item, which of
  * the candidates and why. It runs **as the joiner's 入职负责人**, under that
  * person's grants and in a conversation of theirs, reading only (the tools
  * it may call are listed below and every one is `ALLOW`, so the run never
@@ -34,8 +34,8 @@ import type { SettingsService } from './settings.js';
  * the 入职负责人 reserves or changes them on the card. Agent does the work,
  * a person decides (guideline 3.3).
  *
- * A run starts only when the 入职负责人 asks for one on the card (让 Noco
- * 挑选 / 重新建议), for a joiner not yet equipped, with an owner, and with
+ * A run starts only when the 入职负责人 asks for one on the card (挑选 /
+ * 重新建议), for a joiner not yet equipped, with an owner, and with
  * something to choose — some item with more candidates than it needs. It
  * ran on every save and nightly too until 2026-10-06, which spent a model
  * run on joiners nobody had looked at yet and held their picks back from
@@ -66,7 +66,7 @@ export interface OnboardingAdvisor {
 export const onboardingAdvisorToken: ServiceToken<OnboardingAdvisor> =
   createServiceToken<OnboardingAdvisor>('itam/onboarding-advisor');
 
-/** What Noco answers: its picks per item, and a line about the whole. */
+/** What Asset Steward answers: its picks per item, and a line about the whole. */
 export const ADVICE_SCHEMA = z.object({
   items: z
     .array(
@@ -91,9 +91,9 @@ export const ADVICE_SCHEMA = z.object({
 });
 export type AdviceAnswer = z.infer<typeof ADVICE_SCHEMA>;
 
-/** One unattended run of Noco, as the advisor needs it. */
+/** One unattended run of Asset Steward, as the advisor needs it. */
 export interface AgentRunner {
-  /** Whether a model is usable and Noco is enabled. */
+  /** Whether a model is usable and Asset Steward is enabled. */
   available(): Promise<boolean>;
   run(input: {
     readonly actorId: string;
@@ -115,7 +115,7 @@ const RUN_TIMEOUT_MS = 5 * 60_000;
 
 /**
  * The Agents plugin's model gateway behind `AgentRunner` (template
- * 1.0.0-beta.64): one session with Noco's model, this job's instructions as
+ * 1.0.0-beta.64): one session with Asset Steward's model, this job's instructions as
  * its system prompt and the joiner with their candidates as the question,
  * answered as JSON in `ADVICE_SCHEMA`'s shape (`openSession` in
  * ai-model.ts). There is no conversation: the run's row is the record, and
@@ -123,7 +123,7 @@ const RUN_TIMEOUT_MS = 5 * 60_000;
  * which is what the AI employee plugin's agent had to be kept from
  * (2026-10-06). No model is unavailable.
  */
-export function createNocoAgentRunner(
+export function createAssistantRunner(
   container: ServiceContainer,
 ): AgentRunner {
   return {
@@ -157,7 +157,7 @@ const PROMPTS: Readonly<
   'zh-CN': {
     title: (name) => `入职配备建议：${name}`,
     ask: [
-      '你是 IT 资产管理系统里的助手 Noco，在后台为一位新人从库存里挑选入职配备。没有人在看，你只做这一件事。用户消息是一段 JSON：新人、他的配置、业务说明，以及要挑的各项和候选。',
+      '你是 IT 资产管理系统里的资产管家，在后台为一位新人从库存里挑选入职配备。没有人在看，你只做这一件事。用户消息是一段 JSON：新人、他的配置、业务说明，以及要挑的各项和候选。',
       '',
       '- 只回答 items 列出的项。每一项从它的 candidates 里挑出 missing 个（不够就全挑），每个写一句理由。',
       '- 返回的 line 和 id 必须原样取自 JSON；不在 candidates 里的不算数，会被丢弃。',
@@ -175,7 +175,7 @@ const PROMPTS: Readonly<
   'en-US': {
     title: (name) => `Onboarding suggestions: ${name}`,
     ask: [
-      'You are Noco, the assistant of an IT asset management system, choosing onboarding equipment from stock for one joiner in the background. Nobody is watching and this is the only thing to do. The user message is JSON: the joiner, their kit, the business notes, and the items to choose for with their candidates.',
+      'You are Asset Steward, the assistant of an IT asset management system, choosing onboarding equipment from stock for one joiner in the background. Nobody is watching and this is the only thing to do. The user message is JSON: the joiner, their kit, the business notes, and the items to choose for with their candidates.',
       '',
       '- Answer only the items listed under `items`. For each, pick `missing` of its `candidates` (all of them when there are fewer), each with one sentence of reason.',
       '- Copy every `line` and `id` exactly from the JSON; anything not among the candidates is discarded.',
@@ -192,7 +192,7 @@ const PROMPTS: Readonly<
   },
 };
 
-/** The items Noco has a choice on: more candidates than it needs. */
+/** The items Asset Steward has a choice on: more candidates than it needs. */
 const choices = (plan: OnboardingPlan) =>
   plan.lines.filter(
     (line) =>
@@ -205,7 +205,7 @@ const choices = (plan: OnboardingPlan) =>
   );
 
 /**
- * Noco's answer held to the question: each pick a candidate of its own item,
+ * Asset Steward's answer held to the question: each pick a candidate of its own item,
  * none taken twice, no more than the item needs. Whatever else it said is
  * dropped rather than trusted.
  */

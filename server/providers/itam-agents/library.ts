@@ -18,7 +18,7 @@ import { METHOD_SKILLS, WORK_SKILLS } from './skill.js';
  * ITAM's method skills (ai/skills: onboarding, offboarding, receiving,
  * catalog, device-sync) as skills of the library, where people read and edit them under
  * AI → 技能: each is added once, from its SKILL.md as shipped, and attached
- * to Noco — a work agent's skill (approval-review) to its agent instead
+ * to Asset Steward — a work agent's skill (approval-review) to its agent instead
  * (work-agents.ts); the marker keeps their ids, so a skill an administrator edited,
  * detached or deleted stays as they left it, and a later SKILL.md shipped
  * with the code does not replace the library's. The background work reads
@@ -74,15 +74,15 @@ export async function provisionSkills(
   }
   if (!Object.keys(added).length) return;
   const agentId = await assistantId(database);
-  const forNoco = Object.entries(added)
+  const forAssistant = Object.entries(added)
     .filter(([slug]) => (METHOD_SKILLS as readonly string[]).includes(slug))
     .map(([, id]) => id);
-  if (agentId && forNoco.length) {
+  if (agentId && forAssistant.length) {
     const target = { scope: 'agent', scopeId: agentId } as const;
     const attached = await agents.skills.attached(target).catch(() => null);
     if (attached)
       await agents.skills.attach(target, [
-        ...new Set([...attached, ...forNoco]),
+        ...new Set([...attached, ...forAssistant]),
       ]);
   }
   await writeMarker(database, SKILLS_MARKER, {

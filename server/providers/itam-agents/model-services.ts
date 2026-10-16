@@ -50,7 +50,7 @@ export async function provisionModelServices(
     return;
   }
   // In the order config.yml sorts them, which is the order the plugin lists
-  // them in and so Noco's models' (assistant.ts): its default is the first.
+  // them in and so Asset Steward's models' (assistant.ts): its default is the first.
   const ordered = Object.entries(configured).sort(
     ([, a], [, b]) => (a.sort ?? 0) - (b.sort ?? 0),
   );

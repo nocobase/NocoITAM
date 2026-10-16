@@ -110,7 +110,7 @@ export const AI_WRITE_SCHEMAS = {
     ...target,
   }),
   // Device sync (step 4, 2026-10-15): a person's decisions about what a
-  // management platform reports, proposed by Noco.
+  // management platform reports, proposed by Asset Steward.
   itam_link_managed_device: z.object({
     title,
     managedDeviceId: id.describe(

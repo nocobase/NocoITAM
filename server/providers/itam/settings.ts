@@ -51,7 +51,7 @@ export interface ItamSettings {
   readonly ai: {
     readonly businessNotes: string;
     /**
-     * Whether Noco chooses a joiner's equipment in the background
+     * Whether Asset Steward chooses a joiner's equipment in the background
      * (`onboarding-advisor.ts`, 2026-10-06). On by default: the switch is
      * for a deployment that wants no model running unattended.
      */
@@ -71,7 +71,7 @@ export interface ItamSettings {
     readonly builtInEmployeesDisabled: boolean;
     /**
      * The application's skills already put in front of the administrator:
-     * added once to Noco's saved skill selection, and never again after
+     * added once to Asset Steward's saved skill selection, and never again after
      * that, so one they removed stays removed (`ai/index.ts`, 2026-10-06).
      * Null until the registrar first records it. Not shown on the settings
      * page.

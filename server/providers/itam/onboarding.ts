@@ -16,9 +16,9 @@ import { DEFAULT_ITAM_SETTINGS, type SettingsService } from './settings.js';
  *
  * The kit is the rule (`onboardingKits`, by department and position); this
  * is the arithmetic on it, deterministic so that "which laptop" is a
- * computed answer rather than a guess — the page lists it and Noco presents
+ * computed answer rather than a guess — the page lists it and Asset Steward presents
  * it, and neither invents a device. Among the candidates the arithmetic
- * finds, Noco may have chosen in the background with a reason
+ * finds, Asset Steward may have chosen in the background with a reason
  * (`onboarding-advisor.ts`, 2026-10-06): its pick leads while it is still
  * free, and the rule's order decides the rest. It writes nothing: every proposal is
  * carried out by the operation that already exists for it (reserve, issue,
@@ -72,7 +72,7 @@ export interface PlanThing {
    */
   readonly needsAccount?: boolean;
   readonly account?: string;
-  /** A proposal Noco chose in the background, with the reason it gave. */
+  /** A proposal Asset Steward chose in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;
   /** A planned thing: where it will come from, and from when. */
@@ -101,7 +101,7 @@ export interface PlanSupply {
 
 /**
  * Something in stock that could make up an item, with what the choice
- * between them turns on: what Noco is shown when it picks in the
+ * between them turns on: what Asset Steward is shown when it picks in the
  * background (`onboarding-advisor.ts`).
  */
 export interface PlanCandidate {
@@ -110,7 +110,7 @@ export interface PlanCandidate {
   readonly facts: Readonly<Record<string, string | number | boolean | null>>;
 }
 
-/** Noco's latest background run for this joiner, as the card shows it. */
+/** Asset Steward's latest background run for this joiner, as the card shows it. */
 export interface PlanAdvice {
   readonly runId: string;
   readonly status: 'running' | 'ready' | 'failed';
@@ -194,7 +194,7 @@ export interface OnboardingPlan {
    * on: what is already being bought, so it is not bought twice.
    */
   readonly orders: readonly PlanOrder[];
-  /** Noco's latest background run for them, or null when none ran. */
+  /** Asset Steward's latest background run for them, or null when none ran. */
   readonly advice: PlanAdvice | null;
 }
 
@@ -299,7 +299,7 @@ interface Pools {
   readonly returns: readonly ReturnDevice[];
   /** Devices proposed or planned for a joiner already worked out. */
   readonly takenDevices: Set<string>;
-  /** The person each device Noco picked was picked for. */
+  /** The person each device Asset Steward picked was picked for. */
   readonly pins: ReadonlyMap<string, string>;
   readonly stockItems: { readonly row: Row; available: number }[];
   readonly entitlements: { readonly row: Row; free: number }[];
@@ -429,10 +429,10 @@ export interface DepartmentKits {
   }[];
 }
 
-/** How many candidates an item shows Noco: enough to choose among. */
+/** How many candidates an item shows Asset Steward: enough to choose among. */
 const CANDIDATE_LIMIT = 12;
 
-/** Noco's picks for one kit item, as a run stores them. */
+/** Asset Steward's picks for one kit item, as a run stores them. */
 export interface AdvisedLine {
   readonly line: string;
   readonly picks: readonly { readonly id: string; readonly reason: string }[];
@@ -502,7 +502,7 @@ export function createOnboardingService(
   };
 
   /**
-   * A device in stock as Noco sees it: where it is, how old, how long its
+   * A device in stock as Asset Steward sees it: where it is, how old, how long its
    * warranty runs, when it is due to be replaced and how often it has been
    * repaired — what a person choosing among identical laptops would ask.
    */
@@ -551,9 +551,9 @@ export function createOnboardingService(
   };
 
   /**
-   * Who Noco picked each device for, by every person's latest finished run.
+   * Who Asset Steward picked each device for, by every person's latest finished run.
    * Two joiners of the same department want the same laptop, and without
-   * this the plan offered both of them the one Noco had just chosen for the
+   * this the plan offered both of them the one Asset Steward had just chosen for the
    * first. A pick is held only while it is still a pick: once reserved it
    * leaves stock anyway, and a newer run replaces it.
    */
@@ -581,7 +581,7 @@ export function createOnboardingService(
     return pins;
   };
 
-  /** Noco's latest run for a person, and the picks of its latest ready one. */
+  /** Asset Steward's latest run for a person, and the picks of its latest ready one. */
   const adviceFor = async (
     personId: string,
   ): Promise<{
@@ -637,7 +637,7 @@ export function createOnboardingService(
   };
 
   /**
-   * Noco's picks first, in its order, then the rule's: a pick still free
+   * Asset Steward's picks first, in its order, then the rule's: a pick still free
    * leads, and one taken since simply is not among the rows any more.
    */
   const preferred = <T>(
@@ -654,7 +654,7 @@ export function createOnboardingService(
     return [...rows].sort((a, b) => rank(a) - rank(b));
   };
 
-  /** The reason Noco gave for a thing, marking it as Noco's. */
+  /** The reason Asset Steward gave for a thing, marking it as Asset Steward's. */
   const advised = (
     picks: ReadonlyMap<string, string> | undefined,
     id: string,
@@ -664,7 +664,7 @@ export function createOnboardingService(
   /**
    * What the joiners' plans draw on, read once for all of them: stock now,
    * what is on its way — open purchase orders, and the devices and seats of
-   * people leaving — and the devices Noco picked for somebody. Each plan
+   * people leaving — and the devices Asset Steward picked for somebody. Each plan
    * takes from it in turn, so what one joiner is planned is not offered to
    * the next.
    */
@@ -1411,7 +1411,7 @@ export function createOnboardingService(
             });
             missing -= 1;
           };
-          // Noco's picks first, from stock or from what comes back; then
+          // Asset Steward's picks first, from stock or from what comes back; then
           // stock; then what is being bought; then what comes back.
           for (const pick of picks?.keys() ?? []) {
             if (missing <= 0) break;

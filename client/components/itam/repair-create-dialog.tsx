@@ -51,7 +51,7 @@ interface Triage {
  * 维修单整理 (2026-10-17). What a rule can say is said without a model:
  * above the fields, the device's warranty, age, book value and how often it
  * was repaired, and a device still under warranty starts as a warranty
- * repair to its own vendor. What takes judgement is asked of Noco
+ * repair to its own vendor. What takes judgement is asked of Asset Steward
  * (`POST /itam/ai/read`, task `repairTriage`, the device read on the server
  * as the person): the kind of fault, filled and marked 请核对, and whether to
  * repair it, replace it or look first, with its reasons, beside the form.
@@ -141,7 +141,7 @@ function RepairForm({
       values={values}
       onValuesChange={(next, key) => {
         setValues(next);
-        // A field the person sets is theirs, no longer Noco's to check.
+        // A field the person sets is theirs, no longer Asset Steward's to check.
         if (marks.has(key))
           setMarks((before) => new Set([...before].filter((k) => k !== key)));
       }}
@@ -250,7 +250,7 @@ function DeviceFacts({
   );
 }
 
-/** Beside the form: asking Noco, and what it recommends. */
+/** Beside the form: asking Asset Steward, and what it recommends. */
 function TriagePanel({
   deviceId,
   fault,

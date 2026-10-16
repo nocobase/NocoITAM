@@ -14,7 +14,7 @@ export interface PlanThing {
   /** A subscription seat: held under an account, the person's e-mail. */
   readonly needsAccount?: boolean;
   readonly account?: string;
-  /** Chosen by Noco in the background, with the reason it gave. */
+  /** Chosen by Asset Steward in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;
   /** Planned rather than in stock: where it comes from, and from when. */
@@ -33,7 +33,7 @@ export interface PlanSupply {
   readonly fromName?: string;
 }
 
-/** Noco's latest background run for the joiner. */
+/** Asset Steward's latest background run for the joiner. */
 export interface PlanAdvice {
   readonly runId: string;
   readonly status: 'running' | 'ready' | 'failed';
@@ -149,7 +149,7 @@ export function useOnboardingPlan(
         })
       ).data,
     enabled: enabled && Boolean(personId),
-    // While Noco is choosing, look again until it has; the run's end also
+    // While Asset Steward is choosing, look again until it has; the run's end also
     // reaches open pages through the change signal.
     refetchInterval: (query) =>
       query.state.data?.advice?.status === 'running' ? 5_000 : false,

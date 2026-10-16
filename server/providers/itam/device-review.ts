@@ -196,7 +196,7 @@ export interface DeviceReviewService {
   ): Promise<Map<string, number>>;
   /**
    * Ties a platform record to a register device, by a person — or on a plan
-   * Noco proposed and the person confirmed (`origin: 'agent'`).
+   * Asset Steward proposed and the person confirmed (`origin: 'agent'`).
    */
   link(
     managedId: string,

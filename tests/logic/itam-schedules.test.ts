@@ -103,7 +103,7 @@ describe('ITAM schedules', () => {
     expect(defined[1]!.title).toBe('资产每日维护');
     expect(target.validate({ job: 'daily' }).valid).toBe(true);
     expect(target.validate({ job: 'leavers' }).valid).toBe(true);
-    // Noco chooses only when asked (2026-10-06): no nightly task.
+    // Asset Steward chooses only when asked (2026-10-06): no nightly task.
     expect(target.validate({ job: 'onboardingAdvice' }).valid).toBe(false);
     expect(target.validate({ job: 'reminders' }).valid).toBe(false);
   });

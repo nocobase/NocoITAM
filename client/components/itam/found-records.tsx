@@ -5,8 +5,8 @@ import type { ReactElement } from 'react';
 import { Button } from '@/components/ui/button';
 
 /**
- * Above a list showing only the records Noco found for a question asked on
- * the workbench: what they are, in Noco's words, how many, and the way back
+ * Above a list showing only the records Asset Steward found for a question asked on
+ * the workbench: what they are, in Asset Steward's words, how many, and the way back
  * to the whole list. Without it a list narrowed by ids would look like the
  * whole register with most of it missing.
  */

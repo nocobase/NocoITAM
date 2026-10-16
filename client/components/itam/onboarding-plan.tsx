@@ -51,7 +51,7 @@ import { ReferenceSelect } from './reference-select.js';
  * reserved until the joining date while they have not started, and
  * assigned once they have. What stock cannot cover is the shortfall.
  *
- * Which device of several is Noco's to suggest (2026-10-06): it chooses in
+ * Which device of several is Asset Steward's to suggest (2026-10-06): it chooses in
  * the background as the joiner's 入职负责人 (`onboarding-advisor.ts`), its
  * picks come first with the reason beneath, and the strip under the heading
  * says how that run went. The buttons stay the person's.
@@ -63,7 +63,7 @@ export function OnboardingPlanCard({
 }: {
   readonly personId: string;
   readonly personName: string;
-  /** The joiner's 入职负责人, who alone may ask Noco again. */
+  /** The joiner's 入职负责人, who alone may ask Asset Steward again. */
   readonly ownerId?: string;
 }): ReactElement | null {
   const { t } = useTranslation();
@@ -78,7 +78,7 @@ export function OnboardingPlanCard({
   const [chosen, setChosen] = useState<Readonly<Record<string, PlanThing>>>({});
   const effective = (thing: PlanThing): PlanThing => chosen[thing.id] ?? thing;
   const data = plan.data;
-  // The person goes along as page context, so Noco reads this very plan
+  // The person goes along as page context, so Asset Steward reads this very plan
   // (`itam onboarding plan`) and proposes it as a plan of its own (the
   // onboarding skill) — with the purchase order for the shortfall, which
   // needs a vendor the card does not ask for.
@@ -384,7 +384,7 @@ function PlanLine({
       className='size-4 shrink-0 text-muted-foreground'
     />
   );
-  // Noco's reasons, for the picks still standing: one replaced by 更换 is
+  // Asset Steward's reasons, for the picks still standing: one replaced by 更换 is
   // the person's choice now, and its reason no longer applies.
   const reasons = line.proposals.filter(
     (thing) => thing.reason && effective(thing) === thing,
@@ -616,7 +616,7 @@ export function LineOutlook({
 }
 
 /**
- * How Noco's background choice stands: choosing, chosen (with its summary
+ * How Asset Steward's background choice stands: choosing, chosen (with its summary
  * and the conversation it ran in, which is the 入职负责人's), or failed.
  * The 入职负责人 may ask again, since the run is made as them.
  */
@@ -655,7 +655,7 @@ function AdviceStrip({
         );
     },
   });
-  // Nothing to say: Noco has not run and the reader cannot ask it to.
+  // Nothing to say: Asset Steward has not run and the reader cannot ask it to.
   if (!advice && !(isOwner && aiAvailable)) return null;
   const again =
     isOwner && aiAvailable && advice?.status !== 'running' ? (

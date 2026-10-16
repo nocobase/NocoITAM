@@ -258,7 +258,7 @@ function SearchPanel({
   const groups = results.data ?? [];
 
   // Enter opens the first result. The selection is controlled because the
-  // Noco row renders before the results arrive and would otherwise keep it;
+  // Asset Steward row renders before the results arrive and would otherwise keep it;
   // a choice made with the arrows or the mouse holds until the results
   // change under it.
   const resultKey = `${term}|${groups.map((group) => `${group.key}${group.total}`).join()}`;

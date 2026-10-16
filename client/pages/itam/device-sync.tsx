@@ -153,7 +153,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
         <p className='text-sm text-muted-foreground'>
           {t(`deviceSync.review.hints.${view}`)}
         </p>
-        {/* Noco explains the differences, or sorts out the records the
+        {/* Asset Steward explains the differences, or sorts out the records the
             register lacks into one plan (device-sync skill, step 4). */}
         {ai.available &&
         (view === 'checks' || view === 'unregistered') &&

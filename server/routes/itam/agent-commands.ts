@@ -283,7 +283,7 @@ export const agentCommandRoutes: AppApiRouteContribution<Application> =
         summary: "A joiner's onboarding plan",
         operationId: 'itamOnboardingPlan',
         description:
-          "The kit for the joiner's department and position, what they hold or have reserved, the device, stock item or seat proposed for the rest (the system's choice, or Noco's pick while still free), what is planned from orders and leavers, and the shortfall. Propose exactly these proposals; never choose other items.",
+          "The kit for the joiner's department and position, what they hold or have reserved, the device, stock item or seat proposed for the rest (the system's choice, or Asset Steward's pick while still free), what is planned from orders and leavers, and the shortfall. Propose exactly these proposals; never choose other items.",
         ...command(VIEW_ACTION, { command: 'onboarding plan' }),
         responses: {
           '200': dataResponse(anyData),

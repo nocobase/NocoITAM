@@ -219,7 +219,7 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   opens its list searched for the same words. The 问 AI side of the box's
   segmented 搜索 | 问 AI switch (the pages' own tabs) answers in the dialog
   again (2026-10-16, as NocoCRM does; `SearchAnswer` in
-  `client/components/itam/ai/search-answer.tsx`): the question goes to Noco
+  `client/components/itam/ai/search-answer.tsx`): the question goes to Asset Steward
   on a conversation of the source `itam-search`, which the conversation
   lists leave out (`history-list.tsx`), and the reply replaces the results.
   返回搜索 and closing the dialog delete it (stopping a reply still being

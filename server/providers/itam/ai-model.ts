@@ -15,13 +15,13 @@ import { BusinessRuleError } from './errors.js';
 /**
  * ITAM's own model calls (template 1.0.0-beta.64, after NocoCRM's): reading
  * a delivery document, AI 整理 on a purchase order, a model's or a product's
- * details, and Noco choosing a joiner's equipment ask the Agents plugin's
+ * details, and Asset Steward choosing a joiner's equipment ask the Agents plugin's
  * model gateway, which keeps the keys and records the use. Each is a
  * session of turns, each one call; the answer is JSON in the reply, checked
  * against the shape the caller gives — the gateway's `generate` has no
  * structured output of its own — and asked once more when it is not.
  *
- * The model is Noco's first, so changing Noco's model on AI → 智能体 changes
+ * The model is Asset Steward's first, so changing Asset Steward's model on AI → 智能体 changes
  * this work too; without one, the system's default chat model. None means
  * the assistant is unavailable, and the pages keep their plain forms.
  */
@@ -57,9 +57,9 @@ export async function itamModel(
 
 /**
  * A work agent's model and instructions (2026-10-16, work-agents.ts): its
- * first model when it lists one, else Noco's (`itamModel`); null when there
+ * first model when it lists one, else Asset Steward's (`itamModel`); null when there
  * is no model to ask. One an administrator archived or deleted leaves its
- * work to Noco's model and no instructions of its own.
+ * work to Asset Steward's model and no instructions of its own.
  */
 export async function workRun(
   container: ServiceResolver,
@@ -87,7 +87,7 @@ export async function workRun(
         };
     }
   } catch {
-    // Unreadable: Noco's model below.
+    // Unreadable: Asset Steward's model below.
   }
   const model = await itamModel(container).catch(() => null);
   return model ? { model, instructions } : null;

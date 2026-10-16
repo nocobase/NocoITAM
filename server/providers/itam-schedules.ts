@@ -42,8 +42,8 @@ const TITLES: Readonly<
   },
 };
 
-// Noco's nightly pass over the joiners (`itam.onboarding-advice`, 02:30)
-// went on 2026-10-06: Noco chooses only when the 入职负责人 asks. A database
+// Asset Steward's nightly pass over the joiners (`itam.onboarding-advice`, 02:30)
+// went on 2026-10-06: Asset Steward chooses only when the 入职负责人 asks. A database
 // that synchronised it keeps the definition until `scheduler sync
 // --finalize` deactivates it; a firing before then finds no definition and
 // runs nothing. The work agents' daily pass (`itam.agent-passes`, 02:30,

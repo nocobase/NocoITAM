@@ -10,7 +10,7 @@ import { useItamSettings, type ItamSettings } from '@/lib/itam/api';
 import { useSave } from './settings/use-settings-save.js';
 
 /**
- * 业务说明 (2026-10-16, after NocoCRM's Business guidance page): what Noco
+ * 业务说明 (2026-10-16, after NocoCRM's Business guidance page): what Asset Steward
  * reads at the start of every conversation and every work agent's run —
  * who the organisation is, its standard equipment, its budgets, when
  * something needs approval. It is the `ai.businessNotes` setting, moved

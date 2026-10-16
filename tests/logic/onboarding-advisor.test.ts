@@ -23,7 +23,7 @@ const MACBOOK = 'model-macbook-pro-14-m3';
 const LINE = `model:${MACBOOK}`;
 
 /**
- * Noco choosing a joiner's equipment when their 入职负责人 asks
+ * Asset Steward choosing a joiner's equipment when their 入职负责人 asks
  * (`onboarding-advisor.ts`): when a run may start, what is kept of its answer,
  * and how the plan puts its picks first. The model is a stand-in that
  * answers what each test tells it to.
@@ -100,8 +100,8 @@ describe('onboarding advisor', () => {
     await app.destroy();
   });
 
-  it('puts Noco’s pick first, with its reason', async () => {
-    // The rule would take the longer warranty; Noco takes the other.
+  it('puts Asset Steward’s pick first, with its reason', async () => {
+    // The rule would take the longer warranty; Asset Steward takes the other.
     const longer = await laptop('C02ADV0001', '2030-01-01');
     const other = await laptop('C02ADV0002', '2028-01-01');
     const person = await joiner();

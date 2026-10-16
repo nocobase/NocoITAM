@@ -265,7 +265,7 @@ const zhCN: AppResource = {
       changes: '变更',
     },
     origin: {
-      agent: '经 Noco 提议',
+      agent: '经资产管家提议',
       import: '经数据导入',
       schedule: '经定时任务',
       sync: '经设备同步',
@@ -989,20 +989,20 @@ const zhCN: AppResource = {
     runAll_one: '全部执行（{{count}}）',
     runAll_other: '全部执行（{{count}}）',
     advice: {
-      none: 'Noco 还没有为他挑选，可以让它从库存里挑一遍。',
-      running: 'Noco 正在从库存里为他挑选…',
-      ready: 'Noco 已挑选（{{date}}）',
-      failed: 'Noco 这次没挑成。',
+      none: '资产管家还没有为他挑选，可以让它从库存里挑一遍。',
+      running: '资产管家正在从库存里为他挑选…',
+      ready: '资产管家已挑选（{{date}}）',
+      failed: '资产管家这次没挑成。',
       conversation: '查看过程',
       first: '挑选',
       again: '重新建议',
       notStarted: {
         disabled: '入职建议已在设置中关闭',
-        unavailable: 'Noco 现在不可用：请在「Agent 团队 → 模型」检查模型',
+        unavailable: '资产管家现在不可用：请在「Agent 团队 → 模型」检查模型',
         notJoiner: '只为还没配齐的新人挑选',
         noOwner: '先给他指定入职负责人',
         nothingToChoose: '没有可挑的：每一项的候选都只有一个或没有',
-        running: 'Noco 正在挑选',
+        running: '资产管家正在挑选',
       },
     },
     waive: '不需要',
@@ -2596,10 +2596,10 @@ const zhCN: AppResource = {
     ai: {
       title: 'AI 助手',
       description:
-        'AI 助手 Noco 在后台做的事；业务指导在「Agent 团队 → 业务指导」，它的模型和能做的事在「Agent 团队 → Agent」中配置，模型服务在「Agent 团队 → 模型」',
+        '资产管家在后台做的事；业务指导在「Agent 团队 → 业务指导」，它的模型和能做的事在「Agent 团队 → Agent」中配置，模型服务在「Agent 团队 → 模型」',
       onboardingAdvice: '入职建议',
       onboardingAdviceHint:
-        '入职负责人可以在新人的入职配备卡片上点「挑选」，Noco 在后台从库存里为新人挑选设备、配件和授权并写明理由，由他确认或更换。关闭后只在对话中准备。',
+        '入职负责人可以在新人的入职配备卡片上点「挑选」，资产管家在后台从库存里为新人挑选设备、配件和授权并写明理由，由他确认或更换。关闭后只在对话中准备。',
       assistantDock: '页面底部的 AI 对话框',
       assistantDockHint: '对所有人生效。关闭后，从右上角的 ✨ 按钮使用 AI。',
     },
@@ -2657,9 +2657,9 @@ const zhCN: AppResource = {
     },
     triage: {
       ask: '看看',
-      hint: '选好设备、写下故障描述后，Noco 可以判断故障类型，并建议修还是换。',
-      working: 'Noco 正在看…',
-      nothing: 'Noco 没能给出建议，请按情况填写。',
+      hint: '选好设备、写下故障描述后，资产管家可以判断故障类型，并建议修还是换。',
+      working: '资产管家正在看…',
+      nothing: '资产管家没能给出建议，请按情况填写。',
       recommendation: {
         repair: '建议维修',
         replace: '建议直接更换',
@@ -2938,7 +2938,7 @@ const zhCN: AppResource = {
       retry: '重试',
       empty: '还没有对话',
       emptyDescription:
-        '问 Noco 关于资产台账的问题，它提出的改动由你确认后执行。',
+        '问资产管家关于资产台账的问题，它提出的改动由你确认后执行。',
       noArchived: '没有已归档的对话',
       showArchived: '显示已归档',
       hideArchived: '隐藏已归档',
@@ -3015,6 +3015,8 @@ const zhCN: AppResource = {
     sendFailed: '问题没能发出，请在对话里重试。',
     conversationSource: 'IT 资产管理',
     searchSource: '全局搜索',
+    // The assistant's name (2026-10-16; it was Noco until then).
+    assistantName: '资产管家',
     agentPreset: {
       name: 'IT 资产助手',
       description:
@@ -3231,7 +3233,7 @@ const zhCN: AppResource = {
   guidance: {
     title: '业务指导',
     description:
-      'Noco 每次对话、每个 Agent 每次运行都会读这里：你们是谁、标准配置、预算、什么情况要审批。',
+      '资产管家每次对话、每个 Agent 每次运行都会读这里：你们是谁、标准配置、预算、什么情况要审批。',
     placeholder:
       '比如：\n- 公司 300 人，总部在上海，分部在深圳。\n- 标准笔记本：研发 MacBook Pro 14，其他岗位 Latitude 5440。\n- 笔记本 4 年更换，显示器 6 年。\n- 单张采购单超过 5 万元要财务总监审批。',
     hint: '用 Markdown 写。留空则不提供业务指导。',

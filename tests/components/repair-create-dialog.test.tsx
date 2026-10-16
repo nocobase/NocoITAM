@@ -114,7 +114,7 @@ it('leaves the method to the person once the warranty has ended', () => {
   expect(field('method')?.value).toBe('');
 });
 
-it('asks Noco about the fault, fills its kind and shows the recommendation', async () => {
+it('asks Asset Steward about the fault, fills its kind and shows the recommendation', async () => {
   render(<RepairCreateDialog deviceId='d1' open onOpenChange={vi.fn()} />);
   const ask = screen.getByRole('button', { name: 'repairs.triage.ask' });
   expect(ask).toBeDisabled();

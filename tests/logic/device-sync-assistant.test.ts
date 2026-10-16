@@ -46,7 +46,7 @@ const observed = (
   ...values,
 });
 
-describe('Noco on device sync', () => {
+describe('Asset Steward on device sync', () => {
   let app: TestApp;
   type Who = { user: string; role: 'employee' | 'support' | 'manager' };
   const post = (

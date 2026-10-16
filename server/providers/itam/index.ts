@@ -91,7 +91,7 @@ import {
   onboardingServiceToken,
 } from './onboarding.js';
 import {
-  createNocoAgentRunner,
+  createAssistantRunner,
   createOnboardingAdvisor,
   onboardingAdvisorToken,
 } from './onboarding-advisor.js';
@@ -730,14 +730,14 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // The changes the assistant proposes, carried out by the person it
     // works for (`plans.ts`).
     container.singleton(planServiceToken, () => createPlanService(container));
-    // Noco choosing a joiner's equipment when their 入职负责人 asks, in the
+    // Asset Steward choosing a joiner's equipment when their 入职负责人 asks, in the
     // background (`onboarding-advisor.ts`).
     container.singleton(onboardingAdvisorToken, () =>
       createOnboardingAdvisor({
         database: container.resolve(databaseManagerToken),
         onboarding: container.resolve(onboardingServiceToken),
         settings: container.resolve(settingsServiceToken),
-        runner: createNocoAgentRunner(container),
+        runner: createAssistantRunner(container),
         locale: () =>
           process.env.APP_DEFAULT_LOCALE ??
           this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??

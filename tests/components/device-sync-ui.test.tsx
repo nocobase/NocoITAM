@@ -270,7 +270,7 @@ describe("a device's differences with the platform", () => {
       screen.getByRole('button', { name: 'deviceSync.checks.transferTo' }),
     );
     expect(actions.onTransfer).toHaveBeenCalledWith(record.personId);
-    // 忽略 and Noco are MDM 核对's, not the device page's (2026-10-16).
+    // 忽略 and Asset Steward are MDM 核对's, not the device page's (2026-10-16).
     expect(
       screen.queryByRole('button', { name: 'deviceSync.checks.keepRegister' }),
     ).toBeNull();

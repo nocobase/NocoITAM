@@ -12,11 +12,11 @@ import { errorMessage, formatDate } from '@/lib/itam/format';
 
 /**
  * The plans the assistant proposes, as cards in its conversation (template
- * 1.0.0-beta.64, after NocoCRM's): every change Noco asks for is one plan of
+ * 1.0.0-beta.64, after NocoCRM's): every change Asset Steward asks for is one plan of
  * steps (`server/providers/itam/plans.ts`), and nothing is written until the
  * person it works for carries it out here — or declines it. Each step reads
  * as its own line; unticking one leaves it out. What became of the plan goes
- * back to the conversation (`plan-news.ts`), so Noco reports it.
+ * back to the conversation (`plan-news.ts`), so Asset Steward reports it.
  */
 
 import { PLANS_PATH, type Plan, type PlanStep } from '@/lib/itam/plans';

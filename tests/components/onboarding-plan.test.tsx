@@ -170,7 +170,7 @@ beforeEach(() => {
   state.opened = [];
 });
 
-/** The plan with Noco's pick on the laptop, from a run made as `u1`. */
+/** The plan with Asset Steward's pick on the laptop, from a run made as `u1`. */
 const advised = (): OnboardingPlan => {
   const base = plan('2099-01-10');
   return {
@@ -318,7 +318,7 @@ it('reserves the device the person chose instead of the proposed one', async () 
   expect(state.requests[0]?.path).toBe('itam/devices/d2/reserve');
 });
 
-it('shows Noco’s reason under its pick, and the run under the heading', async () => {
+it('shows Asset Steward’s reason under its pick, and the run under the heading', async () => {
   state.plan = advised();
   state.aiAvailable = true;
   show();

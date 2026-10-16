@@ -15,7 +15,7 @@ const skillsDir = path.resolve(process.cwd(), 'ai/skills');
 /**
  * A skill is a delivered document, not prose inside the instructions: the
  * server puts `ai/skills/<name>/SKILL.md` into the Agents plugin's skill
- * library at its first start and attaches it to Noco
+ * library at its first start and attaches it to Asset Steward
  * (`server/providers/itam-agents/library.ts`), and the build copies the
  * directory into `dist`. So the thing to hold still is that the files and
  * the names the library is given are the same set — a file nobody names is
@@ -27,7 +27,7 @@ describe('the skills this Solution delivers', () => {
     .map((entry) => entry.name);
 
   it('are exactly the ones put into the library', () => {
-    // Noco's method skills and the work agents' (2026-10-16).
+    // Asset Steward's method skills and the work agents' (2026-10-16).
     expect([...directories].sort()).toEqual(
       [...METHOD_SKILLS, ...WORK_SKILLS].sort(),
     );

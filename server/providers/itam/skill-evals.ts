@@ -8,7 +8,7 @@ import { DEVICE_SYNC_EVALS } from './evals/device-sync.js';
 /**
  * Eval sets for ITAM's method skills (device sync, step 4, 2026-10-15; the
  * first one): situations with the answer a person who knows the method
- * would give, run against the model Noco answers with before a skill, its
+ * would give, run against the model Asset Steward answers with before a skill, its
  * instructions or the model change (NocoSolution guideline 1.3 and 3.5).
  *
  * A case asks for decisions, not for a plan: what the skill teaches is the
@@ -144,7 +144,7 @@ export function evalPrompt(item: EvalCase): string {
 /** Runs one skill's eval set with the given model session per case. */
 export async function runEval(options: {
   readonly skill: string;
-  /** The skill's text, as Noco reads it. */
+  /** The skill's text, as Asset Steward reads it. */
   readonly instructions: string;
   readonly open: (system: string) => Promise<ModelSession | null>;
   readonly signal?: AbortSignal;

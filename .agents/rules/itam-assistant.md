@@ -1,6 +1,6 @@
 # ITAM: the assistant
 
-Read this before changing Noco, its commands or plans, the chat, a page's AI shortcut, AI 整理, receiving by delivery document, or any call to a model.
+Read this before changing Asset Steward, its commands or plans, the chat, a page's AI shortcut, AI 整理, receiving by delivery document, or any call to a model.
 
 Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small; each rule is as it was written, with the date it was decided.
 
@@ -18,16 +18,24 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (`context.ts`) and the `itam` conversation source. At start it creates,
   once each, the model services from `ai.llmServices` in `config.yml`
   (`model-services.ts`, in their `sort` order; the keys are stored
-  encrypted, so `secrets.keys` must be configured), Noco as an online agent
+  encrypted, so `secrets.keys` must be configured), Asset Steward as an online agent
   open to everyone with every chat model, the system's default chat agent
   (`assistant.ts`), and the five method skills of `ai/skills/` in the
-  plugin's library, attached to Noco (`library.ts`, copied into `dist` by
+  plugin's library, attached to Asset Steward (`library.ts`, copied into `dist` by
   the build hook). A marker row in `itamSettings` (`agents-noco-v1`,
   `agents-skills-v1`, `markers.ts`) records each, so what an administrator
   changes on Agent 团队 → Agent / 技能 / 模型 is never overwritten. Nothing of it
   may stop the application starting: a failure is logged and retried at the
   next start.
-- Noco reads the register through **commands**, the routes of
+- **The assistant is Asset Steward, 资产管家** (2026-10-16; it was Noco
+  until then). The agent's `name` is the English and its `nameText`
+  (`ai.assistantName`) shows it in the viewer's language; the first line of
+  its instructions and the background prompts use the name too. At start,
+  `renameFormer` in `assistant.ts` renames an assistant still called Noco
+  — name, translation and that first line — and leaves one an administrator
+  renamed alone. The marker (`agents-noco-v1`) and the `source: 'noco'` of a
+  background pick keep the old word: they are stored keys, not names.
+- Asset Steward reads the register through **commands**, the routes of
   `server/routes/itam/agent-commands.ts` under `/api/assistant/*` (not
   `/itam/*`, whose `auth.required()` refuses a run's token): `itam context`,
   `search`, `record get`, `stats`, `availability`, `model match`,
@@ -37,7 +45,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   does not hold and answers any write `PLAN_REQUIRED`. What they read is
   `server/providers/itam-agents/reads.ts`, as the person the run works for
   (`readerFor(container, userId)` → `scopeFor`), exactly as the pages would
-  show it. Noco **changes nothing itself**: it writes one **plan**
+  show it. Asset Steward **changes nothing itself**: it writes one **plan**
   (`server/providers/itam/plans.ts`, tables `itamPlans` / `itamPlanSteps`,
   migration `202610120001_itam_plans`) whose steps are the operations it
   could once call directly — `AI_WRITE_SCHEMAS` (`ai-writes.ts`) and
@@ -120,7 +128,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   while a reply is unread, no search or filters; the archived ones behind
   显示已归档 at its foot (`?archived=1`). With no conversation the page is an
   empty state. The conversation fills the column under a header of the
-  avatar, the title (click to rename) over "Noco · what it does" and a ⋯
+  avatar, the title (click to rename) over "Asset Steward · what it does" and a ⋯
   menu (archive), over a rule, with no greeting on a new one; an archived
   conversation shows 这个对话已归档。 and 取消归档 in place of the composer. The global search's 问 AI answers in its own
   dialog on a conversation listed nowhere until the reader goes on asking
@@ -132,22 +140,22 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   carries ids only; the server resolves each kind (`context.ts`) from a
   per-person snapshot of the collections they may read, taken by
   `/itam/ai/status` (the plugin resolves inside its own transaction, where
-  authorization cannot be asked on SQLite). Noco then reads the record with
+  authorization cannot be asked on SQLite). Asset Steward then reads the record with
   its commands. `useItamAi()` says whether a model is there (`/itam/ai/status`:
-  Noco's first model, else the system default) and opens or starts
+  Asset Steward's first model, else the system default) and opens or starts
   conversations. Every AI shortcut on a page is blue text with a sparkle
   (`AiShortcut`), not a button. There is no web search.
 - ITAM's **own model calls** go through the plugin's model gateway
   (`server/providers/itam/ai-model.ts`: `openSession`, `askJson` with a zod
   shape spelled out as JSON Schema, asked once more when the reply does not
-  hold it, and `readSkill` from the library), with Noco's first model. They
+  hold it, and `readSkill` from the library), with Asset Steward's first model. They
   are the forms filled from material — AI 整理 on a purchase order or its
   lines, a new model or software product, a delivery document —
   `POST /itam/ai/read` (`ai-reading.ts`, each task under the grant its form
   needs), which answers in the shape the form's own handler took when a page
   tool delivered it, so the same server checks (`/capture/match`, a receipt
-  run's `/draft`) still decide what the form takes; and Noco choosing a
-  joiner's equipment (`createNocoAgentRunner` in `onboarding-advisor.ts`).
+  run's `/draft`) still decide what the form takes; and Asset Steward choosing a
+  joiner's equipment (`createAssistantRunner` in `onboarding-advisor.ts`).
   A purchase reading is given the models and products on the books to pick
   ids from. Documents are read as text on the server (`document-text.ts`:
   exceljs, mammoth, unpdf); a picture is not read.
@@ -166,10 +174,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   conversation, and only suggest. One plugin agent per work, created once
   at start (`server/providers/itam-agents/work-agents.ts`, marker
   `agents-work-v1`, owner-only, no actions, its method skill attached —
-  `WORK_SKILLS` in `skill.ts` go into the library but not onto Noco), is how
+  `WORK_SKILLS` in `skill.ts` go into the library but not onto Asset Steward), is how
   an administrator sets its model and instructions on Agent 团队 → Agent; a run
   asks the gateway with them (`openSession({ work })`, falling back to
-  Noco's model) and its use shows under the agent's name on 用量. Each run
+  Asset Steward's model) and its use shows under the agent's name on 用量. Each run
   is a row of `itamAgentRuns` (migration `202610160001_agent_runs`,
   `server/providers/itam/agent-runs.ts`): running → pending with its
   structured result, or failed with a reason code shown where the result
@@ -229,7 +237,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     archives its plugin agent and drops it from the marker, and 收件箱 and
     its count read only the agents in `AGENTS`, so its old runs stop
     showing. The plan operations they added (`adjust_entitlement_seats`,
-    `set_entitlement_auto_renew`) stay for Noco.
+    `set_entitlement_auto_renew`) stay for Asset Steward.
 - An AI create meets the page dialog's bar: `REQUIRED_ON_CREATE` in
   `server/routes/itam/ai-records.ts` lists what each create dialog requires
   beyond its input schema (conditional ones included, and a device's serial
@@ -239,14 +247,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (`CREATE_FIELD_GUIDE`, generated from the routes' own schemas) is what
   `itam plan ops` shows, so a field added to a page reaches the assistant by
   itself.
-- **Noco chooses a joiner's equipment when asked** (2026-10-06,
+- **Asset Steward chooses a joiner's equipment when asked** (2026-10-06,
   `server/providers/itam/onboarding-advisor.ts`, migration
   `202610060002_onboarding_runs`), reversing "nothing AI runs outside a
   conversation" for this one job. The rule picks among identical laptops by
-  place and warranty; Noco also weighs repairs, the replacement date, notes
+  place and warranty; Asset Steward also weighs repairs, the replacement date, notes
   and the business notes, and says why. A run is one call to the Agents
-  plugin's model gateway (`createNocoAgentRunner`, `openSession` /
-  `askJson` in `ai-model.ts`, template 1.0.0-beta.64) with Noco's model and
+  plugin's model gateway (`createAssistantRunner`, `openSession` /
+  `askJson` in `ai-model.ts`, template 1.0.0-beta.64) with Asset Steward's model and
   this job's instructions (`PROMPTS`) as the whole system prompt, answered
   in `ADVICE_SCHEMA`'s shape; the message is the joiner, the kit, the
   business notes and each item's candidates as JSON. It has no conversation,
@@ -259,14 +267,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `plan()` puts a pick first **while it is still free** (marked
   `source: 'noco'` with its `reason`) and otherwise falls back to the rule,
   so a pick taken since needs no clean-up; `plan(id, { candidates: true })`
-  is what the run is shown. A device Noco picked for one joiner (their
+  is what the run is shown. A device Asset Steward picked for one joiner (their
   latest finished run) is **held back** from every other joiner's
   candidates and proposals (`heldForOthers`), or two joiners of one
   department were both offered the laptop it had just chosen for the first.
   A run starts **only when the 入职负责人 asks** — 挑选 / 重新建议
   on the card, which only they may press (`advise`, `POST /itam/master/people/:id/onboarding/advise`,
   `NOT_OWNER`) — for a joiner not yet equipped, however far off their
-  first day, when Noco has a choice (some item with more candidates than it
+  first day, when Asset Steward has a choice (some item with more candidates than it
   needs). Runs are queued one at a time. It also ran after every save of a
   person and nightly (`itam.onboarding-advice`, 02:30) until later the same
   day, notifying the owner of what it found; that went, because it spent a
@@ -275,7 +283,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   definition until `scheduler sync --finalize`; a firing before then finds
   no definition and runs nothing.
   The card shows the run under its heading — choosing, chosen with
-  Noco's summary, or failed — and each pick's reason under its item; the
+  Asset Steward's summary, or failed — and each pick's reason under its item; the
   buttons stay the person's. `ai.onboardingAdvice` in ITAM's settings
   (入职建议, on by default) switches it off; no usable model starts
   nothing.
@@ -316,7 +324,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   name (exceljs), Word as its raw text (mammoth) and PDF page by page
   (unpdf). A picture, or a legacy .xls / .doc, is not read, and the form
   says so; do not add an OCR library for them. 解析单据 on a draft's lines is **AI 整理, lines
-  only** (2026-10-06; until then it opened the side panel and Noco placed
+  only** (2026-10-06; until then it opened the side panel and Asset Steward placed
   lines through `addDraftLines`, unchecked by the server's matching): the
   shortcut sits beside 编辑 and opens the editor itself, keeps the file on
   the order, reads it through `POST /itam/purchase-orders/:id/document-text`
@@ -422,7 +430,7 @@ document-text`, which reads only a file uploaded within the hour and
   **AI 补充** (2026-10-06, `EnrichAction` in
   `client/pages/itam/master/master-domain-parts.tsx`, for whoever may update
   the record): it starts a conversation with the record pinned. Under the
-  `catalog` skill's 补充已有记录 section Noco reads the record and its
+  `catalog` skill's 补充已有记录 section Asset Steward reads the record and its
   category with its commands, says what it found, then proposes the change
   as a plan with one `update_master_record` step (`ai-writes.ts`): only the
   fields the lookup fills — a model's code, specification, warranty, dates

@@ -248,7 +248,7 @@ export interface ItamSettings {
   };
   readonly ai: {
     businessNotes: string;
-    /** Noco choosing joiners' equipment in the background. */
+    /** Asset Steward choosing joiners' equipment in the background. */
     onboardingAdvice: boolean;
     /** The ask box at the bottom of pages, for everyone. */
     assistantDock: boolean;

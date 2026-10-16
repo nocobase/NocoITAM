@@ -73,7 +73,7 @@ export function registerItamSkill(agents: Agents): () => void {
 
 /**
  * ITAM's method skills (ai/skills): skills of the Agents plugin's library,
- * attached to Noco (library.ts), so a question about a joiner, a leaver,
+ * attached to Asset Steward (library.ts), so a question about a joiner, a leaver,
  * receiving goods or a model's details is answered by the same method.
  */
 export const METHOD_SKILLS = [
@@ -88,6 +88,6 @@ export const METHOD_SKILLS = [
 /**
  * The work agents' method skills (2026-10-16, work-agents.ts): put into the
  * library like the others, but attached to their work agent rather than to
- * Noco — nobody asks Noco to review an approval.
+ * Asset Steward — nobody asks Asset Steward to review an approval.
  */
 export const WORK_SKILLS = ['approval-review'] as const;

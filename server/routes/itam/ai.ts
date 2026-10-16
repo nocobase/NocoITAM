@@ -56,7 +56,7 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
 
     routes.use('*', auth.required(), authorization.middleware());
 
-    // Available means a model to ask: Noco's, else the system's default
+    // Available means a model to ask: Asset Steward's, else the system's default
     // chat model (`itamModel` in ai-model.ts). The shell asks on every load,
     // so this is also where the collections the reader may read are noted
     // for the chat's page context, which is resolved where authorization
@@ -132,7 +132,7 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
       },
     );
 
-    // A method skill's eval set, run against the model Noco answers with
+    // A method skill's eval set, run against the model Asset Steward answers with
     // (device sync, step 4, 2026-10-15): what to run before changing a
     // skill, its instructions or the model, and attach to the change
     // (NocoSolution guideline 3.5). Slow — one model call per case — and an

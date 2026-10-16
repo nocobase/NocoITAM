@@ -20,7 +20,7 @@ import {
 import { useApi } from './api.js';
 
 /**
- * The assistant as the pages see it (template 1.0.0-beta.64): Noco on the
+ * The assistant as the pages see it (template 1.0.0-beta.64): Asset Steward on the
  * Agents plugin, in its chat panel (`client/layouts/agent-chat.tsx`).
  * Whether a model is there to answer, asking a question with the page's
  * record pinned, and opening a conversation. Without a model the page

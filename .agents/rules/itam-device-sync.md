@@ -148,7 +148,7 @@ product or in release notes, until it is listed here.
   `device-sync.ts`, after every pull, a match by serial and a person's
   link): its reason no longer holds, and a mark left behind would hide the
   device again should it drop off the platform. Categories stay the coarse
-  rule; this is the per-device exception. Noco reads it as
+  rule; this is the per-device exception. Asset Steward reads it as
   `--view exempted` and in a device's `exemption`.
 - **One tag for a difference (2026-10-16)**: `DifferenceTag`
   (`client/components/itam/difference-tag.tsx`) — the 注意 tone, or the
@@ -157,7 +157,7 @@ product or in release notes, until it is listed here.
   sync's age, 已不在平台中 by the platform's name, another user beside the
   primary user with 调拨, an off-duty status beside the last sync with 分配
   or 恢复为库存中), in MDM 核对's 信息不一致 and on 待办's MDM 核对 cards.
-  忽略 and asking Noco are MDM 核对's, not the device page's.
+  忽略 and asking Asset Steward are MDM 核对's, not the device page's.
 - **Loose ends closed (2026-10-16)**: a record kept off the register
   (不纳入台账) is linked once the register has one device of its serial —
   by `matchDevice` at once, or by the next pull — and its ignore cleared;
@@ -232,7 +232,7 @@ product or in release notes, until it is listed here.
   the differences read the latest sync. MDM 核对 folds unregistered and
   kept-off records of one serial into one row (`sources` lists the
   platforms), and 不纳入台账 / 恢复 decide them together.
-- **Noco** (step 4, 2026-10-15): the method skill `device-sync`
+- **Asset Steward** (step 4, 2026-10-15): the method skill `device-sync`
   (`ai/skills/device-sync/SKILL.md`, MDM 核对) — explain a difference,
   find the right device for a shared serial, sort the records the register
   lacks into one plan; never mark lost or keep the register for the person,
@@ -251,8 +251,8 @@ product or in release notes, until it is listed here.
   person who knows the method would make per item (transfer, assign,
   register, link, ignore, restore, keep, verify, escalate) — and
   `skill-evals.ts` scores them. `POST /api/itam/ai/evals/device-sync`
-  (settings grant) runs every case against Noco's model with the skill as
+  (settings grant) runs every case against Asset Steward's model with the skill as
   the library holds it and answers a report (passed / total, each case's
   misses). Run it before changing the skill, the instructions or the model,
   and attach the report to the change. A case from real use — a difference a
-  person settled otherwise than Noco proposed — is the best kind to add.
+  person settled otherwise than Asset Steward proposed — is the best kind to add.

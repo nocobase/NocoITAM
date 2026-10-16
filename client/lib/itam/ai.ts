@@ -6,7 +6,7 @@ import { useApi } from './api.js';
 export const AI_PATH = 'itam/ai';
 
 /**
- * Whether the assistant is available: a model to ask (Noco's, else the
+ * Whether the assistant is available: a model to ask (Asset Steward's, else the
  * system's default chat model, on the Agents plugin).
  */
 export interface AiStatus {

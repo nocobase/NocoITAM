@@ -40,7 +40,7 @@ import appRuntime from '../server/runtime.js';
  * developer stays signed in with the same roles.
  */
 const ITAM_TABLES = [
-  // Work agents' runs and the plans Noco and they proposed (2026-10-17).
+  // Work agents' runs and the plans Asset Steward and they proposed (2026-10-17).
   'itamAgentRuns',
   'itamPlanSteps',
   'itamPlans',
@@ -86,9 +86,9 @@ const ITAM_TABLES = [
 
 /**
  * `itamSettings` rows that stay: the markers of what ITAM created in the
- * Agents plugin (Noco, the work agents, the skills). The plugin's own
+ * Agents plugin (Asset Steward, the work agents, the skills). The plugin's own
  * tables are not wiped, so without its marker the next start would create
- * a second Noco beside the first, as a development database once did
+ * a second Asset Steward beside the first, as a development database once did
  * (2026-10-17). Every other settings row is wiped as before.
  */
 const KEPT_SETTINGS_PREFIX = 'agents-';

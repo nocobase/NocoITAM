@@ -13,7 +13,7 @@ import {
 
 /**
  * @temporary(nocobase-official): agents an application ships are created
- * from code once, at start, as Noco is (assistant.ts), the Agents plugin
+ * from code once, at start, as Asset Steward is (assistant.ts), the Agents plugin
  * having no way to ship one (after NocoCRM's `crm-agents/work-agents.ts`).
  *
  * ITAM's work agents (2026-10-16, plan "Work agents"), one per kind of work
@@ -27,7 +27,7 @@ import {
  * never a run of the agent, and nobody chats with it: it is visible to its
  * creator alone. The marker keeps the ids, so one an administrator changed,
  * archived or deleted stays as they left it, its work then following
- * Noco's model.
+ * Asset Steward's model.
  */
 export const WORK_AGENTS_MARKER = 'agents-work-v1';
 

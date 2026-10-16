@@ -145,13 +145,13 @@ waive`, people `update`, `people.onboardingWaived`, migration
   预留, 分配 and 全部执行 act on. The seeds write a kit per department (the ones the AI business
   notes describe) and a designer's in Product; the demo adds two joiners.
   Choosing which device is the service's, never the model's. The AI side
-  is the `onboarding` skill (`ai/skills/onboarding/SKILL.md`): Noco reads
+  is the `onboarding` skill (`ai/skills/onboarding/SKILL.md`): Asset Steward reads
   the plan with `itam onboarding plan` (under the user's people grant),
   explains it, and proposes exactly its proposals as one plan — a
   `reserve_device` step (granted by `reserve`, until the joining day)
   before they start, `assign_device` after, `issue_stock`, `assign_seat` —
   with one 新员工配备 `create_purchase_order` for the shortfall, asking for
-  the vendor, which is why that step is Noco's and not a button (`itemType`
+  the vendor, which is why that step is Asset Steward's and not a button (`itemType`
   on each plan line says what the line would be bought as). The 入职配备
   card's AI shortcut (准备) asks with the person pinned. A seat proposed to a
   person always names them as holder: the seat card shows 持有人 even when

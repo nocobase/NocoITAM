@@ -56,7 +56,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   stock — and the extra audits keep off the laptops, whose 400-day-old last
   count a matched count would stamp today.
   The two joiners are entered **last** (2026-10-06), because saving one sets
-  Noco choosing their equipment, and four spare MacBook Pro 14s and two
+  Asset Steward choosing their equipment, and four spare MacBook Pro 14s and two
   spare monitors give it something to weigh: the rule's pick (own floor,
   longest warranty) is SG-LT-050, whose keyboard was repaired twice, and
   SG-MON-006, with a dead pixel; SG-LT-053 is due for replacement within
@@ -130,7 +130,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   afterwards, or regenerating collides. `pnpm data:reset --demo` builds a
   container without those plugins, so it **deletes** the demo accounts by
   name and creates none; generate from the running application for sign-ins.
-  An account that talked to Noco on the AI employee plugin owns
+  An account that talked to Asset Steward on the AI employee plugin owns
   conversations and usage events that reference the user row — a database
   upgraded from before template 1.0.0-beta.64 still holds them — so those
   are deleted first, with the account; the Agents plugin's rows reference

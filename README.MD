@@ -32,7 +32,7 @@ An IT asset management system built on [NocoBase 3](https://www.nocobase.com), t
 - **Workbench.** The risks to look at come first: warranties and subscriptions about to end, over-allocated licences, stock below its minimum and devices not audited. Then come the team's to-dos, each with its own column: handovers, joiners to equip, approvals, orders to place and receive, disposals, repairs, overdue loans and audits in progress. A switch narrows the board to the reader's own work.
 - **Reports.** The reports cover the overview, the asset ledger, distribution, costs and depreciation, IT cost per person, warranty and expiry, software compliance, repairs, audit results and changes. Every table exports as CSV.
 - **Search and import.** One search covers every list, and can also hand a question to the assistant. CSV import and export work on the registers and the reference data.
-- **The AI assistant, Noco.**
+- **The AI assistant, Asset Steward.**
   - **Chat.** A chat panel on every page answers from the records the user may read, through the application's `itam` commands. Every change it proposes is one plan the user confirms on a card, carried out as that user and never beyond their permissions.
   - **Capture.** It fills a new purchase order from text or a document, and a new model or software product from what it knows.
   - **Onboarding.** It reads delivery notes for receiving. When asked, it chooses among identical devices for a joiner, giving its reasons.
@@ -48,7 +48,7 @@ NocoBase 3 provides the NocoBase App Foundation, which is the application infras
 | Application server, database layer and CLI | The server, migrations, configuration, builds and deployment                                 |
 | Application template and UI Library        | Layouts, routing, theme, sign-in pages and the components every page is built from           |
 | Authentication, users and authorization    | Sign-in, user management, and the roles as permission sets with record and field permissions |
-| Agents plugin                              | The assistant Noco, its chat panel, model services, skills and usage                         |
+| Agents plugin                              | The assistant Asset Steward, its chat panel, model services, skills and usage                |
 | Notification and scheduler plugins         | The in-app inbox and the nightly tasks: employment status, maintenance, depreciation         |
 | File and i18n plugins                      | Attachments, model pictures and delivery notes, the interface languages                      |
 
@@ -96,7 +96,7 @@ secrets:
       key: <64 hex characters>
 ```
 
-**AI.** Declare at least one LLM service in `config.yml`, with its key written as the value itself. At the first start each becomes a model service on **AI → Model services**, and the assistant Noco is created on **AI → Agents** with every chat model, in the order of `sort`, its first the default:
+**AI.** Declare at least one LLM service in `config.yml`, with its key written as the value itself. At the first start each becomes a model service on **AI → Model services**, and the assistant Asset Steward is created on **AI → Agents** with every chat model, in the order of `sort`, its first the default:
 
 ```yaml
 ai:
@@ -113,7 +113,7 @@ ai:
         apiKey: <key>
 ```
 
-A `${NAME}` placeholder is not expanded and would be sent as the key. To take a key from the environment, run `pnpm nocobase config set --from-env ai.llmServices.deepseek.options.apiKey=DEEPSEEK_API_KEY`. After the first start the services and Noco belong to their pages: a service or agent changed there is never overwritten from `config.yml`.
+A `${NAME}` placeholder is not expanded and would be sent as the key. To take a key from the environment, run `pnpm nocobase config set --from-env ai.llmServices.deepseek.options.apiKey=DEEPSEEK_API_KEY`. After the first start the services and Asset Steward belong to their pages: a service or agent changed there is never overwritten from `config.yml`.
 
 **Notifications.** In-app notifications need a channel named `in-app`:
 

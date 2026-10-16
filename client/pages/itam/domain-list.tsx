@@ -136,7 +136,7 @@ function DomainList({
   // A domain with a board opens on it (?layout=table for the list). A named
   // view (待我审批, 到货逾期) decides the statuses itself, so it reads as a
   // list: every column would otherwise show the same records.
-  // The records Noco found for a question on the workbench read as a
+  // The records Asset Steward found for a question on the workbench read as a
   // table, whatever the page's own layout: a board or a tree of three
   // records would scatter them across columns and branches.
   const found = foundIds(params);
@@ -344,7 +344,7 @@ function DomainList({
                 q,
                 sort: sortField,
                 order: sortOrder,
-                // Exporting the records Noco found exports those records.
+                // Exporting the records Asset Steward found exports those records.
                 ids: found?.join(','),
                 ...Object.fromEntries(
                   Object.entries(filter).map(([key, value]) => [

@@ -4,10 +4,10 @@ import type { EvalCase } from '../skill-evals.js';
  * The eval set of the `device-sync` skill (device sync, step 4,
  * 2026-10-15): situations as `itam device-sync review` shows them, and what
  * a person who knows the method would propose for each — the standard
- * answers. Run them before changing the skill, its instructions or Noco's
+ * answers. Run them before changing the skill, its instructions or Asset Steward's
  * model (NocoSolution guideline 1.3, 3.5): `POST
  * /api/itam/ai/evals/device-sync`. A case added from real use — a
- * difference a person settled otherwise than Noco proposed — is the most
+ * difference a person settled otherwise than Asset Steward proposed — is the most
  * useful kind.
  *
  * Ids in the cases are only labels; nothing here is read from the database.

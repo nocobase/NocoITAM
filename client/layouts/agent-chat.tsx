@@ -56,7 +56,7 @@ export function AgentChatShell({
  * wears with the sparkle in the primary colour, on every page. It toggles
  * the panel as ⌘J does, back where it was left — on the latest
  * conversation when it holds none (`useToggleAssistant`). While the assistant cannot
- * answer (no usable model, Noco switched off) it stays, disabled, and says
+ * answer (no usable model, Asset Steward switched off) it stays, disabled, and says
  * why.
  */
 export function AgentChatButton(): ReactElement | null {

@@ -268,7 +268,7 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   { table: 'auditItems', column: 'auditTaskId' },
   { table: 'disposalDevices', column: 'disposalId' },
   { table: 'repairs', column: 'deviceId' },
-  // Noco's background suggestions for the demo's joiners.
+  // Asset Steward's background suggestions for the demo's joiners.
   { table: 'onboardingRuns', column: 'personId' },
   // 忽略 on the demo's differences (device sync, 2026-10-15).
   { table: 'deviceSyncDismissals', column: 'deviceId' },
@@ -1285,7 +1285,7 @@ export function createDemoService(dependencies: {
         // (2026-10-06): the rule takes the joiner's own floor first and then
         // the longest warranty, which lands on SG-LT-050 — the one whose
         // keyboard has been repaired twice — and on SG-MON-006, with its dead
-        // pixel. Noco reads the repairs, the notes and the replacement dates
+        // pixel. Asset Steward reads the repairs, the notes and the replacement dates
         // and picks otherwise, with a reason the 入职负责人 can check:
         // SG-LT-051 for the first joiner, the clean warehouse SG-LT-052 for
         // the second (051 being held for the first), never SG-LT-053, which
@@ -4402,7 +4402,7 @@ export function createDemoService(dependencies: {
         await reached(95);
         // 入职准备: joining in five and nine days, nothing reserved yet. Entered
         // last, once the spare laptops, monitors, stock and seats exist:
-        // saving a joiner is what sets Noco choosing their equipment
+        // saving a joiner is what sets Asset Steward choosing their equipment
         // (`onboarding-advisor.ts`), and entered first it found nothing in
         // stock to choose from, or half of it.
         const productDept = await seededIn('departments', 'dept-product');

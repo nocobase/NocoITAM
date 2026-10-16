@@ -38,7 +38,7 @@ const conversation = (
   title: `Title ${id}`,
   read: true,
   source: 'itam',
-  agent: { id: 'noco', name: 'Noco' },
+  agent: { id: 'noco', name: 'Asset Steward' },
   lastMessageAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   run: null,
@@ -95,7 +95,7 @@ it('lists each conversation with its latest message, unread ones marked', async 
     await screen.findByText('ai.conversations.lastYours', { exact: false }),
   ).toHaveTextContent('ai.conversations.lastYoursWhich laptops are idle?');
   expect(
-    await screen.findByText(/ai\.conversations\.lastFrom:Noco/),
+    await screen.findByText(/ai\.conversations\.lastFrom:Asset Steward/),
   ).toHaveTextContent('DE-000001 DE-000002');
   expect(screen.getAllByText('ai.conversations.unread')).toHaveLength(1);
 });

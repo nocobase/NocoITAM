@@ -45,7 +45,7 @@ const PRESET_ACTIONS: readonly string[] = [VIEW_ACTION, PLAN_ACTION];
 /**
  * ITAM on the Agents plugin (template 1.0.0-beta.64, after NocoCRM's): the
  * business actions an agent may be given and who holds them, the preset an
- * ITAM agent starts from and the assistant made from it (Noco,
+ * ITAM agent starts from and the assistant made from it (Asset Steward,
  * assistant.ts), the skill and rules every conversation gets, what a page
  * context may name, and where conversations start. ITAM's commands are its
  * own API routes (`server/routes/itam/agent-commands.ts`); a change a run
