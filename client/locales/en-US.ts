@@ -1807,6 +1807,9 @@ const messages = {
     askHint:
       'Ask in your own words, e.g. laptops in repair or on loan, or who in R&D has no monitor.',
     searchTab: 'Search',
+    answering: '{{name}} is answering…',
+    backToResults: 'Back to search',
+    continueAsking: 'Keep asking',
     followUpDraft: 'About “{{question}}”: ',
     showAll: 'Show all',
   },
@@ -3025,6 +3028,7 @@ const messages = {
     closeChat: 'Close the AI chat',
     sendFailed: 'The question could not be sent. Try again from the chat.',
     conversationSource: 'IT asset management',
+    searchSource: 'Global search',
     agentPreset: {
       name: 'ITAM assistant',
       description:

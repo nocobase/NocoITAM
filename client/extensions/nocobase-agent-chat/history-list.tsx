@@ -66,6 +66,9 @@ import { cn } from 'cn';
 import { useChatTranslation } from './chat-i18n.js';
 import { ChatTag, LoadError, Pulse } from './chat-ui.js';
 
+/** The global search's answers (application change, ITAM). */
+const SEARCH_SOURCE = 'itam-search';
+
 const ALL = '__all__';
 
 export interface HistoryListProps {
@@ -100,7 +103,12 @@ export function HistoryList({
     ...(source === ALL ? {} : { source }),
   };
   const pages = useConversationList(query);
-  const items = pages.data?.pages.flatMap((page) => page.items) ?? [];
+  // Application change (ITAM, 2026-10-16): the global search's answers are
+  // conversations of their own source, listed nowhere until the reader goes
+  // on asking in one (itam-agents/search-answers.ts).
+  const items = (pages.data?.pages.flatMap((page) => page.items) ?? []).filter(
+    (item) => item.source !== SEARCH_SOURCE,
+  );
   const agentItems = [
     { value: ALL, label: t('chat.history.allAgents') },
     ...(agents.data ?? []).map((agent) => ({
@@ -111,7 +119,9 @@ export function HistoryList({
   const sourceItems = [
     { value: ALL, label: t('chat.history.allSources') },
     { value: PANEL_SOURCE, label: t('chat.sources.panel') },
-    ...sources.map((source) => ({ value: source.key, label: source.label })),
+    ...sources
+      .filter((source) => source.key !== SEARCH_SOURCE)
+      .map((source) => ({ value: source.key, label: source.label })),
   ];
   const filtered = Boolean(q) || agentId !== ALL || source !== ALL;
 

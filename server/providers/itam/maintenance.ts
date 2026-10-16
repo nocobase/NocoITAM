@@ -14,6 +14,7 @@ import type { EntitlementService } from './entitlements.js';
 import type { MasterDataService } from './master-data.js';
 import type { HistoryService } from './history.js';
 import type { ItamNotifier } from './notifier.js';
+import { sweepSearchAnswers } from '../itam-agents/search-answers.js';
 
 /**
  * The time-driven automation: daily status maintenance (subscription
@@ -512,6 +513,11 @@ export function createMaintenanceService(dependencies: {
         subscriptions,
         reservationsReleased: released.length,
         loansOverdue: await notifyOverdueLoans(now),
+        // The global search's answers nobody kept (search-answers.ts); a
+        // deployment without the Agents plugin has no conversations.
+        searchAnswersSwept: (
+          await sweepSearchAnswers(database, now).catch(() => ({ deleted: 0 }))
+        ).deleted,
       };
     },
 

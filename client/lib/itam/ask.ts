@@ -1,11 +1,13 @@
 import { useToaster } from '@nocobase/app-client';
 import {
   buildPageContext,
+  chatKeys,
   newConversationAgent,
   useChatAgents,
   useChatApi,
   useChatAttachments,
   useChatPanel,
+  useConversationActions,
   type ChatContextItem,
 } from '@nocobase/app-plugin-agents/client/chat';
 import {
@@ -16,10 +18,15 @@ import {
   type MessageAttachment,
 } from '@nocobase/app-plugin-agents/shared/conversations';
 import { useTranslation } from '@nocobase/i18n/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 
-import { useAiStatus } from './ai.js';
+import { AI_PATH, useAiStatus } from './ai.js';
 import { ITAM_SOURCE } from './ai-chat.js';
+import { useApi } from './api.js';
+
+/** A question asked from the global search, answered in its dialog (`itam-agents/search-answers.ts`). */
+export const SEARCH_SOURCE = 'itam-search';
 
 /**
  * Asking the assistant from outside its panel (2026-10-16, after NocoCRM's
@@ -283,5 +290,63 @@ export function useDiscuss(): (pins: readonly ChatContextItem[]) => void {
       panel.focusComposer();
     },
     [panel],
+  );
+}
+
+/**
+ * A question from the global search, answered in its dialog (2026-10-16,
+ * after NocoCRM's): the conversation is created and the question sent,
+ * nothing opened; its id comes back for the dialog to follow. Going on
+ * asking keeps it (and opens the panel on it); leaving the answer discards
+ * it, stopping a reply still being written first.
+ */
+export function useSearchAnswer(): {
+  readonly start: (prompt: string, agent: ChatAgent) => Promise<string>;
+  readonly keep: (conversationId: string, question: string) => Promise<void>;
+  readonly discard: (conversationId: string, running: boolean) => void;
+} {
+  const chat = useChatApi();
+  const api = useApi();
+  const panel = useChatPanel();
+  const actions = useConversationActions();
+  const queryClient = useQueryClient();
+  return useMemo(
+    () => ({
+      start: async (prompt, agent) => {
+        const conversation = await chat.createConversation({
+          agentId: agent.id,
+          source: SEARCH_SOURCE,
+        });
+        await chat.sendMessage(conversation.id, {
+          content: prompt,
+          clientId: newClientId(),
+        });
+        return conversation.id;
+      },
+      keep: async (conversationId, question) => {
+        await api.request({
+          path: `${AI_PATH}/search-answers/${encodeURIComponent(conversationId)}/keep`,
+          method: 'POST',
+          json: { title: question.slice(0, 200) },
+        });
+        // Now one of ITAM's conversations, which the lists show.
+        void queryClient.invalidateQueries({ queryKey: chatKeys.lists });
+        panel.openChat({ conversationId, view: 'chat' });
+        panel.focusComposer();
+      },
+      discard: (conversationId, running) => {
+        void (async () => {
+          if (running)
+            await actions.stop
+              .mutateAsync(conversationId)
+              .catch(() => undefined);
+          await api.request({
+            path: `${AI_PATH}/search-answers/${encodeURIComponent(conversationId)}`,
+            method: 'DELETE',
+          });
+        })().catch(() => undefined);
+      },
+    }),
+    [chat, api, panel, actions.stop, queryClient],
   );
 }

@@ -5,6 +5,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type PropsWithChildren,
   type ReactElement,
@@ -35,7 +36,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { SearchAnswer } from '@/components/itam/ai/search-answer';
 import { useItamAi } from '@/lib/itam/ai-chat';
+import { useAgentReadiness, useSearchAnswer } from '@/lib/itam/ask';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
 import {
   SEARCH_PAGES,
@@ -53,6 +56,13 @@ const SHORTCUT =
 
 type Mode = 'search' | 'ask';
 
+interface SearchAnswerState {
+  readonly question: string;
+  /** Null while the conversation is being created. */
+  readonly conversationId: string | null;
+  readonly failed: boolean;
+}
+
 interface GlobalSearch {
   readonly open: boolean;
   readonly setOpen: (open: boolean) => void;
@@ -60,8 +70,19 @@ interface GlobalSearch {
   readonly setValue: (value: string) => void;
   readonly mode: Mode;
   readonly setMode: (mode: Mode) => void;
-  /** Asks the assistant in its panel, and closes the search. */
+  /**
+   * Asks the assistant, answered in the dialog (2026-10-16, after NocoCRM's):
+   * the answer replaces the results until the reader goes back or keeps it.
+   */
   readonly ask: (text: string) => void;
+  /** The question being answered in the dialog, if one is. */
+  readonly answer: SearchAnswerState | null;
+  /** Back to the results: the answer is discarded. */
+  readonly back: () => void;
+  /** Keeps the answer as a conversation and opens it in the panel. */
+  readonly keep: () => void;
+  /** The answer view says whether its reply is still being written. */
+  readonly trackRunning: (running: boolean) => void;
 }
 
 const GlobalSearchContext = createContext<GlobalSearch | undefined>(undefined);
@@ -92,6 +113,15 @@ export function GlobalSearchProvider({
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [mode, setMode] = useState<Mode>('search');
+  const readiness = useAgentReadiness();
+  const searchAnswer = useSearchAnswer();
+  const [answer, setAnswer] = useState<SearchAnswerState | null>(null);
+  // Whether the reply is still being written, for discarding it.
+  const runningRef = useRef(false);
+  const discard = (current: SearchAnswerState | null): void => {
+    if (current?.conversationId)
+      searchAnswer.discard(current.conversationId, runningRef.current);
+  };
 
   // ⌘K (Ctrl+K off a Mac) opens it from anywhere, and closes it again —
   // the shortcut a command palette is expected to have.
@@ -114,16 +144,50 @@ export function GlobalSearchProvider({
 
   const search: GlobalSearch = {
     open,
-    setOpen,
+    // Closing the dialog leaves an answer nobody kept: it is discarded.
+    setOpen: (next) => {
+      if (!next && answer) {
+        discard(answer);
+        setAnswer(null);
+      }
+      setOpen(next);
+    },
     value,
     setValue,
     mode,
     setMode,
     ask: (text) => {
-      if (!ai.available || !text) return;
-      setOpen(false);
+      const agent = readiness.agent;
+      if (!ai.available || !text || !agent) return;
+      runningRef.current = true;
+      setAnswer({ question: text, conversationId: null, failed: false });
+      searchAnswer.start(t('ai.prompts.globalSearch', { text }), agent).then(
+        (conversationId) =>
+          setAnswer((current) =>
+            current?.question === text
+              ? { ...current, conversationId }
+              : current,
+          ),
+        () =>
+          setAnswer((current) =>
+            current?.question === text ? { ...current, failed: true } : current,
+          ),
+      );
+    },
+    answer,
+    back: () => {
+      discard(answer);
+      setAnswer(null);
+    },
+    trackRunning: (running) => {
+      runningRef.current = running;
+    },
+    keep: () => {
+      if (!answer?.conversationId) return;
+      void searchAnswer.keep(answer.conversationId, answer.question);
+      setAnswer(null);
       setValue('');
-      ai.ask(t('ai.prompts.globalSearch', { text }));
+      setOpen(false);
     },
   };
 
@@ -156,7 +220,18 @@ export function GlobalSearchDialog(): ReactElement | null {
         className='top-[12svh] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-2xl'
       >
         <DialogTitle className='sr-only'>{t('search.label')}</DialogTitle>
-        <SearchPanel search={search} />
+        {search.answer ? (
+          <SearchAnswer
+            conversationId={search.answer.conversationId}
+            question={search.answer.question}
+            failed={search.answer.failed}
+            onRunning={search.trackRunning}
+            onBack={() => search.back()}
+            onContinue={search.keep}
+          />
+        ) : (
+          <SearchPanel search={search} />
+        )}
       </DialogContent>
     </Dialog>
   );

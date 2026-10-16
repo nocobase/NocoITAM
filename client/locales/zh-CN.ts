@@ -1725,6 +1725,9 @@ const zhCN: AppResource = {
     askHint:
       '用自己的话问，例如：维修中或借出中的笔记本，研发部谁还没有显示器。',
     searchTab: '搜索',
+    answering: '{{name}} 正在回答…',
+    backToResults: '返回搜索',
+    continueAsking: '继续追问',
     followUpDraft: '关于「{{question}}」：',
     showAll: '显示全部',
   },
@@ -2845,6 +2848,7 @@ const zhCN: AppResource = {
     closeChat: '收起 AI 对话',
     sendFailed: '问题没能发出，请在对话里重试。',
     conversationSource: 'IT 资产管理',
+    searchSource: '全局搜索',
     agentPreset: {
       name: 'IT 资产助手',
       description:

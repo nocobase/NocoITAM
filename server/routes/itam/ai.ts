@@ -8,12 +8,17 @@ import {
   defineApiRoutes,
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
+import { databaseManagerToken } from '@nocobase/db';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { receiptRunServiceToken } from '../../providers/index.js';
 import { readSnapshotsToken } from '../../providers/itam-agents/index.js';
 import { CONTEXT_KINDS } from '../../providers/itam-agents/context.js';
+import {
+  discardSearchAnswer,
+  keepSearchAnswer,
+} from '../../providers/itam-agents/search-answers.js';
 import { scopeFor } from '../../providers/itam/ai-bridge.js';
 import {
   aiAvailable,
@@ -163,6 +168,46 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
         }
       },
     );
+
+    // The global search's answers (itam-agents/search-answers.ts): kept as
+    // one of ITAM's conversations when the reader goes on asking, deleted
+    // when they leave the answer. Each acts on the reader's own conversation
+    // only.
+    const conversationIdOf = (raw: string): string =>
+      z.string().min(1).max(64).parse(raw);
+    routes.post('/search-answers/:conversationId/keep', async (context) => {
+      try {
+        const { title } = z
+          .object({ title: z.string().trim().min(1).max(200).optional() })
+          .parse(await readJsonObject(context));
+        const kept = await keepSearchAnswer(
+          app.container.resolve(databaseManagerToken),
+          principalId(context),
+          conversationIdOf(context.req.param('conversationId')),
+          title,
+        );
+        if (!kept)
+          return context.json(
+            { code: 'NOT_FOUND', message: 'No such answer' },
+            404,
+          );
+        return context.json({ data: { kept: true } });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+    routes.delete('/search-answers/:conversationId', async (context) => {
+      try {
+        await discardSearchAnswer(
+          app.container.resolve(databaseManagerToken),
+          principalId(context),
+          conversationIdOf(context.req.param('conversationId')),
+        );
+        return context.json({ data: { discarded: true } });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
 
     router.route('/itam/ai', routes);
     return router;

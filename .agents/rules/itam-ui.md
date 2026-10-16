@@ -201,12 +201,18 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   `maybeDecide`, skipping what they may not read, and answers the first
   five of each with the total; no model takes part. A group's last row
   opens its list searched for the same words. The 问 AI side of the box's
-  segmented 搜索 | 问 AI switch (the pages' own tabs) hands the question to
-  Noco in the chat panel, on a new conversation, and closes the dialog
-  (template 1.0.0-beta.64, after NocoCRM's): the answer is a conversation
-  the reader can go on with. Until then it was answered in the dialog from
-  an unseen chat with a page tool of its own (`presentRecords`), which the
-  Agents plugin's chat does not have. Keyword search also matches
+  segmented 搜索 | 问 AI switch (the pages' own tabs) answers in the dialog
+  again (2026-10-16, as NocoCRM does; `SearchAnswer` in
+  `client/components/itam/ai/search-answer.tsx`): the question goes to Noco
+  on a conversation of the source `itam-search`, which the conversation
+  lists leave out (`history-list.tsx`), and the reply replaces the results.
+  返回搜索 and closing the dialog delete it (stopping a reply still being
+  written); 继续追问 keeps it as one of ITAM's conversations, titled by the
+  question, and opens it in the panel. One left behind is swept by the daily
+  job after an hour (`server/providers/itam-agents/search-answers.ts`,
+  which writes the plugin's rows itself: it can neither delete a
+  conversation nor change its source). From template 1.0.0-beta.64 until
+  then, 问 AI handed the question to the panel and closed the dialog. Keyword search also matches
   through references (`searchByReference` in `collections.ts`: a device or
   stock item by its model's name, an entitlement by its product's), because
   a device is named by its asset tag while people type "MacBook" — which

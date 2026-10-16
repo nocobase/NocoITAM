@@ -107,7 +107,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (`/agent-chat/:conversationId`), `/agent-chat/new` starting one — the
   block's `ChatConversationPage` takes a null conversation and `history:
 false` for this, and the first message moves the address within the same
-  route, so the view stays. It has no menu entry: the panel's history ends
+  route, so the view stays. The global search's 问 AI answers in its own
+  dialog on a conversation listed nowhere until the reader goes on asking
+  in it (2026-10-16; see the global search in `itam-ui.md`). It has no menu entry: the panel's history ends
   in a link to it, and a conversation's page button lands there. A page offers what it
   shows through `useAiPageContext({ kind, id, label })`
   (`client/lib/itam/ai-chat.tsx`): the record's chip sits above the composer

@@ -27,6 +27,7 @@ import { deliverPlanOutcome } from './plan-news.js';
 import { ITAM_ASSISTANT_INSTRUCTIONS } from './preset.js';
 import { itamConversationRules } from './rules.js';
 import { registerItamSkill } from './skill.js';
+import { SEARCH_SOURCE } from './search-answers.js';
 
 /** Which collections each person could read when they last loaded a page. */
 export const readSnapshotsToken: ServiceToken<ReadSnapshots> =
@@ -92,6 +93,12 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
     agents.conversations.sources.register({
       key: 'itam',
       title: { key: 'ai.conversationSource', ns: 'itam' },
+    });
+    // The global search's answers, listed nowhere until kept
+    // (search-answers.ts).
+    agents.conversations.sources.register({
+      key: SEARCH_SOURCE,
+      title: { key: 'ai.searchSource', ns: 'itam' },
     });
     return Promise.resolve();
   }
