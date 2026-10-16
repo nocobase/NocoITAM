@@ -92,6 +92,8 @@ export function stockFields(kind: StockKind): readonly FieldDefinition[] {
       type: 'number',
       column: true,
       form: false,
+      // Leads 基本信息 on the detail page (`StockLead`), not 数量.
+      detail: false,
       group: 'groups.quantity',
     },
     {
@@ -104,6 +106,7 @@ export function stockFields(kind: StockKind): readonly FieldDefinition[] {
           : 'fields.outstandingQuantity',
       type: 'number',
       form: false,
+      detail: false,
       group: 'groups.quantity',
     },
     {

@@ -275,6 +275,8 @@ export interface DomainConfig {
   readonly Aside?: ComponentType<{ readonly record: ItamRecord }>;
   /** A section that opens the information card (a leading section). */
   readonly InfoLead?: ComponentType<{ readonly record: ItamRecord }>;
+  /** Rows that open 基本信息, above 负责人 (a stock item's quantities). */
+  readonly BasicLead?: ComponentType<{ readonly record: ItamRecord }>;
   /** Detail column layout; `reversed` puts the aside and tabs on the left. */
   readonly detailLayout?: 'narrow' | 'reversed';
   /** Hide automatic timestamps when the system card already presents them. */

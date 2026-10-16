@@ -257,6 +257,7 @@ export function DomainDetailPage({
   const Notice = domain.Notice;
   const Aside = domain.Aside;
   const InfoLead = domain.InfoLead;
+  const BasicLead = domain.BasicLead;
   const currency = text(data.currency);
   const BreadcrumbTrail = domain.BreadcrumbTrail;
   const prefixField = domain.fields.find(
@@ -506,6 +507,9 @@ export function DomainDetailPage({
             {[...groups.entries()].map(([group, fields], groupIndex) => (
               <Fragment key={group}>
                 <InfoSection title={t(group)}>
+                  {group === 'groups.basic' && BasicLead ? (
+                    <BasicLead record={data} />
+                  ) : null}
                   {fields
                     .toSorted(
                       (a, b) => (a.detailOrder ?? 0) - (b.detailOrder ?? 0),

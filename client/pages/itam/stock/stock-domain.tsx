@@ -8,7 +8,8 @@ import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { DataTable, type DataTableColumn } from '@/components/itam/data-table';
-import { HolderLink } from '@/components/itam/holder-link';
+import { InfoRow } from '@/components/itam/detail-page';
+import { HolderCell, HolderLink } from '@/components/itam/holder-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -98,9 +99,101 @@ export function stockDomain(kind: StockKind): DomainConfig {
     Actions: function Actions({ record }) {
       return <StockActions record={record} kind={kind} />;
     },
-    // Quantities live in the 数量 group of the card; no summary strip.
+    // 在库, 在外 and who holds it lead 基本信息 (2026-10-16), as a
+    // device's status and holder do; no summary strip.
+    BasicLead: function BasicLead({ record }) {
+      return <StockLead record={record} kind={kind} />;
+    },
     summaryTimestamps: false,
   };
+}
+
+/**
+ * The top of a stock item's 基本信息, above 负责人: how many are in stock,
+ * how many are out (used up, for a consumable) and, for what comes back,
+ * who has them now with how many each.
+ */
+function StockLead({
+  record,
+  kind,
+}: {
+  readonly record: ItamRecord;
+  readonly kind: StockKind;
+}): ReactElement {
+  const { t } = useTranslation();
+  const api = useApi();
+  const id = text(record.id);
+  // A consumable is used up, never held.
+  const held = kind !== 'consumable';
+  const holdings = useQuery({
+    queryKey: ['itam', STOCK_PATH, 'holdings', id],
+    queryFn: async () =>
+      (
+        await api.request<{ data: ItamRecord[] }>({
+          path: `${STOCK_PATH}/${id}/holdings`,
+        })
+      ).data,
+    enabled: held && Boolean(id),
+  });
+  const rows = (holdings.data ?? []).filter((row) => Number(row.quantity) > 0);
+  const idsOf = (type: string) =>
+    rows
+      .filter((row) => row.holderType === type)
+      .map((row) => text(row.holderId));
+  const names = useReferenceNames([
+    { collection: 'people', ids: idsOf('person') },
+    { collection: 'locations', ids: idsOf('location') },
+    { collection: 'devices', ids: idsOf('device') },
+  ]);
+  return (
+    <>
+      <InfoRow label={t('fields.inStock')}>
+        {text(record.availableQuantity) || '0'}
+      </InfoRow>
+      <InfoRow
+        label={t(
+          kind === 'consumable'
+            ? 'fields.consumedTotal'
+            : 'fields.outstandingQuantity',
+        )}
+      >
+        {text(record.usedQuantity) || '0'}
+      </InfoRow>
+      {held ? (
+        <InfoRow label={t('stock.holder')}>
+          {rows.length === 0 ? (
+            '—'
+          ) : (
+            <span className='flex flex-wrap gap-x-3 gap-y-1'>
+              {rows.map((row) => (
+                <span
+                  key={text(row.id)}
+                  className='inline-flex items-center gap-1'
+                >
+                  <HolderCell
+                    holderType={text(row.holderType)}
+                    holderId={text(row.holderId)}
+                    names={
+                      names[
+                        row.holderType === 'person'
+                          ? 'people'
+                          : row.holderType === 'location'
+                            ? 'locations'
+                            : 'devices'
+                      ]
+                    }
+                  />
+                  <span className='text-muted-foreground tabular-nums'>
+                    × {text(row.quantity)}
+                  </span>
+                </span>
+              ))}
+            </span>
+          )}
+        </InfoRow>
+      ) : null}
+    </>
+  );
 }
 
 /** Why a quantity goes up, or down; 其他 asks for a note. */
