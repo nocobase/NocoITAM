@@ -131,6 +131,7 @@ plus a browser check.
 | **P5 Automation & reports**               | Cron jobs, full workbench, ten reports, settings pages                                                                                                                                                    |
 | **P6 AI**                                 | Chat panel, employee and tools, action center, quick entries, embedded capabilities, daily AI inspection, employee self-service guidance                                                                  |
 | **P7 Import/export & demo**               | CSV import wizard, discovery reconciliation, barcode labels and scanning, demo data command with deliberate "problem" records, sample PDF / CSV, e2e over the main chain                                  |
+| **P8 Work agents**                        | Agents that work unasked and only suggest: runs, 收件箱, 智能体工作, then 审批审阅, 离职回收, 授权续费, MDM 核对, 入职准备 (see 2026-10-16 Work agents)                                                   |
 
 Tests per phase: migration up / down against the real database; each service's
 state transitions including rejected transitions and rollback; every route's
@@ -2937,6 +2938,192 @@ person it goes to; the server creates and assigns in one transaction. 补登记
 starts the device 使用中 for the platform's primary user when they are a
 person on the register, since a device saved 库存中 while it is online came
 straight back as 状态不符. Longer forms are two fields to a row.
+
+### 2026-10-16 Work agents (plan): the agents that work without being asked
+
+Plan only; nothing is built yet. Noco answers when asked: in the panel, the
+ask box, the global search and on the page shortcuts. No agent works on its
+own. The guideline asks for at least one class of daily work carried by an
+agent (`solution-guideline.md` §2.3, §2.4 #3), with an agent as the
+**collaborator** on ledger objects (§1.1): it watches them and hands what
+it finds to their 负责人.
+
+ITAM had such a layer once. AI 发现 and the device page's instant check were
+dropped on 2026-09-27 because the AI employee plugin could show nothing
+outside a conversation. That limit no longer holds. NocoCRM now runs five
+work agents on the Agents plugin: lead follow-up, opportunity follow-up,
+approval review, task preparation and company signals. This plan ports
+that design and keeps everything that already works here: Noco, its plans
+and plan cards, the single-shot readings, and the rules behind 需要关注.
+
+#### What every work agent obeys
+
+- **It only suggests** (§3.5: every new agent starts at 建议). A person
+  accepts every change. Accepting turns the change into an ordinary plan
+  (`itamPlans`), carried out step by step as that person through the
+  services. NocoCRM writes one accept route per card type; ITAM's plan engine
+  makes that unnecessary. Submit, decide, order, executing a disposal and
+  delete stay with people, as for Noco.
+- **Every run names what started it** (§3.2): a person's 让 Noco… or a
+  trigger an administrator switched on. No run is started by another
+  agent's output.
+- **Two output forms** (§3.3, `frontend-standard.md` §S4):
+  - a **决定卡** for a review attached to something a person must decide (an
+    approval);
+  - a **建议卡** for everything else.
+
+  Each card shows its 依据, linking the records it read, and the decision
+  is written on the record's 历史.
+
+- **A failure goes back to a person** (§3.6). A run that fails or times out
+  becomes a card with a reason code, in the same place its result would
+  have gone, never a silent gap.
+- **Measured from the first run** (§1.3, §3.5, §4.4): per agent, runs,
+  accepted, ignored, waiting, failed, acceptance rate. Every agent ships with
+  a method skill in `ai/skills/` and an eval set beside the device-sync one
+  (`server/providers/itam/evals/`), and its skill is not changed without
+  running that set.
+
+#### Built once, in step 1
+
+- **Runs table** (migration). One row per run in `itamAgentRuns`:
+  - agent, trigger, and who or which switch started it;
+  - the record (collection and id) and the person who decides;
+  - status: running / pending / accepted / dismissed / failed / superseded
+    / expired;
+  - the structured result, reason code, plan id, decided by and when, and
+    model.
+
+  It is a table of its own rather than columns on `historyEvents`
+  (NocoCRM put its cards on `crmHistory`), so that the agent work page's
+  counts and lists are plain queries and history stays a record of what
+  happened. The record's 历史 tab shows a run as a card (§S6.2), and
+  deciding writes the history event.
+
+- **Agents.** `server/providers/itam-agents/work-agents.ts` creates one
+  plugin agent per work at start, once (marker `agents-work-v1`). Each is
+  owner-only, has no business actions and has its method skill attached.
+  An administrator sets its model and instructions on the plugin's 智能体
+  page, and its usage is counted under its own name on 用量.
+  `@temporary(nocobase-official)`: the plugin cannot ship an agent.
+- **Running.** `server/providers/itam/agent-runs.ts`:
+  - a jobs queue (small concurrency, one open run per record and agent,
+    requeued at start);
+  - each run opens a session on the gateway already in
+    `server/providers/itam/ai-model.ts` (`openSession`, `askJson` with a zod
+    shape per agent, `readSkill`);
+  - a run past its limit is failed `timedOut`;
+  - usage is written as NocoCRM does (`recordUse`,
+    `@temporary(nocobase-official)`).
+
+  The business notes in 设置 → AI go into every background run as they go
+  into every conversation.
+
+- **Switches.** Each agent, and each of its triggers, has a switch in a
+  settings row `agents`. Every automatic start checks it; a person asking by
+  hand is never switched off. Daily passes start at most 20 runs and skip a
+  record with a run waiting or running.
+- **收件箱.** `/notifications` becomes 收件箱 with 待我决定 and 通知
+  (`frontend-standard.md` §S2): the cards waiting for the reader first,
+  then the ones handled, and the plugin's notifications as now. The badge
+  counts only 待我决定. A record's page shows its own waiting cards in an
+  等你决定 block (§S3.2), sharing the inbox's card and actions.
+- **智能体工作.** `/agent-work/:agent` heads the AI menu group, before 智能体,
+  技能, 模型服务 and 用量. It has a tab per agent, each with:
+  - what it does, its model and skill, and its on/off switch;
+  - a switch per trigger;
+  - 7- and 30-day counts with the acceptance rate;
+  - the runs of the last 90 days on records the reader may read, filtered
+    by status.
+
+  The menu shows a running badge. 按送货单入库's run card moves here from
+  设置 → AI as a further tab.
+
+- **Routes.** `/api/itam/agents/*` serves the overview, the switches, the
+  runs, and a run's accept, dismiss or redo. Redo takes the reader's own
+  instruction and records it. The inbox's lists and counts are
+  `/api/itam/inbox*`. Each route has its own `auth.required()` and grant
+  check, as every route does.
+
+#### The agents, in order
+
+1. **审批审阅** (`approval-review`), in step 1 with the foundations.
+   - _Trigger:_ a purchase order or a disposal is submitted (`approvals`
+     already covers both).
+   - _Reads:_
+     - purchase order: what is asked; stock and idle devices of the same
+       model or category; earlier prices from the vendor and for the model;
+       the business notes;
+     - disposal: book value, age and repair history, and whether the data
+       is wiped.
+   - _Output:_ a 决定卡 seen by the approver only: approve, approve on
+     conditions, reject, or ask for more, with the reasons and a drafted
+     comment.
+   - _On accept:_ the approver's own 同意 / 驳回 is highlighted as the
+     recommended button, with the comment filled in; the decision stays the
+     approver's.
+   - It is superseded when the approval is decided or withdrawn elsewhere.
+     This is NocoCRM's approval review, ported nearly as it is, which is why
+     it carries the foundations.
+2. **离职回收** (`offboarding`, step 2).
+   - _Triggers:_ 标记离职 (the 01:50 job included), and a daily pass over
+     leavers with open items.
+   - _Output:_ a 建议卡 per leaver: what to take back (devices, stock
+     items, seats, accounts), and for each, to whom it goes (back to stock,
+     or to a named colleague).
+   - It goes to whoever the 离职交接 card goes to today.
+   - _On accept:_ a plan of returns, transfers and seat reclaims.
+   - The `offboarding` skill exists and has no entry yet.
+3. **授权续费** (`renewal-review`, step 2).
+   - _Trigger:_ a daily pass over entitlements due within the 需要关注
+     window.
+   - _Output:_ renew, renew with fewer seats, or let lapse, weighed on
+     seats assigned, seats held by leavers and the usage imported.
+   - _On accept:_ a plan of seat reclaims. A change to the renewal quantity
+     needs a new plan operation, added in that step.
+4. **MDM 核对** (`device-sync`, step 3).
+   - _Trigger:_ after the 01:30 sync, for new differences and new devices
+     only in MDM.
+   - _Output:_ per device, link, register, ignore or keep off the
+     register.
+   - _On accept:_ a plan of the existing link, unlink and ignore
+     operations; registering is creating the device.
+   - Its skill and eval set exist.
+5. **入职准备** (`onboarding`, step 3).
+   - The onboarding advisor becomes a work agent, triggered by a joiner's
+     creation and by a daily pass a set number of days before the start.
+   - Its picks keep showing in the onboarding card. `onboardingRuns` moves
+     into `itamAgentRuns` by migration.
+6. **资产优化** (step 4, later).
+   - _Trigger:_ weekly.
+   - _Covers:_ idle devices, warranties running out, devices repaired
+     again and again, and stock below its level.
+   - _Output:_ reassign, repair, replace or dispose; for stock, a
+     replenishment purchase order draft.
+
+#### Left open
+
+- **待办 stays without AI.** No questions on 待办 for now, as decided on
+  2026-09-27. NocoCRM's overview asks up to three questions from its
+  attention figures; whether 待办 should do the same is the user's call.
+- **Where 收件箱 sits in the menu.** §S1 puts 收件箱 first and 我的… second,
+  which would move 待办 down one. 待办's 待审批 column and the inbox's
+  approval cards should then say the same thing in two places, or one of
+  them should go. This is decided when step 1 is reviewed.
+- **Only one tier of the autonomy matrix: 建议** (§3.5, §S8.3). An agent
+  earns 自动 on its acceptance data. The matrix is built when one has
+  data enough. This is a proposal for the guideline, not a departure:
+  every new agent starts there anyway.
+- **报表.** The six measures of §4.4 / §S13 (adoption, AI share, trust,
+  reliability, cost, human load) follow once two agents have run for a
+  month.
+- **The spec.** `SPEC.md`'s P6 describes AI 发现 and the old employee.
+  It is rewritten for work agents in a NocoSolution pull request before
+  step 1 is merged.
+
+Each step is its own change: migration, service, routes, pages, skill, eval
+set, tests and the rules files (`itam-assistant.md`, `itam-workbench.md`).
+Each ends with the usual checks and a browser run against the demo.
 
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
