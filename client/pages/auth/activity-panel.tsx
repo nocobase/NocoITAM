@@ -33,7 +33,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 // the repair shop and the recycler outside — and devices moving between them
 // as ITAM records it: a delivery comes into the warehouse, a laptop goes to
 // a joiner's desk, one leaves for repair and comes back, a printer goes to
-// the recycler, each move drawn as a trail with the device's tag. An MDM
+// the recycler, each move carrying the device's tag. An MDM
 // sync sweeps the desks and a stocktake ticks every room. Its own look rather
 // than NocoCRM's story card, over a backdrop of the things IT looks after.
 // Sample content: every name is in the locale files.
@@ -409,9 +409,6 @@ export function ActivityPanel(): ReactElement {
   const count = useEvents();
   const latest = count > 0 ? EVENTS[count - 1] : undefined;
   const placed = placeAll(count);
-  const before = new Map(
-    placeAll(Math.max(0, count - 1)).map((d) => [d.id, d]),
-  );
   const moved = new Set(latest?.moves.map(([id]) => id) ?? []);
   // One tag per move, over the first device it moves.
   const tagged = latest?.moves[0]?.[0];
@@ -458,40 +455,10 @@ export function ActivityPanel(): ReactElement {
                     zone={key}
                   />
                 ))}
-                {/* The company's wall: inside above, outside below. */}
-                <span className='absolute top-[67%] right-0 left-0 h-px bg-gradient-to-r from-transparent via-border to-transparent' />
+                {/* Where the company ends: inside above, outside below. */}
                 <span className='absolute top-[67%] left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-border bg-card px-2.5 py-0.5 text-[0.625rem] text-muted-foreground'>
                   {t('loginActivity.outside')}
                 </span>
-                {/* Each move's trail, from where the device was. */}
-                <svg
-                  className='pointer-events-none absolute inset-0 size-full overflow-visible'
-                  preserveAspectRatio='none'
-                  viewBox='0 0 100 100'
-                >
-                  {placed
-                    .filter((device) => moved.has(device.id))
-                    .map((device) => {
-                      const from = before.get(device.id);
-                      if (!from) return null;
-                      const lift = Math.min(from.y, device.y) - 14;
-                      return (
-                        <path
-                          className='auth-move-trail text-primary'
-                          d={`M ${String(from.x)} ${String(from.y)} Q ${String(
-                            (from.x + device.x) / 2,
-                          )} ${String(lift)} ${String(device.x)} ${String(device.y)}`}
-                          fill='none'
-                          key={`${latest?.id ?? ''}-${device.id}`}
-                          pathLength={1}
-                          stroke='currentColor'
-                          strokeLinecap='round'
-                          strokeWidth='2'
-                          vectorEffect='non-scaling-stroke'
-                        />
-                      );
-                    })}
-                </svg>
                 {placed.map((device) => {
                   const DeviceIcon = KINDS[device.kind];
                   const isMoved = moved.has(device.id);
