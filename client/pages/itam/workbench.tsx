@@ -120,7 +120,7 @@ export default function WorkbenchPage(): ReactElement {
         ref={barRef}
         className='sticky top-0 z-10 -mx-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-background/85 px-6 py-2.5 backdrop-blur-xl'
       >
-        {loading ? <span /> : <WorkCounts cards={cards} />}
+        {loading ? <span /> : <WorkCounts cards={cards} offset={bar + 8} />}
         <div className='ml-auto flex shrink-0 items-center gap-2'>
           <WorkViewToggle
             value={view}
@@ -203,8 +203,11 @@ function WorkViewToggle({
  */
 function WorkCounts({
   cards,
+  offset,
 }: {
   readonly cards: readonly WorkCard[];
+  /** The pinned bar's height: a column lands below it, its title in view. */
+  readonly offset: number;
 }): ReactElement | null {
   const waiting = cards.filter((card) => card.count > 0);
   if (waiting.length === 0) return null;
@@ -220,13 +223,16 @@ function WorkCounts({
           <button
             type='button'
             className='flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
-            onClick={() =>
-              document.getElementById(`work-${card.key}`)?.scrollIntoView({
+            onClick={() => {
+              const target = document.getElementById(`work-${card.key}`);
+              if (!target) return;
+              target.style.scrollMarginTop = `${String(offset)}px`;
+              target.scrollIntoView({
                 behavior: 'smooth',
-                block: 'nearest',
+                block: 'start',
                 inline: 'start',
-              })
-            }
+              });
+            }}
           >
             {card.label}
             <span className='font-semibold text-foreground tabular-nums'>
