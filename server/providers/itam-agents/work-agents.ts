@@ -85,21 +85,18 @@ export async function provisionWorkAgents(
     return;
   let known = idsOf(marker);
   // A work no longer done (离职回收, 授权续费, removed 2026-10-17): its agent is
-  // archived, so it leaves the agents' list, and the marker forgets it.
+  // deleted — archived first, as the plugin asks; its past runs stay — and
+  // the marker forgets it (2026-10-17; it was only archived the same day).
   const retired = Object.keys(known).filter(
     (agent) => !(AGENTS as readonly string[]).includes(agent),
   );
   if (retired.length) {
-    const creator = await firstAccount(database);
-    for (const agent of retired) {
-      const id = known[agent as AgentName];
-      if (id) await agents.agents.archive(id, creator).catch(() => undefined);
-    }
     known = Object.fromEntries(
       Object.entries(known).filter(([agent]) => !retired.includes(agent)),
     );
     await writeMarker(database, WORK_AGENTS_MARKER, { agentIds: known });
   }
+  await removeRetired(agents, database);
   const missing = AGENTS.filter((agent) => !known[agent]);
   if (!missing.length) return;
   const creator = await firstAccount(database);
@@ -165,4 +162,46 @@ function idsOf(
         ),
       )
     : {};
+}
+
+/**
+ * Deletes the work agents ITAM created for a work it no longer does, known
+ * by the name key it wrote on them (`agentWork.<agent>.name`), whether or
+ * not the marker still lists them: a database that ran 2026-10-17's first
+ * version archived them and dropped them from the marker.
+ */
+async function removeRetired(
+  agents: Agents,
+  database: DatabaseManager,
+): Promise<void> {
+  const rows = await database
+    .query()
+    .selectFrom('agAgents')
+    .select(['id', 'nameText', 'archivedAt'])
+    .execute<{ id: unknown; nameText: unknown; archivedAt: unknown }>()
+    .catch(() => []);
+  const current = new Set(AGENTS.map((agent) => `agentWork.${agent}.name`));
+  const retired = rows.filter((row) => {
+    const text =
+      typeof row.nameText === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(row.nameText) as unknown;
+            } catch {
+              return null;
+            }
+          })()
+        : row.nameText;
+    const key =
+      text && typeof text === 'object' && 'key' in text ? String(text.key) : '';
+    return /^agentWork\.[A-Za-z]+\.name$/.test(key) && !current.has(key);
+  });
+  if (!retired.length) return;
+  const creator = await firstAccount(database);
+  for (const row of retired) {
+    const id = String(row.id);
+    if (!row.archivedAt)
+      await agents.agents.archive(id, creator).catch(() => undefined);
+    await agents.agents.remove(id, creator).catch(() => undefined);
+  }
 }

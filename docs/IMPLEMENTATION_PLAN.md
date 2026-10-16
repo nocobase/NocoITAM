@@ -3202,8 +3202,9 @@ What stays from the step:
   which matches nothing on SQLite.
 - A new run on a record retires an earlier failed one, which otherwise
   stayed in 收件箱 after a successful retry.
-- `provisionWorkAgents` archives a work agent no longer listed and drops
-  it from the marker; 收件箱 shows only the listed agents' runs.
+- `provisionWorkAgents` deletes a work agent no longer listed (archived
+  first, as the plugin asks; its past runs stay) and drops it from the
+  marker; 收件箱 shows only the listed agents' runs.
 - 审批审阅 is shown as 审批助手.
 
 Migration `202610170001_agent_run_plans` (the plan a suggestion became)

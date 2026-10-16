@@ -239,7 +239,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     need the software). A work agent is for a judgement a rule cannot make
     and the register holds the material for, as 审批审阅 has. Removing one
     takes it out of `AGENTS` and `WORK_AGENTS`; `provisionWorkAgents`
-    archives its plugin agent and drops it from the marker, and 收件箱 and
+    deletes its plugin agent at the next start (archived first, as the
+    plugin asks; found by its `agentWork.<agent>.name` key, so also when the
+    marker no longer lists it) and drops it from the marker, and 收件箱 and
     its count read only the agents in `AGENTS`, so its old runs stop
     showing. The plan operations they added (`adjust_entitlement_seats`,
     `set_entitlement_auto_renew`) stay for Asset Steward.
