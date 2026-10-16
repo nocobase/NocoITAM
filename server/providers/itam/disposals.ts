@@ -5,7 +5,11 @@ import {
   type ServiceToken,
 } from '@nocobase/service-provider';
 
-import type { ApprovalDecision, ApprovalService } from './approvals.js';
+import {
+  requestTitle,
+  type ApprovalDecision,
+  type ApprovalService,
+} from './approvals.js';
 import type { DeviceService, OperationContext } from './devices.js';
 import { assertInputFields } from './authz-filter.js';
 import {
@@ -680,7 +684,7 @@ export function createDisposalService(dependencies: {
               'Add at least one device before submitting',
               'NO_DEVICES',
             );
-          title = `${String(disposal.disposalNo)} ${String(disposal.method)}`;
+          title = requestTitle(disposal.disposalNo, disposal.description);
           // Every disposal is approved by the person its submitter names;
           // there is no switch to skip it (removed 2026-09-27).
           const approval = await approvals.request(
@@ -754,7 +758,7 @@ export function createDisposalService(dependencies: {
             connection,
           );
           submitterId = String(pending.requestedById);
-          title = `${String(disposal.disposalNo)} ${String(disposal.method)}`;
+          title = requestTitle(disposal.disposalNo, disposal.description);
           await records.setStatus(
             connection,
             disposal,

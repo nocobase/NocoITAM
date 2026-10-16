@@ -324,7 +324,7 @@ const VENDOR_NAMES: Readonly<
 const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   'en-US': {
     onboardingBatch: 'Onboarding batch',
-    approval: 'Approved for onboarding',
+    approval: 'Approved, go ahead and order',
     officeLicense: 'Office LTSC 2024',
     ideLicense: 'IntelliJ IDEA Ultimate',
     replacementOrder: 'Laptop refresh for R&D',
@@ -408,7 +408,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   },
   'zh-CN': {
     onboardingBatch: '新员工入职配备',
-    approval: '入职配备已批准',
+    approval: '同意，按计划采购',
     officeLicense: 'Office LTSC 2024',
     ideLicense: 'IntelliJ IDEA Ultimate',
     replacementOrder: '研发部笔记本换新',

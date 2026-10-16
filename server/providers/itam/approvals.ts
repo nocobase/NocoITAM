@@ -94,6 +94,18 @@ export const approvalServiceToken: ServiceToken<ApprovalService> =
 
 const JSON_FIELDS = ['approverIds'] as const;
 
+/**
+ * What an approval and its notifications call a request: its number and its
+ * own description (2026-10-16). It used to append the reason or method's
+ * enum key, which read as untranslated English (PO-000032 newHire).
+ */
+export function requestTitle(number: unknown, description: unknown): string {
+  const text =
+    typeof description === 'string' ? description.trim().split('\n')[0] : '';
+  const short = text.length > 40 ? `${text.slice(0, 40)}…` : text;
+  return short ? `${String(number)} ${short}` : String(number);
+}
+
 export function createApprovalService(
   database: DatabaseManager,
   history: HistoryService,

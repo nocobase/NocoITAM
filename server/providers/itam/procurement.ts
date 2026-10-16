@@ -5,7 +5,7 @@ import {
   type ServiceToken,
 } from '@nocobase/service-provider';
 
-import type { ApprovalService } from './approvals.js';
+import { requestTitle, type ApprovalService } from './approvals.js';
 import type { DeviceService, OperationContext } from './devices.js';
 import {
   assertInputFields,
@@ -1161,7 +1161,7 @@ export function createProcurementService(deps: {
             'NO_LINES',
           );
         const refreshed = (await findRaw(id, connection)) ?? order;
-        title = `${String(order.orderNo)} ${String(order.reason)}`;
+        title = requestTitle(order.orderNo, order.description);
         // Every purchase order is approved by the person its submitter
         // names; there is no switch to skip it (removed 2026-09-27).
         const approval = await approvals.request(
@@ -1210,7 +1210,7 @@ export function createProcurementService(deps: {
       let title = '';
       const row = await mutate(id, conditions, async (connection, order) => {
         ownerId = asText(order.ownerId) ?? '';
-        title = `${String(order.orderNo)} ${String(order.reason)}`;
+        title = requestTitle(order.orderNo, order.description);
         requireStatus(order, ['pendingApproval'], 'decide');
         const pending = (
           await approvals.forSubject('purchaseOrder', id, connection)
