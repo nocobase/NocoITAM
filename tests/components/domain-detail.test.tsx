@@ -112,11 +112,14 @@ it('groups named procurement references and dates, without repeating summary or 
     currency: 'USD',
   };
   show(purchaseOrderDomain);
-  // No 申请信息 group: 负责人 heads 基本信息, and 部门 and 需求日期 read with
-  // what the order is for.
+  // No 申请信息 group, and no summary strip: the status and the estimate
+  // lead 基本信息 (a draft has no approver yet), then 负责人; 部门 and 需求日期
+  // read with what the order is for.
   expect(screen.queryByRole('heading', { name: 'groups.request' })).toBeNull();
   const basic = within(section('groups.basic'));
   expect(basic.getAllByRole('term').map((node) => node.textContent)).toEqual([
+    'fields.status',
+    'fields.estimatedTotal',
     'fields.owner',
     'fields.poReason',
     'fields.description',
