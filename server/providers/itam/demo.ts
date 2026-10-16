@@ -448,6 +448,8 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     adobeLicense: 'Adobe Creative Cloud for teams',
     chatgptLicense: 'ChatGPT Team',
     windowsLicense: 'Windows 11 Pro upgrades',
+    zoomYearlyLicense: 'Zoom Workplace Pro (annual)',
+    figmaTrialLicense: 'Figma Professional (trial)',
     m365Growth: 'Four more seats for this year’s new hires',
     tonerTopUp: 'Bought locally while the order was on its way',
     paperDelivery: 'Quarterly paper delivery',
@@ -569,6 +571,8 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     adobeLicense: 'Adobe Creative Cloud 团队版',
     chatgptLicense: 'ChatGPT Team',
     windowsLicense: 'Windows 11 专业版升级授权',
+    zoomYearlyLicense: 'Zoom Workplace Pro（年付）',
+    figmaTrialLicense: 'Figma Professional（试用）',
     m365Growth: '为今年的新员工增加 4 个席位',
     tonerTopUp: '订单未到，先在本地采购应急',
     paperDelivery: '每季度纸张配送',
@@ -3268,7 +3272,7 @@ export function createDemoService(dependencies: {
         // spare for the joiners.
         const zoomYearly = await subscription(
           {
-            name: 'Zoom Workplace Pro（年付）',
+            name: texts.zoomYearlyLicense,
             softwareProductId: zoom.id,
             billingModel: 'perSeat',
             seatCount: 9 + crewCount(crewWants.zoom),
@@ -3290,7 +3294,7 @@ export function createDemoService(dependencies: {
         await seatsToCrew(zoomYearly, -358, crewWants.zoom);
         await subscription(
           {
-            name: 'Figma Professional（试用）',
+            name: texts.figmaTrialLicense,
             softwareProductId: figma.id,
             billingModel: 'flat',
             billingCycle: 'year',
