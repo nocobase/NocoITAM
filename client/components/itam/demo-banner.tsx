@@ -68,7 +68,7 @@ export function DemoBanner(): ReactElement | null {
       </p>
       {/* A link drawn as a button: it goes to another page. */}
       <Link
-        to='/settings/itam?tab=demo'
+        to='/settings/demo'
         className={buttonVariants({ size: 'sm', className: 'shrink-0' })}
       >
         {t('settings.demo.bannerAction')}

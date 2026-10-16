@@ -15,11 +15,8 @@ import {
   AppWindow,
   BookOpen,
   Bot,
-  CalendarClock,
   Gauge,
   Settings2,
-  ShieldUser,
-  UsersRound,
   BarChart3,
   Briefcase,
   Building2,
@@ -621,20 +618,27 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
         },
       ],
     },
-    // 设置 (template 1.0.0-beta.64): the template has no settings area and
-    // the plugins ship no pages, so the application routes its own —
-    // ITAM's settings, then the administration pages built on the plugins'
-    // APIs (client/pages/settings/, ported from NocoCRM's), each route
-    // checking what the plugin's own API checks.
+    // 设置 (2026-10-16, after NocoCRM's): one menu entry, a page with a tab
+    // each (pages/settings/index.tsx). The template has no settings area and
+    // the plugins ship no pages, so the application routes its own — ITAM's
+    // settings, then the administration pages built on the plugins' APIs
+    // (client/pages/settings/, ported from NocoCRM's) — as this page's
+    // children at the /settings/... addresses they had as entries of their
+    // own, each route checking what its API checks; a tab shows only to
+    // whoever may open it. ITAM's settings tabs all check the page grant
+    // `itam-settings` the settings page held, so no stored grant changes.
     {
-      name: 'settings-group',
+      name: 'settings',
+      path: '/settings',
+      auth: 'required',
+      // Opens on the first tab its reader may open; API keys are everyone's.
+      authz: 'skip',
       navigation: { title: 'navigation.settingsGroup', icon: Settings2 },
+      componentLoader: () => import('./pages/settings/index.js'),
       children: [
         {
           name: 'itam-settings',
-          path: '/settings/itam',
-          auth: 'required',
-          navigation: { title: 'navigation.itamSettings', icon: Wrench },
+          path: 'itam',
           authz: {
             resource: { type: 'page', id: 'itam-settings' },
             action: 'access',
@@ -643,13 +647,30 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
             import('./pages/itam/settings/itam-settings.js'),
         },
         {
+          name: 'itam-settings-mdm',
+          path: 'mdm',
+          authz: {
+            resource: { type: 'page', id: 'itam-settings' },
+            action: 'access',
+          },
+          componentLoader: () => import('./pages/itam/settings/mdm.js'),
+        },
+        {
+          name: 'itam-settings-receipt-agent',
+          path: 'receipt-agent',
+          authz: {
+            resource: { type: 'page', id: 'itam-settings' },
+            action: 'access',
+          },
+          componentLoader: () =>
+            import('./pages/itam/settings/receipt-agent.js'),
+        },
+        {
           // The users plugin's `user` record type, which it does not place
           // in the permission catalog: only the unrestricted root set opens
           // it.
           name: 'settings-users',
-          path: '/settings/users',
-          auth: 'required',
-          navigation: { title: 'navigation.users', icon: UsersRound },
+          path: 'users',
           authz: { resource: { type: 'user', id: '*' }, action: 'read' },
           componentLoader: () => import('./pages/settings/users/index.js'),
           children: [
@@ -683,12 +704,7 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
         },
         {
           name: 'settings-permission-sets',
-          path: '/settings/permission-sets',
-          auth: 'required',
-          navigation: {
-            title: 'navigation.permissionSets',
-            icon: ShieldUser,
-          },
+          path: 'permission-sets',
           authz: {
             resource: {
               type: 'settings',
@@ -753,9 +769,7 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
           // Every signed-in person manages their own keys only; the API
           // answers for the caller alone.
           name: 'settings-api-keys',
-          path: '/settings/api-keys',
-          auth: 'required',
-          navigation: { title: 'navigation.apiKeys', icon: KeyRound },
+          path: 'api-keys',
           authz: 'skip',
           componentLoader: () => import('./pages/settings/api-keys/index.js'),
           children: [
@@ -769,12 +783,7 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
         {
           // The page grant the scheduler's API checks.
           name: 'settings-scheduled-tasks',
-          path: '/settings/scheduled-tasks',
-          auth: 'required',
-          navigation: {
-            title: 'navigation.scheduledTasks',
-            icon: CalendarClock,
-          },
+          path: 'scheduled-tasks',
           authz: {
             resource: { type: 'page', id: 'scheduler.schedules' },
             action: 'access',
@@ -789,6 +798,16 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
                 import('./pages/settings/scheduled-tasks/detail.js'),
             },
           ],
+        },
+        {
+          // Last: a trial's, rarely opened once ITAM is in use.
+          name: 'itam-settings-demo',
+          path: 'demo',
+          authz: {
+            resource: { type: 'page', id: 'itam-settings' },
+            action: 'access',
+          },
+          componentLoader: () => import('./pages/itam/settings/demo.js'),
         },
       ],
     },

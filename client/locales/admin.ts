@@ -1,4 +1,4 @@
-// The administration pages of the menu's 设置 section: Users, Permission
+// The administration pages of 设置: Users, Permission
 // sets, API keys and Scheduled tasks (client/pages/settings/), built on the
 // plugins' APIs once the template stopped shipping a settings area and the
 // plugins stopped shipping pages (template 1.0.0-beta.64, ported from
@@ -275,6 +275,13 @@ export const adminWording = {
     // `client/routes.ts` declares; every other page takes its title.
     pages: {
       'master-data-overview': ['Reference data overview', '主数据概览'],
+      // 设置's tabs name no menu entry since it became one page (2026-10-16).
+      'itam-settings': [
+        'Settings: General, MDM, receiving by delivery note, demo data',
+        '设置：通用、MDM、按送货单入库、演示数据',
+      ],
+      // `scheduler.schedules`, nested: the lookup reads the dot as a level.
+      scheduler: { schedules: ['Settings: Scheduled tasks', '设置：定时任务'] },
     },
     unrestricted: [
       'This permission set is unrestricted: whoever holds it may do everything.',

@@ -1,4 +1,6 @@
-import type { ReactElement, ReactNode } from 'react';
+import { useContext, type ReactElement, type ReactNode } from 'react';
+
+import { PageFrameContext } from './page-frame.js';
 
 export interface PageHeaderProps {
   readonly title: ReactNode;
@@ -13,6 +15,27 @@ export function PageHeader({
   description,
   title,
 }: PageHeaderProps): ReactElement {
+  // Application change: inside a page that gathers pages under tabs, that
+  // page draws the title and the tabs, and this one only its description
+  // and actions, on a row under them (page-frame.ts).
+  const frame = useContext(PageFrameContext);
+  if (frame)
+    return description || actions ? (
+      <header className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+        {description ? (
+          <p className='max-w-2xl text-sm leading-6 text-muted-foreground'>
+            {description}
+          </p>
+        ) : (
+          <span />
+        )}
+        {actions ? (
+          <div className='flex shrink-0 items-center gap-2'>{actions}</div>
+        ) : null}
+      </header>
+    ) : (
+      <></>
+    );
   return (
     <header className='flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between'>
       <div className='min-w-0'>

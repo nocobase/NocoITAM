@@ -10,6 +10,8 @@ import {
 
 import { cn } from 'cn';
 
+import { PageFrameContext } from './page-frame.js';
+
 export interface RouteChildPageProps {
   readonly children?: ReactNode;
   readonly className?: string;
@@ -113,7 +115,11 @@ export function RouteChildPage({
         ref={scrollerRef}
       >
         <EnclosingLayerContext.Provider value={scrollerRef}>
-          {children}
+          {/* Application change: a covering page draws its own heading, not
+              the tabs of the page it covers (page-frame.ts). */}
+          <PageFrameContext.Provider value={false}>
+            {children}
+          </PageFrameContext.Provider>
         </EnclosingLayerContext.Provider>
       </div>
     </div>

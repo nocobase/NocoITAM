@@ -98,7 +98,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
             // A link drawn as a button: it goes to another page. Filled in
             // the foreground colour, as asked (2026-10-15).
             <Link
-              to='/settings/itam?tab=deviceSync'
+              to='/settings/mdm'
               className={cn(
                 buttonVariants(),
                 'bg-foreground text-background hover:bg-foreground/85',

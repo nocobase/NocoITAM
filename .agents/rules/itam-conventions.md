@@ -30,9 +30,12 @@ The layout is the template's shadcn sidebar (`AppSidebar`, `NavigationMenu`)
 with two application changes: a menu group reads as a heading with its pages
 always listed (`sections` on `NavigationMenu`), and the search button sits
 beside the logo (`AppSidebar`'s `action`), falling back to an entry under
-待办 (`after`) when the sidebar is collapsed. There is no settings layout: 设置 is a section of the same menu,
-with ITAM's own settings and the administration pages in
-`client/pages/settings/` (users, permission sets, API keys, scheduled tasks),
+待办 (`after`) when the sidebar is collapsed. 设置 is one menu entry opening one page of tabs (2026-10-16, after
+NocoCRM's; `client/pages/settings/index.tsx`): ITAM's own settings (通用,
+MDM, 按送货单入库 and, last, 演示数据, in `client/pages/itam/settings/`) and
+the administration pages in `client/pages/settings/` (users, permission
+sets, API keys, scheduled tasks), each tab its own child route at
+`/settings/<tab>` checking its own grant and shown only to whoever it lets in,
 built on the plugins' client APIs and worded through `admin.*`
 (`client/locales/admin.ts`). AI is a section too, holding the Agents
 plugin's own pages; its model services page is at `/ai-models`, since

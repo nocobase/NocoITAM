@@ -76,7 +76,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (`client/components/itam/demo-banner.tsx`, mounted under the header in
   `client/layouts/app-layout.tsx` — an application change to the layout)
   offers it to whoever holds the settings grant the demo endpoints require,
-  links to `/settings/itam?tab=demo` and, dismissed, stays away in that
+  links to `/settings/demo` and, dismissed, stays away in that
   browser. Clearing it takes its numbers too: `numbering.rewind()` moves
   each sequence back to just past the highest number still in use (never
   forward, only under the current prefix), so on a database that held only

@@ -19,7 +19,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `itam.daily-maintenance`
   (02:00) and
   `itam.monthly-depreciation` (1st, 03:00) in the ITAM time zone,
-  so each execution — status, reason, counts — shows at 设置 → 自动化 → 定时任务
+  so each execution — status, reason, counts — shows at 设置 → 定时任务
   (page grant `scheduler.schedules`, both IT roles') and can be
   disabled there. The target runs the job inside `start()` and returns
   `completed` / `failed`; there is no application run log (`jobRuns` dropped

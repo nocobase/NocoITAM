@@ -11,9 +11,16 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
 - `client/react-providers.ts` mounts a TanStack QueryClient and the tooltip
   provider (`client/lib/itam/query-provider.tsx`); pages use the hooks in
   `client/lib/itam/api.ts` rather than Refine data hooks.
-- The ITAM settings page is **tabs**, one per settings document (基本设置,
-  提醒阈值, 编号规则, AI 助手, 按送货单入库, 演示数据), the open one in the
-  address as `?tab=` so a link can open it (2026-10-05).
+- 设置 is **one page of tabs** (2026-10-16, after NocoCRM's; it was a menu
+  section of five entries, the first of them ITAM's settings with tabs of
+  its own): 通用 (`/settings/itam`: 基本设置, 提醒阈值, 编号规则 and AI 助手,
+  one card under another, each saved by its own button), MDM, 按送货单入库,
+  用户, 权限集, API 密钥, 定时任务 and 演示数据, each tab a route of its own.
+  ITAM's four tabs all check the page grant `itam-settings`, so no stored
+  grant changed; the permission editor names it and `scheduler.schedules`
+  through `admin.sets.pages`, since neither has a menu entry any more. A
+  link written for the old `?tab=` still lands (`MOVED` in
+  `itam-settings.tsx`).
 - An asset-type tag is outlined, not filled: the contract
   `[data-slot='badge'][data-tag='kind']` in `client/styles.css` gives it a
   border and no background, which is what tells it apart from a status tag

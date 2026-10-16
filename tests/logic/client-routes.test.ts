@@ -78,18 +78,23 @@ describe('app client routes', () => {
       'locations',
       'departments',
       'people',
-      // AI and 设置 (template 1.0.0-beta.64): the Agents plugin's pages, each
-      // behind its own grant or the settings item its API reads, then this
-      // application's settings and the administration pages, each checking
-      // what the plugin's own API checks.
+      // AI (template 1.0.0-beta.64): the Agents plugin's pages, each behind
+      // its own grant or the settings item its API reads.
       'agents',
       'skills',
       'settings:agents.services',
       'usage',
+      // 设置, one page of tabs (2026-10-16): the page itself checks nothing,
+      // API keys being everyone's; ITAM's tabs check the grant the settings
+      // page always had, and the administration pages what the plugin's own
+      // API checks.
+      'itam-settings',
+      'itam-settings',
       'itam-settings',
       'user:*',
       'settings:authorization.permission-sets',
       'scheduler.schedules',
+      'itam-settings',
     ]);
     // A detail page is not a menu entry and carries no grant of its own.
     expect(
