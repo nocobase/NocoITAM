@@ -422,6 +422,24 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     miceDamaged: 'Scroll wheel broken; not worth repairing',
     returnedGood: 'Good condition; wiped and back on the shelf',
     returnedLoan: 'Back from the customer visit, all accessories present',
+    itManagerKit: 'IT asset manager kit',
+    salesManagerKit: 'Sales manager kit',
+    resellerContact: 'Laura Chen',
+    repairShopNotes:
+      'Collects on Tuesdays and Fridays; quotes first for anything out of warranty',
+    recyclerNotes: 'Issues a data destruction certificate with every batch',
+    webcamSpecUpdated:
+      '4K webcam with HDR, a privacy shutter and a 2 m USB-C cable',
+    commentResellerContact:
+      '{contact} has moved to their enterprise team. {newContact} looks after our account from now on; orders still go to the same address.',
+    commentResellerReply:
+      'Good to know, thanks. I will change the contact here.',
+    commentRecycler:
+      'The data destruction certificate for the laptop we sold them came in; it is filed with the disposal.',
+    commentHubEnd:
+      'Dell stops selling this hub next quarter. If we want spares, order them before then.',
+    commentWebcam:
+      'In the meeting room set it to 1080p: the room computer crops a 4K picture.',
   },
   'zh-CN': {
     onboardingBatch: '新员工入职配备',
@@ -517,6 +535,19 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     miceDamaged: '滚轮损坏，不值得维修',
     returnedGood: '完好，已清除数据并放回库存',
     returnedLoan: '客户拜访归来，配件齐全',
+    itManagerKit: 'IT 资产经理配置',
+    salesManagerKit: '销售经理配置',
+    resellerContact: '梁晓',
+    repairShopNotes: '每周二、周五上门取件；保外维修先报价',
+    recyclerNotes: '每批回收都出具数据销毁证明',
+    webcamSpecUpdated: '4K 摄像头，支持 HDR，带隐私挡板，附 2 米 USB-C 线',
+    commentResellerContact:
+      '{contact} 调去了他们的大客户部，以后由{newContact}对接我们，下单地址不变。',
+    commentResellerReply: '好的，我把这边的联系人改一下。',
+    commentRecycler:
+      '卖给他们的那台笔记本，数据销毁证明已经收到，归档在报废单里。',
+    commentHubEnd: 'Dell 下个季度停售这款扩展器，需要备件的话在那之前下单。',
+    commentWebcam: '会议室里请设成 1080p：会议室电脑接 4K 会裁切画面。',
   },
 };
 
@@ -605,6 +636,242 @@ const JOINER_NAMES: Readonly<
     { name: '林雪', mail: 'lin.xue', position: '设计师' },
   ],
 };
+
+/**
+ * What a department's 入职配置 asks for, as the seeds write it
+ * (`202610050001_seed_itam_onboarding_kits`): engineering (R&D, QA and
+ * 技术部, whose kit the demo adds), product, marketing, the customer-facing
+ * teams and the office teams.
+ */
+type CrewKit = 'engineering' | 'product' | 'marketing' | 'field' | 'office';
+const CREW_KITS: Readonly<Record<string, CrewKit>> = {
+  'dept-tech': 'engineering',
+  'dept-rd': 'engineering',
+  'dept-qa': 'engineering',
+  'dept-product': 'product',
+  'dept-marketing': 'marketing',
+  'dept-sales': 'field',
+  'dept-customer': 'field',
+  'dept-hr': 'office',
+  'dept-finance': 'office',
+  'dept-admin': 'office',
+};
+
+/** One of the rest of the company: name, mailbox and position by language. */
+interface CrewSpec {
+  readonly department: string;
+  /** Days ago they started. */
+  readonly hired: number;
+  /** Days ago they left, everything handed back: a former employee. */
+  readonly left?: number;
+  /** Works at the Japan branch rather than on the third floor. */
+  readonly japan?: boolean;
+  /** Product's designers have a kit of their own (Adobe on top). */
+  readonly designer?: boolean;
+  /**
+   * The index in `CREW` of a former employee whose laptop and monitor or
+   * phone they took over when they started.
+   */
+  readonly inherits?: number;
+  readonly 'en-US': readonly [string, string, string];
+  readonly 'zh-CN': readonly [string, string, string];
+}
+
+/**
+ * The rest of the company (2026-10-16): the demo had six employees and its
+ * IT staff, so the register read as a team of twelve. These fill the seeded
+ * departments with people who joined over six years — in the order they
+ * started, which is the order of their employee numbers — each with a
+ * position from their department's list, and two who left long ago with
+ * everything handed back, whose laptops went on to the people who replaced
+ * them. Everybody still here is equipped as their department's 入职配置
+ * asks, on the days they started.
+ */
+const CREW: readonly CrewSpec[] = [
+  {
+    department: 'dept-tech',
+    hired: 2350,
+    'en-US': ['Henry Walsh', 'henry.walsh', 'Technical Director'],
+    'zh-CN': ['郑涛', 'zheng.tao', '技术总监'],
+  },
+  {
+    department: 'dept-finance',
+    hired: 2200,
+    'en-US': ['Rachel Moore', 'rachel.moore', 'Finance Manager'],
+    'zh-CN': ['何丽', 'he.li', '财务经理'],
+  },
+  {
+    department: 'dept-hr',
+    hired: 2000,
+    'en-US': ['Megan Price', 'megan.price', 'HR Business Partner'],
+    'zh-CN': ['高婷', 'gao.ting', 'HRBP'],
+  },
+  {
+    department: 'dept-admin',
+    hired: 1900,
+    'en-US': ['Laura Hughes', 'laura.hughes', 'Office Administrator'],
+    'zh-CN': ['罗丹', 'luo.dan', '行政专员'],
+  },
+  {
+    department: 'dept-rd',
+    hired: 1820,
+    'en-US': ['Jacob Foster', 'jacob.foster', 'Backend Engineer'],
+    'zh-CN': ['马超', 'ma.chao', '后端工程师'],
+  },
+  {
+    department: 'dept-qa',
+    hired: 1700,
+    'en-US': ['Andrew Collins', 'andrew.collins', 'QA Manager'],
+    'zh-CN': ['胡斌', 'hu.bin', '质量经理'],
+  },
+  {
+    department: 'dept-product',
+    hired: 1450,
+    'en-US': ['Nathan Reed', 'nathan.reed', 'Product Manager'],
+    'zh-CN': ['林峰', 'lin.feng', '产品经理'],
+  },
+  // Left a year ago; Dylan Cooper (程亮) took over the laptop and phone.
+  {
+    department: 'dept-sales',
+    hired: 1400,
+    left: 385,
+    'en-US': ['Hannah Scott', 'hannah.scott', 'Sales Representative'],
+    'zh-CN': ['朱琳', 'zhu.lin', '销售代表'],
+  },
+  {
+    department: 'dept-marketing',
+    hired: 1380,
+    'en-US': ['Victoria Hayes', 'victoria.hayes', 'Marketing Manager'],
+    'zh-CN': ['郭静', 'guo.jing', '市场经理'],
+  },
+  {
+    department: 'dept-sales',
+    hired: 1280,
+    'en-US': ['Tyler Morgan', 'tyler.morgan', 'Sales Representative'],
+    'zh-CN': ['黄磊', 'huang.lei', '销售代表'],
+  },
+  {
+    department: 'dept-customer',
+    hired: 1150,
+    'en-US': ['Amelia Clarke', 'amelia.clarke', 'Customer Success Manager'],
+    'zh-CN': ['宋佳', 'song.jia', '客户成功经理'],
+  },
+  // Left in the spring; Logan Hall (叶帆) took over the laptop and monitor.
+  {
+    department: 'dept-rd',
+    hired: 1010,
+    left: 205,
+    'en-US': ['Owen Parker', 'owen.parker', 'Mobile Engineer'],
+    'zh-CN': ['唐宁', 'tang.ning', '移动端工程师'],
+  },
+  {
+    department: 'dept-rd',
+    hired: 980,
+    'en-US': ['Isaac Rivera', 'isaac.rivera', 'Mobile Engineer'],
+    'zh-CN': ['许晨', 'xu.chen', '移动端工程师'],
+  },
+  {
+    department: 'dept-finance',
+    hired: 900,
+    'en-US': ['Emma Lewis', 'emma.lewis', 'Accountant'],
+    'zh-CN': ['冯悦', 'feng.yue', '会计'],
+  },
+  {
+    department: 'dept-product',
+    hired: 880,
+    designer: true,
+    'en-US': ['Zoe Campbell', 'zoe.campbell', 'Designer'],
+    'zh-CN': ['曹颖', 'cao.ying', '设计师'],
+  },
+  {
+    department: 'dept-sales',
+    hired: 760,
+    'en-US': ['Caleb Russell', 'caleb.russell', 'Presales Consultant'],
+    'zh-CN': ['彭飞', 'peng.fei', '售前顾问'],
+  },
+  {
+    department: 'dept-marketing',
+    hired: 690,
+    'en-US': ['Lily Evans', 'lily.evans', 'Content Marketer'],
+    'zh-CN': ['董琪', 'dong.qi', '内容运营'],
+  },
+  {
+    department: 'dept-rd',
+    hired: 640,
+    'en-US': ['Samuel Young', 'samuel.young', 'Frontend Engineer'],
+    'zh-CN': ['袁博', 'yuan.bo', '前端工程师'],
+  },
+  {
+    department: 'dept-customer',
+    hired: 560,
+    japan: true,
+    'en-US': ['Haruto Sato', 'sato.haruto', 'Support Specialist'],
+    'zh-CN': ['佐藤阳翔', 'sato.haruto', '技术支持'],
+  },
+  {
+    department: 'dept-product',
+    hired: 520,
+    'en-US': ['Ava Robinson', 'ava.robinson', 'Product Manager'],
+    'zh-CN': ['蒋欣', 'jiang.xin', '产品经理'],
+  },
+  {
+    department: 'dept-qa',
+    hired: 410,
+    'en-US': ['Leo Bailey', 'leo.bailey', 'QA Engineer'],
+    'zh-CN': ['韩冰', 'han.bing', '测试工程师'],
+  },
+  {
+    department: 'dept-sales',
+    hired: 370,
+    inherits: 7,
+    'en-US': ['Dylan Cooper', 'dylan.cooper', 'Sales Representative'],
+    'zh-CN': ['程亮', 'cheng.liang', '销售代表'],
+  },
+  {
+    department: 'dept-hr',
+    hired: 330,
+    'en-US': ['Ella Richardson', 'ella.richardson', 'Recruiter'],
+    'zh-CN': ['魏然', 'wei.ran', '招聘专员'],
+  },
+  {
+    department: 'dept-admin',
+    hired: 260,
+    'en-US': ['Mia Howard', 'mia.howard', 'Receptionist'],
+    'zh-CN': ['姚瑶', 'yao.yao', '前台'],
+  },
+  {
+    department: 'dept-marketing',
+    hired: 210,
+    'en-US': ['Ruby Graham', 'ruby.graham', 'Content Marketer'],
+    'zh-CN': ['邓莉', 'deng.li', '内容运营'],
+  },
+  {
+    department: 'dept-rd',
+    hired: 150,
+    inherits: 11,
+    'en-US': ['Logan Hall', 'logan.hall', 'Mobile Engineer'],
+    'zh-CN': ['叶帆', 'ye.fan', '移动端工程师'],
+  },
+  {
+    department: 'dept-sales',
+    hired: 95,
+    japan: true,
+    'en-US': ['Yui Tanaka', 'tanaka.yui', 'Sales Representative'],
+    'zh-CN': ['田中结衣', 'tanaka.yui', '销售代表'],
+  },
+  {
+    department: 'dept-rd',
+    hired: 75,
+    'en-US': ['Jack Simmons', 'jack.simmons', 'Backend Engineer'],
+    'zh-CN': ['潘越', 'pan.yue', '后端工程师'],
+  },
+  {
+    department: 'dept-customer',
+    hired: 40,
+    'en-US': ['Ivy Coleman', 'ivy.coleman', 'Support Specialist'],
+    'zh-CN': ['钟慧', 'zhong.hui', '技术支持'],
+  },
+];
 
 export function createDemoService(dependencies: {
   database: DatabaseManager;
@@ -928,8 +1195,13 @@ export function createDemoService(dependencies: {
           locations: { sort: 0 },
           departments: { sort: 0 },
         };
-        const md = async (collection: string, input: Row) =>
-          track(
+        // The master data the demo created itself, as opposed to a seeded or
+        // existing record it reuses: only these may be given a history,
+        // since clearing the demo removes the history of its own records
+        // and would leave anybody else's changed.
+        const demoMade = new Set<string>();
+        const md = async (collection: string, input: Row) => {
+          const created = await track(
             collection,
             await masterData.create(
               collection,
@@ -938,6 +1210,20 @@ export function createDemoService(dependencies: {
               all(collection, 'create'),
             ),
           );
+          demoMade.add(String(created.id));
+          return created;
+        };
+        /** A later change to master data the demo made, dated by `on()`. */
+        const revise = async (collection: string, row: Row, input: Row) => {
+          if (!demoMade.has(String(row.id))) return;
+          await masterData.update(
+            collection,
+            String(row.id),
+            input,
+            writerId,
+            all(collection, 'update'),
+          );
+        };
 
         await reached(5);
         // Master data
@@ -946,6 +1232,7 @@ export function createDemoService(dependencies: {
         // books long before the oldest device.
         await on(-1950);
         const vendorNames = VENDOR_NAMES[locale] ?? VENDOR_NAMES['en-US'];
+        const texts = TEXTS[locale] ?? TEXTS['en-US'];
         const reseller = await md('vendors', {
           name: vendorNames.reseller.name,
           types: ['equipment', 'softwareReseller'],
@@ -967,6 +1254,25 @@ export function createDemoService(dependencies: {
           phone: '021-5000 3003',
           email: 'recycle@demo-greenloop.example',
         });
+        // Their records changed since (2026-10-16), so a vendor's history
+        // reads as years of dealing with it rather than one line saying it
+        // was created: the reseller moved to a new switchboard and later
+        // handed the account to somebody else, the repair shop set its
+        // pick-up days, the recycler started certifying destruction.
+        await on(-1180);
+        await revise('vendors', reseller, { phone: '021-5000 1888' });
+        await on(-610);
+        await revise('vendors', reseller, {
+          contactName: texts.resellerContact,
+          email: 'accounts@demo-reseller.example',
+        });
+        await on(-430);
+        await revise('vendors', repairShop, {
+          phone: '021-5000 2266',
+          notes: texts.repairShopNotes,
+        });
+        await on(-300);
+        await revise('vendors', recycler, { notes: texts.recyclerNotes });
         // Categories, manufacturers, models, software products, locations and
         // departments come from the seeds (`202609120002_seed_itam_categories`,
         // `202609150001_seed_itam_manufacturers_models`,
@@ -1062,7 +1368,6 @@ export function createDemoService(dependencies: {
         // Names read in the deployment's language; the e-mail keeps the
         // romanised form so it stays a valid address.
         const personNames = PERSON_NAMES[locale] ?? PERSON_NAMES['en-US'];
-        const texts = TEXTS[locale] ?? TEXTS['en-US'];
         const itDept = await seededIn('departments', 'dept-it');
         // The leaver is IT support; the rest are the two business teams.
         const departmentsByIndex = [rnd, rnd, sales, itDept, rnd, sales];
@@ -1104,6 +1409,54 @@ export function createDemoService(dependencies: {
         }
         const [liNa, zhangWei, wangFang, chenJie, liuYang, zhaoMin] =
           people as [Row, Row, Row, Row, Row, Row];
+        // The rest of the company (2026-10-16, `CREW`), numbered on from the
+        // employees above in the order they started. Each is entered a few
+        // days before their first day, like everybody, so each is measured
+        // against their department's 入职配置 — and is equipped to it below.
+        const crew: Row[] = [];
+        for (const [index, spec] of CREW.entries()) {
+          const [name, mail, position] =
+            locale === 'zh-CN' ? spec['zh-CN'] : spec['en-US'];
+          const number = String(index + 107).padStart(3, '0');
+          await on(-spec.hired - 3);
+          crew.push(
+            await md('people', {
+              name,
+              employeeNo: `EMP-${number}`,
+              email: `${mail}@northbridge.example`,
+              phone: spec.japan
+                ? `+81 90 5521 0${number}`
+                : `138 0013 0${number}`,
+              position,
+              departmentId: (await seededIn('departments', spec.department)).id,
+              locationId: spec.japan ? japan.id : floor3.id,
+              hireDate: daysFromNow(-spec.hired),
+            }),
+          );
+        }
+        /** What a crew member's department kit asks for. */
+        const crewKit = (spec: CrewSpec): CrewKit =>
+          CREW_KITS[spec.department] ?? 'office';
+        const crewWants = {
+          monitor: (spec: CrewSpec) =>
+            ['engineering', 'product'].includes(crewKit(spec)),
+          phone: (spec: CrewSpec) => crewKit(spec) === 'field',
+          dock: (spec: CrewSpec) => crewKit(spec) === 'engineering',
+          keyboard: (spec: CrewSpec) =>
+            ['engineering', 'office'].includes(crewKit(spec)),
+          mouse: (spec: CrewSpec) => crewKit(spec) !== 'field',
+          headset: (spec: CrewSpec) => crewKit(spec) === 'field',
+          intellij: (spec: CrewSpec) => crewKit(spec) === 'engineering',
+          zoom: (spec: CrewSpec) =>
+            ['engineering', 'product', 'field'].includes(crewKit(spec)),
+          figma: (spec: CrewSpec) =>
+            ['product', 'marketing'].includes(crewKit(spec)),
+          adobe: (spec: CrewSpec) =>
+            crewKit(spec) === 'marketing' || spec.designer === true,
+        } as const;
+        /** How many still here want something: what stock and seats must cover. */
+        const crewCount = (wants: (spec: CrewSpec) => boolean) =>
+          CREW.filter((spec) => spec.left === undefined && wants(spec)).length;
 
         // The staff sign-ins get a person record of their own, in IT, so the
         // equipment they are issued has somebody to be assigned to.
@@ -1531,6 +1884,168 @@ export function createDemoService(dependencies: {
           );
         }
 
+        // What the kits ask of the people above that they did not have yet
+        // (2026-10-16): a monitor each for the backend engineer, the QA
+        // engineer, the first asset manager and IT support, bought with the
+        // third floor's monitors, and a phone for the sales manager.
+        const monitorAttributes = {
+          screenSize: '27',
+          resolution: '3840×2160',
+          inputs: 'HDMI, DisplayPort, USB-C',
+        };
+        const deskMonitors: Row[] = [];
+        for (let index = 0; index < 4; index += 1)
+          deskMonitors.push(
+            await device({
+              modelId: u2723.id,
+              serialNo: `CN0F5K7Y${3020 + index}`,
+              name: `SG-MON-01${index}`,
+              vendorId: reseller.id,
+              purchaseDate: daysFromNow(-300),
+              purchasePrice: 4299,
+              warrantyEndDate: daysFromNow(795),
+              attributes: monitorAttributes,
+            }),
+          );
+        const salesPhone = await device({
+          modelId: iphone.id,
+          serialNo: 'HG7Q2X01PLM',
+          name: 'SG-PH-003',
+          departmentId: sales.id,
+          vendorId: reseller.id,
+          purchaseDate: daysFromNow(-1100),
+          purchasePrice: 5999,
+          warrantyEndDate: daysFromNow(-370),
+          attributes: {
+            imei: '356789104512347',
+            phoneNumber: '138 0000 0003',
+            carrier: 'China Mobile',
+          },
+        });
+
+        // The crew's own equipment, bought ahead of their first day in the
+        // batch that covered it (two-monthly), or — for those who started
+        // before the model was sold — in the refresh that brought it. Their
+        // serials sort after the devices above, so the MDM situations the
+        // demo picks by position keep their devices.
+        const crewDevices = new Map<number, Row[]>();
+        const boughtFor = (spec: CrewSpec, earliest: number) =>
+          Math.max(Math.floor((-spec.hired - 7) / 60) * 60, earliest);
+        // A warranty does not end inside the 30-day window by accident: the
+        // ones ending soon are the demo's chosen few.
+        const warrantyFrom = (day: number, length: number) => {
+          const end = day + length;
+          return daysFromNow(end >= -3 && end <= 35 ? end + 60 : end);
+        };
+        const hex = (value: number) => value.toString(16).padStart(2, '0');
+        let computerNo = 0;
+        let monitorNo = 0;
+        let phoneNo = 0;
+        for (const [index, spec] of CREW.entries()) {
+          const kit = crewKit(spec);
+          const own: Row[] = [];
+          const departmentId = (await seededIn('departments', spec.department))
+            .id;
+          const locationId = spec.japan ? japan.id : floor3.id;
+          // A successor takes over their predecessor's, below.
+          if (spec.inherits === undefined) {
+            computerNo += 1;
+            const n = String(computerNo).padStart(2, '0');
+            const name = `SG-LT-1${n}`;
+            const laptop =
+              kit === 'engineering' || kit === 'product'
+                ? {
+                    model: mbp,
+                    earliest: -1050,
+                    serialNo: `XQ7C${n}MD6T`,
+                    price: 15999,
+                    os: 'macOS 15.6',
+                    mac: `a4:83:e7:60:${hex(computerNo)}:01`,
+                  }
+                : kit === 'office'
+                  ? {
+                      model: thinkpad,
+                      earliest: -880,
+                      serialNo: `R90${n}K7T`,
+                      price: 8499,
+                      os: 'Windows 11 24H2',
+                      mac: `b0:4f:13:60:${hex(computerNo)}:03`,
+                    }
+                  : {
+                      model: air,
+                      earliest: -940,
+                      serialNo: `XR2H${n}Q6LR`,
+                      price: 9999,
+                      os: 'macOS 15.6',
+                      mac: `a4:83:e7:60:${hex(computerNo)}:02`,
+                    };
+            const day = boughtFor(spec, laptop.earliest);
+            own.push(
+              await device({
+                modelId: laptop.model.id,
+                serialNo: laptop.serialNo,
+                name,
+                departmentId,
+                locationId,
+                vendorId: reseller.id,
+                purchaseDate: daysFromNow(day),
+                purchasePrice: laptop.price,
+                warrantyEndDate: warrantyFrom(day, 1095),
+                attributes: {
+                  os: laptop.os,
+                  macAddress: laptop.mac,
+                  hostname: name,
+                },
+              }),
+            );
+            if (crewWants.monitor(spec)) {
+              monitorNo += 1;
+              const m = String(monitorNo).padStart(2, '0');
+              const bought = boughtFor(spec, -1450);
+              own.push(
+                await device({
+                  modelId: u2723.id,
+                  serialNo: `CN0F5K7Y31${m}`,
+                  name: `SG-MON-1${m}`,
+                  departmentId,
+                  locationId,
+                  vendorId: reseller.id,
+                  purchaseDate: daysFromNow(bought),
+                  purchasePrice: 4299,
+                  warrantyEndDate: warrantyFrom(bought, 1095),
+                  attributes: monitorAttributes,
+                }),
+              );
+            }
+            if (crewWants.phone(spec)) {
+              phoneNo += 1;
+              const p = String(phoneNo).padStart(2, '0');
+              const bought = boughtFor(spec, -1100);
+              own.push(
+                await device({
+                  modelId: iphone.id,
+                  serialNo: `HG7R${p}Q9PLM`,
+                  name: `SG-PH-1${p}`,
+                  departmentId,
+                  locationId,
+                  vendorId: reseller.id,
+                  purchaseDate: daysFromNow(bought),
+                  purchasePrice: 5999,
+                  warrantyEndDate: warrantyFrom(bought, 730),
+                  attributes: {
+                    imei: `3567891046${String(10000 + phoneNo * 37)}`,
+                    phoneNumber: spec.japan
+                      ? `+81 90 7310 02${p}`
+                      : `138 0000 01${p}`,
+                    carrier: spec.japan ? 'NTT docomo' : 'China Mobile',
+                  },
+                }),
+              );
+            }
+          }
+          crewDevices.set(index, own);
+        }
+
         // The orders those devices came in on (2026-10-16): they were on the
         // books before ITAM, bought in batches, so each batch — one vendor,
         // one day — is a completed order with a line per model and a receipt
@@ -1732,6 +2247,35 @@ export function createDemoService(dependencies: {
         if (deskOwner)
           for (const owned of deskDevices)
             await assign(owned.id, deskOwner.id, dayOf(owned.purchaseDate) + 2);
+        // The monitors and the phone their kits asked for (2026-10-16).
+        for (const [index, [holder, day]] of (
+          [
+            [zhangWei, -295],
+            [liuYang, -287],
+            [staff.get('approver'), -298],
+            [supportPerson, -294],
+          ] as const
+        ).entries())
+          if (holder) await assign(deskMonitors[index].id, holder.id, day);
+        await assign(salesPhone.id, wangFang.id, -1097);
+        // The crew's, on their first day — or a few days after a refresh
+        // bought them — and a former employee's back on the day they left,
+        // then on to whoever took their place.
+        for (const [index, spec] of CREW.entries())
+          for (const owned of crewDevices.get(index) ?? [])
+            await assign(
+              owned.id,
+              crew[index].id,
+              Math.max(dayOf(owned.purchaseDate) + 3, -spec.hired),
+            );
+        for (const [index, spec] of CREW.entries())
+          if (spec.left !== undefined)
+            for (const owned of crewDevices.get(index) ?? [])
+              await giveBack(owned.id, -spec.left);
+        for (const [index, spec] of CREW.entries())
+          if (spec.inherits !== undefined)
+            for (const owned of crewDevices.get(spec.inherits) ?? [])
+              await assign(owned.id, crew[index].id, -spec.hired);
         // Shared equipment lives at its location rather than with a person.
         const assignTo = async (
           deviceId: unknown,
@@ -1852,6 +2396,24 @@ export function createDemoService(dependencies: {
             laptops.map((row) => String(row.id)),
           )
           .execute();
+        // The equipment the kits added (2026-10-16) was counted at last
+        // year's desk count, so 盘点逾期 keeps to the devices the demo means
+        // to be overdue rather than every desk in the company; only what
+        // was bought before it.
+        const counted = [
+          ...deskMonitors,
+          salesPhone,
+          ...[...crewDevices.values()].flat(),
+        ]
+          .filter((row) => dayOf(row.purchaseDate) < -100)
+          .map((row) => String(row.id));
+        if (counted.length > 0)
+          await database
+            .query()
+            .updateTable('devices')
+            .set({ lastAuditedAt: new Date(Date.now() - 96 * DAY) })
+            .where('id', 'in', counted)
+            .execute();
 
         // Stock (2026-10-16): each item was stocked one to three years ago
         // and has been issued, returned, used up and topped up since, so its
@@ -1914,6 +2476,23 @@ export function createDemoService(dependencies: {
             all('stockItems', 'stockIn'),
           );
         };
+        // One each for the crew the kits give one, on their first day or the
+        // day after the item was stocked; a former employee's came back when
+        // they left.
+        const toCrew = async (
+          item: Row,
+          stockedOn: number,
+          wants: (spec: CrewSpec) => boolean,
+        ) => {
+          for (const [index, spec] of CREW.entries()) {
+            if (!wants(spec)) continue;
+            const day = Math.max(-spec.hired + 1, stockedOn + 1);
+            if (spec.left !== undefined && day > -spec.left - 60) continue;
+            await issue(item, 'person', crew[index], 1, day);
+            if (spec.left !== undefined)
+              await takeBack(item, 'person', crew[index], -spec.left);
+          }
+        };
         const approver = staff.get('approver')!;
         const writer = staff.get('writer')!;
         const support = staff.get('support')!;
@@ -1926,14 +2505,15 @@ export function createDemoService(dependencies: {
             categoryId: mouseCat.id,
             modelId: mxMaster.id,
             manufacturerId: mxMaster.manufacturer.id,
-            totalQuantity: 5,
+            // Enough for everybody the kits give one (2026-10-16), and still
+            // below the minimum at the end, as before.
+            totalQuantity: 7 + crewCount(crewWants.mouse),
             minimumQuantity: 5,
           },
           -900,
         );
         await issue(mice, 'person', zhangWei, 1, -880);
         await issue(mice, 'person', liNa, 1, -870);
-        await takeBack(mice, 'person', zhangWei, -420);
         await on(-300);
         await stock.adjust(
           String(mice.id),
@@ -1942,7 +2522,7 @@ export function createDemoService(dependencies: {
           all('stockItems', 'update'),
         );
         await issue(mice, 'person', liuYang, 1, -285);
-        await takeBack(mice, 'person', liuYang, -60);
+        await toCrew(mice, -900, crewWants.mouse);
         // Stock bought through an order: the order runs request → approval →
         // ordered → received, each on its day, so the item shows a purchase
         // record with the order's vendor and price. `into` is an item already
@@ -2142,11 +2722,12 @@ export function createDemoService(dependencies: {
             categoryId: keyboardCat.id,
             modelId: mxKeys.id,
             manufacturerId: mxKeys.manufacturer.id,
-            totalQuantity: 4,
+            totalQuantity: 5 + crewCount(crewWants.keyboard),
             minimumQuantity: 3,
           },
           -700,
         );
+        await issue(keyboards, 'person', liNa, 1, -695);
         await issue(keyboards, 'person', wangFang, 1, -690);
         await issue(keyboards, 'person', writer, 1, -415);
         await purchasedStock({
@@ -2160,6 +2741,7 @@ export function createDemoService(dependencies: {
         });
         for (const holder of [zhangWei, liuYang])
           await issue(keyboards, 'person', holder, 1, -30);
+        await toCrew(keyboards, -700, crewWants.keyboard);
         const docks = await stockItem(
           {
             kind: 'accessory',
@@ -2167,11 +2749,12 @@ export function createDemoService(dependencies: {
             categoryId: dockCat.id,
             modelId: wd22.id,
             manufacturerId: latitude.manufacturer.id,
-            totalQuantity: 6,
+            totalQuantity: 9 + crewCount(crewWants.dock),
             minimumQuantity: 2,
           },
           -800,
         );
+        await issue(docks, 'person', liNa, 1, -795);
         await issue(docks, 'person', zhangWei, 1, -790);
         // The leaver holds one of these too: a dock goes back to stock, which
         // is a different answer from a device's 归还 and from a seat's 回收,
@@ -2181,7 +2764,8 @@ export function createDemoService(dependencies: {
         await issue(docks, 'person', wangFang, 1, -600);
         await takeBack(docks, 'person', wangFang, -510);
         await issue(docks, 'person', liuYang, 1, -280);
-        await takeBack(docks, 'person', liuYang, -150);
+        if (supportPerson) await issue(docks, 'person', supportPerson, 1, -294);
+        await toCrew(docks, -800, crewWants.dock);
         const headsets = await stockItem(
           {
             kind: 'accessory',
@@ -2189,15 +2773,19 @@ export function createDemoService(dependencies: {
             categoryId: headsetCat.id,
             modelId: zoneVibe.id,
             manufacturerId: mxMaster.manufacturer.id,
-            totalQuantity: 10,
+            totalQuantity: 11 + crewCount(crewWants.headset),
             minimumQuantity: 3,
           },
           -400,
         );
         await issue(headsets, 'person', wangFang, 1, -390);
         await issue(headsets, 'person', zhaoMin, 1, -325);
-        await takeBack(headsets, 'person', wangFang, -120);
+        await toCrew(headsets, -400, crewWants.headset);
         // A USB-C hub for travelling, lent for trips and back.
+        // Each model and category the stock needs is entered just before
+        // the stock that uses it (2026-10-16), not on whichever day the step
+        // before ended.
+        await on(-541);
         const hubModel = await named('models', {
           name: 'DA310',
           categoryId: dockCat.id,
@@ -2224,6 +2812,7 @@ export function createDemoService(dependencies: {
         await takeBack(hubs, 'person', zhangWei, -45);
         // Webcams: one in the third-floor meeting room, the rest with people
         // who present.
+        await on(-701);
         const webcamCat = await named('categories', {
           ...MASTER_DEFAULTS.categories,
           name: texts.webcamCategory,
@@ -2314,6 +2903,7 @@ export function createDemoService(dependencies: {
         // For the Latitude the sales manager had then, and for IT support's.
         await issue(batteries, 'person', wangFang, 1, -600);
         await issue(batteries, 'person', chenJie, 1, -250);
+        await on(-401);
         const paperModel = await named('models', {
           name: 'Office Paper A4 80 g',
           categoryId: printSuppliesCat.id,
@@ -2345,6 +2935,7 @@ export function createDemoService(dependencies: {
           [-10, 4],
         ] as const)
           await issue(paper, 'location', floor3, quantity, day);
+        await on(-601);
         const duracell = await named('manufacturers', { name: 'Duracell' });
         const aaModel = await named('models', {
           name: 'Plus AA',
@@ -2406,6 +2997,7 @@ export function createDemoService(dependencies: {
         await issue(ram, 'device', expiredLaptop, 1, -900);
         const supportLaptop = staffLaptops.get('support');
         if (supportLaptop) await issue(ram, 'device', supportLaptop, 1, -290);
+        await on(-251);
         const bigSsdModel = await named('models', {
           name: '990 PRO 2 TB',
           categoryId: diskCat.id,
@@ -2430,6 +3022,7 @@ export function createDemoService(dependencies: {
           await issue(bigSsd, 'device', supportLaptop, 1, -150);
         await issue(bigSsd, 'device', thinkpads[0], 1, -53);
         await takeBack(bigSsd, 'device', thinkpads[0], -51);
+        await on(-351);
         const smallRamModel = await named('models', {
           name: 'DDR5-5600 16 GB SO-DIMM',
           categoryId: ramCat.id,
@@ -2452,6 +3045,24 @@ export function createDemoService(dependencies: {
         await issue(smallRam, 'device', thinkpads[0], 1, -54);
         await issue(smallRam, 'device', thinkpads[1], 1, -54);
         await takeBack(smallRam, 'device', thinkpads[1], -20);
+        // The models and the maker the demo added have changed since too
+        // (2026-10-16): Duracell's site was filled in, the webcam's
+        // description now says what comes in the box, Samsung's five-year
+        // warranty went on the 2 TB drive and Dell announced the end of the
+        // hub. Only those the demo created (`revise`): one of the same name
+        // that was there before is left as it was.
+        await on(-590);
+        await revise('manufacturers', duracell, {
+          website: 'https://www.duracell.com',
+        });
+        await on(-300);
+        await revise('models', webcamModel, {
+          specification: texts.webcamSpecUpdated,
+        });
+        await on(-240);
+        await revise('models', bigSsdModel, { warrantyMonths: 60 });
+        await on(-90);
+        await revise('models', hubModel, { eolDate: daysFromNow(75) });
 
         // Seats, each on its day: given out when the licence came in or the
         // person joined, and taken back when somebody stopped using one.
@@ -2544,7 +3155,8 @@ export function createDemoService(dependencies: {
         const ideLicense = await purchasedEntitlement({
           description: texts.ideOrder,
           softwareProductId: String(intellij.id),
-          quantity: 5,
+          // Two to spare beyond the engineers who have one (2026-10-16).
+          quantity: 5 + crewCount(crewWants.intellij),
           unitPrice: 700,
           orderedDaysAgo: 200,
           extra: {
@@ -2553,15 +3165,37 @@ export function createDemoService(dependencies: {
           },
         });
         await seatsTo(ideLicense, [liNa, zhangWei, liuYang], -195);
+        // Seats for the crew their kits give one, on their first day or the
+        // day the licence came in; a former employee's taken back when they
+        // left.
+        const seatsToCrew = async (
+          entitlement: Row,
+          from: number,
+          wants: (spec: CrewSpec) => boolean,
+        ) => {
+          for (const [index, spec] of CREW.entries()) {
+            if (!wants(spec)) continue;
+            const day = Math.max(-spec.hired + 2, from);
+            if (spec.left !== undefined && day > -spec.left - 60) continue;
+            await seatsTo(entitlement, [crew[index]], day);
+            if (spec.left !== undefined)
+              await reclaimFrom(entitlement, crew[index], -spec.left);
+          }
+        };
+        await seatsToCrew(ideLicense, -195, crewWants.intellij);
         // Two subscriptions whose dates fall inside the week: one that will
         // charge (yearly auto-renew) and one that will stop (nothing renews
         // it). They are opposite acts, and the workbench lists them apart.
-        await subscription(
+        // The yearly one is where the kits' Zoom seats come from (2026-10-16):
+        // one for everybody whose kit asks for one — but the backend
+        // engineer, who still holds one on the plan that ended — and two to
+        // spare for the joiners.
+        const zoomYearly = await subscription(
           {
             name: 'Zoom Workplace Pro（年付）',
             softwareProductId: zoom.id,
             billingModel: 'perSeat',
-            seatCount: 2,
+            seatCount: 9 + crewCount(crewWants.zoom),
             billingCycle: 'year',
             unitPrice: 150,
             currency: 'USD',
@@ -2570,6 +3204,14 @@ export function createDemoService(dependencies: {
           },
           -360,
         );
+        await seatsTo(
+          zoomYearly,
+          [liNa, wangFang, approver, writer, support],
+          -358,
+        );
+        await seatsTo(zoomYearly, [zhaoMin], -328);
+        await seatsTo(zoomYearly, [liuYang], -288);
+        await seatsToCrew(zoomYearly, -358, crewWants.zoom);
         await subscription(
           {
             name: 'Figma Professional（试用）',
@@ -2588,7 +3230,7 @@ export function createDemoService(dependencies: {
             name: 'Figma Organization',
             softwareProductId: figma.id,
             billingModel: 'perSeat',
-            seatCount: 6,
+            seatCount: 6 + crewCount(crewWants.figma),
             billingCycle: 'month',
             unitPrice: 45,
             currency: 'USD',
@@ -2600,6 +3242,7 @@ export function createDemoService(dependencies: {
         await seatsTo(figmaSub, [liNa, zhangWei], -398);
         await seatsTo(figmaSub, [wangFang], -300);
         await seatsTo(figmaSub, [chenJie], -250);
+        await seatsToCrew(figmaSub, -398, crewWants.figma);
 
         // A subscription the team stopped: not renewing, past its date, and
         // one seat never taken back — the "ended" reminder.
@@ -2628,7 +3271,8 @@ export function createDemoService(dependencies: {
               await seededIn('softwareProducts', 'sp-microsoft-365')
             ).id,
             billingModel: 'perSeat',
-            seatCount: 8,
+            // Everybody has one (2026-10-16), five to spare once it grew.
+            seatCount: 9 + crewCount(() => true),
             billingCycle: 'year',
             unitPrice: 150,
             currency: 'USD',
@@ -2640,9 +3284,10 @@ export function createDemoService(dependencies: {
         );
         await seatsTo(
           m365,
-          [approver, writer, support, zhangWei, wangFang],
+          [approver, writer, support, liNa, zhangWei, wangFang],
           -755,
         );
+        await seatsToCrew(m365, -755, () => true);
         const renew = async (
           entitlement: Row,
           expiryDate: string,
@@ -2677,7 +3322,7 @@ export function createDemoService(dependencies: {
               await seededIn('softwareProducts', 'sp-adobe-creative-cloud')
             ).id,
             billingModel: 'perSeat',
-            seatCount: 3,
+            seatCount: 3 + crewCount(crewWants.adobe),
             billingCycle: 'year',
             unitPrice: 1080,
             currency: 'USD',
@@ -2690,6 +3335,7 @@ export function createDemoService(dependencies: {
         await seatsTo(adobe, [liNa, wangFang], -615);
         await reclaimFrom(adobe, liNa, -210);
         await seatsTo(adobe, [zhaoMin], -205);
+        await seatsToCrew(adobe, -615, crewWants.adobe);
         // ChatGPT Team: the QA engineer's seat moved to presales.
         const chatgpt = await subscription(
           {
@@ -2738,6 +3384,21 @@ export function createDemoService(dependencies: {
         if (supportLaptop) await seatsTo(windows, [supportLaptop], -294);
         await reclaimFrom(windows, expiredLaptop, -58);
         await seatsTo(windows, [thinkpads[0]], -55);
+
+        // The two who left long ago, once everything of theirs is back: a
+        // leave date in the past marks them left on that day, the way
+        // entering one does, with nothing left to hand over.
+        for (const [index, spec] of CREW.entries())
+          if (spec.left !== undefined) {
+            await on(-spec.left);
+            await masterData.update(
+              'people',
+              String(crew[index].id),
+              { leaveDate: daysFromNow(-spec.left) },
+              writerId,
+              all('people', 'update'),
+            );
+          }
 
         // A purchase order that went through the chain and was received.
         await on(-36);
@@ -4141,6 +4802,49 @@ export function createDemoService(dependencies: {
           await comment(-1, writerId, 'people', chenJie, texts.commentLeaver, {
             mention: true,
           });
+          // And on the master data the demo made (2026-10-16): the reseller's
+          // new account manager, the recycler's certificate, the end of the
+          // hub and a tip for the webcam.
+          const handover = await comment(
+            -611,
+            managerUserId,
+            'vendors',
+            reseller,
+            texts.commentResellerContact
+              .replace('{contact}', vendorNames.reseller.contact)
+              .replace('{newContact}', texts.resellerContact),
+          );
+          await comment(
+            -611,
+            writerId,
+            'vendors',
+            reseller,
+            texts.commentResellerReply,
+            { replyTo: handover },
+          );
+          await comment(
+            -18,
+            supportUserId,
+            'vendors',
+            recycler,
+            texts.commentRecycler,
+          );
+          if (demoMade.has(String(hubModel.id)))
+            await comment(
+              -89,
+              writerId,
+              'models',
+              hubModel,
+              texts.commentHubEnd,
+            );
+          if (demoMade.has(String(webcamModel.id)))
+            await comment(
+              -280,
+              supportUserId,
+              'models',
+              webcamModel,
+              texts.commentWebcam,
+            );
         }
 
         await reached(90);
@@ -4398,6 +5102,55 @@ export function createDemoService(dependencies: {
             });
           defaults.set(id, items);
         }
+        // Two positions work on something other than their department's kit
+        // (2026-10-16): IT's asset managers on a MacBook Pro rather than IT's
+        // ThinkPad, and without a dock, and the sales manager on a MacBook
+        // Pro rather than an Air. Each position has a kit of its own saying
+        // so, the way Product's designers do, rather than the laptop marked
+        // 不需要 for each of them — so everybody in the demo holds what their
+        // kit asks. A kit the position has already is kept.
+        const positionKit = async (
+          departmentId: unknown,
+          position: string | undefined,
+          name: string,
+          items: unknown[],
+        ) => {
+          if (!position) return;
+          const kits = await database
+            .query()
+            .selectFrom('onboardingKits')
+            .select(['position'])
+            .where('departmentId', '=', String(departmentId))
+            .execute<Row>();
+          const same = (value: unknown) =>
+            (asText(value) ?? '').trim().toLowerCase() ===
+            position.trim().toLowerCase();
+          if (kits.some((kit) => same(kit.position))) return;
+          await md('onboardingKits', { name, departmentId, position, items });
+        };
+        await positionKit(
+          itDept.id,
+          staffSpecs.find((spec) => spec.key === 'approver')?.position,
+          texts.itManagerKit,
+          [
+            one(String(mbp.id)),
+            one(String(u2723.id)),
+            seat('sp-microsoft-365'),
+            seat(String(zoom.id)),
+          ],
+        );
+        await positionKit(
+          sales.id,
+          personNames[2]?.position,
+          texts.salesManagerKit,
+          [
+            one(String(mbp.id)),
+            one(String(iphone.id)),
+            one(String(zoneVibe.id)),
+            seat('sp-microsoft-365'),
+            seat(String(zoom.id)),
+          ],
+        );
 
         await reached(95);
         // 入职准备: joining in five and nine days, nothing reserved yet. Entered

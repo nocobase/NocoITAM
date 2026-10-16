@@ -49,7 +49,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   审批中, 已批准, 已下单, 部分到货, 已完成, 已拒绝, 已取消), most of them two or
   three deep, and audit tasks every status of theirs (2026-10-05:
   `queuedOrder` and `auditTask` in `demo.ts`), so each board column holds
-  cards. One placed order — PO-000020 on a fresh import — carries a line of
+  cards. One placed order — PO-000020 on a fresh import until 2026-10-16,
+  numbered later since the historical orders grew — carries a line of
   every kind (desktops, keyboards, toner, memory, a perpetual licence and a
   subscription), so receiving it, by hand or from a delivery note, shows
   every way goods arrive. The extra orders are never received — receiving makes devices and
@@ -188,8 +189,53 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   each year and grown by four seats; Adobe Creative Cloud and ChatGPT Team,
   each with a seat taken back and given to someone else). Models and
   master data a stock item needs beyond the seeds go through `named()`,
-  which reuses a record of that name rather than tracking it. Keep the
-  employee with EMP-101's holdings as they were (two devices, one
-  accessory, two seats): the data test counts them. Dating moves any row
+  which reuses a record of that name rather than tracking it. The data test
+  counts the holdings of the employee with EMP-101 (two devices, three
+  accessories, four seats since 2026-10-16). Dating moves any row
   written while the import runs, so an import is best not run while others
   edit the register.
+- **Everybody in the demo holds what their 入职配置 asks** (2026-10-16):
+  every person is entered a few days before their first day, so each is a
+  joiner (`isJoiner`) and 入职准备 measured all of them against their kit —
+  it listed long-standing employees while the people page said two were
+  joining. The demo now equips everybody still there to their kit on the
+  days they started: the devices are bought ahead of the first day (or in
+  the refresh that brought the model, for those who started before it was
+  sold) and come in on the historical orders, the accessories are issued
+  from stock sized so what is left at the end is what it always was (MX
+  Master still below its minimum), and the seats come from Microsoft 365,
+  the yearly Zoom plan, IntelliJ, Figma and Adobe, each sized to keep the
+  same free seats as before. Two positions have a kit of their own, added
+  and tracked by the demo: IT's asset managers and the sales manager work
+  on a MacBook Pro (no ThinkPad or Air), so `positionKit` says so rather
+  than marking an item 不需要 for each. Only the two joiners entered last
+  (孙浩 / 林雪, Noah Harris / Grace Lee) are not equipped; 入职准备 lists
+  exactly them, which the data test asserts, and the rule still picks
+  SG-LT-050 and SG-MON-006 for them. A change to a kit's seed, or to who
+  the demo's people are, needs the matching change in `CREW_KITS` /
+  `crewWants` and the gap fills of the six original employees and the
+  staff, or 入职准备 fills up again.
+- **The rest of the company** (2026-10-16, `CREW` in `demo.ts`): 29 more
+  people across the seeded departments, names per language (Chinese names
+  in the Chinese demo, English ones in the English demo, two Japanese
+  names at the Japan branch in both), positions from each department's
+  seeded list, employee numbers EMP-107 on in the order they started (over
+  six years), so the register holds 41 with the seeded one. Two of them
+  left long ago (a leave date in the past, entered once everything was
+  back) and their laptop and monitor or phone went to the person who took
+  their place; neither opens a 离职交接 to-do. Their devices' serials sort
+  after every other computer's and phone's, because MDM picks its
+  situations by position in the serial order; keep a new device's serial
+  sorting last too. Equipment bought before last year's desk count is
+  stamped counted then, so 盘点逾期 keeps to the devices meant to be
+  overdue.
+- **The demo's own master data has a history** (2026-10-16): the vendors
+  change over the years (the reseller's switchboard, then its account
+  manager, the repair shop's pick-up days, the recycler's certificates),
+  as do the models and maker `named()` created (the webcam's description,
+  the 2 TB drive's warranty, the hub's end of sale, Duracell's website),
+  each dated with `on()`, and the reseller, the recycler and two models
+  carry comments. Only records the demo created are changed (`revise`,
+  `demoMade`): a seeded or pre-existing record of the same name is left
+  alone, since clearing the demo removes only the history of what it
+  tracks. Each model the stock needs is entered just before that stock.

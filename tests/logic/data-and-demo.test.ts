@@ -674,13 +674,31 @@ describe('CSV import / export and demo data', () => {
     const stats = await data<{ counts: Record<string, number> }>(
       await get(`master/people/${liNa!.id}/stats`),
     );
+    // Her kit's laptop and monitor; its dock, keyboard and mouse; IntelliJ,
+    // Microsoft 365 and Zoom, and the Figma seat she has besides
+    // (2026-10-16: equipped to the R&D kit).
     expect(stats.counts.devices).toBe(2);
-    expect(stats.counts.accessories).toBe(1);
-    expect(stats.counts.entitlements).toBe(2);
-    expect(stats.counts.holdings).toBe(5);
+    expect(stats.counts.accessories).toBe(3);
+    expect(stats.counts.entitlements).toBe(4);
+    expect(stats.counts.holdings).toBe(9);
     expect(holdingCounts.devices?.[liNa!.id]).toBe(2);
-    expect(holdingCounts.accessories?.[liNa!.id]).toBe(1);
-    expect(holdingCounts.entitlements?.[liNa!.id]).toBe(2);
+    expect(holdingCounts.accessories?.[liNa!.id]).toBe(3);
+    expect(holdingCounts.entitlements?.[liNa!.id]).toBe(4);
+
+    // A company rather than a team of twelve (2026-10-16), and everybody
+    // there holds what their 入职配置 asks: 入职准备 lists only the two
+    // joining next week.
+    expect(people.length).toBeGreaterThanOrEqual(35);
+    const pendingOnboarding = (
+      await data<
+        { key: string; count: number; records: { title: string }[] }[]
+      >(await get('workbench/my-work'))
+    ).find((item) => item.key === 'pendingOnboarding');
+    expect(pendingOnboarding?.count).toBe(2);
+    expect(pendingOnboarding?.records.map((record) => record.title)).toEqual([
+      'Noah Harris',
+      'Grace Lee',
+    ]);
 
     // One placed order carries every kind of line, so receiving it shows
     // every way goods arrive: the placed order with the most kinds of line.
