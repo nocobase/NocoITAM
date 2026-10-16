@@ -205,14 +205,11 @@ export default function DeviceDetailPage(): ReactElement {
         }
       : null,
   );
-  // The same strip the record drawer shows for a device. Its hooks run on
+  // The summary items lead 基本信息 instead of a strip of their own
+  // (2026-10-16): 状态, the disposal that counts, then who holds the
+  // device (分配给 / 借给 / 预留给), all above 负责人. Its hooks run on
   // every render, so it sits with the other hooks, above the early returns.
-  // 状态 and who holds the device (分配给 / 借给 / 预留给) lead 基本信息,
-  // above 负责人 (2026-10-16); the strip keeps the rest (a disposal).
-  const summaryItems = RECORD_SUMMARIES.devices.items(data ?? { id }, t);
-  const LEADING = new Set(['status', 'assignee']);
-  const leading = summaryItems.filter((item) => LEADING.has(item.key));
-  const summary = summaryItems.filter((item) => !LEADING.has(item.key));
+  const leading = RECORD_SUMMARIES.devices.items(data ?? { id }, t);
   const referenceRequests = useMemo(
     () => [
       ...DEVICE_FIELDS.filter(
@@ -603,7 +600,6 @@ export default function DeviceDetailPage(): ReactElement {
             ) : null}
           </>
         }
-        summary={summary}
         info={
           <InfoCard>
             {[...groups.entries()].map(([group, fields], index) => (
