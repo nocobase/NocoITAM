@@ -122,6 +122,12 @@ export interface DeviceSyncService {
    * shows the platform at once. A person's own decision on a record stands.
    */
   matchDevice(deviceId: string, actorId?: string): Promise<void>;
+  /**
+   * Called after a pull that read every page (scheduled or by hand, not the
+   * demo's), for MDM 跟进 to look at what it left (2026-10-17). Set by the
+   * agents' provider; it must not throw.
+   */
+  onSynced?: (run: Row) => void;
 }
 
 export const deviceSyncServiceToken: ServiceToken<DeviceSyncService> =
@@ -451,6 +457,8 @@ export function createDeviceSyncService(deps: {
   };
 
   /** Reads the pages into an open run and closes it. */
+  const hooks: { onSynced?: (run: Row) => void } = {};
+
   const pull = async (
     source: DeviceSourceKey,
     run: Awaited<ReturnType<typeof open>>,
@@ -513,7 +521,10 @@ export function createDeviceSyncService(deps: {
       )
       .execute();
     if (seen > 0) deps.touched?.();
-    return runRow(id);
+    const finished = await runRow(id);
+    if (finished.status === 'succeeded' && finished.trigger !== 'demo')
+      hooks.onSynced?.(finished);
+    return finished;
   };
 
   const ingest: DeviceSyncService['ingest'] = async (
@@ -569,6 +580,12 @@ export function createDeviceSyncService(deps: {
       .executeTakeFirst()) ?? null;
 
   return {
+    get onSynced() {
+      return hooks.onSynced;
+    },
+    set onSynced(next) {
+      hooks.onSynced = next;
+    },
     async status() {
       const configured = new Set(
         (await deps.sources()).map((source) => source.key),

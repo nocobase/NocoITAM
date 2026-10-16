@@ -226,6 +226,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     button. 智能体工作 (`/agent-work`, page grant `agent-work` for both IT
     roles via `ADDED_PAGES`) shows each agent's switches, 7/30-day counts
     with the acceptance rate, and its runs on records the reader may read.
+  - **MDM 跟进** (2026-10-17) is the second work agent: what a device sync
+    leaves for a person to judge, as a plan in 收件箱, its card the plan's
+    own (`DeviceSyncRunCard`); see `itam-device-sync.md`. A run of either
+    agent goes to the job queue's one handler, which picks the agent's
+    worker by `run.agent`.
   - **No agent for what a rule decides** (2026-10-17). 离职回收 and
     授权续费 were built as work agents and removed the same day: what a
     leaver hands back is the rule in `recovery.ts`, and what a renewal

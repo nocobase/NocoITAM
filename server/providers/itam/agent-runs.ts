@@ -22,7 +22,8 @@ import { dbDateTime } from './dates.js';
 // 2026-10-17 and removed the same day: what a leaver hands back and what a
 // renewal needs are rules (`recovery.ts`, the renewal reminders), not
 // judgements a model adds to.
-export const AGENTS = ['approvalReview'] as const;
+// MDM 跟进 (2026-10-17): what a device sync leaves for a person to judge.
+export const AGENTS = ['approvalReview', 'deviceSync'] as const;
 export type AgentName = (typeof AGENTS)[number];
 
 export const RUN_STATUSES = [

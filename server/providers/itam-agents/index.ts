@@ -16,6 +16,8 @@ import { AGENT_JOBS, createAgentJob, oncePerRun } from '../itam/agent-jobs.js';
 import { agentRunServiceToken } from '../itam/agent-runs.js';
 import { approvalReviewerToken } from '../itam/approval-review.js';
 import { approvalServiceToken } from '../itam/approvals.js';
+import { deviceSyncFollowUpToken } from '../itam/device-sync-followup.js';
+import { deviceSyncServiceToken } from '../itam/device-sync.js';
 import { planServiceToken } from '../itam/plans.js';
 import { settingsServiceToken } from '../itam/settings.js';
 import { agentActionOptions, PLAN_ACTION, VIEW_ACTION } from './actions.js';
@@ -36,6 +38,9 @@ import { SEARCH_SOURCE } from './search-answers.js';
 import { provisionWorkAgents } from './work-agents.js';
 
 /** Which collections each person could read when they last loaded a page. */
+/** How long MDM 跟进 waits for the other platforms' pulls to end. */
+const FOLLOW_UP_SETTLE_MS = 15_000;
+
 export const readSnapshotsToken: ServiceToken<ReadSnapshots> =
   createServiceToken<ReadSnapshots>('itam/agents-read-snapshots');
 
@@ -91,11 +96,20 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
       this.app.container.resolve(readSnapshotsToken),
       this.app.publicBasePath.replace(/\/+$/, ''),
     );
-    // What became of a plan goes back to the conversation that proposed it.
-    this.app.container.resolve(planServiceToken).onDecided = deliverPlanOutcome(
-      agents,
-      () => this.app.container.resolve(databaseManagerToken),
+    // What became of a plan goes back to the conversation that proposed it,
+    // and a plan MDM 跟进 proposed settles its suggestion (2026-10-17).
+    const planNews = deliverPlanOutcome(agents, () =>
+      this.app.container.resolve(databaseManagerToken),
     );
+    this.app.container.resolve(planServiceToken).onDecided = async (
+      outcome,
+    ) => {
+      await planNews(outcome);
+      await this.app.container
+        .resolve(deviceSyncFollowUpToken)
+        .planDecided(outcome)
+        .catch(() => undefined);
+    };
     agents.conversations.sources.register({
       key: 'itam',
       title: { key: 'ai.conversationSource', ns: 'itam' },
@@ -139,12 +153,35 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
         );
     approvals.onSettled = (approval) =>
       void reviewer.settled(approval).catch(() => undefined);
+    // MDM 跟进 (2026-10-17): after each pull that read every page. Pulls of
+    // several platforms end moments apart; one follow-up waits for the last.
+    const followUp = container.resolve(deviceSyncFollowUpToken);
+    let settling: ReturnType<typeof setTimeout> | undefined;
+    container.resolve(deviceSyncServiceToken).onSynced = (run) => {
+      if (settling) clearTimeout(settling);
+      const by = typeof run.actorId === 'string' ? run.actorId : null;
+      settling = setTimeout(() => {
+        settling = undefined;
+        void followUp
+          .afterSync(by)
+          .catch((error: unknown) =>
+            warn(error, 'The MDM follow-up did not start'),
+          );
+      }, FOLLOW_UP_SETTLE_MS);
+    };
     if (!container.has(jobExecutorServiceToken)) return;
     const executor = container
       .resolve(jobExecutorServiceToken)
       .getJobExecutor('itam', AGENT_JOBS);
+    // One queue for every agent: a task names its run, whose agent says
+    // which works it.
+    const runs = container.resolve(agentRunServiceToken);
     const AgentRunJob = createAgentJob(
-      oncePerRun((runId, signal) => reviewer.runEntry(runId, signal)),
+      oncePerRun(async (runId, signal) => {
+        const run = await runs.get(runId);
+        if (run?.agent === 'deviceSync') await followUp.runEntry(runId, signal);
+        else await reviewer.runEntry(runId, signal);
+      }),
     );
     executor.registerJob(AgentRunJob);
     await executor.setup();
@@ -152,6 +189,7 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
       await executor.addJob(new AgentRunJob({ runId }));
     };
     reviewer.useJobs(dispatch);
+    followUp.useJobs(dispatch);
     // The runs a shutdown cut short left running, queued again: only on the
     // memory queue, which this process alone holds; a shared one (Redis)
     // keeps its tasks through any exit, and another instance may be running

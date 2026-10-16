@@ -40,6 +40,8 @@ export interface EvalDecision {
   readonly action: EvalAction;
   /** The person or device it goes to, where the action has one. */
   readonly target?: string | null;
+  /** Why, in one short sentence (MDM 跟进 shows it; not scored). */
+  readonly reason?: string | null;
 }
 
 export interface EvalCase {
@@ -87,13 +89,15 @@ export const EVAL_SKILLS: readonly string[] = [
   'approval-review',
 ];
 
-const DECISIONS = z.object({
+export const DECISIONS = z.object({
   decisions: z
     .array(
       z.object({
         subject: z.string(),
         action: z.enum(EVAL_ACTIONS),
         target: z.string().nullable().optional(),
+        // Why, in one sentence: MDM 跟进 shows it; the eval does not score it.
+        reason: z.string().max(300).nullable().optional(),
       }),
     )
     .max(50),

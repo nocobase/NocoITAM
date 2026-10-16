@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { useEffect, useMemo, useRef, type ReactElement } from 'react';
 
 import { ApprovalReviewCard } from '@/components/itam/ai/approval-review';
+import { DeviceSyncRunCard } from '@/components/itam/ai/device-sync-run';
 import { RecordLink } from '@/components/itam/record-link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInbox, type AgentRun } from '@/lib/itam/agents';
@@ -168,7 +169,9 @@ function ReviewList({
                     aria-hidden
                   />
                 )}
-                {t('review.title')}
+                {run.agent === 'deviceSync'
+                  ? t('deviceSyncRun.title')
+                  : t('review.title')}
                 <span className='ml-auto tabular-nums'>
                   {relativeTime(
                     run.updatedAt,
@@ -177,9 +180,7 @@ function ReviewList({
                   )}
                 </span>
               </span>
-              <span className='truncate font-medium'>
-                {run.title ?? run.subjectId}
-              </span>
+              <span className='truncate font-medium'>{titleOf(run, t)}</span>
               <span className='truncate text-xs text-muted-foreground'>
                 {redone.has(run.id) ? t('review.redone') : lineOf(run, t)}
               </span>
@@ -191,11 +192,24 @@ function ReviewList({
   );
 }
 
-/** One line saying where a review stands. */
-function lineOf(
-  run: AgentRun,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string {
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/** What a run is about: the request, or the differences a sync left. */
+function titleOf(run: AgentRun, t: Translate): string {
+  if (run.agent === 'deviceSync')
+    return run.result
+      ? t('deviceSyncRun.differences', { count: run.result.items.length })
+      : t('deviceSyncRun.afterSync');
+  return run.title ?? run.subjectId;
+}
+
+/** One line saying where a run stands. */
+function lineOf(run: AgentRun, t: Translate): string {
+  if (run.agent === 'deviceSync') {
+    if (run.status === 'running') return t('deviceSyncRun.working');
+    if (run.status === 'accepted') return t('deviceSyncRun.accepted');
+    if (run.status === 'pending') return run.result?.summary ?? '';
+  }
   if (run.status === 'running') return t('review.working');
   if (run.status === 'failed')
     return t(`review.failed.${run.failure ?? 'failed'}`, {
@@ -205,7 +219,7 @@ function lineOf(
     return t(`review.decided.${run.decision ?? 'approved'}`);
   if (run.status === 'dismissed') return t('review.dismissed');
   if (run.status === 'superseded') return t('review.superseded');
-  return run.result
+  return run.agent === 'approvalReview' && run.result
     ? `${t(`review.recommendation.${run.result.recommendation}`)} · ${run.result.summary}`
     : '';
 }
@@ -227,6 +241,13 @@ function ReviewDetail({
       <p className='p-6 text-sm text-muted-foreground'>
         {t('agentInbox.nothingPicked')}
       </p>
+    );
+  if (run.agent === 'deviceSync')
+    return (
+      <article className='min-w-0 space-y-3 p-6'>
+        <h2 className='text-base font-semibold'>{titleOf(run, t)}</h2>
+        <DeviceSyncRunCard key={run.id} run={run} />
+      </article>
     );
   return (
     <article className='min-w-0 space-y-3 p-6'>

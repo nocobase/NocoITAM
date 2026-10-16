@@ -42,6 +42,13 @@ export const WORK_AGENTS: Readonly<
     skill: 'approval-review',
     task: 'reviewing purchase orders and disposals sent for approval, for the person asked to approve them',
   },
+  // MDM 跟进 (2026-10-17). The device-sync skill is Asset Steward's as
+  // well: the same method, asked in a conversation or after each pull.
+  deviceSync: {
+    name: 'MDM follow-up',
+    skill: 'device-sync',
+    task: 'settling what a device platform sync leaves for a person to judge — a platform user who is not the holder, a platform record the register lacks — as a plan for the person who would settle it',
+  },
 };
 
 /** A work agent's instructions: what it does, then the rules every work keeps. */

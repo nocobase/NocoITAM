@@ -19,7 +19,7 @@ export const AGENTS_PATH = 'itam/agents';
 export const INBOX_PATH = 'itam/inbox';
 export const AGENT_RUNS_PATH = 'itam/agentRuns';
 
-export type AgentName = 'approvalReview';
+export type AgentName = 'approvalReview' | 'deviceSync';
 export type RunStatus =
   'running' | 'pending' | 'accepted' | 'dismissed' | 'failed' | 'superseded';
 
@@ -36,18 +36,30 @@ export interface ApprovalReviewResult {
   readonly comment: string;
 }
 
-export interface AgentRun {
+/**
+ * What MDM 跟进 left (2026-10-17): the differences it looked at, the plan it
+ * proposed for the ones a plan can settle, and notes for the rest.
+ */
+export interface DeviceSyncResult {
+  readonly items: readonly {
+    readonly key: string;
+    readonly kind: 'userMismatch' | 'unregistered';
+    readonly subject: string;
+    readonly label: string;
+  }[];
+  readonly planId: string | null;
+  readonly notes: readonly string[];
+  readonly summary: string;
+}
+
+interface RunBase {
   readonly id: string;
-  readonly agent: AgentName;
   readonly trigger: string;
   readonly startedById: string | null;
-  readonly subjectType: 'purchaseOrders' | 'disposals';
   readonly subjectId: string;
   readonly refId: string | null;
   readonly deciderId: string | null;
   readonly status: RunStatus;
-  /** For the run's decider alone; null for anyone else. */
-  readonly result: ApprovalReviewResult | null;
   readonly failure: string | null;
   readonly revisesId: string | null;
   readonly instruction: string | null;
@@ -61,6 +73,22 @@ export interface AgentRun {
   /** The request it is about, as its approval names it. */
   readonly title: string | null;
 }
+
+export interface ApprovalReviewRun extends RunBase {
+  readonly agent: 'approvalReview';
+  readonly subjectType: 'purchaseOrders' | 'disposals';
+  /** For the run's decider alone; null for anyone else. */
+  readonly result: ApprovalReviewResult | null;
+}
+
+export interface DeviceSyncRun extends RunBase {
+  readonly agent: 'deviceSync';
+  readonly subjectType: 'deviceSync';
+  /** For the run's decider alone; null for anyone else. */
+  readonly result: DeviceSyncResult | null;
+}
+
+export type AgentRun = ApprovalReviewRun | DeviceSyncRun;
 
 export interface RunCounts {
   readonly runs: number;
@@ -199,13 +227,13 @@ export function useLatestReview(
   subjectType: 'purchaseOrders' | 'disposals',
   subjectId: string,
   enabled = true,
-): UseQueryResult<AgentRun | null> {
+): UseQueryResult<ApprovalReviewRun | null> {
   const api = useApi();
   return useQuery({
     queryKey: [...keys.runs, 'latest', subjectType, subjectId],
     queryFn: async () =>
       (
-        await api.request<{ data: AgentRun | null }>({
+        await api.request<{ data: ApprovalReviewRun | null }>({
           path: `${AGENT_RUNS_PATH}/latest`,
           query: { agent: 'approvalReview', subjectType, subjectId },
         })
@@ -243,7 +271,7 @@ export function useDecideReview(): UseMutationResult<
   unknown,
   Error,
   {
-    readonly run: AgentRun;
+    readonly run: ApprovalReviewRun;
     readonly decision: 'approved' | 'rejected';
     readonly comment: string;
   }

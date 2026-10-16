@@ -246,6 +246,24 @@ product or in release notes, until it is listed here.
   serial at once, as on its page. Entry points: 看看 on a
   difference's notice, and 解释这些差异 / 整理这批设备 on MDM 核对
   (the AI shortcuts dropped 让 Noco from their labels, 2026-10-17).
+- **MDM 跟进** (2026-10-17, `server/providers/itam/device-sync-followup.ts`,
+  work agent `deviceSync`, trigger `synced`): after a pull that read every
+  page (`DeviceSyncService.onSynced`, set by the agents' provider; not the
+  demo's ingest), the new 使用人不一致 and 只在 MDM are worked out by Asset
+  Steward with the `device-sync` skill (one call, the eval set's prompt and
+  decisions shape, material from `deviceSyncReview` read as the person) and
+  left as a plan in 收件箱: a run per device 负责人 for its devices
+  (`owner:<id>`), and one per holder of the asset manager set for the
+  records nobody owns (`shared:<id>`, the others superseded once one is
+  decided). Steps are `transfer_device` / `assign_device` /
+  `link_managed_device` / `ignore_managed_device`; register, keep, restore,
+  verify and escalate are notes, as is a step the plan screen refuses. A
+  difference is new until a run holding it was carried out or set aside
+  (90 days); a waiting run is replaced by the next pull's, since a plan
+  lasts a day. Carrying out or withdrawing the plan settles the run
+  (`PlanService.onDecided`, composed with the conversation news); 忽略
+  withdraws the plan. 失联, 状态不符 and 只在台账 are a rule's and stay on
+  待办.
 - **Eval set** (step 4): `server/providers/itam/evals/device-sync.ts` holds
   the cases — what the commands show, the question, and the decision a
   person who knows the method would make per item (transfer, assign,

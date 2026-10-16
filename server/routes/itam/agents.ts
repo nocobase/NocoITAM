@@ -37,6 +37,7 @@ import {
 } from '../../providers/itam/agent-switches.js';
 import { workRun } from '../../providers/itam/ai-model.js';
 import { approvalReviewerToken } from '../../providers/itam/approval-review.js';
+import { deviceSyncFollowUpToken } from '../../providers/itam/device-sync-followup.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
 import { RecordNotFoundError } from '../../providers/itam/errors.js';
 import {
@@ -220,11 +221,15 @@ export const agentRoutes: AppApiRouteContribution<Application> =
             if (!readable.has(key))
               readable.set(
                 key,
-                Boolean(
-                  await reader
-                    .get(run.subjectType, run.subjectId)
-                    .catch(() => undefined),
-                ),
+                // MDM 跟进's runs are about a sync, not one record: seen by
+                // whoever may read devices (2026-10-17).
+                run.subjectType === 'deviceSync'
+                  ? Boolean(await reader.scope.may('devices', 'read'))
+                  : Boolean(
+                      await reader
+                        .get(run.subjectType, run.subjectId)
+                        .catch(() => undefined),
+                    ),
               );
             if (readable.get(key)) visible.push(run);
             if (visible.length >= 100) break;
@@ -428,16 +433,20 @@ export const agentRoutes: AppApiRouteContribution<Application> =
       '/:id/dismiss',
       describeRoute({
         tags,
-        summary: 'Set a review aside',
+        summary: 'Set a run aside',
         operationId: 'itamDismissAgentRun',
         description:
-          'The approver sets the review aside; the request still waits on them.',
+          "Its decider sets a review or a suggestion aside: a request still waits on them; MDM 跟进's plan is withdrawn and its differences are not raised again.",
       }),
       async (context) => {
         try {
-          const run = await container
-            .resolve(approvalReviewerToken)
-            .dismiss(context.req.param('id'), principalId(context));
+          const id = context.req.param('id');
+          const me = principalId(context);
+          const found = await runs().get(id);
+          const run =
+            found?.agent === 'deviceSync'
+              ? await container.resolve(deviceSyncFollowUpToken).dismiss(id, me)
+              : await container.resolve(approvalReviewerToken).dismiss(id, me);
           return context.json({ data: run });
         } catch (error) {
           return errorResponse(context, error);
