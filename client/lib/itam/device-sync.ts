@@ -319,6 +319,7 @@ export const REVIEW_VIEWS = [
   'exempted',
   'dismissed',
   'linked',
+  'silent',
 ] as const;
 export type ReviewView = (typeof REVIEW_VIEWS)[number];
 

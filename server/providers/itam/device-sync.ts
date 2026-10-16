@@ -302,15 +302,19 @@ export function createDeviceSyncService(deps: {
         // its device has been deleted. An ignored record stays ignored.
         // A person's own link or unlink (`matchedBy: manual`, step 2)
         // stands too, until its device is deleted.
+        const candidatesFor = serialNo
+          ? (register.bySerial.get(serialNo) ?? [])
+          : [];
+        // An ignored record stays ignored — until the register has one
+        // device of its serial (2026-10-16): it was kept off a register
+        // that now holds it, so it is linked like any other.
         const keepLink =
-          row?.matchState === 'ignored' ||
+          (row?.matchState === 'ignored' && candidatesFor.length !== 1) ||
           (row?.matchState === 'unlinked' && row.matchedBy === 'manual') ||
           (row?.matchState === 'linked' &&
             typeof row.deviceId === 'string' &&
             register.exists.has(row.deviceId));
-        const candidates = serialNo
-          ? (register.bySerial.get(serialNo) ?? [])
-          : [];
+        const candidates = candidatesFor;
         const match = keepLink
           ? {}
           : candidates.length === 1
@@ -318,6 +322,9 @@ export function createDeviceSyncService(deps: {
                 deviceId: candidates[0],
                 matchState: 'linked' as MatchState,
                 matchedBy: 'serial',
+                ignoredById: null,
+                ignoredAt: null,
+                ignoreReason: null,
               }
             : {
                 deviceId: null,
@@ -643,9 +650,13 @@ export function createDeviceSyncService(deps: {
         .selectFrom('managedDevices')
         .selectAll()
         .where('serialNo', '=', serial)
-        .where('matchState', 'in', ['unlinked', 'ambiguous'])
+        .where('matchState', 'in', ['unlinked', 'ambiguous', 'ignored'])
         .execute<Row>();
-      const open = records.filter((row) => row.matchedBy !== 'manual');
+      // A person's unlink stands; a record kept off the register does not
+      // once the register has its device (2026-10-16).
+      const open = records.filter(
+        (row) => row.matchState === 'ignored' || row.matchedBy !== 'manual',
+      );
       if (open.length === 0) return;
       const register = await loadRegister();
       if ((register.bySerial.get(serial) ?? []).length !== 1) return;
@@ -658,6 +669,9 @@ export function createDeviceSyncService(deps: {
             deviceId,
             matchState: 'linked',
             matchedBy: 'serial',
+            ignoredById: null,
+            ignoredAt: null,
+            ignoreReason: null,
             updatedAt: now,
           })
           .where('id', '=', String(row.id))

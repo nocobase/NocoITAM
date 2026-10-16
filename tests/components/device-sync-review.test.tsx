@@ -13,6 +13,7 @@ const state = vi.hoisted(() => ({
   action: vi.fn(),
   create: undefined as Record<string, unknown> | undefined,
   device: undefined as Record<string, unknown> | undefined,
+  records: [] as Record<string, unknown>[],
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -41,6 +42,9 @@ vi.mock('../../client/lib/itam/device-sync.js', () => ({
     },
     isPending: false,
     error: null,
+  }),
+  useManagedDevices: (id: string | undefined) => ({
+    data: id ? { data: state.records } : undefined,
   }),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({
@@ -411,6 +415,76 @@ describe('MDM 核对 → 只在 MDM: 补登记', () => {
     expect(
       screen.queryByText('deviceSync.review.linkConflicts.serialMismatch'),
     ).toBeNull();
+  });
+
+  it('links the record to the device registered from it', async () => {
+    state.action.mockReset();
+    state.views = { unregistered: [record('PF5DEMO01')] };
+    open();
+    await (
+      state.create?.onCreated as (
+        created: Record<string, unknown>,
+      ) => Promise<void>
+    )({ id: 'new-1', deviceNo: 'DE-000099' });
+    expect(state.action).toHaveBeenCalledWith({
+      kind: 'link',
+      managedId: 'm1',
+      deviceId: 'new-1',
+    });
+  });
+
+  it('offers no 补登记 when a register device already has the serial', () => {
+    state.views = {
+      unregistered: [
+        { ...record('PF5DEMO01'), candidates: [{ id: 'd1', label: 'X' }] },
+      ],
+    };
+    render(
+      <MemoryRouter initialEntries={['/device-sync?view=unregistered']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.queryByRole('button', { name: 'deviceSync.review.register' }),
+    ).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'deviceSync.review.link' }),
+    ).toBeInTheDocument();
+  });
+
+  it('lists records silent too long beneath', () => {
+    state.views = { unregistered: [], silent: [record('OLD-1')] };
+    render(
+      <MemoryRouter initialEntries={['/device-sync?view=unregistered']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    const section = screen
+      .getByText('deviceSync.review.silentHeading:1')
+      .closest('section')!;
+    expect(within(section).getByText('OLD-1')).toBeInTheDocument();
+  });
+
+  it('warns when the device already has another record of the platform', () => {
+    state.views = {
+      unregistered: [
+        { ...record('PF5DEMO01'), candidates: [{ id: 'd1', label: 'X' }] },
+      ],
+    };
+    state.device = { id: 'd1', serialNo: 'PF5DEMO01', status: 'inStock' };
+    state.records = [{ id: 'other', source: 'intune', goneAt: null }];
+    render(
+      <MemoryRouter initialEntries={['/device-sync?view=unregistered']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.review.link' }),
+    );
+    expect(
+      screen.getByText('deviceSync.review.linkConflicts.alreadyLinked'),
+    ).toBeInTheDocument();
+    state.records = [];
   });
 
   it('leaves it to be typed when the platform has none', () => {

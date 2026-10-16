@@ -2017,6 +2017,8 @@ const zhCN: AppResource = {
       linkRegister: '台账：',
       linkPlatform: 'MDM 主用户：',
       linkConflicts: {
+        alreadyLinked:
+          '这台设备已经关联了另一条 {{source}} 记录。可能是重新注册过，也可能选错了设备。',
         serialMismatch:
           '序列号是 {{own}}，和 MDM 里的 {{platform}} 不一致。确认是同一台再关联。',
         serialMissing:
@@ -2042,6 +2044,9 @@ const zhCN: AppResource = {
       exemptedHeading: '不需要纳管 {{count}} 台',
       dismissedHeading: '已忽略 {{count}} 条',
       linkedHeading: '手动关联 {{count}} 台',
+      silentHeading: '长期未同步 {{count}} 台',
+      silentHint:
+        '超过「失联」天数没同步、台账里也没有的 MDM 记录，多半已经不用了。需要的话照样可以补登记、关联或不纳入台账。',
       linkedHint:
         '在这里手动关联到台账设备的 MDM 记录，序列号不一致的标黄。点「解除关联」会回到上面的列表。',
       dismissedHint:

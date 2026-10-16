@@ -2115,6 +2115,8 @@ const messages = {
       linkRegister: 'Register:',
       linkPlatform: 'MDM primary user:',
       linkConflicts: {
+        alreadyLinked:
+          'This device is already linked to another {{source}} record: enrolled again, or the wrong device.',
         serialMismatch:
           'Its serial is {{own}}, not {{platform}} as MDM reports. Link it only if it is the same device.',
         serialMissing:
@@ -2143,6 +2145,9 @@ const messages = {
       exemptedHeading: 'Not to be managed ({{count}})',
       dismissedHeading: 'Ignored ({{count}})',
       linkedHeading: 'Linked by hand ({{count}})',
+      silentHeading: 'Long silent ({{count}})',
+      silentHint:
+        'MDM records not on the register that have not synced for longer than a device counts as silent, most likely out of use. They can still be registered, linked or kept off the register.',
       linkedHint:
         'MDM records linked here to a register device by hand; a serial that differs is highlighted. Unlink puts a record back in the list above.',
       dismissedHint:

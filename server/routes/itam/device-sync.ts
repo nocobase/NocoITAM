@@ -43,8 +43,10 @@ const VIEWS = [
   'exempted',
   // 忽略 on a difference (2026-10-16), listed under 信息不一致.
   'dismissed',
-  // Linked by hand (2026-10-16), listed under 只在 MDM.
+  // Linked by hand, and records silent too long, both listed under 只在
+  // MDM (2026-10-16).
   'linked',
+  'silent',
 ] as const;
 const CHECK_KINDS = ['stale', 'userMismatch', 'statusMismatch'] as const;
 
@@ -245,7 +247,9 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
           data:
             view === 'unregistered'
               ? await review.unregistered()
-              : await review.ignored(),
+              : view === 'silent'
+                ? await review.silent()
+                : await review.ignored(),
         });
       } catch (error) {
         return errorResponse(context, error);

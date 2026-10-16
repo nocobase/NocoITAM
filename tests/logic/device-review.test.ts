@@ -493,6 +493,64 @@ describe('device review', () => {
     expect(await kinds(linux)).toEqual([[linux, 'stale', false]]);
   });
 
+  it('links a record kept off the register once a device of its serial is registered', async () => {
+    await pull(observed('off', { serialNo: 'KEPT-OFF' }));
+    const id = await managedId('off');
+    await request(`device-sync/devices/${id}/ignore`, { reason: 'Lab' });
+    expect(await review.ignored()).toHaveLength(1);
+    // Registered by hand: linked at once, the ignore gone.
+    const laptop = await device('KEPT-OFF');
+    expect(await review.ignored()).toEqual([]);
+    expect(await sync.forDevice(laptop)).toMatchObject([
+      { externalId: 'off', matchedBy: 'serial' },
+    ]);
+  });
+
+  it('links an ignored record on the next pull once the register has its device', async () => {
+    await pull(observed('later', { serialNo: 'LATER-1' }));
+    const id = await managedId('later');
+    const laptop = await device('LATER-1');
+    // Unlinked and then kept off by a person, with the device on the register.
+    await request(`device-sync/devices/${id}/unlink`, {});
+    await request(`device-sync/devices/${id}/ignore`, { reason: 'Lab' });
+    expect(await review.ignored()).toHaveLength(1);
+    await pull(observed('later', { serialNo: 'LATER-1' }));
+    expect(await review.ignored()).toEqual([]);
+    expect(await sync.forDevice(laptop)).toMatchObject([
+      { externalId: 'later', matchedBy: 'serial' },
+    ]);
+  });
+
+  it('lists records silent too long under 只在 MDM rather than nowhere', async () => {
+    await pull(
+      observed('fresh', { serialNo: 'FRESH-9' }),
+      observed('old', { serialNo: 'OLD-9', lastSyncAt: ago(60) }),
+    );
+    expect((await review.unregistered()).map((row) => row.externalId)).toEqual([
+      'fresh',
+    ]);
+    expect((await review.silent()).map((row) => row.externalId)).toEqual([
+      'old',
+    ]);
+    const listed = await request('device-sync/review?view=silent');
+    expect(await listed.json()).toMatchObject({
+      data: [{ externalId: 'old' }],
+    });
+  });
+
+  it('offers the device of its serial for a record a person unlinked', async () => {
+    const laptop = await device('UNDO-1');
+    await pull(observed('undo', { serialNo: 'UNDO-1' }));
+    const id = await managedId('undo');
+    await request(`device-sync/devices/${id}/unlink`, {});
+    const [row] = await review.unregistered();
+    expect(row).toMatchObject({
+      externalId: 'undo',
+      matchState: 'unlinked',
+      candidates: [{ id: laptop }],
+    });
+  });
+
   it('keeps a record linked by hand listed with its device, until it is unlinked', async () => {
     const laptop = await device('REG-SERIAL');
     await pull(observed('hand', { serialNo: 'MDM-SERIAL' }));

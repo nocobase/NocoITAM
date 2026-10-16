@@ -153,6 +153,12 @@ export interface DeviceReviewService {
   /** Platform records a person kept off the register. */
   ignored(): Promise<UnregisteredDevice[]>;
   /**
+   * Platform records on no register device that have not synced for
+   * `staleDays` (2026-10-16): too old for 只在 MDM's list, most likely out
+   * of use, but listed under it rather than nowhere.
+   */
+  silent(now?: Date): Promise<UnregisteredDevice[]>;
+  /**
    * Platform records a person linked to a register device by hand
    * (2026-10-16), with the device: 只在 MDM lists them under its rows so a
    * link made there does not vanish, and 解除关联 takes it back.
@@ -575,9 +581,11 @@ export function createDeviceReviewService(deps: {
 
   /** Register devices sharing each serial, for the ambiguous rows. */
   const sharedSerials = async (rows: readonly Row[]) => {
+    // Any record whose serial a register device has (2026-10-16): several
+    // when it is ambiguous, one when a person unlinked it — then 补登记
+    // would only be refused as a duplicate serial, and 关联 is the act.
     const wanted = new Set(
       rows
-        .filter((row) => row.matchState === 'ambiguous')
         .map((row) => asText(row.serialNo))
         .filter((serial): serial is string => Boolean(serial)),
     );
@@ -773,6 +781,32 @@ export function createDeviceReviewService(deps: {
           'lastSyncAt',
           '>=',
           dbDateTime(new Date(now.getTime() - config.staleDays * DAY)),
+        );
+      if (config.ignorePersonal)
+        query = query.where('ownership', '!=', 'personal');
+      const rows = await query.orderBy('lastSyncAt', 'desc').execute<Row>();
+      const models = await modelIndex();
+      const shared = await sharedSerials(rows);
+      const urlOf = await sync.consoleUrls();
+      return fold(
+        rows.map((row) => toUnregistered(row, models, shared, urlOf)),
+      );
+    },
+
+    async silent(now = new Date()) {
+      if (!(await sync.connected())) return [];
+      const config = limits(await settings.get('deviceSync'));
+      const cutoff = dbDateTime(
+        new Date(now.getTime() - config.staleDays * DAY),
+      );
+      let query = database
+        .query()
+        .selectFrom('managedDevices')
+        .selectAll()
+        .where('matchState', 'in', ['unlinked', 'ambiguous'])
+        .where('goneAt', 'is', null)
+        .where((eb) =>
+          eb.or([eb('lastSyncAt', '<', cutoff), eb('lastSyncAt', 'is', null)]),
         );
       if (config.ignorePersonal)
         query = query.where('ownership', '!=', 'personal');

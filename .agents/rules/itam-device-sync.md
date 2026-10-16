@@ -150,6 +150,18 @@ product or in release notes, until it is listed here.
   device again should it drop off the platform. Categories stay the coarse
   rule; this is the per-device exception. Noco reads it as
   `--view exempted` and in a device's `exemption`.
+- **Loose ends closed (2026-10-16)**: a record kept off the register
+  (不纳入台账) is linked once the register has one device of its serial —
+  by `matchDevice` at once, or by the next pull — and its ignore cleared;
+  a person's unlink still stands. 补登记 links its record to the new device
+  itself, since matching by serial leaves a record a person unlinked alone.
+  A record whose serial a register device has carries that device as a
+  candidate (`sharedSerials`, not only for `ambiguous`), and 只在 MDM then
+  offers 关联 but not 补登记, which the duplicate serial would refuse.
+  Records on no device that have not synced for `staleDays` are
+  `silent()` (view `silent`), listed as 长期未同步 under 只在 MDM rather
+  than nowhere. The link dialog warns when the device already has another
+  live record of the same platform.
 - **Acts on the register stay the register's**: the MDM group offers
   调拨给 / 分配给 the platform user and 恢复为库存中 by opening the device
   page's own dialogs, prefilled (`ManagedPlatforms`' `actions`). 补登记

@@ -33,6 +33,7 @@ import {
   DEVICE_SYNC_PATH,
   useDeviceReview,
   useDeviceReviewAction,
+  useManagedDevices,
   type DeviceCheck,
   type ExemptDevice,
   type ReviewView,
@@ -88,6 +89,8 @@ export default function DeviceSyncReviewPage(): ReactElement {
   const ignoredShown = view === 'unregistered' && (counts.ignored ?? 0) > 0;
   // What was linked here by hand, under 只在 MDM's rows (2026-10-16).
   const linkedShown = view === 'unregistered' && (counts.linked ?? 0) > 0;
+  // Records silent too long for the list, under it (2026-10-16).
+  const silentShown = view === 'unregistered' && (counts.silent ?? 0) > 0;
   const exemptedShown = view === 'unmanaged' && (counts.exempted ?? 0) > 0;
   // The differences a person ignored, under 信息不一致 (2026-10-16).
   const dismissedShown = view === 'checks' && (counts.dismissed ?? 0) > 0;
@@ -166,6 +169,19 @@ export default function DeviceSyncReviewPage(): ReactElement {
       ) : (
         <RecordsView view='unregistered' />
       )}
+      {silentShown ? (
+        <section className='mt-4 flex flex-col gap-3'>
+          <div className='space-y-1'>
+            <h2 className='font-medium'>
+              {t('deviceSync.review.silentHeading', { count: counts.silent })}
+            </h2>
+            <p className='text-sm text-muted-foreground'>
+              {t('deviceSync.review.silentHint')}
+            </p>
+          </div>
+          <RecordsView view='silent' />
+        </section>
+      ) : null}
       {linkedShown ? (
         <section className='mt-4 flex flex-col gap-3'>
           <div className='space-y-1'>
@@ -263,6 +279,7 @@ function useReviewCounts(): Partial<
   const exempted = useDeviceReview('exempted');
   const dismissed = useDeviceReview('dismissed');
   const linked = useDeviceReview('linked');
+  const silent = useDeviceReview('silent');
   const byRule = ignored.data?.filter((row) => row.ignoredByRule).length;
   return {
     checks: checks.data?.length,
@@ -272,6 +289,7 @@ function useReviewCounts(): Partial<
     exempted: exempted.data?.length,
     dismissed: dismissed.data?.length,
     linked: linked.data?.length,
+    silent: silent.data?.length,
     // 已忽略's two kinds: kept off by a person, or by 忽略个人设备.
     ignoredByRule: byRule,
     ignoredManual:
@@ -487,6 +505,7 @@ const OFF_DUTY_STATUSES = [
 ];
 
 type LinkConflict =
+  | 'alreadyLinked'
   | 'serialMismatch'
   | 'serialMissing'
   | 'userMismatch'
@@ -505,10 +524,25 @@ function linkConflicts(
   rules:
     { readonly staleDays: number; readonly recentDays: number } | undefined,
   now: number,
+  /** The platform records the device already has. */
+  others: readonly {
+    readonly id: string;
+    readonly source: string;
+    readonly goneAt: string | null;
+  }[],
 ): LinkConflict[] {
   const normalize = (value: unknown) =>
     (typeof value === 'string' ? value : '').replace(/\s+/g, '').toUpperCase();
   const conflicts: LinkConflict[] = [];
+  // Another record of the same platform on it (2026-10-16): a device
+  // enrolled again, or the wrong device.
+  if (
+    others.some(
+      (other) =>
+        other.id !== row.id && other.source === row.source && !other.goneAt,
+    )
+  )
+    conflicts.push('alreadyLinked');
   if (row.serialNo && normalize(device.serialNo) !== normalize(row.serialNo))
     conflicts.push(device.serialNo ? 'serialMismatch' : 'serialMissing');
   const synced = row.lastSyncAt ? Date.parse(row.lastSyncAt) : Number.NaN;
@@ -577,6 +611,7 @@ function LinkPreview({
             own: text(device.serialNo),
             platform: row.serialNo ?? '',
             status: t(`enums.deviceStatus.${status}`, { defaultValue: status }),
+            source: t(`deviceSync.sources.${row.source}`),
           })}
         </p>
       ))}
@@ -866,7 +901,7 @@ function platformModel(
 function RecordsView({
   view,
 }: {
-  readonly view: 'unregistered' | 'ignored';
+  readonly view: 'unregistered' | 'silent' | 'ignored';
 }): ReactElement {
   const { t } = useTranslation();
   const review = useDeviceReview(view);
@@ -899,6 +934,8 @@ function RecordsView({
     readonly differs?: boolean;
   }>();
   const picked = useItamRecord(DEVICES_PATH, target ?? undefined);
+  // The platform records that device already has.
+  const pickedRecords = useManagedDevices(target ?? undefined);
   const settings = useItamSettings();
   const queryClient = useQueryClient();
   const registerValues = (row: UnregisteredDevice) => {
@@ -950,6 +987,15 @@ function RecordsView({
       }
       onCreated={async (created) => {
         setDone({ kind: 'registered', record: created });
+        // The record it was registered from is linked to it at once
+        // (2026-10-16): matching by serial leaves a record a person once
+        // unlinked alone, and this one is the new device's own.
+        if (registering)
+          action.mutate({
+            kind: 'link',
+            managedId: registering.id,
+            deviceId: String(created.id),
+          });
         await queryClient.invalidateQueries({
           queryKey: ['itam', DEVICE_SYNC_PATH],
         });
@@ -980,7 +1026,13 @@ function RecordsView({
   ) : null;
   const conflicts =
     linking && picked.data && target
-      ? linkConflicts(picked.data, linking, settings.data?.deviceSync, now)
+      ? linkConflicts(
+          picked.data,
+          linking,
+          settings.data?.deviceSync,
+          now,
+          pickedRecords.data?.data ?? [],
+        )
       : [];
   if (rows.length === 0)
     return (
@@ -1128,7 +1180,11 @@ function RecordsView({
                       </Button>
                     ) : (
                       <>
-                        {row.matchState === 'unlinked' ? (
+                        {/* A serial already on the register would be refused
+                            as a duplicate: that record is linked, not
+                            registered (2026-10-16). */}
+                        {row.matchState === 'unlinked' &&
+                        row.candidates.length === 0 ? (
                           <Button
                             size='sm'
                             variant='outline'
@@ -1184,7 +1240,10 @@ function RecordsView({
           if (!linking || !target) return;
           const record = picked.data;
           const differs = conflicts.some(
-            (conflict) => !conflict.startsWith('serial'),
+            (conflict) =>
+              conflict === 'userMismatch' ||
+              conflict === 'statusMismatch' ||
+              conflict === 'stale',
           );
           action.mutate(
             { kind: 'link', managedId: linking.id, deviceId: target },
