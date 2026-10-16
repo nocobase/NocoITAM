@@ -140,6 +140,10 @@ it('opens a linked record on its own detail page in the drawer without leaving t
   expect(
     within(drawer).queryByRole('button', { name: 'common.back' }),
   ).toBeNull();
+  // Nor the page's own way back: inside a drawer there is no page before.
+  expect(
+    within(drawer).queryByRole('button', { name: 'common.backPrevious' }),
+  ).toBeNull();
 });
 
 it('switches the page tabs inside the drawer without moving the page behind it', () => {

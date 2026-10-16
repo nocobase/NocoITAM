@@ -152,6 +152,7 @@ const zhCN: AppResource = {
     clickToEdit: '点击编辑',
     editTitle: '编辑标题',
     back: '返回',
+    backPrevious: '返回上一页',
     yes: '是',
     no: '否',
     none: '无',

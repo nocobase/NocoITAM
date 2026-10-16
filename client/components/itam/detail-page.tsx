@@ -114,19 +114,8 @@ export function DetailPage({
             is decided on; it still shrinks and wraps once on a line alone. */}
         <header className='flex flex-wrap items-start justify-between gap-x-4 gap-y-3'>
           <div className='min-w-0 flex-[1_1_auto] space-y-1'>
-            {breadcrumb || subtitle || canGoBack ? (
+            {breadcrumb || subtitle ? (
               <div className='flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-muted-foreground'>
-                {canGoBack ? (
-                  <button
-                    type='button'
-                    aria-label={t('common.back')}
-                    title={t('common.back')}
-                    className='inline-flex size-5 items-center justify-center self-center rounded-sm transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50'
-                    onClick={() => void navigate(-1)}
-                  >
-                    <ArrowLeft aria-hidden='true' className='size-4' />
-                  </button>
-                ) : null}
                 {breadcrumb}
                 {breadcrumb && subtitle ? (
                   <span aria-hidden='true'>·</span>
@@ -135,6 +124,20 @@ export function DetailPage({
               </div>
             ) : null}
             <div className='flex min-w-0 items-center gap-2'>
+              {/* Beside the title, apart from the kind above it (2026-10-16):
+                  "← 采购" read as a way to the procurement list, where this
+                  goes to the page before. */}
+              {canGoBack ? (
+                <button
+                  type='button'
+                  aria-label={t('common.backPrevious')}
+                  title={t('common.backPrevious')}
+                  className='-ml-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50'
+                  onClick={() => void navigate(-1)}
+                >
+                  <ArrowLeft aria-hidden='true' className='size-5' />
+                </button>
+              ) : null}
               {titleEdit ? (
                 <EditableTitle
                   value={titleEdit.value}

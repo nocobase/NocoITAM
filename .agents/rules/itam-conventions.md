@@ -12,7 +12,10 @@ ITAM tags compose the shared `Badge`. The application-wide slot rules in
 `client/styles.css` also style plugin-owned Badge copies, keeping their geometry
 consistent without editing Registry sources. See the components reference.
 Detail headers combine breadcrumbs and auxiliary record information into one
-wrapping line above the title; do not add a second subtitle below it.
+wrapping line above the title; do not add a second subtitle below it. That
+line names the record's kind and is not a link; the way back to the page
+before is an arrow button beside the title, shown only when there is a page
+before (2026-10-16: "← 采购" above the title read as a link to the list).
 
 ## This application: ITAM
 

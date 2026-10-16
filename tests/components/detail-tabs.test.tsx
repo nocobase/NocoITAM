@@ -45,3 +45,32 @@ it('leads each tab with its icon and shows counts as plain figures', () => {
   );
   expect(devices.className).toContain('border-transparent');
 });
+
+// The way back sits beside the title, apart from the record's kind above it,
+// which reads as a label rather than a link to its list (2026-10-16).
+it('puts the way back beside the title, apart from the kind', () => {
+  render(
+    <MemoryRouter initialEntries={['/list', '/records/1']} initialIndex={1}>
+      <Routes>
+        <Route
+          path='/records/:id'
+          element={
+            <DetailPage
+              title='PO-000046'
+              subtitle='Procurement'
+              info={null}
+              tabs={[]}
+            >
+              <p>content</p>
+            </DetailPage>
+          }
+        />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const back = screen.getByRole('button', { name: 'common.backPrevious' });
+  expect(back.parentElement).toBe(
+    screen.getByRole('heading', { name: 'PO-000046' }).parentElement,
+  );
+  expect(screen.getByText('Procurement').closest('button')).toBeNull();
+});

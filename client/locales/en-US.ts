@@ -155,6 +155,7 @@ const messages = {
     clickToEdit: 'Click to edit',
     editTitle: 'Edit title',
     back: 'Back',
+    backPrevious: 'Back to the previous page',
     yes: 'Yes',
     no: 'No',
     none: 'None',
