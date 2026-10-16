@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDragPan } from '@/hooks/use-drag-pan';
 import { useItamList, type ItamRecord } from '@/lib/itam/api';
+import { CountPill } from './count-pill.js';
 
 /** Cards a column reads at first, and how many each 加载更多 adds. */
 const PAGE = 20;
@@ -95,11 +96,7 @@ export function createStatusBoard(
             />
           ) : null}
           <span className='truncate text-sm font-semibold'>{statusLabel}</span>
-          {list.data ? (
-            <span className='rounded-full bg-background px-1.5 text-xs leading-5 font-medium text-muted-foreground tabular-nums ring-1 ring-border/60'>
-              {total}
-            </span>
-          ) : null}
+          {list.data ? <CountPill>{total}</CountPill> : null}
         </header>
         <div className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2'>
           {list.isLoading ? (

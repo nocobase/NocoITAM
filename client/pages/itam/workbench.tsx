@@ -43,6 +43,7 @@ import {
   useReminders,
   type ReminderSummary,
 } from '@/lib/itam/workbench';
+import { CountPill } from '@/components/itam/count-pill';
 
 /**
  * The workbench is the team's to-do board (2026-10-05): 需要关注 on the left,
@@ -126,11 +127,7 @@ function Column({
     >
       <header className='flex h-11 shrink-0 items-center gap-2 px-3.5'>
         <span className='truncate text-sm font-semibold'>{title}</span>
-        {count === undefined ? null : (
-          <span className='rounded-full bg-background px-1.5 text-xs leading-5 font-medium text-muted-foreground tabular-nums ring-1 ring-border/60'>
-            {count}
-          </span>
-        )}
+        {count === undefined ? null : <CountPill>{count}</CountPill>}
         {action ? <span className='ml-auto shrink-0'>{action}</span> : null}
       </header>
       <div className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2'>

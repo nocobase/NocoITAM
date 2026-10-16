@@ -1,6 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-
-import { Badge } from '@/components/ui/badge';
+import { CountPill } from './count-pill.js';
 
 export interface PageHeaderProps {
   readonly title: ReactNode;
@@ -35,11 +34,7 @@ export function PageHeader({
           <h1 className='truncate font-heading text-2xl font-semibold tracking-tight'>
             {title}
           </h1>
-          {total !== undefined ? (
-            <Badge variant='secondary' className='tabular-nums'>
-              {total}
-            </Badge>
-          ) : null}
+          {total !== undefined ? <CountPill>{total}</CountPill> : null}
           {aside ? <div className='ml-2 min-w-0'>{aside}</div> : null}
         </div>
         {description ? (
