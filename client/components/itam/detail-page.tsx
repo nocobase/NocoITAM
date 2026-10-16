@@ -1,8 +1,10 @@
-import type { LucideIcon } from 'lucide-react';
-import type { ReactElement, ReactNode } from 'react';
-import { NavLink, useLocation } from 'react-router';
+import { useTranslation } from '@nocobase/i18n/client';
+import { ArrowLeft, type LucideIcon } from 'lucide-react';
+import { useContext, type ReactElement, type ReactNode } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { EmbeddedRecordContext } from '@/lib/itam/detail-chrome';
 import { TAB_ICONS } from '@/lib/itam/tab-icons';
 import { cn } from '@/lib/utils';
 
@@ -86,7 +88,15 @@ export function DetailPage({
   tabs,
   children,
 }: DetailPageProps): ReactElement {
+  const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
+  // 返回 to the page the reader actually came from (2026-10-16): the
+  // browser's previous entry, which a drawer never adds and a tab switch
+  // replaces. Not on a page opened directly (React Router names a session's
+  // first entry `default`), nor on one shown inside another page.
+  const embedded = useContext(EmbeddedRecordContext);
+  const canGoBack = !embedded && location.key !== 'default';
   return (
     <>
       {/* Breakpoints follow the page's own width (container queries), not
@@ -104,8 +114,19 @@ export function DetailPage({
             is decided on; it still shrinks and wraps once on a line alone. */}
         <header className='flex flex-wrap items-start justify-between gap-x-4 gap-y-3'>
           <div className='min-w-0 flex-[1_1_auto] space-y-1'>
-            {breadcrumb || subtitle ? (
+            {breadcrumb || subtitle || canGoBack ? (
               <div className='flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-muted-foreground'>
+                {canGoBack ? (
+                  <button
+                    type='button'
+                    aria-label={t('common.back')}
+                    title={t('common.back')}
+                    className='inline-flex size-5 items-center justify-center self-center rounded-sm transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50'
+                    onClick={() => void navigate(-1)}
+                  >
+                    <ArrowLeft aria-hidden='true' className='size-4' />
+                  </button>
+                ) : null}
                 {breadcrumb}
                 {breadcrumb && subtitle ? (
                   <span aria-hidden='true'>·</span>
@@ -202,6 +223,9 @@ export function DetailPage({
                     <NavLink
                       key={tab.key}
                       to={{ pathname: tab.to, search: location.search }}
+                      // A tab is a view of the same record, not a page:
+                      // 返回 and the browser's back leave the record.
+                      replace
                       className={({ isActive }) =>
                         cn(
                           '-mb-px flex h-10 items-center gap-1.5 border-b-2 text-sm font-medium transition-colors outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',

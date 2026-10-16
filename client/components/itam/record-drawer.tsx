@@ -35,6 +35,7 @@ import {
   RecordDrawerContext,
   type RecordDrawerApi,
 } from '@/lib/itam/record-drawer';
+import { EmbeddedRecordContext } from '@/lib/itam/detail-chrome';
 import { recordPage } from '@/lib/itam/record-pages';
 import { recordTarget, type RecordTarget } from '@/lib/itam/record-view';
 import { referenceLabel } from '@/lib/itam/references';
@@ -190,25 +191,27 @@ export function RecordPane({
   if (!target || !page) return <>{fallback}</>;
   return (
     <IsolatedRouter initialPath={to}>
-      {toolbar}
-      <Routes>
-        <Route
-          path={`/${target.route}/:id`}
-          // The page brings its own padding and lays out by its own
-          // width, so it reads like a narrow screen here.
-          element={<RoutePage page={page.Detail} />}
-        >
-          {page.tabs.map((tab) => (
-            <Route
-              key={tab.path}
-              path={tab.path}
-              element={<RoutePage page={tab.Component} />}
-            />
-          ))}
-        </Route>
-        {/* Anywhere else belongs to the page around the pane. */}
-        <Route path='*' element={<LeaveDrawer onLeave={onLeave} />} />
-      </Routes>
+      <EmbeddedRecordContext.Provider value>
+        {toolbar}
+        <Routes>
+          <Route
+            path={`/${target.route}/:id`}
+            // The page brings its own padding and lays out by its own
+            // width, so it reads like a narrow screen here.
+            element={<RoutePage page={page.Detail} />}
+          >
+            {page.tabs.map((tab) => (
+              <Route
+                key={tab.path}
+                path={tab.path}
+                element={<RoutePage page={tab.Component} />}
+              />
+            ))}
+          </Route>
+          {/* Anywhere else belongs to the page around the pane. */}
+          <Route path='*' element={<LeaveDrawer onLeave={onLeave} />} />
+        </Routes>
+      </EmbeddedRecordContext.Provider>
     </IsolatedRouter>
   );
 }
