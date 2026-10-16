@@ -2116,6 +2116,8 @@ const messages = {
     },
     group: 'Management platform',
     notFound: 'Not found on the connected management platforms',
+    notFoundIdle:
+      'Not on the connected management platforms (a device not in use need not be)',
     exempted: 'Not to be managed: {{reason}}',
     sources: { intune: 'Intune', jamf: 'Jamf' },
     sourceNames: { intune: 'Microsoft Intune', jamf: 'Jamf Pro' },

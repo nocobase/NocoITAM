@@ -41,9 +41,15 @@ export interface CheckActions {
  */
 export function ManagedPlatforms({
   deviceId,
+  status,
   actions,
 }: {
   readonly deviceId: string;
+  /**
+   * The device's status: only one in use or on loan should be on a
+   * platform, so for any other, not being on one is said calmly.
+   */
+  readonly status?: string;
   readonly actions?: CheckActions;
 }): ReactElement | null {
   const { t } = useTranslation();
@@ -66,7 +72,11 @@ export function ManagedPlatforms({
         />
       ) : records.length === 0 ? (
         <p className='text-sm text-muted-foreground'>
-          {t('deviceSync.notFound')}
+          {t(
+            status && !['inUse', 'onLoan'].includes(status)
+              ? 'deviceSync.notFoundIdle'
+              : 'deviceSync.notFound',
+          )}
         </p>
       ) : (
         <div className='flex flex-col gap-4'>

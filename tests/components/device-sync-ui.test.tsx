@@ -147,6 +147,12 @@ describe("a device's MDM group", () => {
     expect(screen.getByText('deviceSync.notFound')).toBeInTheDocument();
   });
 
+  it('says it calmly for a device not in use, which need not be on one', () => {
+    state.managed = { data: [], connected: true };
+    render(<ManagedPlatforms deviceId='d1' status='inStock' />);
+    expect(screen.getByText('deviceSync.notFoundIdle')).toBeInTheDocument();
+  });
+
   it('says why a device marked 不需要纳管 is on none, with 恢复 for an editor', () => {
     state.review.mockReset();
     state.managed = {

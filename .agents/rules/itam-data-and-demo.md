@@ -134,7 +134,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   virtual machine; a personal phone and a meeting room computer kept off by
   a person; and, on the register's side, laptops in use on no platform
   (只在台账) and a test phone marked 不需要纳管 with its reason
-  (`deviceSyncExemptions`, cleared through `DEPENDENTS`). Their platform ids start `demo-` (or `computer:demo-` /
+  (`deviceSyncExemptions`, cleared through `DEPENDENTS`). The computers on
+  the shelf or at the repairer are on Intune as well (2026-10-16), with no
+  user and a sync three weeks back or more, as a returned laptop stays
+  enrolled — linked, yet no 状态不符 — but the last two on the shelf, new
+  and not set up yet. Their platform ids start `demo-` (or `computer:demo-` /
   `mobile:demo-`), which is how `device-demo-source.ts` knows them: with no
   connection, a platform holding demo records reads as connected (`demo`)
   and its pulls replay them, last syncs moved on by the time since the

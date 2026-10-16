@@ -571,6 +571,22 @@ describe('CSV import / export and demo data', () => {
     );
     // The disposed laptop still online is the critical one.
     expect(checks.some((check) => check.critical)).toBe(true);
+    // The computers on the shelf or at the repairer are on Intune too, with
+    // a sync weeks back (2026-10-16): linked, yet no 状态不符 — only the
+    // shelved one syncing daily and the disposed one are.
+    const resting = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('managedDevices')
+      .innerJoin('devices', 'devices.id', 'managedDevices.deviceId')
+      .select(['devices.id as id'])
+      .where('managedDevices.matchState', '=', 'linked')
+      .where('devices.status', 'in', ['inStock', 'inRepair'])
+      .execute<{ id: string }>();
+    expect(resting.length).toBeGreaterThan(2);
+    expect(
+      checks.filter((check) => check.kind === 'statusMismatch'),
+    ).toHaveLength(2);
     // The new laptop, the contractor's, the shared serial and the VM.
     expect(await review.unregistered()).toHaveLength(4);
     expect((await review.unmanaged()).length).toBeGreaterThanOrEqual(1);

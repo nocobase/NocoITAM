@@ -592,6 +592,7 @@ export default function DeviceDetailPage(): ReactElement {
                 {group === 'groups.system' && id ? (
                   <ManagedPlatforms
                     deviceId={id}
+                    status={data?.status as string | undefined}
                     actions={{
                       editable,
                       onAssign: (personId) => {

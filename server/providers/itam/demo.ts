@@ -3496,6 +3496,24 @@ export function createDemoService(dependencies: {
             }),
           );
         }
+        // The computers on the shelf or at the repairer are on Intune too
+        // (2026-10-16), as a returned laptop stays enrolled, with no user and
+        // a sync weeks back — long enough not to read as 状态不符. Not the
+        // two the cases above use, nor the last two on the shelf: new, and
+        // not set up yet.
+        const resting = [
+          ...onShelf.slice(2, -2),
+          ...computers.filter((row) => row.status === 'inRepair'),
+        ];
+        resting.forEach((row, index) =>
+          observed.push(
+            observation(row, observed.length, {
+              userPrincipal: null,
+              userName: null,
+              lastSyncAt: syncedAgo(21 + index * 6),
+            }),
+          ),
+        );
         // Two pulls: the first with every device, the second without the
         // one Intune stopped reporting, which the second marks gone.
         for (const batch of [
