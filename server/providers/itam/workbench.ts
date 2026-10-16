@@ -55,6 +55,8 @@ export interface MyWorkRecord {
    * act is granted by permission, so each row says whether this one is the
    * reader's rather than leaving the list looking like all of it is.
    */
+  /** The 负责人's name, where the card names whom to ask (an overdue loan). */
+  readonly owner?: string | null;
   readonly mine?: boolean;
   /**
    * How far a leaver's handover has got: of what was in their name when they
@@ -950,12 +952,14 @@ export function createWorkbenchService(dependencies: {
             (row) => !seen.has(String(row.id)),
           ),
         ].slice(0, MY_WORK_PREVIEW);
-        // Who has it: the card says whom to chase, not only what.
+        // Who has it, and who answers for it: the card says whom to chase,
+        // and who to ask (2026-10-17).
         const borrowers = await referenceNames(
           database,
           rows.map((row) => ({
             assigneeType: row.assigneeType,
             assigneeId: row.assigneeId,
+            ownerId: row.ownerId,
           })),
         );
         items.push({
@@ -973,6 +977,11 @@ export function createWorkbenchService(dependencies: {
             date: asText(row.expectedReturnDate) ?? null,
             url: `/devices/${String(row.id)}`,
             mine: asText(row.ownerId) === userId,
+            owner: row.ownerId
+              ? (asText(
+                  nameOf(borrowers, row, 'ownerId') as string | undefined,
+                ) ?? null)
+              : null,
           })),
         });
       }

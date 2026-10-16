@@ -212,7 +212,11 @@ export const LOAN_CARD: BoardCardSpec = {
         icon: CalendarClock,
       },
     ],
-    // That it is the reader's own: the column lists everybody's.
-    footer: [(record, t) => (record.mine ? t('workbench.work.yours') : null)],
+    // Who answers for it, as every document card's footer says (2026-10-17),
+    // and that it is the reader's own: the column lists everybody's.
+    footer: [
+      (record) => (record.owner ? text(record.owner) : null),
+      (record, t) => (record.mine ? t('workbench.work.yours') : null),
+    ],
   },
 };

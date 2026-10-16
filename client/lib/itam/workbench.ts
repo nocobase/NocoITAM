@@ -120,6 +120,8 @@ export interface MyWorkRecord {
    * act is granted by permission rather than by ownership, so each row says
    * whether this one is the reader's.
    */
+  /** The 负责人's name, where the card names whom to ask (an overdue loan). */
+  readonly owner?: string | null;
   readonly mine?: boolean;
   /**
    * How far a leaver's handover has got, against what was in their name when

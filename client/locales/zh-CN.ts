@@ -1814,6 +1814,8 @@ const zhCN: AppResource = {
       board: '看板',
       list: '列表',
     },
+    showMoreCards_one: '展开其余 {{count}} 张',
+    showMoreCards_other: '展开其余 {{count}} 张',
     work: {
       people: '人员变动',
       devices: '设备跟进',

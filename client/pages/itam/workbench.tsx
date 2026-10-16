@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowRight, Columns3, List } from 'lucide-react';
+import { ArrowRight, Columns3, List, TriangleAlert } from 'lucide-react';
 import {
   useEffect,
   useRef,
@@ -312,6 +312,38 @@ function Column({
   );
 }
 
+/** A list section's cards before 展开: two rows of however many fit. */
+const SECTION_ROWS = 2;
+
+/**
+ * How many cards a list section's grid lays side by side, from its width:
+ * `CARD_GRID`'s 16rem minimum and its gap. Four until it is measured.
+ */
+function useCardsPerRow(
+  ref: { readonly current: HTMLElement | null },
+  enabled: boolean,
+): number {
+  const [perRow, setPerRow] = useState(4);
+  useEffect(() => {
+    const element = ref.current;
+    if (!enabled || !element || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const rem = parseFloat(
+        getComputedStyle(document.documentElement).fontSize,
+      );
+      const gap = rem * 0.5;
+      setPerRow(
+        Math.max(1, Math.floor((element.clientWidth + gap) / (rem * 16 + gap))),
+      );
+    };
+    // Measured as soon as it is observed, then on every change of width.
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref, enabled]);
+  return perRow;
+}
+
 function WorkColumn({
   card,
   layout,
@@ -320,6 +352,17 @@ function WorkColumn({
   readonly layout: 'column' | 'section';
 }): ReactElement {
   const { t } = useTranslation();
+  // In the list, a section shows two rows and folds the rest (2026-10-17),
+  // so one busy kind of to-do does not push every other below the fold.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const perRow = useCardsPerRow(gridRef, layout === 'section');
+  const [expanded, setExpanded] = useState(false);
+  const limit = perRow * SECTION_ROWS;
+  const shown =
+    layout === 'section' && !expanded && card.records.length > limit
+      ? { ...card, records: card.records.slice(0, limit) }
+      : card;
+  const folded = card.records.length - shown.records.length;
   return (
     <Column
       id={`work-${card.key}`}
@@ -375,11 +418,31 @@ function WorkColumn({
         </p>
       ) : (
         <>
-          {card.summary?.map((entry) => (
-            <SummaryCard key={entry.key} entry={entry} />
-          ))}
+          {card.summary?.length ? (
+            // In the list, the same width as the cards beside them.
+            <div
+              className={
+                layout === 'section' ? CARD_GRID : 'flex flex-col gap-2'
+              }
+            >
+              {card.summary.map((entry) => (
+                <SummaryCard key={entry.key} entry={entry} />
+              ))}
+            </div>
+          ) : null}
           {card.records.length > 0 ? (
-            <ColumnCards card={card} grid={layout === 'section'} />
+            <div ref={gridRef}>
+              <ColumnCards card={shown} grid={layout === 'section'} />
+            </div>
+          ) : null}
+          {folded > 0 ? (
+            <button
+              type='button'
+              className='mx-1.5 w-fit text-xs text-link underline-offset-4 hover:underline'
+              onClick={() => setExpanded(true)}
+            >
+              {t('workbench.showMoreCards', { count: folded })}
+            </button>
           ) : null}
         </>
       )}
@@ -671,7 +734,16 @@ function LeaverCard({
           {/* The job right after the name, and giving way first. */}
           <div className='flex min-w-0 items-baseline gap-1.5'>
             {tagged ? (
-              <Badge variant='outline' className='shrink-0'>
+              // 离职 and 入职 told apart at a glance: the one to recover
+              // from, the one to equip.
+              <Badge
+                className={cn(
+                  'shrink-0',
+                  joining
+                    ? 'bg-success text-success-foreground'
+                    : 'bg-destructive/10 text-destructive',
+                )}
+              >
                 {t(
                   joining
                     ? 'workbench.work.tagJoining'
@@ -814,13 +886,18 @@ function AttentionBand(): ReactElement {
     });
 
   return (
-    // A band across the top on a warning-tinted ground (2026-10-17): risks
-    // rather than to-dos, so it no longer takes a column of the board.
+    // A band across the top (2026-10-17): risks rather than to-dos, so it
+    // takes no column of the board. On the columns' own quiet ground, the
+    // warning said by the heading's icon rather than a yellow wash.
     <section
       aria-label={t('workbench.attention')}
-      className='shrink-0 rounded-2xl bg-warning/50 px-3 py-2.5'
+      className='shrink-0 rounded-2xl bg-foreground/[0.025] px-3 py-2.5'
     >
-      <h2 className='mb-2 px-0.5 text-sm font-semibold'>
+      <h2 className='mb-2 flex items-center gap-1.5 px-0.5 text-sm font-semibold'>
+        <TriangleAlert
+          aria-hidden='true'
+          className='size-4 text-warning-foreground'
+        />
         {t('workbench.attention')}
       </h2>
       {reminders.isLoading ? (
