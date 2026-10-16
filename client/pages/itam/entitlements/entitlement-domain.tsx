@@ -31,6 +31,7 @@ import { InlineField } from '@/components/itam/inline-field';
 import type { FieldDefinition } from '@/lib/itam/fields';
 
 import { ProductKeyValue } from './product-key.js';
+import { RenewalDecisions } from './renewal-decisions.js';
 import { useReferenceNames } from '@/lib/itam/references';
 import { useConfirm } from '@/lib/itam/use-confirm';
 
@@ -109,6 +110,8 @@ export const entitlementDomain: DomainConfig = {
     ) : undefined,
   Notice: EntitlementNotice,
   Actions: EntitlementActions,
+  // 授权续费's suggestion for its 负责人 (2026-10-17, plan "Work agents").
+  Decisions: RenewalDecisions,
   // No summary strip: the kind, the seat counts, the compliance status and
   // the maintenance date all have a row in the information card, and a strip
   // repeating them only pushed the card down.

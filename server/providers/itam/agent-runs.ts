@@ -5,6 +5,7 @@ import {
 } from '@nocobase/service-provider';
 
 import { asText } from './collection-query.js';
+import { dbDateTime } from './dates.js';
 
 /**
  * The work agents' runs (2026-10-16, plan "Work agents"; table
@@ -17,7 +18,12 @@ import { asText } from './collection-query.js';
  * the person who asked, or the trigger an administrator left switched on.
  */
 
-export const AGENTS = ['approvalReview'] as const;
+export const AGENTS = [
+  'approvalReview',
+  // Step 2 (2026-10-17): a leaver's things back, and a renewal weighed.
+  'offboarding',
+  'renewalReview',
+] as const;
 export type AgentName = (typeof AGENTS)[number];
 
 export const RUN_STATUSES = [
@@ -61,6 +67,8 @@ export interface AgentRun {
   readonly decidedById: string | null;
   readonly decidedAt: string | null;
   readonly model: string | null;
+  /** The plan accepting it became (step 2); null before, or for a review. */
+  readonly planId: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly startedAt: string | null;
@@ -77,6 +85,12 @@ export interface StartRun {
   readonly deciderId: string | null;
   readonly revisesId?: string | null;
   readonly instruction?: string | null;
+  /**
+   * Whether it replaces only the open run its own decider holds on the
+   * record (a leaver's things are reviewed once per 负责人); otherwise any
+   * open run of the agent on the record.
+   */
+  readonly perDecider?: boolean;
 }
 
 export interface RunCounts {
@@ -91,12 +105,22 @@ export interface AgentRunService {
   /** A new run, running; any earlier one of the agent on the record still open is superseded. */
   start(input: StartRun, connection?: DatabaseConnection): Promise<AgentRun>;
   get(id: string): Promise<AgentRun | undefined>;
-  /** The newest run of the agent on a record. */
+  /** The newest run of the agent on a record; with `deciderId`, the newest that person decides. */
   latest(
     agent: AgentName,
     subjectType: string,
     subjectId: string,
+    deciderId?: string,
   ): Promise<AgentRun | undefined>;
+  /** Whether the agent has run on the record since `since`, or has one open (a daily pass skips it). */
+  reviewedSince(
+    agent: AgentName,
+    subjectType: string,
+    subjectId: string,
+    since: Date,
+  ): Promise<boolean>;
+  /** Names the plan an accepted suggestion became. */
+  setPlan(id: string, planId: string): Promise<void>;
   /** Marks a run as being worked on (`started`), or handed back to the queue. */
   markStarted(id: string, started: boolean): Promise<void>;
   /** Settles a running run: its result waiting, or why there is none. Nothing when it is no longer running. */
@@ -129,6 +153,7 @@ export interface AgentRunService {
     subjectType: string,
     subjectId: string,
     connection?: DatabaseConnection,
+    deciderId?: string | null,
   ): Promise<void>;
   /** Runs left running too long, failed `timedOut`. */
   expireStale(now?: Date): Promise<number>;
@@ -208,6 +233,7 @@ export function decodeRun(row: Record<string, unknown>): AgentRun {
     decidedById: text(row.decidedById),
     decidedAt: iso(row.decidedAt),
     model: text(row.model),
+    planId: text(row.planId),
     createdAt: iso(row.createdAt) ?? '',
     updatedAt: iso(row.updatedAt) ?? '',
     startedAt: iso(row.startedAt),
@@ -231,6 +257,7 @@ export function createAgentRunService(
         input.subjectType,
         input.subjectId,
         connection,
+        input.perDecider ? input.deciderId : undefined,
       );
       const now = new Date();
       const values = {
@@ -252,6 +279,7 @@ export function createAgentRunService(
         decidedById: null,
         decidedAt: null,
         model: null,
+        planId: null,
         createdAt: now,
         updatedAt: now,
         startedAt: null,
@@ -275,18 +303,47 @@ export function createAgentRunService(
       return row ? decodeRun(row) : undefined;
     },
 
-    async latest(agent, subjectType, subjectId) {
+    async latest(agent, subjectType, subjectId, deciderId) {
       await service.expireStale();
-      const row = await database
+      let rows = database
         .query()
         .selectFrom('itamAgentRuns')
         .selectAll()
         .where('agent', '=', agent)
         .where('subjectType', '=', subjectType)
-        .where('subjectId', '=', subjectId)
+        .where('subjectId', '=', subjectId);
+      if (deciderId) rows = rows.where('deciderId', '=', deciderId);
+      const row = await rows
         .orderBy('createdAt', 'desc')
         .executeTakeFirst<Record<string, unknown>>();
       return row ? decodeRun(row) : undefined;
+    },
+
+    async reviewedSince(agent, subjectType, subjectId, since) {
+      const row = await database
+        .query()
+        .selectFrom('itamAgentRuns')
+        .select('id')
+        .where('agent', '=', agent)
+        .where('subjectType', '=', subjectType)
+        .where('subjectId', '=', subjectId)
+        .where((eb) =>
+          eb.or([
+            eb('createdAt', '>=', dbDateTime(since)),
+            eb('status', 'in', ['running', 'pending']),
+          ]),
+        )
+        .executeTakeFirst();
+      return Boolean(row);
+    },
+
+    async setPlan(id, planId) {
+      await database
+        .query()
+        .updateTable('itamAgentRuns')
+        .set({ planId, updatedAt: new Date() })
+        .where('id', '=', id)
+        .execute();
     },
 
     async markStarted(id, started) {
@@ -354,20 +411,25 @@ export function createAgentRunService(
         .execute();
     },
 
-    async supersede(agent, subjectType, subjectId, connection) {
-      await query(connection)
+    async supersede(agent, subjectType, subjectId, connection, deciderId) {
+      let update = query(connection)
         .updateTable('itamAgentRuns')
         .set({ status: 'superseded', updatedAt: new Date() })
         .where('agent', '=', agent)
         .where('subjectType', '=', subjectType)
         .where('subjectId', '=', subjectId)
-        .where('status', 'in', [...OPEN])
-        .execute();
+        // A failure too: once the record has a newer run, or is decided,
+        // it no longer waits on anyone (2026-10-17).
+        .where('status', 'in', [...OPEN, 'failed']);
+      if (deciderId) update = update.where('deciderId', '=', deciderId);
+      await update.execute();
     },
 
     async expireStale(now = new Date()) {
       const working = new Date(now.getTime() - RUN_LIMIT_MS);
       const queued = new Date(now.getTime() - QUEUE_LIMIT_MS);
+      // Datetime columns are text: compared through `dbDateTime`, as a bound
+      // `Date` matches nothing (`.agents/rules/itam-foundations.md`).
       const result = await database
         .query()
         .updateTable('itamAgentRuns')
@@ -382,9 +444,9 @@ export function createAgentRunService(
           eb.or([
             eb.and([
               eb('startedAt', 'is not', null),
-              eb('startedAt', '<', working),
+              eb('startedAt', '<', dbDateTime(working)),
             ]),
-            eb('createdAt', '<', queued),
+            eb('createdAt', '<', dbDateTime(queued)),
           ]),
         )
         .execute()
@@ -418,7 +480,10 @@ export function createAgentRunService(
         // A failure stays in front of its decider for as long as the
         // record waits on them, and not past the window.
         .where((eb) =>
-          eb.or([eb('status', '!=', 'failed'), eb('createdAt', '>=', since)]),
+          eb.or([
+            eb('status', '!=', 'failed'),
+            eb('createdAt', '>=', dbDateTime(since)),
+          ]),
         )
         .orderBy('createdAt', 'desc')
         .limit(limit)
@@ -429,7 +494,7 @@ export function createAgentRunService(
         .selectAll()
         .where('deciderId', '=', deciderId)
         .where('status', 'in', [...HANDLED])
-        .where('updatedAt', '>=', since)
+        .where('updatedAt', '>=', dbDateTime(since))
         .orderBy('updatedAt', 'desc')
         .limit(limit)
         .execute<Record<string, unknown>>();
@@ -455,7 +520,7 @@ export function createAgentRunService(
         .selectFrom('itamAgentRuns')
         .selectAll()
         .where('agent', '=', agent)
-        .where('createdAt', '>=', options.since);
+        .where('createdAt', '>=', dbDateTime(options.since));
       if (options.statuses?.length)
         rows = rows.where('status', 'in', [...options.statuses]);
       return (
@@ -474,7 +539,7 @@ export function createAgentRunService(
         .select(['status'])
         .select((eb) => [eb.fn.countAll().as('count')])
         .where('agent', '=', agent)
-        .where('createdAt', '>=', since)
+        .where('createdAt', '>=', dbDateTime(since))
         .groupBy('status')
         .execute<{ status: unknown; count: unknown }>();
       const of = (status: RunStatus) =>

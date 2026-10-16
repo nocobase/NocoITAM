@@ -168,6 +168,25 @@ export const AI_WRITE_SCHEMAS = {
       .min(1)
       .max(100),
   }),
+  // Renewal review (2026-10-16, work agents step 2): fewer or more seats on
+  // an entitlement that counts them, a signed change; the service refuses
+  // going below the seats assigned.
+  itam_adjust_entitlement_seats: z.object({
+    title,
+    entitlementId: id,
+    quantity: z
+      .number()
+      .int()
+      .refine((value) => value !== 0, 'Change the seat count by at least one'),
+    notes: z.string().trim().max(2000).optional(),
+  }),
+  // Whether a subscription renews by itself (2026-10-16): letting one lapse
+  // is switching it off.
+  itam_set_entitlement_auto_renew: z.object({
+    title,
+    entitlementId: id,
+    autoRenew: z.boolean(),
+  }),
   itam_create_purchase_order: z.object({
     title,
     reason: z.enum(PO_REASONS),
@@ -259,6 +278,8 @@ const PERMISSIONS: Readonly<
   itam_correct_device_status: [['devices', 'correctStatus']],
   itam_assign_seat: [['entitlements', 'assignSeat']],
   itam_reclaim_seats: [['entitlements', 'assignSeat']],
+  itam_adjust_entitlement_seats: [['entitlements', 'update']],
+  itam_set_entitlement_auto_renew: [['entitlements', 'update']],
   itam_create_purchase_order: [
     ['purchaseOrders', 'create'],
     ['purchaseOrders', 'update'],
@@ -588,6 +609,26 @@ async function execute(
           holderId: seat?.holderId ?? null,
         };
       });
+    }
+    case 'itam_adjust_entitlement_seats': {
+      const args = AI_WRITE_SCHEMAS[tool].parse(raw);
+      const row = await entitlements.adjustSeats(
+        args.entitlementId,
+        { quantity: args.quantity, notes: args.notes ?? null },
+        context,
+        await decide('entitlements', 'update'),
+      );
+      return { id: row.id, name: row.name, seatCount: row.seatCount };
+    }
+    case 'itam_set_entitlement_auto_renew': {
+      const args = AI_WRITE_SCHEMAS[tool].parse(raw);
+      const row = await entitlements.update(
+        args.entitlementId,
+        { autoRenew: args.autoRenew },
+        context,
+        await decide('entitlements', 'update'),
+      );
+      return { id: row.id, name: row.name, autoRenew: row.autoRenew };
     }
     case 'itam_create_purchase_order': {
       const {

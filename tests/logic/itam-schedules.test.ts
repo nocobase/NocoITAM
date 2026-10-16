@@ -96,7 +96,11 @@ describe('ITAM schedules', () => {
       ],
       // Device sync (2026-10-14), before the leavers are judged at 01:50.
       ['itam.device-sync', '30 1 * * *', 'Asia/Shanghai', {}],
+      // The work agents' daily passes (2026-10-17), after the maintenance.
+      ['itam.agent-passes', '30 2 * * *', 'Asia/Shanghai', {}],
     ]);
+    expect(defined[4]!.title).toBe('Agent 每日检查');
+    expect(defined[4]!.target.type).toBe('app.itam.agents');
     expect(defined[3]!.title).toBe('设备同步');
     expect(defined[3]!.target.type).toBe('app.itam.device-sync');
     expect(defined[0]!.title).toBe('人员在职状态更新');

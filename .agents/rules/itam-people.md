@@ -35,6 +35,15 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   count beside its name. 我的待办's 离职交接 pane renders this component
   alone, not the whole person page: the queue asks what to do, and the rest
   of a person record is not it.
+- **离职回收** (2026-10-17, plan "Work agents", step 2): marking someone
+  as left also starts the work agent's review of what they hold, through
+  `MasterDataService.onLeft`. The agents' provider sets it, and
+  `createMasterDataService` calls it after the same three changes as
+  `leavers`, once the transaction has committed. Each 负责人 gets a
+  suggestion for their own part only, on the leaver's page and in 收件箱.
+  Accepting carries out the changes through the same services as the 归属
+  tab's buttons, so the tab and the agent never disagree about what
+  recovering means.
 - 入职 is the mirror of 离职, with one difference (2026-10-05): what a
   leaver must hand back is a fact in the register, while what a joiner
   should get is a rule. The rule is **data**, 入职配置 (`onboardingKits`,

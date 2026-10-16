@@ -3170,6 +3170,62 @@ the plugin's row, and the skill put into the library from code (as before).
 Still to do for this step: the specification's P6 (`SPEC.md`, a
 NocoSolution pull request).
 
+### 2026-10-17 Work agents, step 2: 离职回收 and 授权续费
+
+Built as planned above, with the changes below. Both agents only suggest. A
+suggestion is a list of changes, each a plan step with its reason. The
+decider ticks the ones they keep and presses 执行: the kept changes become an
+ordinary plan (`itamPlans`), proposed and carried out at once as the
+decider, and each step is screened under the decider's grants as it is when
+Noco proposes one. The ticks are the confirmation, so the plan is not
+confirmed a second time. The run names the plan (`planId`, migration
+`202610170001_agent_run_plans`), and the card then shows what each step did.
+A suggestion that changes nothing, such as renewing as it is, is agreed to
+with no plan.
+
+- **离职回收** (`offboarding-review.ts`, the existing `offboarding` skill).
+  - _Triggers:_ 标记离职, a leave date entered in the past, and the nightly
+    job marking someone left (`MasterDataService.onLeft`, after the
+    transaction commits, beside the leaver's account); also a daily pass
+    over leavers who still hold things, each at most once a week.
+  - _One suggestion per 负责人 per leaver_, not one per leaver: the same
+    split as the leaver notification and the 离职交接 card, so each IT
+    person decides only what they answer for. Things nobody answers for go
+    to whoever marked the person left. On the nightly job they stay on the
+    team's 离职交接 card.
+  - _Changes:_ a device returned to stock, to repair or to disposal, or
+    transferred straight to a joiner of the next 60 days; stock taken back;
+    a seat reclaimed. An item at the repair shop, or a consumable, gets a
+    note, not a change. An item the model leaves out still gets the rule's
+    own change, so nothing is forgotten.
+  - It goes on a leaver's page as 等你决定, with 让 Noco 拟回收方案 while
+    they still hold anything.
+- **授权续费** (`renewal-review.ts`, new skill `renewal-review`).
+  - _Trigger:_ a daily pass over subscriptions ending, and perpetual
+    licences' maintenance ending, within the reminder days in 设置 (at least
+    30), each at most once a month. Only an entitlement with a 负责人 is
+    reviewed, for that 负责人; only they may ask by hand.
+  - _No usage data:_ the import was dropped on 2026-09-25. The review weighs
+    the seats against those assigned, those held by leavers, and the
+    joiners of the next 90 days.
+  - _Changes:_ reclaim the leavers' seats; set the seat count (only when
+    reducing, and never below what stays assigned); turn auto-renewal off
+    when letting a subscription lapse, or on when keeping one that would
+    otherwise stop. The two new plan operations are
+    `adjust_entitlement_seats` and `set_entitlement_auto_renew`. Not
+    renewing a licence's maintenance has no field to change, so it is a
+    note.
+  - It goes on the entitlement's page as 等你决定, with 让 Noco 看看续费 for
+    its 负责人 within 90 days of the date.
+- Both run in one schedule, `itam.agent-passes` (02:30, after the daily
+  maintenance). Each has its eval set (`evals/offboarding.ts`,
+  `evals/renewal-review.ts`).
+- The agents' run queries now compare datetimes through `dbDateTime()`.
+  Step 1's counts, run lists and the inbox's 30-day window bound a `Date`,
+  which matches nothing on SQLite (`.agents/rules/itam-foundations.md`).
+- A new run on a record now also retires an earlier failed one, which
+  otherwise stayed in 收件箱 after a successful retry.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became

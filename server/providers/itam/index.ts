@@ -24,6 +24,18 @@ import {
   approvalReviewerToken,
   createApprovalReviewer,
 } from './approval-review.js';
+import {
+  createSuggestionDecisions,
+  suggestionDecisionsToken,
+} from './agent-suggestions.js';
+import {
+  createOffboardingReviewer,
+  offboardingReviewerToken,
+} from './offboarding-review.js';
+import {
+  createRenewalReviewer,
+  renewalReviewerToken,
+} from './renewal-review.js';
 import { approvalServiceToken, createApprovalService } from './approvals.js';
 import { auditServiceToken, createAuditService } from './audits.js';
 import { deviceServiceToken, createDeviceService } from './devices.js';
@@ -450,6 +462,33 @@ export default class ItamProvider extends ServiceProvider<Application> {
               .warn(detail, message);
         },
       }),
+    );
+    // Step 2 (2026-10-17): the work agents that only suggest, and what
+    // accepting or dismissing their suggestions does.
+    const agentLocale = () =>
+      process.env.APP_DEFAULT_LOCALE ??
+      this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??
+      'en-US';
+    const agentWarn = (detail: Record<string, unknown>, message: string) => {
+      if (container.has(loggingToken))
+        container.resolve(loggingToken).getLogger('itam').warn(detail, message);
+    };
+    container.singleton(offboardingReviewerToken, () =>
+      createOffboardingReviewer({
+        container,
+        locale: agentLocale,
+        warn: agentWarn,
+      }),
+    );
+    container.singleton(renewalReviewerToken, () =>
+      createRenewalReviewer({
+        container,
+        locale: agentLocale,
+        warn: agentWarn,
+      }),
+    );
+    container.singleton(suggestionDecisionsToken, () =>
+      createSuggestionDecisions(container, agentLocale),
     );
     container.singleton(attachmentServiceToken, () =>
       createAttachmentService(

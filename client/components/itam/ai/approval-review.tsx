@@ -16,7 +16,7 @@ import {
   useDecideReview,
   useDismissReview,
   useLatestReview,
-  type AgentRun,
+  type ApprovalReviewRun,
   type ApprovalReviewResult,
 } from '@/lib/itam/agents';
 import { useDiscuss } from '@/lib/itam/ask';
@@ -40,7 +40,7 @@ export function ApprovalReviewCard({
   run,
   onDecided,
 }: {
-  readonly run: AgentRun;
+  readonly run: ApprovalReviewRun;
   /** After a decision or a dismissal (the inbox moves on). */
   readonly onDecided?: () => void;
 }): ReactElement | null {

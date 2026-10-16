@@ -7,19 +7,26 @@ import {
 } from '@tanstack/react-query';
 
 import { useApi } from './api.js';
+import type { Plan } from './plans.js';
 
 /**
  * The work agents on the client (2026-10-16, plan "Work agents", step 1;
  * `server/routes/itam/agents.ts`): 智能体工作's overview, switches and
  * runs; 收件箱's 待我决定 and its count; and one record's newest review,
- * asked for, redone, decided or set aside.
+ * asked for, redone, decided or set aside. Step 2 (2026-10-17) adds the
+ * agents that suggest — 离职回收 and 授权续费 — whose runs are accepted as
+ * plans: the changes the decider kept are carried out, and the plan says
+ * what was done.
  */
 
 export const AGENTS_PATH = 'itam/agents';
 export const INBOX_PATH = 'itam/inbox';
 export const AGENT_RUNS_PATH = 'itam/agentRuns';
 
-export type AgentName = 'approvalReview';
+export type AgentName = 'approvalReview' | 'offboarding' | 'renewalReview';
+export type SuggestingAgent = 'offboarding' | 'renewalReview';
+export type SubjectType =
+  'purchaseOrders' | 'disposals' | 'people' | 'entitlements';
 export type RunStatus =
   'running' | 'pending' | 'accepted' | 'dismissed' | 'failed' | 'superseded';
 
@@ -36,31 +43,81 @@ export interface ApprovalReviewResult {
   readonly comment: string;
 }
 
-export interface AgentRun {
+/** One change a suggestion proposes, as its card lists it. */
+export interface SuggestedChange {
+  readonly op: string;
+  readonly kind: 'device' | 'stock' | 'seat' | 'entitlement';
+  readonly action:
+    | 'return'
+    | 'transfer'
+    | 'takeBack'
+    | 'reclaim'
+    | 'adjustSeats'
+    | 'stopAutoRenew'
+    | 'startAutoRenew';
+  readonly subject: string;
+  readonly nextStatus?: string | null;
+  readonly target?: { readonly id: string; readonly name: string } | null;
+  readonly quantity?: number | null;
+  readonly reason: string;
+}
+
+/** What 离职回收 and 授权续费 hand back. */
+export interface SuggestionResult {
+  readonly title: string;
+  readonly summary: string;
+  readonly changes: readonly SuggestedChange[];
+  readonly notes: readonly string[];
+  readonly risks: readonly string[];
+  /** 授权续费's verdict, the seats it keeps and what that saves a year. */
+  readonly recommendation?: 'renew' | 'reduce' | 'lapse';
+  readonly seatCount?: number | null;
+  readonly saving?: string | null;
+  readonly reasons?: readonly string[];
+}
+
+interface RunBase {
   readonly id: string;
-  readonly agent: AgentName;
   readonly trigger: string;
   readonly startedById: string | null;
-  readonly subjectType: 'purchaseOrders' | 'disposals';
   readonly subjectId: string;
   readonly refId: string | null;
   readonly deciderId: string | null;
   readonly status: RunStatus;
-  /** For the run's decider alone; null for anyone else. */
-  readonly result: ApprovalReviewResult | null;
   readonly failure: string | null;
   readonly revisesId: string | null;
   readonly instruction: string | null;
-  readonly decision: 'approved' | 'rejected' | null;
+  readonly decision: 'approved' | 'rejected' | 'accepted' | null;
   readonly comment: string | null;
   readonly decidedById: string | null;
   readonly decidedAt: string | null;
   readonly model: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
-  /** The request it is about, as its approval names it. */
+  /** What it is about: the request, the leaver, the entitlement. */
   readonly title: string | null;
 }
+
+export interface ApprovalReviewRun extends RunBase {
+  readonly agent: 'approvalReview';
+  readonly subjectType: 'purchaseOrders' | 'disposals';
+  /** For the run's decider alone; null for anyone else. */
+  readonly result: ApprovalReviewResult | null;
+}
+
+export interface SuggestionRun extends RunBase {
+  readonly agent: SuggestingAgent;
+  readonly subjectType: 'people' | 'entitlements';
+  /** For the run's decider alone; null for anyone else. */
+  readonly result: SuggestionResult | null;
+  /** The plan it became once accepted. */
+  readonly planId: string | null;
+}
+
+export type AgentRun = ApprovalReviewRun | SuggestionRun;
+
+export const isSuggestion = (run: AgentRun): run is SuggestionRun =>
+  run.agent !== 'approvalReview';
 
 export interface RunCounts {
   readonly runs: number;
@@ -199,15 +256,33 @@ export function useLatestReview(
   subjectType: 'purchaseOrders' | 'disposals',
   subjectId: string,
   enabled = true,
-): UseQueryResult<AgentRun | null> {
+): UseQueryResult<ApprovalReviewRun | null> {
+  return useLatestRun<ApprovalReviewRun>(
+    'approvalReview',
+    subjectType,
+    subjectId,
+    enabled,
+  );
+}
+
+/**
+ * A record's newest run of one agent, for the reader; null when there is
+ * none. A leaver's is the reader's own part of their things.
+ */
+export function useLatestRun<Run extends AgentRun = AgentRun>(
+  agent: AgentName,
+  subjectType: SubjectType,
+  subjectId: string,
+  enabled = true,
+): UseQueryResult<Run | null> {
   const api = useApi();
   return useQuery({
-    queryKey: [...keys.runs, 'latest', subjectType, subjectId],
+    queryKey: [...keys.runs, 'latest', agent, subjectType, subjectId],
     queryFn: async () =>
       (
-        await api.request<{ data: AgentRun | null }>({
+        await api.request<{ data: Run | null }>({
           path: `${AGENT_RUNS_PATH}/latest`,
-          query: { agent: 'approvalReview', subjectType, subjectId },
+          query: { agent, subjectType, subjectId },
         })
       ).data,
     enabled: enabled && Boolean(subjectId),
@@ -215,12 +290,17 @@ export function useLatestReview(
   });
 }
 
-/** The approver asks for a review, or redoes the waiting one in their words. */
+/**
+ * The decider asks an agent to look at a record — a request waiting on
+ * them, a leaver's things, an entitlement they answer for — or redoes the
+ * waiting run in their words. Without `agent`, 审批审阅.
+ */
 export function useAskReview(): UseMutationResult<
   unknown,
   Error,
   {
-    readonly subjectType: 'purchaseOrders' | 'disposals';
+    readonly agent?: AgentName;
+    readonly subjectType: SubjectType;
     readonly subjectId: string;
     readonly revise?: { readonly runId: string; readonly instruction: string };
   }
@@ -228,13 +308,55 @@ export function useAskReview(): UseMutationResult<
   const api = useApi();
   const refresh = useRefreshRuns();
   return useMutation({
-    mutationFn: (input) =>
+    mutationFn: ({ agent = 'approvalReview', ...input }) =>
       api.request({
         path: AGENT_RUNS_PATH,
         method: 'POST',
-        json: { agent: 'approvalReview', ...input },
+        json: { agent, ...input },
       }),
     onSuccess: refresh,
+  });
+}
+
+/**
+ * The decider carries out the changes they kept (indexes into the
+ * suggestion's changes); every page those changes touch reloads.
+ */
+export function useAcceptSuggestion(): UseMutationResult<
+  { readonly run: SuggestionRun; readonly plan: Plan | null },
+  Error,
+  { readonly run: SuggestionRun; readonly keep: readonly number[] }
+> {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ run, keep }) =>
+      (
+        await api.request<{
+          data: { run: SuggestionRun; plan: Plan | null };
+        }>({
+          path: `${AGENT_RUNS_PATH}/${run.id}/accept`,
+          method: 'POST',
+          json: { keep },
+        })
+      ).data,
+    // Devices, stock, seats and people all may have changed.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itam'] }),
+  });
+}
+
+/** The plan an accepted suggestion became, with what each step did. */
+export function useRunPlan(run: SuggestionRun): UseQueryResult<Plan | null> {
+  const api = useApi();
+  return useQuery({
+    queryKey: [...keys.runs, run.id, 'plan'],
+    queryFn: async () =>
+      (
+        await api.request<{ data: Plan | null }>({
+          path: `${AGENT_RUNS_PATH}/${run.id}/plan`,
+        })
+      ).data,
+    enabled: run.status === 'accepted' && Boolean(run.planId),
   });
 }
 
@@ -243,7 +365,7 @@ export function useDecideReview(): UseMutationResult<
   unknown,
   Error,
   {
-    readonly run: AgentRun;
+    readonly run: ApprovalReviewRun;
     readonly decision: 'approved' | 'rejected';
     readonly comment: string;
   }
