@@ -244,24 +244,34 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
         // The create dialog shows the category and manufacturer the model
         // brings, and sends them back; they always follow the model, so
         // they are accepted here and dropped.
+        // `assignTo` (2026-10-16): created 使用中, assigned to that person in
+        // the same step, which also takes `assign`.
         const {
           categoryId: _category,
           manufacturerId: _manufacturer,
+          assignTo,
           ...input
         } = deviceSchema
           .extend({
             categoryId: id.nullable().optional(),
             manufacturerId: id.nullable().optional(),
+            assignTo: assignSchema.strict().optional(),
           })
           .strict()
           .parse(await readJsonObject(context));
         const conditions = await decide(context, 'create', {
           fields: { input: Object.keys(input) },
         });
+        const assignConditions = assignTo
+          ? await decide(context, 'assign')
+          : undefined;
         const created = await devices.create(
           input,
           operationContext(context),
           conditions,
+          assignTo && assignConditions
+            ? { input: assignTo, conditions: assignConditions }
+            : undefined,
         );
         // A device a platform already reports is linked at once (device
         // sync, step 2); a failure there never undoes the create.

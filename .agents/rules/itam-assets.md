@@ -236,6 +236,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   is not enough on its own: every stored grant states an explicit list, so
   `ADDED_FIELDS` in `reconcile-grants.ts` is what an existing database
   learns it from.
+- **A new device starts 库存中 or 使用中** (2026-10-16): 创建设备 asks for
+  the status, and 使用中 asks for the person, sent as `assignTo` with
+  `POST /itam/devices`; the service assigns in the create's transaction
+  (`create(…, assign)`, which also takes `assign`), so a refused assignment
+  leaves no device. Other statuses need their own details (a loan's return
+  date, a repair) and stay the device page's acts. Longer record forms are
+  two fields to a row by default (`RecordFormDialog`, more than four
+  fields).
 - **A model fills its category's extended fields too, as the defaults its
   new devices start with** (2026-10-06, migration
   `202610060004_model_attributes`, `models.attributes`). Every template field

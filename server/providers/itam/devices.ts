@@ -145,10 +145,19 @@ export interface DeviceService {
     field: CountField,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Readonly<Record<string, number>>>;
+  /**
+   * With `assign`, the new device goes straight into use (2026-10-16): it is
+   * assigned in the same transaction, so a refused assignment leaves no
+   * device behind; the caller decided `assign` for `assign.conditions`.
+   */
   create(
     input: DeviceInput,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
+    assign?: {
+      readonly input: AssignInput;
+      readonly conditions: DatabaseAuthorizationConditions;
+    },
   ): Promise<Row>;
   /** Creates inside a caller-owned transaction (receiving a purchase order); the caller authorized. */
   createWithin(
@@ -1228,13 +1237,21 @@ export function createDeviceService(
       return decode(values);
     },
 
-    async create(input, context, conditions) {
+    async create(input, context, conditions, assign) {
       assertInputFields(input, conditions.fieldAccess?.input ?? '*');
       let id = '';
       await database.transaction(async (connection) => {
         const values = await buildCreateValues(connection, input, context);
         id = String(values.id);
         await insert(connection, values, context);
+        if (assign)
+          await assignOp(
+            id,
+            assign.input,
+            context,
+            assign.conditions,
+            connection,
+          );
       });
       const created = await findRaw(id);
       return shape(created ?? {}, conditions);

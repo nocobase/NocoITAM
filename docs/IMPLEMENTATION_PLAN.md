@@ -2930,6 +2930,14 @@ sight, unlike the other two tabs' kept-off records; it is now listed in a
 difference again. The storage and the rule are unchanged: an ignored
 difference returns by itself when the platform reports another value.
 
+### 2026-10-16 创建设备: start in use, and 补登记 for the MDM user
+
+创建设备 asks whether the device starts 库存中 or 使用中, and for 使用中 the
+person it goes to; the server creates and assigns in one transaction. 补登记
+starts the device 使用中 for the platform's primary user when they are a
+person on the register, since a device saved 库存中 while it is online came
+straight back as 状态不符. Longer forms are two fields to a row.
+
 ## Template upgrade: beta.22 → beta.43 (2026-09-23)
 
 Merged 21 template releases. The framework layer moved: `client/shell/` became
