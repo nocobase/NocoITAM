@@ -18,6 +18,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   had. Deleting such a record deletes its rows in `lifecycleTransitions` and
   `lifecycleEffectRuns`; the demo lists both as dependents. Read the
   development guide's `references/lifecycle.md` before adding the next one.
+- `202610180001_disposal_lifecycle` was corrected after it was merged
+  (2026-10-16), the one exception to "a merged migration is history": its
+  backfill wrote `updatedAt` as it reads back (local text) into the zoned
+  `statusChangedAt` and failed on every database that had a disposal, so no
+  such database had run it, and a later migration could not have helped. The
+  schema it makes is unchanged; a database that ran it while it had no
+  disposals reports checksum drift, which `pnpm nocobase db repair` clears.
+  A backfill into a `datetimeTz` field passes a `Date`.
 - Inside `database.transaction(async (connection) => …)` every read and write,
   including calls into other services, must go through `connection.query`. The
   SQLite pool holds one connection, so a read through `database.query()` while

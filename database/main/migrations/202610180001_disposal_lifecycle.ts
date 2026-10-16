@@ -30,17 +30,30 @@ const migration: MigrationDefinition = defineMigration({
     });
     // When each disposal entered the state it is in: its last write is the
     // nearest the table knows. The query builder has no column-to-column
-    // update, so each row is read and written back.
+    // update, so each row is read and written back. `updatedAt` is a
+    // datetime without a zone and reads back as local text, which the
+    // zoned field refuses as it is, so it goes back as the instant it names
+    // (2026-10-16: the first version wrote the text and failed on every
+    // database that had a disposal; only empty ones ran it).
     const rows = await query
       .selectFrom('disposals')
       .select(['id', 'updatedAt'])
       .execute<{ id: string; updatedAt: unknown }>();
-    for (const row of rows)
+    for (const row of rows) {
+      const value = row.updatedAt;
+      const at =
+        value instanceof Date
+          ? value
+          : typeof value === 'string' || typeof value === 'number'
+            ? new Date(value)
+            : null;
+      if (!at || Number.isNaN(at.getTime())) continue;
       await query
         .updateTable('disposals')
-        .set({ statusChangedAt: row.updatedAt })
+        .set({ statusChangedAt: at })
         .where('id', '=', row.id)
         .execute();
+    }
 
     await builder.createCollection('lifecycleTransitions', (c) => {
       c.bigInt('id').primary().autoIncrement().notNull();

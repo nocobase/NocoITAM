@@ -3,6 +3,7 @@ import addRepairNo from '../../database/main/migrations/202609190002_add_repair_
 import compositeGrants from '../../database/main/migrations/202609280007_composite_grants.js';
 import requestOwner from '../../database/main/migrations/202610050001_request_owner.js';
 import auditOwner from '../../database/main/migrations/202610050002_audit_owner.js';
+import disposalLifecycle from '../../database/main/migrations/202610180001_disposal_lifecycle.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -387,6 +388,45 @@ describe('ITAM migrations', () => {
     ).toBe(true);
     expect(await client.schema.hasTable('lifecycle_transitions')).toBe(true);
     expect(await client.schema.hasTable('lifecycle_effect_runs')).toBe(true);
+  });
+
+  it('dates when a disposal already there entered its state, from its last write', async () => {
+    // The first version wrote `updatedAt` as it reads back — local text —
+    // into the zoned field and failed on every database with a disposal.
+    db = await createTestDatabase();
+    const connection = db.database.connection();
+    const context = {
+      connection,
+      query: connection.query,
+      builder: connection.builder,
+    };
+    await disposalLifecycle.down!(context);
+    const written = new Date('2026-10-16T14:51:55.255Z');
+    await connection.query
+      .insertInto('disposals')
+      .values({
+        id: 'dp',
+        disposalNo: 'DP-1',
+        method: 'scrap',
+        reason: 'other',
+        ownerId: 'sam',
+        status: 'pendingApproval',
+        createdAt: written,
+        updatedAt: written,
+      })
+      .execute();
+    await disposalLifecycle.up(context);
+    const row = await connection.query
+      .selectFrom('disposals')
+      .select(['statusChangedAt', 'lifecycleVersion'])
+      .executeTakeFirst<{
+        statusChangedAt: unknown;
+        lifecycleVersion: unknown;
+      }>();
+    expect(new Date(String(row?.statusChangedAt)).getTime()).toBe(
+      written.getTime(),
+    );
+    expect(Number(row?.lifecycleVersion)).toBe(0);
   });
 
   it('is applied once and rolls back cleanly', async () => {
