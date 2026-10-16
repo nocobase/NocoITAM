@@ -590,13 +590,10 @@ export default function EntitlementSeatsTab(): ReactElement {
   );
 }
 
-/** Seat holders named on the card before 等 N 个 sends the reader to 席位. */
-const LEAD_HOLDERS = 5;
-
 /**
  * The top of an entitlement's 基本信息, above 负责人: whether its seats
- * are in order, how many there are, are taken and are free, and who holds
- * them — the first few by name, the rest counted.
+ * are in order, and how many there are, are taken and are free. Who holds
+ * them is the 席位 tab, not a row here as well (2026-10-16).
  */
 function EntitlementLead({
   record,
@@ -604,28 +601,6 @@ function EntitlementLead({
   readonly record: ItamRecord;
 }): ReactElement {
   const { t } = useTranslation();
-  const api = useApi();
-  const id = text(record.id);
-  const seats = useQuery({
-    queryKey: ['itam', ENTITLEMENTS_PATH, 'seats', id],
-    queryFn: async () =>
-      (
-        await api.request<{
-          data: { seats: ItamRecord[] };
-        }>({ path: `${ENTITLEMENTS_PATH}/${id}/seats` })
-      ).data,
-    enabled: Boolean(id),
-  });
-  const held = seats.data?.seats ?? [];
-  const shown = held.slice(0, LEAD_HOLDERS);
-  const idsOf = (type: string) =>
-    shown
-      .filter((seat) => seat.holderType === type && seat.holderId)
-      .map((seat) => text(seat.holderId));
-  const names = useReferenceNames([
-    { collection: 'people', ids: idsOf('person') },
-    { collection: 'devices', ids: idsOf('device') },
-  ]);
   const count = (value: unknown) =>
     value === null || value === undefined || value === '' ? '—' : text(value);
   const compliance = text(record.complianceStatus);
@@ -640,38 +615,6 @@ function EntitlementLead({
       </InfoRow>
       <InfoRow label={t('fields.availableSeats')}>
         {count(record.availableSeats)}
-      </InfoRow>
-      <InfoRow label={t('stock.holder')}>
-        {held.length === 0 ? (
-          '—'
-        ) : (
-          <span className='flex flex-wrap items-center gap-x-3 gap-y-1'>
-            {shown.map((seat) =>
-              seat.holderId ? (
-                <HolderCell
-                  key={text(seat.id)}
-                  holderType={text(seat.holderType)}
-                  holderId={text(seat.holderId)}
-                  names={
-                    names[seat.holderType === 'device' ? 'devices' : 'people']
-                  }
-                />
-              ) : (
-                // A subscription seat may name an account and nobody yet.
-                <span key={text(seat.id)} className='wrap-anywhere'>
-                  {text(seat.account) || '—'}
-                </span>
-              ),
-            )}
-            {held.length > shown.length ? (
-              <span className='text-muted-foreground'>
-                {t('entitlements.moreHolders', {
-                  count: held.length - shown.length,
-                })}
-              </span>
-            ) : null}
-          </span>
-        )}
       </InfoRow>
     </>
   );
