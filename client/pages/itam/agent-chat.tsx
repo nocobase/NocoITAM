@@ -101,8 +101,14 @@ export default function AgentChatPage(): ReactElement {
   const detailOpen = isNew || openId !== null;
   // The reader's first conversation: no list beside it yet.
   const first = none && !archived;
+  // In the foreground's black, as NocoCRM's (its `contrast` button), set
+  // here rather than as a variant of the shadcn primitive.
   const newButton = (
-    <Button render={<Link to={`${PATH}/new`} />} nativeButton={false}>
+    <Button
+      render={<Link to={`${PATH}/new`} />}
+      nativeButton={false}
+      className='bg-foreground text-background hover:bg-foreground/85'
+    >
       <Plus />
       {t('ai.conversations.new')}
     </Button>
