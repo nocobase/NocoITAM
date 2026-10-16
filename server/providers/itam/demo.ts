@@ -22,7 +22,7 @@ import type {
 } from './procurement.js';
 import type { RepairService } from './repairs.js';
 import type { StockService } from './stock.js';
-import { addDays, isoDate } from './dates.js';
+import { addDays, dbDateTime, isoDate } from './dates.js';
 
 /**
  * Demo data for a first look: a fictional company ("Demo Co.") with the
@@ -383,6 +383,27 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     monitorAuditName: 'Q2 count · monitors',
     spotAuditName: 'Spot check · warehouse',
     spotAuditCancel: 'Covered by the Q3 warehouse count',
+    webcamCategory: 'Webcam',
+    hubItem: 'Dell DA310 USB-C hub',
+    hubSpec: 'USB-C to HDMI, DisplayPort, USB-A, USB-C and Ethernet',
+    webcamItem: 'Logitech Brio 4K webcam',
+    webcamSpec: '4K webcam with HDR and a privacy shutter',
+    paperItem: 'A4 copy paper, 80 g',
+    paperSpec: 'A4, 80 g/m², 500 sheets a ream',
+    batteryItem: 'AA alkaline batteries',
+    batterySpec: 'AA alkaline, 1.5 V',
+    ssdSpec: 'NVMe M.2 SSD, PCIe 4.0, 2 TB',
+    ramSpec: '16 GB DDR5-5600 SO-DIMM, CL46',
+    m365License: 'Microsoft 365 Business Standard',
+    adobeLicense: 'Adobe Creative Cloud for teams',
+    chatgptLicense: 'ChatGPT Team',
+    windowsLicense: 'Windows 11 Pro upgrades',
+    m365Growth: 'Four more seats for this year’s new hires',
+    tonerTopUp: 'Bought locally while the order was on its way',
+    paperDelivery: 'Quarterly paper delivery',
+    miceDamaged: 'Scroll wheel broken; not worth repairing',
+    returnedGood: 'Good condition; wiped and back on the shelf',
+    returnedLoan: 'Back from the customer visit, all accessories present',
   },
   'zh-CN': {
     onboardingBatch: '新员工入职配备',
@@ -444,6 +465,27 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     monitorAuditName: '二季度盘点 · 显示器',
     spotAuditName: '临时抽盘 · 仓库',
     spotAuditCancel: '已并入三季度仓库盘点',
+    webcamCategory: '摄像头',
+    hubItem: 'Dell DA310 USB-C 扩展器',
+    hubSpec: 'USB-C 转 HDMI、DisplayPort、USB-A、USB-C 和网口',
+    webcamItem: 'Logitech Brio 4K 摄像头',
+    webcamSpec: '4K 摄像头，支持 HDR，带隐私挡板',
+    paperItem: 'A4 复印纸 80g',
+    paperSpec: 'A4，80 克，每包 500 张',
+    batteryItem: 'AA 碱性电池',
+    batterySpec: 'AA 碱性电池，1.5 V',
+    ssdSpec: 'NVMe M.2 固态硬盘，PCIe 4.0，2 TB',
+    ramSpec: '16 GB DDR5-5600 笔记本内存，CL46',
+    m365License: 'Microsoft 365 商业标准版',
+    adobeLicense: 'Adobe Creative Cloud 团队版',
+    chatgptLicense: 'ChatGPT Team',
+    windowsLicense: 'Windows 11 专业版升级授权',
+    m365Growth: '为今年的新员工增加 4 个席位',
+    tonerTopUp: '订单未到，先在本地采购应急',
+    paperDelivery: '每季度纸张配送',
+    miceDamaged: '滚轮损坏，不值得维修',
+    returnedGood: '完好，已清除数据并放回库存',
+    returnedLoan: '客户拜访归来，配件齐全',
   },
 };
 
@@ -678,6 +720,113 @@ export function createDemoService(dependencies: {
             .execute();
           return row;
         };
+        // The demo's clock (2026-10-16). The services stamp every history
+        // line, movement, assignment period and seat with the moment they
+        // run, so an import used to read as one afternoon: every timeline
+        // said 今天. `on(day)` dates what the operations after it write —
+        // until the next `on()` or `off()` — on that day (days from now,
+        // negative in the past): each row written since keeps its order and
+        // moves to that day at office hours, a millisecond of the import
+        // becoming a second. A laptop bought three years ago then reads as
+        // bought, issued, repaired and counted across those three years,
+        // and a stock item's movements run over the months they took. Only
+        // rows written while a day is set move, so nothing the demo did not
+        // write is touched; what is written after `off()` keeps today.
+        const DATED: readonly (readonly [string, string])[] = [
+          ['historyEvents', 'createdAt'],
+          ['changeLogs', 'createdAt'],
+          ['stockMovements', 'createdAt'],
+          ['stockHoldings', 'createdAt'],
+          ['stockHoldings', 'updatedAt'],
+          ['allocations', 'createdAt'],
+          ['allocations', 'endedAt'],
+          ['entitlementSeats', 'assignedAt'],
+          ['entitlementSeats', 'releasedAt'],
+          ['approvals', 'requestedAt'],
+          ['approvals', 'decidedAt'],
+          ['purchaseReceipts', 'createdAt'],
+          ['auditItems', 'countedAt'],
+          ['auditItems', 'resolvedAt'],
+          ['auditTasks', 'createdAt'],
+          ['auditTasks', 'startedAt'],
+          ['auditTasks', 'completedAt'],
+          ['devices', 'createdAt'],
+          ['devices', 'assignedAt'],
+          ['devices', 'lastAuditedAt'],
+          ['stockItems', 'createdAt'],
+          ['entitlements', 'createdAt'],
+          ['purchaseOrders', 'createdAt'],
+          ['repairs', 'createdAt'],
+          ['disposals', 'createdAt'],
+          ['people', 'createdAt'],
+          ['vendors', 'createdAt'],
+        ];
+        const instant = (value: unknown): number =>
+          value instanceof Date ? value.getTime() : Date.parse(String(value));
+        // When a day's first entry is made: between nine and five, varying
+        // with the day so the timelines do not all read 09:00.
+        const officeHours = (day: number): number => {
+          const at = new Date(Date.now() + day * DAY);
+          const spread = Math.abs(Math.round(day));
+          at.setHours(9 + ((spread * 5) % 8), (spread * 17) % 60, 0, 0);
+          return at.getTime();
+        };
+        // How far into each day the entries already dated reach, so a second
+        // `on()` for the same day follows the first instead of overlapping it.
+        const dayEnds = new Map<string, number>();
+        let clock:
+          | { readonly since: string; readonly sinceMs: number; base: number }
+          | undefined;
+        const off = async (): Promise<void> => {
+          if (!clock) return;
+          const { since, sinceMs, base } = clock;
+          clock = undefined;
+          let latest = base;
+          for (const [table, column] of DATED) {
+            const rows = await database
+              .query()
+              .selectFrom(table)
+              .select(['id', column])
+              .where(column, '>=', since)
+              .execute<Row>();
+            for (const row of rows) {
+              const at = Math.min(
+                base + Math.max(0, instant(row[column]) - sinceMs) * 1000,
+                Date.now() - 60_000,
+              );
+              latest = Math.max(latest, at);
+              await database
+                .query()
+                .updateTable(table)
+                .set({ [column]: new Date(at) })
+                .where('id', '=', String(row.id))
+                .execute();
+            }
+          }
+          const key = isoDate(new Date(base));
+          dayEnds.set(key, Math.max(dayEnds.get(key) ?? 0, latest));
+        };
+        const on = async (day: number): Promise<void> => {
+          await off();
+          const start = officeHours(day);
+          const before = dayEnds.get(isoDate(new Date(start)));
+          const now = new Date();
+          clock = {
+            since: dbDateTime(now),
+            sinceMs: now.getTime(),
+            base:
+              before === undefined ? start : Math.max(start, before + 300_000),
+          };
+        };
+        /** Days from today to a YYYY-MM-DD date. */
+        const dayOf = (date: unknown): number =>
+          Math.round(
+            (Date.parse(
+              `${date instanceof Date ? isoDate(date) : String(date).slice(0, 10)}T12:00:00`,
+            ) -
+              Date.parse(`${isoDate(new Date())}T12:00:00`)) /
+              DAY,
+          );
         // The demo's own sign-ins, so every role can be tried straight away.
         // Each is tracked like any other demo record and removed when the demo
         // is cleared.
@@ -753,7 +902,9 @@ export function createDemoService(dependencies: {
         await reached(5);
         // Master data
         // Vendors are fictional companies; their names read in the
-        // deployment's language and keep the demo marker.
+        // deployment's language and keep the demo marker. They were on the
+        // books long before the oldest device.
+        await on(-1950);
         const vendorNames = VENDOR_NAMES[locale] ?? VENDOR_NAMES['en-US'];
         const reseller = await md('vendors', {
           name: vendorNames.reseller.name,
@@ -812,7 +963,21 @@ export function createDemoService(dependencies: {
             ),
           };
         };
+        // Master data the demo needs that the seeds do not carry — a webcam
+        // category, the models of a few stock items — is created and tracked,
+        // unless a record of that name is there already, which is used as it
+        // is and left alone on clearing.
+        const named = async (collection: string, input: Row): Promise<Row> =>
+          (await database
+            .query()
+            .selectFrom(collection)
+            .selectAll()
+            .where('name', '=', String(input.name))
+            .executeTakeFirst<Row>()) ?? (await md(collection, input));
         const mouseCat = await seeded('cat-mouse');
+        const keyboardCat = await seeded('cat-keyboard');
+        const tonerCat = await seeded('cat-toner');
+        const printSuppliesCat = await seeded('cat-print-supplies');
         const ramCat = await seeded('cat-memory');
         const dockCat = await seeded('cat-dock');
         const headsetCat = await seeded('cat-headset');
@@ -861,7 +1026,14 @@ export function createDemoService(dependencies: {
         const itDept = await seededIn('departments', 'dept-it');
         // The leaver is IT support; the rest are the two business teams.
         const departmentsByIndex = [rnd, rnd, sales, itDept, rnd, sales];
+        // When each joined (2026-10-16): the first four were there when the
+        // 2023 laptop batch came in, the QA engineer and the presales
+        // consultant came later and took over equipment others had used.
+        // Each person is entered a few days before they start.
+        const HIRED_DAYS_AGO = [1150, 1120, 1610, 1560, 290, 330];
         for (const [index, entry] of personNames.entries()) {
+          const hiredDaysAgo = HIRED_DAYS_AGO[index] ?? 400;
+          await on(-hiredDaysAgo - 3);
           // Only the leaver signs in: they are IT, and a person who has left
           // still owns the records that name them, which point at a sign-in.
           // The others are employees, who are people in the register and not
@@ -885,7 +1057,7 @@ export function createDemoService(dependencies: {
               position: entry.position,
               departmentId: departmentsByIndex[index]?.id,
               locationId: floor3.id,
-              hireDate: daysFromNow(-400 + index * 60),
+              hireDate: daysFromNow(-hiredDaysAgo),
               ...(userId ? { userId } : {}),
             }),
           );
@@ -897,7 +1069,10 @@ export function createDemoService(dependencies: {
         // equipment they are issued has somebody to be assigned to.
         const itDepartment = itDept;
         const staff = new Map<StaffKey, Row>();
+        const STAFF_HIRED_DAYS_AGO = [1700, 1400, 1100];
         for (const [index, spec] of staffSpecs.entries()) {
+          const hiredDaysAgo = STAFF_HIRED_DAYS_AGO[index] ?? 900;
+          await on(-hiredDaysAgo - 3);
           staff.set(
             spec.key,
             await md('people', {
@@ -910,7 +1085,7 @@ export function createDemoService(dependencies: {
               position: spec.position,
               departmentId: itDepartment.id,
               locationId: floor3.id,
-              hireDate: daysFromNow(-900 + index * 120),
+              hireDate: daysFromNow(-hiredDaysAgo),
               ...(staffUserIds[index] ? { userId: staffUserIds[index] } : {}),
             }),
           );
@@ -924,8 +1099,10 @@ export function createDemoService(dependencies: {
         const leaverUserId = asText(chenJie.userId) ?? writerId;
 
         // Devices: a batch of laptops bought together (same warranty), monitors, and problem records.
-        const device = async (input: Row) =>
-          track(
+        // Each is entered on the day it was bought.
+        const device = async (input: Row) => {
+          if (input.purchaseDate) await on(dayOf(input.purchaseDate));
+          return track(
             'devices',
             await devices.create(
               {
@@ -936,6 +1113,7 @@ export function createDemoService(dependencies: {
               all('devices', 'create'),
             ),
           );
+        };
         // Extended fields follow the seeded laptop template (os, cpu, memory,
         // storage, macAddress, hostname, screenSize) so the device pages show
         // filled-in values.
@@ -1453,9 +1631,17 @@ export function createDemoService(dependencies: {
           .where('id', '=', String(idleLaptop.id))
           .execute();
 
-        // Assignments
-        const assign = (deviceId: unknown, personId: unknown) =>
-          devices.assign(
+        // Assignments, each on its day (2026-10-16): a device goes out a few
+        // days after it is bought, or when the person it is for joins, and a
+        // few changed hands on the way — so a three-year-old laptop's history
+        // reads as three years of use.
+        const assign = async (
+          deviceId: unknown,
+          personId: unknown,
+          day?: number,
+        ) => {
+          if (day !== undefined) await on(day);
+          return devices.assign(
             String(deviceId),
             {
               targetType: 'person',
@@ -1464,29 +1650,56 @@ export function createDemoService(dependencies: {
             context,
             all('devices', 'assign'),
           );
-        await assign(laptops[0].id, liNa.id);
-        await assign(laptops[1].id, zhangWei.id);
-        await assign(laptops[2].id, liuYang.id);
-        await assign(laptops[3].id, wangFang.id);
-        await assign(airs[0].id, zhaoMin.id);
-        await assign(thinkpads[0].id, liuYang.id);
-        await assign(expiredLaptop.id, chenJie.id);
+        };
+        const giveBack = async (deviceId: unknown, day: number) => {
+          await on(day);
+          return devices.return(
+            String(deviceId),
+            { condition: texts.returnedGood, locationId: String(warehouse.id) },
+            context,
+            all('devices', 'return'),
+          );
+        };
+        const supportPerson = staff.get('support');
+        await assign(laptops[0].id, liNa.id, -1055);
+        await assign(laptops[1].id, zhangWei.id, -1055);
+        // The third went to IT support first; it came back when he moved to
+        // his ThinkPad, and went to the QA engineer who had just joined.
+        if (supportPerson) {
+          await assign(laptops[2].id, supportPerson.id, -1054);
+          await giveBack(laptops[2].id, -296);
+        }
+        await assign(laptops[2].id, liuYang.id, -288);
+        await assign(laptops[3].id, wangFang.id, -1054);
+        await assign(airs[0].id, zhaoMin.id, -145);
+        await assign(thinkpads[0].id, liuYang.id, -55);
+        await assign(expiredLaptop.id, chenJie.id, -1495);
         // A second thing in the leaver's hands, this one answering to 吴静,
         // who writes the demo: their laptop is at the repair shop and answers
         // to IT support, so without this somebody signed in as an asset
         // manager has nothing on the recovery they can actually hand back.
-        await assign(airs[1].id, chenJie.id);
-        await assign(monitors[0].id, liNa.id);
-        await assign(monitors[1].id, zhaoMin.id);
-        await assign(deskPc.id, wangFang.id);
-        await assign(mobile.id, zhaoMin.id);
-        for (const [username, laptop] of staffLaptops)
-          await assign(laptop.id, staff.get(username)!.id);
+        await assign(airs[1].id, chenJie.id, -140);
+        await assign(monitors[0].id, liNa.id, -295);
+        await assign(monitors[1].id, zhaoMin.id, -295);
+        await assign(deskPc.id, wangFang.id, -495);
+        await assign(mobile.id, zhaoMin.id, -195);
+        for (const [key, laptop] of staffLaptops)
+          await assign(
+            laptop.id,
+            staff.get(key)!.id,
+            key === 'approver' ? -298 : -295,
+          );
         if (deskOwner)
-          for (const owned of deskDevices) await assign(owned.id, deskOwner.id);
+          for (const owned of deskDevices)
+            await assign(owned.id, deskOwner.id, dayOf(owned.purchaseDate) + 2);
         // Shared equipment lives at its location rather than with a person.
-        const assignTo = (deviceId: unknown, locationId: unknown) =>
-          devices.assign(
+        const assignTo = async (
+          deviceId: unknown,
+          locationId: unknown,
+          day: number,
+        ) => {
+          await on(day);
+          return devices.assign(
             String(deviceId),
             {
               targetType: 'location',
@@ -1495,12 +1708,88 @@ export function createDemoService(dependencies: {
             context,
             all('devices', 'assign'),
           );
-        await assignTo(rack.id, serverRoom.id);
-        await assignTo(coreSwitch.id, serverRoom.id);
-        await assignTo(vm.id, serverRoom.id);
-        await assignTo(officePrinter.id, floor3.id);
+        };
+        await assignTo(rack.id, serverRoom.id, -797);
+        await assignTo(coreSwitch.id, serverRoom.id, -897);
+        await assignTo(vm.id, serverRoom.id, -99);
+        await assignTo(officePrinter.id, floor3.id, -598);
+        // A loan's due date. The service takes none in the past, so a loan
+        // dated back is made due in three days and its date is corrected
+        // afterwards: on the device, on the loan period and in the history
+        // line that names it.
+        const dueOn = async (deviceId: unknown, due: string) => {
+          const id = String(deviceId);
+          await database
+            .query()
+            .updateTable('devices')
+            .set({ expectedReturnDate: due })
+            .where('id', '=', id)
+            .execute();
+          const period = await database
+            .query()
+            .selectFrom('allocations')
+            .select(['id'])
+            .where('subjectId', '=', id)
+            .where('action', '=', 'loan')
+            .orderBy('createdAt', 'desc')
+            .executeTakeFirst<Row>();
+          if (period)
+            await database
+              .query()
+              .updateTable('allocations')
+              .set({ expectedReturnDate: due })
+              .where('id', '=', String(period.id))
+              .execute();
+          const line = await database
+            .query()
+            .selectFrom('historyEvents')
+            .select(['id', 'summary', 'payload'])
+            .where('subjectId', '=', id)
+            .where('type', '=', 'loan')
+            .orderBy('createdAt', 'desc')
+            .executeTakeFirst<Row>();
+          if (line) {
+            const payload = decodeRow(line, {
+              jsonFields: ['payload'],
+            }).payload;
+            await database
+              .query()
+              .updateTable('historyEvents')
+              .set({
+                summary: String(line.summary).replace(/due \S*$/, `due ${due}`),
+                payload: {
+                  ...(payload && typeof payload === 'object' ? payload : {}),
+                  expectedReturnDate: due,
+                },
+              })
+              .where('id', '=', String(line.id))
+              .execute();
+          }
+        };
+        // The spare MacBook Pro lent out before: a week with the QA engineer
+        // for a customer visit, back a day early.
+        await on(-260);
+        await devices.loan(
+          String(laptops[4].id),
+          {
+            targetType: 'person',
+            targetId: String(liuYang.id),
+            expectedReturnDate: daysFromNow(3),
+          },
+          context,
+          all('devices', 'loan'),
+        );
+        await dueOn(laptops[4].id, daysFromNow(-251));
+        await on(-252);
+        await devices.return(
+          String(laptops[4].id),
+          { condition: texts.returnedLoan },
+          context,
+          all('devices', 'return'),
+        );
         // A loan overdue for a week: lent for a few days, then the return
         // date is moved into the past (the service refuses a past date).
+        await on(-10);
         await devices.loan(
           String(laptops[4].id),
           {
@@ -1511,12 +1800,7 @@ export function createDemoService(dependencies: {
           context,
           all('devices', 'loan'),
         );
-        await database
-          .query()
-          .updateTable('devices')
-          .set({ expectedReturnDate: daysFromNow(-7) })
-          .where('id', '=', String(laptops[4].id))
-          .execute();
+        await dueOn(laptops[4].id, daysFromNow(-7));
         // Audited long ago: the batch was last counted 400 days back.
         await database
           .query()
@@ -1529,9 +1813,15 @@ export function createDemoService(dependencies: {
           )
           .execute();
 
-        // Stock: an accessory below its minimum, a consumable, a component installed on a laptop.
-        const stockItem = async (input: Row) =>
-          track(
+        // Stock (2026-10-16): each item was stocked one to three years ago
+        // and has been issued, returned, used up and topped up since, so its
+        // movement log and its holders' pages read as the months they took.
+        // What it ends with is what the demo has always shown: one accessory
+        // below its minimum, consumables used on the third floor, components
+        // installed on laptops, an accessory and a seat in the leaver's hands.
+        const stockItem = async (input: Row, day: number) => {
+          await on(day);
+          return track(
             'stockItems',
             await stock.create(
               { locationId: warehouse.id, ...input },
@@ -1539,34 +1829,96 @@ export function createDemoService(dependencies: {
               all('stockItems', 'create'),
             ),
           );
-        const mice = await stockItem({
-          kind: 'accessory',
-          name: 'Logitech MX Master 3S',
-          categoryId: mouseCat.id,
-          modelId: mxMaster.id,
-          manufacturerId: mxMaster.manufacturer.id,
-          totalQuantity: 4,
-          minimumQuantity: 5,
-        });
-        await stock.issue(
-          String(mice.id),
-          { holderType: 'person', holderId: String(liNa.id), quantity: 1 },
-          context,
-          all('stockItems', 'issue'),
+        };
+        type Holder = 'person' | 'location' | 'device';
+        const issue = async (
+          item: Row,
+          holderType: Holder,
+          holder: Row,
+          quantity: number,
+          day: number,
+        ) => {
+          await on(day);
+          await stock.issue(
+            String(item.id),
+            { holderType, holderId: String(holder.id), quantity },
+            context,
+            all('stockItems', 'issue'),
+          );
+        };
+        const takeBack = async (
+          item: Row,
+          holderType: Holder,
+          holder: Row,
+          day: number,
+        ) => {
+          await on(day);
+          await stock.takeBack(
+            String(item.id),
+            { holderType, holderId: String(holder.id), quantity: 1 },
+            context,
+            all('stockItems', 'return'),
+          );
+        };
+        const stockIn = async (
+          item: Row,
+          quantity: number,
+          notes: string,
+          day: number,
+        ) => {
+          await on(day);
+          await stock.stockIn(
+            String(item.id),
+            { quantity, notes },
+            context,
+            all('stockItems', 'stockIn'),
+          );
+        };
+        const approver = staff.get('approver')!;
+        const writer = staff.get('writer')!;
+        const support = staff.get('support')!;
+        // Below its minimum, as it has been for months: one broke, and the
+        // reorder is still waiting to be placed.
+        const mice = await stockItem(
+          {
+            kind: 'accessory',
+            name: 'Logitech MX Master 3S',
+            categoryId: mouseCat.id,
+            modelId: mxMaster.id,
+            manufacturerId: mxMaster.manufacturer.id,
+            totalQuantity: 5,
+            minimumQuantity: 5,
+          },
+          -900,
         );
+        await issue(mice, 'person', zhangWei, 1, -880);
+        await issue(mice, 'person', liNa, 1, -870);
+        await takeBack(mice, 'person', zhangWei, -420);
+        await on(-300);
+        await stock.adjust(
+          String(mice.id),
+          { quantity: -1, reason: 'damaged', notes: texts.miceDamaged },
+          context,
+          all('stockItems', 'update'),
+        );
+        await issue(mice, 'person', liuYang, 1, -285);
+        await takeBack(mice, 'person', liuYang, -60);
         // Stock bought through an order: the order runs request → approval →
-        // ordered → received, so the item shows a purchase record with the
-        // order's vendor and price.
+        // ordered → received, each on its day, so the item shows a purchase
+        // record with the order's vendor and price. `into` is an item already
+        // in stock the delivery joins.
         const purchasedStock = async (order: {
           readonly description: string;
           readonly itemType: 'accessory' | 'consumable' | 'component';
           readonly modelId: string;
-          readonly name: string;
           readonly quantity: number;
           readonly unitPrice: number;
-          readonly minimumQuantity: number;
           readonly orderedDaysAgo: number;
+          readonly into?: Row;
+          readonly name?: string;
+          readonly minimumQuantity?: number;
         }): Promise<Row> => {
+          await on(-order.orderedDaysAgo - 6);
           const created = await track(
             'purchaseOrders',
             await procurement.create(
@@ -1601,6 +1953,7 @@ export function createDemoService(dependencies: {
             context,
             all('purchaseOrders', 'submit'),
           );
+          await on(-order.orderedDaysAgo - 5);
           if (
             (await procurement.get(id, all('purchaseOrders', 'read')))
               ?.status === 'pendingApproval'
@@ -1612,6 +1965,7 @@ export function createDemoService(dependencies: {
               { actorId: approverId, sourceType: 'demo' },
               all('purchaseOrders', 'approve'),
             );
+          await on(-order.orderedDaysAgo);
           await procurement.markOrdered(
             id,
             {
@@ -1622,20 +1976,30 @@ export function createDemoService(dependencies: {
             all('purchaseOrders', 'order'),
           );
           const lines = await procurement.lines(id);
+          // The day after it was due; the latest arrivals are moved again
+          // below, with the rows the receipt wrote.
+          await on(-order.orderedDaysAgo + 8);
           await procurement.receive(
             id,
-            {
-              lineId: String(lines[0].id),
-              quantity: order.quantity,
-              locationId: String(warehouse.id),
-              extra: {
-                name: order.name,
-                minimumQuantity: order.minimumQuantity,
-              },
-            },
+            order.into
+              ? {
+                  lineId: String(lines[0].id),
+                  quantity: order.quantity,
+                  stockItemId: String(order.into.id),
+                }
+              : {
+                  lineId: String(lines[0].id),
+                  quantity: order.quantity,
+                  locationId: String(warehouse.id),
+                  extra: {
+                    name: order.name,
+                    minimumQuantity: order.minimumQuantity,
+                  },
+                },
             context,
             all('purchaseOrders', 'receive'),
           );
+          if (order.into) return order.into;
           const itemId = (await procurement.generated(id)).find(
             (entry) => entry.type === 'stockItem',
           )?.id as string | undefined;
@@ -1653,6 +2017,7 @@ export function createDemoService(dependencies: {
           readonly orderedDaysAgo: number;
           readonly extra: Row;
         }): Promise<Row> => {
+          await on(-order.orderedDaysAgo - 6);
           const created = await track(
             'purchaseOrders',
             await procurement.create(
@@ -1687,6 +2052,7 @@ export function createDemoService(dependencies: {
             context,
             all('purchaseOrders', 'submit'),
           );
+          await on(-order.orderedDaysAgo - 5);
           if (
             (await procurement.get(id, all('purchaseOrders', 'read')))
               ?.status === 'pendingApproval'
@@ -1698,6 +2064,7 @@ export function createDemoService(dependencies: {
               { actorId: approverId, sourceType: 'demo' },
               all('purchaseOrders', 'approve'),
             );
+          await on(-order.orderedDaysAgo);
           await procurement.markOrdered(
             id,
             {
@@ -1708,6 +2075,7 @@ export function createDemoService(dependencies: {
             all('purchaseOrders', 'order'),
           );
           const lines = await procurement.lines(id);
+          await on(-order.orderedDaysAgo + 4);
           await procurement.receive(
             id,
             {
@@ -1725,174 +2093,382 @@ export function createDemoService(dependencies: {
             throw new Error(`${order.description}: no entitlement`);
           return track('entitlements', { id: entitlementId });
         };
-        const keyboards = await purchasedStock({
+        // Keyboards from the shelf for two years, topped up by an order for
+        // the new desks a month ago.
+        const keyboards = await stockItem(
+          {
+            kind: 'accessory',
+            name: 'Logitech MX Keys',
+            categoryId: keyboardCat.id,
+            modelId: mxKeys.id,
+            manufacturerId: mxKeys.manufacturer.id,
+            totalQuantity: 4,
+            minimumQuantity: 3,
+          },
+          -700,
+        );
+        await issue(keyboards, 'person', wangFang, 1, -690);
+        await issue(keyboards, 'person', writer, 1, -415);
+        await purchasedStock({
           description: texts.keyboardOrder,
           itemType: 'accessory',
           modelId: String(mxKeys.id),
-          name: 'Logitech MX Keys',
           quantity: 8,
           unitPrice: 799,
-          minimumQuantity: 3,
           orderedDaysAgo: 40,
+          into: keyboards,
         });
         for (const holder of [zhangWei, liuYang])
-          await stock.issue(
-            String(keyboards.id),
-            { holderType: 'person', holderId: String(holder.id), quantity: 1 },
-            context,
-            all('stockItems', 'issue'),
-          );
-        const docks = await stockItem({
-          kind: 'accessory',
-          name: 'Dell WD22TB4 dock',
-          categoryId: dockCat.id,
-          modelId: wd22.id,
-          manufacturerId: latitude.manufacturer.id,
-          totalQuantity: 6,
-          minimumQuantity: 2,
-        });
-        await stock.issue(
-          String(docks.id),
-          { holderType: 'person', holderId: String(zhangWei.id), quantity: 1 },
-          context,
-          all('stockItems', 'issue'),
+          await issue(keyboards, 'person', holder, 1, -30);
+        const docks = await stockItem(
+          {
+            kind: 'accessory',
+            name: 'Dell WD22TB4 dock',
+            categoryId: dockCat.id,
+            modelId: wd22.id,
+            manufacturerId: latitude.manufacturer.id,
+            totalQuantity: 6,
+            minimumQuantity: 2,
+          },
+          -800,
         );
+        await issue(docks, 'person', zhangWei, 1, -790);
         // The leaver holds one of these too: a dock goes back to stock, which
         // is a different answer from a device's 归还 and from a seat's 回收,
         // and the recovery has to show all three.
-        await stock.issue(
-          String(docks.id),
-          { holderType: 'person', holderId: String(chenJie.id), quantity: 1 },
-          context,
-          all('stockItems', 'issue'),
+        await issue(docks, 'person', chenJie, 1, -700);
+        // Docks went out and came back, so returns show in the history.
+        await issue(docks, 'person', wangFang, 1, -600);
+        await takeBack(docks, 'person', wangFang, -510);
+        await issue(docks, 'person', liuYang, 1, -280);
+        await takeBack(docks, 'person', liuYang, -150);
+        const headsets = await stockItem(
+          {
+            kind: 'accessory',
+            name: 'Logitech Zone Vibe 100',
+            categoryId: headsetCat.id,
+            modelId: zoneVibe.id,
+            manufacturerId: mxMaster.manufacturer.id,
+            totalQuantity: 10,
+            minimumQuantity: 3,
+          },
+          -400,
         );
-        // One dock went out and came back, so a return shows in the history.
-        await stock.issue(
-          String(docks.id),
-          { holderType: 'person', holderId: String(liuYang.id), quantity: 1 },
-          context,
-          all('stockItems', 'issue'),
-        );
-        await stock.takeBack(
-          String(docks.id),
-          { holderType: 'person', holderId: String(liuYang.id), quantity: 1 },
-          context,
-          all('stockItems', 'return'),
-        );
-        const headsets = await stockItem({
-          kind: 'accessory',
-          name: 'Logitech Zone Vibe 100',
-          categoryId: headsetCat.id,
-          modelId: zoneVibe.id,
-          manufacturerId: mxMaster.manufacturer.id,
-          totalQuantity: 10,
-          minimumQuantity: 3,
+        await issue(headsets, 'person', wangFang, 1, -390);
+        await issue(headsets, 'person', zhaoMin, 1, -325);
+        await takeBack(headsets, 'person', wangFang, -120);
+        // A USB-C hub for travelling, lent for trips and back.
+        const hubModel = await named('models', {
+          name: 'DA310',
+          categoryId: dockCat.id,
+          manufacturerId: latitude.manufacturer.id,
+          specification: texts.hubSpec,
         });
-        await stock.issue(
-          String(headsets.id),
-          { holderType: 'person', holderId: String(zhaoMin.id), quantity: 1 },
-          context,
-          all('stockItems', 'issue'),
+        const hubs = await stockItem(
+          {
+            kind: 'accessory',
+            name: texts.hubItem,
+            categoryId: dockCat.id,
+            modelId: hubModel.id,
+            manufacturerId: latitude.manufacturer.id,
+            totalQuantity: 8,
+            minimumQuantity: 2,
+          },
+          -540,
         );
-        const toner = await purchasedStock({
+        await issue(hubs, 'person', wangFang, 1, -400);
+        await takeBack(hubs, 'person', wangFang, -380);
+        await issue(hubs, 'person', zhaoMin, 1, -320);
+        await issue(hubs, 'person', approver, 1, -200);
+        await issue(hubs, 'person', zhangWei, 1, -60);
+        await takeBack(hubs, 'person', zhangWei, -45);
+        // Webcams: one in the third-floor meeting room, the rest with people
+        // who present.
+        const webcamCat = await named('categories', {
+          ...MASTER_DEFAULTS.categories,
+          name: texts.webcamCategory,
+          appliesTo: 'accessory',
+        });
+        const webcamModel = await named('models', {
+          name: 'Brio 4K',
+          categoryId: webcamCat.id,
+          manufacturerId: mxMaster.manufacturer.id,
+          specification: texts.webcamSpec,
+        });
+        const webcams = await stockItem(
+          {
+            kind: 'accessory',
+            name: texts.webcamItem,
+            categoryId: webcamCat.id,
+            modelId: webcamModel.id,
+            manufacturerId: mxMaster.manufacturer.id,
+            totalQuantity: 6,
+            minimumQuantity: 1,
+          },
+          -700,
+        );
+        await issue(webcams, 'location', floor3, 1, -650);
+        await issue(webcams, 'person', wangFang, 1, -640);
+        await issue(webcams, 'person', writer, 1, -410);
+        await issue(webcams, 'person', liuYang, 1, -280);
+        await takeBack(webcams, 'person', liuYang, -100);
+        // Consumables are used up where they go: the third floor's printer
+        // and desks, a batch at a time.
+        const toner = await stockItem(
+          {
+            kind: 'consumable',
+            name: 'HP 58A toner',
+            categoryId: tonerCat.id,
+            modelId: hpToner.id,
+            manufacturerId: hpToner.manufacturer.id,
+            totalQuantity: 6,
+            minimumQuantity: 4,
+          },
+          -720,
+        );
+        await issue(toner, 'location', floor3, 2, -650);
+        await stockIn(toner, 6, texts.tonerTopUp, -600);
+        for (const day of [-470, -300, -150])
+          await issue(toner, 'location', floor3, 2, day);
+        await purchasedStock({
           description: texts.tonerOrder,
           itemType: 'consumable',
           modelId: String(hpToner.id),
-          name: 'HP 58A toner',
           quantity: 12,
           unitPrice: 280,
-          minimumQuantity: 4,
           orderedDaysAgo: 25,
+          into: toner,
         });
-        // Consumables are used up where they go: the third floor's printer
-        // and desks.
-        await stock.issue(
-          String(toner.id),
-          { holderType: 'location', holderId: String(floor3.id), quantity: 2 },
-          context,
-          all('stockItems', 'issue'),
+        for (const day of [-20, -6])
+          await issue(toner, 'location', floor3, 2, day);
+        const cables = await stockItem(
+          {
+            kind: 'consumable',
+            name: 'USB-C cable 1 m',
+            categoryId: cableCat.id,
+            modelId: usbCable.id,
+            totalQuantity: 40,
+            minimumQuantity: 10,
+          },
+          -500,
         );
-        const cables = await stockItem({
-          kind: 'consumable',
-          name: 'USB-C cable 1 m',
-          categoryId: cableCat.id,
-          modelId: usbCable.id,
-          totalQuantity: 40,
-          minimumQuantity: 10,
+        for (const [day, quantity] of [
+          [-480, 6],
+          [-300, 4],
+          [-120, 5],
+          [-15, 3],
+        ] as const)
+          await issue(cables, 'location', floor3, quantity, day);
+        const batteries = await stockItem(
+          {
+            kind: 'consumable',
+            name: 'Latitude 5440 battery',
+            categoryId: batteryCat.id,
+            modelId: laptopBattery.id,
+            manufacturerId: latitude.manufacturer.id,
+            totalQuantity: 4,
+            minimumQuantity: 2,
+          },
+          -1000,
+        );
+        // For the Latitude the sales manager had then, and for IT support's.
+        await issue(batteries, 'person', wangFang, 1, -600);
+        await issue(batteries, 'person', chenJie, 1, -250);
+        const paperModel = await named('models', {
+          name: 'Office Paper A4 80 g',
+          categoryId: printSuppliesCat.id,
+          manufacturerId: hpToner.manufacturer.id,
+          specification: texts.paperSpec,
         });
-        await stock.issue(
-          String(cables.id),
-          { holderType: 'location', holderId: String(floor3.id), quantity: 6 },
-          context,
-          all('stockItems', 'issue'),
+        const paper = await stockItem(
+          {
+            kind: 'consumable',
+            name: texts.paperItem,
+            categoryId: printSuppliesCat.id,
+            modelId: paperModel.id,
+            manufacturerId: hpToner.manufacturer.id,
+            totalQuantity: 40,
+            minimumQuantity: 10,
+          },
+          -400,
         );
-        await stockItem({
-          kind: 'consumable',
-          name: 'Latitude 5440 battery',
+        for (const [day, quantity] of [
+          [-390, 8],
+          [-300, 8],
+          [-200, 6],
+        ] as const)
+          await issue(paper, 'location', floor3, quantity, day);
+        await stockIn(paper, 30, texts.paperDelivery, -190);
+        for (const [day, quantity] of [
+          [-120, 8],
+          [-45, 6],
+          [-10, 4],
+        ] as const)
+          await issue(paper, 'location', floor3, quantity, day);
+        const duracell = await named('manufacturers', { name: 'Duracell' });
+        const aaModel = await named('models', {
+          name: 'Plus AA',
           categoryId: batteryCat.id,
-          modelId: laptopBattery.id,
-          manufacturerId: latitude.manufacturer.id,
-          totalQuantity: 2,
-          minimumQuantity: 2,
+          manufacturerId: duracell.id,
+          specification: texts.batterySpec,
         });
-        const ssd = await stockItem({
-          kind: 'component',
-          name: '1 TB NVMe SSD',
-          categoryId: diskCat.id,
-          modelId: ssdModel.id,
-          manufacturerId: ssdModel.manufacturer.id,
-          totalQuantity: 5,
-          minimumQuantity: 2,
-        });
+        const aaBatteries = await stockItem(
+          {
+            kind: 'consumable',
+            name: texts.batteryItem,
+            categoryId: batteryCat.id,
+            modelId: aaModel.id,
+            manufacturerId: duracell.id,
+            totalQuantity: 48,
+            minimumQuantity: 12,
+          },
+          -600,
+        );
+        await issue(aaBatteries, 'person', zhangWei, 4, -500);
+        await issue(aaBatteries, 'location', floor3, 12, -350);
+        await issue(aaBatteries, 'person', wangFang, 4, -200);
+        await issue(aaBatteries, 'location', floor3, 8, -60);
+        const ssd = await stockItem(
+          {
+            kind: 'component',
+            name: '1 TB NVMe SSD',
+            categoryId: diskCat.id,
+            modelId: ssdModel.id,
+            manufacturerId: ssdModel.manufacturer.id,
+            totalQuantity: 5,
+            minimumQuantity: 2,
+          },
+          -600,
+        );
+        await issue(ssd, 'device', laptops[1], 1, -300);
+        // A drive went into a laptop and came out again, so the component's
+        // log shows an install and an uninstall.
+        await issue(ssd, 'device', laptops[2], 1, -200);
+        await takeBack(ssd, 'device', laptops[2], -180);
         // A component sits on the leaver's laptop. It is not theirs to give
         // back — a component belongs to the device it is installed on, and
         // goes wherever that goes — so the recovery lists the laptop and not
         // this; what it shows is that recovering a device recovers what is in
         // it.
-        await stock.issue(
-          String(ssd.id),
-          { holderType: 'device', holderId: String(airs[1].id), quantity: 1 },
-          context,
-          all('stockItems', 'issue'),
-        );
-        // A drive went into a laptop and came out again, so the component's
-        // log shows an install and an uninstall.
-        for (const holder of [laptops[1], laptops[2]])
-          await stock.issue(
-            String(ssd.id),
-            { holderType: 'device', holderId: String(holder.id), quantity: 1 },
-            context,
-            all('stockItems', 'issue'),
-          );
-        await stock.takeBack(
-          String(ssd.id),
+        await issue(ssd, 'device', airs[1], 1, -100);
+        const ram = await stockItem(
           {
-            holderType: 'device',
-            holderId: String(laptops[2].id),
-            quantity: 1,
+            kind: 'component',
+            name: '32 GB DDR5 SO-DIMM',
+            categoryId: ramCat.id,
+            modelId: ramModel.id,
+            manufacturerId: ramModel.manufacturer.id,
+            totalQuantity: 6,
+            minimumQuantity: 2,
           },
-          context,
-          all('stockItems', 'return'),
+          -1000,
         );
-        const ram = await stockItem({
-          kind: 'component',
-          name: '32 GB DDR5 SO-DIMM',
-          categoryId: ramCat.id,
-          modelId: ramModel.id,
-          manufacturerId: ramModel.manufacturer.id,
-          totalQuantity: 6,
-          minimumQuantity: 2,
+        await issue(ram, 'device', expiredLaptop, 1, -900);
+        const supportLaptop = staffLaptops.get('support');
+        if (supportLaptop) await issue(ram, 'device', supportLaptop, 1, -290);
+        const bigSsdModel = await named('models', {
+          name: '990 PRO 2 TB',
+          categoryId: diskCat.id,
+          manufacturerId: ssdModel.manufacturer.id,
+          code: 'MZ-V9P2T0BW',
+          specification: texts.ssdSpec,
         });
-        await stock.issue(
-          String(ram.id),
+        const bigSsd = await stockItem(
           {
-            holderType: 'device',
-            holderId: String(expiredLaptop.id),
-            quantity: 1,
+            kind: 'component',
+            name: '2 TB NVMe SSD',
+            categoryId: diskCat.id,
+            modelId: bigSsdModel.id,
+            manufacturerId: ssdModel.manufacturer.id,
+            totalQuantity: 4,
+            minimumQuantity: 1,
           },
-          context,
-          all('stockItems', 'issue'),
+          -250,
         );
+        await issue(bigSsd, 'device', deskPc, 1, -240);
+        if (supportLaptop)
+          await issue(bigSsd, 'device', supportLaptop, 1, -150);
+        await issue(bigSsd, 'device', thinkpads[0], 1, -53);
+        await takeBack(bigSsd, 'device', thinkpads[0], -51);
+        const smallRamModel = await named('models', {
+          name: 'DDR5-5600 16 GB SO-DIMM',
+          categoryId: ramCat.id,
+          manufacturerId: ramModel.manufacturer.id,
+          code: 'CT16G56C46S5',
+          specification: texts.ramSpec,
+        });
+        const smallRam = await stockItem(
+          {
+            kind: 'component',
+            name: '16 GB DDR5 SO-DIMM',
+            categoryId: ramCat.id,
+            modelId: smallRamModel.id,
+            manufacturerId: ramModel.manufacturer.id,
+            totalQuantity: 8,
+            minimumQuantity: 2,
+          },
+          -350,
+        );
+        await issue(smallRam, 'device', thinkpads[0], 1, -54);
+        await issue(smallRam, 'device', thinkpads[1], 1, -54);
+        await takeBack(smallRam, 'device', thinkpads[1], -20);
+
+        // Seats, each on its day: given out when the licence came in or the
+        // person joined, and taken back when somebody stopped using one.
+        const seatsTo = async (
+          entitlement: Row,
+          seats: readonly Row[],
+          day: number,
+        ) => {
+          await on(day);
+          await entitlements.assignSeats(
+            String(entitlement.id),
+            seats.map((holder) =>
+              holder.deviceNo !== undefined
+                ? { holderType: 'device', holderId: String(holder.id) }
+                : {
+                    holderType: 'person',
+                    holderId: String(holder.id),
+                    account: asText(holder.email) ?? null,
+                  },
+            ),
+            context,
+            all('entitlements', 'assignSeat'),
+          );
+        };
+        const reclaimFrom = async (
+          entitlement: Row,
+          holder: Row,
+          day: number,
+        ) => {
+          await on(day);
+          const seat = (await entitlements.seats(String(entitlement.id))).find(
+            (row) =>
+              String(row.holderId) === String(holder.id) && !row.releasedAt,
+          );
+          if (seat)
+            await entitlements.reclaimSeats(
+              String(entitlement.id),
+              [String(seat.id)],
+              context,
+              all('entitlements', 'assignSeat'),
+            );
+        };
+        const subscription = async (input: Row, day: number) => {
+          await on(day);
+          return track(
+            'entitlements',
+            await entitlements.create(
+              {
+                kind: 'subscription',
+                ownerId: managerUserId ?? writerId,
+                ...input,
+              },
+              context,
+              all('entitlements', 'create'),
+            ),
+          );
+        };
 
         // Perpetual entitlements: one over-allocated. A subscription: seats
         // nobody uses.
@@ -1910,16 +2486,13 @@ export function createDemoService(dependencies: {
             maintenanceExpiryDate: daysFromNow(20),
           },
         });
-        await entitlements.assignSeats(
-          String(officeLicense.id),
-          [laptops[0], laptops[1], laptops[2], laptops[3]].map((laptop) => ({
-            holderType: 'device',
-            holderId: String(laptop.id),
-          })),
-          context,
-          all('entitlements', 'assignSeat'),
+        await seatsTo(
+          officeLicense,
+          [laptops[0], laptops[1], laptops[2], laptops[3]],
+          -490,
         );
         // Over-allocated: the seat count is reduced below what is assigned.
+        await on(-120);
         await entitlements.update(
           String(officeLicense.id),
           { seatCount: 3 },
@@ -1939,133 +2512,195 @@ export function createDemoService(dependencies: {
             licensingModel: 'perUser',
           },
         });
-        await entitlements.assignSeats(
-          String(ideLicense.id),
-          [liNa, zhangWei, liuYang].map((person) => ({
-            holderType: 'person',
-            holderId: String(person.id),
-          })),
-          context,
-          all('entitlements', 'assignSeat'),
-        );
+        await seatsTo(ideLicense, [liNa, zhangWei, liuYang], -195);
         // Two subscriptions whose dates fall inside the week: one that will
         // charge (yearly auto-renew) and one that will stop (nothing renews
         // it). They are opposite acts, and the workbench lists them apart.
-        await track(
-          'entitlements',
-          await entitlements.create(
-            {
-              kind: 'subscription',
-              name: 'Zoom Workplace Pro（年付）',
-              softwareProductId: zoom.id,
-              billingModel: 'perSeat',
-              seatCount: 2,
-              billingCycle: 'year',
-              unitPrice: 150,
-              currency: 'USD',
-              expiryDate: daysFromNow(5),
-              autoRenew: true,
-              ownerId: managerUserId ?? writerId,
-            },
-            context,
-            all('entitlements', 'create'),
-          ),
+        await subscription(
+          {
+            name: 'Zoom Workplace Pro（年付）',
+            softwareProductId: zoom.id,
+            billingModel: 'perSeat',
+            seatCount: 2,
+            billingCycle: 'year',
+            unitPrice: 150,
+            currency: 'USD',
+            expiryDate: daysFromNow(5),
+            autoRenew: true,
+          },
+          -360,
         );
-        await track(
-          'entitlements',
-          await entitlements.create(
-            {
-              kind: 'subscription',
-              name: 'Figma Professional（试用）',
-              softwareProductId: figma.id,
-              billingModel: 'flat',
-              billingCycle: 'year',
-              unitPrice: 900,
-              currency: 'USD',
-              expiryDate: daysFromNow(6),
-              autoRenew: false,
-              ownerId: managerUserId ?? writerId,
-            },
-            context,
-            all('entitlements', 'create'),
-          ),
+        await subscription(
+          {
+            name: 'Figma Professional（试用）',
+            softwareProductId: figma.id,
+            billingModel: 'flat',
+            billingCycle: 'year',
+            unitPrice: 900,
+            currency: 'USD',
+            expiryDate: daysFromNow(6),
+            autoRenew: false,
+          },
+          -24,
         );
-        const figmaSub = await track(
-          'entitlements',
-          await entitlements.create(
-            {
-              kind: 'subscription',
-              name: 'Figma Organization',
-              softwareProductId: figma.id,
-              billingModel: 'perSeat',
-              seatCount: 6,
-              billingCycle: 'month',
-              unitPrice: 45,
-              currency: 'USD',
-              expiryDate: daysFromNow(25),
-              autoRenew: true,
-              ownerId: managerUserId ?? writerId,
-            },
-            context,
-            all('entitlements', 'create'),
-          ),
+        const figmaSub = await subscription(
+          {
+            name: 'Figma Organization',
+            softwareProductId: figma.id,
+            billingModel: 'perSeat',
+            seatCount: 6,
+            billingCycle: 'month',
+            unitPrice: 45,
+            currency: 'USD',
+            expiryDate: daysFromNow(25),
+            autoRenew: true,
+          },
+          -400,
         );
-        await entitlements.assignSeats(
-          String(figmaSub.id),
-          [
-            { holderId: String(liNa.id), account: 'li.na@northbridge.example' },
-            {
-              holderId: String(zhangWei.id),
-              account: 'zhang.wei@northbridge.example',
-            },
-            {
-              holderId: String(wangFang.id),
-              account: 'wang.fang@northbridge.example',
-            },
-            {
-              holderId: String(chenJie.id),
-              account: 'chen.jie@northbridge.example',
-            },
-          ],
-          context,
-          all('entitlements', 'assignSeat'),
-        );
+        await seatsTo(figmaSub, [liNa, zhangWei], -398);
+        await seatsTo(figmaSub, [wangFang], -300);
+        await seatsTo(figmaSub, [chenJie], -250);
 
         // A subscription the team stopped: not renewing, past its date, and
         // one seat never taken back — the "ended" reminder.
-        const zoomSub = await track(
+        const zoomSub = await subscription(
+          {
+            name: 'Zoom Workplace Pro',
+            softwareProductId: zoom.id,
+            billingModel: 'perSeat',
+            seatCount: 3,
+            billingCycle: 'year',
+            unitPrice: 150,
+            currency: 'USD',
+            expiryDate: daysFromNow(-10),
+            autoRenew: false,
+          },
+          -375,
+        );
+        await seatsTo(zoomSub, [zhangWei], -370);
+
+        // Microsoft 365 for two years: renewed by hand each year, a few days
+        // before it ran out, and grown by four seats at the last renewal.
+        const m365 = await subscription(
+          {
+            name: texts.m365License,
+            softwareProductId: (
+              await seededIn('softwareProducts', 'sp-microsoft-365')
+            ).id,
+            billingModel: 'perSeat',
+            seatCount: 8,
+            billingCycle: 'year',
+            unitPrice: 150,
+            currency: 'USD',
+            startDate: daysFromNow(-760),
+            expiryDate: daysFromNow(-395),
+            autoRenew: false,
+          },
+          -760,
+        );
+        await seatsTo(
+          m365,
+          [approver, writer, support, zhangWei, wangFang],
+          -755,
+        );
+        const renew = async (
+          entitlement: Row,
+          expiryDate: string,
+          day: number,
+        ) => {
+          await on(day);
+          await entitlements.update(
+            String(entitlement.id),
+            { expiryDate },
+            context,
+            all('entitlements', 'update'),
+          );
+        };
+        await renew(m365, daysFromNow(-30), -400);
+        await seatsTo(m365, [zhaoMin], -328);
+        await seatsTo(m365, [liuYang], -288);
+        await renew(m365, daysFromNow(335), -33);
+        await on(-33);
+        await entitlements.adjustSeats(
+          String(m365.id),
+          { quantity: 4, notes: texts.m365Growth },
+          context,
+          all('entitlements', 'update'),
+        );
+        // Adobe Creative Cloud: a seat that went unused was taken back and
+        // given to the presales consultant; one is kept free for the designer
+        // joining next week.
+        const adobe = await subscription(
+          {
+            name: texts.adobeLicense,
+            softwareProductId: (
+              await seededIn('softwareProducts', 'sp-adobe-creative-cloud')
+            ).id,
+            billingModel: 'perSeat',
+            seatCount: 3,
+            billingCycle: 'year',
+            unitPrice: 1080,
+            currency: 'USD',
+            startDate: daysFromNow(-620),
+            expiryDate: daysFromNow(110),
+            autoRenew: true,
+          },
+          -620,
+        );
+        await seatsTo(adobe, [liNa, wangFang], -615);
+        await reclaimFrom(adobe, liNa, -210);
+        await seatsTo(adobe, [zhaoMin], -205);
+        // ChatGPT Team: the QA engineer's seat moved to presales.
+        const chatgpt = await subscription(
+          {
+            name: texts.chatgptLicense,
+            softwareProductId: (
+              await seededIn('softwareProducts', 'sp-chatgpt')
+            ).id,
+            billingModel: 'perSeat',
+            seatCount: 5,
+            billingCycle: 'year',
+            unitPrice: 300,
+            currency: 'USD',
+            startDate: daysFromNow(-280),
+            expiryDate: daysFromNow(85),
+            autoRenew: true,
+          },
+          -280,
+        );
+        await seatsTo(chatgpt, [approver, zhangWei, liuYang], -278);
+        await reclaimFrom(chatgpt, liuYang, -90);
+        await seatsTo(chatgpt, [zhaoMin], -88);
+        // Windows 11 Pro upgrades, per device: the leaver's old Latitude gave
+        // its licence up to the new ThinkPad.
+        const windowsProduct = await seededIn(
+          'softwareProducts',
+          'sp-windows-11-pro',
+        );
+        await on(-520);
+        const windows = await track(
           'entitlements',
           await entitlements.create(
             {
-              kind: 'subscription',
-              name: 'Zoom Workplace Pro',
-              softwareProductId: zoom.id,
-              billingModel: 'perSeat',
-              seatCount: 3,
-              billingCycle: 'year',
-              unitPrice: 150,
-              currency: 'USD',
-              expiryDate: daysFromNow(-10),
-              autoRenew: false,
+              kind: 'perpetual',
+              name: texts.windowsLicense,
+              softwareProductId: windowsProduct.id,
+              licensingModel: 'perDevice',
+              seatCount: 5,
               ownerId: managerUserId ?? writerId,
             },
             context,
             all('entitlements', 'create'),
           ),
         );
-        await entitlements.assignSeats(
-          String(zoomSub.id),
-          [
-            {
-              holderId: String(zhangWei.id),
-              account: 'zhang.wei@northbridge.example',
-            },
-          ],
-          context,
-          all('entitlements', 'assignSeat'),
-        );
+        await seatsTo(windows, [expiredLaptop], -515);
+        await seatsTo(windows, [deskPc], -495);
+        if (supportLaptop) await seatsTo(windows, [supportLaptop], -294);
+        await reclaimFrom(windows, expiredLaptop, -58);
+        await seatsTo(windows, [thinkpads[0]], -55);
 
         // A purchase order that went through the chain and was received.
+        await on(-36);
         const order = await track(
           'purchaseOrders',
           await procurement.create(
@@ -2099,6 +2734,7 @@ export function createDemoService(dependencies: {
           context,
           all('purchaseOrders', 'submit'),
         );
+        await on(-35);
         const orderAfterSubmit = await procurement.get(
           String(order.id),
           all('purchaseOrders', 'read'),
@@ -2114,6 +2750,7 @@ export function createDemoService(dependencies: {
             all('purchaseOrders', 'approve'),
           );
         }
+        await on(-33);
         await procurement.markOrdered(
           String(order.id),
           { orderedAt: daysFromNow(-20), expectedAt: daysFromNow(-5) },
@@ -2124,6 +2761,7 @@ export function createDemoService(dependencies: {
         await reached(50);
         // Each device is its own record, so each is received on its own — the
         // receiving dialog takes one serial, name and keeper at a time.
+        await on(-18);
         for (const [index, serial] of ['7YQ2K81', '7YQ2K82'].entries())
           await procurement.receive(
             String(order.id),
@@ -2149,6 +2787,7 @@ export function createDemoService(dependencies: {
         // belongs to its 负责人, so the 维修中 card has something to show
         // when you sign in as IT support (`zhouyu`, or `ryan` in English). The
         // finished ones below are theirs too.
+        await on(-3);
         await track(
           'repairs',
           await repairs.create(
@@ -2247,6 +2886,7 @@ export function createDemoService(dependencies: {
           sourceType: 'demo',
         };
         for (const entry of finishedRepairs) {
+          await on(entry.sentDays);
           const repair = await track(
             'repairs',
             await repairs.create(
@@ -2263,6 +2903,7 @@ export function createDemoService(dependencies: {
               all('repairs', 'create'),
             ),
           );
+          await on(entry.returnDays);
           await repairs.complete(
             String(repair.id),
             {
@@ -2276,6 +2917,7 @@ export function createDemoService(dependencies: {
             all('repairs', 'complete'),
           );
         }
+        await on(-1);
         await track(
           'repairs',
           await repairs.create(
@@ -2298,6 +2940,7 @@ export function createDemoService(dependencies: {
         await reached(60);
         // More purchase orders, one per stage: a draft, one waiting for
         // approval, and one ordered whose delivery is overdue.
+        await on(-6);
         const draftOrder = await track(
           'purchaseOrders',
           await procurement.create(
@@ -2328,6 +2971,7 @@ export function createDemoService(dependencies: {
           context,
           all('purchaseOrders', 'update'),
         );
+        await on(-5);
         const monitorOrder = await track(
           'purchaseOrders',
           await procurement.create(
@@ -2361,6 +3005,7 @@ export function createDemoService(dependencies: {
           context,
           all('purchaseOrders', 'submit'),
         );
+        await on(-15);
         const dockOrder = await track(
           'purchaseOrders',
           await procurement.create(
@@ -2394,6 +3039,7 @@ export function createDemoService(dependencies: {
           context,
           all('purchaseOrders', 'submit'),
         );
+        await on(-14);
         if (
           (
             await procurement.get(
@@ -2409,6 +3055,7 @@ export function createDemoService(dependencies: {
             { actorId: approverId, sourceType: 'demo' },
             all('purchaseOrders', 'approve'),
           );
+        await on(-12);
         await procurement.markOrdered(
           String(dockOrder.id),
           { orderedAt: daysFromNow(-12), expectedAt: daysFromNow(-2) },
@@ -2417,6 +3064,7 @@ export function createDemoService(dependencies: {
         );
 
         // Approved and waiting to be placed with the vendor.
+        await on(-7);
         const memoryOrder = await track(
           'purchaseOrders',
           await procurement.create(
@@ -2450,6 +3098,7 @@ export function createDemoService(dependencies: {
           context,
           all('purchaseOrders', 'submit'),
         );
+        await on(-6);
         if (
           (
             await procurement.get(
@@ -2468,6 +3117,7 @@ export function createDemoService(dependencies: {
 
         // Half of it arrived: the rest is still outstanding on the line, and
         // what came in joined the headsets already in stock.
+        await on(-11);
         const headsetOrder = await track(
           'purchaseOrders',
           await procurement.create(
@@ -2501,6 +3151,7 @@ export function createDemoService(dependencies: {
           context,
           all('purchaseOrders', 'submit'),
         );
+        await on(-10);
         if (
           (
             await procurement.get(
@@ -2516,6 +3167,7 @@ export function createDemoService(dependencies: {
             { actorId: approverId, sourceType: 'demo' },
             all('purchaseOrders', 'approve'),
           );
+        await on(-8);
         await procurement.markOrdered(
           String(headsetOrder.id),
           { orderedAt: daysFromNow(-8), expectedAt: daysFromNow(6) },
@@ -2523,6 +3175,7 @@ export function createDemoService(dependencies: {
           all('purchaseOrders', 'order'),
         );
         const headsetLines = await procurement.lines(String(headsetOrder.id));
+        await on(-2);
         await procurement.receive(
           String(headsetOrder.id),
           {
@@ -2536,6 +3189,7 @@ export function createDemoService(dependencies: {
 
         // Asked for and refused: a rejected order is editable again, so the
         // list shows what a request looks like after it comes back.
+        await on(-9);
         const internOrder = await track(
           'purchaseOrders',
           await procurement.create(
@@ -2569,6 +3223,7 @@ export function createDemoService(dependencies: {
           context,
           all('purchaseOrders', 'submit'),
         );
+        await on(-8);
         if (
           (
             await procurement.get(
@@ -2586,6 +3241,7 @@ export function createDemoService(dependencies: {
           );
 
         // Approved, then called off before it was placed.
+        await on(-20);
         const extraDocks = await track(
           'purchaseOrders',
           await procurement.create(
@@ -2619,6 +3275,7 @@ export function createDemoService(dependencies: {
           context,
           all('purchaseOrders', 'submit'),
         );
+        await on(-19);
         if (
           (
             await procurement.get(
@@ -2634,6 +3291,7 @@ export function createDemoService(dependencies: {
             { actorId: approverId, sourceType: 'demo' },
             all('purchaseOrders', 'approve'),
           );
+        await on(-16);
         await procurement.cancel(
           String(extraDocks.id),
           texts.extraDockCancel,
@@ -2661,7 +3319,10 @@ export function createDemoService(dependencies: {
             | 'cancelled';
           /** The rejection's comment, or the cancellation's reason. */
           readonly why?: string;
+          /** When it was raised; it was decided the next day. */
+          readonly raisedDaysAgo: number;
         }): Promise<void> => {
+          await on(-order.raisedDaysAgo);
           const created = await track(
             'purchaseOrders',
             await procurement.create(
@@ -2691,6 +3352,7 @@ export function createDemoService(dependencies: {
             all('purchaseOrders', 'submit'),
           );
           if (order.stage === 'pendingApproval') return;
+          await on(-order.raisedDaysAgo + 1);
           if (
             (await procurement.get(id, all('purchaseOrders', 'read')))
               ?.status === 'pendingApproval'
@@ -2712,6 +3374,7 @@ export function createDemoService(dependencies: {
             );
             return;
           }
+          await on(-3);
           await procurement.markOrdered(
             id,
             { orderedAt: daysFromNow(-3), expectedAt: daysFromNow(4) },
@@ -2737,6 +3400,7 @@ export function createDemoService(dependencies: {
           neededInDays: 45,
           lines: [line('device', thinkpad, 2, 9999)],
           stage: 'draft',
+          raisedDaysAgo: 3,
         });
         await queuedOrder({
           description: texts.salesPhoneOrder,
@@ -2745,6 +3409,7 @@ export function createDemoService(dependencies: {
           neededInDays: 20,
           lines: [line('device', iphone, 3, 5999)],
           stage: 'draft',
+          raisedDaysAgo: 2,
         });
         await queuedOrder({
           description: texts.airOrder,
@@ -2753,6 +3418,7 @@ export function createDemoService(dependencies: {
           neededInDays: 14,
           lines: [line('device', air, 4, 8999)],
           stage: 'pendingApproval',
+          raisedDaysAgo: 5,
         });
         await queuedOrder({
           description: texts.switchOrder,
@@ -2761,6 +3427,7 @@ export function createDemoService(dependencies: {
           neededInDays: 30,
           lines: [line('device', catalyst, 1, 23000)],
           stage: 'pendingApproval',
+          raisedDaysAgo: 4,
         });
         await queuedOrder({
           description: texts.printerReplaceOrder,
@@ -2769,6 +3436,7 @@ export function createDemoService(dependencies: {
           neededInDays: 7,
           lines: [line('device', laserjet, 1, 2899)],
           stage: 'approved',
+          raisedDaysAgo: 9,
         });
         await queuedOrder({
           description: texts.mouseOrder,
@@ -2777,6 +3445,7 @@ export function createDemoService(dependencies: {
           neededInDays: 10,
           lines: [line('accessory', mxMaster, 20, 599)],
           stage: 'approved',
+          raisedDaysAgo: 7,
         });
         await queuedOrder({
           description: texts.ssdOrder,
@@ -2785,6 +3454,7 @@ export function createDemoService(dependencies: {
           neededInDays: 5,
           lines: [line('component', ssdModel, 10, 899)],
           stage: 'ordered',
+          raisedDaysAgo: 10,
         });
         // Placed and waiting for delivery, with one line of every kind an
         // order can carry — a device, an accessory, a consumable, a
@@ -2815,6 +3485,7 @@ export function createDemoService(dependencies: {
             software('subscription', zoom, 3, 1080),
           ],
           stage: 'ordered',
+          raisedDaysAgo: 11,
         });
         await queuedOrder({
           description: texts.serverOrder,
@@ -2823,6 +3494,7 @@ export function createDemoService(dependencies: {
           neededInDays: 60,
           lines: [line('device', poweredge, 2, 68000)],
           stage: 'rejected',
+          raisedDaysAgo: 14,
           why: texts.serverRejection,
         });
         await queuedOrder({
@@ -2832,11 +3504,13 @@ export function createDemoService(dependencies: {
           neededInDays: 15,
           lines: [line('accessory', zoneVibe, 15, 399)],
           stage: 'cancelled',
+          raisedDaysAgo: 18,
           why: texts.headsetCancel,
         });
 
         await reached(78);
         // An audit in progress over the third floor.
+        await on(-5);
         const audit = await track(
           'auditTasks',
           await audits.create(
@@ -2852,12 +3526,14 @@ export function createDemoService(dependencies: {
             all('auditTasks', 'create'),
           ),
         );
+        await on(-3);
         await audits.start(
           String(audit.id),
           context,
           all('auditTasks', 'start'),
         );
         const items = await audits.items(String(audit.id));
+        await on(-2);
         const first = items.find((item) => item.deviceId === laptops[0].id);
         if (first)
           await audits.count(
@@ -2872,6 +3548,7 @@ export function createDemoService(dependencies: {
         // gone is stalled until another name is on it, and so is a scrapping
         // nobody can submit. The demo gives the handover half one of each
         // beside the laptops they answer for.
+        await on(-4);
         const leaverAudit = await track(
           'auditTasks',
           await audits.create(
@@ -2890,6 +3567,7 @@ export function createDemoService(dependencies: {
             all('auditTasks', 'create'),
           ),
         );
+        await on(-2);
         await audits.start(
           String(leaverAudit.id),
           context,
@@ -2906,8 +3584,11 @@ export function createDemoService(dependencies: {
           readonly scope: Row;
           readonly startIn: number;
           readonly endIn: number;
-        }): Promise<string> =>
-          String(
+          /** When it was planned. */
+          readonly createdIn: number;
+        }): Promise<string> => {
+          await on(task.createdIn);
+          return String(
             (
               await track(
                 'auditTasks',
@@ -2926,6 +3607,7 @@ export function createDemoService(dependencies: {
               )
             ).id,
           );
+        };
         const itemOf = async (taskId: string, deviceId: unknown) =>
           String(
             (await audits.items(taskId)).find(
@@ -2941,6 +3623,7 @@ export function createDemoService(dependencies: {
           scope: { locationIds: [String(floor3.id)] },
           startIn: 20,
           endIn: 30,
+          createdIn: -8,
         });
         await auditTask({
           name: texts.japanAuditName,
@@ -2948,6 +3631,7 @@ export function createDemoService(dependencies: {
           scope: { locationIds: [String(japan.id)] },
           startIn: 40,
           endIn: 55,
+          createdIn: -12,
         });
         // One finished with differences to settle: a phone found elsewhere,
         // and the printer nobody counted, which finishing marks not found.
@@ -2958,8 +3642,11 @@ export function createDemoService(dependencies: {
           },
           startIn: -6,
           endIn: -1,
+          createdIn: -8,
         });
+        await on(-6);
         await audits.start(diffAudit, context, all('auditTasks', 'start'));
+        await on(-2);
         await countIn(diffAudit, [
           { itemId: await itemOf(diffAudit, deskPc.id), result: 'matched' },
           {
@@ -2968,6 +3655,7 @@ export function createDemoService(dependencies: {
             actualLocationId: String(serverRoom.id),
           },
         ]);
+        await on(-1);
         await audits.finish(diffAudit, context, all('auditTasks', 'finish'));
         // Two completed last quarter: one all matched, one whose difference
         // was looked at and left as it was.
@@ -2976,8 +3664,11 @@ export function createDemoService(dependencies: {
           scope: { locationIds: [String(serverRoom.id)] },
           startIn: -100,
           endIn: -90,
+          createdIn: -105,
         });
+        await on(-99);
         await audits.start(roomAudit, context, all('auditTasks', 'start'));
+        await on(-95);
         await countIn(
           roomAudit,
           (await audits.items(roomAudit)).map((item) => ({
@@ -2985,15 +3676,19 @@ export function createDemoService(dependencies: {
             result: 'matched',
           })),
         );
+        await on(-92);
         await audits.finish(roomAudit, context, all('auditTasks', 'finish'));
         const monitorAudit = await auditTask({
           name: texts.monitorAuditName,
           scope: { deviceIds: monitors.map((row) => String(row.id)) },
           startIn: -95,
           endIn: -88,
+          createdIn: -100,
         });
+        await on(-94);
         await audits.start(monitorAudit, context, all('auditTasks', 'start'));
         const monitorItems = await audits.items(monitorAudit);
+        await on(-90);
         await countIn(
           monitorAudit,
           monitorItems.map((item, index) =>
@@ -3006,7 +3701,9 @@ export function createDemoService(dependencies: {
               : { itemId: String(item.id), result: 'matched' },
           ),
         );
+        await on(-89);
         await audits.finish(monitorAudit, context, all('auditTasks', 'finish'));
+        await on(-88);
         await audits.resolve(
           monitorAudit,
           [{ itemId: String(monitorItems[0]?.id), resolution: 'markVerified' }],
@@ -3035,8 +3732,11 @@ export function createDemoService(dependencies: {
           scope: { locationIds: [String(warehouse.id)] },
           startIn: -4,
           endIn: -3,
+          createdIn: -6,
         });
+        await on(-4);
         await audits.start(spotAudit, context, all('auditTasks', 'start'));
+        await on(-3);
         await audits.cancel(
           spotAudit,
           texts.spotAuditCancel,
@@ -3063,12 +3763,17 @@ export function createDemoService(dependencies: {
             screenSize: '14',
           },
         });
+        // The sales manager's laptop until her desktop came, then a spare.
+        await assign(swollenLaptop.id, wangFang.id, -1475);
+        await giveBack(swollenLaptop.id, -500);
+        await on(-5);
         await track(
           'disposals',
           await disposals.create(
             {
               method: 'scrap',
               reason: 'damaged',
+              requestedAt: daysFromNow(-5),
               description: texts.leaverDisposal,
               deviceIds: [String(swollenLaptop.id)],
               recipientVendorId: String(recycler.id),
@@ -3085,12 +3790,14 @@ export function createDemoService(dependencies: {
 
         await reached(85);
         // A disposal draft for the last monitor.
+        await on(-2);
         await track(
           'disposals',
           await disposals.create(
             {
               method: 'scrap',
               reason: 'damaged',
+              requestedAt: daysFromNow(-2),
               description: texts.disposalDescription,
               deviceIds: [String(monitors[2].id)],
               recipientVendorId: String(recycler.id),
@@ -3104,12 +3811,14 @@ export function createDemoService(dependencies: {
 
         // A disposal waiting for a decision, so the 待我审批 view has
         // something in it: the old printer, past its warranty.
+        await on(-4);
         const printerDisposal = await track(
           'disposals',
           await disposals.create(
             {
               method: 'scrap',
               reason: 'endOfLife',
+              requestedAt: daysFromNow(-4),
               description: texts.disposalPrinter,
               deviceIds: [String(officePrinter.id)],
               recipientVendorId: String(recycler.id),
@@ -3119,6 +3828,7 @@ export function createDemoService(dependencies: {
             all('disposals', 'create'),
           ),
         );
+        await on(-3);
         await disposals.submit(
           String(printerDisposal.id),
           approverId,
@@ -3144,12 +3854,17 @@ export function createDemoService(dependencies: {
             inputs: 'HDMI, DisplayPort, USB-C',
           },
         });
+        // On the R&D engineer's desk until her current monitor came.
+        await assign(brokenMonitor.id, liNa.id, -1140);
+        await giveBack(brokenMonitor.id, -296);
+        await on(-9);
         const monitorDisposal = await track(
           'disposals',
           await disposals.create(
             {
               method: 'scrap',
               reason: 'damaged',
+              requestedAt: daysFromNow(-9),
               description: texts.disposalDescription,
               deviceIds: [String(brokenMonitor.id)],
               recipientVendorId: String(recycler.id),
@@ -3165,6 +3880,7 @@ export function createDemoService(dependencies: {
           context,
           all('disposals', 'submit'),
         );
+        await on(-8);
         if (
           (
             await disposals.get(
@@ -3204,6 +3920,11 @@ export function createDemoService(dependencies: {
             screenSize: '14',
           },
         });
+        // The second asset manager's laptop for four years, until her
+        // MacBook Pro came.
+        await assign(retiredLaptop.id, writer.id, -1395);
+        await giveBack(retiredLaptop.id, -421);
+        await on(-35);
         const sale = await track(
           'disposals',
           await disposals.create(
@@ -3228,6 +3949,7 @@ export function createDemoService(dependencies: {
           context,
           all('disposals', 'submit'),
         );
+        await on(-30);
         if (
           (await disposals.get(saleId, all('disposals', 'read')))?.status ===
           'pendingApproval'
@@ -3239,6 +3961,7 @@ export function createDemoService(dependencies: {
             { actorId: approverId, sourceType: 'demo' },
             all('disposals', 'approve'),
           );
+        await on(-20);
         await disposals.execute(
           saleId,
           {
@@ -3253,6 +3976,9 @@ export function createDemoService(dependencies: {
         );
 
         await reached(90);
+        // What follows happens today: the leaver leaves, the joiners are
+        // entered, Intune and Jamf report.
+        await off();
         // The one who is about to leave is **not** marked left here. Everything
         // that makes offboarding worth seeing is already in place — they hold
         // a device in repair that answers to somebody else, a device the
@@ -3292,6 +4018,83 @@ export function createDemoService(dependencies: {
         // most recent get dates of their own as well: their definitions
         // promise delivery days from now, which for an order already received
         // would stamp an arrival in the future.
+        // What a receipt wrote — the movement into stock, the new device or
+        // entitlement and its first history line, the order's own lines for
+        // the arrival — moves with the receipt, in the order it was written.
+        // Most arrivals were dated as they were received; these are the ones
+        // whose date is decided only here.
+        const arrivedOn = async (orderId: string, at: string) => {
+          const base = instant(at);
+          const sourced = await database
+            .query()
+            .selectFrom('historyEvents')
+            .select(['operationId'])
+            .where('sourceType', '=', 'purchaseOrder')
+            .where('sourceId', '=', orderId)
+            .execute<{ operationId: string | null }>();
+          const operations = [
+            ...new Set(sourced.map((row) => row.operationId).filter(Boolean)),
+          ] as string[];
+          const moved: { table: string; id: string; at: number }[] = [];
+          for (const table of ['historyEvents', 'changeLogs']) {
+            if (operations.length === 0) break;
+            for (const row of await database
+              .query()
+              .selectFrom(table)
+              .select(['id', 'createdAt'])
+              .where('operationId', 'in', operations)
+              .execute<Row>())
+              moved.push({
+                table,
+                id: String(row.id),
+                at: instant(row.createdAt),
+              });
+          }
+          for (const row of await database
+            .query()
+            .selectFrom('stockMovements')
+            .select(['id', 'createdAt'])
+            .where('sourceType', '=', 'purchaseOrder')
+            .where('sourceId', '=', orderId)
+            .execute<Row>())
+            moved.push({
+              table: 'stockMovements',
+              id: String(row.id),
+              at: instant(row.createdAt),
+            });
+          // An order entered with the register wrote nothing of its own.
+          if (moved.length === 0) return;
+          const first = Math.min(...moved.map((row) => row.at));
+          for (const row of moved)
+            await database
+              .query()
+              .updateTable(row.table)
+              .set({ createdAt: new Date(base + (row.at - first) * 1000) })
+              .where('id', '=', row.id)
+              .execute();
+          // A device or entitlement the receipt created was created then.
+          for (const receipt of await database
+            .query()
+            .selectFrom('purchaseReceipts')
+            .select(['generatedType', 'generatedId'])
+            .where('purchaseOrderId', '=', orderId)
+            .execute<Row>()) {
+            const table =
+              receipt.generatedType === 'device'
+                ? 'devices'
+                : receipt.generatedType === 'entitlement'
+                  ? 'entitlements'
+                  : undefined;
+            const generatedId = asText(receipt.generatedId);
+            if (table && generatedId)
+              await database
+                .query()
+                .updateTable(table)
+                .set({ createdAt: new Date(base) })
+                .where('id', '=', generatedId)
+                .execute();
+          }
+        };
         const RECENT_ARRIVALS = [
           { expectedDaysAgo: 19 },
           { expectedDaysAgo: 26 },
@@ -3329,6 +4132,7 @@ export function createDemoService(dependencies: {
             .set({ createdAt: `${arrived}T10:00:00.000` })
             .where('purchaseOrderId', '=', String(row.id))
             .execute();
+          await arrivedOn(String(row.id), `${arrived}T10:00:00.000`);
         }
 
         // 陈杰 leaves today, last, once everything he holds and answers for

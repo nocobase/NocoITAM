@@ -160,3 +160,32 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   and its pulls replay them, last syncs moved on by the time since the
   previous pull. Keep that prefix on any record the demo adds. The data and
   demo test asserts each situation.
+- **The demo has a history** (2026-10-16, `on()` / `off()` in `demo.ts`):
+  the services stamp every history line, change, movement, assignment
+  period, seat and approval with the moment they run, so an import read as
+  one afternoon. `on(day)` dates what the operations after it write — until
+  the next `on()` or `off()` — on that day at office hours, keeping their
+  order (`DATED` lists the columns it moves); `device()` enters each device
+  on its purchase date, and every other step names its day. Laptops of the
+  2023 batch read as three years of use: bought, issued (one changed hands,
+  the spare was lent and came back), repaired, counted; the people's hire
+  dates fit their equipment. A receipt whose date is only decided by the
+  arrival corrections moves with everything it wrote (`arrivedOn`). What
+  happens on the day — the leaver, the kits, the joiners, MDM — comes after
+  `off()` and stays today. A loan dated back is made due in three days and
+  corrected on the device, its period and its history line (`dueOn`). The
+  stock and licences grew with it: six accessories (a USB-C hub and a webcam
+  in a `摄像头` / `Webcam` category the demo adds), five consumables (A4
+  paper, AA batteries), four components (2 TB SSD, 16 GB memory), each
+  stocked one to three years back and issued, returned, consumed and topped
+  up since — keyboards and toner are hand-stocked and topped up by their
+  orders (`purchasedStock({ into })`); three perpetual licences (Windows 11
+  Pro per device) and seven subscriptions (Microsoft 365, renewed by hand
+  each year and grown by four seats; Adobe Creative Cloud and ChatGPT Team,
+  each with a seat taken back and given to someone else). Models and
+  master data a stock item needs beyond the seeds go through `named()`,
+  which reuses a record of that name rather than tracking it. Keep the
+  employee with EMP-101's holdings as they were (two devices, one
+  accessory, two seats): the data test counts them. Dating moves any row
+  written while the import runs, so an import is best not run while others
+  edit the register.

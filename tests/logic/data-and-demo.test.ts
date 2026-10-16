@@ -707,9 +707,162 @@ describe('CSV import / export and demo data', () => {
       'subscription',
     ]);
 
+    // More than devices (2026-10-16): six accessories, five consumables and
+    // four components, three perpetual licences and seven subscriptions.
+    const kindsOfStock = await db
+      .selectFrom('stockItems')
+      .select(['id', 'kind', 'name', 'totalQuantity', 'usedQuantity'])
+      .execute<{
+        id: string;
+        kind: string;
+        name: string;
+        totalQuantity: number;
+        usedQuantity: number;
+      }>();
+    const countBy = (values: string[]) =>
+      values.reduce<Record<string, number>>(
+        (counts, value) => ({ ...counts, [value]: (counts[value] ?? 0) + 1 }),
+        {},
+      );
+    expect(countBy(kindsOfStock.map((row) => row.kind))).toEqual({
+      accessory: 6,
+      consumable: 5,
+      component: 4,
+    });
+    const licences = await db
+      .selectFrom('entitlements')
+      .select(['id', 'kind', 'name'])
+      .execute<{ id: string; kind: string; name: string }>();
+    expect(countBy(licences.map((row) => row.kind))).toEqual({
+      perpetual: 3,
+      subscription: 7,
+    });
+    // Every stock item has a story of several movements, and read in date
+    // order they never take more out than was there and add up to what the
+    // item holds: the dates moved, the order did not.
+    const movements = await db
+      .selectFrom('stockMovements')
+      .select(['stockItemId', 'type', 'quantity', 'createdAt'])
+      .orderBy('createdAt', 'asc')
+      .execute<{
+        stockItemId: string;
+        type: string;
+        quantity: number;
+        createdAt: string;
+      }>();
+    const SIGN: Record<string, number> = {
+      in: 1,
+      adjust: 1,
+      return: 1,
+      uninstall: 1,
+      issue: -1,
+      consume: -1,
+      install: -1,
+    };
+    const unlikely: string[] = [];
+    for (const item of kindsOfStock) {
+      const own = movements.filter((row) => row.stockItemId === item.id);
+      if (own.length < 3)
+        unlikely.push(`${item.name}: ${own.length} movements`);
+      let onHand = 0;
+      for (const row of own) {
+        onHand += (SIGN[row.type] ?? 0) * Number(row.quantity);
+        if (onHand < 0)
+          unlikely.push(`${item.name}: negative at ${row.createdAt}`);
+      }
+      if (onHand !== Number(item.totalQuantity) - Number(item.usedQuantity))
+        unlikely.push(`${item.name}: ends at ${onHand}`);
+      // Stocked a year or more ago, used since.
+      if (new Set(own.map((row) => row.createdAt.slice(0, 10))).size < 3)
+        unlikely.push(`${item.name}: all on one or two days`);
+    }
+    expect(unlikely).toEqual([]);
+    // The history runs over years, not one afternoon: a laptop of the 2023
+    // batch was entered three years back, and nothing is dated ahead.
+    const history = await db
+      .selectFrom('historyEvents')
+      .select(['subjectId', 'type', 'createdAt'])
+      .execute<{ subjectId: string; type: string; createdAt: string }>();
+    expect(
+      history.filter((row) => Date.parse(row.createdAt) > Date.now()),
+    ).toEqual([]);
+    expect(
+      new Set(history.map((row) => row.createdAt.slice(0, 10))).size,
+    ).toBeGreaterThan(60);
+    const oldLaptop = await data<{ id: string }[]>(
+      await get('devices?q=SG-LT-003&pageSize=1'),
+    );
+    const laptopHistory = history
+      .filter((row) => row.subjectId === oldLaptop[0]?.id)
+      .map((row) => row.createdAt)
+      .sort();
+    expect(Date.parse(laptopHistory[0]!)).toBeLessThan(
+      Date.now() - 1000 * 86_400_000,
+    );
+    expect(
+      new Set(laptopHistory.map((at) => at.slice(0, 7))).size,
+    ).toBeGreaterThanOrEqual(5);
+    // It changed hands: returned by one person, assigned to another.
+    expect(
+      history.filter(
+        (row) => row.subjectId === oldLaptop[0]?.id && row.type === 'assign',
+      ),
+    ).toHaveLength(2);
+    // Seats were taken back and given to somebody else on a later day.
+    const seats = await db
+      .selectFrom('entitlementSeats')
+      .select(['entitlementId', 'assignedAt', 'releasedAt'])
+      .execute<{
+        entitlementId: string;
+        assignedAt: string;
+        releasedAt: string | null;
+      }>();
+    const reassigned = licences.filter((licence) => {
+      const own = seats.filter((seat) => seat.entitlementId === licence.id);
+      return own.some(
+        (released) =>
+          released.releasedAt &&
+          own.some(
+            (next) =>
+              !next.releasedAt && next.assignedAt > released.releasedAt!,
+          ),
+      );
+    });
+    expect(reassigned.length).toBeGreaterThanOrEqual(2);
+
     const cleared = await data<{ generated: boolean }>(
       await post('demo/clear'),
     );
+    // Its stock, movements, seats and the master data it added went with it.
+    for (const table of [
+      'stockItems',
+      'stockMovements',
+      'stockHoldings',
+      'entitlementSeats',
+    ])
+      expect(
+        (
+          await app.container
+            .resolve(databaseManagerToken)
+            .query()
+            .selectFrom(table)
+            .select(['id'])
+            .execute()
+        ).map(() => table),
+      ).toEqual([]);
+    for (const [table, name] of [
+      ['categories', 'Webcam'],
+      ['manufacturers', 'Duracell'],
+    ] as const)
+      expect(
+        await app.container
+          .resolve(databaseManagerToken)
+          .query()
+          .selectFrom(table)
+          .select(['id'])
+          .where('name', '=', name)
+          .execute(),
+      ).toEqual([]);
     expect(cleared.generated).toBe(false);
     for (const table of ['managedDevices', 'deviceSyncRuns'])
       expect(
