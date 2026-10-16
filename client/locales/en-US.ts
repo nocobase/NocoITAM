@@ -1207,12 +1207,6 @@ const messages = {
     new: 'New person',
     edit: 'Edit person',
     empty: 'No people yet',
-    stats: {
-      leftHolding: 'Left, still holding',
-      leftHoldingCaption: 'Left people with devices, stock or seats',
-      hiredThisMonth: 'Hired this month',
-      hiredThisMonthCaption: 'By hire date',
-    },
     markLeft: 'Mark as left',
     markLeftTitle: 'Mark {{name}} as left?',
     markLeftHoldings_one:

@@ -1173,12 +1173,6 @@ const zhCN: AppResource = {
     new: '创建人员',
     edit: '编辑人员',
     empty: '暂无人员',
-    stats: {
-      leftHolding: '离职仍持有',
-      leftHoldingCaption: '已离职但名下仍有资产、库存或席位',
-      hiredThisMonth: '本月入职',
-      hiredThisMonthCaption: '按入职日期',
-    },
     markLeft: '标记离职',
     markLeftTitle: '将 {{name}} 标记为离职？',
     markLeftHoldings_one:

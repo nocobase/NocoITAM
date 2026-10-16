@@ -21,7 +21,6 @@ import {
   MasterActions,
   MasterTree,
   OnHandCell,
-  PeopleStats,
   RelatedCountCell,
 } from './master-domain-parts.js';
 import {
@@ -184,10 +183,6 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
       ? (props) => <MasterTree collection={collection} {...props} />
       : undefined,
     treeFills: collection.tree,
-    Stats:
-      collection.name === 'people'
-        ? ({ onFilter }) => <PeopleStats onFilter={onFilter} />
-        : undefined,
     tabs,
     defaultTab: collection.defaultTab,
     relatedRecord:

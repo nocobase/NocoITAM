@@ -160,7 +160,8 @@ it('describes each collection for the generic pages', () => {
 
   for (const tree of ['categories', 'locations', 'departments'])
     expect(masterDomain(tree).Tree).toBeDefined();
-  expect(masterDomain('people').Stats).toBeDefined();
+  // The people list has no stat cards above it (2026-10-17).
+  expect(masterDomain('people').Stats).toBeUndefined();
   // A location's owner is named, not whoever typed it in.
   expect(masterDomain('locations').ownerFromCreator).toBe(false);
   // Reference data exports every readable field, so it imports back.

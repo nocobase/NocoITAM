@@ -9,7 +9,6 @@ import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { EmptyState } from '@/components/itam/empty-state';
 import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
 import { MasterDataTree } from '@/components/itam/master-data-tree';
-import { PeopleStatCards } from '@/components/itam/people-stats';
 import { RecordPane } from '@/components/itam/record-drawer';
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { Button } from '@/components/ui/button';
@@ -289,26 +288,6 @@ export function OnHandCell({
     kind === 'device' ? (devices.data[row.id] ?? 0) : (stock.data[row.id] ?? 0);
   return (
     <>{`${t(kind === 'device' ? 'tabs.devices' : 'tabs.stock')} ${total.toLocaleString()}`}</>
-  );
-}
-
-/** The cards above the people list; the list's own URL says which is active. */
-export function PeopleStats({
-  onFilter,
-}: {
-  readonly onFilter: (
-    filter: Readonly<Record<string, string | undefined>>,
-  ) => void;
-}): ReactElement {
-  const [params] = useSearchParams();
-  return (
-    <PeopleStatCards
-      active={{
-        employmentStatus: params.get('employmentStatus') ?? undefined,
-        sort: params.get('sort') ?? undefined,
-      }}
-      onFilter={onFilter}
-    />
   );
 }
 
