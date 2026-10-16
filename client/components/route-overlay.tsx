@@ -174,9 +174,12 @@ export function RouteOverlay({
                 {children}
               </div>
               {footer != null && (
+                // Application change (ITAM, 2026-10-16): a lower footer, its
+                // buttons py-3 from the edges (the library's p-6) and still
+                // in line with the body's sides.
                 <footer
                   data-slot='route-overlay-footer'
-                  className='flex shrink-0 flex-wrap justify-end gap-2 border-t bg-muted/30 p-6'
+                  className='flex shrink-0 flex-wrap justify-end gap-2 border-t bg-muted/30 px-6 py-3'
                 >
                   {footer}
                 </footer>

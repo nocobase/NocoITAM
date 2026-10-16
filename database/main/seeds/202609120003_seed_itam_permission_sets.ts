@@ -283,15 +283,15 @@ const seed: SeedDefinition = defineSeed({
       return;
     const now = new Date();
 
-    const sets: readonly [string, string, Grant[]][] = [
-      [IT_SUPPORT, 'IT Support', splitOperations(itSupportGrants())],
-      [
-        ASSET_MANAGER,
-        'IT Asset Manager',
-        splitOperations(assetManagerGrants()),
-      ],
+    // Each title a translation key in the application's namespace, as the
+    // plugin's own sets carry theirs, so the name follows the reader's
+    // language (2026-10-16): `users.roles.<key>` in client/locales. A set
+    // an administrator renames stores the name typed.
+    const sets: readonly [string, Grant[]][] = [
+      [IT_SUPPORT, splitOperations(itSupportGrants())],
+      [ASSET_MANAGER, splitOperations(assetManagerGrants())],
     ];
-    for (const [key, title, grants] of sets) {
+    for (const [key, grants] of sets) {
       const existing = await query
         .selectFrom('authorizationPermissionSets')
         .select('key')
@@ -304,7 +304,7 @@ const seed: SeedDefinition = defineSeed({
           id: crypto.randomUUID(),
           key,
           // A title is stored encoded: plain text or a { key, ns } descriptor.
-          title: JSON.stringify(title),
+          title: JSON.stringify({ key: `users.roles.${key}`, ns: 'itam' }),
           grants,
           createdAt: now,
           updatedAt: now,

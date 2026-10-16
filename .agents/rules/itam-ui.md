@@ -33,6 +33,9 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   `admin.*` namespace rather than `crm.admin.*`, `ToneBadge` for tags, the
   settings' own `sortable-table` and `auto-load`, and the bordered card
   `shared.tsx` draws on `bg-card`. Port a later CRM change the same way.
+  Every route overlay's footer is `py-3` rather than the UI Library's `p-6`
+  (an application change in `client/components/route-overlay.tsx`,
+  2026-10-16): the drawers' 保存 row stood too tall.
 - An asset-type tag is outlined, not filled: the contract
   `[data-slot='badge'][data-tag='kind']` in `client/styles.css` gives it a
   border and no background, which is what tells it apart from a status tag

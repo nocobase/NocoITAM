@@ -156,6 +156,18 @@ describe('ITAM seeds', () => {
       'itam-it-support',
       'system-administrator',
     ]);
+    // Each named by a translation key, so the name follows the language.
+    const titles = await db.database
+      .query()
+      .selectFrom('authorizationPermissionSets')
+      .select(['key', 'title'])
+      .where('key', 'like', 'itam-%')
+      .execute<{ key: string; title: unknown }>();
+    for (const row of titles)
+      expect(JSON.parse(String(row.title))).toEqual({
+        key: `users.roles.${row.key}`,
+        ns: 'itam',
+      });
 
     // This application issues the platform's administrator set nothing: the
     // `root` set is unrestricted, so an ITAM copy of "may do everything"
@@ -454,6 +466,27 @@ describe('ITAM seeds', () => {
     );
   });
 
+  it('names a set still called what the seeds once wrote by a translation key', async () => {
+    const stored = [
+      { key: 'itam-it-support', title: 'IT Support', grants: [] },
+      // Renamed by an administrator: the name typed stays.
+      { key: 'itam-asset-manager', title: '资产管理员', grants: [] },
+    ];
+    const titles = new Map<string, unknown>();
+    await reconcileGrants({
+      list: async () => stored,
+      update: async (key: string, set: { title: unknown }) => {
+        titles.set(key, set.title);
+      },
+    } as never);
+    expect(titles.get('itam-it-support')).toEqual({
+      key: 'users.roles.itam-it-support',
+      ns: 'itam',
+    });
+    // Updated for its grants, if at all, with its own name.
+    expect(titles.get('itam-asset-manager') ?? '资产管理员').toBe('资产管理员');
+  });
+
   it('gives a set stored before 入职配置 its grant, and no page of its own', async () => {
     const stored = [
       { key: 'itam-it-support', grants: [] },
@@ -478,9 +511,9 @@ describe('ITAM seeds', () => {
       'create',
       'update',
     ]);
-    expect(kitGrant('itam-asset-manager')?.actions.map((a) => a.action)).toEqual(
-      ['read', 'create', 'update', 'delete'],
-    );
+    expect(
+      kitGrant('itam-asset-manager')?.actions.map((a) => a.action),
+    ).toEqual(['read', 'create', 'update', 'delete']);
     // 入职配置 is a tab of the department's page since 2026-10-06, so its
     // page of its own is not added, and a stored grant for it is stripped.
     expect(updated.get('itam-it-support')).not.toContainEqual({

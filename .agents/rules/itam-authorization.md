@@ -99,6 +99,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   which translates this application's two sets through `users.roles.*` and
   reads any other by its stored title), since picking a 负责人 or an
   approver is picking a role as much as a person.
+- The two sets' **names follow the reader's language** (2026-10-16): the
+  seed stores each title as a translation key, `{ key: 'users.roles.<set
+key>', ns: 'itam' }`, the way the plugin's own 成员 and 系统管理员 are
+  stored, and `reconcileGrants` gives the key to a set still named what the
+  seeds wrote before (`SEEDED_TITLES`: "IT Support", "IT Asset Manager").
+  A set an administrator renamed keeps the name typed, in that one
+  language — the plugin stores a rename as plain text.
 - IT support is the Asset Manager **minus approving and deleting**
   (2026-10-05): every grant seed derives `itSupportGrants()` from the
   manager's through `minusApprovalAndDeletion`, so the difference between

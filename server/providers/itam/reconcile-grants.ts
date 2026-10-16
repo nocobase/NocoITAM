@@ -526,6 +526,17 @@ const ADDED_COLLECTIONS: ReadonlyMap<
   ],
 ]);
 
+/**
+ * The titles the seeds wrote as plain English before they wrote translation
+ * keys (2026-10-16). A set still named so is given the key, so its name
+ * follows the reader's language like the plugin's own sets; one an
+ * administrator renamed keeps the name typed.
+ */
+const SEEDED_TITLES: ReadonlyMap<string, string> = new Map([
+  ['itam-it-support', 'IT Support'],
+  ['itam-asset-manager', 'IT Asset Manager'],
+]);
+
 export async function reconcileGrants(
   permissionSets: PermissionSetsApi,
 ): Promise<void> {
@@ -537,6 +548,12 @@ export async function reconcileGrants(
       continue;
     }
     let changed = false;
+    const seededTitle = SEEDED_TITLES.get(set.key);
+    const title =
+      seededTitle !== undefined && set.title === seededTitle
+        ? { key: `users.roles.${set.key}`, ns: 'itam' }
+        : set.title;
+    if (title !== set.title) changed = true;
     const grants = set.grants.flatMap((entry) => {
       const normalized = normalizeGrantFields(entry);
       if (normalized.changed) changed = true;
@@ -600,6 +617,7 @@ export async function reconcileGrants(
       });
       changed = true;
     }
-    if (changed) await permissionSets.update(set.key, { ...set, grants });
+    if (changed)
+      await permissionSets.update(set.key, { ...set, title, grants });
   }
 }
