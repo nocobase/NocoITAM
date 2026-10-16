@@ -18,7 +18,7 @@ import { PurchaseOrderLinesCard } from './lines-tab.js';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { createMyApprovalView } from '@/components/itam/my-approval-view';
-import { InfoRow } from '@/components/itam/detail-page';
+import { SummaryLead } from '@/components/itam/summary-lead';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
 import { Paged } from '@/components/itam/paged';
 import { Button } from '@/components/ui/button';
@@ -138,26 +138,10 @@ export const purchaseOrderDomain: DomainConfig = {
   Decisions: createApprovalDecisions('purchaseOrders', PURCHASE_ORDERS_PATH),
   // Status, approver and the estimate lead 基本信息 (2026-10-16), as a
   // device's status does; no summary strip.
-  BasicLead: PurchaseOrderLead,
+  BasicLead: ({ record }) => (
+    <SummaryLead record={record} summary={RECORD_SUMMARIES.purchaseOrders} />
+  ),
 };
-
-/** The top of an order's 基本信息: what the summary strip used to say. */
-function PurchaseOrderLead({
-  record,
-}: {
-  readonly record: ItamRecord;
-}): ReactElement {
-  const { t } = useTranslation();
-  return (
-    <>
-      {RECORD_SUMMARIES.purchaseOrders.items(record, t).map((item) => (
-        <InfoRow key={item.key} label={item.label}>
-          {item.value}
-        </InfoRow>
-      ))}
-    </>
-  );
-}
 
 /** What the decision is about: the lines, as the order states them. */
 function DecidedLines({ orderId }: { readonly orderId: string }): ReactElement {

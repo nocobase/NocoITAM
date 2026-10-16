@@ -12,6 +12,7 @@ import { FieldInput } from '@/components/itam/field-input';
 import { MultiReferenceInput } from '@/components/itam/multi-reference';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
+import { SummaryLead } from '@/components/itam/summary-lead';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -100,7 +101,10 @@ export const auditDomain: DomainConfig = {
   defaultTab: 'items',
   Create: AuditCreateDialog,
   Actions: AuditActions,
-  summary: RECORD_SUMMARIES.auditTasks.items,
+  // The summary leads 基本信息 (2026-10-16); no summary strip.
+  BasicLead: ({ record }) => (
+    <SummaryLead record={record} summary={RECORD_SUMMARIES.auditTasks} />
+  ),
 };
 
 function ExecutorNames({ ids }: { readonly ids: unknown }): ReactElement {

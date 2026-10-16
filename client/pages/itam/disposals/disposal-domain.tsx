@@ -18,6 +18,7 @@ import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { RecipientInput } from '@/components/itam/recipient-input';
 import { createMyApprovalView } from '@/components/itam/my-approval-view';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
+import { SummaryLead } from '@/components/itam/summary-lead';
 import { DataTable } from '@/components/itam/data-table';
 import { RecordLink } from '@/components/itam/record-link';
 import { TreePath } from '@/components/itam/tree-path';
@@ -108,7 +109,10 @@ export const disposalDomain: DomainConfig = {
   Actions: DisposalActions,
   // 等你决定: 审批审阅's review for the approver (2026-10-16).
   Decisions: createApprovalDecisions('disposals', DISPOSALS_PATH),
-  summary: RECORD_SUMMARIES.disposals.items,
+  // The summary leads 基本信息 (2026-10-16); no summary strip.
+  BasicLead: ({ record }) => (
+    <SummaryLead record={record} summary={RECORD_SUMMARIES.disposals} />
+  ),
 };
 
 /**

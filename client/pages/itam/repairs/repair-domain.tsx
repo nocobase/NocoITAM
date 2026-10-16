@@ -5,6 +5,7 @@ import { useParams } from 'react-router';
 
 import { AttachmentsTab } from '@/components/itam/attachments-tab';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
+import { SummaryLead } from '@/components/itam/summary-lead';
 import { RepairCompleteDialog } from '@/components/itam/repair-complete';
 import { RepairCreateDialog } from '@/components/itam/repair-create-dialog';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,10 @@ export const repairDomain: DomainConfig = {
     />
   ),
   summaryTimestamps: false,
-  summary: RECORD_SUMMARIES.repairs.items,
+  // The summary leads 基本信息 (2026-10-16); no summary strip.
+  BasicLead: ({ record }) => (
+    <SummaryLead record={record} summary={RECORD_SUMMARIES.repairs} />
+  ),
 };
 
 /** 完成维修 on the detail page while the repair is in progress. */
