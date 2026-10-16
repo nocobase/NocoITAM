@@ -22,7 +22,6 @@ import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
 import { Paged } from '@/components/itam/paged';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -59,6 +58,7 @@ import { referenceRoute, useReferenceNames } from '@/lib/itam/references';
 import { STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
 import { useConfirm } from '@/lib/itam/use-confirm';
 import { PurchaseOrderCreateDialog } from './create-dialog.js';
+import { DateField } from '@/components/itam/date-field';
 
 // eslint-disable-next-line react-refresh/only-export-components -- a domain config is data that references its components
 export const purchaseOrderDomain: DomainConfig = {
@@ -502,23 +502,20 @@ function PurchaseOrderActions({
       >
         <div className='grid gap-1.5'>
           <Label htmlFor='order-placed'>{t('fields.orderedAt')}</Label>
-          <Input
+          <DateField
             id='order-placed'
-            type='date'
-            max='9999-12-31'
+            required
             value={orderedAt}
-            onChange={(event) => setOrderedAt(event.target.value)}
+            onChange={(next) => setOrderedAt(next ?? '')}
           />
         </div>
         <div className='grid gap-1.5'>
           <Label htmlFor='order-expected'>{t('fields.expectedAt')}</Label>
-          <Input
+          <DateField
             id='order-expected'
-            type='date'
-            max='9999-12-31'
             min={orderedAt || todayIso()}
             value={expectedAt}
-            onChange={(event) => setExpectedAt(event.target.value)}
+            onChange={(next) => setExpectedAt(next ?? '')}
           />
         </div>
       </ConfirmDialog>

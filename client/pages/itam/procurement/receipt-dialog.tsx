@@ -47,6 +47,7 @@ import {
 import { useReferenceNames } from '@/lib/itam/references';
 import { STOCK_PATH } from '@/lib/itam/stock';
 import { cn } from '@/lib/utils';
+import { DateField } from '@/components/itam/date-field';
 
 /** One device being received; `source` while it holds what the document said. */
 interface UnitDraft {
@@ -742,14 +743,12 @@ function DeviceLine({
               <AiMark source={draft.warrantySource} />
             ) : null}
           </Label>
-          <Input
+          <DateField
             id={`batch-warranty-${lineId}`}
-            type='date'
-            max='9999-12-31'
             value={draft.warrantyEndDate}
-            onChange={(event) =>
+            onChange={(next) =>
               onChange({
-                warrantyEndDate: event.target.value,
+                warrantyEndDate: next ?? '',
                 warrantySource: undefined,
               })
             }

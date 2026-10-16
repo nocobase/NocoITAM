@@ -65,7 +65,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -78,6 +77,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useAiPageContext } from '@/lib/itam/ai-chat';
 import { useAnnounce } from '@/lib/itam/announce';
+import { DateField } from '@/components/itam/date-field';
 import {
   apiErrorBody,
   masterDataPath,
@@ -947,13 +947,11 @@ function ReserveDialog({
       </div>
       <div className='grid gap-1.5'>
         <Label htmlFor='reserve-until'>{t('fields.reservedUntil')}</Label>
-        <Input
+        <DateField
           id='reserve-until'
-          type='date'
-          max='9999-12-31'
           min={todayIso()}
           value={until}
-          onChange={(event) => setUntil(event.target.value)}
+          onChange={(next) => setUntil(next ?? '')}
         />
       </div>
     </ConfirmDialog>

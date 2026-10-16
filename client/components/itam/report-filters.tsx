@@ -2,7 +2,6 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useState, type ReactElement } from 'react';
 
 import { ReferenceSelect } from '@/components/itam/reference-select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { periodRange, type ReportPeriod } from '@/lib/itam/report-charts';
 import type { ReportFilters } from '@/lib/itam/workbench';
+import { DateField } from './date-field.js';
 
 const PERIODS: readonly ReportPeriod[] = ['month', 'quarter', 'year', 'custom'];
 
@@ -75,24 +75,18 @@ export function ReportFilterBar({
         <>
           <div className='grid gap-1.5'>
             <Label htmlFor='report-from'>{t('reports.from')}</Label>
-            <Input
+            <DateField
               id='report-from'
-              type='date'
-              max='9999-12-31'
-              value={value.from ?? ''}
-              onChange={(event) =>
-                set({ from: event.target.value || undefined })
-              }
+              value={value.from}
+              onChange={(next) => set({ from: next || undefined })}
             />
           </div>
           <div className='grid gap-1.5'>
             <Label htmlFor='report-to'>{t('reports.to')}</Label>
-            <Input
+            <DateField
               id='report-to'
-              type='date'
-              max='9999-12-31'
-              value={value.to ?? ''}
-              onChange={(event) => set({ to: event.target.value || undefined })}
+              value={value.to}
+              onChange={(next) => set({ to: next || undefined })}
             />
           </div>
         </>

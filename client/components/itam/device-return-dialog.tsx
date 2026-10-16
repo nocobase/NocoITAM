@@ -114,6 +114,8 @@ export function DeviceReturnDialog({
         {/* A conclusion can run to a few lines (2026-10-16). */}
         <Textarea
           id='return-condition'
+          // The server's limit, so it cannot be passed by typing.
+          maxLength={2000}
           value={condition}
           onChange={(event) => setCondition(event.target.value)}
         />

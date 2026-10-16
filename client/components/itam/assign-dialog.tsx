@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -31,6 +30,7 @@ import {
   todayIso,
 } from '@/lib/itam/format';
 
+import { DateField } from './date-field.js';
 import { ReferenceSelect } from './reference-select.js';
 
 export interface AssignValues {
@@ -250,16 +250,12 @@ export function AssignDialog({
                   {t('fields.expectedReturnDate')}{' '}
                   <span className='text-destructive'>*</span>
                 </Label>
-                <Input
+                <DateField
                   id='assign-return'
-                  type='date'
-                  max='9999-12-31'
                   min={todayIso()}
                   required
                   value={expectedReturnDate}
-                  onChange={(event) =>
-                    setExpectedReturnDate(event.target.value)
-                  }
+                  onChange={(next) => setExpectedReturnDate(next ?? '')}
                 />
               </div>
             ) : null}

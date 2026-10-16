@@ -446,7 +446,9 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
               .enum(RETURN_TARGETS as [string, ...string[]])
               .optional(),
             locationId: id.optional(),
-            condition: optionalText,
+            // A conclusion, kept in the history entry: room for a few
+            // lines rather than one (2026-10-16).
+            condition: z.string().trim().max(2000).nullable().optional(),
           })
           .strict()
           .parse(body) as never,

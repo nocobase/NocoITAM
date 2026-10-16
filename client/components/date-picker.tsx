@@ -36,6 +36,12 @@ export interface DatePickerProps {
    * where a date is required.
    */
   readonly clearLabel?: string;
+  /**
+   * The earliest day that may be picked, `yyyy-mm-dd` (ITAM, 2026-10-16:
+   * a loan's return date, which the native date inputs it replaced bounded
+   * with `min`).
+   */
+  readonly min?: string;
 }
 
 export function DatePicker({
@@ -50,7 +56,9 @@ export function DatePicker({
   onOpenChange,
   defaultOpen = false,
   clearLabel,
+  min,
 }: DatePickerProps): ReactElement {
+  const earliest = localDay(min);
   const [open, setOpen] = useState(defaultOpen);
   const day = localDay(value);
   const close = (): void => {
@@ -90,6 +98,7 @@ export function DatePicker({
           selected={day}
           defaultMonth={day}
           locale={locale}
+          {...(earliest ? { disabled: { before: earliest } } : {})}
           onSelect={(picked) => {
             onChange(picked ? isoDay(picked) : null);
             close();
