@@ -505,9 +505,9 @@ export function PersonBelongings({
             per group would split five rows into three tables. */}
       <DataTable
         columns={[
-          // Ticking, first, and only where something can be ticked: a row
-          // waiting on a repair, a consumable to confirm and a settled row
-          // have no box, the way they have no button.
+          // Ticking, first. A row nothing can be done with yet — waiting on
+          // a repair, a consumable to confirm, a settled row — keeps a
+          // greyed box, so the column reads as one (2026-10-16).
           ...(selectable.length > 0
             ? [
                 {
@@ -528,24 +528,37 @@ export function PersonBelongings({
                       }
                     />
                   ),
-                  className: 'w-px',
+                  // Level with the row's first line, the tag's, rather than
+                  // the middle of a row that wraps.
+                  className: 'w-px align-top',
                   render: (item: (typeof rows)[number]) =>
                     actionable(item) ? (
-                      <Checkbox
-                        aria-label={t('people.recovery.batch.select')}
-                        checked={ticked.has(itemKey(item))}
-                        // The row opens its record; ticking must not.
-                        onClick={(event) => event.stopPropagation()}
-                        onCheckedChange={(checked) =>
-                          setTicked((current) => {
-                            const next = new Set(current);
-                            if (checked) next.add(itemKey(item));
-                            else next.delete(itemKey(item));
-                            return next;
-                          })
-                        }
-                      />
-                    ) : null,
+                      <span className='flex h-6 items-center'>
+                        <Checkbox
+                          aria-label={t('people.recovery.batch.select')}
+                          checked={ticked.has(itemKey(item))}
+                          // The row opens its record; ticking must not.
+                          onClick={(event) => event.stopPropagation()}
+                          onCheckedChange={(checked) =>
+                            setTicked((current) => {
+                              const next = new Set(current);
+                              if (checked) next.add(itemKey(item));
+                              else next.delete(itemKey(item));
+                              return next;
+                            })
+                          }
+                        />
+                      </span>
+                    ) : (
+                      <span className='flex h-6 items-center'>
+                        <Checkbox
+                          aria-label={t('people.recovery.batch.select')}
+                          checked={false}
+                          disabled
+                          onClick={(event) => event.stopPropagation()}
+                        />
+                      </span>
+                    ),
                 },
               ]
             : []),
@@ -557,7 +570,7 @@ export function PersonBelongings({
             // carries, and how many of a stock item are held.
             render: (item) => (
               <span className='grid gap-0.5'>
-                <span className='flex min-w-0 items-center gap-2 font-medium'>
+                <span className='flex min-h-6 min-w-0 items-center gap-2 font-medium'>
                   {/* Which of the five it is reads in front of the name,
                         the way a to-do row is tagged: one mixed list, and
                         the tag is what tells the rows apart. */}

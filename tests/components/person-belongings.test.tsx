@@ -222,7 +222,7 @@ it('takes everything ticked back at once, each its own way', async () => {
       },
       seat('s1'),
       seat('s2'),
-      // Waiting on a repair: no box, as it has no button.
+      // Waiting on a repair: a greyed box, as it has no button.
       {
         kind: 'device',
         id: 'd1',
@@ -236,9 +236,13 @@ it('takes everything ticked back at once, each its own way', async () => {
     ],
   });
   show();
+  const boxes = screen.getAllByRole('checkbox', {
+    name: 'people.recovery.batch.select',
+  });
+  expect(boxes).toHaveLength(4);
   expect(
-    screen.getAllByRole('checkbox', { name: 'people.recovery.batch.select' }),
-  ).toHaveLength(3);
+    boxes.filter((box) => box.getAttribute('aria-disabled') === 'true'),
+  ).toHaveLength(1);
   fireEvent.click(
     screen.getAllByRole('checkbox', {
       name: 'people.recovery.batch.selectAll',

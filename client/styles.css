@@ -567,6 +567,12 @@ label:has(> .sr-only:focus-visible),
 [data-slot='table-cell'] {
   padding-inline: calc(var(--spacing) * 3);
 }
+/* A checkbox column keeps the primitive's own rule — no padding between the
+   box and the cell after it — which the padding above, unlayered, overrode,
+   leaving the box far from what it ticks (2026-10-16). */
+:is([data-slot='table-head'], [data-slot='table-cell']):has([role='checkbox']) {
+  padding-right: 0;
+}
 [data-slot='table-head'][aria-sort]:not([aria-sort='none']) {
   color: var(--primary);
 }
