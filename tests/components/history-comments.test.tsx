@@ -196,6 +196,39 @@ it('keeps a comment’s files in view while it is edited, and saves those kept',
   );
 });
 
+it('deletes a comment whose one file is all it holds, saying so first', async () => {
+  state.items = [
+    {
+      ...comment,
+      actorId: 'me',
+      event: {
+        ...comment.event,
+        actorId: 'me',
+        payload: {
+          body: '',
+          mentions: [],
+          files: [{ id: 'f9', filename: 'photo.jpg', ext: 'jpg', size: 900 }],
+        },
+      },
+      replies: [],
+    },
+  ];
+  renderTimeline();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'actions.delete: photo.jpg' }),
+  );
+  expect(
+    await screen.findByText('comments.removeLastFileDescription'),
+  ).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'actions.delete' }));
+  await waitFor(() =>
+    expect(state.request).toHaveBeenCalledWith({
+      path: 'itam/comments/c1',
+      method: 'DELETE',
+    }),
+  );
+});
+
 it('keeps no comment box where a history keeps no comments', () => {
   render(
     <MemoryRouter>

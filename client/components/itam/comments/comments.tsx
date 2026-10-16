@@ -454,6 +454,10 @@ function Message({
     text(event.actorId);
   const mine = Boolean(scope.me) && event.actorId === scope.me;
   const removed = gone(event);
+  // A comment with no text and one file is that file: taking it off
+  // deletes the comment.
+  const lastContent =
+    bodyOf(event).trim() === '' && filesOf(event).length === 1;
   const write = async (
     method: 'PATCH' | 'DELETE',
     // Taking one file off: the comment keeps its text and the rest.
@@ -638,15 +642,9 @@ function Message({
             ) : null}
             <CommentFiles
               files={filesOf(event)}
-              // Its author's to take off, while something else is left —
-              // a comment of one file and no text is deleted whole.
-              onRemove={
-                mine &&
-                !removed &&
-                (bodyOf(event).trim() !== '' || filesOf(event).length > 1)
-                  ? setUnfiling
-                  : undefined
-              }
+              // Its author's to take off; the last thing a comment holds
+              // takes the comment with it, which the question says.
+              onRemove={mine && !removed ? setUnfiling : undefined}
             />
           </>
         )}
@@ -671,14 +669,19 @@ function Message({
           if (!open) setUnfiling(undefined);
         }}
         title={t('comments.removeFileTitle')}
-        description={t('comments.removeFileDescription', {
-          name: unfiling?.filename ?? '',
-        })}
+        description={t(
+          lastContent
+            ? 'comments.removeLastFileDescription'
+            : 'comments.removeFileDescription',
+          { name: unfiling?.filename ?? '' },
+        )}
         confirmLabel={t('actions.delete')}
         destructive
         busy={busy}
         error={error}
-        onConfirm={() => void write('PATCH', unfiling)}
+        onConfirm={() =>
+          void (lastContent ? write('DELETE') : write('PATCH', unfiling))
+        }
       />
       <ConfirmDialog
         open={dropping !== undefined}

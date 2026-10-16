@@ -244,6 +244,8 @@ const messages = {
     edited: 'edited',
     deleted: 'This comment was deleted',
     removeFileTitle: 'Delete attachment',
+    removeLastFileDescription:
+      '"{{name}}" is all this comment holds: deleting it deletes the comment.',
     removeFileDescription:
       'Delete "{{name}}" from this comment? Its text stays.',
     deleteTitle: 'Delete this comment?',

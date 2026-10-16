@@ -237,6 +237,8 @@ const zhCN: AppResource = {
     edited: '已编辑',
     deleted: '评论已删除',
     removeFileTitle: '删除附件',
+    removeLastFileDescription:
+      '「{{name}}」是这条评论唯一的内容，删除后整条评论也会删除。',
     removeFileDescription: '从这条评论中删除「{{name}}」？评论的文字保留。',
     deleteTitle: '删除这条评论？',
     deleteDescription: '评论的文字和附件会删除，回复会保留。',
