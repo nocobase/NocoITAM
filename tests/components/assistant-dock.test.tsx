@@ -107,3 +107,36 @@ it('says why it cannot answer, and takes no input', () => {
     screen.getByRole('textbox', { name: 'ai.unavailable' }),
   ).toBeDisabled();
 });
+
+it('closes once a question is sent, its suggestions not coming back', () => {
+  at('/devices');
+  const box = screen.getByRole('textbox', { name: 'ai.dock.placeholder' });
+  fireEvent.focus(box);
+  expect(screen.getByRole('list')).toBeTruthy();
+  fireEvent.change(box, { target: { value: 'Which are idle?' } });
+  fireEvent.keyDown(box, { key: 'Enter' });
+  expect(state.ask).toHaveBeenCalled();
+  expect(screen.queryByRole('list')).toBeNull();
+});
+
+it('gets focus back, still one line, when the panel closes', () => {
+  const { rerender } = at('/devices');
+  state.panelOpen = true;
+  rerender(
+    <MemoryRouter initialEntries={['/devices']}>
+      <AssistantDock />
+    </MemoryRouter>,
+  );
+  state.panelOpen = false;
+  rerender(
+    <MemoryRouter initialEntries={['/devices']}>
+      <AssistantDock />
+    </MemoryRouter>,
+  );
+  const box = screen.getByRole('textbox', { name: 'ai.dock.placeholder' });
+  expect(box).toHaveFocus();
+  // Not opened by itself: no suggestions until pressed.
+  expect(screen.queryByRole('list')).toBeNull();
+  fireEvent.pointerDown(box);
+  expect(screen.getByRole('list')).toBeTruthy();
+});

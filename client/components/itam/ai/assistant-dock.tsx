@@ -100,7 +100,14 @@ export function AssistantDock(): ReactElement | null {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const phoneRef = useRef<HTMLButtonElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
-  useFocusReturn(() => (isMobile ? phoneRef.current : inputRef.current));
+  // Focus given back when the panel closes leaves the dock one line: it
+  // opens once the reader presses it or types, not by itself (2026-10-16,
+  // as NocoCRM's).
+  const quietRef = useRef(false);
+  useFocusReturn(() => {
+    quietRef.current = !isMobile;
+    return isMobile ? phoneRef.current : inputRef.current;
+  });
   // A press outside closes it too, focus or not: a page that drags on a
   // press keeps focus where it was, so no blur would come. Its model menu,
   // outside it while open, keeps it open (2026-10-16, as NocoCRM's).
@@ -140,13 +147,26 @@ export function AssistantDock(): ReactElement | null {
       modelMenu ||
       Boolean(draft.value) ||
       draft.files.files.length > 0);
+  // Sent, by Enter, the send button or a suggestion: the box closes, so its
+  // suggestions do not come back over the emptied box.
+  const sending: typeof draft = {
+    ...draft,
+    send: (prompt) => {
+      const sent = draft.send(prompt);
+      if (sent) {
+        setListOpen(false);
+        setFocused(false);
+      }
+      return sent;
+    },
+  };
   const send = (prompt: string): void => {
-    if (draft.send(prompt)) setFocused(false);
+    sending.send(prompt);
   };
 
   const box = (
     <AskComposer
-      draft={draft}
+      draft={sending}
       placeholder={placeholder}
       disabled={Boolean(unavailable)}
       expanded={expanded}
@@ -221,7 +241,18 @@ export function AssistantDock(): ReactElement | null {
               expanded ? 'max-w-[32rem]' : 'max-w-[22rem]'
             }`}
             onFocus={() => {
+              if (quietRef.current) {
+                quietRef.current = false;
+                return;
+              }
               if (!focused) setListOpen(true);
+              setFocused(true);
+            }}
+            // Pressed while it already holds focus (given back quietly):
+            // it opens as a focus would open it.
+            onPointerDown={() => {
+              if (focused) return;
+              setListOpen(true);
               setFocused(true);
             }}
             onBlur={(event) => {
