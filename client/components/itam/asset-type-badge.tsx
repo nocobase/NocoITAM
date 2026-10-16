@@ -37,10 +37,15 @@ export function AssetTypeBadge({
     ];
   if (!kind) return <span className='text-muted-foreground'>—</span>;
   return (
-    // Outlined, because it says what kind of thing this is rather than what
-    // state it is in — the contract is in `styles.css`, beside the rest of
-    // what every tag in this application looks like.
-    <Badge variant='secondary' data-tag='kind' className={className}>
+    // A kind, not a state, and drawn as a solid dark tag (2026-10-16) — the
+    // contract is in `styles.css`, beside the rest of what every tag in this
+    // application looks like.
+    <Badge
+      variant='secondary'
+      data-tag='kind'
+      data-kind='asset'
+      className={className}
+    >
       {Icon ? <Icon className='size-3' aria-hidden='true' /> : null}
       {label ?? t(`enums.appliesTo.${kind}`, { defaultValue: kind })}
     </Badge>

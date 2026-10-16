@@ -249,6 +249,13 @@
   @apply border border-border bg-transparent text-muted-foreground;
 }
 
+/* An asset type (设备, 配件, 耗材, 组件, 授权) is a solid dark tag
+   (2026-10-16): the one tag drawn this way, so it stands apart from both a
+   status's light fill and a document kind's outline. */
+[data-slot='badge'][data-tag='kind'][data-kind='asset'] {
+  @apply border-transparent bg-foreground text-background;
+}
+
 /* A work document's kind, each in a hue of its own (2026-10-17): still
    outlined, so it never reads as a status, whose tags are filled. */
 [data-slot='badge'][data-tag='kind'][data-kind='purchaseOrders'] {
