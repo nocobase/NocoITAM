@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { createApprovalDecisions } from '@/components/itam/ai/approval-decisions';
 import { DISPOSAL_CARD } from '@/components/itam/board-card-specs';
 import { createStatusBoard } from '@/components/itam/status-board';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -105,6 +106,8 @@ export const disposalDomain: DomainConfig = {
   Aside: DisposalDevicesCard,
   Create: DisposalCreateDialog,
   Actions: DisposalActions,
+  // 等你决定: 审批审阅's review for the approver (2026-10-16).
+  Decisions: createApprovalDecisions('disposals', DISPOSALS_PATH),
   summary: RECORD_SUMMARIES.disposals.items,
 };
 

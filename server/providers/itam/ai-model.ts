@@ -8,6 +8,8 @@ import { z, type ZodType } from 'zod';
 
 import { assistantId } from '../itam-agents/assistant.js';
 import { SKILLS_DIR } from '../itam-agents/library.js';
+import { WORK_AGENTS, workAgentIds } from '../itam-agents/work-agents.js';
+import type { AgentName } from './agent-runs.js';
 import { BusinessRuleError } from './errors.js';
 
 /**
@@ -53,6 +55,44 @@ export async function itamModel(
   return catalog?.defaultModel ?? null;
 }
 
+/**
+ * A work agent's model and instructions (2026-10-16, work-agents.ts): its
+ * first model when it lists one, else Noco's (`itamModel`); null when there
+ * is no model to ask. One an administrator archived or deleted leaves its
+ * work to Noco's model and no instructions of its own.
+ */
+export async function workRun(
+  container: ServiceResolver,
+  work: AgentName,
+): Promise<{ model: ModelRef; instructions: string } | null> {
+  if (!container.has(agentsToken)) return null;
+  let instructions = '';
+  try {
+    const id = container.has(databaseManagerToken)
+      ? (await workAgentIds(container.resolve(databaseManagerToken)))[work]
+      : undefined;
+    const agent = id
+      ? await container
+          .resolve(agentsToken)
+          .agents.get(id)
+          .catch(() => null)
+      : null;
+    if (agent && !agent.archivedAt) {
+      instructions = (agent.instructions ?? '').trim();
+      const entry = agent.modelEntries[0];
+      if (entry && 'modelService' in entry)
+        return {
+          model: { modelService: entry.modelService, model: entry.model },
+          instructions,
+        };
+    }
+  } catch {
+    // Unreadable: Noco's model below.
+  }
+  const model = await itamModel(container).catch(() => null);
+  return model ? { model, instructions } : null;
+}
+
 /** Whether the work can run: there is a model to ask. */
 export async function aiAvailable(
   container: ServiceResolver,
@@ -82,10 +122,27 @@ export interface ModelSession {
  */
 export async function openSession(
   container: ServiceResolver,
-  { timeZone, system }: { timeZone: string; system: string },
-): Promise<ModelSession | null> {
-  const model = await itamModel(container).catch(() => null);
-  if (!model) return null;
+  {
+    timeZone,
+    system,
+    work,
+  }: {
+    timeZone: string;
+    system: string;
+    /**
+     * A work agent's run (2026-10-16): its model and instructions, its use
+     * recorded under its name on 用量.
+     */
+    work?: AgentName;
+  },
+): Promise<(ModelSession & { readonly model: ModelRef }) | null> {
+  const run = work
+    ? await workRun(container, work).catch(() => null)
+    : await itamModel(container)
+        .then((model) => (model ? { model, instructions: '' } : null))
+        .catch(() => null);
+  if (!run) return null;
+  const { model } = run;
   const now = new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
@@ -96,7 +153,11 @@ export async function openSession(
     minute: '2-digit',
     hour12: false,
   }).format(new Date());
-  const prompt = [`The current time is ${now} (${timeZone}).`, system]
+  const prompt = [
+    `The current time is ${now} (${timeZone}).`,
+    run.instructions,
+    system,
+  ]
     .filter(Boolean)
     .join('\n\n');
   const gateway = container.resolve(agentsToken).online.gateway;
@@ -119,13 +180,14 @@ export async function openSession(
       system: prompt,
       prompt: text,
       maxOutputTokens: 16_000,
-      source: AI_SOURCE,
+      source: work ? WORK_AGENTS[work].name : AI_SOURCE,
       ...(signal ? { signal } : {}),
     });
     turns.push({ role: 'assistant', text: reply.text });
     return reply.text;
   };
   return {
+    model,
     ask,
     async askJson<T>(
       content: string,

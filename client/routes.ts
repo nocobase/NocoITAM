@@ -25,6 +25,7 @@ import {
   Database,
   FolderTree,
   Factory,
+  Inbox,
   KeyRound,
   LayoutDashboard,
   Laptop,
@@ -35,9 +36,11 @@ import {
   Package,
   Printer,
   Recycle,
+  ScrollText,
   ShoppingCart,
   Store,
   Users,
+  Workflow,
   Wrench,
 } from 'lucide-react';
 
@@ -47,6 +50,27 @@ import {
  * tabs are child routes of the detail page.
  */
 const comingSoon = () => import('./pages/itam/coming-soon-page.js');
+
+/**
+ * One of the Agents plugin's pages drawn in ITAM's look
+ * (components/itam/plugin-page.tsx, 2026-10-16, after NocoCRM's): its
+ * component loaded as the plugin declares it and wrapped, the route
+ * otherwise the plugin's own.
+ */
+const itamStyled = <
+  Route extends { componentLoader: AppClientRouteComponentLoader },
+>(
+  route: Route,
+): Route => ({
+  ...route,
+  componentLoader: async () => {
+    const [{ default: Page }, { withItamStyle }] = await Promise.all([
+      route.componentLoader(),
+      import('./components/itam/plugin-page.js'),
+    ]);
+    return { default: withItamStyle(Page) };
+  },
+});
 
 const deviceTabLoaders: Readonly<
   Record<string, AppClientRouteComponentLoader>
@@ -214,6 +238,18 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       componentLoader: () => import('./pages/auth/device.js'),
       name: 'device',
       path: '/device',
+    },
+    // 收件箱 (2026-10-16, plan "Work agents"; `frontend-standard.md` §S1):
+    // first in the menu, its count the runs waiting on the reader. Everyone
+    // has one and it shows only the reader's own, so it checks no page
+    // grant; `/notifications`, where the bell led, opens its 通知 tab.
+    {
+      name: 'inbox',
+      path: '/inbox',
+      auth: 'required',
+      authz: 'skip',
+      navigation: { title: 'navigation.inbox', icon: Inbox },
+      componentLoader: () => import('./pages/itam/inbox.js'),
     },
     {
       name: 'workbench',
@@ -598,25 +634,49 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       name: 'ai-group',
       navigation: { title: 'navigation.aiGroup', icon: Bot },
       children: [
+        // What the work agents do on their own (2026-10-16, plan "Work
+        // agents"); the page grant `agent-work` both IT roles hold.
         {
-          ...agentsRoute,
+          name: 'agent-work',
+          path: '/agent-work',
+          auth: 'required',
+          navigation: { title: 'navigation.agentWork', icon: Workflow },
+          componentLoader: () => import('./pages/itam/agent-work.js'),
+        },
+        // 业务说明 (2026-10-16, after NocoCRM's Business guidance): what
+        // every conversation and every background run works from, moved out
+        // of 设置 → AI; it is a setting, so it checks the settings page's
+        // grant.
+        {
+          name: 'ai-guidance',
+          path: '/ai-guidance',
+          auth: 'required',
+          authz: {
+            resource: { type: 'page', id: 'itam-settings' },
+            action: 'access',
+          },
+          navigation: { title: 'navigation.guidance', icon: ScrollText },
+          componentLoader: () => import('./pages/itam/guidance.js'),
+        },
+        {
+          ...itamStyled(agentsRoute),
           navigation: { title: 'navigation.agents', icon: Bot },
         },
         {
-          ...skillsRoute,
+          ...itamStyled(skillsRoute),
           navigation: { title: 'navigation.skills', icon: BookOpen },
         },
         // The plugin's `/models` is this application's asset models page
         // (a stored page grant names it), so the model services move aside.
         // The plugin's own "set up models" link still says `/models`.
         {
-          ...modelsRoute,
+          ...itamStyled(modelsRoute),
           name: 'ai-models',
           path: '/ai-models',
           navigation: { title: 'navigation.aiModels', icon: Cpu },
         },
         {
-          ...usageRoute,
+          ...itamStyled(usageRoute),
           navigation: { title: 'navigation.usage', icon: Gauge },
         },
       ],

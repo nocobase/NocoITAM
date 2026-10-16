@@ -19,6 +19,11 @@ import {
   type ServiceContainer,
 } from '@nocobase/service-provider';
 
+import { agentRunServiceToken, createAgentRunService } from './agent-runs.js';
+import {
+  approvalReviewerToken,
+  createApprovalReviewer,
+} from './approval-review.js';
 import { approvalServiceToken, createApprovalService } from './approvals.js';
 import { auditServiceToken, createAuditService } from './audits.js';
 import { deviceServiceToken, createDeviceService } from './devices.js';
@@ -422,6 +427,29 @@ export default class ItamProvider extends ServiceProvider<Application> {
         container.resolve(databaseManagerToken),
         container.resolve(historyServiceToken),
       ),
+    );
+    // The work agents' runs and the first of them, 审批审阅 (2026-10-16,
+    // plan "Work agents"); the agents' provider starts it on each request
+    // and gives it the jobs service.
+    container.singleton(agentRunServiceToken, () =>
+      createAgentRunService(container.resolve(databaseManagerToken)),
+    );
+    container.singleton(approvalReviewerToken, () =>
+      createApprovalReviewer({
+        container,
+        // The test harness has no config; the seeds' env override applies.
+        locale: () =>
+          process.env.APP_DEFAULT_LOCALE ??
+          this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??
+          'en-US',
+        warn: (detail, message) => {
+          if (container.has(loggingToken))
+            container
+              .resolve(loggingToken)
+              .getLogger('itam')
+              .warn(detail, message);
+        },
+      }),
     );
     container.singleton(attachmentServiceToken, () =>
       createAttachmentService(

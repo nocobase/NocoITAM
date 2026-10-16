@@ -66,9 +66,12 @@ const messages = {
     collapse: 'Collapse navigation',
     label: 'Application navigation',
     workbench: 'To-dos',
+    agentWork: 'Agent work',
+    guidance: 'Business guidance',
     search: 'Search',
     inboxGroup: 'Inbox',
-    inbox: 'To-dos',
+    // The inbox, first in the menu (2026-10-16); it said To-dos before, unused.
+    inbox: 'Inbox',
     notifications: 'Notifications',
     assetsGroup: 'Assets',
     operationsGroup: 'Operations',
@@ -93,10 +96,11 @@ const messages = {
     departments: 'Departments',
     people: 'People',
     onboardingKits: 'Onboarding kits',
-    aiGroup: 'AI',
+    // Named as NocoCRM's and the NocoSolution front-end standard's (§S1).
+    aiGroup: 'Agent team',
     agents: 'Agents',
     skills: 'Skills',
-    aiModels: 'Model services',
+    aiModels: 'Models',
     usage: 'Usage',
     settingsGroup: 'Settings',
     settingsGeneral: 'General',
@@ -967,7 +971,7 @@ const messages = {
       notStarted: {
         disabled: 'Onboarding suggestions are switched off in the settings',
         unavailable:
-          'Noco is not available: check the models under AI → Model services',
+          'Noco is not available: check the models under Agent team → Models',
         notJoiner: 'Noco chooses only for joiners not yet equipped',
         noOwner: 'Give them an onboarding owner first',
         nothingToChoose:
@@ -2652,8 +2656,7 @@ const messages = {
     ai: {
       title: 'AI assistant',
       description:
-        'Business notes for the assistant Noco, and what it does in the background; its model and what it may do are set under AI → Agents, the model services under AI → Model services.',
-      businessNotes: 'Business notes (Noco reads them when a task starts)',
+        'What the assistant Noco does in the background; the business guidance is under Agent team → Business guidance, its model and what it may do under Agent team → Agents, the model services under Agent team → Models.',
       onboardingAdvice: 'Onboarding suggestions',
       onboardingAdviceHint:
         "On a joiner's onboarding card, their onboarding owner can ask Noco to choose devices, accessories and seats from stock in the background, with a reason for each, then confirm or change them. Off, it prepares them only in a conversation.",
@@ -3067,7 +3070,7 @@ const messages = {
         reports: { summary: 'Sum up where the assets stand' },
       },
     },
-    unavailable: 'AI is unavailable: check the models in AI → Model services',
+    unavailable: 'AI is unavailable: check the models in Agent team → Models',
     openChat: 'Open the AI chat',
     closeChat: 'Close the AI chat',
     sendFailed: 'The question could not be sent. Try again from the chat.',
@@ -3078,7 +3081,7 @@ const messages = {
       description:
         'Looks things up across the IT asset register and proposes changes as plans the person confirms.',
     },
-    // The business actions an agent may be given (AI → 智能体).
+    // The business actions an agent may be given (Agent 团队 → Agent).
     agentActions: {
       records: 'IT assets',
       view: 'Read the asset register',
@@ -3289,6 +3292,132 @@ const messages = {
     deniedDescription: 'You do not have permission to access {{label}}.',
     routeFailedDescription:
       'Route {{label}} from {{packageName}} could not be loaded.',
+  },
+  guidance: {
+    title: 'Business guidance',
+    description:
+      'What Noco reads in every conversation and every agent run: who you are, your standard equipment, your budgets, when something needs approval.',
+    placeholder:
+      'For example:\n- 300 people, head office in Shanghai, a branch in Shenzhen.\n- Standard laptops: MacBook Pro 14 for engineering, Latitude 5440 for everyone else.\n- Laptops are replaced after 4 years, monitors after 6.\n- A purchase order over 50,000 needs the finance director.',
+    hint: 'Written in Markdown. Leave it empty for none.',
+    save: 'Save',
+    saving: 'Saving…',
+    saved: 'Saved. It applies from the next conversation and the next run.',
+  },
+  agentInbox: {
+    category: 'AI suggestions',
+    waiting: 'To do',
+    handled: 'Handled',
+    openRecord: 'Open the request',
+    nothingPicked: 'Pick an AI suggestion to read it.',
+  },
+  review: {
+    title: 'Approval review',
+    waiting: 'Waiting on you',
+    working: 'Approval review is reading this request…',
+    waitingNoReview: 'This request waits for your approval.',
+    ask: 'Ask Noco to review',
+    askAgain: 'Review again',
+    recommendation: {
+      approve: 'Recommends approving',
+      conditional: 'Recommends approving on conditions',
+      reject: 'Recommends rejecting',
+      needMore: 'Recommends asking for more',
+    },
+    asked: 'What is asked',
+    conditions: 'Conditions',
+    basis: 'Basis and details',
+    reasons: 'Basis',
+    alternatives: 'What could serve instead',
+    precedents: 'Earlier requests of the kind',
+    risks: 'Risks',
+    missing: 'To add',
+    comment: 'Decision comment',
+    approve: 'Approve',
+    reject: 'Reject',
+    dismiss: 'Dismiss',
+    discuss: 'Discuss',
+    redo: 'Redo my way',
+    redoPlaceholder: 'Say what to change, such as "buy only 3"',
+    redoSend: 'Redo',
+    revised: 'Redone your way: {{text}}',
+    failed: {
+      unavailable: 'No model is available; the review did not finish.',
+      unreadable:
+        "The model's reply could not be read; the review did not finish.",
+      timedOut: 'The review timed out.',
+      notFound: 'This request is gone.',
+      failed: 'The review did not finish.',
+    },
+    decided: {
+      approved: 'Approved from the review',
+      rejected: 'Rejected from the review',
+    },
+    dismissed: 'Review dismissed',
+    superseded: 'Handled elsewhere',
+    redone: 'Redone',
+  },
+  agentWork: {
+    title: 'Agent work',
+    description:
+      'What the agents do on their own: when they run and how they did. They only suggest; people decide.',
+    on: 'On',
+    off: 'Off',
+    onlySuggests:
+      'Run by the {{name}} agent. It only suggests: the person responsible decides in their inbox whether to accept.',
+    model: 'Model',
+    noModel: 'No model available',
+    skill: 'Skill',
+    configure: 'Set its model and instructions',
+    whenItRuns: 'When it runs',
+    runsOnItsOwn: 'Runs on its own',
+    byHand:
+      'Whatever is switched off, an approver can always ask Noco to review a request.',
+    howItDid: 'How it did',
+    last7: 'Last 7 days',
+    last30: 'Last 30 days',
+    counts: {
+      runs: 'Runs',
+      accepted: 'Accepted',
+      dismissed: 'Dismissed',
+      waiting: 'Waiting',
+      failed: 'Failed',
+      acceptance: 'Acceptance rate',
+    },
+    runs: 'Runs',
+    runsHint: 'Last 90 days, on requests you may read',
+    filters: {
+      all: 'All',
+      pending: 'Waiting',
+      accepted: 'Accepted',
+      dismissed: 'Dismissed',
+      running: 'Running',
+      failed: 'Failed',
+    },
+    noRuns: 'No runs yet',
+    startedBy: {
+      submitted: 'Sent for approval',
+      asked: 'Asked by a person',
+    },
+    status: {
+      running: 'Running',
+      pending: 'Waiting',
+      accepted: 'Accepted',
+      dismissed: 'Dismissed',
+      failed: 'Failed',
+      superseded: 'Handled elsewhere',
+    },
+    approvalReview: {
+      name: 'Approval review',
+      description:
+        'Once a purchase order or a disposal is sent for approval, reads it for the approver — what is asked and what it costs, whether stock or idle devices could serve, how such requests went before — recommends approving, approving on conditions, rejecting or asking for more, and drafts the decision comment.',
+      triggers: {
+        submitted: {
+          title: 'Sent for approval',
+          hint: 'A purchase order or a disposal goes to its approver.',
+        },
+      },
+    },
   },
 };
 

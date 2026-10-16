@@ -43,6 +43,8 @@ export interface DetailPageProps {
   readonly actions?: ReactNode;
   /** Shown above the header, e.g. an inspection notice. */
   readonly notice?: ReactNode;
+  /** 等你决定: what waits on the reader, under the header and before the body. */
+  readonly decisions?: ReactNode;
   readonly summary?: readonly SummaryItem[];
   /** Clickable counts under the header (a master-data record's footprint). */
   readonly stats?: readonly StatCard[];
@@ -74,6 +76,7 @@ export function DetailPage({
   breadcrumb,
   actions,
   notice,
+  decisions,
   summary,
   stats,
   info,
@@ -131,6 +134,7 @@ export function DetailPage({
             </div>
           ) : null}
         </header>
+        {decisions}
         {summary && summary.length > 0 ? (
           <Card className='py-0'>
             {/* One line of "label value" pairs, spaced apart rather than

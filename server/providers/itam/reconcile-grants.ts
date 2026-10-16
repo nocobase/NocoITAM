@@ -493,6 +493,9 @@ const IT_ROLE_PAGES: readonly string[] = [
   // Granted by its own seed (`202609130004_seed_itam_p5_grants`), which
   // used to give it to the Asset Manager alone.
   'itam-settings',
+  // 智能体工作 (2026-10-16, plan "Work agents"): what the agents do on
+  // their own, and their switches (changing them needs the settings grant).
+  'agent-work',
 ];
 const ADDED_PAGES: ReadonlyMap<string, readonly string[]> = new Map([
   ['itam-it-support', IT_ROLE_PAGES],

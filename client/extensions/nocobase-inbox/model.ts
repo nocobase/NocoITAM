@@ -127,6 +127,11 @@ export interface InboxCollectionState {
   readonly group: ReactNode;
   /** The list shown in place of the items while the kind filter selects it. */
   readonly list: ReactNode;
+  /**
+   * Application change: how many of its records wait on the viewer, counted on To do with the waiting items. The
+   * library counts only entry categories and feeds; the work agents' suggestions are a collection that waits.
+   */
+  readonly waiting?: number;
 }
 
 /**
@@ -203,12 +208,25 @@ export function kindsOf(
   return ['all', ...categoriesOf(view, categories).map(({ id }) => id)];
 }
 
+/**
+ * Application change: the views offered, in tab order. To do comes first (the work agents' suggestions, labelled AI 建议) and
+ * only while a category is offered there; All (the notifications) always. The first is the default, left out of the
+ * URL. The library offers both, All first and the default.
+ */
+export function viewsOf(categories: readonly InboxCategory[]): InboxView[] {
+  return (['todo', 'all'] as const).filter(
+    (view) => view === 'all' || categoriesOf(view, categories).length > 0,
+  );
+}
+
 /** The filter in the URL (`?view=`, `?kind=`); a kind the view does not offer reads as every kind. */
 export function readInboxFilter(
   params: URLSearchParams,
   categories: readonly InboxCategory[],
 ): InboxFilter {
-  const view: InboxView = params.get('view') === 'todo' ? 'todo' : 'all';
+  const views = viewsOf(categories);
+  const view: InboxView =
+    views.find((value) => value === params.get('view')) ?? views[0] ?? 'all';
   const kind =
     kindsOf(view, categories).find((value) => value === params.get('kind')) ??
     'all';
@@ -222,7 +240,7 @@ export function inboxFilterParams(
   categories: readonly InboxCategory[],
 ): URLSearchParams {
   const next = new URLSearchParams(params);
-  if (filter.view === 'all') next.delete('view');
+  if (filter.view === viewsOf(categories)[0]) next.delete('view');
   else next.set('view', filter.view);
   if (filter.kind === 'all') next.delete('kind');
   else next.set('kind', filter.kind);
@@ -420,9 +438,17 @@ export function relativeTime(
   now: number = Date.now(),
 ): string {
   const seconds = Math.round((new Date(at).getTime() - now) / 1000);
-  const format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  // Application change: compact, as the application's own lists read ("6h ago",
+  // "3分钟前"), always in figures but in Chinese, which keeps its words.
+  const format = new Intl.RelativeTimeFormat(locale, {
+    style: 'narrow',
+    numeric: locale.startsWith('zh') ? 'auto' : 'always',
+  });
   for (const [unit, size] of UNITS)
     if (Math.abs(seconds) >= size)
       return format.format(Math.round(seconds / size), unit);
-  return format.format(0, 'second');
+  return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
+    0,
+    'second',
+  );
 }

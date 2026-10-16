@@ -78,8 +78,13 @@ describe('app client routes', () => {
       'locations',
       'departments',
       'people',
-      // AI (template 1.0.0-beta.64): the Agents plugin's pages, each behind
-      // its own grant or the settings item its API reads.
+      // AI: 智能体工作 (2026-10-16), ITAM's own page; then (template
+      // 1.0.0-beta.64) the Agents plugin's pages, each behind its own grant
+      // or the settings item its API reads. 收件箱, first in the menu, checks
+      // no grant: everyone has one, showing only their own.
+      'agent-work',
+      // 业务说明 (2026-10-16), a setting: the settings page's grant.
+      'itam-settings',
       'agents',
       'skills',
       'settings:agents.services',

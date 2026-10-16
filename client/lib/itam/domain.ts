@@ -267,6 +267,12 @@ export interface DomainConfig {
   readonly deleteInMenu?: boolean;
   /** Rendered above the detail header (an inspection notice, AI quick entries). */
   readonly Notice?: ComponentType<{ readonly record: ItamRecord }>;
+  /**
+   * 等你决定 (2026-10-16, `frontend-standard.md` §S3.2): what waits on the
+   * reader's decision, under the title and before the body — the approval
+   * review on a purchase order or a disposal.
+   */
+  readonly Decisions?: ComponentType<{ readonly record: ItamRecord }>;
   /** The create dialog offers attachments, linked once the record exists. */
   readonly createAttachments?: boolean;
   /** Renders the detail header actions (dialogs included). */

@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, ArrowUpRightIcon, InboxIcon } from 'lucide-react';
+import { ArrowLeftIcon, InboxIcon } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 import { Link } from 'react-router';
 
@@ -95,6 +95,18 @@ export function InboxDetail({
       </div>
     );
   const renderer = rendererOf(entry);
+  // Application change: an item its contributor draws its own way leaves the
+  // pane to its contributor's placeholder.
+  if (renderer.Placeholder)
+    return (
+      <ContributorScope
+        key={`${entry.item.id}:${rendererKey(renderer)}`}
+        namespace={renderer.namespace}
+        resources={renderer.resources}
+      >
+        <renderer.Placeholder entry={entry} onBack={props.onBack} />
+      </ContributorScope>
+    );
   return (
     <ContributorScope
       key={`${entry.item.id}:${rendererKey(renderer)}`}
@@ -276,6 +288,32 @@ export function InboxDetailHeader({
   onBack,
   backLabel,
 }: InboxDetailHeaderProps): ReactElement {
+  const link = (content: ReactNode): ReactNode =>
+    href ? (
+      <Link
+        to={href}
+        title={openLabel}
+        data-slot='inbox-detail-link'
+        className='rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50'
+        onClick={(event) => {
+          if (
+            !onOpen ||
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+          )
+            return;
+          event.preventDefault();
+          onOpen();
+        }}
+      >
+        {content}
+      </Link>
+    ) : (
+      content
+    );
   return (
     <header className='sticky top-0 z-10 flex flex-col gap-3 border-b bg-background/95 p-5 backdrop-blur-md md:px-6'>
       <div className='flex min-h-7 items-center gap-2'>
@@ -302,45 +340,21 @@ export function InboxDetailHeader({
         ) : null}
       </div>
       <div className='flex flex-col gap-1'>
+        {/* Application change: the sentence follows the title on its line,
+            muted, as the list's card reads, and carries the link. */}
         <h2
           id={titleId}
           className='font-heading text-lg font-semibold tracking-tight wrap-anywhere'
         >
-          {href ? (
-            <Link
-              to={href}
-              title={openLabel}
-              data-slot='inbox-detail-link'
-              className='rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50'
-              onClick={(event) => {
-                if (
-                  !onOpen ||
-                  event.button !== 0 ||
-                  event.metaKey ||
-                  event.ctrlKey ||
-                  event.shiftKey ||
-                  event.altKey
-                )
-                  return;
-                event.preventDefault();
-                onOpen();
-              }}
-            >
-              {title}
-              <ArrowUpRightIcon
-                aria-hidden='true'
-                className='ml-1 inline size-4 align-baseline text-muted-foreground'
-              />
-            </Link>
-          ) : (
-            title
-          )}
+          {/* The record the sentence names carries the link; without one,
+              the title does. */}
+          {sentence ? title : link(title)}
+          {sentence ? (
+            <span className='ml-2 font-normal text-muted-foreground'>
+              {link(sentence)}
+            </span>
+          ) : null}
         </h2>
-        {sentence ? (
-          <p className='text-sm text-muted-foreground wrap-anywhere'>
-            {sentence}
-          </p>
-        ) : null}
         {meta ? (
           <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground'>
             {meta}

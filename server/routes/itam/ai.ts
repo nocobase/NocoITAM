@@ -27,7 +27,7 @@ import {
 } from '../../providers/itam/ai-model.js';
 import { BusinessRuleError } from '../../providers/itam/errors.js';
 import { settingsServiceToken } from '../../providers/itam/settings.js';
-import { runEval, SKILL_EVALS } from '../../providers/itam/skill-evals.js';
+import { EVAL_SKILLS, runEval } from '../../providers/itam/skill-evals.js';
 import {
   READING_GRANTS,
   READING_TASKS,
@@ -143,7 +143,7 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
       async (context) => {
         try {
           const skill = context.req.param('skill');
-          if (!SKILL_EVALS[skill])
+          if (!EVAL_SKILLS.includes(skill))
             return context.json(
               { code: 'NOT_FOUND', message: `No eval set for ${skill}` },
               404,

@@ -1,4 +1,9 @@
-import { AlertCircleIcon, InboxIcon, ListTodoIcon } from 'lucide-react';
+import {
+  AlertCircleIcon,
+  BellIcon,
+  InboxIcon,
+  SparklesIcon,
+} from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 
 import {
@@ -16,7 +21,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '#components/ui/empty';
-import { Kbd } from '#components/ui/kbd';
 import {
   Select,
   SelectContent,
@@ -26,20 +30,19 @@ import {
 } from '#components/ui/select';
 import { Skeleton } from '#components/ui/skeleton';
 import { Spinner } from '#components/ui/spinner';
-import { Tabs, TabsList, TabsTrigger } from '#components/ui/tabs';
+import { cn } from 'cn';
 
 import { useInboxFrameText } from './frame.js';
 import type { InboxAction } from './inbox-actions.js';
 import { InboxItemCard } from './inbox-item.js';
 import {
   categoriesOf,
-  INBOX_VIEWS,
   kindsOf,
   shownGroups,
+  viewsOf,
   type InboxEntry,
   type InboxFilter,
   type InboxGroups,
-  type InboxView,
 } from './model.js';
 import { categoriesOfRegistry, useInboxRegistry } from './registry.js';
 
@@ -88,6 +91,8 @@ export interface InboxListProps {
   readonly collections?: Readonly<Record<string, InboxListCollection>>;
   /** Beside the kind filter, such as a sound reminder switch. */
   readonly footer?: ReactNode;
+  /** Application change: atop the list itself, such as "Mark all as read". */
+  readonly head?: ReactNode;
   /** The prefix of the element ids it renders. */
   readonly idPrefix?: string;
 }
@@ -119,11 +124,13 @@ export function InboxList({
   feedCount = 0,
   collections = {},
   footer,
+  head,
   idPrefix = 'nocobase-inbox',
 }: InboxListProps): ReactElement {
   const { t } = useInboxFrameText();
   const categories = categoriesOfRegistry(useInboxRegistry());
   const { view, kind } = filter;
+  const views = viewsOf(categories);
   const shown = shownGroups(filter, groups, categories);
   const selectedCollection = categories.find(
     (category) => category.type === 'collection' && category.id === kind,
@@ -168,6 +175,18 @@ export function InboxList({
         </CollectionSlot>
       ));
 
+  // Application change: the list's head (Mark all as read) on the first
+  // group's heading line, after its heading (at the left when the heading is
+  // hidden), rather than on a line of its own.
+  const headGroup = head
+    ? shown.find(({ entries }) => !(entries.length === 0 && kind === 'all'))
+        ?.category.id
+    : undefined;
+  // Application change: a view with a single group (Notifications) does not
+  // repeat its tab's name over it; the heading stays for screen readers.
+  const lone =
+    shown.filter(({ entries }) => !(entries.length === 0 && kind === 'all'))
+      .length === 1 && !showFeeds;
   let content: ReactNode;
   if (selectedCollection) content = collections[selectedCollection.id]?.list;
   else if (query.isError && !loaded)
@@ -257,16 +276,29 @@ export function InboxList({
             <CollectionSlot key={category.id}>
               {entries.length === 0 && kind === 'all' ? null : (
                 <section aria-labelledby={heading} className='space-y-1'>
-                  <h2
-                    id={heading}
-                    className='flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase'
+                  <div
+                    className={cn(
+                      'flex items-center justify-between gap-2 pr-1',
+                      // The heading hidden, its head at the left.
+                      lone && 'justify-start',
+                      lone && category.id !== headGroup && 'hidden',
+                    )}
                   >
-                    {category.title(t)}
-                    {/* What still waits, as To do counts it; handled items stay listed in All but are not counted. */}
-                    {count > 0 ? (
-                      <span className='tabular-nums'>{count}</span>
-                    ) : null}
-                  </h2>
+                    <h2
+                      id={heading}
+                      className={cn(
+                        'flex items-center gap-2 text-xs font-medium tracking-wider text-muted-foreground uppercase',
+                        lone && 'sr-only',
+                      )}
+                    >
+                      {category.title(t)}
+                      {/* What still waits, as To do counts it; handled items stay listed in All but are not counted. */}
+                      {count > 0 ? (
+                        <span className='tabular-nums'>{count}</span>
+                      ) : null}
+                    </h2>
+                    {category.id === headGroup ? head : null}
+                  </div>
                   <ul aria-label={category.title(t)} className='space-y-0.5'>
                     {entries.map((entry) => (
                       <li key={entry.item.id}>
@@ -289,7 +321,13 @@ export function InboxList({
           );
         })}
         {after(null)}
-        {query.hasNextPage ? (
+        {/* Application change: more of the feed only where the view lists
+            the feed's entries; the AI suggestions' view lists collections,
+            where a page more of notifications would show nothing new. */}
+        {query.hasNextPage &&
+        categoriesOf(view, categories).some(
+          (category) => category.type === 'entries',
+        ) ? (
           <div className='flex justify-center pt-1'>
             <Button
               variant='ghost'
@@ -309,31 +347,46 @@ export function InboxList({
 
   return (
     <>
-      {/* The views as line tabs (client/styles.css draws them as a record page's), each led by its icon, a count in
-          muted figures. */}
-      <Tabs
-        value={view}
-        onValueChange={(value) => {
-          const next = value as InboxView;
-          onFilter({
-            view: next,
-            kind: kindsOf(next, categories).includes(kind) ? kind : 'all',
-          });
-        }}
-      >
-        <TabsList
-          variant='line'
-          className='shrink-0 [--tabs-inset:--spacing(6)]'
+      {/* Application change: the views offered (`viewsOf`), tabs only when
+          there are two, drawn as a record page's tabs are (DetailTabBar in
+          the detail pages' tab bar): from the left, each led by its icon,
+          the open one in the foreground over a 2px line, the others muted
+          until hovered, a count in muted figures, on a thin rule. */}
+      {views.length > 1 ? (
+        <div
+          role='tablist'
+          className='flex shrink-0 gap-x-5 border-b border-border px-6'
         >
-          {INBOX_VIEWS.map((value) => {
+          {views.map((value) => {
             const count = value === 'todo' ? pending : unread;
-            const Icon = value === 'todo' ? ListTodoIcon : InboxIcon;
+            const selected = value === view;
+            const Icon = value === 'todo' ? SparklesIcon : BellIcon;
             return (
-              <TabsTrigger key={value} value={value}>
-                <Icon aria-hidden='true' />
+              <button
+                key={value}
+                type='button'
+                role='tab'
+                aria-selected={selected}
+                onClick={() => {
+                  onFilter({
+                    view: value,
+                    kind: kindsOf(value, categories).includes(kind)
+                      ? kind
+                      : 'all',
+                  });
+                }}
+                className={cn(
+                  '-mb-px flex h-11 items-center gap-1.5 border-b-2 text-sm font-medium transition-colors outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
+                  selected
+                    ? 'border-foreground text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <Icon className='size-4' />
                 {value === 'todo'
                   ? t('inbox.views.todo', { defaultValue: 'To do' })
                   : t('inbox.views.all', { defaultValue: 'All' })}
+                {/* A count in muted figures, as a record page's tabs show theirs. */}
                 {count > 0 ? (
                   <span
                     className='text-xs text-muted-foreground tabular-nums'
@@ -352,48 +405,52 @@ export function InboxList({
                     {count}
                   </span>
                 ) : null}
-              </TabsTrigger>
+              </button>
             );
           })}
-        </TabsList>
-      </Tabs>
-      <div className='flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-6 py-2.5'>
-        <Select
-          items={kinds}
-          value={kind}
-          onValueChange={(next: string | null) => {
-            if (next) onFilter({ view, kind: next });
-          }}
-        >
-          <SelectTrigger
-            size='sm'
-            className='w-40'
-            aria-label={t('inbox.kinds.label', { defaultValue: 'Type' })}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className='w-auto max-w-[min(var(--container-sm),var(--available-width))] min-w-(--anchor-width) [&_[data-slot=select-item]>:first-child]:whitespace-normal'>
-            {kinds.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {footer}
+        </div>
+      ) : null}
+      {/* Application change: the type filter only where a view offers more than one kind to choose between. */}
+      {kinds.length > 2 || footer ? (
+        <div className='shrink-0 border-b border-border px-6 py-2.5'>
+          <div className='flex flex-wrap items-center justify-between gap-2'>
+            {kinds.length > 2 ? (
+              <Select
+                items={kinds}
+                value={kind}
+                onValueChange={(next: string | null) => {
+                  if (next) onFilter({ view, kind: next });
+                }}
+              >
+                <SelectTrigger
+                  size='sm'
+                  className='w-40'
+                  aria-label={t('inbox.kinds.label', {
+                    defaultValue: 'Type',
+                  })}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className='w-auto max-w-[min(var(--container-sm),var(--available-width))] min-w-(--anchor-width) [&_[data-slot=select-item]>:first-child]:whitespace-normal'>
+                  {kinds.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span />
+            )}
+            {footer}
+          </div>
+        </div>
+      ) : null}
+      <div className='min-h-0 flex-1 overflow-y-auto px-6 py-3'>
+        {headGroup ? null : head}
+        {content}
       </div>
-      <div className='min-h-0 flex-1 overflow-y-auto px-6 py-3'>{content}</div>
-      <p className='hidden shrink-0 items-center gap-3 border-t px-4 py-2 text-xs text-muted-foreground lg:flex'>
-        <span className='inline-flex items-center gap-1'>
-          <Kbd>J</Kbd>
-          <Kbd>K</Kbd>
-          {t('inbox.keyMove', { defaultValue: 'Move' })}
-        </span>
-        <span className='inline-flex items-center gap-1'>
-          <Kbd>Enter</Kbd>
-          {t('inbox.keyOpen', { defaultValue: 'Open' })}
-        </span>
-      </p>
+      {/* Application change: no keyboard hints at the list's foot. */}
     </>
   );
 }
@@ -408,7 +465,7 @@ function ListEmpty({
   readonly action?: ReactNode;
 }): ReactElement {
   return (
-    <Empty className='min-h-48'>
+    <Empty className='mx-1 min-h-48'>
       <EmptyHeader>
         <EmptyMedia variant='icon'>
           <InboxIcon />

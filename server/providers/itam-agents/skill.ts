@@ -84,3 +84,10 @@ export const METHOD_SKILLS = [
   // Device sync, step 4 (2026-10-15).
   'device-sync',
 ] as const;
+
+/**
+ * The work agents' method skills (2026-10-16, work-agents.ts): put into the
+ * library like the others, but attached to their work agent rather than to
+ * Noco — nobody asks Noco to review an approval.
+ */
+export const WORK_SKILLS = ['approval-review'] as const;
