@@ -272,6 +272,19 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
       }
     });
 
+    // The other people's MDM 跟进 on MDM 核对, for an asset manager to read
+    // (2026-10-17); an empty list for anybody else.
+    routes.get('/followUps', async (context) => {
+      try {
+        await decideFor(context, 'devices', 'read');
+        return context.json({
+          data: await followUp.others(principalId(context)),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
     const managedId = (context: ItamContext) => context.req.param('id') ?? '';
 
     routes.post('/devices/:id/link', async (context) => {

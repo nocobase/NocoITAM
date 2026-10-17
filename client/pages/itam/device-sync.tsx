@@ -755,7 +755,10 @@ function UnmanagedView({
   const names = useReferenceNames([
     {
       collection: 'users',
-      ids: rows.flatMap((row) => (row.exemptedById ? [row.exemptedById] : [])),
+      ids: rows.flatMap((row) => [
+        ...(row.exemptedById ? [row.exemptedById] : []),
+        ...(row.ownerId ? [row.ownerId] : []),
+      ]),
     },
     {
       collection: 'models',
@@ -776,6 +779,9 @@ function UnmanagedView({
               <TableHead>{t('fields.serialNo')}</TableHead>
               <TableHead>{t('fields.model')}</TableHead>
               <TableHead>{t('deviceSync.review.columns.holder')}</TableHead>
+              {/* Who answers for it, as on 信息不一致 (2026-10-17): their
+                  MDM 跟进 has it. */}
+              <TableHead>{t('fields.owner')}</TableHead>
               {/* Who said so and when in columns of their own (2026-10-16):
                   under the reason they made the row two lines tall. */}
               {view === 'exempted' ? (
@@ -827,6 +833,11 @@ function UnmanagedView({
                     ) : (
                       '—'
                     )}
+                  </CellText>
+                </TableCell>
+                <TableCell>
+                  <CellText className='max-w-48'>
+                    {row.ownerId ? (names.users?.get(row.ownerId) ?? '…') : '—'}
                   </CellText>
                 </TableCell>
                 {view === 'exempted' ? (

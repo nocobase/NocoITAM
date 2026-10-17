@@ -6,12 +6,14 @@ import {
   DeviceSyncFollowUpBlock,
   DeviceSyncRunCard,
 } from '../../client/components/itam/ai/device-sync-run.js';
+import { FollowUpFocusContext } from '../../client/lib/itam/device-sync-followup.js';
 import type { DeviceSyncRun } from '../../client/lib/itam/agents.js';
 
 const state = vi.hoisted(() => ({
   dismiss: vi.fn(),
   plan: null as unknown,
   inbox: { open: [] as unknown[], handled: [] as unknown[] },
+  others: [] as unknown[],
 }));
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({
@@ -26,6 +28,7 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 vi.mock('../../client/lib/itam/agents.js', () => ({
   useInbox: () => ({ data: state.inbox }),
+  useOtherFollowUps: () => ({ data: state.others }),
   useDismissReview: () => ({
     mutate: state.dismiss,
     isPending: false,
@@ -33,6 +36,9 @@ vi.mock('../../client/lib/itam/agents.js', () => ({
   }),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({ useApi: () => ({}) }));
+vi.mock('../../client/lib/itam/references.js', () => ({
+  useReferenceNames: () => ({ users: new Map([['wujing', 'Wu Jing']]) }),
+}));
 // The plan's own card is tested with the chat; here, that it is shown.
 vi.mock('../../client/components/itam/ai/plan-card.js', () => ({
   PlanCard: ({ plan }: { plan: { title: string } }) => <p>plan:{plan.title}</p>,
@@ -84,6 +90,8 @@ const show = (value: DeviceSyncRun) =>
 
 beforeEach(() => {
   state.dismiss.mockClear();
+  state.inbox = { open: [], handled: [] };
+  state.others = [];
   state.plan = { id: 'plan-1', title: 'MDM follow-up: 2 differences' };
 });
 
@@ -165,4 +173,56 @@ it('lists the reader’s open follow-ups under 等你决定, and nothing else', 
     </MemoryRouter>,
   );
   expect(screen.queryByText('review.waiting')).not.toBeInTheDocument();
+});
+
+// Beside a run in 收件箱, that run alone (2026-10-17).
+it('shows the run picked in 收件箱 alone', () => {
+  state.inbox = {
+    open: [run({ id: 'a' }), run({ id: 'b', subjectId: 'shared:mia' })],
+    handled: [],
+  };
+  render(
+    <MemoryRouter>
+      <FollowUpFocusContext.Provider value='b'>
+        <DeviceSyncFollowUpBlock />
+      </FollowUpFocusContext.Provider>
+    </MemoryRouter>,
+  );
+  expect(
+    screen.getByText('deviceSyncRun.sharedDifferences'),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByText('deviceSyncRun.ownDifferences'),
+  ).not.toBeInTheDocument();
+});
+
+// For an asset manager (2026-10-17): the others' follow-ups, to read.
+it('lists the other owners’ follow-ups to read, with nothing to act on', () => {
+  state.others = [
+    {
+      id: 'o1',
+      deciderId: 'wujing',
+      status: 'pending',
+      failure: null,
+      createdAt: '2026-10-17T08:00:00.000Z',
+      items: [{ key: 'k', kind: 'stale', subject: 'd', label: 'DE-1' }],
+      summary: '1 difference',
+      notes: ['DE-1: ask its user'],
+      steps: ['Transfer DE-2 to Liu Yang'],
+    },
+  ];
+  render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: /^deviceSyncRun\.others/ }),
+  );
+  expect(screen.getByText('deviceSyncRun.otherTitle')).toBeInTheDocument();
+  expect(screen.getByText('Transfer DE-2 to Liu Yang')).toBeInTheDocument();
+  expect(screen.getByText('DE-1: ask its user')).toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'review.dismiss' }),
+  ).not.toBeInTheDocument();
 });

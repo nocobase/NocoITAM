@@ -6,6 +6,10 @@ import { useNavigate } from 'react-router';
 import { ApprovalReviewCard } from '@/components/itam/ai/approval-review';
 import { DeviceSyncRunCard } from '@/components/itam/ai/device-sync-run';
 import {
+  FollowUpFocusContext,
+  followUpTitle,
+} from '@/lib/itam/device-sync-followup';
+import {
   itamInboxSource,
   itamNoticeRenderer,
 } from '@/components/itam/inbox-notices';
@@ -94,6 +98,28 @@ function reviewsCategory(label: string): InboxCollectionCategory {
 // MDM 核对, shown beside an MDM 跟进: loaded when one is opened.
 const DeviceSyncReviewPage = lazy(() => import('./device-sync.js'));
 
+/**
+ * An MDM 跟进 a newer one for the same person replaced is left out
+ * (2026-10-17): each MDM 跟进 brings the reader's differences again, so the
+ * old one only repeated the new one as 已在别处处理. One settled by another
+ * asset manager stays: that is news.
+ */
+function withoutReplaced(runs: readonly AgentRun[]): AgentRun[] {
+  const newest = new Map<string, string>();
+  for (const run of runs)
+    if (run.agent === 'deviceSync') {
+      const seen = newest.get(run.subjectId);
+      if (!seen || run.createdAt > seen)
+        newest.set(run.subjectId, run.createdAt);
+    }
+  return runs.filter(
+    (run) =>
+      run.agent !== 'deviceSync' ||
+      run.status !== 'superseded' ||
+      newest.get(run.subjectId) === run.createdAt,
+  );
+}
+
 const isOpen = (run: AgentRun): boolean =>
   run.status === 'pending' ||
   run.status === 'running' ||
@@ -107,7 +133,11 @@ function useReviewsCollection({
 }: InboxCollectionInput): InboxCollectionState {
   const inbox = useInbox();
   const items = useMemo(
-    () => [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])],
+    () =>
+      withoutReplaced([
+        ...(inbox.data?.open ?? []),
+        ...(inbox.data?.handled ?? []),
+      ]),
     [inbox.data],
   );
   const chosen = filter.kind === REVIEWS_CATEGORY;
@@ -223,10 +253,7 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 /** What a run is about: the request, or the differences a sync left. */
 function titleOf(run: AgentRun, t: Translate): string {
-  if (run.agent === 'deviceSync')
-    return run.result
-      ? t('deviceSyncRun.differences', { count: run.result.items.length })
-      : t('deviceSyncRun.afterSync');
+  if (run.agent === 'deviceSync') return followUpTitle(run, t);
   return run.title ?? run.subjectId;
 }
 
@@ -281,12 +308,15 @@ function ReviewDetail({
             <DeviceSyncRunCard key={run.id} run={run} />
           </div>
         )}
-        <PagePane
-          key={run.id}
-          to='/device-sync'
-          page={DeviceSyncReviewPage}
-          onLeave={(path) => void navigate(path)}
-        />
+        {/* The page's 等你决定 shows the picked run alone. */}
+        <FollowUpFocusContext.Provider value={run.id}>
+          <PagePane
+            key={run.id}
+            to='/device-sync'
+            page={DeviceSyncReviewPage}
+            onLeave={(path) => void navigate(path)}
+          />
+        </FollowUpFocusContext.Provider>
       </div>
     );
   // The request itself, as a notification shows its record (2026-10-16):

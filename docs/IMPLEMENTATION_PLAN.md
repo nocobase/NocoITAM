@@ -3303,7 +3303,9 @@ everyone else's suggestions alone. What a person already carried out or
 set aside is still not raised again; when nothing is new the page says so.
 The page shows the reader's open suggestions under 等你决定, and 收件箱
 shows the page beside an MDM 跟进, the way it shows a request beside its
-review.
+review. Each follow-up says whose it is (the reader's devices, or the asset
+managers'); an asset manager also reads, without acting on, the other
+owners' open follow-ups; and 只在台账 shows each device's 负责人.
 
 ### 2026-10-16 The demo comes with AI suggestions, without a model
 
