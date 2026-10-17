@@ -237,6 +237,16 @@ export const DEVICE_FIELDS: readonly FieldDefinition[] = [
     form: false,
     group: 'groups.ownership',
   },
+  // Written by receiving only; first in its group, as the vendor, price
+  // and date below follow it (2026-10-17).
+  {
+    key: 'purchaseOrderId',
+    label: 'fields.purchaseOrder',
+    type: 'reference',
+    reference: { collection: 'purchaseOrders' },
+    form: false,
+    group: 'groups.purchase',
+  },
   // A device received through an order takes vendor, price and date from
   // the order; they are edited only on devices registered by hand.
   {
@@ -273,15 +283,6 @@ export const DEVICE_FIELDS: readonly FieldDefinition[] = [
     type: 'currency',
     form: false,
     detail: false,
-    group: 'groups.purchase',
-  },
-  // Written by receiving only.
-  {
-    key: 'purchaseOrderId',
-    label: 'fields.purchaseOrder',
-    type: 'reference',
-    reference: { collection: 'purchaseOrders' },
-    form: false,
     group: 'groups.purchase',
   },
   {
