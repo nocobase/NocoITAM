@@ -18,6 +18,8 @@ import {
   DISPOSALS_PATH,
 } from '@/lib/itam/operations';
 
+import { DisposalApproverHint } from './approver-hint.js';
+
 const HEADER_FIELDS = DISPOSAL_CREATE_FIELDS.map((key) =>
   DISPOSAL_FIELDS.find((field) => field.key === key)!,
 );
@@ -207,9 +209,7 @@ export function DisposalCreateDialog({
             value={approverId}
             onChange={setApproverId}
           />
-          <p className='text-xs text-muted-foreground'>
-            {t('disposals.approverForSubmit')}
-          </p>
+          <DisposalApproverHint hint={t('disposals.approverForSubmit')} />
         </div>
       </div>
     </ConfirmDialog>

@@ -2679,7 +2679,8 @@ const messages = {
       byRole: 'By permission set',
       byPerson: 'By person',
       current: 'Can be chosen now: {{names}}',
-      nobody: 'nobody',
+      nobodyLeft:
+        'Nobody can be chosen now, so no disposal can be submitted: the permission sets and people ticked no longer hold disposal approval. Tick others, or give the approval back in the permission sets.',
       conflict:
         'Someone else changed this setting meanwhile and the latest version is loaded. Your changes are kept; save again to replace it.',
     },
@@ -2947,6 +2948,8 @@ const messages = {
     noneForDevice: 'This device has never been on a disposal',
     approverForSubmit:
       'Needed to submit for approval; a draft can be saved without one.',
+    noApprovers:
+      'Nobody can be chosen as the approver, so it cannot be submitted for now. Ask an administrator to check the approvers under Settings → Disposal flow, or disposal approval in the permission sets.',
     // The moves on its Flow tab, by the lifecycle's transition names.
     transitions: {
       $create: 'Create',

@@ -116,3 +116,16 @@ it('keeps what was written after a conflict and saves it again under a new key',
   expect(state.saves[1]).toMatchObject({ anyone: false, users: ['ann'] });
   expect(state.saves[1]?.requestId).not.toBe(state.saves[0]?.requestId);
 });
+
+it('warns when the saved range is left with nobody to pick', () => {
+  state.range = {
+    ...(state.range as object),
+    anyone: false,
+    users: ['lee'],
+    approvers: [],
+  };
+  render(<DisposalFlowSettingsPage />);
+  expect(screen.getByRole('alert').textContent).toBe(
+    'settings.disposalFlow.nobodyLeft',
+  );
+});

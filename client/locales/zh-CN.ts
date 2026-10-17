@@ -2527,7 +2527,8 @@ const zhCN: AppResource = {
       byRole: '按权限集',
       byPerson: '按人员',
       current: '现在可选：{{names}}',
-      nobody: '没有人',
+      nobodyLeft:
+        '现在没有可选的审批人，报废单无法提交审批：所选权限集和人员都已没有报废审批权限。请重新勾选，或在权限集里恢复报废审批权限。',
       conflict:
         '其他人刚改过这项设置，已载入最新版本。你的修改还在，确认后再保存一次。',
     },
@@ -2778,6 +2779,8 @@ const zhCN: AppResource = {
     noAssets: '尚未添加设备',
     noneForDevice: '没有报废记录',
     approverForSubmit: '提交审批时必填；只保存草稿可以不选。',
+    noApprovers:
+      '没有可选的审批人，暂时无法提交审批。请联系管理员检查「设置 → 报废流程」的可选审批人，或权限集里的报废审批权限。',
     // The moves on its 流程 tab, by the lifecycle's transition names.
     transitions: {
       $create: '创建',

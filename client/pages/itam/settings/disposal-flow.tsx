@@ -149,15 +149,21 @@ function ApproverRangeCard({
           onToggle={toggle(setUsers)}
         />
       </div>
-      <p className='text-sm text-muted-foreground'>
-        {conflict
-          ? t('settings.disposalFlow.conflict')
-          : t('settings.disposalFlow.current', {
-              names:
-                range.approvers.map((person) => person.name).join('、') ||
-                t('settings.disposalFlow.nobody'),
-            })}
-      </p>
+      {/* The saved range can be left with nobody when the permission sets
+          change afterwards; saving refuses that, the sets cannot. */}
+      {!conflict && range.approvers.length === 0 ? (
+        <p role='alert' className='text-sm text-destructive'>
+          {t('settings.disposalFlow.nobodyLeft')}
+        </p>
+      ) : (
+        <p className='text-sm text-muted-foreground'>
+          {conflict
+            ? t('settings.disposalFlow.conflict')
+            : t('settings.disposalFlow.current', {
+                names: range.approvers.map((person) => person.name).join('、'),
+              })}
+        </p>
+      )}
     </SettingsCard>
   );
 }

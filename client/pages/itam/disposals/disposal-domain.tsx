@@ -7,6 +7,7 @@ import { Check, Plus, Recycle, Send, Trash2, Undo2 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 import { useParams } from 'react-router';
 
+import { DisposalApproverHint } from './approver-hint.js';
 import { DisposalCreateDialog } from './create-dialog.js';
 
 import { AttachmentsTab } from '@/components/itam/attachments-tab';
@@ -419,9 +420,7 @@ function DisposalActions({
             value={approverId}
             onChange={setApproverId}
           />
-          <p className='text-xs text-muted-foreground'>
-            {t('procurement.approverHint')}
-          </p>
+          <DisposalApproverHint hint={t('procurement.approverHint')} />
         </div>
       </ConfirmDialog>
       <ConfirmDialog
