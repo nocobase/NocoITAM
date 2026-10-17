@@ -1035,6 +1035,8 @@ describe('CSV import / export and demo data', () => {
     expect(
       new Set(checks.map((check) => check.ownerId)).size,
     ).toBeGreaterThanOrEqual(3);
+    // Two of them the importer's own.
+    expect(checks.filter((check) => check.ownerId === 'admin')).toHaveLength(2);
     // And its records carry comment threads, three of which mention it.
     expect(written.length).toBeGreaterThanOrEqual(8);
     expect(written.filter((entry) => entry.actor === 'admin')).toHaveLength(1);

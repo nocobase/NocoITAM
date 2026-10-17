@@ -5463,13 +5463,14 @@ export function createDemoService(dependencies: {
           // The devices behind 信息不一致 answer to different people
           // (2026-10-17), so its 负责人 column and each person's MDM 跟进
           // are not all 吴静's: IT support keeps the silent laptop and the
-          // one Intune dropped, the first asset manager the one on the
-          // shelf and the disposed one; the laptop in someone else's hands
+          // one Intune dropped, the account that imported the demo the one
+          // on the shelf and the disposed one, so its own MDM 核对 has
+          // something to follow up; the laptop in someone else's hands
           // stays with 吴静. Not the leaver, who is handing things over.
           const answering: readonly [Row | undefined, string][] = [
             [inUse[1], supportUserId ?? writerId],
-            [onShelf[0], managerUserId ?? writerId],
-            [disposed, managerUserId ?? writerId],
+            [onShelf[0], importerId ?? managerUserId ?? writerId],
+            [disposed, importerId ?? managerUserId ?? writerId],
             [dropped?.row, supportUserId ?? writerId],
           ];
           for (const [row, ownerId] of answering)

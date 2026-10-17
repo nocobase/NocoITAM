@@ -99,7 +99,7 @@ product or in release notes, until it is listed here.
   online, and three not on the books (a laptop, a personal iPhone, a VM with
   a placeholder serial). Both tables are in `ORDER` and in
   `scripts/data-reset.ts`. The devices behind 信息不一致 answer to IT
-  support, the first asset manager and 吴静 (2026-10-17), so the 负责人
+  support, the importing account and 吴静 (2026-10-17), so the 负责人
   column and each person's MDM 跟进 differ; never the leaver.
 - **Differences** (step 2, 2026-10-15, `device-review.ts`) are computed when
   asked, like 需要关注, from the linked platform records and the register;
