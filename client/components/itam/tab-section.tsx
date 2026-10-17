@@ -9,13 +9,15 @@ import type { ReactElement, ReactNode } from 'react';
 export function TabSection({
   title,
   count,
+  empty,
   children,
 }: {
   readonly title: string;
   readonly count: number | undefined;
+  /** One line under an empty section (2026-10-17): the count alone read as a missing list. */
+  readonly empty?: string;
   readonly children: ReactNode;
 }): ReactElement {
-  // The count says a section is empty; a word beside it would say it twice.
   return (
     <section className='space-y-2'>
       <h3 className='flex items-center gap-2 font-heading text-sm font-semibold'>
@@ -27,7 +29,13 @@ export function TabSection({
           </span>
         )}
       </h3>
-      {count ? children : null}
+      {count ? (
+        children
+      ) : count === 0 && empty ? (
+        <p className='rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground'>
+          {empty}
+        </p>
+      ) : null}
     </section>
   );
 }

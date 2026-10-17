@@ -98,15 +98,24 @@ export function DeviceDocumentsTab(): ReactElement {
       <TabSection
         title={t('tabs.purchaseOrders')}
         count={device.data ? (purchaseOrderId ? 1 : 0) : undefined}
+        empty={t('devices.noPurchaseOrder')}
       >
         <DevicePurchaseOrderList purchaseOrderId={purchaseOrderId} />
       </TabSection>
-      <TabSection title={t('tabs.repairs')} count={repairCount}>
+      <TabSection
+        title={t('tabs.repairs')}
+        count={repairCount}
+        empty={t('devices.noRepairs')}
+      >
         {/* The page header carries 完成维修 for the repair in progress. */}
         <RepairsList deviceId={id} completable={false} />
       </TabSection>
       {disposalPermissions.read ? (
-        <TabSection title={t('tabs.disposals')} count={disposals.data?.length}>
+        <TabSection
+          title={t('tabs.disposals')}
+          count={disposals.data?.length}
+          empty={t('disposals.noneForDevice')}
+        >
           <DeviceDisposalsList deviceId={id} />
         </TabSection>
       ) : null}

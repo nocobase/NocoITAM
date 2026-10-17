@@ -1447,6 +1447,7 @@ const messages = {
     empty: 'No devices match',
     noAndName: 'No. / Name',
     noPurchaseOrder: 'Not received through a purchase order',
+    noRepairs: 'Never repaired',
     noneInTab: 'No devices',
     allStatuses: 'All statuses',
     holding: 'Assignment',

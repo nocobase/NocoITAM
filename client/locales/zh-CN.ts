@@ -1399,7 +1399,8 @@ const zhCN: AppResource = {
     empty: '没有符合条件的设备',
     noAndName: '编号 / 名称',
     noneInTab: '暂无设备',
-    noPurchaseOrder: '未通过采购单入库',
+    noPurchaseOrder: '没有采购记录',
+    noRepairs: '没有维修记录',
     allStatuses: '全部状态',
     holding: '去向',
     reservedShort: '已预留',
@@ -2777,7 +2778,7 @@ const zhCN: AppResource = {
     newDescription: '填写报废信息并选择设备；可先保存草稿，也可直接提交审批',
     addDevice: '添加设备',
     noAssets: '尚未添加设备',
-    noneForDevice: '这台设备没有报废单',
+    noneForDevice: '没有报废记录',
     approverForSubmit: '提交审批时必填；只保存草稿可以不选。',
     // The moves on its 流程 tab, by the lifecycle's transition names.
     transitions: {
