@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   approverDirectoryToken,
   createApproverDirectory,
+  startApproverRange,
   type ApproverDirectory,
 } from '../../server/providers/itam/approvers.js';
 import { createItamLifecycleRuntime } from '../../server/providers/itam/lifecycles.js';
@@ -60,12 +61,13 @@ const ASSIGNMENTS: Readonly<Record<string, readonly string[]>> = {
 
 describe('disposal approver range', () => {
   let db: TestDatabase;
+  let container: ServiceContainer;
   let directory: ApproverDirectory;
   let root: Hono;
 
   beforeEach(async () => {
     db = await createTestDatabase();
-    const container = new ServiceContainer();
+    container = new ServiceContainer();
     container.instance(databaseManagerToken, db.database);
     container.instance(authenticationToken, {
       required: () => (async (_context, next) => next()) as MiddlewareHandler,
@@ -194,5 +196,24 @@ describe('disposal approver range', () => {
       save({ roles: ['itam-it-support'], revision: 0, requestId: 'r3' }),
     ).rejects.toMatchObject({ field: 'roles' });
     expect((await directory.approverRangeView()).revision).toBe(0);
+  });
+
+  it('starts a deployment at the IT Asset Manager set, once, and never over a saved range', async () => {
+    await startApproverRange(container);
+    const started = await directory.approverRangeView();
+    expect(started).toMatchObject({
+      anyone: false,
+      roles: ['itam-asset-manager'],
+      revision: 1,
+      updatedById: 'system',
+    });
+    expect(ids(started.approvers)).toEqual(['mia']);
+    // The next start finds it saved.
+    await startApproverRange(container);
+    expect((await directory.approverRangeView()).revision).toBe(1);
+    // An administrator's choice stands through every later start.
+    await save({ anyone: true, revision: 1, requestId: 'r1' });
+    await startApproverRange(container);
+    expect((await directory.approverRangeView()).anyone).toBe(true);
   });
 });

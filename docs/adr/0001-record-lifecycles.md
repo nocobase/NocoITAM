@@ -77,6 +77,15 @@ someone outside it is refused (`APPROVER_NOT_IN_RANGE`). It is not the
 amount tiers removed on 2026-09-25: it decides who may be asked, never who
 must be.
 
+A deployment starts with the IT Asset Manager set ticked: when the
+application starts and no range has been saved, `startApproverRange`
+(`server/providers/itam/approvers.ts`) saves that set as the first version.
+It is done at start rather than in a seed, because a seed may not use the
+parameter store's database manager. An administrator's later choice,
+everyone included, is never overwritten; the lifecycle's own default stays
+`anyone`, which is what a database without the authorization tables (a
+test's) keeps.
+
 ## Scope after the pilot
 
 | Record          | Plan                                                                 |

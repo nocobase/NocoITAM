@@ -69,6 +69,7 @@ import { createDisposalService, disposalServiceToken } from './disposals.js';
 import {
   approverDirectoryToken,
   createApproverDirectory,
+  startApproverRange,
 } from './approvers.js';
 import {
   createItamLifecycleRuntime,
@@ -873,6 +874,16 @@ export default class ItamProvider extends ServiceProvider<Application> {
         );
       }
     if (!this.app.container.has(authorizationToken)) return;
+    // The disposals' first approver range, once (approvers.ts); like the
+    // effects, it never stops the application starting.
+    try {
+      await startApproverRange(this.app.container);
+    } catch (error) {
+      this.lifecycleLogger().error(
+        'The disposal approver range was not set up',
+        error,
+      );
+    }
     // Idempotent and cheap: older seeds may have just re-granted the
     // removed tickets collection and pages or the tables that became
     // `entitlements`.

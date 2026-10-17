@@ -4,7 +4,6 @@ import { databaseManagerToken } from '@nocobase/db';
 import {
   ParameterConfigurationError,
   resolveReviewerSelections,
-  type JsonValue,
   type LifecycleRuntime,
   type ReviewerSelection,
 } from '@nocobase/lifecycle';
@@ -363,7 +362,7 @@ export function createApproverDirectory(
       await store.save({
         scope: LIFECYCLE_PARAMETER_SCOPE,
         group: approverRangeGroup,
-        values: { approverRange: range as unknown as JsonValue },
+        values: { approverRange: range },
         expectedRevision: input.revision,
         requestId: input.requestId,
         actorId,
@@ -381,4 +380,54 @@ export function createApproverDirectory(
     return approverRangeView();
   }
   return directory;
+}
+
+/** The permission set a deployment's disposal approvers start as. */
+export const DEFAULT_APPROVER_SET = 'itam-asset-manager';
+
+/**
+ * A deployment's first approver range (2026-10-18): the IT Asset Manager
+ * set — the one this application's seeds give disposal approval to — saved
+ * as the range's first version when the application starts and nobody has
+ * saved one, so 设置 → 报废流程 opens with it ticked. Done at start rather
+ * than in a seed, which may not use the parameter store's database manager.
+ * A range already saved, or a deployment without that set, is left alone;
+ * the lifecycle's own default stays everyone who may approve.
+ */
+export async function startApproverRange(
+  container: ServiceContainer,
+): Promise<void> {
+  if (!container.has(authorizationToken)) return;
+  const store = lifecycleParameterStore(
+    container.resolve(databaseManagerToken),
+  );
+  if (await store.read(LIFECYCLE_PARAMETER_SCOPE, approverRangeGroup.key))
+    return;
+  const sets = await container
+    .resolve(authorizationToken)
+    .permissionSets.list();
+  if (!sets.some((set) => set.key === DEFAULT_APPROVER_SET)) return;
+  try {
+    await store.save({
+      scope: LIFECYCLE_PARAMETER_SCOPE,
+      group: approverRangeGroup,
+      values: {
+        approverRange: [
+          { group: 1, type: 'role', referenceId: DEFAULT_APPROVER_SET },
+        ],
+      },
+      expectedRevision: 0,
+      requestId: 'start:itam-disposal-approver-range',
+      actorId: 'system',
+      at: new Date().toISOString(),
+    });
+  } catch (error) {
+    // Another instance starting beside this one saved it first.
+    if (
+      error instanceof ParameterConfigurationError &&
+      error.code === 'CONFIGURATION_CONFLICT'
+    )
+      return;
+    throw error;
+  }
 }
