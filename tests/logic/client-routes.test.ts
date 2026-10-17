@@ -92,7 +92,8 @@ describe('app client routes', () => {
       // 设置, one page of tabs (2026-10-16): the page itself checks nothing,
       // API keys being everyone's; ITAM's tabs check the grant the settings
       // page always had, and the administration pages what the plugin's own
-      // API checks.
+      // API checks. 报废流程 (2026-10-18) is one of ITAM's.
+      'itam-settings',
       'itam-settings',
       'itam-settings',
       'itam-settings',

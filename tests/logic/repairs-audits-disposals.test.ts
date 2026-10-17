@@ -792,6 +792,47 @@ describe('repairs, audits and disposals', () => {
     expect((await data(cancelled)).status).toBe('cancelled');
   });
 
+  it('shows the disposal approver range to readers and lets only the settings change it', async () => {
+    const view = await data<{ anyone: boolean; revision: number }>(
+      await get('disposals/lifecycle/approvers'),
+    );
+    expect(view).toMatchObject({ anyone: true, revision: 0 });
+    const put = (
+      body: Record<string, unknown>,
+      who: { user: string; role: 'employee' | 'support' | 'manager' },
+    ) =>
+      app.request('/api/itam/disposals/lifecycle/approvers', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+        ...who,
+      });
+    const range = {
+      anyone: true,
+      roles: [],
+      users: [],
+      revision: 0,
+      requestId: 'r1',
+    };
+    expect(
+      (
+        await app.request('/api/itam/disposals/lifecycle/approvers', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(range),
+        })
+      ).status,
+    ).toBe(401);
+    expect((await put(range, { user: 'eve', role: 'employee' })).status).toBe(
+      403,
+    );
+    // Fields the range does not have are refused, not ignored.
+    expect((await put({ ...range, revision: -1 }, manager)).status).toBe(400);
+    const saved = await put(range, manager);
+    expect(saved.status).toBe(200);
+    expect((await data<{ revision: number }>(saved)).revision).toBe(1);
+  });
+
   it('runs a disposal: approval reclaims seats and components, execution disposes', async () => {
     const device = await createDevice();
     await assign(device.id, fixture.personId);

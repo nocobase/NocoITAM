@@ -6,6 +6,7 @@ import {
   FileText,
   KeyRound,
   MonitorSmartphone,
+  Recycle,
   Settings2,
   ShieldUser,
   UsersRound,
@@ -37,6 +38,12 @@ interface Tab {
 const TABS: readonly Tab[] = [
   { path: 'itam', label: 'navigation.settingsGeneral', icon: Settings2 },
   { path: 'mdm', label: 'settings.deviceSync.title', icon: MonitorSmartphone },
+  // The disposal's flow and its approvers (2026-10-18).
+  {
+    path: 'disposal-flow',
+    label: 'settings.disposalFlow.title',
+    icon: Recycle,
+  },
   {
     path: 'receipt-agent',
     label: 'settings.receiptAgent.title',
@@ -70,6 +77,7 @@ export default function SettingsPage(): ReactElement {
   const access: Readonly<Record<string, ReturnType<typeof useCan>>> = {
     itam,
     mdm: itam,
+    'disposal-flow': itam,
     'receipt-agent': itam,
     demo: itam,
     users: useCan({ resource: { type: 'user', id: '*' }, action: 'read' }),

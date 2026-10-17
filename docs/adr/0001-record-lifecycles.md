@@ -62,6 +62,21 @@ Adopt it record kind by record kind, starting with **disposals**:
   when a notification could not be delivered. The page's buttons stay the
   actions.
 
+## The approver range (2026-10-18)
+
+The first parameter an administrator sets on a lifecycle: whom a submitter
+may ask to approve a disposal (设置 → 报废流程). It is a `reviewers` field of
+the lifecycle's `parameterConfiguration`, read live, stored by
+`StoredLifecycleParameters` in the six `lifecycleParameter*` tables
+(202610180002_lifecycle_parameters), and saved with the revision the page
+showed and a request id, so a stale page conflicts and a resent save saves
+once. It may name `anyone` (the default: everyone holding disposal approval),
+permission sets or people, and it only ever narrows the holders of the
+approval. The submitter's picker lists the range, and submitting with
+someone outside it is refused (`APPROVER_NOT_IN_RANGE`). It is not the
+amount tiers removed on 2026-09-25: it decides who may be asked, never who
+must be.
+
 ## Scope after the pilot
 
 | Record          | Plan                                                                 |

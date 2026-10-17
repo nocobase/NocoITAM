@@ -10,6 +10,11 @@ import { ServiceContainer } from '@nocobase/service-provider';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import {
+  approverDirectoryToken,
+  createApproverDirectory,
+} from '../../server/providers/itam/approvers.js';
+import { createItamLifecycleRuntime } from '../../server/providers/itam/lifecycles.js';
 import { userDirectoryRoutes } from '../../server/routes/itam/users.js';
 import {
   createTestDatabase,
@@ -104,6 +109,17 @@ describe('user directory', () => {
       },
       get: async (id: string) => USERS.find((user) => user.id === id),
     } as never);
+    // Who holds what, as the route asks it (`approvers.ts`); the disposals'
+    // approver range stays at its default here.
+    const runtime = createItamLifecycleRuntime({
+      database: db.database,
+      approvals: { forSubject: async () => [] } as never,
+      notifier: { notify: async () => {}, deliver: async () => {} },
+    });
+    container.instance(
+      approverDirectoryToken,
+      createApproverDirectory(container, () => runtime),
+    );
     const app = { container } as unknown as Application;
     root = new Hono();
     root.route('/api', await userDirectoryRoutes.createRouter(app));

@@ -47,6 +47,8 @@ export interface ApiErrorBody {
   readonly code?: string;
   readonly message?: string;
   readonly field?: string;
+  /** A `BUSINESS_RULE` refusal's rule, such as `CONFLICT`. */
+  readonly rule?: string;
   readonly issues?: readonly { path: string; message: string }[];
   readonly impact?: DeleteImpact;
 }

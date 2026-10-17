@@ -50,6 +50,13 @@ const tables = [
   // The lifecycle runtime's own log (2026-10-18).
   'lifecycle_transitions',
   'lifecycle_effect_runs',
+  // The parameters an administrator sets on a lifecycle (2026-10-18).
+  'lifecycle_parameter_heads',
+  'lifecycle_parameter_versions',
+  'lifecycle_parameter_selections',
+  'lifecycle_parameter_requests',
+  'lifecycle_parameter_snapshots',
+  'lifecycle_parameter_usages',
 ];
 
 describe('ITAM migrations', () => {
@@ -435,7 +442,7 @@ describe('ITAM migrations', () => {
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(108);
+    expect(rolledBack.rolledBack.length).toBe(109);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

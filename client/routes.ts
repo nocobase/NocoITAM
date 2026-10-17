@@ -721,6 +721,16 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
           componentLoader: () => import('./pages/itam/settings/mdm.js'),
         },
         {
+          name: 'itam-settings-disposal-flow',
+          path: 'disposal-flow',
+          authz: {
+            resource: { type: 'page', id: 'itam-settings' },
+            action: 'access',
+          },
+          componentLoader: () =>
+            import('./pages/itam/settings/disposal-flow.js'),
+        },
+        {
           name: 'itam-settings-receipt-agent',
           path: 'receipt-agent',
           authz: {

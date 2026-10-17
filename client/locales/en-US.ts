@@ -2664,6 +2664,26 @@ const messages = {
         gone: 'No longer reported',
       },
     },
+    // Settings → Disposal flow (2026-10-18).
+    disposalFlow: {
+      title: 'Disposal flow',
+      description:
+        'Every step of a disposal from draft to carried out, and whom a submitter may ask to approve',
+      diagram: 'Flowchart',
+      diagramHint:
+        'The flow is defined by the system and can only be viewed here; who may take each step is enforced by it too.',
+      approvers: 'Approvers to choose from',
+      approversHint:
+        'Who a submitter may pick as the approver of a disposal. Applies to later submissions; a request already waiting keeps its approver.',
+      anyone: 'Everyone who may approve disposals',
+      chosen: 'Only these permission sets and people',
+      byRole: 'By permission set',
+      byPerson: 'By person',
+      current: 'Can be chosen now: {{names}}',
+      nobody: 'nobody',
+      conflict:
+        'Someone else changed this setting meanwhile and the latest version is loaded. Your changes are kept; save again to replace it.',
+    },
     receiptAgent: {
       title: 'Receiving from delivery notes',
       description:

@@ -23,9 +23,17 @@ import {
   WIPE_METHODS,
 } from '../../providers/itam/disposals.js';
 import { DISPOSAL_LIFECYCLE } from '../../lifecycles/disposals.js';
+import { approverDirectoryToken } from '../../providers/itam/approvers.js';
+import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
 import { lifecycleRuntimeToken } from '../../providers/itam/lifecycles.js';
 import { createCrudRoutes } from './crud-routes.js';
-import { decideCollection, errorResponse, principalId } from './http.js';
+import {
+  decideCollection,
+  errorResponse,
+  principalId,
+  readJsonObject,
+  requireGrant,
+} from './http.js';
 
 /** `/api/itam/disposals`: device list, approval steps and execution. */
 const id = z.string().min(1).max(64);
@@ -56,6 +64,14 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
     const approvals = app.container.resolve(approvalServiceToken);
     const history = app.container.resolve(historyServiceToken);
     const lifecycles = app.container.resolve(lifecycleRuntimeToken);
+    const approverDirectory = app.container.resolve(approverDirectoryToken);
+    const approverRangeSchema = z.object({
+      anyone: z.boolean(),
+      roles: z.array(z.string().min(1).max(128)).max(50),
+      users: z.array(id).max(100),
+      revision: z.number().int().nonnegative(),
+      requestId: z.string().min(1).max(128),
+    });
 
     const routes = createCrudRoutes({
       collection: 'disposals',
@@ -107,6 +123,38 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
             return errorResponse(context, error);
           }
         });
+        // 设置 → 报废流程 (2026-10-18): whom a submitter may ask to approve.
+        // Anybody who may read disposals may see it, as the picker shows
+        // the people anyway; changing it is the settings' own grant.
+        routes.get('/lifecycle/approvers', async (context) => {
+          try {
+            await decide(context, 'read');
+            return context.json({
+              data: await approverDirectory.approverRangeView(),
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
+        routes.put(
+          '/lifecycle/approvers',
+          requireGrant(ITAM_SETTINGS_RESOURCE, 'update'),
+          async (context) => {
+            try {
+              const input = approverRangeSchema.parse(
+                await readJsonObject(context),
+              );
+              return context.json({
+                data: await approverDirectory.saveApproverRange(
+                  input,
+                  principalId(context),
+                ),
+              });
+            } catch (error) {
+              return errorResponse(context, error);
+            }
+          },
+        );
         // Where one disposal stands on it: its state, what the reader may
         // do next and why not, the moves it made, and the notifications
         // they owe — never the record itself, whose fields the reader's
