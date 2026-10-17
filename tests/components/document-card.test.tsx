@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
+import { ShoppingCart, Wrench } from 'lucide-react';
 
 import {
   DocumentCard,
@@ -16,6 +17,8 @@ describe('DocumentCard', () => {
       <MemoryRouter>
         <DocumentList>
           <DocumentCard
+            icon={ShoppingCart}
+            tone='purchase'
             to='/procurement/po-1'
             number='PO-000005'
             title='Laptops for the new starters'
@@ -44,7 +47,13 @@ describe('DocumentCard', () => {
   it('leaves out the description and amount it was not given', () => {
     render(
       <MemoryRouter>
-        <DocumentCard to='/repairs/r-1' number='RP-000001' details={[]} />
+        <DocumentCard
+          icon={Wrench}
+          tone='repair'
+          to='/repairs/r-1'
+          number='RP-000001'
+          details={[]}
+        />
       </MemoryRouter>,
     );
     expect(screen.getByRole('listitem')).toHaveTextContent('RP-000001');

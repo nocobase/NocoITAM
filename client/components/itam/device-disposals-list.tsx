@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { Recycle } from 'lucide-react';
 import type { ReactElement } from 'react';
 
 import { EnumBadge } from '@/components/itam/cells';
@@ -28,6 +29,8 @@ export function DeviceDisposalsList({
           {pageRows.map((row) => (
             <DocumentCard
               key={row.id}
+              icon={Recycle}
+              tone='disposal'
               to={`/disposals/${text(row.id)}`}
               number={text(row.disposalNo)}
               title={text(row.description) || null}

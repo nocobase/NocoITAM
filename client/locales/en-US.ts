@@ -220,7 +220,7 @@ const messages = {
     holdings: 'In their name',
     relatedAssets: 'Related assets',
     devices: 'Devices',
-    purchaseOrders: 'Purchase orders',
+    purchaseOrders: 'Purchases',
     stock: 'Stock',
     total: 'Total',
     components: 'Components',

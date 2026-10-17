@@ -1,17 +1,28 @@
+import type { LucideIcon } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 
 import { RecordLink } from './record-link.js';
 
+/** Each kind's icon, tinted as the rest of the application tints it. */
+const TONES = {
+  purchase: 'bg-primary/10 text-primary',
+  repair: 'bg-warning text-warning-foreground',
+  disposal: 'bg-destructive/10 text-destructive',
+} as const;
+export type DocumentTone = keyof typeof TONES;
+
 /**
  * One document (purchase order, repair, disposal) as a card in a record's
- * related-documents lists. Every kind has the same shape (2026-10-17), with
- * no icon, since the list's heading names the kind: the number (a link to
- * the record) and the document's own words — an order's description, a
- * repair's fault — on the first line; its type and the details in small
- * text underneath; and at the right the status over the amount, so the
- * figures line up down the list.
+ * related-documents lists. Every kind has the same shape (2026-10-17): its
+ * icon in a round badge tinted by kind; the number (a link to the record)
+ * and the document's own words — an order's description, a repair's
+ * fault — on the first line; its type and the details in small text
+ * underneath; and at the right the status over the amount, so the figures
+ * line up down the list.
  */
 export function DocumentCard({
+  icon: Icon,
+  tone,
   to,
   number,
   title,
@@ -21,6 +32,8 @@ export function DocumentCard({
   details,
   action,
 }: {
+  readonly icon: LucideIcon;
+  readonly tone: DocumentTone;
   /** The record's route; the number opens it in the drawer. */
   readonly to: string;
   readonly number: ReactNode;
@@ -39,7 +52,12 @@ export function DocumentCard({
 }): ReactElement {
   const line = details.filter(Boolean);
   return (
-    <li className='flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40'>
+    <li className='flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/40'>
+      <span
+        className={`flex size-9 shrink-0 items-center justify-center rounded-full ${TONES[tone]}`}
+      >
+        <Icon className='size-4' aria-hidden='true' strokeWidth={1.75} />
+      </span>
       <div className='min-w-0 flex-1 space-y-1'>
         <div className='flex min-w-0 items-baseline gap-2'>
           <RecordLink

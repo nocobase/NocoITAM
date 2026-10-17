@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { ShoppingCart } from 'lucide-react';
 import type { ReactElement } from 'react';
 
 import type { ItamRecord } from '@/lib/itam/api';
@@ -30,6 +31,8 @@ export function PurchaseOrderCard({
   const { t } = useTranslation();
   return (
     <DocumentCard
+      icon={ShoppingCart}
+      tone='purchase'
       to={`/procurement/${text(order.id)}`}
       number={text(order.orderNo)}
       title={text(order.description) || null}

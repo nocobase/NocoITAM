@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { Wrench } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { EmptyState } from '@/components/itam/empty-state';
@@ -64,6 +65,8 @@ export function RepairsList({
           {rows.map((row) => (
             <DocumentCard
               key={row.id}
+              icon={Wrench}
+              tone='repair'
               to={`/repairs/${text(row.id)}`}
               number={text(row.repairNo)}
               title={text(row.faultDescription) || null}
