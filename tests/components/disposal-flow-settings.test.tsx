@@ -74,15 +74,22 @@ it('shows the flow and whom a submitter may pick, everyone by default', () => {
   expect(
     screen.getByText('settings.disposalFlow.current:Ann、Mia'),
   ).toBeTruthy();
-  // Everyone: nothing to tick.
-  expect(screen.queryByText('Finance')).toBeNull();
+  // Nothing ticked: everyone, saved as such.
+  expect(
+    screen
+      .getByRole('checkbox', { name: 'Finance' })
+      .getAttribute('aria-checked'),
+  ).toBe('false');
+  fireEvent.click(screen.getByRole('button', { name: /actions\.save/ }));
+  expect(state.saves[0]).toMatchObject({
+    anyone: true,
+    roles: [],
+    users: [],
+  });
 });
 
 it('narrows the range to what is ticked and saves it against the version shown', () => {
   render(<DisposalFlowSettingsPage />);
-  fireEvent.click(
-    screen.getByRole('radio', { name: 'settings.disposalFlow.chosen' }),
-  );
   fireEvent.click(screen.getByRole('checkbox', { name: 'Finance' }));
   fireEvent.click(screen.getByRole('button', { name: /actions\.save/ }));
   expect(state.saves).toEqual([
@@ -101,9 +108,6 @@ it('keeps what was written after a conflict and saves it again under a new key',
     response: { data: { code: 'BUSINESS_RULE', rule: 'CONFLICT' } },
   };
   render(<DisposalFlowSettingsPage />);
-  fireEvent.click(
-    screen.getByRole('radio', { name: 'settings.disposalFlow.chosen' }),
-  );
   fireEvent.click(screen.getByRole('checkbox', { name: 'Ann' }));
   const save = screen.getByRole('button', { name: /actions\.save/ });
   fireEvent.click(save);

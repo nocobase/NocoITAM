@@ -7,7 +7,6 @@ import { PageHeader } from '#components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiErrorBody } from '@/lib/itam/api';
 import {
@@ -83,7 +82,6 @@ function ApproverRangeCard({
 }): ReactElement {
   const { t } = useTranslation();
   const save = useSaveDisposalApproverRange(DISPOSALS_PATH);
-  const [anyone, setAnyone] = useState(range.anyone);
   const [roles, setRoles] = useState<ReadonlySet<string>>(
     () => new Set(range.roles),
   );
@@ -113,10 +111,12 @@ function ApproverRangeCard({
       // loaded the newer one and keeps what was being written, so saving
       // again is a deliberate choice to replace it. A failed save takes a
       // new key, since the same key with other input is refused.
+      // Nothing ticked is everyone who may approve (2026-10-18: a separate
+      // choice for it was one step more saying the same thing).
       onSave={() =>
         save.mutate(
           {
-            anyone,
+            anyone: roles.size === 0 && users.size === 0,
             roles: [...roles],
             users: [...users],
             revision: range.revision,
@@ -129,47 +129,26 @@ function ApproverRangeCard({
       error={conflict ? null : save.error}
       saved={save.isSuccess}
     >
-      <RadioGroup
-        value={anyone ? 'anyone' : 'chosen'}
-        onValueChange={(value) => {
-          setAnyone(value === 'anyone');
-          changed();
-        }}
-        className='gap-3'
-      >
-        <Label className='flex items-center gap-2 font-normal'>
-          <RadioGroupItem value='anyone' />
-          {t('settings.disposalFlow.anyone')}
-        </Label>
-        <Label className='flex items-center gap-2 font-normal'>
-          <RadioGroupItem value='chosen' />
-          {t('settings.disposalFlow.chosen')}
-        </Label>
-      </RadioGroup>
-      <>
-        {anyone ? null : (
-          <div className='grid gap-6 sm:grid-cols-2'>
-            <ChoiceList
-              title={t('settings.disposalFlow.byRole')}
-              options={range.roleOptions.map((role) => ({
-                key: role.key,
-                label: roleTitle(role, t),
-              }))}
-              chosen={roles}
-              onToggle={toggle(setRoles)}
-            />
-            <ChoiceList
-              title={t('settings.disposalFlow.byPerson')}
-              options={range.userOptions.map((person) => ({
-                key: person.id,
-                label: person.name,
-              }))}
-              chosen={users}
-              onToggle={toggle(setUsers)}
-            />
-          </div>
-        )}
-      </>
+      <div className='grid gap-6 sm:grid-cols-2'>
+        <ChoiceList
+          title={t('settings.disposalFlow.byRole')}
+          options={range.roleOptions.map((role) => ({
+            key: role.key,
+            label: roleTitle(role, t),
+          }))}
+          chosen={roles}
+          onToggle={toggle(setRoles)}
+        />
+        <ChoiceList
+          title={t('settings.disposalFlow.byPerson')}
+          options={range.userOptions.map((person) => ({
+            key: person.id,
+            label: person.name,
+          }))}
+          chosen={users}
+          onToggle={toggle(setUsers)}
+        />
+      </div>
       <p className='text-sm text-muted-foreground'>
         {conflict
           ? t('settings.disposalFlow.conflict')

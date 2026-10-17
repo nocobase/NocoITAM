@@ -2675,9 +2675,7 @@ const messages = {
         'The flow is defined by the system and can only be viewed here; who may take each step is enforced by it too.',
       approvers: 'Approvers to choose from',
       approversHint:
-        'Who a submitter may pick as the approver of a disposal. Applies to later submissions; a request already waiting keeps its approver.',
-      anyone: 'Everyone who may approve disposals',
-      chosen: 'Only these permission sets and people',
+        'A submitter picks the approver of a disposal from the permission sets and people ticked here; with none ticked, from everyone who may approve disposals. Applies to later submissions; a request already waiting keeps its approver.',
       byRole: 'By permission set',
       byPerson: 'By person',
       current: 'Can be chosen now: {{names}}',
