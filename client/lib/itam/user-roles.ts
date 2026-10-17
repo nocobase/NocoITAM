@@ -19,6 +19,16 @@ const KNOWN_ROLES: ReadonlySet<string> = new Set([
   'itam-it-support',
 ]);
 
+/** A permission set's name: this application's own in the reader's language. */
+export function roleTitle(
+  role: UserRole,
+  t: (key: string, options?: { defaultValue?: string }) => string,
+): string {
+  return KNOWN_ROLES.has(role.key)
+    ? t(`users.roles.${role.key}`, { defaultValue: role.title })
+    : role.title;
+}
+
 /**
  * The names of the permission sets a picked person holds — IT 资产经理,
  * IT 支持 — joined for the line beside their name. A set an administrator
@@ -32,11 +42,7 @@ export function userRolesLabel(
   if (!PEOPLE_DIRECTORIES.has(collection) || !Array.isArray(row.roles))
     return '';
   return (row.roles as readonly UserRole[])
-    .map((role) =>
-      KNOWN_ROLES.has(role.key)
-        ? t(`users.roles.${role.key}`, { defaultValue: role.title })
-        : role.title,
-    )
+    .map((role) => roleTitle(role, t))
     .filter(Boolean)
     .join(' · ');
 }

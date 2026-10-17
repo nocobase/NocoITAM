@@ -2515,6 +2515,25 @@ const zhCN: AppResource = {
         gone: '已不在平台中',
       },
     },
+    // 设置 → 报废流程 (2026-10-18).
+    disposalFlow: {
+      title: '报废流程',
+      description: '报废单从草稿到执行的每一步，以及提交时可以选谁审批',
+      diagram: '流程图',
+      diagramHint:
+        '流程由系统定义，这里只能查看；每一步谁能操作也由系统强制执行。',
+      approvers: '可选审批人',
+      approversHint:
+        '提交报废审批时，可以从这些人里选审批人。只对之后的提交生效，已在审批中的申请不受影响。',
+      anyone: '所有有报废审批权限的人',
+      chosen: '只限以下权限集和人员',
+      byRole: '按权限集',
+      byPerson: '按人员',
+      current: '现在可选：{{names}}',
+      nobody: '没有人',
+      conflict:
+        '其他人刚改过这项设置，已载入最新版本。你的修改还在，确认后再保存一次。',
+    },
     receiptAgent: {
       title: '按送货单入库',
       description:

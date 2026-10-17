@@ -67,6 +67,10 @@ import {
 } from './demo.js';
 import { createDisposalService, disposalServiceToken } from './disposals.js';
 import {
+  approverDirectoryToken,
+  createApproverDirectory,
+} from './approvers.js';
+import {
   createItamLifecycleRuntime,
   LIFECYCLE_EFFECT_JOB,
   LIFECYCLE_JOB_SCOPE,
@@ -605,7 +609,13 @@ export default class ItamProvider extends ServiceProvider<Application> {
         entitlements: container.resolve(entitlementServiceToken),
         stock: container.resolve(stockServiceToken),
         lifecycles: container.resolve(lifecycleRuntimeToken),
+        approvers: container.resolve(approverDirectoryToken),
       }),
+    );
+    container.singleton(approverDirectoryToken, () =>
+      createApproverDirectory(container, () =>
+        container.resolve(lifecycleRuntimeToken),
+      ),
     );
     container.singleton(auditServiceToken, () =>
       createAuditService({

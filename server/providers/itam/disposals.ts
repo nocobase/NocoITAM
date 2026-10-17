@@ -34,6 +34,7 @@ import {
 } from './errors.js';
 import type { HistoryService } from './history.js';
 import type { EntitlementService } from './entitlements.js';
+import type { ApproverDirectory } from './approvers.js';
 import { lifecycleRefusal } from './lifecycles.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
@@ -232,6 +233,7 @@ export function createDisposalService(dependencies: {
   entitlements: EntitlementService;
   stock: StockService;
   lifecycles: LifecycleRuntime;
+  approvers: ApproverDirectory;
 }): DisposalService {
   const {
     database,
@@ -243,6 +245,7 @@ export function createDisposalService(dependencies: {
     entitlements,
     stock,
     lifecycles,
+    approvers,
   } = dependencies;
   const definition = DISPOSALS_COLLECTION;
   const records = createRecordHelpers(database, history, definition);
@@ -720,8 +723,15 @@ export function createDisposalService(dependencies: {
 
     // The approver hears of it, and the requester of the decision, through
     // the lifecycle's effects once the transaction commits.
-    submit: (id, approverId, context, conditions) =>
-      records.mutate(id, conditions, async (connection, disposal) => {
+    async submit(id, approverId, context, conditions) {
+      // Asked before the transaction opens: who holds which permission set
+      // is read outside SQLite's one connection.
+      if (approverId && !(await approvers.mayApproveDisposal(approverId)))
+        throw new BusinessRuleError(
+          'Choose an approver from the range set for disposals',
+          'APPROVER_NOT_IN_RANGE',
+        );
+      return records.mutate(id, conditions, async (connection, disposal) => {
         // The guard reads the count the devices make now.
         await recomputeTotals(connection, id);
         // Who it asks, and who asks: what the approver is told.
@@ -744,7 +754,8 @@ export function createDisposalService(dependencies: {
           context,
           connection,
         );
-      }),
+      });
+    },
 
     withdraw: (id, context, conditions) =>
       records.mutate(id, conditions, async (connection, disposal) => {
@@ -825,7 +836,8 @@ export function createDisposalService(dependencies: {
             ? null
             : (statedRecipientName ?? asText(disposal.recipientName) ?? null),
           dataWipe: input.dataWipe,
-          wipeMethod: input.dataWipe === 'wiped' ? input.wipeMethod : null,
+          wipeMethod:
+            input.dataWipe === 'wiped' ? (input.wipeMethod ?? null) : null,
           // Who carried it out: the person the executor names, else
           // whoever pressed the button.
           executedById: input.executedById ?? context.actorId,

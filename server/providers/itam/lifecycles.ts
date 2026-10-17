@@ -3,8 +3,10 @@ import {
   createRepositoryLifecycleStore,
   LifecycleError,
   LifecycleRuntime,
+  StoredLifecycleParameters,
   type EffectDispatcher,
   type LifecycleLogger,
+  type LifecycleParameterStore,
 } from '@nocobase/lifecycle';
 import {
   createServiceToken,
@@ -32,6 +34,27 @@ export const lifecycleRuntimeToken: ServiceToken<LifecycleRuntime> =
 
 /** Stored with every queued effect: never rename it. */
 export const LIFECYCLE_EFFECT_JOB = 'itam/lifecycle-effect';
+/**
+ * The one scope the lifecycles' administrator-set parameters are kept
+ * under: the whole installation. Never rename it, or the stored versions
+ * are no longer found.
+ */
+export const LIFECYCLE_PARAMETER_SCOPE = 'itam';
+
+/**
+ * The versions of those parameters, in the database
+ * (202610180002_lifecycle_parameters). It keeps no state of its own, so the
+ * runtime, which reads them on each transition, and the settings that save
+ * them each build one.
+ */
+export function lifecycleParameterStore(
+  database: DatabaseManager,
+): LifecycleParameterStore {
+  return new StoredLifecycleParameters(
+    createRepositoryLifecycleStore(database),
+  );
+}
+
 /** The jobs scope the effects and the sweep run in: never rename it. */
 export const LIFECYCLE_JOB_SCOPE = 'itam-lifecycles';
 
@@ -61,6 +84,11 @@ export function createItamLifecycleRuntime(dependencies: {
         ),
       notifier,
     }),
+    // 设置 → 报废流程's approver range, read live on every submission.
+    parameterConfiguration: {
+      store: lifecycleParameterStore(database),
+      scope: () => LIFECYCLE_PARAMETER_SCOPE,
+    },
   });
   return runtime;
 }
