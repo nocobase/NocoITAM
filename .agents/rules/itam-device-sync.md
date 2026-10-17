@@ -279,7 +279,17 @@ product or in release notes, until it is listed here.
   runs) shows the reader's open follow-ups as their cards, a run just asked
   for at once, working; one carried out or set aside there stays folded,
   one a newer run replaced goes. 收件箱 shows MDM 核对 itself beside an MDM
-  跟进 (`PagePane`), as it shows a request beside its review.
+  跟进 (`PagePane`), as it shows a request beside its review, with that run
+  alone in 等你决定 (`FollowUpFocusContext`). Its title says whose it is —
+  你负责的设备 (`owner:`) or 资产管理员 (`shared:`), `followUpTitle` — and a
+  run a newer one for the same person replaced is left out of the list.
+  A holder of the asset manager set also reads the other people's open
+  follow-ups there, folded under 其他负责人的跟进 (`GET
+/api/itam/device-sync/followUps`, `others()`): the summary, what the plan
+  would do (its steps' titles, read from `itamPlanSteps` since only its
+  proposer may load the plan) and the notes — nothing to act on, which
+  stays their owner's. 只在台账 lists each device's 负责人, whose follow-up
+  has it.
 - **Eval set** (step 4): `server/providers/itam/evals/device-sync.ts` holds
   the cases — what the commands show, the question, and the decision a
   person who knows the method would make per item (transfer, assign,

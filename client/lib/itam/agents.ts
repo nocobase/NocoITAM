@@ -43,7 +43,12 @@ export interface ApprovalReviewResult {
 export interface DeviceSyncResult {
   readonly items: readonly {
     readonly key: string;
-    readonly kind: 'userMismatch' | 'unregistered';
+    readonly kind:
+      | 'stale'
+      | 'userMismatch'
+      | 'statusMismatch'
+      | 'unmanaged'
+      | 'unregistered';
     readonly subject: string;
     readonly label: string;
   }[];
@@ -89,6 +94,20 @@ export interface DeviceSyncRun extends RunBase {
 }
 
 export type AgentRun = ApprovalReviewRun | DeviceSyncRun;
+
+/** Another person's open MDM 跟进, as an asset manager reads it. */
+export interface OtherFollowUp {
+  readonly id: string;
+  readonly deciderId: string;
+  readonly status: 'running' | 'pending' | 'failed';
+  readonly failure: string | null;
+  readonly createdAt: string;
+  readonly items: DeviceSyncResult['items'];
+  readonly summary: string;
+  readonly notes: readonly string[];
+  /** What its plan would do, while the plan waits. */
+  readonly steps: readonly string[];
+}
 
 export interface RunCounts {
   readonly runs: number;
@@ -263,6 +282,25 @@ export function useAskReview(): UseMutationResult<
         json: { agent: 'approvalReview', ...input },
       }),
     onSuccess: refresh,
+  });
+}
+
+/**
+ * For an asset manager on MDM 核对 (2026-10-17): the other people's open
+ * MDM 跟进, to read; none for anybody else.
+ */
+export function useOtherFollowUps(): UseQueryResult<readonly OtherFollowUp[]> {
+  const api = useApi();
+  return useQuery({
+    queryKey: [...keys.runs, 'others'],
+    queryFn: async () =>
+      (
+        await api.request<{ data: readonly OtherFollowUp[] }>({
+          path: 'itam/device-sync/followUps',
+        })
+      ).data,
+    refetchInterval: (query) =>
+      query.state.data?.some((run) => run.status === 'running') ? 4_000 : false,
   });
 }
 

@@ -170,6 +170,8 @@ describe('MDM 核对 → 只在台账', () => {
     show();
     // The serial to find it by in MDM, and its model.
     expect(screen.getByText('LNX-001')).toBeInTheDocument();
+    // Who answers for it (2026-10-17).
+    expect(screen.getByText('Mia')).toBeInTheDocument();
     expect(screen.getByText('Dell OptiPlex 7020')).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole('button', { name: 'deviceSync.review.exempt' }),
@@ -201,7 +203,8 @@ describe('MDM 核对 → 只在台账', () => {
     expect(
       within(section).getByText('Wiped for every release').className,
     ).toContain('truncate');
-    expect(within(section).getByText(/Mia/)).toBeInTheDocument();
+    // Who marked it, and who answers for the device.
+    expect(within(section).getAllByText(/Mia/)).toHaveLength(2);
     fireEvent.click(
       within(section).getByRole('button', {
         name: 'deviceSync.review.restore',

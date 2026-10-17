@@ -346,6 +346,34 @@ describe('MDM follow-up', () => {
     ).toEqual([]);
   });
 
+  // For an asset manager on MDM 核对 (2026-10-17).
+  it('shows an asset manager the other people’s open follow-ups to read, and nobody else', async () => {
+    model.decide = (item) =>
+      item.kind === 'userMismatch'
+        ? { action: 'transfer', target: wangWu }
+        : null;
+    await followUp().afterSync(null);
+    await settled(() => latest('owner:mia'));
+    await settled(() => latest('shared:ann'));
+    const read = async (who?: { user: string; role: 'manager' | 'employee' }) =>
+      app.request('/api/itam/device-sync/followUps', { ...who });
+    expect((await read()).status).toBe(401);
+    expect((await read({ user: 'bob', role: 'employee' })).status).toBe(403);
+    const anns = (await (
+      await read({ user: 'ann', role: 'manager' })
+    ).json()) as {
+      data: Record<string, unknown>[];
+    };
+    // Mia's devices, with what the plan would do; not Ann's own.
+    expect(anns.data).toHaveLength(1);
+    expect(anns.data[0]).toMatchObject({ deciderId: 'mia', status: 'pending' });
+    expect((anns.data[0]!.steps as string[]).length).toBe(1);
+    // Mia holds no asset manager set.
+    expect(
+      ((await (await read(mia)).json()) as { data: unknown[] }).data,
+    ).toEqual([]);
+  });
+
   it('runs only while switched on', async () => {
     await app.container
       .resolve(databaseManagerToken)

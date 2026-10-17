@@ -141,6 +141,20 @@ export interface FollowUpResult {
   readonly summary: string;
 }
 
+/** Another person's open suggestion, as an asset manager reads it. */
+export interface OtherFollowUp {
+  readonly id: string;
+  readonly deciderId: string;
+  readonly status: string;
+  readonly failure: string | null;
+  readonly createdAt: string;
+  readonly items: readonly FollowUpItem[];
+  readonly summary: string;
+  readonly notes: readonly string[];
+  /** What its plan would do, while the plan waits. */
+  readonly steps: readonly string[];
+}
+
 export interface DeviceSyncFollowUp {
   useJobs(dispatch: (runId: string) => Promise<void>): void;
   /**
@@ -163,6 +177,14 @@ export interface DeviceSyncFollowUp {
    * by hand, it is never switched off.
    */
   ask(by: string): Promise<readonly AgentRun[]>;
+  /**
+   * For a holder of the asset manager set (2026-10-17): the suggestions
+   * still open on the devices other people answer for, to read on MDM 核对
+   * — the suggestion and what its plan would do, never the plan to carry
+   * out, which stays its person's. None for anybody else. The platform
+   * records' suggestions are left out: an asset manager has their own.
+   */
+  others(reader: string): Promise<readonly OtherFollowUp[]>;
   runEntry(runId: string, signal?: AbortSignal): Promise<void>;
   /** A plan decided on its card: the run that proposed it goes with it. */
   planDecided(outcome: PlanOutcome): Promise<void>;
@@ -366,6 +388,64 @@ export function createDeviceSyncFollowUp(dependencies: {
       if (shared.length && (await assetManagers()).includes(by))
         started.push(await begin('asked', by, `shared:${by}`, by));
       return started;
+    },
+
+    async others(reader) {
+      if (!(await assetManagers()).includes(reader)) return [];
+      const open = (
+        await runs().list(AGENT, {
+          since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
+          statuses: ['running', 'pending', 'failed'],
+          limit: 200,
+        })
+      ).filter(
+        (run) =>
+          run.subjectId.startsWith('owner:') &&
+          run.deciderId !== null &&
+          run.deciderId !== reader,
+      );
+      const result: OtherFollowUp[] = [];
+      for (const run of open) {
+        const planId = asText(run.result?.planId);
+        const plan = planId
+          ? await database()
+              .query()
+              .selectFrom('itamPlans')
+              .select(['status'])
+              .where('id', '=', planId)
+              .executeTakeFirst<{ status: unknown }>()
+          : undefined;
+        const steps =
+          planId && plan?.status === 'pending'
+            ? await database()
+                .query()
+                .selectFrom('itamPlanSteps')
+                .select(['params'])
+                .where('planId', '=', planId)
+                .orderBy('position', 'asc')
+                .execute<{ params: unknown }>()
+            : [];
+        result.push({
+          id: run.id,
+          deciderId: String(run.deciderId),
+          status: run.status,
+          failure: run.failure,
+          createdAt: run.createdAt,
+          items: (run.result?.items ?? []) as FollowUpItem[],
+          summary: asText(run.result?.summary) ?? '',
+          notes: (run.result?.notes ?? []) as string[],
+          steps: steps.flatMap((step) => {
+            const params = (
+              typeof step.params === 'string'
+                ? JSON.parse(step.params)
+                : step.params
+            ) as { title?: unknown } | null;
+            const title = asText(params?.title);
+            return title ? [title] : [];
+          }),
+        });
+      }
+      return result;
     },
 
     runEntry: (runId, signal) => work(runId, askModel, signal),
