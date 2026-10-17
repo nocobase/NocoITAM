@@ -1,12 +1,16 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
 import { Check, RefreshCw } from 'lucide-react';
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { Link } from 'react-router';
 
 import { Button } from '#components/ui/button';
 import { Spinner } from '#components/ui/spinner';
-import { useDismissReview, type DeviceSyncRun } from '@/lib/itam/agents';
+import {
+  useDismissReview,
+  useInbox,
+  type DeviceSyncRun,
+} from '@/lib/itam/agents';
 import { useApi } from '@/lib/itam/api';
 import { relativeTime } from '@/lib/itam/format';
 import { PLANS_PATH, type Plan } from '@/lib/itam/plans';
@@ -24,9 +28,12 @@ import { PlanCard } from './plan-card.js';
 export function DeviceSyncRunCard({
   run,
   onDecided,
+  onReview = false,
 }: {
   readonly run: DeviceSyncRun;
   readonly onDecided?: () => void;
+  /** Shown on MDM 核对 itself, which needs no way to it. */
+  readonly onReview?: boolean;
 }): ReactElement {
   const { t, i18n } = useTranslation();
   const api = useApi();
@@ -48,7 +55,7 @@ export function DeviceSyncRunCard({
     i18n.language,
     t('comments.justNow'),
   );
-  const toReview = (
+  const toReview = onReview ? null : (
     <Button
       size='sm'
       variant='outline'
@@ -110,24 +117,70 @@ export function DeviceSyncRunCard({
           </ul>
         </section>
       ) : null}
-      <div className='flex flex-wrap items-center gap-2'>
-        {toReview}
-        {!decided ? (
-          <Button
-            size='sm'
-            variant='ghost'
-            disabled={dismiss.isPending}
-            onClick={() =>
-              dismiss.mutate(run, { onSuccess: () => onDecided?.() })
-            }
-          >
-            {t('review.dismiss')}
-          </Button>
-        ) : null}
-      </div>
+      {toReview || !decided ? (
+        <div className='flex flex-wrap items-center gap-2'>
+          {toReview}
+          {!decided ? (
+            <Button
+              size='sm'
+              variant='ghost'
+              disabled={dismiss.isPending}
+              onClick={() =>
+                dismiss.mutate(run, { onSuccess: () => onDecided?.() })
+              }
+            >
+              {t('review.dismiss')}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       {dismiss.error ? (
         <p className='text-destructive'>{dismiss.error.message}</p>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * 等你决定 on MDM 核对 (2026-10-17), as on a request's page: the reader's
+ * MDM 跟进 suggestions still open — their devices', and as an asset manager
+ * the platform records' — newest first, each its card. One carried out or
+ * set aside while the page was open stays, folded to how it ended; one a
+ * newer run replaced goes. Nothing otherwise. The
+ * runs are the 收件箱's, kept live with it.
+ */
+export function DeviceSyncFollowUpBlock(): ReactElement | null {
+  const { t } = useTranslation();
+  const inbox = useInbox();
+  const runs = [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])]
+    .filter((run): run is DeviceSyncRun => run.agent === 'deviceSync')
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const open = (run: DeviceSyncRun) =>
+    run.status === 'running' ||
+    run.status === 'pending' ||
+    run.status === 'failed';
+  // The runs open while the page was: once decided here they stay.
+  const [shown, setShown] = useState<readonly string[]>([]);
+  const opened = runs.filter(open).map((run) => run.id);
+  if (opened.some((id) => !shown.includes(id)))
+    setShown([...new Set([...shown, ...opened])]);
+  // Replaced by a newer run is gone, not decided: its card would offer a
+  // plan nobody should carry out any more.
+  const visible = runs.filter(
+    (run) =>
+      open(run) ||
+      (shown.includes(run.id) &&
+        (run.status === 'accepted' || run.status === 'dismissed')),
+  );
+  if (!visible.length) return null;
+  return (
+    <section className='space-y-2'>
+      <h2 className='text-sm font-semibold'>{t('review.waiting')}</h2>
+      {visible.map((run) => (
+        <div key={run.id} className='rounded-lg border bg-card p-4'>
+          <DeviceSyncRunCard run={run} onReview />
+        </div>
+      ))}
+    </section>
   );
 }

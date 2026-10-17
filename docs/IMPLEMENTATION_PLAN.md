@@ -3301,6 +3301,9 @@ answer for, and the platform records nobody owns when they are an asset
 manager — are worked out at once and land in their 收件箱, leaving
 everyone else's suggestions alone. What a person already carried out or
 set aside is still not raised again; when nothing is new the page says so.
+The page shows the reader's open suggestions under 等你决定, and 收件箱
+shows the page beside an MDM 跟进, the way it shows a request beside its
+review.
 
 ### 2026-10-16 The demo comes with AI suggestions, without a model
 
