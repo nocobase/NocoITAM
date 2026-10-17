@@ -38,11 +38,13 @@ export function DevicePurchaseOrderList({
           <PurchaseOrderCard
             key={text(row.id)}
             order={row}
+            amount={
+              amount === null || amount === undefined
+                ? null
+                : formatMoney(amount, text(row.currency))
+            }
             detail={[
               row.orderedAt ? formatDate(row.orderedAt) : '',
-              amount === null || amount === undefined
-                ? ''
-                : formatMoney(amount, text(row.currency)),
               row.vendorId
                 ? (names.vendors?.get(text(row.vendorId)) ?? '')
                 : '',

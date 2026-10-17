@@ -29,12 +29,14 @@ export function PurchaseOrderCards({
             <PurchaseOrderCard
               key={text(order.id)}
               order={order}
+              amount={
+                order.amount === null || order.amount === undefined
+                  ? null
+                  : formatMoney(order.amount, text(order.currency) || null)
+              }
               detail={[
                 order.orderedAt ? formatDate(order.orderedAt) : '',
                 t('stock.purchasedQuantity', { count: Number(order.quantity) }),
-                order.amount === null || order.amount === undefined
-                  ? ''
-                  : formatMoney(order.amount, text(order.currency) || null),
                 order.vendorId
                   ? (names.vendors?.get(text(order.vendorId)) ?? '')
                   : '',

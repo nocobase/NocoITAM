@@ -1,5 +1,4 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { Wrench } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { EmptyState } from '@/components/itam/empty-state';
@@ -65,9 +64,9 @@ export function RepairsList({
           {rows.map((row) => (
             <DocumentCard
               key={row.id}
-              icon={Wrench}
               to={`/repairs/${text(row.id)}`}
               number={text(row.repairNo)}
+              title={text(row.faultDescription) || null}
               kind={t(`enums.repairMethod.${text(row.method)}`, {
                 defaultValue: text(row.method),
               })}
@@ -95,7 +94,6 @@ export function RepairsList({
                 !deviceId && row.deviceId
                   ? names.devices?.get(text(row.deviceId))
                   : '',
-                text(row.faultDescription),
                 row.actualReturnAt
                   ? `${formatDate(row.sentAt)} → ${formatDate(row.actualReturnAt)}`
                   : formatDate(row.sentAt),
@@ -105,10 +103,12 @@ export function RepairsList({
                     })
                   : '',
                 row.vendorId ? names.vendors?.get(text(row.vendorId)) : '',
+              ]}
+              amount={
                 row.cost !== null && row.cost !== undefined
                   ? formatMoney(row.cost, text(row.currency))
-                  : '',
-              ]}
+                  : null
+              }
               action={
                 completable &&
                 permissions.complete &&
