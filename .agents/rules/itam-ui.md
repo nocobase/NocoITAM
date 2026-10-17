@@ -292,7 +292,7 @@ around an aside, as Chinese prose does.
 ## Menus and destructive actions
 
 `DropdownMenuContent` sizes to its content and never goes below the trigger
-width or 8rem; the registry default bound it to `--anchor-width`, which made
+width or 120px (7.5rem since 2026-10-17; it was 8rem); the registry default bound it to `--anchor-width`, which made
 every menu anchored to an icon button one button wide and wrapped each label.
 Items stay on one line. Keep that when the primitive is upgraded from the
 registry.
