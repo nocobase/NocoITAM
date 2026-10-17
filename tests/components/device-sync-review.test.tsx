@@ -132,8 +132,8 @@ describe('MDM 核对 → 只在台账', () => {
     };
   });
 
-  // AI 跟进 (2026-10-17): MDM 跟进 for the reader, now.
-  it('offers AI follow-up while a model is usable, and asks for it', () => {
+  // MDM 跟进 on the page (2026-10-17): the follow-up for the reader, now.
+  it('offers MDM follow-up while a model is usable, and asks for it', () => {
     const { unmount } = show();
     expect(
       screen.queryByRole('button', { name: 'deviceSync.review.followUp' }),

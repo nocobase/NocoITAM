@@ -300,7 +300,7 @@ describe('MDM follow-up', () => {
     expect(registered?.locationId).toBe('loc-hq');
   });
 
-  // AI 跟进 on MDM 核对 (2026-10-17).
+  // MDM 跟进 on MDM 核对 (2026-10-17).
   it('works out the reader’s own items when they ask, switched on or not', async () => {
     const ask = (who?: { user: string; role: 'employee' | 'manager' }) =>
       app.request('/api/itam/device-sync/followUp', {

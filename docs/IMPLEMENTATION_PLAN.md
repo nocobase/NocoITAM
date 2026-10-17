@@ -3292,11 +3292,11 @@ for the person to confirm; it still never marks a device lost. Finding a
 silent device or enrolling one on a platform stays a note. The first run
 looks at everything MDM 核对 lists; later ones at what is new.
 
-### 2026-10-17 AI 跟进 on MDM 核对
+### 2026-10-17 MDM 跟进 on MDM 核对
 
 MDM 跟进 ran only after a pull, so the only way to have it look again was
 to sync from the settings page, which redid everyone's suggestions. MDM 核对
-now has an AI 跟进 shortcut: the reader's own items — the devices they
+now has an MDM 跟进 shortcut: the reader's own items — the devices they
 answer for, and the platform records nobody owns when they are an asset
 manager — are worked out at once and land in their 收件箱, leaving
 everyone else's suggestions alone. What a person already carried out or

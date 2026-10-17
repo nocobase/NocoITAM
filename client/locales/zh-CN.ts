@@ -2056,7 +2056,7 @@ const zhCN: AppResource = {
     review: {
       title: 'MDM 核对',
       settingsLink: 'MDM 设置',
-      followUp: 'AI 跟进',
+      followUp: 'MDM 跟进',
       followUpStarted: '资产管家正在整理你负责的差异，好了会出现在收件箱。',
       followUpNothing: '没有要你处理的新差异；已经处理或忽略过的不会再提。',
       openInbox: '去收件箱',
@@ -3410,7 +3410,7 @@ const zhCN: AppResource = {
     notes: '需要你看一下',
     openReview: '去 MDM 核对',
     failedHint:
-      '这次没整理出来，可以到 MDM 核对页查看，或者在那里点“AI 跟进”再试一次。',
+      '这次没整理出来，可以到 MDM 核对页查看，或者在那里点“MDM 跟进”再试一次。',
   },
   loginActivity: {
     heading: '每一台设备在哪、谁在用，一目了然。',

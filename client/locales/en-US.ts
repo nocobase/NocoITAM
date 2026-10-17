@@ -2147,7 +2147,7 @@ const messages = {
     review: {
       title: 'Platform review',
       settingsLink: 'MDM settings',
-      followUp: 'AI follow-up',
+      followUp: 'MDM follow-up',
       followUpStarted:
         'Asset Steward is sorting the differences you answer for; the result will be in your inbox.',
       followUpNothing:
@@ -3604,7 +3604,7 @@ const messages = {
     notes: 'For you to look at',
     openReview: 'Open MDM 核对',
     failedHint:
-      'Nothing was sorted this time; look on the MDM review, or try AI follow-up there again.',
+      'Nothing was sorted this time; look on the MDM review, or try MDM follow-up there again.',
   },
   loginActivity: {
     heading: 'Where every device is, and who has it.',

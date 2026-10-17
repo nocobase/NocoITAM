@@ -267,7 +267,7 @@ export function useAskReview(): UseMutationResult<
 }
 
 /**
- * AI 跟进 on MDM 核对 (2026-10-17): the reader's own differences worked out
+ * MDM 跟进 on MDM 核对 (2026-10-17): the reader's own differences worked out
  * now; the runs it started, none when there is nothing new for them.
  */
 export function useAskFollowUp(): UseMutationResult<

@@ -113,7 +113,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
         description={t('deviceSync.review.description')}
         actions={
           <>
-            {/* AI 跟进 (2026-10-17): MDM 跟进 for the reader alone, now
+            {/* MDM 跟进 on the page (2026-10-17): the follow-up for the reader alone, now
                 rather than after the next pull. */}
             {ai.available ? (
               <AiShortcut

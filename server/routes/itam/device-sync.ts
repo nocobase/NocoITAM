@@ -258,7 +258,7 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
       }
     });
 
-    // AI 跟进 on MDM 核对 (2026-10-17): the reader's own items worked out
+    // MDM 跟进 on MDM 核对 (2026-10-17): the reader's own items worked out
     // now rather than after the next pull, for their 收件箱. Whoever may
     // read devices may ask; the run reads only what they may read.
     routes.post('/followUp', async (context) => {
