@@ -266,6 +266,29 @@ export function useAskReview(): UseMutationResult<
   });
 }
 
+/**
+ * AI 跟进 on MDM 核对 (2026-10-17): the reader's own differences worked out
+ * now; the runs it started, none when there is nothing new for them.
+ */
+export function useAskFollowUp(): UseMutationResult<
+  readonly AgentRun[],
+  Error,
+  void
+> {
+  const api = useApi();
+  const refresh = useRefreshRuns();
+  return useMutation({
+    mutationFn: async () =>
+      (
+        await api.request<{ data: readonly AgentRun[] }>({
+          path: 'itam/device-sync/followUp',
+          method: 'POST',
+        })
+      ).data,
+    onSuccess: refresh,
+  });
+}
+
 /** The approver approves or rejects from the review; the request changes with it. */
 export function useDecideReview(): UseMutationResult<
   unknown,

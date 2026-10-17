@@ -14,6 +14,14 @@ const state = vi.hoisted(() => ({
   create: undefined as Record<string, unknown> | undefined,
   device: undefined as Record<string, unknown> | undefined,
   records: [] as Record<string, unknown>[],
+  ai: false,
+  followUp: {
+    mutate: vi.fn(),
+    isPending: false,
+    isSuccess: false,
+    data: undefined as unknown[] | undefined,
+    error: null,
+  },
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -56,7 +64,10 @@ vi.mock('../../client/lib/itam/api.js', () => ({
   }),
 }));
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
-  useItamAi: () => ({ available: false, ask: vi.fn() }),
+  useItamAi: () => ({ available: state.ai, ask: vi.fn() }),
+}));
+vi.mock('../../client/lib/itam/agents.js', () => ({
+  useAskFollowUp: () => state.followUp,
 }));
 vi.mock('../../client/lib/itam/references.js', () => ({
   useReferenceNames: () => ({
@@ -111,6 +122,47 @@ describe('MDM 核对 → 只在台账', () => {
   beforeEach(() => {
     state.views = {};
     state.action.mockReset();
+    state.ai = false;
+    state.followUp = {
+      mutate: vi.fn(),
+      isPending: false,
+      isSuccess: false,
+      data: undefined,
+      error: null,
+    };
+  });
+
+  // AI 跟进 (2026-10-17): MDM 跟进 for the reader, now.
+  it('offers AI follow-up while a model is usable, and asks for it', () => {
+    const { unmount } = show();
+    expect(
+      screen.queryByRole('button', { name: 'deviceSync.review.followUp' }),
+    ).not.toBeInTheDocument();
+    unmount();
+    state.ai = true;
+    show();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.review.followUp' }),
+    );
+    expect(state.followUp.mutate).toHaveBeenCalled();
+  });
+
+  it('says where the follow-up goes, or that nothing is new', () => {
+    state.ai = true;
+    state.followUp = { ...state.followUp, isSuccess: true, data: [{}] };
+    const { unmount } = show();
+    expect(
+      screen.getByText('deviceSync.review.followUpStarted', { exact: false }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('deviceSync.review.openInbox').closest('a'),
+    ).toHaveAttribute('href', '/inbox');
+    unmount();
+    state.followUp = { ...state.followUp, data: [] };
+    show();
+    expect(
+      screen.getByText('deviceSync.review.followUpNothing'),
+    ).toBeInTheDocument();
   });
 
   it('marks a device 不需要纳管 with a reason', () => {

@@ -12,6 +12,7 @@ import { deviceReviewServiceToken } from '../../server/providers/itam/device-rev
 import { deviceSyncFollowUpToken } from '../../server/providers/itam/device-sync-followup.js';
 import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.js';
 import { planServiceToken } from '../../server/providers/itam/plans.js';
+import { deviceSyncRoutes } from '../../server/routes/itam/device-sync.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
@@ -121,7 +122,7 @@ describe('MDM follow-up', () => {
     model.decide = () => null;
     managers = ['ann'];
     app = await createTestApp({ seeds: true });
-    for (const routes of [masterDataRoutes, deviceRoutes])
+    for (const routes of [masterDataRoutes, deviceRoutes, deviceSyncRoutes])
       await app.mount(routes);
     // The asset manager set's holders, as the authorization plugin lists them.
     Object.assign(app.container.resolve(authorizationToken), {
@@ -297,6 +298,52 @@ describe('MDM follow-up', () => {
       .where('serialNo', '=', 'SN-UNKNOWN')
       .executeTakeFirst<{ locationId: unknown }>();
     expect(registered?.locationId).toBe('loc-hq');
+  });
+
+  // AI 跟进 on MDM 核对 (2026-10-17).
+  it('works out the reader’s own items when they ask, switched on or not', async () => {
+    const ask = (who?: { user: string; role: 'employee' | 'manager' }) =>
+      app.request('/api/itam/device-sync/followUp', {
+        ...json({}),
+        ...who,
+      });
+    expect((await ask()).status).toBe(401);
+    expect((await ask({ user: 'bob', role: 'employee' })).status).toBe(403);
+    await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .insertInto('itamSettings')
+      .values({
+        key: 'agent-switches',
+        value: JSON.stringify({ deviceSync: { enabled: false } }),
+        updatedAt: new Date(),
+      })
+      .execute();
+
+    // Mia answers for the devices and holds no asset manager set.
+    const asked = await ask(mia);
+    expect(asked.status).toBe(200);
+    const started = ((await asked.json()) as { data: AgentRun[] }).data;
+    expect(
+      started.map((run) => [run.subjectId, run.trigger, run.startedById]),
+    ).toEqual([['owner:mia', 'asked', 'mia']]);
+    const mine = await settled(() => latest('owner:mia'));
+    expect((mine.result?.items as unknown[]).length).toBeGreaterThan(0);
+
+    // Ann, an asset manager, gets the records nobody owns; Mia's stays.
+    const anns = (
+      (await (await ask({ user: 'ann', role: 'manager' })).json()) as {
+        data: AgentRun[];
+      }
+    ).data;
+    expect(anns.map((run) => run.subjectId)).toEqual(['shared:ann']);
+    expect((await runs().get(mine.id))?.status).toBe('pending');
+
+    // Set aside, nothing is new for her.
+    await followUp().dismiss(mine.id, 'mia');
+    expect(
+      ((await (await ask(mia)).json()) as { data: AgentRun[] }).data,
+    ).toEqual([]);
   });
 
   it('runs only while switched on', async () => {
