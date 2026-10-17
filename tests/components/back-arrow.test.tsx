@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router';
 import { expect, it, vi } from 'vitest';
 
-import { HistoryBackButton } from '../../client/components/itam/history-back-button.js';
+import { BackArrow } from '../../client/components/itam/back-arrow.js';
 
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
@@ -22,23 +22,33 @@ it('steps back to the page the reader came from', () => {
     <MemoryRouter initialEntries={['/devices']}>
       <Routes>
         <Route path='/devices' element={<Origin />} />
-        <Route path='/review' element={<HistoryBackButton fallback='/' />} />
+        <Route path='/review' element={<BackArrow />} />
       </Routes>
     </MemoryRouter>,
   );
   fireEvent.click(screen.getByText('open'));
-  fireEvent.click(screen.getByText('navigation.back'));
-  // Back on the list it was opened from, not the fallback.
+  fireEvent.click(screen.getByRole('button', { name: 'common.backPrevious' }));
   expect(screen.getByText('open')).toBeInTheDocument();
 });
 
-it('leads to the fallback when the page was opened directly', () => {
-  render(
+it('shows nothing on a page opened directly, or when hidden', () => {
+  const { unmount } = render(
     <MemoryRouter initialEntries={['/review']}>
-      <HistoryBackButton fallback='/' />
+      <BackArrow />
     </MemoryRouter>,
   );
+  expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  unmount();
+  render(
+    <MemoryRouter initialEntries={['/devices']}>
+      <Routes>
+        <Route path='/devices' element={<Origin />} />
+        <Route path='/review' element={<BackArrow hidden />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  fireEvent.click(screen.getByText('open'));
   expect(
-    screen.getByRole('link', { name: /navigation\.back/ }),
-  ).toHaveAttribute('href', '/');
+    screen.queryByRole('button', { name: 'common.backPrevious' }),
+  ).not.toBeInTheDocument();
 });

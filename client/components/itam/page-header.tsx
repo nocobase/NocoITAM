@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
+import { BackArrow } from './back-arrow.js';
 import { CountPill } from './count-pill.js';
 
 export interface PageHeaderProps {
@@ -10,6 +11,8 @@ export interface PageHeaderProps {
   readonly description?: ReactNode;
   readonly actions?: ReactNode;
   readonly breadcrumb?: ReactNode;
+  /** An arrow before the title back to the page before, as on a detail page. */
+  readonly back?: boolean;
 }
 
 /** The header every ITAM page starts with: title, total, actions. */
@@ -20,6 +23,7 @@ export function PageHeader({
   description,
   actions,
   breadcrumb,
+  back = false,
 }: PageHeaderProps): ReactElement {
   return (
     // Wraps by its own room, not the window's: beside the assistant panel a
@@ -31,6 +35,7 @@ export function PageHeader({
           <div className='text-sm text-muted-foreground'>{breadcrumb}</div>
         ) : null}
         <div className='flex items-center gap-2'>
+          {back ? <BackArrow /> : null}
           <h1 className='truncate font-heading text-2xl font-semibold tracking-tight'>
             {title}
           </h1>

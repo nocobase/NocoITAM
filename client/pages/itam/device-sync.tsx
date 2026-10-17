@@ -9,7 +9,6 @@ import { useAskFollowUp } from '@/lib/itam/agents';
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { EmptyState } from '@/components/itam/empty-state';
-import { HistoryBackButton } from '@/components/itam/history-back-button';
 import { CellText } from '@/components/itam/cell-text';
 import { DifferenceTag } from '@/components/itam/difference-tag';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
@@ -107,8 +106,8 @@ export default function DeviceSyncReviewPage(): ReactElement {
   }, [requested, ignoredShown, exemptedShown, dismissedShown]);
   return (
     <Page>
-      <HistoryBackButton fallback='/' />
       <PageHeader
+        back
         title={t('deviceSync.review.title')}
         description={t('deviceSync.review.description')}
         actions={

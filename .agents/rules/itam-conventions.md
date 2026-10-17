@@ -16,6 +16,10 @@ wrapping line above the title; do not add a second subtitle below it. That
 line names the record's kind and is not a link; the way back to the page
 before is an arrow button beside the title, shown only when there is a page
 before (2026-10-16: "← 采购" above the title read as a link to the list).
+It is `BackArrow` (`client/components/itam/back-arrow.tsx`); a page that is
+not a record but is reached from several places, such as MDM 核对, shows
+the same arrow with `PageHeader`'s `back` (2026-10-17, replacing its
+"← 返回" text link).
 
 ## This application: ITAM
 

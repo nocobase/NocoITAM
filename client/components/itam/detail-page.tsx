@@ -1,13 +1,13 @@
-import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowLeft, type LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useContext, type ReactElement, type ReactNode } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router';
+import { NavLink, useLocation } from 'react-router';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { EmbeddedRecordContext } from '@/lib/itam/detail-chrome';
 import { TAB_ICONS } from '@/lib/itam/tab-icons';
 import { cn } from '@/lib/utils';
 
+import { BackArrow } from './back-arrow.js';
 import { EditableTitle } from './editable-title.js';
 import { StatCards, type StatCard } from './stat-cards.js';
 
@@ -88,15 +88,10 @@ export function DetailPage({
   tabs,
   children,
 }: DetailPageProps): ReactElement {
-  const { t } = useTranslation();
   const location = useLocation();
-  const navigate = useNavigate();
-  // 返回 to the page the reader actually came from (2026-10-16): the
-  // browser's previous entry, which a drawer never adds and a tab switch
-  // replaces. Not on a page opened directly (React Router names a session's
-  // first entry `default`), nor on one shown inside another page.
+  // 返回 goes to the browser's previous entry, which a drawer never adds
+  // and a tab switch replaces (`BackArrow`).
   const embedded = useContext(EmbeddedRecordContext);
-  const canGoBack = !embedded && location.key !== 'default';
   return (
     <>
       {/* Breakpoints follow the page's own width (container queries), not
@@ -126,18 +121,8 @@ export function DetailPage({
             <div className='flex min-w-0 items-center gap-2'>
               {/* Beside the title, apart from the kind above it (2026-10-16):
                   "← 采购" read as a way to the procurement list, where this
-                  goes to the page before. */}
-              {canGoBack ? (
-                <button
-                  type='button'
-                  aria-label={t('common.backPrevious')}
-                  title={t('common.backPrevious')}
-                  className='-ml-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50'
-                  onClick={() => void navigate(-1)}
-                >
-                  <ArrowLeft aria-hidden='true' className='size-5' />
-                </button>
-              ) : null}
+                  goes to the page before. Not inside another page. */}
+              <BackArrow hidden={embedded} />
               {titleEdit ? (
                 <EditableTitle
                   value={titleEdit.value}
