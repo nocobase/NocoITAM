@@ -988,6 +988,7 @@ describe('CSV import / export and demo data', () => {
       audits: resolve(auditServiceToken),
       disposals: resolve(disposalServiceToken),
       numbering: resolve(numberingServiceToken),
+      deviceSync: resolve(deviceSyncServiceToken),
       // The comment service needs the users table, which this harness has
       // not; a recorder stands in for it.
       comments: {
@@ -1027,6 +1028,13 @@ describe('CSV import / export and demo data', () => {
     expect(await owned('purchaseOrders')).toBe(4);
     expect(await owned('repairs')).toBe(1);
     expect(await owned('disposals')).toBe(1);
+    // 信息不一致's devices answer to several people, not all to 吴静
+    // (2026-10-17).
+    const checks = await resolve(deviceReviewServiceToken).checks();
+    expect(checks.length).toBeGreaterThanOrEqual(4);
+    expect(
+      new Set(checks.map((check) => check.ownerId)).size,
+    ).toBeGreaterThanOrEqual(3);
     // And its records carry comment threads, three of which mention it.
     expect(written.length).toBeGreaterThanOrEqual(8);
     expect(written.filter((entry) => entry.actor === 'admin')).toHaveLength(1);

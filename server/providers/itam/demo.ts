@@ -5460,6 +5460,26 @@ export function createDemoService(dependencies: {
               encrypted: false,
             };
           const dropped = intuneOnly[1];
+          // The devices behind 信息不一致 answer to different people
+          // (2026-10-17), so its 负责人 column and each person's MDM 跟进
+          // are not all 吴静's: IT support keeps the silent laptop and the
+          // one Intune dropped, the first asset manager the one on the
+          // shelf and the disposed one; the laptop in someone else's hands
+          // stays with 吴静. Not the leaver, who is handing things over.
+          const answering: readonly [Row | undefined, string][] = [
+            [inUse[1], supportUserId ?? writerId],
+            [onShelf[0], managerUserId ?? writerId],
+            [disposed, managerUserId ?? writerId],
+            [dropped?.row, supportUserId ?? writerId],
+          ];
+          for (const [row, ownerId] of answering)
+            if (row)
+              await database
+                .query()
+                .updateTable('devices')
+                .set({ ownerId })
+                .where('id', '=', String(row.id))
+                .execute();
           const extra = (
             externalId: string,
             values: Partial<ObservedDevice>,
