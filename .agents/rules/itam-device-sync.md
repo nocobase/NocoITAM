@@ -269,6 +269,12 @@ product or in release notes, until it is listed here.
   run is replaced by the next pull's, since a plan lasts a day. Carrying
   out or withdrawing the plan settles the run (`PlanService.onDecided`,
   composed with the conversation news); 忽略 withdraws the plan.
+  **AI 跟进** on MDM 核对 (2026-10-17, `POST /api/itam/device-sync/followUp`,
+  devices `read`; `ask()`, trigger `asked`) runs it for the reader alone
+  without waiting for a pull: their `owner:` run, and their `shared:` one
+  when they hold the asset manager set. It replaces only their own waiting
+  run, ignores the agent's switch (asked by hand), and answers the runs it
+  started — none when nothing is new for them, which the page says.
 - **Eval set** (step 4): `server/providers/itam/evals/device-sync.ts` holds
   the cases — what the commands show, the question, and the decision a
   person who knows the method would make per item (transfer, assign,

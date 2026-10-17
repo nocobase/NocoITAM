@@ -23,6 +23,7 @@ import {
   SourceError,
 } from '../../providers/itam/device-sources.js';
 import { compileAuthzScope } from '../../providers/itam/authz-filter.js';
+import { deviceSyncFollowUpToken } from '../../providers/itam/device-sync-followup.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
 import { BusinessRuleError } from '../../providers/itam/errors.js';
 import {
@@ -70,6 +71,7 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
     const devices = app.container.resolve(deviceServiceToken);
     const database = app.container.resolve(databaseManagerToken);
     const connections = app.container.resolve(deviceConnectionsServiceToken);
+    const followUp = app.container.resolve(deviceSyncFollowUpToken);
 
     routes.use('*', auth.required(), authorization.middleware());
     const settingsGrant = requireGrant(ITAM_SETTINGS_RESOURCE, 'update');
@@ -250,6 +252,20 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
               : view === 'silent'
                 ? await review.silent()
                 : await review.ignored(),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // AI 跟进 on MDM 核对 (2026-10-17): the reader's own items worked out
+    // now rather than after the next pull, for their 收件箱. Whoever may
+    // read devices may ask; the run reads only what they may read.
+    routes.post('/followUp', async (context) => {
+      try {
+        await decideFor(context, 'devices', 'read');
+        return context.json({
+          data: await followUp.ask(principalId(context)),
         });
       } catch (error) {
         return errorResponse(context, error);

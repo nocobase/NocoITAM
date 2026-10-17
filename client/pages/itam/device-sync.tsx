@@ -5,6 +5,7 @@ import { ExternalLink, Settings2 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
+import { useAskFollowUp } from '@/lib/itam/agents';
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { EmptyState } from '@/components/itam/empty-state';
@@ -65,6 +66,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const ai = useItamAi();
+  const followUp = useAskFollowUp();
   // MDM settings (connections, runs, the rules behind these lists)
   // for whoever may change them, the grant its API asks for.
   const { can: canSettle } = useCan({
@@ -110,22 +112,53 @@ export default function DeviceSyncReviewPage(): ReactElement {
         title={t('deviceSync.review.title')}
         description={t('deviceSync.review.description')}
         actions={
-          canSettle ? (
-            // A link drawn as a button: it goes to another page. Filled in
-            // the foreground colour, as asked (2026-10-15).
-            <Link
-              to='/settings/mdm'
-              className={cn(
-                buttonVariants(),
-                'bg-foreground text-background hover:bg-foreground/85',
-              )}
-            >
-              <Settings2 data-icon='inline-start' />
-              {t('deviceSync.review.settingsLink')}
-            </Link>
-          ) : undefined
+          <>
+            {/* AI 跟进 (2026-10-17): MDM 跟进 for the reader alone, now
+                rather than after the next pull. */}
+            {ai.available ? (
+              <AiShortcut
+                disabled={followUp.isPending}
+                onClick={() => followUp.mutate()}
+              >
+                {t('deviceSync.review.followUp')}
+              </AiShortcut>
+            ) : null}
+            {canSettle ? (
+              // A link drawn as a button: it goes to another page. Filled in
+              // the foreground colour, as asked (2026-10-15).
+              <Link
+                to='/settings/mdm'
+                className={cn(
+                  buttonVariants(),
+                  'bg-foreground text-background hover:bg-foreground/85',
+                )}
+              >
+                <Settings2 data-icon='inline-start' />
+                {t('deviceSync.review.settingsLink')}
+              </Link>
+            ) : null}
+          </>
         }
       />
+      {followUp.isSuccess ? (
+        <p role='status' className='text-sm text-muted-foreground'>
+          {followUp.data.length ? (
+            <>
+              {t('deviceSync.review.followUpStarted')}{' '}
+              <Link to='/inbox' className='text-primary hover:underline'>
+                {t('deviceSync.review.openInbox')}
+              </Link>
+            </>
+          ) : (
+            t('deviceSync.review.followUpNothing')
+          )}
+        </p>
+      ) : null}
+      {followUp.error ? (
+        <p role='alert' className='text-sm text-destructive'>
+          {followUp.error.message}
+        </p>
+      ) : null}
       {/* Three ways the two lists disagree (2026-10-15): both have the
           device but say otherwise, only MDM has it, only the register has
           it — each with its count. What was kept off is not a fourth to-do:

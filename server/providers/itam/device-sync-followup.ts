@@ -155,6 +155,14 @@ export interface DeviceSyncFollowUp {
       readonly locale: string;
     },
   ): Promise<readonly AgentRun[]>;
+  /**
+   * A person asks on MDM 核对 (2026-10-17): a run for their own items only
+   * — the devices they answer for, and the platform records nobody owns
+   * when they hold the asset manager set — without waiting for a pull.
+   * Their waiting suggestion is replaced; nobody else's is touched. Asked
+   * by hand, it is never switched off.
+   */
+  ask(by: string): Promise<readonly AgentRun[]>;
   runEntry(runId: string, signal?: AbortSignal): Promise<void>;
   /** A plan decided on its card: the run that proposed it goes with it. */
   planDecided(outcome: PlanOutcome): Promise<void>;
@@ -293,6 +301,41 @@ export function createDeviceSyncFollowUp(dependencies: {
 
   const words = (zhText: string, enText: string) => (zh() ? zhText : enText);
 
+  /**
+   * A run for one person, replacing their suggestion still waiting; worked
+   * out by the model on the queue, or here and now from given answers.
+   */
+  const begin = async (
+    trigger: 'synced' | 'asked',
+    by: string | null,
+    subjectId: string,
+    deciderId: string,
+    answers?: { readonly answerer: FollowUpAnswerer; readonly locale: string },
+  ): Promise<AgentRun> => {
+    const run = await runs().start({
+      agent: AGENT,
+      trigger,
+      startedById: by,
+      subjectType: SUBJECT,
+      subjectId,
+      deciderId,
+    });
+    if (!answers) {
+      await enqueue(run.id);
+      return run;
+    }
+    answering = answers.locale;
+    try {
+      await work(run.id, async (material) => ({
+        decisions: answers.answerer(material),
+        model: null,
+      }));
+    } finally {
+      answering = undefined;
+    }
+    return run;
+  };
+
   const service: DeviceSyncFollowUp = {
     useJobs(next) {
       dispatch = next;
@@ -304,35 +347,24 @@ export function createDeviceSyncFollowUp(dependencies: {
       const { byOwner, shared } = await pending();
       const started: AgentRun[] = [];
       const start = async (subjectId: string, deciderId: string) => {
-        // Replaces the person's suggestion still waiting from the last pull.
-        const run = await runs().start({
-          agent: AGENT,
-          trigger: 'synced',
-          startedById: by,
-          subjectType: SUBJECT,
-          subjectId,
-          deciderId,
-        });
-        started.push(run);
-        if (!answers) {
-          await enqueue(run.id);
-          return;
-        }
-        answering = answers.locale;
-        try {
-          await work(run.id, async (material) => ({
-            decisions: answers.answerer(material),
-            model: null,
-          }));
-        } finally {
-          answering = undefined;
-        }
+        started.push(await begin('synced', by, subjectId, deciderId, answers));
       };
       for (const [owner, items] of byOwner)
         if (items.length) await start(`owner:${owner}`, owner);
       if (shared.length)
         for (const manager of await assetManagers())
           await start(`shared:${manager}`, manager);
+      return started;
+    },
+
+    async ask(by) {
+      if (!(await review().active())) return [];
+      const { byOwner, shared } = await pending();
+      const started: AgentRun[] = [];
+      if (byOwner.get(by)?.length)
+        started.push(await begin('asked', by, `owner:${by}`, by));
+      if (shared.length && (await assetManagers()).includes(by))
+        started.push(await begin('asked', by, `shared:${by}`, by));
       return started;
     },
 

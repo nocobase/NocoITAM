@@ -2147,6 +2147,12 @@ const messages = {
     review: {
       title: 'Platform review',
       settingsLink: 'MDM settings',
+      followUp: 'AI follow-up',
+      followUpStarted:
+        'Asset Steward is sorting the differences you answer for; the result will be in your inbox.',
+      followUpNothing:
+        'No new differences for you; those already settled or ignored are not raised again.',
+      openInbox: 'Open inbox',
       description:
         'Where the device management platforms and the register disagree',
       views: {
@@ -3590,15 +3596,15 @@ const messages = {
   },
   deviceSyncRun: {
     title: 'MDM follow-up',
-    afterSync: 'Differences after an MDM sync',
-    differences_one: 'MDM sync: {{count}} new difference',
-    differences_other: 'MDM sync: {{count}} new differences',
-    working: 'Asset Steward is sorting what the sync left…',
+    afterSync: 'Differences on the MDM review',
+    differences_one: 'MDM follow-up: {{count}} difference',
+    differences_other: 'MDM follow-up: {{count}} differences',
+    working: 'Asset Steward is sorting the differences on the MDM review…',
     accepted: 'Carried out',
     notes: 'For you to look at',
     openReview: 'Open MDM 核对',
     failedHint:
-      'Nothing was sorted this time; look on MDM 核对, or wait for the next sync.',
+      'Nothing was sorted this time; look on the MDM review, or try AI follow-up there again.',
   },
   loginActivity: {
     heading: 'Where every device is, and who has it.',
