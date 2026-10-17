@@ -69,6 +69,9 @@ vi.mock('../../client/lib/itam/ai-chat.js', () => ({
 vi.mock('../../client/lib/itam/agents.js', () => ({
   useAskFollowUp: () => state.followUp,
 }));
+vi.mock('../../client/components/itam/ai/device-sync-run.js', () => ({
+  DeviceSyncFollowUpBlock: () => <p>follow-up block</p>,
+}));
 vi.mock('../../client/lib/itam/references.js', () => ({
   useReferenceNames: () => ({
     users: new Map([['mia', 'Mia']]),
@@ -147,22 +150,19 @@ describe('MDM 核对 → 只在台账', () => {
     expect(state.followUp.mutate).toHaveBeenCalled();
   });
 
-  it('says where the follow-up goes, or that nothing is new', () => {
+  it('shows the reader’s follow-ups, and says when nothing was new', () => {
     state.ai = true;
     state.followUp = { ...state.followUp, isSuccess: true, data: [{}] };
     const { unmount } = show();
-    expect(
-      screen.getByText('deviceSync.review.followUpStarted', { exact: false }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('deviceSync.review.openInbox').closest('a'),
-    ).toHaveAttribute('href', '/inbox');
+    // The cards are the page's 等你决定, a run just asked for among them.
+    expect(screen.getByText('follow-up block')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     unmount();
     state.followUp = { ...state.followUp, data: [] };
     show();
-    expect(
-      screen.getByText('deviceSync.review.followUpNothing'),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'deviceSync.review.followUpNothing',
+    );
   });
 
   it('marks a device 不需要纳管 with a reason', () => {

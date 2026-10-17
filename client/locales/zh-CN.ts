@@ -2057,9 +2057,7 @@ const zhCN: AppResource = {
       title: 'MDM 核对',
       settingsLink: 'MDM 设置',
       followUp: 'MDM 跟进',
-      followUpStarted: '资产管家正在整理你负责的差异，好了会出现在收件箱。',
       followUpNothing: '没有要你处理的新差异；已经处理或忽略过的不会再提。',
-      openInbox: '去收件箱',
       description: '设备管理平台（MDM）报告的设备与台账不一致的地方',
       views: {
         checks: '信息不一致',

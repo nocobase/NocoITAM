@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { Check } from 'lucide-react';
-import { useEffect, useMemo, useRef, type ReactElement } from 'react';
+import { lazy, useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
 import { ApprovalReviewCard } from '@/components/itam/ai/approval-review';
@@ -10,7 +10,7 @@ import {
   itamNoticeRenderer,
 } from '@/components/itam/inbox-notices';
 import { noticePath } from '@/lib/itam/inbox-notices';
-import { RecordPane } from '@/components/itam/record-drawer';
+import { PagePane, RecordPane } from '@/components/itam/record-drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInbox, type AgentRun } from '@/lib/itam/agents';
 import { relativeTime } from '@/lib/itam/format';
@@ -90,6 +90,9 @@ function reviewsCategory(label: string): InboxCollectionCategory {
     Detail: ReviewDetail,
   };
 }
+
+// MDM 核对, shown beside an MDM 跟进: loaded when one is opened.
+const DeviceSyncReviewPage = lazy(() => import('./device-sync.js'));
 
 const isOpen = (run: AgentRun): boolean =>
   run.status === 'pending' ||
@@ -267,12 +270,24 @@ function ReviewDetail({
         {t('agentInbox.nothingPicked')}
       </p>
     );
+  // MDM 核对 itself (2026-10-17), as a review shows its request: the page's
+  // 等你决定 carries the suggestion while it is open. One already handled
+  // is no longer on the page, so its card, folded, sits above it.
   if (run.agent === 'deviceSync')
     return (
-      <article className='min-w-0 space-y-3 p-6'>
-        <h2 className='text-base font-semibold'>{titleOf(run, t)}</h2>
-        <DeviceSyncRunCard key={run.id} run={run} />
-      </article>
+      <div className='min-w-0'>
+        {isOpen(run) ? null : (
+          <div className='px-6 pt-6'>
+            <DeviceSyncRunCard key={run.id} run={run} />
+          </div>
+        )}
+        <PagePane
+          key={run.id}
+          to='/device-sync'
+          page={DeviceSyncReviewPage}
+          onLeave={(path) => void navigate(path)}
+        />
+      </div>
     );
   // The request itself, as a notification shows its record (2026-10-16):
   // its own page, whose 等你决定 carries the review while it waits on the

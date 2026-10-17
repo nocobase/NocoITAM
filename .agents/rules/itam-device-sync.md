@@ -274,7 +274,12 @@ product or in release notes, until it is listed here.
   without waiting for a pull: their `owner:` run, and their `shared:` one
   when they hold the asset manager set. It replaces only their own waiting
   run, ignores the agent's switch (asked by hand), and answers the runs it
-  started — none when nothing is new for them, which the page says.
+  started — none when nothing is new for them, which the page says in an
+  alert. The page's 等你决定 (`DeviceSyncFollowUpBlock`, from the 收件箱's
+  runs) shows the reader's open follow-ups as their cards, a run just asked
+  for at once, working; one carried out or set aside there stays folded,
+  one a newer run replaced goes. 收件箱 shows MDM 核对 itself beside an MDM
+  跟进 (`PagePane`), as it shows a request beside its review.
 - **Eval set** (step 4): `server/providers/itam/evals/device-sync.ts` holds
   the cases — what the commands show, the question, and the decision a
   person who knows the method would make per item (transfer, assign,

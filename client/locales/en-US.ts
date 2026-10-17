@@ -2148,11 +2148,8 @@ const messages = {
       title: 'Platform review',
       settingsLink: 'MDM settings',
       followUp: 'MDM follow-up',
-      followUpStarted:
-        'Asset Steward is sorting the differences you answer for; the result will be in your inbox.',
       followUpNothing:
         'No new differences for you; those already settled or ignored are not raised again.',
-      openInbox: 'Open inbox',
       description:
         'Where the device management platforms and the register disagree',
       views: {

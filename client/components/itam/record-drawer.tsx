@@ -221,6 +221,33 @@ export function RecordPane({
 }
 
 /**
+ * A page that is not a record, shown in place as `RecordPane` shows one
+ * (2026-10-17: MDM 核对 beside an MDM 跟进 in 收件箱): its own router at
+ * `to`, and any link away from it handed to `onLeave`.
+ */
+export function PagePane({
+  to,
+  page,
+  onLeave,
+}: {
+  readonly to: string;
+  readonly page: ComponentType;
+  readonly onLeave: (path: string) => void;
+}): ReactElement {
+  const path = to.split(/[?#]/)[0] ?? to;
+  return (
+    <IsolatedRouter initialPath={to}>
+      <EmbeddedRecordContext.Provider value>
+        <Routes>
+          <Route path={path} element={<RoutePage page={page} />} />
+          <Route path='*' element={<LeaveDrawer onLeave={onLeave} />} />
+        </Routes>
+      </EmbeddedRecordContext.Provider>
+    </IsolatedRouter>
+  );
+}
+
+/**
  * 返回 when records are stacked and 打开完整页面 for the drawer's current
  * view, in a row of their own beside the close button. The page's own
  * action buttons sit at the top right of its header, so these must not

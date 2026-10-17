@@ -1,10 +1,12 @@
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { ExternalLink, Settings2 } from 'lucide-react';
+import { ExternalLink, Info, Settings2 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
+import { DeviceSyncFollowUpBlock } from '@/components/itam/ai/device-sync-run';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAskFollowUp } from '@/lib/itam/agents';
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
@@ -139,19 +141,17 @@ export default function DeviceSyncReviewPage(): ReactElement {
           </>
         }
       />
-      {followUp.isSuccess ? (
-        <p role='status' className='text-sm text-muted-foreground'>
-          {followUp.data.length ? (
-            <>
-              {t('deviceSync.review.followUpStarted')}{' '}
-              <Link to='/inbox' className='text-primary hover:underline'>
-                {t('deviceSync.review.openInbox')}
-              </Link>
-            </>
-          ) : (
-            t('deviceSync.review.followUpNothing')
-          )}
-        </p>
+      {/* What MDM 跟进 left the reader, as on a request's page; a run just
+          asked for shows here at once, working. When nothing was new for
+          them, the page says so where the card would be. */}
+      <DeviceSyncFollowUpBlock />
+      {followUp.isSuccess && followUp.data.length === 0 ? (
+        <Alert>
+          <Info aria-hidden />
+          <AlertDescription>
+            {t('deviceSync.review.followUpNothing')}
+          </AlertDescription>
+        </Alert>
       ) : null}
       {followUp.error ? (
         <p role='alert' className='text-sm text-destructive'>

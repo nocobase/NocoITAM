@@ -2,10 +2,17 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-import { DeviceSyncRunCard } from '../../client/components/itam/ai/device-sync-run.js';
+import {
+  DeviceSyncFollowUpBlock,
+  DeviceSyncRunCard,
+} from '../../client/components/itam/ai/device-sync-run.js';
 import type { DeviceSyncRun } from '../../client/lib/itam/agents.js';
 
-const state = vi.hoisted(() => ({ dismiss: vi.fn(), plan: null as unknown }));
+const state = vi.hoisted(() => ({
+  dismiss: vi.fn(),
+  plan: null as unknown,
+  inbox: { open: [] as unknown[], handled: [] as unknown[] },
+}));
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
@@ -18,6 +25,7 @@ vi.mock('@tanstack/react-query', () => ({
   }),
 }));
 vi.mock('../../client/lib/itam/agents.js', () => ({
+  useInbox: () => ({ data: state.inbox }),
   useDismissReview: () => ({
     mutate: state.dismiss,
     isPending: false,
@@ -115,4 +123,46 @@ it('offers nothing to set aside once it is carried out', () => {
   expect(
     screen.queryByRole('button', { name: 'review.dismiss' }),
   ).not.toBeInTheDocument();
+});
+
+// On MDM 核对 itself (2026-10-17): no way to the page it is on.
+it('leaves out the way to MDM 核对 when shown there', () => {
+  show(run());
+  expect(screen.getByText('deviceSyncRun.openReview')).toBeInTheDocument();
+  render(
+    <MemoryRouter>
+      <DeviceSyncRunCard run={run({ id: 'run-2' })} onReview />
+    </MemoryRouter>,
+  );
+  expect(screen.getAllByText('deviceSyncRun.openReview')).toHaveLength(1);
+});
+
+it('lists the reader’s open follow-ups under 等你决定, and nothing else', () => {
+  state.inbox = {
+    open: [
+      run({ id: 'mine', status: 'running', result: null }),
+      { ...run({ id: 'review' }), agent: 'approvalReview' },
+    ],
+    handled: [
+      run({ id: 'old', status: 'accepted' }),
+      run({ id: 'replaced', status: 'superseded' }),
+    ],
+  };
+  const { unmount } = render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('review.waiting')).toBeInTheDocument();
+  expect(screen.getAllByText('deviceSyncRun.working')).toHaveLength(1);
+  expect(screen.queryByText('deviceSyncRun.accepted')).not.toBeInTheDocument();
+  expect(screen.queryByText('review.superseded')).not.toBeInTheDocument();
+  unmount();
+  state.inbox = { open: [], handled: [run({ status: 'accepted' })] };
+  render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.queryByText('review.waiting')).not.toBeInTheDocument();
 });
