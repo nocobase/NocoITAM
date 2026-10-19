@@ -2709,6 +2709,20 @@ const messages = {
       disposals: 'Disposals',
       devices: 'Devices',
       diagram: 'Flowchart',
+      devicesOmitted: {
+        title:
+          'To keep the chart readable it draws the main paths only; these moves are not drawn:',
+        markLost:
+          'Mark lost: a device in use, on loan, in stock or retired can be marked lost, and goes back to stock when found.',
+        markPendingDisposal:
+          'To pending disposal: when a disposal is approved, or a repair finds the device unrepairable, it goes to pending disposal from any status but disposed.',
+        return:
+          'A return can also send the device straight to repair, pending disposal or retirement instead of stock.',
+        correct:
+          'Correct the status: with a reason, any status but disposed can be corrected to in stock, in use, on loan, in repair, retired or lost.',
+        unchanged:
+          'Reserving, cancelling a reservation and transferring keep the status.',
+      },
       diagramHint:
         'The flow is defined by the system and can only be viewed here; who may take each step is enforced by it too.',
       approvers: 'Who may approve',

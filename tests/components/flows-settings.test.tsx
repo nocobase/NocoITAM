@@ -196,4 +196,9 @@ it('shows devices as a flowchart alone, last, since nothing approves a move', ()
   expect(screen.getAllByRole('tab').at(-1)?.textContent).toBe(
     'settings.flows.devices',
   );
+  // The moves the chart leaves out are said in words under it.
+  expect(screen.getByText('settings.flows.devicesOmitted.title')).toBeTruthy();
+  expect(
+    screen.getByText('settings.flows.devicesOmitted.markPendingDisposal'),
+  ).toBeTruthy();
 });

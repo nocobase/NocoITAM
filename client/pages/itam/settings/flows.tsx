@@ -75,17 +75,67 @@ const FLOWS = [
     approvals: true,
   },
   // The device itself, which every document above moves (2026-10-19): a
-  // flowchart alone, since nothing approves a device's move.
+  // flowchart alone, since nothing approves a device's move. Its moves that
+  // start from almost anywhere — correcting, marking lost, going to pending
+  // disposal, and a return straight to repair, disposal or retirement — drew
+  // some fifty lines that hid the rest, so the chart keeps the main paths and
+  // the panel says the others in words below it.
   {
     key: 'devices',
     path: DEVICES_PATH,
     statusEnum: 'deviceStatus',
     transitions: 'devices.transitions',
     approvals: false,
+    omitted: ['correct', 'markLost', 'markPendingDisposal'],
+    drawnTargets: { return: ['inStock'] },
   },
 ] as const;
 
 type Flow = (typeof FLOWS)[number];
+
+/** The device moves the chart leaves out, said in words under it. */
+const DEVICE_OMITTED = [
+  'markLost',
+  'markPendingDisposal',
+  'return',
+  'correct',
+  'unchanged',
+] as const;
+
+type Description = NonNullable<
+  ReturnType<typeof useLifecycleDescription>['data']
+>;
+
+/**
+ * What the flowchart draws (2026-10-19): the moves that change the state.
+ * A move that stays where it is — a device reserved or transferred — is a
+ * loop that says nothing about the flow, and a flow may leave out moves of
+ * its own (`omitted`) or some of a move's destinations (`drawnTargets`),
+ * which the panel names in words instead.
+ */
+const drawn = (description: Description, flow: Flow): Description => {
+  const omitted: readonly string[] = 'omitted' in flow ? flow.omitted : [];
+  const targets: Readonly<Record<string, readonly string[]>> =
+    'drawnTargets' in flow ? flow.drawnTargets : {};
+  return {
+    ...description,
+    transitions: description.transitions
+      .filter((transition) => !omitted.includes(transition.name))
+      .map((transition) => {
+        const only = targets[transition.name];
+        return only
+          ? {
+              ...transition,
+              to: transition.to.filter((to) => only.includes(to)),
+            }
+          : transition;
+      })
+      .filter(
+        (transition) =>
+          !transition.to.every((to) => transition.from.includes(to)),
+      ),
+  };
+};
 
 /**
  * 设置 → 流程 (2026-10-19, docs/adr/0001-record-lifecycles.md): the record
@@ -163,7 +213,7 @@ function FlowPanel({ flow }: { readonly flow: Flow }): ReactElement {
           {description.data ? (
             <LifecycleDiagram
               ariaLabel={t('lifecycle.diagram')}
-              description={description.data}
+              description={drawn(description.data, flow)}
               stateLabel={(state) =>
                 t(`enums.${flow.statusEnum}.${state.name}`)
               }
@@ -177,6 +227,16 @@ function FlowPanel({ flow }: { readonly flow: Flow }): ReactElement {
           ) : (
             <Skeleton className='h-96 w-full rounded-lg' />
           )}
+          {flow.key === 'devices' ? (
+            <div className='mt-4 space-y-1 text-sm text-muted-foreground'>
+              <p>{t('settings.flows.devicesOmitted.title')}</p>
+              <ul className='list-disc space-y-1 pl-5'>
+                {DEVICE_OMITTED.map((key) => (
+                  <li key={key}>{t(`settings.flows.devicesOmitted.${key}`)}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>
