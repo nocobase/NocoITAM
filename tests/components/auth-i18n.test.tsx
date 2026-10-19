@@ -109,9 +109,21 @@ describe('authentication translations', () => {
     expect(screen.getByLabelText('用户名或邮箱')).toBeVisible();
     expect(screen.getByRole('button', { name: '显示密码' })).toBeVisible();
     expect(screen.getByRole('link', { name: '注册' })).toBeVisible();
-    expect(screen.getByText('AI 原生应用平台')).toBeVisible();
+    // The aside is ITAM's floor plan (2026-10-16) and the name the NocoITAM
+    // lockup (2026-10-19), not the template's brand panel and text.
+    expect(
+      screen.getByRole('heading', {
+        name: '每一台设备在哪、谁在用，一目了然。',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'NocoITAM' })).toBeInTheDocument();
     await act(() => value.changeLanguage('en-US'));
     expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    expect(
+      screen.getByRole('heading', {
+        name: 'Where every device is, and who has it.',
+      }),
+    ).toBeInTheDocument();
   });
   it('retranslates an existing password mismatch', async () => {
     const value = await runtime();

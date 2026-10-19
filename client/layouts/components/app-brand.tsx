@@ -1,16 +1,24 @@
-import { resolveAssetUrl } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import type { ReactElement } from 'react';
 import { Link } from 'react-router';
+
+import { NocoItamLogo } from '#components/brand-logo';
+import {
+  BRAND_MARK_PATH,
+  BRAND_MARK_TRANSLATE,
+  BRAND_MARK_VIEW_BOX,
+} from '#components/brand-mark-geometry';
 
 export interface AppBrandProps {
   readonly compact?: boolean;
 }
 
-// Application change to the template's brand: the mark is the template's own
-// logo image from /assets (light and dark variants, the way the sign-in page
-// shows it), while the wordmark is this application's name rather than the
-// template's.
+// Application change to the template's brand (2026-10-19, as NocoCRM's): the
+// official NocoBase lockup with the application's name, "Noco" heavy and
+// "ITAM" light (components/brand-logo.tsx, NocoSolution's logo script's
+// small-size version), in place of the template's logo image beside its name
+// in the heading font; collapsed, the mark alone. Both fill with the text
+// colour, so one drawing serves light and dark.
 export function AppBrand(inputProps: AppBrandProps): ReactElement {
   const { t } = useTranslation();
   const { compact = false } = inputProps;
@@ -18,28 +26,20 @@ export function AppBrand(inputProps: AppBrandProps): ReactElement {
   return (
     <Link
       aria-label={t('navigation.brandHome', { defaultValue: 'NocoITAM home' })}
-      className='flex min-w-0 items-center gap-2 text-foreground'
+      className='flex min-w-0 items-center text-foreground'
       to='/'
     >
-      <img
-        alt=''
-        aria-hidden='true'
-        className='h-7 w-auto shrink-0 object-contain dark:hidden'
-        src={resolveAssetUrl('/assets/logo-mark.png')}
-      />
-      <img
-        alt=''
-        aria-hidden='true'
-        className='hidden h-7 w-auto shrink-0 object-contain dark:block'
-        src={resolveAssetUrl('/assets/logo-mark-dark.png')}
-      />
-      {!compact && (
-        <span className='truncate font-heading text-lg tracking-wide'>
-          {/* The template's wordmark weighting: "Noco" heavy, the product
-              name light. */}
-          <span className='font-black'>Noco</span>
-          <span className='font-normal'>ITAM</span>
-        </span>
+      {compact ? (
+        <svg
+          aria-hidden='true'
+          className='h-6 w-auto shrink-0'
+          fill='currentColor'
+          viewBox={BRAND_MARK_VIEW_BOX}
+        >
+          <path transform={BRAND_MARK_TRANSLATE} d={BRAND_MARK_PATH} />
+        </svg>
+      ) : (
+        <NocoItamLogo aria-hidden='true' className='h-5 w-auto shrink-0' />
       )}
     </Link>
   );
