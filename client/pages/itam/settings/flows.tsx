@@ -8,7 +8,6 @@ import { PageHeader } from '#components/page-header';
 import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -190,13 +189,38 @@ function ApproverRangeCard({
   const byDefault = !range.updatedById || range.updatedById === 'system';
   return (
     <Card>
-      {/* The save at the header's top right, in the card's own action
-          slot (2026-10-19: a flex row here lost to the header's grid and
-          dropped the button under the hint). */}
       <CardHeader>
         <CardTitle>{t('settings.flows.approvers')}</CardTitle>
         <CardDescription>{t('settings.flows.approversHint')}</CardDescription>
-        <CardAction>
+      </CardHeader>
+      <CardContent className='space-y-4'>
+        {save.error && !conflict ? (
+          <p role='alert' className='text-sm text-destructive'>
+            {apiErrorBody(save.error)?.message ?? errorMessage(save.error)}
+          </p>
+        ) : null}
+        {/* The save closes the row it saves, after 人员 (2026-10-19). */}
+        <div className='grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end'>
+          <ChoiceSelect
+            id='approver-range-roles'
+            title={t('settings.flows.byRole')}
+            options={range.roleOptions.map((role) => ({
+              key: role.key,
+              label: roleTitle(role, t),
+            }))}
+            chosen={roles}
+            onChange={choose(setRoles)}
+          />
+          <ChoiceSelect
+            id='approver-range-users'
+            title={t('settings.flows.byPerson')}
+            options={range.userOptions.map((person) => ({
+              key: person.id,
+              label: person.name,
+            }))}
+            chosen={users}
+            onChange={choose(setUsers)}
+          />
           <Button
             disabled={!dirty || save.isPending}
             // Against the version shown now: after a conflict the page has
@@ -218,35 +242,6 @@ function ApproverRangeCard({
           >
             {t('actions.save')}
           </Button>
-        </CardAction>
-      </CardHeader>
-      <CardContent className='space-y-4'>
-        {save.error && !conflict ? (
-          <p role='alert' className='text-sm text-destructive'>
-            {apiErrorBody(save.error)?.message ?? errorMessage(save.error)}
-          </p>
-        ) : null}
-        <div className='grid gap-4 sm:grid-cols-2'>
-          <ChoiceSelect
-            id='approver-range-roles'
-            title={t('settings.flows.byRole')}
-            options={range.roleOptions.map((role) => ({
-              key: role.key,
-              label: roleTitle(role, t),
-            }))}
-            chosen={roles}
-            onChange={choose(setRoles)}
-          />
-          <ChoiceSelect
-            id='approver-range-users'
-            title={t('settings.flows.byPerson')}
-            options={range.userOptions.map((person) => ({
-              key: person.id,
-              label: person.name,
-            }))}
-            chosen={users}
-            onChange={choose(setUsers)}
-          />
         </div>
         {/* The saved range can be left with nobody when the permission sets
             change afterwards; saving refuses that, the sets cannot. */}
