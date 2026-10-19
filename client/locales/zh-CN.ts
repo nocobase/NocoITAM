@@ -1632,6 +1632,18 @@ const zhCN: AppResource = {
     took: '采用 {{vendor}}',
   },
   procurement: {
+    // The moves on 设置 → 流程 → 采购, by the lifecycle's transition names.
+    transitions: {
+      $create: '创建',
+      submit: '提交审批',
+      withdraw: '撤回',
+      approve: '批准',
+      reject: '拒绝',
+      order: '下单',
+      receivePartly: '部分到货',
+      complete: '全部到货',
+      cancel: '取消',
+    },
     saveDraft: '保存草稿',
     title: '采购',
     object: '采购单',
@@ -2514,27 +2526,32 @@ const zhCN: AppResource = {
       },
     },
     // 设置 → 报废流程 (2026-10-18).
-    disposalFlow: {
-      title: '报废流程',
-      description: '报废单从草稿到执行的每一步，以及提交时可以选谁审批',
+    // 设置 → 流程 (2026-10-19; 报废流程 from 2026-10-18). 谁可以审批 is
+    // worded as NocoCRM's.
+    flows: {
+      title: '流程',
+      description: '采购单、报废单从提交到完成的每一步，以及提交时可以选谁审批',
+      procurement: '采购',
+      disposals: '报废',
       diagram: '流程图',
       diagramHint:
         '流程由系统定义，这里只能查看；每一步谁能操作也由系统强制执行。',
-      // 谁可以审批, worded as NocoCRM's (2026-10-19).
       approvers: '谁可以审批',
       approversHint:
-        '申请人从这些角色和人员中选择审批人，满足其中一项即可；都不选时，所有有报废审批权限的人都可选。修改只影响之后的提交，已提交的申请保留原审批人。',
+        '申请人从这些角色和人员中选择审批人，满足其中一项即可；都不选时，所有有审批权限的人都可选。修改只影响之后的提交，已提交的申请保留原审批人。',
       byRole: '角色',
       byPerson: '人员',
       choose: '请选择…',
       current:
-        '当前可选审批人：{{names}}。审批人须为启用状态，并拥有报废审批权限。',
+        '当前可选审批人：{{names}}。审批人须为启用状态，并拥有审批权限。',
       nobodyLeft:
-        '当前没有可选审批人，报废单无法提交审批：所选的角色和人员都已没有报废审批权限。请重新选择，或在权限集里恢复报废审批权限。',
+        '当前没有可选审批人，无法提交审批：所选的角色和人员都已没有审批权限。请重新选择，或在权限集里恢复审批权限。',
       byDefault: '默认设置：IT 资产经理。',
       version: '第 {{revision}} 版，由{{name}}于 {{time}} 设置。',
       conflict:
         '其他人刚改过这项设置，已载入最新版本。你的修改还在，确认后再保存一次。',
+      noApprovers:
+        '没有可选的审批人，暂时无法提交审批。请联系管理员检查「设置 → 流程」中的可选审批人，或权限集里的审批权限。',
     },
     receiptAgent: {
       title: '按送货单入库',
@@ -2783,8 +2800,6 @@ const zhCN: AppResource = {
     noAssets: '尚未添加设备',
     noneForDevice: '没有报废记录',
     approverForSubmit: '提交审批时必填；只保存草稿可以不选。',
-    noApprovers:
-      '没有可选的审批人，暂时无法提交审批。请联系管理员检查「设置 → 报废流程」的可选审批人，或权限集里的报废审批权限。',
     // The moves on its 流程 tab, by the lifecycle's transition names.
     transitions: {
       $create: '创建',

@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 import { useMemo, useState, type DragEvent, type ReactElement } from 'react';
 
+import { ApproverHint } from '@/components/itam/approver-hint';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
@@ -531,9 +532,10 @@ export function PurchaseOrderCreateDialog({
                     value={approverId}
                     onChange={setApproverId}
                   />
-                  <p className='text-xs text-muted-foreground'>
-                    {t('procurement.approverForSubmit')}
-                  </p>
+                  <ApproverHint
+                    subject='purchaseOrder'
+                    hint={t('procurement.approverForSubmit')}
+                  />
                 </div>
               </div>
               {result ? (

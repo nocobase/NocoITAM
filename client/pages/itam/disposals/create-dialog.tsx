@@ -2,6 +2,7 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Fragment, useState, type ReactElement } from 'react';
 
+import { ApproverHint } from '@/components/itam/approver-hint';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
 import { ReferenceSelect } from '@/components/itam/reference-select';
@@ -17,8 +18,6 @@ import {
   DISPOSAL_FIELDS,
   DISPOSALS_PATH,
 } from '@/lib/itam/operations';
-
-import { DisposalApproverHint } from './approver-hint.js';
 
 const HEADER_FIELDS = DISPOSAL_CREATE_FIELDS.map((key) =>
   DISPOSAL_FIELDS.find((field) => field.key === key)!,
@@ -209,7 +208,10 @@ export function DisposalCreateDialog({
             value={approverId}
             onChange={setApproverId}
           />
-          <DisposalApproverHint hint={t('disposals.approverForSubmit')} />
+          <ApproverHint
+            subject='disposal'
+            hint={t('disposals.approverForSubmit')}
+          />
         </div>
       </div>
     </ConfirmDialog>

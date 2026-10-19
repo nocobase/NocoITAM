@@ -19,11 +19,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   had. Deleting such a record deletes its rows in `lifecycleTransitions` and
   `lifecycleEffectRuns`; the demo lists both as dependents. Read the
   development guide's `references/lifecycle.md` before adding the next one.
-- A disposal's approver range (设置 → 报废流程, 2026-10-18) is the
-  lifecycle's `approverRange` parameter, not an `itamSettings` key. Who holds
-  what — permission set members, an operation's holders, the range's
-  candidates — is `server/providers/itam/approvers.ts`, which the users
-  route, the disposal service and the settings page share. It is read
+- A request's approver range (设置 → 流程; disposals 2026-10-18, purchase
+  orders 2026-10-19) is its lifecycle's `approverRange` parameter, not an
+  `itamSettings` key — one group per kind (`server/lifecycles/approver-range.ts`).
+  Who holds what — permission set members, an operation's holders, a range's
+  candidates — is `server/providers/itam/approvers.ts`, keyed by the kind of
+  request (`approversFor`, `mayApprove`), which the users route, both
+  services and the settings page share. A new kind with an approval adds
+  itself to its `SUBJECTS`. It is read
   before a transaction opens: permission sets are read through the
   authorization plugin, never on SQLite's one connection.
 - `202610180001_disposal_lifecycle` was corrected after it was merged

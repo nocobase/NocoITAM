@@ -130,7 +130,7 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
           try {
             await decide(context, 'read');
             return context.json({
-              data: await approverDirectory.approverRangeView(),
+              data: await approverDirectory.approverRangeView('disposal'),
             });
           } catch (error) {
             return errorResponse(context, error);
@@ -146,6 +146,7 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
               );
               return context.json({
                 data: await approverDirectory.saveApproverRange(
+                  'disposal',
                   input,
                   principalId(context),
                 ),

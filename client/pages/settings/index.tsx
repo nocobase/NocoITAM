@@ -6,7 +6,7 @@ import {
   FileText,
   KeyRound,
   MonitorSmartphone,
-  Recycle,
+  Workflow,
   Settings2,
   ShieldUser,
   UsersRound,
@@ -38,11 +38,12 @@ interface Tab {
 const TABS: readonly Tab[] = [
   { path: 'itam', label: 'navigation.settingsGeneral', icon: Settings2 },
   { path: 'mdm', label: 'settings.deviceSync.title', icon: MonitorSmartphone },
-  // The disposal's flow and its approvers (2026-10-18).
+  // The record lifecycles and their approvers (2026-10-19; 报废流程 from
+  // 2026-10-18).
   {
-    path: 'disposal-flow',
-    label: 'settings.disposalFlow.title',
-    icon: Recycle,
+    path: 'flows',
+    label: 'settings.flows.title',
+    icon: Workflow,
   },
   {
     path: 'receipt-agent',
@@ -77,7 +78,7 @@ export default function SettingsPage(): ReactElement {
   const access: Readonly<Record<string, ReturnType<typeof useCan>>> = {
     itam,
     mdm: itam,
-    'disposal-flow': itam,
+    flows: itam,
     'receipt-agent': itam,
     demo: itam,
     users: useCan({ resource: { type: 'user', id: '*' }, action: 'read' }),

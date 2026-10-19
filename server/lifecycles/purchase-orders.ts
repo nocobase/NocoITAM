@@ -5,10 +5,16 @@ import {
   type JsonObject,
   type Lifecycle,
   type LifecycleRecord,
+  type ParameterGroup,
   type TransitionContext,
 } from '@nocobase/lifecycle';
 
 import { requestTitle } from '../providers/itam/approvals.js';
+import {
+  approverRangeGroup,
+  DEFAULT_APPROVER_RANGE,
+  type ApproverRangeParameters,
+} from './approver-range.js';
 import type { Row } from '../providers/itam/collection-query.js';
 import type { ItamNotifier } from '../providers/itam/notifier.js';
 
@@ -67,8 +73,14 @@ export interface PurchaseOrderLifecycleServices {
 export interface PurchaseOrderTypes {
   record: PurchaseOrderRecord;
   state: PurchaseOrderState;
+  parameters: ApproverRangeParameters;
   services: PurchaseOrderLifecycleServices;
 }
+
+/** 设置 → 流程 → 采购: whom a submitter may pick as the approver. */
+export const purchaseOrderApproverRange: ParameterGroup = approverRangeGroup(
+  'purchaseOrderApprovers',
+);
 
 type Context = TransitionContext<PurchaseOrderTypes>;
 
@@ -211,6 +223,11 @@ export const purchaseOrderLifecycle: Lifecycle<PurchaseOrderTypes> =
   defineLifecycle<PurchaseOrderTypes>({
     name: PURCHASE_ORDER_LIFECYCLE,
     initial: 'draft',
+    parameters: { approverRange: DEFAULT_APPROVER_RANGE },
+    parameterConfiguration: {
+      readMode: 'live',
+      groups: [purchaseOrderApproverRange],
+    },
     states: [
       'draft',
       'pendingApproval',

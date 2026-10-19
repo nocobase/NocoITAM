@@ -23,8 +23,9 @@ import {
   type TestDatabase,
 } from '../support/test-database.js';
 
-// 设置 → 报废流程's approver range (2026-10-18): whom a submitter may ask to
-// approve a disposal, kept as a lifecycle parameter. It narrows the people
+// 设置 → 流程's approver ranges (2026-10-18, purchase orders 2026-10-19): whom
+// a submitter may ask to approve, kept as a lifecycle parameter per kind of
+// request. It narrows the people
 // who hold disposal approval and never widens them; saving it is versioned,
 // so a stale page conflicts and a resent request saves nothing twice.
 
@@ -38,8 +39,16 @@ const approve = {
   resource: { type: 'composite', id: 'itam.disposals' },
   actions: [{ action: 'approve' }],
 };
+const approveOrders = {
+  resource: { type: 'composite', id: 'itam.purchaseOrders' },
+  actions: [{ action: 'approve' }],
+};
 const SETS = [
-  { key: 'itam-asset-manager', title: 'IT Asset Manager', grants: [approve] },
+  {
+    key: 'itam-asset-manager',
+    title: 'IT Asset Manager',
+    grants: [approve, approveOrders],
+  },
   { key: 'finance', title: 'Finance', grants: [approve] },
   // Holds an operation of this application's, but not the approval.
   {
@@ -59,7 +68,7 @@ const ASSIGNMENTS: Readonly<Record<string, readonly string[]>> = {
   'itam-it-support': ['sam'],
 };
 
-describe('disposal approver range', () => {
+describe('approver range', () => {
   let db: TestDatabase;
   let container: ServiceContainer;
   let directory: ApproverDirectory;
@@ -119,12 +128,13 @@ describe('disposal approver range', () => {
     requestId: string;
   }) =>
     directory.saveApproverRange(
+      'disposal',
       { anyone: false, roles: [], users: [], ...input },
       'mia',
     );
 
   it('is everyone who may approve until an administrator narrows it', async () => {
-    const view = await directory.approverRangeView();
+    const view = await directory.approverRangeView('disposal');
     expect(view).toMatchObject({
       anyone: true,
       roles: [],
@@ -139,7 +149,7 @@ describe('disposal approver range', () => {
       'itam-asset-manager',
     ]);
     expect(ids(view.userOptions)).toEqual(['ann', 'mia']);
-    expect(await directory.mayApproveDisposal('sam')).toBe(true);
+    expect(await directory.mayApprove('disposal', 'sam')).toBe(true);
   });
 
   it('narrows the picker and the submission to the sets and people chosen', async () => {
@@ -155,19 +165,21 @@ describe('disposal approver range', () => {
       updatedById: 'mia',
     });
     expect(ids(saved.approvers)).toEqual(['ann']);
-    expect(await directory.mayApproveDisposal('ann')).toBe(true);
-    expect(await directory.mayApproveDisposal('mia')).toBe(false);
+    expect(await directory.mayApprove('disposal', 'ann')).toBe(true);
+    expect(await directory.mayApprove('disposal', 'mia')).toBe(false);
     // The submitter's picker offers the range alone.
     const response = await root.request(
       '/api/itam/users/approvers?filter[subject]=disposal',
     );
     const { data } = (await response.json()) as { data: { id: string }[] };
     expect(ids(data)).toEqual(['ann']);
-    // A purchase order's approvers are not the disposals' range.
+    // A purchase order's approvers are not narrowed by the disposals' range.
     const orders = await root.request(
       '/api/itam/users/approvers?filter[subject]=purchaseOrder',
     );
-    expect(((await orders.json()) as { data: unknown[] }).data).toEqual([]);
+    expect(
+      ids(((await orders.json()) as { data: { id: string }[] }).data),
+    ).toEqual(['mia']);
   });
 
   it('conflicts on a stale page and saves a resent request once', async () => {
@@ -195,12 +207,12 @@ describe('disposal approver range', () => {
     await expect(
       save({ roles: ['itam-it-support'], revision: 0, requestId: 'r3' }),
     ).rejects.toMatchObject({ field: 'roles' });
-    expect((await directory.approverRangeView()).revision).toBe(0);
+    expect((await directory.approverRangeView('disposal')).revision).toBe(0);
   });
 
   it('starts a deployment at the IT Asset Manager set, once, and never over a saved range', async () => {
     await startApproverRange(container);
-    const started = await directory.approverRangeView();
+    const started = await directory.approverRangeView('disposal');
     expect(started).toMatchObject({
       anyone: false,
       roles: ['itam-asset-manager'],
@@ -208,12 +220,48 @@ describe('disposal approver range', () => {
       updatedById: 'system',
     });
     expect(ids(started.approvers)).toEqual(['mia']);
+    // Purchase orders start the same way.
+    expect(await directory.approverRangeView('purchaseOrder')).toMatchObject({
+      roles: ['itam-asset-manager'],
+      revision: 1,
+    });
     // The next start finds it saved.
     await startApproverRange(container);
-    expect((await directory.approverRangeView()).revision).toBe(1);
+    expect((await directory.approverRangeView('disposal')).revision).toBe(1);
     // An administrator's choice stands through every later start.
     await save({ anyone: true, revision: 1, requestId: 'r1' });
     await startApproverRange(container);
-    expect((await directory.approverRangeView()).anyone).toBe(true);
+    expect((await directory.approverRangeView('disposal')).anyone).toBe(true);
+  });
+
+  it('keeps each kind of request to its own range and its own approvers', async () => {
+    // Only the asset manager approves orders; finance approves disposals.
+    const orders = await directory.approverRangeView('purchaseOrder');
+    expect(ids(orders.userOptions)).toEqual(['mia']);
+    await save({ roles: ['finance'], revision: 0, requestId: 'r1' });
+    // Narrowing the disposals' range leaves the orders' as it was.
+    expect((await directory.approverRangeView('purchaseOrder')).anyone).toBe(
+      true,
+    );
+    expect(await directory.mayApprove('purchaseOrder', 'mia')).toBe(true);
+    // A disposal approver cannot be put in the orders' range.
+    await expect(
+      directory.saveApproverRange(
+        'purchaseOrder',
+        {
+          anyone: false,
+          roles: [],
+          users: ['ann'],
+          revision: 0,
+          requestId: 'r2',
+        },
+        'mia',
+      ),
+    ).rejects.toMatchObject({ field: 'users' });
+    const response = await root.request(
+      '/api/itam/users/approvers?filter[subject]=purchaseOrder',
+    );
+    const { data } = (await response.json()) as { data: { id: string }[] };
+    expect(ids(data)).toEqual(['mia']);
   });
 });

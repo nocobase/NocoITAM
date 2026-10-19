@@ -56,29 +56,32 @@ Adopt it record kind by record kind, starting with **disposals**:
 - **History stays the timeline.** `historyEvents` / `changeLogs` are still
   written; the runtime's `lifecycleTransitions` is the audit log behind the
   flowchart. Deleting a record, or clearing the demo, removes both.
-- **The flowchart is drawn once, on 设置 → 报废流程,** with the UI Library's
-  `@nocobase/lifecycle-diagram`. A disposal's own 流程 tab, drawing where it
-  stood, came with the pilot and went on 2026-10-19: five states in nearly a
-  line said nothing its status tag and 历史 did not. A record with more
-  steps and branches, such as a purchase order, may earn one.
+- **The flowcharts are drawn once, on 设置 → 流程,** a tab per lifecycle
+  (purchase orders, disposals; 2026-10-19, after 设置 → 报废流程 of
+  2026-10-18), with the UI Library's `@nocobase/lifecycle-diagram`. A
+  disposal's own 流程 tab, drawing where it stood, came with the pilot and
+  went on 2026-10-19: five states in nearly a line said nothing its status
+  tag and 历史 did not.
 
 ## The approver range (2026-10-18)
 
 The first parameter an administrator sets on a lifecycle: whom a submitter
-may ask to approve a disposal (设置 → 报废流程). It is a `reviewers` field of
-the lifecycle's `parameterConfiguration`, read live, stored by
+may ask to approve — a disposal from 2026-10-18, a purchase order too from
+2026-10-19, each on its tab of 设置 → 流程 and under a group key of its own
+(`disposalApprovers`, `purchaseOrderApprovers`; `server/lifecycles/approver-range.ts`).
+It is a `reviewers` field of the lifecycle's `parameterConfiguration`, read live, stored by
 `StoredLifecycleParameters` in the six `lifecycleParameter*` tables
 (202610180002_lifecycle_parameters), and saved with the revision the page
 showed and a request id, so a stale page conflicts and a resent save saves
-once. It may name `anyone` (the default: everyone holding disposal approval),
+once. It may name `anyone` (the default: everyone holding that approval),
 permission sets or people, and it only ever narrows the holders of the
 approval. The submitter's picker lists the range, and submitting with
 someone outside it is refused (`APPROVER_NOT_IN_RANGE`). It is not the
 amount tiers removed on 2026-09-25: it decides who may be asked, never who
 must be.
 
-A deployment starts with the IT Asset Manager set ticked: when the
-application starts and no range has been saved, `startApproverRange`
+A deployment starts with the IT Asset Manager set ticked on both: when the
+application starts and a range has not been saved, `startApproverRange`
 (`server/providers/itam/approvers.ts`) saves that set as the first version.
 It is done at start rather than in a seed, because a seed may not use the
 parameter store's database manager. An administrator's later choice,

@@ -5,12 +5,15 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-import DisposalFlowSettingsPage from '../../client/pages/itam/settings/disposal-flow.js';
+import FlowsSettingsPage from '../../client/pages/itam/settings/flows.js';
 
 const state = vi.hoisted(() => ({
   range: undefined as unknown,
+  /** The API paths the page read, newest last. */
+  paths: [] as string[],
   saves: [] as Record<string, unknown>[],
   error: null as unknown,
 }));
@@ -45,11 +48,12 @@ vi.mock('../../client/lib/itam/lifecycle.js', () => ({
     let n = 0;
     return () => `req-${String((n += 1))}`;
   })(),
-  useLifecycleDescription: () => ({
-    data: { name: 'disposals', stateInfo: [], transitions: [] },
-  }),
-  useDisposalApproverRange: () => ({ data: state.range }),
-  useSaveDisposalApproverRange: () => ({
+  useLifecycleDescription: (path: string) => {
+    state.paths.push(path);
+    return { data: { name: path, stateInfo: [], transitions: [] } };
+  },
+  useApproverRange: () => ({ data: state.range }),
+  useSaveApproverRange: () => ({
     mutate: (
       input: Record<string, unknown>,
       options?: { onError?: () => void },
@@ -63,6 +67,13 @@ vi.mock('../../client/lib/itam/lifecycle.js', () => ({
   }),
 }));
 
+const show = (address = '/settings/flows') =>
+  render(
+    <MemoryRouter initialEntries={[address]}>
+      <FlowsSettingsPage />
+    </MemoryRouter>,
+  );
+
 /** Opens a dropdown by its label and picks an option in it. */
 const pick = async (label: string, option: string) => {
   fireEvent.click(screen.getByLabelText(label));
@@ -74,6 +85,7 @@ const ANN = { id: 'ann', name: 'Ann' };
 const MIA = { id: 'mia', name: 'Mia' };
 
 beforeEach(() => {
+  state.paths = [];
   state.saves = [];
   state.error = null;
   state.range = {
@@ -90,28 +102,26 @@ beforeEach(() => {
 });
 
 it('shows the flow and whom a submitter may pick, everyone by default', () => {
-  render(<DisposalFlowSettingsPage />);
+  show();
   expect(screen.getByRole('img', { name: 'diagram' })).toBeTruthy();
-  expect(
-    screen.getByText('settings.disposalFlow.current:Ann、Mia'),
-  ).toBeTruthy();
+  expect(screen.getByText('settings.flows.current:Ann、Mia')).toBeTruthy();
   // Nothing chosen: everyone; nothing changed, nothing to save.
-  expect(screen.getAllByText('settings.disposalFlow.choose')).toHaveLength(2);
+  expect(screen.getAllByText('settings.flows.choose')).toHaveLength(2);
   expect(
     screen
       .getByRole('button', { name: /actions\.save/ })
       .hasAttribute('disabled'),
   ).toBe(true);
   // Who set the version shown.
-  expect(screen.getByText('settings.disposalFlow.version:Mia')).toBeTruthy();
+  expect(screen.getByText('settings.flows.version:Mia')).toBeTruthy();
 });
 
 it('narrows the range to what is chosen and saves it against the version shown', async () => {
-  render(<DisposalFlowSettingsPage />);
-  await pick('settings.disposalFlow.byRole', 'Finance');
+  show();
+  await pick('settings.flows.byRole', 'Finance');
   await waitFor(() =>
     expect(
-      screen.getByLabelText('settings.disposalFlow.byRole').textContent,
+      screen.getByLabelText('settings.flows.byRole').textContent,
     ).toContain('Finance'),
   );
   fireEvent.click(screen.getByRole('button', { name: /actions\.save/ }));
@@ -130,8 +140,8 @@ it('keeps what was written after a conflict and saves it again under a new key',
   state.error = {
     response: { data: { code: 'BUSINESS_RULE', rule: 'CONFLICT' } },
   };
-  render(<DisposalFlowSettingsPage />);
-  await pick('settings.disposalFlow.byPerson', 'Ann');
+  show();
+  await pick('settings.flows.byPerson', 'Ann');
   const save = screen.getByRole('button', { name: /actions\.save/ });
   fireEvent.click(save);
   fireEvent.click(save);
@@ -147,8 +157,21 @@ it('warns when the saved range is left with nobody to pick', () => {
     users: ['lee'],
     approvers: [],
   };
-  render(<DisposalFlowSettingsPage />);
+  show();
   expect(screen.getByRole('alert').textContent).toBe(
-    'settings.disposalFlow.nobodyLeft',
+    'settings.flows.nobodyLeft',
   );
+});
+
+it('opens on purchase orders, and on the flow the address names', () => {
+  show();
+  expect(state.paths.at(-1)).toBe('itam/purchase-orders');
+  expect(
+    screen
+      .getByRole('tab', { name: 'settings.flows.procurement' })
+      .getAttribute('aria-selected'),
+  ).toBe('true');
+  state.paths = [];
+  show('/settings/flows?kind=disposals');
+  expect(state.paths.at(-1)).toBe('itam/disposals');
 });

@@ -560,6 +560,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         stock: container.resolve(stockServiceToken),
         entitlements: container.resolve(entitlementServiceToken),
         receiptRuns: container.resolve(receiptRunServiceToken),
+        approvers: container.resolve(approverDirectoryToken),
       }),
     );
     container.singleton(documentReaderToken, () =>

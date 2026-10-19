@@ -1701,6 +1701,19 @@ const messages = {
     took: 'took {{vendor}}',
   },
   procurement: {
+    // The moves on Settings → Flows → Procurement, by the lifecycle's
+    // transition names.
+    transitions: {
+      $create: 'Create',
+      submit: 'Submit',
+      withdraw: 'Withdraw',
+      approve: 'Approve',
+      reject: 'Reject',
+      order: 'Order',
+      receivePartly: 'Receive part',
+      complete: 'Receive all',
+      cancel: 'Cancel',
+    },
     saveDraft: 'Save draft',
     title: 'Procurement',
     object: 'purchase order',
@@ -2665,28 +2678,33 @@ const messages = {
       },
     },
     // Settings → Disposal flow (2026-10-18).
-    disposalFlow: {
-      title: 'Disposal flow',
+    // Settings → Flows (2026-10-19; Disposal flow from 2026-10-18). Who may
+    // approve is worded as NocoCRM's.
+    flows: {
+      title: 'Flows',
       description:
-        'Every step of a disposal from draft to carried out, and whom a submitter may ask to approve',
+        'Every step of a purchase order and a disposal from submission to the end, and whom a submitter may ask to approve',
+      procurement: 'Procurement',
+      disposals: 'Disposals',
       diagram: 'Flowchart',
       diagramHint:
         'The flow is defined by the system and can only be viewed here; who may take each step is enforced by it too.',
-      // Who may approve, worded as NocoCRM's (2026-10-19).
       approvers: 'Who may approve',
       approversHint:
-        'A submitter chooses the approver from these roles and people; any one of them is enough. With none chosen, anyone who may approve disposals can be chosen. A change applies to the next submissions; requests already submitted keep their approver.',
+        'A submitter chooses the approver from these roles and people; any one of them is enough. With none chosen, anyone who may approve can be chosen. A change applies to the next submissions; requests already submitted keep their approver.',
       byRole: 'Roles',
       byPerson: 'People',
       choose: 'Choose…',
       current:
-        'Approvers now: {{names}}. Each must be active and hold disposal approval.',
+        'Approvers now: {{names}}. Each must be active and hold the approval.',
       nobodyLeft:
-        'Nobody can be chosen now, so no disposal can be submitted: the roles and people chosen no longer hold disposal approval. Choose others, or give the approval back in the permission sets.',
+        'Nobody can be chosen now, so nothing can be submitted: the roles and people chosen no longer hold the approval. Choose others, or give the approval back in the permission sets.',
       byDefault: 'The default: IT Asset Manager.',
       version: 'Version {{revision}}, set by {{name}} at {{time}}.',
       conflict:
         'Someone else changed this setting meanwhile and the latest version is loaded. Your changes are kept; save again to replace it.',
+      noApprovers:
+        'Nobody can be chosen as the approver, so it cannot be submitted for now. Ask an administrator to check the approvers under Settings → Flows, or the approval in the permission sets.',
     },
     receiptAgent: {
       title: 'Receiving from delivery notes',
@@ -2952,8 +2970,6 @@ const messages = {
     noneForDevice: 'This device has never been on a disposal',
     approverForSubmit:
       'Needed to submit for approval; a draft can be saved without one.',
-    noApprovers:
-      'Nobody can be chosen as the approver, so it cannot be submitted for now. Ask an administrator to check the approvers under Settings → Disposal flow, or disposal approval in the permission sets.',
     // The moves on its Flow tab, by the lifecycle's transition names.
     transitions: {
       $create: 'Create',

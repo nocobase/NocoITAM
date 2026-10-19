@@ -47,7 +47,7 @@ export interface ApproverPerson {
   readonly roles?: readonly { readonly key: string; readonly title: string }[];
 }
 
-export function useDisposalApproverRange(path: string) {
+export function useApproverRange(path: string) {
   const api = useApi();
   return useQuery({
     queryKey: ['itam', path, 'lifecycle', 'approvers'],
@@ -72,7 +72,7 @@ export function newRequestId(): string {
   );
 }
 
-export function useSaveDisposalApproverRange(path: string) {
+export function useSaveApproverRange(path: string) {
   const api = useApi();
   const client = useQueryClient();
   return useMutation({
