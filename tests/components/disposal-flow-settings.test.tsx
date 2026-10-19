@@ -1,4 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import DisposalFlowSettingsPage from '../../client/pages/itam/settings/disposal-flow.js';
@@ -49,6 +55,13 @@ vi.mock('../../client/lib/itam/lifecycle.js', () => ({
   }),
 }));
 
+/** Opens a dropdown by its label and picks an option in it. */
+const pick = async (label: string, option: string) => {
+  fireEvent.click(screen.getByLabelText(label));
+  const listbox = await screen.findByRole('listbox');
+  fireEvent.click(within(listbox).getByRole('option', { name: option }));
+};
+
 const ANN = { id: 'ann', name: 'Ann' };
 const MIA = { id: 'mia', name: 'Mia' };
 
@@ -74,12 +87,10 @@ it('shows the flow and whom a submitter may pick, everyone by default', () => {
   expect(
     screen.getByText('settings.disposalFlow.current:Ann、Mia'),
   ).toBeTruthy();
-  // Nothing ticked: everyone, saved as such.
-  expect(
-    screen
-      .getByRole('checkbox', { name: 'Finance' })
-      .getAttribute('aria-checked'),
-  ).toBe('false');
+  // Nothing chosen: everyone, saved as such.
+  expect(screen.getAllByText('settings.disposalFlow.noneChosen')).toHaveLength(
+    2,
+  );
   fireEvent.click(screen.getByRole('button', { name: /actions\.save/ }));
   expect(state.saves[0]).toMatchObject({
     anyone: true,
@@ -88,9 +99,14 @@ it('shows the flow and whom a submitter may pick, everyone by default', () => {
   });
 });
 
-it('narrows the range to what is ticked and saves it against the version shown', () => {
+it('narrows the range to what is chosen and saves it against the version shown', async () => {
   render(<DisposalFlowSettingsPage />);
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Finance' }));
+  await pick('settings.disposalFlow.byRole', 'Finance');
+  await waitFor(() =>
+    expect(
+      screen.getByLabelText('settings.disposalFlow.byRole').textContent,
+    ).toContain('Finance'),
+  );
   fireEvent.click(screen.getByRole('button', { name: /actions\.save/ }));
   expect(state.saves).toEqual([
     {
@@ -103,12 +119,12 @@ it('narrows the range to what is ticked and saves it against the version shown',
   ]);
 });
 
-it('keeps what was written after a conflict and saves it again under a new key', () => {
+it('keeps what was written after a conflict and saves it again under a new key', async () => {
   state.error = {
     response: { data: { code: 'BUSINESS_RULE', rule: 'CONFLICT' } },
   };
   render(<DisposalFlowSettingsPage />);
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Ann' }));
+  await pick('settings.disposalFlow.byPerson', 'Ann');
   const save = screen.getByRole('button', { name: /actions\.save/ });
   fireEvent.click(save);
   fireEvent.click(save);

@@ -5,8 +5,14 @@ import { LifecycleDiagram } from '#components/lifecycle-diagram';
 import { PageContainer } from '#components/page-container';
 import { PageHeader } from '#components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiErrorBody } from '@/lib/itam/api';
 import {
@@ -40,6 +46,11 @@ export default function DisposalFlowSettingsPage(): ReactElement {
         description={t('settings.disposalFlow.description')}
       />
       <div className='max-w-4xl space-y-6'>
+        {range.data ? (
+          <ApproverRangeCard range={range.data} />
+        ) : (
+          <Skeleton className='h-48 w-full rounded-lg' />
+        )}
         <Card>
           <CardHeader>
             <CardTitle>{t('settings.disposalFlow.diagram')}</CardTitle>
@@ -65,11 +76,6 @@ export default function DisposalFlowSettingsPage(): ReactElement {
             )}
           </CardContent>
         </Card>
-        {range.data ? (
-          <ApproverRangeCard range={range.data} />
-        ) : (
-          <Skeleton className='h-48 w-full rounded-lg' />
-        )}
       </div>
     </PageContainer>
   );
@@ -91,15 +97,9 @@ function ApproverRangeCard({
   // One key per save of these values, kept for its retries.
   const [requestId, setRequestId] = useState(newRequestId);
   const changed = () => setRequestId(newRequestId());
-  const toggle =
-    (set: (update: (current: ReadonlySet<string>) => Set<string>) => void) =>
-    (key: string, checked: boolean) => {
-      set((current) => {
-        const next = new Set(current);
-        if (checked) next.add(key);
-        else next.delete(key);
-        return next;
-      });
+  const choose =
+    (set: (next: ReadonlySet<string>) => void) => (next: readonly string[]) => {
+      set(new Set(next));
       changed();
     };
   const conflict = apiErrorBody(save.error)?.rule === 'CONFLICT';
@@ -130,23 +130,25 @@ function ApproverRangeCard({
       saved={save.isSuccess}
     >
       <div className='grid gap-6 sm:grid-cols-2'>
-        <ChoiceList
+        <ChoiceSelect
+          id='approver-range-roles'
           title={t('settings.disposalFlow.byRole')}
           options={range.roleOptions.map((role) => ({
             key: role.key,
             label: roleTitle(role, t),
           }))}
           chosen={roles}
-          onToggle={toggle(setRoles)}
+          onChange={choose(setRoles)}
         />
-        <ChoiceList
+        <ChoiceSelect
+          id='approver-range-users'
           title={t('settings.disposalFlow.byPerson')}
           options={range.userOptions.map((person) => ({
             key: person.id,
             label: person.name,
           }))}
           chosen={users}
-          onToggle={toggle(setUsers)}
+          onChange={choose(setUsers)}
         />
       </div>
       {/* The saved range can be left with nobody when the permission sets
@@ -168,37 +170,54 @@ function ApproverRangeCard({
   );
 }
 
-function ChoiceList({
+/** Several of a short list, picked in a dropdown (2026-10-19). */
+function ChoiceSelect({
+  id,
   title,
   options,
   chosen,
-  onToggle,
+  onChange,
 }: {
+  readonly id: string;
   readonly title: string;
   readonly options: readonly { readonly key: string; readonly label: string }[];
   readonly chosen: ReadonlySet<string>;
-  readonly onToggle: (key: string, checked: boolean) => void;
+  readonly onChange: (next: readonly string[]) => void;
 }): ReactElement {
   const { t } = useTranslation();
+  const labelOf = (key: string) =>
+    options.find((option) => option.key === key)?.label ?? key;
   return (
-    <fieldset className='space-y-2'>
-      <legend className='mb-2 text-sm font-medium'>{title}</legend>
-      {options.length === 0 ? (
-        <p className='text-sm text-muted-foreground'>{t('common.empty')}</p>
-      ) : (
-        options.map((option) => (
-          <Label
-            key={option.key}
-            className='flex items-center gap-2 font-normal'
-          >
-            <Checkbox
-              checked={chosen.has(option.key)}
-              onCheckedChange={(checked) => onToggle(option.key, checked)}
-            />
-            {option.label}
-          </Label>
-        ))
-      )}
-    </fieldset>
+    <div className='grid content-start gap-1.5'>
+      <Label htmlFor={id}>{title}</Label>
+      <Select
+        multiple
+        value={[...chosen]}
+        onValueChange={(next) => onChange(next)}
+      >
+        <SelectTrigger id={id} className='w-full'>
+          <SelectValue>
+            {(value: string[]) =>
+              value.length > 0 ? (
+                <span className='truncate'>
+                  {value.map(labelOf).join('、')}
+                </span>
+              ) : (
+                <span className='text-muted-foreground'>
+                  {t('settings.disposalFlow.noneChosen')}
+                </span>
+              )
+            }
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.key} value={option.key}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

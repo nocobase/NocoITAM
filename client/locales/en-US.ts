@@ -2678,6 +2678,7 @@ const messages = {
       byRole: 'By permission set',
       byPerson: 'By person',
       current: 'Can be chosen now: {{names}}',
+      noneChosen: 'None chosen',
       nobodyLeft:
         'Nobody can be chosen now, so no disposal can be submitted: the permission sets and people ticked no longer hold disposal approval. Tick others, or give the approval back in the permission sets.',
       conflict:

@@ -2526,6 +2526,7 @@ const zhCN: AppResource = {
       byRole: '按权限集',
       byPerson: '按人员',
       current: '现在可选：{{names}}',
+      noneChosen: '未选择',
       nobodyLeft:
         '现在没有可选的审批人，报废单无法提交审批：所选权限集和人员都已没有报废审批权限。请重新勾选，或在权限集里恢复报废审批权限。',
       conflict:
