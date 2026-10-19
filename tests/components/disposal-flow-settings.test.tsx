@@ -17,8 +17,13 @@ const state = vi.hoisted(() => ({
 
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({
-    t: (key: string, options?: { names?: string }) =>
-      options?.names === undefined ? key : `${key}:${options.names}`,
+    t: (key: string, options?: { names?: string; name?: string }) =>
+      options?.names !== undefined
+        ? `${key}:${options.names}`
+        : options?.name !== undefined
+          ? `${key}:${options.name}`
+          : key,
+    i18n: { language: 'zh-CN' },
   }),
 }));
 vi.mock('#components/lifecycle-diagram', () => ({
@@ -31,6 +36,9 @@ vi.mock('#components/page-container', () => ({
 }));
 vi.mock('#components/page-header', () => ({
   PageHeader: ({ title }: { title: string }) => <h1>{title}</h1>,
+}));
+vi.mock('../../client/lib/itam/references.js', () => ({
+  useReferenceNames: () => ({ users: new Map([['mia', 'Mia']]) }),
 }));
 vi.mock('../../client/lib/itam/lifecycle.js', () => ({
   newRequestId: (() => {
@@ -87,16 +95,15 @@ it('shows the flow and whom a submitter may pick, everyone by default', () => {
   expect(
     screen.getByText('settings.disposalFlow.current:Ann、Mia'),
   ).toBeTruthy();
-  // Nothing chosen: everyone, saved as such.
-  expect(screen.getAllByText('settings.disposalFlow.noneChosen')).toHaveLength(
-    2,
-  );
-  fireEvent.click(screen.getByRole('button', { name: /actions\.save/ }));
-  expect(state.saves[0]).toMatchObject({
-    anyone: true,
-    roles: [],
-    users: [],
-  });
+  // Nothing chosen: everyone; nothing changed, nothing to save.
+  expect(screen.getAllByText('settings.disposalFlow.choose')).toHaveLength(2);
+  expect(
+    screen
+      .getByRole('button', { name: /actions\.save/ })
+      .hasAttribute('disabled'),
+  ).toBe(true);
+  // Who set the version shown.
+  expect(screen.getByText('settings.disposalFlow.version:Mia')).toBeTruthy();
 });
 
 it('narrows the range to what is chosen and saves it against the version shown', async () => {

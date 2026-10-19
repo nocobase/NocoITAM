@@ -2672,15 +2672,19 @@ const messages = {
       diagram: 'Flowchart',
       diagramHint:
         'The flow is defined by the system and can only be viewed here; who may take each step is enforced by it too.',
-      approvers: 'Approvers to choose from',
+      // Who may approve, worded as NocoCRM's (2026-10-19).
+      approvers: 'Who may approve',
       approversHint:
-        'A submitter picks the approver of a disposal from the permission sets and people ticked here; with none ticked, from everyone who may approve disposals. Applies to later submissions; a request already waiting keeps its approver.',
-      byRole: 'By permission set',
-      byPerson: 'By person',
-      current: 'Can be chosen now: {{names}}',
-      noneChosen: 'None chosen',
+        'A submitter chooses the approver from these roles and people; any one of them is enough. With none chosen, anyone who may approve disposals can be chosen. A change applies to the next submissions; requests already submitted keep their approver.',
+      byRole: 'Roles',
+      byPerson: 'People',
+      choose: 'Choose…',
+      current:
+        'Approvers now: {{names}}. Each must be active and hold disposal approval.',
       nobodyLeft:
-        'Nobody can be chosen now, so no disposal can be submitted: the permission sets and people ticked no longer hold disposal approval. Tick others, or give the approval back in the permission sets.',
+        'Nobody can be chosen now, so no disposal can be submitted: the roles and people chosen no longer hold disposal approval. Choose others, or give the approval back in the permission sets.',
+      byDefault: 'The default: IT Asset Manager.',
+      version: 'Version {{revision}}, set by {{name}} at {{time}}.',
       conflict:
         'Someone else changed this setting meanwhile and the latest version is loaded. Your changes are kept; save again to replace it.',
     },
