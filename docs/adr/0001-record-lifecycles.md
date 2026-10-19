@@ -57,7 +57,7 @@ Adopt it record kind by record kind, starting with **disposals**:
   written; the runtime's `lifecycleTransitions` is the audit log behind the
   flowchart. Deleting a record, or clearing the demo, removes both.
 - **The flowcharts are drawn once, on 设置 → 流程,** a tab per lifecycle
-  (purchase orders, repairs, stocktakes, disposals; 2026-10-19, after
+  (purchase orders, repairs, stocktakes, disposals, devices; 2026-10-19, after
   设置 → 报废流程 of
   2026-10-18), with the UI Library's `@nocobase/lifecycle-diagram`. A
   disposal's own 流程 tab, drawing where it stood, came with the pilot and
@@ -92,14 +92,14 @@ test's) keeps.
 
 ## Scope after the pilot
 
-| Record          | Plan                                                                 |
-| --------------- | -------------------------------------------------------------------- |
-| Purchase orders | Done 2026-10-19: receiving fires `receivePartly` or `complete`       |
-| Repairs         | Done 2026-10-19: `result` is the state (`stateField`), no new column |
-| Stocktakes      | Done 2026-10-19: `finish` routes to completed or pending differences |
-| Devices         | Decide after the pilot: eight states driven by four other domains    |
-| Not adopted     | People (state derived from dates), entitlements and sync differences |
-|                 | (computed views), agent runs and plans (already conditional updates) |
+| Record          | Plan                                                                  |
+| --------------- | --------------------------------------------------------------------- |
+| Purchase orders | Done 2026-10-19: receiving fires `receivePartly` or `complete`        |
+| Repairs         | Done 2026-10-19: `result` is the state (`stateField`), no new column  |
+| Stocktakes      | Done 2026-10-19: `finish` routes to completed or pending differences  |
+| Devices         | Done 2026-10-19: the other domains move it through the device service |
+| Not adopted     | People (state derived from dates), entitlements and sync differences  |
+|                 | (computed views), agent runs and plans (already conditional updates)  |
 
 ## Consequences
 

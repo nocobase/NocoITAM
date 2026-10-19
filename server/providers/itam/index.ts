@@ -463,6 +463,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         container.resolve(historyServiceToken),
         container.resolve(numberingServiceToken),
         container.resolve(settingsServiceToken),
+        container.resolve(lifecycleRuntimeToken),
       ),
     );
     container.singleton(stockServiceToken, () =>

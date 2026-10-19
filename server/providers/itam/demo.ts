@@ -5745,19 +5745,23 @@ export function createDemoService(dependencies: {
             .where('holderId', 'in', allIds)
             .execute();
           // Devices the user assigned or reserved to demo people or places
-          // go back to stock rather than pointing at nothing.
-          await connection.query
-            .updateTable('devices')
-            .set({
-              status: 'inStock',
-              assigneeType: null,
-              assigneeId: null,
-              assignedAt: null,
-              expectedReturnDate: null,
-            })
+          // go back to stock rather than pointing at nothing — a correction
+          // of the device's lifecycle (2026-10-19), since only the runtime
+          // writes its state.
+          const stranded = await connection.query
+            .selectFrom('devices')
+            .select('id')
             .where('assigneeId', 'in', allIds)
             .where('id', 'not in', allIds)
-            .execute();
+            .execute<{ id: string }>();
+          for (const device of stranded)
+            await devices.correctStatus(
+              device.id,
+              { status: 'inStock', reason: 'Demo data cleared' },
+              { actorId },
+              unrestricted('devices', 'update'),
+              connection,
+            );
           await connection.query
             .updateTable('devices')
             .set({

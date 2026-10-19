@@ -118,6 +118,32 @@ describe('devices', () => {
     ).toBe(200);
   });
 
+  it('shows the device flow to readers only', async () => {
+    const path = '/api/itam/devices/lifecycle';
+    expect((await app.request(path)).status).toBe(401);
+    expect(
+      (await app.request(path, { user: 'eve', role: 'employee' })).status,
+    ).toBe(403);
+    const flow = await app.request(path, { user: 'sam', role: 'support' });
+    expect(flow.status).toBe(200);
+    expect(
+      (
+        (await flow.json()) as {
+          data: { description: { stateInfo: { name: string }[] } };
+        }
+      ).data.description.stateInfo.map((state) => state.name),
+    ).toEqual([
+      'inStock',
+      'inUse',
+      'onLoan',
+      'inRepair',
+      'retired',
+      'pendingDisposal',
+      'disposed',
+      'lost',
+    ]);
+  });
+
   it('finds a device by its model name, not only its own fields', async () => {
     // Devices are named by asset tag (SG-LT-001) while people search for
     // "MacBook", which is the model's name.
@@ -414,6 +440,24 @@ describe('devices', () => {
       'return',
     ]);
     expect(allocations.every((row) => row.endedAt !== null)).toBe(true);
+
+    // Each move went through the device's lifecycle (2026-10-19), at the
+    // next version each time; the second assign was refused before it.
+    const log = await app.db.database
+      .query()
+      .selectFrom('lifecycleTransitions')
+      .select(['transition', 'to', 'version'])
+      .where('lifecycle', '=', 'devices')
+      .where('recordId', '=', String(device.id))
+      .orderBy('id', 'asc')
+      .execute<{ transition: string; to: string; version: number }>();
+    expect(log.map((entry) => [entry.transition, entry.to])).toEqual([
+      ['$create', 'inStock'],
+      ['assign', 'inUse'],
+      ['transfer', 'inUse'],
+      ['return', 'inRepair'],
+    ]);
+    expect(log.map((entry) => Number(entry.version))).toEqual([1, 2, 3, 4]);
   });
 
   it('honours reservations and loans', async () => {

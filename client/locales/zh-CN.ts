@@ -1386,6 +1386,25 @@ const zhCN: AppResource = {
       '系统计算：按席位为 单价 × 总席位 × 每年期数；固定费用为 每期费用 × 每年期数。按购买的席位算，不按已分配',
   },
   devices: {
+    // The moves on 设置 → 流程 → 设备, by the lifecycle's transition names.
+    transitions: {
+      $create: '登记入库',
+      assign: '分配',
+      loan: '借出',
+      transfer: '调拨',
+      return: '归还',
+      reserve: '预留',
+      unreserve: '取消预留',
+      markLost: '标记丢失',
+      restore: '找回',
+      retire: '停用',
+      reactivate: '重新启用',
+      sendToRepair: '送修',
+      repairDone: '维修完成',
+      markPendingDisposal: '转待报废',
+      dispose: '执行报废',
+      correct: '更正状态',
+    },
     title: '设备',
     showHiddenFields_one: '显示 {{count}} 个隐藏字段',
     showHiddenFields_other: '显示 {{count}} 个隐藏字段',
@@ -2531,11 +2550,12 @@ const zhCN: AppResource = {
     flows: {
       title: '流程',
       description:
-        '采购单、维修单、盘点任务、报废单从开始到结束的每一步，以及提交审批时可以选谁审批',
+        '采购单、维修单、盘点任务、报废单和设备从开始到结束的每一步，以及提交审批时可以选谁审批',
       procurement: '采购',
       repairs: '维修',
       audits: '盘点',
       disposals: '报废',
+      devices: '设备',
       diagram: '流程图',
       diagramHint:
         '流程由系统定义，这里只能查看；每一步谁能操作也由系统强制执行。',

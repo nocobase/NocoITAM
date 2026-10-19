@@ -14,6 +14,7 @@ import {
 } from '@nocobase/service-provider';
 
 import { auditTaskLifecycle } from '../../lifecycles/audit-tasks.js';
+import { deviceLifecycle } from '../../lifecycles/devices.js';
 import { disposalLifecycle } from '../../lifecycles/disposals.js';
 import { purchaseOrderLifecycle } from '../../lifecycles/purchase-orders.js';
 import { repairLifecycle } from '../../lifecycles/repairs.js';
@@ -26,8 +27,9 @@ import type { ItamNotifier } from './notifier.js';
  * 2026-10-18, docs/adr/0001-record-lifecycles.md), which every record
  * lifecycle registers on: the disposals' (`server/lifecycles/disposals.ts`)
  * the purchase orders' (`server/lifecycles/purchase-orders.ts`), the
- * repairs' (`server/lifecycles/repairs.ts`) and the stocktakes'
- * (`server/lifecycles/audit-tasks.ts`). It keeps no state of its own; the
+ * repairs' (`server/lifecycles/repairs.ts`), the stocktakes'
+ * (`server/lifecycles/audit-tasks.ts`) and the devices'
+ * (`server/lifecycles/devices.ts`). It keeps no state of its own; the
  * records, their transition log and their effect runs are in the database
  * (202610180001_disposal_lifecycle). Its effects run on the application's
  * jobs once `ItamProvider.start()` hands it the dispatcher; a container
@@ -123,6 +125,8 @@ export function createItamLifecycleRuntime(dependencies: {
   runtime.register(repairLifecycle);
   // Stocktakes tell their executors the count has started.
   runtime.register(auditTaskLifecycle, { services: { notifier } });
+  // Devices read nothing beyond the record and tell nobody.
+  runtime.register(deviceLifecycle);
   return runtime;
 }
 
