@@ -6,7 +6,14 @@ import { LifecycleDiagram } from '#components/lifecycle-diagram';
 import { PageContainer } from '#components/page-container';
 import { PageHeader } from '#components/page-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -183,34 +190,35 @@ function ApproverRangeCard({
   const byDefault = !range.updatedById || range.updatedById === 'system';
   return (
     <Card>
-      <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-3'>
-        <div className='grid gap-1'>
-          <CardTitle>{t('settings.flows.approvers')}</CardTitle>
-          <p className='text-sm text-muted-foreground'>
-            {t('settings.flows.approversHint')}
-          </p>
-        </div>
-        <Button
-          disabled={!dirty || save.isPending}
-          // Against the version shown now: after a conflict the page has
-          // loaded the newer one and keeps what was being written, so saving
-          // again is a deliberate choice to replace it. A failed save takes
-          // a new key, since the same key with other input is refused.
-          onClick={() =>
-            save.mutate(
-              {
-                anyone: roles.size === 0 && users.size === 0,
-                roles: [...roles],
-                users: [...users],
-                revision: range.revision,
-                requestId,
-              },
-              { onError: changed },
-            )
-          }
-        >
-          {t('actions.save')}
-        </Button>
+      {/* The save at the header's top right, in the card's own action
+          slot (2026-10-19: a flex row here lost to the header's grid and
+          dropped the button under the hint). */}
+      <CardHeader>
+        <CardTitle>{t('settings.flows.approvers')}</CardTitle>
+        <CardDescription>{t('settings.flows.approversHint')}</CardDescription>
+        <CardAction>
+          <Button
+            disabled={!dirty || save.isPending}
+            // Against the version shown now: after a conflict the page has
+            // loaded the newer one and keeps what was being written, so saving
+            // again is a deliberate choice to replace it. A failed save takes
+            // a new key, since the same key with other input is refused.
+            onClick={() =>
+              save.mutate(
+                {
+                  anyone: roles.size === 0 && users.size === 0,
+                  roles: [...roles],
+                  users: [...users],
+                  revision: range.revision,
+                  requestId,
+                },
+                { onError: changed },
+              )
+            }
+          >
+            {t('actions.save')}
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent className='space-y-4'>
         {save.error && !conflict ? (
