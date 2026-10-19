@@ -726,6 +726,22 @@ describe('repairs, audits and disposals', () => {
     expect(registered.data.some((row) => row.name === 'Unknown Dell')).toBe(
       true,
     );
+    // Each move went through the task's lifecycle (2026-10-19): created,
+    // started, counted with differences, settled.
+    const log = await app.db.database
+      .query()
+      .selectFrom('lifecycleTransitions')
+      .select(['transition', 'to'])
+      .where('lifecycle', '=', 'auditTasks')
+      .where('recordId', '=', task.id)
+      .orderBy('id', 'asc')
+      .execute<{ transition: string; to: string }>();
+    expect(log.map((entry) => [entry.transition, entry.to])).toEqual([
+      ['$create', 'notStarted'],
+      ['start', 'inProgress'],
+      ['finish', 'pendingDifferences'],
+      ['settle', 'completed'],
+    ]);
   });
 
   it('shows a task not started the devices its scope matches now, then snapshots them', async () => {

@@ -2531,9 +2531,10 @@ const zhCN: AppResource = {
     flows: {
       title: '流程',
       description:
-        '采购单、维修单、报废单从开始到结束的每一步，以及提交审批时可以选谁审批',
+        '采购单、维修单、盘点任务、报废单从开始到结束的每一步，以及提交审批时可以选谁审批',
       procurement: '采购',
       repairs: '维修',
+      audits: '盘点',
       disposals: '报废',
       diagram: '流程图',
       diagramHint:
@@ -2749,6 +2750,14 @@ const zhCN: AppResource = {
     },
   },
   audits: {
+    // The moves on 设置 → 流程 → 盘点, by the lifecycle's transition names.
+    transitions: {
+      $create: '创建',
+      start: '开始盘点',
+      finish: '结束清点',
+      settle: '处理完差异',
+      cancel: '取消',
+    },
     title: '盘点',
     object: '盘点任务',
     new: '创建盘点任务',

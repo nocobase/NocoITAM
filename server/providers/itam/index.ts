@@ -625,7 +625,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         database: container.resolve(databaseManagerToken),
         history: container.resolve(historyServiceToken),
         devices: container.resolve(deviceServiceToken),
-        notifier: container.resolve(itamNotifierToken),
+        lifecycles: container.resolve(lifecycleRuntimeToken),
       }),
     );
     container.singleton(importServiceToken, () =>

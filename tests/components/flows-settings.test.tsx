@@ -182,3 +182,9 @@ it('shows repairs as a flowchart alone, since nothing approves a repair', () => 
   expect(screen.queryByText('settings.flows.approvers')).toBeNull();
   expect(screen.getByRole('img', { name: 'diagram' })).toBeTruthy();
 });
+
+it('shows stocktakes as a flowchart alone, since nothing approves one', () => {
+  show('/settings/flows?kind=audits');
+  expect(state.paths.at(-1)).toBe('itam/audits');
+  expect(screen.queryByText('settings.flows.approvers')).toBeNull();
+});

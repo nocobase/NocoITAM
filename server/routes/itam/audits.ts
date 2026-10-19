@@ -5,6 +5,7 @@ import {
   defineApiRoutes,
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
+import { lifecycleDescriptionView } from '@nocobase/lifecycle';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -21,6 +22,8 @@ import {
   AUDIT_RESOLUTIONS,
   AUDIT_RESULTS,
 } from '../../providers/itam/audits.js';
+import { AUDIT_TASK_LIFECYCLE } from '../../lifecycles/audit-tasks.js';
+import { lifecycleRuntimeToken } from '../../providers/itam/lifecycles.js';
 import { createCrudRoutes } from './crud-routes.js';
 import { errorResponse, readJsonObject } from './http.js';
 
@@ -97,6 +100,7 @@ export const auditRoutes: AppApiRouteContribution<Application> =
     const authorization = app.container.resolve(authorizationToken);
     const audits = app.container.resolve(auditServiceToken);
     const history = app.container.resolve(historyServiceToken);
+    const lifecycles = app.container.resolve(lifecycleRuntimeToken);
 
     const routes = createCrudRoutes({
       collection: 'auditTasks',
@@ -106,6 +110,18 @@ export const auditRoutes: AppApiRouteContribution<Application> =
       updateSchema: taskSchema.partial(),
       middleware: [auth.required(), authorization.middleware()],
       before: (routes, { decide, operationContext, operation }) => {
+        // 设置 → 流程 → 盘点 (2026-10-19): the lifecycle as its flowchart
+        // draws it, from source; nothing about any one stocktake.
+        routes.get('/lifecycle', async (context) => {
+          try {
+            await decide(context, 'read');
+            return context.json({
+              data: lifecycleDescriptionView(lifecycles, AUDIT_TASK_LIFECYCLE),
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
         routes.post('/preview-scope', async (context) => {
           try {
             await decide(context, 'create');
