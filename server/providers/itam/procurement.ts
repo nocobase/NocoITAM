@@ -1,10 +1,15 @@
 import type { DatabaseAuthorizationConditions } from '@nocobase/app-plugin-authorization/server';
 import type { DatabaseConnection, DatabaseManager } from '@nocobase/db';
+import type { JsonObject, LifecycleRuntime } from '@nocobase/lifecycle';
 import {
   createServiceToken,
   type ServiceToken,
 } from '@nocobase/service-provider';
 
+import {
+  PURCHASE_ORDER_LIFECYCLE,
+  type PurchaseOrderState,
+} from '../../lifecycles/purchase-orders.js';
 import { requestTitle, type ApprovalService } from './approvals.js';
 import type { DeviceService, OperationContext } from './devices.js';
 import {
@@ -31,7 +36,7 @@ import {
   type DeleteImpact,
 } from './errors.js';
 import type { HistoryService } from './history.js';
-import type { ItamNotifier } from './notifier.js';
+import { lifecycleRefusal } from './lifecycles.js';
 import type { EntitlementService } from './entitlements.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
@@ -207,6 +212,8 @@ const str = (value: unknown, fallback = ''): string =>
 
 const LIFECYCLE_FIELDS = new Set([
   'status',
+  'statusChangedAt',
+  'lifecycleVersion',
   'orderNo',
   'estimatedTotal',
   'orderedAt',
@@ -284,7 +291,7 @@ export function createProcurementService(deps: {
   numbering: NumberingService;
   settings: SettingsService;
   approvals: ApprovalService;
-  notifier: ItamNotifier;
+  lifecycles: LifecycleRuntime;
   devices: DeviceService;
   stock: StockService;
   entitlements: EntitlementService;
@@ -293,7 +300,7 @@ export function createProcurementService(deps: {
   const {
     database,
     history,
-    notifier,
+    lifecycles,
     numbering,
     settings,
     approvals,
@@ -332,25 +339,40 @@ export function createProcurementService(deps: {
   const shape = (row: Row, conditions: DatabaseAuthorizationConditions): Row =>
     pickFields(row, outputFields(definition.fields, conditions));
 
-  /** `summary: null` leaves the event to the operation; see `domain-record.ts`. */
-  const setStatus = async (
+  /**
+   * Fires a transition in the operation's transaction (2026-10-19,
+   * server/lifecycles/purchase-orders.ts): the runtime checks the state, the
+   * guard and the version, and writes the state, the fields the transition
+   * accepts and its log entry. The change log keeps its status line, and a
+   * move no other event tells (`summary`) writes its timeline line, as
+   * before.
+   */
+  const move = async (
     connection: DatabaseConnection,
     order: Row,
-    next: string,
+    transition: string,
     context: OperationContext,
-    summary: string | null,
+    input: JsonObject = {},
+    summary: string | null = null,
     payload: Record<string, unknown> = {},
-    extra: Row = {},
-  ) => {
-    await connection.query
-      .updateTable('purchaseOrders')
-      .set({ status: next, ...extra, updatedAt: new Date() })
-      .where('id', '=', String(order.id))
-      .execute();
+  ): Promise<PurchaseOrderState> => {
+    const id = String(order.id);
+    let next: PurchaseOrderState;
+    try {
+      const result = await lifecycles.fire(
+        PURCHASE_ORDER_LIFECYCLE,
+        id,
+        transition,
+        { actor: { id: context.actorId }, input, transaction: connection },
+      );
+      next = result.record.status as PurchaseOrderState;
+    } catch (error) {
+      throw lifecycleRefusal(error);
+    }
     await history.log(
       {
         subjectType: 'purchaseOrders',
-        subjectId: String(order.id),
+        subjectId: id,
         action: 'statusChange',
         field: 'status',
         oldValue: order.status,
@@ -359,18 +381,19 @@ export function createProcurementService(deps: {
       },
       connection,
     );
-    if (summary === null) return;
-    await history.record(
-      {
-        subjectType: 'purchaseOrders',
-        subjectId: String(order.id),
-        type: 'statusChange',
-        summary,
-        payload: { from: order.status, to: next, ...payload },
-        ...context,
-      },
-      connection,
-    );
+    if (summary !== null)
+      await history.record(
+        {
+          subjectType: 'purchaseOrders',
+          subjectId: id,
+          type: 'statusChange',
+          summary,
+          payload: { from: order.status, to: next, ...payload },
+          ...context,
+        },
+        connection,
+      );
+    return next;
   };
 
   const recomputeTotals = async (
@@ -775,25 +798,26 @@ export function createProcurementService(deps: {
       (row) => Number(row.receivedQuantity) >= Number(row.quantity),
     );
     const current = (await findRaw(id, connection)) ?? order;
-    if (complete) {
-      await setStatus(
+    // More of an order already partly received changes nothing about where
+    // it stands, so nothing is fired for it.
+    if (complete)
+      await move(
         connection,
         current,
-        'completed',
+        'complete',
         context,
-        'All lines received',
-        {},
         { receivedAt: today() },
+        'All lines received',
       );
-    } else if (current.status !== 'partiallyReceived') {
-      await setStatus(
+    else if (current.status !== 'partiallyReceived')
+      await move(
         connection,
         current,
-        'partiallyReceived',
+        'receivePartly',
         context,
+        {},
         'Partially received',
       );
-    }
   };
 
   return {
@@ -847,23 +871,29 @@ export function createProcurementService(deps: {
         const ownerId =
           typeof input.ownerId === 'string' ? input.ownerId : context.actorId;
         const now = new Date();
-        await connection.query
-          .insertInto('purchaseOrders')
-          .values({
-            ...input,
-            id,
-            orderNo,
-            ownerId,
-            status: 'draft',
-            estimatedTotal: 0,
-            currency:
-              input.currency ??
-              (await settings.get('general', connection)).currency,
-            createdById: context.actorId,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .execute();
+        // Created through the lifecycle, which starts it as a draft and
+        // opens its log.
+        await lifecycles
+          .create(
+            PURCHASE_ORDER_LIFECYCLE,
+            {
+              ...input,
+              id,
+              orderNo,
+              ownerId,
+              estimatedTotal: 0,
+              currency:
+                input.currency ??
+                (await settings.get('general', connection)).currency,
+              createdById: context.actorId,
+              createdAt: now,
+              updatedAt: now,
+            },
+            { actor: { id: context.actorId }, transaction: connection },
+          )
+          .catch((error: unknown) => {
+            throw lifecycleRefusal(error);
+          });
         // The event alone: a change-log "create" would repeat it.
         await history.record(
           {
@@ -975,6 +1005,14 @@ export function createProcurementService(deps: {
           .where('id', '=', id)
           .where((eb) => compileAuthzScope(eb, conditions.scope))
           .execute();
+        // Its lifecycle log goes with it: the tables name records by id and
+        // hold no key to remove them by.
+        for (const table of ['lifecycleEffectRuns', 'lifecycleTransitions'])
+          await connection.query
+            .deleteFrom(table)
+            .where('lifecycle', '=', PURCHASE_ORDER_LIFECYCLE)
+            .where('recordId', '=', id)
+            .execute();
         await history.log(
           {
             subjectType: 'purchaseOrders',
@@ -1148,73 +1186,59 @@ export function createProcurementService(deps: {
       return this.lines(id);
     },
 
-    async submit(id, approverId, context, conditions) {
-      let asked: readonly string[] = [];
-      let title = '';
-      const row = await mutate(id, conditions, async (connection, order) => {
-        requireStatus(order, ['draft', 'rejected'], 'submit');
-        requireOwner(order, context);
-        const lines = await recomputeTotals(connection, id);
-        if (lines.length === 0)
-          throw new BusinessRuleError(
-            'Add at least one line before submitting',
-            'NO_LINES',
-          );
+    // The approver hears of it, and the owner of the decision, through the
+    // lifecycle's effects once the transaction commits.
+    submit: (id, approverId, context, conditions) =>
+      mutate(id, conditions, async (connection, order) => {
+        // The approval asks for the amount the lines make now.
+        await recomputeTotals(connection, id);
+        // Who it asks, and who asks: what the approver is told. The guard
+        // checks the owner and that there are lines.
+        await move(connection, order, 'submit', context, {
+          approverIds: approverId ? [approverId] : [],
+          requestedById: context.actorId,
+        });
         const refreshed = (await findRaw(id, connection)) ?? order;
-        title = requestTitle(order.orderNo, order.description);
         // Every purchase order is approved by the person its submitter
-        // names; there is no switch to skip it (removed 2026-09-27).
-        const approval = await approvals.request(
+        // names; there is no switch to skip it (removed 2026-09-27). It
+        // writes the event for this act.
+        await approvals.request(
           {
             subjectType: 'purchaseOrder',
             subjectId: id,
-            title,
+            title: requestTitle(order.orderNo, order.description),
             amount: Number(refreshed.estimatedTotal ?? 0),
             approverId,
           },
           context,
           connection,
         );
-        asked = Array.isArray(approval.approverIds)
-          ? (approval.approverIds as string[])
-          : [];
-        // `approvals.request` already wrote the event for this act.
-        await setStatus(connection, order, 'pendingApproval', context, null);
-      });
-      // Only the person asked can act, so only telling them is the point.
-      await notifier.notify({
-        key: `purchaseOrder:${id}:submitted:${String(row.updatedAt)}`,
-        to: asked,
-        actorId: context.actorId,
-        title: {
-          key: 'notifications.approvalRequested',
-          params: { title },
-        },
-        body: { key: 'notifications.approvalBody', params: {} },
-        url: `/procurement/${id}`,
-        source: { type: 'purchaseOrder', referenceId: id },
-      });
-      return row;
-    },
+      }),
 
     withdraw: (id, context, conditions) =>
       mutate(id, conditions, async (connection, order) => {
-        requireStatus(order, ['pendingApproval'], 'withdraw');
-        requireOwner(order, context);
+        await move(connection, order, 'withdraw', context);
         await approvals.withdraw('purchaseOrder', id, context, connection);
-        await setStatus(connection, order, 'draft', context, null);
       }),
 
-    async decide(id, decision, comment, context, conditions) {
-      let ownerId = '';
-      let title = '';
-      const row = await mutate(id, conditions, async (connection, order) => {
-        ownerId = asText(order.ownerId) ?? '';
-        title = requestTitle(order.orderNo, order.description);
-        requireStatus(order, ['pendingApproval'], 'decide');
+    decide: (id, decision, comment, context, conditions) =>
+      mutate(id, conditions, async (connection, order) => {
         const pending = (
           await approvals.forSubject('purchaseOrder', id, connection)
         ).find((approval) => approval.status === 'pending');
+        await move(
+          connection,
+          order,
+          decision === 'approved' ? 'approve' : 'reject',
+          context,
+          // The owner hears the decision, in the approver's own words.
+          {
+            comment: comment ?? '',
+            ownerId: asText(order.ownerId) ?? null,
+            decidedById: context.actorId,
+          },
+        );
+        // The guard refuses an order with no request open.
         if (!pending)
           throw new BusinessRuleError('No pending approval', 'NOT_PENDING');
         await approvals.decide(
@@ -1224,47 +1248,20 @@ export function createProcurementService(deps: {
           context,
           connection,
         );
-        await setStatus(
-          connection,
-          order,
-          decision === 'approved' ? 'approved' : 'rejected',
-          context,
-          null,
-        );
-      });
-      await notifier.notify({
-        key: `purchaseOrder:${id}:${decision}:${String(row.updatedAt)}`,
-        to: [ownerId],
-        actorId: context.actorId,
-        title: {
-          key:
-            decision === 'approved'
-              ? 'notifications.approvalApproved'
-              : 'notifications.approvalRejected',
-          params: { title },
-        },
-        // The approver's own sentence, passed through as written.
-        body: { text: comment ?? '' },
-        url: `/procurement/${id}`,
-        source: { type: 'purchaseOrder', referenceId: id },
-      });
-      return row;
-    },
+      }),
 
     markOrdered: (id, input, context, conditions) =>
       mutate(id, conditions, async (connection, order) => {
-        requireStatus(order, ['approved'], 'order');
-        await setStatus(
+        await move(
           connection,
           order,
-          'ordered',
+          'order',
           context,
-          'Order placed',
-          {},
           {
             orderedAt: input.orderedAt ?? today(),
             expectedAt: input.expectedAt ?? null,
           },
+          'Order placed',
         );
       }),
 
@@ -1334,50 +1331,23 @@ export function createProcurementService(deps: {
 
     cancel: (id, reason, context, conditions) =>
       mutate(id, conditions, async (connection, order) => {
-        // Not `rejected`: that order is not waiting on anything, and its
-        // owner's move is to fix it and ask again. Not for a draft either —
-        // that one is deleted.
-        requireStatus(
-          order,
-          ['draft', 'pendingApproval', 'approved', 'ordered'],
-          'cancel',
-        );
         if (!reason.trim())
           throw new ValidationError('A reason is required', 'reason');
-        // Calling the order off is for the people it went through: the side
-        // that raised it, and whoever was asked to decide or decided. A
-        // draft has no approval, so it is its 负责人's alone.
-        if (!raisedTheOrder(order, context)) {
-          const trail = await approvals.forSubject(
-            'purchaseOrder',
-            id,
-            connection,
-          );
-          const asked = trail.some(
-            (entry) =>
-              asText(entry.decidedById) === context.actorId ||
-              (Array.isArray(entry.approverIds) &&
-                (entry.approverIds as unknown[]).includes(context.actorId)),
-          );
-          if (!asked)
-            throw new BusinessRuleError(
-              'Only the owner or the approver can cancel this order',
-              'NOT_INVOLVED',
-            );
-        }
+        // From which steps, and who — the people the order went through —
+        // is the transition's (server/lifecycles/purchase-orders.ts).
+        await move(
+          connection,
+          order,
+          'cancel',
+          context,
+          { cancelReason: reason },
+          `Cancelled: ${reason}`,
+          { reason },
+        );
         if (order.status === 'pendingApproval')
           await approvals
             .withdraw('purchaseOrder', id, context, connection)
             .catch(() => undefined);
-        await setStatus(
-          connection,
-          order,
-          'cancelled',
-          context,
-          `Cancelled: ${reason}`,
-          { reason },
-          { cancelReason: reason },
-        );
       }),
 
     async receipts(id) {

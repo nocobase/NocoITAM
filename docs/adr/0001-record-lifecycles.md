@@ -90,7 +90,7 @@ test's) keeps.
 
 | Record          | Plan                                                                 |
 | --------------- | -------------------------------------------------------------------- |
-| Purchase orders | Next: receiving routes to partially received / completed             |
+| Purchase orders | Done 2026-10-19: receiving fires `receivePartly` or `complete`       |
 | Repairs         | Next: gains a real state in place of `result`                        |
 | Stocktakes      | Next                                                                 |
 | Devices         | Decide after the pilot: eight states driven by four other domains    |

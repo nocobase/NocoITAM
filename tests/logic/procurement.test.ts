@@ -338,6 +338,38 @@ describe('procurement', () => {
     expect(Number(completed.estimatedTotal)).toBe(
       2 * 14800 + 3 * 499 + 5 * 100,
     );
+    // Every move went through the order's lifecycle (2026-10-19): created,
+    // submitted, decided, placed, received in part and then in full, each
+    // at the next version, with the notifications they owed sent.
+    const log = await app.db.database
+      .query()
+      .selectFrom('lifecycleTransitions')
+      .select(['transition', 'version'])
+      .where('lifecycle', '=', 'purchaseOrders')
+      .where('recordId', '=', order.id)
+      .orderBy('id', 'asc')
+      .execute<{ transition: string; version: number }>();
+    expect(log.map((entry) => entry.transition)).toEqual([
+      '$create',
+      'submit',
+      'approve',
+      'order',
+      'receivePartly',
+      'complete',
+    ]);
+    expect(log.map((entry) => Number(entry.version))).toEqual([
+      1, 2, 3, 4, 5, 6,
+    ]);
+    const effects = await app.db.database
+      .query()
+      .selectFrom('lifecycleEffectRuns')
+      .select(['effect', 'status'])
+      .where('recordId', '=', order.id)
+      .execute<{ effect: string; status: string }>();
+    expect(effects.map((run) => [run.effect, run.status])).toEqual([
+      ['purchaseOrders.notifyApprover', 'succeeded'],
+      ['purchaseOrders.notifyDecision', 'succeeded'],
+    ]);
     const licenses = (
       (await (await app.request('/api/itam/entitlements', manager)).json()) as {
         data: { id: string; seatCount: number }[];

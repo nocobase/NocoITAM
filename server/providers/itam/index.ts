@@ -555,7 +555,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         numbering: container.resolve(numberingServiceToken),
         settings: container.resolve(settingsServiceToken),
         approvals: container.resolve(approvalServiceToken),
-        notifier: container.resolve(itamNotifierToken),
+        lifecycles: container.resolve(lifecycleRuntimeToken),
         devices: container.resolve(deviceServiceToken),
         stock: container.resolve(stockServiceToken),
         entitlements: container.resolve(entitlementServiceToken),
