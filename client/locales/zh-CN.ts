@@ -2530,8 +2530,10 @@ const zhCN: AppResource = {
     // worded as NocoCRM's.
     flows: {
       title: '流程',
-      description: '采购单、报废单从提交到完成的每一步，以及提交时可以选谁审批',
+      description:
+        '采购单、维修单、报废单从开始到结束的每一步，以及提交审批时可以选谁审批',
       procurement: '采购',
+      repairs: '维修',
       disposals: '报废',
       diagram: '流程图',
       diagramHint:
@@ -2690,6 +2692,12 @@ const zhCN: AppResource = {
     emptyDescription: '没有已启用的插件提供你有权访问的设置页面。',
   },
   repairs: {
+    // The moves on 设置 → 流程 → 维修, by the lifecycle's transition names.
+    transitions: {
+      $create: '送修',
+      complete: '完成维修',
+      correct: '更正结果',
+    },
     title: '维修',
     object: '维修单',
     facts: {

@@ -175,3 +175,10 @@ it('opens on purchase orders, and on the flow the address names', () => {
   show('/settings/flows?kind=disposals');
   expect(state.paths.at(-1)).toBe('itam/disposals');
 });
+
+it('shows repairs as a flowchart alone, since nothing approves a repair', () => {
+  show('/settings/flows?kind=repairs');
+  expect(state.paths.at(-1)).toBe('itam/repairs');
+  expect(screen.queryByText('settings.flows.approvers')).toBeNull();
+  expect(screen.getByRole('img', { name: 'diagram' })).toBeTruthy();
+});

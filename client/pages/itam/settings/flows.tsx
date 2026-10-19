@@ -32,7 +32,7 @@ import {
   useSaveApproverRange,
   type ApproverRange,
 } from '@/lib/itam/lifecycle';
-import { DISPOSALS_PATH } from '@/lib/itam/operations';
+import { DISPOSALS_PATH, REPAIRS_PATH } from '@/lib/itam/operations';
 import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
 import { useReferenceNames } from '@/lib/itam/references';
 import { roleTitle } from '@/lib/itam/user-roles';
@@ -44,12 +44,22 @@ const FLOWS = [
     path: PURCHASE_ORDERS_PATH,
     statusEnum: 'poStatus',
     transitions: 'procurement.transitions',
+    approvals: true,
+  },
+  // A repair is not approved: its tab is the flowchart alone (2026-10-19).
+  {
+    key: 'repairs',
+    path: REPAIRS_PATH,
+    statusEnum: 'repairResult',
+    transitions: 'repairs.transitions',
+    approvals: false,
   },
   {
     key: 'disposals',
     path: DISPOSALS_PATH,
     statusEnum: 'disposalStatus',
     transitions: 'disposals.transitions',
+    approvals: true,
   },
 ] as const;
 
@@ -57,8 +67,9 @@ type Flow = (typeof FLOWS)[number];
 
 /**
  * 设置 → 流程 (2026-10-19, docs/adr/0001-record-lifecycles.md): the record
- * lifecycles, a tab each — purchase orders, disposals — with the one thing
- * an administrator sets on each, whom a submitter may ask to approve, above
+ * lifecycles, a tab each — purchase orders, repairs, disposals — with the
+ * one thing an administrator sets on those approved, whom a submitter may
+ * ask to approve, above
  * its flowchart as declared in source, which nobody edits here. The range
  * narrows the people who hold the approval and never widens them; it
  * applies to the next submission, and a request already waiting keeps the
@@ -110,10 +121,10 @@ export default function FlowsSettingsPage(): ReactElement {
 function FlowPanel({ flow }: { readonly flow: Flow }): ReactElement {
   const { t } = useTranslation();
   const description = useLifecycleDescription(flow.path);
-  const range = useApproverRange(flow.path);
+  const range = useApproverRange(flow.path, flow.approvals);
   return (
     <div className='space-y-6 pt-2'>
-      {range.data ? (
+      {!flow.approvals ? null : range.data ? (
         <ApproverRangeCard path={flow.path} range={range.data} />
       ) : (
         <Skeleton className='h-48 w-full rounded-lg' />

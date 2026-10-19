@@ -1,5 +1,6 @@
 import type { DatabaseAuthorizationConditions } from '@nocobase/app-plugin-authorization/server';
 import type { DatabaseConnection, DatabaseManager } from '@nocobase/db';
+import type { JsonObject, LifecycleRuntime } from '@nocobase/lifecycle';
 import {
   createServiceToken,
   type ServiceToken,
@@ -22,7 +23,9 @@ import {
   ValidationError,
   type DeleteImpact,
 } from './errors.js';
+import { REPAIR_LIFECYCLE } from '../../lifecycles/repairs.js';
 import type { HistoryService } from './history.js';
+import { lifecycleRefusal } from './lifecycles.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
 import { today } from './dates.js';
@@ -32,6 +35,13 @@ import { today } from './dates.js';
  * drives the device by result — repaired goes back to its holder or to
  * stock, unrepairable and replaced go to pending disposal. A device lent to
  * the holder meanwhile is an ordinary loan, not part of the repair record.
+ *
+ * The result moves only through the repair's lifecycle
+ * (`server/lifecycles/repairs.ts`, 2026-10-19): filing creates it in
+ * progress, completing and correcting fire their transitions in the
+ * operation's own transaction, which check the result, who may and the
+ * version; what the move carries along — the device, the timeline — is
+ * written here, in the same transaction.
  */
 export const REPAIR_METHODS = [
   'vendorWarranty',
@@ -143,43 +153,45 @@ export interface RepairService {
 export const repairServiceToken: ServiceToken<RepairService> =
   createServiceToken<RepairService>('itam/repair-service');
 
-const LIFECYCLE_FIELDS = new Set(['deviceId']);
+const LIFECYCLE_FIELDS = new Set([
+  'deviceId',
+  'statusChangedAt',
+  'lifecycleVersion',
+]);
 export function createRepairService(dependencies: {
   database: DatabaseManager;
   history: HistoryService;
   settings: SettingsService;
   devices: DeviceService;
   numbering: NumberingService;
+  lifecycles: LifecycleRuntime;
 }): RepairService {
-  const { database, history, settings, devices, numbering } = dependencies;
+  const { database, history, settings, devices, numbering, lifecycles } =
+    dependencies;
   const definition = REPAIRS_COLLECTION;
   const records = createRecordHelpers(database, history, definition);
 
   /**
-   * A repair belongs to its 负责人 (2026-09-28): the one named person who
-   * finishes it, and the one who may take it back by deleting it. Holding
-   * the grant is not enough — everybody in IT may own a repair, and naming
-   * one is what makes a repair handed over rather than stuck
-   * with whoever happened to file it.
+   * Fires a transition in the operation's transaction: the runtime checks
+   * the result, the guard and the version, and writes the result with the
+   * fields the transition accepts and its log entry.
    */
-  /**
-   * Finishing a repair is its 负责人's, or a supervisor's (2026-10-05): the
-   * people who may clear a repair away — the asset manager and root, who
-   * hold `delete` on repairs — may also close one somebody else follows,
-   * so a repair whose 负责人 is away or has left is not stuck until it is
-   * handed over. IT support holds `complete` and not `delete`, so for them
-   * it is still their own repairs only.
-   */
-  const requireOwner = (
-    repair: Row,
+  const move = async (
+    connection: DatabaseConnection,
+    id: string,
+    transition: string,
     context: OperationContext,
-    supervises = false,
-  ) => {
-    if (!supervises && asText(repair.ownerId) !== context.actorId)
-      throw new BusinessRuleError(
-        'Only the owner or a supervisor can complete this repair',
-        'NOT_OWNER',
-      );
+    input: JsonObject,
+  ): Promise<void> => {
+    try {
+      await lifecycles.fire(REPAIR_LIFECYCLE, id, transition, {
+        actor: { id: context.actorId },
+        input,
+        transaction: connection,
+      });
+    } catch (error) {
+      throw lifecycleRefusal(error);
+    }
   };
 
   const createIn = async (
@@ -231,31 +243,37 @@ export function createRepairService(dependencies: {
       );
     const id = crypto.randomUUID();
     const now = new Date();
-    await connection.query
-      .insertInto('repairs')
-      .values({
-        id,
-        repairNo: await numbering.next('repair', { connection }),
-        deviceId: input.deviceId,
-        method: input.method,
-        vendorId: input.vendorId ?? null,
-        faultDescription: input.faultDescription,
-        faultCategory: input.faultCategory ?? null,
-        sentAt: input.sentAt ?? today(),
-        expectedReturnAt: input.expectedReturnAt ?? null,
-        actualReturnAt: null,
-        result: 'inProgress',
-        cost: input.cost ?? null,
-        currency:
-          input.currency ??
-          (await settings.get('general', connection)).currency,
-        notes: input.notes ?? null,
-        ownerId: input.ownerId ?? context.actorId,
-        createdById: context.actorId,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .execute();
+    // Filed through the lifecycle, which starts it in progress and opens
+    // its log.
+    await lifecycles
+      .create(
+        REPAIR_LIFECYCLE,
+        {
+          id,
+          repairNo: await numbering.next('repair', { connection }),
+          deviceId: input.deviceId,
+          method: input.method,
+          vendorId: input.vendorId ?? null,
+          faultDescription: input.faultDescription,
+          faultCategory: input.faultCategory ?? null,
+          sentAt: input.sentAt ?? today(),
+          expectedReturnAt: input.expectedReturnAt ?? null,
+          actualReturnAt: null,
+          cost: input.cost ?? null,
+          currency:
+            input.currency ??
+            (await settings.get('general', connection)).currency,
+          notes: input.notes ?? null,
+          ownerId: input.ownerId ?? context.actorId,
+          createdById: context.actorId,
+          createdAt: now,
+          updatedAt: now,
+        },
+        { actor: { id: context.actorId }, transaction: connection },
+      )
+      .catch((error: unknown) => {
+        throw lifecycleRefusal(error);
+      });
     await history.log(
       { subjectType: 'repairs', subjectId: id, action: 'create', ...context },
       connection,
@@ -335,11 +353,19 @@ export function createRepairService(dependencies: {
             'A finished repair keeps the owner it had',
             'INVALID_STATUS',
           );
-        await connection.query
-          .updateTable('repairs')
-          .set({ ...input, updatedAt: new Date() })
-          .where('id', '=', id)
-          .execute();
+        // A corrected result is a move of its own; the rest is a plain
+        // write, and the change log tells both as one edit.
+        const { result, ...fields } = input;
+        if (result !== undefined && result !== repair.result)
+          await move(connection, id, 'correct', context, {
+            result: asText(result) ?? '',
+          });
+        if (Object.keys(fields).length > 0)
+          await connection.query
+            .updateTable('repairs')
+            .set({ ...fields, updatedAt: new Date() })
+            .where('id', '=', id)
+            .execute();
         await history.logChanges(
           { subjectType: 'repairs', subjectId: id },
           repair,
@@ -365,6 +391,14 @@ export function createRepairService(dependencies: {
           .deleteFrom('repairs')
           .where('id', '=', id)
           .execute();
+        // Its lifecycle log goes with it: the tables name records by id and
+        // hold no key to remove them by.
+        for (const table of ['lifecycleEffectRuns', 'lifecycleTransitions'])
+          await connection.query
+            .deleteFrom(table)
+            .where('lifecycle', '=', REPAIR_LIFECYCLE)
+            .where('recordId', '=', id)
+            .execute();
         // Its attachments go with it: nothing else can open them. Only the
         // links are removed, as deleting an attachment on the tab does; the
         // stored file belongs to the file plugin.
@@ -407,30 +441,19 @@ export function createRepairService(dependencies: {
         id,
         conditions,
         async (connection, repair) => {
-          requireOwner(repair, context, options?.supervises);
-          if (repair.result !== 'inProgress')
-            throw new BusinessRuleError(
-              'Repair is already completed',
-              'INVALID_STATUS',
-            );
-          if (
-            !REPAIR_RESULTS.includes(input.result) ||
-            (input.result as string) === 'inProgress'
-          )
-            throw new ValidationError('Invalid repair result', 'result');
+          // Who may (its 负责人, or a supervisor), from where (in progress)
+          // and to which result is the transition's.
           const values: Record<string, unknown> = {
             result: input.result,
             actualReturnAt: input.actualReturnAt ?? today(),
-            updatedAt: new Date(),
           };
           if (input.cost !== undefined) values.cost = input.cost;
           if (input.currency !== undefined) values.currency = input.currency;
           if (input.notes !== undefined) values.notes = input.notes;
-          await connection.query
-            .updateTable('repairs')
-            .set(values)
-            .where('id', '=', id)
-            .execute();
+          await move(connection, id, 'complete', context, {
+            ...(values as JsonObject),
+            supervises: options?.supervises === true,
+          });
           await history.logChanges(
             { subjectType: 'repairs', subjectId: id },
             repair,

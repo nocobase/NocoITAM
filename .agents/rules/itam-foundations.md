@@ -5,12 +5,14 @@ Read this before writing a service, a route, a transaction, a query on dates or 
 Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small; each rule is as it was written, with the date it was decided.
 
 - **A record lifecycle** (2026-10-18, [ADR 0001](../../docs/adr/0001-record-lifecycles.md)):
-  disposals and, since 2026-10-19, purchase orders move only through
+  disposals and, since 2026-10-19, purchase orders and repairs move only
+  through
   `@nocobase/lifecycle` — the definitions in `server/lifecycles/`, the one
   runtime in
   `server/providers/itam/lifecycles.ts`. A service fires the transition
   inside its own transaction (`transaction: connection`) and writes what the
-  move carries along beside it; nothing else writes `status`,
+  move carries along beside it; nothing else writes the state (`status`, or a
+  repair's `result`),
   `statusChangedAt` or `lifecycleVersion`. A guard reads other tables through
   the services factory's handle, never `database.query()`. An effect reads
   what it needs from the transition's input, and notifies through

@@ -2683,8 +2683,9 @@ const messages = {
     flows: {
       title: 'Flows',
       description:
-        'Every step of a purchase order and a disposal from submission to the end, and whom a submitter may ask to approve',
+        'Every step of a purchase order, a repair and a disposal from start to end, and whom a submitter may ask to approve',
       procurement: 'Procurement',
+      repairs: 'Repairs',
       disposals: 'Disposals',
       diagram: 'Flowchart',
       diagramHint:
@@ -2852,6 +2853,13 @@ const messages = {
       'No enabled plugin contributes a settings page you have access to.',
   },
   repairs: {
+    // The moves on Settings → Flows → Repairs, by the lifecycle's transition
+    // names.
+    transitions: {
+      $create: 'Send to repair',
+      complete: 'Complete',
+      correct: 'Correct the result',
+    },
     facts: {
       warranty: 'Under warranty until {{date}}',
       warrantyEnded: 'Warranty ended on {{date}}',

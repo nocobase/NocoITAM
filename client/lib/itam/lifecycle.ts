@@ -47,9 +47,10 @@ export interface ApproverPerson {
   readonly roles?: readonly { readonly key: string; readonly title: string }[];
 }
 
-export function useApproverRange(path: string) {
+export function useApproverRange(path: string, enabled = true) {
   const api = useApi();
   return useQuery({
+    enabled,
     queryKey: ['itam', path, 'lifecycle', 'approvers'],
     queryFn: async () =>
       (
