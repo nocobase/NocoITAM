@@ -15,15 +15,17 @@ import {
 
 import { disposalLifecycle } from '../../lifecycles/disposals.js';
 import { purchaseOrderLifecycle } from '../../lifecycles/purchase-orders.js';
+import { repairLifecycle } from '../../lifecycles/repairs.js';
 import type { ApprovalService } from './approvals.js';
-import { BusinessRuleError } from './errors.js';
+import { BusinessRuleError, ValidationError } from './errors.js';
 import type { ItamNotifier } from './notifier.js';
 
 /**
  * The application's one lifecycle runtime (`@nocobase/lifecycle`,
  * 2026-10-18, docs/adr/0001-record-lifecycles.md), which every record
  * lifecycle registers on: the disposals' (`server/lifecycles/disposals.ts`)
- * and the purchase orders' (`server/lifecycles/purchase-orders.ts`). It keeps no state of its own; the
+ * the purchase orders' (`server/lifecycles/purchase-orders.ts`) and the
+ * repairs' (`server/lifecycles/repairs.ts`). It keeps no state of its own; the
  * records, their transition log and their effect runs are in the database
  * (202610180001_disposal_lifecycle). Its effects run on the application's
  * jobs once `ItamProvider.start()` hands it the dispatcher; a container
@@ -115,6 +117,8 @@ export function createItamLifecycleRuntime(dependencies: {
       scope: () => LIFECYCLE_PARAMETER_SCOPE,
     },
   });
+  // Repairs read nothing beyond the record and tell nobody.
+  runtime.register(repairLifecycle);
   return runtime;
 }
 
@@ -139,6 +143,14 @@ export function lifecycleRefusal(error: unknown): unknown {
     }
     case 'INVALID_STATE':
       return new BusinessRuleError(error.message, 'INVALID_STATUS');
+    // Input the transition refused, as a field the form can point at.
+    case 'INVALID_INPUT': {
+      const problem = error.problems[0];
+      return new ValidationError(
+        problem?.message ?? error.message,
+        problem?.field ?? 'input',
+      );
+    }
     case 'CONFLICT':
       return new BusinessRuleError(
         'The record changed meanwhile; reload it and try again',

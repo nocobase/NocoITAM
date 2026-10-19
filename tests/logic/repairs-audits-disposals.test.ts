@@ -524,7 +524,21 @@ describe('repairs, audits and disposals', () => {
     // Correcting the record does not move the device again.
     expect(await data(await get(`devices/${device.id}`))).toMatchObject({
       status: 'inUse',
-    });
+    }); // Each move went through the repair's lifecycle (2026-10-19): filed,
+    // completed, corrected, each at the next version.
+    const log = await app.db.database
+      .query()
+      .selectFrom('lifecycleTransitions')
+      .select(['transition', 'to'])
+      .where('lifecycle', '=', 'repairs')
+      .where('recordId', '=', String(repair.id))
+      .orderBy('id', 'asc')
+      .execute<{ transition: string; to: string }>();
+    expect(log.map((entry) => [entry.transition, entry.to])).toEqual([
+      ['$create', 'inProgress'],
+      ['complete', 'repaired'],
+      ['correct', 'unrepairable'],
+    ]);
   });
 
   it('keeps an unrepairable device in use unless sent to disposal', async () => {

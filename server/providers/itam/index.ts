@@ -588,6 +588,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
         settings: container.resolve(settingsServiceToken),
         devices: container.resolve(deviceServiceToken),
         numbering: container.resolve(numberingServiceToken),
+        lifecycles: container.resolve(lifecycleRuntimeToken),
       }),
     );
     container.singleton(lifecycleRuntimeToken, () => {

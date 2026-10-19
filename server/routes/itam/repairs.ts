@@ -5,6 +5,7 @@ import {
   defineApiRoutes,
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
+import { lifecycleDescriptionView } from '@nocobase/lifecycle';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -18,8 +19,10 @@ import {
   REPAIR_METHODS,
   REPAIR_RESULTS,
 } from '../../providers/itam/repairs.js';
+import { REPAIR_LIFECYCLE } from '../../lifecycles/repairs.js';
+import { lifecycleRuntimeToken } from '../../providers/itam/lifecycles.js';
 import { createCrudRoutes } from './crud-routes.js';
-import { maybeDecide } from './http.js';
+import { errorResponse, maybeDecide } from './http.js';
 
 /** `/api/itam/repairs`: CRUD filtered by device / vendor, plus completion. */
 const id = z.string().min(1).max(64);
@@ -48,6 +51,7 @@ export const repairRoutes: AppApiRouteContribution<Application> =
     const authorization = app.container.resolve(authorizationToken);
     const repairs = app.container.resolve(repairServiceToken);
     const history = app.container.resolve(historyServiceToken);
+    const lifecycles = app.container.resolve(lifecycleRuntimeToken);
 
     const routes = createCrudRoutes({
       collection: 'repairs',
@@ -68,7 +72,19 @@ export const repairRoutes: AppApiRouteContribution<Application> =
         })
         .partial(),
       middleware: [auth.required(), authorization.middleware()],
-      before: (_routes, { operationContext, operation }) => {
+      before: (routes, { decide, operationContext, operation }) => {
+        // 设置 → 流程 → 维修 (2026-10-19): the lifecycle as its flowchart
+        // draws it, from source; nothing about any one repair.
+        routes.get('/lifecycle', async (context) => {
+          try {
+            await decide(context, 'read');
+            return context.json({
+              data: lifecycleDescriptionView(lifecycles, REPAIR_LIFECYCLE),
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
         operation(
           'complete',
           'complete',
