@@ -211,7 +211,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
     2026-10-16) runs again with the approver's words, replacing the waiting
     one. The card offers no 讨论: a conversation about the request went the
     same day.
-  - **Where it shows** (`frontend-standard.md` §S1–S4): 收件箱 (`/inbox`,
+  - **Where it shows**: 收件箱 (`/inbox`,
     first in the menu, its badge the runs waiting, `useInboxCount`) is the
     template's inbox block with the reviews added to its To do view as a
     collection category (`client/pages/itam/inbox.tsx`; a suggestion shows

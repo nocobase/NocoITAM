@@ -18,7 +18,7 @@ import { useWorkCards } from './my-work.js';
  * by the product owner). 待办: every to-do on the board, in the scope the
  * workbench is set to (全部 / 我负责的), kept live with it. 收件箱: what
  * waits on the reader's decision and the notifications they have not read —
- * a departure from frontend-standard §S1, which counts decisions only: the
+ * rather than the decisions alone: the
  * inbox is where notifications are read now, and a number that stayed at
  * zero while unread notices piled up was asked to change.
  */

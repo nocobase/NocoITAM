@@ -25,8 +25,7 @@ import { useCurrentUserId } from '@/lib/itam/permissions';
 import { AiShortcut } from './ai-shortcut.js';
 
 /**
- * 审批审阅's card (2026-10-16, plan "Work agents", step 1;
- * `frontend-standard.md` §S2.3, §S4.5): a decision card for the approver —
+ * 审批审阅's card (2026-10-16, plan "Work agents", step 1): a decision card for the approver —
  * an amber edge, what the review recommends in one line, what is asked,
  * and the basis folded away; the decision comment ready to edit; the
  * recommended decision as the one solid button, the other beside it, then
@@ -312,8 +311,7 @@ function Basis({
 }
 
 /**
- * 等你决定 on a purchase order's or a disposal's page (`frontend-standard.md`
- * §S3.2): the newest review, for the approver alone, under the title. While
+ * 等你决定 on a purchase order's or a disposal's page: the newest review, for the approver alone, under the title. While
  * the request waits on the reader and no review is open, one line offers
  * to ask for one. Nothing for anybody else, or once nothing waits.
  */

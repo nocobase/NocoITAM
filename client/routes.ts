@@ -246,7 +246,7 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       navigation: { title: 'navigation.workbench', icon: LayoutDashboard },
       componentLoader: () => import('./pages/itam/workbench.js'),
     },
-    // 收件箱 (2026-10-16, plan "Work agents"; `frontend-standard.md` §S1):
+    // 收件箱 (2026-10-16, plan "Work agents"):
     // under 待办 in the menu (2026-10-17; it was first), its count the runs
     // waiting on the reader. Everyone
     // has one and it shows only the reader's own, so it checks no page

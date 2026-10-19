@@ -268,7 +268,7 @@ export interface DomainConfig {
   /** Rendered above the detail header (an inspection notice, AI quick entries). */
   readonly Notice?: ComponentType<{ readonly record: ItamRecord }>;
   /**
-   * 等你决定 (2026-10-16, `frontend-standard.md` §S3.2): what waits on the
+   * 等你决定 (2026-10-16): what waits on the
    * reader's decision, under the title and before the body — the approval
    * review on a purchase order or a disposal.
    */

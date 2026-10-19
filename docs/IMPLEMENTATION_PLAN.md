@@ -2967,7 +2967,7 @@ and plan cards, the single-shot readings, and the rules behind 需要关注.
 - **Every run names what started it** (§3.2): a person's 让 Noco… or a
   trigger an administrator switched on. No run is started by another
   agent's output.
-- **Two output forms** (§3.3, `frontend-standard.md` §S4):
+- **Two output forms** (§3.3):
   - a **决定卡** for a review attached to something a person must decide (an
     approval);
   - a **建议卡** for everything else.
@@ -3023,8 +3023,8 @@ and plan cards, the single-shot readings, and the rules behind 需要关注.
   settings row `agents`. Every automatic start checks it; a person asking by
   hand is never switched off. Daily passes start at most 20 runs and skip a
   record with a run waiting or running.
-- **收件箱.** `/notifications` becomes 收件箱 with 待我决定 and 通知
-  (`frontend-standard.md` §S2): the cards waiting for the reader first,
+- **收件箱.** `/notifications` becomes 收件箱 with 待我决定 and 通知:
+  the cards waiting for the reader first,
   then the ones handled, and the plugin's notifications as now. The badge
   counts only 待我决定. A record's page shows its own waiting cards in an
   等你决定 block (§S3.2), sharing the inbox's card and actions.
