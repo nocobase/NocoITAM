@@ -394,6 +394,10 @@ describe('ITAM migrations', () => {
       await client.schema.hasColumn('disposals', 'lifecycle_version'),
     ).toBe(true);
     expect(await client.schema.hasTable('lifecycle_transitions')).toBe(true);
+    // Purchase orders too (2026-10-19).
+    expect(
+      await client.schema.hasColumn('purchase_orders', 'lifecycle_version'),
+    ).toBe(true);
     expect(await client.schema.hasTable('lifecycle_effect_runs')).toBe(true);
   });
 
@@ -442,7 +446,7 @@ describe('ITAM migrations', () => {
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(109);
+    expect(rolledBack.rolledBack.length).toBe(110);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

@@ -14,6 +14,7 @@ import {
 } from '@nocobase/service-provider';
 
 import { disposalLifecycle } from '../../lifecycles/disposals.js';
+import { purchaseOrderLifecycle } from '../../lifecycles/purchase-orders.js';
 import type { ApprovalService } from './approvals.js';
 import { BusinessRuleError } from './errors.js';
 import type { ItamNotifier } from './notifier.js';
@@ -21,8 +22,8 @@ import type { ItamNotifier } from './notifier.js';
 /**
  * The application's one lifecycle runtime (`@nocobase/lifecycle`,
  * 2026-10-18, docs/adr/0001-record-lifecycles.md), which every record
- * lifecycle registers on: the disposals' for now
- * (`server/lifecycles/disposals.ts`). It keeps no state of its own; the
+ * lifecycle registers on: the disposals' (`server/lifecycles/disposals.ts`)
+ * and the purchase orders' (`server/lifecycles/purchase-orders.ts`). It keeps no state of its own; the
  * records, their transition log and their effect runs are in the database
  * (202610180001_disposal_lifecycle). Its effects run on the application's
  * jobs once `ItamProvider.start()` hands it the dispatcher; a container
@@ -88,6 +89,25 @@ export function createItamLifecycleRuntime(dependencies: {
     parameterConfiguration: {
       store: lifecycleParameterStore(database),
       scope: () => LIFECYCLE_PARAMETER_SCOPE,
+    },
+  });
+  runtime.register(purchaseOrderLifecycle, {
+    // Bound to the transaction a transition is decided in, as above.
+    services: (handle) => {
+      const connection = handle as DatabaseConnection | undefined;
+      return {
+        approvals: (id) =>
+          approvals.forSubject('purchaseOrder', id, connection),
+        lineCount: async (id) => {
+          const row = await (connection ? connection.query : database.query())
+            .selectFrom('purchaseOrderLines')
+            .select((eb) => [eb.fn.countAll().as('count')])
+            .where('purchaseOrderId', '=', id)
+            .executeTakeFirst<{ count: number | string }>();
+          return Number(row?.count ?? 0);
+        },
+        notifier,
+      };
     },
   });
   return runtime;
