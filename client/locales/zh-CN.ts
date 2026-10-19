@@ -208,7 +208,6 @@ const zhCN: AppResource = {
   },
   tabs: {
     history: '历史',
-    flow: '流程',
     children: '子级',
     holdings: '归属',
     relatedAssets: '关联资产',
@@ -2795,8 +2794,6 @@ const zhCN: AppResource = {
   lifecycle: {
     diagram: '流程图',
     end: '结束',
-    undelivered_one: '有 {{count}} 条通知未能送达',
-    undelivered_other: '有 {{count}} 条通知未能送达',
   },
   // The UI Library's diagram component.
   flowDiagram: {

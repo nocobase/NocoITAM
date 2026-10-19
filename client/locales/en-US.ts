@@ -215,7 +215,6 @@ const messages = {
   },
   tabs: {
     history: 'History',
-    flow: 'Flow',
     children: 'Sub-items',
     holdings: 'In their name',
     relatedAssets: 'Related assets',
@@ -2964,8 +2963,6 @@ const messages = {
   lifecycle: {
     diagram: 'Flowchart',
     end: 'End',
-    undelivered_one: '{{count}} notification could not be delivered',
-    undelivered_other: '{{count}} notifications could not be delivered',
   },
   // The UI Library's diagram component.
   flowDiagram: {

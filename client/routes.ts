@@ -420,7 +420,6 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
             attachments: () =>
               import('./pages/itam/disposals/tab-attachments.js'),
             history: () => import('./pages/itam/disposals/tab-history.js'),
-            flow: () => import('./pages/itam/disposals/tab-flow.js'),
           },
         }),
         domainRoute('audits', 'navigation.audits', ClipboardCheck, {

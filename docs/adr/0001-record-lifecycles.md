@@ -56,11 +56,11 @@ Adopt it record kind by record kind, starting with **disposals**:
 - **History stays the timeline.** `historyEvents` / `changeLogs` are still
   written; the runtime's `lifecycleTransitions` is the audit log behind the
   flowchart. Deleting a record, or clearing the demo, removes both.
-- **A 流程 tab** draws the lifecycle with the UI Library's
-  `@nocobase/lifecycle-diagram` (`client/components/itam/record-flow.tsx`):
-  the current state, the moves made, the ones the reader may make, and a line
-  when a notification could not be delivered. The page's buttons stay the
-  actions.
+- **The flowchart is drawn once, on 设置 → 报废流程,** with the UI Library's
+  `@nocobase/lifecycle-diagram`. A disposal's own 流程 tab, drawing where it
+  stood, came with the pilot and went on 2026-10-19: five states in nearly a
+  line said nothing its status tag and 历史 did not. A record with more
+  steps and branches, such as a purchase order, may earn one.
 
 ## The approver range (2026-10-18)
 
@@ -101,9 +101,9 @@ test's) keeps.
 
 - Two disposals decided at once: one commits, the other is refused with
   `CONFLICT`, on any database.
-- A failed notification is retried with backoff and stays visible on the
-  record's 流程 tab. Surfacing it in the owner's inbox (guideline §3.6) is a
-  follow-up.
+- A failed notification is retried with backoff; its run, failed after the
+  last try, is in `lifecycleEffectRuns` and `GET /itam/disposals/:id/lifecycle`.
+  Telling the owner in their inbox (guideline §3.6) is a follow-up.
 - Only the runtime writes `status`, `statusChangedAt` and `lifecycleVersion`.
   The demo goes through the services; an import that writes a state directly
   is a one-off data load, like a migration's backfill, and starts at version

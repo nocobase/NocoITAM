@@ -98,8 +98,6 @@ export const disposalDomain: DomainConfig = {
     // No devices tab: the list reads in its own card above the tabs. No
     // approvals tab: submitted, withdrawn and decided are history events.
     { key: 'attachments', label: 'tabs.attachments' },
-    // Its lifecycle drawn: where it is, and the way it came (2026-10-18).
-    { key: 'flow', label: 'tabs.flow' },
   ],
   summaryTimestamps: false,
   Views: createMyApprovalView({
