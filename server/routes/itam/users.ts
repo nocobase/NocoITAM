@@ -9,16 +9,17 @@ import {
 } from '@nocobase/app-server/router';
 import { Hono } from 'hono';
 
+import type { ApprovalSubject } from '../../providers/itam/approvals.js';
 import {
   approverDirectoryToken,
   type ApproverCandidate,
 } from '../../providers/itam/approvers.js';
 
-/** Which collection's `approve` an approver of this subject must hold. */
-const APPROVAL_SUBJECTS: Readonly<Record<string, string>> = {
-  purchaseOrder: 'purchaseOrders',
-  disposal: 'disposals',
-};
+/** The kinds of request that are approved, as the picker names them. */
+const APPROVAL_SUBJECTS: ReadonlySet<string> = new Set([
+  'purchaseOrder',
+  'disposal',
+]);
 
 /**
  * `/api/itam/users`: the people a record may name — its 负责人, an audit's
@@ -115,25 +116,16 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
     router.get('/itam/users/approvers', auth.required(), async (context) => {
       const url = new URL(context.req.url);
       const subject = url.searchParams.get('filter[subject]') ?? '';
-      const collection = APPROVAL_SUBJECTS[subject];
-      if (!collection) return context.json(listed([]));
-      // A disposal's approver is picked from its approver range
-      // (设置 → 报废流程, 2026-10-18).
-      if (subject === 'disposal')
-        return context.json(
-          listed(
-            await directory.disposalApprovers(url.searchParams.get('q') ?? ''),
-          ),
-        );
-      // The requester is a candidate like anyone else who may approve: an
-      // Asset Manager filing a request has nobody else to ask when they are
-      // the only one (2026-09-27). The operation lives on the business
-      // resource, not the Collection.
+      if (!APPROVAL_SUBJECTS.has(subject)) return context.json(listed([]));
+      // Whoever holds the approval, narrowed by the kind's approver range
+      // (设置 → 流程; disposals 2026-10-18, purchase orders 2026-10-19). The
+      // requester is a candidate like anyone else who may approve: an Asset
+      // Manager filing a request has nobody else to ask when they are the
+      // only one (2026-09-27).
       return context.json(
         listed(
-          await holdersOf(
-            `itam.${collection}`,
-            'approve',
+          await directory.approversFor(
+            subject as ApprovalSubject,
             url.searchParams.get('q') ?? '',
           ),
         ),

@@ -36,6 +36,7 @@ import {
   type DeleteImpact,
 } from './errors.js';
 import type { HistoryService } from './history.js';
+import type { ApproverDirectory } from './approvers.js';
 import { lifecycleRefusal } from './lifecycles.js';
 import type { EntitlementService } from './entitlements.js';
 import type { NumberingService } from './numbering.js';
@@ -296,6 +297,7 @@ export function createProcurementService(deps: {
   stock: StockService;
   entitlements: EntitlementService;
   receiptRuns: ReceiptRunService;
+  approvers: ApproverDirectory;
 }): ProcurementService {
   const {
     database,
@@ -308,6 +310,7 @@ export function createProcurementService(deps: {
     stock,
     entitlements,
     receiptRuns,
+    approvers,
   } = deps;
   const definition = PURCHASE_ORDERS_COLLECTION;
 
@@ -1188,8 +1191,19 @@ export function createProcurementService(deps: {
 
     // The approver hears of it, and the owner of the decision, through the
     // lifecycle's effects once the transaction commits.
-    submit: (id, approverId, context, conditions) =>
-      mutate(id, conditions, async (connection, order) => {
+    async submit(id, approverId, context, conditions) {
+      // Asked before the transaction opens: who holds which permission set
+      // is read outside SQLite's one connection (设置 → 流程 → 采购,
+      // 2026-10-19).
+      if (
+        approverId &&
+        !(await approvers.mayApprove('purchaseOrder', approverId))
+      )
+        throw new BusinessRuleError(
+          'Choose an approver from the range set for purchase orders',
+          'APPROVER_NOT_IN_RANGE',
+        );
+      return mutate(id, conditions, async (connection, order) => {
         // The approval asks for the amount the lines make now.
         await recomputeTotals(connection, id);
         // Who it asks, and who asks: what the approver is told. The guard
@@ -1213,7 +1227,8 @@ export function createProcurementService(deps: {
           context,
           connection,
         );
-      }),
+      });
+    },
 
     withdraw: (id, context, conditions) =>
       mutate(id, conditions, async (connection, order) => {

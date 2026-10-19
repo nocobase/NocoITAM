@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { ApproverHint } from '@/components/itam/approver-hint';
 import { createApprovalDecisions } from '@/components/itam/ai/approval-decisions';
 import { CellText } from '@/components/itam/cell-text';
 import { PURCHASE_ORDER_CARD } from '@/components/itam/board-card-specs';
@@ -451,9 +452,10 @@ function PurchaseOrderActions({
             value={approverId}
             onChange={setApproverId}
           />
-          <p className='text-xs text-muted-foreground'>
-            {t('procurement.approverHint')}
-          </p>
+          <ApproverHint
+            subject='purchaseOrder'
+            hint={t('procurement.approverHint')}
+          />
         </div>
       </ConfirmDialog>
       <ConfirmDialog

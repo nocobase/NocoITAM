@@ -26,12 +26,19 @@ import {
   LINE_ITEM_TYPES,
   PO_REASONS,
 } from '../../providers/itam/procurement.js';
+import { lifecycleDescriptionView } from '@nocobase/lifecycle';
+
+import { PURCHASE_ORDER_LIFECYCLE } from '../../lifecycles/purchase-orders.js';
+import { approverDirectoryToken } from '../../providers/itam/approvers.js';
+import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
+import { lifecycleRuntimeToken } from '../../providers/itam/lifecycles.js';
 import { createCrudRoutes } from './crud-routes.js';
 import {
   decideCollection,
   errorResponse,
   principalId,
   readJsonObject,
+  requireGrant,
 } from './http.js';
 import {
   comparisonInputSchema,
@@ -187,6 +194,15 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
     const procurement = app.container.resolve(procurementServiceToken);
     const approvals = app.container.resolve(approvalServiceToken);
     const history = app.container.resolve(historyServiceToken);
+    const lifecycles = app.container.resolve(lifecycleRuntimeToken);
+    const approverDirectory = app.container.resolve(approverDirectoryToken);
+    const approverRangeSchema = z.object({
+      anyone: z.boolean(),
+      roles: z.array(z.string().min(1).max(128)).max(50),
+      users: z.array(z.string().min(1).max(64)).max(100),
+      revision: z.number().int().nonnegative(),
+      requestId: z.string().min(1).max(128),
+    });
     const receiptRuns = app.container.resolve(receiptRunServiceToken);
     const readDocument = app.container.resolve(documentReaderToken);
     const database = app.container.resolve(databaseManagerToken);
@@ -238,6 +254,53 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
       updateSchema: orderSchema.partial(),
       middleware: [auth.required(), authorization.middleware()],
       before: (routes, { decide, operationContext, operation }) => {
+        // 设置 → 流程 → 采购 (2026-10-19): the lifecycle as its flowchart
+        // draws it, from source, and whom a submitter may ask to approve —
+        // read by anybody who may read orders, changed under the settings'
+        // own grant.
+        routes.get('/lifecycle', async (context) => {
+          try {
+            await decide(context, 'read');
+            return context.json({
+              data: lifecycleDescriptionView(
+                lifecycles,
+                PURCHASE_ORDER_LIFECYCLE,
+              ),
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
+        routes.get('/lifecycle/approvers', async (context) => {
+          try {
+            await decide(context, 'read');
+            return context.json({
+              data: await approverDirectory.approverRangeView('purchaseOrder'),
+            });
+          } catch (error) {
+            return errorResponse(context, error);
+          }
+        });
+        routes.put(
+          '/lifecycle/approvers',
+          requireGrant(ITAM_SETTINGS_RESOURCE, 'update'),
+          async (context) => {
+            try {
+              const input = approverRangeSchema.parse(
+                await readJsonObject(context),
+              );
+              return context.json({
+                data: await approverDirectory.saveApproverRange(
+                  'purchaseOrder',
+                  input,
+                  principalId(context),
+                ),
+              });
+            } catch (error) {
+              return errorResponse(context, error);
+            }
+          },
+        );
         // AI 整理 in the create dialog, before the order exists: both ask for
         // `create`, the grant the dialog itself needs. Registered first, so
         // `capture` is never read as an order id.

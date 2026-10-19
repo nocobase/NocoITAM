@@ -13,11 +13,16 @@ import {
   type ServiceToken,
 } from '@nocobase/service-provider';
 
+import type { ApproverRangeParameters } from '../../lifecycles/approver-range.js';
 import {
-  approverRangeGroup,
   DISPOSAL_LIFECYCLE,
-  type DisposalParameters,
+  disposalApproverRange,
 } from '../../lifecycles/disposals.js';
+import {
+  PURCHASE_ORDER_LIFECYCLE,
+  purchaseOrderApproverRange,
+} from '../../lifecycles/purchase-orders.js';
+import type { ApprovalSubject } from './approvals.js';
 import { BusinessRuleError, ValidationError } from './errors.js';
 import {
   LIFECYCLE_PARAMETER_SCOPE,
@@ -26,11 +31,28 @@ import {
 
 /**
  * Who holds what, as the pickers offer people (moved out of the users route
- * 2026-10-18, so the disposal service and 设置 → 报废流程 read the same
- * answer): the accounts a permission set of this application is assigned
- * to, the ones holding one business operation, and — for a disposal — the
- * ones its approver range lets a submitter ask.
+ * 2026-10-18, so the services and 设置 → 流程 read the same answer): the
+ * accounts a permission set of this application is assigned to, the ones
+ * holding one business operation, and — for a request that is approved, a
+ * purchase order or a disposal — the ones its approver range lets a
+ * submitter ask.
  */
+
+/** What each kind of request is approved under, and its range is kept as. */
+const SUBJECTS = {
+  disposal: {
+    lifecycle: DISPOSAL_LIFECYCLE,
+    resource: 'itam.disposals',
+    group: disposalApproverRange,
+    startRequest: 'start:itam-disposal-approver-range',
+  },
+  purchaseOrder: {
+    lifecycle: PURCHASE_ORDER_LIFECYCLE,
+    resource: 'itam.purchaseOrders',
+    group: purchaseOrderApproverRange,
+    startRequest: 'start:itam-purchase-order-approver-range',
+  },
+} as const satisfies Record<ApprovalSubject, unknown>;
 
 /** A permission set as a picker names it: its key and its title. */
 export interface ApproverRole {
@@ -56,29 +78,31 @@ export interface ApproverDirectory {
     q?: string,
   ): Promise<ApproverCandidate[]>;
   /**
-   * Whom a submitter may ask to approve a disposal: the people holding its
-   * approval, narrowed by the approver range — the one saved, or `rule`
-   * when a settings page checks one before saving it.
+   * Whom a submitter may ask to approve this kind of request: the people
+   * holding its approval, narrowed by its approver range — the one saved,
+   * or `rule` when a settings page checks one before saving it.
    */
-  disposalApprovers(
+  approversFor(
+    subject: ApprovalSubject,
     q?: string,
     rule?: readonly ReviewerSelection[],
   ): Promise<ApproverCandidate[]>;
   /**
-   * Whether a submitter may ask this person to approve a disposal. Always,
-   * while the range is everyone who may approve — the approval itself is
-   * checked when the approver decides, as it always was.
+   * Whether a submitter may ask this person to approve. Always, while the
+   * range is everyone who may approve — the approval itself is checked when
+   * the approver decides, as it always was.
    */
-  mayApproveDisposal(userId: string): Promise<boolean>;
-  /** 设置 → 报废流程: the approver range, and what it offers now. */
-  approverRangeView(): Promise<ApproverRangeView>;
+  mayApprove(subject: ApprovalSubject, userId: string): Promise<boolean>;
+  /** 设置 → 流程: the approver range, and what it offers now. */
+  approverRangeView(subject: ApprovalSubject): Promise<ApproverRangeView>;
   /**
    * A new version of the range, made from the version the page showed
    * (`revision`): one saved meanwhile by someone else is a conflict, and a
    * request sent again under the same id saves nothing twice. A range that
-   * leaves nobody to ask is refused, since no disposal could be submitted.
+   * leaves nobody to ask is refused, since nothing could then be submitted.
    */
   saveApproverRange(
+    subject: ApprovalSubject,
     input: ApproverRangeInput,
     actorId: string,
   ): Promise<ApproverRangeView>;
@@ -102,7 +126,7 @@ export interface ApproverRangeView {
   readonly revision: number;
   readonly updatedById: string | null;
   readonly updatedAt: string | null;
-  /** What may be chosen: the sets and people who hold disposal approval. */
+  /** What may be chosen: the sets and people who hold the approval. */
   readonly roleOptions: readonly ApproverRole[];
   readonly userOptions: readonly ApproverCandidate[];
   /** Whom a submitter may pick under this range. */
@@ -252,39 +276,41 @@ export function createApproverDirectory(
   };
 
   /** The approver range as it stands: the administrator's, or the default. */
-  const currentRange = async (): Promise<readonly ReviewerSelection[]> =>
+  const currentRange = async (
+    subject: ApprovalSubject,
+  ): Promise<readonly ReviewerSelection[]> =>
     (
-      (await lifecycles().resolveParameters(DISPOSAL_LIFECYCLE, {
+      (await lifecycles().resolveParameters(SUBJECTS[subject].lifecycle, {
         record: null,
         purpose: 'preview',
         transactionHandle: undefined,
-      })) as DisposalParameters
+      })) as ApproverRangeParameters
     ).approverRange;
+  const holdersFor = (subject: ApprovalSubject) =>
+    holdersOf(SUBJECTS[subject].resource, 'approve', '');
 
   const directory: ApproverDirectory = {
     leftUserIds,
     rolesOf,
     holders: (resource, action, q = '') => holdersOf(resource, action, q),
-    approverRangeView: () => approverRangeView(),
-    saveApproverRange: (input, actorId) => saveApproverRange(input, actorId),
-    async mayApproveDisposal(userId) {
-      const range = await currentRange();
+    approverRangeView: (subject) => approverRangeView(subject),
+    saveApproverRange: (subject, input, actorId) =>
+      saveApproverRange(subject, input, actorId),
+    async mayApprove(subject, userId) {
+      const range = await currentRange(subject);
       if (range.some((selection) => selection.type === 'anyone')) return true;
-      return (await directory.disposalApprovers('', range)).some(
+      return (await directory.approversFor(subject, '', range)).some(
         (candidate) => candidate.id === userId,
       );
     },
-    async disposalApprovers(
-      q = '',
-      rule?: readonly ReviewerSelection[],
-    ): Promise<ApproverCandidate[]> {
-      const holders = await holdersOf('itam.disposals', 'approve', '');
+    async approversFor(subject, q = '', rule) {
+      const holders = await holdersFor(subject);
       const byId = new Map(holders.map((holder) => [holder.id, holder]));
       // Every selection resolves among people; whoever it names must still
       // hold the approval, so a range never widens who may approve.
       const allowed = new Set(
         await resolveReviewerSelections(
-          rule ?? (await currentRange()),
+          rule ?? (await currentRange(subject)),
           { scope: 'itam', applicantId: '' },
           {
             selectors: {
@@ -309,11 +335,13 @@ export function createApproverDirectory(
       );
     },
   };
-  async function approverRangeView(): Promise<ApproverRangeView> {
+  async function approverRangeView(
+    subject: ApprovalSubject,
+  ): Promise<ApproverRangeView> {
     const [version, range, holders] = await Promise.all([
-      store.read(LIFECYCLE_PARAMETER_SCOPE, approverRangeGroup.key),
-      currentRange(),
-      holdersOf('itam.disposals', 'approve', ''),
+      store.read(LIFECYCLE_PARAMETER_SCOPE, SUBJECTS[subject].group.key),
+      currentRange(subject),
+      holdersFor(subject),
     ]);
     const roleOptions = new Map<string, ApproverRole>();
     for (const holder of holders)
@@ -327,14 +355,15 @@ export function createApproverDirectory(
       updatedAt: version?.at ?? null,
       roleOptions: [...roleOptions.values()],
       userOptions: holders,
-      approvers: await directory.disposalApprovers('', range),
+      approvers: await directory.approversFor(subject, '', range),
     };
   }
   async function saveApproverRange(
+    subject: ApprovalSubject,
     input: ApproverRangeInput,
     actorId: string,
   ): Promise<ApproverRangeView> {
-    const holders = await holdersOf('itam.disposals', 'approve', '');
+    const holders = await holdersFor(subject);
     const roleKeys = new Set(
       holders.flatMap((holder) => (holder.roles ?? []).map((role) => role.key)),
     );
@@ -345,14 +374,14 @@ export function createApproverDirectory(
         throw new ValidationError('Unknown permission set', 'roles');
       if (input.users.some((id) => !holders.some((holder) => holder.id === id)))
         throw new ValidationError(
-          'Only someone who may approve a disposal can be chosen',
+          'Only someone who may approve this kind of request can be chosen',
           'users',
         );
     }
     const range = rangeOf(input);
     if (
       !input.anyone &&
-      (await directory.disposalApprovers('', range)).length === 0
+      (await directory.approversFor(subject, '', range)).length === 0
     )
       throw new BusinessRuleError(
         'The range leaves nobody to ask for approval',
@@ -361,7 +390,7 @@ export function createApproverDirectory(
     try {
       await store.save({
         scope: LIFECYCLE_PARAMETER_SCOPE,
-        group: approverRangeGroup,
+        group: SUBJECTS[subject].group,
         values: { approverRange: range },
         expectedRevision: input.revision,
         requestId: input.requestId,
@@ -377,22 +406,23 @@ export function createApproverDirectory(
             'CONFLICT',
           );
     }
-    return approverRangeView();
+    return approverRangeView(subject);
   }
   return directory;
 }
 
-/** The permission set a deployment's disposal approvers start as. */
+/** The permission set a deployment's approvers start as. */
 export const DEFAULT_APPROVER_SET = 'itam-asset-manager';
 
 /**
- * A deployment's first approver range (2026-10-18): the IT Asset Manager
- * set — the one this application's seeds give disposal approval to — saved
- * as the range's first version when the application starts and nobody has
- * saved one, so 设置 → 报废流程 opens with it ticked. Done at start rather
- * than in a seed, which may not use the parameter store's database manager.
- * A range already saved, or a deployment without that set, is left alone;
- * the lifecycle's own default stays everyone who may approve.
+ * A deployment's first approver ranges (2026-10-18 for disposals,
+ * 2026-10-19 for purchase orders): the IT Asset Manager set — the one this
+ * application's seeds give both approvals to — saved as each range's first
+ * version when the application starts and nobody has saved one, so
+ * 设置 → 流程 opens with it ticked. Done at start rather than in a seed,
+ * which may not use the parameter store's database manager. A range already
+ * saved, or a deployment without that set, is left alone; the lifecycles'
+ * own default stays everyone who may approve.
  */
 export async function startApproverRange(
   container: ServiceContainer,
@@ -401,33 +431,34 @@ export async function startApproverRange(
   const store = lifecycleParameterStore(
     container.resolve(databaseManagerToken),
   );
-  if (await store.read(LIFECYCLE_PARAMETER_SCOPE, approverRangeGroup.key))
-    return;
   const sets = await container
     .resolve(authorizationToken)
     .permissionSets.list();
   if (!sets.some((set) => set.key === DEFAULT_APPROVER_SET)) return;
-  try {
-    await store.save({
-      scope: LIFECYCLE_PARAMETER_SCOPE,
-      group: approverRangeGroup,
-      values: {
-        approverRange: [
-          { group: 1, type: 'role', referenceId: DEFAULT_APPROVER_SET },
-        ],
-      },
-      expectedRevision: 0,
-      requestId: 'start:itam-disposal-approver-range',
-      actorId: 'system',
-      at: new Date().toISOString(),
-    });
-  } catch (error) {
-    // Another instance starting beside this one saved it first.
-    if (
-      error instanceof ParameterConfigurationError &&
-      error.code === 'CONFIGURATION_CONFLICT'
-    )
-      return;
-    throw error;
+  for (const subject of Object.values(SUBJECTS)) {
+    if (await store.read(LIFECYCLE_PARAMETER_SCOPE, subject.group.key))
+      continue;
+    try {
+      await store.save({
+        scope: LIFECYCLE_PARAMETER_SCOPE,
+        group: subject.group,
+        values: {
+          approverRange: [
+            { group: 1, type: 'role', referenceId: DEFAULT_APPROVER_SET },
+          ],
+        },
+        expectedRevision: 0,
+        requestId: subject.startRequest,
+        actorId: 'system',
+        at: new Date().toISOString(),
+      });
+    } catch (error) {
+      // Another instance starting beside this one saved it first.
+      if (!(
+        error instanceof ParameterConfigurationError &&
+        error.code === 'CONFIGURATION_CONFLICT'
+      ))
+        throw error;
+    }
   }
 }

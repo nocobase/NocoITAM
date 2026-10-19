@@ -114,6 +114,52 @@ describe('procurement', () => {
     await app.destroy();
   });
 
+  it('shows the order flow and approver range to readers and lets only the settings change it', async () => {
+    const path = '/api/itam/purchase-orders/lifecycle/approvers';
+    const range = await app.request(path, manager);
+    expect(range.status).toBe(200);
+    expect(
+      ((await range.json()) as { data: { anyone: boolean } }).data.anyone,
+    ).toBe(true);
+    const flow = await app.request(
+      '/api/itam/purchase-orders/lifecycle',
+      manager,
+    );
+    expect(
+      (
+        (await flow.json()) as {
+          data: { description: { stateInfo: { name: string }[] } };
+        }
+      ).data.description.stateInfo.map((state) => state.name),
+    ).toEqual([
+      'draft',
+      'pendingApproval',
+      'approved',
+      'rejected',
+      'ordered',
+      'partiallyReceived',
+      'completed',
+      'cancelled',
+    ]);
+    const body = JSON.stringify({
+      anyone: true,
+      roles: [],
+      users: [],
+      revision: 0,
+      requestId: 'r1',
+    });
+    const put = (who?: { user: string; role: 'employee' | 'manager' }) =>
+      app.request(path, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body,
+        ...(who ?? {}),
+      });
+    expect((await put()).status).toBe(401);
+    expect((await put({ user: 'eve', role: 'employee' })).status).toBe(403);
+    expect((await put(manager)).status).toBe(200);
+  });
+
   it('runs request → approval → order → receipt → stock-in, generating records', async () => {
     const created = await post('purchase-orders', {
       reason: 'newHire',

@@ -1,17 +1,20 @@
 import {
   defineEffect,
   defineLifecycle,
-  normalizeReviewerSelections,
   type GuardVerdict,
   type JsonObject,
   type Lifecycle,
   type LifecycleRecord,
   type ParameterGroup,
-  type ReviewerSelection,
   type TransitionContext,
 } from '@nocobase/lifecycle';
 
 import { requestTitle } from '../providers/itam/approvals.js';
+import {
+  approverRangeGroup,
+  DEFAULT_APPROVER_RANGE,
+  type ApproverRangeParameters,
+} from './approver-range.js';
 import type { Row } from '../providers/itam/collection-query.js';
 import type { ItamNotifier } from '../providers/itam/notifier.js';
 
@@ -57,51 +60,16 @@ export interface DisposalLifecycleServices {
   readonly notifier: ItamNotifier;
 }
 
-export interface DisposalParameters {
-  /** Who a submitter may ask to approve; see `approverRangeGroup`. */
-  readonly approverRange: readonly ReviewerSelection[];
-}
-
 export interface DisposalTypes {
   record: DisposalRecord;
   state: DisposalState;
-  parameters: DisposalParameters;
+  parameters: ApproverRangeParameters;
   services: DisposalLifecycleServices;
 }
 
-/**
- * Who an approver range may name (2026-10-18): everyone who may approve a
- * disposal (`anyone`, the one reference `*`), a permission set by key
- * (`role`), or a user by id. Each selection is a group of its own, so the
- * range is their union, always narrowed to the people who hold the approval.
- */
-export const APPROVER_SELECTOR_TYPES = ['anyone', 'role', 'user'] as const;
-
-/** Before an administrator narrows it: whoever may approve, as always. */
-export const DEFAULT_APPROVER_RANGE: readonly ReviewerSelection[] = [
-  { group: 1, type: 'anyone', referenceId: '*' },
-];
-
-/**
- * 设置 → 报废流程: whom a submitter may pick as the approver. Read live, when
- * a disposal is submitted and when the picker lists the candidates; a
- * request already waiting keeps the approver it asked. Never rename its key,
- * and raise `schemaVersion` only with a migration of the stored versions.
- */
-export const approverRangeGroup: ParameterGroup = {
-  key: 'disposalApprovers',
-  title: 'Approvers',
-  schemaVersion: 1,
-  fields: {
-    approverRange: {
-      type: 'reviewers',
-      title: 'Who may be asked to approve',
-      parse: (value) =>
-        normalizeReviewerSelections(value, APPROVER_SELECTOR_TYPES),
-      bindings: [{ transition: 'submit' }],
-    },
-  },
-};
+/** 设置 → 流程 → 报废: whom a submitter may pick as the approver. */
+export const disposalApproverRange: ParameterGroup =
+  approverRangeGroup('disposalApprovers');
 
 type Context = TransitionContext<DisposalTypes>;
 
@@ -257,7 +225,7 @@ export const disposalLifecycle: Lifecycle<DisposalTypes> =
     parameters: { approverRange: DEFAULT_APPROVER_RANGE },
     parameterConfiguration: {
       readMode: 'live',
-      groups: [approverRangeGroup],
+      groups: [disposalApproverRange],
     },
     states: [
       'draft',

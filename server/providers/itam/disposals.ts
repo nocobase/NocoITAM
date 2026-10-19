@@ -726,7 +726,7 @@ export function createDisposalService(dependencies: {
     async submit(id, approverId, context, conditions) {
       // Asked before the transaction opens: who holds which permission set
       // is read outside SQLite's one connection.
-      if (approverId && !(await approvers.mayApproveDisposal(approverId)))
+      if (approverId && !(await approvers.mayApprove('disposal', approverId)))
         throw new BusinessRuleError(
           'Choose an approver from the range set for disposals',
           'APPROVER_NOT_IN_RANGE',

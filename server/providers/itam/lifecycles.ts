@@ -109,6 +109,11 @@ export function createItamLifecycleRuntime(dependencies: {
         notifier,
       };
     },
+    // 设置 → 流程 → 采购's approver range, read live on every submission.
+    parameterConfiguration: {
+      store: lifecycleParameterStore(database),
+      scope: () => LIFECYCLE_PARAMETER_SCOPE,
+    },
   });
   return runtime;
 }
