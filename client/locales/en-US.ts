@@ -2683,9 +2683,10 @@ const messages = {
     flows: {
       title: 'Flows',
       description:
-        'Every step of a purchase order, a repair and a disposal from start to end, and whom a submitter may ask to approve',
+        'Every step of a purchase order, a repair, a stocktake and a disposal from start to end, and whom a submitter may ask to approve',
       procurement: 'Procurement',
       repairs: 'Repairs',
+      audits: 'Stocktakes',
       disposals: 'Disposals',
       diagram: 'Flowchart',
       diagramHint:
@@ -2913,6 +2914,15 @@ const messages = {
     },
   },
   audits: {
+    // The moves on Settings → Flows → Stocktakes, by the lifecycle's
+    // transition names.
+    transitions: {
+      $create: 'Create',
+      start: 'Start',
+      finish: 'Finish counting',
+      settle: 'Resolve the differences',
+      cancel: 'Cancel',
+    },
     title: 'Audits',
     object: 'audit task',
     new: 'New audit task',

@@ -1,5 +1,6 @@
 import type { DatabaseAuthorizationConditions } from '@nocobase/app-plugin-authorization/server';
 import type { DatabaseConnection, DatabaseManager } from '@nocobase/db';
+import type { JsonObject, LifecycleRuntime } from '@nocobase/lifecycle';
 import {
   createServiceToken,
   type ServiceToken,
@@ -26,7 +27,11 @@ import {
   type DeleteImpact,
 } from './errors.js';
 import type { HistoryService } from './history.js';
-import type { ItamNotifier } from './notifier.js';
+import {
+  AUDIT_TASK_LIFECYCLE,
+  type AuditTaskState,
+} from '../../lifecycles/audit-tasks.js';
+import { lifecycleRefusal } from './lifecycles.js';
 import { today } from './dates.js';
 
 /**
@@ -198,6 +203,8 @@ export const auditServiceToken: ServiceToken<AuditService> =
 const JSON_FIELDS = ['scope', 'executorIds'] as const;
 const LIFECYCLE_FIELDS = new Set([
   'status',
+  'statusChangedAt',
+  'lifecycleVersion',
   'expectedCount',
   'countedCount',
   'differenceCount',
@@ -210,9 +217,9 @@ export function createAuditService(dependencies: {
   database: DatabaseManager;
   history: HistoryService;
   devices: DeviceService;
-  notifier: ItamNotifier;
+  lifecycles: LifecycleRuntime;
 }): AuditService {
-  const { database, history, devices, notifier } = dependencies;
+  const { database, history, devices, lifecycles } = dependencies;
   const definition = AUDIT_TASKS_COLLECTION;
   const records = createRecordHelpers(database, history, definition, {
     jsonFields: JSON_FIELDS,
@@ -288,10 +295,74 @@ export function createAuditService(dependencies: {
     return { expected, counted, differences };
   };
 
+  /**
+   * Fires a transition in the operation's transaction (2026-10-19,
+   * server/lifecycles/audit-tasks.ts): the runtime checks the state and the
+   * version, and writes the state, the fields the transition accepts and
+   * its log entry. The change log keeps its status line, and the move's own
+   * timeline line (`summary`) is written as before.
+   */
+  const move = async (
+    connection: DatabaseConnection,
+    task: Row,
+    transition: string,
+    context: OperationContext,
+    input: JsonObject,
+    summary: string,
+    payload: Record<string, unknown> = {},
+  ): Promise<void> => {
+    const id = String(task.id);
+    let next: AuditTaskState;
+    try {
+      const result = await lifecycles.fire(
+        AUDIT_TASK_LIFECYCLE,
+        id,
+        transition,
+        {
+          actor: { id: context.actorId },
+          input,
+          transaction: connection,
+        },
+      );
+      next = result.record.status as AuditTaskState;
+    } catch (error) {
+      throw lifecycleRefusal(error);
+    }
+    await history.log(
+      {
+        subjectType: 'auditTasks',
+        subjectId: id,
+        action: 'statusChange',
+        field: 'status',
+        oldValue: task.status,
+        newValue: next,
+        ...context,
+      },
+      connection,
+    );
+    await history.record(
+      {
+        subjectType: 'auditTasks',
+        subjectId: id,
+        type: 'statusChange',
+        summary,
+        payload: { from: task.status, to: next, ...payload },
+        ...context,
+      },
+      connection,
+    );
+  };
+
+  /**
+   * Completes the task: every counted device stamped as audited, then the
+   * move — `finish` straight from counting when nothing differed, `settle`
+   * once the differences are resolved.
+   */
   const complete = async (
     connection: DatabaseConnection,
     task: Row,
     context: OperationContext,
+    transition: 'finish' | 'settle',
   ) => {
     const items = await connection.query
       .selectFrom('auditItems')
@@ -326,14 +397,13 @@ export function createAuditService(dependencies: {
         connection,
       );
     }
-    await records.setStatus(
+    await move(
       connection,
       task,
-      'completed',
+      transition,
       context,
+      { completedAt: now.toISOString(), differences: 0 },
       'Audit completed',
-      {},
-      { completedAt: now },
     );
   };
 
@@ -402,29 +472,35 @@ export function createAuditService(dependencies: {
       const id = crypto.randomUUID();
       const now = new Date();
       await database.transaction(async (connection) => {
-        await connection.query
-          .insertInto('auditTasks')
-          .values({
-            id,
-            name: input.name,
-            scope: input.scope,
-            plannedStart: input.plannedStart,
-            plannedEnd: input.plannedEnd,
-            executorIds: input.executorIds,
-            ownerId: input.ownerId ?? context.actorId,
-            status: 'notStarted',
-            expectedCount: expected,
-            countedCount: 0,
-            differenceCount: 0,
-            notes: input.notes ?? null,
-            cancelReason: null,
-            startedAt: null,
-            completedAt: null,
-            createdById: context.actorId,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .execute();
+        // Created through the lifecycle, which starts it not started and
+        // opens its log.
+        await lifecycles
+          .create(
+            AUDIT_TASK_LIFECYCLE,
+            {
+              id,
+              name: input.name,
+              scope: input.scope,
+              plannedStart: input.plannedStart,
+              plannedEnd: input.plannedEnd,
+              executorIds: input.executorIds,
+              ownerId: input.ownerId ?? context.actorId,
+              expectedCount: expected,
+              countedCount: 0,
+              differenceCount: 0,
+              notes: input.notes ?? null,
+              cancelReason: null,
+              startedAt: null,
+              completedAt: null,
+              createdById: context.actorId,
+              createdAt: now,
+              updatedAt: now,
+            },
+            { actor: { id: context.actorId }, transaction: connection },
+          )
+          .catch((error: unknown) => {
+            throw lifecycleRefusal(error);
+          });
         await history.log(
           {
             subjectType: 'auditTasks',
@@ -496,6 +572,14 @@ export function createAuditService(dependencies: {
           .deleteFrom('auditItems')
           .where('auditTaskId', '=', id)
           .execute();
+        // Its lifecycle log goes with it: the tables name records by id and
+        // hold no key to remove them by.
+        for (const table of ['lifecycleEffectRuns', 'lifecycleTransitions'])
+          await connection.query
+            .deleteFrom(table)
+            .where('lifecycle', '=', AUDIT_TASK_LIFECYCLE)
+            .where('recordId', '=', id)
+            .execute();
         await connection.query
           .deleteFrom('auditTasks')
           .where('id', '=', id)
@@ -598,79 +682,65 @@ export function createAuditService(dependencies: {
 
     previewScope: async (scope) => (await resolveScope(scope)).length,
 
-    async start(id, context, conditions) {
-      let executors: readonly string[] = [];
-      let name = '';
-      const row = await records.mutate(
-        id,
-        conditions,
-        async (connection, task) => {
-          records.requireStatus(task, ['notStarted'], 'start');
-          const scope = (task.scope ?? {}) as AuditScope;
-          const deviceIds = await resolveScope(scope, connection);
-          const now = new Date();
-          for (const deviceId of deviceIds) {
-            const device = await connection.query
-              .selectFrom('devices')
-              .select(['locationId', 'assigneeType', 'assigneeId', 'status'])
-              .where('id', '=', deviceId)
-              .executeTakeFirst<Row>();
-            await connection.query
-              .insertInto('auditItems')
-              .values({
-                id: crypto.randomUUID(),
-                auditTaskId: id,
-                deviceId,
-                label: null,
-                bookLocationId: device?.locationId ?? null,
-                bookAssigneeType: device?.assigneeType ?? null,
-                bookAssigneeId: device?.assigneeId ?? null,
-                bookStatus: device?.status ?? null,
-                result: 'notCounted',
-                actualLocationId: null,
-                actualAssigneeId: null,
-                actualAssigneeType: null,
-                actualStatus: null,
-                notes: null,
-                resolution: 'unresolved',
-                resolvedAt: null,
-                countedById: null,
-                countedAt: null,
-                createdAt: now,
-                updatedAt: now,
-              })
-              .execute();
-          }
-          await recount(connection, id);
-          await records.setStatus(
-            connection,
-            task,
-            'inProgress',
-            context,
-            `Started with ${deviceIds.length} device(s)`,
-            { expected: deviceIds.length },
-            { startedAt: now },
-          );
-          executors = Array.isArray(task.executorIds)
-            ? (task.executorIds as string[])
-            : [];
-          name = String(task.name);
-        },
-      );
-      await notifier.notify({
-        key: `auditTask:${id}:started`,
-        to: executors,
-        actorId: context.actorId,
-        title: { key: 'notifications.auditStarted', params: { name } },
-        body: {
-          key: 'notifications.auditStartedBody',
-          params: { date: String(row.plannedEnd) },
-        },
-        url: `/audits/${id}`,
-        source: { type: 'auditTask', referenceId: id },
-      });
-      return row;
-    },
+    // The executors hear of it through the lifecycle's effect once the
+    // transaction commits.
+    start: (id, context, conditions) =>
+      records.mutate(id, conditions, async (connection, task) => {
+        // A task already started is refused by the transition below, and
+        // the snapshot taken here rolls back with it.
+        const scope = (task.scope ?? {}) as AuditScope;
+        const deviceIds = await resolveScope(scope, connection);
+        const now = new Date();
+        for (const deviceId of deviceIds) {
+          const device = await connection.query
+            .selectFrom('devices')
+            .select(['locationId', 'assigneeType', 'assigneeId', 'status'])
+            .where('id', '=', deviceId)
+            .executeTakeFirst<Row>();
+          await connection.query
+            .insertInto('auditItems')
+            .values({
+              id: crypto.randomUUID(),
+              auditTaskId: id,
+              deviceId,
+              label: null,
+              bookLocationId: device?.locationId ?? null,
+              bookAssigneeType: device?.assigneeType ?? null,
+              bookAssigneeId: device?.assigneeId ?? null,
+              bookStatus: device?.status ?? null,
+              result: 'notCounted',
+              actualLocationId: null,
+              actualAssigneeId: null,
+              actualAssigneeType: null,
+              actualStatus: null,
+              notes: null,
+              resolution: 'unresolved',
+              resolvedAt: null,
+              countedById: null,
+              countedAt: null,
+              createdAt: now,
+              updatedAt: now,
+            })
+            .execute();
+        }
+        await recount(connection, id);
+        await move(
+          connection,
+          task,
+          'start',
+          context,
+          {
+            startedAt: now.toISOString(),
+            // Who is told, and who started it: what the executors hear.
+            executorIds: Array.isArray(task.executorIds)
+              ? (task.executorIds as string[])
+              : [],
+            startedById: context.actorId,
+          },
+          `Started with ${deviceIds.length} device(s)`,
+          { expected: deviceIds.length },
+        );
+      }),
 
     count: (id, entries, context, conditions) =>
       records.mutate(id, conditions, async (connection, task) => {
@@ -878,18 +948,18 @@ export function createAuditService(dependencies: {
           .where('result', '=', 'notCounted')
           .execute();
         const totals = await recount(connection, id);
-        if (totals.differences === 0) {
-          await complete(connection, task, context);
-        } else {
-          await records.setStatus(
+        if (totals.differences === 0)
+          await complete(connection, task, context, 'finish');
+        else
+          await move(
             connection,
             task,
-            'pendingDifferences',
+            'finish',
             context,
+            { differences: totals.differences },
             `Count finished with ${totals.differences} difference(s)`,
             totals,
           );
-        }
       }),
 
     resolve: (id, entries, context, conditions) =>
@@ -1086,27 +1156,24 @@ export function createAuditService(dependencies: {
           },
           connection,
         );
-        if (totals.differences === 0) await complete(connection, task, context);
+        if (totals.differences === 0)
+          await complete(connection, task, context, 'settle');
       }),
 
     cancel: (id, reason, context, conditions) =>
       records.mutate(id, conditions, async (connection, task) => {
-        records.requireStatus(
-          task,
-          // A task not started yet has nothing to call off: it is deleted.
-          ['inProgress', 'pendingDifferences'],
-          'cancel',
-        );
         if (!reason.trim())
           throw new ValidationError('reason is required', 'reason');
-        await records.setStatus(
+        // From where — under way, not before it started — is the
+        // transition's.
+        await move(
           connection,
           task,
-          'cancelled',
+          'cancel',
           context,
+          { cancelReason: reason },
           `Cancelled: ${reason}`,
           { reason },
-          { cancelReason: reason },
         );
       }),
   };

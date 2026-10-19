@@ -32,7 +32,11 @@ import {
   useSaveApproverRange,
   type ApproverRange,
 } from '@/lib/itam/lifecycle';
-import { DISPOSALS_PATH, REPAIRS_PATH } from '@/lib/itam/operations';
+import {
+  AUDITS_PATH,
+  DISPOSALS_PATH,
+  REPAIRS_PATH,
+} from '@/lib/itam/operations';
 import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
 import { useReferenceNames } from '@/lib/itam/references';
 import { roleTitle } from '@/lib/itam/user-roles';
@@ -54,6 +58,14 @@ const FLOWS = [
     transitions: 'repairs.transitions',
     approvals: false,
   },
+  // A stocktake is not approved either (2026-10-19).
+  {
+    key: 'audits',
+    path: AUDITS_PATH,
+    statusEnum: 'auditStatus',
+    transitions: 'audits.transitions',
+    approvals: false,
+  },
   {
     key: 'disposals',
     path: DISPOSALS_PATH,
@@ -67,7 +79,8 @@ type Flow = (typeof FLOWS)[number];
 
 /**
  * 设置 → 流程 (2026-10-19, docs/adr/0001-record-lifecycles.md): the record
- * lifecycles, a tab each — purchase orders, repairs, disposals — with the
+ * lifecycles, a tab each — purchase orders, repairs, stocktakes, disposals —
+ * with the
  * one thing an administrator sets on those approved, whom a submitter may
  * ask to approve, above
  * its flowchart as declared in source, which nobody edits here. The range
