@@ -5,8 +5,8 @@ Read this before writing a service, a route, a transaction, a query on dates or 
 Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small; each rule is as it was written, with the date it was decided.
 
 - **A record lifecycle** (2026-10-18, [ADR 0001](../../docs/adr/0001-record-lifecycles.md)):
-  disposals and, since 2026-10-19, purchase orders, repairs and stocktakes
-  move only through
+  disposals and, since 2026-10-19, purchase orders, repairs, stocktakes and
+  devices move only through
   `@nocobase/lifecycle` — the definitions in `server/lifecycles/`, the one
   runtime in
   `server/providers/itam/lifecycles.ts`. A service fires the transition
@@ -21,6 +21,15 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   had. Deleting such a record deletes its rows in `lifecycleTransitions` and
   `lifecycleEffectRuns`; the demo lists both as dependents. Read the
   development guide's `references/lifecycle.md` before adding the next one.
+- A device's moves (2026-10-19, `server/lifecycles/devices.ts`) are the
+  device service's alone: repairs, disposals, stocktakes, receiving, the
+  demo and the assistant call `devices.transition()`, `correctStatus()` and
+  the other operations, never the runtime, because the holder, the ledger
+  and the timeline move with the state. Where each may start is still
+  `OPERATION_FROM`, which the definition is built from and the assistant's
+  plans check; change it there. A device is created through the runtime
+  (`$create`, always 库存中), and the demo puts a stranded device back with
+  a correction, not a write.
 - A request's approver range (设置 → 流程; disposals 2026-10-18, purchase
   orders 2026-10-19) is its lifecycle's `approverRange` parameter, not an
   `itamSettings` key — one group per kind (`server/lifecycles/approver-range.ts`).

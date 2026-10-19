@@ -1,6 +1,11 @@
 import type { DatabaseAuthorizationConditions } from '@nocobase/app-plugin-authorization/server';
 import type { DatabaseConnection, DatabaseManager } from '@nocobase/db';
 import {
+  SYSTEM_ACTOR,
+  type JsonObject,
+  type LifecycleRuntime,
+} from '@nocobase/lifecycle';
+import {
   createServiceToken,
   type ServiceToken,
 } from '@nocobase/service-provider';
@@ -44,6 +49,8 @@ import type { HistoryService, HistorySource } from './history.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
 import { normalizeSerial } from './device-sources.js';
+import { lifecycleRefusal } from './lifecycles.js';
+import { DEVICE_LIFECYCLE } from '../../lifecycles/devices.js';
 
 /**
  * Individually tracked devices: creation with category / model defaults, the
@@ -324,6 +331,9 @@ const LIFECYCLE_FIELDS = new Set([
   'manufacturerId',
   // Written by receiving an order only.
   'purchaseOrderId',
+  // The lifecycle's own (2026-10-19): only the runtime writes them.
+  'statusChangedAt',
+  'lifecycleVersion',
 ]);
 
 /** What the purchase order decides for a device that came in through one. */
@@ -418,8 +428,35 @@ export function createDeviceService(
   history: HistoryService,
   numbering: NumberingService,
   settings: SettingsService,
+  lifecycles: LifecycleRuntime,
 ): DeviceService {
   const definition = DEVICES_COLLECTION;
+
+  /**
+   * Fires a device's move in the operation's transaction (2026-10-19,
+   * `server/lifecycles/devices.ts`): the runtime checks the state it starts
+   * from, writes the new one, its version and the log entry; the caller
+   * then writes what the move carries along. Returns the state it reached.
+   * A move without a person behind it — the scheduler's — is the system's.
+   */
+  const move = async (
+    connection: DatabaseConnection,
+    id: string,
+    transition: string,
+    context: OperationContext,
+    input: JsonObject = {},
+  ): Promise<DeviceStatus> => {
+    try {
+      const result = await lifecycles.fire(DEVICE_LIFECYCLE, id, transition, {
+        actor: context.actorId ? { id: context.actorId } : SYSTEM_ACTOR,
+        input,
+        transaction: connection,
+      });
+      return result.record.status as DeviceStatus;
+    } catch (error) {
+      throw lifecycleRefusal(error);
+    }
+  };
 
   const findRaw = async (
     id: string,
@@ -677,12 +714,20 @@ export function createDeviceService(
       input.targetId,
       String(device.id),
     );
+    const nextStatus = await move(
+      connection,
+      String(device.id),
+      mode,
+      context,
+      {
+        targetType: input.targetType,
+        targetId: input.targetId,
+      },
+    );
     if (mode === 'transfer')
       await closeActiveAllocation(connection, String(device.id));
     await openAllocation(connection, device, mode, input, context);
-    const nextStatus: DeviceStatus = mode === 'loan' ? 'onLoan' : 'inUse';
     await write(connection, String(device.id), {
-      status: nextStatus,
       assigneeType: input.targetType,
       assigneeId: input.targetId,
       assignedAt: new Date(),
@@ -955,7 +1000,18 @@ export function createDeviceService(
     values: Row,
     context: OperationContext,
   ) => {
-    await connection.query.insertInto('devices').values(values).execute();
+    // Created through the lifecycle, which starts it in stock and opens its
+    // log (2026-10-19); `values` keeps the state for the caller and the
+    // event below, but only the runtime writes it.
+    const { status: _state, ...record } = values;
+    await lifecycles
+      .create(DEVICE_LIFECYCLE, record as JsonObject, {
+        actor: context.actorId ? { id: context.actorId } : SYSTEM_ACTOR,
+        transaction: connection,
+      })
+      .catch((error: unknown) => {
+        throw lifecycleRefusal(error);
+      });
     // One line: the event says it was created and in which status. A bare
     // "create" change-log row beside it read as a second, emptier 创建 —
     // and as a folded "1 field" when the two did merge.
@@ -1084,13 +1140,15 @@ export function createDeviceService(
       conditions,
       'return',
       async (connection, device) => {
-        const nextStatus = input.nextStatus ?? 'inStock';
-        if (!RETURN_TARGETS.includes(nextStatus)) {
+        if (!RETURN_TARGETS.includes(input.nextStatus ?? 'inStock')) {
           throw new ValidationError(
             'Invalid status after return',
             'nextStatus',
           );
         }
+        const nextStatus = await move(connection, id, 'return', context, {
+          nextStatus: input.nextStatus ?? 'inStock',
+        });
         await closeActiveAllocation(connection, id);
         await connection.query
           .insertInto('allocations')
@@ -1114,7 +1172,6 @@ export function createDeviceService(
           })
           .execute();
         await write(connection, id, {
-          status: nextStatus,
           assigneeType: null,
           assigneeId: null,
           assignedAt: null,
@@ -1574,6 +1631,14 @@ export function createDeviceService(
           .where('id', '=', id)
           .where((eb) => compileAuthzScope(eb, conditions.scope))
           .execute();
+        // Its lifecycle log goes with it: the tables name records by id and
+        // hold no key to remove them by.
+        for (const table of ['lifecycleEffectRuns', 'lifecycleTransitions'])
+          await connection.query
+            .deleteFrom(table)
+            .where('lifecycle', '=', DEVICE_LIFECYCLE)
+            .where('recordId', '=', id)
+            .execute();
         await history.log(
           {
             subjectType: 'devices',
@@ -1659,6 +1724,11 @@ export function createDeviceService(
           id,
         );
         const targetLabelText = targetLabel(target, input.reservedForType);
+        await move(connection, id, 'reserve', context, {
+          reservedForType: input.reservedForType,
+          reservedForId: input.reservedForId,
+          reservedUntil: input.reservedUntil,
+        });
         await write(connection, id, {
           reservedForType: input.reservedForType,
           reservedForId: input.reservedForId,
@@ -1681,6 +1751,7 @@ export function createDeviceService(
       mutate(id, conditions, 'unreserve', async (connection, device) => {
         if (!device.reservedForId)
           throw new BusinessRuleError('Device is not reserved', 'NOT_RESERVED');
+        await move(connection, id, 'unreserve', context);
         await write(connection, id, {
           reservedForType: null,
           reservedForId: null,
@@ -1709,9 +1780,9 @@ export function createDeviceService(
         conditions,
         'markLost',
         async (connection, device) => {
+          await move(connection, id, 'markLost', context, { notes });
           await closeActiveAllocation(connection, id);
           await write(connection, id, {
-            status: 'lost',
             assigneeType: null,
             assigneeId: null,
             assignedAt: null,
@@ -1731,7 +1802,7 @@ export function createDeviceService(
 
     restore: (id, context, conditions) =>
       mutate(id, conditions, 'restore', async (connection, device) => {
-        await write(connection, id, { status: 'inStock' });
+        await move(connection, id, 'restore', context);
         await statusChange(
           connection,
           device,
@@ -1743,8 +1814,8 @@ export function createDeviceService(
 
     retire: (id, context, conditions) =>
       mutate(id, conditions, 'retire', async (connection, device) => {
+        await move(connection, id, 'retire', context);
         await write(connection, id, {
-          status: 'retired',
           reservedForType: null,
           reservedForId: null,
           reservedUntil: null,
@@ -1754,7 +1825,7 @@ export function createDeviceService(
 
     reactivate: (id, context, conditions) =>
       mutate(id, conditions, 'reactivate', async (connection, device) => {
-        await write(connection, id, { status: 'inStock' });
+        await move(connection, id, 'reactivate', context);
         await statusChange(
           connection,
           device,
@@ -1778,19 +1849,20 @@ export function createDeviceService(
               'DISPOSAL_ONLY',
             );
           }
-          const clearsAssignee = !IN_USE_STATUSES.includes(input.status);
-          if (clearsAssignee) await closeActiveAllocation(connection, id);
-          await write(connection, id, {
+          await move(connection, id, 'correct', context, {
             status: input.status,
-            ...(clearsAssignee
-              ? {
-                  assigneeType: null,
-                  assigneeId: null,
-                  assignedAt: null,
-                  expectedReturnDate: null,
-                }
-              : {}),
+            reason: input.reason,
           });
+          const clearsAssignee = !IN_USE_STATUSES.includes(input.status);
+          if (clearsAssignee) {
+            await closeActiveAllocation(connection, id);
+            await write(connection, id, {
+              assigneeType: null,
+              assigneeId: null,
+              assignedAt: null,
+              expectedReturnDate: null,
+            });
+          }
           await statusChange(
             connection,
             device,
@@ -1811,37 +1883,21 @@ export function createDeviceService(
         const device = await findRaw(id, tx);
         if (!device) throw new RecordNotFoundError('devices', id);
         requireStatus(device, operation);
-        let next: DeviceStatus;
-        const values: Row = {};
-        switch (operation) {
-          case 'sendToRepair':
-            next = 'inRepair';
-            break;
-          case 'repairDone':
-            next = device.assigneeId
-              ? device.expectedReturnDate
-                ? 'onLoan'
-                : 'inUse'
-              : 'inStock';
-            break;
-          case 'markPendingDisposal':
-            next = 'pendingDisposal';
-            await closeActiveAllocation(tx, id);
-            Object.assign(values, {
-              assigneeType: null,
-              assigneeId: null,
-              assignedAt: null,
-              expectedReturnDate: null,
-              reservedForType: null,
-              reservedForId: null,
-              reservedUntil: null,
-            });
-            break;
-          case 'dispose':
-            next = 'disposed';
-            break;
+        // Back from repair goes to whoever still holds it, or to stock: the
+        // lifecycle routes it by the device's holder.
+        const next = await move(tx, id, operation, context);
+        if (operation === 'markPendingDisposal') {
+          await closeActiveAllocation(tx, id);
+          await write(tx, id, {
+            assigneeType: null,
+            assigneeId: null,
+            assignedAt: null,
+            expectedReturnDate: null,
+            reservedForType: null,
+            reservedForId: null,
+            reservedUntil: null,
+          });
         }
-        await write(tx, id, { ...values, status: next });
         await statusChange(
           tx,
           device,
@@ -1873,6 +1929,11 @@ export function createDeviceService(
         }>();
       for (const device of expired) {
         await database.transaction(async (connection) => {
+          // The scheduler's own move: nobody is behind it.
+          await move(connection, device.id, 'unreserve', {
+            actorId: '',
+            sourceType: 'scheduler',
+          });
           await write(connection, device.id, {
             reservedForType: null,
             reservedForId: null,

@@ -188,3 +188,12 @@ it('shows stocktakes as a flowchart alone, since nothing approves one', () => {
   expect(state.paths.at(-1)).toBe('itam/audits');
   expect(screen.queryByText('settings.flows.approvers')).toBeNull();
 });
+
+it('shows devices as a flowchart alone, last, since nothing approves a move', () => {
+  show('/settings/flows?kind=devices');
+  expect(state.paths.at(-1)).toBe('itam/devices');
+  expect(screen.queryByText('settings.flows.approvers')).toBeNull();
+  expect(screen.getAllByRole('tab').at(-1)?.textContent).toBe(
+    'settings.flows.devices',
+  );
+});

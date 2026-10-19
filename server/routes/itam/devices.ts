@@ -9,6 +9,7 @@ import {
   defineApiRoutes,
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
+import { lifecycleDescriptionView } from '@nocobase/lifecycle';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -24,7 +25,9 @@ import {
   deviceSyncServiceToken,
   historyServiceToken,
 } from '../../providers/index.js';
+import { DEVICE_LIFECYCLE } from '../../lifecycles/devices.js';
 import { narrowBySyncState } from '../../providers/itam/device-review.js';
+import { lifecycleRuntimeToken } from '../../providers/itam/lifecycles.js';
 import {
   COUNT_FIELDS,
   type CountField,
@@ -143,6 +146,22 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
       try {
         const conditions = await decide(context, 'read');
         return context.json({ data: await devices.stats(conditions) });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // 设置 → 流程 → 设备 (2026-10-19): the lifecycle as its flowchart draws
+    // it, from source; nothing about any one device.
+    routes.get('/lifecycle', async (context) => {
+      try {
+        await decide(context, 'read');
+        return context.json({
+          data: lifecycleDescriptionView(
+            app.container.resolve(lifecycleRuntimeToken),
+            DEVICE_LIFECYCLE,
+          ),
+        });
       } catch (error) {
         return errorResponse(context, error);
       }

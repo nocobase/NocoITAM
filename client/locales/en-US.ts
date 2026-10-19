@@ -1434,6 +1434,25 @@ const messages = {
       'Computed: per seat, unit price × total seats × cycles per year; flat, price per cycle × cycles per year. Counts the seats bought, not those assigned',
   },
   devices: {
+    // The moves on Settings > Flows > Devices, by the lifecycle's transition names.
+    transitions: {
+      $create: 'Register in stock',
+      assign: 'Assign',
+      loan: 'Loan',
+      transfer: 'Transfer',
+      return: 'Return',
+      reserve: 'Reserve',
+      unreserve: 'Cancel the reservation',
+      markLost: 'Mark lost',
+      restore: 'Found',
+      retire: 'Retire',
+      reactivate: 'Reactivate',
+      sendToRepair: 'Send to repair',
+      repairDone: 'Back from repair',
+      markPendingDisposal: 'To pending disposal',
+      dispose: 'Dispose',
+      correct: 'Correct the status',
+    },
     title: 'Devices',
     showHiddenFields_one: 'Show {{count}} hidden field',
     showHiddenFields_other: 'Show {{count}} hidden fields',
@@ -2683,11 +2702,12 @@ const messages = {
     flows: {
       title: 'Flows',
       description:
-        'Every step of a purchase order, a repair, a stocktake and a disposal from start to end, and whom a submitter may ask to approve',
+        'Every step of a purchase order, a repair, a stocktake, a disposal and a device from start to end, and whom a submitter may ask to approve',
       procurement: 'Procurement',
       repairs: 'Repairs',
       audits: 'Stocktakes',
       disposals: 'Disposals',
+      devices: 'Devices',
       diagram: 'Flowchart',
       diagramHint:
         'The flow is defined by the system and can only be viewed here; who may take each step is enforced by it too.',

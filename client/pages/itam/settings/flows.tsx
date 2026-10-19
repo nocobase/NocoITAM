@@ -24,6 +24,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiErrorBody } from '@/lib/itam/api';
+import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { errorMessage, formatDate } from '@/lib/itam/format';
 import {
   newRequestId,
@@ -73,14 +74,23 @@ const FLOWS = [
     transitions: 'disposals.transitions',
     approvals: true,
   },
+  // The device itself, which every document above moves (2026-10-19): a
+  // flowchart alone, since nothing approves a device's move.
+  {
+    key: 'devices',
+    path: DEVICES_PATH,
+    statusEnum: 'deviceStatus',
+    transitions: 'devices.transitions',
+    approvals: false,
+  },
 ] as const;
 
 type Flow = (typeof FLOWS)[number];
 
 /**
  * 设置 → 流程 (2026-10-19, docs/adr/0001-record-lifecycles.md): the record
- * lifecycles, a tab each — purchase orders, repairs, stocktakes, disposals —
- * with the
+ * lifecycles, a tab each — purchase orders, repairs, stocktakes, disposals,
+ * devices (2026-10-19) — with the
  * one thing an administrator sets on those approved, whom a submitter may
  * ask to approve, above
  * its flowchart as declared in source, which nobody edits here. The range
