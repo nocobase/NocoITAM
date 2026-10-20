@@ -16,7 +16,6 @@ import { ImportExport } from '@/components/itam/import-export';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useItamList, type ItamRecord } from '@/lib/itam/api';
 import { useDeviceReview } from '@/lib/itam/device-sync';
@@ -384,9 +383,9 @@ function DevicesList(): ReactElement {
  * MDM 核对 from the device list, while a platform is connected (2026-10-20):
  * outlined like the page's other tools, with how many of its to-dos wait —
  * differences, only in MDM, only in the register, as its own tabs count
- * them — in plain figures as the tabs' counts are, amber while any wait
- * (2026-10-20; a tinted box around it read heavy). What matters is said by
- * the count, not by a second filled button beside 创建设备.
+ * them — in plain muted figures as the tabs' counts are (2026-10-20; a
+ * tinted box, then amber, read heavy). What matters is said by the count,
+ * not by a second filled button beside 创建设备.
  */
 function MdmReviewButton(): ReactElement {
   const { t } = useTranslation();
@@ -403,12 +402,7 @@ function MdmReviewButton(): ReactElement {
       <MonitorCheck data-icon='inline-start' />
       {t('deviceSync.review.title')}
       {waiting === undefined ? null : (
-        <span
-          className={cn(
-            'text-sm font-medium tabular-nums',
-            waiting > 0 ? 'text-warning-foreground' : 'text-muted-foreground',
-          )}
-        >
+        <span className='text-sm text-muted-foreground tabular-nums'>
           {waiting}
         </span>
       )}
