@@ -228,7 +228,10 @@ function MasterCreateForm({
               onValueChange={(value) => setTab(value as 'ai' | 'form')}
             >
               <TabsList>
-                <TabsTrigger value='ai' className='text-primary'>
+                <TabsTrigger
+                  value='ai'
+                  className='text-primary data-active:text-primary'
+                >
                   <Sparkles data-icon='inline-start' />
                   {t('procurement.capture.aiTab')}
                 </TabsTrigger>
