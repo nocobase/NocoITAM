@@ -14,6 +14,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   command, because since `@nocobase/app-cli` 1.0 (template beta.49) every
   application command ships in the deployment's `dist/cli`, and one that
   wipes the database must not. Migrations stay immutable once applied.
+  Its demo runs in a bare container with allow-all doubles and no accounts
+  plugins, so its approver directory lets anyone be asked (2026-10-20,
+  `DemoContainer`): the stored approver range names the IT Asset Manager
+  set, which nobody holds there, and refused the demo's stand-in approver.
 - Seeds carry data, not UI text: the category seed writes names and field
   labels in the deployment's default locale (`APP_DEFAULT_LOCALE`, else
   `i18n.defaultLocale` in `config.yml`) because a seed's context holds only

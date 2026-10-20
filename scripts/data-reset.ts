@@ -11,8 +11,16 @@ import {
 } from '@nocobase/app-server/database';
 import { resolveStandaloneAppRuntime } from '@nocobase/app-server/node';
 import { databaseManagerToken } from '@nocobase/db';
-import { ServiceContainer } from '@nocobase/service-provider';
+import {
+  ServiceContainer,
+  type ServiceFactory,
+  type ServiceToken,
+} from '@nocobase/service-provider';
 
+import {
+  approverDirectoryToken,
+  type ApproverDirectory,
+} from '../server/providers/itam/approvers.js';
 import { demoAccountUsernames } from '../server/providers/itam/demo.js';
 import ItamProvider, {
   demoServiceToken,
@@ -92,6 +100,30 @@ const ITAM_TABLES = [
  * (2026-10-17). Every other settings row is wiped as before.
  */
 const KEPT_SETTINGS_PREFIX = 'agents-';
+
+/**
+ * The demo's container: the provider's own services, except that anyone may
+ * be asked to approve. The authorization double below allows everything,
+ * but the approver range stored in the database still names the IT Asset
+ * Manager set, and without the accounts plugins nobody holds it — so the
+ * demo's stand-in approver was refused on submit (`APPROVER_NOT_IN_RANGE`,
+ * since purchase orders got a range on 2026-10-19). The range agrees with
+ * the authorization double instead; the running application checks it as
+ * written.
+ */
+class DemoContainer extends ServiceContainer {
+  override singleton<T>(token: ServiceToken<T>, factory: ServiceFactory<T>) {
+    if (token !== (approverDirectoryToken as ServiceToken<unknown>))
+      return super.singleton(token, factory);
+    super.singleton(token, (resolver) => {
+      const directory = factory(resolver) as ApproverDirectory;
+      return {
+        ...directory,
+        mayApprove: async () => true,
+      } satisfies ApproverDirectory as T;
+    });
+  }
+}
 
 function fail(message: string): never {
   console.error(message);
@@ -229,7 +261,7 @@ async function main(): Promise<void> {
       .orderBy('createdAt' as never)
       .executeTakeFirst<{ id: string }>();
     if (!actor) return fail('Sign up a user first; the demo needs an actor.');
-    const container = new ServiceContainer();
+    const container = new DemoContainer();
     container.instance(databaseManagerToken, demoDatabase);
     container.instance(notificationServiceToken, {
       send: async (input: { idempotencyKey: string }) => ({
