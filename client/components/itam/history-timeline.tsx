@@ -596,12 +596,8 @@ function TimelineRow({
         <span className='flex h-6 w-5 shrink-0 items-center justify-center'>
           <HistoryIcon
             type={event?.type}
-            className={cn(
-              'size-3.5',
-              item.origin === 'agent' || item.origin === 'ai'
-                ? 'text-primary'
-                : 'text-muted-foreground',
-            )}
+            // One colour: the AI tag on the line says who wrote it.
+            className='size-3.5 text-muted-foreground'
           />
         </span>
       )}
@@ -685,15 +681,26 @@ function TimelineRow({
                   </span>
                 ) : null}
                 {folded.length > 0 ? (
-                  // Right after the sentence that counts them (2026-10-20).
+                  // Right after the sentence that counts them, the chevron
+                  // the folded edits around it use (2026-10-20).
                   <>
                     {' '}
                     <button
                       type='button'
-                      className='text-link underline-offset-4 hover:underline'
+                      aria-expanded={open}
+                      aria-label={t(
+                        open ? 'history.hideFields' : 'history.showFields',
+                      )}
+                      title={t(
+                        open ? 'history.hideFields' : 'history.showFields',
+                      )}
+                      className='inline-flex size-5 items-center justify-center rounded align-middle text-muted-foreground hover:bg-accent hover:text-foreground'
                       onClick={() => setOpen((current) => !current)}
                     >
-                      {t(open ? 'history.hideFields' : 'history.showFields')}
+                      <ChevronDown
+                        className={`size-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
+                        aria-hidden='true'
+                      />
                     </button>
                   </>
                 ) : null}
