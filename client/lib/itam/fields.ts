@@ -127,6 +127,11 @@ export interface FieldDefinition {
   /** Translation key explaining why the field is read-only when it is. */
   readonly readonlyHint?: string;
   /**
+   * Takes the whole row of a two-column form, as a long text does
+   * (2026-10-20): a new repair's device, as wide as its fault.
+   */
+  readonly wide?: boolean;
+  /**
    * A person's position: chosen from the positions of the department in
    * this field of the same record (2026-10-06); `department` is that
    * department, resolved against the values.

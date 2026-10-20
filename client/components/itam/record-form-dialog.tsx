@@ -240,7 +240,7 @@ export function RecordFormDialog({
   const twoColumns = columns === 2;
   // In two columns a long text keeps the whole row.
   const cell = (field: FieldDefinition) =>
-    twoColumns && field.type === 'textarea'
+    twoColumns && (field.type === 'textarea' || field.wide)
       ? 'grid gap-1.5 sm:col-span-2'
       : 'grid gap-1.5';
   const renderField = (field: FieldDefinition): ReactNode => {

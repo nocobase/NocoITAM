@@ -2765,6 +2765,7 @@ const zhCN: AppResource = {
       repairs_one: '修过 {{count}} 次',
       repairs_other: '修过 {{count}} 次',
     },
+    deviceFixed: '从设备页创建，设备不可更改',
     triage: {
       ask: '诊断',
       again: '重新诊断',

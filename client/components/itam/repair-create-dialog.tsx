@@ -126,11 +126,26 @@ function RepairForm({
 }): ReactElement {
   const { t } = useTranslation();
   const currentUserId = useCurrentUserId();
-  const fields = fieldsOf(
-    deviceId ? REPAIR_CREATE_FIELDS : ['deviceId', ...REPAIR_CREATE_FIELDS],
+  // The device leads the form either way (2026-10-20); opened from its
+  // page it is shown, fixed, rather than left out.
+  const fields = fieldsOf(['deviceId', ...REPAIR_CREATE_FIELDS]).map((field) =>
+    field.key === 'deviceId'
+      ? {
+          ...field,
+          // As wide as the fault under it.
+          wide: true,
+          ...(deviceId
+            ? {
+                readonlyWhen: () => true,
+                readonlyHint: 'repairs.deviceFixed',
+              }
+            : {}),
+        }
+      : field,
   );
   const [values, setValues] = useState<Record<string, unknown>>(() =>
     initialFormValues(fields, {
+      ...(deviceId ? { deviceId } : {}),
       sentAt: todayIso(),
       // Whoever files it follows it through until they name someone else.
       ...(currentUserId ? { ownerId: currentUserId } : {}),

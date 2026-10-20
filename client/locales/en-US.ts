@@ -2931,6 +2931,7 @@ const messages = {
       repairs_one: 'Repaired {{count}} time',
       repairs_other: 'Repaired {{count}} times',
     },
+    deviceFixed: 'Filed from the device’s page, so the device is fixed',
     triage: {
       ask: 'Diagnose',
       again: 'Diagnose again',

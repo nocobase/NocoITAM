@@ -147,7 +147,7 @@ it('offers nothing to ask when the assistant is not available', () => {
   ).not.toBeInTheDocument();
 });
 
-it('starts with the fault, and turns into a disposal when told to replace', async () => {
+it('starts with the device and its fault, and turns into a disposal when told to replace', async () => {
   const onReplace = vi.fn();
   render(
     <RepairCreateDialog
@@ -157,8 +157,11 @@ it('starts with the fault, and turns into a disposal when told to replace', asyn
       onReplace={onReplace}
     />,
   );
-  // The fault is the form's first field.
-  expect(document.querySelector('input')?.id).toMatch(/faultDescription$/);
+  // The device leads, given; the fault comes next.
+  const inputs = [...document.querySelectorAll('input')];
+  expect(inputs[0]?.id).toMatch(/deviceId$/);
+  expect(inputs[0]?.value).toBe('d1');
+  expect(inputs[1]?.id).toMatch(/faultDescription$/);
   fireEvent.change(field('faultDescription')!, {
     target: { value: 'Screen flickers' },
   });
