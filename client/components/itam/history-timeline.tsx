@@ -888,8 +888,9 @@ function ChangeValue({
       );
     }
     return (
-      // The size of where it sits: a folded list is small, a sentence not.
-      <ul className='space-y-0.5'>
+      // The size of where it sits: a folded list is small, a sentence not;
+      // indented under the field it belongs to.
+      <ul className='space-y-0.5 pl-3'>
         {lines.map((line) => (
           <li key={line.key} className='flex flex-wrap items-baseline gap-x-2'>
             {line.kind ? <KindTag kind={line.kind} t={t} /> : null}
