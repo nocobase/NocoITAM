@@ -204,12 +204,16 @@ export async function checkCategoryReading(
   container: ServiceContainer,
   actorId: string,
   reading: Record<string, unknown>,
+  /** 完善: the category being improved, which is no duplicate of itself. */
+  self: string | null = null,
 ): Promise<Record<string, unknown>> {
   const book = await categoryBook(container, actorId);
   const values: Record<string, unknown> = {};
   const name = asText(reading.name)?.trim();
   if (name) values.name = name;
-  const parent = book.byId.get(asText(reading.parentId) ?? '');
+  // A category is never its own parent.
+  const parentId = asText(reading.parentId) ?? '';
+  const parent = parentId === self ? undefined : book.byId.get(parentId);
   if (parent) {
     values.parentId = parent.id;
     values.appliesTo = parent.appliesTo;
@@ -245,7 +249,7 @@ export async function checkCategoryReading(
       : [],
     duplicates: name
       ? book.rows
-          .filter((row) => same(row.name) === same(name))
+          .filter((row) => row.id !== self && same(row.name) === same(name))
           .map((row) => ({ id: row.id, name: book.path(row) }))
       : [],
   };

@@ -1115,9 +1115,9 @@ const messages = {
     new: 'New category',
     newChild: 'New sub-category',
     noneOfKind: 'No categories of this type yet',
-    suggestedDefaults: 'Suggested rules and defaults',
-    applyDefaults: 'Apply',
-    defaultsApplied: 'Applied',
+    refine: 'Refine',
+    refineTitle: 'Refine {{name}}',
+    refining: 'Refining: suggesting rules, defaults and extended fields…',
     appliesToInherited: 'Inherited from the parent',
     appliesToFromCategory: 'Set by the category',
     hintNotSoftware:
@@ -2120,18 +2120,9 @@ const messages = {
     people: 'People',
   },
   fieldTemplate: {
-    suggest: 'Suggest fields',
-    suggesting: 'Suggesting fields, and the category’s rules and defaults…',
-    suggested:
-      '{{count}} fields added and {{changed}} changed; check them before saving. {{said}}',
     newTag: 'New',
     changedTag: 'Changed',
     changedFrom: 'Was: {{before}}. {{reason}}',
-    suggestedAdded:
-      '{{count}} fields added; check them before saving. {{said}}',
-    suggestedChanged:
-      '{{changed}} fields changed; check them before saving. {{said}}',
-    suggestedNone: 'AI has no fields to add.',
     title: 'Extended fields',
     add: 'Add field',
     addBelow: 'Add a field below',

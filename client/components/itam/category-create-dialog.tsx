@@ -4,13 +4,18 @@ import { Sparkles } from 'lucide-react';
 import {
   Fragment,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactElement,
 } from 'react';
 
 import { CollapsibleText } from '@/components/itam/collapsible-text';
-import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
+import {
+  FieldTemplateEditor,
+  type FieldMarks,
+} from '@/components/itam/field-template-editor';
 import {
   initialFormValues,
   RecordFormDialog,
@@ -28,7 +33,15 @@ import {
   useItamMutations,
   type ItamRecord,
 } from '@/lib/itam/api';
+import {
+  CATEGORY_DEFAULT_KEYS,
+  categoryDefaultsOf,
+} from '@/lib/itam/category-defaults';
 import { parseTemplate, type TemplateField } from '@/lib/itam/field-template';
+import {
+  applyFieldSuggestion,
+  type FieldChange,
+} from '@/lib/itam/field-suggestion';
 import { errorMessage, text } from '@/lib/itam/format';
 import { masterDataByName } from '@/lib/itam/master-data';
 
@@ -43,6 +56,12 @@ export interface CategoryCreateDialogProps {
   readonly derive?: RecordFormDialogProps['derive'];
   /** A sub-category's parent's fields, which it keeps; suggestions add to them. */
   readonly baseTemplate?: readonly TemplateField[];
+  /**
+   * 完善 (2026-10-20): the category to improve. The dialog opens on the
+   * model's suggestions for it — its rules, defaults and fields — marked 修改
+   * and 新增 against what it holds, and saves them onto it.
+   */
+  readonly record?: ItamRecord;
 }
 
 interface CategoryReading {
@@ -56,21 +75,25 @@ interface CategoryReading {
 }
 
 /**
- * 创建分类 with AI 整理 (2026-10-20): the reader writes what the category is
- * — its name, often what it is for — and the model fills the whole form —
+ * 创建分类 with AI 整理, and 完善 of a category (2026-10-20). Creating, the
+ * reader writes what the category is and the model fills the whole form —
  * where it goes, its kind, its rules, its defaults — and the extended fields
- * its records carry, read against the categories on the books
- * (`categoryFields`' sibling task `category`, checked on the server). The
- * fields show beside the form, each removable, and are saved with it.
- * Without a model it is the plain form. Nothing is saved until the reader
- * saves.
+ * its records carry (task `category`, checked on the server). Improving, it
+ * opens on what the model suggests for the category (task
+ * `categoryFields`), each value it changed tagged 修改 with what it was and
+ * each field tagged 新增 or 修改. Either way the fields are edited under the
+ * form, the column beside it holds what the model said and a line to ask
+ * for a change, and nothing is saved until the reader saves.
  */
 export function CategoryCreateDialog(
   props: CategoryCreateDialogProps,
 ): ReactElement {
   if (!props.open) return <Fragment />;
   return (
-    <CategoryCreateForm key={JSON.stringify(props.initial ?? {})} {...props} />
+    <CategoryCreateForm
+      key={JSON.stringify(props.initial ?? props.record?.id ?? {})}
+      {...props}
+    />
   );
 }
 
@@ -81,7 +104,8 @@ function CategoryCreateForm({
   initial,
   title,
   derive,
-  baseTemplate = [],
+  baseTemplate: givenBase,
+  record,
 }: CategoryCreateDialogProps): ReactElement {
   const { t } = useTranslation();
   const meta = masterDataByName('categories')!;
@@ -92,21 +116,29 @@ function CategoryCreateForm({
   const mutations = useItamMutations<ItamRecord>(masterDataPath('categories'));
   const ai = useItamAi();
   const read = useAiReading();
+  const refining = Boolean(record);
+  // What the category holds, which 完善 marks its changes against.
+  const recordTemplate = useMemo(
+    () => (record ? parseTemplate(record.fieldTemplate) : []),
+    [record],
+  );
+  const baseTemplate = record ? recordTemplate : (givenBase ?? []);
   const [values, setValues] = useState<Record<string, unknown>>(() =>
-    initialFormValues(fields, initial),
+    initialFormValues(fields, record ?? initial),
   );
   const [tab, setTab] = useState<'ai' | 'form'>();
-  const current = tab ?? (ai.available ? 'ai' : 'form');
-  const [material, setMaterial] = useState('');
+  const current = refining ? 'form' : (tab ?? (ai.available ? 'ai' : 'form'));
+  const [material, setMaterial] = useState(() => text(record?.name));
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string>();
   const [said, setSaid] = useState<string>();
   // The fields the editor starts from (the parent's, then the suggestions),
-  // re-seeded when AI 整理 answers again; and what it holds now.
+  // re-seeded when the model answers again; and what it holds now.
   const [seed, setSeed] = useState(0);
   const [seedFields, setSeedFields] = useState<readonly TemplateField[]>(
     () => baseTemplate,
   );
+  const [fieldMarks, setFieldMarks] = useState<FieldMarks>();
   const [template, setTemplate] = useState<readonly TemplateField[]>(
     () => baseTemplate,
   );
@@ -120,6 +152,12 @@ function CategoryCreateForm({
     [],
   );
   const [marks, setMarks] = useState<ReadonlySet<string>>(() => new Set());
+  // 完善: the form's values it changed, each with what it was.
+  const [changes, setChanges] = useState<ReadonlyMap<string, string>>(
+    () => new Map(),
+  );
+  // Why it changed each field, kept across adjustments.
+  const reasonsRef = useRef(new Map<string, string>());
   const [duplicates, setDuplicates] = useState<
     NonNullable<CategoryReading['duplicates']>
   >([]);
@@ -129,6 +167,89 @@ function CategoryCreateForm({
     readonly { id: string; from: 'user' | 'ai'; text: string }[]
   >([]);
   const [instruction, setInstruction] = useState('');
+
+  /** A value as the form shows it, for what a changed one was. */
+  const shown = (key: string, value: unknown): string => {
+    if (typeof value === 'boolean')
+      return t(value ? 'common.yes' : 'common.no');
+    const raw = text(value);
+    if (!raw) return '—';
+    if (key === 'depreciationMethod')
+      return t(`enums.depreciationMethod.${raw}`);
+    if (key === 'residualRate')
+      return `${String(Math.round(Number(raw) * 1000) / 10)}%`;
+    return raw;
+  };
+  const describe = (field: TemplateField) =>
+    [
+      field.label,
+      t(`fieldTemplate.types.${field.type}`),
+      field.type === 'select' ? (field.options ?? []).join(', ') : '',
+      field.required ? t('fieldTemplate.required') : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
+  /**
+   * 完善's marks: each value and field that differs from what the category
+   * holds, with what it was (and why, when the model said).
+   */
+  const markAgainstRecord = (
+    nextValues: Readonly<Record<string, unknown>>,
+    nextFields: readonly TemplateField[],
+  ) => {
+    if (!record) return;
+    const note = (before: string, key: string) =>
+      t('fieldTemplate.changedFrom', {
+        before,
+        reason: reasonsRef.current.get(key) ?? '',
+      });
+    setChanges(
+      new Map(
+        fields.flatMap((field) => {
+          const was = record[field.key];
+          const now = nextValues[field.key];
+          const same =
+            typeof now === 'boolean'
+              ? Boolean(was) === now
+              : text(was) === text(now);
+          return same
+            ? []
+            : [[field.key, note(shown(field.key, was), field.key)] as const];
+        }),
+      ),
+    );
+    const held = new Map(recordTemplate.map((field) => [field.key, field]));
+    setFieldMarks({
+      added: new Set(
+        nextFields
+          .filter((field) => !held.has(field.key))
+          .map((field) => field.key),
+      ),
+      changed: new Map(
+        nextFields.flatMap((field) => {
+          const was = held.get(field.key);
+          return was && describe(was) !== describe(field)
+            ? [[field.key, note(describe(was), field.key)] as const]
+            : [];
+        }),
+      ),
+    });
+  };
+
+  /** Puts an answer into the form and the fields' editor. */
+  const fill = (
+    nextValues: Readonly<Record<string, unknown>>,
+    nextFields: readonly TemplateField[],
+  ) => {
+    setValues({ ...nextValues });
+    setSeedFields(nextFields);
+    setTemplate(nextFields);
+    markAgainstRecord(nextValues, nextFields);
+    setSeed((known) => known + 1);
+    setFilled(true);
+    setTab('form');
+  };
 
   /**
    * Asks the model: to fill the form from the material, or to change the
@@ -144,6 +265,7 @@ function CategoryCreateForm({
         material,
         context: {
           parentId: text(values.parentId) || null,
+          ...(record ? { categoryId: text(record.id) } : {}),
           ...(instruction
             ? { form: { ...values, fieldTemplate: template } }
             : {}),
@@ -155,7 +277,6 @@ function CategoryCreateForm({
         setFailure(answer.said || t('masterCapture.nothing'));
         return;
       }
-      setValues((known) => ({ ...known, ...reading.values }));
       setMarks(
         new Set(
           (reading.uncertain ?? []).filter((key) => key !== 'fieldTemplate'),
@@ -165,15 +286,15 @@ function CategoryCreateForm({
       // adjusting, the fields are the form's as the model hands them back.
       const answered = parseTemplate(reading.fieldTemplate);
       const kept = new Set(baseTemplate.map((field) => field.key));
-      const fields = instruction
-        ? answered
-        : [
-            ...baseTemplate,
-            ...answered.filter((field) => !kept.has(field.key)),
-          ];
-      setSeedFields(fields);
-      setTemplate(fields);
-      setSeed((known) => known + 1);
+      fill(
+        { ...values, ...reading.values },
+        instruction
+          ? answered
+          : [
+              ...baseTemplate,
+              ...answered.filter((field) => !kept.has(field.key)),
+            ],
+      );
       setDuplicates(reading.duplicates ?? []);
       if (instruction)
         setTurns((known) => [
@@ -188,14 +309,62 @@ function CategoryCreateForm({
         setSaid(answer.said || undefined);
         setTurns([]);
       }
-      setFilled(true);
-      setTab('form');
     } catch (caught) {
       setFailure(apiErrorBody(caught)?.message ?? errorMessage(caught));
     } finally {
       setBusy(false);
     }
   };
+
+  /** 完善: what the model suggests for the category as it is. */
+  const refine = async () => {
+    if (!record) return;
+    setBusy(true);
+    setFailure(undefined);
+    try {
+      const answer = await read({
+        task: 'categoryFields',
+        material: text(record.name) || 'category',
+        context: { categoryId: text(record.id) },
+      });
+      const reading = answer.reading as {
+        fields?: unknown;
+        changes?: unknown;
+        defaults?: unknown;
+      } | null;
+      const fieldChanges = Array.isArray(reading?.changes)
+        ? (reading.changes as FieldChange[]).filter(
+            (change) => typeof change?.key === 'string',
+          )
+        : [];
+      for (const change of fieldChanges)
+        if (change.reason) reasonsRef.current.set(change.key, change.reason);
+      const suggested = applyFieldSuggestion(
+        recordTemplate,
+        parseTemplate(reading?.fields),
+        fieldChanges,
+        () => '',
+      );
+      const defaults = categoryDefaultsOf(reading?.defaults);
+      const nextValues: Record<string, unknown> = { ...values };
+      for (const key of CATEGORY_DEFAULT_KEYS)
+        if (defaults[key] !== undefined) nextValues[key] = defaults[key];
+      fill(nextValues, suggested.fields);
+      setSaid(answer.said || undefined);
+    } catch (caught) {
+      setFailure(apiErrorBody(caught)?.message ?? errorMessage(caught));
+    } finally {
+      setBusy(false);
+    }
+  };
+  // 完善 asks once, as it opens.
+  const askedRef = useRef(false);
+  useEffect(() => {
+    if (!refining || askedRef.current) return;
+    askedRef.current = true;
+    void refine();
+  });
+
   const organise = () => ask();
   const adjust = (instruction: string) => {
     const words = instruction.trim();
@@ -208,7 +377,10 @@ function CategoryCreateForm({
   };
 
   const close = (next: boolean) => {
-    if (!next) mutations.create.reset();
+    if (!next) {
+      mutations.create.reset();
+      mutations.update.reset();
+    }
     onOpenChange(next);
   };
 
@@ -216,12 +388,18 @@ function CategoryCreateForm({
     <RecordFormDialog
       open={open}
       onOpenChange={close}
-      title={title ?? t('categories.new')}
+      title={
+        title ??
+        (record
+          ? t('categories.refineTitle', { name: text(record.name) })
+          : t('categories.new'))
+      }
       description={
         current === 'ai' ? t('categoryCapture.description') : undefined
       }
       fields={fields}
       columns={2}
+      {...(record ? { recordId: text(record.id) } : {})}
       values={values}
       onValuesChange={(next, key) => {
         setValues(next);
@@ -233,9 +411,10 @@ function CategoryCreateForm({
           });
       }}
       marks={marks}
+      changes={changes}
       {...(derive ? { derive } : {})}
       titleAside={
-        ai.available ? (
+        ai.available && !refining ? (
           <Tabs
             value={current}
             onValueChange={(value) => setTab(value as 'ai' | 'form')}
@@ -256,7 +435,19 @@ function CategoryCreateForm({
         ) : undefined
       }
       replacement={
-        current === 'ai' ? (
+        // 完善 waits for the model's first answer before showing the form.
+        refining && !filled ? (
+          failure ? (
+            <p className='text-sm text-destructive'>
+              <CollapsibleText text={failure} chars={160} lines={3} />
+            </p>
+          ) : (
+            <p className='flex items-center gap-2 py-6 text-sm text-muted-foreground'>
+              <Spinner />
+              {t('categories.refining')}
+            </p>
+          )
+        ) : current === 'ai' ? (
           <div className='grid gap-2'>
             <Textarea
               autoFocus
@@ -300,8 +491,7 @@ function CategoryCreateForm({
           </div>
         ) : undefined
       }
-      // Above the form: what AI 整理 said, and the categories already called
-      // the same; no column beside it, so the fields' table has the width.
+      // Above the form: the categories already called the same.
       prelude={
         filled && current === 'form' && duplicates.length > 0 ? (
           <p className='rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm text-warning-foreground'>
@@ -322,7 +512,7 @@ function CategoryCreateForm({
           </p>
         ) : undefined
       }
-      // Beside the form: what AI 整理 said, and where to ask it for a
+      // Beside the form: what the model said, and where to ask it for a
       // change — the whole form, the fields under it too.
       aside={
         filled ? (
@@ -402,8 +592,8 @@ function CategoryCreateForm({
           </div>
         ) : undefined
       }
-      // The fields are edited right here (2026-10-20): the same editor as
-      // the category's card, embedded, saved with the form.
+      // The fields are edited right here: the same editor as the category's
+      // card, embedded, saved with the form.
       postlude={
         filled ? (
           <FieldTemplateEditor
@@ -415,11 +605,12 @@ function CategoryCreateForm({
               onChange: changeFields,
               showProblems: attempted,
             }}
+            {...(fieldMarks ? { marks: fieldMarks } : {})}
           />
         ) : undefined
       }
-      submitting={mutations.create.isPending}
-      error={mutations.create.error}
+      submitting={mutations.create.isPending || mutations.update.isPending}
+      error={mutations.create.error ?? mutations.update.error}
       onSubmit={async (payload) => {
         // A field still missing its name or key stops the save, and the
         // editor shows where.
@@ -427,11 +618,19 @@ function CategoryCreateForm({
           setAttempted(true);
           throw new Error(t('categoryCapture.fieldsInvalid'));
         }
-        const created = await mutations.create.mutateAsync({
-          ...payload,
-          ...(template.length > 0 ? { fieldTemplate: template } : {}),
-        });
-        onCreated(created);
+        if (record) {
+          const saved = await mutations.update.mutateAsync({
+            id: record.id,
+            input: { ...payload, fieldTemplate: template },
+          });
+          onCreated(saved);
+        } else {
+          const created = await mutations.create.mutateAsync({
+            ...payload,
+            ...(template.length > 0 ? { fieldTemplate: template } : {}),
+          });
+          onCreated(created);
+        }
         onOpenChange(false);
       }}
     />

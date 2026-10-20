@@ -73,7 +73,11 @@ export const READING_GRANTS: Readonly<
   purchaseQuote: [['purchaseOrders', 'update']],
   quoteRecommendation: [['purchaseOrders', 'update']],
   categoryFields: [['categories', 'update']],
-  category: [['categories', 'create']],
+  // 完善 adjusts an existing category through the same task.
+  category: [
+    ['categories', 'create'],
+    ['categories', 'update'],
+  ],
 };
 
 export interface ReadingInput {
@@ -446,7 +450,12 @@ export async function readForForm(
       // A new category's reading is checked before the form takes it.
       reading:
         reading && input.task === 'category'
-          ? await checkCategoryReading(container, actorId, reading)
+          ? await checkCategoryReading(
+              container,
+              actorId,
+              reading,
+              asText(input.context.categoryId) ?? null,
+            )
           : reading && web
             ? citedOnly(reading, web)
             : reading,

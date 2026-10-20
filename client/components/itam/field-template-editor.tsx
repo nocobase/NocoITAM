@@ -9,17 +9,9 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import {
-  useEffect,
-  useState,
-  type DragEvent,
-  type ReactElement,
-  type ReactNode,
-} from 'react';
+import { useEffect, useState, type DragEvent, type ReactElement } from 'react';
 
-import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -102,24 +94,13 @@ const stripIds = (rows: readonly EditRow[]): TemplateField[] =>
       field.type === 'select' ? parseOptions(optionsText) : field.options,
   }));
 
-/** What AI 建议字段 answers: the fields to add, and its one sentence. */
-/** A change 建议字段 proposes to a field the category has, and why. */
-export interface FieldChange {
-  readonly key: string;
-  readonly label?: string;
-  readonly type?: TemplateField['type'];
-  readonly required?: boolean;
-  readonly options?: readonly string[];
-  readonly reason?: string;
-}
-
-export interface FieldSuggestion {
-  readonly fields: readonly TemplateField[];
-  /** Changes to the fields there already (2026-10-20). */
-  readonly changes?: readonly FieldChange[];
-  readonly said: string;
-  /** Shown under the sentence, e.g. the record's suggested defaults. */
-  readonly extra?: ReactNode;
+/**
+ * Which fields 完善 added and which it changed (2026-10-20), by key, each
+ * change with what the field was: tagged 新增 / 修改 until saved.
+ */
+export interface FieldMarks {
+  readonly added: ReadonlySet<string>;
+  readonly changed: ReadonlyMap<string, string>;
 }
 
 export function FieldTemplateEditor({
@@ -127,19 +108,14 @@ export function FieldTemplateEditor({
   editable,
   usage,
   onSave,
-  onSuggest,
   embedded,
+  marks,
 }: {
   readonly value: unknown;
   readonly editable: boolean;
   /** Devices holding a value per key; such fields can be hidden, not deleted. */
   readonly usage?: Readonly<Record<string, number>>;
   readonly onSave: (template: TemplateField[]) => Promise<void>;
-  /**
-   * AI 建议字段 (2026-10-20): asks the model for fields to add; they join the
-   * rows under edit for the reader to check and save. Absent without a model.
-   */
-  readonly onSuggest?: (current: TemplateField[]) => Promise<FieldSuggestion>;
   /**
    * Part of a form rather than a card of its own (2026-10-20, 创建分类): always
    * the editor, with no 保存 or 取消 — the form saves the fields it is told
@@ -149,6 +125,7 @@ export function FieldTemplateEditor({
     readonly onChange: (fields: TemplateField[], valid: boolean) => void;
     readonly showProblems: boolean;
   };
+  readonly marks?: FieldMarks;
 }): ReactElement {
   const { t } = useTranslation();
   const [rows, setRows] = useState(() => withIds(parseTemplate(value)));
@@ -162,17 +139,21 @@ export function FieldTemplateEditor({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
-  const [suggesting, setSuggesting] = useState(false);
-  const [suggested, setSuggested] = useState<string>();
-  const [suggestedExtra, setSuggestedExtra] = useState<ReactNode>();
-  // The rows 建议字段 added, marked until they are saved or dropped
-  // (2026-10-20): beside the fields there already, they looked the same.
+  // The rows 完善 added or changed, marked until they are saved or dropped.
   const [freshRows, setFreshRows] = useState<ReadonlySet<number>>(
-    () => new Set(),
+    () =>
+      new Set(
+        rows.filter((row) => marks?.added.has(row.key)).map((row) => row.rid),
+      ),
   );
-  // Rows it changed: what they were, and why, for the 修改 tag's tooltip.
   const [changedRows, setChangedRows] = useState<ReadonlyMap<number, string>>(
-    () => new Map(),
+    () =>
+      new Map(
+        rows.flatMap((row) => {
+          const note = marks?.changed.get(row.key);
+          return note ? [[row.rid, note] as const] : [];
+        }),
+      ),
   );
   // Problems surface only after a save attempt; a fresh row starts quiet.
   const [attempted, setAttempted] = useState(false);
@@ -270,114 +251,6 @@ export function FieldTemplateEditor({
       ...(row.hidden ? { hidden: true } : {}),
       ...(row.type === 'select' ? { options: row.options ?? [] } : {}),
     }));
-  /** Adds what the model suggests that the template lacks, as new rows. */
-  const suggest = async () => {
-    if (!onSuggest) return;
-    // The card stays as it is while the model answers; the editor opens
-    // with what it suggested (2026-10-20).
-    setSuggesting(true);
-    setSuggested(undefined);
-    setSuggestedExtra(undefined);
-    setError(undefined);
-    try {
-      // The fields as the editor holds them, unsaved ones too, so a second
-      // round does not suggest again what the first added.
-      const answer = await onSuggest(cleaned().filter((field) => field.key));
-      const taken = new Set(rows.map((row) => row.key));
-      const fresh = answer.fields.filter(
-        (field) =>
-          /^[A-Za-z][A-Za-z0-9_]*$/.test(field.key) && !taken.has(field.key),
-      );
-      const added = withIds(
-        fresh.map((field) => ({ ...field, required: false })),
-      );
-      // A change applies to the row of its key, in place; the key stays.
-      const describe = (row: EditRow) =>
-        [
-          row.label,
-          t(`fieldTemplate.types.${row.type}`),
-          row.type === 'select' ? row.optionsText : '',
-          row.required ? t('fieldTemplate.required') : '',
-        ]
-          .filter(Boolean)
-          .join(' · ');
-      const changes = new Map(
-        (answer.changes ?? []).map((change) => [change.key, change]),
-      );
-      const notes = new Map<number, string>();
-      const next = rows
-        .filter((row) => row.key || row.label)
-        .map((row) => {
-          const change = changes.get(row.key);
-          if (!change) return row;
-          const changed: EditRow = {
-            ...row,
-            ...(change.label ? { label: change.label } : {}),
-            ...(change.type && TYPES.includes(change.type)
-              ? { type: change.type }
-              : {}),
-            ...(change.required === undefined
-              ? {}
-              : { required: change.required }),
-            ...(change.options?.length
-              ? {
-                  options: change.options,
-                  optionsText: change.options.join(', '),
-                }
-              : {}),
-          };
-          if (JSON.stringify(changed) === JSON.stringify(row)) return row;
-          // A row not saved yet stays 新增, however often it changes.
-          if (freshRows.has(row.rid)) return changed;
-          notes.set(
-            row.rid,
-            t('fieldTemplate.changedFrom', {
-              before: describe(row),
-              reason: change.reason ?? '',
-            }),
-          );
-          return changed;
-        });
-      setRows([...next, ...added]);
-      setFreshRows(
-        (known) => new Set([...known, ...added.map((row) => row.rid)]),
-      );
-      setChangedRows((known) => new Map([...known, ...notes]));
-      setEditing(true);
-      setSuggestedExtra(answer.extra);
-      setSuggested(
-        fresh.length || notes.size
-          ? t(
-              fresh.length && notes.size
-                ? 'fieldTemplate.suggested'
-                : fresh.length
-                  ? 'fieldTemplate.suggestedAdded'
-                  : 'fieldTemplate.suggestedChanged',
-              {
-                count: fresh.length,
-                changed: notes.size,
-                said: answer.said,
-              },
-            )
-          : answer.said || t('fieldTemplate.suggestedNone'),
-      );
-    } catch (caught) {
-      setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
-    } finally {
-      setSuggesting(false);
-    }
-  };
-  const suggestAction =
-    editable && onSuggest ? (
-      <AiShortcut
-        disabled={suggesting || saving}
-        onClick={() => void suggest()}
-      >
-        {/* Greyed while it runs; the card's own line says what is going on. */}
-        {t('fieldTemplate.suggest')}
-      </AiShortcut>
-    ) : null;
-
   // Embedded, the form is told of every change and saves the fields itself.
   const onEmbeddedChange = embedded?.onChange;
   const valid = problems.size === 0;
@@ -396,8 +269,6 @@ export function FieldTemplateEditor({
     try {
       await onSave(cleaned());
       setEditing(false);
-      setSuggested(undefined);
-      setSuggestedExtra(undefined);
       setFreshRows(new Set());
       setChangedRows(new Map());
     } catch (caught) {
@@ -420,7 +291,6 @@ export function FieldTemplateEditor({
             </div>
             {editable ? (
               <div className='flex items-center gap-3'>
-                {suggestAction}
                 <Button
                   variant='outline'
                   className='shrink-0'
@@ -437,14 +307,6 @@ export function FieldTemplateEditor({
               </div>
             ) : null}
           </div>
-          {suggesting ? (
-            <p className='flex items-center gap-2 text-sm text-muted-foreground'>
-              <Spinner />
-              {t('fieldTemplate.suggesting')}
-            </p>
-          ) : error ? (
-            <p className='text-sm text-destructive'>{error}</p>
-          ) : null}
           {fields.length === 0 ? (
             <p className='text-sm text-muted-foreground'>
               {t('fieldTemplate.empty')}
@@ -496,20 +358,15 @@ export function FieldTemplateEditor({
           </h2>
         </div>
         {/* Nothing has been written yet, so there is nothing to keep or
-              throw away: the card offers only 添加字段 (and AI 建议字段)
-              until a row exists. */}
-        {editable && rows.length === 0 ? suggestAction : null}
+              throw away: the card offers only 添加字段 until a row exists. */}
         {editable && rows.length > 0 && !embedded ? (
           <div className='flex items-center gap-2'>
-            <span className='mr-1'>{suggestAction}</span>
             <Button
               variant='ghost'
               disabled={saving}
               onClick={() => {
                 setRows(withIds(parseTemplate(value)));
                 setError(undefined);
-                setSuggested(undefined);
-                setSuggestedExtra(undefined);
                 setFreshRows(new Set());
                 setChangedRows(new Map());
                 setEditing(false);
@@ -525,20 +382,7 @@ export function FieldTemplateEditor({
           </div>
         ) : null}
       </div>
-      {suggesting ? (
-        <p className='flex items-center gap-2 text-sm text-muted-foreground'>
-          <Spinner />
-          {t('fieldTemplate.suggesting')}
-        </p>
-      ) : suggested ? (
-        <div className='space-y-2'>
-          <p className='text-sm text-muted-foreground'>{suggested}</p>
-          {suggestedExtra}
-        </div>
-      ) : null}
-      {/* While fields are being suggested, the empty card's offer to add
-            one by hand would compete with them; it waits. */}
-      {suggesting && rows.length === 0 ? null : rows.length === 0 ? (
+      {rows.length === 0 ? (
         <div className='flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground'>
           {t('fieldTemplate.empty')}
           {/* The only thing to do on an empty card, so it reads as the
@@ -549,15 +393,7 @@ export function FieldTemplateEditor({
           </Button>
         </div>
       ) : (
-        // Locked while the model answers: what it suggests replaces rows,
-        // and an edit made meanwhile would be lost.
-        <fieldset
-          disabled={suggesting}
-          className={cn(
-            'min-w-0 overflow-x-auto rounded-lg border border-border bg-card',
-            suggesting && 'pointer-events-none opacity-60',
-          )}
-        >
+        <div className='overflow-x-auto rounded-lg border border-border bg-card'>
           <Table>
             <TableHeader>
               <TableRow>
@@ -836,7 +672,7 @@ export function FieldTemplateEditor({
               ))}
             </TableBody>
           </Table>
-        </fieldset>
+        </div>
       )}
       {error ? <p className='text-sm text-destructive'>{error}</p> : null}
       <ConfirmDialog

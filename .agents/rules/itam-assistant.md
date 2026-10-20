@@ -307,35 +307,21 @@ locale })` — its own plans, the answers given — and the joiners'
     showing (the plugin agent it once had went with plugin 1.0). The plan
     operations they added (`adjust_entitlement_seats`,
     `set_entitlement_auto_renew`) stay for Asset Steward.
-- **建议字段** (2026-10-20) on a category's 扩展字段 card
-  (`FieldTemplateEditor`'s `onSuggest`, wired in `CategoryTemplate`): one
-  gateway call, task `categoryFields` under `categories.update`. The server
-  reads the category as the person — its path, kind and current fields —
-  and the fields of up to twenty other categories of the same kind
-  (`categoryFieldFacts` in `ai-reading.ts`), and the model answers fields
-  that reuse those keys for the same thing and leave out the standard ones.
-  They join the rows under edit, new keys only and never required, tagged
-  新增; a change it proposes to a field the category has (`changes`: options
-  it lacks, a unit, a type; never its key) is made on that row, tagged 修改
-  with what it was and why on hover. Nothing is saved until the reader
-  saves; 取消 drops all of it. The same answer suggests the category's
-  defaults (depreciation, useful life, residual rate, warranty, replacement,
-  audit cycle), read against its current ones and similar categories';
-  those that differ show under the sentence, current beside suggested, and
-  采用 writes them to the category (`CategoryDefaultsSuggestion`). The
-  shortcut reads 建议字段: the sparkle already says AI. The rules
-  (需要序列号, 可分配给人员) are suggested with the defaults. 创建分类 and
-  创建子分类 open on **AI 整理** too (`CategoryCreateDialog`, task
-  `category` under `categories.create`): the reader writes what the
-  category is, and the model fills the form — parent, kind, rules, defaults
-  — and its extended fields, read against every category on the books;
-  `checkCategoryReading` (`category-reading.ts`) keeps a parent that exists
-  and its kind, values within bounds and fields the editor accepts, and
-  names categories already called the same. The fields show beside the
-  form under it (`postlude`) in the category card's own editor, embedded (`FieldTemplateEditor`'s `embedded`: no 保存 of its own, an incomplete row stops the form's save), and are saved with it; what AI 整理 said sits in the column beside the form with a line to ask for a change (the whole form goes back as `form`, fields included, and comes back whole), and the fields' editor sits under the form in its column, a section rather than a card, the dialog widened for it (the column beside stays in view as the form scrolls); a sub-category keeps its
-  parent's fields and the suggestions add to them. The server's category
-  readings live in `server/providers/itam/category-reading.ts`. A category has no AI 整理 tab: it is
-  created rarely and has nothing to look up.
+- **完善** (2026-10-20) on a category's page header (`RefineCategoryAction`,
+  for whoever may update it while a model is there) suggests the whole
+  category at once — rules, defaults and extended fields — in the dialog
+  that creates one (`CategoryCreateDialog` with `record`): it opens on
+  "正在完善…", asks task `categoryFields` (the category as the person reads
+  it, its kind's other categories, under `categories.update`), and shows the
+  form with each value it changed tagged 修改 (what it was on hover, the
+  dialog's `changes`), the fields under it tagged 新增 or 修改
+  (`FieldTemplateEditor`'s `marks`; a field's key never changes, its changes
+  come as `changes` with a reason), and the column beside for what it said
+  and a line to adjust (task `category` with the form, the category itself no
+  duplicate and never its own parent). Saving updates the category; closing
+  drops it all. Turning on straight-line depreciation brings useful life and
+  residual rate with it. The 扩展字段 card itself only edits by hand: a
+  suggestion there for the fields above it read wrong.
 - An AI create meets the page dialog's bar: `REQUIRED_ON_CREATE` in
   `server/routes/itam/ai-records.ts` lists what each create dialog requires
   beyond its input schema (conditional ones included, and a device's serial

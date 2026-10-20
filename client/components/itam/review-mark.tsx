@@ -13,7 +13,15 @@ import {
  * It goes as soon as somebody changes the value, which is the check. What it
  * means is its tooltip, not a sentence above the form (2026-10-06).
  */
-export function ReviewMark(): ReactElement {
+export function ReviewMark({
+  label,
+  hint,
+}: {
+  /** 修改 for a value AI 完善 changed (2026-10-20); 请核对 by default. */
+  readonly label?: string;
+  /** What it was, and why, in place of what 请核对 means. */
+  readonly hint?: string;
+} = {}): ReactElement {
   const { t } = useTranslation();
   return (
     <Tooltip>
@@ -25,9 +33,11 @@ export function ReviewMark(): ReactElement {
           />
         }
       >
-        {t('procurement.capture.check')}
+        {label ?? t('procurement.capture.check')}
       </TooltipTrigger>
-      <TooltipContent>{t('procurement.capture.reviewHint')}</TooltipContent>
+      <TooltipContent className='max-w-80'>
+        {hint ?? t('procurement.capture.reviewHint')}
+      </TooltipContent>
     </Tooltip>
   );
 }

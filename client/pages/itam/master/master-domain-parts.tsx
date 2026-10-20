@@ -8,12 +8,7 @@ import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { EmptyState } from '@/components/itam/empty-state';
 import { CategoryCreateDialog } from '@/components/itam/category-create-dialog';
-import { CategoryDefaultsSuggestion } from '@/components/itam/category-defaults-suggestion';
-import {
-  FieldTemplateEditor,
-  type FieldChange,
-} from '@/components/itam/field-template-editor';
-import { categoryDefaultsOf } from '@/lib/itam/category-defaults';
+import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
 import { parseTemplate } from '@/lib/itam/field-template';
 import { MasterDataTree } from '@/components/itam/master-data-tree';
 import { RecordPane } from '@/components/itam/record-drawer';
@@ -33,7 +28,7 @@ import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
 import type { DomainTreeProps } from '@/lib/itam/domain';
 import { errorMessage, text } from '@/lib/itam/format';
 import { useAiStatus } from '@/lib/itam/ai';
-import { useAiPageContext, useAiReading, useItamAi } from '@/lib/itam/ai-chat';
+import { useAiPageContext, useItamAi } from '@/lib/itam/ai-chat';
 import { useReferenceNames } from '@/lib/itam/references';
 import {
   isMasterCaptureCollection,
@@ -341,59 +336,14 @@ export function CategoryTemplate({
     'update',
     'delete',
   ]);
-  const ai = useItamAi();
-  const read = useAiReading();
+  // The card edits the fields by hand; 完善, in the page's header, suggests
+  // (2026-10-20).
   return (
     <FieldTemplateEditor
       key={JSON.stringify(record.fieldTemplate ?? null)}
       value={record.fieldTemplate}
       editable={Boolean(permissions.update)}
       usage={stats.data?.attributeUsage}
-      // AI 建议字段 (2026-10-20): the server reads the category and the
-      // fields of its kind's other categories (`categoryFields`).
-      {...(ai.available
-        ? {
-            onSuggest: async (current) => {
-              const answer = await read({
-                task: 'categoryFields',
-                material: text(record.name) || 'category',
-                context: {
-                  categoryId: text(record.id),
-                  currentFields: current,
-                },
-              });
-              const reading = answer.reading as {
-                fields?: unknown;
-                changes?: unknown;
-                defaults?: unknown;
-              } | null;
-              return {
-                fields: parseTemplate(reading?.fields),
-                // Changes to the fields it has, by key; the editor checks
-                // the type.
-                changes: Array.isArray(reading?.changes)
-                  ? (reading.changes as FieldChange[]).filter(
-                      (change) => typeof change?.key === 'string',
-                    )
-                  : [],
-                said: answer.said,
-                // The defaults too: those that differ, with 采用.
-                extra: (
-                  <CategoryDefaultsSuggestion
-                    record={record}
-                    defaults={categoryDefaultsOf(reading?.defaults)}
-                    onApply={async (values) => {
-                      await mutations.update.mutateAsync({
-                        id: record.id,
-                        input: values,
-                      });
-                    }}
-                  />
-                ),
-              };
-            },
-          }
-        : {})}
       onSave={async (template) => {
         try {
           await mutations.update.mutateAsync({
@@ -536,9 +486,43 @@ export function MasterActions({
         <EnrichAction collection={collection.name} record={record} />
       ) : null}
       {collection.name === 'people' ? <PersonActions record={record} /> : null}
+      {collection.name === 'categories' ? (
+        <RefineCategoryAction record={record} />
+      ) : null}
       {collection.tree ? (
         <NewChildAction collection={collection} record={record} />
       ) : null}
+    </>
+  );
+}
+
+/**
+ * 完善 on a category's page (2026-10-20): the model suggests its rules,
+ * defaults and extended fields at once, in the dialog that creates one,
+ * marked 修改 and 新增 against what it holds; the reader saves or drops them.
+ * For whoever may change the category, while a model is there.
+ */
+function RefineCategoryAction({
+  record,
+}: {
+  readonly record: ItamRecord;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const ai = useItamAi();
+  const permissions = useCollectionPermissions('categories', ['update']);
+  const [open, setOpen] = useState(false);
+  if (!ai.available || !permissions.update) return null;
+  return (
+    <>
+      <AiShortcut onClick={() => setOpen(true)}>
+        {t('categories.refine')}
+      </AiShortcut>
+      <CategoryCreateDialog
+        open={open}
+        onOpenChange={setOpen}
+        record={record}
+        onCreated={() => setOpen(false)}
+      />
     </>
   );
 }

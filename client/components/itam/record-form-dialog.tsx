@@ -69,6 +69,11 @@ export interface RecordFormDialogProps {
   ) => void;
   /** Fields that carry 请核对 beside their label. */
   readonly marks?: ReadonlySet<string>;
+  /**
+   * Fields AI 完善 changed (2026-10-20), each with what it was: tagged 修改
+   * with that on hover. A field leaves the map when the caller drops it.
+   */
+  readonly changes?: ReadonlyMap<string, string>;
   /** Beside the title: AI 整理 / 表单录入. */
   readonly titleAside?: ReactNode;
   /** Shown instead of the fields, with no footer (the AI 整理 tab). */
@@ -135,6 +140,7 @@ export function RecordFormDialog({
   values: heldValues,
   onValuesChange,
   marks,
+  changes,
   titleAside,
   replacement,
   aside,
@@ -243,7 +249,14 @@ export function RecordFormDialog({
             {field.required ? (
               <span className='text-destructive'> *</span>
             ) : null}
-            {marks?.has(field.key) ? <ReviewMark /> : null}
+            {changes?.has(field.key) ? (
+              <ReviewMark
+                label={t('fieldTemplate.changedTag')}
+                hint={changes.get(field.key)}
+              />
+            ) : marks?.has(field.key) ? (
+              <ReviewMark />
+            ) : null}
           </Label>
           <FieldInput
             id={id}
@@ -285,7 +298,14 @@ export function RecordFormDialog({
             {field.required ? (
               <span className='text-destructive'>*</span>
             ) : null}
-            {marks?.has(field.key) ? <ReviewMark /> : null}
+            {changes?.has(field.key) ? (
+              <ReviewMark
+                label={t('fieldTemplate.changedTag')}
+                hint={changes.get(field.key)}
+              />
+            ) : marks?.has(field.key) ? (
+              <ReviewMark />
+            ) : null}
           </FieldLabel>
         </Label>
         <FieldInput
