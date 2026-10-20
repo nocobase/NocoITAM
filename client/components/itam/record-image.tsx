@@ -139,7 +139,6 @@ export function RecordImage({
           <div className='absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-linear-to-t from-background/90 to-transparent p-1.5 opacity-0 transition-opacity group-hover/image:opacity-100 focus-within:opacity-100'>
             <Button
               type='button'
-              size='sm'
               variant='secondary'
               disabled={busy}
               onClick={() => inputRef.current?.click()}
@@ -150,7 +149,6 @@ export function RecordImage({
             {src ? (
               <Button
                 type='button'
-                size='sm'
                 variant='secondary'
                 disabled={busy}
                 aria-label={t('image.remove')}

@@ -138,7 +138,6 @@ function AgentPanel({
             {agent.agentId && agentsPage ? (
               <Button
                 variant='outline'
-                size='sm'
                 render={
                   <Link to={`/agents/${encodeURIComponent(agent.agentId)}`} />
                 }

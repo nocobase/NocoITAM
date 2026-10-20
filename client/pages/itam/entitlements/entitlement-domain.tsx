@@ -311,7 +311,6 @@ function EntitlementActions({
               <Button
                 key={direction}
                 type='button'
-                size='sm'
                 variant={seatChange === direction ? 'default' : 'outline'}
                 onClick={() => setSeatChange(direction)}
               >
@@ -519,7 +518,6 @@ export default function EntitlementSeatsTab(): ReactElement {
           <span className='flex items-center justify-end gap-1'>
             {permissions.assignSeat ? (
               <Button
-                size='sm'
                 variant='outline'
                 disabled={reclaim.isPending}
                 onClick={() =>

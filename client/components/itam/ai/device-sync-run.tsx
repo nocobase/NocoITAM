@@ -68,7 +68,6 @@ export function DeviceSyncRunCard({
   );
   const toReview = onReview ? null : (
     <Button
-      size='sm'
       variant='outline'
       render={<Link to='/device-sync' />}
       nativeButton={false}
@@ -133,7 +132,6 @@ export function DeviceSyncRunCard({
           {toReview}
           {!decided ? (
             <Button
-              size='sm'
               variant='ghost'
               disabled={dismiss.isPending}
               onClick={() =>

@@ -845,7 +845,6 @@ function DeviceLine({
         })}
         <div>
           <Button
-            size='sm'
             variant='outline'
             onClick={() => setUnits([...draft.units, newUnit()])}
           >
@@ -1179,11 +1178,7 @@ function DocumentStrip({
             {t('receipt.document.again')}
           </AiShortcut>
         ) : (
-          <Button
-            size='sm'
-            variant='outline'
-            onClick={() => inputRef.current?.click()}
-          >
+          <Button variant='outline' onClick={() => inputRef.current?.click()}>
             <Upload data-icon='inline-start' />
             {t('receipt.document.choose')}
           </Button>

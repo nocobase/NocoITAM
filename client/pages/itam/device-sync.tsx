@@ -422,7 +422,6 @@ function ChecksView(): ReactElement {
                 </TableCell>
                 <TableCell className='text-right'>
                   <Button
-                    size='sm'
                     variant='outline'
                     disabled={action.isPending}
                     onClick={() =>
@@ -509,7 +508,6 @@ function LinkedView(): ReactElement {
               </TableCell>
               <TableCell className='text-right'>
                 <Button
-                  size='sm'
                   variant='outline'
                   disabled={action.isPending}
                   onClick={() =>
@@ -713,7 +711,6 @@ function DismissedView(): ReactElement {
               </TableCell>
               <TableCell className='text-right'>
                 <Button
-                  size='sm'
                   variant='outline'
                   disabled={action.isPending}
                   onClick={() =>
@@ -861,7 +858,6 @@ function UnmanagedView({
                   <span className='flex justify-end'>
                     {view === 'exempted' ? (
                       <Button
-                        size='sm'
                         variant='outline'
                         disabled={action.isPending}
                         onClick={() =>
@@ -872,7 +868,6 @@ function UnmanagedView({
                       </Button>
                     ) : (
                       <Button
-                        size='sm'
                         variant='outline'
                         onClick={() => {
                           setReason('');
@@ -1213,7 +1208,6 @@ function RecordsView({
                     {view === 'ignored' && row.ignoredByRule ? null : view ===
                       'ignored' ? (
                       <Button
-                        size='sm'
                         variant='outline'
                         disabled={action.isPending}
                         onClick={() =>
@@ -1230,7 +1224,6 @@ function RecordsView({
                         {row.matchState === 'unlinked' &&
                         row.candidates.length === 0 ? (
                           <Button
-                            size='sm'
                             variant='outline'
                             onClick={() => {
                               setDone(undefined);
@@ -1241,7 +1234,6 @@ function RecordsView({
                           </Button>
                         ) : null}
                         <Button
-                          size='sm'
                           variant='outline'
                           onClick={() => {
                             setTarget(row.candidates[0]?.id ?? null);
@@ -1251,7 +1243,6 @@ function RecordsView({
                           {t('deviceSync.review.link')}
                         </Button>
                         <Button
-                          size='sm'
                           variant='outline'
                           onClick={() => {
                             setReason('');

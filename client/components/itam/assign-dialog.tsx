@@ -174,7 +174,6 @@ export function AssignDialog({
                 <Button
                   type='button'
                   variant='outline'
-                  size='sm'
                   disabled={submitting}
                   onClick={() => void onUnlock()}
                 >

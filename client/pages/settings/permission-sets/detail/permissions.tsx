@@ -500,7 +500,6 @@ export default function PermissionsDrawer(): ReactElement {
             <AlertAction>
               <Button
                 variant='outline'
-                size='sm'
                 onClick={() => {
                   setStale(false);
                   focusArea();

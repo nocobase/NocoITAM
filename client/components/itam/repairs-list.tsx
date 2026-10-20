@@ -116,11 +116,7 @@ export function RepairsList({
                 completable &&
                 permissions.complete &&
                 row.result === 'inProgress' ? (
-                  <Button
-                    size='sm'
-                    variant='outline'
-                    onClick={() => setCompleting(row)}
-                  >
+                  <Button variant='outline' onClick={() => setCompleting(row)}>
                     {t('repairs.complete')}
                   </Button>
                 ) : undefined

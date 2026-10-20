@@ -345,15 +345,11 @@ export function CommentComposer({
             {t('comments.shortcut')}
           </span>
           {replyToId ? (
-            <Button size='sm' variant='ghost' onClick={() => onDone?.()}>
+            <Button variant='ghost' onClick={() => onDone?.()}>
               {t('actions.cancel')}
             </Button>
           ) : null}
-          <Button
-            size='sm'
-            disabled={busy || !ready}
-            onClick={() => void post()}
-          >
+          <Button disabled={busy || !ready} onClick={() => void post()}>
             <Send data-icon='inline-start' />
             {t('comments.post')}
           </Button>
@@ -663,7 +659,6 @@ function Message({
               />
               <Button
                 type='button'
-                size='sm'
                 variant='ghost'
                 className='mr-auto text-muted-foreground'
                 disabled={additions.uploading}
@@ -676,15 +671,10 @@ function Message({
                 )}
                 {t('comments.attach')}
               </Button>
-              <Button
-                size='sm'
-                variant='ghost'
-                onClick={() => setEditing(false)}
-              >
+              <Button variant='ghost' onClick={() => setEditing(false)}>
                 {t('actions.cancel')}
               </Button>
               <Button
-                size='sm'
                 disabled={
                   busy ||
                   additions.uploading ||

@@ -176,7 +176,6 @@ export function KitItems({
           {!editing ? actions : null}
           {editable && !editing ? (
             <Button
-              size='sm'
               variant='outline'
               className='shrink-0'
               onClick={() => {
@@ -350,7 +349,6 @@ export function KitItems({
             {/* Only the way to the first row: after that, each row adds. */}
             {rows.length === 0 ? (
               <Button
-                size='sm'
                 variant='outline'
                 onClick={() =>
                   setRows([

@@ -119,15 +119,10 @@ export function PositionSelect({
               }
             }}
           />
-          <Button
-            size='sm'
-            disabled={saving || !draft.trim()}
-            onClick={() => void add()}
-          >
+          <Button disabled={saving || !draft.trim()} onClick={() => void add()}>
             {t('positions.add')}
           </Button>
           <Button
-            size='sm'
             variant='ghost'
             disabled={saving}
             onClick={() => {

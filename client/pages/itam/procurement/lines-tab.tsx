@@ -417,7 +417,7 @@ export function PurchaseOrderLinesCard({
                   </AiShortcut>
                 </>
               ) : null}
-              <Button size='sm' variant='outline' onClick={() => setBatch({})}>
+              <Button variant='outline' onClick={() => setBatch({})}>
                 <Truck data-icon='inline-start' />
                 {t('procurement.receive')}
               </Button>
@@ -461,7 +461,6 @@ export function PurchaseOrderLinesCard({
               {drafts ? (
                 <>
                   <Button
-                    size='sm'
                     variant='ghost'
                     disabled={save.isPending}
                     onClick={() => {
@@ -474,7 +473,6 @@ export function PurchaseOrderLinesCard({
                     {t('actions.cancel')}
                   </Button>
                   <Button
-                    size='sm'
                     disabled={save.isPending || incomplete || !dirty}
                     onClick={() => commit(drafts)}
                   >
@@ -484,7 +482,6 @@ export function PurchaseOrderLinesCard({
                 </>
               ) : (
                 <Button
-                  size='sm'
                   variant='outline'
                   onClick={() => {
                     save.reset();
@@ -654,11 +651,7 @@ export function PurchaseOrderLinesCard({
                     className='py-8 text-center text-muted-foreground'
                   >
                     {drafts ? (
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        onClick={() => insertAfter()}
-                      >
+                      <Button variant='outline' onClick={() => insertAfter()}>
                         <Plus data-icon='inline-start' />
                         {t('procurement.addLine')}
                       </Button>

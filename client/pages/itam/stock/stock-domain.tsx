@@ -291,7 +291,6 @@ function StockActions({
               <Button
                 key={direction}
                 type='button'
-                size='sm'
                 variant={adjustDirection === direction ? 'default' : 'outline'}
                 onClick={() => {
                   setAdjustDirection(direction);
@@ -688,7 +687,6 @@ export function StockHoldersTab({
                 const target = takeBackOf(row);
                 return target ? (
                   <Button
-                    size='sm'
                     variant='outline'
                     disabled={takeBack.isPending}
                     onClick={() => {

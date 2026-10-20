@@ -260,7 +260,6 @@ export function HistoryTimeline({
     (query.data?.total ?? 0) > items.length ? (
       <Button
         variant='outline'
-        size='sm'
         onClick={() => setPages((current) => current + 1)}
       >
         {t('common.loadMore')}

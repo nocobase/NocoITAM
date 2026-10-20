@@ -293,7 +293,7 @@ function ImportWizard({
                   {t('data.errors', { count: report.errors })}
                 </Badge>
                 {report.errors > 0 ? (
-                  <Button size='sm' variant='ghost' onClick={errorRowsCsv}>
+                  <Button variant='ghost' onClick={errorRowsCsv}>
                     <Download data-icon='inline-start' />
                     {t('data.downloadErrors')}
                   </Button>

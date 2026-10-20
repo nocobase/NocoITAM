@@ -211,7 +211,6 @@ export function DepartmentKits({
             // from, so it keeps its own.
             kits.delete && hasParent ? (
               <Button
-                size='sm'
                 variant='ghost'
                 className='text-muted-foreground'
                 disabled={busy}
@@ -234,7 +233,6 @@ export function DepartmentKits({
               <span className='flex-1' />
               {kits.create ? (
                 <Button
-                  size='sm'
                   variant='outline'
                   disabled={busy}
                   onClick={() => void run(() => createKit(null, baseItems))}

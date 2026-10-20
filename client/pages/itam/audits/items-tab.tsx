@@ -588,7 +588,6 @@ export default function AuditItemsTab(): ReactElement {
                           it gave: the chosen one is filled in, green when
                           nothing is wrong. */}
                       <Button
-                        size='sm'
                         variant='outline'
                         className={
                           row.result === 'matched'
@@ -609,7 +608,6 @@ export default function AuditItemsTab(): ReactElement {
                         {t('enums.auditResult.matched')}
                       </Button>
                       <Button
-                        size='sm'
                         variant={
                           row.result === 'notFound' ? 'destructive' : 'outline'
                         }
@@ -627,7 +625,6 @@ export default function AuditItemsTab(): ReactElement {
                         {t('enums.auditResult.notFound')}
                       </Button>
                       <Button
-                        size='sm'
                         variant={
                           row.result === 'mismatch' ? 'destructive' : 'outline'
                         }
@@ -655,7 +652,6 @@ export default function AuditItemsTab(): ReactElement {
                   ) : null}
                   {resolving && difference ? (
                     <Button
-                      size='sm'
                       variant='outline'
                       onClick={() => {
                         run.reset();

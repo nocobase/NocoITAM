@@ -660,7 +660,7 @@ export function PersonBelongings({
                       <span tabIndex={0} aria-label={waitingLabel(item)} />
                     }
                   >
-                    <Button variant='outline' size='sm' disabled>
+                    <Button variant='outline' disabled>
                       <Undo2 data-icon='inline-start' />
                       {item.kind === 'device'
                         ? t('deviceActions.return.title')
@@ -672,7 +672,6 @@ export function PersonBelongings({
               ) : allowed[item.kind] ? (
                 <Button
                   variant='outline'
-                  size='sm'
                   onClick={(event) => {
                     // The row opens the record; the button does its own job.
                     event.stopPropagation();
@@ -863,7 +862,6 @@ export function PersonBelongings({
                     ) : (
                       <Button
                         variant='outline'
-                        size='sm'
                         className='shrink-0'
                         onClick={() => setHandover(record)}
                       >
@@ -1051,11 +1049,11 @@ function BatchBar({
   return (
     <div className='flex flex-wrap items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm'>
       <span className='font-medium'>{count}</span>
-      <Button size='sm' onClick={onAct}>
+      <Button onClick={onAct}>
         {icon}
         {action}
       </Button>
-      <Button size='sm' variant='ghost' onClick={onClear}>
+      <Button variant='ghost' onClick={onClear}>
         {t('people.recovery.batch.clear')}
       </Button>
     </div>

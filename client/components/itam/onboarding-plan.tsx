@@ -246,7 +246,6 @@ export function OnboardingPlanCard({
           ) : null}
           {proposals.length > 0 ? (
             <Button
-              size='sm'
               disabled={busy}
               onClick={() =>
                 void run(proposals, (done) =>
@@ -400,12 +399,7 @@ function PlanLine({
           <span className='shrink-0 tabular-nums'>×{line.required}</span>
         </span>
         <Badge variant='secondary'>{t('onboarding.waived')}</Badge>
-        <Button
-          size='sm'
-          variant='ghost'
-          disabled={busy}
-          onClick={() => onWaive(false)}
-        >
+        <Button variant='ghost' disabled={busy} onClick={() => onWaive(false)}>
           {t('onboarding.restore')}
         </Button>
       </li>
@@ -474,7 +468,6 @@ function PlanLine({
                 className='inline-flex items-center gap-1'
               >
                 <Button
-                  size='sm'
                   variant='outline'
                   disabled={busy || (thing.needsAccount && !thing.account)}
                   title={
@@ -497,7 +490,6 @@ function PlanLine({
                 </Button>
                 {thing.type === 'device' ? (
                   <Button
-                    size='sm'
                     variant='ghost'
                     disabled={busy}
                     onClick={() => setChanging(original.id)}
@@ -513,7 +505,6 @@ function PlanLine({
               laptop — is marked rather than left outstanding for ever. */}
           {line.preparedCount < line.required ? (
             <Button
-              size='sm'
               variant='ghost'
               className='text-muted-foreground'
               disabled={busy}

@@ -426,7 +426,6 @@ export function PurchaseOrderCreateDialog({
                     {lines.length === 0 ? (
                       <Button
                         type='button'
-                        size='sm'
                         variant='outline'
                         onClick={() => insertAfter()}
                       >

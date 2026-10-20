@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { useState, type DragEvent, type ReactElement } from 'react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -244,7 +243,6 @@ export function FieldTemplateEditor({
             </div>
             {editable ? (
               <Button
-                size='sm'
                 variant='outline'
                 className='shrink-0'
                 onClick={() => {
@@ -266,11 +264,15 @@ export function FieldTemplateEditor({
           ) : (
             <div className='flex flex-wrap gap-2'>
               {fields.map((field) => (
-                <Badge
+                // Larger than a status tag (2026-10-20): these are the
+                // card's content, not a mark beside it, so not a Badge,
+                // whose size styles.css sets for every tag.
+                <span
                   key={field.key}
-                  variant={field.hidden ? 'outline' : 'secondary'}
                   className={cn(
-                    field.hidden && 'text-muted-foreground line-through',
+                    'inline-flex h-7 items-center gap-1.5 rounded-md bg-secondary px-2.5 text-sm font-medium whitespace-nowrap text-secondary-foreground',
+                    field.hidden &&
+                      'bg-muted text-muted-foreground line-through',
                   )}
                   title={
                     field.hidden ? t('fieldTemplate.hiddenHint') : undefined
@@ -282,7 +284,7 @@ export function FieldTemplateEditor({
                     {t(`fieldTemplate.types.${field.type}`)}
                     {field.required ? ' *' : ''}
                   </span>
-                </Badge>
+                </span>
               ))}
             </div>
           )}
@@ -305,7 +307,6 @@ export function FieldTemplateEditor({
           {editable && rows.length > 0 ? (
             <div className='flex items-center gap-2'>
               <Button
-                size='sm'
                 variant='ghost'
                 disabled={saving}
                 onClick={() => {
@@ -317,11 +318,7 @@ export function FieldTemplateEditor({
                 <X data-icon='inline-start' />
                 {t('actions.cancel')}
               </Button>
-              <Button
-                size='sm'
-                disabled={!dirty || saving}
-                onClick={() => void save()}
-              >
+              <Button disabled={!dirty || saving} onClick={() => void save()}>
                 <Save data-icon='inline-start' />
                 {t('actions.save')}
               </Button>
@@ -333,7 +330,7 @@ export function FieldTemplateEditor({
             {t('fieldTemplate.empty')}
             {/* The only thing to do on an empty card, so it reads as the
                 action it is rather than as a muted secondary one. */}
-            <Button size='sm' onClick={() => insertAfter()}>
+            <Button onClick={() => insertAfter()}>
               <Plus data-icon='inline-start' />
               {t('fieldTemplate.add')}
             </Button>

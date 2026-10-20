@@ -180,7 +180,6 @@ function WorkViewToggle({
           key={option}
           role='radio'
           aria-checked={value === option}
-          size='sm'
           variant={value === option ? 'default' : 'ghost'}
           className='h-7 px-2.5'
           onClick={() => onChange(option)}

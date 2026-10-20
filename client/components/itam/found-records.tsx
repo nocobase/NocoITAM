@@ -28,7 +28,7 @@ export function FoundRecords({
           ? t('search.foundTitled', { title, count })
           : t('search.found', { count })}
       </p>
-      <Button variant='ghost' size='sm' onClick={onClear}>
+      <Button variant='ghost' onClick={onClear}>
         <X data-icon='inline-start' />
         {t('search.showAll')}
       </Button>

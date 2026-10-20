@@ -155,7 +155,6 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
         <div className='mt-3 flex flex-wrap items-center justify-end gap-2'>
           {toggleParams}
           <Button
-            size='sm'
             variant='ghost'
             disabled={decide.isPending}
             onClick={() => decide.mutate('void')}
@@ -163,7 +162,6 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
             {t('ai.plans.decline')}
           </Button>
           <Button
-            size='sm'
             disabled={decide.isPending || left === 0}
             onClick={() => decide.mutate('execute')}
           >

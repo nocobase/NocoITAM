@@ -186,7 +186,6 @@ export function InlineField({
             <div className='min-w-0 flex-1'>{input}</div>
             <Button
               type='button'
-              size='sm'
               variant='ghost'
               className='text-destructive'
               disabled={saving}
@@ -216,7 +215,6 @@ export function InlineField({
           <div className='flex gap-2'>
             <Button
               type='button'
-              size='sm'
               disabled={saving}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => void commit()}
@@ -225,7 +223,6 @@ export function InlineField({
             </Button>
             <Button
               type='button'
-              size='sm'
               variant='ghost'
               disabled={saving}
               onMouseDown={(event) => event.preventDefault()}

@@ -272,12 +272,7 @@ function DrawerToolbar({
       {/* 返回 at the far left, where a way back is looked for; the drawer's
           own controls stay at the right beside its close button. */}
       {canGoBack ? (
-        <Button
-          variant='ghost'
-          size='sm'
-          className='mr-auto -ml-1'
-          onClick={onBack}
-        >
+        <Button variant='ghost' className='mr-auto -ml-1' onClick={onBack}>
           <ArrowLeft data-icon='inline-start' />
           {t('common.back')}
         </Button>

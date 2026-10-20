@@ -126,7 +126,6 @@ export default function ReportsPage(): ReactElement {
               {report.data ? <ReportInsight report={report.data} /> : null}
               <Button
                 variant='outline'
-                size='sm'
                 disabled={!report.data || downloading}
                 onClick={() => {
                   setDownloading(true);

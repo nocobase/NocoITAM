@@ -116,7 +116,6 @@ export function createStatusBoard(
           {rows.length < total ? (
             <Button
               variant='ghost'
-              size='sm'
               disabled={list.isFetching}
               onClick={() => setPageSize((current) => current + PAGE)}
             >

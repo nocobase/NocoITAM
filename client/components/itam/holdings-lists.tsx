@@ -153,7 +153,6 @@ export function StockHoldingsList({
           withTakeBack && permissions.issue
             ? (row) => (
                 <Button
-                  size='sm'
                   variant='outline'
                   disabled={takeBack.isPending}
                   onClick={() => {
@@ -324,7 +323,6 @@ export function EntitlementSeatsList({
           device && permissions.assignSeat
             ? (row) => (
                 <Button
-                  size='sm'
                   variant='outline'
                   disabled={reclaim.isPending}
                   onClick={() => {

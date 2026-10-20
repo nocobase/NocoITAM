@@ -634,7 +634,6 @@ function DisposalDevicesCard({
                 />
               </div>
               <Button
-                size='sm'
                 disabled={
                   !adding || currentIds.includes(adding) || save.isPending
                 }

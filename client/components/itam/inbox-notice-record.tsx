@@ -27,7 +27,7 @@ export function NoticeRecord({
     <div className='min-w-0'>
       {onBack ? (
         <div className='px-4 pt-3 lg:hidden'>
-          <Button variant='ghost' size='sm' onClick={onBack}>
+          <Button variant='ghost' onClick={onBack}>
             <ArrowLeft data-icon='inline-start' />
             {t('common.back')}
           </Button>

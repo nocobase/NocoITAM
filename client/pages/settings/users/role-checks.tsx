@@ -49,7 +49,7 @@ export function RoleChecks({
           {text('common.loadFailed', { what: text('users.fields.roles') })}
         </AlertDescription>
         <AlertAction>
-          <Button type='button' variant='outline' size='sm' onClick={retry}>
+          <Button type='button' variant='outline' onClick={retry}>
             {text('common.retry')}
           </Button>
         </AlertAction>

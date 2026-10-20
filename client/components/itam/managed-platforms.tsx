@@ -163,7 +163,6 @@ function ExemptionNotice({
       </div>
       {editable ? (
         <Button
-          size='sm'
           variant='outline'
           disabled={review.isPending}
           onClick={() => review.mutate({ kind: 'unexempt', deviceId })}
@@ -232,7 +231,7 @@ function PlatformRecord({
           <>
             <DifferenceTag>{t('deviceSync.checks.otherUserTag')}</DifferenceTag>
             {onTransfer ? (
-              <Button size='sm' variant='outline' onClick={onTransfer}>
+              <Button variant='outline' onClick={onTransfer}>
                 {t('deviceSync.checks.transferTo', {
                   user: record.userName ?? '',
                 })}
@@ -254,14 +253,14 @@ function PlatformRecord({
               })}
             </DifferenceTag>
             {offDuty.status === 'inStock' && onAssign ? (
-              <Button size='sm' variant='outline' onClick={onAssign}>
+              <Button variant='outline' onClick={onAssign}>
                 {t('deviceSync.checks.assignTo', {
                   user: record.userName ?? '',
                 })}
               </Button>
             ) : null}
             {offDuty.status === 'lost' && onRestore ? (
-              <Button size='sm' variant='outline' onClick={onRestore}>
+              <Button variant='outline' onClick={onRestore}>
                 {t('deviceSync.checks.restore')}
               </Button>
             ) : null}

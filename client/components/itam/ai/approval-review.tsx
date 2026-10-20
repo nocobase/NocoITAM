@@ -111,7 +111,7 @@ export function ApprovalReviewCard({
               defaultValue: t('review.failed.failed'),
             })}
           </p>
-          <Button variant='outline' size='sm' disabled={busy} onClick={again}>
+          <Button variant='outline' disabled={busy} onClick={again}>
             <RotateCcw />
             {t('review.askAgain')}
           </Button>
@@ -145,7 +145,6 @@ export function ApprovalReviewCard({
               ({ decision, solid }) => (
                 <Button
                   key={decision}
-                  size='sm'
                   variant={
                     decision === 'rejected'
                       ? 'destructive'
@@ -170,7 +169,6 @@ export function ApprovalReviewCard({
               ),
             )}
             <Button
-              size='sm'
               variant='ghost'
               disabled={busy}
               onClick={() =>
@@ -218,11 +216,7 @@ export function ApprovalReviewCard({
                 autoFocus
               />
               <div>
-                <Button
-                  size='sm'
-                  type='submit'
-                  disabled={busy || !instruction.trim()}
-                >
+                <Button type='submit' disabled={busy || !instruction.trim()}>
                   {t('review.redoSend')}
                 </Button>
               </div>

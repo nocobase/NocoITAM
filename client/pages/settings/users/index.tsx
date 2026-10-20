@@ -277,7 +277,7 @@ export default function UsersPage(): ReactElement {
     content = (
       <div className='flex min-h-40 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-sm text-muted-foreground'>
         <span>{text('users.noResults')}</span>
-        <Button variant='link' size='sm' onClick={clearFilters}>
+        <Button variant='link' onClick={clearFilters}>
           {text('common.clearFilters')}
         </Button>
       </div>

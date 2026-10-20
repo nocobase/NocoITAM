@@ -78,20 +78,19 @@ export function LoadFailure({
   const status = notFound ? 404 : errorStatus(error);
   const action =
     status === 401 ? (
-      <Button variant='outline' size='sm' onClick={() => void refresh()}>
+      <Button variant='outline' onClick={() => void refresh()}>
         {text('common.signInAgain')}
       </Button>
     ) : status === 404 && back ? (
       <Button
         variant='outline'
-        size='sm'
         nativeButton={false}
         render={<Link to={back.to} />}
       >
         {back.label}
       </Button>
     ) : status === 403 || status === 404 || !onRetry ? null : (
-      <Button variant='outline' size='sm' onClick={onRetry}>
+      <Button variant='outline' onClick={onRetry}>
         {text('common.retry')}
       </Button>
     );

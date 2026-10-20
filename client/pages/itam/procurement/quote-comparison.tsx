@@ -440,7 +440,6 @@ function QuoteComparisonDialog({
               }}
             />
             <Button
-              size='sm'
               variant='outline'
               disabled={room <= 0 || busy}
               onClick={() => fileRef.current?.click()}
@@ -449,7 +448,6 @@ function QuoteComparisonDialog({
               {t('quotes.addFiles')}
             </Button>
             <Button
-              size='sm'
               variant='ghost'
               disabled={room <= 0 || busy}
               onClick={() => setPasting((open) => !open)}
@@ -470,11 +468,7 @@ function QuoteComparisonDialog({
               rows={5}
               maxLength={20000}
             />
-            <Button
-              size='sm'
-              disabled={!pasted.trim() || busy}
-              onClick={addPasted}
-            >
+            <Button disabled={!pasted.trim() || busy} onClick={addPasted}>
               {t('quotes.read')}
             </Button>
           </div>
@@ -525,7 +519,6 @@ function QuoteComparisonDialog({
               className='w-64'
             />
             <Button
-              size='sm'
               disabled={!vendorPick.vendorId || taking !== null}
               onClick={() =>
                 vendorPick.vendorId &&
@@ -745,7 +738,6 @@ function ComparisonTable({
                   </StatusBadge>
                 ) : editable ? (
                   <Button
-                    size='xs'
                     variant='outline'
                     disabled={busy}
                     onClick={() => onTake(index)}

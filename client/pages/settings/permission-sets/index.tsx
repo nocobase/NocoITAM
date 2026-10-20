@@ -176,7 +176,6 @@ export default function PermissionSetsPage(): ReactElement {
                       {/* The set's two views, each a drawer over the list. */}
                       <Button
                         variant='ghost'
-                        size='sm'
                         nativeButton={false}
                         aria-label={text('sets.permissionsOf', { name })}
                         render={
@@ -192,7 +191,6 @@ export default function PermissionSetsPage(): ReactElement {
                       </Button>
                       <Button
                         variant='ghost'
-                        size='sm'
                         nativeButton={false}
                         aria-label={text('sets.membersOf', { name })}
                         render={

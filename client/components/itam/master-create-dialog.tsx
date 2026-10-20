@@ -354,7 +354,6 @@ function MaterialPane({
             action — as on the purchase order's AI 整理. */}
         <Button
           type='button'
-          size='sm'
           className='bg-primary text-primary-foreground hover:bg-primary/90'
           disabled={busy || !material.trim()}
           onClick={go}
@@ -459,7 +458,6 @@ function CaptureNotes({
           {onCreateManufacturer ? (
             <Button
               type='button'
-              size='sm'
               variant='outline'
               className='justify-self-start bg-background'
               onClick={onCreateManufacturer}
@@ -515,7 +513,6 @@ function CaptureNotes({
         />
         <Button
           type='button'
-          size='sm'
           variant='outline'
           className='justify-self-end'
           disabled={busy || !instruction.trim()}

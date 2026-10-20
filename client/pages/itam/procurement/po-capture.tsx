@@ -90,7 +90,6 @@ export function CapturePane({
           ) : (
             <Button
               type='button'
-              size='sm'
               variant='outline'
               disabled={busy}
               onClick={() => inputRef.current?.click()}
@@ -107,7 +106,6 @@ export function CapturePane({
             it is this tab's one action. */}
         <Button
           type='button'
-          size='sm'
           className='bg-primary text-primary-foreground hover:bg-primary/90'
           disabled={busy || !ready}
           onClick={go}
@@ -251,7 +249,6 @@ export function CaptureNotice({
           />
           <Button
             type='button'
-            size='sm'
             variant='outline'
             className='justify-self-end'
             disabled={busy || !instruction.trim()}
