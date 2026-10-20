@@ -233,12 +233,7 @@ export default function MasterDataOverviewPage(): ReactElement {
               ))}
               <RowLabel>{t('masterData.rowKinds')}</RowLabel>
               {KINDS.map((kind) => (
-                <NodeCard
-                  key={kind.value}
-                  node={nodes[kind.record]}
-                  compact
-                  emphasis
-                />
+                <NodeCard key={kind.value} node={nodes[kind.record]} compact />
               ))}
               <ArrowRow
                 cells={KINDS.map((kind) => ({
@@ -369,9 +364,9 @@ export default function MasterDataOverviewPage(): ReactElement {
             <Arrow label={t('masterData.edgeUndertakes')} centered />
             <Arrow label={t('masterData.edgeUndertakes')} centered />
             <Arrow label={t('masterData.edgeUndertakes')} centered />
-            <NodeCard node={nodes.purchaseOrders} compact emphasis />
-            <NodeCard node={nodes.repairs} compact emphasis />
-            <NodeCard node={nodes.disposals} compact emphasis />
+            <NodeCard node={nodes.purchaseOrders} compact />
+            <NodeCard node={nodes.repairs} compact />
+            <NodeCard node={nodes.disposals} compact />
           </div>
         </Lane>
       </div>
@@ -516,13 +511,10 @@ function NodeCard({
   node,
   note,
   compact,
-  emphasis,
 }: {
   readonly node: Node;
   readonly note?: string;
   readonly compact?: boolean;
-  /** The device-type row stands out: it is the axis the matrix is built on. */
-  readonly emphasis?: boolean;
 }): ReactElement {
   const list = useItamList<ItamRecord>(
     node.path ?? '',
@@ -542,7 +534,6 @@ function NodeCard({
         node.kind === 'master'
           ? 'border-border bg-card'
           : 'border-dashed border-border bg-muted/30',
-        emphasis && 'border-solid border-primary/30 bg-primary/10',
         compact && 'px-1.5 py-2 @3xl:p-2',
       )}
     >
