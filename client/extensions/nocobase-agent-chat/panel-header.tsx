@@ -8,7 +8,6 @@
 import {
   AgentAvatar,
   newConversationAgent,
-  useAgentText,
   useChatAgents,
   useChatPanel,
   useConversation,
@@ -44,6 +43,9 @@ import {
 import { cn } from 'cn';
 
 import { useChatTranslation } from './chat-i18n.js';
+// Application change (ITAM, Agents plugin 1.0): Asset Steward's name for
+// the plugin's native online agent (lib/itam/agent-text.ts).
+import { useAgentText } from '@/lib/itam/agent-text';
 
 /** A ghost icon button named by its tooltip. */
 function IconButton({

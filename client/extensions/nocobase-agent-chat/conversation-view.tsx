@@ -9,7 +9,6 @@ import {
   useChatScroll,
   newConversationAgent,
   timelineOrder,
-  useAgentText,
   useChatAgents,
   useChatModels,
   useChatPanel,
@@ -61,6 +60,9 @@ import { LoadError } from './chat-ui.js';
 import { Composer } from './composer.js';
 import { LiveSteps, TurnAnnouncer } from './live-steps.js';
 import { MessageItem, PendingItem } from './message-item.js';
+// Application change (ITAM, Agents plugin 1.0): Asset Steward's name for
+// the plugin's native online agent (lib/itam/agent-text.ts).
+import { useAgentText } from '@/lib/itam/agent-text';
 
 const NO_ITEMS: readonly ChatTimelineItem[] = [];
 

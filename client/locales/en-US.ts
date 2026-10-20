@@ -3324,6 +3324,8 @@ const messages = {
     searchSource: 'Global search',
     // The assistant's name (2026-10-16; it was Noco until then).
     assistantName: 'Asset Steward',
+    assistantDescription:
+      'Looks things up across the IT asset register and proposes changes as plans you confirm.',
     // The business actions an agent may be given (Agent 团队 → Agent).
     agentActions: {
       records: 'IT assets',

@@ -1,7 +1,6 @@
 import {
   appUIMessageText,
   chatIsRunning,
-  useAgentText,
   useChatStream,
   useConversation,
   useConversationMessages,
@@ -13,6 +12,7 @@ import { useEffect, type ReactElement } from 'react';
 import { Button } from '#components/ui/button';
 import { Spinner } from '#components/ui/spinner';
 import { ChatMarkdown } from '#extensions/nocobase-agent-chat/chat-markdown';
+import { useAgentText } from '@/lib/itam/agent-text';
 
 /**
  * A question from the global search answered in its dialog (2026-10-16,

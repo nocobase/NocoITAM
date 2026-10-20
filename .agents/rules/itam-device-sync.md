@@ -297,7 +297,7 @@ product or in release notes, until it is listed here.
   person who knows the method would make per item (transfer, assign,
   register, link, ignore, restore, keep, verify, escalate) — and
   `skill-evals.ts` scores them. `POST /api/itam/ai/evals/device-sync`
-  (settings grant) runs every case against Asset Steward's model with the skill as
+  (settings grant) runs every case against the default chat model with the skill as
   the library holds it and answers a report (passed / total, each case's
   misses). Run it before changing the skill, the instructions or the model,
   and attach the report to the change. A case from real use — a difference a

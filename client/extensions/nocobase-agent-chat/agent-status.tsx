@@ -1,7 +1,4 @@
-import {
-  AgentAvatar,
-  useAgentText,
-} from '@nocobase/app-plugin-agents/client/chat';
+import { AgentAvatar } from '@nocobase/app-plugin-agents/client/chat';
 import type {
   ChatAvailability,
   ConversationDetail,
@@ -15,6 +12,9 @@ import { cn } from 'cn';
 
 import { useAgentPickerLabels, useChatTranslation } from './chat-i18n.js';
 import { ChatTag } from './chat-ui.js';
+// Application change (ITAM, Agents plugin 1.0): Asset Steward's name for
+// the plugin's native online agent (lib/itam/agent-text.ts).
+import { useAgentText } from '@/lib/itam/agent-text';
 
 /** A green or grey dot with its meaning for screen readers (`agent-picker`'s, in the chat's wording). */
 export function AvailabilityDot({

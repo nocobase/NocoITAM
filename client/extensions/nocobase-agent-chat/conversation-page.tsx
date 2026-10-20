@@ -22,7 +22,6 @@ import {
   AgentAvatar,
   CHAT_PANEL_ATTRIBUTE,
   ChatPanelScope,
-  useAgentText,
   useChatAgents,
   useChatPageTracking,
   useChatPanel,
@@ -52,6 +51,9 @@ import { Skeleton } from '#components/ui/skeleton';
 import { useChatTranslation } from './chat-i18n.js';
 import { ConversationView } from './conversation-view.js';
 import { ConversationTitle } from './panel-header.js';
+// Application change (ITAM, Agents plugin 1.0): Asset Steward's name for
+// the plugin's native online agent (lib/itam/agent-text.ts).
+import { useAgentText } from '@/lib/itam/agent-text';
 
 function noop(): void {}
 

@@ -2,7 +2,6 @@ import { useConversationActions } from './conversation-actions.js';
 import {
   CHAT_PANEL_ATTRIBUTE,
   chatIsRunning,
-  useAgentText,
   useChatAgents,
   useConversationList,
   useConversationSources,
@@ -60,6 +59,9 @@ import { cn } from 'cn';
 
 import { useChatTranslation } from './chat-i18n.js';
 import { ChatTag, LoadError, Pulse } from './chat-ui.js';
+// Application change (ITAM, Agents plugin 1.0): Asset Steward's name for
+// the plugin's native online agent (lib/itam/agent-text.ts).
+import { useAgentText } from '@/lib/itam/agent-text';
 
 /** The global search's answers (application change, ITAM). */
 const SEARCH_SOURCE = 'itam-search';

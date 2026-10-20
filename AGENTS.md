@@ -40,7 +40,7 @@ client/components/itam/       The shared UI kit (page header, data table, detail
 client/pages/itam/            Pages; list / detail pages are the generic domain pages driven by a DomainConfig
                               (master data: masterDomain() in master/master-domain.tsx, from client/lib/itam/master-data.ts)
 client/layouts/agent-chat.tsx The Agents plugin's chat around the shell, and the header's assistant button
-server/providers/itam-agents/ ITAM on the Agents plugin: Asset Steward, its actions, gate, skill, rules, page-context kinds
+server/providers/itam-agents/ ITAM on the Agents plugin: Asset Steward's tools and scope, its actions, gate, skill, rules, page-context kinds
 server/routes/itam/agent-commands.ts  The `itam` commands an agent's run calls (`/api/assistant/*`) and the plans
 ai/skills/                    The method skills put into the Agents plugin's skill library at the first start
 tests/support/                In-memory database and test-app harness with auth / authz doubles
@@ -157,7 +157,7 @@ When the built-in mechanism genuinely cannot express what is being asked, changi
 | [.agents/rules/build-and-deploy.md](.agents/rules/build-and-deploy.md)     | Changing the build, packing a deployment, the Docker image, `CDN_BASE_URL`, or building for another platform                             |
 | [.agents/rules/itam-conventions.md](.agents/rules/itam-conventions.md)     | Adding an ITAM domain, or changing the shell, the assistant's entry points or the shared tag, detail and list components                 |
 | [.agents/rules/itam-foundations.md](.agents/rules/itam-foundations.md)     | Writing a service, route, transaction, date or JSON query, notification, record lifecycle, CSV import or export, or reading `config.yml` |
-| [.agents/rules/itam-assistant.md](.agents/rules/itam-assistant.md)         | Changing Asset Steward, its commands or plans, the chat, an AI shortcut, AI 整理, receiving by document, or any model call               |
+| [.agents/rules/itam-assistant.md](.agents/rules/itam-assistant.md)         | Changing Asset Steward, its tools or plans, the chat, an AI shortcut, AI 整理, receiving by document, or any model call                  |
 | [.agents/rules/itam-workbench.md](.agents/rules/itam-workbench.md)         | Changing the workbench, 需要关注, to-do cards and their scope, the status boards, or the scheduled jobs                                  |
 | [.agents/rules/itam-people.md](.agents/rules/itam-people.md)               | Changing who signs in, a person's 归属 tab, offboarding and handover, onboarding kits and joiners, or leavers' accounts                  |
 | [.agents/rules/itam-procurement.md](.agents/rules/itam-procurement.md)     | Changing purchase orders, their lines, receiving, approvals or a request's 负责人                                                        |

@@ -1,4 +1,3 @@
-import { useAgentText } from '@nocobase/app-plugin-agents/client/chat';
 import type { ChatAgent } from '@nocobase/app-plugin-agents/shared/conversations';
 import type {
   ModelRef,
@@ -9,6 +8,9 @@ import type { ReactElement } from 'react';
 import { AgentPicker } from '#components/agent-picker';
 
 import { useAgentPickerLabels, useChatTranslation } from './chat-i18n.js';
+// Application change (ITAM, Agents plugin 1.0): Asset Steward's name for
+// the plugin's native online agent (lib/itam/agent-text.ts).
+import { useAgentText } from '@/lib/itam/agent-text';
 
 export interface NewChatChoiceProps {
   readonly agents: readonly ChatAgent[];

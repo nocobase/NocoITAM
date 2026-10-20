@@ -3551,3 +3551,30 @@ ships it (decided 2026-10-14):
   added itself; ITAM keeps only `after` (搜索 under 工作台) on top.
 - The boards keep a visible scrollbar (`scroll-shown`), and joiner cards wrap
   their date and countdown as whole phrases.
+
+## Template upgrade: beta.68 → beta.73 (2026-10-20)
+
+`@nocobase/app-template-default` 1.0.0-beta.68 → 1.0.0-beta.73: app-server
+3.0.0-beta.0, app-client 4.0.0-beta.0, app-cli 1.0.0-beta.25, the realtime
+package 0.1 (publishing is asynchronous), app-skills 0.1.0-beta.41, and the
+Agents plugin 0.1.0-beta.8 → 1.0.0-beta.15. Refine and agent annotations
+left the template and the application. Decided with the user to take the
+Agents plugin to 1.0 as well and migrate fully:
+
+- **Asset Steward is no longer an agent of the plugin.** Plugin 1.0 keeps no
+  online agents an application creates (its migration deletes them, and
+  their conversations stay, read only); a native conversation runs the model
+  inside the application with the tools it registers. Asset Steward is now
+  the global scope of every native conversation: its reads and the plan
+  proposal as tools, the enabled chat models with the default first, its
+  instructions, work guide and the business notes as the system prompt. The
+  `itam` commands stay for an agent on a runner.
+- **The work agents** (审批助手, MDM 跟进) and ITAM's own model calls use the
+  default chat model; an administrator edits their method as a skill.
+- **The chat** is the UI Library's 1.0 block (AI SDK messages, model chosen
+  before a conversation's first message), with ITAM's panel, styling and plan
+  cards kept; tool calls show as one line each.
+- **Database.** Eleven plugin migrations run at the first start. The plugin
+  edited its released `202610020003_ag_create_runs` (documented in its
+  changelog, for MySQL), so an existing database warns of that checksum
+  until `pnpm nocobase db repair` acknowledges it.

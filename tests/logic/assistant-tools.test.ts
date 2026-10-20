@@ -11,6 +11,10 @@ import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
 
+type Projection = {
+  input(value: unknown): unknown;
+  output(value: unknown): unknown;
+};
 type Execute = (
   input: unknown,
   options: { context: { user: { id: string }; sessionId: string } },
@@ -30,7 +34,10 @@ type Scope = () => Promise<{
  */
 describe('Asset Steward’s tools', () => {
   let app: TestApp;
-  let tools: Map<string, { definition: { execute: Execute } }>;
+  let tools: Map<
+    string,
+    { definition: { execute: Execute; public: Projection } }
+  >;
   let scope: Scope | null;
   let modelId = '';
   let locationId = '';
@@ -64,7 +71,7 @@ describe('Asset Steward’s tools', () => {
         configurator: {
           registerTool: (
             name: string,
-            spec: { definition: { execute: Execute } },
+            spec: { definition: { execute: Execute; public: Projection } },
           ) => tools.set(name, spec),
           registerOnlineAgentGlobalScope: (provider: Scope) => {
             scope = provider;
@@ -185,5 +192,15 @@ describe('Asset Steward’s tools', () => {
     ).toMatchObject({
       error: { code: 'PLAN_STEP_REFUSED', field: 'steps.1' },
     });
+  });
+
+  it('shows the page that a tool ran and why it was refused, never what it read', () => {
+    const search = tools.get(ITAM_TOOLS.search)?.definition.public;
+    if (!search) throw new Error('no public projection');
+    expect(search.input({ collection: 'people', q: 'Li' })).toEqual({});
+    expect(search.output({ data: [{ id: 'p1', name: 'Li Na' }] })).toEqual({});
+    expect(
+      search.output({ error: { message: 'Not allowed', code: 'FORBIDDEN' } }),
+    ).toEqual({ error: { message: 'Not allowed' } });
   });
 });

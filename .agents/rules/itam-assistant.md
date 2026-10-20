@@ -1,51 +1,66 @@
 # ITAM: the assistant
 
-Read this before changing Asset Steward, its commands or plans, the chat, a page's AI shortcut, AI 整理, receiving by delivery document, or any call to a model.
+Read this before changing Asset Steward, its tools, commands or plans, the chat, a page's AI shortcut, AI 整理, receiving by delivery document, or any call to a model.
 
 Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small; each rule is as it was written, with the date it was decided.
 
-- **The assistant runs on the Agents plugin** (`@nocobase/app-plugin-agents`,
-  template 1.0.0-beta.64, after NocoCRM's); the AI employee plugin, its
-  `ai/` employee and tools, the `nocobase-ai` Registry copy, the unseen
-  chats and every page tool are gone. `server/providers/itam-agents/`
-  (`ItamAgentsProvider`) gives the plugin ITAM's two business actions —
-  `itam.records/view` and `itam.plans/create` (`actions.ts`) — and the gate
-  (`gate.ts`: a person holds both, a run what its agent is configured with),
-  the `itam-assistant` preset, the `itam-work` skill every online run gets
-  (`skill.ts`: the commands and the plan's shape), the conversation rules
-  (`rules.ts`: how to read the register, the business notes and the time
-  zone, kept current through `settings.onSaved`), the page-context kinds
-  (`context.ts`) and the `itam` conversation source. At start it creates,
-  once each, the model services from `ai.llmServices` in `config.yml`
-  (`model-services.ts`, in their `sort` order; the keys are stored
-  encrypted, so `secrets.keys` must be configured), Asset Steward as an online agent
-  open to everyone with every chat model, the system's default chat agent
-  (`assistant.ts`), and the five method skills of `ai/skills/` in the
-  plugin's library, attached to Asset Steward (`library.ts`, copied into `dist` by
-  the build hook). A marker row in `itamSettings` (`agents-noco-v1`,
-  `agents-skills-v1`, `markers.ts`) records each, so what an administrator
-  changes on Agent 团队 → Agent / 技能 / 模型 is never overwritten. Nothing of it
-  may stop the application starting: a failure is logged and retried at the
-  next start.
+- **The assistant runs on the Agents plugin's OnlineAgent service**
+  (`@nocobase/app-plugin-agents` 1.0, template 1.0.0-beta.73,
+  2026-10-20). Plugin 1.0 keeps no online agents an application creates:
+  its migration `202610240020_ag_runner_agents` deleted Asset Steward, the
+  two work agents and every other online agent, and a native conversation
+  is answered by the plugin's own agent `online`, inside this process, with
+  the tools the application registers. So Asset Steward is the **global
+  scope** of every native conversation (`registerAssistant` in
+  `server/providers/itam-agents/assistant.ts`,
+  `registerOnlineAgentGlobalScope`): ITAM's tools, the enabled chat models
+  as `service/model` with the default chat model of Agent 团队 → 模型
+  first, and a system prompt of its instructions (`preset.ts`), the work
+  guide (`ITAM_WORK_GUIDE` in `skill.ts`), the time zone and the business
+  notes. Global rather than a named scope because the plugin's chat client
+  creates a conversation with no scope of the application's choosing. A
+  runner agent cannot take native tools, so ITAM's own ways of asking go to
+  `online` alone (`ITAM_AGENT` in `client/lib/itam/ai-chat.tsx`), and the
+  chat shows that agent as 资产管家 / Asset Steward (`useAgentText` in
+  `client/lib/itam/agent-text.ts`, used by the chat block in place of the
+  plugin's, which names it "Online agent" with no setting to change it).
+  `server/providers/itam-agents/` (`ItamAgentsProvider`) also gives the
+  plugin ITAM's two business actions — `itam.records/view` and
+  `itam.plans/create` (`actions.ts`) — and the gate (`gate.ts`), the
+  conversation rules (`rules.ts`), the page-context kinds (`context.ts`) and
+  the `itam` conversation source, all for an agent on a runner. At start it
+  creates, once each, the model services from `ai.llmServices` in
+  `config.yml` (`model-services.ts`, `agents.models.services`; the keys are
+  stored encrypted, so `secrets.keys` must be configured) and puts the
+  method skills of `ai/skills/` in the plugin's library (`library.ts`,
+  copied into `dist` by the build hook; marker `agents-skills-v1`, so what
+  an administrator changes on Agent 团队 → 技能 is kept). Nothing of it may
+  stop the application starting: a failure is logged and retried at the
+  next start. Conversations of the deleted agents stay, read only.
 - **The assistant is Asset Steward, 资产管家** (2026-10-16; it was Noco
-  until then). The agent's `name` is the English and its `nameText`
-  (`ai.assistantName`) shows it in the viewer's language; the first line of
-  its instructions and the background prompts use the name too. At start,
-  `renameFormer` in `assistant.ts` renames an assistant still called Noco
-  — name, translation and that first line — and leaves one an administrator
-  renamed alone. The marker (`agents-noco-v1`) and the `source: 'noco'` of a
-  background pick keep the old word: they are stored keys, not names.
-- Asset Steward reads the register through **commands**, the routes of
-  `server/routes/itam/agent-commands.ts` under `/api/assistant/*` (not
-  `/itam/*`, whose `auth.required()` refuses a run's token): `itam context`,
-  `search`, `record get`, `stats`, `availability`, `model match`,
-  `onboarding plan`, and `plan ops | create | list | get`. Each is a
-  `describeRoute` with `cliRoute({ action })`, the plugin builds the run's
-  command line from them, and the guard there refuses an action the run
-  does not hold and answers any write `PLAN_REQUIRED`. What they read is
-  `server/providers/itam-agents/reads.ts`, as the person the run works for
-  (`readerFor(container, userId)` → `scopeFor`), exactly as the pages would
-  show it. Asset Steward **changes nothing itself**: it writes one **plan**
+  until then): `ASSISTANT_NAME` in `assistant.ts`, `ai.assistantName` and
+  `ai.assistantDescription` in the chat, the first line of its
+  instructions and the background prompts. The `source: 'noco'` of a
+  background pick keeps the old word: it is a stored key, not a name.
+- Asset Steward reads the register through **tools** (`ITAM_TOOLS` in
+  `assistant.ts`): `itam_context`, `itam_search`, `itam_record_get`,
+  `itam_stats`, `itam_availability`, `itam_model_match`,
+  `itam_onboarding_plan`, `itam_device_sync_review`, `itam_plan_ops`,
+  `itam_plan_create` and `itam_read_skill` (a method skill from the
+  library). Each runs `server/providers/itam-agents/reads.ts` as the person
+  chatting (`readerFor(container, context.user.id)` → `scopeFor`), exactly
+  as the pages would show it; a refusal comes back as `{ error }` for the
+  model to act on, not thrown. A tool's output must be plain JSON, and only
+  what its `public` projection gives reaches the page and the saved
+  history: by default that a tool ran and, when refused, why — without a
+  projection the call would not show at all. The chat draws each as one
+  quiet line (`ToolLine`, `client/lib/itam/tool-renderers.ts` through
+  `AIToolRendererProvider`, `ai.tools.*`). The same reads are also the
+  **commands** of `server/routes/itam/agent-commands.ts` under
+  `/api/assistant/*` (not `/itam/*`, whose `auth.required()` refuses a run's
+  token), kept for an agent on a runner, which reaches ITAM through its
+  command line; the plan's input (`plan-input.ts`) is shared by both.
+  Asset Steward **changes nothing itself**: it writes one **plan**
   (`server/providers/itam/plans.ts`, tables `itamPlans` / `itamPlanSteps`,
   migration `202610120001_itam_plans`) whose steps are the operations it
   could once call directly — `AI_WRITE_SCHEMAS` (`ai-writes.ts`) and
@@ -57,21 +72,28 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   A refused step stops the plan there, the steps before it staying done,
   and the card and the outcome say how far it got. A later step names what
   an earlier one created by `$n` or its `ref`. A plan is its proposer's,
-  expires after a day, and its outcome goes back to the conversation as
-  news and as an input that wakes the agent (`plan-news.ts`). The card is
-  `client/components/itam/ai/plan-card.tsx`, placed among a conversation's
-  messages through the plugin's `ChatExtensionsContext`
-  (`client/lib/itam/chat-extensions.tsx`); unticking a step leaves it out.
-  Submitting, deciding, ordering, cancelling, executing a disposal and
-  deleting are never plan steps — they stay on the pages.
+  kept with the conversation it was proposed in (the tool context's
+  `sessionId` is the conversation's id), expires after a day, and its
+  outcome goes back to the conversation as news (`plan-news.ts`). The card
+  is `client/components/itam/ai/plan-card.tsx`, placed among a
+  conversation's messages through the plugin's `ChatExtensionsContext`
+  (`client/lib/itam/chat-extensions.tsx`, the conversation's plans by their
+  time); unticking a step leaves it out. Submitting, deciding, ordering,
+  cancelling, executing a disposal and deleting are never plan steps — they
+  stay on the pages.
 - The chat itself is the UI Library's `agent-chat` block in
   `client/extensions/nocobase-agent-chat/` (written from the registry: the
   CLI could not install it), around the shell through `AgentChatShell` in
   `client/layouts/agent-chat.tsx`, and a full page at
-  `/agent-chat/:conversationId`. A model is sent as its service and name
-  alone (`modelRef` in `conversation-view.tsx`), since plugin 0.1.0-beta.8
-  refuses the labels and effort a model choice carries, which made every
-  model but the agent's default unpickable. Since 2026-10-16 the panel looks
+  `/agent-chat/:conversationId`. Plugin 1.0 messages are AI SDK
+  `UIMessage`s (text, `tool-*` and data parts; `appUIMessageText` for the
+  text), sent through the plugin's chat controller and streamed back; a
+  new conversation's model is chosen before its first message
+  (`NewChatChoice`). ITAM's ways of asking from outside the panel — the ask
+  box, the global search, a page's shortcut — start one through
+  `useStartConversation` (`ai-chat.tsx`), which submits through
+  `useChatController().submissions` as the composer does and resolves with
+  the conversation's id. Since 2026-10-16 the panel looks
   and sits as NocoCRM's does, through `Application change (ITAM)` edits to
   the block: fixed at the window's right edge over the whole height, 28rem
   (`chat-panel.tsx`, drawn by `AgentChatShell`), the header and page making
@@ -141,14 +163,15 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   per-person snapshot of the collections they may read, taken by
   `/itam/ai/status` (the plugin resolves inside its own transaction, where
   authorization cannot be asked on SQLite). Asset Steward then reads the record with
-  its commands. `useItamAi()` says whether a model is there (`/itam/ai/status`:
-  Asset Steward's first model, else the system default) and opens or starts
-  conversations. Every AI shortcut on a page is blue text with a sparkle
+  its tools. `useItamAi()` says whether a model is there (`/itam/ai/status`:
+  the default chat model, which it also names so the ask box offers it
+  first) and opens or starts conversations. Every AI shortcut on a page is blue text with a sparkle
   (`AiShortcut`), not a button. There is no web search.
 - ITAM's **own model calls** go through the plugin's model gateway
   (`server/providers/itam/ai-model.ts`: `openSession`, `askJson` with a zod
   shape spelled out as JSON Schema, asked once more when the reply does not
-  hold it, and `readSkill` from the library), with Asset Steward's first model. They
+  hold it, and `readSkill` from the library), with the default chat model
+  of Agent 团队 → 模型 (`itamModel`). They
   are the forms filled from material — AI 整理 on a purchase order or its
   lines, a new model or software product, a delivery document —
   `POST /itam/ai/read` (`ai-reading.ts`, each task under the grant its form
@@ -171,13 +194,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   with the material on screen.
 - **Work agents** (2026-10-16, plan "Work agents", step 1, after
   NocoCRM's): agents that work on a record without being asked in a
-  conversation, and only suggest. One plugin agent per work, created once
-  at start (`server/providers/itam-agents/work-agents.ts`, marker
-  `agents-work-v1`, owner-only, no actions, its method skill attached —
-  `WORK_SKILLS` in `skill.ts` go into the library but not onto Asset Steward), is how
-  an administrator sets its model and instructions on Agent 团队 → Agent; a run
-  asks the gateway with them (`openSession({ work })`, falling back to
-  Asset Steward's model) and its use shows under the agent's name on 用量. Each run
+  conversation, and only suggest. Until plugin 1.0 each was an online
+  agent of the plugin, created at start, whose model and instructions an
+  administrator set on Agent 团队 → Agent; 1.0 deleted them (2026-10-20). A
+  run now asks the gateway with the default chat model and the instructions
+  ITAM writes for the work (`workRun` in `ai-model.ts`,
+  `workInstructions` in `server/providers/itam-agents/work-agents.ts`), and
+  its method is its skill in the library (`WORK_SKILLS` in `skill.ts`),
+  which administrators edit on Agent 团队 → 技能. Each run
   is a row of `itamAgentRuns` (migration `202610160001_agent_runs`,
   `server/providers/itam/agent-runs.ts`): running → pending with its
   structured result, or failed with a reason code shown where the result
@@ -260,12 +284,10 @@ locale })` — its own plans, the answers given — and the joiners'
     the model could only guess what the register does not hold (who will
     need the software). A work agent is for a judgement a rule cannot make
     and the register holds the material for, as 审批审阅 has. Removing one
-    takes it out of `AGENTS` and `WORK_AGENTS`; `provisionWorkAgents`
-    deletes its plugin agent at the next start (archived first, as the
-    plugin asks; found by its `agentWork.<agent>.name` key, so also when the
-    marker no longer lists it) and drops it from the marker, and 收件箱 and
+    takes it out of `AGENTS` and `WORK_AGENTS`, and 收件箱 and
     its count read only the agents in `AGENTS`, so its old runs stop
-    showing. The plan operations they added (`adjust_entitlement_seats`,
+    showing (the plugin agent it once had went with plugin 1.0). The plan
+    operations they added (`adjust_entitlement_seats`,
     `set_entitlement_auto_renew`) stay for Asset Steward.
 - An AI create meets the page dialog's bar: `REQUIRED_ON_CREATE` in
   `server/routes/itam/ai-records.ts` lists what each create dialog requires
@@ -273,9 +295,10 @@ locale })` — its own plans, the answers given — and the joiners'
   when its category requires one), checked when a plan holding a
   `create_record` step is proposed and again when it runs. A new required
   field on a create dialog is added there too. Its field guide
-  (`CREATE_FIELD_GUIDE`, generated from the routes' own schemas) is what
-  `itam plan ops` shows, so a field added to a page reaches the assistant by
-  itself.
+  (`createFieldGuide()`, generated from the routes' own schemas on first
+  use — at load it ran before those schemas were loaded once the tools
+  imported it from a provider) is what `itam_plan_ops` shows, so a field
+  added to a page reaches the assistant by itself.
 - **Asset Steward chooses a joiner's equipment when asked** (2026-10-06,
   `server/providers/itam/onboarding-advisor.ts`, migration
   `202610060002_onboarding_runs`), reversing "nothing AI runs outside a
@@ -283,7 +306,7 @@ locale })` — its own plans, the answers given — and the joiners'
   place and warranty; Asset Steward also weighs repairs, the replacement date, notes
   and the business notes, and says why. A run is one call to the Agents
   plugin's model gateway (`createAssistantRunner`, `openSession` /
-  `askJson` in `ai-model.ts`, template 1.0.0-beta.64) with Asset Steward's model and
+  `askJson` in `ai-model.ts`, template 1.0.0-beta.64) with the default chat model and
   this job's instructions (`PROMPTS`) as the whole system prompt, answered
   in `ADVICE_SCHEMA`'s shape; the message is the joiner, the kit, the
   business notes and each item's candidates as JSON. It has no conversation,
@@ -460,7 +483,7 @@ document-text`, which reads only a file uploaded within the hour and
   `client/pages/itam/master/master-domain-parts.tsx`, for whoever may update
   the record): it starts a conversation with the record pinned. Under the
   `catalog` skill's 补充已有记录 section Asset Steward reads the record and its
-  category with its commands, says what it found, then proposes the change
+  category with its tools, says what it found, then proposes the change
   as a plan with one `update_master_record` step (`ai-writes.ts`): only the
   fields the lookup fills — a model's code, specification, warranty, dates
   and extended fields (held to the template by `holdAttributes`, merged into

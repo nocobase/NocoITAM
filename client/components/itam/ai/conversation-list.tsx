@@ -1,7 +1,6 @@
 import {
   appUIMessageText,
   AgentAvatar,
-  useAgentText,
   useChatApi,
   type ConversationListPages,
 } from '@nocobase/app-plugin-agents/client/chat';
@@ -21,6 +20,7 @@ import { Button } from '#components/ui/button';
 import { Skeleton } from '#components/ui/skeleton';
 import { listedConversations, markdownLine } from '@/lib/itam/conversations';
 import { errorMessage, relativeTime } from '@/lib/itam/format';
+import { useAgentText } from '@/lib/itam/agent-text';
 
 /**
  * The reader's conversations with the assistant, last message first

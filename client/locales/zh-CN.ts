@@ -3136,6 +3136,8 @@ const zhCN: AppResource = {
     searchSource: '全局搜索',
     // The assistant's name (2026-10-16; it was Noco until then).
     assistantName: '资产管家',
+    assistantDescription:
+      '在 IT 资产台账里查找信息，把修改整理成计划，由你确认后执行。',
     // The business actions an agent may be given (Agent 团队 → Agent).
     agentActions: {
       records: 'IT 资产',

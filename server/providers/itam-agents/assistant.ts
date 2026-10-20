@@ -97,6 +97,19 @@ function refusal(error: unknown): OnlineAgentJson {
   });
 }
 
+/** A tool's output as the page sees it: its refusal, or nothing. */
+function publicRefusal(value: OnlineAgentJson): OnlineAgentJson {
+  const error =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as { error?: { message?: unknown } }).error
+      : undefined;
+  return asJson(
+    typeof error?.message === 'string'
+      ? { error: { message: error.message } }
+      : {},
+  );
+}
+
 export function registerAssistant(
   agents: Agents,
   container: ServiceContainer,
@@ -128,7 +141,13 @@ export function registerAssistant(
             return refusal(error);
           }
         },
-        ...(publicView ? { public: publicView } : {}),
+        // The page sees that a tool ran and, when refused, why; never what
+        // it read — the answer says what the person needs of that. Without
+        // a projection the call would not show at all.
+        public: publicView ?? {
+          input: () => asJson({}),
+          output: (value) => publicRefusal(value),
+        },
       },
     });
   const reader = (userId: string) => readerFor(container, userId);
