@@ -359,9 +359,13 @@ export function RecordFormDialog({
             ? twoColumns
               ? 'sm:max-w-5xl'
               : 'sm:max-w-3xl'
-            : twoColumns && !replacement
-              ? 'sm:max-w-2xl'
-              : 'sm:max-w-lg',
+            : // A table under the fields (a new category's extended
+              // fields) wants the width a column beside them would take.
+              postlude && !replacement
+              ? 'sm:max-w-4xl'
+              : twoColumns && !replacement
+                ? 'sm:max-w-2xl'
+                : 'sm:max-w-lg',
         )}
       >
         <form

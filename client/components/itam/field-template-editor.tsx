@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import {
+  useEffect,
   useState,
   type DragEvent,
   type ReactElement,
@@ -115,6 +116,7 @@ export function FieldTemplateEditor({
   usage,
   onSave,
   onSuggest,
+  embedded,
 }: {
   readonly value: unknown;
   readonly editable: boolean;
@@ -126,6 +128,15 @@ export function FieldTemplateEditor({
    * rows under edit for the reader to check and save. Absent without a model.
    */
   readonly onSuggest?: () => Promise<FieldSuggestion>;
+  /**
+   * Part of a form rather than a card of its own (2026-10-20, 创建分类): always
+   * the editor, with no 保存 or 取消 — the form saves the fields it is told
+   * of, with whether they are valid, and asks the problems shown.
+   */
+  readonly embedded?: {
+    readonly onChange: (fields: TemplateField[], valid: boolean) => void;
+    readonly showProblems: boolean;
+  };
 }): ReactElement {
   const { t } = useTranslation();
   const [rows, setRows] = useState(() => withIds(parseTemplate(value)));
@@ -135,7 +146,7 @@ export function FieldTemplateEditor({
   // 添加字段 straight in front of them. Cancelling still returns to the
   // empty card — that is the reader saying they did not want one.
   const [editing, setEditing] = useState(
-    () => editable && parseTemplate(value).length === 0,
+    () => Boolean(embedded) || (editable && parseTemplate(value).length === 0),
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -218,7 +229,7 @@ export function FieldTemplateEditor({
     seen.add(row.key);
   });
   const problemAt = (index: number, cell: ProblemCell) =>
-    attempted && problems.get(index)?.cell === cell
+    (attempted || embedded?.showProblems) && problems.get(index)?.cell === cell
       ? problems.get(index)?.message
       : undefined;
   const problemText = (index: number, cell: ProblemCell) => {
@@ -274,6 +285,24 @@ export function FieldTemplateEditor({
       </AiShortcut>
     ) : null;
 
+  /** The fields as saved: labels trimmed, options only on a select. */
+  const cleaned = (): TemplateField[] =>
+    stripIds(rows).map((row) => ({
+      key: row.key,
+      label: row.label.trim(),
+      type: row.type,
+      ...(row.required ? { required: true } : {}),
+      ...(row.hidden ? { hidden: true } : {}),
+      ...(row.type === 'select' ? { options: row.options ?? [] } : {}),
+    }));
+  // Embedded, the form is told of every change and saves the fields itself.
+  const onEmbeddedChange = embedded?.onChange;
+  const valid = problems.size === 0;
+  const fingerprint = JSON.stringify(cleaned());
+  useEffect(() => {
+    onEmbeddedChange?.(JSON.parse(fingerprint) as TemplateField[], valid);
+  }, [onEmbeddedChange, fingerprint, valid]);
+
   const save = async () => {
     if (problems.size > 0) {
       setAttempted(true);
@@ -282,16 +311,7 @@ export function FieldTemplateEditor({
     setSaving(true);
     setError(undefined);
     try {
-      await onSave(
-        stripIds(rows).map((row) => ({
-          key: row.key,
-          label: row.label.trim(),
-          type: row.type,
-          ...(row.required ? { required: true } : {}),
-          ...(row.hidden ? { hidden: true } : {}),
-          ...(row.type === 'select' ? { options: row.options ?? [] } : {}),
-        })),
-      );
+      await onSave(cleaned());
       setEditing(false);
       setSuggested(undefined);
       setSuggestedExtra(undefined);
@@ -381,7 +401,7 @@ export function FieldTemplateEditor({
               throw away: the card offers only 添加字段 (and AI 建议字段)
               until a row exists. */}
           {editable && rows.length === 0 ? suggestAction : null}
-          {editable && rows.length > 0 ? (
+          {editable && rows.length > 0 && !embedded ? (
             <div className='flex items-center gap-2'>
               <span className='mr-1'>{suggestAction}</span>
               <Button

@@ -1,9 +1,16 @@
 import { resolveAppUrl } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
-import { Sparkles, X } from 'lucide-react';
-import { Fragment, useMemo, useState, type ReactElement } from 'react';
+import { Sparkles } from 'lucide-react';
+import {
+  Fragment,
+  useCallback,
+  useMemo,
+  useState,
+  type ReactElement,
+} from 'react';
 
 import { CollapsibleText } from '@/components/itam/collapsible-text';
+import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
 import {
   initialFormValues,
   RecordFormDialog,
@@ -93,7 +100,24 @@ function CategoryCreateForm({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string>();
   const [said, setSaid] = useState<string>();
-  const [template, setTemplate] = useState<readonly TemplateField[]>([]);
+  // The fields the editor starts from (the parent's, then the suggestions),
+  // re-seeded when AI 整理 answers again; and what it holds now.
+  const [seed, setSeed] = useState(0);
+  const [seedFields, setSeedFields] = useState<readonly TemplateField[]>(
+    () => baseTemplate,
+  );
+  const [template, setTemplate] = useState<readonly TemplateField[]>(
+    () => baseTemplate,
+  );
+  const [templateValid, setTemplateValid] = useState(true);
+  const [attempted, setAttempted] = useState(false);
+  const changeFields = useCallback(
+    (fields: TemplateField[], valid: boolean) => {
+      setTemplate(fields);
+      setTemplateValid(valid);
+    },
+    [],
+  );
   const [marks, setMarks] = useState<ReadonlySet<string>>(() => new Set());
   const [duplicates, setDuplicates] = useState<
     NonNullable<CategoryReading['duplicates']>
@@ -122,11 +146,15 @@ function CategoryCreateForm({
         ),
       );
       const kept = new Set(baseTemplate.map((field) => field.key));
-      setTemplate(
-        parseTemplate(reading.fieldTemplate).filter(
+      const fields = [
+        ...baseTemplate,
+        ...parseTemplate(reading.fieldTemplate).filter(
           (field) => !kept.has(field.key),
         ),
-      );
+      ];
+      setSeedFields(fields);
+      setTemplate(fields);
+      setSeed((known) => known + 1);
       setDuplicates(reading.duplicates ?? []);
       setSaid(answer.said || undefined);
       setFilled(true);
@@ -231,94 +259,66 @@ function CategoryCreateForm({
           </div>
         ) : undefined
       }
+      // Above the form: what AI 整理 said, and the categories already called
+      // the same; no column beside it, so the fields' table has the width.
       prelude={
-        filled && current === 'form' && duplicates.length > 0 ? (
-          <p className='rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm text-warning-foreground'>
-            {t('categoryCapture.duplicates')}
-            {duplicates.map((row, index) => (
-              <Fragment key={row.id}>
-                {index > 0 ? '、' : null}
-                <a
-                  href={resolveAppUrl(`/categories?selected=${row.id}`)}
-                  target='_blank'
-                  rel='noreferrer'
-                  className='text-info-foreground hover:underline'
-                >
-                  {row.name}
-                </a>
-              </Fragment>
-            ))}
-          </p>
-        ) : undefined
-      }
-      // What AI 整理 said, beside the form; the fields it suggested are
-      // part of what the form saves, so they sit under it (2026-10-20).
-      aside={
-        filled ? (
-          <p className='flex gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
-            <Sparkles className='mt-0.5 size-4 shrink-0 text-primary' />
-            <span className='min-w-0'>{said ?? t('masterCapture.filled')}</span>
-          </p>
-        ) : undefined
-      }
-      postlude={
-        filled ? (
-          <div className='grid gap-2 rounded-lg bg-muted/40 p-3 text-sm'>
-            <p className='font-medium'>{t('fieldTemplate.title')}</p>
-            {baseTemplate.length > 0 ? (
-              <p className='text-xs text-muted-foreground'>
-                {t('categoryCapture.inherited', {
-                  count: baseTemplate.length,
-                })}
+        filled && current === 'form' ? (
+          <div className='grid gap-2'>
+            <p className='flex gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
+              <Sparkles className='mt-0.5 size-4 shrink-0 text-primary' />
+              <span className='min-w-0'>
+                {said ?? t('masterCapture.filled')}
+              </span>
+            </p>
+            {duplicates.length > 0 ? (
+              <p className='rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm text-warning-foreground'>
+                {t('categoryCapture.duplicates')}
+                {duplicates.map((row, index) => (
+                  <Fragment key={row.id}>
+                    {index > 0 ? '、' : null}
+                    <a
+                      href={resolveAppUrl(`/categories?selected=${row.id}`)}
+                      target='_blank'
+                      rel='noreferrer'
+                      className='text-info-foreground hover:underline'
+                    >
+                      {row.name}
+                    </a>
+                  </Fragment>
+                ))}
               </p>
             ) : null}
-            {template.length === 0 ? (
-              <p className='text-muted-foreground'>
-                {t('categoryCapture.noFields')}
-              </p>
-            ) : (
-              <ul className='flex flex-wrap gap-1.5'>
-                {template.map((field) => (
-                  <li
-                    key={field.key}
-                    className='inline-flex h-7 items-center gap-1.5 rounded-md bg-background px-2.5'
-                  >
-                    {field.label}
-                    <span className='text-muted-foreground'>
-                      {t(`fieldTemplate.types.${field.type}`)}
-                    </span>
-                    <button
-                      type='button'
-                      className='text-muted-foreground hover:text-foreground'
-                      aria-label={t('categoryCapture.removeField', {
-                        name: field.label,
-                      })}
-                      onClick={() =>
-                        setTemplate((list) =>
-                          list.filter((item) => item.key !== field.key),
-                        )
-                      }
-                    >
-                      <X className='size-3.5' />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className='text-xs text-muted-foreground'>
-              {t('categoryCapture.fieldsHint')}
-            </p>
           </div>
+        ) : undefined
+      }
+      // The fields are edited right here (2026-10-20): the same editor as
+      // the category's card, embedded, saved with the form.
+      postlude={
+        filled ? (
+          <FieldTemplateEditor
+            key={seed}
+            value={seedFields}
+            editable
+            onSave={() => Promise.resolve()}
+            embedded={{
+              onChange: changeFields,
+              showProblems: attempted,
+            }}
+          />
         ) : undefined
       }
       submitting={mutations.create.isPending}
       error={mutations.create.error}
       onSubmit={async (payload) => {
+        // A field still missing its name or key stops the save, and the
+        // editor shows where.
+        if (!templateValid) {
+          setAttempted(true);
+          throw new Error(t('categoryCapture.fieldsInvalid'));
+        }
         const created = await mutations.create.mutateAsync({
           ...payload,
-          ...(baseTemplate.length + template.length > 0
-            ? { fieldTemplate: [...baseTemplate, ...template] }
-            : {}),
+          ...(template.length > 0 ? { fieldTemplate: template } : {}),
         });
         onCreated(created);
         onOpenChange(false);
