@@ -43,7 +43,8 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   two-attribute selector already there, and this theme is **monochrome** —
   `--primary` / `--secondary` / `--muted` / `--accent` all carry zero chroma,
   so `bg-primary/10` is grey. Only `--info` / `--success` / `--warning` /
-  `--destructive` have colour. A work document's kind tag (`DocumentTypeBadge`) is
+  `--destructive` have colour, and `--loan` (violet, 2026-10-20), a device's
+  借出中, which in a lighter blue read as 库存中. A work document's kind tag (`DocumentTypeBadge`) is
   outlined in a hue of its own per kind (`data-kind`, 2026-10-17): 采购 info,
   维修 warning, 盘点 success, 报废 destructive — still outlined, so it never
   reads as a filled status tag. On the workbench, 人员变动's 离职 / 入职 tags
