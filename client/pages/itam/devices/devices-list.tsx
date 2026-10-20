@@ -384,8 +384,9 @@ function DevicesList(): ReactElement {
  * MDM 核对 from the device list, while a platform is connected (2026-10-20):
  * outlined like the page's other tools, with how many of its to-dos wait —
  * differences, only in MDM, only in the register, as its own tabs count
- * them — in amber while any do. What matters is said by the count, not by
- * a second filled button beside 创建设备.
+ * them — in plain figures as the tabs' counts are, amber while any wait
+ * (2026-10-20; a tinted box around it read heavy). What matters is said by
+ * the count, not by a second filled button beside 创建设备.
  */
 function MdmReviewButton(): ReactElement {
   const { t } = useTranslation();
@@ -404,10 +405,8 @@ function MdmReviewButton(): ReactElement {
       {waiting === undefined ? null : (
         <span
           className={cn(
-            'rounded-md px-1.5 text-xs leading-5 font-medium tabular-nums',
-            waiting > 0
-              ? 'bg-warning text-warning-foreground'
-              : 'bg-muted text-muted-foreground',
+            'text-sm font-medium tabular-nums',
+            waiting > 0 ? 'text-warning-foreground' : 'text-muted-foreground',
           )}
         >
           {waiting}
