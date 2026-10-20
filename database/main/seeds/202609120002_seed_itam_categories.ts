@@ -158,6 +158,8 @@ const CATEGORIES: readonly CategorySeed[] = [
     id: 'cat-endpoint',
     name: 'End-user devices',
     appliesTo: 'device',
+    // Every laptop, desktop and phone under it carries one (2026-10-20).
+    requiresSerial: true,
     sort: 10,
   },
   { id: 'cat-peripheral', name: 'Peripherals', appliesTo: 'device', sort: 20 },

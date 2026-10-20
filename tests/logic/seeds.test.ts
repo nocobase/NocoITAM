@@ -83,6 +83,13 @@ describe('ITAM seeds', () => {
       .select('id')
       .execute();
     expect(categories.length).toBeGreaterThan(20);
+    // 终端设备 needs a serial number.
+    const endpoint = await query
+      .selectFrom('categories')
+      .select('requiresSerial')
+      .where('id', '=', 'cat-endpoint')
+      .executeTakeFirstOrThrow();
+    expect(Boolean(endpoint.requiresSerial)).toBe(true);
     // An English deployment's first employee has an English name.
     const person = await query
       .selectFrom('people')

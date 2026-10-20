@@ -7,7 +7,9 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { EmptyState } from '@/components/itam/empty-state';
+import { CategoryDefaultsSuggestion } from '@/components/itam/category-defaults-suggestion';
 import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
+import { categoryDefaultsOf } from '@/lib/itam/category-defaults';
 import { parseTemplate } from '@/lib/itam/field-template';
 import { MasterDataTree } from '@/components/itam/master-data-tree';
 import { RecordPane } from '@/components/itam/record-drawer';
@@ -353,11 +355,26 @@ export function CategoryTemplate({
                 material: text(record.name) || 'category',
                 context: { categoryId: text(record.id) },
               });
-              const fields = (answer.reading as { fields?: unknown } | null)
-                ?.fields;
+              const reading = answer.reading as {
+                fields?: unknown;
+                defaults?: unknown;
+              } | null;
               return {
-                fields: parseTemplate(fields),
+                fields: parseTemplate(reading?.fields),
                 said: answer.said,
+                // The defaults too: those that differ, with 采用.
+                extra: (
+                  <CategoryDefaultsSuggestion
+                    record={record}
+                    defaults={categoryDefaultsOf(reading?.defaults)}
+                    onApply={async (values) => {
+                      await mutations.update.mutateAsync({
+                        id: record.id,
+                        input: values,
+                      });
+                    }}
+                  />
+                ),
               };
             },
           }

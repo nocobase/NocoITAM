@@ -9,7 +9,12 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useState, type DragEvent, type ReactElement } from 'react';
+import {
+  useState,
+  type DragEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { Button } from '@/components/ui/button';
@@ -100,6 +105,8 @@ const stripIds = (rows: readonly EditRow[]): TemplateField[] =>
 export interface FieldSuggestion {
   readonly fields: readonly TemplateField[];
   readonly said: string;
+  /** Shown under the sentence, e.g. the record's suggested defaults. */
+  readonly extra?: ReactNode;
 }
 
 export function FieldTemplateEditor({
@@ -134,6 +141,7 @@ export function FieldTemplateEditor({
   const [error, setError] = useState<string>();
   const [suggesting, setSuggesting] = useState(false);
   const [suggested, setSuggested] = useState<string>();
+  const [suggestedExtra, setSuggestedExtra] = useState<ReactNode>();
   // Problems surface only after a save attempt; a fresh row starts quiet.
   const [attempted, setAttempted] = useState(false);
   // Removing a row that already describes a field asks first; a blank row
@@ -226,6 +234,7 @@ export function FieldTemplateEditor({
     setEditing(true);
     setSuggesting(true);
     setSuggested(undefined);
+    setSuggestedExtra(undefined);
     setError(undefined);
     try {
       const answer = await onSuggest();
@@ -239,6 +248,7 @@ export function FieldTemplateEditor({
         ...current.filter((row) => row.key || row.label),
         ...withIds(fresh.map((field) => ({ ...field, required: false }))),
       ]);
+      setSuggestedExtra(answer.extra);
       setSuggested(
         fresh.length
           ? t('fieldTemplate.suggested', {
@@ -285,6 +295,7 @@ export function FieldTemplateEditor({
       );
       setEditing(false);
       setSuggested(undefined);
+      setSuggestedExtra(undefined);
     } catch (caught) {
       setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
     } finally {
@@ -381,6 +392,7 @@ export function FieldTemplateEditor({
                   setRows(withIds(parseTemplate(value)));
                   setError(undefined);
                   setSuggested(undefined);
+                  setSuggestedExtra(undefined);
                   setEditing(false);
                 }}
               >
@@ -400,7 +412,10 @@ export function FieldTemplateEditor({
             {t('fieldTemplate.suggesting')}
           </p>
         ) : suggested ? (
-          <p className='text-sm text-muted-foreground'>{suggested}</p>
+          <div className='space-y-2'>
+            <p className='text-sm text-muted-foreground'>{suggested}</p>
+            {suggestedExtra}
+          </div>
         ) : null}
         {rows.length === 0 ? (
           <div className='flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground'>

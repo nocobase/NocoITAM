@@ -307,7 +307,7 @@ locale })` — its own plans, the answers given — and the joiners'
     showing (the plugin agent it once had went with plugin 1.0). The plan
     operations they added (`adjust_entitlement_seats`,
     `set_entitlement_auto_renew`) stay for Asset Steward.
-- **AI 建议字段** (2026-10-20) on a category's 扩展字段 card
+- **建议字段** (2026-10-20) on a category's 扩展字段 card
   (`FieldTemplateEditor`'s `onSuggest`, wired in `CategoryTemplate`): one
   gateway call, task `categoryFields` under `categories.update`. The server
   reads the category as the person — its path, kind and current fields —
@@ -315,7 +315,12 @@ locale })` — its own plans, the answers given — and the joiners'
   (`categoryFieldFacts` in `ai-reading.ts`), and the model answers fields
   that reuse those keys for the same thing and leave out the standard ones.
   They join the rows under edit, new keys only and never required; nothing
-  is saved until the reader saves. A category has no AI 整理 tab: it is
+  is saved until the reader saves. The same answer suggests the category's
+  defaults (depreciation, useful life, residual rate, warranty, replacement,
+  audit cycle), read against its current ones and similar categories';
+  those that differ show under the sentence, current beside suggested, and
+  采用 writes them to the category (`CategoryDefaultsSuggestion`). The
+  shortcut reads 建议字段: the sparkle already says AI. A category has no AI 整理 tab: it is
   created rarely and has nothing to look up.
 - An AI create meets the page dialog's bar: `REQUIRED_ON_CREATE` in
   `server/routes/itam/ai-records.ts` lists what each create dialog requires

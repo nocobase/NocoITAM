@@ -1115,6 +1115,9 @@ const messages = {
     new: 'New category',
     newChild: 'New sub-category',
     noneOfKind: 'No categories of this type yet',
+    suggestedDefaults: 'Suggested defaults',
+    applyDefaults: 'Apply',
+    defaultsApplied: 'Applied',
     appliesToInherited: 'Inherited from the parent',
     appliesToFromCategory: 'Set by the category',
     hintNotSoftware:
@@ -2100,8 +2103,8 @@ const messages = {
     people: 'People',
   },
   fieldTemplate: {
-    suggest: 'AI suggests fields',
-    suggesting: 'AI is suggesting fields…',
+    suggest: 'Suggest fields',
+    suggesting: 'Suggesting fields and defaults…',
     suggested:
       'Added {{count}} suggested fields; check them before saving. {{said}}',
     suggestedNone: 'AI has no fields to add.',

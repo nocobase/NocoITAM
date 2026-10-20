@@ -1090,6 +1090,9 @@ const zhCN: AppResource = {
     new: '创建分类',
     newChild: '创建子分类',
     noneOfKind: '暂无这一类的分类',
+    suggestedDefaults: '建议的默认值',
+    applyDefaults: '采用',
+    defaultsApplied: '已采用',
     appliesToInherited: '继承上级分类',
     appliesToFromCategory: '随分类',
     hintNotSoftware:
@@ -2013,8 +2016,8 @@ const zhCN: AppResource = {
     people: '在职人员',
   },
   fieldTemplate: {
-    suggest: 'AI 建议字段',
-    suggesting: 'AI 正在建议字段…',
+    suggest: '建议字段',
+    suggesting: '正在建议字段和默认值…',
     suggested: '已加入 {{count}} 个建议字段，核对后保存。{{said}}',
     suggestedNone: 'AI 没有可补充的字段。',
     title: '扩展字段',
