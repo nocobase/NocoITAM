@@ -147,7 +147,7 @@ it('reads a model and fills the form for checking', async () => {
   ).toHaveAttribute('aria-selected', 'true');
   // Nothing to save before the form is filled, and no footer at all: the
   // corner's close button closes it.
-  expect(screen.queryByRole('button', { name: 'actions.save' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'actions.create' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'actions.cancel' })).toBeNull();
   expect(
     screen.getByRole('textbox', { name: 'masterCapture.material' }),
@@ -230,7 +230,7 @@ it('is the plain form without the assistant', () => {
   render(dialog());
   expect(screen.queryByRole('tab')).toBeNull();
   expect(screen.getByLabelText('form-name')).toBeVisible();
-  expect(screen.getByRole('button', { name: 'actions.save' })).toBeVisible();
+  expect(screen.getByRole('button', { name: 'actions.create' })).toBeVisible();
 });
 
 it('says what the reading said when it filled nothing', async () => {

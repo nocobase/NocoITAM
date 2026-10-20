@@ -435,11 +435,13 @@ export function RecordFormDialog({
               >
                 {t('actions.cancel')}
               </Button>
+              {/* 创建 for a new record, 保存 for one being edited
+                  (2026-10-20). */}
               <Button
                 type='submit'
                 disabled={submitting || missing || uploading}
               >
-                {t('actions.save')}
+                {t(recordId ? 'actions.save' : 'actions.create')}
               </Button>
             </DialogFooter>
           )}
