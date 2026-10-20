@@ -41,6 +41,18 @@ describe('history layout', () => {
     ]);
   });
 
+  it('keeps a record’s creation a line of its own, never folded with the edits after it', () => {
+    const units = groupEdits([
+      edit('b', at(16, 14, 5)),
+      edit('a', at(16, 14, 4)),
+      { ...edit('created', at(16, 14, 0)), changes: [{ action: 'create' }] },
+    ]);
+    expect(units.map((unit) => [unit.kind, unit.id])).toEqual([
+      ['edits', 'edits:b'],
+      ['item', 'created'],
+    ]);
+  });
+
   it('heads each day and folds a long run of changes between comments', () => {
     const items = [
       event('c1', at(16, 15), 'comment'),

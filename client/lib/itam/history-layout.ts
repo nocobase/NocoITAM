@@ -12,7 +12,19 @@ export interface LayoutItem {
   readonly actorId: string | null;
   /** Null for a line that only changed fields. */
   readonly event: { readonly type: string } | null;
+  /** The field changes, each with its action (create, update, delete). */
+  readonly changes?: readonly { readonly action?: string }[];
 }
+
+/**
+ * A record's creation or deletion is a line of its own (2026-10-20): folded
+ * with the edits after it, 创建 read as one of "修改了 2 项".
+ */
+const standsAlone = (item: LayoutItem): boolean =>
+  item.event !== null ||
+  (item.changes ?? []).some(
+    (change) => change.action === 'create' || change.action === 'delete',
+  );
 
 export type TimelineUnit<T extends LayoutItem> =
   | { readonly kind: 'item'; readonly id: string; readonly item: T }
@@ -97,7 +109,7 @@ export function groupEdits<T extends LayoutItem>(
   for (const item of items) {
     const previous = run.at(-1);
     const joins =
-      item.event === null &&
+      !standsAlone(item) &&
       previous !== undefined &&
       previous.actorId === item.actorId &&
       Math.abs(
@@ -105,7 +117,7 @@ export function groupEdits<T extends LayoutItem>(
           new Date(item.createdAt).getTime(),
       ) <= EDIT_WINDOW_MS;
     if (!joins) flush();
-    if (item.event === null) run.push(item);
+    if (!standsAlone(item)) run.push(item);
     else units.push({ kind: 'item', id: item.id, item });
   }
   flush();
