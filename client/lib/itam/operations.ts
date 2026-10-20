@@ -163,11 +163,11 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
 export const REPAIR_CREATE_FIELDS: readonly string[] = [
   'method',
   'vendorId',
-  // The kind of fault, then what it is (2026-10-20): the description reads
-  // straight under the category it explains.
+  // The kind of fault and when it went, then what it is (2026-10-20): the
+  // description reads across the form under the category it explains.
   'faultCategory',
-  'faultDescription',
   'sentAt',
+  'faultDescription',
   'expectedReturnAt',
   'ownerId',
 ];
