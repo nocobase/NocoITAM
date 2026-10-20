@@ -296,16 +296,30 @@ export default function MasterDataOverviewPage(): ReactElement {
           title={t('masterData.laneWhere')}
           hint={t('masterData.laneWhereHint')}
         >
-          <div className='grid grid-cols-2 gap-x-2 gap-y-2'>
+          <div className='grid grid-cols-3 gap-x-2 gap-y-2'>
             <NodeCard node={nodes.departments} compact />
-            <NodeCard node={nodes.locations} compact />
+            <div className='col-span-2'>
+              <NodeCard node={nodes.locations} compact />
+            </div>
             {/* Read upwards: a person belongs to a department and has an
-                office location. */}
+                office location; a device or a stock record is kept at a
+                location (its 存放位置, 2026-10-20), whoever holds it. */}
             <Arrow label={t('masterData.edgeBelongsTo')} centered up />
             <Arrow label={t('fields.officeLocation')} centered up />
+            <Arrow label={t('masterData.edgeStoredAt')} centered up />
             <div className='col-span-2'>
               <NodeCard node={nodes.people} compact />
             </div>
+            <NodeCard
+              node={{
+                key: 'stored',
+                icon: Package,
+                label: t('masterData.storedAssets'),
+                to: '/devices',
+                kind: 'record',
+              }}
+              compact
+            />
           </div>
           {/* Who may hold what: assignees down, device types across. */}
           <div className='-mx-4 mt-6 overflow-x-auto px-4'>

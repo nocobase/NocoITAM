@@ -116,11 +116,13 @@ const zhCN: AppResource = {
     laneWhatHint: '基于五种内置资产类型对资产分别管理',
     laneWhere: '资产归属',
     laneWhereHint:
-      '资产分配给人员、位置或设备后归其持有；人员属于部门并有办公位置',
+      '资产分配给人员、位置或设备后归其持有；人员属于部门并有办公位置；设备和库存存放在某个位置，与分给谁无关',
     laneWho: '资产来源与去向',
     laneWhoHint:
       '供应商不被其他主数据引用，但可被资产记录以及采购、维修、报废引用',
     edgeBelongsTo: '属于',
+    edgeStoredAt: '存放于',
+    storedAssets: '设备 · 库存',
     edgeDividesInto: '细分',
     edgeContains: '收录',
     edgeMadeBy: '出自',
@@ -147,6 +149,8 @@ const zhCN: AppResource = {
     showMore: '展开',
     showLess: '收起',
     all: '全部',
+    mine: '我的',
+    awaitingMe: '待我审批',
     allOf: '全部{{field}}',
     view: '查看',
     clickToEdit: '点击编辑',

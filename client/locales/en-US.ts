@@ -119,11 +119,13 @@ const messages = {
     laneWhatHint: 'Assets are managed separately by five built-in asset types',
     laneWhere: 'Asset ownership',
     laneWhereHint:
-      'Assets are held by the person, location or device they are assigned to; a person belongs to a department and has an office location',
+      'Assets are held by the person, location or device they are assigned to; a person belongs to a department and has an office location; devices and stock are stored at a location, whoever holds them',
     laneWho: 'Where assets come from and go',
     laneWhoHint:
       'No other master data references a vendor, but asset records, purchases, repairs and disposals do',
     edgeBelongsTo: 'belongs to',
+    edgeStoredAt: 'stored at',
+    storedAssets: 'Devices · Stock',
     edgeDividesInto: 'divided into',
     edgeContains: 'lists',
     edgeMadeBy: 'made by',
@@ -150,6 +152,8 @@ const messages = {
     showMore: 'Show more',
     showLess: 'Show less',
     all: 'All',
+    mine: 'Mine',
+    awaitingMe: 'Awaiting me',
     allOf: 'All: {{field}}',
     view: 'View',
     clickToEdit: 'Click to edit',
