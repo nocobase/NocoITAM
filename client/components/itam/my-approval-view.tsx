@@ -1,10 +1,9 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
-import { Inbox } from 'lucide-react';
 import type { ComponentType, ReactElement } from 'react';
 
 import { CountPill } from '@/components/itam/count-pill';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApi } from '@/lib/itam/api';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 
@@ -16,8 +15,10 @@ export interface ViewsProps {
 }
 
 /**
- * A toggle for the requests waiting on this reader's decision, with how many
- * there are. Which ones those are lives in the approval rather than the
+ * A switch between every request and those waiting on this reader's
+ * decision, with how many there are: the segmented control 设置 uses for its
+ * tabs (2026-10-20), where a lone outlined button beside the title read as
+ * a tag. Which ones those are lives in the approval rather than the
  * record, so the list route answers `filter[view]=myApproval`; a reader who
  * cannot approve this kind of request sees no toggle at all.
  */
@@ -45,20 +46,20 @@ export function createMyApprovalView(options: {
     if (!permissions.approve) return null;
     const active = filter.view === 'myApproval';
     return (
-      <div className='flex items-center gap-2'>
-        <Button
-          size='sm'
-          variant={active ? 'secondary' : 'outline'}
-          aria-pressed={active}
-          onClick={() => onFilter({ view: active ? undefined : 'myApproval' })}
-        >
-          <Inbox data-icon='inline-start' />
-          {t(label)}
-          {/* The application's one count look (2026-10-20): a solid badge
-              read as a second button inside the first. */}
-          <CountPill>{mine.data ?? 0}</CountPill>
-        </Button>
-      </div>
+      <Tabs
+        value={active ? 'mine' : 'all'}
+        onValueChange={(value) =>
+          onFilter({ view: value === 'mine' ? 'myApproval' : undefined })
+        }
+      >
+        <TabsList>
+          <TabsTrigger value='all'>{t('common.all')}</TabsTrigger>
+          <TabsTrigger value='mine'>
+            {t(label)}
+            <CountPill>{mine.data ?? 0}</CountPill>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
     );
   };
 }
