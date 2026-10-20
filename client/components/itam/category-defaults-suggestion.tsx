@@ -38,6 +38,20 @@ export function CategoryDefaultsSuggestion({
         : String(defaults[key]) !== text(record[key]),
   );
   if (changed.length === 0) return null;
+  // Turning on straight-line depreciation brings the two values it uses
+  // into view, even unchanged: they were hidden while it was off.
+  const related: readonly Key[] =
+    changed.includes('depreciationMethod') &&
+    defaults.depreciationMethod === 'straightLine'
+      ? (['usefulLifeMonths', 'residualRate'] as const).filter(
+          (key) =>
+            !changed.includes(key) &&
+            (defaults[key] !== undefined || text(record[key])),
+        )
+      : [];
+  const listed = KEYS.filter(
+    (key) => changed.includes(key) || related.includes(key),
+  );
   const shown = (key: Key, value: unknown): string => {
     if (rule(key)) return t(value ? 'common.yes' : 'common.no');
     const raw = text(value);
@@ -53,7 +67,9 @@ export function CategoryDefaultsSuggestion({
     setError(undefined);
     try {
       await onApply(
-        Object.fromEntries(changed.map((key) => [key, defaults[key]])),
+        Object.fromEntries(
+          listed.map((key) => [key, defaults[key] ?? record[key]]),
+        ),
       );
       setState('done');
     } catch (caught) {
@@ -81,16 +97,22 @@ export function CategoryDefaultsSuggestion({
         )}
       </div>
       <dl className='mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1'>
-        {changed.map((key) => (
+        {listed.map((key) => (
           <div key={key} className='contents'>
             <dt className='text-muted-foreground'>{t(`fields.${key}`)}</dt>
-            <dd>
-              <span className='text-muted-foreground line-through'>
-                {shown(key, record[key])}
-              </span>
-              <span className='mx-1.5 text-muted-foreground'>→</span>
-              <span className='font-medium'>{shown(key, defaults[key])}</span>
-            </dd>
+            {changed.includes(key) ? (
+              <dd>
+                <span className='text-muted-foreground line-through'>
+                  {shown(key, record[key])}
+                </span>
+                <span className='mx-1.5 text-muted-foreground'>→</span>
+                <span className='font-medium'>{shown(key, defaults[key])}</span>
+              </dd>
+            ) : (
+              <dd className='font-medium'>
+                {shown(key, defaults[key] ?? record[key])}
+              </dd>
+            )}
           </div>
         ))}
       </dl>

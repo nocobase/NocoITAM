@@ -273,7 +273,8 @@ export function FieldTemplateEditor({
   /** Adds what the model suggests that the template lacks, as new rows. */
   const suggest = async () => {
     if (!onSuggest) return;
-    setEditing(true);
+    // The card stays as it is while the model answers; the editor opens
+    // with what it suggested (2026-10-20).
     setSuggesting(true);
     setSuggested(undefined);
     setSuggestedExtra(undefined);
@@ -342,6 +343,7 @@ export function FieldTemplateEditor({
         (known) => new Set([...known, ...added.map((row) => row.rid)]),
       );
       setChangedRows((known) => new Map([...known, ...notes]));
+      setEditing(true);
       setSuggestedExtra(answer.extra);
       setSuggested(
         fresh.length || notes.size
@@ -435,6 +437,14 @@ export function FieldTemplateEditor({
               </div>
             ) : null}
           </div>
+          {suggesting ? (
+            <p className='flex items-center gap-2 text-sm text-muted-foreground'>
+              <Spinner />
+              {t('fieldTemplate.suggesting')}
+            </p>
+          ) : error ? (
+            <p className='text-sm text-destructive'>{error}</p>
+          ) : null}
           {fields.length === 0 ? (
             <p className='text-sm text-muted-foreground'>
               {t('fieldTemplate.empty')}
@@ -539,7 +549,15 @@ export function FieldTemplateEditor({
           </Button>
         </div>
       ) : (
-        <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+        // Locked while the model answers: what it suggests replaces rows,
+        // and an edit made meanwhile would be lost.
+        <fieldset
+          disabled={suggesting}
+          className={cn(
+            'min-w-0 overflow-x-auto rounded-lg border border-border bg-card',
+            suggesting && 'pointer-events-none opacity-60',
+          )}
+        >
           <Table>
             <TableHeader>
               <TableRow>
@@ -818,7 +836,7 @@ export function FieldTemplateEditor({
               ))}
             </TableBody>
           </Table>
-        </div>
+        </fieldset>
       )}
       {error ? <p className='text-sm text-destructive'>{error}</p> : null}
       <ConfirmDialog
