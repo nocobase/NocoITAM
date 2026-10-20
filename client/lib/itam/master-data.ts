@@ -380,19 +380,20 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         column: true,
         group: 'groups.basic',
       },
-      {
-        key: 'code',
-        label: 'fields.modelCode',
-        type: 'text',
-        column: true,
-        group: 'groups.basic',
-      },
+      // The maker first, then its part code (2026-10-20).
       {
         key: 'manufacturerId',
         label: 'fields.manufacturer',
         type: 'reference',
         required: true,
         reference: { collection: 'manufacturers' },
+        column: true,
+        group: 'groups.basic',
+      },
+      {
+        key: 'code',
+        label: 'fields.modelCode',
+        type: 'text',
         column: true,
         group: 'groups.basic',
       },
