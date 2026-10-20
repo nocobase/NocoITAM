@@ -1,28 +1,27 @@
-/**
- * One conversation, the panel's main view: the messages as a log (older pages on demand), what an application adds
- * among them (plan cards), the agent at work, notices about who answers, and the composer. Without a conversation
- * (`conversationId` null) it is a new one: an empty log whose first message creates it on the server, and the
- * composer's toolbar chooses its agent and model (`NewChatChoice`); once it exists, only the model of an online
- * agent may change there.
- */
+import { useConversationActions } from './conversation-actions.js';
 import {
   ChatExtensionsContext,
+  getAIToolSourceMessage,
+  appUIMessageText,
+  chatMessageSegments,
+  chatFeedback,
+  chatIsRunning,
+  useChatScroll,
   newConversationAgent,
   timelineOrder,
   useAgentText,
   useChatAgents,
+  useChatModels,
   useChatPanel,
   useConversation,
-  useConversationActions,
   useConversationMessages,
+  useChatStream,
+  useChatController,
   useSendMessage,
   type ChatTimelineItem,
 } from '@nocobase/app-plugin-agents/client/chat';
-import type { OnlineModelEntry } from '@nocobase/app-plugin-agents/shared/agents';
-import type {
-  ConversationDetail,
-  ConversationMessage,
-} from '@nocobase/app-plugin-agents/shared/conversations';
+import type { ConversationDetail } from '@nocobase/app-plugin-agents/shared/conversations';
+import type { ModelRef } from '@nocobase/app-plugin-agents/shared/models';
 import {
   ArchiveRestoreIcon,
   BotMessageSquareIcon,
@@ -33,7 +32,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -41,6 +39,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
+import type { ChatInputAvailability } from './input-availability.js';
 
 import { Button } from '#components/ui/button';
 import {
@@ -52,6 +51,7 @@ import {
   EmptyTitle,
 } from '#components/ui/empty';
 import { Skeleton } from '#components/ui/skeleton';
+import { Spinner } from '#components/ui/spinner';
 import { cn } from 'cn';
 
 import { NewChatChoice } from './agent-choice.js';
@@ -61,7 +61,6 @@ import { LoadError } from './chat-ui.js';
 import { Composer } from './composer.js';
 import { LiveSteps, TurnAnnouncer } from './live-steps.js';
 import { MessageItem, PendingItem } from './message-item.js';
-import { ModelPicker } from './model-picker.js';
 
 const NO_ITEMS: readonly ChatTimelineItem[] = [];
 
@@ -81,11 +80,13 @@ export function ConversationView({
   conversationId,
   className,
   variant = 'panel',
+  inputAvailability,
 }: {
   readonly conversationId: string | null;
   readonly className?: string;
   /** `page`: the full-page view, its messages and composer centred at a readable width. */
   readonly variant?: ConversationVariant;
+  readonly inputAvailability?: ChatInputAvailability;
 }): ReactElement {
   const { t } = useChatTranslation();
   const panel = useChatPanel();
@@ -165,6 +166,7 @@ export function ConversationView({
       onCreated={(id) => setCreated(id)}
       className={className}
       variant={variant}
+      inputAvailability={inputAvailability}
     />
   );
 }
@@ -174,6 +176,7 @@ interface Entry {
   readonly at: string;
   /** Messages before other items at the same time. */
   readonly rank: number;
+  readonly seq?: number;
   readonly node: ReactNode;
 }
 
@@ -183,23 +186,46 @@ function ConversationBody({
   onCreated,
   className,
   variant,
+  inputAvailability,
 }: {
   readonly conversationId: string | null;
   readonly conversation: ConversationDetail | null;
   readonly onCreated: (conversationId: string) => void;
   readonly className?: string;
   readonly variant: ConversationVariant;
+  readonly inputAvailability?: ChatInputAvailability;
 }): ReactElement {
   const { t } = useChatTranslation();
   const panel = useChatPanel();
   const extensions = useContext(ChatExtensionsContext);
   const actions = useConversationActions();
   const agents = useChatAgents(panel.open);
+  const catalog = useChatModels(panel.open && !conversation);
+  const [chosenModel, setChosenModel] = useState<ModelRef | null>(null);
   const run = conversation?.run ?? null;
-  const running = run !== null;
-  const messages = useConversationMessages(conversationId, running);
+  const stream = useChatStream(conversation?.execution ? conversationId : null);
+  const receiving =
+    stream?.status === 'submitted' || stream?.status === 'streaming';
+  const running = chatIsRunning(conversation) || receiving;
+  const chatController = useChatController();
+  const [saveError, setSaveError] = useState<unknown>(null);
+  const messages = useConversationMessages(conversationId);
+  const [refreshError, setRefreshError] = useState<unknown>(null);
+  const refreshHistory = () => {
+    messages.fetchNewer();
+    if (conversationId)
+      void chatController
+        .refresh(conversationId)
+        .then(() => setRefreshError(null), setRefreshError);
+  };
+  const creationObserverRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => creationObserverRef.current?.(), []);
   const useTimelineItems = extensions.useTimelineItems ?? noTimelineItems;
-  const revision = messages.lastSeq * 10 + (running ? 1 : 0);
+  const revision =
+    messages.items.reduce(
+      (sum, message) => sum + (message.metadata?.revision ?? 0),
+      messages.lastSeq,
+    ) + (running ? 1 : 0);
   const timeline: readonly ChatTimelineItem[] = useTimelineItems(
     conversationId ?? '',
     revision,
@@ -207,14 +233,45 @@ function ConversationBody({
   const target = conversation
     ? null
     : newConversationAgent(agents.data, panel.newAgentId);
-  // A new chat with an online agent answers with the model chosen before its first message; choosing another agent
-  // starts from its default again.
-  const [newModel, setNewModel] = useState<{
-    readonly agentId: string;
-    readonly model: OnlineModelEntry | null;
-  } | null>(null);
-  const chosenModel =
-    target && newModel?.agentId === target.id ? newModel.model : null;
+
+  // Leave default resolution on the server until a model is explicitly chosen.
+  const model = chosenModel;
+  const hasChatModels = Boolean(
+    catalog.data?.some((service) =>
+      service.models.some((item) => item.kind === 'chat'),
+    ),
+  );
+  // A removed explicit selection must not silently fall back to another model.
+  const modelOffered = Boolean(
+    model &&
+    catalog.data?.some(
+      (service) =>
+        service.name === model.modelService &&
+        service.models.some(
+          (item) => item.kind === 'chat' && item.value === model.model,
+        ),
+    ),
+  );
+  const nativeReady =
+    catalog.isSuccess &&
+    !catalog.isFetching &&
+    (model ? modelOffered : hasChatModels);
+
+  const selectedId = conversation?.agent.id ?? target?.id ?? 'online';
+  const sendAvailability =
+    selectedId === 'online'
+      ? {
+          ...inputAvailability,
+          canSend:
+            (inputAvailability?.canSend ?? true) &&
+            (conversation !== null || nativeReady),
+        }
+      : {
+          canSend:
+            conversation?.availability.online ??
+            target?.availability.online ??
+            false,
+        };
 
   const { selectConversation, resetSource, source, focusComposer } = panel;
   const created = useCallback(
@@ -229,9 +286,9 @@ function ConversationBody({
     conversationId,
     agentId: conversation ? conversation.agent.id : (target?.id ?? null),
     source,
-    model: modelRef(chosenModel),
     dispatch: messages.dispatch,
     onCreated: created,
+    ...(target?.id === 'online' && model ? { selectedModel: model } : {}),
   });
 
   // Viewed: tell the server the agent's latest replies were read.
@@ -262,17 +319,65 @@ function ConversationBody({
     (target ? text.name(target) : null) ??
     (conversation ? t('chat.agentGone') : t('chat.anyAgent'));
 
+  const segments = chatMessageSegments(messages.items);
+  const segmented = new Set(segments.map((segment) => segment.message));
+  const extraEntries: Entry[] = extensions.renderMessageExtra
+    ? messages.items.flatMap((message): Entry[] => {
+        if (segmented.has(message)) return [];
+        const extra = extensions.renderMessageExtra?.(message);
+        if (extra == null) return [];
+        const source = message.metadata?.sourceRecords?.at(-1);
+        return [
+          {
+            key: `extra-${message.id}`,
+            at: source?.createdAt ?? message.metadata?.createdAt ?? '',
+            seq: source?.seq ?? message.metadata?.seq,
+            rank: 0,
+            node: (
+              <li
+                key={`extra-${message.id}`}
+                className='min-w-0 max-w-full overflow-x-auto wrap-anywhere'
+                data-message-id={message.id}
+              >
+                {extra}
+              </li>
+            ),
+          },
+        ];
+      })
+    : [];
   const entries: Entry[] = timelineOrder([
-    ...messages.items.map((message: ConversationMessage): Entry => ({
-      key: `m-${message.id}`,
-      at: message.createdAt,
+    ...extraEntries,
+    ...segments.map((segment): Entry => ({
+      key: `m-${segment.key}`,
+      at: segment.at,
+      seq: segment.seq,
       rank: 0,
       node: (
         <MessageItem
-          key={`m-${message.id}`}
-          message={message}
+          key={`m-${segment.key}`}
+          message={segment.message}
+          sourceMessage={getAIToolSourceMessage(
+            segment.message,
+            messages.items,
+          )}
+          readOnly={!conversationId || Boolean(conversation?.archivedAt)}
+          segment={segment}
+          streaming={
+            receiving && segment.message.id === messages.items.at(-1)?.id
+          }
           agentName={agentName}
-          extra={extensions.renderMessageExtra?.(message)}
+          extra={
+            segment.last
+              ? extensions.renderMessageExtra?.(segment.message)
+              : null
+          }
+          approvalDisabled={receiving}
+          onApproval={
+            conversationId
+              ? (input) => chatController.approve(conversationId, input)
+              : undefined
+          }
         />
       ),
     })),
@@ -281,7 +386,11 @@ function ConversationBody({
       at: item.at,
       rank: 1,
       node: (
-        <li key={`x-${item.key}`} data-chat-item={item.key}>
+        <li
+          key={`x-${item.key}`}
+          data-chat-item={item.key}
+          className='min-w-0 max-w-full overflow-x-auto wrap-anywhere'
+        >
           {item.node}
         </li>
       ),
@@ -289,16 +398,68 @@ function ConversationBody({
   ]);
 
   // Follow the end of the log as messages arrive; keep the place when older ones are loaded above.
-  const listRef = useRef<HTMLDivElement>(null);
-  const lastKey = messages.items.at(-1)?.seq ?? 0;
-  const pendingCount = messages.pending.length;
-  useLayoutEffect(() => {
-    const element = listRef.current;
-    if (element) element.scrollTop = element.scrollHeight;
-  }, [lastKey, pendingCount, run?.id, timeline.length]);
+  const listRef = useChatScroll(segments[0]?.seq);
+  const stopping =
+    conversationId !== null &&
+    chatController.isStopping(conversationId) &&
+    running;
+  const afterUser =
+    messages.items.filter((item) => item.role === 'user').at(-1)?.metadata
+      ?.seq ?? Infinity;
+  const feedback = chatFeedback({
+    execution: conversation?.execution,
+    lastSeq: messages.lastSeq,
+    running,
+    stopping,
+    submission: chatController.submissions
+      .snapshot()
+      .filter(
+        (record) =>
+          record.conversationId === conversationId &&
+          (conversationId !== null ||
+            record.editorKey === `registry:${source}:new`),
+      )
+      .at(-1),
+    stream,
+    hasOutput: messages.items.some(
+      (item) =>
+        (item.metadata?.seq ?? Infinity) > afterUser &&
+        item.role === 'assistant' &&
+        (appUIMessageText(item).trim().length > 0 ||
+          item.parts.some(
+            (part) =>
+              part.type === 'dynamic-tool' ||
+              part.type.startsWith('tool-') ||
+              part.type === 'file',
+          )),
+    ),
+  });
+  const busyFeedback =
+    feedback === 'sending' ||
+    feedback === 'waiting' ||
+    feedback === 'thinking' ||
+    feedback === 'stopping';
+  const feedbackNotice = feedback ? (
+    <div
+      role='status'
+      aria-live='polite'
+      className='flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground'
+      data-chat-feedback={feedback}
+    >
+      {busyFeedback ? (
+        <Spinner aria-hidden='true' className='shrink-0' />
+      ) : null}
+      {t(`chat.feedback.${feedback}`)}
+    </div>
+  ) : null;
 
   const empty =
-    entries.length === 0 && messages.pending.length === 0 && !running;
+    entries.length === 0 &&
+    messages.pending.length === 0 &&
+    !busyFeedback &&
+    !running &&
+    !messages.error &&
+    (conversationId === null || messages.loaded);
   const page = variant === 'page';
 
   // Files dropped anywhere on the conversation go to the composer, which uploads them.
@@ -320,7 +481,7 @@ function ConversationBody({
   return (
     <section
       className={cn(
-        'relative flex h-full min-h-0 flex-col',
+        'relative flex h-full min-h-0 min-w-0 flex-col',
         page ? 'gap-0' : 'gap-3',
         className,
       )}
@@ -361,14 +522,32 @@ function ConversationBody({
         </div>
       ) : null}
       {/* Positioned so absolutely placed content (sr-only text, live regions) stays inside the scroller instead of growing the page. */}
-      <div ref={listRef} className='relative min-h-0 flex-1 overflow-y-auto'>
+      <div
+        ref={listRef}
+        data-testid='chat-message-scroll'
+        role='log'
+        aria-label={t('chat.messages')}
+        tabIndex={0}
+        className='relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto'
+      >
         <div
           className={cn(
-            'flex min-h-full flex-col',
+            'flex min-h-full min-w-0 flex-col',
             // Application change (ITAM, after NocoCRM's panel): py-4.
             page ? cn(PAGE_COLUMN, 'py-4') : 'py-4',
           )}
         >
+          {messages.error ? (
+            <LoadError
+              title={t('chat.loadFailed')}
+              error={messages.error}
+              onRetry={messages.fetchNewer}
+            />
+          ) : conversationId && !messages.loaded ? (
+            <div role='status' aria-label={t('chat.loading')}>
+              <Skeleton className='h-16' />
+            </div>
+          ) : null}
           {/* Application change (ITAM, after NocoCRM's panel and, from
               2026-10-16, its conversations page): a new conversation is the
               empty view and the box, with no greeting. */}
@@ -387,34 +566,87 @@ function ConversationBody({
                 </div>
               ) : null}
               <ol
-                role='log'
                 aria-label={t('chat.messages')}
-                className='flex flex-col gap-4 py-1'
+                className='flex min-w-0 flex-col gap-4 py-1'
               >
                 {entries.map((entry) => entry.node)}
                 {messages.pending.map((message) => (
                   <PendingItem
                     key={message.clientId}
                     message={message}
-                    onDiscard={() =>
+                    onContinue={
+                      chatController.submissions
+                        .snapshot()
+                        .some(
+                          (record) =>
+                            record.clientId === message.clientId &&
+                            record.status === 'unknown' &&
+                            !record.released,
+                        )
+                        ? () => {
+                            chatController.submissions.releaseUnknown(
+                              message.clientId,
+                            );
+                            focusComposer();
+                          }
+                        : undefined
+                    }
+                    onCheck={conversationId ? refreshHistory : undefined}
+                    onDiscard={() => {
                       messages.dispatch({
                         type: 'discard',
                         clientId: message.clientId,
-                      })
+                      });
+                    }}
+                    retryDisabled={
+                      sendAvailability?.canSend === false || running
                     }
-                    onRetry={() =>
-                      void send({
+                    onRecoverCreation={
+                      chatController.submissions
+                        .snapshot()
+                        .some(
+                          (record) =>
+                            record.clientId === message.clientId &&
+                            record.status === 'creationUnknown',
+                        )
+                        ? () => {
+                            if (sendAvailability?.canSend === false || running)
+                              return;
+                            creationObserverRef.current?.();
+                            const off = chatController.submissions.onUpdated(
+                              (detail, record, wasCreated) => {
+                                if (
+                                  record.clientId !== message.clientId ||
+                                  !wasCreated
+                                )
+                                  return;
+                                created(detail);
+                                off();
+                              },
+                            );
+                            creationObserverRef.current = off;
+                            chatController.submissions.resumeCreation(
+                              message.clientId,
+                              null,
+                            );
+                          }
+                        : undefined
+                    }
+                    onRetry={() => {
+                      if (sendAvailability?.canSend === false || running)
+                        return;
+                      send({
                         content: message.content,
                         context: message.context,
                         ...(message.attachments
                           ? { attachments: message.attachments }
                           : {}),
                         clientId: message.clientId,
-                      })
-                    }
+                      });
+                    }}
                   />
                 ))}
-                {run ? (
+                {run && !conversation?.execution ? (
                   <li>
                     <LiveSteps
                       key={run.id}
@@ -424,11 +656,40 @@ function ConversationBody({
                     />
                   </li>
                 ) : null}
+                {/* Waiting belongs where the next reply will appear, not beside the composer. */}
+                {busyFeedback ? <li>{feedbackNotice}</li> : null}
               </ol>
             </>
           )}
         </div>
       </div>
+      {refreshError ? (
+        <LoadError
+          title={t('chat.loadFailed')}
+          error={refreshError}
+          onRetry={refreshHistory}
+        />
+      ) : null}
+      {stream?.error ? (
+        <div role='alert' className='px-3 py-2 text-sm text-muted-foreground'>
+          {t('chat.connectionUnknown')}{' '}
+          <Button variant='outline' size='sm' onClick={refreshHistory}>
+            {t('chat.refreshHistory')}
+          </Button>
+          {conversationId ? (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() =>
+                void chatController.finalize(conversationId).catch(() => {})
+              }
+            >
+              {t('chat.retrySaving')}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {busyFeedback ? null : feedbackNotice}
       <TurnAnnouncer running={running} />
       {/* Application change (ITAM, 2026-10-16, as NocoCRM's): an archived
           conversation says so in place of the composer and offers to bring
@@ -454,56 +715,71 @@ function ConversationBody({
         </div>
       ) : (
         <div className={page ? cn(PAGE_COLUMN, 'pt-2 pb-4') : 'pt-3 pb-4'}>
+          {sendAvailability?.notice ? (
+            <div className='mb-3'>{sendAvailability.notice}</div>
+          ) : null}
+          {saveError ? (
+            <LoadError
+              title={t('chat.loadFailed')}
+              error={saveError}
+              onRetry={() => {
+                if (conversationId)
+                  void chatController
+                    .finalize(conversationId)
+                    .then(() => setSaveError(null), setSaveError);
+              }}
+            />
+          ) : null}
           <Composer
             variant={variant}
+            disabled={
+              sendAvailability?.canSend === false ||
+              running ||
+              Boolean(conversation && !conversation.availability.online) ||
+              chatController.submissions.blocked(
+                conversationId,
+                `registry:${source}:${conversationId ?? 'new'}`,
+              ) ||
+              Boolean(conversation && !conversation.execution)
+            }
             running={running}
-            stopping={actions.stop.isPending}
+            stopping={stopping}
             onStop={() => {
               if (conversationId) actions.stop.mutate(conversationId);
             }}
             onSend={(content, context, attachments) => {
-              void send({ content, context, attachments }).then(() =>
-                focusComposer(),
-              );
-              return true;
+              if (sendAvailability?.canSend === false) return false;
+              const accepted = send({ content, context, attachments });
+              if (accepted) focusComposer();
+              return accepted;
             }}
             registerAddFiles={registerAddFiles}
             toolbar={
-              conversation ? (
-                <ModelPicker
-                  conversation={conversation}
-                  disabled={actions.chooseModel.isPending}
-                  onChange={(model) =>
-                    actions.chooseModel.mutate({
-                      id: conversation.id,
-                      model: modelRef(model),
-                    })
-                  }
-                />
-              ) : (
-                // Before the first message: who the conversation goes to, and the model of an online agent.
+              conversation ? null : (
+                // Before the first message: who the conversation goes to.
                 <NewChatChoice
                   agents={agents.data ?? []}
                   agent={target}
+                  services={catalog.data ?? []}
+                  model={model}
+                  modelsDisabled={
+                    catalog.isFetching || !catalog.isSuccess || !hasChatModels
+                  }
+                  onModelChange={(selected) => {
+                    setChosenModel(selected);
+                    selectConversation(null, 'online');
+                    focusComposer();
+                  }}
                   onAgentChange={(agentId) => {
                     selectConversation(null, agentId);
                     focusComposer();
-                  }}
-                  model={chosenModel}
-                  onModelChange={(model) => {
-                    if (target) setNewModel({ agentId: target.id, model });
                   }}
                 />
               )
             }
             notice={
               conversation ? (
-                <AgentNotice
-                  conversation={conversation}
-                  busy={actions.fallback.isPending || actions.restore.isPending}
-                  onFallback={() => actions.fallback.mutate(conversation.id)}
-                  onRestore={() => actions.restore.mutate(conversation.id)}
-                />
+                <AgentNotice conversation={conversation} />
               ) : target === null && agents.isSuccess ? (
                 (agents.data?.length ?? 0) > 0 ? (
                   <p
@@ -527,17 +803,4 @@ function ConversationBody({
       )}
     </section>
   );
-}
-
-/**
- * Application change (ITAM): a model as the plugin's API takes it, its
- * service and name alone. A choice from `ChatAgent.models` also carries its
- * labels and effort, which `@nocobase/app-plugin-agents` 0.1.0-beta.8 refuses
- * as unrecognized keys (400), so a conversation could not be started on, or
- * moved to, any model but the agent's default.
- */
-function modelRef(model: OnlineModelEntry | null): OnlineModelEntry | null {
-  return model
-    ? { modelService: model.modelService, model: model.model }
-    : null;
 }

@@ -1,13 +1,18 @@
 import { useToaster } from '@nocobase/app-client';
 import {
   buildPageContext,
-  newConversationAgent,
   useChatAgents,
-  useChatApi,
   useChatContextSource,
+  useChatController,
   useChatPanel,
   type ChatContextItem,
 } from '@nocobase/app-plugin-agents/client/chat';
+import type {
+  ConversationSource,
+  MessageAttachment,
+  PageContext,
+} from '@nocobase/app-plugin-agents/shared/conversations';
+import type { ModelRef } from '@nocobase/app-plugin-agents/shared/models';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useCallback, useMemo } from 'react';
 
@@ -47,15 +52,116 @@ export interface ItamAi {
 /** Where ITAM's conversations come from (`itam-agents/index.ts`). */
 export const ITAM_SOURCE = 'itam';
 
+/**
+ * The agent ITAM's conversations go to: the plugin's native online agent,
+ * which Asset Steward is (Agents plugin 1.0, 2026-10-20,
+ * `itam-agents/assistant.ts`). A runner agent cannot take ITAM's tools, so
+ * ITAM's own ways of asking never go to one.
+ */
+export const ITAM_AGENT = 'online';
+
+/** The page context a question is sent with: the given records only. */
+export function contextOf(
+  route: string,
+  items: readonly ChatContextItem[],
+): PageContext | undefined {
+  return buildPageContext({
+    route,
+    pinned: items,
+    sources: [],
+    filter: null,
+    selection: null,
+    removed: new Set(),
+  });
+}
+
+/**
+ * Starts a conversation with Asset Steward and sends its first message,
+ * through the plugin's chat controller, which holds the request whatever
+ * view is open (plugin 1.0: messages go through its stream, not a request of
+ * their own). Resolves with the conversation's id once it is created;
+ * rejects when it was not.
+ */
+export function useStartConversation(): (input: {
+  readonly content: string;
+  readonly source: ConversationSource;
+  readonly context?: PageContext;
+  readonly attachments?: readonly MessageAttachment[];
+  readonly model?: ModelRef;
+}) => Promise<string> {
+  const controller = useChatController();
+  return useCallback(
+    ({ content, source, context, attachments = [], model }) =>
+      new Promise<string>((resolve, reject) => {
+        const submissions = controller.submissions;
+        // The submission's id, known once it is submitted below.
+        const sent: { clientId: string | undefined } = { clientId: undefined };
+        const done = (outcome: () => void) => {
+          off();
+          stop();
+          outcome();
+        };
+        const off = submissions.onUpdated((detail, record, created) => {
+          if (created && record.clientId === sent.clientId)
+            done(() => resolve(detail.id));
+        });
+        const stop = submissions.subscribe(() => {
+          const record = submissions
+            .snapshot()
+            .find((item) => item.clientId === sent.clientId);
+          if (!record) return;
+          if (record.conversationId && record.status === 'confirmed')
+            done(() => resolve(record.conversationId as string));
+          else if (
+            ['creationUnknown', 'notSubmitted', 'rejected'].includes(
+              record.status,
+            )
+          )
+            done(() =>
+              reject(
+                record.error instanceof Error
+                  ? record.error
+                  : new Error(record.status),
+              ),
+            );
+        });
+        const submitted = submissions.submit({
+          content,
+          context,
+          attachments,
+          conversationId: null,
+          editorKey: `itam:${source}:${crypto.randomUUID()}`,
+          create: {
+            agentId: ITAM_AGENT,
+            source,
+            ...(model
+              ? {
+                  selectedModel: {
+                    modelService: model.modelService,
+                    model: model.model,
+                  },
+                }
+              : {}),
+          },
+        });
+        if (!submitted) {
+          done(() => reject(new Error('notSubmitted')));
+          return;
+        }
+        sent.clientId = submissions.snapshot().at(-1)?.clientId;
+      }),
+    [controller],
+  );
+}
+
 export function useItamAi(): ItamAi {
   const status = useAiStatus();
   const panel = useChatPanel();
   const agents = useChatAgents(panel.available);
-  const api = useChatApi();
+  const start = useStartConversation();
   const toaster = useToaster();
   const { t } = useTranslation();
-  const agent =
-    newConversationAgent(agents.data, null) ?? agents.data?.[0] ?? null;
+  const agent = agents.data?.find((item) => item.id === ITAM_AGENT) ?? null;
   const available = Boolean(panel.available && status.data?.available && agent);
 
   const ask = useCallback<ItamAi['ask']>(
@@ -64,45 +170,37 @@ export function useItamAi(): ItamAi {
       const pins = options.pins ?? [];
       if (options.autoSend === false) {
         panel.clearPinned();
-        panel.openChat({ conversationId: null, view: 'chat', draft: prompt });
+        panel.openChat({
+          conversationId: null,
+          agentId: ITAM_AGENT,
+          view: 'chat',
+          draft: prompt,
+        });
         for (const pin of pins) panel.openChat({ pin });
         panel.focusComposer();
         return;
       }
-      const failed = () =>
-        toaster.show({ type: 'error', title: t('ai.sendFailed') });
-      void (async () => {
-        const conversation = await api.createConversation({
-          agentId: agent.id,
-          source: ITAM_SOURCE,
-        });
-        panel.clearPinned();
-        try {
-          const context = buildPageContext({
-            route: window.location.pathname,
-            pinned: pins,
-            sources: [],
-            filter: null,
-            selection: null,
-            removed: new Set(),
-          });
-          await api.sendMessage(conversation.id, {
-            content: prompt,
-            clientId: crypto.randomUUID(),
-            ...(context ? { context } : {}),
-          });
-          panel.openChat({ conversationId: conversation.id, view: 'chat' });
-        } catch {
-          failed();
+      const context = contextOf(window.location.pathname, pins);
+      panel.clearPinned();
+      start({
+        content: prompt,
+        source: ITAM_SOURCE,
+        ...(context ? { context } : {}),
+      }).then(
+        (conversationId) => panel.openChat({ conversationId, view: 'chat' }),
+        () => {
+          toaster.show({ type: 'error', title: t('ai.sendFailed') });
           panel.openChat({
-            conversationId: conversation.id,
+            conversationId: null,
+            agentId: ITAM_AGENT,
             view: 'chat',
             draft: prompt,
           });
-        }
-      })().catch(failed);
+          for (const pin of pins) panel.openChat({ pin });
+        },
+      );
     },
-    [agent, api, panel, t, toaster],
+    [agent, panel, start, t, toaster],
   );
 
   return useMemo(

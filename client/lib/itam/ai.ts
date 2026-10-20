@@ -11,6 +11,11 @@ export const AI_PATH = 'itam/ai';
  */
 export interface AiStatus {
   readonly available: boolean;
+  /** The model a conversation answers with unless another is chosen. */
+  readonly model: {
+    readonly modelService: string;
+    readonly model: string;
+  } | null;
 }
 
 export function useAiStatus(): UseQueryResult<AiStatus> {

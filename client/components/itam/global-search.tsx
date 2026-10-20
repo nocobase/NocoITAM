@@ -161,7 +161,7 @@ export function GlobalSearchProvider({
       if (!ai.available || !text || !agent) return;
       runningRef.current = true;
       setAnswer({ question: text, conversationId: null, failed: false });
-      searchAnswer.start(t('ai.prompts.globalSearch', { text }), agent).then(
+      searchAnswer.start(t('ai.prompts.globalSearch', { text })).then(
         (conversationId) =>
           setAnswer((current) =>
             current?.question === text

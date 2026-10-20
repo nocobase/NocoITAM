@@ -44,7 +44,9 @@ vi.mock('../../client/lib/itam/permissions.js', () => ({
   // to know who is reading; these records name 'u1' as their 负责人.
   useCurrentUserId: () => 'u1',
 }));
-vi.mock('@tanstack/react-query', () => ({
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  // The rest as it is: @nocobase/app-client builds its query client from it.
+  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
   useQuery: () => ({ data: undefined }),
 }));
 vi.mock('../../client/lib/itam/attachments.js', () => ({

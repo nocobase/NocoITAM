@@ -33,18 +33,19 @@ import { ITAM_WORK_GUIDE, METHOD_SKILLS } from './skill.js';
  * 1.0, 2026-10-20). Until then it was an online agent of the plugin, whose
  * runs called ITAM's `itam` commands from a sandbox; 1.0 keeps no online
  * agents, and a chat runs the model inside this process with the business
- * tools the application registers. So Asset Steward is the scope `itam`:
- * the tools below — each the read a command made (reads.ts) or proposing a
- * plan (plans.ts), as the person chatting and within what they may read —
- * the instructions and the work guide as its system prompt, and the enabled
- * chat models, the default first. ITAM's chat creates its conversations in
- * this scope (`ITAM_CHAT_SCOPE` on the client).
+ * tools the application registers. So Asset Steward is the global layer
+ * of every native conversation: the tools below — each the read a command
+ * made (reads.ts) or proposing a plan (plans.ts), as the person chatting and
+ * within what they may read — the instructions and the work guide as its
+ * system prompt, and the enabled chat models, the default first. Global
+ * rather than a named scope because the plugin's chat client creates a
+ * conversation with no scope of the application's choosing; a runner agent
+ * cannot take native tools, so ITAM's chat offers Asset Steward alone.
  *
  * The commands stay (routes/itam/agent-commands.ts) for an agent running on
  * a runner, which reaches ITAM through its CLI.
  */
 
-export const ITAM_SCOPE = 'itam';
 export const ASSISTANT_NAME = 'Asset Steward';
 
 /** The tools, by name; the plan card is drawn for `itam_plan_create`. */
@@ -224,7 +225,7 @@ export function registerAssistant(
     async ({ name }) => ({ name, content: await readSkill(container, name) }),
   );
 
-  configurator.registerOnlineAgentScope(ITAM_SCOPE, async () => ({
+  configurator.registerOnlineAgentGlobalScope(async () => ({
     tool: Object.values(ITAM_TOOLS),
     model: await chatModels(agents),
     systemPromptTemplate: systemPrompt(notes()),

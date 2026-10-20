@@ -3324,11 +3324,6 @@ const messages = {
     searchSource: 'Global search',
     // The assistant's name (2026-10-16; it was Noco until then).
     assistantName: 'Asset Steward',
-    agentPreset: {
-      name: 'ITAM assistant',
-      description:
-        'Looks things up across the IT asset register and proposes changes as plans the person confirms.',
-    },
     // The business actions an agent may be given (Agent 团队 → Agent).
     agentActions: {
       records: 'IT assets',
@@ -3339,6 +3334,21 @@ const messages = {
       planCreate: 'Propose changes as plans',
       planCreateDescription:
         'Propose changes as a plan the person confirms; nothing is written until they carry it out.',
+    },
+    // Asset Steward's tools, one line each in a conversation
+    // (components/itam/ai/tool-lines.tsx).
+    tools: {
+      itam_context: 'Read the business overview',
+      itam_search: 'Searched the register',
+      itam_record_get: 'Read a record',
+      itam_stats: 'Counted the figures',
+      itam_availability: 'Checked what is available',
+      itam_model_match: 'Matched the models',
+      itam_onboarding_plan: "Read the joiner's kit",
+      itam_device_sync_review: 'Checked the device sync differences',
+      itam_plan_ops: 'Read the operations a plan may use',
+      itam_plan_create: 'Proposed a plan',
+      itam_read_skill: 'Read the method',
     },
     // A plan the assistant proposed, as its card in the conversation.
     plans: {

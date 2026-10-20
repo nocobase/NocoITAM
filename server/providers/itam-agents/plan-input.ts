@@ -4,7 +4,7 @@ import { AI_WRITE_SCHEMAS } from '../itam/ai-writes.js';
 import { MAX_STEPS, PLAN_OPS } from '../itam/plans.js';
 import {
   AI_RECORD_SCHEMAS,
-  CREATE_FIELD_GUIDE,
+  createFieldGuide,
 } from '../../routes/itam/ai-records.js';
 
 /**
@@ -55,5 +55,5 @@ export function planOps(): Record<string, unknown> {
     ...AI_RECORD_SCHEMAS,
   }))
     ops[tool.replace(/^itam_/, '')] = schemaOf(schema as z.ZodType);
-  return { ops, createFields: CREATE_FIELD_GUIDE };
+  return { ops, createFields: createFieldGuide() };
 }

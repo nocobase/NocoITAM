@@ -1,9 +1,3 @@
-/**
- * The card of a consultation in a conversation (`ask_agent`): "Consulted ‹agent›", folded to one line that says how it
- * went, and open to the question, the consulted agent's steps while it answers (its own run's transcript, live), its
- * answer as it is written and then final, the plans it proposed and what it used. The server rewrites the card in
- * place while it runs (`metadata.streaming`), so the conversation fetches it again.
- */
 import { useLiveRunEvents } from '@nocobase/app-plugin-agents/client/chat';
 import type { ConsultationNotice } from '@nocobase/app-plugin-agents/shared/conversations';
 import { useLocale } from '@nocobase/i18n/client';
@@ -33,7 +27,9 @@ function renderMarkdown(text: string): ReactElement {
   return <ChatMarkdown content={text} />;
 }
 
-/** The consulted agent's steps so far, from its run's transcript, fetched as its topic announces them. */
+/** A genuine saved consultation data part; same-message revision rereads update its structured state and answer.
+ * This renderer does not restore an ask_agent producer. Run transcript reads remain authorized by their own API.
+ */
 function ConsultationSteps({
   runId,
 }: {
@@ -100,6 +96,7 @@ export function ConsultationCard({
         <span className='ml-auto flex shrink-0 items-center gap-1.5'>
           {running ? <Pulse /> : null}
           <Badge
+            data-size='sm'
             variant={
               notice.state === 'failed' || notice.state === 'refused'
                 ? 'destructive'
@@ -135,11 +132,7 @@ export function ConsultationCard({
             {notice.error}
           </p>
         ) : null}
-        {notice.plans > 0 ? (
-          <p className='text-xs text-muted-foreground'>
-            {t('chat.consultation.plans', { count: notice.plans })}
-          </p>
-        ) : null}
+
         {notice.usage ? (
           <p
             className='text-xs text-muted-foreground tabular-nums'

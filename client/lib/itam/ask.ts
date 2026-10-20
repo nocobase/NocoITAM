@@ -1,11 +1,9 @@
 import { useToaster } from '@nocobase/app-client';
 import {
-  buildPageContext,
   chatKeys,
-  newConversationAgent,
   useChatAgents,
-  useChatApi,
   useChatAttachments,
+  useChatModels,
   useChatPanel,
   useConversationActions,
   type ChatContextItem,
@@ -14,15 +12,20 @@ import {
   CHAT_ATTACHMENT_SIZE_MAX,
   CHAT_ATTACHMENTS_PER_MESSAGE_MAX,
   type ChatAgent,
-  type ChatModelChoice,
   type MessageAttachment,
 } from '@nocobase/app-plugin-agents/shared/conversations';
+import type { ModelRef } from '@nocobase/app-plugin-agents/shared/models';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 
 import { AI_PATH, useAiStatus } from './ai.js';
-import { ITAM_SOURCE } from './ai-chat.js';
+import {
+  contextOf,
+  ITAM_AGENT,
+  ITAM_SOURCE,
+  useStartConversation,
+} from './ai-chat.js';
 import { useApi } from './api.js';
 
 /** A question asked from the global search, answered in its dialog (`itam-agents/search-answers.ts`). */
@@ -34,8 +37,6 @@ export const SEARCH_SOURCE = 'itam-search';
  * may answer with, the files a question carries, asking at once (the ask box
  * at the bottom of pages) and opening a conversation about a record.
  */
-
-const newClientId = (): string => crypto.randomUUID();
 
 export type AgentReadiness =
   | {
@@ -55,8 +56,9 @@ export type AgentReadiness =
     };
 
 /**
- * The agent a new conversation goes to, as the plugin picks it, and whether
- * it can answer now: `/itam/ai/status` says whether a usable model is there.
+ * Asset Steward, the native online agent ITAM's conversations go to
+ * (`ITAM_AGENT`), and whether it can answer now: `/itam/ai/status` says
+ * whether a usable model is there.
  */
 export function useAgentReadiness(): AgentReadiness {
   const { t } = useTranslation();
@@ -65,30 +67,55 @@ export function useAgentReadiness(): AgentReadiness {
   const status = useAiStatus();
   if (agents.isLoading || status.isLoading)
     return { state: 'loading', agent: null };
-  const agent =
-    newConversationAgent(agents.data, null) ?? agents.data?.[0] ?? null;
+  const agent = agents.data?.find((item) => item.id === ITAM_AGENT) ?? null;
   if (!agent || status.data?.available !== true)
     return { state: 'unavailable', agent, reason: t('ai.unavailable') };
   return { state: 'ready', agent };
 }
 
+/** A chat model a question may be answered with, named for the menu. */
+export interface AskModel extends ModelRef {
+  readonly serviceTitle: string;
+  readonly modelLabel: string;
+}
+
 /** A model choice by a key a select can hold. */
-export const modelKey = (
-  model: Pick<ChatModelChoice, 'modelService' | 'model'>,
-): string => `${model.modelService}/${model.model}`;
+export const modelKey = (model: ModelRef): string =>
+  `${model.modelService}/${model.model}`;
 
 const MODEL_KEY = 'nocoitam:agent-model';
 
 /**
- * The models the agent lists (its first the default) and the one picked for
+ * The chat models a new conversation may answer with (the plugin's catalog,
+ * the default first, as `/itam/ai/status` names it) and the one picked for
  * the next conversation, which this browser remembers.
  */
-export function useAgentModels(agent: ChatAgent | null): {
-  readonly models: readonly ChatModelChoice[];
-  readonly model: ChatModelChoice | undefined;
+export function useAskModels(): {
+  readonly models: readonly AskModel[];
+  readonly model: AskModel | undefined;
   readonly select: (key: string) => void;
 } {
-  const models = useMemo(() => agent?.models ?? [], [agent]);
+  const panel = useChatPanel();
+  const catalog = useChatModels(panel.available);
+  const status = useAiStatus();
+  const fallback = status.data?.model ?? null;
+  const models = useMemo(() => {
+    const all = (catalog.data ?? []).flatMap((service) =>
+      service.models
+        .filter((item) => item.kind === 'chat')
+        .map((item): AskModel => ({
+          modelService: service.name,
+          model: item.value,
+          serviceTitle: service.title,
+          modelLabel: item.label || item.value,
+        })),
+    );
+    const first = fallback ? modelKey(fallback) : null;
+    return [
+      ...all.filter((item) => modelKey(item) === first),
+      ...all.filter((item) => modelKey(item) !== first),
+    ];
+  }, [catalog.data, fallback]);
   const [key, setKey] = useState(() => {
     try {
       return localStorage.getItem(MODEL_KEY) ?? '';
@@ -161,7 +188,7 @@ export function useAskFiles(): AskFiles {
       const pending = accepted.map((file) => ({
         file,
         entry: {
-          uid: newClientId(),
+          uid: crypto.randomUUID(),
           filename: file.name || `pasted-${String(Date.now())}`,
           size: file.size,
           mimeType: file.type,
@@ -213,66 +240,34 @@ export function useAskFiles(): AskFiles {
   };
 }
 
-/** The page context a question is sent with: the given items only. */
-export function contextOf(route: string, items: readonly ChatContextItem[]) {
-  return buildPageContext({
-    route,
-    pinned: items,
-    sources: [],
-    filter: null,
-    selection: null,
-    removed: new Set(),
-  });
-}
-
 /**
  * Asking the assistant at once from outside the panel: the conversation is
- * created and the question sent, then the panel opens on it. A conversation
- * created whose message did not go opens with the text in its composer; one
- * not created leaves the text with the caller (the promise rejects).
+ * created with the question, then the panel opens on it. One not created
+ * leaves the text with the caller (the promise rejects).
  */
 export function useAskAgent(): (question: {
   readonly text: string;
   readonly items?: readonly ChatContextItem[];
   readonly attachments?: readonly MessageAttachment[];
-  readonly model?: ChatModelChoice;
+  readonly model?: ModelRef;
   readonly agent: ChatAgent;
 }) => Promise<void> {
-  const api = useChatApi();
+  const start = useStartConversation();
   const panel = useChatPanel();
-  const toaster = useToaster();
-  const { t } = useTranslation();
   return useCallback(
-    async ({ text, items = [], attachments = [], model, agent }) => {
-      const conversation = await api.createConversation({
-        agentId: agent.id,
+    async ({ text, items = [], attachments = [], model }) => {
+      const context = contextOf(window.location.pathname, items);
+      const conversationId = await start({
+        content: text,
         source: ITAM_SOURCE,
-        ...(model
-          ? { model: { modelService: model.modelService, model: model.model } }
-          : {}),
+        attachments,
+        ...(context ? { context } : {}),
+        ...(model ? { model } : {}),
       });
       panel.clearPinned();
-      try {
-        const context = contextOf(window.location.pathname, items);
-        await api.sendMessage(conversation.id, {
-          content: text,
-          clientId: newClientId(),
-          ...(context ? { context } : {}),
-          ...(attachments.length
-            ? { attachmentIds: attachments.map((file) => file.id) }
-            : {}),
-        });
-        panel.openChat({ conversationId: conversation.id, view: 'chat' });
-      } catch {
-        toaster.show({ type: 'error', title: t('ai.sendFailed') });
-        panel.openChat({
-          conversationId: conversation.id,
-          view: 'chat',
-          draft: text,
-        });
-      }
+      panel.openChat({ conversationId, view: 'chat' });
     },
-    [api, panel, toaster, t],
+    [start, panel],
   );
 }
 
@@ -301,28 +296,19 @@ export function useDiscuss(): (pins: readonly ChatContextItem[]) => void {
  * it, stopping a reply still being written first.
  */
 export function useSearchAnswer(): {
-  readonly start: (prompt: string, agent: ChatAgent) => Promise<string>;
+  readonly start: (prompt: string) => Promise<string>;
   readonly keep: (conversationId: string, question: string) => Promise<void>;
   readonly discard: (conversationId: string, running: boolean) => void;
 } {
-  const chat = useChatApi();
+  const startConversation = useStartConversation();
   const api = useApi();
   const panel = useChatPanel();
   const actions = useConversationActions();
   const queryClient = useQueryClient();
   return useMemo(
     () => ({
-      start: async (prompt, agent) => {
-        const conversation = await chat.createConversation({
-          agentId: agent.id,
-          source: SEARCH_SOURCE,
-        });
-        await chat.sendMessage(conversation.id, {
-          content: prompt,
-          clientId: newClientId(),
-        });
-        return conversation.id;
-      },
+      start: (prompt) =>
+        startConversation({ content: prompt, source: SEARCH_SOURCE }),
       keep: async (conversationId, question) => {
         await api.request({
           path: `${AI_PATH}/search-answers/${encodeURIComponent(conversationId)}/keep`,
@@ -347,6 +333,6 @@ export function useSearchAnswer(): {
         })().catch(() => undefined);
       },
     }),
-    [chat, api, panel, actions.stop, queryClient],
+    [startConversation, api, panel, actions.stop, queryClient],
   );
 }

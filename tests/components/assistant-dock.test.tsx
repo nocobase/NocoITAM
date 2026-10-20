@@ -30,10 +30,10 @@ vi.mock('../../client/lib/itam/ask.js', () => ({
     `${model.modelService}/${model.model}`,
   useAgentReadiness: () =>
     state.ready
-      ? { state: 'ready', agent: { id: 'noco' } }
+      ? { state: 'ready', agent: { id: 'online' } }
       : { state: 'unavailable', agent: null, reason: 'ai.unavailable' },
   useDiscuss: () => vi.fn(),
-  useAgentModels: () => ({ models: [], model: undefined, select: vi.fn() }),
+  useAskModels: () => ({ models: [], model: undefined, select: vi.fn() }),
   useAskAgent: () => state.ask,
   useAskFiles: () => ({
     files: [],

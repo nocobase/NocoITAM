@@ -1,15 +1,9 @@
-/**
- * The viewer's conversations, last message first, in the panel's history view and the full-page view's history
- * dialog: search over titles and messages, filters by agent and by where a conversation started, open or archived
- * ones. Each row opens its conversation; its menu opens it full screen (when the application has a page for it),
- * renames it in place, or archives it (undo in the toast) or brings it back. `ChatHistoryDialog` shows the list in a
- * dialog, for a page rather than the panel.
- */
+import { useConversationActions } from './conversation-actions.js';
 import {
   CHAT_PANEL_ATTRIBUTE,
+  chatIsRunning,
   useAgentText,
   useChatAgents,
-  useConversationActions,
   useConversationList,
   useConversationSources,
   useFormatters,
@@ -47,6 +41,7 @@ import {
 } from '#components/ui/dropdown-menu';
 import {
   Empty,
+  EmptyContent,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
@@ -76,12 +71,14 @@ export interface HistoryListProps {
   readonly onOpen: (conversationId: string) => void;
   /** Offered in each row's menu: open the conversation on the application's full-page view. */
   readonly onOpenPage?: ((conversationId: string) => void) | null;
+  readonly onNew?: () => void;
 }
 
 export function HistoryList({
   activeId,
   onOpen,
   onOpenPage,
+  onNew,
 }: HistoryListProps): ReactElement {
   const { t } = useChatTranslation();
   const agents = useChatAgents();
@@ -227,6 +224,27 @@ export function HistoryList({
                   : t('chat.history.empty')}
             </EmptyTitle>
           </EmptyHeader>
+          {filtered || onNew ? (
+            <EmptyContent>
+              {filtered ? (
+                <Button
+                  variant='outline'
+                  onClick={() => {
+                    setText('');
+                    setQ('');
+                    setAgentId(ALL);
+                    setSource(ALL);
+                  }}
+                >
+                  {t('chat.history.clearFilters')}
+                </Button>
+              ) : onNew ? (
+                <Button variant='outline' onClick={onNew}>
+                  {t('chat.newConversation')}
+                </Button>
+              ) : null}
+            </EmptyContent>
+          ) : null}
         </Empty>
       ) : (
         <ul
@@ -326,7 +344,7 @@ function HistoryRow({
           onClick={onOpen}
         >
           <span className='flex w-full min-w-0 items-center gap-1.5'>
-            {item.run ? <Pulse /> : null}
+            {chatIsRunning(item) ? <Pulse /> : null}
             <span
               className={cn(
                 'truncate text-sm',

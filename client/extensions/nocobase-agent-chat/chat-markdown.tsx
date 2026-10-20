@@ -1,4 +1,3 @@
-/** What an agent wrote, as compact prose: the installed `markdown-view`, with `mermaid` code blocks drawn as diagrams. */
 import { MermaidDiagram } from '@nocobase/markdown-mermaid';
 import type { ReactElement } from 'react';
 

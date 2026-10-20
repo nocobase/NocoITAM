@@ -6,7 +6,6 @@ import {
   type ReactElement,
   type RefObject,
 } from 'react';
-import type { ChatModelChoice } from '@nocobase/app-plugin-agents/shared/conversations';
 import { useTranslation } from '@nocobase/i18n/client';
 
 import {
@@ -30,7 +29,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '#components/ui/tooltip';
-import { modelKey, type AskFile } from '@/lib/itam/ask';
+import { modelKey, type AskFile, type AskModel } from '@/lib/itam/ask';
 import { useFileDrag } from '@/lib/itam/file-drag';
 
 import type { AskDraft } from './ask-draft.js';
@@ -77,7 +76,7 @@ export function AskComposer({
   const { files, model } = draft;
   // The models by service, as the select groups them.
   const groups = [...draft.models].reduce<
-    { key: string; label: string; models: ChatModelChoice[] }[]
+    { key: string; label: string; models: AskModel[] }[]
   >((list, item) => {
     const group = list.find((entry) => entry.key === item.modelService);
     if (group) group.models.push(item);

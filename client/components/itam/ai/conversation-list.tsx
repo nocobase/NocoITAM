@@ -1,4 +1,5 @@
 import {
+  appUIMessageText,
   AgentAvatar,
   useAgentText,
   useChatApi,
@@ -254,7 +255,7 @@ function LastMessage({
     staleTime: Infinity,
   });
   const line =
-    data && data.role !== 'system' ? markdownLine(data.content.content) : '';
+    data && data.role !== 'system' ? markdownLine(appUIMessageText(data)) : '';
   if (!line) return null;
   return (
     <>

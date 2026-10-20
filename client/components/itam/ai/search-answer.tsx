@@ -1,5 +1,8 @@
 import {
+  appUIMessageText,
+  chatIsRunning,
   useAgentText,
+  useChatStream,
   useConversation,
   useConversationMessages,
 } from '@nocobase/app-plugin-agents/client/chat';
@@ -41,14 +44,20 @@ export function SearchAnswer({
   const agentText = useAgentText();
   const detail = useConversation(conversationId);
   const conversation = detail.data;
-  const running = Boolean(conversation?.run);
+  const stream = useChatStream(conversation?.execution ? conversationId : null);
+  const running =
+    chatIsRunning(conversation ?? null) ||
+    stream?.status === 'submitted' ||
+    stream?.status === 'streaming';
   useEffect(() => onRunning(running), [onRunning, running]);
-  const messages = useConversationMessages(conversationId, running);
+  const messages = useConversationMessages(conversationId);
   const replies = messages.items.filter(
-    (message) => message.role === 'assistant' && message.content.content.trim(),
+    (message) =>
+      message.role === 'assistant' && appUIMessageText(message).trim(),
   );
   const name =
-    (conversation?.agent ? agentText.name(conversation.agent) : null) ?? t('ai.assistantName');
+    (conversation?.agent ? agentText.name(conversation.agent) : null) ??
+    t('ai.assistantName');
   return (
     <div className='flex max-h-[min(70svh,40rem)] flex-col'>
       <div className='flex items-start gap-2 border-b border-border px-4 py-3'>
@@ -67,7 +76,7 @@ export function SearchAnswer({
                 key={message.id}
                 className='min-w-0 text-sm leading-6 [&_li]:my-1 [&_ol]:my-2 [&_p]:my-2 [&_ul]:my-2'
               >
-                <ChatMarkdown content={message.content.content} />
+                <ChatMarkdown content={appUIMessageText(message)} />
               </div>
             ))}
             {running || !replies.length ? (

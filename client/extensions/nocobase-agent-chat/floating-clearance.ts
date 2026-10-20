@@ -1,15 +1,3 @@
-/**
- * Keeps the floating chat button clear of what a page pins to the bottom of the screen, such as an issue's comment
- * composer or a form's sticky action bar. The button has a resting place (bottom right); when a sticky or fixed bar
- * lies under that place, the button rises to sit above the bar's top edge. Pages need not tell the button anything:
- * it looks at what is actually under its resting place whenever the layout may have changed.
- *
- * Bars that cover the button anyway are left alone: dialogs, sheets and toasts stack above it, and a bar taller than
- * half the screen is a panel rather than a bar.
- *
- * What is marked `data-floating-avoid`, such as an agent composer, is never covered, pinned or not: the button rises
- * above it too, and hides when it cannot (the composer is taller than half the screen, or runs off its top).
- */
 import { useEffect, useState } from 'react';
 
 /** The button's resting place, in CSS pixels: its size and its distance from the right and bottom edges. */

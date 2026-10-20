@@ -1,8 +1,3 @@
-/**
- * The agent at work, below the last message: "waiting for a runner" while the run is queued, then one line for what it
- * is doing ("thinking…", "looking at ‹PM-12›") that expands to the steps since it last wrote. The steps come from the
- * run's transcript (`useLiveRunEvents`), fetched as the run's topic announces them and polled meanwhile.
- */
 import {
   liveStepsView,
   stepLineText,

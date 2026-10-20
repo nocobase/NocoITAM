@@ -112,7 +112,9 @@ vi.mock('../../client/components/itam/reference-select.js', () => ({
     </button>
   ),
 }));
-vi.mock('@tanstack/react-query', () => ({
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  // The rest as it is: @nocobase/app-client builds its query client from it.
+  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   useQuery: () => ({ data: state.rows ?? lines }),
   useMutation: () => ({

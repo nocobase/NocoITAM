@@ -1,11 +1,3 @@
-/**
- * Ways to open the chat panel: the header button (its tooltip names ⌘J / Ctrl+J), the floating button below `md`, and
- * "Ask agent" on a page, which opens the panel with the page's object pinned to the context and, optionally, a draft
- * in the composer (never sent on its own).
- *
- * The header and floating buttons are plain outlined icon buttons, like the header's other buttons; while the panel's
- * conversation has a reply in progress, a small dot in the primary color sits on their corner.
- */
 import {
   CHAT_PANEL_ID,
   modifierKeyLabel,
@@ -37,7 +29,8 @@ import {
 /** Whether the panel's conversation has a reply in progress: the launchers show it. */
 function useReplying(): boolean {
   const { conversationId } = useChatPanel();
-  return useConversation(conversationId).data?.run != null;
+  const detail = useConversation(conversationId).data;
+  return detail?.run != null || detail?.execution?.status === 'running';
 }
 
 /**
@@ -80,7 +73,7 @@ function HeaderButton(): ReactElement {
             <Button
               variant='outline'
               size='icon'
-              className='relative size-10 rounded-xl border-border/70 bg-background/60 text-foreground aria-expanded:border-foreground/40 aria-expanded:bg-accent dark:border-border/70'
+              className='relative size-10 rounded-xl border-border bg-background/60 text-foreground aria-expanded:border-foreground/40 aria-expanded:bg-accent dark:border-border'
               aria-label={label}
               aria-expanded={panel.open}
               aria-controls={CHAT_PANEL_ID}
@@ -124,7 +117,7 @@ function FloatingButton(): ReactElement {
       variant='outline'
       size='icon'
       className={cn(
-        'fixed right-4 z-40 size-12 rounded-full border-border/70 bg-background text-foreground shadow-lg transition-[bottom] duration-150 md:hidden dark:border-border/70 dark:bg-background',
+        'fixed right-4 z-40 size-12 rounded-full border-border bg-background text-foreground shadow-lg transition-[bottom] duration-150 md:hidden dark:border-border dark:bg-background',
         bottom === null && 'hidden',
       )}
       style={{ bottom: bottom ?? FLOATING_BUTTON.inset }}

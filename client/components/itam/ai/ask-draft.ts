@@ -2,15 +2,15 @@ import {
   useChatPanel,
   type ChatContextItem,
 } from '@nocobase/app-plugin-agents/client/chat';
-import type { ChatModelChoice } from '@nocobase/app-plugin-agents/shared/conversations';
 import { useEffect, useRef, useState } from 'react';
 
 import {
-  useAgentModels,
+  useAskModels,
   useAgentReadiness,
   useAskAgent,
   useAskFiles,
   type AskFiles,
+  type AskModel,
 } from '@/lib/itam/ask';
 
 /**
@@ -47,8 +47,8 @@ export interface AskDraft {
   readonly value: string;
   readonly setValue: (value: string) => void;
   readonly files: AskFiles;
-  readonly models: readonly ChatModelChoice[];
-  readonly model: ChatModelChoice | undefined;
+  readonly models: readonly AskModel[];
+  readonly model: AskModel | undefined;
   readonly selectModel: (key: string) => void;
   readonly canSend: boolean;
   readonly sending: boolean;
@@ -62,7 +62,7 @@ export function useAskDraft(
 ): AskDraft {
   const readiness = useAgentReadiness();
   const files = useAskFiles();
-  const { models, model, select } = useAgentModels(readiness.agent);
+  const { models, model, select } = useAskModels();
   const askAgent = useAskAgent();
   const [value, setValue] = useState('');
   const [sending, setSending] = useState(false);

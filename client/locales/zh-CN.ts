@@ -3136,11 +3136,6 @@ const zhCN: AppResource = {
     searchSource: '全局搜索',
     // The assistant's name (2026-10-16; it was Noco until then).
     assistantName: '资产管家',
-    agentPreset: {
-      name: 'IT 资产助手',
-      description:
-        '在 IT 资产台账里查找信息，把修改整理成计划，由人确认后执行。',
-    },
     // The business actions an agent may be given (Agent 团队 → Agent).
     agentActions: {
       records: 'IT 资产',
@@ -3151,6 +3146,21 @@ const zhCN: AppResource = {
       planCreate: '以计划提出修改',
       planCreateDescription:
         '把修改整理成计划交给使用人确认；确认执行前不写入任何数据。',
+    },
+    // Asset Steward's tools, one line each in a conversation
+    // (components/itam/ai/tool-lines.tsx).
+    tools: {
+      itam_context: '读取了业务概况',
+      itam_search: '查找了台账记录',
+      itam_record_get: '读取了一条记录',
+      itam_stats: '统计了数据',
+      itam_availability: '查看了可用库存',
+      itam_model_match: '匹配了型号',
+      itam_onboarding_plan: '查看了入职配备',
+      itam_device_sync_review: '查看了设备同步差异',
+      itam_plan_ops: '读取了计划可用的操作',
+      itam_plan_create: '提出了计划',
+      itam_read_skill: '读取了工作方法',
     },
     // A plan the assistant proposed, as its card in the conversation.
     plans: {

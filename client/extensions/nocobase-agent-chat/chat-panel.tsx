@@ -13,39 +13,85 @@ import {
   useChatPanel,
   useConversationList,
 } from '@nocobase/app-plugin-agents/client/chat';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactElement,
+} from 'react';
 
+import {
+  Dialog,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+} from '#components/ui/dialog';
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 
 import { ConversationList } from '#components/itam/ai/conversation-list';
 import { Button } from '#components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '#components/ui/dialog';
 
 import { useChatTranslation } from './chat-i18n.js';
 import { ConversationView } from './conversation-view.js';
 import { PanelHeader } from './panel-header.js';
 import { useMediaQuery } from './use-media-query.js';
+import type { ChatInputAvailability } from './input-availability.js';
 
 /** The chat panel; nothing while `ChatProvider` says the panel is not available (signed out, no provider). */
-export function ChatPanel(): ReactElement | null {
+export function ChatPanel({
+  inputAvailability,
+}: {
+  readonly inputAvailability?: ChatInputAvailability;
+}): ReactElement | null {
   const panel = useChatPanel();
-  return panel.available ? <PanelFrame /> : null;
+  return panel.available ? (
+    <PanelFrame inputAvailability={inputAvailability} />
+  ) : null;
 }
 
-function PanelFrame(): ReactElement | null {
+function PanelFrame({
+  inputAvailability,
+}: {
+  readonly inputAvailability?: ChatInputAvailability;
+}): ReactElement | null {
+  const panel = useChatPanel();
+  const [mounted, setMounted] = useState(panel.open);
+  if (panel.open && !mounted) setMounted(true);
+  return mounted ? (
+    <MountedPanel inputAvailability={inputAvailability} />
+  ) : null;
+}
+
+function MountedPanel({
+  inputAvailability,
+}: {
+  readonly inputAvailability?: ChatInputAvailability;
+}): ReactElement {
   const { t } = useChatTranslation();
   const panel = useChatPanel();
   const mobile = useMediaQuery(CHAT_MOBILE_QUERY);
-  const [mounted, setMounted] = useState(panel.open);
   const asideRef = useRef<HTMLElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-  if (panel.open && !mounted) setMounted(true);
-
+  // One stable React portal owns the body, even when its DOM slot moves between desktop and the phone dialog.
+  // Closing a phone dialog or crossing a breakpoint must not destroy drafts, uploads or message state.
+  const [body] = useState(() => {
+    const element = document.createElement('div');
+    element.className = 'flex min-h-0 flex-1 flex-col';
+    return element;
+  });
+  const attachBody = useCallback(
+    (slot: HTMLDivElement | null) => {
+      slot?.appendChild(body);
+    },
+    [body],
+  );
   const { closeChat, open } = panel;
   useEffect(() => {
     const element = asideRef.current;
-    if (!element || !open) return undefined;
-    // A native listener: Escape inside a menu or a select (rendered in a portal) never reaches it.
+    if (!element || !open) return;
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       event.preventDefault();
@@ -53,74 +99,78 @@ function PanelFrame(): ReactElement | null {
     }
     element.addEventListener('keydown', onKeyDown);
     return () => element.removeEventListener('keydown', onKeyDown);
-  }, [open, closeChat, mounted, mobile]);
+  }, [open, closeChat, mobile]);
   // The page makes room for the panel (styles.css).
   useEffect(() => {
     document.body.classList.toggle('itam-agent-panel-open', open && !mobile);
     return () => document.body.classList.remove('itam-agent-panel-open');
   }, [open, mobile]);
-
-  if (!mounted) return null;
   const marker = { [CHAT_PANEL_ATTRIBUTE]: '' };
-
-  if (mobile)
-    return (
-      <Dialog
-        open={open}
-        onOpenChange={(next) => {
-          if (!next) closeChat();
-        }}
-      >
-        <DialogContent
-          ref={dialogRef}
-          // The dialog itself takes the focus on opening: its first control is the title's rename button, whose focus
-          // ring would greet every opening, and focusing the box would raise the keyboard over the conversation.
-          initialFocus={dialogRef}
+  return (
+    <>
+      {createPortal(<PanelBody inputAvailability={inputAvailability} />, body)}
+      {mobile ? (
+        <Dialog
+          open={open}
+          onOpenChange={(next) => {
+            if (!next) closeChat();
+          }}
+        >
+          <DialogPortal keepMounted>
+            <DialogOverlay hidden={!open} />
+            <DialogPrimitive.Popup
+              ref={dialogRef}
+              initialFocus={dialogRef}
+              hidden={!open}
+              id={CHAT_PANEL_ID}
+              {...marker}
+              className='fixed inset-0 z-50 flex h-dvh min-w-0 max-h-dvh w-full flex-col bg-background text-foreground outline-none'
+              data-testid='chat-panel'
+              data-mode='mobile'
+            >
+              <DialogTitle className='sr-only'>{t('chat.title')}</DialogTitle>
+              <PanelHeader compact />
+              <div ref={attachBody} className='flex min-h-0 flex-1 flex-col' />
+            </DialogPrimitive.Popup>
+          </DialogPortal>
+        </Dialog>
+      ) : (
+        <aside
+          ref={asideRef}
           id={CHAT_PANEL_ID}
           {...marker}
-          showCloseButton={false}
-          className='flex h-dvh max-h-dvh w-full max-w-none flex-col gap-0 rounded-none p-0 sm:max-w-none'
+          aria-label={t('chat.title')}
+          hidden={!open}
+          // Application change (ITAM, 2026-10-16, after NocoCRM's panel): one
+          // form from `md` up, fixed at the window's right edge over the whole
+          // height (above the sticky header, z-40; dialogs and menus stay above it),
+          // 28rem wide; from 1280px the page makes room for it (`itam-page-main`,
+          // styles.css), narrower it lies over the page. No docked, floating or
+          // expanded forms: a conversation's own page is the wide view.
+          data-mode='docked'
           data-testid='chat-panel'
-          data-mode='mobile'
+          className='fixed inset-y-0 right-0 z-40 flex w-[28rem] max-w-full min-w-0 flex-col border-l border-border bg-background shadow-lg'
         >
-          <DialogTitle className='sr-only'>{t('chat.title')}</DialogTitle>
-          <PanelHeader compact />
-          <PanelBody />
-        </DialogContent>
-      </Dialog>
-    );
-
-  // Application change (ITAM, 2026-10-16, after NocoCRM's panel): one
-  // form from `md` up, fixed at the window's right edge over the whole
-  // height (above the sticky header, z-40; dialogs and menus stay above it),
-  // 28rem wide; from 1280px the page makes room for it (`itam-page-main`,
-  // styles.css), narrower it lies over the page. No docked, floating or
-  // expanded forms: a conversation's own page is the wide view.
-  return (
-    <aside
-      ref={asideRef}
-      id={CHAT_PANEL_ID}
-      {...marker}
-      aria-label={t('chat.title')}
-      hidden={!open}
-      data-mode='docked'
-      data-testid='chat-panel'
-      className='fixed inset-y-0 right-0 z-40 flex w-[28rem] max-w-full flex-col border-l border-border bg-background shadow-lg'
-    >
-      <PanelHeader compact={false} />
-      <PanelBody />
-    </aside>
+          <PanelHeader compact={false} />
+          <div ref={attachBody} className='flex min-h-0 flex-1 flex-col' />
+        </aside>
+      )}
+    </>
   );
 }
 
-function PanelBody(): ReactElement {
+function PanelBody({
+  inputAvailability,
+}: {
+  readonly inputAvailability?: ChatInputAvailability;
+}): ReactElement {
   const { t } = useChatTranslation();
   const panel = useChatPanel();
   const navigate = useNavigate();
   const list = useConversationList({});
   return (
     // Application change (ITAM): NocoCRM's margins, px-4.
-    <div className='flex min-h-0 flex-1 flex-col px-4'>
+    <div className='flex min-h-0 min-w-0 flex-1 flex-col px-4'>
       {panel.view === 'history' ? (
         <>
           {/* Application change (ITAM, 2026-10-16): NocoCRM's list, the
@@ -153,7 +203,10 @@ function PanelBody(): ReactElement {
           </div>
         </>
       ) : (
-        <ConversationView conversationId={panel.conversationId} />
+        <ConversationView
+          conversationId={panel.conversationId}
+          inputAvailability={inputAvailability}
+        />
       )}
     </div>
   );

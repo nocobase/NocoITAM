@@ -1,4 +1,5 @@
 import {
+  AIToolRendererProvider,
   CHAT_PANEL_ID,
   ChatExtensionsContext,
   ChatProvider,
@@ -10,6 +11,7 @@ import type { ReactElement, ReactNode } from 'react';
 
 import { useAiStatus } from '@/lib/itam/ai';
 import { ITAM_CHAT_EXTENSIONS } from '@/lib/itam/chat-extensions';
+import { ITAM_TOOL_RENDERERS } from '@/lib/itam/tool-renderers';
 import { useToggleAssistant } from '@/lib/itam/conversations';
 import { ChatPanel } from '#extensions/nocobase-agent-chat/chat-panel';
 import { ChatFloatingButton } from '#extensions/nocobase-agent-chat/launchers';
@@ -29,7 +31,8 @@ import {
  * Library's agent-chat block) is drawn here, fixed at the window's right
  * edge over the whole height as NocoCRM's is (2026-10-16), the page making
  * room for it from 1280px (`itam-page-main`, styles.css). ITAM adds its plan
- * cards among a conversation's messages (`ITAM_CHAT_EXTENSIONS`).
+ * cards among a conversation's messages (`ITAM_CHAT_EXTENSIONS`), and draws
+ * Asset Steward's tool calls as one line each (`ITAM_TOOL_RENDERERS`).
  */
 export function AgentChatShell({
   children,
@@ -41,10 +44,12 @@ export function AgentChatShell({
       conversationPath={(id) => `/agent-chat/${encodeURIComponent(id)}`}
     >
       <ChatExtensionsContext.Provider value={ITAM_CHAT_EXTENSIONS}>
-        {children}
-        <ChatPanel />
-        {/* Below `md` the panel opens from a floating button. */}
-        <ChatFloatingButton />
+        <AIToolRendererProvider renderers={ITAM_TOOL_RENDERERS}>
+          {children}
+          <ChatPanel />
+          {/* Below `md` the panel opens from a floating button. */}
+          <ChatFloatingButton />
+        </AIToolRendererProvider>
       </ChatExtensionsContext.Provider>
     </ChatProvider>
   );

@@ -1,6 +1,33 @@
-/** Every key the agent chat looks up, so each locale is checked against the same list. */
 export interface AgentChatLocale {
   readonly chat: {
+    readonly retrySaving: string;
+    readonly contextFailed: string;
+    readonly approval: {
+      readonly request: string;
+      readonly approve: string;
+      readonly deny: string;
+      readonly denied: string;
+      readonly failed: string;
+    };
+    readonly feedback: {
+      readonly sending: string;
+      readonly waiting: string;
+      readonly thinking: string;
+      readonly stopping: string;
+      readonly completed: string;
+      readonly cancelled: string;
+      readonly failed: string;
+      readonly unknown: string;
+      readonly effectReview: string;
+    };
+    readonly connectionUnknown: string;
+    readonly historicalReadOnly: string;
+    readonly executionFailed: string;
+    readonly allowAnother: string;
+    readonly creationUnknown: string;
+    readonly retryCreation: string;
+    readonly refreshHistory: string;
+    readonly signIn: string;
     readonly title: string;
     readonly ask: string;
     readonly close: string;
@@ -17,6 +44,10 @@ export interface AgentChatLocale {
     readonly unarchive: string;
     /** Application change (ITAM, 2026-10-16): in place of the composer of an archived conversation. */
     readonly archivedNote: string;
+    readonly renamed: string;
+    readonly archivedNamed: string;
+    readonly unarchived: string;
+    readonly undo: string;
     readonly you: string;
     readonly agentGone: string;
     readonly anyAgent: string;
@@ -37,14 +68,10 @@ export interface AgentChatLocale {
       readonly agentMissing: string;
       readonly agentArchived: string;
       readonly forbidden: string;
+      readonly noModel: string;
       readonly noRunner: string;
+      readonly othersPersonal: string;
       readonly modelUnavailable: string;
-    };
-    readonly mode: {
-      readonly online: string;
-      readonly runner: string;
-      readonly onlineHint: string;
-      readonly runnerHint: string;
     };
     readonly reply: {
       readonly writing: string;
@@ -54,7 +81,9 @@ export interface AgentChatLocale {
       readonly agentMissing: string;
       readonly agentArchived: string;
       readonly forbidden: string;
+      readonly noModel: string;
       readonly noRunner: string;
+      readonly othersPersonal: string;
       readonly modelUnavailable: string;
       readonly kept: string;
       readonly fallback: string;
@@ -75,8 +104,6 @@ export interface AgentChatLocale {
       readonly question: string;
       readonly answer: string;
       readonly steps: string;
-      readonly plans_one: string;
-      readonly plans_other: string;
       readonly usage: string;
       readonly state: {
         readonly running: string;
@@ -102,11 +129,6 @@ export interface AgentChatLocale {
       readonly failed: string;
       readonly retry: string;
       readonly discard: string;
-    };
-    readonly model: {
-      readonly label: string;
-      readonly current: string;
-      readonly default: string;
     };
     readonly composer: {
       readonly label: string;
@@ -145,6 +167,15 @@ export interface AgentChatLocale {
       readonly remove: string;
     };
     readonly agents: {
+      readonly models: string;
+      readonly defaultModel: string;
+      readonly runnerAgents: string;
+      readonly modelPlaceholder: string;
+      readonly modelSwitch: string;
+      readonly modelHint: string;
+      readonly mixedHint: string;
+      readonly search: string;
+      readonly noResults: string;
       readonly switch: string;
       readonly withStatus: string;
       readonly chooseFor: string;
@@ -159,9 +190,7 @@ export interface AgentChatLocale {
       readonly systemDefault: string;
       readonly personal: string;
       readonly temporary: string;
-      readonly onlineGroup: string;
-      readonly runnerGroup: string;
-      readonly modeHint: string;
+      readonly hint: string;
     };
     readonly history: {
       readonly title: string;
@@ -175,6 +204,7 @@ export interface AgentChatLocale {
       readonly allSources: string;
       readonly loadFailed: string;
       readonly noMatch: string;
+      readonly clearFilters: string;
       readonly noArchived: string;
       readonly empty: string;
       readonly more: string;
@@ -187,6 +217,7 @@ export interface AgentChatLocale {
       readonly forbidden: string;
       readonly notFound: string;
       readonly requestFailed: string;
+      readonly signInRequired: string;
     };
     readonly transcript: {
       readonly waiting: string;
@@ -216,6 +247,45 @@ export interface AgentChatLocale {
 
 const agentChatEnUS: AgentChatLocale = {
   chat: {
+    retrySaving: 'Retry saving',
+    contextFailed:
+      'Could not read the selected context or send the message. Check the current page and try again.',
+    approval: {
+      request: 'This tool needs your approval before it runs.',
+      approve: 'Approve',
+      deny: 'Deny',
+      denied: 'Tool execution was denied.',
+      failed:
+        'Approval was not confirmed. Refresh the saved message before trying again.',
+    },
+    feedback: {
+      sending: 'Sending…',
+      waiting: 'Waiting for the agent…',
+      thinking: 'Thinking…',
+      stopping: 'Stop requested. Waiting for the agent to finish…',
+      completed: 'Completed.',
+      cancelled:
+        'Cancelled. Check possibly completed actions before repeating them.',
+      failed:
+        'The response failed. Check history before deciding whether to send again.',
+      unknown:
+        'The result or its saved history is not confirmed. Refresh history before deciding whether to send again.',
+      effectReview:
+        'Some actions may have completed. Check their results before repeating them.',
+    },
+
+    executionFailed:
+      'Execution failed. Check saved history and possibly completed actions before repeating them.',
+    historicalReadOnly:
+      'This historical conversation is read-only. Start a new chat to continue.',
+    connectionUnknown:
+      'Connection interrupted. The result is unknown. Refresh saved history before deciding to send again.',
+    allowAnother: 'Allow another send (may duplicate)',
+    creationUnknown:
+      'A conversation may have been created, but its ID was not received. Creating another may leave an empty duplicate. No message is resent automatically.',
+    retryCreation: 'Create another conversation and send',
+    refreshHistory: 'Refresh history',
+    signIn: 'Sign in',
     title: 'Agent chat',
     ask: 'Ask agent',
     close: 'Close',
@@ -231,6 +301,10 @@ const agentChatEnUS: AgentChatLocale = {
     archive: 'Archive',
     unarchive: 'Unarchive',
     archivedNote: 'This conversation is archived.',
+    renamed: 'Conversation renamed',
+    archivedNamed: 'Archived “{{title}}”',
+    unarchived: 'Conversation unarchived',
+    undo: 'Undo',
     you: 'You',
     agentGone: 'Deleted agent',
     anyAgent: 'Agent',
@@ -242,7 +316,7 @@ const agentChatEnUS: AgentChatLocale = {
     emptyDescription:
       'Ask anything, or describe the work to organize. What this page shows goes along as context.',
     noAgent:
-      'There is no agent you may chat with. Ask an administrator to create one or to give you access.',
+      'There is no agent you may chat with. Ask an administrator to enable one, or connect a runner.',
     chooseAgent:
       'Choose who to chat with below. To start with an agent every time, set your default in your profile.',
     messages: 'Messages',
@@ -253,16 +327,13 @@ const agentChatEnUS: AgentChatLocale = {
     availability: {
       online: 'Online',
       agentMissing: 'Deleted',
-      agentArchived: 'Archived',
+      agentArchived: 'Not enabled',
       forbidden: 'Not available to you',
-      noRunner: 'No runner online',
+      noModel: 'Configure a chat model first',
+      noRunner: 'No runner online, cannot be chosen',
+      othersPersonal: "Only others' personal runners have it",
+      // The reason earlier versions wrote on a notice that their online fallback could not answer.
       modelUnavailable: 'Model unavailable',
-    },
-    mode: {
-      online: 'Online',
-      runner: 'Runner',
-      onlineHint: 'Answers in seconds on the server',
-      runnerHint: 'A coding agent on a runtime',
     },
     reply: {
       writing: 'Writing…',
@@ -270,9 +341,12 @@ const agentChatEnUS: AgentChatLocale = {
     },
     offline: {
       agentMissing: '{{name}} no longer exists',
-      agentArchived: '{{name}} is archived',
+      agentArchived: '{{name}} is not enabled',
       forbidden: 'You may no longer use {{name}}',
+      noModel: 'Configure a chat model first',
       noRunner: '{{name}} has no runner online right now',
+      othersPersonal:
+        "Only others' personal runners have {{name}}; connect a runner of your own",
       modelUnavailable:
         'The model of {{name}} is not available; ask an administrator',
       kept: 'Your messages are kept and answered once it can answer.',
@@ -291,15 +365,13 @@ const agentChatEnUS: AgentChatLocale = {
       switchedBack: 'Back with {{name}}.',
       runFailed: 'The agent stopped before answering.',
       runFailedReason: 'The agent stopped before answering: {{reason}}',
-      runCancelled: 'Stopped.',
+      runCancelled: 'Cancellation requested.',
     },
     consultation: {
       title: 'Consulted {{name}}',
       question: 'Question',
       answer: 'Answer',
       steps: 'Its steps',
-      plans_one: 'Proposed a plan for you to confirm.',
-      plans_other: 'Proposed {{count}} plans for you to confirm.',
       usage: 'Used {{input}} input and {{output}} output tokens.',
       state: {
         running: 'Answering…',
@@ -326,16 +398,11 @@ const agentChatEnUS: AgentChatLocale = {
       retry: 'Send again',
       discard: 'Discard',
     },
-    model: {
-      label: 'Model',
-      current: 'Model: {{name}}',
-      default: '{{model}} (default)',
-    },
     composer: {
       label: 'Message to the agent',
       placeholder: 'Ask, or describe the work to organize…',
       hint: 'Enter to send, Shift+Enter for a new line',
-      runningHint: 'Messages you send now join the work in progress',
+      runningHint: 'Working. You can stop this execution.',
       tooLong: 'At most {{max}} characters.',
       send: 'Send',
       stop: 'Stop',
@@ -368,6 +435,15 @@ const agentChatEnUS: AgentChatLocale = {
       remove: 'Remove context: {{label}}',
     },
     agents: {
+      models: 'Models',
+      defaultModel: 'Default model',
+      runnerAgents: 'Agents',
+      modelPlaceholder: 'Choose a model',
+      modelSwitch: 'Model: {{name}} · {{service}}; choose a model or agent',
+      modelHint: 'Choose an online model to chat with.',
+      mixedHint: 'Choose an online model or an Agent on a runner to chat with.',
+      search: 'Search models or agents',
+      noResults: 'No matching models or agents',
       switch: 'Agent: {{name}}; choose another',
       withStatus: '{{name}}, {{status}}',
       chooseFor: 'Chat with',
@@ -381,12 +457,9 @@ const agentChatEnUS: AgentChatLocale = {
       placeholder: 'Choose an agent',
       myDefault: 'My default',
       systemDefault: 'System default',
-      personal: 'Only me',
+      personal: 'Personal runners only',
       temporary: 'Temporary',
-      onlineGroup: 'Online agents',
-      runnerGroup: 'Runner agents',
-      modeHint:
-        'Online answers on the server in seconds; Runner runs a coding agent on a runtime. A conversation keeps its mode.',
+      hint: 'Choose an enabled agent. Online Agent answers directly using the configured chat model.',
     },
     history: {
       title: 'Conversations',
@@ -400,6 +473,7 @@ const agentChatEnUS: AgentChatLocale = {
       allSources: 'Anywhere',
       loadFailed: 'Could not load conversations',
       noMatch: 'No conversation matches',
+      clearFilters: 'Clear filters',
       noArchived: 'No archived conversations',
       empty: 'No conversations yet',
       more: 'Load more',
@@ -412,6 +486,7 @@ const agentChatEnUS: AgentChatLocale = {
       forbidden: 'You are not allowed to do this.',
       notFound: 'It no longer exists.',
       requestFailed: 'The request failed. Try again.',
+      signInRequired: 'Your session has expired. Sign in to continue.',
     },
     transcript: {
       waiting: 'Waiting for the agent to start…',

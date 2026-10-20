@@ -212,10 +212,21 @@ function describeFields(schema: z.ZodObject): string {
     .join(', ');
 }
 
-export const CREATE_FIELD_GUIDE: string = CREATABLE_COLLECTIONS.map(
-  (collection) =>
-    `${collection}: ${describeFields(CREATE_TARGETS[collection].schema)}`,
-).join('\n');
+let fieldGuide: string | null = null;
+
+/**
+ * The fields each collection's `create_record` takes, one line each. Made on
+ * first use rather than at load (2026-10-20): Asset Steward's tools load
+ * this module from a provider, and the schemas it reads are not loaded yet
+ * then.
+ */
+export function createFieldGuide(): string {
+  fieldGuide ??= CREATABLE_COLLECTIONS.map(
+    (collection) =>
+      `${collection}: ${describeFields(CREATE_TARGETS[collection].schema)}`,
+  ).join('\n');
+  return fieldGuide;
+}
 
 const title = z
   .string()

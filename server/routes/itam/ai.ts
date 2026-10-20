@@ -22,6 +22,7 @@ import {
 import { scopeFor } from '../../providers/itam/ai-bridge.js';
 import {
   aiAvailable,
+  itamModel,
   openSession,
   readSkill,
 } from '../../providers/itam/ai-model.js';
@@ -72,9 +73,10 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
               readable.push(collection);
           app.container.resolve(readSnapshotsToken).set(userId, readable);
         }
-        return context.json({
-          data: { available: await aiAvailable(app.container) },
-        });
+        // The model too, so the ask box offers it first (Agents plugin 1.0:
+        // the client's model catalog does not say which is the default).
+        const model = await itamModel(app.container).catch(() => null);
+        return context.json({ data: { available: model !== null, model } });
       } catch (error) {
         return errorResponse(context, error);
       }

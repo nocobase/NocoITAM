@@ -427,7 +427,13 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // that show live to-dos subscribe to (`changes.ts`). The topic is
     // defined at boot; a container without realtime publishes nothing.
     container.singleton(itamChangesToken, () =>
-      createItamChanges(() => this.changesTopic?.publish({ kind: 'changed' })),
+      // Publishing is asynchronous since @nocobase/realtime 0.1 (template
+      // 1.0.0-beta.73); a failed one only means pages refresh later.
+      createItamChanges(() => {
+        void this.changesTopic
+          ?.publish({ kind: 'changed' })
+          .catch(() => undefined);
+      }),
     );
     // The notification plugin is resolved per send so registration order
     // does not matter and a test container without it stays silent.

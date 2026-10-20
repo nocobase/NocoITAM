@@ -1,16 +1,8 @@
-/**
- * The small parts the chat's views share: tags in a tint of their hue, the breathing dot of work in progress, the
- * Online / Runner tag and a failed load with a retry.
- */
-import type { ConversationMode } from '@nocobase/app-plugin-agents/shared/conversations';
 import { AlertCircleIcon } from 'lucide-react';
 import type { ReactElement } from 'react';
+import { Link, useLocation } from 'react-router';
 
-import {
-  AgentTag,
-  ModeTag as AgentModeTag,
-  type AgentTagTone,
-} from '#components/agent-picker';
+import { AgentTag, type AgentTagTone } from '#components/agent-picker';
 import {
   Alert,
   AlertAction,
@@ -19,11 +11,7 @@ import {
 } from '#components/ui/alert';
 import { Button } from '#components/ui/button';
 
-import {
-  errorStatus,
-  useAgentPickerLabels,
-  useChatTranslation,
-} from './chat-i18n.js';
+import { errorStatus, useChatTranslation } from './chat-i18n.js';
 
 export type ChatTagTone = AgentTagTone;
 
@@ -40,17 +28,7 @@ export function Pulse(): ReactElement {
   );
 }
 
-/** A conversation's mode, Online or Runner, with what it means on hover. */
-export function ModeTag({
-  mode,
-}: {
-  readonly mode: ConversationMode;
-}): ReactElement {
-  const labels = useAgentPickerLabels();
-  return <AgentModeTag mode={mode} labels={labels} data-testid='chat-mode' />;
-}
-
-/** A failed load with a retry button (none for 403, which retrying cannot fix). */
+/** Retry only recoverable reads; authentication and missing/denied resources need a different next step. */
 export function LoadError({
   title,
   error,
@@ -62,18 +40,36 @@ export function LoadError({
 }): ReactElement {
   const { t } = useChatTranslation();
   const status = errorStatus(error);
+  const location = useLocation();
   return (
     <Alert variant='destructive'>
       <AlertCircleIcon />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
-        {status === 403
-          ? t('chat.errors.forbidden')
-          : status === 404
-            ? t('chat.errors.notFound')
-            : t('chat.errors.requestFailed')}
+        {status === 401
+          ? t('chat.errors.signInRequired')
+          : status === 403
+            ? t('chat.errors.forbidden')
+            : status === 404
+              ? t('chat.errors.notFound')
+              : t('chat.errors.requestFailed')}
       </AlertDescription>
-      {onRetry && status !== 403 ? (
+      {status === 401 ? (
+        <AlertAction>
+          <Button
+            variant='outline'
+            size='sm'
+            nativeButton={false}
+            render={
+              <Link
+                to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`}
+              />
+            }
+          >
+            {t('chat.signIn')}
+          </Button>
+        </AlertAction>
+      ) : onRetry && status !== 403 && status !== 404 ? (
         <AlertAction>
           <Button variant='outline' size='sm' onClick={onRetry}>
             {t('chat.retry')}

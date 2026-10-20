@@ -10,10 +10,12 @@ import { markdownLine } from '../../client/lib/itam/conversations.js';
 const state = vi.hoisted(() => ({
   messages: {} as Record<
     string,
-    { role: string; content: { content: string } }
+    { role: string; parts: { type: 'text'; text: string }[] }
   >,
 }));
 vi.mock('@nocobase/app-plugin-agents/client/chat', () => ({
+  appUIMessageText: (message: { parts: { text: string }[] }) =>
+    message.parts.map((part) => part.text).join(''),
   AgentAvatar: ({ name }: { name: string }) => <span>{name[0]}</span>,
   useAgentText: () => ({ name: (agent: { name: string }) => agent.name }),
   useChatApi: () => ({
@@ -65,8 +67,14 @@ const wrap = (children: ReactNode) =>
 
 beforeEach(() => {
   state.messages = {
-    a: { role: 'user', content: { content: 'Which **laptops** are idle?' } },
-    b: { role: 'assistant', content: { content: '- DE-000001\n- DE-000002' } },
+    a: {
+      role: 'user',
+      parts: [{ type: 'text', text: 'Which **laptops** are idle?' }],
+    },
+    b: {
+      role: 'assistant',
+      parts: [{ type: 'text', text: '- DE-000001\n- DE-000002' }],
+    },
   };
 });
 
