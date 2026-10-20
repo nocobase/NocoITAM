@@ -2033,6 +2033,7 @@ const zhCN: AppResource = {
     suggest: '建议字段',
     suggesting: '正在建议字段和默认值…',
     suggested: '已加入 {{count}} 个建议字段，核对后保存。{{said}}',
+    suggestedTag: '建议',
     suggestedNone: 'AI 没有可补充的字段。',
     title: '扩展字段',
     add: '添加字段',

@@ -2124,6 +2124,7 @@ const messages = {
     suggesting: 'Suggesting fields and defaults…',
     suggested:
       'Added {{count}} suggested fields; check them before saving. {{said}}',
+    suggestedTag: 'Suggested',
     suggestedNone: 'AI has no fields to add.',
     title: 'Extended fields',
     add: 'Add field',

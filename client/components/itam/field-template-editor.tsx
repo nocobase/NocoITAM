@@ -2,6 +2,7 @@ import { useTranslation } from '@nocobase/i18n/client';
 import {
   Eye,
   EyeOff,
+  Sparkles,
   GripVertical,
   Pencil,
   Plus,
@@ -153,6 +154,11 @@ export function FieldTemplateEditor({
   const [suggesting, setSuggesting] = useState(false);
   const [suggested, setSuggested] = useState<string>();
   const [suggestedExtra, setSuggestedExtra] = useState<ReactNode>();
+  // The rows 建议字段 added, marked until they are saved or dropped
+  // (2026-10-20): beside the fields there already, they looked the same.
+  const [freshRows, setFreshRows] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
   // Problems surface only after a save attempt; a fresh row starts quiet.
   const [attempted, setAttempted] = useState(false);
   // Removing a row that already describes a field asks first; a blank row
@@ -254,11 +260,17 @@ export function FieldTemplateEditor({
         (field) =>
           /^[A-Za-z][A-Za-z0-9_]*$/.test(field.key) && !taken.has(field.key),
       );
+      const added = withIds(
+        fresh.map((field) => ({ ...field, required: false })),
+      );
       setRows((current) => [
         // A blank row the reader had not started goes.
         ...current.filter((row) => row.key || row.label),
-        ...withIds(fresh.map((field) => ({ ...field, required: false }))),
+        ...added,
       ]);
+      setFreshRows(
+        (known) => new Set([...known, ...added.map((row) => row.rid)]),
+      );
       setSuggestedExtra(answer.extra);
       setSuggested(
         fresh.length
@@ -315,6 +327,7 @@ export function FieldTemplateEditor({
       setEditing(false);
       setSuggested(undefined);
       setSuggestedExtra(undefined);
+      setFreshRows(new Set());
     } catch (caught) {
       setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
     } finally {
@@ -417,6 +430,7 @@ export function FieldTemplateEditor({
                 setError(undefined);
                 setSuggested(undefined);
                 setSuggestedExtra(undefined);
+                setFreshRows(new Set());
                 setEditing(false);
               }}
             >
@@ -478,6 +492,7 @@ export function FieldTemplateEditor({
                   className={cn(
                     dragIndex === index && 'opacity-40',
                     row.hidden && 'text-muted-foreground',
+                    freshRows.has(row.rid) && 'bg-primary/5',
                     dropAt === index &&
                       'shadow-[inset_0_2px_0_0_var(--color-primary)]',
                     dropAt === index + 1 &&
@@ -520,21 +535,29 @@ export function FieldTemplateEditor({
                   ) : null}
                   <TableCell>
                     {editable ? (
-                      <Input
-                        value={row.label}
-                        aria-invalid={
-                          problemAt(index, 'label') ? true : undefined
-                        }
-                        onChange={(event) =>
-                          update(index, {
-                            label: event.target.value,
-                            ...(row.key === '' ||
-                            row.key === keyFromLabel(row.label)
-                              ? { key: keyFromLabel(event.target.value) }
-                              : {}),
-                          })
-                        }
-                      />
+                      <div className='flex items-center gap-2'>
+                        <Input
+                          value={row.label}
+                          aria-invalid={
+                            problemAt(index, 'label') ? true : undefined
+                          }
+                          onChange={(event) =>
+                            update(index, {
+                              label: event.target.value,
+                              ...(row.key === '' ||
+                              row.key === keyFromLabel(row.label)
+                                ? { key: keyFromLabel(event.target.value) }
+                                : {}),
+                            })
+                          }
+                        />
+                        {freshRows.has(row.rid) ? (
+                          <span className='inline-flex shrink-0 items-center gap-0.5 text-xs font-medium text-primary'>
+                            <Sparkles className='size-3' />
+                            {t('fieldTemplate.suggestedTag')}
+                          </span>
+                        ) : null}
+                      </div>
                     ) : (
                       row.label
                     )}
