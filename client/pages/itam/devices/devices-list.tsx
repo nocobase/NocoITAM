@@ -16,8 +16,10 @@ import { ImportExport } from '@/components/itam/import-export';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useItamList, type ItamRecord } from '@/lib/itam/api';
+import { useDeviceReview } from '@/lib/itam/device-sync';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { DEVICE_FIELDS, holderCollection } from '@/lib/itam/devices';
 import { formatDate, text } from '@/lib/itam/format';
@@ -267,18 +269,7 @@ function DevicesList(): ReactElement {
             />
             {/* MDM 核对 has no menu entry (it is empty until a platform
                 is connected), so the device list leads to it while one is. */}
-            {syncConnected ? (
-              // Filled in the foreground colour like MDM 核对's own link to
-              // its settings (2026-10-15): a way to another page, apart
-              // from this page's blue actions.
-              <Button
-                className='bg-foreground text-background hover:bg-foreground/85'
-                onClick={() => void navigate('/device-sync')}
-              >
-                <MonitorCheck data-icon='inline-start' />
-                {t('deviceSync.review.title')}
-              </Button>
-            ) : null}
+            {syncConnected ? <MdmReviewButton /> : null}
             <Button onClick={() => setCreating(true)}>
               <Plus data-icon='inline-start' />
               {t('devices.new')}
@@ -386,5 +377,42 @@ function DevicesList(): ReactElement {
         onCreated={(created) => navigate(`/devices/${created.id}`)}
       />
     </Page>
+  );
+}
+
+/**
+ * MDM 核对 from the device list, while a platform is connected (2026-10-20):
+ * outlined like the page's other tools, with how many of its to-dos wait —
+ * differences, only in MDM, only in the register, as its own tabs count
+ * them — in amber while any do. What matters is said by the count, not by
+ * a second filled button beside 创建设备.
+ */
+function MdmReviewButton(): ReactElement {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const checks = useDeviceReview('checks');
+  const unregistered = useDeviceReview('unregistered');
+  const unmanaged = useDeviceReview('unmanaged');
+  const parts = [checks.data, unregistered.data, unmanaged.data];
+  const waiting = parts.every(Boolean)
+    ? parts.reduce((sum, rows) => sum + (rows?.length ?? 0), 0)
+    : undefined;
+  return (
+    <Button variant='outline' onClick={() => void navigate('/device-sync')}>
+      <MonitorCheck data-icon='inline-start' />
+      {t('deviceSync.review.title')}
+      {waiting === undefined ? null : (
+        <span
+          className={cn(
+            'rounded-md px-1.5 text-xs leading-5 font-medium tabular-nums',
+            waiting > 0
+              ? 'bg-warning text-warning-foreground'
+              : 'bg-muted text-muted-foreground',
+          )}
+        >
+          {waiting}
+        </span>
+      )}
+    </Button>
   );
 }
