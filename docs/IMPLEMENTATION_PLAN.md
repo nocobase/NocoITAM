@@ -3562,8 +3562,8 @@ left the template and the application. Decided with the user to take the
 Agents plugin to 1.0 as well and migrate fully:
 
 - **Asset Steward is no longer an agent of the plugin.** Plugin 1.0 keeps no
-  online agents an application creates (its migration deletes them, and
-  their conversations stay, read only); a native conversation runs the model
+  online agents an application creates (its migration archives them; their
+  conversations cannot be opened by 1.0, so ITAM's migration deletes them); a native conversation runs the model
   inside the application with the tools it registers. Asset Steward is now
   the global scope of every native conversation: its reads and the plan
   proposal as tools, the enabled chat models with the default first, its

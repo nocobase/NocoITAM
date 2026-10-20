@@ -36,7 +36,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   copied into `dist` by the build hook; marker `agents-skills-v1`, so what
   an administrator changes on Agent 团队 → 技能 is kept). Nothing of it may
   stop the application starting: a failure is logged and retried at the
-  next start. Conversations of the deleted agents stay, read only.
+  next start. The conversations from before 1.0 carry no binding the plugin
+  can open, so ITAM's migration `202610270003_delete_pre_agents_1_conversations`
+  deletes them with their messages (the user's choice, 2026-10-20).
 - **The assistant is Asset Steward, 资产管家** (2026-10-16; it was Noco
   until then): `ASSISTANT_NAME` in `assistant.ts`, `ai.assistantName` and
   `ai.assistantDescription` in the chat, the first line of its
