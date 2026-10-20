@@ -2032,8 +2032,13 @@ const zhCN: AppResource = {
   fieldTemplate: {
     suggest: '建议字段',
     suggesting: '正在建议字段和默认值…',
-    suggested: '已加入 {{count}} 个建议字段，核对后保存。{{said}}',
-    suggestedTag: '建议',
+    suggested:
+      '新增 {{count}} 个字段、修改 {{changed}} 个字段，核对后保存。{{said}}',
+    newTag: '新增',
+    changedTag: '修改',
+    changedFrom: '原：{{before}}。{{reason}}',
+    suggestedAdded: '新增 {{count}} 个字段，核对后保存。{{said}}',
+    suggestedChanged: '修改 {{changed}} 个字段，核对后保存。{{said}}',
     suggestedNone: 'AI 没有可补充的字段。',
     title: '扩展字段',
     add: '添加字段',

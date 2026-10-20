@@ -2123,8 +2123,14 @@ const messages = {
     suggest: 'Suggest fields',
     suggesting: 'Suggesting fields and defaults…',
     suggested:
-      'Added {{count}} suggested fields; check them before saving. {{said}}',
-    suggestedTag: 'Suggested',
+      '{{count}} fields added and {{changed}} changed; check them before saving. {{said}}',
+    newTag: 'New',
+    changedTag: 'Changed',
+    changedFrom: 'Was: {{before}}. {{reason}}',
+    suggestedAdded:
+      '{{count}} fields added; check them before saving. {{said}}',
+    suggestedChanged:
+      '{{changed}} fields changed; check them before saving. {{said}}',
     suggestedNone: 'AI has no fields to add.',
     title: 'Extended fields',
     add: 'Add field',

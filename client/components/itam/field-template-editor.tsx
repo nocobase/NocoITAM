@@ -2,7 +2,6 @@ import { useTranslation } from '@nocobase/i18n/client';
 import {
   Eye,
   EyeOff,
-  Sparkles,
   GripVertical,
   Pencil,
   Plus,
@@ -104,8 +103,20 @@ const stripIds = (rows: readonly EditRow[]): TemplateField[] =>
   }));
 
 /** What AI 建议字段 answers: the fields to add, and its one sentence. */
+/** A change 建议字段 proposes to a field the category has, and why. */
+export interface FieldChange {
+  readonly key: string;
+  readonly label?: string;
+  readonly type?: TemplateField['type'];
+  readonly required?: boolean;
+  readonly options?: readonly string[];
+  readonly reason?: string;
+}
+
 export interface FieldSuggestion {
   readonly fields: readonly TemplateField[];
+  /** Changes to the fields there already (2026-10-20). */
+  readonly changes?: readonly FieldChange[];
   readonly said: string;
   /** Shown under the sentence, e.g. the record's suggested defaults. */
   readonly extra?: ReactNode;
@@ -158,6 +169,10 @@ export function FieldTemplateEditor({
   // (2026-10-20): beside the fields there already, they looked the same.
   const [freshRows, setFreshRows] = useState<ReadonlySet<number>>(
     () => new Set(),
+  );
+  // Rows it changed: what they were, and why, for the 修改 tag's tooltip.
+  const [changedRows, setChangedRows] = useState<ReadonlyMap<number, string>>(
+    () => new Map(),
   );
   // Problems surface only after a save attempt; a fresh row starts quiet.
   const [attempted, setAttempted] = useState(false);
@@ -263,21 +278,71 @@ export function FieldTemplateEditor({
       const added = withIds(
         fresh.map((field) => ({ ...field, required: false })),
       );
-      setRows((current) => [
-        // A blank row the reader had not started goes.
-        ...current.filter((row) => row.key || row.label),
-        ...added,
-      ]);
+      // A change applies to the row of its key, in place; the key stays.
+      const describe = (row: EditRow) =>
+        [
+          row.label,
+          t(`fieldTemplate.types.${row.type}`),
+          row.type === 'select' ? row.optionsText : '',
+          row.required ? t('fieldTemplate.required') : '',
+        ]
+          .filter(Boolean)
+          .join(' · ');
+      const changes = new Map(
+        (answer.changes ?? []).map((change) => [change.key, change]),
+      );
+      const notes = new Map<number, string>();
+      const next = rows
+        .filter((row) => row.key || row.label)
+        .map((row) => {
+          const change = changes.get(row.key);
+          if (!change) return row;
+          const changed: EditRow = {
+            ...row,
+            ...(change.label ? { label: change.label } : {}),
+            ...(change.type && TYPES.includes(change.type)
+              ? { type: change.type }
+              : {}),
+            ...(change.required === undefined
+              ? {}
+              : { required: change.required }),
+            ...(change.options?.length
+              ? {
+                  options: change.options,
+                  optionsText: change.options.join(', '),
+                }
+              : {}),
+          };
+          if (JSON.stringify(changed) === JSON.stringify(row)) return row;
+          notes.set(
+            row.rid,
+            t('fieldTemplate.changedFrom', {
+              before: describe(row),
+              reason: change.reason ?? '',
+            }),
+          );
+          return changed;
+        });
+      setRows([...next, ...added]);
       setFreshRows(
         (known) => new Set([...known, ...added.map((row) => row.rid)]),
       );
+      setChangedRows((known) => new Map([...known, ...notes]));
       setSuggestedExtra(answer.extra);
       setSuggested(
-        fresh.length
-          ? t('fieldTemplate.suggested', {
-              count: fresh.length,
-              said: answer.said,
-            })
+        fresh.length || notes.size
+          ? t(
+              fresh.length && notes.size
+                ? 'fieldTemplate.suggested'
+                : fresh.length
+                  ? 'fieldTemplate.suggestedAdded'
+                  : 'fieldTemplate.suggestedChanged',
+              {
+                count: fresh.length,
+                changed: notes.size,
+                said: answer.said,
+              },
+            )
           : answer.said || t('fieldTemplate.suggestedNone'),
       );
     } catch (caught) {
@@ -328,6 +393,7 @@ export function FieldTemplateEditor({
       setSuggested(undefined);
       setSuggestedExtra(undefined);
       setFreshRows(new Set());
+      setChangedRows(new Map());
     } catch (caught) {
       setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
     } finally {
@@ -431,6 +497,7 @@ export function FieldTemplateEditor({
                 setSuggested(undefined);
                 setSuggestedExtra(undefined);
                 setFreshRows(new Set());
+                setChangedRows(new Map());
                 setEditing(false);
               }}
             >
@@ -493,6 +560,7 @@ export function FieldTemplateEditor({
                     dragIndex === index && 'opacity-40',
                     row.hidden && 'text-muted-foreground',
                     freshRows.has(row.rid) && 'bg-primary/5',
+                    changedRows.has(row.rid) && 'bg-warning/25',
                     dropAt === index &&
                       'shadow-[inset_0_2px_0_0_var(--color-primary)]',
                     dropAt === index + 1 &&
@@ -552,9 +620,15 @@ export function FieldTemplateEditor({
                           }
                         />
                         {freshRows.has(row.rid) ? (
-                          <span className='inline-flex shrink-0 items-center gap-0.5 text-xs font-medium text-primary'>
-                            <Sparkles className='size-3' />
-                            {t('fieldTemplate.suggestedTag')}
+                          <span className='shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary'>
+                            {t('fieldTemplate.newTag')}
+                          </span>
+                        ) : changedRows.has(row.rid) ? (
+                          <span
+                            className='shrink-0 cursor-help rounded-md bg-warning px-1.5 py-0.5 text-xs font-medium text-warning-foreground'
+                            title={changedRows.get(row.rid)}
+                          >
+                            {t('fieldTemplate.changedTag')}
                           </span>
                         ) : null}
                       </div>

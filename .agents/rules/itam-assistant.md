@@ -314,8 +314,11 @@ locale })` — its own plans, the answers given — and the joiners'
   and the fields of up to twenty other categories of the same kind
   (`categoryFieldFacts` in `ai-reading.ts`), and the model answers fields
   that reuse those keys for the same thing and leave out the standard ones.
-  They join the rows under edit, new keys only and never required; nothing
-  is saved until the reader saves. The same answer suggests the category's
+  They join the rows under edit, new keys only and never required, tagged
+  新增; a change it proposes to a field the category has (`changes`: options
+  it lacks, a unit, a type; never its key) is made on that row, tagged 修改
+  with what it was and why on hover. Nothing is saved until the reader
+  saves; 取消 drops all of it. The same answer suggests the category's
   defaults (depreciation, useful life, residual rate, warranty, replacement,
   audit cycle), read against its current ones and similar categories';
   those that differ show under the sentence, current beside suggested, and

@@ -9,7 +9,10 @@ import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { EmptyState } from '@/components/itam/empty-state';
 import { CategoryCreateDialog } from '@/components/itam/category-create-dialog';
 import { CategoryDefaultsSuggestion } from '@/components/itam/category-defaults-suggestion';
-import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
+import {
+  FieldTemplateEditor,
+  type FieldChange,
+} from '@/components/itam/field-template-editor';
 import { categoryDefaultsOf } from '@/lib/itam/category-defaults';
 import { parseTemplate } from '@/lib/itam/field-template';
 import { MasterDataTree } from '@/components/itam/master-data-tree';
@@ -358,10 +361,18 @@ export function CategoryTemplate({
               });
               const reading = answer.reading as {
                 fields?: unknown;
+                changes?: unknown;
                 defaults?: unknown;
               } | null;
               return {
                 fields: parseTemplate(reading?.fields),
+                // Changes to the fields it has, by key; the editor checks
+                // the type.
+                changes: Array.isArray(reading?.changes)
+                  ? (reading.changes as FieldChange[]).filter(
+                      (change) => typeof change?.key === 'string',
+                    )
+                  : [],
                 said: answer.said,
                 // The defaults too: those that differ, with 采用.
                 extra: (
