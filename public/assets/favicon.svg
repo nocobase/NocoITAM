@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -20 1760 1540">
+  <!-- The NocoBase mark, light or dark with the browser (2026-10-20): the
+       .ico is black only and disappears on a dark tab bar. -->
+  <style>
+    .ink { fill: #000; stroke: #000; }
+    .face { fill: #fff; stroke: #000; }
+    @media (prefers-color-scheme: dark) {
+      .ink { fill: #fff; stroke: #fff; }
+      .face { fill: none; stroke: #fff; }
+    }
+  </style>
+  <g stroke-width="32" stroke-linejoin="round">
+    <path class="ink" d="M0 645 355 432v418l335 190 675-405 355 210v445l-355 210-337-200-338 200L0 1090z"/>
+    <path class="face" d="M355 425 1028 18l337 200v412l-675 405-335-190z"/>
+    <path class="face" fill="none" style="fill: none" d="M355 425l335 200 675-407M690 625v415"/>
+  </g>
+</svg>
