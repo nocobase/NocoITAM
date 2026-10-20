@@ -720,7 +720,7 @@ function TimelineRow({
               </time>
             </div>
             {folded.length > 0 && open ? (
-              <ul className='mt-1 space-y-0.5 border-l border-border pl-3 text-xs'>
+              <ul className='mt-1 space-y-0.5 rounded-md bg-muted/60 px-3 py-2 text-xs'>
                 {folded.map((change) => (
                   <li key={change.id}>
                     <span className='text-muted-foreground'>
@@ -980,7 +980,8 @@ const KIND_ORDER = { changed: 0, added: 1, removed: 2 } as const;
 const KIND_TONE = {
   added: 'bg-primary/10 text-primary',
   changed: 'bg-warning text-warning-foreground',
-  removed: 'bg-muted text-muted-foreground',
+  // Not muted: the folded list it sits in is muted already.
+  removed: 'bg-destructive/10 text-destructive',
 } as const;
 
 /** 修改 / 新增 / 删除 before an entry of a list, as the editor tags them. */
