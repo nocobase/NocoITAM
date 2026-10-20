@@ -42,7 +42,14 @@ const BOOKKEEPING_FIELDS: ReadonlySet<string> = new Set(['updatedAt']);
  * Absent on rows written before it was recorded, which read as `human`.
  */
 export type HistoryOrigin =
-  'human' | 'agent' | 'import' | 'schedule' | 'sync' | 'install';
+  | 'human'
+  | 'agent'
+  // Filled or changed by AI 整理 / 完善 and saved by the person (2026-10-20).
+  | 'ai'
+  | 'import'
+  | 'schedule'
+  | 'sync'
+  | 'install';
 
 export interface HistorySource {
   /** Defaults to `human`: a person acting on a page. */

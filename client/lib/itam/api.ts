@@ -156,11 +156,25 @@ export function useItamMutations<T extends ItamRecord = ItamRecord>(
   // workbench showing what it showed before. Only active queries refetch.
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['itam'] });
+  // `$origin: 'ai'` in the input: filled or changed by AI 整理 / 完善, which
+  // the record's history shows (2026-10-20). It goes as `?origin=ai`.
+  const withOrigin = (input: Record<string, unknown>) => {
+    const { $origin, ...json } = input;
+    return {
+      json,
+      ...($origin === 'ai' ? { query: { origin: 'ai' } } : {}),
+    };
+  };
   return {
     create: useMutation({
       mutationFn: async (input: Record<string, unknown>) =>
-        (await api.request<{ data: T }>({ path, method: 'POST', json: input }))
-          .data,
+        (
+          await api.request<{ data: T }>({
+            path,
+            method: 'POST',
+            ...withOrigin(input),
+          })
+        ).data,
       onSuccess: invalidate,
     }),
     update: useMutation({
@@ -175,7 +189,7 @@ export function useItamMutations<T extends ItamRecord = ItamRecord>(
           await api.request<{ data: T }>({
             path: `${path}/${id}`,
             method: 'PATCH',
-            json: input,
+            ...withOrigin(input),
           })
         ).data,
       onSuccess: invalidate,

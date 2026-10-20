@@ -621,13 +621,15 @@ function CategoryCreateForm({
         if (record) {
           const saved = await mutations.update.mutateAsync({
             id: record.id,
-            input: { ...payload, fieldTemplate: template },
+            input: { ...payload, fieldTemplate: template, $origin: 'ai' },
           });
           onCreated(saved);
         } else {
           const created = await mutations.create.mutateAsync({
             ...payload,
             ...(template.length > 0 ? { fieldTemplate: template } : {}),
+            // Filled by AI 整理: its history says so.
+            ...(filled ? { $origin: 'ai' } : {}),
           });
           onCreated(created);
         }

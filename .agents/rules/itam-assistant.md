@@ -322,6 +322,13 @@ locale })` — its own plans, the answers given — and the joiners'
   drops it all. Turning on straight-line depreciation brings useful life and
   residual rate with it. The 扩展字段 card itself only edits by hand: a
   suggestion there for the fields above it read wrong.
+- **What AI wrote is tagged in the history** (2026-10-20): a save from
+  AI 整理 or 完善 sends `$origin: 'ai'` in its input (`useItamMutations`
+  turns it into `?origin=ai`; the master-data routes pass it to the service),
+  so its lines carry `origin: 'ai'` beside the person who saved them; the
+  timeline tags them ✨ AI 建议, and a plan Asset Steward proposed
+  (`agent`) ✨ 资产管家提议. A route that saves what AI filled passes the
+  origin the same way.
 - An AI create meets the page dialog's bar: `REQUIRED_ON_CREATE` in
   `server/routes/itam/ai-records.ts` lists what each create dialog requires
   beyond its input schema (conditional ones included, and a device's serial

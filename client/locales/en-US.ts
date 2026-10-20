@@ -276,7 +276,8 @@ const messages = {
       changes: 'Changes',
     },
     origin: {
-      agent: 'proposed by Asset Steward',
+      agent: 'Proposed by Asset Steward',
+      ai: 'AI suggested',
       import: 'through a data import',
       schedule: 'by a scheduled task',
       sync: 'through device sync',

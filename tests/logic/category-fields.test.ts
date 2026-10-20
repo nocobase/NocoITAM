@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { historyServiceToken } from '../../server/providers/itam/history.js';
 import { aiRoutes } from '../../server/routes/itam/ai.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
@@ -168,5 +169,31 @@ describe('suggesting a category’s fields', () => {
       'Peripherals / Printer',
     ]);
     expect(model.asked.at(-1)).toContain('"path":"Office / Scanner"');
+  });
+
+  it('says in the history what AI filled or changed, and nothing for a plain save', async () => {
+    const patch = (query: string, body: Record<string, unknown>) =>
+      app.request(`/api/itam/master/categories/${printerId}${query}`, {
+        ...json(body),
+        method: 'PATCH',
+        ...manager,
+      });
+    expect((await patch('?origin=ai', { warrantyMonths: 24 })).status).toBe(
+      200,
+    );
+    expect((await patch('?origin=other', { warrantyMonths: 12 })).status).toBe(
+      200,
+    );
+    const { data } = await app.container
+      .resolve(historyServiceToken)
+      .changes({ subjectType: 'categories', subjectId: printerId });
+    expect(
+      data
+        .filter((row) => row.field === 'warrantyMonths')
+        .map((row) => [row.newValue, row.origin]),
+    ).toEqual([
+      [12, 'human'],
+      [24, 'ai'],
+    ]);
   });
 });

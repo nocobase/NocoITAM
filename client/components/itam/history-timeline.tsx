@@ -3,7 +3,7 @@ import { isAssetTypeField } from '@/lib/itam/fields';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Sparkles } from 'lucide-react';
 import {
   createContext,
   useContext,
@@ -54,7 +54,7 @@ import { RecordLink } from './record-link.js';
  * neither is shown, because saying so on every line says nothing.
  */
 export type HistoryOrigin =
-  'human' | 'agent' | 'import' | 'schedule' | 'sync' | 'install';
+  'human' | 'agent' | 'ai' | 'import' | 'schedule' | 'sync' | 'install';
 
 export interface HistoryEvent {
   readonly origin?: HistoryOrigin | null;
@@ -598,7 +598,7 @@ function TimelineRow({
             type={event?.type}
             className={cn(
               'size-3.5',
-              item.origin === 'agent'
+              item.origin === 'agent' || item.origin === 'ai'
                 ? 'text-primary'
                 : 'text-muted-foreground',
             )}
@@ -684,7 +684,14 @@ function TimelineRow({
                     />
                   </span>
                 ) : null}
-                {item.origin && item.origin !== 'human' ? (
+                {item.origin === 'ai' || item.origin === 'agent' ? (
+                  // A tag for what AI wrote (2026-10-20): AI 整理 / 完善, or
+                  // a plan Asset Steward proposed, saved by the person named.
+                  <span className='ml-1.5 inline-flex translate-y-[-1px] items-center gap-0.5 rounded-md bg-primary/10 px-1.5 py-0.5 align-middle text-xs font-medium text-primary'>
+                    <Sparkles className='size-3' aria-hidden='true' />
+                    {t(`history.origin.${item.origin}`)}
+                  </span>
+                ) : item.origin && item.origin !== 'human' ? (
                   <span className='ml-1.5 text-muted-foreground'>
                     · {t(`history.origin.${item.origin}`)}
                   </span>

@@ -268,7 +268,8 @@ const zhCN: AppResource = {
       changes: '变更',
     },
     origin: {
-      agent: '经资产管家提议',
+      agent: '资产管家提议',
+      ai: 'AI 建议',
       import: '经数据导入',
       schedule: '经定时任务',
       sync: '经设备同步',

@@ -268,12 +268,14 @@ function MasterCreateForm({
         submitting={mutations.create.isPending}
         error={mutations.create.error}
         onSubmit={async (payload) => {
-          const created = await mutations.create.mutateAsync(
-            withAttributes(
+          const created = await mutations.create.mutateAsync({
+            ...withAttributes(
               payload,
               shared.map((field) => field.key),
             ),
-          );
+            // Filled by AI 整理: its history says so (2026-10-20).
+            ...(result ? { $origin: 'ai' } : {}),
+          });
           capture.release();
           onCreated(created);
           onOpenChange(false);

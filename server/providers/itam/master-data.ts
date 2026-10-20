@@ -36,7 +36,7 @@ import {
 import { addDays, addMonths, today } from './dates.js';
 import type { LeaverAccounts } from './leaver-accounts.js';
 import { OWNED_BY_USER, recoveryPlan, type RecoveryItem } from './recovery.js';
-import type { HistoryService } from './history.js';
+import type { HistoryOrigin, HistoryService } from './history.js';
 
 /**
  * Generic CRUD for the master-data collections. Every method takes the
@@ -221,6 +221,8 @@ export interface MasterDataService {
     input: Row,
     actorId: string,
     conditions: DatabaseAuthorizationConditions,
+    /** How it reached the record, e.g. `ai` for AI 整理 (2026-10-20). */
+    origin?: HistoryOrigin,
   ): Promise<Row>;
   update(
     collection: string,
@@ -228,6 +230,8 @@ export interface MasterDataService {
     input: Row,
     actorId: string,
     conditions: DatabaseAuthorizationConditions,
+    /** How it reached the record, e.g. `ai` for 完善 (2026-10-20). */
+    origin?: HistoryOrigin,
   ): Promise<Row>;
   deleteImpact(collection: string, id: string): Promise<DeleteImpact>;
   /** Counts shown at the top of a detail page, plus the ancestors of a tree node. */
@@ -736,7 +740,7 @@ export function createMasterDataService(
       );
     },
 
-    async create(collection, input, actorId, conditions) {
+    async create(collection, input, actorId, conditions, origin) {
       const definition = require(collection);
       assertInputFields(input, conditions.fieldAccess?.input ?? '*');
       await assertUnique(collection, input);
@@ -786,7 +790,13 @@ export function createMasterDataService(
       await database.transaction(async (connection) => {
         await connection.query.insertInto(collection).values(values).execute();
         await history.log(
-          { subjectType: collection, subjectId: id, action: 'create', actorId },
+          {
+            subjectType: collection,
+            subjectId: id,
+            action: 'create',
+            actorId,
+            ...(origin ? { origin } : {}),
+          },
           connection,
         );
         if (collection === 'people')
@@ -803,7 +813,7 @@ export function createMasterDataService(
       );
     },
 
-    async update(collection, id, input, actorId, conditions) {
+    async update(collection, id, input, actorId, conditions, origin) {
       const definition = require(collection);
       assertInputFields(input, conditions.fieldAccess?.input ?? '*');
       const before = await database
@@ -1004,7 +1014,7 @@ export function createMasterDataService(
           { subjectType: collection, subjectId: id },
           previous,
           input,
-          { actorId },
+          { actorId, ...(origin ? { origin } : {}) },
           connection,
         );
         // The planned replacement date is the category's rule applied to

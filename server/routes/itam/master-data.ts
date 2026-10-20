@@ -96,6 +96,16 @@ const moveSchema = z.object({
   index: z.number().int().min(0),
 });
 
+/**
+ * `?origin=ai`: what is saved was filled or changed by AI 整理 or 完善 and
+ * checked by the person saving it (2026-10-20); its history says so. Only
+ * that value; any other is ignored.
+ */
+const aiOrigin = (context: {
+  req: { query(name: string): string | undefined };
+}): 'ai' | undefined =>
+  context.req.query('origin') === 'ai' ? 'ai' : undefined;
+
 export const masterDataRoutes: AppApiRouteContribution<Application> =
   defineApiRoutes((app) => {
     const router = new Hono();
@@ -567,6 +577,7 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
           input,
           principalId(context),
           conditions,
+          aiOrigin(context),
         );
         return context.json({ data: created }, 201);
       } catch (error) {
@@ -595,6 +606,7 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
           input,
           principalId(context),
           conditions,
+          aiOrigin(context),
         );
         return context.json({ data: updated });
       } catch (error) {
