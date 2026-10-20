@@ -18,8 +18,9 @@ export interface ViewsProps {
 /**
  * A toggle for the requests waiting on this reader's decision, with how many
  * there are. Quiet until it matters (2026-10-20): no outline, which beside
- * the title read as a tag; pressed it is shaded like a selected tab, and a
- * count waiting on the reader is tinted with the primary color. Which ones those are lives in the approval rather than the
+ * the title read as a tag; pressed it takes the primary tint, so the list
+ * plainly reads as filtered, and a count waiting on the reader is tinted
+ * too. Which ones those are lives in the approval rather than the
  * record, so the list route answers `filter[view]=myApproval`; a reader who
  * cannot approve this kind of request sees no toggle at all.
  */
@@ -54,7 +55,10 @@ export function createMyApprovalView(options: {
         aria-pressed={active}
         className={cn(
           'text-muted-foreground',
-          active && 'bg-muted font-medium text-foreground',
+          // Pressed in the primary tint: shaded grey it matched the page and
+          // the list looked unfiltered, its total suddenly small (2026-10-20).
+          active &&
+            'bg-primary/10 font-medium text-primary hover:bg-primary/15 hover:text-primary',
         )}
         onClick={() => onFilter({ view: active ? undefined : 'myApproval' })}
       >
@@ -63,9 +67,11 @@ export function createMyApprovalView(options: {
         <span
           className={cn(
             'rounded-full px-1.5 text-xs leading-5 font-medium tabular-nums',
-            waiting > 0
-              ? 'bg-primary/10 text-primary'
-              : 'bg-muted text-muted-foreground',
+            active
+              ? 'bg-primary text-primary-foreground'
+              : waiting > 0
+                ? 'bg-primary/10 text-primary'
+                : 'bg-muted text-muted-foreground',
           )}
         >
           {waiting}
