@@ -880,6 +880,51 @@ describe('procurement', () => {
     ]);
   });
 
+  it('lists 我的 as what waits on the reader or what they own, and marks what waits on them', async () => {
+    const order = await data<{ id: string }>(
+      await post('purchase-orders', {
+        reason: 'newHire',
+        vendorId: fixture.vendorId,
+        departmentId: fixture.departmentId,
+      }),
+    );
+    await app.request(`/api/itam/purchase-orders/${order.id}/lines`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        lines: [{ itemType: 'device', modelId: fixture.modelId, quantity: 1 }],
+      }),
+      ...manager,
+    });
+    await post(`purchase-orders/${order.id}/submit`, { approverId: 'ann' });
+    const list = async (who: typeof manager, view?: string) =>
+      data<{ id: string; awaitingMe: boolean }[]>(
+        await app.request(
+          `/api/itam/purchase-orders${view ? `?filter[view]=${view}` : ''}`,
+          who,
+        ),
+      );
+    // The requester owns it; the approver has it waiting on them.
+    expect(await list(manager, 'mine')).toEqual([
+      expect.objectContaining({ id: order.id, awaitingMe: false }),
+    ]);
+    expect(await list(approver, 'mine')).toEqual([
+      expect.objectContaining({ id: order.id, awaitingMe: true }),
+    ]);
+    // Every list marks the rows waiting on its reader.
+    expect(
+      (await list(approver)).find((row) => row.id === order.id)?.awaitingMe,
+    ).toBe(true);
+    expect(
+      (await list(manager)).find((row) => row.id === order.id)?.awaitingMe,
+    ).toBe(false);
+    // 待我审批 alone, as the workbench links to it.
+    expect(await list(manager, 'myApproval')).toEqual([]);
+    expect((await list(approver, 'myApproval')).map((row) => row.id)).toEqual([
+      order.id,
+    ]);
+  });
+
   it('counts and lists what waits on an approver, by kind', async () => {
     const order = await data<{ id: string; orderNo: string }>(
       await post('purchase-orders', {

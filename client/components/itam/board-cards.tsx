@@ -9,6 +9,7 @@ import type { DocumentKind } from '@/lib/itam/document-kinds';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { text } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
+import { AwaitingMeTag } from '@/components/itam/awaiting-me-tag';
 import { cn } from '@/lib/utils';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
@@ -198,6 +199,14 @@ export function BoardCards({
                     </p>
                   ))}
                 </div>
+              ) : null}
+              {/* A request waiting on this reader (2026-10-20), on a line of
+                  its own under the facts: beside the number it cut the
+                  number short. */}
+              {row.awaitingMe === true ? (
+                <p className='mt-1.5'>
+                  <AwaitingMeTag />
+                </p>
               ) : null}
               {footer.length > 0 || entry.marker ? (
                 <p className='mt-2.5 flex min-w-0 items-center gap-1.5 border-t border-border/50 pt-2 text-xs text-muted-foreground'>

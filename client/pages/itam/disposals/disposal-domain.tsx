@@ -17,7 +17,7 @@ import { EmptyState } from '@/components/itam/empty-state';
 import { FieldInput } from '@/components/itam/field-input';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { RecipientInput } from '@/components/itam/recipient-input';
-import { createMyApprovalView } from '@/components/itam/my-approval-view';
+import { MineView } from '@/components/itam/mine-view';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
 import { SummaryLead } from '@/components/itam/summary-lead';
 import { DataTable } from '@/components/itam/data-table';
@@ -100,11 +100,8 @@ export const disposalDomain: DomainConfig = {
     { key: 'attachments', label: 'tabs.attachments' },
   ],
   summaryTimestamps: false,
-  Views: createMyApprovalView({
-    collection: 'disposals',
-    path: DISPOSALS_PATH,
-    label: 'disposals.myApproval',
-  }),
+  // 全部 | 我的 (2026-10-20).
+  Views: MineView,
   Aside: DisposalDevicesCard,
   Create: DisposalCreateDialog,
   Actions: DisposalActions,

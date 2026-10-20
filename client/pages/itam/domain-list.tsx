@@ -1,3 +1,4 @@
+import { AwaitingMeTag } from '@/components/itam/awaiting-me-tag';
 import { useTranslation } from '@nocobase/i18n/client';
 import {
   ChevronsDownUp,
@@ -135,12 +136,14 @@ function DomainList({
   }
   // A domain with a board opens on it (?layout=table for the list). A named
   // view (待我审批, 到货逾期) decides the statuses itself, so it reads as a
-  // list: every column would otherwise show the same records.
+  // list: every column would otherwise show the same records. 我的
+  // (`view=mine`, 2026-10-20) spans every status, so it keeps the board.
   // The records Asset Steward found for a question on the workbench read as a
   // table, whatever the page's own layout: a board or a tree of three
   // records would scatter them across columns and branches.
   const found = foundIds(params);
-  const boardable = Boolean(domain.Board) && !filter.view && !found;
+  const boardable =
+    Boolean(domain.Board) && (!filter.view || filter.view === 'mine') && !found;
   // A tree is its own view: it carries search, filters and counts itself,
   // and the list request only answers the total in the header.
   const layout =
@@ -232,6 +235,8 @@ function DomainList({
             </span>
           ) : null}
           {text(row[field.key])}
+          {/* A request waiting on this reader (2026-10-20). */}
+          {row.awaitingMe === true ? <AwaitingMeTag className='ml-2' /> : null}
         </span>
       ) : (
         <FieldValue

@@ -18,7 +18,7 @@ import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { PurchaseOrderLinesCard } from './lines-tab.js';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
-import { createMyApprovalView } from '@/components/itam/my-approval-view';
+import { MineView } from '@/components/itam/mine-view';
 import { SummaryLead } from '@/components/itam/summary-lead';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
 import { Paged } from '@/components/itam/paged';
@@ -129,11 +129,8 @@ export const purchaseOrderDomain: DomainConfig = {
   Create: PurchaseOrderCreateDialog,
   // The lines are the order itself, so they read above its tabs.
   Aside: PurchaseOrderLinesCard,
-  Views: createMyApprovalView({
-    collection: 'purchaseOrders',
-    path: PURCHASE_ORDERS_PATH,
-    label: 'procurement.myApproval',
-  }),
+  // 全部 | 我的 (2026-10-20).
+  Views: MineView,
   Actions: PurchaseOrderActions,
   // 等你决定: 审批审阅's review for the approver (2026-10-16).
   Decisions: createApprovalDecisions('purchaseOrders', PURCHASE_ORDERS_PATH),

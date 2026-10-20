@@ -33,6 +33,7 @@ import { approverDirectoryToken } from '../../providers/itam/approvers.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
 import { lifecycleRuntimeToken } from '../../providers/itam/lifecycles.js';
 import { createCrudRoutes } from './crud-routes.js';
+import { listWithMine } from './mine-view.js';
 import {
   decideCollection,
   errorResponse,
@@ -220,32 +221,16 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
       collection: 'purchaseOrders',
       service: procurement,
       history,
-      // `view=myApproval` is the one view the service cannot express on its
-      // own: which orders are waiting on *this* reader lives in the approval,
-      // so the route resolves it to the ids and lists those.
-      list: async (context, options, conditions) => {
-        if (options.filter?.view !== 'myApproval')
-          return procurement.list(options, conditions);
-        const { view: _view, ...filter } = options.filter;
-        const waiting = await approvals.pendingFor(
-          principalId(context),
-          await decideCollection(context, 'approvals', 'read'),
-        );
-        const ids = waiting
-          .filter((entry) => entry.subjectType === 'purchaseOrder')
-          .map((entry) => String(entry.subjectId));
-        if (ids.length === 0)
-          return {
-            data: [],
-            total: 0,
-            page: options.page ?? 1,
-            pageSize: options.pageSize ?? 20,
-          };
-        return procurement.list(
-          { ...options, filter: { ...filter, id: ids } },
-          conditions,
-        );
-      },
+      // 我的 and 待我审批, and whether each row waits on this reader
+      // (2026-10-20): what waits on whom lives in the approval, not the
+      // record (`mine-view.ts`).
+      list: listWithMine({
+        database,
+        approvals,
+        collection: 'purchaseOrders',
+        subjectType: 'purchaseOrder',
+        list: (options, conditions) => procurement.list(options, conditions),
+      }),
       createSchema: orderSchema,
       // 负责人 is editable like the rest of what the order asks for: the
       // service freezes it with them once the order is approved

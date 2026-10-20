@@ -5,6 +5,7 @@ import {
   defineApiRoutes,
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
+import { databaseManagerToken } from '@nocobase/db';
 import { lifecycleDescriptionView } from '@nocobase/lifecycle';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -27,8 +28,8 @@ import { approverDirectoryToken } from '../../providers/itam/approvers.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
 import { lifecycleRuntimeToken } from '../../providers/itam/lifecycles.js';
 import { createCrudRoutes } from './crud-routes.js';
+import { listWithMine } from './mine-view.js';
 import {
-  decideCollection,
   errorResponse,
   principalId,
   readJsonObject,
@@ -62,6 +63,7 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
     const authorization = app.container.resolve(authorizationToken);
     const disposals = app.container.resolve(disposalServiceToken);
     const approvals = app.container.resolve(approvalServiceToken);
+    const database = app.container.resolve(databaseManagerToken);
     const history = app.container.resolve(historyServiceToken);
     const lifecycles = app.container.resolve(lifecycleRuntimeToken);
     const approverDirectory = app.container.resolve(approverDirectoryToken);
@@ -77,32 +79,16 @@ export const disposalRoutes: AppApiRouteContribution<Application> =
       collection: 'disposals',
       service: disposals,
       history,
-      // `view=myApproval` is the one view the service cannot express on its
-      // own: which disposals are waiting on *this* reader lives in the
-      // approval, so the route resolves it to the ids and lists those.
-      list: async (context, options, conditions) => {
-        if (options.filter?.view !== 'myApproval')
-          return disposals.list(options, conditions);
-        const { view: _view, ...filter } = options.filter;
-        const waiting = await approvals.pendingFor(
-          principalId(context),
-          await decideCollection(context, 'approvals', 'read'),
-        );
-        const ids = waiting
-          .filter((entry) => entry.subjectType === 'disposal')
-          .map((entry) => String(entry.subjectId));
-        if (ids.length === 0)
-          return {
-            data: [],
-            total: 0,
-            page: options.page ?? 1,
-            pageSize: options.pageSize ?? 20,
-          };
-        return disposals.list(
-          { ...options, filter: { ...filter, id: ids } },
-          conditions,
-        );
-      },
+      // 我的 and 待我审批, and whether each row waits on this reader
+      // (2026-10-20): what waits on whom lives in the approval, not the
+      // record (`mine-view.ts`).
+      list: listWithMine({
+        database,
+        approvals,
+        collection: 'disposals',
+        subjectType: 'disposal',
+        list: (options, conditions) => disposals.list(options, conditions),
+      }),
       createSchema: disposalSchema,
       relationInputs: ['deviceIds'],
       // 负责人 stays editable while the request is open, the way the rest
