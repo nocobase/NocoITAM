@@ -1160,9 +1160,9 @@ const messages = {
     fieldsInvalid:
       'Some extended fields are incomplete; check them before saving.',
     description:
-      'Write the category and what it is for; AI fills its parent, rules, defaults and extended fields for you to check before saving',
+      'Write the category, with what it is for if you like; AI fills its parent, rules, defaults and extended fields for you to check before saving',
     placeholder:
-      'The category and what it is for, e.g. Projector, for meeting rooms',
+      'The category, optionally what it is for, e.g. Projector, for meeting rooms',
     duplicates: 'A category with this name exists: ',
   },
   masterCapture: {

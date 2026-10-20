@@ -1130,8 +1130,8 @@ const zhCN: AppResource = {
   categoryCapture: {
     fieldsInvalid: '扩展字段还有没填完的，请检查后再保存。',
     description:
-      '写上分类名称和用途，AI 补全上级、规则、默认值和扩展字段，核对后保存',
-    placeholder: '分类名称和用途，例如：投影仪，会议室用',
+      '写上分类名称，可以加一句用途，AI 补全上级、规则、默认值和扩展字段，核对后保存',
+    placeholder: '分类名称，可加用途，例如：投影仪，会议室用',
     duplicates: '已有同名分类：',
   },
   masterCapture: {
