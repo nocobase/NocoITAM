@@ -204,6 +204,10 @@ export function createRepairService(dependencies: {
         'faultDescription is required',
         'faultDescription',
       );
+    // Every repair says what kind of fault it is (2026-10-20), so the
+    // repairs can be counted by it.
+    if (!input.faultCategory)
+      throw new ValidationError('faultCategory is required', 'faultCategory');
     // Only an internal repair has no counterpart; warranty work goes to the
     // reseller or the maker's service centre, both vendors here.
     if (input.method !== 'internal' && !input.vendorId)

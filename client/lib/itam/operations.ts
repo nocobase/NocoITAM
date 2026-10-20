@@ -86,6 +86,7 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     key: 'faultCategory',
     label: 'fields.faultCategory',
     type: 'select',
+    required: true,
     options: options('faultCategory', REPAIR_FAULT_CATEGORIES),
     column: true,
   },
@@ -162,8 +163,10 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
 export const REPAIR_CREATE_FIELDS: readonly string[] = [
   'method',
   'vendorId',
-  'faultDescription',
+  // The kind of fault, then what it is (2026-10-20): the description reads
+  // straight under the category it explains.
   'faultCategory',
+  'faultDescription',
   'sentAt',
   'expectedReturnAt',
   'ownerId',

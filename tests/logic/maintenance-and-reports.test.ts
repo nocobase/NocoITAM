@@ -629,6 +629,7 @@ describe('maintenance, reminders, workbench and reports', () => {
       deviceId: device.id,
       method: 'internal',
       faultDescription: 'The E key sticks',
+      faultCategory: 'keyboard',
       expectedReturnAt: '2030-01-01',
     });
     const itWork = await data<{ key: string; count: number }[]>(

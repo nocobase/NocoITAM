@@ -22,7 +22,7 @@ import type {
   LineItemType,
   ProcurementService,
 } from './procurement.js';
-import type { RepairService } from './repairs.js';
+import type { REPAIR_FAULT_CATEGORIES, RepairService } from './repairs.js';
 import type { StockService } from './stock.js';
 import { addDays, dbDateTime, isoDate } from './dates.js';
 
@@ -3888,6 +3888,7 @@ export function createDemoService(dependencies: {
               method: 'sendOut',
               vendorId: String(repairShop.id),
               faultDescription: texts.repairFault,
+              faultCategory: 'battery',
               sentAt: daysFromNow(-3),
               expectedReturnAt: daysFromNow(4),
               ownerId: supportUserId ?? null,
@@ -3905,6 +3906,7 @@ export function createDemoService(dependencies: {
           readonly method: 'internal' | 'vendorWarranty';
           readonly vendorId?: string;
           readonly fault: string;
+          readonly faultCategory: (typeof REPAIR_FAULT_CATEGORIES)[number];
           readonly sentDays: number;
           readonly returnDays: number;
           readonly cost: number;
@@ -3914,6 +3916,7 @@ export function createDemoService(dependencies: {
             deviceId: String(airs[1].id),
             method: 'internal',
             fault: texts.repairKeyboard,
+            faultCategory: 'keyboard',
             sentDays: -25,
             returnDays: -22,
             cost: 380,
@@ -3923,6 +3926,7 @@ export function createDemoService(dependencies: {
             method: 'vendorWarranty',
             vendorId: String(reseller.id),
             fault: texts.repairPanel,
+            faultCategory: 'screen',
             sentDays: -60,
             returnDays: -46,
             cost: 0,
@@ -3934,6 +3938,7 @@ export function createDemoService(dependencies: {
             deviceId: String(repairedSpare.id),
             method: 'internal',
             fault: texts.repairKeyboard,
+            faultCategory: 'keyboard',
             sentDays: -160,
             returnDays: -157,
             cost: 0,
@@ -3942,6 +3947,7 @@ export function createDemoService(dependencies: {
             deviceId: String(repairedSpare.id),
             method: 'internal',
             fault: texts.repairKeyboard,
+            faultCategory: 'keyboard',
             sentDays: -40,
             returnDays: -38,
             cost: 380,
@@ -3954,6 +3960,7 @@ export function createDemoService(dependencies: {
             method: 'vendorWarranty',
             vendorId: String(reseller.id),
             fault: texts.repairFault,
+            faultCategory: 'battery',
             sentDays: -44,
             returnDays: -37,
             cost: 0,
@@ -3964,6 +3971,7 @@ export function createDemoService(dependencies: {
             method: 'vendorWarranty',
             vendorId: String(reseller.id),
             fault: texts.repairFault,
+            faultCategory: 'battery',
             sentDays: -19,
             returnDays: -12,
             cost: 0,
@@ -3987,6 +3995,7 @@ export function createDemoService(dependencies: {
                 method: entry.method,
                 vendorId: entry.vendorId ?? null,
                 faultDescription: entry.fault,
+                faultCategory: entry.faultCategory,
                 sentAt: daysFromNow(entry.sentDays),
                 expectedReturnAt: daysFromNow(entry.returnDays),
                 ownerId: supportUserId ?? writerId,
@@ -4018,6 +4027,7 @@ export function createDemoService(dependencies: {
               method: 'sendOut',
               vendorId: String(repairShop.id),
               faultDescription: texts.repairScreen,
+              faultCategory: 'screen',
               sentAt: daysFromNow(-1),
               expectedReturnAt: daysFromNow(6),
               // Raised by the leaver and still out at the shop: finishing it
@@ -4039,6 +4049,7 @@ export function createDemoService(dependencies: {
                 method: 'internal',
                 vendorId: null,
                 faultDescription: texts.repairFan,
+                faultCategory: 'other',
                 sentAt: daysFromNow(-1),
                 expectedReturnAt: daysFromNow(2),
                 ownerId: importerId,

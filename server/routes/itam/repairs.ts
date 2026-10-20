@@ -33,7 +33,8 @@ export const repairSchema = z.object({
   method: z.enum(REPAIR_METHODS),
   vendorId: id.nullable().optional(),
   faultDescription: z.string().trim().min(1).max(20000),
-  faultCategory: z.enum(REPAIR_FAULT_CATEGORIES).nullable().optional(),
+  // Required from 2026-10-20: every repair says what kind of fault it is.
+  faultCategory: z.enum(REPAIR_FAULT_CATEGORIES),
   sentAt: date.optional(),
   expectedReturnAt: date.nullable().optional(),
   cost: z.number().min(0).nullable().optional(),

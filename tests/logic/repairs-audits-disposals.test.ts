@@ -178,6 +178,7 @@ describe('repairs, audits and disposals', () => {
         method: 'internal',
         expectedReturnAt: '2030-01-01',
         faultDescription: 'Wrong device',
+        faultCategory: 'other',
       }),
     );
     expect(await data(await get(`devices/${device.id}`))).toMatchObject({
@@ -291,6 +292,7 @@ describe('repairs, audits and disposals', () => {
           method: 'internal',
           expectedReturnAt: '2030-01-01',
           faultDescription: 'Fan rattles',
+          faultCategory: 'other',
         }),
       );
     const finish = (id: string, who: typeof manager | typeof support) =>
@@ -392,12 +394,21 @@ describe('repairs, audits and disposals', () => {
 
   it('numbers repairs RP-000001 onwards and lists them by number', async () => {
     const device = await createDevice();
+    // Every repair says what kind of fault it is (2026-10-20).
+    const unsorted = await post('repairs', {
+      deviceId: device.id,
+      method: 'internal',
+      expectedReturnAt: '2030-01-01',
+      faultDescription: 'No kind given',
+    });
+    expect(unsorted.status).toBe(400);
     const created = await data(
       await post('repairs', {
         deviceId: device.id,
         method: 'internal',
         expectedReturnAt: '2030-01-01',
         faultDescription: 'Numbered',
+        faultCategory: 'other',
       }),
     );
     expect(String(created.repairNo)).toMatch(/^RP-\d{6}$/);
@@ -428,6 +439,7 @@ describe('repairs, audits and disposals', () => {
         method: 'internal',
         expectedReturnAt: '2030-01-01',
         faultDescription: 'Cracked screen',
+        faultCategory: 'screen',
       }),
     );
     await post(`repairs/${String(repair.id)}/complete`, {
@@ -478,6 +490,7 @@ describe('repairs, audits and disposals', () => {
         method: 'internal',
         expectedReturnAt: '2030-01-01',
         faultDescription: 'Loose hinge',
+        faultCategory: 'physical',
       }),
     );
     const patch = (body: Record<string, unknown>) =>
@@ -550,6 +563,7 @@ describe('repairs, audits and disposals', () => {
         method: 'internal',
         expectedReturnAt: '2030-01-01',
         faultDescription: 'Dead pixel',
+        faultCategory: 'screen',
       }),
     );
     // Could not be fixed, but the device goes back to its holder by default.
@@ -571,6 +585,7 @@ describe('repairs, audits and disposals', () => {
         method: 'internal',
         expectedReturnAt: '2030-01-01',
         faultDescription: 'Board failure',
+        faultCategory: 'power',
       }),
     );
     expect(

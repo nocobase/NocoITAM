@@ -170,6 +170,7 @@ describe('main chain', () => {
         deviceId,
         method: 'internal',
         faultDescription: 'Several keys do not respond',
+        faultCategory: 'keyboard',
         expectedReturnAt: '2030-01-01',
       }),
     );
