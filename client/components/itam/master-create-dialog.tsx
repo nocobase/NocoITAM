@@ -516,7 +516,6 @@ function CaptureNotes({
         />
         <Button
           type='button'
-          variant='outline'
           className='justify-self-end'
           disabled={busy || !instruction.trim()}
           onClick={send}

@@ -390,7 +390,13 @@ export function FieldTemplateEditor({
 
   const body = (
     <>
-      <div className='flex min-h-9 items-center justify-between gap-3 border-b border-border/60 pb-2'>
+      {/* In a form it is a section heading like the form's own, no rule. */}
+      <div
+        className={cn(
+          'flex items-center justify-between gap-3',
+          embedded ? null : 'min-h-9 border-b border-border/60 pb-2',
+        )}
+      >
         <div className='min-w-0'>
           <h2 className='font-heading text-sm font-semibold'>
             {t('fieldTemplate.title')}
