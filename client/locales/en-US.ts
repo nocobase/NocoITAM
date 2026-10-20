@@ -1166,7 +1166,7 @@ const messages = {
     material: 'What you know about it',
     willSearch: 'AI searches the web to fill in more details',
     cannotSearch:
-      'The current model cannot search the web; AI uses only what it knows',
+      'No DeepSeek model service to search the web; AI uses only what it knows',
     searching: 'AI is searching…',
     nothing: 'AI did not fill the form. Add more detail and try again.',
     filled: 'AI has filled the form. Check it before saving.',
@@ -3351,6 +3351,8 @@ const messages = {
       itam_plan_ops: 'Read the operations a plan may use',
       itam_plan_create: 'Proposed a plan',
       itam_read_skill: 'Read the method',
+      itam_web_search: 'Searched the web',
+      itam_web_fetch: 'Read a web page',
     },
     // A plan the assistant proposed, as its card in the conversation.
     plans: {
@@ -3419,6 +3421,8 @@ const messages = {
         'Following the catalog skill, check the model “{{name}}” (it is the page context) and fill in what is missing. {{search}} First tell me in a few sentences what is empty and can be filled, and what you would change; then propose the empty fields as a plan — the differing ones wait for my say.',
       enrichSoftwareProduct:
         'Following the catalog skill, check the software product “{{name}}” (it is the page context) and fill in what is missing. {{search}} First tell me in a few sentences what is empty and can be filled, and what you would change; then propose the empty fields as a plan — the differing ones wait for my say.',
+      masterSearch:
+        "Look it up on the web first, the maker's own site before others, and link the pages you took anything from.",
       masterNoSearch:
         'You cannot search the web: use only what you reliably know, and say what you are not sure of.',
       globalSearch:

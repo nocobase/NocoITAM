@@ -28,6 +28,7 @@ import {
 } from '../../providers/itam/ai-model.js';
 import { BusinessRuleError } from '../../providers/itam/errors.js';
 import { settingsServiceToken } from '../../providers/itam/settings.js';
+import { webSearchAvailable } from '../../providers/itam/web-search.js';
 import { EVAL_SKILLS, runEval } from '../../providers/itam/skill-evals.js';
 import {
   READING_GRANTS,
@@ -76,7 +77,12 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
         // The model too, so the ask box offers it first (Agents plugin 1.0:
         // the client's model catalog does not say which is the default).
         const model = await itamModel(app.container).catch(() => null);
-        return context.json({ data: { available: model !== null, model } });
+        // Whether AI 整理 and Asset Steward can search the web (a DeepSeek
+        // model service, web-search.ts).
+        const webSearch = await webSearchAvailable(app.container);
+        return context.json({
+          data: { available: model !== null, model, webSearch },
+        });
       } catch (error) {
         return errorResponse(context, error);
       }

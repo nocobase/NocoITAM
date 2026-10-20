@@ -22,6 +22,9 @@ const TOOL_NAMES = [
   'itam_plan_ops',
   'itam_plan_create',
   'itam_read_skill',
+  // The web, through DeepSeek's Search and Fetch APIs (2026-10-20).
+  'itam_web_search',
+  'itam_web_fetch',
 ] as const;
 
 /** Every ITAM tool drawn as its line (`AIToolRendererProvider`). */

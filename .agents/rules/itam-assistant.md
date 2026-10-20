@@ -168,7 +168,23 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   its tools. `useItamAi()` says whether a model is there (`/itam/ai/status`:
   the default chat model, which it also names so the ask box offers it
   first) and opens or starts conversations. Every AI shortcut on a page is blue text with a sparkle
-  (`AiShortcut`), not a button. There is no web search.
+  (`AiShortcut`), not a button.
+- **The web** (2026-10-20): DeepSeek's Search and Fetch APIs
+  (`server/providers/itam/web-search.ts`), with the key of a DeepSeek model
+  service of the plugin — the default chat model's service when it is
+  DeepSeek's, else the first enabled one — read through
+  `models.services.connectionFor`; with none there is no web search, and
+  `/itam/ai/status` says so (`webSearch`). Asset Steward gets
+  `itam_web_search` and `itam_web_fetch` only then (the global scope leaves
+  them out otherwise, and its prompt adds `WEB_GUIDE` or `NO_WEB_GUIDE` from
+  `skill.ts`); their public projection shows the query or page and the pages
+  found, never their text. AI 整理 of a model or software product searches
+  the material first and hands the results to the reading as `web` (the
+  first three with their text), told to cite them in `sources`; the server
+  keeps only sources the search found, and answers `searched`. Each
+  successful call is billed by DeepSeek (about $0.75 per 1,000). The
+  method skills name the runner's `itam …` commands; the work guide maps
+  them to the tools, so an installed skill needs no edit.
 - ITAM's **own model calls** go through the plugin's model gateway
   (`server/providers/itam/ai-model.ts`: `openSession`, `askJson` with a zod
   shape spelled out as JSON Schema, asked once more when the reply does not
@@ -451,9 +467,9 @@ document-text`, which reads only a file uploaded within the hour and
 - 创建型号 and 创建软件产品 open on **AI 整理** too (2026-10-06,
   `MasterCreateDialog` in `client/components/itam/master-create-dialog.tsx`,
   the master domain's `Create` and `QuickCreateDialog` alike): the reader
-  types the maker and the model, and the model fills the rest from what it
-  reliably knows — there is no web search on the Agents plugin's gateway
-  (template 1.0.0-beta.64), and the dialog says so. How to look a record up
+  types the maker and the model, and the model fills the rest from the web
+  when it can be searched (see the web above), else from what it reliably
+  knows, and the dialog says which. How to look a record up
   and fill the form is the `catalog` skill (`ai/skills/catalog/SKILL.md`,
   型号与软件产品资料, 2026-10-06), read from the plugin's skill library into
   the system prompt, so the rules are a document the business can change.

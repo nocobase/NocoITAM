@@ -11,6 +11,8 @@ export const AI_PATH = 'itam/ai';
  */
 export interface AiStatus {
   readonly available: boolean;
+  /** AI 整理 and Asset Steward can search the web (a DeepSeek service). */
+  readonly webSearch?: boolean;
   /** The model a conversation answers with unless another is chosen. */
   readonly model: {
     readonly modelService: string;
@@ -33,6 +35,8 @@ export function useAiStatus(): UseQueryResult<AiStatus> {
 export interface AiReading {
   readonly reading: Record<string, unknown> | null;
   readonly said: string;
+  /** The web was searched for it (a model's or product's reading). */
+  readonly searched?: boolean;
 }
 
 export type AiReadingTask =

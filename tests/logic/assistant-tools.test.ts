@@ -143,7 +143,11 @@ describe('Asset Steward’s tools', () => {
     expect([...tools.keys()].sort()).toEqual(Object.values(ITAM_TOOLS).sort());
     if (!scope) throw new Error('no global scope');
     const given = await scope();
-    expect(given.tool).toEqual(Object.values(ITAM_TOOLS));
+    // No DeepSeek model service here, so no web tools (web-search.ts).
+    expect(given.tool).toEqual(
+      Object.values(ITAM_TOOLS).filter((name) => !name.startsWith('itam_web_')),
+    );
+    expect(given.systemPromptTemplate).toContain('There is no web search');
     expect(given.model).toEqual(['cloud/large', 'cloud/small']);
     expect(given.systemPromptTemplate).toContain(
       'Laptops are replaced every four years.',

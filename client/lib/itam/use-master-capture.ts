@@ -1,6 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMemo, useRef, useState } from 'react';
 
+import { useAiStatus } from './ai.js';
 import { useAiReading, useItamAi } from './ai-chat.js';
 import { masterDataPath, useApi, useItamList, type ItamRecord } from './api.js';
 import { errorMessage, todayIso } from './format.js';
@@ -23,7 +24,7 @@ interface Session {
 export interface MasterCaptureState {
   /** A model is there to ask. */
   readonly available: boolean;
-  /** Whether the reading searches the web: never on the Agents plugin's gateway. */
+  /** Whether the reading searches the web: with a DeepSeek model service. */
   readonly searches: boolean;
   readonly busy: boolean;
   readonly mode: Mode | undefined;
@@ -44,9 +45,10 @@ export type MasterCaptureHandle = MasterCaptureState;
 /**
  * AI 整理 for a new model or software product (2026-10-06): what the reader
  * knows — a maker and a model, usually — goes to the model on the server
- * (`POST /itam/ai/read`, template 1.0.0-beta.64) under the catalog skill,
- * with no web search: it fills from what the model reliably knows and marks
- * the rest uncertain. The server checks the reading
+ * (`POST /itam/ai/read`, template 1.0.0-beta.64) under the catalog skill.
+ * With a DeepSeek model service the server searches the web first and the
+ * reading cites the pages it used (2026-10-20); otherwise it fills from what
+ * the model reliably knows and marks the rest uncertain. The server checks the reading
  * (`/itam/master/:collection/capture/match`) before the form takes it. An
  * adjustment is the material, the form as it stands and what to change;
  * nothing is saved until the reader saves.
@@ -64,7 +66,9 @@ export function useMasterCapture({
   const { t } = useTranslation();
   const api = useApi();
   const ai = useItamAi();
+  const status = useAiStatus();
   const read = useAiReading();
+  const [searched, setSearched] = useState(false);
   const [session, setSession] = useState<Session>();
   const [turns, setTurns] = useState<readonly Turn[]>([]);
   const [summary, setSummary] = useState<string>();
@@ -137,6 +141,7 @@ export function useMasterCapture({
         });
         if (asked !== askedRef.current) return;
         onFill(data);
+        setSearched(answer.searched === true);
         if (mode === 'organise') {
           setSummary(answer.said || undefined);
           setTurns([]);
@@ -155,13 +160,13 @@ export function useMasterCapture({
 
   return {
     available: ai.available,
-    searches: false,
+    searches: status.data?.webSearch === true,
     busy: session?.phase === 'reading',
     mode: session?.mode,
     failure: session?.phase === 'failed' ? session.message : undefined,
     turns,
     summary,
-    searched: false,
+    searched,
     organise: (material) => {
       if (!material.trim()) return;
       materialRef.current = material;

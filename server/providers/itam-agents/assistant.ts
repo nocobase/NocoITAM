@@ -26,7 +26,17 @@ import {
   search,
   stats,
 } from './reads.js';
-import { ITAM_WORK_GUIDE, METHOD_SKILLS } from './skill.js';
+import {
+  fetchPage,
+  searchWeb,
+  webSearchAvailable,
+} from '../itam/web-search.js';
+import {
+  ITAM_WORK_GUIDE,
+  METHOD_SKILLS,
+  NO_WEB_GUIDE,
+  WEB_GUIDE,
+} from './skill.js';
 
 /**
  * Asset Steward (资产管家) on the Agents plugin's OnlineAgent service (plugin
@@ -61,7 +71,17 @@ export const ITAM_TOOLS = {
   planOps: 'itam_plan_ops',
   planCreate: 'itam_plan_create',
   skill: 'itam_read_skill',
+  // Through DeepSeek's Search and Fetch APIs (2026-10-20), offered only
+  // while a DeepSeek model service is there (`WEB_TOOLS`).
+  webSearch: 'itam_web_search',
+  webFetch: 'itam_web_fetch',
 } as const;
+
+/** The tools that reach the web, left out with no DeepSeek service. */
+const WEB_TOOLS: readonly string[] = [
+  ITAM_TOOLS.webSearch,
+  ITAM_TOOLS.webFetch,
+];
 
 /**
  * What a tool hands back must already be plain JSON (dates as ISO strings);
@@ -97,17 +117,19 @@ function refusal(error: unknown): OnlineAgentJson {
   });
 }
 
-/** A tool's output as the page sees it: its refusal, or nothing. */
-function publicRefusal(value: OnlineAgentJson): OnlineAgentJson {
+/** A tool's refusal message, when its output is one. */
+function refusalOf(value: OnlineAgentJson): string | null {
   const error =
     value && typeof value === 'object' && !Array.isArray(value)
       ? (value as { error?: { message?: unknown } }).error
       : undefined;
-  return asJson(
-    typeof error?.message === 'string'
-      ? { error: { message: error.message } }
-      : {},
-  );
+  return typeof error?.message === 'string' ? error.message : null;
+}
+
+/** A tool's output as the page sees it: its refusal, or nothing. */
+function publicRefusal(value: OnlineAgentJson): OnlineAgentJson {
+  const message = refusalOf(value);
+  return asJson(message === null ? {} : { error: { message } });
 }
 
 export function registerAssistant(
@@ -244,11 +266,61 @@ export function registerAssistant(
     async ({ name }) => ({ name, content: await readSkill(container, name) }),
   );
 
-  configurator.registerOnlineAgentGlobalScope(async () => ({
-    tool: Object.values(ITAM_TOOLS),
-    model: await chatModels(agents),
-    systemPromptTemplate: systemPrompt(notes()),
-  }));
+  tool(
+    ITAM_TOOLS.webSearch,
+    'Searches the web for a fact the register does not hold (a model\'s specifications, a warranty policy, a release or end-of-life date, a price). `query` is short, at most 128 characters; operators work: site:dell.com, lang:zh,en, after:2025-01-01, "exact phrase", -term. Results come the most relevant first, each with its title, url, site, date, authority (0–4, 3 and above authoritative) and a summary.',
+    z.object({
+      query: z.string().trim().min(1).max(128),
+      count: z.number().int().min(1).max(10).optional(),
+    }),
+    async ({ query, count }, _userId, context) => ({
+      results: await searchWeb(container, query, {
+        count: count ?? 6,
+        signal: context.signal,
+      }),
+    }),
+    {
+      // The query and the pages found, never their text.
+      input: (value) => asJson({ query: value.query }),
+      output: (value) => {
+        if (refusalOf(value) !== null) return publicRefusal(value);
+        const results = (
+          value as { results?: { title: string; url: string }[] }
+        ).results;
+        return asJson({
+          results: (results ?? [])
+            .slice(0, 6)
+            .map(({ title, url }) => ({ title, url })),
+        });
+      },
+    },
+  );
+  tool(
+    ITAM_TOOLS.webFetch,
+    'Reads one web page whole, as Markdown (cut at 20,000 characters): a page `itam_web_search` found, or one the person names.',
+    z.object({ url: z.url().max(2048) }),
+    async ({ url }, _userId, context) =>
+      fetchPage(container, url, context.signal),
+    {
+      input: (value) => asJson({ url: value.url }),
+      output: (value) => {
+        return refusalOf(value) !== null
+          ? publicRefusal(value)
+          : asJson({ title: (value as { title?: string }).title ?? '' });
+      },
+    },
+  );
+
+  configurator.registerOnlineAgentGlobalScope(async () => {
+    const web = await webSearchAvailable(container);
+    return {
+      tool: Object.values(ITAM_TOOLS).filter(
+        (name) => web || !WEB_TOOLS.includes(name),
+      ),
+      model: await chatModels(agents),
+      systemPromptTemplate: systemPrompt(notes(), web),
+    };
+  });
 }
 
 /**
@@ -276,16 +348,20 @@ async function chatModels(agents: Agents): Promise<string[]> {
 }
 
 /** Who Asset Steward is, how it works on ITAM, and the business notes. */
-function systemPrompt({
-  businessNotes,
-  timeZone,
-}: {
-  businessNotes: string;
-  timeZone: string;
-}): string {
+function systemPrompt(
+  {
+    businessNotes,
+    timeZone,
+  }: {
+    businessNotes: string;
+    timeZone: string;
+  },
+  web: boolean,
+): string {
   return [
     ITAM_ASSISTANT_INSTRUCTIONS,
     ITAM_WORK_GUIDE,
+    web ? WEB_GUIDE : NO_WEB_GUIDE,
     `Dates the tools return are local to the deployment; speak of them in its time zone, ${timeZone}.`,
     businessNotes.trim()
       ? `## Business notes from the administrator\n\n${businessNotes.trim()}`

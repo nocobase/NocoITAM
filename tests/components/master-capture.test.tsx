@@ -91,6 +91,13 @@ vi.mock('../../client/lib/itam/ai-chat.js', () => ({
       return Promise.resolve(state.answer);
     },
 }));
+// Whether the web can be searched (a DeepSeek model service): not here.
+vi.mock('../../client/lib/itam/ai.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../client/lib/itam/ai.js')>()),
+  useAiStatus: () => ({
+    data: { available: state.available, model: null, webSearch: false },
+  }),
+}));
 vi.mock('../../client/components/itam/field-input.js', () => ({
   // A plain input per field, so the filled values can be read.
   FieldInput: ({

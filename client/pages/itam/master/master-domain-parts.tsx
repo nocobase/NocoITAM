@@ -25,6 +25,7 @@ import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
 import type { DomainTreeProps } from '@/lib/itam/domain';
 import { errorMessage, text } from '@/lib/itam/format';
+import { useAiStatus } from '@/lib/itam/ai';
 import { useAiPageContext, useItamAi } from '@/lib/itam/ai-chat';
 import { useReferenceNames } from '@/lib/itam/references';
 import {
@@ -489,8 +490,9 @@ function EnrichAction({
 
 /**
  * The shortcut itself: the record is the chat's page context, and the
- * assistant reads it and its category's fields with its commands, then
- * proposes the empty fields it can fill as a plan (the catalog skill).
+ * assistant reads it and its category's fields with its tools — the web
+ * too, with a DeepSeek model service — then proposes the empty fields it
+ * can fill as a plan (the catalog skill).
  */
 function EnrichShortcut({
   collection,
@@ -504,6 +506,7 @@ function EnrichShortcut({
     { collection: 'manufacturers', ids: [text(record.manufacturerId)] },
   ]);
   const maker = names.manufacturers?.get(text(record.manufacturerId)) ?? '';
+  const web = useAiStatus().data?.webSearch === true;
   const { ask } = useAiPageContext({
     kind: collection,
     id: text(record.id),
@@ -519,7 +522,9 @@ function EnrichShortcut({
               : 'ai.prompts.enrichSoftwareProduct',
             {
               name: [maker, text(record.name)].filter(Boolean).join(' '),
-              search: t('ai.prompts.masterNoSearch'),
+              search: t(
+                web ? 'ai.prompts.masterSearch' : 'ai.prompts.masterNoSearch',
+              ),
             },
           ),
         )

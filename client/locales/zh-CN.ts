@@ -1134,7 +1134,7 @@ const zhCN: AppResource = {
     },
     material: '已知信息',
     willSearch: 'AI 会联网搜索补充更多信息',
-    cannotSearch: '当前模型不支持联网，AI 只按自身知识整理',
+    cannotSearch: '没有可用的 DeepSeek 模型服务，AI 只按自身知识整理',
     searching: 'AI 正在联网查询…',
     nothing: 'AI 没有填好表单，请补充信息后再试。',
     filled: 'AI 已填好表单，请核对后保存。',
@@ -3163,6 +3163,8 @@ const zhCN: AppResource = {
       itam_plan_ops: '读取了计划可用的操作',
       itam_plan_create: '提出了计划',
       itam_read_skill: '读取了工作方法',
+      itam_web_search: '搜索了网页',
+      itam_web_fetch: '读取了网页',
     },
     // A plan the assistant proposed, as its card in the conversation.
     plans: {
@@ -3231,6 +3233,8 @@ const zhCN: AppResource = {
         '请按「型号与软件产品资料」技能核对型号「{{name}}」（就是页面上下文里的这条记录），补充缺的资料。{{search}}先用几句话告诉我：哪些现在空着、可以补上，哪些你认为要改；然后把可补的空字段整理成一份计划提出来，要改的等我决定。',
       enrichSoftwareProduct:
         '请按「型号与软件产品资料」技能核对软件产品「{{name}}」（就是页面上下文里的这条记录），补充缺的资料。{{search}}先用几句话告诉我：哪些现在空着、可以补上，哪些你认为要改；然后把可补的空字段整理成一份计划提出来，要改的等我决定。',
+      masterSearch:
+        '先联网查资料，制造商官网优先，补充的内容在回答里注明来源链接。',
       masterNoSearch:
         '这次无法联网：只按你可靠地知道的信息填写，没有把握的要说明。',
       globalSearch:
