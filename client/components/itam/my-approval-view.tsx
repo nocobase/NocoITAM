@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Inbox } from 'lucide-react';
 import type { ComponentType, ReactElement } from 'react';
 
-import { Badge } from '@/components/ui/badge';
+import { CountPill } from '@/components/itam/count-pill';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/lib/itam/api';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
@@ -54,9 +54,9 @@ export function createMyApprovalView(options: {
         >
           <Inbox data-icon='inline-start' />
           {t(label)}
-          <Badge variant={mine.data ? 'default' : 'outline'}>
-            {mine.data ?? 0}
-          </Badge>
+          {/* The application's one count look (2026-10-20): a solid badge
+              read as a second button inside the first. */}
+          <CountPill>{mine.data ?? 0}</CountPill>
         </Button>
       </div>
     );
