@@ -136,9 +136,6 @@ const zhCN: AppResource = {
     rowCategory: '资产分类',
     rowModel: '型号 / 软件产品',
     rowManufacturer: '制造商',
-    setupOrder: '建立顺序',
-    setupSeeded:
-      '种子数据已提供每一类的基础记录（常见制造商和型号、软件产品、分类树、总部位置、组织架构和第一位员工），可直接在其上增补',
     assigneeHeader: '分配对象',
     assigneeDevice: '设备 (机柜、备件箱等)',
   },

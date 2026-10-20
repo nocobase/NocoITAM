@@ -86,8 +86,8 @@ const ASSIGNEES: readonly {
 
 /**
  * The master-data landing page: how the eight collections relate to each
- * other and to the records built on them, with live counts, and the order
- * to set them up in.
+ * other and to the records built on them, with live counts (the order to
+ * set them up in went on 2026-10-20).
  */
 export default function MasterDataOverviewPage(): ReactElement {
   const { t } = useTranslation();
@@ -370,49 +370,6 @@ export default function MasterDataOverviewPage(): ReactElement {
           </div>
         </Lane>
       </div>
-      <Card className='py-0'>
-        <CardContent className='space-y-3 p-4'>
-          <h2 className='font-heading text-base font-semibold'>
-            {t('masterData.setupOrder')}
-          </h2>
-          <ol className='flex flex-wrap items-center gap-x-2 gap-y-2 text-sm'>
-            {(
-              [
-                ['manufacturers', 'vendors'],
-                ['categories'],
-                ['models', 'softwareProducts'],
-                ['locations', 'departments'],
-                ['people'],
-              ] as const
-            ).map((step, index, steps) => (
-              <li key={step.join('+')} className='flex items-center gap-2'>
-                <span className='flex size-5 items-center justify-center rounded-full bg-muted text-xs font-medium tabular-nums'>
-                  {index + 1}
-                </span>
-                {step.map((key, i) => (
-                  <span key={key} className='flex items-center gap-2'>
-                    {i > 0 ? (
-                      <span className='text-muted-foreground'>·</span>
-                    ) : null}
-                    <Link
-                      to={nodes[key].to}
-                      className='text-link underline-offset-4 hover:underline'
-                    >
-                      {nodes[key].label}
-                    </Link>
-                  </span>
-                ))}
-                {index < steps.length - 1 ? (
-                  <span className='px-1 text-muted-foreground'>→</span>
-                ) : null}
-              </li>
-            ))}
-          </ol>
-          <p className='text-xs text-muted-foreground'>
-            {t('masterData.setupSeeded')}
-          </p>
-        </CardContent>
-      </Card>
     </Page>
   );
 }

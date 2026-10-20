@@ -139,9 +139,6 @@ const messages = {
     rowCategory: 'Category',
     rowModel: 'Model / software product',
     rowManufacturer: 'Manufacturer',
-    setupOrder: 'Set-up order',
-    setupSeeded:
-      'Seed data already provides a base for every collection (common manufacturers and models, software products, the category tree, a headquarters, an organisation and a first employee) to build on',
     assigneeHeader: 'Assignee',
     assigneeDevice: 'Device (rack, spares box, …)',
   },
