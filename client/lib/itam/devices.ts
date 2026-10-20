@@ -75,7 +75,9 @@ export const OPERATION_FROM: Readonly<
 /** Badge tone per status, mapped to semantic classes. */
 export const STATUS_TONE: Readonly<Record<DeviceStatus, string>> = {
   inStock: 'bg-primary/10 text-primary',
-  inUse: 'bg-primary text-primary-foreground',
+  // Out and in use, as a device should be: the green of a state that is
+  // fine (2026-10-20), apart from stock's and a loan's blues.
+  inUse: 'bg-success text-success-foreground',
   onLoan: 'bg-primary/20 text-primary',
   // In progress, not wrong (2026-10-20): amber as 审批中 is; red is kept
   // for what has gone wrong — pending disposal, lost.
