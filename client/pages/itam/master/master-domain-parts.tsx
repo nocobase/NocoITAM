@@ -8,6 +8,7 @@ import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { EmptyState } from '@/components/itam/empty-state';
 import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
+import { parseTemplate } from '@/lib/itam/field-template';
 import { MasterDataTree } from '@/components/itam/master-data-tree';
 import { RecordPane } from '@/components/itam/record-drawer';
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
@@ -26,7 +27,7 @@ import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
 import type { DomainTreeProps } from '@/lib/itam/domain';
 import { errorMessage, text } from '@/lib/itam/format';
 import { useAiStatus } from '@/lib/itam/ai';
-import { useAiPageContext, useItamAi } from '@/lib/itam/ai-chat';
+import { useAiPageContext, useAiReading, useItamAi } from '@/lib/itam/ai-chat';
 import { useReferenceNames } from '@/lib/itam/references';
 import {
   isMasterCaptureCollection,
@@ -334,12 +335,33 @@ export function CategoryTemplate({
     'update',
     'delete',
   ]);
+  const ai = useItamAi();
+  const read = useAiReading();
   return (
     <FieldTemplateEditor
       key={JSON.stringify(record.fieldTemplate ?? null)}
       value={record.fieldTemplate}
       editable={Boolean(permissions.update)}
       usage={stats.data?.attributeUsage}
+      // AI 建议字段 (2026-10-20): the server reads the category and the
+      // fields of its kind's other categories (`categoryFields`).
+      {...(ai.available
+        ? {
+            onSuggest: async () => {
+              const answer = await read({
+                task: 'categoryFields',
+                material: text(record.name) || 'category',
+                context: { categoryId: text(record.id) },
+              });
+              const fields = (answer.reading as { fields?: unknown } | null)
+                ?.fields;
+              return {
+                fields: parseTemplate(fields),
+                said: answer.said,
+              };
+            },
+          }
+        : {})}
       onSave={async (template) => {
         try {
           await mutations.update.mutateAsync({

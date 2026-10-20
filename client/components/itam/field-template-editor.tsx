@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 import { useState, type DragEvent, type ReactElement } from 'react';
 
+import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -94,17 +96,29 @@ const stripIds = (rows: readonly EditRow[]): TemplateField[] =>
       field.type === 'select' ? parseOptions(optionsText) : field.options,
   }));
 
+/** What AI 建议字段 answers: the fields to add, and its one sentence. */
+export interface FieldSuggestion {
+  readonly fields: readonly TemplateField[];
+  readonly said: string;
+}
+
 export function FieldTemplateEditor({
   value,
   editable,
   usage,
   onSave,
+  onSuggest,
 }: {
   readonly value: unknown;
   readonly editable: boolean;
   /** Devices holding a value per key; such fields can be hidden, not deleted. */
   readonly usage?: Readonly<Record<string, number>>;
   readonly onSave: (template: TemplateField[]) => Promise<void>;
+  /**
+   * AI 建议字段 (2026-10-20): asks the model for fields to add; they join the
+   * rows under edit for the reader to check and save. Absent without a model.
+   */
+  readonly onSuggest?: () => Promise<FieldSuggestion>;
 }): ReactElement {
   const { t } = useTranslation();
   const [rows, setRows] = useState(() => withIds(parseTemplate(value)));
@@ -118,6 +132,8 @@ export function FieldTemplateEditor({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggested, setSuggested] = useState<string>();
   // Problems surface only after a save attempt; a fresh row starts quiet.
   const [attempted, setAttempted] = useState(false);
   // Removing a row that already describes a field asks first; a blank row
@@ -204,6 +220,51 @@ export function FieldTemplateEditor({
     ) : null;
   };
 
+  /** Adds what the model suggests that the template lacks, as new rows. */
+  const suggest = async () => {
+    if (!onSuggest) return;
+    setEditing(true);
+    setSuggesting(true);
+    setSuggested(undefined);
+    setError(undefined);
+    try {
+      const answer = await onSuggest();
+      const taken = new Set(rows.map((row) => row.key));
+      const fresh = answer.fields.filter(
+        (field) =>
+          /^[A-Za-z][A-Za-z0-9_]*$/.test(field.key) && !taken.has(field.key),
+      );
+      setRows((current) => [
+        // A blank row the reader had not started goes.
+        ...current.filter((row) => row.key || row.label),
+        ...withIds(fresh.map((field) => ({ ...field, required: false }))),
+      ]);
+      setSuggested(
+        fresh.length
+          ? t('fieldTemplate.suggested', {
+              count: fresh.length,
+              said: answer.said,
+            })
+          : answer.said || t('fieldTemplate.suggestedNone'),
+      );
+    } catch (caught) {
+      setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
+    } finally {
+      setSuggesting(false);
+    }
+  };
+  const suggestAction =
+    editable && onSuggest ? (
+      <AiShortcut
+        disabled={suggesting || saving}
+        onClick={() => void suggest()}
+      >
+        {suggesting
+          ? t('fieldTemplate.suggesting')
+          : t('fieldTemplate.suggest')}
+      </AiShortcut>
+    ) : null;
+
   const save = async () => {
     if (problems.size > 0) {
       setAttempted(true);
@@ -223,6 +284,7 @@ export function FieldTemplateEditor({
         })),
       );
       setEditing(false);
+      setSuggested(undefined);
     } catch (caught) {
       setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
     } finally {
@@ -242,19 +304,22 @@ export function FieldTemplateEditor({
               </h2>
             </div>
             {editable ? (
-              <Button
-                variant='outline'
-                className='shrink-0'
-                onClick={() => {
-                  setRows(withIds(parseTemplate(value)));
-                  setError(undefined);
-                  setAttempted(false);
-                  setEditing(true);
-                }}
-              >
-                <Pencil data-icon='inline-start' />
-                {t('actions.edit')}
-              </Button>
+              <div className='flex items-center gap-3'>
+                {suggestAction}
+                <Button
+                  variant='outline'
+                  className='shrink-0'
+                  onClick={() => {
+                    setRows(withIds(parseTemplate(value)));
+                    setError(undefined);
+                    setAttempted(false);
+                    setEditing(true);
+                  }}
+                >
+                  <Pencil data-icon='inline-start' />
+                  {t('actions.edit')}
+                </Button>
+              </div>
             ) : null}
           </div>
           {fields.length === 0 ? (
@@ -303,15 +368,19 @@ export function FieldTemplateEditor({
             </h2>
           </div>
           {/* Nothing has been written yet, so there is nothing to keep or
-              throw away: the card offers only 添加字段 until a row exists. */}
+              throw away: the card offers only 添加字段 (and AI 建议字段)
+              until a row exists. */}
+          {editable && rows.length === 0 ? suggestAction : null}
           {editable && rows.length > 0 ? (
             <div className='flex items-center gap-2'>
+              <span className='mr-1'>{suggestAction}</span>
               <Button
                 variant='ghost'
                 disabled={saving}
                 onClick={() => {
                   setRows(withIds(parseTemplate(value)));
                   setError(undefined);
+                  setSuggested(undefined);
                   setEditing(false);
                 }}
               >
@@ -325,6 +394,14 @@ export function FieldTemplateEditor({
             </div>
           ) : null}
         </div>
+        {suggesting ? (
+          <p className='flex items-center gap-2 text-sm text-muted-foreground'>
+            <Spinner />
+            {t('fieldTemplate.suggesting')}
+          </p>
+        ) : suggested ? (
+          <p className='text-sm text-muted-foreground'>{suggested}</p>
+        ) : null}
         {rows.length === 0 ? (
           <div className='flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground'>
             {t('fieldTemplate.empty')}

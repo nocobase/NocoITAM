@@ -2013,6 +2013,10 @@ const zhCN: AppResource = {
     people: '在职人员',
   },
   fieldTemplate: {
+    suggest: 'AI 建议字段',
+    suggesting: 'AI 正在建议字段…',
+    suggested: '已加入 {{count}} 个建议字段，核对后保存。{{said}}',
+    suggestedNone: 'AI 没有可补充的字段。',
     title: '扩展字段',
     add: '添加字段',
     addBelow: '在下方添加字段',

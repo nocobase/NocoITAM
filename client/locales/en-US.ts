@@ -2100,6 +2100,11 @@ const messages = {
     people: 'People',
   },
   fieldTemplate: {
+    suggest: 'AI suggests fields',
+    suggesting: 'AI is suggesting fields…',
+    suggested:
+      'Added {{count}} suggested fields; check them before saving. {{said}}',
+    suggestedNone: 'AI has no fields to add.',
     title: 'Extended fields',
     add: 'Add field',
     addBelow: 'Add a field below',

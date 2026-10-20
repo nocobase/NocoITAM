@@ -33,6 +33,7 @@ vi.mock('../../client/lib/itam/api.js', async (importOriginal) => ({
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useItamAi: () => ({ available: false }),
   useAiPageContext: () => ({ available: false, ask: () => undefined }),
+  useAiReading: () => () => Promise.reject(new Error('no model')),
 }));
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCollectionPermissions: () => ({}),
