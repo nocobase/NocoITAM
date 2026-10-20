@@ -35,6 +35,10 @@ export interface RecordSummary {
 
 function useDeviceSummary(record: ItamRecord, t: Translate): SummaryItem[] {
   const permissions = useCollectionPermissions('disposals', ['read']);
+  // Who may put a wrong status right: by default the asset managers.
+  const devicePermissions = useCollectionPermissions('devices', [
+    'correctStatus',
+  ]);
   const repairPermissions = useCollectionPermissions('repairs', ['read']);
   // The repair a device in repair is out on (2026-10-16), as a disposal
   // shows for one being disposed of.
@@ -62,9 +66,17 @@ function useDeviceSummary(record: ItamRecord, t: Translate): SummaryItem[] {
   return [
     {
       key: 'status',
-      // Why there is no editing it (2026-10-20): the operations move it.
+      // Why there is no editing it (2026-10-20): the operations move it,
+      // and a wrong one is corrected by whoever may — or asked of them.
       label: (
-        <FieldLabel label={t('fields.status')} hint='devices.statusHint' />
+        <FieldLabel
+          label={t('fields.status')}
+          hint={
+            devicePermissions.correctStatus
+              ? 'devices.statusHint'
+              : 'devices.statusHintAsk'
+          }
+        />
       ),
       value: <DeviceStatusBadge status={text(record.status)} />,
     },

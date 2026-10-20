@@ -388,339 +388,342 @@ export function FieldTemplateEditor({
     );
   }
 
-  return (
-    <Card className='py-0'>
-      <CardContent className='space-y-3 p-4'>
-        <div className='flex min-h-9 items-center justify-between gap-3 border-b border-border/60 pb-2'>
-          <div className='min-w-0'>
-            <h2 className='font-heading text-sm font-semibold'>
-              {t('fieldTemplate.title')}
-            </h2>
-          </div>
-          {/* Nothing has been written yet, so there is nothing to keep or
+  const body = (
+    <>
+      <div className='flex min-h-9 items-center justify-between gap-3 border-b border-border/60 pb-2'>
+        <div className='min-w-0'>
+          <h2 className='font-heading text-sm font-semibold'>
+            {t('fieldTemplate.title')}
+          </h2>
+        </div>
+        {/* Nothing has been written yet, so there is nothing to keep or
               throw away: the card offers only 添加字段 (and AI 建议字段)
               until a row exists. */}
-          {editable && rows.length === 0 ? suggestAction : null}
-          {editable && rows.length > 0 && !embedded ? (
-            <div className='flex items-center gap-2'>
-              <span className='mr-1'>{suggestAction}</span>
-              <Button
-                variant='ghost'
-                disabled={saving}
-                onClick={() => {
-                  setRows(withIds(parseTemplate(value)));
-                  setError(undefined);
-                  setSuggested(undefined);
-                  setSuggestedExtra(undefined);
-                  setEditing(false);
-                }}
-              >
-                <X data-icon='inline-start' />
-                {t('actions.cancel')}
-              </Button>
-              <Button disabled={!dirty || saving} onClick={() => void save()}>
-                <Save data-icon='inline-start' />
-                {t('actions.save')}
-              </Button>
-            </div>
-          ) : null}
-        </div>
-        {suggesting ? (
-          <p className='flex items-center gap-2 text-sm text-muted-foreground'>
-            <Spinner />
-            {t('fieldTemplate.suggesting')}
-          </p>
-        ) : suggested ? (
-          <div className='space-y-2'>
-            <p className='text-sm text-muted-foreground'>{suggested}</p>
-            {suggestedExtra}
-          </div>
-        ) : null}
-        {/* While fields are being suggested, the empty card's offer to add
-            one by hand would compete with them; it waits. */}
-        {suggesting && rows.length === 0 ? null : rows.length === 0 ? (
-          <div className='flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground'>
-            {t('fieldTemplate.empty')}
-            {/* The only thing to do on an empty card, so it reads as the
-                action it is rather than as a muted secondary one. */}
-            <Button onClick={() => insertAfter()}>
-              <Plus data-icon='inline-start' />
-              {t('fieldTemplate.add')}
+        {editable && rows.length === 0 ? suggestAction : null}
+        {editable && rows.length > 0 && !embedded ? (
+          <div className='flex items-center gap-2'>
+            <span className='mr-1'>{suggestAction}</span>
+            <Button
+              variant='ghost'
+              disabled={saving}
+              onClick={() => {
+                setRows(withIds(parseTemplate(value)));
+                setError(undefined);
+                setSuggested(undefined);
+                setSuggestedExtra(undefined);
+                setEditing(false);
+              }}
+            >
+              <X data-icon='inline-start' />
+              {t('actions.cancel')}
+            </Button>
+            <Button disabled={!dirty || saving} onClick={() => void save()}>
+              <Save data-icon='inline-start' />
+              {t('actions.save')}
             </Button>
           </div>
-        ) : (
-          <div className='overflow-x-auto rounded-lg border border-border bg-card'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {editable ? <TableHead className='w-8' /> : null}
-                  <TableHead>{t('fieldTemplate.label')}</TableHead>
-                  <TableHead className='w-40'>
-                    {t('fieldTemplate.key')}
-                  </TableHead>
-                  <TableHead className='w-32'>
-                    {t('fieldTemplate.type')}
-                  </TableHead>
-                  <TableHead className='w-16 text-center'>
-                    {t('fieldTemplate.required')}
-                  </TableHead>
-                  <TableHead>{t('fieldTemplate.options')}</TableHead>
-                  {editable ? <TableHead className='w-28' /> : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row, index) => (
-                  <TableRow
-                    key={row.rid}
-                    className={cn(
-                      dragIndex === index && 'opacity-40',
-                      row.hidden && 'text-muted-foreground',
-                      dropAt === index &&
-                        'shadow-[inset_0_2px_0_0_var(--color-primary)]',
-                      dropAt === index + 1 &&
-                        index === rows.length - 1 &&
-                        'shadow-[inset_0_-2px_0_0_var(--color-primary)]',
+        ) : null}
+      </div>
+      {suggesting ? (
+        <p className='flex items-center gap-2 text-sm text-muted-foreground'>
+          <Spinner />
+          {t('fieldTemplate.suggesting')}
+        </p>
+      ) : suggested ? (
+        <div className='space-y-2'>
+          <p className='text-sm text-muted-foreground'>{suggested}</p>
+          {suggestedExtra}
+        </div>
+      ) : null}
+      {/* While fields are being suggested, the empty card's offer to add
+            one by hand would compete with them; it waits. */}
+      {suggesting && rows.length === 0 ? null : rows.length === 0 ? (
+        <div className='flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground'>
+          {t('fieldTemplate.empty')}
+          {/* The only thing to do on an empty card, so it reads as the
+                action it is rather than as a muted secondary one. */}
+          <Button onClick={() => insertAfter()}>
+            <Plus data-icon='inline-start' />
+            {t('fieldTemplate.add')}
+          </Button>
+        </div>
+      ) : (
+        <div className='overflow-x-auto rounded-lg border border-border bg-card'>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {editable ? <TableHead className='w-8' /> : null}
+                <TableHead>{t('fieldTemplate.label')}</TableHead>
+                <TableHead className='w-40'>{t('fieldTemplate.key')}</TableHead>
+                <TableHead className='w-32'>
+                  {t('fieldTemplate.type')}
+                </TableHead>
+                <TableHead className='w-16 text-center'>
+                  {t('fieldTemplate.required')}
+                </TableHead>
+                <TableHead>{t('fieldTemplate.options')}</TableHead>
+                {editable ? <TableHead className='w-28' /> : null}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row, index) => (
+                <TableRow
+                  key={row.rid}
+                  className={cn(
+                    dragIndex === index && 'opacity-40',
+                    row.hidden && 'text-muted-foreground',
+                    dropAt === index &&
+                      'shadow-[inset_0_2px_0_0_var(--color-primary)]',
+                    dropAt === index + 1 &&
+                      index === rows.length - 1 &&
+                      'shadow-[inset_0_-2px_0_0_var(--color-primary)]',
+                  )}
+                  onDragOver={(event) => {
+                    if (dragIndex === undefined) return;
+                    event.preventDefault();
+                    const at = dropIndexFor(event, index);
+                    if (at !== dropAt) setDropAt(at);
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (dragIndex !== undefined)
+                      reorder(dragIndex, dropIndexFor(event, index));
+                    setDragIndex(undefined);
+                    setDropAt(undefined);
+                  }}
+                >
+                  {editable ? (
+                    <TableCell className='pr-0'>
+                      <span
+                        draggable
+                        aria-label={t('fieldTemplate.drag')}
+                        className='inline-flex cursor-grab text-muted-foreground/60 active:cursor-grabbing'
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = 'move';
+                          event.dataTransfer.setData('text/plain', row.key);
+                          setDragIndex(index);
+                        }}
+                        onDragEnd={() => {
+                          setDragIndex(undefined);
+                          setDropAt(undefined);
+                        }}
+                      >
+                        <GripVertical className='size-4' />
+                      </span>
+                    </TableCell>
+                  ) : null}
+                  <TableCell>
+                    {editable ? (
+                      <Input
+                        value={row.label}
+                        aria-invalid={
+                          problemAt(index, 'label') ? true : undefined
+                        }
+                        onChange={(event) =>
+                          update(index, {
+                            label: event.target.value,
+                            ...(row.key === '' ||
+                            row.key === keyFromLabel(row.label)
+                              ? { key: keyFromLabel(event.target.value) }
+                              : {}),
+                          })
+                        }
+                      />
+                    ) : (
+                      row.label
                     )}
-                    onDragOver={(event) => {
-                      if (dragIndex === undefined) return;
-                      event.preventDefault();
-                      const at = dropIndexFor(event, index);
-                      if (at !== dropAt) setDropAt(at);
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      if (dragIndex !== undefined)
-                        reorder(dragIndex, dropIndexFor(event, index));
-                      setDragIndex(undefined);
-                      setDropAt(undefined);
-                    }}
-                  >
+                    {problemText(index, 'label')}
+                  </TableCell>
+                  <TableCell>
                     {editable ? (
-                      <TableCell className='pr-0'>
-                        <span
-                          draggable
-                          aria-label={t('fieldTemplate.drag')}
-                          className='inline-flex cursor-grab text-muted-foreground/60 active:cursor-grabbing'
-                          onDragStart={(event) => {
-                            event.dataTransfer.effectAllowed = 'move';
-                            event.dataTransfer.setData('text/plain', row.key);
-                            setDragIndex(index);
-                          }}
-                          onDragEnd={() => {
-                            setDragIndex(undefined);
-                            setDropAt(undefined);
-                          }}
-                        >
-                          <GripVertical className='size-4' />
-                        </span>
-                      </TableCell>
-                    ) : null}
-                    <TableCell>
-                      {editable ? (
-                        <Input
-                          value={row.label}
-                          aria-invalid={
-                            problemAt(index, 'label') ? true : undefined
-                          }
-                          onChange={(event) =>
-                            update(index, {
-                              label: event.target.value,
-                              ...(row.key === '' ||
-                              row.key === keyFromLabel(row.label)
-                                ? { key: keyFromLabel(event.target.value) }
-                                : {}),
-                            })
-                          }
-                        />
-                      ) : (
-                        row.label
-                      )}
-                      {problemText(index, 'label')}
-                    </TableCell>
-                    <TableCell>
-                      {editable ? (
-                        <Input
-                          value={row.key}
-                          className='font-mono text-xs'
-                          aria-invalid={
-                            problemAt(index, 'key') ? true : undefined
-                          }
-                          onChange={(event) =>
-                            update(index, { key: event.target.value })
-                          }
-                        />
-                      ) : (
-                        <code className='text-xs'>{row.key}</code>
-                      )}
-                      {problemText(index, 'key')}
-                    </TableCell>
-                    <TableCell>
-                      {editable ? (
-                        <Select
-                          items={TYPES.map((type) => ({
-                            value: type,
-                            label: t(`fieldTemplate.types.${type}`),
-                          }))}
-                          value={row.type}
-                          onValueChange={(next) =>
-                            update(index, {
-                              type: next as TemplateField['type'],
-                            })
-                          }
-                        >
-                          <SelectTrigger className='w-full'>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {TYPES.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {t(`fieldTemplate.types.${type}`)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        t(`fieldTemplate.types.${row.type}`)
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex justify-center'>
-                        <Checkbox
-                          checked={Boolean(row.required)}
-                          disabled={!editable}
-                          aria-label={t('fieldTemplate.required')}
-                          onCheckedChange={(checked) =>
-                            update(index, { required: Boolean(checked) })
-                          }
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {row.type === 'select' ? (
-                        editable ? (
-                          <>
-                            <Input
-                              value={row.optionsText}
-                              placeholder={t(
-                                'fieldTemplate.optionsPlaceholder',
-                              )}
-                              aria-invalid={
-                                problemAt(index, 'options') ? true : undefined
-                              }
-                              onChange={(event) =>
-                                update(index, {
-                                  optionsText: event.target.value,
-                                })
-                              }
-                            />
-                            {problemText(index, 'options')}
-                          </>
-                        ) : (
-                          <CellText className='max-w-64'>
-                            {(row.options ?? []).join(', ')}
-                          </CellText>
-                        )
-                      ) : (
-                        <span className='text-muted-foreground'>—</span>
-                      )}
-                    </TableCell>
+                      <Input
+                        value={row.key}
+                        className='font-mono text-xs'
+                        aria-invalid={
+                          problemAt(index, 'key') ? true : undefined
+                        }
+                        onChange={(event) =>
+                          update(index, { key: event.target.value })
+                        }
+                      />
+                    ) : (
+                      <code className='text-xs'>{row.key}</code>
+                    )}
+                    {problemText(index, 'key')}
+                  </TableCell>
+                  <TableCell>
                     {editable ? (
-                      <TableCell>
-                        <div className='flex items-center justify-end gap-0.5'>
-                          <Button
-                            size='icon'
-                            variant='ghost'
-                            aria-label={t('fieldTemplate.addBelow')}
-                            onClick={() => insertAfter(index)}
+                      <Select
+                        items={TYPES.map((type) => ({
+                          value: type,
+                          label: t(`fieldTemplate.types.${type}`),
+                        }))}
+                        value={row.type}
+                        onValueChange={(next) =>
+                          update(index, {
+                            type: next as TemplateField['type'],
+                          })
+                        }
+                      >
+                        <SelectTrigger className='w-full'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {t(`fieldTemplate.types.${type}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      t(`fieldTemplate.types.${row.type}`)
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className='flex justify-center'>
+                      <Checkbox
+                        checked={Boolean(row.required)}
+                        disabled={!editable}
+                        aria-label={t('fieldTemplate.required')}
+                        onCheckedChange={(checked) =>
+                          update(index, { required: Boolean(checked) })
+                        }
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {row.type === 'select' ? (
+                      editable ? (
+                        <>
+                          <Input
+                            value={row.optionsText}
+                            placeholder={t('fieldTemplate.optionsPlaceholder')}
+                            aria-invalid={
+                              problemAt(index, 'options') ? true : undefined
+                            }
+                            onChange={(event) =>
+                              update(index, {
+                                optionsText: event.target.value,
+                              })
+                            }
+                          />
+                          {problemText(index, 'options')}
+                        </>
+                      ) : (
+                        <CellText className='max-w-64'>
+                          {(row.options ?? []).join(', ')}
+                        </CellText>
+                      )
+                    ) : (
+                      <span className='text-muted-foreground'>—</span>
+                    )}
+                  </TableCell>
+                  {editable ? (
+                    <TableCell>
+                      <div className='flex items-center justify-end gap-0.5'>
+                        <Button
+                          size='icon'
+                          variant='ghost'
+                          aria-label={t('fieldTemplate.addBelow')}
+                          onClick={() => insertAfter(index)}
+                        >
+                          <Plus />
+                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                size='icon'
+                                variant='ghost'
+                                aria-label={
+                                  row.hidden
+                                    ? t('fieldTemplate.show')
+                                    : t('fieldTemplate.hide')
+                                }
+                                onClick={() =>
+                                  update(index, { hidden: !row.hidden })
+                                }
+                              />
+                            }
                           >
-                            <Plus />
-                          </Button>
+                            {row.hidden ? <EyeOff /> : <Eye />}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {row.hidden
+                              ? t('fieldTemplate.showTip')
+                              : t('fieldTemplate.hideTip')}
+                          </TooltipContent>
+                        </Tooltip>
+                        {(usage?.[row.key] ?? 0) > 0 ? (
                           <Tooltip>
                             <TooltipTrigger
                               render={
-                                <Button
-                                  size='icon'
-                                  variant='ghost'
-                                  aria-label={
-                                    row.hidden
-                                      ? t('fieldTemplate.show')
-                                      : t('fieldTemplate.hide')
-                                  }
-                                  onClick={() =>
-                                    update(index, { hidden: !row.hidden })
-                                  }
-                                />
+                                <span className='inline-flex' tabIndex={0} />
                               }
                             >
-                              {row.hidden ? <EyeOff /> : <Eye />}
+                              <Button
+                                size='icon'
+                                variant='ghost'
+                                disabled
+                                aria-label={t('fieldTemplate.remove')}
+                              >
+                                <Trash2 />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              {row.hidden
-                                ? t('fieldTemplate.showTip')
-                                : t('fieldTemplate.hideTip')}
+                              {t('fieldTemplate.inUse', {
+                                count: usage?.[row.key] ?? 0,
+                              })}
                             </TooltipContent>
                           </Tooltip>
-                          {(usage?.[row.key] ?? 0) > 0 ? (
-                            <Tooltip>
-                              <TooltipTrigger
-                                render={
-                                  <span className='inline-flex' tabIndex={0} />
-                                }
-                              >
-                                <Button
-                                  size='icon'
-                                  variant='ghost'
-                                  disabled
-                                  aria-label={t('fieldTemplate.remove')}
-                                >
-                                  <Trash2 />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {t('fieldTemplate.inUse', {
-                                  count: usage?.[row.key] ?? 0,
-                                })}
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <Button
-                              size='icon'
-                              variant='ghost'
-                              aria-label={t('fieldTemplate.remove')}
-                              onClick={() =>
-                                row.label.trim() || row.key
-                                  ? setRemoving(index)
-                                  : removeRow(index)
-                              }
-                            >
-                              <Trash2 />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    ) : null}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-        {error ? <p className='text-sm text-destructive'>{error}</p> : null}
-        <ConfirmDialog
-          open={removing !== undefined}
-          onOpenChange={(open) => !open && setRemoving(undefined)}
-          title={t('fieldTemplate.removeTitle', {
-            label: removing !== undefined ? rows[removing]?.label : '',
-          })}
-          description={t('fieldTemplate.removeDescription')}
-          destructive
-          confirmLabel={t('fieldTemplate.remove')}
-          onConfirm={() => {
-            if (removing !== undefined) removeRow(removing);
-            setRemoving(undefined);
-          }}
-        />
-      </CardContent>
+                        ) : (
+                          <Button
+                            size='icon'
+                            variant='ghost'
+                            aria-label={t('fieldTemplate.remove')}
+                            onClick={() =>
+                              row.label.trim() || row.key
+                                ? setRemoving(index)
+                                : removeRow(index)
+                            }
+                          >
+                            <Trash2 />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  ) : null}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      {error ? <p className='text-sm text-destructive'>{error}</p> : null}
+      <ConfirmDialog
+        open={removing !== undefined}
+        onOpenChange={(open) => !open && setRemoving(undefined)}
+        title={t('fieldTemplate.removeTitle', {
+          label: removing !== undefined ? rows[removing]?.label : '',
+        })}
+        description={t('fieldTemplate.removeDescription')}
+        destructive
+        confirmLabel={t('fieldTemplate.remove')}
+        onConfirm={() => {
+          if (removing !== undefined) removeRow(removing);
+          setRemoving(undefined);
+        }}
+      />
+    </>
+  );
+  // Embedded in a form it is a section of that form, not a card of its
+  // own.
+  return embedded ? (
+    <section className='space-y-3'>{body}</section>
+  ) : (
+    <Card className='py-0'>
+      <CardContent className='space-y-3 p-4'>{body}</CardContent>
     </Card>
   );
 }

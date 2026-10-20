@@ -1436,6 +1436,8 @@ const zhCN: AppResource = {
     assignedSince: '，{{date}} 分配',
     statusHint:
       '状态随分配、借出、归还、维修、报废等操作自动变更，不能直接修改；记录有误时，可在「更多」里修正状态。',
+    statusHintAsk:
+      '状态随分配、借出、归还、维修、报废等操作自动变更，不能直接修改；记录有误时，请联系 IT 资产经理修正。',
     followsModel: '随型号',
     startBorrower: '借用人',
     followsOrder: '随采购单',

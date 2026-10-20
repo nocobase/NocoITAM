@@ -329,7 +329,7 @@ locale })` — its own plans, the answers given — and the joiners'
   `checkCategoryReading` (`category-reading.ts`) keeps a parent that exists
   and its kind, values within bounds and fields the editor accepts, and
   names categories already called the same. The fields show beside the
-  form under it (`postlude`) in the category card's own editor, embedded (`FieldTemplateEditor`'s `embedded`: no 保存 of its own, an incomplete row stops the form's save), and are saved with it; what AI 整理 said sits in the column beside the form with a line to ask for a change (the whole form goes back as `form`, fields included, and comes back whole), and the table runs under both across the dialog; a sub-category keeps its
+  form under it (`postlude`) in the category card's own editor, embedded (`FieldTemplateEditor`'s `embedded`: no 保存 of its own, an incomplete row stops the form's save), and are saved with it; what AI 整理 said sits in the column beside the form with a line to ask for a change (the whole form goes back as `form`, fields included, and comes back whole), and the fields' editor sits under the form in its column, a section rather than a card, the dialog widened for it (the column beside stays in view as the form scrolls); a sub-category keeps its
   parent's fields and the suggestions add to them. The server's category
   readings live in `server/providers/itam/category-reading.ts`. A category has no AI 整理 tab: it is
   created rarely and has nothing to look up.

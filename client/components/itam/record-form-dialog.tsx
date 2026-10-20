@@ -94,7 +94,7 @@ export interface RecordFormDialogProps {
   readonly columns?: 1 | 2;
   /** Above the fields: what the reader should know before checking them. */
   readonly prelude?: ReactNode;
-  /** Below the fields, across the dialog: more the form saves (2026-10-20). */
+  /** Below the fields, in their column: more the form saves (2026-10-20). */
   readonly postlude?: ReactNode;
 }
 
@@ -356,9 +356,13 @@ export function RecordFormDialog({
         className={cn(
           'max-h-[90svh] overflow-y-auto',
           aside && !replacement
-            ? twoColumns
-              ? 'sm:max-w-5xl'
-              : 'sm:max-w-3xl'
+            ? postlude
+              ? // The fields' column holds a table too (a new category's
+                // extended fields): wider, so it has room beside the AI.
+                'sm:max-w-6xl'
+              : twoColumns
+                ? 'sm:max-w-5xl'
+                : 'sm:max-w-3xl'
             : // A table under the fields (a new category's extended
               // fields) wants the width a column beside them would take.
               postlude && !replacement
@@ -396,20 +400,19 @@ export function RecordFormDialog({
                   : 'grid'
               }
             >
-              {prelude ? (
-                <div className='grid min-w-0 gap-3'>
+              {prelude || postlude ? (
+                <div className='grid min-w-0 gap-4'>
                   {prelude}
                   {fieldsGrid}
+                  {postlude}
                 </div>
               ) : (
                 fieldsGrid
               )}
-              {aside}
+              {/* The column beside stays in view while the form scrolls. */}
+              {aside ? <div className='md:sticky md:top-0'>{aside}</div> : null}
             </div>
           )}
-          {/* Under the fields and the column beside them, the dialog's whole
-              width: a table wants it. */}
-          {postlude && !replacement ? postlude : null}
           {attachments && !recordId && !replacement ? (
             <AttachmentsUpload
               value={files}
