@@ -626,11 +626,11 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       ],
     },
     // AI (template 1.0.0-beta.64): the Agents plugin's pages, which it
-    // leaves to the application to route — the agents, the skill library,
-    // the model services and what runs used. Each keeps the page grant or
-    // settings item its definition declares, so it shows only to whoever
-    // may open it; the coding-tool runtimes page is left out, ITAM's agents
-    // being online ones.
+    // leaves to the application to route — the skill library, the model
+    // services and what runs used. Each keeps the page grant or settings
+    // item its definition declares, so it shows only to whoever may open it;
+    // the runtimes page is left out and the runners' agents off the menu,
+    // ITAM connecting no runner.
     {
       name: 'ai-group',
       navigation: { title: 'navigation.aiGroup', icon: Bot },
@@ -659,10 +659,12 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
           navigation: { title: 'navigation.guidance', icon: ScrollText },
           componentLoader: () => import('./pages/itam/guidance.js'),
         },
-        {
-          ...itamStyled(agentsRoute),
-          navigation: { title: 'navigation.agents', icon: Bot },
-        },
+        // Off the menu since the Agents plugin 1.0 (2026-10-20): the page
+        // lists only the agents runners report, and ITAM connects no runner
+        // (Asset Steward and the work agents are not there). Still routed,
+        // for when one is connected: add the navigation back then, with the
+        // runtimes page.
+        itamStyled(agentsRoute),
         {
           ...itamStyled(skillsRoute),
           navigation: { title: 'navigation.skills', icon: BookOpen },
