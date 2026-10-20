@@ -158,6 +158,8 @@ describe('repair triage', () => {
       modelName: 'Latitude 5480',
       purchaseDate: '2018-05-20',
       warrantyEndDate: '2021-05-20',
+      // Said outright, so the method and the first reason rest on it.
+      underWarranty: false,
       repairCount: 1,
       sameModel: {
         devicesInUse: 1,

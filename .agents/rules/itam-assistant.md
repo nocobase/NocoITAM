@@ -206,7 +206,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `ai-reading.ts`: model, age, warranty, book value when they may see
   costs, the last repairs, and how often its model was repaired in the last
   year by kind) and the model answers the kind of fault, repair / replace /
-  inspect and at most three reasons. The form fills the kind, marked
+  inspect, how to repair it (the method: vendorWarranty only under
+  warranty, which the facts state as \`underWarranty\`; null to replace) and
+  at most three reasons, the first always the warranty (2026-10-20). The
+  form fills the kind, and the method while none is chosen, marked
   请核对, and shows the rest under the fault description, which the form
   starts with since 2026-10-20 (`fieldFooters` / `autoFocusField` of
   `RecordFormDialog`); told to replace, it offers 改为创建报废, which

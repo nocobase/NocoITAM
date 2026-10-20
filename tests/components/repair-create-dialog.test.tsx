@@ -18,6 +18,7 @@ const state = vi.hoisted(() => ({
     reading: {
       faultCategory: 'screen',
       recommendation: 'replace',
+      method: 'sendOut',
       reasons: ['Eight years old'],
     } as Record<string, unknown> | null,
     said: 'Ask whether it was dropped.',
@@ -179,4 +180,32 @@ it('starts with the fault, and turns into a disposal when told to replace', asyn
     deviceId: 'd1',
     description: 'Screen flickers',
   });
+});
+
+it('fills the method from the diagnosis only while none is chosen', async () => {
+  // Out of warranty the method starts empty: the diagnosis fills it, and
+  // the vendor follows it as it does by hand.
+  state.device = { ...state.device, warrantyEndDate: '2021-05-20' };
+  const { unmount } = render(
+    <RepairCreateDialog deviceId='d1' open onOpenChange={vi.fn()} />,
+  );
+  fireEvent.change(field('faultDescription')!, {
+    target: { value: 'Screen flickers' },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'repairs.triage.ask' }));
+  });
+  expect(field('method')?.value).toBe('sendOut');
+  expect(field('vendorId')?.value).toBe('v1');
+  unmount();
+  // Under warranty the rule chose it already; the diagnosis leaves it.
+  state.device = { ...state.device, warrantyEndDate: '2099-01-01' };
+  render(<RepairCreateDialog deviceId='d1' open onOpenChange={vi.fn()} />);
+  fireEvent.change(field('faultDescription')!, {
+    target: { value: 'Screen flickers' },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'repairs.triage.ask' }));
+  });
+  expect(field('method')?.value).toBe('vendorWarranty');
 });

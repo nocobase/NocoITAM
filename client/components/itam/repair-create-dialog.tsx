@@ -29,6 +29,7 @@ import {
   REPAIR_CREATE_FIELDS,
   REPAIR_FAULT_CATEGORIES,
   REPAIR_FIELDS,
+  REPAIR_METHODS,
   REPAIRS_PATH,
 } from '@/lib/itam/operations';
 
@@ -177,9 +178,32 @@ function RepairForm({
           <TriagePanel
             deviceId={chosen}
             fault={text(values.faultDescription)}
-            onCategory={(category) => {
-              setValues((before) => ({ ...before, faultCategory: category }));
-              setMarks((before) => new Set([...before, 'faultCategory']));
+            onReading={({ category, method }) => {
+              // The kind always; the method only while nobody — the
+              // warranty rule or the person — has chosen one (2026-10-20),
+              // with the vendor following it as it does by hand.
+              const fillMethod = Boolean(method) && !values.method;
+              setValues((before) => ({
+                ...before,
+                ...(category ? { faultCategory: category } : {}),
+                ...(fillMethod
+                  ? {
+                      method,
+                      vendorId:
+                        method === 'internal'
+                          ? null
+                          : (before.vendorId ?? device.data?.vendorId ?? null),
+                    }
+                  : {}),
+              }));
+              setMarks(
+                (before) =>
+                  new Set([
+                    ...before,
+                    ...(category ? ['faultCategory'] : []),
+                    ...(fillMethod ? ['method'] : []),
+                  ]),
+              );
             }}
             onReplace={
               onReplace && chosen
@@ -286,12 +310,16 @@ function DeviceFacts({
 function TriagePanel({
   deviceId,
   fault,
-  onCategory,
+  onReading,
   onReplace,
 }: {
   readonly deviceId: string | undefined;
   readonly fault: string;
-  readonly onCategory: (category: string) => void;
+  /** What the reading fills: the kind of fault and how to repair it. */
+  readonly onReading: (reading: {
+    readonly category?: string;
+    readonly method?: string;
+  }) => void;
   /** Turns the request into a disposal, when Asset Steward says replace. */
   readonly onReplace?: () => void;
 }): ReactElement | null {
@@ -324,7 +352,8 @@ function TriagePanel({
       const category = REPAIR_FAULT_CATEGORIES.find(
         (value) => value === reading.faultCategory,
       );
-      if (category) onCategory(category);
+      const method = REPAIR_METHODS.find((value) => value === reading.method);
+      onReading({ category, method });
       setTriage({
         recommendation,
         reasons: (Array.isArray(reading.reasons) ? reading.reasons : [])
