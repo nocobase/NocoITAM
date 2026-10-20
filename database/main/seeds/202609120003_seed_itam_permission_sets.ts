@@ -115,9 +115,16 @@ const IT_PAGES = [
 /**
  * 报表 reads costs across the register, which is the Asset Manager's, and
  * so are the scheduled maintenance tasks (the scheduler plugin's 定时任务
- * page), beside the application settings the role already owns.
+ * page), beside the application settings the role already owns. 智能体工作
+ * (2026-10-16) is what the work agents do on their own; `ADDED_PAGES` in
+ * `reconcile-grants.ts` gives it to sets seeded before.
  */
-const MANAGER_PAGES = [...IT_PAGES, 'reports', 'scheduler.schedules'];
+const MANAGER_PAGES = [
+  ...IT_PAGES,
+  'reports',
+  'scheduler.schedules',
+  'agent-work',
+];
 
 interface Grant {
   readonly resource: { readonly type: string; readonly id: string };
