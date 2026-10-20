@@ -56,3 +56,25 @@ export function applyFieldSuggestion(
     changed,
   };
 }
+
+/**
+ * An adjustment of 完善 adds and changes fields, never removes one the
+ * category has (2026-10-20): asked "不扩充了", the model handed back a
+ * shorter list and the save deleted fields records may already hold. A field
+ * the category has, and the form still holds, stays (as the model changed
+ * it, if it did); deleting one is left to the editor, by hand.
+ */
+export function keepHeldFields(
+  held: readonly TemplateField[],
+  inForm: readonly TemplateField[],
+  answered: readonly TemplateField[],
+): TemplateField[] {
+  const formKeys = new Set(inForm.map((field) => field.key));
+  const byKey = new Map(answered.map((field) => [field.key, field]));
+  const kept = held.filter((field) => formKeys.has(field.key));
+  const keptKeys = new Set(kept.map((field) => field.key));
+  return [
+    ...kept.map((field) => byKey.get(field.key) ?? field),
+    ...answered.filter((field) => !keptKeys.has(field.key)),
+  ];
+}

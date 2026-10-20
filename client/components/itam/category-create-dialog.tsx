@@ -22,7 +22,6 @@ import {
   type RecordFormDialogProps,
 } from '@/components/itam/record-form-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,6 +39,7 @@ import {
 import { parseTemplate, type TemplateField } from '@/lib/itam/field-template';
 import {
   applyFieldSuggestion,
+  keepHeldFields,
   type FieldChange,
 } from '@/lib/itam/field-suggestion';
 import { errorMessage, text } from '@/lib/itam/format';
@@ -289,7 +289,9 @@ function CategoryCreateForm({
       fill(
         { ...values, ...reading.values },
         instruction
-          ? answered
+          ? record
+            ? keepHeldFields(recordTemplate, template, answered)
+            : answered
           : [
               ...baseTemplate,
               ...answered.filter((field) => !kept.has(field.key)),
@@ -551,7 +553,7 @@ function CategoryCreateForm({
               {failure && turns.length > 0 ? (
                 <p className='text-destructive'>{failure}</p>
               ) : null}
-              <Input
+              <Textarea
                 value={instruction}
                 disabled={busy}
                 maxLength={1000}
@@ -560,7 +562,11 @@ function CategoryCreateForm({
                 aria-label={t('procurement.capture.adjust')}
                 onChange={(event) => setInstruction(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                  if (
+                    event.key === 'Enter' &&
+                    !event.shiftKey &&
+                    !event.nativeEvent.isComposing
+                  ) {
                     // Enter here adjusts; it must not submit the form.
                     event.preventDefault();
                     adjust(instruction);

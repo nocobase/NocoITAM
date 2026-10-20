@@ -7,7 +7,6 @@ import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { QuickCreateDialog } from '@/components/itam/quick-create-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { listQueryParams, useApi, type ListResponse } from '@/lib/itam/api';
@@ -232,7 +231,7 @@ export function CaptureNotice({
         {/* Stacked: the column beside the form is too narrow for the
             request and its button on one line. */}
         <div className='grid gap-2'>
-          <Input
+          <Textarea
             value={instruction}
             disabled={busy}
             maxLength={1000}
@@ -241,7 +240,11 @@ export function CaptureNotice({
             aria-label={t('procurement.capture.adjust')}
             onChange={(event) => setInstruction(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+              if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing
+              ) {
                 event.preventDefault();
                 send();
               }
