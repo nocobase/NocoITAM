@@ -2031,7 +2031,7 @@ const zhCN: AppResource = {
   },
   fieldTemplate: {
     suggest: '建议字段',
-    suggesting: '正在建议字段和默认值…',
+    suggesting: '正在建议扩展字段，以及分类的规则和默认值…',
     suggested:
       '新增 {{count}} 个字段、修改 {{changed}} 个字段，核对后保存。{{said}}',
     newTag: '新增',

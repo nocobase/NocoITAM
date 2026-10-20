@@ -2121,7 +2121,7 @@ const messages = {
   },
   fieldTemplate: {
     suggest: 'Suggest fields',
-    suggesting: 'Suggesting fields and defaults…',
+    suggesting: 'Suggesting fields, and the category’s rules and defaults…',
     suggested:
       '{{count}} fields added and {{changed}} changed; check them before saving. {{said}}',
     newTag: 'New',
