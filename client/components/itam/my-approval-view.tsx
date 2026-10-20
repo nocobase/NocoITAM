@@ -1,9 +1,10 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
+import { Inbox } from 'lucide-react';
 import type { ComponentType, ReactElement } from 'react';
 
-import { CountPill } from '@/components/itam/count-pill';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useApi } from '@/lib/itam/api';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 
@@ -15,10 +16,10 @@ export interface ViewsProps {
 }
 
 /**
- * A switch between every request and those waiting on this reader's
- * decision, with how many there are: the segmented control 设置 uses for its
- * tabs (2026-10-20), where a lone outlined button beside the title read as
- * a tag. Which ones those are lives in the approval rather than the
+ * A toggle for the requests waiting on this reader's decision, with how many
+ * there are. Quiet until it matters (2026-10-20): no outline, which beside
+ * the title read as a tag; pressed it is shaded like a selected tab, and a
+ * count waiting on the reader is tinted with the primary color. Which ones those are lives in the approval rather than the
  * record, so the list route answers `filter[view]=myApproval`; a reader who
  * cannot approve this kind of request sees no toggle at all.
  */
@@ -45,21 +46,31 @@ export function createMyApprovalView(options: {
     });
     if (!permissions.approve) return null;
     const active = filter.view === 'myApproval';
+    const waiting = mine.data ?? 0;
     return (
-      <Tabs
-        value={active ? 'mine' : 'all'}
-        onValueChange={(value) =>
-          onFilter({ view: value === 'mine' ? 'myApproval' : undefined })
-        }
+      <Button
+        size='sm'
+        variant='ghost'
+        aria-pressed={active}
+        className={cn(
+          'text-muted-foreground',
+          active && 'bg-muted font-medium text-foreground',
+        )}
+        onClick={() => onFilter({ view: active ? undefined : 'myApproval' })}
       >
-        <TabsList>
-          <TabsTrigger value='all'>{t('common.all')}</TabsTrigger>
-          <TabsTrigger value='mine'>
-            {t(label)}
-            <CountPill>{mine.data ?? 0}</CountPill>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+        <Inbox data-icon='inline-start' />
+        {t(label)}
+        <span
+          className={cn(
+            'rounded-full px-1.5 text-xs leading-5 font-medium tabular-nums',
+            waiting > 0
+              ? 'bg-primary/10 text-primary'
+              : 'bg-muted text-muted-foreground',
+          )}
+        >
+          {waiting}
+        </span>
+      </Button>
     );
   };
 }
