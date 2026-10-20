@@ -269,9 +269,8 @@ export function FieldTemplateEditor({
         disabled={suggesting || saving}
         onClick={() => void suggest()}
       >
-        {suggesting
-          ? t('fieldTemplate.suggesting')
-          : t('fieldTemplate.suggest')}
+        {/* Greyed while it runs; the card's own line says what is going on. */}
+        {t('fieldTemplate.suggest')}
       </AiShortcut>
     ) : null;
 
@@ -417,7 +416,9 @@ export function FieldTemplateEditor({
             {suggestedExtra}
           </div>
         ) : null}
-        {rows.length === 0 ? (
+        {/* While fields are being suggested, the empty card's offer to add
+            one by hand would compete with them; it waits. */}
+        {suggesting && rows.length === 0 ? null : rows.length === 0 ? (
           <div className='flex flex-col items-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground'>
             {t('fieldTemplate.empty')}
             {/* The only thing to do on an empty card, so it reads as the

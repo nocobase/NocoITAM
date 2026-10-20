@@ -1115,7 +1115,7 @@ const messages = {
     new: 'New category',
     newChild: 'New sub-category',
     noneOfKind: 'No categories of this type yet',
-    suggestedDefaults: 'Suggested defaults',
+    suggestedDefaults: 'Suggested rules and defaults',
     applyDefaults: 'Apply',
     defaultsApplied: 'Applied',
     appliesToInherited: 'Inherited from the parent',
@@ -1156,6 +1156,19 @@ const messages = {
   capture: { adjustPlaceholder: 'Tell the AI what to change' },
   // AI lookup on a model's or software product's page.
   masterEnrich: { action: 'Look up with AI' },
+  categoryCapture: {
+    description:
+      'Write the category and what it is for; AI fills its parent, rules, defaults and extended fields for you to check before saving',
+    placeholder:
+      'The category and what it is for, e.g. Projector, for meeting rooms',
+    duplicates: 'A category with this name exists: ',
+    noFields: 'No extended fields suggested.',
+    removeField: 'Remove the field {{name}}',
+    fieldsHint:
+      'These fields are saved with the category; change them later under its extended fields.',
+    inherited:
+      'Keeps {{count}} fields of the parent category; below are the suggested additions.',
+  },
   masterCapture: {
     description: {
       models:

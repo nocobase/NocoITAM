@@ -48,4 +48,5 @@ export type AiReadingTask =
   | 'repairTriage'
   | 'purchaseQuote'
   | 'quoteRecommendation'
-  | 'categoryFields';
+  | 'categoryFields'
+  | 'category';

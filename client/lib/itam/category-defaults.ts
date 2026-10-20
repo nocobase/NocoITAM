@@ -1,5 +1,10 @@
-/** The defaults a category's new records start with, as the form names them. */
+/**
+ * A category's rules and the defaults its new records start with, as the
+ * form names them (the rules since 2026-10-20).
+ */
 export const CATEGORY_DEFAULT_KEYS = [
+  'requiresSerial',
+  'assignableToPerson',
   'depreciationMethod',
   'usefulLifeMonths',
   'residualRate',
@@ -9,7 +14,7 @@ export const CATEGORY_DEFAULT_KEYS = [
 ] as const;
 export type CategoryDefaultKey = (typeof CATEGORY_DEFAULT_KEYS)[number];
 export type CategoryDefaults = Partial<
-  Record<CategoryDefaultKey, string | number>
+  Record<CategoryDefaultKey, string | number | boolean>
 >;
 
 /**
@@ -19,9 +24,13 @@ export type CategoryDefaults = Partial<
 export function categoryDefaultsOf(value: unknown): CategoryDefaults {
   if (!value || typeof value !== 'object') return {};
   const raw = value as Record<string, unknown>;
-  const out: Record<string, string | number> = {};
+  const out: Record<string, string | number | boolean> = {};
   for (const key of CATEGORY_DEFAULT_KEYS) {
     const item = raw[key];
+    if (key === 'requiresSerial' || key === 'assignableToPerson') {
+      if (typeof item === 'boolean') out[key] = item;
+      continue;
+    }
     if (key === 'depreciationMethod') {
       if (item === 'none' || item === 'straightLine') out[key] = item;
       continue;

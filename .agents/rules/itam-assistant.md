@@ -320,7 +320,18 @@ locale })` — its own plans, the answers given — and the joiners'
   audit cycle), read against its current ones and similar categories';
   those that differ show under the sentence, current beside suggested, and
   采用 writes them to the category (`CategoryDefaultsSuggestion`). The
-  shortcut reads 建议字段: the sparkle already says AI. A category has no AI 整理 tab: it is
+  shortcut reads 建议字段: the sparkle already says AI. The rules
+  (需要序列号, 可分配给人员) are suggested with the defaults. 创建分类 and
+  创建子分类 open on **AI 整理** too (`CategoryCreateDialog`, task
+  `category` under `categories.create`): the reader writes what the
+  category is, and the model fills the form — parent, kind, rules, defaults
+  — and its extended fields, read against every category on the books;
+  `checkCategoryReading` (`category-reading.ts`) keeps a parent that exists
+  and its kind, values within bounds and fields the editor accepts, and
+  names categories already called the same. The fields show beside the
+  form, each removable, and are saved with it; a sub-category keeps its
+  parent's fields and the suggestions add to them. The server's category
+  readings live in `server/providers/itam/category-reading.ts`. A category has no AI 整理 tab: it is
   created rarely and has nothing to look up.
 - An AI create meets the page dialog's bar: `REQUIRED_ON_CREATE` in
   `server/routes/itam/ai-records.ts` lists what each create dialog requires

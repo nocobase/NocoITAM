@@ -1090,7 +1090,7 @@ const zhCN: AppResource = {
     new: '创建分类',
     newChild: '创建子分类',
     noneOfKind: '暂无这一类的分类',
-    suggestedDefaults: '建议的默认值',
+    suggestedDefaults: '建议的规则和默认值',
     applyDefaults: '采用',
     defaultsApplied: '已采用',
     appliesToInherited: '继承上级分类',
@@ -1127,6 +1127,16 @@ const zhCN: AppResource = {
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
   // AI 补充 on a model's or software product's page.
   masterEnrich: { action: 'AI 补充' },
+  categoryCapture: {
+    description:
+      '写上分类名称和用途，AI 补全上级、规则、默认值和扩展字段，核对后保存',
+    placeholder: '分类名称和用途，例如：投影仪，会议室用',
+    duplicates: '已有同名分类：',
+    noFields: '没有建议的扩展字段。',
+    removeField: '去掉字段「{{name}}」',
+    fieldsHint: '这些字段随分类一起保存，之后可在分类的扩展字段里修改。',
+    inherited: '沿用上级分类的 {{count}} 个字段，下面是新增的建议。',
+  },
   masterCapture: {
     description: {
       models: '写上制造商和型号，AI 补全其余信息，核对后保存',

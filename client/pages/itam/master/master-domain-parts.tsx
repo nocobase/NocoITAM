@@ -7,6 +7,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { EmptyState } from '@/components/itam/empty-state';
+import { CategoryCreateDialog } from '@/components/itam/category-create-dialog';
 import { CategoryDefaultsSuggestion } from '@/components/itam/category-defaults-suggestion';
 import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
 import { categoryDefaultsOf } from '@/lib/itam/category-defaults';
@@ -426,61 +427,77 @@ export function NewChildAction({
   const permissions = useCollectionPermissions(collection.name, ['create']);
   if (!permissions.create) return null;
   const fields = collection.fields;
+  const childInitial = {
+    ...Object.fromEntries(
+      fields
+        .filter(
+          (field) =>
+            field.form !== false &&
+            ![
+              collection.nameField,
+              'parentId',
+              'sort',
+              'address',
+              'type',
+              'notes',
+            ].includes(field.key),
+        )
+        .map((field) => [
+          field.key,
+          field.type === 'boolean'
+            ? Boolean(record[field.key])
+            : (record[field.key] ?? null),
+        ]),
+    ),
+    parentId: record.id,
+  };
   return (
     <>
       <Button variant='outline' onClick={() => setOpen(true)}>
         <Plus data-icon='inline-start' />
         {t(`${collection.i18n}.newChild`)}
       </Button>
-      <RecordFormDialog
-        key={open ? 'child' : 'child-closed'}
-        open={open}
-        onOpenChange={(next) => {
-          setOpen(next);
-          if (!next) mutations.create.reset();
-        }}
-        title={t(`${collection.i18n}.newChild`)}
-        fields={fields}
-        initial={{
-          ...Object.fromEntries(
-            fields
-              .filter(
-                (field) =>
-                  field.form !== false &&
-                  ![
-                    collection.nameField,
-                    'parentId',
-                    'sort',
-                    'address',
-                    'type',
-                    'notes',
-                  ].includes(field.key),
-              )
-              .map((field) => [
-                field.key,
-                field.type === 'boolean'
-                  ? Boolean(record[field.key])
-                  : (record[field.key] ?? null),
-              ]),
-          ),
-          parentId: record.id,
-        }}
-        submitting={mutations.create.isPending}
-        error={mutations.create.error}
-        onSubmit={async (values) => {
-          const created = await mutations.create.mutateAsync({
-            ...values,
-            parentId: record.id,
-            // A sub-category starts with its parent's extended fields.
-            ...(collection.name === 'categories' &&
-            Array.isArray(record.fieldTemplate)
-              ? { fieldTemplate: record.fieldTemplate }
-              : {}),
-          });
-          setOpen(false);
-          await navigate(`/${collection.route}/${created.id}`);
-        }}
-      />
+      {/* A sub-category is created with AI 整理 too (2026-10-20), keeping
+          its parent's extended fields. */}
+      {collection.name === 'categories' ? (
+        <CategoryCreateDialog
+          open={open}
+          onOpenChange={setOpen}
+          title={t(`${collection.i18n}.newChild`)}
+          initial={childInitial}
+          baseTemplate={parseTemplate(record.fieldTemplate)}
+          onCreated={(created) => {
+            void navigate(`/${collection.route}/${created.id}`);
+          }}
+        />
+      ) : (
+        <RecordFormDialog
+          key={open ? 'child' : 'child-closed'}
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (!next) mutations.create.reset();
+          }}
+          title={t(`${collection.i18n}.newChild`)}
+          fields={fields}
+          initial={childInitial}
+          submitting={mutations.create.isPending}
+          error={mutations.create.error}
+          onSubmit={async (values) => {
+            const created = await mutations.create.mutateAsync({
+              ...values,
+              parentId: record.id,
+              // A sub-category starts with its parent's extended fields.
+              ...(collection.name === 'categories' &&
+              Array.isArray(record.fieldTemplate)
+                ? { fieldTemplate: record.fieldTemplate }
+                : {}),
+            });
+            setOpen(false);
+            await navigate(`/${collection.route}/${created.id}`);
+          }}
+        />
+      )}
     </>
   );
 }

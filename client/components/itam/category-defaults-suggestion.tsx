@@ -28,13 +28,18 @@ export function CategoryDefaultsSuggestion({
   const { t } = useTranslation();
   const [state, setState] = useState<'idle' | 'saving' | 'done'>('idle');
   const [error, setError] = useState<string>();
-  const changed = KEYS.filter(
-    (key) =>
-      defaults[key] !== undefined &&
-      String(defaults[key]) !== (text(record[key]) ?? ''),
+  const rule = (key: Key) =>
+    key === 'requiresSerial' || key === 'assignableToPerson';
+  const changed = KEYS.filter((key) =>
+    defaults[key] === undefined
+      ? false
+      : rule(key)
+        ? Boolean(record[key]) !== defaults[key]
+        : String(defaults[key]) !== text(record[key]),
   );
   if (changed.length === 0) return null;
   const shown = (key: Key, value: unknown): string => {
+    if (rule(key)) return t(value ? 'common.yes' : 'common.no');
     const raw = text(value);
     if (!raw) return '—';
     if (key === 'depreciationMethod')

@@ -6,7 +6,7 @@ import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
 
 // What the model was asked, and its answer: two fields for a printer.
-const model = vi.hoisted(() => ({ asked: [] as string[] }));
+const model = vi.hoisted(() => ({ asked: [] as string[], parentId: '' }));
 vi.mock('../../server/providers/itam/ai-model.js', async (importOriginal) => ({
   ...(await importOriginal<
     typeof import('../../server/providers/itam/ai-model.js')
@@ -16,6 +16,27 @@ vi.mock('../../server/providers/itam/ai-model.js', async (importOriginal) => ({
     ask: async () => '',
     askJson: async (content: string) => {
       model.asked.push(content);
+      // AI 整理 of a new category: under Office, with one field whose key
+      // the editor would refuse and a kind its parent overrules.
+      if (content.includes('Fill the new category form'))
+        return {
+          reading: {
+            name: 'Printer',
+            parentId: model.parentId,
+            appliesTo: 'consumable',
+            requiresSerial: true,
+            assignableToPerson: false,
+            usefulLifeMonths: 60,
+            residualRate: 7,
+            fieldTemplate: [
+              { key: 'ppm', label: 'Speed', type: 'number' },
+              { key: '1bad', label: 'Bad', type: 'text' },
+              { key: 'size', label: 'Paper', type: 'select' },
+            ],
+            uncertain: ['assignableToPerson'],
+          },
+          said: 'Check the rules.',
+        };
       return {
         reading: {
           fields: [
@@ -66,6 +87,7 @@ describe('suggesting a category’s fields', () => {
     await app.mount(masterDataRoutes);
     await app.mount(aiRoutes);
     const parent = await created({ name: 'Office', appliesTo: 'device' });
+    model.parentId = parent;
     await created({
       name: 'Scanner',
       parentId: parent,
@@ -104,5 +126,47 @@ describe('suggesting a category’s fields', () => {
   it('is refused to whoever may not edit a category', async () => {
     expect((await ask(employee)).status).toBe(403);
     expect(model.asked).toEqual([]);
+  });
+
+  it('fills a new category, checked: its parent’s kind, valid fields and the same name already there', async () => {
+    const response = await app.request('/api/itam/ai/read', {
+      ...json({
+        task: 'category',
+        material: 'Printer for the office floor',
+        context: {},
+        language: 'en-US',
+      }),
+      ...manager,
+    });
+    expect(response.status).toBe(200);
+    const { data } = (await response.json()) as {
+      data: {
+        reading: {
+          values: Record<string, unknown>;
+          fieldTemplate: { key: string }[];
+          uncertain: string[];
+          duplicates: { name: string }[];
+        };
+      };
+    };
+    expect(data.reading.values).toEqual({
+      name: 'Printer',
+      parentId: model.parentId,
+      // The parent's kind, not the one the model wrote.
+      appliesTo: 'device',
+      requiresSerial: true,
+      assignableToPerson: false,
+      usefulLifeMonths: 60,
+    });
+    expect(data.reading.fieldTemplate.map((field) => field.key)).toEqual([
+      'ppm',
+    ]);
+    expect(data.reading.uncertain).toEqual(['assignableToPerson']);
+    // The seeds' printer category and the test's own.
+    expect(data.reading.duplicates.map((row) => row.name).sort()).toEqual([
+      'Office / Printer',
+      'Peripherals / Printer',
+    ]);
+    expect(model.asked.at(-1)).toContain('"path":"Office / Scanner"');
   });
 });

@@ -77,7 +77,9 @@ export const STATUS_TONE: Readonly<Record<DeviceStatus, string>> = {
   inStock: 'bg-primary/10 text-primary',
   inUse: 'bg-primary text-primary-foreground',
   onLoan: 'bg-primary/20 text-primary',
-  inRepair: 'bg-destructive/10 text-destructive',
+  // In progress, not wrong (2026-10-20): amber as 审批中 is; red is kept
+  // for what has gone wrong — pending disposal, lost.
+  inRepair: 'bg-warning text-warning-foreground',
   retired: 'bg-muted text-muted-foreground',
   pendingDisposal: 'bg-destructive/10 text-destructive',
   disposed: 'bg-muted text-muted-foreground',
