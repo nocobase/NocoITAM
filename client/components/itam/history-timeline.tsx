@@ -684,6 +684,19 @@ function TimelineRow({
                     />
                   </span>
                 ) : null}
+                {folded.length > 0 ? (
+                  // Right after the sentence that counts them (2026-10-20).
+                  <>
+                    {' '}
+                    <button
+                      type='button'
+                      className='text-link underline-offset-4 hover:underline'
+                      onClick={() => setOpen((current) => !current)}
+                    >
+                      {t(open ? 'history.hideFields' : 'history.showFields')}
+                    </button>
+                  </>
+                ) : null}
                 {item.origin === 'ai' || item.origin === 'agent' ? (
                   // A tag for what AI wrote (2026-10-20): AI 整理 / 完善, or
                   // a plan Asset Steward proposed, saved by the person named.
@@ -706,40 +719,27 @@ function TimelineRow({
                 {timeLabel(item.createdAt, language, t('comments.justNow'))}
               </time>
             </div>
-            {folded.length > 0 ? (
-              <>
-                <button
-                  type='button'
-                  className='mt-0.5 text-xs text-link underline-offset-4 hover:underline'
-                  onClick={() => setOpen((current) => !current)}
-                >
-                  {open
-                    ? t('history.hideFields')
-                    : t('history.showFields', { count: folded.length })}
-                </button>
-                {open ? (
-                  <ul className='mt-1 space-y-0.5 border-l border-border pl-3 text-xs'>
-                    {folded.map((change) => (
-                      <li key={change.id}>
-                        <span className='text-muted-foreground'>
-                          {fieldLabel(change)}
-                        </span>{' '}
-                        {change.field ? (
-                          <ChangeValue
-                            field={fieldByKey.get(change.field)}
-                            fieldKey={change.field}
-                            oldValue={change.oldValue}
-                            newValue={change.newValue}
-                            names={names}
-                            keyLabels={keyLabels}
-                            t={t}
-                          />
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </>
+            {folded.length > 0 && open ? (
+              <ul className='mt-1 space-y-0.5 border-l border-border pl-3 text-xs'>
+                {folded.map((change) => (
+                  <li key={change.id}>
+                    <span className='text-muted-foreground'>
+                      {fieldLabel(change)}
+                    </span>{' '}
+                    {change.field ? (
+                      <ChangeValue
+                        field={fieldByKey.get(change.field)}
+                        fieldKey={change.field}
+                        oldValue={change.oldValue}
+                        newValue={change.newValue}
+                        names={names}
+                        keyLabels={keyLabels}
+                        t={t}
+                      />
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
             ) : null}
           </>
         }

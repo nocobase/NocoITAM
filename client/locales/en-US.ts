@@ -285,8 +285,7 @@ const messages = {
     },
     fieldsChanged_one: '{{count}} field updated',
     fieldsChanged_other: '{{count}} fields updated',
-    showFields_one: 'Show {{count}} field',
-    showFields_other: 'Show {{count}} fields',
+    showFields: 'Show',
     hideFields: 'Hide',
     columns: {
       time: 'Time',

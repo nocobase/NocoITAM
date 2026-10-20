@@ -277,8 +277,7 @@ const zhCN: AppResource = {
     },
     fieldsChanged_one: '更新了 {{count}} 个字段',
     fieldsChanged_other: '更新了 {{count}} 个字段',
-    showFields_one: '查看 {{count}} 个字段',
-    showFields_other: '查看 {{count}} 个字段',
+    showFields: '查看',
     hideFields: '收起',
     columns: {
       time: '时间',
