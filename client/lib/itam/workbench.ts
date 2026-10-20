@@ -17,6 +17,7 @@ export const REMINDER_KINDS = [
   'entitlementEnded',
   'idleDevice',
   'auditOverdue',
+  'departmentMismatch',
   'entitlementOverAllocated',
   'lowAccessories',
   'lowConsumables',
@@ -41,7 +42,13 @@ export const REMINDER_GROUPS: readonly {
     // rule here is about a device. The one rule the other kinds have —
     // 低于水位 — is in `supply` with the goods coming in.
     key: 'devices',
-    kinds: ['warrantyExpiring', 'idleDevice', 'auditOverdue'],
+    kinds: [
+      'warrantyExpiring',
+      'idleDevice',
+      'auditOverdue',
+      // On the department its holder has left (2026-10-20).
+      'departmentMismatch',
+    ],
   },
   {
     key: 'entitlements',
@@ -73,6 +80,7 @@ export const REMINDER_ROUTES: Readonly<Record<ReminderKind, string>> = {
   entitlementEnded: '/entitlements?view=ended',
   idleDevice: '/devices?view=idle',
   auditOverdue: '/devices?view=auditOverdue',
+  departmentMismatch: '/devices?view=departmentMismatch',
   entitlementOverAllocated: '/entitlements?view=overAllocated',
   lowAccessories: '/accessories?view=lowStock',
   lowConsumables: '/consumables?view=lowStock',

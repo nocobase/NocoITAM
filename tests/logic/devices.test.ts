@@ -460,6 +460,47 @@ describe('devices', () => {
     expect(log.map((entry) => Number(entry.version))).toEqual([1, 2, 3, 4]);
   });
 
+  it('lists the devices whose department is not their holder’s', async () => {
+    const device = await createDevice();
+    await post(`/${device.id}/assign`, {
+      targetType: 'person',
+      targetId: fixture.personId,
+    });
+    const mismatched = async () =>
+      (
+        (await (
+          await app.request(
+            '/api/itam/devices?filter[view]=departmentMismatch',
+            manager,
+          )
+        ).json()) as { data: { id: string }[] }
+      ).data.map((row) => row.id);
+    // Assigning copied the holder's department: nothing to list.
+    expect(await mismatched()).toEqual([]);
+    // The holder moves; the device stays on the department it was on.
+    const sales = (
+      (await (
+        await app.request('/api/itam/master/departments', {
+          ...json({ name: 'Field Sales' }),
+          ...manager,
+        })
+      ).json()) as { data: { id: string } }
+    ).data.id;
+    const moved = await app.request(
+      `/api/itam/master/people/${fixture.personId}`,
+      { ...json({ departmentId: sales }), method: 'PATCH', ...manager },
+    );
+    expect(moved.status).toBe(200);
+    expect(await mismatched()).toEqual([device.id]);
+    // Put right by hand, it is no longer listed.
+    await app.request(`/api/itam/devices/${device.id}`, {
+      ...json({ departmentId: sales }),
+      method: 'PATCH',
+      ...manager,
+    });
+    expect(await mismatched()).toEqual([]);
+  });
+
   it('honours reservations and loans', async () => {
     const device = await createDevice();
     const reserved = await post(`/${device.id}/reserve`, {

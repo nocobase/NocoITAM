@@ -5,7 +5,7 @@ import {
   type ServiceToken,
 } from '@nocobase/service-provider';
 
-import type { DeviceService } from './devices.js';
+import { departmentMismatches, type DeviceService } from './devices.js';
 import { asText, type Row } from './collection-query.js';
 import { recoveryPlan } from './recovery.js';
 import type { SettingsService } from './settings.js';
@@ -33,6 +33,8 @@ export const REMINDER_KINDS = [
   'entitlementEnded',
   'idleDevice',
   'auditOverdue',
+  // A device still on the department its holder has left (2026-10-20).
+  'departmentMismatch',
   'entitlementOverAllocated',
   // One rule per kind kept as a quantity (2026-10-05): each opens its own
   // page, and "below its level" means a different errand for a cable, a
@@ -421,6 +423,15 @@ export function createMaintenanceService(dependencies: {
     for (const device of auditOverdue)
       rows.push({
         kind: 'auditOverdue',
+        subjectType: 'devices',
+        subjectId: String(device.id),
+        severity: 'info',
+        data: { deviceNo: device.deviceNo, name: device.name },
+      });
+
+    for (const device of await departmentMismatches(database))
+      rows.push({
+        kind: 'departmentMismatch',
         subjectType: 'devices',
         subjectId: String(device.id),
         severity: 'info',

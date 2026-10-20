@@ -423,6 +423,39 @@ export function computeBookValue(
   };
 }
 
+/**
+ * The devices out with a person whose department is not the person's own
+ * (2026-10-20): assigning copies the holder's department onto the device,
+ * and it stays there when the person later moves — a device's department
+ * is whose books it is on, so nothing rewrites it unasked. This is the check
+ * that lists them, as the device list's `departmentMismatch` view and
+ * 需要关注's rule of that name. A holder with no department is no mismatch.
+ */
+export async function departmentMismatches(
+  database: DatabaseManager,
+): Promise<readonly Row[]> {
+  const rows = await database
+    .query()
+    .selectFrom('devices')
+    .innerJoin('people', 'people.id', 'devices.assigneeId')
+    .select([
+      'devices.id as id',
+      'devices.deviceNo as deviceNo',
+      'devices.name as name',
+      'devices.departmentId as departmentId',
+      'people.departmentId as holderDepartmentId',
+    ])
+    .where('devices.assigneeType', '=', 'person')
+    .where('devices.status', '!=', 'disposed')
+    .execute<Row>();
+  return rows.filter(
+    (row) =>
+      row.holderDepartmentId !== null &&
+      row.holderDepartmentId !== undefined &&
+      row.holderDepartmentId !== row.departmentId,
+  );
+}
+
 export function createDeviceService(
   database: DatabaseManager,
   history: HistoryService,
@@ -1091,6 +1124,13 @@ export function createDeviceService(
         return { filter: { status: 'inRepair' } };
       case 'createdThisMonth':
         return { filter: { 'createdAt:gte': monthStart } };
+      case 'departmentMismatch': {
+        const ids = (await departmentMismatches(database)).map((row) =>
+          String(row.id),
+        );
+        // `''` is nobody's id: an empty list rather than every device.
+        return { filter: { id: ids.length > 0 ? ids : [''] } };
+      }
       case 'disposedThisMonth':
         return { filter: { status: 'disposed', 'updatedAt:gte': monthStart } };
       default:
