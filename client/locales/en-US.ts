@@ -1448,14 +1448,14 @@ const messages = {
       reserve: 'Reserve',
       unreserve: 'Cancel the reservation',
       markLost: 'Mark lost',
-      restore: 'Found',
+      restore: 'Restore',
       retire: 'Retire',
       reactivate: 'Reactivate',
       sendToRepair: 'Send to repair',
       repairDone: 'Back from repair',
       markPendingDisposal: 'To pending disposal',
       dispose: 'Dispose',
-      correct: 'Correct the status',
+      correct: 'Correct status',
     },
     title: 'Devices',
     showHiddenFields_one: 'Show {{count}} hidden field',
@@ -2729,7 +2729,7 @@ const messages = {
         return:
           'A return can also send the device straight to repair, pending disposal or retirement instead of stock.',
         correct:
-          'Correct the status: with a reason, any status but disposed can be corrected to in stock, in use, on loan, in repair, retired or lost.',
+          'Correct status: with a reason, any status but disposed can be corrected to in stock, in use, on loan, in repair, retired or lost.',
         unchanged:
           'Reserving, cancelling a reservation and transferring keep the status.',
       },

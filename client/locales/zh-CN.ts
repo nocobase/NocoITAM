@@ -1400,14 +1400,14 @@ const zhCN: AppResource = {
       reserve: '预留',
       unreserve: '取消预留',
       markLost: '标记丢失',
-      restore: '找回',
+      restore: '恢复',
       retire: '停用',
       reactivate: '重新启用',
       sendToRepair: '送修',
       repairDone: '维修完成',
       markPendingDisposal: '转待报废',
       dispose: '执行报废',
-      correct: '更正状态',
+      correct: '修正状态',
     },
     title: '设备',
     showHiddenFields_one: '显示 {{count}} 个隐藏字段',
@@ -2569,12 +2569,12 @@ const zhCN: AppResource = {
       devicesOmitted: {
         title: '为便于阅读，图中只画了主要流程，以下操作未画出：',
         markLost:
-          '标记丢失：使用中、借出中、库存中、已停用的设备都可以标记丢失，找回后回到库存中。',
+          '标记丢失：使用中、借出中、库存中、已停用的设备都可以标记丢失，找回后可恢复为库存中。',
         markPendingDisposal:
           '转待报废：报废单获批，或维修判定无法修复时，设备从除已报废外的任何状态转为待报废。',
         return: '归还时也可以直接送修、转待报废或停用，而不回库存。',
         correct:
-          '更正状态：除已报废外，任何状态都可以填写原因后更正为库存中、使用中、借出中、维修中、已停用或已丢失。',
+          '修正状态：除已报废外，任何状态都可以填写原因后更正为库存中、使用中、借出中、维修中、已停用或已丢失。',
         unchanged: '预留、取消预留、调拨不改变状态。',
       },
       diagramHint:
