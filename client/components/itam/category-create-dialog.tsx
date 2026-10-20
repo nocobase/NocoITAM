@@ -251,19 +251,25 @@ function CategoryCreateForm({
           </p>
         ) : undefined
       }
+      // What AI 整理 said, beside the form; the fields it suggested are
+      // part of what the form saves, so they sit under it (2026-10-20).
       aside={
         filled ? (
-          <div className='grid gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
-            <p className='flex gap-2'>
-              <Sparkles className='mt-0.5 size-4 shrink-0 text-primary' />
-              <span className='min-w-0'>
-                {said ?? t('masterCapture.filled')}
-              </span>
-            </p>
-            <p className='pt-1 font-medium'>{t('fieldTemplate.title')}</p>
+          <p className='flex gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
+            <Sparkles className='mt-0.5 size-4 shrink-0 text-primary' />
+            <span className='min-w-0'>{said ?? t('masterCapture.filled')}</span>
+          </p>
+        ) : undefined
+      }
+      postlude={
+        filled ? (
+          <div className='grid gap-2 rounded-lg bg-muted/40 p-3 text-sm'>
+            <p className='font-medium'>{t('fieldTemplate.title')}</p>
             {baseTemplate.length > 0 ? (
               <p className='text-xs text-muted-foreground'>
-                {t('categoryCapture.inherited', { count: baseTemplate.length })}
+                {t('categoryCapture.inherited', {
+                  count: baseTemplate.length,
+                })}
               </p>
             ) : null}
             {template.length === 0 ? (

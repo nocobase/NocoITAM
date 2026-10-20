@@ -94,6 +94,8 @@ export interface RecordFormDialogProps {
   readonly columns?: 1 | 2;
   /** Above the fields: what the reader should know before checking them. */
   readonly prelude?: ReactNode;
+  /** Below the fields, in the same column: more the form saves (2026-10-20). */
+  readonly postlude?: ReactNode;
 }
 
 /** A form's starting values: what it was given, else each field's default. */
@@ -140,6 +142,7 @@ export function RecordFormDialog({
   section,
   columns: columnsOption,
   prelude,
+  postlude,
 }: RecordFormDialogProps): ReactElement {
   const columns = columnsOption ?? (fields.length > 4 ? 2 : 1);
   const [files, setFiles] = useState<readonly FileRecord[]>([]);
@@ -389,10 +392,11 @@ export function RecordFormDialog({
                   : 'grid'
               }
             >
-              {prelude ? (
+              {prelude || postlude ? (
                 <div className='grid min-w-0 gap-3'>
                   {prelude}
                   {fieldsGrid}
+                  {postlude}
                 </div>
               ) : (
                 fieldsGrid

@@ -329,7 +329,7 @@ locale })` — its own plans, the answers given — and the joiners'
   `checkCategoryReading` (`category-reading.ts`) keeps a parent that exists
   and its kind, values within bounds and fields the editor accepts, and
   names categories already called the same. The fields show beside the
-  form, each removable, and are saved with it; a sub-category keeps its
+  form under it (`postlude`), each removable, and are saved with it — not in the column beside it, which holds what AI 整理 said; a sub-category keeps its
   parent's fields and the suggestions add to them. The server's category
   readings live in `server/providers/itam/category-reading.ts`. A category has no AI 整理 tab: it is
   created rarely and has nothing to look up.
