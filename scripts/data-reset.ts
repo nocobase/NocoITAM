@@ -147,28 +147,24 @@ async function main(): Promise<void> {
           .where('userId' as never, '=', id)
           .execute();
     for (const { id } of accounts) {
-      // The AI plugin's conversations reference the user, so an account
-      // that talked to the assistant cannot be deleted before them. They
-      // were the demo account's, and go with it.
-      const sessions = await database
+      // The Agents plugin's conversations, their messages and chat
+      // preference were the demo account's, and go with it. Since Agents
+      // 1.0 (2026-10-20) they live in `ag*` tables; the old AI plugin's
+      // `ai*` tables are gone, and reading them stopped the reset.
+      const conversations = await database
         .query()
-        .selectFrom('aiConversations' as never)
-        .select(['sessionId' as never])
+        .selectFrom('agConversations' as never)
+        .select(['id' as never])
         .where('userId' as never, '=', id)
-        .execute<{ sessionId: string }>();
-      const sessionIds = sessions.map((row) => row.sessionId);
-      if (sessionIds.length > 0)
-        for (const table of ['aiToolMessages', 'aiMessages'] as const)
-          await database
-            .query()
-            .deleteFrom(table as never)
-            .where('sessionId' as never, 'in', sessionIds as never)
-            .execute();
-      for (const table of [
-        'aiUsageEvents',
-        'aiConversations',
-        'usersAiEmployees',
-      ] as const)
+        .execute<{ id: string }>();
+      const conversationIds = conversations.map((row) => row.id);
+      if (conversationIds.length > 0)
+        await database
+          .query()
+          .deleteFrom('agConversationMessages' as never)
+          .where('conversationId' as never, 'in', conversationIds as never)
+          .execute();
+      for (const table of ['agConversations', 'agChatPreferences'] as const)
         await database
           .query()
           .deleteFrom(table as never)
