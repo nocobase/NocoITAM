@@ -624,12 +624,23 @@ export function FieldTemplateEditor({
                             {t('fieldTemplate.newTag')}
                           </span>
                         ) : changedRows.has(row.rid) ? (
-                          <span
-                            className='shrink-0 cursor-help rounded-md bg-warning px-1.5 py-0.5 text-xs font-medium text-warning-foreground'
-                            title={changedRows.get(row.rid)}
-                          >
-                            {t('fieldTemplate.changedTag')}
-                          </span>
+                          // What it was and why, on hover at once: a
+                          // native title came late or not at all.
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <span
+                                  tabIndex={0}
+                                  className='shrink-0 cursor-help rounded-md bg-warning px-1.5 py-0.5 text-xs font-medium text-warning-foreground'
+                                />
+                              }
+                            >
+                              {t('fieldTemplate.changedTag')}
+                            </TooltipTrigger>
+                            <TooltipContent className='max-w-80'>
+                              {changedRows.get(row.rid)}
+                            </TooltipContent>
+                          </Tooltip>
                         ) : null}
                       </div>
                     ) : (
