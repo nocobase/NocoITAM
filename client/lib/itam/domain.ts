@@ -173,6 +173,11 @@ export interface DomainConfig {
   /** Extended fields from the record's category template (default true). */
   readonly extendedFields?: boolean;
   /**
+   * The detail group the extended fields follow; default the first. A
+   * model's come after its lifecycle, its own facts first (2026-10-20).
+   */
+  readonly extendedFieldsAfter?: string;
+  /**
    * A record this one's tabs depend on, loaded beside it (a model's
    * category decides whether it has devices or stock).
    */

@@ -478,6 +478,16 @@ describe('CSV import / export and demo data', () => {
     }>(generated);
     expect(summary.generated).toBe(true);
     expect(summary.counts.devices).toBeGreaterThanOrEqual(12);
+    // Every model has its part code and a picture, the demo's own too
+    // (2026-10-20).
+    const models = (await (await get('master/models?pageSize=200')).json()) as {
+      data: { name: string; code: string | null; imageFileId: string | null }[];
+    };
+    expect(
+      models.data
+        .filter((model) => !model.code || !model.imageFileId)
+        .map((model) => model.name),
+    ).toEqual(['vSphere VM']);
     // Every department has a default 入职配置, 技术部 included, which the
     // seeds leave without one.
     const kits = (await (

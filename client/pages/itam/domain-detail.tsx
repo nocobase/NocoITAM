@@ -538,8 +538,11 @@ export function DomainDetailPage({
                     ))}
                 </InfoSection>
                 {/* A category's extended fields belong with the basics, the
-                  way the device page places them. */}
-                {groupIndex === 0 && domain.extendedFields !== false ? (
+                  way the device page places them, unless the domain says
+                  otherwise. */}
+                {(domain.extendedFieldsAfter
+                  ? group === domain.extendedFieldsAfter
+                  : groupIndex === 0) && domain.extendedFields !== false ? (
                   <ExtendedFields
                     record={data}
                     editable={editable}

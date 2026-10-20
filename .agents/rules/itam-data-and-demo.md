@@ -34,6 +34,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   pictures the way an upload does (bytes under `<storage>/objects/`, a row
   in `itamFiles`), so tests point `APP_STORAGE_DIR` at a temporary
   directory (`tests/support/setup.ts`).
+  It stores every drawing in `assets/models/`, those no seeded model uses
+  too (2026-10-20): they are the picture library the demo's own models
+  point at by the same file ids (`DEMO_PICTURES` in `demo.ts`), never
+  writing a file, so clearing the demo leaves them. Every demo model has
+  its manufacturer part code and a picture; only `vSphere VM` has no code.
 - Demo data is generated through the services, never by raw inserts, and
   every created id is tracked in `demoRecords`; `demo.clear()` deletes only
   what is tracked. Anything the generator creates must be deletable in the

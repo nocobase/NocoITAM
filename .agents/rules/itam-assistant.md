@@ -519,7 +519,8 @@ document-text`, which reads only a file uploaded within the hour and
   the aside renders as a sibling of the form, never inside it: a submit in
   a portal still bubbles to the form around it in React's tree.
   A model's or software product's own page offers the same check as
-  **AI 补充** (2026-10-06, `EnrichAction` in
+  **完善** (2026-10-06 as AI 补充, renamed 2026-10-20 to match a category's;
+  `EnrichAction` in
   `client/pages/itam/master/master-domain-parts.tsx`, for whoever may update
   the record): it starts a conversation with the record pinned. Under the
   `catalog` skill's 补充已有记录 section Asset Steward reads the record and its

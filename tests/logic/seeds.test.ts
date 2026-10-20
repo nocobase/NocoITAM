@@ -90,6 +90,18 @@ describe('ITAM seeds', () => {
       .where('id', '=', 'cat-endpoint')
       .executeTakeFirstOrThrow();
     expect(Boolean(endpoint.requiresSerial)).toBe(true);
+    // Every drawing is stored, those no seeded model uses too: the demo's
+    // models point at them (2026-10-20).
+    const drawings = await query
+      .selectFrom('itamFiles')
+      .select('filename')
+      .where('filename', 'in', ['phone.svg', 'webcam.svg', 'paper.svg'])
+      .execute<{ filename: string }>();
+    expect(drawings.map((row) => row.filename).sort()).toEqual([
+      'paper.svg',
+      'phone.svg',
+      'webcam.svg',
+    ]);
     // An English deployment's first employee has an English name.
     const person = await query
       .selectFrom('people')

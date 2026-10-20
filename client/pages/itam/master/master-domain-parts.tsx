@@ -246,16 +246,6 @@ function appliesToOf(
   );
 }
 
-/** The category's device type, beside the category itself. */
-export function CategoryKindCell({
-  row,
-}: {
-  readonly row: ItamRecord;
-}): ReactElement {
-  const categories = useCategoryKinds();
-  return <AssetTypeBadge value={appliesToOf(categories.data?.data, row)} />;
-}
-
 function useCountsBy(path: string, by: string) {
   const api = useApi();
   return useQuery({
@@ -528,7 +518,7 @@ function RefineCategoryAction({
 }
 
 /**
- * AI 补充 on a model's or software product's page (2026-10-06): opens the
+ * 完善 (AI 补充 until 2026-10-20) on a model's or software product's page (2026-10-06): opens the
  * assistant's panel on a new conversation and asks Asset Steward to check the record
  * under the catalog skill, with the record as page context. Asset Steward says what
  * it found and proposes the change as a plan (`update_master_record`), whose

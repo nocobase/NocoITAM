@@ -16,7 +16,6 @@ import {
 
 import {
   AncestorsTrail,
-  CategoryKindCell,
   CategoryKindValue,
   CategoryTemplate,
   MasterActions,
@@ -99,17 +98,8 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
         />
       ),
     })),
-    ...(hasCategory
-      ? [
-          {
-            key: 'appliesTo',
-            label: 'fields.appliesTo',
-            width: '7rem',
-            after: 'categoryId',
-            Cell: CategoryKindCell,
-          } satisfies DomainListColumn,
-        ]
-      : []),
+    // No device-type column (2026-10-20): the category path beside it
+    // already says it; the filter keeps it.
     ...(collection.countField
       ? [
           {
@@ -169,6 +159,9 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
     // its category's fields as the defaults its new devices start with
     // (2026-10-06).
     extendedFields: collection.name === 'models',
+    ...(collection.name === 'models'
+      ? { extendedFieldsAfter: 'groups.lifecycle' }
+      : {}),
     summaryTimestamps: false,
     deleteInMenu: true,
     filterFields: [

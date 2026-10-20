@@ -1126,8 +1126,8 @@ const zhCN: AppResource = {
   },
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
-  // AI 补充 on a model's or software product's page.
-  masterEnrich: { action: 'AI 补充' },
+  // 完善 on a model's or software product's page, as a category's.
+  masterEnrich: { action: '完善' },
   categoryCapture: {
     fieldsInvalid: '扩展字段还有没填完的，请检查后再保存。',
     description:

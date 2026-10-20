@@ -29,7 +29,7 @@ vi.mock('../../client/lib/itam/api.js', async (importOriginal) => ({
   useRelatedCounts: () => [],
   useRowCounts: () => [],
 }));
-// The assistant is not configured: a model's page offers no AI 补充.
+// The assistant is not configured: a model's page offers no 完善.
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useItamAi: () => ({ available: false }),
   useAiPageContext: () => ({ available: false, ask: () => undefined }),
@@ -131,10 +131,10 @@ it('describes each collection for the generic pages', () => {
   expect(models.titlePrefixField).toBe('manufacturerId');
   expect(models.nameSort).toBe('manufacturerName');
   expect(models.image).toBe(true);
-  expect(models.listColumns?.map((column) => column.key)).toEqual([
-    'appliesTo',
-    'total',
-  ]);
+  // No device-type column: the category path says it.
+  expect(models.listColumns?.map((column) => column.key)).toEqual(['total']);
+  // Its extended fields follow its lifecycle.
+  expect(models.extendedFieldsAfter).toBe('groups.lifecycle');
   expect(
     models.filterFields?.map((entry) =>
       typeof entry === 'string' ? entry : entry.key,

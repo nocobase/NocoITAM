@@ -20,6 +20,10 @@ import {
 // `itamFiles`, and the model's `imageFileId` points at that row. The pictures
 // live in `assets/models/` next to this seed; `CREDITS.md` there lists the
 // photos' licenses, which `imageCredit` repeats on the model page.
+//
+// Every drawing is stored, the ones no seeded model uses too (2026-10-20):
+// they are the picture library the demo's own models point at, by these
+// same file ids, so a demo model has a picture without writing a file.
 
 /**
  * The language this deployment writes installation data in.
@@ -90,6 +94,8 @@ const PICTURE_FILE_IDS: Readonly<Record<string, string>> = {
   'headset.svg': 'f0ba82b1-9f09-5af2-a220-dc8467946dfb',
   'cable.svg': '64c8e8c7-7dba-57d7-9dbc-3157f6f98e21',
   'battery.svg': 'dfb62c27-051e-5729-988f-645e9ebb3b19',
+  'webcam.svg': '575d22ad-fa25-57a2-8417-dd3397dc8200',
+  'paper.svg': '5e30baa7-65e8-5850-8a28-f7d233d83fc0',
   'macbook-pro-14-m3.jpg': '419aaaa2-bf99-515c-b4ae-78dbe21e061e',
   'macbook-air-13-m3.jpg': 'f6052130-a7ea-5f17-b613-43e11def712b',
   'thinkpad-t14.jpg': '287c9828-3e32-5202-b14c-7465548bac62',
@@ -514,6 +520,9 @@ const seed: SeedDefinition = defineSeed({
         })
         .execute();
     }
+    // The rest of the drawings, for the demo's models.
+    for (const image of Object.keys(PICTURE_FILE_IDS))
+      if (image.endsWith('.svg')) await pictureFile(image);
   },
 });
 

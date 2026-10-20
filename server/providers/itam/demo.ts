@@ -350,6 +350,31 @@ const VENDOR_NAMES: Readonly<
 
 /** Free text of the demo's records, in the deployment's language. */
 /**
+ * The drawings the model seed stores for every database (2026-10-20), by
+ * the seed's own file ids (`PICTURE_FILE_IDS` in
+ * `database/main/seeds/202609150001_seed_itam_manufacturers_models.ts`), so
+ * the demo's models have a picture without writing a file of their own.
+ * Shared, never the demo's: clearing the demo leaves them.
+ */
+const DEMO_PICTURES = {
+  'laptop.svg': '352aed01-d257-59b2-85d0-8dcebb263cb8',
+  'desktop.svg': '53a59a2b-781b-5db5-9a72-9fa080d06477',
+  'monitor.svg': 'ea3a6843-b16b-5692-9a48-a0b18fb9bf60',
+  'network.svg': 'd7c3ae10-353d-5d96-9bff-17a44e3ef7c0',
+  'phone.svg': 'cabcdf09-99f2-549c-90d6-5a2a496fb04b',
+  'printer.svg': '70a07617-1091-5f64-b624-a09abbf57924',
+  'mouse.svg': '45ed46d1-1ecc-5352-ad43-d9f875748618',
+  'keyboard.svg': 'a4dbb661-6448-5e31-a178-ad054510fd32',
+  'dock.svg': '27995f2d-8017-54e8-ad11-7ca00a6fcefe',
+  'disk.svg': '1b61195f-bb60-5bfe-a804-20226cfe92aa',
+  'memory.svg': 'fea00f16-4f83-5af6-b8d6-c69ddf120823',
+  'battery.svg': 'dfb62c27-051e-5729-988f-645e9ebb3b19',
+  'webcam.svg': '575d22ad-fa25-57a2-8417-dd3397dc8200',
+  'paper.svg': '5e30baa7-65e8-5850-8a28-f7d233d83fc0',
+} as const;
+type DemoPicture = keyof typeof DEMO_PICTURES;
+
+/**
  * Models the company has bought or looked at besides the ones its devices
  * and stock use (2026-10-20), so 型号 reads as a real catalogue: the newer
  * laptops IT now orders, a desktop and monitors for the design team, the
@@ -362,12 +387,18 @@ const CATALOGUE_MODELS: readonly {
   readonly name: string;
   readonly categoryId: string;
   readonly manufacturerId: string;
+  /** The manufacturer's part number. */
+  readonly code: string;
+  /** A drawing from the model seed's library. */
+  readonly image: DemoPicture;
   readonly warrantyMonths: number;
   readonly day: number;
   readonly spec: Readonly<Record<DemoLanguage, string>>;
 }[] = [
   {
     name: 'MacBook Pro 16 M3 Pro',
+    code: 'MRW13CH/A',
+    image: 'laptop.svg',
     categoryId: 'cat-laptop',
     manufacturerId: 'mfr-apple',
     warrantyMonths: 36,
@@ -380,18 +411,22 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'ThinkPad X1 Carbon Gen 12',
+    code: '21KC00A7US',
+    image: 'laptop.svg',
     categoryId: 'cat-laptop',
     manufacturerId: 'mfr-lenovo',
     warrantyMonths: 36,
     day: -260,
     spec: {
       'zh-CN':
-        '14 英寸 2.8K OLED，Core Ultra 7 155U，32 GB 内存，1 TB 固态硬盘',
-      'en-US': '14-inch 2.8K OLED, Core Ultra 7 155U, 32 GB memory, 1 TB SSD',
+        '14 英寸 2.8K OLED，Core Ultra 7 155U，32 GB 内存，512 GB 固态硬盘',
+      'en-US': '14-inch 2.8K OLED, Core Ultra 7 155U, 32 GB memory, 512 GB SSD',
     },
   },
   {
     name: 'EliteBook 840 G11',
+    code: 'A6SY7UT#ABA',
+    image: 'laptop.svg',
     categoryId: 'cat-laptop',
     manufacturerId: 'mfr-hp',
     warrantyMonths: 36,
@@ -403,6 +438,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'Surface Laptop 6',
+    code: 'ZJQ-00001',
+    image: 'laptop.svg',
     categoryId: 'cat-laptop',
     manufacturerId: 'mfr-microsoft',
     warrantyMonths: 12,
@@ -416,17 +453,21 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'Mac mini M2',
+    code: 'MMFK3CH/A',
+    image: 'desktop.svg',
     categoryId: 'cat-desktop',
     manufacturerId: 'mfr-apple',
     warrantyMonths: 12,
     day: -420,
     spec: {
-      'zh-CN': 'M2，16 GB 内存，512 GB 固态硬盘',
-      'en-US': 'M2, 16 GB memory, 512 GB SSD',
+      'zh-CN': 'M2，8 GB 内存，512 GB 固态硬盘',
+      'en-US': 'M2, 8 GB memory, 512 GB SSD',
     },
   },
   {
     name: 'ThinkCentre M90q Gen 4',
+    code: '12EH000CGE',
+    image: 'desktop.svg',
     categoryId: 'cat-desktop',
     manufacturerId: 'mfr-lenovo',
     warrantyMonths: 36,
@@ -438,6 +479,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'P2723DE',
+    code: '210-BDEH',
+    image: 'monitor.svg',
     categoryId: 'cat-monitor',
     manufacturerId: 'mfr-dell',
     warrantyMonths: 36,
@@ -449,6 +492,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'Studio Display',
+    code: 'MK0U3CH/A',
+    image: 'monitor.svg',
     categoryId: 'cat-monitor',
     manufacturerId: 'mfr-apple',
     warrantyMonths: 12,
@@ -460,6 +505,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'iPhone 15 Pro',
+    code: 'MTQA3LL/A',
+    image: 'phone.svg',
     categoryId: 'cat-phone',
     manufacturerId: 'mfr-apple',
     warrantyMonths: 12,
@@ -471,6 +518,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'Galaxy S24',
+    code: 'SM-S9210',
+    image: 'phone.svg',
     categoryId: 'cat-phone',
     manufacturerId: 'mfr-samsung',
     warrantyMonths: 12,
@@ -482,6 +531,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'Color LaserJet Pro MFP M479fdw',
+    code: 'W1A80A',
+    image: 'printer.svg',
     categoryId: 'cat-printer',
     manufacturerId: 'mfr-hp',
     warrantyMonths: 12,
@@ -494,6 +545,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'Catalyst 9120AXI',
+    code: 'C9120AXI-H',
+    image: 'network.svg',
     categoryId: 'cat-network',
     manufacturerId: 'mfr-cisco',
     warrantyMonths: 60,
@@ -505,6 +558,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'MX Anywhere 3S',
+    code: '910-006958',
+    image: 'mouse.svg',
     categoryId: 'cat-mouse',
     manufacturerId: 'mfr-logitech',
     warrantyMonths: 12,
@@ -516,6 +571,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'MX Keys Mini',
+    code: '920-010505',
+    image: 'keyboard.svg',
     categoryId: 'cat-keyboard',
     manufacturerId: 'mfr-logitech',
     warrantyMonths: 12,
@@ -527,6 +584,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: 'ThinkPad Thunderbolt 4 Dock',
+    code: '40B00135CN',
+    image: 'dock.svg',
     categoryId: 'cat-dock',
     manufacturerId: 'mfr-lenovo',
     warrantyMonths: 36,
@@ -538,6 +597,8 @@ const CATALOGUE_MODELS: readonly {
   },
   {
     name: '870 EVO 1 TB',
+    code: 'MZ-77E1T0BW',
+    image: 'disk.svg',
     categoryId: 'cat-disk',
     manufacturerId: 'mfr-samsung',
     warrantyMonths: 60,
@@ -1598,6 +1659,18 @@ export function createDemoService(dependencies: {
             .selectAll()
             .where('name', '=', String(input.name))
             .executeTakeFirst<Row>()) ?? (await md(collection, input));
+        // A drawing for a model the demo enters (`DEMO_PICTURES`), when the
+        // model seed stored it: a database seeded before the seed kept
+        // every drawing gets the model without one.
+        const picture = async (image: DemoPicture): Promise<Row> =>
+          (await database
+            .query()
+            .selectFrom('itamFiles')
+            .select('id')
+            .where('id', '=', DEMO_PICTURES[image])
+            .executeTakeFirst())
+            ? { imageFileId: DEMO_PICTURES[image] }
+            : {};
         const mouseCat = await seeded('cat-mouse');
         const keyboardCat = await seeded('cat-keyboard');
         const tonerCat = await seeded('cat-toner');
@@ -3075,6 +3148,8 @@ export function createDemoService(dependencies: {
           name: 'DA310',
           categoryId: dockCat.id,
           manufacturerId: latitude.manufacturer.id,
+          code: '470-AEUP',
+          ...(await picture('dock.svg')),
           specification: texts.hubSpec,
         });
         const hubs = await stockItem(
@@ -3107,6 +3182,8 @@ export function createDemoService(dependencies: {
           name: 'Brio 4K',
           categoryId: webcamCat.id,
           manufacturerId: mxMaster.manufacturer.id,
+          code: '960-001105',
+          ...(await picture('webcam.svg')),
           specification: texts.webcamSpec,
         });
         const webcams = await stockItem(
@@ -3193,6 +3270,8 @@ export function createDemoService(dependencies: {
           name: 'Office Paper A4 80 g',
           categoryId: printSuppliesCat.id,
           manufacturerId: hpToner.manufacturer.id,
+          code: 'CHP110',
+          ...(await picture('paper.svg')),
           specification: texts.paperSpec,
         });
         const paper = await stockItem(
@@ -3226,6 +3305,8 @@ export function createDemoService(dependencies: {
           name: 'Plus AA',
           categoryId: batteryCat.id,
           manufacturerId: duracell.id,
+          code: 'MN1500',
+          ...(await picture('battery.svg')),
           specification: texts.batterySpec,
         });
         const aaBatteries = await stockItem(
@@ -3288,6 +3369,7 @@ export function createDemoService(dependencies: {
           categoryId: diskCat.id,
           manufacturerId: ssdModel.manufacturer.id,
           code: 'MZ-V9P2T0BW',
+          ...(await picture('disk.svg')),
           specification: texts.ssdSpec,
         });
         const bigSsd = await stockItem(
@@ -3313,6 +3395,7 @@ export function createDemoService(dependencies: {
           categoryId: ramCat.id,
           manufacturerId: ramModel.manufacturer.id,
           code: 'CT16G56C46S5',
+          ...(await picture('memory.svg')),
           specification: texts.ramSpec,
         });
         const smallRam = await stockItem(
@@ -3340,6 +3423,8 @@ export function createDemoService(dependencies: {
             name: entry.name,
             categoryId: entry.categoryId,
             manufacturerId: entry.manufacturerId,
+            code: entry.code,
+            ...(await picture(entry.image)),
             warrantyMonths: entry.warrantyMonths,
             specification:
               entry.spec[locale as DemoLanguage] ?? entry.spec['en-US'],

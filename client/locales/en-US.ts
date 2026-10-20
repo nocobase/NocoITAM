@@ -1156,7 +1156,7 @@ const messages = {
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: 'Tell the AI what to change' },
   // AI lookup on a model's or software product's page.
-  masterEnrich: { action: 'Look up with AI' },
+  masterEnrich: { action: 'Refine' },
   categoryCapture: {
     fieldsInvalid:
       'Some extended fields are incomplete; check them before saving.',
