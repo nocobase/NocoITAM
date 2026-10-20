@@ -2590,6 +2590,7 @@ const messages = {
     truncated: 'Showing {{shown}} of {{total}} nodes',
   },
   settings: {
+    ...systemEnUS.settings,
     title: 'Settings',
     deviceSyncRules: {
       title: 'Review rules',
@@ -3039,6 +3040,7 @@ const messages = {
   },
   // The UI Library's diagram component.
   flowDiagram: {
+    ...systemEnUS.flowDiagram,
     empty: 'No states to display.',
     failed: 'Unable to lay out this diagram.',
     loading: 'Laying out diagram…',

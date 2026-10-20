@@ -342,7 +342,9 @@ label:has(> .sr-only:focus-visible),
    spacing) than the same buttons on a page. ITAM keeps one button size
    everywhere, so the rule is removed; an upgrade that brings it back should
    leave it out (.agents/rules/components.md). */
-[data-slot='dialog-content'] > [data-slot='dialog-close'] {
+/* Route overlays compose the dialog primitives, so their close button sits where a dialog's does. */
+:is([data-slot='dialog-content'], [data-slot='route-overlay-content'])
+  > [data-slot='dialog-close'] {
   top: calc(var(--spacing) * 4);
   right: calc(var(--spacing) * 4);
 }

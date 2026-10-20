@@ -2445,6 +2445,7 @@ const zhCN: AppResource = {
     truncated: '显示 {{shown}} / {{total}} 个节点',
   },
   settings: {
+    ...systemZhCN.settings,
     title: '设置',
     deviceSyncRules: {
       title: '核对规则',
@@ -2865,6 +2866,7 @@ const zhCN: AppResource = {
   },
   // The UI Library's diagram component.
   flowDiagram: {
+    ...systemZhCN.flowDiagram,
     empty: '没有可显示的状态。',
     failed: '无法绘制这张流程图。',
     loading: '正在绘制流程图…',
