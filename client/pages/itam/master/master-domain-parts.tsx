@@ -420,6 +420,7 @@ export function NewChildAction({
 }): ReactElement | null {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const mutations = useItamMutations<ItamRecord>(
     masterDataPath(collection.name),
@@ -427,6 +428,12 @@ export function NewChildAction({
   const permissions = useCollectionPermissions(collection.name, ['create']);
   if (!permissions.create) return null;
   const fields = collection.fields;
+  // Beside the tree (its page with ?selected=), the child is selected in
+  // it; on the record's own page, the child's page opens (2026-10-20).
+  const createdPath = (id: unknown) =>
+    new URLSearchParams(location.search).has('selected')
+      ? `/${collection.route}?selected=${encodeURIComponent(String(id))}`
+      : `/${collection.route}/${String(id)}`;
   const childInitial = {
     ...Object.fromEntries(
       fields
@@ -467,7 +474,7 @@ export function NewChildAction({
           initial={childInitial}
           baseTemplate={parseTemplate(record.fieldTemplate)}
           onCreated={(created) => {
-            void navigate(`/${collection.route}/${created.id}`);
+            void navigate(createdPath(created.id));
           }}
         />
       ) : (
@@ -494,7 +501,7 @@ export function NewChildAction({
                 : {}),
             });
             setOpen(false);
-            await navigate(`/${collection.route}/${created.id}`);
+            await navigate(createdPath(created.id));
           }}
         />
       )}

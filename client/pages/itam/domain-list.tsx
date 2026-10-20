@@ -153,6 +153,14 @@ function DomainList({
         ? 'board'
         : 'table';
   const [treeExpanded, setTreeExpanded] = useState(true);
+  // A record just created: beside the tree, selected in it (2026-10-20),
+  // rather than on its own page, which left the tree behind.
+  const openCreated = (id: unknown) =>
+    navigate(
+      layout === 'tree'
+        ? `/${domain.route}?selected=${encodeURIComponent(String(id))}`
+        : `/${domain.route}/${String(id)}`,
+    );
 
   const list = useItamList<ItamRecord>(
     domain.path,
@@ -525,7 +533,7 @@ function DomainList({
           onOpenChange={setCreating}
           onCreated={(created) => {
             setCreating(false);
-            void navigate(`/${domain.route}/${created.id}`);
+            void openCreated(created.id);
           }}
         />
       ) : (
@@ -564,7 +572,7 @@ function DomainList({
                 json: { fileIds: files.map((file) => file.id) },
               });
             setCreating(false);
-            await navigate(`/${domain.route}/${created.id}`);
+            await openCreated(created.id);
           }}
         />
       )}
