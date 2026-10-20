@@ -169,7 +169,7 @@ function RepairForm({
           <DeviceFacts device={device.data} deviceId={chosen} />
         ) : undefined
       }
-      // 看看 right under the fault it reads (2026-10-20), where the form
+      // 诊断 right under the fault it reads (2026-10-20), where the form
       // starts, rather than in a column beside it.
       autoFocusField={chosen ? 'faultDescription' : undefined}
       fieldFooters={{
@@ -343,7 +343,9 @@ function TriagePanel({
     <div className='space-y-2 text-sm'>
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
         <AiShortcut disabled={!ready || busy} onClick={() => void ask()}>
-          {t('repairs.triage.ask')}
+          {/* 诊断 (2026-10-20; it was 看看), and once answered, again — for
+              a description changed since. */}
+          {t(triage ? 'repairs.triage.again' : 'repairs.triage.ask')}
         </AiShortcut>
         {!ready && !triage && !busy ? (
           <span className='text-xs text-muted-foreground'>

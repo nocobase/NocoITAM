@@ -2932,9 +2932,10 @@ const messages = {
       repairs_other: 'Repaired {{count}} times',
     },
     triage: {
-      ask: 'Take a look',
+      ask: 'Diagnose',
+      again: 'Diagnose again',
       hint: 'Once the device is picked and the fault described, Asset Steward can tell the kind of fault and suggest repairing or replacing.',
-      working: 'Asset Steward is looking…',
+      working: 'Asset Steward is diagnosing…',
       nothing: 'Asset Steward gave no suggestion; fill it in as you see fit.',
       toDisposal: 'Request disposal instead',
       recommendation: {

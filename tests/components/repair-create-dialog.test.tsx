@@ -168,6 +168,10 @@ it('starts with the fault, and turns into a disposal when told to replace', asyn
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'repairs.triage.ask' }));
   });
+  // Once answered, it asks again.
+  expect(
+    screen.getByRole('button', { name: 'repairs.triage.again' }),
+  ).toBeInTheDocument();
   fireEvent.click(
     screen.getByRole('button', { name: 'repairs.triage.toDisposal' }),
   );
