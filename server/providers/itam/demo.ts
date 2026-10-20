@@ -2239,6 +2239,7 @@ export function createDemoService(dependencies: {
                     price: 15999,
                     os: 'macOS 15.6',
                     mac: `a4:83:e7:60:${hex(computerNo)}:01`,
+                    warrantyDays: 1095,
                   }
                 : kit === 'office'
                   ? {
@@ -2248,6 +2249,11 @@ export function createDemoService(dependencies: {
                       price: 8499,
                       os: 'Windows 11 24H2',
                       mac: `b0:4f:13:60:${hex(computerNo)}:03`,
+                      // The office ThinkPads came with Lenovo's one-year
+                      // warranty and were never extended (2026-10-20), so
+                      // the older ones are in use out of warranty, as old
+                      // laptops are in most companies.
+                      warrantyDays: 365,
                     }
                   : {
                       model: air,
@@ -2256,6 +2262,7 @@ export function createDemoService(dependencies: {
                       price: 9999,
                       os: 'macOS 15.6',
                       mac: `a4:83:e7:60:${hex(computerNo)}:02`,
+                      warrantyDays: 1095,
                     };
             const day = boughtFor(spec, laptop.earliest);
             own.push(
@@ -2268,7 +2275,7 @@ export function createDemoService(dependencies: {
                 vendorId: reseller.id,
                 purchaseDate: daysFromNow(day),
                 purchasePrice: laptop.price,
-                warrantyEndDate: warrantyFrom(day, 1095),
+                warrantyEndDate: warrantyFrom(day, laptop.warrantyDays),
                 attributes: {
                   os: laptop.os,
                   macAddress: laptop.mac,
