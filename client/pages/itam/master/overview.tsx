@@ -182,107 +182,113 @@ export default function MasterDataOverviewPage(): ReactElement {
   return (
     <Page>
       <PageHeader title={t('masterData.overviewTitle')} />
-      <div className='grid gap-6 lg:grid-cols-2'>
+      {/* Laid out by the page's own width (`Page` is a container), not the
+          window's: the assistant's panel narrows the page (2026-10-20). */}
+      <div className='grid gap-6 @4xl:grid-cols-2'>
         <Lane
           title={t('masterData.laneWhat')}
           hint={t('masterData.laneWhatHint')}
-          className='lg:col-span-2'
+          className='@4xl:col-span-2'
         >
           {/* One column per device type, read from the records upwards: the
               records, the categories of that type, then what the records
               are instances of, then who makes those. */}
-          <div className='grid grid-cols-[9rem_repeat(5,minmax(0,1fr))] items-center gap-x-2 gap-y-2'>
-            <RowLabel>{t('masterData.rowGrain')}</RowLabel>
-            {(
-              [
-                {
-                  label: t('tabs.devices'),
-                  hint: t('masterData.grainDevice'),
-                  span: 'col-span-1',
-                },
-                {
-                  label: t('tabs.stock'),
-                  hint: t('masterData.grainStock'),
-                  span: 'col-span-3',
-                },
-                {
-                  label: t('entitlements.object'),
-                  hint: t('masterData.grainEntitlement'),
-                  span: 'col-span-1',
-                },
-              ] as const
-            ).map((grain) => (
-              <div
-                key={grain.label}
-                className={cn('px-3 text-center', grain.span)}
-              >
-                <div className='text-xs font-medium'>{grain.label}</div>
-                <div className='text-xs text-muted-foreground'>
-                  {grain.hint}
+          {/* Narrower than its five columns can take, it scrolls sideways
+              rather than cut the names short. */}
+          <div className='-mx-4 overflow-x-auto px-4'>
+            <div className='grid min-w-[28rem] grid-cols-[4.75rem_repeat(5,minmax(0,1fr))] items-stretch gap-x-1.5 gap-y-2 @3xl:gap-x-2 @3xl:grid-cols-[7rem_repeat(5,minmax(0,1fr))]'>
+              <RowLabel>{t('masterData.rowGrain')}</RowLabel>
+              {(
+                [
+                  {
+                    label: t('tabs.devices'),
+                    hint: t('masterData.grainDevice'),
+                    span: 'col-span-1',
+                  },
+                  {
+                    label: t('tabs.stock'),
+                    hint: t('masterData.grainStock'),
+                    span: 'col-span-3',
+                  },
+                  {
+                    label: t('entitlements.object'),
+                    hint: t('masterData.grainEntitlement'),
+                    span: 'col-span-1',
+                  },
+                ] as const
+              ).map((grain) => (
+                <div
+                  key={grain.label}
+                  className={cn('px-3 text-center', grain.span)}
+                >
+                  <div className='text-xs font-medium'>{grain.label}</div>
+                  <div className='text-xs text-muted-foreground'>
+                    {grain.hint}
+                  </div>
+                  {grain.span !== 'col-span-1' ? (
+                    // A bracket over the columns this granularity spans.
+                    <div className='mx-6 mt-1 h-2 rounded-t-sm border-t border-r border-l border-border' />
+                  ) : null}
                 </div>
-                {grain.span !== 'col-span-1' ? (
-                  // A bracket over the columns this granularity spans.
-                  <div className='mx-6 mt-1 h-2 rounded-t-sm border-t border-r border-l border-border' />
-                ) : null}
-              </div>
-            ))}
-            <RowLabel>{t('masterData.rowKinds')}</RowLabel>
-            {KINDS.map((kind) => (
-              <NodeCard
-                key={kind.value}
-                node={nodes[kind.record]}
-                compact
-                emphasis
-              />
-            ))}
-            <ArrowRow
-              cells={KINDS.map((kind) => ({
-                key: kind.value,
-                label: t('masterData.edgeDividesInto'),
-                span: 'col-span-1',
-              }))}
-            />
-            <RowLabel>{t('masterData.rowCategory')}</RowLabel>
-            {KINDS.map((kind) => (
-              <NodeCard
-                key={kind.value}
-                node={{
-                  ...nodes.categories,
-                  to: `/categories?appliesTo=${kind.value}`,
-                  filter: { appliesTo: kind.value },
-                }}
-                compact
-              />
-            ))}
-            <ArrowRow
-              cells={KINDS.map((kind) => ({
-                key: kind.value,
-                label: t('masterData.edgeContains'),
-                span: 'col-span-1',
-              }))}
-            />
-            <RowLabel>{t('masterData.rowModel')}</RowLabel>
-            <div className='col-span-4'>
-              <NodeCard node={nodes.models} compact />
-            </div>
-            <NodeCard node={nodes.softwareProducts} compact />
-            <ArrowRow
-              cells={[
-                {
-                  key: 'models',
-                  label: t('masterData.edgeMadeBy'),
-                  span: 'col-span-4',
-                },
-                {
-                  key: 'softwareProducts',
-                  label: t('masterData.edgeMadeBy'),
+              ))}
+              <RowLabel>{t('masterData.rowKinds')}</RowLabel>
+              {KINDS.map((kind) => (
+                <NodeCard
+                  key={kind.value}
+                  node={nodes[kind.record]}
+                  compact
+                  emphasis
+                />
+              ))}
+              <ArrowRow
+                cells={KINDS.map((kind) => ({
+                  key: kind.value,
+                  label: t('masterData.edgeDividesInto'),
                   span: 'col-span-1',
-                },
-              ]}
-            />
-            <RowLabel>{t('masterData.rowManufacturer')}</RowLabel>
-            <div className='col-span-5'>
-              <NodeCard node={nodes.manufacturers} compact />
+                }))}
+              />
+              <RowLabel>{t('masterData.rowCategory')}</RowLabel>
+              {KINDS.map((kind) => (
+                <NodeCard
+                  key={kind.value}
+                  node={{
+                    ...nodes.categories,
+                    to: `/categories?appliesTo=${kind.value}`,
+                    filter: { appliesTo: kind.value },
+                  }}
+                  compact
+                />
+              ))}
+              <ArrowRow
+                cells={KINDS.map((kind) => ({
+                  key: kind.value,
+                  label: t('masterData.edgeContains'),
+                  span: 'col-span-1',
+                }))}
+              />
+              <RowLabel>{t('masterData.rowModel')}</RowLabel>
+              <div className='col-span-4'>
+                <NodeCard node={nodes.models} compact />
+              </div>
+              <NodeCard node={nodes.softwareProducts} compact />
+              <ArrowRow
+                cells={[
+                  {
+                    key: 'models',
+                    label: t('masterData.edgeMadeBy'),
+                    span: 'col-span-4',
+                  },
+                  {
+                    key: 'softwareProducts',
+                    label: t('masterData.edgeMadeBy'),
+                    span: 'col-span-1',
+                  },
+                ]}
+              />
+              <RowLabel>{t('masterData.rowManufacturer')}</RowLabel>
+              <div className='col-span-5'>
+                <NodeCard node={nodes.manufacturers} compact />
+              </div>
             </div>
           </div>
         </Lane>
@@ -302,36 +308,41 @@ export default function MasterDataOverviewPage(): ReactElement {
             </div>
           </div>
           {/* Who may hold what: assignees down, device types across. */}
-          <table className='mt-6 w-full text-sm'>
-            <thead>
-              <tr className='text-xs text-muted-foreground'>
-                <th className='py-1 text-left font-normal'>
-                  {t('masterData.assigneeHeader')}
-                </th>
-                {KINDS.map((kind) => (
-                  <th key={kind.value} className='py-1 text-center font-normal'>
-                    <AssetTypeBadge value={kind.value} />
+          <div className='-mx-4 mt-6 overflow-x-auto px-4'>
+            <table className='w-full min-w-[26rem] text-sm'>
+              <thead>
+                <tr className='text-xs text-muted-foreground'>
+                  <th className='py-1 text-left font-normal'>
+                    {t('masterData.assigneeHeader')}
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {ASSIGNEES.map((assignee) => (
-                <tr key={assignee.key} className='border-t border-border'>
-                  <td className='py-1.5 font-medium'>{t(assignee.label)}</td>
                   {KINDS.map((kind) => (
-                    <td key={kind.value} className='py-1.5 text-center'>
-                      {assignee.holds.includes(kind.value) ? (
-                        <Check className='mx-auto size-4 text-foreground' />
-                      ) : (
-                        <span className='text-muted-foreground/50'>–</span>
-                      )}
-                    </td>
+                    <th
+                      key={kind.value}
+                      className='py-1 text-center font-normal'
+                    >
+                      <AssetTypeBadge value={kind.value} />
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {ASSIGNEES.map((assignee) => (
+                  <tr key={assignee.key} className='border-t border-border'>
+                    <td className='py-1.5 font-medium'>{t(assignee.label)}</td>
+                    {KINDS.map((kind) => (
+                      <td key={kind.value} className='py-1.5 text-center'>
+                        {assignee.holds.includes(kind.value) ? (
+                          <Check className='mx-auto size-4 text-foreground' />
+                        ) : (
+                          <span className='text-muted-foreground/50'>–</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Lane>
         <Lane
           title={t('masterData.laneWho')}
@@ -453,7 +464,7 @@ function RowLabel({
   readonly children: ReactNode;
 }): ReactElement {
   return (
-    <div className='pr-2 text-right text-xs leading-snug text-muted-foreground'>
+    <div className='self-center pr-1 text-right text-xs leading-snug text-muted-foreground @3xl:pr-2'>
       {children}
     </div>
   );
@@ -509,17 +520,23 @@ function NodeCard({
     <Link
       to={node.to}
       className={cn(
-        'block rounded-lg border p-3 transition-colors hover:bg-accent',
+        // Its own container: a narrow card drops the icon before the name
+        // would be cut short, and puts the count under the name if need be.
+        // As tall as the row: a card whose count wrapped under its name
+        // does not leave its neighbours shorter.
+        '@container/node flex h-full flex-col justify-center rounded-lg border p-3 transition-colors hover:bg-accent',
         node.kind === 'master'
           ? 'border-border bg-card'
           : 'border-dashed border-border bg-muted/30',
         emphasis && 'border-solid border-primary/30 bg-primary/10',
-        compact && 'p-2',
+        compact && 'px-1.5 py-2 @3xl:p-2',
       )}
     >
-      <div className='flex items-center justify-center gap-2'>
-        <Icon className='size-4 shrink-0 text-muted-foreground' />
-        <span className='truncate text-sm font-medium'>{node.label}</span>
+      <div className='flex flex-wrap items-center justify-center gap-x-2 gap-y-1'>
+        <Icon className='hidden size-4 shrink-0 text-muted-foreground @[8.5rem]/node:block' />
+        <span className='text-sm font-medium whitespace-nowrap'>
+          {node.label}
+        </span>
         {node.path ? (
           <Badge variant='secondary' className='tabular-nums'>
             {list.data ? list.data.total.toLocaleString() : '…'}
