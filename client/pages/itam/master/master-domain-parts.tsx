@@ -353,11 +353,14 @@ export function CategoryTemplate({
       // fields of its kind's other categories (`categoryFields`).
       {...(ai.available
         ? {
-            onSuggest: async () => {
+            onSuggest: async (current) => {
               const answer = await read({
                 task: 'categoryFields',
                 material: text(record.name) || 'category',
-                context: { categoryId: text(record.id) },
+                context: {
+                  categoryId: text(record.id),
+                  currentFields: current,
+                },
               });
               const reading = answer.reading as {
                 fields?: unknown;

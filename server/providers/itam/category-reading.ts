@@ -105,6 +105,8 @@ export async function categoryFieldFacts(
   container: ServiceContainer,
   actorId: string,
   categoryId: string,
+  /** The fields as the reader's editor holds them, unsaved ones too. */
+  editing?: unknown,
 ): Promise<Record<string, unknown>> {
   const book = await categoryBook(container, actorId);
   const category = book.byId.get(categoryId);
@@ -114,7 +116,9 @@ export async function categoryFieldFacts(
       name: category.name,
       path: book.path(category),
       appliesTo: category.appliesTo,
-      currentFields: book.fieldsOf(category),
+      currentFields: Array.isArray(editing)
+        ? templateFields(editing)
+        : book.fieldsOf(category),
       currentDefaults: book.settingsOf(category),
     },
     otherCategories: book.rows

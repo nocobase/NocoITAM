@@ -139,7 +139,7 @@ export function FieldTemplateEditor({
    * AI 建议字段 (2026-10-20): asks the model for fields to add; they join the
    * rows under edit for the reader to check and save. Absent without a model.
    */
-  readonly onSuggest?: () => Promise<FieldSuggestion>;
+  readonly onSuggest?: (current: TemplateField[]) => Promise<FieldSuggestion>;
   /**
    * Part of a form rather than a card of its own (2026-10-20, 创建分类): always
    * the editor, with no 保存 or 取消 — the form saves the fields it is told
@@ -260,6 +260,16 @@ export function FieldTemplateEditor({
     ) : null;
   };
 
+  /** The fields as saved: labels trimmed, options only on a select. */
+  const cleaned = (): TemplateField[] =>
+    stripIds(rows).map((row) => ({
+      key: row.key,
+      label: row.label.trim(),
+      type: row.type,
+      ...(row.required ? { required: true } : {}),
+      ...(row.hidden ? { hidden: true } : {}),
+      ...(row.type === 'select' ? { options: row.options ?? [] } : {}),
+    }));
   /** Adds what the model suggests that the template lacks, as new rows. */
   const suggest = async () => {
     if (!onSuggest) return;
@@ -269,7 +279,9 @@ export function FieldTemplateEditor({
     setSuggestedExtra(undefined);
     setError(undefined);
     try {
-      const answer = await onSuggest();
+      // The fields as the editor holds them, unsaved ones too, so a second
+      // round does not suggest again what the first added.
+      const answer = await onSuggest(cleaned().filter((field) => field.key));
       const taken = new Set(rows.map((row) => row.key));
       const fresh = answer.fields.filter(
         (field) =>
@@ -314,6 +326,8 @@ export function FieldTemplateEditor({
               : {}),
           };
           if (JSON.stringify(changed) === JSON.stringify(row)) return row;
+          // A row not saved yet stays 新增, however often it changes.
+          if (freshRows.has(row.rid)) return changed;
           notes.set(
             row.rid,
             t('fieldTemplate.changedFrom', {
@@ -362,16 +376,6 @@ export function FieldTemplateEditor({
       </AiShortcut>
     ) : null;
 
-  /** The fields as saved: labels trimmed, options only on a select. */
-  const cleaned = (): TemplateField[] =>
-    stripIds(rows).map((row) => ({
-      key: row.key,
-      label: row.label.trim(),
-      type: row.type,
-      ...(row.required ? { required: true } : {}),
-      ...(row.hidden ? { hidden: true } : {}),
-      ...(row.type === 'select' ? { options: row.options ?? [] } : {}),
-    }));
   // Embedded, the form is told of every change and saves the fields itself.
   const onEmbeddedChange = embedded?.onChange;
   const valid = problems.size === 0;
@@ -560,7 +564,9 @@ export function FieldTemplateEditor({
                     dragIndex === index && 'opacity-40',
                     row.hidden && 'text-muted-foreground',
                     freshRows.has(row.rid) && 'bg-primary/5',
-                    changedRows.has(row.rid) && 'bg-warning/25',
+                    !freshRows.has(row.rid) &&
+                      changedRows.has(row.rid) &&
+                      'bg-warning/25',
                     dropAt === index &&
                       'shadow-[inset_0_2px_0_0_var(--color-primary)]',
                     dropAt === index + 1 &&

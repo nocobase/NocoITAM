@@ -393,7 +393,12 @@ export async function readForForm(
       throw new BusinessRuleError('Pick the category first', 'NOT_FOUND');
     Object.assign(
       context,
-      await categoryFieldFacts(container, actorId, categoryId),
+      await categoryFieldFacts(
+        container,
+        actorId,
+        categoryId,
+        input.context.currentFields,
+      ),
     );
   }
   if (input.task === 'category')
