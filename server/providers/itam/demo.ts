@@ -349,6 +349,206 @@ const VENDOR_NAMES: Readonly<
 };
 
 /** Free text of the demo's records, in the deployment's language. */
+/**
+ * Models the company has bought or looked at besides the ones its devices
+ * and stock use (2026-10-20), so 型号 reads as a real catalogue: the newer
+ * laptops IT now orders, a desktop and monitors for the design team, the
+ * phones and printer on the next refresh, an access point and the small
+ * kit people ask for. Entered through the master-data service on the day
+ * each came in, tracked, and cleared with the demo; no device or stock
+ * points at them. Seed ids, which the demo checks are there.
+ */
+const CATALOGUE_MODELS: readonly {
+  readonly name: string;
+  readonly categoryId: string;
+  readonly manufacturerId: string;
+  readonly warrantyMonths: number;
+  readonly day: number;
+  readonly spec: Readonly<Record<DemoLanguage, string>>;
+}[] = [
+  {
+    name: 'MacBook Pro 16 M3 Pro',
+    categoryId: 'cat-laptop',
+    manufacturerId: 'mfr-apple',
+    warrantyMonths: 36,
+    day: -330,
+    spec: {
+      'zh-CN':
+        '16.2 英寸 Liquid Retina XDR，M3 Pro，18 GB 内存，512 GB 固态硬盘',
+      'en-US': '16.2-inch Liquid Retina XDR, M3 Pro, 18 GB memory, 512 GB SSD',
+    },
+  },
+  {
+    name: 'ThinkPad X1 Carbon Gen 12',
+    categoryId: 'cat-laptop',
+    manufacturerId: 'mfr-lenovo',
+    warrantyMonths: 36,
+    day: -260,
+    spec: {
+      'zh-CN':
+        '14 英寸 2.8K OLED，Core Ultra 7 155U，32 GB 内存，1 TB 固态硬盘',
+      'en-US': '14-inch 2.8K OLED, Core Ultra 7 155U, 32 GB memory, 1 TB SSD',
+    },
+  },
+  {
+    name: 'EliteBook 840 G11',
+    categoryId: 'cat-laptop',
+    manufacturerId: 'mfr-hp',
+    warrantyMonths: 36,
+    day: -240,
+    spec: {
+      'zh-CN': '14 英寸 WUXGA，Core Ultra 5 125U，16 GB 内存，512 GB 固态硬盘',
+      'en-US': '14-inch WUXGA, Core Ultra 5 125U, 16 GB memory, 512 GB SSD',
+    },
+  },
+  {
+    name: 'Surface Laptop 6',
+    categoryId: 'cat-laptop',
+    manufacturerId: 'mfr-microsoft',
+    warrantyMonths: 12,
+    day: -200,
+    spec: {
+      'zh-CN':
+        '13.5 英寸 PixelSense 触屏，Core Ultra 5 135H，16 GB 内存，256 GB 固态硬盘',
+      'en-US':
+        '13.5-inch PixelSense touchscreen, Core Ultra 5 135H, 16 GB memory, 256 GB SSD',
+    },
+  },
+  {
+    name: 'Mac mini M2',
+    categoryId: 'cat-desktop',
+    manufacturerId: 'mfr-apple',
+    warrantyMonths: 12,
+    day: -420,
+    spec: {
+      'zh-CN': 'M2，16 GB 内存，512 GB 固态硬盘',
+      'en-US': 'M2, 16 GB memory, 512 GB SSD',
+    },
+  },
+  {
+    name: 'ThinkCentre M90q Gen 4',
+    categoryId: 'cat-desktop',
+    manufacturerId: 'mfr-lenovo',
+    warrantyMonths: 36,
+    day: -310,
+    spec: {
+      'zh-CN': '迷你主机，Core i7-13700T，16 GB 内存，512 GB 固态硬盘',
+      'en-US': 'Tiny desktop, Core i7-13700T, 16 GB memory, 512 GB SSD',
+    },
+  },
+  {
+    name: 'P2723DE',
+    categoryId: 'cat-monitor',
+    manufacturerId: 'mfr-dell',
+    warrantyMonths: 36,
+    day: -380,
+    spec: {
+      'zh-CN': '27 英寸 QHD IPS，USB-C 扩展，90 W 供电',
+      'en-US': '27-inch QHD IPS, USB-C hub with 90 W charging',
+    },
+  },
+  {
+    name: 'Studio Display',
+    categoryId: 'cat-monitor',
+    manufacturerId: 'mfr-apple',
+    warrantyMonths: 12,
+    day: -415,
+    spec: {
+      'zh-CN': '27 英寸 5K 视网膜，1200 万像素摄像头，三麦克风阵列',
+      'en-US': '27-inch 5K Retina, 12 MP camera, three-microphone array',
+    },
+  },
+  {
+    name: 'iPhone 15 Pro',
+    categoryId: 'cat-phone',
+    manufacturerId: 'mfr-apple',
+    warrantyMonths: 12,
+    day: -150,
+    spec: {
+      'zh-CN': '6.1 英寸，A17 Pro，256 GB',
+      'en-US': '6.1-inch, A17 Pro, 256 GB',
+    },
+  },
+  {
+    name: 'Galaxy S24',
+    categoryId: 'cat-phone',
+    manufacturerId: 'mfr-samsung',
+    warrantyMonths: 12,
+    day: -140,
+    spec: {
+      'zh-CN': '6.2 英寸，8 GB 内存，256 GB',
+      'en-US': '6.2-inch, 8 GB memory, 256 GB',
+    },
+  },
+  {
+    name: 'Color LaserJet Pro MFP M479fdw',
+    categoryId: 'cat-printer',
+    manufacturerId: 'mfr-hp',
+    warrantyMonths: 12,
+    day: -180,
+    spec: {
+      'zh-CN': '彩色激光多功能一体机，打印、扫描、复印、传真，自动双面，Wi-Fi',
+      'en-US':
+        'Colour laser multifunction: print, scan, copy and fax, duplex, Wi-Fi',
+    },
+  },
+  {
+    name: 'Catalyst 9120AXI',
+    categoryId: 'cat-network',
+    manufacturerId: 'mfr-cisco',
+    warrantyMonths: 60,
+    day: -450,
+    spec: {
+      'zh-CN': 'Wi-Fi 6 无线接入点，4x4 MU-MIMO，内置天线',
+      'en-US': 'Wi-Fi 6 access point, 4x4 MU-MIMO, internal antennas',
+    },
+  },
+  {
+    name: 'MX Anywhere 3S',
+    categoryId: 'cat-mouse',
+    manufacturerId: 'mfr-logitech',
+    warrantyMonths: 12,
+    day: -120,
+    spec: {
+      'zh-CN': '便携无线鼠标，8000 DPI，静音按键，蓝牙',
+      'en-US': 'Compact wireless mouse, 8,000 DPI, quiet clicks, Bluetooth',
+    },
+  },
+  {
+    name: 'MX Keys Mini',
+    categoryId: 'cat-keyboard',
+    manufacturerId: 'mfr-logitech',
+    warrantyMonths: 12,
+    day: -120,
+    spec: {
+      'zh-CN': '紧凑型背光无线键盘，蓝牙，USB-C 充电',
+      'en-US': 'Compact backlit wireless keyboard, Bluetooth, USB-C charging',
+    },
+  },
+  {
+    name: 'ThinkPad Thunderbolt 4 Dock',
+    categoryId: 'cat-dock',
+    manufacturerId: 'mfr-lenovo',
+    warrantyMonths: 36,
+    day: -255,
+    spec: {
+      'zh-CN': '雷电 4，双 4K 显示，100 W 供电，2.5G 网口',
+      'en-US': 'Thunderbolt 4, two 4K displays, 100 W charging, 2.5 GbE',
+    },
+  },
+  {
+    name: '870 EVO 1 TB',
+    categoryId: 'cat-disk',
+    manufacturerId: 'mfr-samsung',
+    warrantyMonths: 60,
+    day: -90,
+    spec: {
+      'zh-CN': '2.5 英寸 SATA 固态硬盘，读取最高 560 MB/s',
+      'en-US': '2.5-inch SATA SSD, reads up to 560 MB/s',
+    },
+  },
+];
+
 const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   'en-US': {
     onboardingBatch: 'Onboarding batch',
@@ -3123,6 +3323,21 @@ export function createDemoService(dependencies: {
         await issue(smallRam, 'device', thinkpads[0], 1, -54);
         await issue(smallRam, 'device', thinkpads[1], 1, -54);
         await takeBack(smallRam, 'device', thinkpads[1], -20);
+        // The rest of the catalogue (2026-10-20, `CATALOGUE_MODELS`), each
+        // on the day it was entered.
+        for (const entry of CATALOGUE_MODELS) {
+          await seeded(entry.categoryId);
+          await seededIn('manufacturers', entry.manufacturerId);
+          await on(entry.day);
+          await named('models', {
+            name: entry.name,
+            categoryId: entry.categoryId,
+            manufacturerId: entry.manufacturerId,
+            warrantyMonths: entry.warrantyMonths,
+            specification:
+              entry.spec[locale as DemoLanguage] ?? entry.spec['en-US'],
+          });
+        }
         // The models and the maker the demo added have changed since too
         // (2026-10-16): Duracell's site was filled in, the webcam's
         // description now says what comes in the box, Samsung's five-year
