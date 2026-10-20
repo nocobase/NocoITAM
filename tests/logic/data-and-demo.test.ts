@@ -488,6 +488,13 @@ describe('CSV import / export and demo data', () => {
         .filter((model) => !model.code || !model.imageFileId)
         .map((model) => model.name),
     ).toEqual(['vSphere VM']);
+    // A photo carries the credit its license asks for.
+    const credits = (await (
+      await get('master/models?pageSize=200')
+    ).json()) as { data: { name: string; imageCredit: string | null }[] };
+    expect(
+      credits.data.find((model) => model.name === 'Galaxy S24')?.imageCredit,
+    ).toContain('CC BY-SA 4.0');
     // Every department has a default 入职配置, 技术部 included, which the
     // seeds leave without one.
     const kits = (await (

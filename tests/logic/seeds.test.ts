@@ -95,12 +95,12 @@ describe('ITAM seeds', () => {
     const drawings = await query
       .selectFrom('itamFiles')
       .select('filename')
-      .where('filename', 'in', ['phone.svg', 'webcam.svg', 'paper.svg'])
+      .where('filename', 'in', ['phone.svg', 'paper.svg', 'galaxy-s24.jpg'])
       .execute<{ filename: string }>();
     expect(drawings.map((row) => row.filename).sort()).toEqual([
+      'galaxy-s24.jpg',
       'paper.svg',
       'phone.svg',
-      'webcam.svg',
     ]);
     // An English deployment's first employee has an English name.
     const person = await query

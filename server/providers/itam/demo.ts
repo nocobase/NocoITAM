@@ -350,7 +350,7 @@ const VENDOR_NAMES: Readonly<
 
 /** Free text of the demo's records, in the deployment's language. */
 /**
- * The drawings the model seed stores for every database (2026-10-20), by
+ * The pictures the model seed stores for every database (2026-10-20), by
  * the seed's own file ids (`PICTURE_FILE_IDS` in
  * `database/main/seeds/202609150001_seed_itam_manufacturers_models.ts`), so
  * the demo's models have a picture without writing a file of their own.
@@ -371,7 +371,16 @@ const DEMO_PICTURES = {
   'battery.svg': 'dfb62c27-051e-5729-988f-645e9ebb3b19',
   'webcam.svg': '575d22ad-fa25-57a2-8417-dd3397dc8200',
   'paper.svg': '5e30baa7-65e8-5850-8a28-f7d233d83fc0',
+  'iphone-15-pro.jpg': 'df65e991-bad7-51b0-9e33-cbbe61b22007',
+  'studio-display.jpg': '26d984e7-df22-5709-b983-df16ef578703',
+  'galaxy-s24.jpg': '95d3bc1d-4930-5149-8439-f95c28e476ae',
 } as const;
+/** The credit a photo's license asks for, shown under it (`CREDITS.md`). */
+const DEMO_PICTURE_CREDITS: Partial<Record<DemoPicture, string>> = {
+  'iphone-15-pro.jpg': 'IPHONE 15, CC BY-SA 4.0, Wikimedia Commons',
+  'studio-display.jpg': 'Seasider53, CC BY 4.0, Wikimedia Commons',
+  'galaxy-s24.jpg': 'メイド理世, CC BY-SA 4.0, Wikimedia Commons',
+};
 type DemoPicture = keyof typeof DEMO_PICTURES;
 
 /**
@@ -389,7 +398,7 @@ const CATALOGUE_MODELS: readonly {
   readonly manufacturerId: string;
   /** The manufacturer's part number. */
   readonly code: string;
-  /** A drawing from the model seed's library. */
+  /** A picture from the model seed's library. */
   readonly image: DemoPicture;
   readonly warrantyMonths: number;
   readonly day: number;
@@ -493,7 +502,7 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'Studio Display',
     code: 'MK0U3CH/A',
-    image: 'monitor.svg',
+    image: 'studio-display.jpg',
     categoryId: 'cat-monitor',
     manufacturerId: 'mfr-apple',
     warrantyMonths: 12,
@@ -506,7 +515,7 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'iPhone 15 Pro',
     code: 'MTQA3LL/A',
-    image: 'phone.svg',
+    image: 'iphone-15-pro.jpg',
     categoryId: 'cat-phone',
     manufacturerId: 'mfr-apple',
     warrantyMonths: 12,
@@ -519,7 +528,7 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'Galaxy S24',
     code: 'SM-S9210',
-    image: 'phone.svg',
+    image: 'galaxy-s24.jpg',
     categoryId: 'cat-phone',
     manufacturerId: 'mfr-samsung',
     warrantyMonths: 12,
@@ -1659,9 +1668,9 @@ export function createDemoService(dependencies: {
             .selectAll()
             .where('name', '=', String(input.name))
             .executeTakeFirst<Row>()) ?? (await md(collection, input));
-        // A drawing for a model the demo enters (`DEMO_PICTURES`), when the
-        // model seed stored it: a database seeded before the seed kept
-        // every drawing gets the model without one.
+        // A picture for a model the demo enters (`DEMO_PICTURES`), with
+        // its credit, when the model seed stored it: a database seeded
+        // before the seed kept every picture gets the model without one.
         const picture = async (image: DemoPicture): Promise<Row> =>
           (await database
             .query()
@@ -1669,7 +1678,12 @@ export function createDemoService(dependencies: {
             .select('id')
             .where('id', '=', DEMO_PICTURES[image])
             .executeTakeFirst())
-            ? { imageFileId: DEMO_PICTURES[image] }
+            ? {
+                imageFileId: DEMO_PICTURES[image],
+                ...(DEMO_PICTURE_CREDITS[image]
+                  ? { imageCredit: DEMO_PICTURE_CREDITS[image] }
+                  : {}),
+              }
             : {};
         const mouseCat = await seeded('cat-mouse');
         const keyboardCat = await seeded('cat-keyboard');

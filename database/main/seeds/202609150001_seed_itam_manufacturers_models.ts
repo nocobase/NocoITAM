@@ -21,7 +21,7 @@ import {
 // live in `assets/models/` next to this seed; `CREDITS.md` there lists the
 // photos' licenses, which `imageCredit` repeats on the model page.
 //
-// Every drawing is stored, the ones no seeded model uses too (2026-10-20):
+// Every picture is stored, the ones no seeded model uses too (2026-10-20):
 // they are the picture library the demo's own models point at, by these
 // same file ids, so a demo model has a picture without writing a file.
 
@@ -102,6 +102,10 @@ const PICTURE_FILE_IDS: Readonly<Record<string, string>> = {
   'iphone-15.jpg': 'f47e6880-c469-51d3-b092-79488ba10e30',
   'mx-master-3s.jpg': '7d42559e-4eb3-5da7-ad9b-f5e8382e0c30',
   'mx-keys.jpg': '27d4635a-c65a-5532-af12-77a98e59f77c',
+  '980-pro-1tb.jpg': '7f41211e-06a5-5b26-aa06-adc66b5de478',
+  'iphone-15-pro.jpg': 'df65e991-bad7-51b0-9e33-cbbe61b22007',
+  'studio-display.jpg': '26d984e7-df22-5709-b983-df16ef578703',
+  'galaxy-s24.jpg': '95d3bc1d-4930-5149-8439-f95c28e476ae',
 };
 
 const MANUFACTURERS: readonly ManufacturerSeed[] = [
@@ -301,7 +305,8 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-980-pro-1tb',
-    image: 'disk.svg',
+    image: '980-pro-1tb.jpg',
+    imageCredit: 'D-Kuru, CC BY-SA 4.0, Wikimedia Commons',
     name: '980 PRO 1 TB',
     manufacturerId: 'mfr-samsung',
     categoryId: 'cat-disk',
@@ -520,9 +525,9 @@ const seed: SeedDefinition = defineSeed({
         })
         .execute();
     }
-    // The rest of the drawings, for the demo's models.
+    // The rest of the pictures, for the demo's models.
     for (const image of Object.keys(PICTURE_FILE_IDS))
-      if (image.endsWith('.svg')) await pictureFile(image);
+      await pictureFile(image);
   },
 });
 
