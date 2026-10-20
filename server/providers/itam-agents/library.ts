@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 import type { Agents } from '@nocobase/app-plugin-agents/server/tokens';
 import type { DatabaseManager } from '@nocobase/db';
 
-import { assistantId } from './assistant.js';
 import { claimMarker, readMarker, writeMarker } from './markers.js';
 import { METHOD_SKILLS, WORK_SKILLS } from './skill.js';
 
@@ -73,18 +72,6 @@ export async function provisionSkills(
     added[slug] = (await agents.skills.create(null, { content })).id;
   }
   if (!Object.keys(added).length) return;
-  const agentId = await assistantId(database);
-  const forAssistant = Object.entries(added)
-    .filter(([slug]) => (METHOD_SKILLS as readonly string[]).includes(slug))
-    .map(([, id]) => id);
-  if (agentId && forAssistant.length) {
-    const target = { scope: 'agent', scopeId: agentId } as const;
-    const attached = await agents.skills.attached(target).catch(() => null);
-    if (attached)
-      await agents.skills.attach(target, [
-        ...new Set([...attached, ...forAssistant]),
-      ]);
-  }
   await writeMarker(database, SKILLS_MARKER, {
     skillIds: { ...known, ...added },
   });

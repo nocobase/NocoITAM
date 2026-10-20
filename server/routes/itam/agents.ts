@@ -19,10 +19,7 @@ import {
   skillIdsOf,
 } from '../../providers/itam-agents/library.js';
 import { readMarker } from '../../providers/itam-agents/markers.js';
-import {
-  WORK_AGENTS,
-  workAgentIds,
-} from '../../providers/itam-agents/work-agents.js';
+import { WORK_AGENTS } from '../../providers/itam-agents/work-agents.js';
 import {
   AGENTS,
   RUN_STATUSES,
@@ -130,7 +127,6 @@ export const agentRoutes: AppApiRouteContribution<Application> =
       async (context) => {
         try {
           const now = Date.now();
-          const ids = await workAgentIds(database());
           const skills = skillIdsOf(
             await readMarker(database(), SKILLS_MARKER).catch(() => null),
           );
@@ -141,7 +137,8 @@ export const agentRoutes: AppApiRouteContribution<Application> =
               const run = await workRun(container, agent).catch(() => null);
               return {
                 agent,
-                agentId: ids[agent] ?? null,
+                // No agent of the plugin's does the work (Agents plugin 1.0).
+                agentId: null,
                 skill: WORK_AGENTS[agent].skill,
                 skillId: skills[WORK_AGENTS[agent].skill] ?? null,
                 model: run?.model ?? null,

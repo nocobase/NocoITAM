@@ -1,163 +1,276 @@
-import { MAX_MODEL_ENTRIES } from '@nocobase/app-plugin-agents/shared/agents';
+import type {
+  OnlineAgentJson,
+  OnlineAgentToolContext,
+} from '@nocobase/app-plugin-agents/server/online-agent';
 import type { Agents } from '@nocobase/app-plugin-agents/server/tokens';
-import type { DatabaseManager } from '@nocobase/db';
+import type { ServiceContainer } from '@nocobase/service-provider';
+import { z, type ZodType } from 'zod';
 
-import {
-  claimMarker,
-  firstAccount,
-  readMarker,
-  writeMarker,
-} from './markers.js';
+import { readSkill } from '../itam/ai-model.js';
+import { planServiceToken } from '../itam/plans.js';
+import { CreatePlanInput, planOps } from './plan-input.js';
 import { ITAM_ASSISTANT_INSTRUCTIONS } from './preset.js';
+import {
+  AvailabilityInput,
+  DeviceSyncReviewInput,
+  SEARCHABLE_COLLECTIONS,
+  SearchInput,
+  StatsInput,
+  availability,
+  businessContext,
+  deviceSyncReview,
+  getRecord,
+  matchModel,
+  onboardingPlan,
+  readerFor,
+  search,
+  stats,
+} from './reads.js';
+import { ITAM_WORK_GUIDE, METHOD_SKILLS } from './skill.js';
 
 /**
- * @temporary(nocobase-official): an agent the application ships is created
- * from code once, at start, because the Agents plugin has no way to ship one
- * (after NocoCRM's). Replace with the plugin's own mechanism when it has one.
+ * Asset Steward (资产管家) on the Agents plugin's OnlineAgent service (plugin
+ * 1.0, 2026-10-20). Until then it was an online agent of the plugin, whose
+ * runs called ITAM's `itam` commands from a sandbox; 1.0 keeps no online
+ * agents, and a chat runs the model inside this process with the business
+ * tools the application registers. So Asset Steward is the scope `itam`:
+ * the tools below — each the read a command made (reads.ts) or proposing a
+ * plan (plans.ts), as the person chatting and within what they may read —
+ * the instructions and the work guide as its system prompt, and the enabled
+ * chat models, the default first. ITAM's chat creates its conversations in
+ * this scope (`ITAM_CHAT_SCOPE` on the client).
  *
- * ITAM's assistant, Asset Steward (资产管家), as an online agent: made once from the ITAM
- * assistant preset's instructions and actions, open to everyone, listing
- * every chat model of the enabled services in their order (the first its
- * default), and made the system default chat agent when none is set. The
- * marker keeps its id, so an agent an administrator changed, archived or
- * deleted stays as they left it: it is never recreated or rewritten.
+ * The commands stay (routes/itam/agent-commands.ts) for an agent running on
+ * a runner, which reaches ITAM through its CLI.
  */
-export const ASSISTANT_MARKER = 'agents-noco-v1';
-const ASSISTANT_NAME = 'Asset Steward';
-const ASSISTANT_NAME_TEXT = { key: 'ai.assistantName', ns: 'itam' };
-/**
- * Its name until 2026-10-16, and the line of its instructions that said so:
- * an agent still carrying them is renamed at start (`renameFormer`).
- */
-const FORMER_NAME = 'Noco';
-const FORMER_INTRO =
-  'You are Noco, the IT asset management (ITAM) assistant of this application.';
 
-export async function provisionAssistant(
-  agents: Agents,
-  database: DatabaseManager,
-  actions: readonly string[],
-): Promise<void> {
-  const marker = await readMarker(database, ASSISTANT_MARKER);
-  if (marker) {
-    if (typeof marker.agentId === 'string' && marker.agentId)
-      await renameFormer(database, marker.agentId);
-    return;
-  }
-  const creator = await firstAccount(database);
-  if (!creator) return;
-  if (
-    !(await claimMarker(database, ASSISTANT_MARKER, {
-      version: 1,
-      agentId: null,
-    }))
-  )
-    return;
-  const modelEntries = await chatModelEntries(agents);
-  const assistant = await agents.agents.create(creator, {
-    name: ASSISTANT_NAME,
-    type: 'online',
-    description: 'IT asset management assistant',
-    descriptionText: { key: 'ai.agentPreset.description', ns: 'itam' },
-    instructions: ITAM_ASSISTANT_INSTRUCTIONS,
-    actions: [...actions],
-    access: 'everyone',
-    ...(modelEntries.length ? { modelEntries } : {}),
-  });
-  await nameAssistant(database, assistant.id);
-  const settings = await agents.chat.settings();
-  if (!settings.defaultAgentId)
-    await agents.chat.updateSettings(creator, {
-      defaultAgentId: assistant.id,
-    });
-  await writeMarker(database, ASSISTANT_MARKER, {
-    version: 1,
-    agentId: assistant.id,
-  });
-}
+export const ITAM_SCOPE = 'itam';
+export const ASSISTANT_NAME = 'Asset Steward';
+
+/** The tools, by name; the plan card is drawn for `itam_plan_create`. */
+export const ITAM_TOOLS = {
+  context: 'itam_context',
+  search: 'itam_search',
+  record: 'itam_record_get',
+  stats: 'itam_stats',
+  availability: 'itam_availability',
+  modelMatch: 'itam_model_match',
+  onboarding: 'itam_onboarding_plan',
+  deviceSync: 'itam_device_sync_review',
+  planOps: 'itam_plan_ops',
+  planCreate: 'itam_plan_create',
+  skill: 'itam_read_skill',
+} as const;
 
 /**
- * The assistant named in the viewer's language (资产管家 / Asset Steward).
- * @temporary(nocobase-official): `agents.create` takes no name translation,
- * so it is written on the plugin's row, as the work agents' are.
+ * What a tool hands back must already be plain JSON (dates as ISO strings);
+ * the register's rows are, once serialized.
  */
-async function nameAssistant(
-  database: DatabaseManager,
-  id: string,
-): Promise<void> {
-  await database
-    .query()
-    .updateTable('agAgents')
-    .set({ nameText: ASSISTANT_NAME_TEXT })
-    .where('id', '=', id)
-    .where('name', '=', ASSISTANT_NAME)
-    .execute()
-    .catch(() => undefined);
-}
+const asJson = (value: unknown): OnlineAgentJson =>
+  JSON.parse(JSON.stringify(value ?? null)) as OnlineAgentJson;
 
 /**
- * Noco became Asset Steward (2026-10-16). An assistant still named Noco takes
- * the new name, its translation and the new first line of its instructions;
- * one an administrator renamed keeps the name they gave it.
+ * A refusal the model can act on — a step of a plan the person may not
+ * take, a record that is not there — returned rather than thrown, so the
+ * answer goes on with it instead of failing.
  */
-async function renameFormer(
-  database: DatabaseManager,
-  id: string,
-): Promise<void> {
-  const row = await database
-    .query()
-    .selectFrom('agAgents')
-    .select('instructions')
-    .where('id', '=', id)
-    .where('name', '=', FORMER_NAME)
-    .executeTakeFirst<{ instructions: string | null }>()
-    .catch(() => undefined);
-  if (!row) return;
-  const intro = ITAM_ASSISTANT_INSTRUCTIONS.split('\n')[0];
-  await database
-    .query()
-    .updateTable('agAgents')
-    .set({
-      name: ASSISTANT_NAME,
-      nameText: ASSISTANT_NAME_TEXT,
-      ...(row.instructions?.includes(FORMER_INTRO)
-        ? { instructions: row.instructions.replace(FORMER_INTRO, intro) }
+function refusal(error: unknown): OnlineAgentJson {
+  const failure = error as {
+    message?: unknown;
+    code?: unknown;
+    rule?: unknown;
+    field?: unknown;
+    detail?: unknown;
+  };
+  return asJson({
+    error: {
+      message:
+        typeof failure?.message === 'string' ? failure.message : String(error),
+      ...(typeof failure?.rule === 'string' ? { reason: failure.rule } : {}),
+      ...(typeof failure?.code === 'string' ? { code: failure.code } : {}),
+      ...(typeof failure?.field === 'string' ? { field: failure.field } : {}),
+      ...(typeof failure?.detail === 'string'
+        ? { detail: failure.detail }
         : {}),
-    })
-    .where('id', '=', id)
-    .where('name', '=', FORMER_NAME)
-    .execute()
-    .catch(() => undefined);
+    },
+  });
 }
 
-/** The assistant's id, once provisioned; null before. */
-export async function assistantId(
-  database: DatabaseManager,
-): Promise<string | null> {
-  const marker = await readMarker(database, ASSISTANT_MARKER);
-  return typeof marker?.agentId === 'string' && marker.agentId
-    ? marker.agentId
-    : null;
+export function registerAssistant(
+  agents: Agents,
+  container: ServiceContainer,
+  notes: () => { businessNotes: string; timeZone: string },
+): void {
+  const configurator = agents.onlineAgent.configurator;
+  const tool = <I>(
+    name: string,
+    description: string,
+    inputSchema: ZodType<I>,
+    run: (input: I, userId: string, context: OnlineAgentToolContext) => unknown,
+    publicView?: {
+      input(value: I): OnlineAgentJson;
+      output(value: OnlineAgentJson): OnlineAgentJson;
+    },
+  ) =>
+    configurator.registerTool<I, OnlineAgentJson>(name, {
+      version: '1',
+      definition: {
+        description,
+        inputSchema,
+        execute: async (input, options) => {
+          const context = (
+            options as unknown as { context: OnlineAgentToolContext }
+          ).context;
+          try {
+            return asJson(await run(input, context.user.id, context));
+          } catch (error) {
+            return refusal(error);
+          }
+        },
+        ...(publicView ? { public: publicView } : {}),
+      },
+    });
+  const reader = (userId: string) => readerFor(container, userId);
+
+  tool(
+    ITAM_TOOLS.context,
+    "Today's date, who the reader is (their user id and person record), the currency, the reminder thresholds, the administrator's business notes, what needs attention and what waits for the reader. Read it once at the start of a task.",
+    z.object({}),
+    async (_input, userId) => businessContext(reader(userId)),
+  );
+  tool(
+    ITAM_TOOLS.search,
+    `Searches one collection the reader may read: ${SEARCHABLE_COLLECTIONS.join(', ')}. \`q\` is free text matched word by word (number, serial, name, a model's or product's name); \`filter\` takes exact values ({"status":"inStock"}, {"status":["inUse","onLoan"]}), date ranges as "field:gte" / "field:lte", and named views as {"view": …}: devices available, idle, warrantyExpiring, auditOverdue; entitlements overAllocated, idle, expiring, ended. \`ids\` reads given records. Rows are summarised with a \`…Name\` beside each reference id; ${ITAM_TOOLS.record} reads one whole.`,
+    SearchInput,
+    async (input, userId) => search(reader(userId), input),
+  );
+  tool(
+    ITAM_TOOLS.record,
+    'One record with its last history events and a `…Name` beside each reference id. Devices come with their components, seats and repairs; people with the devices, stock holdings and seats they hold; entitlements with their seats; stock with its holdings; purchase orders with their lines (a line id is what receiving names).',
+    z.object({
+      collection: z.enum(SEARCHABLE_COLLECTIONS),
+      id: z.string().min(1).max(64),
+    }),
+    async ({ collection, id }, userId) =>
+      getRecord(reader(userId), collection, id),
+  );
+  tool(
+    ITAM_TOOLS.stats,
+    'Either devices counted by one field (`devicesBy`: status, categoryId, locationId, departmentId, modelId, manufacturerId), or a preset report (`report`: overview, distribution, costs, perPersonCost, expiry, softwareCompliance, repairs, auditResults, changes) over an optional period (`from`, `to`) and scope.',
+    StatsInput,
+    async (input, userId) => stats(reader(userId), input),
+  );
+  tool(
+    ITAM_TOOLS.availability,
+    'In-stock, unreserved devices of a model or category, stock quantities by name, and entitlements of a software product with their free seats. Read it before proposing an assignment or a purchase.',
+    AvailabilityInput,
+    async (input, userId) => availability(reader(userId), input),
+  );
+  tool(
+    ITAM_TOOLS.modelMatch,
+    'The registered models, categories and software products a description ("MacBook Pro 14", "Figma", "USB-C dock") refers to, with their ids.',
+    z.object({ text: z.string().min(1).max(200) }),
+    async ({ text }, userId) => matchModel(reader(userId), text),
+  );
+  tool(
+    ITAM_TOOLS.onboarding,
+    "A joiner's kit for their department and position, what they hold or have reserved, the device, stock item or seat proposed for the rest (the system's choice, or Asset Steward's pick while still free), what is planned from orders and leavers, and the shortfall. Propose exactly these proposals; never choose other items.",
+    z.object({ personId: z.string().min(1).max(64) }),
+    async ({ personId }, userId) => onboardingPlan(reader(userId), personId),
+  );
+  tool(
+    ITAM_TOOLS.deviceSync,
+    "Where the device management platforms (Intune, Jamf Pro) and the register disagree. `view`: checks — register devices that are silent (`stale`), with another primary user (`userMismatch`) or online while off duty (`statusMismatch`); unregistered — platform records no device answers to, with `suggestedModelId` and, for a serial several devices share, `candidates`; unmanaged — devices in use of a managed category on no platform; ignored — records kept off the register; exempted — devices marked as not to be managed by any platform, with the reason; dismissed — differences a person ignored that still hold. With `deviceId`, that device's platform records, differences and `exemption`. `connected: false` means no platform is connected.",
+    DeviceSyncReviewInput,
+    async (input, userId) => deviceSyncReview(reader(userId), input),
+  );
+  tool(
+    ITAM_TOOLS.planOps,
+    "Every operation a plan's step may be, with the JSON Schema of its `params`, and the fields each collection's `create_record` takes. Read the ones you need before writing a plan.",
+    z.object({}),
+    () => Promise.resolve(planOps()),
+  );
+  tool(
+    ITAM_TOOLS.planCreate,
+    'Proposes one plan: checks every step as the person and keeps it for them to confirm on its card; nothing changes until they do. A step that would be refused comes back as `error` naming it (`field`: steps.N) and why (`detail`): fix that step and propose the plan again.',
+    CreatePlanInput,
+    async (input, userId, context) => {
+      const plan = await container
+        .resolve(planServiceToken)
+        .create(userId, input, {
+          agentId: null,
+          agentName: ASSISTANT_NAME,
+          runId: null,
+          conversationId: context.sessionId,
+        });
+      return {
+        id: plan.id,
+        title: plan.title,
+        status: plan.status,
+        steps: input.steps.length,
+      };
+    },
+    {
+      // The card reads the plan itself by its id; the page needs no more.
+      input: (value) =>
+        asJson({ title: value.title, steps: value.steps.length }),
+      output: (value) => value,
+    },
+  );
+  tool(
+    ITAM_TOOLS.skill,
+    `One of ITAM's method skills, as the administrator keeps it on Agent 团队 → 技能: ${METHOD_SKILLS.join(', ')}. Read the one a task calls for before starting it.`,
+    z.object({ name: z.enum(METHOD_SKILLS) }),
+    async ({ name }) => ({ name, content: await readSkill(container, name) }),
+  );
+
+  configurator.registerOnlineAgentScope(ITAM_SCOPE, async () => ({
+    tool: Object.values(ITAM_TOOLS),
+    model: await chatModels(agents),
+    systemPromptTemplate: systemPrompt(notes()),
+  }));
 }
 
 /**
- * Every chat model of the enabled services, in their order, as an agent's
- * model entries (the first its default).
+ * The enabled chat models, as `service/model`, the default chat model of
+ * Agent 团队 → 模型 first: the one a new conversation answers with.
  */
-export async function chatModelEntries(
-  agents: Agents,
-): Promise<{ modelService: string; model: string }[]> {
-  const services = (await agents.online.services.list()).filter(
-    (service) => service.enabled,
-  );
-  return services
-    .flatMap((service) =>
+async function chatModels(agents: Agents): Promise<string[]> {
+  try {
+    const services = (await agents.models.services.list()).filter(
+      (service) => service.enabled,
+    );
+    const all = services.flatMap((service) =>
       service.models
         .filter((model) => model.kind === 'chat')
-        .map((model) => ({
-          modelService: service.name,
-          model: model.value,
-        })),
-    )
-    .slice(0, MAX_MODEL_ENTRIES);
+        .map((model) => `${service.name}/${model.value}`),
+    );
+    const chat = (await agents.models.services.defaults()).effectiveChat;
+    const first = chat ? `${chat.modelService}/${chat.model}` : null;
+    return first && all.includes(first)
+      ? [first, ...all.filter((ref) => ref !== first)]
+      : all;
+  } catch {
+    return [];
+  }
+}
+
+/** Who Asset Steward is, how it works on ITAM, and the business notes. */
+function systemPrompt({
+  businessNotes,
+  timeZone,
+}: {
+  businessNotes: string;
+  timeZone: string;
+}): string {
+  return [
+    ITAM_ASSISTANT_INSTRUCTIONS,
+    ITAM_WORK_GUIDE,
+    `Dates the tools return are local to the deployment; speak of them in its time zone, ${timeZone}.`,
+    businessNotes.trim()
+      ? `## Business notes from the administrator\n\n${businessNotes.trim()}`
+      : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }

@@ -8,7 +8,7 @@ import {
 } from '@nocobase/service-provider';
 
 import { deviceSyncReview, readerFor } from '../itam-agents/reads.js';
-import { WORK_AGENTS, workAgentIds } from '../itam-agents/work-agents.js';
+import { WORK_AGENTS } from '../itam-agents/work-agents.js';
 import {
   agentRunServiceToken,
   type AgentRun,
@@ -873,7 +873,6 @@ export function createDeviceSyncFollowUp(dependencies: {
         );
     steps = steps.slice(0, 30);
     let planId: string | null = null;
-    const agentId = (await workAgentIds(database()))[AGENT] ?? null;
     // A step the person may not take, or that no longer applies, is
     // refused when proposed: its item becomes a note (with any step that
     // follows from it) and the rest are proposed.
@@ -893,7 +892,8 @@ export function createDeviceSyncFollowUp(dependencies: {
             })),
           },
           {
-            agentId,
+            // No agent of the plugin's does the work (Agents plugin 1.0).
+            agentId: null,
             agentName: WORK_AGENTS[AGENT].name,
             runId: run.id,
             conversationId: null,

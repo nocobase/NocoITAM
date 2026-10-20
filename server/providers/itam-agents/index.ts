@@ -20,8 +20,8 @@ import { deviceSyncFollowUpToken } from '../itam/device-sync-followup.js';
 import { deviceSyncServiceToken } from '../itam/device-sync.js';
 import { planServiceToken } from '../itam/plans.js';
 import { settingsServiceToken } from '../itam/settings.js';
-import { agentActionOptions, PLAN_ACTION, VIEW_ACTION } from './actions.js';
-import { provisionAssistant } from './assistant.js';
+import { agentActionOptions } from './actions.js';
+import { registerAssistant } from './assistant.js';
 import {
   createReadSnapshots,
   registerContextKinds,
@@ -31,11 +31,8 @@ import { itamActionGate, itamAgentsAccess } from './gate.js';
 import { provisionSkills } from './library.js';
 import { provisionModelServices } from './model-services.js';
 import { deliverPlanOutcome } from './plan-news.js';
-import { ITAM_ASSISTANT_INSTRUCTIONS } from './preset.js';
 import { itamConversationRules } from './rules.js';
-import { registerItamSkill } from './skill.js';
 import { SEARCH_SOURCE } from './search-answers.js';
-import { provisionWorkAgents } from './work-agents.js';
 
 /** Which collections each person could read when they last loaded a page. */
 /** How long MDM 跟进 waits for the other platforms' pulls to end. */
@@ -43,9 +40,6 @@ const FOLLOW_UP_SETTLE_MS = 15_000;
 
 export const readSnapshotsToken: ServiceToken<ReadSnapshots> =
   createServiceToken<ReadSnapshots>('itam/agents-read-snapshots');
-
-// The actions an ITAM agent starts from: reading and proposing plans.
-const PRESET_ACTIONS: readonly string[] = [VIEW_ACTION, PLAN_ACTION];
 
 /**
  * ITAM on the Agents plugin (template 1.0.0-beta.64, after NocoCRM's): the
@@ -77,19 +71,9 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
     const agents = this.app.container.resolve(agentsToken);
     agents.actions.provide(agentActionOptions);
     agents.gate.set(itamActionGate());
-    // Every online run gets how to use ITAM's commands and plans.
-    registerItamSkill(agents);
-    agents.presets.register({
-      key: 'itam-assistant',
-      name: 'ITAM assistant',
-      description:
-        'Looks things up across the IT asset register and proposes changes as plans the person confirms.',
-      nameText: { key: 'ai.agentPreset.name', ns: 'itam' },
-      descriptionText: { key: 'ai.agentPreset.description', ns: 'itam' },
-      instructions: ITAM_ASSISTANT_INSTRUCTIONS,
-      type: 'online',
-      actions: [...PRESET_ACTIONS],
-    });
+    // Asset Steward: ITAM's tools and its conversations' scope on the
+    // plugin's OnlineAgent service (assistant.ts, Agents plugin 1.0).
+    registerAssistant(agents, this.app.container, () => this.notes);
     agents.conversations.rules.provide(itamConversationRules(() => this.notes));
     registerContextKinds(
       agents,
@@ -240,9 +224,7 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
         timeZone: (await settings.get('general')).timeZone,
       };
       await provisionModelServices(this.app, agents);
-      await provisionAssistant(agents, database, PRESET_ACTIONS);
       await provisionSkills(agents, database);
-      await provisionWorkAgents(agents, database);
     } catch (error) {
       if (this.app.container.has(loggingToken))
         this.app.container

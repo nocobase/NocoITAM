@@ -2,28 +2,29 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { agentsToken } from '@nocobase/app-plugin-agents/server/tokens';
-import { databaseManagerToken } from '@nocobase/db';
 import type { ServiceResolver } from '@nocobase/service-provider';
 import { z, type ZodType } from 'zod';
 
-import { assistantId } from '../itam-agents/assistant.js';
 import { SKILLS_DIR } from '../itam-agents/library.js';
-import { WORK_AGENTS, workAgentIds } from '../itam-agents/work-agents.js';
+import { WORK_AGENTS, workInstructions } from '../itam-agents/work-agents.js';
 import type { AgentName } from './agent-runs.js';
 import { BusinessRuleError } from './errors.js';
 
 /**
  * ITAM's own model calls (template 1.0.0-beta.64, after NocoCRM's): reading
  * a delivery document, AI 整理 on a purchase order, a model's or a product's
- * details, and Asset Steward choosing a joiner's equipment ask the Agents plugin's
- * model gateway, which keeps the keys and records the use. Each is a
- * session of turns, each one call; the answer is JSON in the reply, checked
- * against the shape the caller gives — the gateway's `generate` has no
- * structured output of its own — and asked once more when it is not.
+ * details, Asset Steward choosing a joiner's equipment and the work agents
+ * ask the Agents plugin's model gateway, which keeps the keys and records
+ * the use. Each is a session of turns, each one call; the answer is JSON in
+ * the reply, checked against the shape the caller gives — the gateway's
+ * `generate` has no structured output of its own — and asked once more when
+ * it is not.
  *
- * The model is Asset Steward's first, so changing Asset Steward's model on AI → 智能体 changes
- * this work too; without one, the system's default chat model. None means
- * the assistant is unavailable, and the pages keep their plain forms.
+ * The model is the default chat model of Agent 团队 → 模型 (Agents plugin
+ * 1.0, 2026-10-20: the plugin keeps no online agents any more, so Asset
+ * Steward's and the work agents' own models went with them), else the first
+ * an enabled service offers. None means the assistant is unavailable, and
+ * the pages keep their plain forms.
  */
 
 export const AI_SOURCE = 'NocoITAM';
@@ -35,62 +36,29 @@ export async function itamModel(
   container: ServiceResolver,
 ): Promise<ModelRef | null> {
   if (!container.has(agentsToken)) return null;
-  const agents = container.resolve(agentsToken);
+  const models = container.resolve(agentsToken).models;
   try {
-    const id = container.has(databaseManagerToken)
-      ? await assistantId(container.resolve(databaseManagerToken))
-      : null;
-    const agentIds = [id, (await agents.chat.settings()).defaultAgentId];
-    for (const agentId of agentIds) {
-      if (!agentId) continue;
-      const agent = await agents.agents.get(agentId).catch(() => null);
-      const entry = agent && !agent.archivedAt ? agent.modelEntries[0] : null;
-      if (entry && 'modelService' in entry)
-        return { modelService: entry.modelService, model: entry.model };
-    }
+    const chat = (await models.services.defaults()).effectiveChat;
+    if (chat) return { modelService: chat.modelService, model: chat.model };
   } catch {
-    // Unreadable: the system default below.
+    // Unreadable: the gateway's own default below.
   }
-  const catalog = await agents.online.gateway.catalog('chat').catch(() => null);
+  const catalog = await models.gateway.catalog('chat').catch(() => null);
   return catalog?.defaultModel ?? null;
 }
 
 /**
- * A work agent's model and instructions (2026-10-16, work-agents.ts): its
- * first model when it lists one, else Asset Steward's (`itamModel`); null when there
- * is no model to ask. One an administrator archived or deleted leaves its
- * work to Asset Steward's model and no instructions of its own.
+ * A work agent's model and instructions (2026-10-16, work-agents.ts): the
+ * default chat model and the instructions ITAM writes for the work; null
+ * when there is no model to ask. Their method is the skill of the plugin's
+ * library (`readSkill`), which administrators edit on Agent 团队 → 技能.
  */
 export async function workRun(
   container: ServiceResolver,
   work: AgentName,
 ): Promise<{ model: ModelRef; instructions: string } | null> {
-  if (!container.has(agentsToken)) return null;
-  let instructions = '';
-  try {
-    const id = container.has(databaseManagerToken)
-      ? (await workAgentIds(container.resolve(databaseManagerToken)))[work]
-      : undefined;
-    const agent = id
-      ? await container
-          .resolve(agentsToken)
-          .agents.get(id)
-          .catch(() => null)
-      : null;
-    if (agent && !agent.archivedAt) {
-      instructions = (agent.instructions ?? '').trim();
-      const entry = agent.modelEntries[0];
-      if (entry && 'modelService' in entry)
-        return {
-          model: { modelService: entry.modelService, model: entry.model },
-          instructions,
-        };
-    }
-  } catch {
-    // Unreadable: Asset Steward's model below.
-  }
   const model = await itamModel(container).catch(() => null);
-  return model ? { model, instructions } : null;
+  return model ? { model, instructions: workInstructions(work) } : null;
 }
 
 /** Whether the work can run: there is a model to ask. */
@@ -160,7 +128,7 @@ export async function openSession(
   ]
     .filter(Boolean)
     .join('\n\n');
-  const gateway = container.resolve(agentsToken).online.gateway;
+  const gateway = container.resolve(agentsToken).models.gateway;
   const turns: { role: 'user' | 'assistant'; text: string }[] = [];
   const ask = async (content: string, signal?: AbortSignal) => {
     turns.push({ role: 'user', text: content });
