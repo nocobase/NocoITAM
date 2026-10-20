@@ -205,8 +205,19 @@ function safeParse(value: string): unknown {
  */
 const FIELD_LIKE_EVENTS = new Set(['productKey', 'seatKey']);
 
-const same = (a: unknown, b: unknown): boolean =>
-  JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+/**
+ * A decimal column reads back as text ("0.05") while a form writes the number
+ * (0.05): the same value, not a change to log (2026-10-20, a category's
+ * residual rate logged "5% → 5%").
+ */
+const numericText = (value: string, number: number): boolean =>
+  /^-?\d+(\.\d+)?$/.test(value.trim()) && Number(value) === number;
+const same = (a: unknown, b: unknown): boolean => {
+  // Only a number beside text: two texts ("0012", "12") stay different.
+  if (typeof a === 'number' && typeof b === 'string') return numericText(b, a);
+  if (typeof a === 'string' && typeof b === 'number') return numericText(a, b);
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+};
 
 /**
  * Extra timeline lines a subject type derives from its own records.
@@ -444,11 +455,18 @@ export function createHistoryService(
         .offset(options.offset ?? 0)
         .execute<ChangeLogRecord>();
       return {
-        data: rows.map((row) => ({
-          ...row,
-          oldValue: parseJson(row.oldValue),
-          newValue: parseJson(row.newValue),
-        })),
+        data: rows
+          .map((row) => ({
+            ...row,
+            oldValue: parseJson(row.oldValue),
+            newValue: parseJson(row.newValue),
+          }))
+          // A line logged before `same` knew a decimal's text from its
+          // number ("5% → 5%") changed nothing; it is left out.
+          .filter(
+            (row) =>
+              row.action !== 'update' || !same(row.oldValue, row.newValue),
+          ),
         total: await count('changeLogs', subject),
       };
     },

@@ -107,4 +107,13 @@ describe('what put a line on the timeline', () => {
     expect(origins).toContain('schedule');
     expect(origins).toContain('human');
   });
+
+  it('logs no change for a decimal read back as text, but does for two texts', async () => {
+    const changed = await history().logChanges(
+      subject,
+      { residualRate: '0.05', code: '0012' },
+      { residualRate: 0.05, code: '12' },
+    );
+    expect(changed).toEqual(['code']);
+  });
 });

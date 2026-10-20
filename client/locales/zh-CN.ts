@@ -248,6 +248,7 @@ const zhCN: AppResource = {
     deleteDescription: '评论的文字和附件会删除，回复会保留。',
   },
   history: {
+    entry: { added: '新增', changed: '修改', removed: '删除' },
     buckets: {
       today: '今天',
       yesterday: '昨天',

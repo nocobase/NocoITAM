@@ -860,6 +860,7 @@ function ChangeValue({
       const line = lines[0];
       return (
         <span className='inline-flex flex-wrap items-baseline gap-x-2'>
+          {line.kind ? <KindTag kind={line.kind} t={t} /> : null}
           {line.label ? (
             <span className='text-muted-foreground'>{line.label}</span>
           ) : null}
@@ -883,6 +884,7 @@ function ChangeValue({
       <ul className='space-y-0.5 text-sm'>
         {lines.map((line) => (
           <li key={line.key} className='flex flex-wrap items-baseline gap-x-2'>
+            {line.kind ? <KindTag kind={line.kind} t={t} /> : null}
             {line.label ? (
               <span className='text-muted-foreground'>{line.label}</span>
             ) : null}
@@ -959,6 +961,37 @@ interface DiffLine {
   readonly label: string;
   readonly from?: string;
   readonly to?: string;
+  /** In a list of entries (a field template): what happened to this one. */
+  readonly kind?: 'added' | 'removed' | 'changed';
+}
+
+type Entry = Record<string, unknown> | undefined;
+
+const KIND_ORDER = { changed: 0, added: 1, removed: 2 } as const;
+const KIND_TONE = {
+  added: 'bg-primary/10 text-primary',
+  changed: 'bg-warning text-warning-foreground',
+  removed: 'bg-muted text-muted-foreground',
+} as const;
+
+/** 修改 / 新增 / 删除 before an entry of a list, as the editor tags them. */
+function KindTag({
+  kind,
+  t,
+}: {
+  readonly kind: NonNullable<DiffLine['kind']>;
+  readonly t: Translate;
+}): ReactElement {
+  return (
+    <span
+      className={cn(
+        'shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium',
+        KIND_TONE[kind],
+      )}
+    >
+      {t(`history.entry.${kind}`)}
+    </span>
+  );
 }
 
 /**
@@ -1014,10 +1047,64 @@ function diffStructured(
   const after = toMap(newValue);
   const isArray = Array.isArray(oldValue) || Array.isArray(newValue);
   const lines: DiffLine[] = [];
+  /**
+   * A template entry that changed, by what changed (2026-10-20): its label
+   * when that changed, else the label names it and only the rest differs.
+   */
+  const changedEntry = (key: string, a: unknown, b: unknown): DiffLine => {
+    const one = (entry: unknown, part: string): string => {
+      const e = entry as Record<string, unknown>;
+      if (part === 'type')
+        return t(`fieldTemplate.types.${text(e.type)}`, {
+          defaultValue: text(e.type),
+        });
+      if (part === 'options')
+        return Array.isArray(e.options)
+          ? `(${e.options.map(text).join(', ')})`
+          : '—';
+      if (part === 'required')
+        return e.required ? t('fieldTemplate.required') : t('common.no');
+      if (part === 'hidden')
+        return e.hidden ? t('fieldTemplate.hiddenShort') : t('common.no');
+      return text(e[part]);
+    };
+    const parts = ['type', 'options', 'required', 'hidden'].filter(
+      (part) =>
+        JSON.stringify((a as Entry)?.[part] ?? null) !==
+        JSON.stringify((b as Entry)?.[part] ?? null),
+    );
+    const labelChanged =
+      text((a as Entry)?.label) !== text((b as Entry)?.label);
+    const join = (entry: unknown, list: readonly string[]) =>
+      list.map((part) => one(entry, part)).join(' ');
+    return labelChanged
+      ? {
+          key,
+          kind: 'changed',
+          label: '',
+          from: [text((a as Entry)?.label), join(a, parts)]
+            .filter(Boolean)
+            .join(' '),
+          to: [text((b as Entry)?.label), join(b, parts)]
+            .filter(Boolean)
+            .join(' '),
+        }
+      : {
+          key,
+          kind: 'changed',
+          label: text((b as Entry)?.label),
+          from: join(a, parts),
+          to: join(b, parts),
+        };
+  };
   for (const key of new Set([...before.keys(), ...after.keys()])) {
     const a = before.get(key);
     const b = after.get(key);
     if (JSON.stringify(a ?? null) === JSON.stringify(b ?? null)) continue;
+    if (isArray && a !== undefined && b !== undefined) {
+      lines.push(changedEntry(key, a, b));
+      continue;
+    }
     const render = (v: unknown) =>
       v === undefined || isEmpty(v)
         ? undefined
@@ -1031,10 +1118,18 @@ function diffStructured(
       label: isArray
         ? ''
         : (keyLabels[key] ?? t(`fields.${key}`, { defaultValue: key })),
-      from: render(a),
-      to: render(b),
+      ...(isArray ? { kind: a === undefined ? 'added' : 'removed' } : {}),
+      // An entry added or removed is shown once, as it is, not as a change.
+      ...(isArray
+        ? { to: render(b ?? a) }
+        : { from: render(a), to: render(b) }),
     });
   }
+  if (isArray)
+    lines.sort(
+      (x, y) =>
+        KIND_ORDER[x.kind ?? 'changed'] - KIND_ORDER[y.kind ?? 'changed'],
+    );
   if (lines.length === 0)
     lines.push({
       key: fieldKey,

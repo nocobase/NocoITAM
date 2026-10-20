@@ -256,6 +256,7 @@ const messages = {
     deleteDescription: 'Its text and files go; replies to it stay.',
   },
   history: {
+    entry: { added: 'Added', changed: 'Changed', removed: 'Removed' },
     buckets: {
       today: 'Today',
       yesterday: 'Yesterday',
