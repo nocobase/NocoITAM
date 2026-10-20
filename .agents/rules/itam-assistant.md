@@ -207,7 +207,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   costs, the last repairs, and how often its model was repaired in the last
   year by kind) and the model answers the kind of fault, repair / replace /
   inspect and at most three reasons. The form fills the kind, marked
-  请核对, and shows the rest beside it; the person decides. Chosen over a
+  请核对, and shows the rest under the fault description, which the form
+  starts with since 2026-10-20 (`fieldFooters` / `autoFocusField` of
+  `RecordFormDialog`); told to replace, it offers 改为创建报废, which
+  opens a disposal for the device with the fault and reason
+  `uneconomicalRepair` (`onReplace`). The person decides. Chosen over a
   background agent because it is asked at the moment a repair is filed,
   with the material on screen.
 - **Work agents** (2026-10-16, plan "Work agents", step 1, after

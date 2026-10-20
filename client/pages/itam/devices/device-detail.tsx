@@ -180,6 +180,11 @@ export default function DeviceDetailPage(): ReactElement {
     'correctStatus',
   ]);
   const [dialog, setDialog] = useState<DialogKind>();
+  // A repair Asset Steward advised against, opened as a disposal instead
+  // (2026-10-20): its fault and the reason it is not worth repairing.
+  const [disposalInitial, setDisposalInitial] = useState<
+    { readonly reason: string; readonly description: string } | undefined
+  >();
   // The person a platform says has the device, offered by MDM's
   // 分配给 / 调拨给 (device sync, 2026-10-15).
   const [suggested, setSuggested] = useState<string>();
@@ -806,15 +811,23 @@ export default function DeviceDetailPage(): ReactElement {
           onOpenChange={(open) => {
             if (!open) setDialog(undefined);
           }}
+          onReplace={({ description }) => {
+            setDisposalInitial({ reason: 'uneconomicalRepair', description });
+            setDialog('requestDisposal');
+          }}
         />
       ) : null}
       {dialog === 'requestDisposal' ? (
         <DisposalCreateDialog
           open
           onOpenChange={(open) => {
-            if (!open) setDialog(undefined);
+            if (!open) {
+              setDialog(undefined);
+              setDisposalInitial(undefined);
+            }
           }}
           deviceIds={[id]}
+          initial={disposalInitial}
           onCreated={(created) => {
             setDialog(undefined);
             void navigate(`/disposals/${created.id}`);

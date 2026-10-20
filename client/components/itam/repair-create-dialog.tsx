@@ -6,7 +6,8 @@ import {
   initialFormValues,
   RecordFormDialog,
 } from '@/components/itam/record-form-dialog';
-import { StatusBadge } from '@/components/status-badge';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useAiReading, useItamAi } from '@/lib/itam/ai-chat';
 import {
@@ -54,20 +55,31 @@ interface Triage {
  * repair to its own vendor. What takes judgement is asked of Asset Steward
  * (`POST /itam/ai/read`, task `repairTriage`, the device read on the server
  * as the person): the kind of fault, filled and marked 请核对, and whether to
- * repair it, replace it or look first, with its reasons, beside the form.
- * The person decides; nothing is saved until they save.
+ * repair it, replace it or look first, with its reasons, under the fault
+ * the form starts with (2026-10-20); told to replace, the caller may turn
+ * it into a disposal instead. The person decides; nothing is saved until
+ * they save.
  */
 export function RepairCreateDialog({
   deviceId,
   open,
   onOpenChange,
   onCreated,
+  onReplace,
 }: {
   /** The device, when the dialog is opened from its page. */
   readonly deviceId?: string;
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly onCreated?: (record: ItamRecord) => void;
+  /**
+   * When Asset Steward advises replacing rather than repairing (2026-10-20):
+   * the caller opens a disposal for the device instead, with the fault.
+   */
+  readonly onReplace?: (input: {
+    readonly deviceId: string;
+    readonly description: string;
+  }) => void;
 }): ReactElement {
   const mutations = useItamMutations<ItamRecord>(REPAIRS_PATH);
   return (
@@ -77,6 +89,7 @@ export function RepairCreateDialog({
       open={open}
       submitting={mutations.create.isPending}
       error={mutations.create.error}
+      onReplace={onReplace}
       onOpenChange={(next) => {
         onOpenChange(next);
         if (!next) mutations.create.reset();
@@ -97,6 +110,7 @@ function RepairForm({
   error,
   onOpenChange,
   onSubmit,
+  onReplace,
 }: {
   readonly deviceId?: string;
   readonly open: boolean;
@@ -104,6 +118,10 @@ function RepairForm({
   readonly error: unknown;
   readonly onOpenChange: (open: boolean) => void;
   readonly onSubmit: (values: Record<string, unknown>) => Promise<void>;
+  readonly onReplace?: (input: {
+    readonly deviceId: string;
+    readonly description: string;
+  }) => void;
 }): ReactElement {
   const { t } = useTranslation();
   const currentUserId = useCurrentUserId();
@@ -151,16 +169,30 @@ function RepairForm({
           <DeviceFacts device={device.data} deviceId={chosen} />
         ) : undefined
       }
-      aside={
-        <TriagePanel
-          deviceId={chosen}
-          fault={text(values.faultDescription)}
-          onCategory={(category) => {
-            setValues((before) => ({ ...before, faultCategory: category }));
-            setMarks((before) => new Set([...before, 'faultCategory']));
-          }}
-        />
-      }
+      // 看看 right under the fault it reads (2026-10-20), where the form
+      // starts, rather than in a column beside it.
+      autoFocusField={chosen ? 'faultDescription' : undefined}
+      fieldFooters={{
+        faultDescription: (
+          <TriagePanel
+            deviceId={chosen}
+            fault={text(values.faultDescription)}
+            onCategory={(category) => {
+              setValues((before) => ({ ...before, faultCategory: category }));
+              setMarks((before) => new Set([...before, 'faultCategory']));
+            }}
+            onReplace={
+              onReplace && chosen
+                ? () =>
+                    onReplace({
+                      deviceId: chosen,
+                      description: text(values.faultDescription),
+                    })
+                : undefined
+            }
+          />
+        ),
+      }}
       // The vendor follows the method: the device's own vendor once a
       // warranty or send-out repair is chosen, none for an internal one.
       derive={({ key, value }, current) =>
@@ -250,15 +282,18 @@ function DeviceFacts({
   );
 }
 
-/** Beside the form: asking Asset Steward, and what it recommends. */
+/** Under the fault: asking Asset Steward, and what it recommends. */
 function TriagePanel({
   deviceId,
   fault,
   onCategory,
+  onReplace,
 }: {
   readonly deviceId: string | undefined;
   readonly fault: string;
   readonly onCategory: (category: string) => void;
+  /** Turns the request into a disposal, when Asset Steward says replace. */
+  readonly onReplace?: () => void;
 }): ReactElement | null {
   const { t } = useTranslation();
   const ai = useItamAi();
@@ -305,33 +340,54 @@ function TriagePanel({
     }
   };
   return (
-    <div className='space-y-3 text-sm'>
-      <AiShortcut disabled={!ready || busy} onClick={() => void ask()}>
-        {t('repairs.triage.ask')}
-      </AiShortcut>
-      {!ready && !triage ? (
-        <p className='text-xs text-muted-foreground'>
-          {t('repairs.triage.hint')}
-        </p>
-      ) : null}
-      {busy ? (
-        <p
-          role='status'
-          className='flex items-center gap-2 text-muted-foreground'
-        >
-          <Spinner />
-          {t('repairs.triage.working')}
-        </p>
-      ) : null}
+    <div className='space-y-2 text-sm'>
+      <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+        <AiShortcut disabled={!ready || busy} onClick={() => void ask()}>
+          {t('repairs.triage.ask')}
+        </AiShortcut>
+        {!ready && !triage && !busy ? (
+          <span className='text-xs text-muted-foreground'>
+            {t('repairs.triage.hint')}
+          </span>
+        ) : null}
+        {busy ? (
+          <span
+            role='status'
+            className='flex items-center gap-2 text-muted-foreground'
+          >
+            <Spinner />
+            {t('repairs.triage.working')}
+          </span>
+        ) : null}
+      </div>
       {failure ? <p className='text-destructive'>{failure}</p> : null}
       {triage && !busy ? (
-        <div className='space-y-2'>
-          <StatusBadge
-            tone={triage.recommendation === 'replace' ? 'warning' : 'info'}
-            size='sm'
-          >
-            {t(`repairs.triage.recommendation.${triage.recommendation}`)}
-          </StatusBadge>
+        <div className='space-y-2 rounded-md bg-muted/50 px-3 py-2'>
+          <div className='flex flex-wrap items-center gap-2'>
+            {/* A filled tag, as a status is: amber for replace, the calm
+                blue for repair or look first. */}
+            <Badge
+              variant='secondary'
+              className={
+                triage.recommendation === 'replace'
+                  ? 'bg-warning text-warning-foreground'
+                  : 'bg-info text-info-foreground'
+              }
+            >
+              {t(`repairs.triage.recommendation.${triage.recommendation}`)}
+            </Badge>
+            {triage.recommendation === 'replace' && onReplace ? (
+              <Button
+                type='button'
+                variant='link'
+                size='sm'
+                className='h-auto px-0'
+                onClick={onReplace}
+              >
+                {t('repairs.triage.toDisposal')}
+              </Button>
+            ) : null}
+          </div>
           {triage.reasons.length ? (
             <ul className='list-disc space-y-0.5 pl-5'>
               {triage.reasons.map((reason) => (

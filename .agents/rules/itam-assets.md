@@ -180,7 +180,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (`RepairCreateDialog`, from the device page and, as `Create`, the repairs
   list) says above its fields, without a model, the device's warranty, age,
   book value and repair count, and starts a device under warranty as a
-  warranty repair to its own vendor; 看看 beside it is 维修单整理
+  warranty repair to its own vendor; it asks for the fault first, with
+  看看 — 维修单整理 — right under it (2026-10-20)
   (see `itam-assistant.md`).
 - A repair belongs to its 负责人 (`ownerId`, 2026-09-28, migration
   `202609280005_repair_owner`): it starts at whoever files the repair and

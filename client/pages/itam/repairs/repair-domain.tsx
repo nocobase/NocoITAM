@@ -1,7 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { CheckCheck } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 
 import { AttachmentsTab } from '@/components/itam/attachments-tab';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
@@ -9,6 +9,7 @@ import { SummaryLead } from '@/components/itam/summary-lead';
 import { RepairCompleteDialog } from '@/components/itam/repair-complete';
 import { RepairCreateDialog } from '@/components/itam/repair-create-dialog';
 import { Button } from '@/components/ui/button';
+import { DisposalCreateDialog } from '../disposals/create-dialog.js';
 import type { ItamRecord } from '@/lib/itam/api';
 import { text } from '@/lib/itam/format';
 import type { DomainConfig } from '@/lib/itam/domain';
@@ -46,19 +47,65 @@ export const repairDomain: DomainConfig = {
   Actions: RepairActions,
   // The device's facts and 维修单整理 beside the form, as from a device's
   // page (2026-10-17).
-  Create: ({ open, onOpenChange, onCreated }) => (
-    <RepairCreateDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      onCreated={onCreated}
-    />
-  ),
+  Create: RepairCreate,
   summaryTimestamps: false,
   // The summary leads 基本信息 (2026-10-16); no summary strip.
   BasicLead: ({ record }) => (
     <SummaryLead record={record} summary={RECORD_SUMMARIES.repairs} />
   ),
 };
+
+/**
+ * A new repair from the list, which may turn into a disposal when Asset
+ * Steward advises replacing the device (2026-10-20): the repair form gives
+ * way to the disposal one for the same device and fault, and a disposal
+ * made opens its page.
+ */
+function RepairCreate({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly onCreated: (record: ItamRecord) => void;
+}): ReactElement {
+  const navigate = useNavigate();
+  const [replacing, setReplacing] = useState<{
+    readonly deviceId: string;
+    readonly description: string;
+  }>();
+  return (
+    <>
+      <RepairCreateDialog
+        open={open && !replacing}
+        onOpenChange={onOpenChange}
+        onCreated={onCreated}
+        onReplace={setReplacing}
+      />
+      {replacing ? (
+        <DisposalCreateDialog
+          open
+          onOpenChange={(next) => {
+            if (next) return;
+            setReplacing(undefined);
+            onOpenChange(false);
+          }}
+          deviceIds={[replacing.deviceId]}
+          initial={{
+            reason: 'uneconomicalRepair',
+            description: replacing.description,
+          }}
+          onCreated={(created) => {
+            setReplacing(undefined);
+            onOpenChange(false);
+            void navigate(`/disposals/${String(created.id)}`);
+          }}
+        />
+      ) : null}
+    </>
+  );
+}
 
 /** 完成维修 on the detail page while the repair is in progress. */
 function RepairActions({

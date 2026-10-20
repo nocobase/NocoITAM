@@ -2936,6 +2936,7 @@ const messages = {
       hint: 'Once the device is picked and the fault described, Asset Steward can tell the kind of fault and suggest repairing or replacing.',
       working: 'Asset Steward is looking…',
       nothing: 'Asset Steward gave no suggestion; fill it in as you see fit.',
+      toDisposal: 'Request disposal instead',
       recommendation: {
         repair: 'Repair it',
         replace: 'Replace it',

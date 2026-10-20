@@ -2770,6 +2770,7 @@ const zhCN: AppResource = {
       hint: '选好设备、写下故障描述后，资产管家可以判断故障类型，并建议修还是换。',
       working: '资产管家正在看…',
       nothing: '资产管家没能给出建议，请按情况填写。',
+      toDisposal: '改为创建报废',
       recommendation: {
         repair: '建议维修',
         replace: '建议直接更换',

@@ -101,6 +101,13 @@ export interface RecordFormDialogProps {
   readonly prelude?: ReactNode;
   /** Below the fields, in their column: more the form saves (2026-10-20). */
   readonly postlude?: ReactNode;
+  /**
+   * Under one field's input, in its cell (2026-10-20): what acts on that
+   * field — a new repair's 看看 under its fault description.
+   */
+  readonly fieldFooters?: Readonly<Record<string, ReactNode>>;
+  /** The field the cursor starts in, where the form begins with it. */
+  readonly autoFocusField?: string;
 }
 
 /** A form's starting values: what it was given, else each field's default. */
@@ -143,6 +150,8 @@ export function RecordFormDialog({
   changes,
   titleAside,
   replacement,
+  fieldFooters,
+  autoFocusField,
   aside,
   contentRef,
   section,
@@ -323,8 +332,10 @@ export function RecordFormDialog({
           }
           disabled={submitting || Boolean(field.readonlyWhen?.(values))}
           excludeId={recordId}
+          autoFocus={field.key === autoFocusField}
         />
         {message ? <p className='text-xs text-destructive'>{message}</p> : null}
+        {fieldFooters?.[field.key]}
       </div>
     );
   };

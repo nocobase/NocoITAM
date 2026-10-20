@@ -161,13 +161,14 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
 ];
 /** Creating records the sending side; cost and notes come with completion. */
 export const REPAIR_CREATE_FIELDS: readonly string[] = [
-  'method',
-  'vendorId',
-  // The kind of fault and when it went, then what it is (2026-10-20): the
-  // description reads across the form under the category it explains.
+  // What is wrong first (2026-10-20): Asset Steward's 看看 reads it, sorts
+  // it into a category and says whether to repair or replace — before how
+  // and where it is repaired is chosen.
+  'faultDescription',
   'faultCategory',
   'sentAt',
-  'faultDescription',
+  'method',
+  'vendorId',
   'expectedReturnAt',
   'ownerId',
 ];

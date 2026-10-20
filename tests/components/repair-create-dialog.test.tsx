@@ -145,3 +145,34 @@ it('offers nothing to ask when the assistant is not available', () => {
     screen.queryByRole('button', { name: 'repairs.triage.ask' }),
   ).not.toBeInTheDocument();
 });
+
+it('starts with the fault, and turns into a disposal when told to replace', async () => {
+  const onReplace = vi.fn();
+  render(
+    <RepairCreateDialog
+      deviceId='d1'
+      open
+      onOpenChange={vi.fn()}
+      onReplace={onReplace}
+    />,
+  );
+  // The fault is the form's first field.
+  expect(document.querySelector('input')?.id).toMatch(/faultDescription$/);
+  fireEvent.change(field('faultDescription')!, {
+    target: { value: 'Screen flickers' },
+  });
+  // Nothing to switch to before Asset Steward has said replace.
+  expect(
+    screen.queryByRole('button', { name: 'repairs.triage.toDisposal' }),
+  ).toBeNull();
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'repairs.triage.ask' }));
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'repairs.triage.toDisposal' }),
+  );
+  expect(onReplace).toHaveBeenCalledWith({
+    deviceId: 'd1',
+    description: 'Screen flickers',
+  });
+});

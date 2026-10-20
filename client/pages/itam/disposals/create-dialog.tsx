@@ -33,17 +33,27 @@ export function DisposalCreateDialog({
   onOpenChange,
   onCreated,
   deviceIds: initialDeviceIds = [],
+  initial,
 }: {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly onCreated: (record: ItamRecord) => void;
   readonly deviceIds?: readonly string[];
+  /**
+   * What the request starts with (2026-10-20): a repair Asset Steward
+   * advised against becomes a disposal for the reason and fault it gave.
+   */
+  readonly initial?: {
+    readonly reason?: string;
+    readonly description?: string;
+  };
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Record<string, unknown>>(() => ({
     requestedAt: todayIso(),
+    ...initial,
   }));
   const [deviceIds, setDeviceIds] =
     useState<readonly string[]>(initialDeviceIds);
