@@ -3,6 +3,7 @@ import type { SummaryItem } from '@/components/itam/detail-page';
 import { DeviceDisposalSummary } from '@/components/itam/device-disposal-summary';
 import { DeviceRepairSummary } from '@/components/itam/device-repair-summary';
 import { DeviceRelation } from '@/components/itam/device-relation';
+import { FieldLabel } from '@/components/itam/field-label';
 import { OverdueBadge } from '@/components/itam/overdue-badge';
 import { RecordApprover } from '@/components/itam/record-approver';
 import {
@@ -61,7 +62,10 @@ function useDeviceSummary(record: ItamRecord, t: Translate): SummaryItem[] {
   return [
     {
       key: 'status',
-      label: t('fields.status'),
+      // Why there is no editing it (2026-10-20): the operations move it.
+      label: (
+        <FieldLabel label={t('fields.status')} hint='devices.statusHint' />
+      ),
       value: <DeviceStatusBadge status={text(record.status)} />,
     },
     ...(repair

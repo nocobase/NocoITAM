@@ -1484,6 +1484,8 @@ const messages = {
     holding: 'Assignment',
     reservedShort: 'Reserved',
     assignedSince: ', since {{date}}',
+    statusHint:
+      'The status follows assigning, lending, returning, repairs and disposals, and cannot be edited directly; if it is wrong, use Correct status under More.',
     followsModel: 'Set by the model',
     startBorrower: 'Borrowed by',
     followsOrder: 'Set by the purchase order',

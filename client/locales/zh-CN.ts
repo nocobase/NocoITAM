@@ -1434,6 +1434,8 @@ const zhCN: AppResource = {
     holding: '去向',
     reservedShort: '已预留',
     assignedSince: '，{{date}} 分配',
+    statusHint:
+      '状态随分配、借出、归还、维修、报废等操作自动变更，不能直接修改；记录有误时，可在「更多」里修正状态。',
     followsModel: '随型号',
     startBorrower: '借用人',
     followsOrder: '随采购单',
