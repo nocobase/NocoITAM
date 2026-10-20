@@ -167,6 +167,13 @@ function DomainList({
     },
     { enabled: layout !== 'board' },
   );
+  // On the board the columns fetch their own records, so the header's total
+  // is asked for on its own: one row, for the count (2026-10-20).
+  const boardTotal = useItamList<ItamRecord>(
+    domain.path,
+    { page: 1, pageSize: 1, q, filter },
+    { enabled: layout === 'board' },
+  );
   const mutations = useItamMutations<ItamRecord>(domain.path);
   const api = useApi();
   // A prefixed name carries its reference, which has no column of its own.
@@ -326,19 +333,17 @@ function DomainList({
     <Page fill={layout === 'board' || (layout === 'tree' && domain.treeFills)}>
       <PageHeader
         title={t(`${domain.i18n}.title`)}
-        total={list.data?.total}
-        // A named view (待我审批) beside the title rather than on a row of
-        // its own under the header, where one button held a whole line.
-        aside={
-          Views ? (
-            <Views
-              filter={filter}
-              onFilter={(next) => setParam({ ...next, page: undefined })}
-            />
-          ) : undefined
-        }
+        total={(layout === 'board' ? boardTotal : list).data?.total}
         actions={
           <>
+            {/* 全部 | 我的 leads the actions (2026-10-20): beside the title
+                it read as part of the name. */}
+            {Views ? (
+              <Views
+                filter={filter}
+                onFilter={(next) => setParam({ ...next, page: undefined })}
+              />
+            ) : null}
             <SearchToggle
               active={searchOpen}
               onClick={() => setSearchOpen((current) => !current)}
