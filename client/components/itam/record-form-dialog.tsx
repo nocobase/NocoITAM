@@ -94,7 +94,7 @@ export interface RecordFormDialogProps {
   readonly columns?: 1 | 2;
   /** Above the fields: what the reader should know before checking them. */
   readonly prelude?: ReactNode;
-  /** Below the fields, in the same column: more the form saves (2026-10-20). */
+  /** Below the fields, across the dialog: more the form saves (2026-10-20). */
   readonly postlude?: ReactNode;
 }
 
@@ -396,11 +396,10 @@ export function RecordFormDialog({
                   : 'grid'
               }
             >
-              {prelude || postlude ? (
+              {prelude ? (
                 <div className='grid min-w-0 gap-3'>
                   {prelude}
                   {fieldsGrid}
-                  {postlude}
                 </div>
               ) : (
                 fieldsGrid
@@ -408,6 +407,9 @@ export function RecordFormDialog({
               {aside}
             </div>
           )}
+          {/* Under the fields and the column beside them, the dialog's whole
+              width: a table wants it. */}
+          {postlude && !replacement ? postlude : null}
           {attachments && !recordId && !replacement ? (
             <AttachmentsUpload
               value={files}

@@ -17,6 +17,7 @@ import {
   type RecordFormDialogProps,
 } from '@/components/itam/record-form-dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -123,8 +124,17 @@ function CategoryCreateForm({
     NonNullable<CategoryReading['duplicates']>
   >([]);
   const [filled, setFilled] = useState(false);
+  // The adjustments asked for after filling, and the answers.
+  const [turns, setTurns] = useState<
+    readonly { id: string; from: 'user' | 'ai'; text: string }[]
+  >([]);
+  const [instruction, setInstruction] = useState('');
 
-  const organise = async () => {
+  /**
+   * Asks the model: to fill the form from the material, or to change the
+   * form as it stands (`instruction`), which hands it back whole.
+   */
+  const ask = async (instruction?: string) => {
     if (!material.trim() || busy) return;
     setBusy(true);
     setFailure(undefined);
@@ -132,7 +142,13 @@ function CategoryCreateForm({
       const answer = await read({
         task: 'category',
         material,
-        context: { parentId: text(values.parentId) || null },
+        context: {
+          parentId: text(values.parentId) || null,
+          ...(instruction
+            ? { form: { ...values, fieldTemplate: template } }
+            : {}),
+        },
+        ...(instruction ? { instruction } : {}),
       });
       const reading = answer.reading as CategoryReading | null;
       if (!reading?.values) {
@@ -145,18 +161,33 @@ function CategoryCreateForm({
           (reading.uncertain ?? []).filter((key) => key !== 'fieldTemplate'),
         ),
       );
+      // Filling, the parent's fields come first and the suggestions after;
+      // adjusting, the fields are the form's as the model hands them back.
+      const answered = parseTemplate(reading.fieldTemplate);
       const kept = new Set(baseTemplate.map((field) => field.key));
-      const fields = [
-        ...baseTemplate,
-        ...parseTemplate(reading.fieldTemplate).filter(
-          (field) => !kept.has(field.key),
-        ),
-      ];
+      const fields = instruction
+        ? answered
+        : [
+            ...baseTemplate,
+            ...answered.filter((field) => !kept.has(field.key)),
+          ];
       setSeedFields(fields);
       setTemplate(fields);
       setSeed((known) => known + 1);
       setDuplicates(reading.duplicates ?? []);
-      setSaid(answer.said || undefined);
+      if (instruction)
+        setTurns((known) => [
+          ...known,
+          {
+            id: crypto.randomUUID(),
+            from: 'ai',
+            text: answer.said || t('masterCapture.filled'),
+          },
+        ]);
+      else {
+        setSaid(answer.said || undefined);
+        setTurns([]);
+      }
       setFilled(true);
       setTab('form');
     } catch (caught) {
@@ -164,6 +195,16 @@ function CategoryCreateForm({
     } finally {
       setBusy(false);
     }
+  };
+  const organise = () => ask();
+  const adjust = (instruction: string) => {
+    const words = instruction.trim();
+    if (!words) return;
+    setTurns((known) => [
+      ...known,
+      { id: crypto.randomUUID(), from: 'user', text: words },
+    ]);
+    void ask(words);
   };
 
   const close = (next: boolean) => {
@@ -262,32 +303,103 @@ function CategoryCreateForm({
       // Above the form: what AI 整理 said, and the categories already called
       // the same; no column beside it, so the fields' table has the width.
       prelude={
-        filled && current === 'form' ? (
-          <div className='grid gap-2'>
-            <p className='flex gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
+        filled && current === 'form' && duplicates.length > 0 ? (
+          <p className='rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm text-warning-foreground'>
+            {t('categoryCapture.duplicates')}
+            {duplicates.map((row, index) => (
+              <Fragment key={row.id}>
+                {index > 0 ? '、' : null}
+                <a
+                  href={resolveAppUrl(`/categories?selected=${row.id}`)}
+                  target='_blank'
+                  rel='noreferrer'
+                  className='text-info-foreground hover:underline'
+                >
+                  {row.name}
+                </a>
+              </Fragment>
+            ))}
+          </p>
+        ) : undefined
+      }
+      // Beside the form: what AI 整理 said, and where to ask it for a
+      // change — the whole form, the fields under it too.
+      aside={
+        filled ? (
+          <div className='grid gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
+            <p className='flex gap-2'>
               <Sparkles className='mt-0.5 size-4 shrink-0 text-primary' />
               <span className='min-w-0'>
-                {said ?? t('masterCapture.filled')}
+                <CollapsibleText
+                  text={said ?? t('masterCapture.filled')}
+                  chars={200}
+                  lines={4}
+                />
               </span>
             </p>
-            {duplicates.length > 0 ? (
-              <p className='rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm text-warning-foreground'>
-                {t('categoryCapture.duplicates')}
-                {duplicates.map((row, index) => (
-                  <Fragment key={row.id}>
-                    {index > 0 ? '、' : null}
-                    <a
-                      href={resolveAppUrl(`/categories?selected=${row.id}`)}
-                      target='_blank'
-                      rel='noreferrer'
-                      className='text-info-foreground hover:underline'
-                    >
-                      {row.name}
-                    </a>
-                  </Fragment>
-                ))}
-              </p>
-            ) : null}
+            <div className='grid gap-2 border-t border-border pt-2'>
+              {turns.map((turn) =>
+                turn.from === 'user' ? (
+                  <p
+                    key={turn.id}
+                    className='ml-auto max-w-[90%] rounded-lg bg-background px-3 py-1.5 whitespace-pre-wrap'
+                  >
+                    {turn.text}
+                  </p>
+                ) : (
+                  <p
+                    key={turn.id}
+                    className='flex max-w-[90%] gap-1.5 text-muted-foreground'
+                  >
+                    <Sparkles className='mt-1 size-3.5 shrink-0 text-primary' />
+                    <span className='min-w-0'>
+                      <CollapsibleText text={turn.text} chars={200} lines={3} />
+                    </span>
+                  </p>
+                ),
+              )}
+              {failure && turns.length > 0 ? (
+                <p className='text-destructive'>{failure}</p>
+              ) : null}
+              <Input
+                value={instruction}
+                disabled={busy}
+                maxLength={1000}
+                className='bg-background'
+                placeholder={t('capture.adjustPlaceholder')}
+                aria-label={t('procurement.capture.adjust')}
+                onChange={(event) => setInstruction(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                    // Enter here adjusts; it must not submit the form.
+                    event.preventDefault();
+                    adjust(instruction);
+                    setInstruction('');
+                  }
+                }}
+              />
+              <Button
+                type='button'
+                variant='outline'
+                className='justify-self-end'
+                disabled={busy || !instruction.trim()}
+                onClick={() => {
+                  adjust(instruction);
+                  setInstruction('');
+                }}
+              >
+                {busy ? (
+                  <Spinner data-icon='inline-start' />
+                ) : (
+                  <Sparkles data-icon='inline-start' />
+                )}
+                {t(
+                  busy
+                    ? 'procurement.capture.adjusting'
+                    : 'procurement.capture.adjust',
+                )}
+              </Button>
+            </div>
           </div>
         ) : undefined
       }
