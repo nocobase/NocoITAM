@@ -3788,6 +3788,7 @@ const messages = {
     otherTitle_other: '{{name}}’s devices: {{count}} differences',
     steps: 'What the plan would do',
     working: 'Asset Steward is sorting the differences on the MDM review…',
+    superseded: 'Followed up again',
     accepted: 'Carried out',
     stepsWaiting_one: '{{count}} step to confirm',
     stepsWaiting_other: '{{count}} steps to confirm',

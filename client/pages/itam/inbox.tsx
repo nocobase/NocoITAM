@@ -98,28 +98,6 @@ function reviewsCategory(label: string): InboxCollectionCategory {
 // MDM 核对, shown beside an MDM 跟进: loaded when one is opened.
 const DeviceSyncReviewPage = lazy(() => import('./device-sync.js'));
 
-/**
- * An MDM 跟进 a newer one for the same person replaced is left out
- * (2026-10-17): each MDM 跟进 brings the reader's differences again, so the
- * old one only repeated the new one as 已在别处处理. One settled by another
- * asset manager stays: that is news.
- */
-function withoutReplaced(runs: readonly AgentRun[]): AgentRun[] {
-  const newest = new Map<string, string>();
-  for (const run of runs)
-    if (run.agent === 'deviceSync') {
-      const seen = newest.get(run.subjectId);
-      if (!seen || run.createdAt > seen)
-        newest.set(run.subjectId, run.createdAt);
-    }
-  return runs.filter(
-    (run) =>
-      run.agent !== 'deviceSync' ||
-      run.status !== 'superseded' ||
-      newest.get(run.subjectId) === run.createdAt,
-  );
-}
-
 const isOpen = (run: AgentRun): boolean =>
   run.status === 'pending' ||
   run.status === 'running' ||
@@ -132,12 +110,10 @@ function useReviewsCollection({
   params,
 }: InboxCollectionInput): InboxCollectionState {
   const inbox = useInbox();
+  // An MDM 跟进 run again is listed among the handled, as replaced
+  // (2026-10-21): the card goes down there rather than out of sight.
   const items = useMemo(
-    () =>
-      withoutReplaced([
-        ...(inbox.data?.open ?? []),
-        ...(inbox.data?.handled ?? []),
-      ]),
+    () => [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])],
     [inbox.data],
   );
   const chosen = filter.kind === REVIEWS_CATEGORY;
@@ -296,6 +272,7 @@ function lineOf(run: AgentRun, t: Translate): string {
   if (run.agent === 'deviceSync') {
     if (run.status === 'running') return t('deviceSyncRun.working');
     if (run.status === 'accepted') return t('deviceSyncRun.accepted');
+    if (run.status === 'superseded') return t('deviceSyncRun.superseded');
     if (run.status === 'pending') return run.result?.summary ?? '';
   }
   if (run.status === 'running') return t('review.working');

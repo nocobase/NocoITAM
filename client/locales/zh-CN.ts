@@ -3584,6 +3584,7 @@ const zhCN: AppResource = {
     otherTitle_other: '{{name}}负责的设备：{{count}} 处差异',
     steps: '方案会做的事',
     working: '资产管家正在整理 MDM 核对上的差异…',
+    superseded: '已重新跟进',
     accepted: '已按方案处理',
     stepsWaiting_one: '{{count}} 项待确认',
     stepsWaiting_other: '{{count}} 项待确认',

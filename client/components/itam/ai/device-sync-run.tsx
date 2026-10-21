@@ -104,7 +104,7 @@ export function DeviceSyncRunCard({
             ? t('deviceSyncRun.accepted')
             : run.status === 'dismissed'
               ? t('review.dismissed')
-              : t('review.superseded')}
+              : t('deviceSyncRun.superseded')}
           <span className='tabular-nums'>· {when}</span>
         </p>
       ) : null}
@@ -200,7 +200,7 @@ function FollowUpReviewCard({
         ? t('deviceSyncRun.accepted')
         : run.status === 'dismissed'
           ? t('review.dismissed')
-          : t('review.superseded')
+          : t('deviceSyncRun.superseded')
       : null,
   ].filter(Boolean);
   return (
