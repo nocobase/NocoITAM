@@ -2935,9 +2935,7 @@ const messages = {
     triage: {
       ask: 'Diagnose',
       again: 'Diagnose again',
-      hint: 'Describe the fault to diagnose it: Asset Steward tells the kind of fault and how to repair it, and suggests repairing or replacing.',
-      nudge:
-        'Diagnose before filling in the rest: Asset Steward fills the kind of fault and how to repair it, and suggests repairing or replacing.',
+      hint: 'Diagnose before filling in the rest: Asset Steward fills the kind of fault and how to repair it, and suggests repairing or replacing.',
       working: 'Asset Steward is diagnosing…',
       nothing: 'Asset Steward gave no suggestion; fill it in as you see fit.',
       toDisposal: 'Request disposal instead',

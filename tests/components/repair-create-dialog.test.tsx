@@ -119,16 +119,16 @@ it('asks Asset Steward about the fault, fills its kind and shows the recommendat
   render(<RepairCreateDialog deviceId='d1' open onOpenChange={vi.fn()} />);
   const ask = screen.getByRole('button', { name: 'repairs.triage.ask' });
   expect(ask).toBeDisabled();
-  // It says how to start, then — the fault written — to run it first.
+  // It asks to be run first until it has answered.
   expect(screen.getByText('repairs.triage.hint')).toBeInTheDocument();
   fireEvent.change(field('faultDescription')!, {
     target: { value: 'Screen flickers' },
   });
-  expect(screen.getByText('repairs.triage.nudge')).toBeInTheDocument();
+  expect(screen.getByText('repairs.triage.hint')).toBeInTheDocument();
   await act(async () => {
     fireEvent.click(ask);
   });
-  expect(screen.queryByText('repairs.triage.nudge')).toBeNull();
+  expect(screen.queryByText('repairs.triage.hint')).toBeNull();
   expect(state.asked).toEqual([
     {
       task: 'repairTriage',
