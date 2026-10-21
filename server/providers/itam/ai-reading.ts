@@ -14,6 +14,11 @@ import {
   newCategoryFacts,
 } from './category-reading.js';
 import { BusinessRuleError } from './errors.js';
+import {
+  DATA_WIPE_OPTIONS,
+  DISPOSAL_METHODS,
+  DISPOSAL_REASONS,
+} from './disposals.js';
 import { REPAIR_FAULT_CATEGORIES, REPAIR_METHODS } from './repairs.js';
 import { settingsServiceToken } from './settings.js';
 import { searchWeb, webSearchAvailable, type WebResult } from './web-search.js';
@@ -43,6 +48,9 @@ export const READING_TASKS = [
   'deliveryDocument',
   // 维修单整理 (2026-10-17): the kind of fault, and whether to repair at all.
   'repairTriage',
+  // 报废诊断 (2026-10-20): the reason, method and data wipe of a disposal,
+  // and which of its devices should not be disposed of yet.
+  'disposalTriage',
   // 报价比较 (2026-10-17): one quote against the order's lines, then which
   // of the quotes to take.
   'purchaseQuote',
@@ -70,6 +78,7 @@ export const READING_GRANTS: Readonly<
   ],
   deliveryDocument: [['purchaseOrders', 'receive']],
   repairTriage: [['repairs', 'create']],
+  disposalTriage: [['disposals', 'create']],
   purchaseQuote: [['purchaseOrders', 'update']],
   quoteRecommendation: [['purchaseOrders', 'update']],
   categoryFields: [['categories', 'update']],
@@ -259,6 +268,15 @@ const SHAPES: Readonly<Record<ReadingTask, z.ZodType>> = {
     method: z.string().nullable().optional(),
     reasons: z.array(z.string()).optional(),
   }),
+  disposalTriage: z.object({
+    reason: z.string().nullable().optional(),
+    method: z.string().nullable().optional(),
+    dataWipe: z.string().nullable().optional(),
+    advice: z.string(),
+    concerns: z
+      .array(z.object({ deviceNo: z.string(), note: z.string() }))
+      .optional(),
+  }),
 };
 
 const LINE_RULES =
@@ -271,6 +289,7 @@ const TASKS: Readonly<Record<ReadingTask, string>> = {
   model: `Fill the new model form for the model the material names, following the catalog method below. Put every field you are not certain of in \`uncertain\`, and never estimate a date. categoryId: one of the context's \`categories\` ids (the closest; mark it uncertain when unsure). attributes: by the keys of that category's \`fields\`. manufacturerName as the maker is called. A model you cannot confirm is still answered with what the material gives — name, maker, the closest category, marked uncertain — and nothing else. In \`said\`, one plain sentence: what you could not fill and what to check.`,
   softwareProduct: `Fill the new software product form for the product the material names, following the catalog method below. Put every field you are not certain of in \`uncertain\`. categoryId: one of the context's \`categories\` ids. deliveryMethod: onPremise, saas or both. In \`said\`, one plain sentence: what you could not fill and what to check.`,
   repairTriage: `The material is how a person describes a device's fault, for a new repair. The context's \`device\` is that device as the register has it: its model, age, warranty, book value (when the person may see costs), its earlier repairs, and how often devices of the same model were repaired in the last year. faultCategory: the kind of fault, exactly one of these values: ${REPAIR_FAULT_CATEGORIES.join(', ')}. screen for the display, keyboard for keys and the touchpad, battery for charge holding, power for not starting or not charging, storage for disks and lost data, network for Wi-Fi, Ethernet and Bluetooth, system for the operating system and software, peripheral for ports, cameras, speakers and docks, physical for a broken case, hinge or liquid damage, other for anything else; null when the description says too little. recommendation: exactly one of repair, replace, inspect — repair when it is worth fixing (under warranty, or young with book value left, or a cheap part); replace when fixing is likely to cost more than the device is worth — old, past its useful life or planned replacement date, out of warranty with little book value, repaired again and again, or physically wrecked; inspect when the description cannot tell (a vague complaint, or a fault that may be software). method: how to repair it, exactly one of ${REPAIR_METHODS.join(', ')} — vendorWarranty only when the device's \`underWarranty\` is true, and then always; out of warranty, internal when IT can do it in-house (the operating system or software, a reinstall, a clean, a common part swapped from spares), else sendOut; null when the recommendation is replace. reasons: at most three, each one short sentence with the fact from the device it rests on (a date, an age, a count, a value), never a fact the context does not give; the first always states the warranty — under warranty until its end date, out of warranty since it ended, or no warranty on record — since it decides how the repair is made. In \`said\`, one plain sentence for the person filing the repair: what to check or ask the user before sending it.`,
+  disposalTriage: `The material is why a person wants to dispose of the devices in the context's \`devices\`, each as the register has it: model, category, ownership, status, who holds it (\`assigneeName\`), age, warranty and \`underWarranty\`, planned replacement date, purchase price and book value when the person may see costs, and its repairs. Fill the request for all of them together. reason: exactly one of ${DISPOSAL_REASONS.join(', ')} — endOfLife past its useful life or planned replacement date, damaged when broken beyond repair, uneconomicalRepair when repairing would cost more than it is worth, insufficientPerformance when too slow for the work, lost, leaseEnded for a leased device going back, other; null when the material says too little. method: exactly one of ${DISPOSAL_METHODS.join(', ')} — returnToLessor whenever a device is leased or borrowed (its \`ownership\`), lossWriteOff for a lost one, sale or donation for one that still works, scrap for one that does not, other. dataWipe: exactly one of ${DATA_WIPE_OPTIONS.join(', ')} — notRequired only when none of the devices holds data (a monitor, a dock, a keyboard), else notWiped: the wipe is done and recorded when the disposal is carried out. advice: dispose when disposing of them is reasonable, reconsider when any should not be disposed of yet — still under warranty (repair it under warranty instead), young with much book value left, or leased but not returned to its lessor. concerns: at most five, one per device that needs attention, each with its \`deviceNo\` and one short sentence naming the fact from the context (under warranty until a date, the book value, leased, still held by someone who must return it first, never a fact the context does not give); none for a device with nothing to say. In \`said\`, one plain sentence for the person: what to do before submitting.`,
   purchaseQuote: `Read one supplier's quote (the material) for the purchase order whose lines are in the context's \`lines\` (each with its id, what it buys, its code when it has one, and the quantity asked for). vendorName: the supplier issuing the quote, as printed. currency: the ISO code of its prices (CNY for 元 or RMB). validUntil: the date the quote holds until (YYYY-MM-DD) when printed. deliveryDays: the lead time in days when given as a duration; deliveryDate (YYYY-MM-DD) when given as a date. warranty and paymentTerms as printed, short. notes: anything else that changes the comparison (a minimum order, a shipping charge, a different model offered), short. lines: one per priced item of the quote. lineId: the id of the order's line it prices — the same item, or what the supplier offers in its place; null when it matches none of them (an extra the order does not ask for). description as printed, partCode the part number printed, quantity as quoted, unitPrice per unit before any overall discount, in the quote's currency (not the line total). Never invent a price or a date the quote does not print. In \`said\`, one plain sentence: what the person must check, especially a line matched to something that is not quite the same item.`,
   quoteRecommendation: `The material is the comparison of a purchase order's quotes, counted by the application: \`quotes\` (each supplier with its validity, delivery, warranty, payment terms, notes and lines), \`rows\` (each of the order's lines with every quote's price, the lowest, and the last price paid for the same item) and \`totals\` (each quote's total, how many of the order's lines it prices, misses or adds). The context gives the order (why it is bought, what for, when it is needed) and today. Recommend which quote to take: quoteIndex is its index in \`quotes\` (0 is the first), or null when none can be taken as it is. Weigh the total for the same items first, then a quote that leaves lines out (it cannot be compared on its total), a line priced for something that is not the same item (the descriptions and part codes say), delivery against when the order is needed, warranty, validity against today, and prices well above the last paid. reasons: at most three, each one short sentence with its numbers (a total, a difference, a date), never a fact the material does not give. Name a quote by its supplier (vendorName), never by its index or as "quote 0"; name a line by what it buys. In \`said\`, one plain sentence: what to ask a supplier before ordering, or nothing to add.`,
   categoryFields: `Suggest the extended fields of the category in the context's \`category\`: what each record of that kind needs beyond the fields every record already has (name, number, serial number, model, maker, category, status, who holds it, location, department, purchase date and price, supplier, warranty end, notes) — never one of those, and none of the category's \`currentFields\`. Suggest what an IT team records for that kind of asset, three to ten fields, the most useful first. key: camelCase ASCII starting with a letter, unique. label: short, in the language the request names. type: text, number, date, select or boolean; a select gives its \`options\` (short labels in that language); a number's label names its unit when it has one ("内存 (GB)"). required only for what every record of the kind must have to be told apart or used. When \`otherCategories\` record the same thing, reuse that field's key, label and type exactly, so reports read one field across categories. For the category's \`currentFields\`, suggest \`changes\` only where one is plainly off — a select missing common options, a number whose label lacks its unit, a type that does not fit, an unclear label: each with the field's key (never changed), only what changes (label, type, options, required) and a short \`reason\` in the request's language; none when they are fine. Also suggest the category's \`defaults\`, its rules and the values its new records start with, as an IT team would set them for that kind of asset: requiresSerial (whether each record must carry a serial number: true for hardware tracked one by one), assignableToPerson (whether a record may be given to a person: false for what stays in a room, such as a server or a rack), depreciationMethod (none or straightLine), usefulLifeMonths, residualRate (0 to 1, e.g. 0.05), warrantyMonths (the usual manufacturer warranty), replacementMonths (when it is usually replaced) and auditCycleDays (how often it is counted). Whenever depreciationMethod is straightLine — suggested or already set — give usefulLifeMonths and residualRate too, which only straight-line depreciation uses. The category's \`currentDefaults\` and the other categories' \`defaults\` show what is set now: keep a current value unless it is plainly off for this kind, and stay consistent with similar categories. In \`said\`, one plain sentence: what the fields cover and any default you would change, or why there is little to add.`,
@@ -423,6 +442,21 @@ export async function readForForm(
     context.device = await repairFacts(container, actorId, deviceId);
     context.today = today();
   }
+  if (input.task === 'disposalTriage') {
+    const deviceIds = (
+      Array.isArray(input.context.deviceIds) ? input.context.deviceIds : []
+    )
+      .map((id) => asText(id))
+      .filter((id): id is string => Boolean(id))
+      // A batch is read as its first twenty: enough to judge it by.
+      .slice(0, 20);
+    if (deviceIds.length === 0)
+      throw new BusinessRuleError('Pick the devices first', 'DEVICE_REQUIRED');
+    context.devices = await Promise.all(
+      deviceIds.map((id) => repairFacts(container, actorId, id)),
+    );
+    context.today = today();
+  }
   const request = [
     TASKS[input.task],
     web ? WEB_READING : catalogTask ? NO_WEB_READING : '',
@@ -549,6 +583,9 @@ async function repairFacts(
       'categoryName',
       'manufacturerName',
       'status',
+      // Whose it is and who has it, which a disposal turns on (2026-10-20).
+      'ownership',
+      'assigneeName',
       'purchaseDate',
       'warrantyEndDate',
       'usefulLifeMonths',

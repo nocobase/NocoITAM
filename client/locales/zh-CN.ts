@@ -2869,6 +2869,18 @@ const zhCN: AppResource = {
     execute: '执行报废',
     decideDescription: '批准后清单内设备转待报废，并自动回收其上的席位与组件',
     executeDescription: '设备将转为已报废并永久只读',
+    triage: {
+      ask: '诊断',
+      again: '重新诊断',
+      hint: '建议先诊断再继续填写：资产管家会填好报废原因、报废方式和数据清除，并检查这些设备是否适合报废。',
+      working: '资产管家正在诊断…',
+      nothing: '资产管家没能给出建议，请按情况填写。',
+      concern: '{{deviceNo}}：{{note}}',
+      advice: {
+        dispose: '可以报废',
+        reconsider: '建议再考虑',
+      },
+    },
     devicesFixed:
       '从设备页创建，只报废这台设备；要一起报废多台，请在报废列表中创建',
     devices: '报废设备',

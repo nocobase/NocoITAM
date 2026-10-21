@@ -200,6 +200,17 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   A purchase reading is given the models and products on the books to pick
   ids from. Documents are read as text on the server (`document-text.ts`:
   exceljs, mammoth, unpdf); a picture is not read.
+- **报废诊断** (2026-10-20, task `disposalTriage`, grant `disposals.create`):
+  the disposal's description is the material and the page sends its
+  `deviceIds` (the first twenty are read); the server reads each device as
+  the person with `repairFacts`, which also gives its `ownership` and
+  holder. The model fills the reason, method (`returnToLessor` for anything
+  leased or borrowed) and data wipe (`notRequired` only for devices that
+  hold no data), says `dispose` or `reconsider`, and names the devices that
+  should not be disposed of yet. The form (`client/pages/itam/disposals/
+triage.tsx`, under the description) fills only what is still empty,
+  marked 请核对. It helps the requester before submitting; the approval
+  review weighs the request again for the approver.
 - **维修单整理** (2026-10-17, task `repairTriage`, grant `repairs.create`):
   the fault description is the material and the page sends only
   `deviceId`; the server reads the device as the person (`repairFacts` in

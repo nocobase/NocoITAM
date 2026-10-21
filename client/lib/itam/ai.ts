@@ -46,6 +46,7 @@ export type AiReadingTask =
   | 'softwareProduct'
   | 'deliveryDocument'
   | 'repairTriage'
+  | 'disposalTriage'
   | 'purchaseQuote'
   | 'quoteRecommendation'
   | 'categoryFields'

@@ -3045,6 +3045,18 @@ const messages = {
     decideDescription:
       'Approving moves every listed device to pending disposal and reclaims its seats and components.',
     executeDescription: 'Devices become disposed and read-only.',
+    triage: {
+      ask: 'Diagnose',
+      again: 'Diagnose again',
+      hint: 'Diagnose before filling in the rest: Asset Steward fills the reason, method and data wipe, and checks whether these devices should be disposed of.',
+      working: 'Asset Steward is diagnosing…',
+      nothing: 'Asset Steward gave no suggestion; fill it in as you see fit.',
+      concern: '{{deviceNo}}: {{note}}',
+      advice: {
+        dispose: 'Fine to dispose of',
+        reconsider: 'Think again',
+      },
+    },
     devicesFixed:
       'Filed for this device alone; to dispose of several together, create the request from the disposals list',
     devices: 'Devices to dispose of',

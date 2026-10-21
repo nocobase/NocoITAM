@@ -6,6 +6,7 @@ import { ApproverHint } from '@/components/itam/approver-hint';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
 import { FieldLabel } from '@/components/itam/field-label';
+import { ReviewMark } from '@/components/itam/review-mark';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { MultiReferenceInput } from '@/components/itam/multi-reference';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,7 @@ import { useApi, type ItamRecord } from '@/lib/itam/api';
 import { text, todayIso } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
 import { useCurrentUserId } from '@/lib/itam/permissions';
+import { DisposalTriage } from './triage.js';
 import { resolveFormField, type FieldDefinition } from '@/lib/itam/fields';
 import {
   DISPOSAL_CREATE_FIELDS,
@@ -59,6 +61,8 @@ export function DisposalCreateDialog({
   const [deviceIds, setDeviceIds] =
     useState<readonly string[]>(initialDeviceIds);
   const fixedDevices = initialDeviceIds.length > 0;
+  // What 报废诊断 filled and nobody has changed since: 请核对.
+  const [marks, setMarks] = useState<ReadonlySet<string>>(() => new Set());
   // Needed to submit right away, not to save a draft.
   const [approverId, setApproverId] = useState<string | null>(null);
   const currentUserId = useCurrentUserId();
@@ -208,19 +212,49 @@ export function DisposalCreateDialog({
                 {field.required ? (
                   <span className='text-destructive'> *</span>
                 ) : null}
+                {marks.has(field.key) ? <ReviewMark /> : null}
               </Label>
               <FieldInput
                 id={`disposal-${field.key}`}
                 field={field}
                 value={pairValue(field)}
-                onChange={(value) =>
+                onChange={(value) => {
                   setValues((current) => ({
                     ...current,
                     ...splitPair(field, value),
-                  }))
-                }
+                  }));
+                  // Changed by the person, it is theirs to stand by.
+                  if (marks.has(field.key))
+                    setMarks(
+                      (before) =>
+                        new Set([...before].filter((key) => key !== field.key)),
+                    );
+                }}
               />
             </div>
+            {/* 诊断 right under the description it reads (2026-10-20), as
+                a repair's is under its fault. */}
+            {field.key === 'description' ? (
+              <div className='sm:col-span-2'>
+                <DisposalTriage
+                  deviceIds={deviceIds}
+                  description={text(values.description)}
+                  onReading={(reading) => {
+                    // Only what is still empty: the person's choices stand.
+                    const filled = (
+                      ['reason', 'method', 'dataWipe'] as const
+                    ).filter((key) => reading[key] && !values[key]);
+                    setValues((current) => ({
+                      ...current,
+                      ...Object.fromEntries(
+                        filled.map((key) => [key, reading[key]]),
+                      ),
+                    }));
+                    setMarks((before) => new Set([...before, ...filled]));
+                  }}
+                />
+              </div>
+            ) : null}
           </Fragment>
         ))}
         <div className='grid content-start gap-1.5'>
