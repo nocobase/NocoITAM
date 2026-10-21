@@ -708,6 +708,12 @@ const CATALOGUE_ASSETS: Readonly<
           readonly serialNo: string;
           /** Placed here (shared equipment); else a spare in the warehouse. */
           readonly at?: 'floor3' | 'serverRoom' | 'japan';
+          /**
+           * Answered for by the account that imported the demo rather than
+           * the writer (2026-10-21): its own MDM 核对 then lists one under
+           * 只在台账 too.
+           */
+          readonly importerOwns?: boolean;
           readonly attributes?: Readonly<Record<string, unknown>>;
         }[];
         readonly price: number;
@@ -769,6 +775,7 @@ const CATALOGUE_ASSETS: Readonly<
         name: 'SG-DT-201',
         serialNo: 'H9VM2MINI01',
         at: 'floor3',
+        importerOwns: true,
         attributes: { os: 'macOS 15.6', hostname: 'SG-DT-201' },
       },
     ],
@@ -3744,6 +3751,9 @@ export function createDemoService(dependencies: {
                 bought + Math.round(entry.warrantyMonths * 30.44),
               ),
               ...(spec.attributes ? { attributes: spec.attributes } : {}),
+              ...(spec.importerOwns && importerId
+                ? { ownerId: importerId }
+                : {}),
             });
             if (spec.at)
               await assignTo(made.id, places[spec.at].id, bought + 2);

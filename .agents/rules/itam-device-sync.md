@@ -100,7 +100,8 @@ product or in release notes, until it is listed here.
   a placeholder serial). Both tables are in `ORDER` and in
   `scripts/data-reset.ts`. The devices behind 信息不一致 answer to IT
   support, the importing account and 吴静 (2026-10-17), so the 负责人
-  column and each person's MDM 跟进 differ; never the leaver.
+  column and each person's MDM 跟进 differ; never the leaver. SG-DT-201, a Mac mini under 只在台账, is the
+  importing account's too (2026-10-21), so its MDM 跟进 has one there.
 - **Differences** (step 2, 2026-10-15, `device-review.ts`) are computed when
   asked, like 需要关注, from the linked platform records and the register;
   nothing stores them. Per device, from its latest platform record:
