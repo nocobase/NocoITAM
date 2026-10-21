@@ -25,9 +25,28 @@ import {
   DISPOSALS_PATH,
 } from '@/lib/itam/operations';
 
-const HEADER_FIELDS = DISPOSAL_CREATE_FIELDS.map((key) =>
-  DISPOSAL_FIELDS.find((field) => field.key === key)!,
-);
+/**
+ * The request's fields in the form's order. A cascading answer (数据清除 →
+ * 清除方式) is two cells here (2026-10-20), the second beside the first and
+ * shown only while the first calls for it, rather than stacked in one.
+ */
+const HEADER_FIELDS: readonly FieldDefinition[] = DISPOSAL_CREATE_FIELDS.map(
+  (key) => DISPOSAL_FIELDS.find((field) => field.key === key)!,
+).flatMap((field): FieldDefinition[] => {
+  const dependent = field.dependent;
+  if (!dependent) return [field];
+  return [
+    { ...field, dependent: undefined },
+    {
+      key: dependent.key,
+      label: dependent.label,
+      type: 'select',
+      options: dependent.options,
+      required: dependent.required,
+      visibleWhen: (values) => dependent.when(values[field.key]),
+    },
+  ];
+});
 
 /**
  * A disposal in one go: its header, the devices it lists and whether it is
@@ -261,10 +280,15 @@ export function DisposalCreateDialog({
                 field={field}
                 value={pairValue(field)}
                 onChange={(value) => {
-                  setValues((current) => ({
-                    ...current,
-                    ...splitPair(field, value),
-                  }));
+                  setValues((current) => {
+                    const next = { ...current, ...splitPair(field, value) };
+                    // An answer that no longer calls for its second half
+                    // carries none (已清除 → 未清除 drops the method).
+                    for (const other of HEADER_FIELDS)
+                      if (other.visibleWhen && !other.visibleWhen(next))
+                        next[other.key] = null;
+                    return next;
+                  });
                   // Changed by the person, it is theirs to stand by.
                   if (marks.has(field.key))
                     setMarks(
