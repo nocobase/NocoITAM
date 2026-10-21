@@ -270,28 +270,29 @@ function useCountsBy(path: string, by: string) {
 }
 
 /**
- * 数量: what the record has on hand — devices or stock units, whichever its
- * category holds (a model has one or the other).
+ * 设备 or 库存 on hand (2026-10-21): the record's devices, or its stock
+ * units; a dash in the column of the kind its category does not hold (a
+ * model has one or the other).
  */
 export function OnHandCell({
   countField,
+  kind,
   row,
 }: {
   readonly countField: string;
+  readonly kind: 'device' | 'stock';
   readonly row: ItamRecord;
 }): ReactElement {
-  const { t } = useTranslation();
   const devices = useCountsBy(DEVICES_PATH, countField);
   const stock = useCountsBy(STOCK_PATH, countField);
   const categories = useCategoryKinds();
   if (!devices.data || !stock.data) return <></>;
   const applies = appliesToOf(categories.data?.data, row);
-  const kind = applies === 'device' || !applies ? 'device' : 'stock';
+  const holds = applies === 'device' || !applies ? 'device' : 'stock';
+  if (holds !== kind) return <span className='text-muted-foreground'>—</span>;
   const total =
     kind === 'device' ? (devices.data[row.id] ?? 0) : (stock.data[row.id] ?? 0);
-  return (
-    <>{`${t(kind === 'device' ? 'tabs.devices' : 'tabs.stock')} ${total.toLocaleString()}`}</>
-  );
+  return <>{total.toLocaleString()}</>;
 }
 
 // ---------------------------------------------------------------- detail

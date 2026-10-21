@@ -112,19 +112,23 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
           } satisfies DomainListColumn,
         ]
       : []),
+    // 设备 and 库存 a column each (2026-10-21; one 数量 column until then):
+    // a model has one or the other, and the other reads as a dash.
     ...(collection.countField
-      ? [
-          {
-            key: 'total',
-            label: 'fields.quantity',
-            className: 'tabular-nums',
-            width: '8rem',
-            before: 'updatedAt',
-            Cell: ({ row }: { readonly row: ItamRecord }) => (
-              <OnHandCell countField={collection.countField!} row={row} />
-            ),
-          } satisfies DomainListColumn,
-        ]
+      ? (['device', 'stock'] as const).map((kind): DomainListColumn => ({
+          key: kind === 'device' ? 'devices' : 'stock',
+          label: kind === 'device' ? 'tabs.devices' : 'tabs.stock',
+          className: 'tabular-nums',
+          width: '5rem',
+          before: 'updatedAt',
+          Cell: ({ row }: { readonly row: ItamRecord }) => (
+            <OnHandCell
+              countField={collection.countField!}
+              kind={kind}
+              row={row}
+            />
+          ),
+        }))
       : []),
   ];
 

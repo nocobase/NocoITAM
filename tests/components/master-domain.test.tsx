@@ -135,7 +135,8 @@ it('describes each collection for the generic pages', () => {
   // The device type, before the category.
   expect(models.listColumns?.map((column) => column.key)).toEqual([
     'appliesTo',
-    'total',
+    'devices',
+    'stock',
   ]);
   expect(
     models.listColumns?.find((column) => column.key === 'appliesTo')?.before,
