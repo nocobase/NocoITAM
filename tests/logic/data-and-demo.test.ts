@@ -512,6 +512,23 @@ describe('CSV import / export and demo data', () => {
         .filter((model) => !used.has(model.id))
         .map((model) => model.name),
     ).toEqual([]);
+    // A real address book (2026-10-21): nine vendors, and the Macs came
+    // through the Apple reseller.
+    const vendors = await data<{ id: string; name: string }[]>(
+      await get('master/vendors?pageSize=50'),
+    );
+    expect(vendors.length).toBeGreaterThanOrEqual(9);
+    const appleReseller = vendors.find((vendor) =>
+      vendor.name.includes('Apple'),
+    );
+    expect(appleReseller).toBeDefined();
+    const macOrders = await data<{ vendorId: string }[]>(
+      await get(`purchase-orders?filter[vendorId]=${appleReseller?.id ?? ''}`),
+    );
+    expect(macOrders.length).toBeGreaterThan(0);
+    expect(
+      macOrders.every((order) => order.vendorId === appleReseller?.id),
+    ).toBe(true);
     // A photo carries the credit its license asks for.
     const credits = (await (
       await get('master/models?pageSize=200')

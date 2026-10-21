@@ -434,6 +434,157 @@ const VENDOR_NAMES: Readonly<
   },
 };
 
+/**
+ * The rest of the company's vendors (2026-10-21), so 供应商 reads as the
+ * IT team's real address book: an Apple authorized reseller that also
+ * services the Macs, a network integrator, an office supplier, the Japan
+ * branch's local supplier, a software reseller and a leasing company the
+ * team once looked at. Most carry business — the Macs, the network gear,
+ * the accessories and Japan's printer came through them — and the last two
+ * are kept on file.
+ */
+const MORE_VENDORS: Readonly<
+  Record<
+    'apple' | 'network' | 'office' | 'japan' | 'software' | 'lessor',
+    {
+      readonly types: readonly string[];
+      readonly phone: string;
+      readonly email: string;
+      readonly website: string;
+      readonly text: Readonly<
+        Record<
+          DemoLanguage,
+          {
+            readonly name: string;
+            readonly contact: string;
+            readonly address: string;
+            readonly notes?: string;
+          }
+        >
+      >;
+    }
+  >
+> = {
+  apple: {
+    types: ['equipment', 'repairProvider'],
+    phone: '021-5000 4004',
+    email: 'business@demo-boltdigital.example',
+    website: 'https://www.demo-boltdigital.example',
+    text: {
+      'en-US': {
+        name: 'Bolt Digital (Apple Authorized Reseller)',
+        contact: 'Grace Lin',
+        address: '1601 Nanjing West Road, Jing’an, Shanghai',
+        notes: 'Apple warranty repairs go through their service desk',
+      },
+      'zh-CN': {
+        name: '博思数码（Apple 授权经销商）',
+        contact: '林悦',
+        address: '上海市静安区南京西路 1601 号',
+        notes: 'Apple 保修维修走他们的服务台',
+      },
+    },
+  },
+  network: {
+    types: ['equipment', 'serviceProvider'],
+    phone: '021-5000 5005',
+    email: 'projects@demo-cloudsail.example',
+    website: 'https://www.demo-cloudsail.example',
+    text: {
+      'en-US': {
+        name: 'Cloudsail Networks',
+        contact: 'Kevin Zhou',
+        address: '399 Shengxia Road, Pudong, Shanghai',
+        notes: 'Installs and maintains the server room and the office network',
+      },
+      'zh-CN': {
+        name: '云帆网络科技',
+        contact: '周凯',
+        address: '上海市浦东新区盛夏路 399 号',
+        notes: '负责机房和办公网络的安装与维保',
+      },
+    },
+  },
+  office: {
+    types: ['equipment'],
+    phone: '021-5000 6006',
+    email: 'orders@demo-lixin.example',
+    website: 'https://www.demo-lixin.example',
+    text: {
+      'en-US': {
+        name: 'Lixin Office Supply',
+        contact: 'Amy Wang',
+        address: '233 Caoxi North Road, Xuhui, Shanghai',
+      },
+      'zh-CN': {
+        name: '立信办公用品',
+        contact: '王芳芳',
+        address: '上海市徐汇区漕溪北路 233 号',
+      },
+    },
+  },
+  japan: {
+    types: ['equipment', 'serviceProvider'],
+    phone: '+81 3 5555 0101',
+    email: 'sales@demo-tokyo-office.example',
+    website: 'https://www.demo-tokyo-office.example',
+    text: {
+      'en-US': {
+        name: 'Tokyo Office Systems',
+        contact: 'Kenji Sato',
+        address: '2-1-1 Nihonbashi, Chuo-ku, Tokyo',
+        notes: 'The Japan branch buys and services its office equipment here',
+      },
+      'zh-CN': {
+        name: '东京办公系统',
+        contact: '佐藤健二',
+        address: '东京都中央区日本桥 2-1-1',
+        notes: '日本分公司的办公设备在这里采购和维护',
+      },
+    },
+  },
+  software: {
+    types: ['softwareReseller'],
+    phone: '021-5000 7007',
+    email: 'licensing@demo-brightlink.example',
+    website: 'https://www.demo-brightlink.example',
+    text: {
+      'en-US': {
+        name: 'Brightlink Software',
+        contact: 'Lucy Chen',
+        address: '88 Keyuan Road, Pudong, Shanghai',
+        notes: 'Quotes volume licences; asked for when renewals come up',
+      },
+      'zh-CN': {
+        name: '智联软件服务',
+        contact: '陈露',
+        address: '上海市浦东新区科苑路 88 号',
+        notes: '可报批量授权价，续费时询价',
+      },
+    },
+  },
+  lessor: {
+    types: ['lessor'],
+    phone: '021-5000 8008',
+    email: 'leasing@demo-fareast.example',
+    website: 'https://www.demo-fareast.example',
+    text: {
+      'en-US': {
+        name: 'Far East Equipment Leasing',
+        contact: 'David Liu',
+        address: '1000 Lujiazui Ring Road, Pudong, Shanghai',
+        notes: 'Laptop leasing was looked at in 2025; not signed',
+      },
+      'zh-CN': {
+        name: '远东设备租赁',
+        contact: '刘大伟',
+        address: '上海市浦东新区陆家嘴环路 1000 号',
+        notes: '2025 年评估过笔记本租赁方案，未签约',
+      },
+    },
+  },
+};
+
 /** Free text of the demo's records, in the deployment's language. */
 /**
  * The pictures the model seed stores for every database (2026-10-20), by
@@ -1861,6 +2012,23 @@ export function createDemoService(dependencies: {
           address: vendorNames.recycler.address,
           website: 'https://www.demo-greenloop.example',
         });
+        const more = {} as Record<keyof typeof MORE_VENDORS, Row>;
+        for (const [key, spec] of Object.entries(MORE_VENDORS) as [
+          keyof typeof MORE_VENDORS,
+          (typeof MORE_VENDORS)[keyof typeof MORE_VENDORS],
+        ][]) {
+          const words = spec.text[locale as DemoLanguage] ?? spec.text['en-US'];
+          more[key] = await md('vendors', {
+            name: words.name,
+            types: [...spec.types],
+            contactName: words.contact,
+            phone: spec.phone,
+            email: spec.email,
+            address: words.address,
+            website: spec.website,
+            ...(words.notes ? { notes: words.notes } : {}),
+          });
+        }
         // Their records changed since (2026-10-16), so a vendor's history
         // reads as years of dealing with it rather than one line saying it
         // was created: the reseller moved to a new switchboard and later
@@ -2144,7 +2312,8 @@ export function createDemoService(dependencies: {
               serialNo: `C02XK1A0${index}MD6T`,
               name: `SG-LT-00${index + 1}`,
               departmentId: index < 3 ? rnd.id : sales.id,
-              vendorId: reseller.id,
+              // The Macs came through the Apple reseller (2026-10-21).
+              vendorId: more.apple.id,
               purchaseDate: daysFromNow(-1060),
               purchasePrice: 15999,
               warrantyEndDate: daysFromNow(20 + index * 2),
@@ -2209,7 +2378,7 @@ export function createDemoService(dependencies: {
               // The second one was never issued, so it is in the warehouse.
               locationId: index === 1 ? warehouse.id : floor3.id,
               departmentId: sales.id,
-              vendorId: reseller.id,
+              vendorId: more.apple.id,
               purchaseDate: daysFromNow(-150),
               purchasePrice: 9999,
               warrantyEndDate: daysFromNow(945),
@@ -2342,7 +2511,7 @@ export function createDemoService(dependencies: {
           name: 'SG-SRV-FILE-01',
           locationId: serverRoom.id,
           departmentId: rnd.id,
-          vendorId: reseller.id,
+          vendorId: more.network.id,
           purchaseDate: daysFromNow(-800),
           purchasePrice: 68000,
           warrantyEndDate: daysFromNow(1025),
@@ -2357,7 +2526,7 @@ export function createDemoService(dependencies: {
           name: 'SG-SW-CORE-01',
           locationId: serverRoom.id,
           departmentId: rnd.id,
-          vendorId: reseller.id,
+          vendorId: more.network.id,
           purchaseDate: daysFromNow(-900),
           purchasePrice: 24000,
           warrantyEndDate: daysFromNow(925),
@@ -2371,7 +2540,7 @@ export function createDemoService(dependencies: {
           serialNo: 'F2LVX4Q9PLJN',
           name: 'SG-PH-001',
           departmentId: sales.id,
-          vendorId: reseller.id,
+          vendorId: more.apple.id,
           purchaseDate: daysFromNow(-200),
           purchasePrice: 5999,
           warrantyEndDate: daysFromNow(165),
@@ -3744,7 +3913,13 @@ export function createDemoService(dependencies: {
               serialNo: spec.serialNo,
               name: spec.name,
               locationId: spec.at ? places[spec.at].id : warehouse.id,
-              vendorId: reseller.id,
+              // Japan buys locally, the Macs come from the Apple reseller.
+              vendorId:
+                spec.at === 'japan'
+                  ? more.japan.id
+                  : entry.manufacturerId === 'mfr-apple'
+                    ? more.apple.id
+                    : reseller.id,
               purchaseDate: daysFromNow(bought),
               purchasePrice: assets.price,
               warrantyEndDate: daysFromNow(
@@ -4287,7 +4462,7 @@ export function createDemoService(dependencies: {
           {
             deviceId: String(laptops[0].id),
             method: 'vendorWarranty',
-            vendorId: String(reseller.id),
+            vendorId: String(more.apple.id),
             fault: texts.repairFault,
             faultCategory: 'battery',
             sentDays: -44,
@@ -4298,7 +4473,7 @@ export function createDemoService(dependencies: {
           {
             deviceId: String(laptops[2].id),
             method: 'vendorWarranty',
-            vendorId: String(reseller.id),
+            vendorId: String(more.apple.id),
             fault: texts.repairFault,
             faultCategory: 'battery',
             sentDays: -19,
@@ -4775,6 +4950,8 @@ export function createDemoService(dependencies: {
           /** Raised for, and decided by, the importer rather than the staff. */
           readonly ownerId?: string;
           readonly approverId?: string;
+          /** Who it is ordered from; the IT reseller unless it says. */
+          readonly vendor?: Row;
         }): Promise<string> => {
           await on(-order.raisedDaysAgo);
           const created = await track(
@@ -4784,7 +4961,7 @@ export function createDemoService(dependencies: {
                 reason: order.reason,
                 description: order.description,
                 neededBy: daysFromNow(order.neededInDays),
-                vendorId: reseller.id,
+                vendorId: (order.vendor ?? reseller).id,
                 departmentId: order.departmentId,
                 ...(order.ownerId ? { ownerId: order.ownerId } : {}),
               },
@@ -4865,6 +5042,7 @@ export function createDemoService(dependencies: {
         });
         await queuedOrder({
           description: texts.salesPhoneOrder,
+          vendor: more.apple,
           reason: 'newHire',
           departmentId: sales.id,
           neededInDays: 20,
@@ -4875,6 +5053,7 @@ export function createDemoService(dependencies: {
         });
         const airOrderId = await queuedOrder({
           description: texts.airOrder,
+          vendor: more.apple,
           reason: 'newHire',
           departmentId: rnd.id,
           neededInDays: 14,
@@ -4885,6 +5064,7 @@ export function createDemoService(dependencies: {
         });
         const switchOrderId = await queuedOrder({
           description: texts.switchOrder,
+          vendor: more.network,
           reason: 'project',
           departmentId: itDept.id,
           neededInDays: 30,
@@ -4904,6 +5084,7 @@ export function createDemoService(dependencies: {
         });
         await queuedOrder({
           description: texts.mouseOrder,
+          vendor: more.office,
           reason: 'stockReplenishment',
           departmentId: rnd.id,
           neededInDays: 10,
@@ -4954,6 +5135,7 @@ export function createDemoService(dependencies: {
         });
         await queuedOrder({
           description: texts.serverOrder,
+          vendor: more.network,
           reason: 'project',
           departmentId: itDept.id,
           neededInDays: 60,
@@ -4964,6 +5146,7 @@ export function createDemoService(dependencies: {
         });
         await queuedOrder({
           description: texts.headsetRestockOrder,
+          vendor: more.office,
           reason: 'stockReplenishment',
           departmentId: sales.id,
           neededInDays: 15,
