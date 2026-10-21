@@ -14,10 +14,29 @@ export function followUpTitle(
   const shared = run.subjectId.startsWith('shared:');
   if (!run.result)
     return t(shared ? 'deviceSyncRun.sharedTitle' : 'deviceSyncRun.ownTitle');
-  return t(
-    shared ? 'deviceSyncRun.sharedDifferences' : 'deviceSyncRun.ownDifferences',
-    { count: run.result.items.length },
-  );
+  if (!shared)
+    return t('deviceSyncRun.ownDifferences', {
+      count: run.result.items.length,
+    });
+  // What the asset managers have, by kind and counted in devices
+  // (2026-10-21): the records only MDM has, and the register's devices
+  // nobody answers for — "3 处差异" did not say which.
+  const items = run.result.items;
+  const onlyInMdm = new Set(
+    items.filter((item) => item.kind === 'unregistered').map((i) => i.subject),
+  ).size;
+  const unowned = new Set(
+    items.filter((item) => item.kind !== 'unregistered').map((i) => i.subject),
+  ).size;
+  const parts = [
+    onlyInMdm
+      ? t('deviceSyncRun.sharedParts.onlyInMdm', { count: onlyInMdm })
+      : null,
+    unowned ? t('deviceSyncRun.sharedParts.unowned', { count: unowned }) : null,
+  ].filter(Boolean);
+  return t('deviceSyncRun.sharedDevices', {
+    parts: parts.join(t('deviceSyncRun.sharedParts.separator')),
+  });
 }
 
 /**

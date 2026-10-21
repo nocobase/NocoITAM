@@ -6,7 +6,10 @@ import {
   DeviceSyncFollowUpBlock,
   DeviceSyncRunCard,
 } from '../../client/components/itam/ai/device-sync-run.js';
-import { FollowUpFocusContext } from '../../client/lib/itam/device-sync-followup.js';
+import {
+  FollowUpFocusContext,
+  followUpTitle,
+} from '../../client/lib/itam/device-sync-followup.js';
 import type { DeviceSyncRun } from '../../client/lib/itam/agents.js';
 
 const state = vi.hoisted(() => ({
@@ -229,9 +232,7 @@ it('shows the run picked in 收件箱 alone', () => {
       </FollowUpFocusContext.Provider>
     </MemoryRouter>,
   );
-  expect(
-    screen.getByText('deviceSyncRun.sharedDifferences'),
-  ).toBeInTheDocument();
+  expect(screen.getByText('deviceSyncRun.sharedDevices')).toBeInTheDocument();
   expect(
     screen.queryByText('deviceSyncRun.ownDifferences'),
   ).not.toBeInTheDocument();
@@ -266,4 +267,39 @@ it('lists the other owners’ follow-ups to read, with nothing to act on', () =>
   expect(
     screen.queryByRole('button', { name: 'review.dismiss' }),
   ).not.toBeInTheDocument();
+});
+
+// The asset managers' follow-up says what it holds, in devices (2026-10-21).
+it('titles the asset managers’ follow-up by kind, in devices', () => {
+  const t = (key: string, options?: Record<string, unknown>) =>
+    key.endsWith('separator')
+      ? ', '
+      : `${key.split('.').at(-1) ?? key}(${Object.values(options ?? {}).join()})`;
+  const item = (kind: string, subject: string) => ({
+    key: `${subject}|${kind}`,
+    kind,
+    subject,
+    label: subject,
+  });
+  const shared = (items: ReturnType<typeof item>[]) =>
+    run({
+      subjectId: 'shared:mia',
+      result: { items, planId: null, notes: [], summary: '' },
+    });
+  expect(
+    followUpTitle(
+      shared([item('unregistered', 'r1'), item('unregistered', 'r2')]),
+      t,
+    ),
+  ).toBe('sharedDevices(onlyInMdm(2))');
+  expect(
+    followUpTitle(
+      shared([
+        item('unregistered', 'r1'),
+        item('stale', 'd1'),
+        item('userMismatch', 'd1'),
+      ]),
+      t,
+    ),
+  ).toBe('sharedDevices(onlyInMdm(1), unowned(1))');
 });
