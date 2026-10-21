@@ -40,8 +40,10 @@ export default function ModelAssetsTab(): ReactElement | null {
       <DeviceListEmbed
         filter={{ modelId: id }}
         leading={[typeColumn(() => 'device')]}
-        // Every row is this model, filed under its category.
-        omit={['modelId', 'categoryId']}
+        // Every row is this model, filed under its category; who holds each
+        // matters more here than since when.
+        omit={['modelId', 'categoryId', 'assignedAt']}
+        show={['serialNo', 'assignee']}
       />
     );
   if (kind === 'stock')
