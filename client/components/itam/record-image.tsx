@@ -239,14 +239,16 @@ export function RecordThumbnail({
   const [open, setOpen] = useState(false);
   const frame =
     'mr-2 inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted/40 align-middle';
-  // No picture leaves the space blank, so the names still line up
-  // (2026-10-21; a placeholder icon until then).
+  // No picture: a quiet placeholder in the same frame, so the names line up
+  // and the gap reads as "no photo" (blank for a moment on 2026-10-21).
   if (!src)
     return (
-      <span
-        aria-hidden='true'
-        className='mr-2 inline-block size-8 shrink-0 align-middle'
-      />
+      <span className={frame}>
+        <ImageIcon
+          className='size-4 text-muted-foreground/60'
+          aria-hidden='true'
+        />
+      </span>
     );
   return (
     <>
