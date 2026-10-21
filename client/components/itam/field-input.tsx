@@ -7,7 +7,7 @@ import { enUS, zhCN } from 'react-day-picker/locale';
 
 import { DatePicker } from '#components/date-picker';
 
-import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -432,39 +432,51 @@ export function FieldInput({
       );
     }
     case 'multiselect': {
+      // A dropdown that keeps several (2026-10-21; a grid of checkboxes
+      // until then): what is chosen reads as a tag each in the field.
       const current = Array.isArray(value) ? value.map(text) : [];
+      const items = (field.options ?? []).map((option) => ({
+        value: option.value,
+        label: t(option.label),
+      }));
       return (
-        <div
-          className='grid grid-cols-2 gap-2 rounded-lg border border-input p-3'
-          // The group saves as a whole once focus leaves it, not per box.
-          onBlur={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) onBlur?.();
+        <Select
+          multiple
+          items={items}
+          value={current}
+          onValueChange={(next) => onChange([...next])}
+          disabled={disabled}
+          defaultOpen={autoFocus}
+          onOpenChange={(open) => {
+            if (!open) onDismiss?.();
           }}
         >
-          {(field.options ?? []).map((option, index) => {
-            const checkboxId = `${inputId}-${option.value}`;
-            return (
-              <div key={option.value} className='flex items-center gap-2'>
-                <Checkbox
-                  id={checkboxId}
-                  checked={current.includes(option.value)}
-                  disabled={disabled}
-                  autoFocus={autoFocus && index === 0}
-                  onCheckedChange={(checked) =>
-                    onChange(
-                      checked
-                        ? [...current, option.value]
-                        : current.filter((entry) => entry !== option.value),
-                    )
-                  }
-                />
-                <Label htmlFor={checkboxId} className='font-normal'>
-                  {t(option.label)}
-                </Label>
-              </div>
-            );
-          })}
-        </div>
+          <SelectTrigger
+            id={inputId}
+            className='w-full data-[size=default]:h-auto data-[size=default]:min-h-8'
+            onBlur={onBlur}
+          >
+            <SelectValue placeholder={t('common.select')}>
+              {current.length > 0 ? (
+                <span className='flex flex-wrap gap-1'>
+                  {current.map((entry) => (
+                    <Badge key={entry} variant='outline'>
+                      {items.find((item) => item.value === entry)?.label ??
+                        entry}
+                    </Badge>
+                  ))}
+                </span>
+              ) : undefined}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {items.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       );
     }
     case 'reference': {
