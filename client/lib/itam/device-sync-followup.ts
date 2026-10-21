@@ -44,12 +44,13 @@ export function followUpParts(
         ['unowned', devices((kind) => kind !== 'unregistered')],
       ]
     : [
+        // In the order of the tabs (2026-10-21).
         ['onlyInMdm', devices((kind) => kind === 'unregistered')],
+        ['onlyOnRegister', devices((kind) => kind === 'unmanaged')],
         [
           'mismatch',
           devices((kind) => kind !== 'unregistered' && kind !== 'unmanaged'),
         ],
-        ['onlyOnRegister', devices((kind) => kind === 'unmanaged')],
       ];
   return counts
     .filter(([, count]) => count > 0)

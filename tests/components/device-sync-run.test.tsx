@@ -338,7 +338,7 @@ it('titles the asset managers’ follow-up by kind, in devices', () => {
       }),
       t,
     ),
-  ).toBe('ownDevices(mismatch(2), onlyOnRegister(1))');
+  ).toBe('ownDevices(onlyOnRegister(1), mismatch(2))');
 });
 
 // Settled on its row below (2026-10-21): its steps are left out, and once
