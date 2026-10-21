@@ -760,24 +760,45 @@ function TimelineRow({
             </div>
             {folded.length > 0 && open ? (
               <ul className='mt-1 space-y-0.5 rounded-md bg-muted/60 px-3 py-2 text-xs'>
-                {folded.map((change) => (
-                  <li key={change.id}>
-                    <span className='text-muted-foreground'>
-                      {fieldLabel(change)}
-                    </span>{' '}
-                    {change.field ? (
-                      <ChangeValue
-                        field={fieldByKey.get(change.field)}
-                        fieldKey={change.field}
-                        oldValue={change.oldValue}
-                        newValue={change.newValue}
-                        names={names}
-                        keyLabels={keyLabels}
-                        t={t}
-                      />
-                    ) : null}
-                  </li>
-                ))}
+                {folded.map((change) => {
+                  // As a one-field line reads (2026-10-21): the field and
+                  // its new value, the old one on hover; a list or a
+                  // structured value keeps its lines.
+                  const field = change.field
+                    ? fieldByKey.get(change.field)
+                    : undefined;
+                  const plain = isCompactChange(change, field);
+                  return (
+                    <li
+                      key={change.id}
+                      className={cn(
+                        plain && 'flex min-w-0 items-baseline gap-x-1.5',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'text-muted-foreground',
+                          plain && 'shrink-0',
+                        )}
+                      >
+                        {fieldLabel(change)}
+                      </span>
+                      {plain ? null : ' '}
+                      {change.field ? (
+                        <ChangeValue
+                          field={field}
+                          fieldKey={change.field}
+                          oldValue={change.oldValue}
+                          newValue={change.newValue}
+                          names={names}
+                          keyLabels={keyLabels}
+                          t={t}
+                          compact={plain}
+                        />
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
             ) : null}
           </>
