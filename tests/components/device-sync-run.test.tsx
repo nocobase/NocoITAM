@@ -176,9 +176,9 @@ it('lists the reader’s open follow-ups under 等你决定, and nothing else', 
   expect(screen.queryByText('review.waiting')).not.toBeInTheDocument();
 });
 
-// Folded to a line on MDM 核对 (2026-10-21): the plan's decision in it,
-// declining standing for 忽略; the steps when opened.
-it('folds a waiting plan to its header line, with the plan’s decision', () => {
+// On MDM 核对 (2026-10-21): the plan's decision in the header line,
+// declining standing for 忽略; the steps open while it waits.
+it('heads a waiting plan with its decision, its steps open beneath', () => {
   state.plan = {
     id: 'plan-1',
     title: 'MDM follow-up: 2 differences',
@@ -197,12 +197,12 @@ it('folds a waiting plan to its header line, with the plan’s decision', () => 
     screen.queryByRole('button', { name: 'review.dismiss' }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByText('plan:MDM follow-up: 2 differences'),
-  ).not.toBeInTheDocument();
-  fireEvent.click(screen.getByText('deviceSyncRun.ownDifferences'));
-  expect(
     screen.getByText('plan:MDM follow-up: 2 differences'),
   ).toBeInTheDocument();
+  fireEvent.click(screen.getByText('deviceSyncRun.ownDifferences'));
+  expect(
+    screen.queryByText('plan:MDM follow-up: 2 differences'),
+  ).not.toBeInTheDocument();
 });
 
 // Beside a run in 收件箱, that run alone (2026-10-17).

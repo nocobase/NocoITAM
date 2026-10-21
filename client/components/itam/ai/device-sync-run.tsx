@@ -156,11 +156,11 @@ function useRunPlan(run: DeviceSyncRun) {
 }
 
 /**
- * One follow-up on MDM 核对 (2026-10-21), folded to a line so the lists
- * stay in view: what it is about and how many steps wait, with the plan's
- * own 拒绝 / 确认执行 — declining it sets the follow-up aside too, so there
- * is no separate 忽略 then. Opened, the steps to tick and what is left to
- * look at. Without a plan, its notes show at once, with 忽略.
+ * One follow-up on MDM 核对 (2026-10-21): a header line with what it is
+ * about and how many steps wait, and the plan's own 拒绝 / 确认执行 —
+ * declining it sets the follow-up aside too, so there is no separate 忽略
+ * then; without a plan, 忽略. Beneath, open while it waits and folded once
+ * decided, the steps to tick and what is left to look at.
  */
 function FollowUpReviewCard({
   run,
@@ -199,8 +199,8 @@ function FollowUpReviewCard({
   ].filter(Boolean);
   return (
     <Collapsible
-      // Folded while a plan waits; its notes alone are shown at once.
-      open={open ?? (!pendingPlan && !decided && notes.length > 0)}
+      // Open while it waits, as asked (2026-10-21); folded once decided.
+      open={open ?? !decided}
       onOpenChange={setOpen}
       className='rounded-lg border bg-card'
     >
