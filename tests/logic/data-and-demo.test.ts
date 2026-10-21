@@ -950,9 +950,34 @@ describe('CSV import / export and demo data', () => {
         updatedAt: new Date(),
       })
       .execute();
+    // A device someone registered from one of its platform records goes
+    // with it too (2026-10-21): left behind, the next import's record
+    // linked to it and 只在 MDM never showed it again.
+    const place = await database
+      .query()
+      .selectFrom('locations')
+      .select('id')
+      .executeTakeFirstOrThrow<{ id: string }>();
+    expect(
+      (
+        await post('devices', {
+          modelId: 'model-thinkpad-t14-gen5',
+          locationId: place.id,
+          serialNo: 'PF5DEMO01',
+        })
+      ).status,
+    ).toBe(201);
     const cleared = await data<{ generated: boolean }>(
       await post('demo/clear'),
     );
+    expect(
+      await database
+        .query()
+        .selectFrom('devices')
+        .select('id')
+        .where('serialNo', '=', 'PF5DEMO01')
+        .execute(),
+    ).toHaveLength(0);
     // Its stock, movements, seats and the master data it added went with it.
     for (const table of [
       'stockItems',

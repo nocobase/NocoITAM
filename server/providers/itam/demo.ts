@@ -6558,11 +6558,48 @@ export function createDemoService(dependencies: {
     },
 
     async clear(actorId) {
-      const tracked = await database
-        .query()
-        .selectFrom('demoRecords')
-        .select(['collection', 'recordId'])
-        .execute<{ collection: string; recordId: string }>();
+      const tracked = [
+        ...(await database
+          .query()
+          .selectFrom('demoRecords')
+          .select(['collection', 'recordId'])
+          .execute<{ collection: string; recordId: string }>()),
+      ];
+      // The devices registered from the demo's platform records (2026-10-21):
+      // by 补登记 or a follow-up's plan, someone trying the demo out put
+      // LAPTOP-PF5DEMO01 on the register; cleared with the demo it stayed,
+      // and every later import's record linked to it by serial, so 只在 MDM
+      // never showed it again. They go with the records they came from.
+      const demoRecordIds = tracked
+        .filter((row) => row.collection === 'managedDevices')
+        .map((row) => row.recordId);
+      if (demoRecordIds.length > 0) {
+        const serials = (
+          await database
+            .query()
+            .selectFrom('managedDevices')
+            .select('serialNo')
+            .where('id', 'in', demoRecordIds)
+            .execute<{ serialNo: unknown }>()
+        ).flatMap((row) => {
+          const serial = asText(row.serialNo);
+          return serial ? [serial] : [];
+        });
+        const demoDevices = new Set(
+          tracked
+            .filter((row) => row.collection === 'devices')
+            .map((row) => row.recordId),
+        );
+        if (serials.length > 0)
+          for (const row of await database
+            .query()
+            .selectFrom('devices')
+            .select('id')
+            .where('serialNo', 'in', serials)
+            .execute<{ id: unknown }>())
+            if (!demoDevices.has(String(row.id)))
+              tracked.push({ collection: 'devices', recordId: String(row.id) });
+      }
       const byCollection = new Map<string, string[]>();
       for (const row of tracked)
         byCollection.set(row.collection, [

@@ -289,3 +289,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   seed of its own like this one. The demo comments on three seeded categories
   without mentions or replies, tracking each comment as `historyEvents` so
   clearing removes it, and changes only the webcam category it made.
+
+- **Devices registered from the demo's platform records** (2026-10-21) are
+  cleared with the demo: `clear` adds every device whose serial is one of
+  its tracked `managedDevices` records' and that it did not make itself.
+  Left behind, a device someone registered while trying the demo out (by
+  补登记 or a follow-up's plan) took the next import's record by serial, and
+  只在 MDM never listed LAPTOP-PF5DEMO01 again.
