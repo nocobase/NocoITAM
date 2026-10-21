@@ -135,7 +135,7 @@ export function RelatedListTab({
   // "requires serial" belong on the record itself.
   const columns = target.fields.filter(
     (field) =>
-      field.column &&
+      (field.column || (showFilterField && field.key === filterField)) &&
       field.type !== 'boolean' &&
       (showFilterField || field.key !== filterField) &&
       !['createdAt', 'updatedAt', 'createdById'].includes(field.key),

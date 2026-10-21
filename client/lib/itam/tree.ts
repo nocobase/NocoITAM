@@ -55,7 +55,7 @@ export function subtreeOf(
  * same query, so usually cached); undefined until it has loaded.
  */
 export function useSubtree(
-  collection: 'departments' | 'locations',
+  collection: 'categories' | 'departments' | 'locations',
   nodeId: string,
 ): readonly string[] | undefined {
   const nodes = useItamList<ItamRecord>(masterDataPath(collection), {

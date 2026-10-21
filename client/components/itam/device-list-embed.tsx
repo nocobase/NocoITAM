@@ -37,10 +37,10 @@ export function DeviceListEmbed({
   /**
    * Columns most tabs leave out: the serial number, who holds it, and the
    * number and name apart (`noAndName`) rather than in one cell, and the
-   * department (a parent department's tab lists its sub-departments' too).
+   * department or location (a parent's tab lists its sub-nodes' too).
    */
   readonly show?: readonly (
-    'serialNo' | 'assignee' | 'noAndName' | 'department'
+    'serialNo' | 'assignee' | 'noAndName' | 'department' | 'location'
   )[];
 }): ReactElement {
   const { t } = useTranslation();
@@ -104,26 +104,34 @@ export function DeviceListEmbed({
                   ),
                 },
               ]),
-          ...(show.includes('department')
-            ? [
-                {
-                  key: 'departmentId',
-                  header: t('fields.department'),
-                  className: 'w-px whitespace-nowrap',
-                  // Its own, not the path: the tab names the parent.
-                  render: (row: ItamRecord) =>
-                    row.departmentId ? (
-                      <TreePath
-                        collection='departments'
-                        nodeId={row.departmentId}
-                        show='leaf'
-                      />
-                    ) : (
-                      '—'
-                    ),
-                },
-              ]
-            : []),
+          // Its own node, not the path: the tab names the parent.
+          ...(
+            [
+              [
+                'department',
+                'departmentId',
+                'departments',
+                'fields.department',
+              ],
+              ['location', 'locationId', 'locations', 'fields.location'],
+            ] as const
+          )
+            .filter(([option]) => show.includes(option))
+            .map(([, key, collection, label]) => ({
+              key,
+              header: t(label),
+              className: 'w-px whitespace-nowrap',
+              render: (row: ItamRecord) =>
+                row[key] ? (
+                  <TreePath
+                    collection={collection}
+                    nodeId={row[key]}
+                    show='leaf'
+                  />
+                ) : (
+                  '—'
+                ),
+            })),
           {
             key: 'modelId',
             header: t('fields.model'),

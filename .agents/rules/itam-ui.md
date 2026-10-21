@@ -140,11 +140,7 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   (2026-10-21) — and a row's one action is a delete icon
   (`DomainTreeProps.onDelete`, through the list's own confirmation), since
   editing is the pane's; it shows on hover, on the open row and on a touch
-  screen (2026-10-21). A department's 人员 and 设备 tabs, and the counts on
-  them, take in its sub-departments (`useSubtree`, the server's
-  `subtreeIds`), each row naming its own department; its people list those
-  on the books by status, then employee number (a list's `sort` takes
-  several comma-separated fields), and those who left in a section below. The clicked
+  screen (2026-10-21). The clicked
   node's own detail page — its tabs included — sits beside it through
   `RecordPane` (`TreePanes` in `master-domain-parts.tsx`), named in
   the address as `?selected=` (a list parameter, not a filter: `RESERVED`
@@ -161,6 +157,17 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   handle any more — the whole row drags — and every level indents along a
   guide line that drops from its parent's arrow, every row keeping the
   arrow's room so siblings line up (2026-10-06).
+- **A tree node takes in its descendants** (2026-10-21, one rule for
+  categories, locations and departments): every tab that lists records
+  under it — a category's 型号 and 软件产品, a location's 设备, 库存 and 人员,
+  a department's 设备 and 人员 — and the counts on those tabs include its
+  sub-nodes' (`useSubtree` on the client, `subtreeIds` in `stats`), each
+  row naming its own node (the leaf, not the path) once there are several.
+  Only 子级 stays the direct children. Reports and stocktakes already scoped
+  a node this way. People list those on the books by status, then employee
+  number (a list's `sort` takes several comma-separated fields), and those
+  who left in a section below (`PeopleUnderTab`). List-page filters on a
+  tree field (the device list's 位置) still match the node alone.
 - Base UI drops a **nested** dialog's backdrop, reasoning that the dialog it
   is nested in already dims the page. The record drawer is such a parent and
   its backdrop sits _behind_ the drawer panel, so a dialog opened inside the

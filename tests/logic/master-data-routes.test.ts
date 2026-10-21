@@ -715,7 +715,7 @@ describe('master data routes', () => {
     ]);
   });
 
-  it("counts a department's sub-departments' people and sorts by several fields", async () => {
+  it("counts a tree node's descendants' people and sorts by several fields", async () => {
     const manager = { user: 'mia', role: 'manager' } as const;
     const create = async (collection: string, body: Record<string, unknown>) =>
       (
@@ -760,6 +760,31 @@ describe('master data routes', () => {
     // Everybody not gone, R&D's included; its children stay its own.
     expect(stats.data.counts.people).toBe(3);
     expect(stats.data.counts.children).toBe(1);
+
+    // A location the same way.
+    const site = await create('locations', { name: 'Site', type: 'building' });
+    const floor = await create('locations', {
+      name: 'Floor',
+      type: 'floor',
+      parentId: site.id,
+    });
+    const ops = await create('departments', { name: 'Ops' });
+    await create('people', {
+      name: 'Upstairs',
+      departmentId: ops.id,
+      locationId: floor.id,
+    });
+    await create('people', {
+      name: 'Left',
+      departmentId: ops.id,
+      locationId: floor.id,
+      leaveDate: '2020-01-01',
+    });
+    const place = (await (
+      await app.request(`/api/itam/master/locations/${site.id}/stats`, manager)
+    ).json()) as { data: { counts: Record<string, number> } };
+    expect(place.data.counts.people).toBe(1);
+    expect(place.data.counts.children).toBe(1);
 
     const list = (await (
       await app.request(
@@ -830,6 +855,15 @@ describe('master data routes', () => {
     expect(stats.data.ancestors.map((entry) => entry.name)).toEqual([
       'Hardware',
     ]);
+    // A parent counts its sub-categories' models; its children stay its own.
+    const parent = (await (
+      await app.request(
+        `/api/itam/master/categories/${hardware.id}/stats`,
+        manager,
+      )
+    ).json()) as { data: { counts: Record<string, number> } };
+    expect(parent.data.counts.models).toBe(2);
+    expect(parent.data.counts.children).toBe(1);
 
     // What a category applies to is fixed while records use it.
     const retarget = await app.request(

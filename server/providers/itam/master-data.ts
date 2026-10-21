@@ -1654,11 +1654,14 @@ export function createMasterDataService(
 
     async stats(collection, id) {
       require(collection);
-      // A department counts its sub-departments' people and devices too
-      // (2026-10-21), as its tabs list them; its children stay its own.
+      // A tree node counts what its descendants hold too (2026-10-21, one
+      // rule for categories, locations and departments), as its tabs list
+      // it; its children stay its own.
       const scope =
+        collection === 'categories' ||
+        collection === 'locations' ||
         collection === 'departments'
-          ? [...(await subtreeIds(database, 'departments', [id]))]
+          ? [...(await subtreeIds(database, collection, [id]))]
           : [id];
       const count = async (
         table: string,
@@ -1686,7 +1689,7 @@ export function createMasterDataService(
           .query()
           .selectFrom('stockItems')
           .select((eb) => [eb.fn.sum('totalQuantity').as('total')])
-          .where(field, '=', id)
+          .where(field, 'in', scope)
           .executeTakeFirst<{ total: unknown }>();
         return Number(row?.total ?? 0);
       };
@@ -1707,12 +1710,19 @@ export function createMasterDataService(
       switch (collection) {
         case 'categories':
           counts.children = await count('categories', 'parentId');
-          counts.models = await count('models', 'categoryId');
+          counts.models = await count('models', 'categoryId', undefined, scope);
           counts.softwareProducts = await count(
             'softwareProducts',
             'categoryId',
+            undefined,
+            scope,
           );
-          counts.stockItems = await count('stockItems', 'categoryId');
+          counts.stockItems = await count(
+            'stockItems',
+            'categoryId',
+            undefined,
+            scope,
+          );
           counts.stockQuantity = await sumQuantity('categoryId');
           await devicesBy('categoryId');
           break;
@@ -1743,8 +1753,19 @@ export function createMasterDataService(
           break;
         case 'locations':
           counts.children = await count('locations', 'parentId');
-          counts.stockItems = await count('stockItems', 'locationId');
-          counts.people = await count('people', 'locationId');
+          counts.stockItems = await count(
+            'stockItems',
+            'locationId',
+            undefined,
+            scope,
+          );
+          // As a department's (2026-10-21): everybody not gone.
+          counts.people = await count(
+            'people',
+            'locationId',
+            { field: 'employmentStatus', op: 'not in', value: ['left'] },
+            scope,
+          );
           await devicesBy('locationId');
           break;
         case 'departments':
