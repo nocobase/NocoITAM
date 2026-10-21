@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { Info } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
@@ -335,8 +336,10 @@ function DeviceFacts({
       : null,
   ].filter(Boolean);
   return (
-    <p className='rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground'>
-      {facts.join(' · ')}
+    <p className='flex items-start gap-2 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground'>
+      {/* What the register knows, marked as such (2026-10-20). */}
+      <Info aria-hidden className='mt-0.5 size-4 shrink-0' />
+      <span>{facts.join(' · ')}</span>
     </p>
   );
 }
