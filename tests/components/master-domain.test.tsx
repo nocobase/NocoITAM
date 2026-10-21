@@ -131,8 +131,14 @@ it('describes each collection for the generic pages', () => {
   expect(models.titlePrefixField).toBe('manufacturerId');
   expect(models.nameSort).toBe('manufacturerName');
   expect(models.image).toBe(true);
-  // No device-type column: the category path says it.
-  expect(models.listColumns?.map((column) => column.key)).toEqual(['total']);
+  // The device type, before the category.
+  expect(models.listColumns?.map((column) => column.key)).toEqual([
+    'appliesTo',
+    'total',
+  ]);
+  expect(
+    models.listColumns?.find((column) => column.key === 'appliesTo')?.before,
+  ).toBe('categoryId');
   // Its extended fields follow its lifecycle.
   expect(models.extendedFieldsAfter).toBe('groups.lifecycle');
   expect(

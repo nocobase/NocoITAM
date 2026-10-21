@@ -246,6 +246,16 @@ function appliesToOf(
   );
 }
 
+/** The category's device type, before the category itself. */
+export function CategoryKindCell({
+  row,
+}: {
+  readonly row: ItamRecord;
+}): ReactElement {
+  const categories = useCategoryKinds();
+  return <AssetTypeBadge value={appliesToOf(categories.data?.data, row)} />;
+}
+
 function useCountsBy(path: string, by: string) {
   const api = useApi();
   return useQuery({

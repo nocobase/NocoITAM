@@ -16,6 +16,7 @@ import {
 
 import {
   AncestorsTrail,
+  CategoryKindCell,
   CategoryKindValue,
   CategoryTemplate,
   MasterActions,
@@ -98,8 +99,19 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
         />
       ),
     })),
-    // No device-type column (2026-10-20): the category path beside it
-    // already says it; the filter keeps it.
+    // The device type, before the category (taken off 2026-10-20, back
+    // 2026-10-21: the path does not say it at a glance).
+    ...(hasCategory
+      ? [
+          {
+            key: 'appliesTo',
+            label: 'fields.appliesTo',
+            width: '7rem',
+            before: 'categoryId',
+            Cell: CategoryKindCell,
+          } satisfies DomainListColumn,
+        ]
+      : []),
     ...(collection.countField
       ? [
           {
