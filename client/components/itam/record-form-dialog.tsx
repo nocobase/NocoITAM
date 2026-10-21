@@ -238,11 +238,13 @@ export function RecordFormDialog({
   };
 
   const twoColumns = columns === 2;
-  // In two columns a long text keeps the whole row.
+  // In two columns a long text keeps the whole row. A cell keeps its label
+  // at the top when the field beside it is taller (2026-10-21: a
+  // multi-choice wrapping to a second line pushed its neighbour's down).
   const cell = (field: FieldDefinition) =>
     twoColumns && (field.type === 'textarea' || field.wide)
-      ? 'grid gap-1.5 sm:col-span-2'
-      : 'grid gap-1.5';
+      ? 'grid content-start gap-1.5 sm:col-span-2'
+      : 'grid content-start gap-1.5';
   const renderField = (field: FieldDefinition): ReactNode => {
     if (field.visibleWhen && !field.visibleWhen(values)) return null;
     // A currency edited with its amount has no row of its own.
