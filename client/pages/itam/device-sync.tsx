@@ -82,9 +82,9 @@ export default function DeviceSyncReviewPage(): ReactElement {
     action: 'update',
   });
   const counts = useReviewCounts();
-  // One way to Asset Steward's follow-up at a time (2026-10-21): while one
-  // works or waits under 等你决定, the header does not offer another. One
-  // that failed does not count: the header is where it is tried again.
+  // While a follow-up works or waits under 等你决定, the header offers it
+  // again rather than hiding (2026-10-21): a new one replaces it. One that
+  // failed does not count.
   const inbox = useInbox();
   const following = (inbox.data?.open ?? []).some(
     (run) => run.agent === 'deviceSync' && run.status !== 'failed',
@@ -130,12 +130,16 @@ export default function DeviceSyncReviewPage(): ReactElement {
           <>
             {/* MDM 跟进 on the page (2026-10-17): the follow-up for the reader alone, now
                 rather than after the next pull. */}
-            {ai.available && !following ? (
+            {ai.available ? (
               <AiShortcut
                 disabled={followUp.isPending}
                 onClick={() => followUp.mutate()}
               >
-                {t('deviceSync.review.followUp')}
+                {t(
+                  following
+                    ? 'deviceSync.review.followUpAgain'
+                    : 'deviceSync.review.followUp',
+                )}
               </AiShortcut>
             ) : null}
             {canSettle ? (
