@@ -412,7 +412,7 @@ function EditsRow({
   const [open, setOpen] = useState(false);
   const first = items[0];
   const actor = first.actorId
-    ? (rest.names.users?.get(first.actorId) ?? first.actorId)
+    ? actorName(rest.names.users, first.actorId, rest.t)
     : undefined;
   const count = items.reduce((sum, item) => sum + item.changes.length, 0);
   return (
@@ -534,7 +534,7 @@ function TimelineRow({
 }): ReactElement {
   const [open, setOpen] = useState(false);
   const actor = item.actorId
-    ? (names.users?.get(item.actorId) ?? item.actorId)
+    ? actorName(names.users, item.actorId, t)
     : undefined;
   // An approval request says whom it waits for: the approver's name comes
   // from the same directory as the actor's.
@@ -809,6 +809,20 @@ function TimelineRow({
 }
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/**
+ * Who did it, by name (2026-10-21): an account since deleted reads as
+ * such rather than as its id, and nothing shows while the names load —
+ * the directory answers every id it knows once it has loaded.
+ */
+function actorName(
+  users: ReadonlyMap<string, string> | undefined,
+  id: string,
+  t: Translate,
+): string {
+  if (!users) return '';
+  return users.get(id) ?? t('history.formerUser');
+}
 
 /**
  * The value a change replaced: struck through and quiet, so the line reads

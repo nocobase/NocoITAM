@@ -286,6 +286,7 @@ const messages = {
       sync: 'through device sync',
       install: 'with the installation',
     },
+    formerUser: 'Former user',
     updatedField: 'updated {{field}}',
     wasLabel: 'Was:',
     nowLabel: 'Now:',

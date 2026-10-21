@@ -278,6 +278,7 @@ const zhCN: AppResource = {
       sync: '经设备同步',
       install: '随系统安装',
     },
+    formerUser: '已删除的用户',
     updatedField: '修改 {{field}}',
     wasLabel: '原：',
     nowLabel: '新：',
