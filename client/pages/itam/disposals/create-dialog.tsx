@@ -239,6 +239,9 @@ export function DisposalCreateDialog({
                 <DisposalTriage
                   deviceIds={deviceIds}
                   description={text(values.description)}
+                  onDescription={(next) =>
+                    setValues((current) => ({ ...current, description: next }))
+                  }
                   onReading={(reading) => {
                     // Only what is still empty: the person's choices stand.
                     const filled = (

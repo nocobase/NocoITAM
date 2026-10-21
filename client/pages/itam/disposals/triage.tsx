@@ -2,6 +2,7 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { TidiedDescription } from '@/components/itam/tidied-description';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { useAiReading, useItamAi } from '@/lib/itam/ai-chat';
@@ -19,6 +20,8 @@ interface Diagnosis {
   readonly advice: Advice;
   readonly concerns: readonly { deviceNo: string; note: string }[];
   readonly said: string;
+  /** The description as written, tidied; theirs to put in or not. */
+  readonly tidied?: string;
 }
 
 /** What the diagnosis fills, each only when one of its values. */
@@ -46,10 +49,13 @@ export function DisposalTriage({
   deviceIds,
   description,
   onReading,
+  onDescription,
 }: {
   readonly deviceIds: readonly string[];
   readonly description: string;
   readonly onReading: (reading: DisposalReading) => void;
+  /** Puts the tidied description in, when the person chooses to. */
+  readonly onDescription: (text: string) => void;
 }): ReactElement | null {
   const { t } = useTranslation();
   const ai = useItamAi();
@@ -89,6 +95,13 @@ export function DisposalTriage({
           .filter((entry) => entry.note)
           .slice(0, 5),
         said: answer.said,
+        tidied: (() => {
+          const tidied =
+            typeof reading.description === 'string'
+              ? reading.description.trim()
+              : '';
+          return tidied && tidied !== description.trim() ? tidied : undefined;
+        })(),
       });
     } catch (caught) {
       setFailure(errorMessage(caught));
@@ -147,6 +160,13 @@ export function DisposalTriage({
           ) : null}
           {diagnosis.said ? (
             <p className='text-muted-foreground'>{diagnosis.said}</p>
+          ) : null}
+          {diagnosis.tidied ? (
+            <TidiedDescription
+              label={t('disposals.triage.tidied')}
+              text={diagnosis.tidied}
+              onApply={onDescription}
+            />
           ) : null}
         </div>
       ) : null}

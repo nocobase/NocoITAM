@@ -20,6 +20,7 @@ const state = vi.hoisted(() => ({
       recommendation: 'replace',
       method: 'sendOut',
       reasons: ['Eight years old'],
+      description: 'The screen flickers, worst when the lid moves.',
     } as Record<string, unknown> | null,
     said: 'Ask whether it was dropped.',
   },
@@ -216,4 +217,26 @@ it('fills the method from the diagnosis only while none is chosen', async () => 
     fireEvent.click(screen.getByRole('button', { name: 'repairs.triage.ask' }));
   });
   expect(field('method')?.value).toBe('vendorWarranty');
+});
+
+it('offers the fault tidied, and puts it in only when chosen', async () => {
+  render(<RepairCreateDialog deviceId='d1' open onOpenChange={vi.fn()} />);
+  fireEvent.change(field('faultDescription')!, {
+    target: { value: 'screen flicker lid' },
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'repairs.triage.ask' }));
+  });
+  expect(
+    screen.getByText('The screen flickers, worst when the lid moves.'),
+  ).toBeInTheDocument();
+  // What they wrote stands until they choose.
+  expect(field('faultDescription')?.value).toBe('screen flicker lid');
+  fireEvent.click(screen.getByRole('button', { name: 'common.apply' }));
+  expect(field('faultDescription')?.value).toBe(
+    'The screen flickers, worst when the lid moves.',
+  );
+  expect(
+    screen.getByRole('button', { name: /common\.applied/ }),
+  ).toBeDisabled();
 });

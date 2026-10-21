@@ -6,6 +6,7 @@ import {
   initialFormValues,
   RecordFormDialog,
 } from '@/components/itam/record-form-dialog';
+import { TidiedDescription } from '@/components/itam/tidied-description';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -37,12 +38,20 @@ const fieldsOf = (keys: readonly string[]) =>
   keys.map((key) => REPAIR_FIELDS.find((field) => field.key === key)!);
 
 const RECOMMENDATIONS = ['repair', 'replace', 'inspect'] as const;
+
+/** The tidied text, when there is one and it says it differently. */
+const tidiedFrom = (value: unknown, written: string): string | undefined => {
+  const tidied = typeof value === 'string' ? value.trim() : '';
+  return tidied && tidied !== written.trim() ? tidied : undefined;
+};
 type Recommendation = (typeof RECOMMENDATIONS)[number];
 
 interface Triage {
   readonly recommendation: Recommendation;
   readonly reasons: readonly string[];
   readonly said: string;
+  /** The fault as written, tidied; theirs to put in or not. */
+  readonly tidied?: string;
 }
 
 /**
@@ -193,6 +202,9 @@ function RepairForm({
           <TriagePanel
             deviceId={chosen}
             fault={text(values.faultDescription)}
+            onDescription={(text) =>
+              setValues((before) => ({ ...before, faultDescription: text }))
+            }
             onReading={({ category, method }) => {
               // The kind always; the method only while nobody — the
               // warranty rule or the person — has chosen one (2026-10-20),
@@ -334,6 +346,7 @@ function TriagePanel({
   deviceId,
   fault,
   onReading,
+  onDescription,
   onReplace,
 }: {
   readonly deviceId: string | undefined;
@@ -343,6 +356,8 @@ function TriagePanel({
     readonly category?: string;
     readonly method?: string;
   }) => void;
+  /** Puts the tidied fault in the field, when the person chooses to. */
+  readonly onDescription: (text: string) => void;
   /** Turns the request into a disposal, when Asset Steward says replace. */
   readonly onReplace?: (triage: {
     readonly reasons: readonly string[];
@@ -386,6 +401,7 @@ function TriagePanel({
           .filter(Boolean)
           .slice(0, 3),
         said: answer.said,
+        tidied: tidiedFrom(reading.description, fault),
       });
     } catch (caught) {
       setFailure(errorMessage(caught));
@@ -455,6 +471,13 @@ function TriagePanel({
           ) : null}
           {triage.said ? (
             <p className='text-muted-foreground'>{triage.said}</p>
+          ) : null}
+          {triage.tidied ? (
+            <TidiedDescription
+              label={t('repairs.triage.tidied')}
+              text={triage.tidied}
+              onApply={onDescription}
+            />
           ) : null}
         </div>
       ) : null}

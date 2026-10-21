@@ -207,6 +207,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   never the reader's interface. `aiLanguageToken` answers it synchronously,
   read at start and kept current through `settings.onSaved`. Asset
   Steward's chat still answers in the language it is asked in.
+- Both diagnoses also return the person's description tidied
+  (`description`: every fact they gave, nothing added, at most 200
+  characters), shown under the result with 填入 (`TidiedDescription`); it
+  replaces what they wrote only when they choose to (2026-10-20).
 - **报废诊断** (2026-10-20, task `disposalTriage`, grant `disposals.create`):
   the disposal's description is the material and the page sends its
   `deviceIds` (the first twenty are read); the server reads each device as
