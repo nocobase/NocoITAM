@@ -348,6 +348,12 @@ where it means a state is fine, as the `success` tokens: a counted item that
 matches the books (一致), an active account, and the template's own status
 dots.
 
+The brand is emerald since 2026-10-21 (`--primary` #047857, #6ee7b7 dark),
+and `--accent` — a highlighted option in a select or menu, a chosen row — is
+neutral grey (`var(--muted)`), the same as the reference pickers' highlight:
+tinted in the brand it read as selected, and a green asset-type tag vanished
+into it.
+
 ## Detail tabs and dates, after NocoCRM
 
 A detail page's tabs are drawn as NocoCRM's record pages draw theirs

@@ -71,8 +71,11 @@
   --secondary-foreground: oklch(0.22 0 0);
   --muted: oklch(0.96 0 0);
   --muted-foreground: oklch(0.52 0 0);
-  --accent: rgb(236 253 245);
-  --accent-foreground: #047857;
+  /* A highlighted option or row is neutral grey (2026-10-21), as the
+     reference pickers' is: the brand-tinted one read as selected, and a
+     green tag vanished into it. */
+  --accent: var(--muted);
+  --accent-foreground: var(--foreground);
   --hover: color-mix(in srgb, var(--muted) 70%, var(--card));
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.9 0 0 / 60%);
@@ -112,8 +115,11 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.23 0 0);
   --muted-foreground: oklch(0.7 0 0);
-  --accent: rgb(17 48 38);
-  --accent-foreground: #a7f3d0;
+  /* A highlighted option or row is neutral grey (2026-10-21), as the
+     reference pickers' is: the brand-tinted one read as selected, and a
+     green tag vanished into it. */
+  --accent: var(--muted);
+  --accent-foreground: var(--foreground);
   --hover: color-mix(in srgb, var(--muted) 70%, var(--card));
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
