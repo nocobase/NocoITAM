@@ -470,16 +470,23 @@ export function createAgentRunService(
 
     async waitingCount(deciderId) {
       await service.expireStale();
-      const row = await database
+      const rows = await database
         .query()
         .selectFrom('itamAgentRuns')
-        .select((eb) => [eb.fn.countAll().as('count')])
+        .select((eb) => ['agent', eb.fn.countAll().as('count')])
         .where('deciderId', '=', deciderId)
         // Runs of a work no longer done (离职回收, 授权续费) are not shown.
         .where('agent', 'in', [...AGENTS])
         .where('status', '=', 'pending')
-        .executeTakeFirst<{ count: unknown }>();
-      return Number(row?.count ?? 0);
+        .groupBy('agent')
+        .execute<{ agent: unknown; count: unknown }>();
+      // A person's waiting MDM 跟进 — their devices' and the asset
+      // managers' — are one entry in 收件箱 (2026-10-21), so count once.
+      return rows.reduce(
+        (sum, row) =>
+          sum + (row.agent === 'deviceSync' ? 1 : Number(row.count ?? 0)),
+        0,
+      );
     },
 
     async list(agent, options) {

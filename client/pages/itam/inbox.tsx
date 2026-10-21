@@ -113,10 +113,27 @@ function useReviewsCollection({
   const inbox = useInbox();
   // An MDM 跟进 run again is listed among the handled, as replaced
   // (2026-10-21): the card goes down there rather than out of sight.
-  const items = useMemo(
-    () => [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])],
-    [inbox.data],
-  );
+  // The reader's waiting MDM 跟进 — their devices' and the asset
+  // managers' — are one entry (2026-10-21), as on MDM 核对: the newest
+  // stands for them, its title theirs.
+  const { items, waitingSync } = useMemo(() => {
+    const all = [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])];
+    const waiting = all.filter(
+      (run) => run.agent === 'deviceSync' && run.status === 'pending',
+    );
+    return {
+      items:
+        waiting.length > 1
+          ? all.filter(
+              (run) =>
+                run.agent !== 'deviceSync' ||
+                run.status !== 'pending' ||
+                run.id === waiting[0]?.id,
+            )
+          : all,
+      waitingSync: waiting.length > 1 ? waiting : [],
+    };
+  }, [inbox.data]);
   const chosen = filter.kind === REVIEWS_CATEGORY;
   // Beside the list on a wide screen, the first suggestion stands open
   // before any pick, as the inbox's first item does; narrow, the list and
@@ -137,6 +154,7 @@ function useReviewsCollection({
   const list = (
     <ReviewList
       items={items}
+      grouped={waitingSync}
       selectedId={selectedId}
       onSelect={onSelect}
       loading={inbox.isLoading}
@@ -157,12 +175,15 @@ function useReviewsCollection({
 
 function ReviewList({
   items,
+  grouped,
   selectedId,
   onSelect,
   loading,
   error,
 }: {
   readonly items: readonly AgentRun[];
+  /** The waiting MDM 跟进 shown as one entry, the first standing for them. */
+  readonly grouped: readonly AgentRun[];
   readonly selectedId: string | null;
   readonly onSelect: (id: string) => void;
   readonly loading: boolean;
@@ -215,7 +236,13 @@ function ReviewList({
           <span className='truncate font-medium'>{titleOf(run, t)}</span>
           {open ? (
             <span className='truncate text-xs text-muted-foreground'>
-              {lineOf(run, t)}
+              {/* The others it stands for, one under the other's title. */}
+              {grouped[0]?.id === run.id
+                ? grouped
+                    .slice(1)
+                    .map((entry) => titleOf(entry, t))
+                    .join('；')
+                : lineOf(run, t)}
             </span>
           ) : (
             <span className='truncate text-xs text-muted-foreground'>
@@ -327,7 +354,9 @@ function ReviewDetail({
         )}
         {/* The page's 等你决定 shows the picked run alone; 打开 leads to
             the page itself (2026-10-21). */}
-        <FollowUpFocusContext.Provider value={run.id}>
+        {/* While it waits, every waiting one shows, as the one card the
+            inbox lists them as (2026-10-21). */}
+        <FollowUpFocusContext.Provider value={isOpen(run) ? null : run.id}>
           <OpenFullPageContext.Provider
             value={() => void navigate('/device-sync')}
           >

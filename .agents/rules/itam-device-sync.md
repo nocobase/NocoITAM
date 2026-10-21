@@ -230,6 +230,13 @@ product or in release notes, until it is listed here.
   device-sync skill register a platform record and hand it to its user in
   that one step (登记新设备并分配给…), no longer a second `assign_device`. The
   follow-up's header no longer counts the steps waiting: 确认执行 N 步 says it.
+- **One follow-up per person, as shown** (2026-10-21): a person's own
+  MDM 跟进 and, as an asset manager, the shared one stay two runs on the
+  server (the shared one settles across the asset managers), but while both
+  wait they are one: one card on MDM 核对 (`FollowUpGroupCard`, a section
+  each, one 拒绝 / 确认执行 over both plans), one entry in 收件箱 (the newest
+  stands for both, the other's title as its second line, the detail showing
+  every waiting one), and one in `waitingCount`.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the
