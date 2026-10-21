@@ -14,9 +14,8 @@ import { RelatedListTab } from './related-list-tab.js';
 
 /**
  * A model's 设备 or 库存 tab (2026-10-21): its devices or its stock items,
- * whichever its category holds, one list for both routes. Each row leads
- * with its asset type, so the list reads the same for a laptop model and a
- * toner.
+ * whichever its category holds, one list for both routes. A stock item
+ * leads with its asset type; every device is a device, so its rows do not.
  */
 export default function ModelAssetsTab(): ReactElement | null {
   const { t } = useTranslation();
@@ -39,7 +38,6 @@ export default function ModelAssetsTab(): ReactElement | null {
     return (
       <DeviceListEmbed
         filter={{ modelId: id }}
-        leading={[typeColumn(() => 'device')]}
         // Every row is this model, filed under its category; who holds each
         // matters more here than since when.
         omit={['modelId', 'categoryId', 'assignedAt']}

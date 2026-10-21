@@ -92,7 +92,7 @@ it('shows a location’s stock the same way, by model', () => {
   ]);
 });
 
-it('lists a device model’s devices in the same tab, led by their type', () => {
+it('lists a device model’s devices without a type column', () => {
   kinds.appliesTo = 'device';
-  expect(headers(<ModelAssetsTab />)[0]).toBe('fields.appliesTo');
+  expect(headers(<ModelAssetsTab />)).not.toContain('fields.appliesTo');
 });
