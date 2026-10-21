@@ -207,21 +207,16 @@ export default function DeviceSyncReviewPage(): ReactElement {
       {/* Three ways the two lists disagree (2026-10-15): both have the
           device but say otherwise, only MDM has it, only the register has
           it — each with its count. What was kept off is not a fourth to-do:
-          it is listed under 只在 MDM, beneath what still waits. Apart from
-          Asset Steward's suggestions above, under a rule and a heading of
-          their own as 等你决定 has (2026-10-21). */}
-      <h2 className='mt-6 font-heading text-lg font-semibold tracking-tight'>
-        {t('deviceSync.review.listHeading')}
-      </h2>
+          it is listed under 只在 MDM, beneath what still waits. Asset
+          Steward's suggestions above sit on a tinted panel of their own
+          (2026-10-21), so the lists need no heading. */}
       <Tabs
         value={view}
         onValueChange={(next) =>
           setParams({ view: String(next) }, { replace: true })
         }
       >
-        {/* A switch, not a heading: the pill tabs set the lists apart
-            from the suggestions' line headings above. */}
-        <TabsList>
+        <TabsList variant='line'>
           {TABS.map((key) => (
             <TabsTrigger key={key} value={key}>
               {t(`deviceSync.review.views.${key}`)}

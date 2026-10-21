@@ -2237,7 +2237,6 @@ const messages = {
         'No new differences for you; those already settled or ignored are not raised again.',
       description:
         'Where the device management platforms and the register disagree',
-      listHeading: 'All differences',
       views: {
         checks: 'Mismatched',
         unregistered: 'Only in MDM',
@@ -3848,12 +3847,12 @@ const messages = {
         by: 'Emily Carter · received by delivery note',
       },
       assigned: {
-        device: 'SG-LT-061',
+        device: 'SH-LT-061',
         what: 'handed to new hire Noah Harris',
         by: 'Ryan Mitchell · onboarding handover',
       },
       repair: {
-        device: 'SG-LT-018',
+        device: 'SH-LT-018',
         what: 'cracked screen, sent for repair',
         by: 'Ryan Mitchell · repair RP-000012',
       },
@@ -3863,12 +3862,12 @@ const messages = {
         by: 'MDM sync',
       },
       repaired: {
-        device: 'SG-LT-018',
+        device: 'SH-LT-018',
         what: 'repaired, back at its desk',
         by: 'Ryan Mitchell · repair done',
       },
       disposed: {
-        device: 'SG-PR-002',
+        device: 'SH-PR-002',
         what: 'disposed of, to the recycler',
         by: 'Approved by Daniel Brooks · disposal DP-000005',
       },

@@ -2139,7 +2139,6 @@ const zhCN: AppResource = {
       followUpAgain: '重新运行 MDM 跟进',
       followUpNothing: '没有要你处理的新差异；已经处理或忽略过的不会再提。',
       description: '设备管理平台（MDM）报告的设备与台账不一致的地方',
-      listHeading: '全部差异',
       views: {
         checks: '信息不一致',
         unregistered: '只在 MDM',
@@ -3642,12 +3641,12 @@ const zhCN: AppResource = {
         by: '吴静 · 按送货单入库',
       },
       assigned: {
-        device: 'SG-LT-061',
+        device: 'SH-LT-061',
         what: '发给新员工孙浩',
         by: '周宇 · 入职发放',
       },
       repair: {
-        device: 'SG-LT-018',
+        device: 'SH-LT-018',
         what: '屏幕碎裂，送去维修',
         by: '周宇 · 维修单 RP-000012',
       },
@@ -3657,12 +3656,12 @@ const zhCN: AppResource = {
         by: 'MDM 自动同步',
       },
       repaired: {
-        device: 'SG-LT-018',
+        device: 'SH-LT-018',
         what: '修好了，送回工位',
         by: '周宇 · 维修完成',
       },
       disposed: {
-        device: 'SG-PR-002',
+        device: 'SH-PR-002',
         what: '报废，交给回收商',
         by: '孙强批准 · 报废单 DP-000005',
       },

@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
-import { Check, ChevronRight, RefreshCw } from 'lucide-react';
+import { Check, ChevronRight, RefreshCw, Sparkles } from 'lucide-react';
 import {
   useContext,
   useEffect,
@@ -362,18 +362,23 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
     setShown([...new Set([...shown, ...opened])]);
   // Replaced by a newer run is gone, not decided: its card would offer a
   // plan nobody should carry out any more.
+  const others = useOtherFollowUps();
+  const hasOthers = !focus && (others.data?.length ?? 0) > 0;
   const visible = runs.filter(
     (run) =>
       isOpenRun(run) ||
       (shown.includes(run.id) &&
         (run.status === 'accepted' || run.status === 'dismissed')),
   );
+  if (!visible.length && !hasOthers) return null;
+  // Asset Steward's part of the page on a tinted panel (2026-10-21), so the
+  // lists below it read as the page's own.
   return (
-    <>
+    <div className='space-y-3 rounded-xl bg-muted p-4'>
       {visible.length ? (
         <section className='space-y-2'>
-          {/* The same size as 全部差异 below it (2026-10-21): two sections. */}
-          <h2 className='font-heading text-lg font-semibold tracking-tight'>
+          <h2 className='flex items-center gap-1.5 text-sm font-semibold'>
+            <Sparkles className='size-4 text-primary' aria-hidden />
             {t('review.waiting')}
           </h2>
           {visible.map((run) => (
@@ -381,8 +386,8 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
           ))}
         </section>
       ) : null}
-      {focus ? null : <OthersFollowUps />}
-    </>
+      {hasOthers ? <OthersFollowUps /> : null}
+    </div>
   );
 }
 
