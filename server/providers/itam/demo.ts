@@ -374,12 +374,22 @@ const DEMO_PICTURES = {
   'iphone-15-pro.jpg': 'df65e991-bad7-51b0-9e33-cbbe61b22007',
   'studio-display.jpg': '26d984e7-df22-5709-b983-df16ef578703',
   'galaxy-s24.jpg': '95d3bc1d-4930-5149-8439-f95c28e476ae',
+  'macbook-pro-16.jpg': '17b0d68e-1962-5301-8777-eae37b9ddb5e',
+  'mac-mini.jpg': '7e6dcb73-62ab-52ef-832b-42eb0bc419c4',
+  'duracell-aa.jpg': '9cb9d9fb-5dea-5725-9fc7-3846c23c549b',
+  '990-pro.jpg': '558e9198-a718-560f-9545-9eac73a2c025',
 } as const;
 /** The credit a photo's license asks for, shown under it (`CREDITS.md`). */
 const DEMO_PICTURE_CREDITS: Partial<Record<DemoPicture, string>> = {
   'iphone-15-pro.jpg': 'IPHONE 15, CC BY-SA 4.0, Wikimedia Commons',
   'studio-display.jpg': 'Seasider53, CC BY 4.0, Wikimedia Commons',
   'galaxy-s24.jpg': 'メイド理世, CC BY-SA 4.0, Wikimedia Commons',
+  // A neighbouring generation of the same exterior (2026-10-21): the 2021
+  // MacBook Pro 16 and M1 Mac mini, a 4 TB 990 PRO, Duracell's AA.
+  'macbook-pro-16.jpg': 'Premeditated, CC BY-SA 4.0, Wikimedia Commons',
+  'mac-mini.jpg': 'Gerd Fahrenhorst, CC BY 4.0, Wikimedia Commons',
+  'duracell-aa.jpg': 'Mygoodsweaties, public domain, Wikimedia Commons',
+  '990-pro.jpg': 'Dinkun Chen, CC BY-SA 4.0, Wikimedia Commons',
 };
 type DemoPicture = keyof typeof DEMO_PICTURES;
 
@@ -408,7 +418,7 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'MacBook Pro 16 M3 Pro',
     code: 'MRW13CH/A',
-    image: 'laptop.svg',
+    image: 'macbook-pro-16.jpg',
     categoryId: 'cat-laptop',
     manufacturerId: 'mfr-apple',
     warrantyMonths: 36,
@@ -464,7 +474,7 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'Mac mini M2',
     code: 'MMFK3CH/A',
-    image: 'desktop.svg',
+    image: 'mac-mini.jpg',
     categoryId: 'cat-desktop',
     manufacturerId: 'mfr-apple',
     warrantyMonths: 12,
@@ -3493,7 +3503,7 @@ export function createDemoService(dependencies: {
           categoryId: batteryCat.id,
           manufacturerId: duracell.id,
           code: 'MN1500',
-          ...(await picture('battery.svg')),
+          ...(await picture('duracell-aa.jpg')),
           specification: texts.batterySpec,
         });
         const aaBatteries = await stockItem(
@@ -3556,7 +3566,7 @@ export function createDemoService(dependencies: {
           categoryId: diskCat.id,
           manufacturerId: ssdModel.manufacturer.id,
           code: 'MZ-V9P2T0BW',
-          ...(await picture('disk.svg')),
+          ...(await picture('990-pro.jpg')),
           specification: texts.ssdSpec,
         });
         const bigSsd = await stockItem(

@@ -44,8 +44,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   credit in `DEMO_PICTURE_CREDITS`), never writing a file, so clearing the
   demo leaves them. A photo is of that exact model, from Wikimedia Commons
   under an open license, credited in `CREDITS.md` and `imageCredit`; a
-  model with no such photo keeps a drawing rather than another
-  generation's. Every demo model has
+  model with no such photo takes a neighbouring generation's whose
+  exterior is the same (2026-10-21, saying so in `CREDITS.md`), else keeps
+  a drawing. Every demo model has
   its manufacturer part code and a picture; only `vSphere VM` has no code.
 - Every model and every category without children has assets behind it in
   the demo (2026-10-21): devices, or a stock item for an accessory,

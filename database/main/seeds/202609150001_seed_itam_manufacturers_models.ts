@@ -106,6 +106,11 @@ const PICTURE_FILE_IDS: Readonly<Record<string, string>> = {
   'iphone-15-pro.jpg': 'df65e991-bad7-51b0-9e33-cbbe61b22007',
   'studio-display.jpg': '26d984e7-df22-5709-b983-df16ef578703',
   'galaxy-s24.jpg': '95d3bc1d-4930-5149-8439-f95c28e476ae',
+  'macbook-pro-16.jpg': '17b0d68e-1962-5301-8777-eae37b9ddb5e',
+  'mac-mini.jpg': '7e6dcb73-62ab-52ef-832b-42eb0bc419c4',
+  'duracell-aa.jpg': '9cb9d9fb-5dea-5725-9fc7-3846c23c549b',
+  '990-pro.jpg': '558e9198-a718-560f-9545-9eac73a2c025',
+  'ddr5-sodimm.jpg': '739f8dec-e727-5bde-8d50-71c57e771bcf',
 };
 
 const MANUFACTURERS: readonly ManufacturerSeed[] = [
@@ -316,7 +321,8 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-ddr5-32gb-sodimm',
-    image: 'memory.svg',
+    image: 'ddr5-sodimm.jpg',
+    imageCredit: 'ITEagle Europe – Sebastiaan Broekhoven, CC BY-SA 4.0, Wikimedia Commons',
     name: 'DDR5-5600 32 GB SO-DIMM',
     manufacturerId: 'mfr-crucial',
     categoryId: 'cat-memory',

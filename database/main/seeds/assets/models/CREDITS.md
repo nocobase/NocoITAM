@@ -19,3 +19,12 @@ picture. Keep the credit when reusing a photo.
 
 The last three are used by the demo's own models, which carry the same
 credit.
+
+A neighbouring generation whose exterior is the same stands in where no
+open photo of the model itself exists (2026-10-21); each says which it is.
+
+- `macbook-pro-16.jpg` — MacBook Pro 16 (M1 Pro, 2021) - Wikipedia (cropped).jpg by Premeditated, CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0), source: https://commons.wikimedia.org/w/index.php?curid=146915051 (the 2021 MacBook Pro 16, for the M3 Pro)
+- `mac-mini.jpg` — Mac mini 2020 (M1) Anschlüsse.jpg by Gerd Fahrenhorst, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0), source: https://commons.wikimedia.org/w/index.php?curid=101498668 (the M1 Mac mini, for the M2)
+- `duracell-aa.jpg` — Duracell AA batteries.JPG by Mygoodsweaties, public domain, source: https://commons.wikimedia.org/w/index.php?curid=692224
+- `990-pro.jpg` — SAMSUNG M.2 NVMe SSD 990 PRO 4TB.jpg by Dinkun Chen, CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0), source: https://commons.wikimedia.org/w/index.php?curid=156884985 (cropped; the 4 TB, for the 2 TB)
+- `ddr5-sodimm.jpg` — Crucial 32GB DDR5-4800 SODIMM CT32G48C40S5.M16A1 - front view.jpg by ITEagle Europe - Sebastiaan Broekhoven, CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0), source: https://commons.wikimedia.org/w/index.php?curid=200436281 (cropped; DDR5-4800, for the DDR5-5600)
