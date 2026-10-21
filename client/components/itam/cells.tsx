@@ -190,23 +190,33 @@ export function FieldValue({
     case 'number':
       return <span className='tabular-nums'>{text(value)}</span>;
     case 'url': {
-      // The text stays plain so a double-click still edits in place; the
-      // icon after it opens the address in a new tab.
-      const href = text(value);
+      // An address out of the application (2026-10-21; plain text with an
+      // icon until then): underlined in the text's own colour with the
+      // external icon, never the green of a link that opens a record here;
+      // without its scheme and www, the whole of it on hover, in a new tab.
+      // Editing in place goes through the row's edit button.
+      const raw = text(value);
+      const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+      const shown = raw
+        .replace(/^https?:\/\//i, '')
+        .replace(/^www\./i, '')
+        .replace(/\/$/, '');
       return (
-        <span className='inline-flex max-w-full items-baseline gap-1'>
-          <span className='min-w-0 break-all'>{href}</span>
-          <a
-            href={/^https?:\/\//i.test(href) ? href : `https://${href}`}
-            target='_blank'
-            rel='noreferrer'
-            aria-label={href}
-            className='shrink-0 self-center text-muted-foreground hover:text-link'
-            onClick={(event) => event.stopPropagation()}
-          >
-            <ExternalLink className='size-3.5' aria-hidden='true' />
-          </a>
-        </span>
+        <a
+          href={href}
+          target='_blank'
+          rel='noreferrer'
+          title={raw}
+          className='inline-flex max-w-full items-baseline gap-1 underline decoration-muted-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground'
+          onClick={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
+        >
+          <span className='min-w-0 break-all'>{shown}</span>
+          <ExternalLink
+            className='size-3.5 shrink-0 self-center text-muted-foreground'
+            aria-hidden='true'
+          />
+        </a>
       );
     }
     case 'textarea':
