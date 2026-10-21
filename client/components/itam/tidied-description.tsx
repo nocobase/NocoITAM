@@ -31,7 +31,7 @@ export function TidiedDescription({
         <Button
           type='button'
           variant='outline'
-          size='xs'
+          size='sm'
           disabled={applied}
           onClick={() => {
             onApply(text);
