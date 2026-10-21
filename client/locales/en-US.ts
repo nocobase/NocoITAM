@@ -3043,6 +3043,8 @@ const messages = {
     decideDescription:
       'Approving moves every listed device to pending disposal and reclaims its seats and components.',
     executeDescription: 'Devices become disposed and read-only.',
+    devicesFixed:
+      'Filed for this device alone; to dispose of several together, create the request from the disposals list',
     devices: 'Devices to dispose of',
     newDescription:
       'Fill in the disposal and pick its devices; save a draft or submit for approval right away.',

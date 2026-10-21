@@ -5,6 +5,7 @@ import { Fragment, useState, type ReactElement } from 'react';
 import { ApproverHint } from '@/components/itam/approver-hint';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
+import { FieldLabel } from '@/components/itam/field-label';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { MultiReferenceInput } from '@/components/itam/multi-reference';
 import { Label } from '@/components/ui/label';
@@ -57,6 +58,7 @@ export function DisposalCreateDialog({
   }));
   const [deviceIds, setDeviceIds] =
     useState<readonly string[]>(initialDeviceIds);
+  const fixedDevices = initialDeviceIds.length > 0;
   // Needed to submit right away, not to save a draft.
   const [approverId, setApproverId] = useState<string | null>(null);
   const currentUserId = useCurrentUserId();
@@ -158,9 +160,30 @@ export function DisposalCreateDialog({
       onSecondary={() => create.mutate(false)}
       size='form'
     >
-      {/* Two fields to a row (2026-10-16); a long text and the devices
+      {/* Two fields to a row (2026-10-16); the devices and a long text
           take the whole row. */}
       <div className='grid gap-4 sm:grid-cols-2'>
+        {/* What is disposed of leads the request (2026-10-20), as a
+            repair's device does. Opened for a device — from its page, or a
+            repair turned into a disposal — it is that device alone, fixed;
+            several are put together from the disposals list. */}
+        <div className='grid gap-1.5 sm:col-span-2'>
+          <Label htmlFor='disposal-devices'>
+            <FieldLabel
+              label={t('disposals.devices')}
+              hint={fixedDevices ? 'disposals.devicesFixed' : undefined}
+            >
+              <span className='text-destructive'>*</span>
+            </FieldLabel>
+          </Label>
+          <MultiReferenceInput
+            id='disposal-devices'
+            reference={{ collection: 'devices' }}
+            value={deviceIds}
+            onChange={setDeviceIds}
+            disabled={fixedDevices}
+          />
+        </div>
         {shownFields.map((field) => (
           <Fragment key={field.key}>
             <div
@@ -187,22 +210,6 @@ export function DisposalCreateDialog({
                 }
               />
             </div>
-            {/* What is being scrapped reads with why it is: the devices come
-              straight after the reason, before the rest of the request. */}
-            {field.key === 'reason' ? (
-              <div className='grid gap-1.5 sm:col-span-2'>
-                <Label htmlFor='disposal-devices'>
-                  {t('disposals.devices')}
-                  <span className='text-destructive'> *</span>
-                </Label>
-                <MultiReferenceInput
-                  id='disposal-devices'
-                  reference={{ collection: 'devices' }}
-                  value={deviceIds}
-                  onChange={setDeviceIds}
-                />
-              </div>
-            ) : null}
           </Fragment>
         ))}
         <div className='grid content-start gap-1.5'>

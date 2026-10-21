@@ -2868,6 +2868,8 @@ const zhCN: AppResource = {
     execute: '执行报废',
     decideDescription: '批准后清单内设备转待报废，并自动回收其上的席位与组件',
     executeDescription: '设备将转为已报废并永久只读',
+    devicesFixed:
+      '从设备页创建，只报废这台设备；要一起报废多台，请在报废列表中创建',
     devices: '报废设备',
     newDescription: '填写报废信息并选择设备；可先保存草稿，也可直接提交审批',
     addDevice: '添加设备',
