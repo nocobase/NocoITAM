@@ -14,6 +14,11 @@ export interface ItamSettings {
     readonly currency: string;
     readonly timeZone: string;
     readonly dateFormat: string;
+    /**
+     * The language the models write in (2026-10-20, `ai-language.ts`):
+     * `auto` follows the deployment's locale.
+     */
+    readonly aiLanguage: 'auto' | 'zh-CN' | 'en-US';
   };
   readonly thresholds: {
     readonly warrantyDays: number;
@@ -95,6 +100,7 @@ export const DEFAULT_ITAM_SETTINGS: ItamSettings = {
     currency: 'CNY',
     timeZone: 'Asia/Shanghai',
     dateFormat: 'YYYY-MM-DD',
+    aiLanguage: 'auto',
   },
   thresholds: {
     warrantyDays: 30,

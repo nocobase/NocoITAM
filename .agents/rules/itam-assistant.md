@@ -200,6 +200,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   A purchase reading is given the models and products on the books to pick
   ids from. Documents are read as text on the server (`document-text.ts`:
   exceljs, mammoth, unpdf); a picture is not read.
+- **The AI working language** (2026-10-20, `ai-language.ts`): everything
+  the models write — the form readings, the approval review, MDM 跟进 — is
+  in `general.aiLanguage` (设置 → 通用 → 基本设置), `auto` meaning the
+  deployment's locale (`APP_DEFAULT_LOCALE`, then `i18n.defaultLocale`),
+  never the reader's interface. `aiLanguageToken` answers it synchronously,
+  read at start and kept current through `settings.onSaved`. Asset
+  Steward's chat still answers in the language it is asked in.
 - **报废诊断** (2026-10-20, task `disposalTriage`, grant `disposals.create`):
   the disposal's description is the material and the page sends its
   `deviceIds` (the first twenty are read); the server reads each device as

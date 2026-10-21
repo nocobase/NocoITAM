@@ -136,6 +136,7 @@ import { createRepairService, repairServiceToken } from './repairs.js';
 import { createPlanService, planServiceToken } from './plans.js';
 import { createReportService, reportServiceToken } from './reports.js';
 import { createSettingsService, settingsServiceToken } from './settings.js';
+import { aiLanguageToken, createAiLanguage } from './ai-language.js';
 import { createWorkbenchService, workbenchServiceToken } from './workbench.js';
 import {
   createLeaverAccounts,
@@ -400,6 +401,18 @@ export default class ItamProvider extends ServiceProvider<Application> {
     container.singleton(settingsServiceToken, () =>
       createSettingsService(container.resolve(databaseManagerToken)),
     );
+    // The language the models write in (2026-10-20): 设置 → 通用 → 基本设置, else
+    // the deployment's locale.
+    container.singleton(aiLanguageToken, () =>
+      createAiLanguage({
+        settings: container.resolve(settingsServiceToken),
+        // The test harness has no config; the seeds' env override applies.
+        deploymentLocale: () =>
+          process.env.APP_DEFAULT_LOCALE ??
+          this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??
+          'en-US',
+      }),
+    );
     container.singleton(numberingServiceToken, () =>
       createNumberingService(
         container.resolve(databaseManagerToken),
@@ -518,11 +531,8 @@ export default class ItamProvider extends ServiceProvider<Application> {
     container.singleton(approvalReviewerToken, () =>
       createApprovalReviewer({
         container,
-        // The test harness has no config; the seeds' env override applies.
-        locale: () =>
-          process.env.APP_DEFAULT_LOCALE ??
-          this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??
-          'en-US',
+        // The AI working language (`ai-language.ts`).
+        locale: () => container.resolve(aiLanguageToken).current(),
         warn: (detail, message) => {
           if (container.has(loggingToken))
             container
@@ -536,10 +546,8 @@ export default class ItamProvider extends ServiceProvider<Application> {
     container.singleton(deviceSyncFollowUpToken, () =>
       createDeviceSyncFollowUp({
         container,
-        locale: () =>
-          process.env.APP_DEFAULT_LOCALE ??
-          this.app.config?.get<AppI18nConfig>('i18n')?.defaultLocale ??
-          'en-US',
+        // The AI working language (`ai-language.ts`).
+        locale: () => container.resolve(aiLanguageToken).current(),
         warn: (detail, message) => {
           if (container.has(loggingToken))
             container
@@ -868,6 +876,13 @@ export default class ItamProvider extends ServiceProvider<Application> {
   }
 
   public override async start(): Promise<void> {
+    // The AI working language as saved; a database not yet migrated keeps
+    // the deployment's locale until the next start.
+    try {
+      await this.app.container.resolve(aiLanguageToken).load();
+    } catch {
+      // The default answers.
+    }
     // The lifecycles' effects and sweep, and what an earlier process left
     // queued. Like the agents' setup, it never stops the application
     // starting — a database not yet migrated has no log to recover from —

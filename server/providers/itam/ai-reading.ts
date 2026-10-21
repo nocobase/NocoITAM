@@ -13,6 +13,7 @@ import {
   checkCategoryReading,
   newCategoryFacts,
 } from './category-reading.js';
+import { aiLanguageToken } from './ai-language.js';
 import { BusinessRuleError } from './errors.js';
 import {
   DATA_WIPE_OPTIONS,
@@ -457,10 +458,15 @@ export async function readForForm(
     );
     context.today = today();
   }
+  // The AI working language (2026-10-20, `ai-language.ts`), not the
+  // reader's interface; a container without it — a test's — keeps theirs.
+  const language = container.has(aiLanguageToken)
+    ? container.resolve(aiLanguageToken).current()
+    : input.language;
   const request = [
     TASKS[input.task],
     web ? WEB_READING : catalogTask ? NO_WEB_READING : '',
-    `Write \`said\` in ${input.language}.`,
+    `Write \`said\` and every sentence you write in ${language}.`,
     input.instruction
       ? `The form was filled from this material and the person has looked at it (\`form\` in the context, their own edits included). Change it as they ask and return the whole of it again: change only what they mention, keep everything else as the form has it now, and leave a field they cleared empty. In \`said\`, what you changed, or plainly what cannot be done. Their request: ${input.instruction}`
       : '',

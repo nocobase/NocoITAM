@@ -2682,6 +2682,14 @@ const zhCN: AppResource = {
       currency: '默认币种',
       timeZone: '时区',
       dateFormat: '日期格式',
+      aiLanguage: 'AI 工作语言',
+      aiLanguageHint:
+        'AI 生成的内容用这种语言撰写：维修诊断、报废诊断、AI 整理、审批助手的建议和 MDM 跟进。资产管家对话仍跟随提问的语言。',
+      aiLanguages: {
+        auto: '跟随系统默认语言',
+        'zh-CN': '中文',
+        'en-US': 'English',
+      },
     },
     numbering: {
       title: '编号规则',

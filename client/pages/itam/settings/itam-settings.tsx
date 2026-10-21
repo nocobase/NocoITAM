@@ -6,6 +6,13 @@ import { PageContainer } from '#components/page-container';
 import { PageHeader } from '#components/page-header';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useItamSettings, type ItamSettings } from '@/lib/itam/api';
 
@@ -68,7 +75,7 @@ function GeneralCard({
       error={save.error}
       saved={save.isSuccess}
     >
-      <div className='grid gap-3 sm:grid-cols-3'>
+      <div className='grid items-start gap-3 sm:grid-cols-2'>
         {(['currency', 'timeZone', 'dateFormat'] as const).map((key) => (
           <div key={key} className='grid gap-1.5'>
             <Label htmlFor={`general-${key}`}>
@@ -83,6 +90,40 @@ function GeneralCard({
             />
           </div>
         ))}
+        {/* The language the models write in (2026-10-20): the
+            deployment's by default, the same for every reader. */}
+        <div className='grid gap-1.5'>
+          <Label htmlFor='general-aiLanguage'>
+            {t('settings.general.aiLanguage')}
+          </Label>
+          <Select
+            value={draft.aiLanguage ?? 'auto'}
+            onValueChange={(next) =>
+              setDraft({
+                ...draft,
+                aiLanguage: next as NonNullable<
+                  ItamSettings['general']['aiLanguage']
+                >,
+              })
+            }
+          >
+            <SelectTrigger id='general-aiLanguage' className='w-full'>
+              <SelectValue>
+                {(value: string) => t(`settings.general.aiLanguages.${value}`)}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {(['auto', 'zh-CN', 'en-US'] as const).map((value) => (
+                <SelectItem key={value} value={value}>
+                  {t(`settings.general.aiLanguages.${value}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className='text-xs text-muted-foreground'>
+            {t('settings.general.aiLanguageHint')}
+          </p>
+        </div>
       </div>
     </SettingsCard>
   );

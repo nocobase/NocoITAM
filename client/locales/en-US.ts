@@ -2845,6 +2845,14 @@ const messages = {
       currency: 'Currency',
       timeZone: 'Time zone',
       dateFormat: 'Date format',
+      aiLanguage: 'AI working language',
+      aiLanguageHint:
+        'What the AI writes is in this language: repair and disposal diagnosis, AI tidy-up, the approval assistant’s advice and MDM follow-up. Asset Steward’s chat still answers in the language it is asked in.',
+      aiLanguages: {
+        auto: 'Follow the system default',
+        'zh-CN': '中文',
+        'en-US': 'English',
+      },
     },
     numbering: {
       title: 'Numbering rules',

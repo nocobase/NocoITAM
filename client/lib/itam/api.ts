@@ -238,6 +238,8 @@ export interface ItamSettings {
     currency: string;
     timeZone: string;
     dateFormat: string;
+    /** The language the models write in; `auto` follows the deployment. */
+    aiLanguage?: 'auto' | 'zh-CN' | 'en-US';
   };
   readonly thresholds: {
     warrantyDays: number;
