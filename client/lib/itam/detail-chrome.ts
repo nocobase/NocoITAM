@@ -18,8 +18,8 @@ export const EmbeddedRecordContext = createContext(false);
 
 /**
  * Opens the full page a pane shows, when the pane offers that in place of
- * the page's own header actions: the inbox's AI suggestions (2026-10-21),
- * decided on their card, whose page's 审批 or MDM 设置 would only lead
- * elsewhere from beside the list. Null everywhere else.
+ * the page's own header actions: the inbox's panes (2026-10-21) — an AI
+ * suggestion, decided on its card, and a notification's record — where the
+ * page's own buttons would act from beside the list. Null everywhere else.
  */
 export const OpenFullPageContext = createContext<(() => void) | null>(null);
