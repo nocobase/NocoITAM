@@ -222,10 +222,18 @@ function RepairForm({
             }}
             onReplace={
               onReplace && chosen
-                ? () =>
+                ? ({ reasons }) =>
                     onReplace({
                       deviceId: chosen,
-                      description: text(values.faultDescription),
+                      // The fault and why Asset Steward advised replacing
+                      // it (2026-10-20), so the disposal says what the
+                      // repair found rather than the symptom alone.
+                      description: t('repairs.triage.disposalNote', {
+                        fault: text(values.faultDescription).trim(),
+                        reasons: reasons
+                          .map((reason) => `- ${reason}`)
+                          .join('\n'),
+                      }),
                     })
                 : undefined
             }
@@ -336,7 +344,9 @@ function TriagePanel({
     readonly method?: string;
   }) => void;
   /** Turns the request into a disposal, when Asset Steward says replace. */
-  readonly onReplace?: () => void;
+  readonly onReplace?: (triage: {
+    readonly reasons: readonly string[];
+  }) => void;
 }): ReactElement | null {
   const { t } = useTranslation();
   const ai = useItamAi();
@@ -429,7 +439,7 @@ function TriagePanel({
                 variant='link'
                 size='sm'
                 className='h-auto px-0'
-                onClick={onReplace}
+                onClick={() => onReplace(triage)}
               >
                 {t('repairs.triage.toDisposal')}
               </Button>

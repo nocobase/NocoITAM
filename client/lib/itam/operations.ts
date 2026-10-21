@@ -600,11 +600,11 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
   ...AUDIT_FIELDS,
 ];
 export const DISPOSAL_CREATE_FIELDS: readonly string[] = [
+  // What and why first (2026-10-20): the devices lead the create dialog,
+  // and the description reads right under them, then how and the reason.
+  'description',
   'method',
   'reason',
-  // The devices are asked for here, between the reason and the rest: what
-  // is being scrapped reads with why (the create dialog renders them).
-  'description',
   // Who follows it through; left empty, the service files it under
   // whoever is signed in.
   'ownerId',

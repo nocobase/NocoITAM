@@ -183,9 +183,10 @@ it('starts with the device and its fault, and turns into a disposal when told to
   fireEvent.click(
     screen.getByRole('button', { name: 'repairs.triage.toDisposal' }),
   );
+  // The disposal is told the fault and why replacing was advised.
   expect(onReplace).toHaveBeenCalledWith({
     deviceId: 'd1',
-    description: 'Screen flickers',
+    description: 'repairs.triage.disposalNote',
   });
 });
 

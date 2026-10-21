@@ -2772,6 +2772,7 @@ const zhCN: AppResource = {
       hint: '建议先诊断再继续填写：资产管家会填好故障类型和维修方式，并建议修还是换。',
       working: '资产管家正在诊断…',
       nothing: '资产管家没能给出建议，请按情况填写。',
+      disposalNote: '故障：{{fault}}\n维修诊断建议直接更换：\n{{reasons}}',
       toDisposal: '改为创建报废',
       recommendation: {
         repair: '建议维修',
