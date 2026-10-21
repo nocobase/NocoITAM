@@ -133,7 +133,14 @@ function DemoCard(): ReactElement {
         return;
       }
       setNotice(t('settings.demo.cleared'));
-      await queryClient.invalidateQueries({ queryKey: ['itam'] });
+      // The notifications it sent go with it, taken off their tables rather
+      // than read or deleted, so no realtime message refreshes the counts:
+      // the sidebar's and the bell's, and the inbox's own list (2026-10-21).
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['itam'] }),
+        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+        queryClient.invalidateQueries({ queryKey: ['notificationInApp'] }),
+      ]);
     },
   });
   const demo = status.data;
