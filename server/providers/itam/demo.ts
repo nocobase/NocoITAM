@@ -297,6 +297,65 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   { table: 'lifecycleTransitions', column: 'recordId' },
 ];
 
+/**
+ * The tables a notification's source names in the singular: the services
+ * notify about `purchaseOrder`, comments about `purchaseOrders`.
+ */
+const NOTICE_SOURCES: Readonly<Record<string, string>> = {
+  auditTask: 'auditTasks',
+  device: 'devices',
+  disposal: 'disposals',
+  person: 'people',
+  purchaseOrder: 'purchaseOrders',
+  repair: 'repairs',
+  entitlement: 'entitlements',
+};
+
+/**
+ * The notifications about ITAM records that no longer exist, whatever left
+ * them (2026-10-21). Sources that are not an ITAM record are left alone.
+ */
+async function noticesOfGoneRecords(
+  database: DatabaseManager,
+): Promise<string[]> {
+  const rows = await database
+    .query()
+    .selectFrom('notificationDispatches')
+    .select(['id', 'sourceType', 'sourceReferenceId'])
+    .execute<{
+      id: unknown;
+      sourceType: unknown;
+      sourceReferenceId: unknown;
+    }>();
+  const byTable = new Map<string, { id: string; record: string }[]>();
+  for (const row of rows) {
+    const type = asText(row.sourceType) ?? '';
+    const table = NOTICE_SOURCES[type] ?? type;
+    const record = asText(row.sourceReferenceId) ?? '';
+    if (!record || !ORDER.includes(table)) continue;
+    byTable.set(table, [
+      ...(byTable.get(table) ?? []),
+      { id: String(row.id), record },
+    ]);
+  }
+  const gone: string[] = [];
+  for (const [table, notices] of byTable) {
+    const present = new Set(
+      (
+        await database
+          .query()
+          .selectFrom(table)
+          .select('id')
+          .where('id', 'in', [...new Set(notices.map((n) => n.record))])
+          .execute<{ id: unknown }>()
+      ).map((row) => String(row.id)),
+    );
+    for (const notice of notices)
+      if (!present.has(notice.record)) gone.push(notice.id);
+  }
+  return gone;
+}
+
 /** Deleted in dependency order: children before the master data they reference. */
 const ORDER: readonly string[] = [
   // The work agents' suggestions the demo wrote (2026-10-16): the plans,
@@ -6451,21 +6510,34 @@ export function createDemoService(dependencies: {
       // records that are gone, and the importer's inbox kept each import's
       // copy beside the next one's. They are the notification plugins'
       // tables, keyed by the source the notifier gave them; an application
-      // without those plugins has nothing to remove.
-      if (allIds.length > 0)
-        await database
-          .transaction(async (connection) => {
-            // Ids first: the query layer takes a list, not a subquery.
-            const idsOf = (rows: readonly { id: unknown }[]) =>
-              rows.map((row) => String(row.id));
-            const dispatches = idsOf(
-              await connection.query
+      // without those plugins has nothing to remove. With them go those
+      // about any ITAM record that no longer exists (2026-10-21): a clearing
+      // whose notification step failed had left whole imports' notices in
+      // 收件箱, naming requests and audits long gone.
+      const idsOf = (rows: readonly { id: unknown }[]) =>
+        rows.map((row) => String(row.id));
+      const ofDemo =
+        allIds.length > 0
+          ? idsOf(
+              await database
+                .query()
                 .selectFrom('notificationDispatches')
                 .select('id')
                 .where('sourceReferenceId', 'in', allIds)
-                .execute<{ id: unknown }>(),
-            );
-            if (dispatches.length === 0) return;
+                .execute<{ id: unknown }>()
+                .catch(() => []),
+            )
+          : [];
+      const dispatches = [
+        ...new Set([
+          ...ofDemo,
+          ...(await noticesOfGoneRecords(database).catch(() => [])),
+        ]),
+      ];
+      if (dispatches.length > 0)
+        await database
+          .transaction(async (connection) => {
+            // Ids first: the query layer takes a list, not a subquery.
             const deliveries = idsOf(
               await connection.query
                 .selectFrom('notificationDeliveries')
