@@ -129,21 +129,22 @@ export function RecordImage({
       }}
     />
   );
-  // No picture shows nothing (2026-10-21, when the drawn placeholders went):
-  // whoever may edit gets a button to add one, nobody an empty frame.
+  // No picture (2026-10-21, when the drawn placeholders went): nothing for
+  // a reader; for whoever may edit, an empty frame the size of a picture,
+  // the whole of it the place to add one.
   if (!fileId) {
     if (!editable) return null;
     return (
-      <div className={cn('flex flex-col items-center gap-1', className)}>
-        <Button
+      <div className={cn('space-y-1', className)}>
+        <button
           type='button'
-          variant='outline'
           disabled={busy}
           onClick={() => inputRef.current?.click()}
+          className='flex aspect-4/3 w-full flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-muted/30 text-sm text-muted-foreground transition-colors hover:border-ring hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60'
         >
-          <Upload data-icon='inline-start' />
+          <ImageIcon className='size-6' aria-hidden='true' />
           {t('image.upload')}
-        </Button>
+        </button>
         {picker}
         {error ? <p className='text-xs text-destructive'>{error}</p> : null}
       </div>
