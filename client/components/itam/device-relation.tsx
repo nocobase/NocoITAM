@@ -33,8 +33,8 @@ export function DeviceRelation({
   readonly unassigned?: ReactNode;
   /** Holder names a list already loaded for its rows; skips the lookup. */
   readonly names?: Record<string, ReferenceNames>;
-  /** A location holder reads as its path, or only its top-level site. */
-  readonly locationShow?: 'path' | 'root';
+  /** A location holder reads as its path, its own name or its top-level site. */
+  readonly locationShow?: 'path' | 'leaf' | 'root';
   /** `false` leaves out the assignment, return or reservation date. */
   readonly dates?: boolean;
 }): ReactElement {

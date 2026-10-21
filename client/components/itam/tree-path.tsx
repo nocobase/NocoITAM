@@ -44,7 +44,15 @@ export function TreePath({
   if (chain.length === 0) return null;
   const route = masterDataByName(collection)?.route ?? collection;
   return (
-    <span className='inline-flex flex-wrap items-baseline gap-x-1'>
+    <span
+      className='inline-flex flex-wrap items-baseline gap-x-1'
+      // A shortened chain keeps the whole path on hover.
+      title={
+        chain.length < full.length
+          ? full.map((entry) => text(entry.name)).join(' › ')
+          : undefined
+      }
+    >
       {chain.map((entry, index) =>
         index < chain.length - 1 ? (
           <span key={entry.id} className='text-muted-foreground'>

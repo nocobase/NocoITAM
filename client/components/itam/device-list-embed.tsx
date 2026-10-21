@@ -190,14 +190,15 @@ export function DeviceListEmbed({
                   key: 'assignee',
                   header: t('devices.holding'),
                   className: 'whitespace-nowrap',
-                  // As the device list shows it: the holder with its kind's
-                  // icon, its top-level site for a place, no date.
+                  // The holder with its kind's icon, no date; a place by its
+                  // own name (2026-10-21), not its top-level site, which
+                  // read as the same on every row of a location's tab.
                   render: (row: ItamRecord) =>
                     row.assigneeId ? (
                       <DeviceRelation
                         device={row}
                         names={names}
-                        locationShow='root'
+                        locationShow='leaf'
                         dates={false}
                       />
                     ) : (
