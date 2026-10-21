@@ -164,7 +164,11 @@ function TreePanes({
         />
       </div>
       {selected ? (
-        <section className='min-h-0 min-w-0 overflow-y-auto rounded-lg border border-border bg-card [:root[data-ask-dock]_&]:pb-16'>
+        // The scrollbar's room is kept whether or not the record scrolls
+        // (2026-10-21): a long history's scrollbar narrowed the pane below
+        // the detail page's two-column width, so one record stacked and the
+        // next sat side by side on the same screen.
+        <section className='min-h-0 min-w-0 overflow-y-auto rounded-lg border border-border bg-card [scrollbar-gutter:stable] [:root[data-ask-dock]_&]:pb-16'>
           {/* The tree beside says where it sits: no breadcrumb here. */}
           <HideBreadcrumbContext.Provider value>
             <RecordPane
