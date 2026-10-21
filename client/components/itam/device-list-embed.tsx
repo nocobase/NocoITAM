@@ -99,16 +99,6 @@ export function DeviceListEmbed({
                   ),
                 },
               ]),
-          ...(show.includes('serialNo')
-            ? [
-                {
-                  key: 'serialNo',
-                  header: t('fields.serialNo'),
-                  className: 'w-px whitespace-nowrap',
-                  render: (row: ItamRecord) => text(row.serialNo) || '—',
-                },
-              ]
-            : []),
           {
             key: 'modelId',
             header: t('fields.model'),
@@ -143,6 +133,18 @@ export function DeviceListEmbed({
                 '—'
               ),
           },
+          // Just before the status (2026-10-21), so it follows the name on a
+          // model's tab, which leaves out the model and category.
+          ...(show.includes('serialNo')
+            ? [
+                {
+                  key: 'serialNo',
+                  header: t('fields.serialNo'),
+                  className: 'w-px whitespace-nowrap',
+                  render: (row: ItamRecord) => text(row.serialNo) || '—',
+                },
+              ]
+            : []),
           {
             key: 'status',
             header: t('fields.status'),
