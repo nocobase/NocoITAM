@@ -116,10 +116,10 @@ it("lists a parent department's people with their department, those who left apa
   expect(screen.getByText('enums.employmentStatus.left')).toBeTruthy();
 });
 
-it("leaves a leaf department's column and its empty leavers' section out", () => {
+it("keeps a leaf department's column and leaves its empty leavers' section out", () => {
   show(<DepartmentPeopleTab />, 'sales');
   expect(state.lists).toHaveLength(1);
-  expect(headers()).not.toContain('fields.department');
+  expect(headers()).toContain('fields.department');
   expect(screen.queryByText('enums.employmentStatus.left')).toBeNull();
 });
 

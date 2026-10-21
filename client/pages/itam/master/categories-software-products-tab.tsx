@@ -16,7 +16,7 @@ export default function Tab(): ReactElement | null {
       collection='softwareProducts'
       filterField='categoryId'
       filterValue={ids}
-      showFilterField={ids.length > 1}
+      showFilterField
       countKind='none'
     />
   );

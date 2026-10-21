@@ -10,20 +10,19 @@ import { stockTypeColumn } from './stock-type-column.js';
 
 /**
  * A location's stock, its sub-locations' included (2026-10-21), with each
- * item's location when there are several.
+ * item's location, on a leaf too.
  */
 export default function Tab(): ReactElement | null {
   const { t } = useTranslation();
   const { id = '' } = useParams();
   const ids = useSubtree('locations', id);
   if (!ids) return null;
-  const several = ids.length > 1;
   return (
     <RelatedListTab
-      target={several ? { ...stockTarget, columns: 5 } : stockTarget}
+      target={{ ...stockTarget, columns: 5 }}
       filterField='locationId'
       filterValue={ids}
-      showFilterField={several}
+      showFilterField
       countKind='none'
       leading={[stockTypeColumn(t)]}
     />

@@ -88,6 +88,7 @@ it('shows a location’s stock the same way, each with its asset type', () => {
     'fields.appliesTo',
     'fields.name',
     'fields.model',
+    'fields.location',
     'fields.stockedTotal',
     'fields.inStock',
   ]);

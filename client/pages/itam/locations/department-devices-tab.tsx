@@ -6,7 +6,7 @@ import { useSubtree } from '@/lib/itam/tree';
 
 /**
  * A department's devices, its sub-departments' included (2026-10-21), with
- * each one's department when there are several.
+ * each one's department, on a leaf too.
  */
 export default function DepartmentDevicesTab(): ReactElement | null {
   const { id = '' } = useParams();
@@ -17,12 +17,7 @@ export default function DepartmentDevicesTab(): ReactElement | null {
       filter={{ departmentId: ids }}
       // As a location's (2026-10-21): who holds each over since when.
       omit={['assignedAt']}
-      show={[
-        'noAndName',
-        ...(ids.length > 1 ? (['department'] as const) : []),
-        'serialNo',
-        'assignee',
-      ]}
+      show={['noAndName', 'department', 'serialNo', 'assignee']}
     />
   );
 }

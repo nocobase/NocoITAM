@@ -6,7 +6,7 @@ import { useSubtree } from '@/lib/itam/tree';
 
 /**
  * A location's devices, its sub-locations' included (2026-10-21), with each
- * one's location when there are several.
+ * one's location, on a leaf too.
  */
 export default function LocationDevicesTab(): ReactElement | null {
   const { id = '' } = useParams();
@@ -17,12 +17,7 @@ export default function LocationDevicesTab(): ReactElement | null {
       filter={{ locationId: ids }}
       // Who holds each matters more here than since when (2026-10-21).
       omit={['assignedAt']}
-      show={[
-        'noAndName',
-        ...(ids.length > 1 ? (['location'] as const) : []),
-        'serialNo',
-        'assignee',
-      ]}
+      show={['noAndName', 'location', 'serialNo', 'assignee']}
     />
   );
 }

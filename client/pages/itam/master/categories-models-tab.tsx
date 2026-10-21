@@ -23,7 +23,7 @@ export default function Tab(): ReactElement | null {
       collection='models'
       filterField='categoryId'
       filterValue={ids}
-      showFilterField={ids.length > 1}
+      showFilterField
       countKind={
         kind === 'device'
           ? 'devices'

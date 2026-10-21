@@ -50,7 +50,7 @@ export function RelatedListTab({
   readonly leading?: readonly DataTableColumn<ItamRecord>[];
   /** What `filterField` matches; the current record by default. */
   readonly filterValue?: string | readonly string[];
-  /** Keep `filterField`'s column, when the rows point at several records. */
+  /** Keep `filterField`'s column (a tree node's tab, its sub-nodes' rows in it). */
   readonly showFilterField?: boolean;
   /** Choice fields shown as their tag rather than plain text. */
   readonly badges?: readonly string[];
