@@ -480,8 +480,8 @@ describe('CSV import / export and demo data', () => {
     }>(generated);
     expect(summary.generated).toBe(true);
     expect(summary.counts.devices).toBeGreaterThanOrEqual(12);
-    // Every model has its part code and a picture, the demo's own too
-    // (2026-10-20).
+    // Every model has its part code, the demo's own too (2026-10-20); a
+    // picture only where there is a photo of it (2026-10-21).
     const models = (await (await get('master/models?pageSize=200')).json()) as {
       data: {
         id: string;
@@ -491,10 +491,11 @@ describe('CSV import / export and demo data', () => {
       }[];
     };
     expect(
-      models.data
-        .filter((model) => !model.code || !model.imageFileId)
-        .map((model) => model.name),
+      models.data.filter((model) => !model.code).map((model) => model.name),
     ).toEqual(['vSphere VM']);
+    expect(
+      models.data.filter((model) => model.imageFileId).length,
+    ).toBeGreaterThanOrEqual(15);
     // Every model has something on the books, devices or stock (2026-10-21).
     const devicesNow = (await (await get('devices?pageSize=500')).json()) as {
       data: { modelId: string }[];

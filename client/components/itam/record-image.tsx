@@ -57,7 +57,7 @@ function PictureLightbox({
 }
 
 /**
- * A record's picture from the file store, else a placeholder. Clicking the
+ * A record's picture from the file store, else nothing. Clicking the
  * picture opens it full size. Editable pictures upload on click and can be removed.
  */
 export function RecordImage({
@@ -76,7 +76,7 @@ export function RecordImage({
   /** Called with the uploaded file, or `null` to remove the picture. */
   readonly onChange?: (file: FileRecord | null) => Promise<void>;
   readonly className?: string;
-}): ReactElement {
+}): ReactElement | null {
   const { t } = useTranslation();
   const manager = useService(clientFileRepositoryManagerToken);
   const repository = useMemo(
@@ -117,6 +117,38 @@ export function RecordImage({
     }
   };
 
+  const picker = (
+    <input
+      ref={inputRef}
+      type='file'
+      accept='image/*'
+      className='hidden'
+      onChange={(event) => {
+        void upload(event.target.files?.[0]);
+        event.target.value = '';
+      }}
+    />
+  );
+  // No picture shows nothing (2026-10-21, when the drawn placeholders went):
+  // whoever may edit gets a button to add one, nobody an empty frame.
+  if (!fileId) {
+    if (!editable) return null;
+    return (
+      <div className={cn('flex flex-col items-center gap-1', className)}>
+        <Button
+          type='button'
+          variant='outline'
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload data-icon='inline-start' />
+          {t('image.upload')}
+        </Button>
+        {picker}
+        {error ? <p className='text-xs text-destructive'>{error}</p> : null}
+      </div>
+    );
+  }
   return (
     <div className={cn('space-y-1', className)}>
       <div className='group/image relative aspect-4/3 w-full overflow-hidden rounded-md border border-border bg-muted/40'>
@@ -158,16 +190,7 @@ export function RecordImage({
                 <Trash2 />
               </Button>
             ) : null}
-            <input
-              ref={inputRef}
-              type='file'
-              accept='image/*'
-              className='hidden'
-              onChange={(event) => {
-                void upload(event.target.files?.[0]);
-                event.target.value = '';
-              }}
-            />
+            {picker}
           </div>
         ) : null}
       </div>
@@ -216,14 +239,14 @@ export function RecordThumbnail({
   const [open, setOpen] = useState(false);
   const frame =
     'mr-2 inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-muted/40 align-middle';
+  // No picture leaves the space blank, so the names still line up
+  // (2026-10-21; a placeholder icon until then).
   if (!src)
     return (
-      <span className={frame}>
-        <ImageIcon
-          className='size-4 text-muted-foreground'
-          aria-hidden='true'
-        />
-      </span>
+      <span
+        aria-hidden='true'
+        className='mr-2 inline-block size-8 shrink-0 align-middle'
+      />
     );
   return (
     <>

@@ -357,20 +357,6 @@ const VENDOR_NAMES: Readonly<
  * Shared, never the demo's: clearing the demo leaves them.
  */
 const DEMO_PICTURES = {
-  'laptop.svg': '352aed01-d257-59b2-85d0-8dcebb263cb8',
-  'desktop.svg': '53a59a2b-781b-5db5-9a72-9fa080d06477',
-  'monitor.svg': 'ea3a6843-b16b-5692-9a48-a0b18fb9bf60',
-  'network.svg': 'd7c3ae10-353d-5d96-9bff-17a44e3ef7c0',
-  'phone.svg': 'cabcdf09-99f2-549c-90d6-5a2a496fb04b',
-  'printer.svg': '70a07617-1091-5f64-b624-a09abbf57924',
-  'mouse.svg': '45ed46d1-1ecc-5352-ad43-d9f875748618',
-  'keyboard.svg': 'a4dbb661-6448-5e31-a178-ad054510fd32',
-  'dock.svg': '27995f2d-8017-54e8-ad11-7ca00a6fcefe',
-  'disk.svg': '1b61195f-bb60-5bfe-a804-20226cfe92aa',
-  'memory.svg': 'fea00f16-4f83-5af6-b8d6-c69ddf120823',
-  'battery.svg': 'dfb62c27-051e-5729-988f-645e9ebb3b19',
-  'webcam.svg': '575d22ad-fa25-57a2-8417-dd3397dc8200',
-  'paper.svg': '5e30baa7-65e8-5850-8a28-f7d233d83fc0',
   'iphone-15-pro.jpg': 'df65e991-bad7-51b0-9e33-cbbe61b22007',
   'studio-display.jpg': '26d984e7-df22-5709-b983-df16ef578703',
   'galaxy-s24.jpg': '95d3bc1d-4930-5149-8439-f95c28e476ae',
@@ -411,8 +397,8 @@ const CATALOGUE_MODELS: readonly {
   readonly manufacturerId: string;
   /** The manufacturer's part number. */
   readonly code: string;
-  /** A picture from the model seed's library. */
-  readonly image: DemoPicture;
+  /** A photo from the model seed's library; none shows no picture. */
+  readonly image?: DemoPicture;
   readonly warrantyMonths: number;
   readonly day: number;
   readonly spec: Readonly<Record<DemoLanguage, string>>;
@@ -434,7 +420,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'ThinkPad X1 Carbon Gen 12',
     code: '21KC00A7US',
-    image: 'laptop.svg',
     categoryId: 'cat-laptop',
     manufacturerId: 'mfr-lenovo',
     warrantyMonths: 36,
@@ -448,7 +433,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'EliteBook 840 G11',
     code: 'A6SY7UT#ABA',
-    image: 'laptop.svg',
     categoryId: 'cat-laptop',
     manufacturerId: 'mfr-hp',
     warrantyMonths: 36,
@@ -461,7 +445,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'Surface Laptop 6',
     code: 'ZJQ-00001',
-    image: 'laptop.svg',
     categoryId: 'cat-laptop',
     manufacturerId: 'mfr-microsoft',
     warrantyMonths: 12,
@@ -489,7 +472,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'ThinkCentre M90q Gen 4',
     code: '12EH000CGE',
-    image: 'desktop.svg',
     categoryId: 'cat-desktop',
     manufacturerId: 'mfr-lenovo',
     warrantyMonths: 36,
@@ -502,7 +484,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'P2723DE',
     code: '210-BDEH',
-    image: 'monitor.svg',
     categoryId: 'cat-monitor',
     manufacturerId: 'mfr-dell',
     warrantyMonths: 36,
@@ -554,7 +535,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'Color LaserJet Pro MFP M479fdw',
     code: 'W1A80A',
-    image: 'printer.svg',
     categoryId: 'cat-printer',
     manufacturerId: 'mfr-hp',
     warrantyMonths: 12,
@@ -568,7 +548,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'Catalyst 9120AXI',
     code: 'C9120AXI-H',
-    image: 'network.svg',
     categoryId: 'cat-network',
     manufacturerId: 'mfr-cisco',
     warrantyMonths: 60,
@@ -581,7 +560,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'MX Anywhere 3S',
     code: '910-006958',
-    image: 'mouse.svg',
     categoryId: 'cat-mouse',
     manufacturerId: 'mfr-logitech',
     warrantyMonths: 12,
@@ -594,7 +572,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'MX Keys Mini',
     code: '920-010505',
-    image: 'keyboard.svg',
     categoryId: 'cat-keyboard',
     manufacturerId: 'mfr-logitech',
     warrantyMonths: 12,
@@ -607,7 +584,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: 'ThinkPad Thunderbolt 4 Dock',
     code: '40B00135CN',
-    image: 'dock.svg',
     categoryId: 'cat-dock',
     manufacturerId: 'mfr-lenovo',
     warrantyMonths: 36,
@@ -620,7 +596,6 @@ const CATALOGUE_MODELS: readonly {
   {
     name: '870 EVO 1 TB',
     code: 'MZ-77E1T0BW',
-    image: 'disk.svg',
     categoryId: 'cat-disk',
     manufacturerId: 'mfr-samsung',
     warrantyMonths: 60,
@@ -3348,7 +3323,6 @@ export function createDemoService(dependencies: {
           categoryId: dockCat.id,
           manufacturerId: latitude.manufacturer.id,
           code: '470-AEUP',
-          ...(await picture('dock.svg')),
           specification: texts.hubSpec,
         });
         const hubs = await stockItem(
@@ -3472,7 +3446,6 @@ export function createDemoService(dependencies: {
           categoryId: printSuppliesCat.id,
           manufacturerId: hpToner.manufacturer.id,
           code: 'CHP110',
-          ...(await picture('paper.svg')),
           specification: texts.paperSpec,
         });
         const paper = await stockItem(
@@ -3596,7 +3569,6 @@ export function createDemoService(dependencies: {
           categoryId: ramCat.id,
           manufacturerId: ramModel.manufacturer.id,
           code: 'CT16G56C46S5',
-          ...(await picture('memory.svg')),
           specification: texts.ramSpec,
         });
         const smallRam = await stockItem(
@@ -3629,7 +3601,7 @@ export function createDemoService(dependencies: {
             categoryId: entry.categoryId,
             manufacturerId: entry.manufacturerId,
             code: entry.code,
-            ...(await picture(entry.image)),
+            ...(entry.image ? await picture(entry.image) : {}),
             warrantyMonths: entry.warrantyMonths,
             specification:
               entry.spec[locale as DemoLanguage] ?? entry.spec['en-US'],

@@ -1,8 +1,8 @@
 # Model pictures
 
-Pictures the manufacturer / model seed stores in the file store for each
-model. The `.svg` files are this application's own line drawings. The photos
-come from Wikimedia Commons under the licenses below; the seed writes the same
+Pictures the manufacturer / model seed stores in the file store. A model
+with no open photo has no picture (the line drawings it once had were
+dropped on 2026-10-21). The photos come from Wikimedia Commons under the licenses below; the seed writes the same
 credit into each model's `imageCredit`, which the model page shows under the
 picture. Keep the credit when reusing a photo.
 

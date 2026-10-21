@@ -45,9 +45,12 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   demo leaves them. A photo is of that exact model, from Wikimedia Commons
   under an open license, credited in `CREDITS.md` and `imageCredit`; a
   model with no such photo takes a neighbouring generation's whose
-  exterior is the same (2026-10-21, saying so in `CREDITS.md`), else keeps
-  a drawing. Every demo model has
-  its manufacturer part code and a picture; only `vSphere VM` has no code.
+  exterior is the same (2026-10-21, saying so in `CREDITS.md`), else has
+  no picture: the line drawings were dropped the same day
+  (`202610210001_clear_drawn_model_pictures` takes them off a database
+  that has them), the list leaves the thumbnail blank and the page shows
+  only 上传图片 to whoever may edit. Every demo model has its manufacturer
+  part code; only `vSphere VM` has none.
 - Every model and every category without children has assets behind it in
   the demo (2026-10-21): devices, or a stock item for an accessory,
   consumable or component model, so no catalogue entry stands empty. The

@@ -90,18 +90,21 @@ describe('ITAM seeds', () => {
       .where('id', '=', 'cat-endpoint')
       .executeTakeFirstOrThrow();
     expect(Boolean(endpoint.requiresSerial)).toBe(true);
-    // Every drawing is stored, those no seeded model uses too: the demo's
-    // models point at them (2026-10-20).
-    const drawings = await query
+    // Every photo is stored, those no seeded model uses too: the demo's
+    // models point at them (2026-10-20). No drawings since 2026-10-21: a
+    // model with no photo has no picture.
+    const pictures = await query
       .selectFrom('itamFiles')
       .select('filename')
-      .where('filename', 'in', ['phone.svg', 'paper.svg', 'galaxy-s24.jpg'])
+      .where('filename', 'in', ['galaxy-s24.jpg', 'laptop.svg'])
       .execute<{ filename: string }>();
-    expect(drawings.map((row) => row.filename).sort()).toEqual([
-      'galaxy-s24.jpg',
-      'paper.svg',
-      'phone.svg',
-    ]);
+    expect(pictures.map((row) => row.filename)).toEqual(['galaxy-s24.jpg']);
+    const drawn = await query
+      .selectFrom('models')
+      .select('imageFileId')
+      .where('id', '=', 'model-latitude-5440')
+      .executeTakeFirstOrThrow<{ imageFileId: string | null }>();
+    expect(drawn.imageFileId).toBeNull();
     // An English deployment's first employee has an English name.
     const person = await query
       .selectFrom('people')
@@ -604,5 +607,34 @@ describe('ITAM seeds', () => {
       { key: 'manager', grants: [grant(['assignSeat'])] },
       { key: 'usage-only', grants: [] },
     ]);
+  });
+
+  // A database seeded before keeps no drawing (2026-10-21); an uploaded
+  // picture stays.
+  it('takes the line drawings off the models', async () => {
+    db = await createTestDatabase();
+    await createSeeder({
+      database: db.database,
+      packageName: 'itam',
+      directory: seedsDirectory,
+    }).run();
+    const query = db.database.query();
+    const laptopDrawing = '352aed01-d257-59b2-85d0-8dcebb263cb8';
+    await query
+      .updateTable('models')
+      .set({ imageFileId: laptopDrawing, imageCredit: null })
+      .where('id', '=', 'model-latitude-5440')
+      .execute();
+    const { default: clear } =
+      await import('../../database/main/seeds/202610210001_clear_drawn_model_pictures.js');
+    await clear.run({ query } as never);
+    const rows = await query
+      .selectFrom('models')
+      .select(['id', 'imageFileId'])
+      .where('id', 'in', ['model-latitude-5440', 'model-macbook-air-13-m3'])
+      .orderBy('id')
+      .execute<{ id: string; imageFileId: string | null }>();
+    expect(rows[0]).toEqual({ id: 'model-latitude-5440', imageFileId: null });
+    expect(rows[1]?.imageFileId).toBeTruthy();
   });
 });

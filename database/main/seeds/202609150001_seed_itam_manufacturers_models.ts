@@ -14,7 +14,7 @@ import {
 // unique) is reused rather than duplicated. Specifications are data written
 // once in the deployment's default language, like the category names.
 //
-// Every model gets a picture the same way an upload stores one: the bytes go
+// A model with a photo gets it the same way an upload stores one: the bytes go
 // to the file plugin's local disk (`<storage>/objects/<id>.<ext>`, the
 // `storage/` directory unless `APP_STORAGE_DIR` says otherwise) and a row to
 // `itamFiles`, and the model's `imageFileId` points at that row. The pictures
@@ -69,33 +69,17 @@ interface ModelSeed {
    * are the same in every language.
    */
   readonly attributes?: Readonly<Record<string, string | number | boolean>>;
-  /** File name under `assets/models/`. */
-  readonly image: string;
-  /** Attribution the picture's license requires; none for our own drawings. */
+  /**
+   * File name under `assets/models/`: a photo, credited. A model with none
+   * shows no picture (2026-10-21; drawn ones until then).
+   */
+  readonly image?: string;
+  /** Attribution the picture's license requires. */
   readonly imageCredit?: string;
 }
 
 /** Fixed file ids so a repeated run finds its pictures instead of adding them. */
 const PICTURE_FILE_IDS: Readonly<Record<string, string>> = {
-  'laptop.svg': '352aed01-d257-59b2-85d0-8dcebb263cb8',
-  'desktop.svg': '53a59a2b-781b-5db5-9a72-9fa080d06477',
-  'monitor.svg': 'ea3a6843-b16b-5692-9a48-a0b18fb9bf60',
-  'server.svg': 'f84af49a-e4e6-5184-84c3-eef620f02bc6',
-  'network.svg': 'd7c3ae10-353d-5d96-9bff-17a44e3ef7c0',
-  'phone.svg': 'cabcdf09-99f2-549c-90d6-5a2a496fb04b',
-  'printer.svg': '70a07617-1091-5f64-b624-a09abbf57924',
-  'virtual.svg': '26531faf-37da-567f-97d1-28efb18cb208',
-  'mouse.svg': '45ed46d1-1ecc-5352-ad43-d9f875748618',
-  'keyboard.svg': 'a4dbb661-6448-5e31-a178-ad054510fd32',
-  'dock.svg': '27995f2d-8017-54e8-ad11-7ca00a6fcefe',
-  'toner.svg': '335dc32c-7c0c-5dc3-98a0-d16e3e6324d8',
-  'disk.svg': '1b61195f-bb60-5bfe-a804-20226cfe92aa',
-  'memory.svg': 'fea00f16-4f83-5af6-b8d6-c69ddf120823',
-  'headset.svg': 'f0ba82b1-9f09-5af2-a220-dc8467946dfb',
-  'cable.svg': '64c8e8c7-7dba-57d7-9dbc-3157f6f98e21',
-  'battery.svg': 'dfb62c27-051e-5729-988f-645e9ebb3b19',
-  'webcam.svg': '575d22ad-fa25-57a2-8417-dd3397dc8200',
-  'paper.svg': '5e30baa7-65e8-5850-8a28-f7d233d83fc0',
   'macbook-pro-14-m3.jpg': '419aaaa2-bf99-515c-b4ae-78dbe21e061e',
   'macbook-air-13-m3.jpg': 'f6052130-a7ea-5f17-b613-43e11def712b',
   'thinkpad-t14.jpg': '287c9828-3e32-5202-b14c-7465548bac62',
@@ -180,7 +164,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-latitude-5440',
-    image: 'laptop.svg',
     name: 'Latitude 5440',
     manufacturerId: 'mfr-dell',
     categoryId: 'cat-laptop',
@@ -196,7 +179,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-optiplex-7010',
-    image: 'desktop.svg',
     name: 'OptiPlex 7010',
     manufacturerId: 'mfr-dell',
     categoryId: 'cat-desktop',
@@ -211,7 +193,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-u2723qe',
-    image: 'monitor.svg',
     name: 'U2723QE',
     manufacturerId: 'mfr-dell',
     categoryId: 'cat-monitor',
@@ -226,7 +207,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-poweredge-r760',
-    image: 'server.svg',
     name: 'PowerEdge R760',
     manufacturerId: 'mfr-dell',
     categoryId: 'cat-server',
@@ -237,7 +217,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-catalyst-9200-48p',
-    image: 'network.svg',
     name: 'Catalyst 9200-48P',
     manufacturerId: 'mfr-cisco',
     categoryId: 'cat-network',
@@ -259,7 +238,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-laserjet-pro-m428',
-    image: 'printer.svg',
     name: 'LaserJet Pro M428',
     manufacturerId: 'mfr-hp',
     categoryId: 'cat-printer',
@@ -272,7 +250,6 @@ const MODELS: readonly ModelSeed[] = [
   // seeded printer, and the parts the demo installs.
   {
     id: 'model-hp-58a',
-    image: 'toner.svg',
     name: 'HP 58A toner',
     manufacturerId: 'mfr-hp',
     categoryId: 'cat-toner',
@@ -282,7 +259,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-zone-vibe-100',
-    image: 'headset.svg',
     name: 'Zone Vibe 100',
     manufacturerId: 'mfr-logitech',
     categoryId: 'cat-headset',
@@ -292,7 +268,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-usb-c-cable-1m',
-    image: 'cable.svg',
     name: 'USB-C Cable 1 m',
     manufacturerId: 'mfr-dell',
     categoryId: 'cat-cable',
@@ -301,7 +276,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-latitude-5440-battery',
-    image: 'battery.svg',
     name: 'Latitude 5440 Battery',
     manufacturerId: 'mfr-dell',
     categoryId: 'cat-battery',
@@ -333,7 +307,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-vsphere-vm',
-    image: 'virtual.svg',
     name: 'vSphere VM',
     manufacturerId: 'mfr-vmware',
     categoryId: 'cat-virtual',
@@ -360,7 +333,6 @@ const MODELS: readonly ModelSeed[] = [
   },
   {
     id: 'model-wd22tb4',
-    image: 'dock.svg',
     name: 'WD22TB4',
     manufacturerId: 'mfr-dell',
     categoryId: 'cat-dock',
@@ -475,7 +447,7 @@ const seed: SeedDefinition = defineSeed({
           key,
           filename: image,
           ext,
-          mimeType: ext === 'svg' ? 'image/svg+xml' : 'image/jpeg',
+          mimeType: 'image/jpeg',
           size: bytes.byteLength,
           createdAt: stamp,
           updatedAt: stamp,
@@ -491,7 +463,7 @@ const seed: SeedDefinition = defineSeed({
         .executeTakeFirst<{ id: string; imageFileId: string | null }>();
       if (existing) {
         // A model seeded before pictures existed gets one now.
-        if (existing.imageFileId === null)
+        if (existing.imageFileId === null && model.image)
           await query
             .updateTable('models')
             .set({
@@ -519,7 +491,7 @@ const seed: SeedDefinition = defineSeed({
             manufacturerIds.get(model.manufacturerId) ?? model.manufacturerId,
           code: model.code ?? null,
           specification: localizedSpecification(model, locale),
-          imageFileId: await pictureFile(model.image),
+          imageFileId: model.image ? await pictureFile(model.image) : null,
           imageCredit: model.imageCredit ?? null,
           warrantyMonths: model.warrantyMonths ?? null,
           attributes: model.attributes ?? null,
