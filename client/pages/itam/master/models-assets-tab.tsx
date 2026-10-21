@@ -43,7 +43,7 @@ export default function ModelAssetsTab(): ReactElement | null {
         // Every row is this model, filed under its category; who holds each
         // matters more here than since when.
         omit={['modelId', 'categoryId', 'assignedAt']}
-        show={['serialNo', 'assignee']}
+        show={['noAndName', 'serialNo', 'assignee']}
       />
     );
   if (kind === 'stock')

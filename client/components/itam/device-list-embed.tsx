@@ -32,8 +32,11 @@ export function DeviceListEmbed({
   readonly leading?: readonly DataTableColumn<ItamRecord>[];
   /** Columns every row shares here, e.g. the model on a model's own tab. */
   readonly omit?: readonly string[];
-  /** Columns most tabs leave out: the serial number and who holds it. */
-  readonly show?: readonly ('serialNo' | 'assignee')[];
+  /**
+   * Columns most tabs leave out: the serial number, who holds it, and the
+   * number and name apart (`noAndName`) rather than in one cell.
+   */
+  readonly show?: readonly ('serialNo' | 'assignee' | 'noAndName')[];
 }): ReactElement {
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
@@ -69,14 +72,33 @@ export function DeviceListEmbed({
       columns={(
         [
           ...leading,
-          {
-            // 编号 / 名称 in one cell, the way a device is named everywhere.
-            key: 'device',
-            header: t('devices.noAndName'),
-            render: (row) => (
-              <span className='font-medium'>{deviceLabel(row)}</span>
-            ),
-          },
+          // 编号 / 名称 in one cell, the way a device is named everywhere; or
+          // a column each, as the device list has them.
+          ...(show.includes('noAndName')
+            ? [
+                {
+                  key: 'deviceNo',
+                  header: t('fields.deviceNo'),
+                  className: 'w-px whitespace-nowrap',
+                  render: (row: ItamRecord) => (
+                    <span className='font-medium'>{text(row.deviceNo)}</span>
+                  ),
+                },
+                {
+                  key: 'name',
+                  header: t('fields.name'),
+                  render: (row: ItamRecord) => text(row.name) || '—',
+                },
+              ]
+            : [
+                {
+                  key: 'device',
+                  header: t('devices.noAndName'),
+                  render: (row: ItamRecord) => (
+                    <span className='font-medium'>{deviceLabel(row)}</span>
+                  ),
+                },
+              ]),
           ...(show.includes('serialNo')
             ? [
                 {
