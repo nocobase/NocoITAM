@@ -20,6 +20,8 @@ picture. Keep the credit when reusing a photo.
 The last three are used by the demo's own models, which carry the same
 credit.
 
+- `brio-301.jpg` — Logitech Brio 301 webcam HS1.jpg by Hayden Schiff, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0), source: https://commons.wikimedia.org/w/index.php?curid=175199361 (the demo's webcam)
+
 A neighbouring generation whose exterior is the same stands in where no
 open photo of the model itself exists (2026-10-21); each says which it is.
 

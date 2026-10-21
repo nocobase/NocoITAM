@@ -378,9 +378,11 @@ const DEMO_PICTURES = {
   'mac-mini.jpg': '7e6dcb73-62ab-52ef-832b-42eb0bc419c4',
   'duracell-aa.jpg': '9cb9d9fb-5dea-5725-9fc7-3846c23c549b',
   '990-pro.jpg': '558e9198-a718-560f-9545-9eac73a2c025',
+  'brio-301.jpg': '40155a04-8728-5f23-98d3-3825afc44410',
 } as const;
 /** The credit a photo's license asks for, shown under it (`CREDITS.md`). */
 const DEMO_PICTURE_CREDITS: Partial<Record<DemoPicture, string>> = {
+  'brio-301.jpg': 'Hayden Schiff, CC BY 4.0, Wikimedia Commons',
   'iphone-15-pro.jpg': 'IPHONE 15, CC BY-SA 4.0, Wikimedia Commons',
   'studio-display.jpg': 'Seasider53, CC BY 4.0, Wikimedia Commons',
   'galaxy-s24.jpg': 'メイド理世, CC BY-SA 4.0, Wikimedia Commons',
@@ -893,8 +895,8 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     webcamCategory: 'Webcam',
     hubItem: 'Dell DA310 USB-C hub',
     hubSpec: 'USB-C to HDMI, DisplayPort, USB-A, USB-C and Ethernet',
-    webcamItem: 'Logitech Brio 4K webcam',
-    webcamSpec: '4K webcam with HDR and a privacy shutter',
+    webcamItem: 'Logitech Brio 301 webcam',
+    webcamSpec: '1080p webcam with a privacy shutter and a USB-C cable',
     paperItem: 'A4 copy paper, 80 g',
     paperSpec: 'A4, 80 g/m², 500 sheets a ream',
     batteryItem: 'AA alkaline batteries',
@@ -920,7 +922,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
       'Collects on Tuesdays and Fridays; quotes first for anything out of warranty',
     recyclerNotes: 'Issues a data destruction certificate with every batch',
     webcamSpecUpdated:
-      '4K webcam with HDR, a privacy shutter and a 2 m USB-C cable',
+      '1080p webcam with a privacy shutter, auto light correction and a 1.5 m USB-C cable',
     commentResellerContact:
       '{contact} has moved to their enterprise team. {newContact} looks after our account from now on; orders still go to the same address.',
     commentResellerReply:
@@ -1016,8 +1018,8 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     webcamCategory: '摄像头',
     hubItem: 'Dell DA310 USB-C 扩展器',
     hubSpec: 'USB-C 转 HDMI、DisplayPort、USB-A、USB-C 和网口',
-    webcamItem: 'Logitech Brio 4K 摄像头',
-    webcamSpec: '4K 摄像头，支持 HDR，带隐私挡板',
+    webcamItem: 'Logitech Brio 301 摄像头',
+    webcamSpec: '1080p 摄像头，带隐私挡板和 USB-C 线缆',
     paperItem: 'A4 复印纸 80g',
     paperSpec: 'A4，80 克，每包 500 张',
     batteryItem: 'AA 碱性电池',
@@ -1041,7 +1043,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     resellerContact: '梁晓',
     repairShopNotes: '每周二、周五上门取件；保外维修先报价',
     recyclerNotes: '每批回收都出具数据销毁证明',
-    webcamSpecUpdated: '4K 摄像头，支持 HDR，带隐私挡板，附 2 米 USB-C 线',
+    webcamSpecUpdated: '1080p 摄像头，带隐私挡板，自动补光，1.5 米 USB-C 线缆',
     commentResellerContact:
       '{contact} 调去了他们的大客户部，以后由{newContact}对接我们，下单地址不变。',
     commentResellerReply: '好的，我把这边的联系人改一下。',
@@ -3376,11 +3378,13 @@ export function createDemoService(dependencies: {
           appliesTo: 'accessory',
         });
         const webcamModel = await named('models', {
-          name: 'Brio 4K',
+          // The Brio 301 since 2026-10-21 (the Brio 4K until then), a
+          // meeting-room webcam with an open photo of its own.
+          name: 'Brio 301',
           categoryId: webcamCat.id,
           manufacturerId: mxMaster.manufacturer.id,
-          code: '960-001105',
-          ...(await picture('webcam.svg')),
+          code: '960-001513',
+          ...(await picture('brio-301.jpg')),
           specification: texts.webcamSpec,
         });
         const webcams = await stockItem(

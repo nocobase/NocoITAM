@@ -110,6 +110,7 @@ const PICTURE_FILE_IDS: Readonly<Record<string, string>> = {
   'mac-mini.jpg': '7e6dcb73-62ab-52ef-832b-42eb0bc419c4',
   'duracell-aa.jpg': '9cb9d9fb-5dea-5725-9fc7-3846c23c549b',
   '990-pro.jpg': '558e9198-a718-560f-9545-9eac73a2c025',
+  'brio-301.jpg': '40155a04-8728-5f23-98d3-3825afc44410',
   'ddr5-sodimm.jpg': '739f8dec-e727-5bde-8d50-71c57e771bcf',
 };
 
