@@ -1102,6 +1102,10 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     serverOrder: 'Two more file servers',
     serverRejection: 'Size the virtual capacity first, then ask again',
     headsetRestockOrder: 'Headset stock',
+    softwareRenewalOrder: 'Adobe and Figma seats for the design team',
+    leaseOrder: 'Laptop leasing trial, 20 units',
+    leaseRejection:
+      'Leasing costs more over three years than buying; we keep buying',
     headsetCancel: 'The vendor is out of stock; buy next quarter',
     q4AuditName: 'Q4 count · 3F',
     q4AuditNotes: 'Quarterly count',
@@ -1226,6 +1230,9 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     serverOrder: '新增两台文件服务器',
     serverRejection: '先评估虚拟化资源，再决定是否采购',
     headsetRestockOrder: '耳机补货',
+    softwareRenewalOrder: '设计团队 Adobe 与 Figma 席位',
+    leaseOrder: '笔记本租赁试点 20 台',
+    leaseRejection: '按三年算租赁比购买贵，继续采购',
     headsetCancel: '供应商缺货，改到下季度采购',
     q4AuditName: '四季度盘点 · 3 楼',
     q4AuditNotes: '季度例行盘点',
@@ -2789,7 +2796,8 @@ export function createDemoService(dependencies: {
                 name,
                 departmentId,
                 locationId,
-                vendorId: reseller.id,
+                // The Japan branch buys from its Tokyo supplier (2026-10-21).
+                vendorId: spec.japan ? more.japan.id : reseller.id,
                 purchaseDate: daysFromNow(day),
                 purchasePrice: laptop.price,
                 warrantyEndDate: warrantyFrom(day, laptop.warrantyDays),
@@ -5156,6 +5164,38 @@ export function createDemoService(dependencies: {
           stage: 'cancelled',
           raisedDaysAgo: 18,
           why: texts.headsetCancel,
+        });
+        // The software reseller and the lessor have business too
+        // (2026-10-21): the design team's seats, approved, and the leasing
+        // trial that was turned down.
+        await queuedOrder({
+          description: texts.softwareRenewalOrder,
+          vendor: more.software,
+          reason: 'project',
+          departmentId: rnd.id,
+          neededInDays: 20,
+          lines: [
+            software(
+              'subscription',
+              await seededIn('softwareProducts', 'sp-adobe-creative-cloud'),
+              3,
+              4200,
+            ),
+            software('subscription', figma, 5, 1440),
+          ],
+          stage: 'approved',
+          raisedDaysAgo: 9,
+        });
+        await queuedOrder({
+          description: texts.leaseOrder,
+          vendor: more.lessor,
+          reason: 'batchReplacement',
+          departmentId: itDept.id,
+          neededInDays: 45,
+          lines: [line('device', thinkpad, 20, 3600)],
+          stage: 'rejected',
+          raisedDaysAgo: 30,
+          why: texts.leaseRejection,
         });
 
         await reached(78);

@@ -807,6 +807,28 @@ describe('CSV import / export and demo data', () => {
 
     // More than devices (2026-10-16): nine accessories, five consumables and
     // five components, three perpetual licences and seven subscriptions.
+    // Every demo vendor has dealt with the company (2026-10-21): an order,
+    // a repair or a disposal, none an empty entry in the address book.
+    const vendorRows = await db
+      .selectFrom('vendors')
+      .select(['id', 'name'])
+      .execute<{ id: string; name: string }>();
+    const dealtWith = new Set<string>();
+    for (const [table, column] of [
+      ['purchaseOrders', 'vendorId'],
+      ['repairs', 'vendorId'],
+      ['disposals', 'recipientVendorId'],
+    ] as const)
+      for (const row of await db
+        .selectFrom(table)
+        .select([column])
+        .execute<Record<string, string | null>>())
+        if (row[column]) dealtWith.add(String(row[column]));
+    expect(
+      vendorRows
+        .filter((vendor) => !dealtWith.has(vendor.id))
+        .map((vendor) => vendor.name),
+    ).toEqual([]);
     const kindsOfStock = await db
       .selectFrom('stockItems')
       .select(['id', 'kind', 'name', 'totalQuantity', 'usedQuantity'])
