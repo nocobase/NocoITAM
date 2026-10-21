@@ -858,7 +858,8 @@ const CATALOGUE_ASSETS: Readonly<
           readonly name: string;
           readonly serialNo: string;
           /** Placed here (shared equipment); else a spare in the warehouse. */
-          readonly at?: 'floor3' | 'serverRoom' | 'japan';
+          readonly at?:
+            'floor3' | 'floor5' | 'meetingRoom' | 'serverRoom' | 'tokyo';
           /**
            * Answered for by the account that imported the demo rather than
            * the writer (2026-10-21): its own MDM 核对 then lists one under
@@ -925,7 +926,7 @@ const CATALOGUE_ASSETS: Readonly<
       {
         name: 'SH-DT-201',
         serialNo: 'H9VM2MINI01',
-        at: 'floor3',
+        at: 'meetingRoom',
         importerOwns: true,
         attributes: { os: 'macOS 15.6', hostname: 'SH-DT-201' },
       },
@@ -937,7 +938,7 @@ const CATALOGUE_ASSETS: Readonly<
       {
         name: 'SH-DT-202',
         serialNo: 'MJ0K90Q4A1',
-        at: 'floor3',
+        at: 'floor5',
         attributes: { os: 'Windows 11 24H2', hostname: 'SH-DT-202' },
       },
     ],
@@ -945,7 +946,7 @@ const CATALOGUE_ASSETS: Readonly<
   P2723DE: {
     price: 2299,
     devices: [
-      { name: 'SH-MON-201', serialNo: 'CN0P2723DE01', at: 'floor3' },
+      { name: 'SH-MON-201', serialNo: 'CN0P2723DE01', at: 'floor5' },
       { name: 'SH-MON-202', serialNo: 'CN0P2723DE02' },
     ],
   },
@@ -967,7 +968,7 @@ const CATALOGUE_ASSETS: Readonly<
       {
         name: 'SH-PRN-JP-01',
         serialNo: 'VNB3M479A1',
-        at: 'japan',
+        at: 'tokyo',
         attributes: { ipAddress: '10.20.0.50' },
       },
     ],
@@ -1102,6 +1103,9 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     serverOrder: 'Two more file servers',
     serverRejection: 'Size the virtual capacity first, then ask again',
     headsetRestockOrder: 'Headset stock',
+    floor5Name: 'Level 5',
+    meetingRoomName: 'Main meeting room',
+    tokyoOfficeName: 'Tokyo office',
     softwareRenewalOrder: 'Adobe and Figma seats for the design team',
     leaseOrder: 'Laptop leasing trial, 20 units',
     leaseRejection:
@@ -1230,6 +1234,9 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     serverOrder: '新增两台文件服务器',
     serverRejection: '先评估虚拟化资源，再决定是否采购',
     headsetRestockOrder: '耳机补货',
+    floor5Name: '5 楼',
+    meetingRoomName: '大会议室',
+    tokyoOfficeName: '东京办公室',
     softwareRenewalOrder: '设计团队 Adobe 与 Figma 席位',
     leaseOrder: '笔记本租赁试点 20 台',
     leaseRejection: '按三年算租赁比购买贵，继续采购',
@@ -2163,6 +2170,28 @@ export function createDemoService(dependencies: {
         const warehouse = await seededIn('locations', 'loc-hq-warehouse');
         const serverRoom = await seededIn('locations', 'loc-hq-server-room');
         const japan = await seededIn('locations', 'loc-japan');
+        // More places than the seeds carry (2026-10-21), each with things in
+        // it: a second floor at HQ, the meeting room on the third, and the
+        // Japan branch's Tokyo office, where its people and gear are.
+        const hq = await seededIn('locations', 'loc-hq');
+        const floor5 = await md('locations', {
+          name: texts.floor5Name,
+          type: 'floor',
+          parentId: hq.id,
+          sort: 15,
+        });
+        const meetingRoom = await md('locations', {
+          name: texts.meetingRoomName,
+          type: 'room',
+          parentId: floor3.id,
+          sort: 10,
+        });
+        const tokyo = await md('locations', {
+          name: texts.tokyoOfficeName,
+          type: 'floor',
+          parentId: japan.id,
+          sort: 10,
+        });
         const rnd = await seededIn('departments', 'dept-rd');
         const sales = await seededIn('departments', 'dept-sales');
         const people = [] as Row[];
@@ -2230,7 +2259,7 @@ export function createDemoService(dependencies: {
                 : `138 0013 0${number}`,
               position,
               departmentId: (await seededIn('departments', spec.department)).id,
-              locationId: spec.japan ? japan.id : floor3.id,
+              locationId: spec.japan ? tokyo.id : floor3.id,
               hireDate: daysFromNow(-spec.hired),
             }),
           );
@@ -2748,7 +2777,7 @@ export function createDemoService(dependencies: {
           const own: Row[] = [];
           const departmentId = (await seededIn('departments', spec.department))
             .id;
-          const locationId = spec.japan ? japan.id : floor3.id;
+          const locationId = spec.japan ? tokyo.id : floor3.id;
           // A successor takes over their predecessor's, below.
           if (spec.inherits === undefined) {
             computerNo += 1;
@@ -3651,7 +3680,7 @@ export function createDemoService(dependencies: {
           },
           -700,
         );
-        await issue(webcams, 'location', floor3, 1, -650);
+        await issue(webcams, 'location', meetingRoom, 1, -650);
         await issue(webcams, 'person', wangFang, 1, -640);
         await issue(webcams, 'person', writer, 1, -410);
         await issue(webcams, 'person', liuYang, 1, -280);
@@ -3888,7 +3917,7 @@ export function createDemoService(dependencies: {
         }
         // Each catalogue model's assets (`CATALOGUE_ASSETS`), bought three
         // weeks after it was entered.
-        const places = { floor3, serverRoom, japan };
+        const places = { floor3, floor5, meetingRoom, serverRoom, tokyo };
         for (const { entry, model } of catalogue) {
           const assets = CATALOGUE_ASSETS[entry.name];
           if (!assets) continue;
@@ -3925,7 +3954,7 @@ export function createDemoService(dependencies: {
               locationId: spec.at ? places[spec.at].id : warehouse.id,
               // Japan buys locally, the Macs come from the Apple reseller.
               vendorId:
-                spec.at === 'japan'
+                spec.at === 'tokyo'
                   ? more.japan.id
                   : entry.manufacturerId === 'mfr-apple'
                     ? more.apple.id

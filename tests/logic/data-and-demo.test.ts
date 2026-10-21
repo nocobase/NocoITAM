@@ -807,6 +807,31 @@ describe('CSV import / export and demo data', () => {
 
     // More than devices (2026-10-16): nine accessories, five consumables and
     // five components, three perpetual licences and seven subscriptions.
+    // Every place without places under it holds something (2026-10-21):
+    // devices, people or stock, a meeting room and a Tokyo office among them.
+    const locationRows = await db
+      .selectFrom('locations')
+      .select(['id', 'name', 'parentId'])
+      .execute<{ id: string; name: string; parentId: string | null }>();
+    expect(locationRows.length).toBeGreaterThanOrEqual(8);
+    const parents = new Set(locationRows.map((row) => row.parentId));
+    const holding = new Set<string>();
+    for (const table of ['devices', 'people'] as const)
+      for (const row of await db
+        .selectFrom(table)
+        .select(['locationId'])
+        .execute<{ locationId: string | null }>())
+        if (row.locationId) holding.add(row.locationId);
+    for (const row of await db
+      .selectFrom('stockItems')
+      .select(['locationId'])
+      .execute<{ locationId: string | null }>())
+      if (row.locationId) holding.add(row.locationId);
+    expect(
+      locationRows
+        .filter((row) => !parents.has(row.id) && !holding.has(row.id))
+        .map((row) => row.name),
+    ).toEqual([]);
     // Every demo vendor has dealt with the company (2026-10-21): an order,
     // a repair or a disposal, none an empty entry in the address book.
     const vendorRows = await db
