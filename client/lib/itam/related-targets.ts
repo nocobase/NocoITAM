@@ -25,6 +25,8 @@ export interface RelatedTarget {
   readonly routeFor: (row: ItamRecord) => string;
   /** Fixed filter, e.g. a stock kind. */
   readonly listFilter?: Readonly<Record<string, string>>;
+  /** How many of `fields` the list shows; four unless it says. */
+  readonly columns?: number;
 }
 
 /** A master-data collection as a related-list target. */
@@ -59,9 +61,12 @@ export const stockTarget: RelatedTarget = {
 /** Entitlements of both kinds (a software product's tab). */
 export const entitlementTarget: RelatedTarget = {
   path: ENTITLEMENTS_PATH,
-  fields: ENTITLEMENT_FIELDS.filter(
-    (field) => field.column && field.key !== 'softwareProductId',
+  // A product's entitlements by their seats (2026-10-21): the maker is the
+  // product's own, so it gives way to 总席位 and 已分配.
+  fields: ['name', 'kind', 'categoryId', 'seatCount', 'assignedCount'].map(
+    (key) => ENTITLEMENT_FIELDS.find((field) => field.key === key)!,
   ),
+  columns: 5,
   nameField: 'name',
   i18n: 'entitlements',
   defaultSort: 'name',

@@ -138,7 +138,7 @@ export function RelatedListTab({
     <DataTable
       columns={[
         ...leading,
-        ...columns.slice(0, 4).map((field) => ({
+        ...columns.slice(0, target.columns ?? 4).map((field) => ({
           key: field.key,
           header: t(field.label),
           render: (row: ItamRecord) =>
