@@ -60,6 +60,32 @@ export function DisposalStatusBadge({
   );
 }
 
+const EMPLOYMENT_TONE: Readonly<Record<string, string>> = {
+  // On the books in green, what is fine; a joiner yet to start in blue;
+  // a leaver muted (2026-10-21).
+  active: 'bg-success text-success-foreground',
+  pending: 'bg-info text-info-foreground',
+  left: 'bg-muted text-muted-foreground',
+};
+
+/** A person's 在职状态. */
+export function EmploymentStatusBadge({
+  status,
+}: {
+  readonly status: unknown;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  if (typeof status !== 'string' || !status) return null;
+  return (
+    <Badge
+      variant='secondary'
+      className={EMPLOYMENT_TONE[status] ?? 'bg-muted text-muted-foreground'}
+    >
+      {t(`enums.employmentStatus.${status}`, { defaultValue: status })}
+    </Badge>
+  );
+}
+
 /** An audit task's status, toned the way a purchase order's is. */
 export function AuditStatusBadge({
   status,

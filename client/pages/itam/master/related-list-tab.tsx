@@ -30,7 +30,6 @@ export function RelatedListTab({
   leading = [],
   filterValue,
   showFilterField = false,
-  badges = [],
 }: {
   /** A master-data collection to list, e.g. `models`; or pass `target`. */
   readonly collection?: string;
@@ -52,8 +51,6 @@ export function RelatedListTab({
   readonly filterValue?: string | readonly string[];
   /** Keep `filterField`'s column (a tree node's tab, its sub-nodes' rows in it). */
   readonly showFilterField?: boolean;
-  /** Choice fields shown as their tag rather than plain text. */
-  readonly badges?: readonly string[];
 }): ReactElement {
   const { t } = useTranslation();
   const { id = '' } = useParams();
@@ -167,7 +164,7 @@ export function RelatedListTab({
                 field={field}
                 value={row[field.key]}
                 names={names}
-                plainEnums={!badges.includes(field.key)}
+                plainEnums
               />
             ),
         })),

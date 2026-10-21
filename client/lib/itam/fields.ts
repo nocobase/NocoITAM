@@ -261,6 +261,15 @@ export function isPurchaseOrderStatusField(field: FieldDefinition): boolean {
 }
 
 /** A disposal's status, which reads in its own tone per state. */
+/** A person's 在职状态 (2026-10-21), toned by `EmploymentStatusBadge`. */
+export function isEmploymentStatusField(field: FieldDefinition): boolean {
+  return (
+    field.options?.every((option) =>
+      option.label.startsWith('enums.employmentStatus.'),
+    ) ?? false
+  );
+}
+
 export function isDisposalStatusField(field: FieldDefinition): boolean {
   return (
     field.options?.every((option) =>

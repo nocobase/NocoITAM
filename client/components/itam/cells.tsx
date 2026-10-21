@@ -3,6 +3,7 @@ import {
   isEntitlementKindField,
   isAuditStatusField,
   isDisposalStatusField,
+  isEmploymentStatusField,
   isPurchaseOrderStatusField,
 } from '@/lib/itam/fields';
 import { AssetTypeBadge } from './asset-type-badge.js';
@@ -11,6 +12,7 @@ import {
   EntitlementKindBadge,
   AuditStatusBadge,
   DisposalStatusBadge,
+  EmploymentStatusBadge,
   PurchaseOrderStatusBadge,
 } from './status-badge.js';
 import { useTranslation } from '@nocobase/i18n/client';
@@ -44,6 +46,8 @@ export function EnumBadge({
   if (isDisposalStatusField(field))
     return <DisposalStatusBadge status={value} />;
   if (isAuditStatusField(field)) return <AuditStatusBadge status={value} />;
+  if (isEmploymentStatusField(field))
+    return <EmploymentStatusBadge status={value} />;
   const values = Array.isArray(value) ? value : [value];
   return (
     <span className='flex flex-wrap gap-1'>
@@ -146,6 +150,10 @@ export function FieldValue({
         return <DisposalStatusBadge status={value} />;
       if (isAuditStatusField(field) && !plainEnums)
         return <AuditStatusBadge status={value} />;
+      // A person's state is a tag wherever it shows (2026-10-21), the
+      // people list's plain cells included, as an asset type is.
+      if (isEmploymentStatusField(field))
+        return <EmploymentStatusBadge status={value} />;
       // Several choices read as a tag each, even where one choice is plain
       // text (2026-10-21): a vendor's 设备供应商 and 软件经销商 rather than a
       // comma-separated line.

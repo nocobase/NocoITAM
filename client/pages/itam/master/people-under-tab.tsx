@@ -51,7 +51,6 @@ export function PeopleUnderTab({
       filterValue={ids}
       showFilterField
       countKind='none'
-      badges={['employmentStatus']}
     />
   );
   return (
