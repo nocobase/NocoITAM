@@ -51,18 +51,16 @@ export function MultiReferenceInput({
           ))}
         </div>
       ) : null}
-      {/* Fixed, there is nothing to add (2026-10-20): the chips alone. */}
-      {disabled ? null : (
-        <ReferenceSelect
-          id={id}
-          reference={reference}
-          value={null}
-          placeholder={t('common.addItem')}
-          onChange={(next) => {
-            if (next && !value.includes(next)) onChange([...value, next]);
-          }}
-        />
-      )}
+      <ReferenceSelect
+        id={id}
+        reference={reference}
+        value={null}
+        disabled={disabled}
+        placeholder={t('common.addItem')}
+        onChange={(next) => {
+          if (next && !value.includes(next)) onChange([...value, next]);
+        }}
+      />
     </div>
   );
 }

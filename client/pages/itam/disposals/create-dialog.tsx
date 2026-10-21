@@ -176,13 +176,24 @@ export function DisposalCreateDialog({
               <span className='text-destructive'>*</span>
             </FieldLabel>
           </Label>
-          <MultiReferenceInput
-            id='disposal-devices'
-            reference={{ collection: 'devices' }}
-            value={deviceIds}
-            onChange={setDeviceIds}
-            disabled={fixedDevices}
-          />
+          {fixedDevices ? (
+            // The one device, as a repair's is: the select it would be
+            // chosen in, fixed.
+            <ReferenceSelect
+              id='disposal-devices'
+              reference={{ collection: 'devices' }}
+              value={deviceIds[0] ?? null}
+              onChange={() => undefined}
+              disabled
+            />
+          ) : (
+            <MultiReferenceInput
+              id='disposal-devices'
+              reference={{ collection: 'devices' }}
+              value={deviceIds}
+              onChange={setDeviceIds}
+            />
+          )}
         </div>
         {shownFields.map((field) => (
           <Fragment key={field.key}>
