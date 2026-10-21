@@ -124,6 +124,17 @@ it('says it is working, and why it has nothing when it failed', () => {
     </MemoryRouter>,
   );
   expect(screen.getByText('review.failed.unavailable')).toBeInTheDocument();
+  expect(screen.getByText('deviceSyncRun.failedHint')).toBeInTheDocument();
+  // On MDM 核对 itself, the way to try again is on the page (2026-10-21).
+  rerender(
+    <MemoryRouter>
+      <DeviceSyncRunCard
+        run={run({ status: 'failed', result: null, failure: 'unavailable' })}
+        onReview
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('deviceSyncRun.failedHintHere')).toBeInTheDocument();
 });
 
 it('offers nothing to set aside once it is carried out', () => {

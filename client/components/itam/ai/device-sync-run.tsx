@@ -84,7 +84,13 @@ export function DeviceSyncRunCard({
             defaultValue: t('review.failed.failed'),
           })}
         </p>
-        <p className='text-muted-foreground'>{t('deviceSyncRun.failedHint')}</p>
+        <p className='text-muted-foreground'>
+          {t(
+            onReview
+              ? 'deviceSyncRun.failedHintHere'
+              : 'deviceSyncRun.failedHint',
+          )}
+        </p>
         {toReview}
       </div>
     );

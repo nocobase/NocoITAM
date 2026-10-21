@@ -83,10 +83,11 @@ export default function DeviceSyncReviewPage(): ReactElement {
   });
   const counts = useReviewCounts();
   // One way to Asset Steward's follow-up at a time (2026-10-21): while one
-  // waits under 等你决定, the header does not offer another.
+  // works or waits under 等你决定, the header does not offer another. One
+  // that failed does not count: the header is where it is tried again.
   const inbox = useInbox();
   const following = (inbox.data?.open ?? []).some(
-    (run) => run.agent === 'deviceSync',
+    (run) => run.agent === 'deviceSync' && run.status !== 'failed',
   );
   const requested = params.get('view');
   // 已忽略 is a section of 只在 MDM: a link to it (the settings page's)

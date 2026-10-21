@@ -17,7 +17,7 @@ const state = vi.hoisted(() => ({
   records: [] as Record<string, unknown>[],
   ai: false,
   // MDM 跟进 runs still open, and what the reader may do to devices.
-  open: [] as { agent: string }[],
+  open: [] as { agent: string; status?: string }[],
   permissions: {} as Record<string, boolean>,
   followUp: {
     mutate: vi.fn(),
@@ -372,6 +372,18 @@ describe('MDM 核对 → 信息不一致', () => {
     expect(
       screen.queryByRole('button', { name: 'deviceSync.review.followUp' }),
     ).toBeNull();
+    state.open = [];
+    state.ai = false;
+  });
+
+  it('offers it again after one failed', () => {
+    state.ai = true;
+    state.views = { checks: [check] };
+    state.open = [{ agent: 'deviceSync', status: 'failed' }];
+    show();
+    expect(
+      screen.getByRole('button', { name: 'deviceSync.review.followUp' }),
+    ).toBeInTheDocument();
     state.open = [];
     state.ai = false;
   });
