@@ -389,8 +389,9 @@ type DemoPicture = keyof typeof DEMO_PICTURES;
  * laptops IT now orders, a desktop and monitors for the design team, the
  * phones and printer on the next refresh, an access point and the small
  * kit people ask for. Entered through the master-data service on the day
- * each came in, tracked, and cleared with the demo; no device or stock
- * points at them. Seed ids, which the demo checks are there.
+ * each came in, tracked, and cleared with the demo. Since 2026-10-21 each
+ * has assets behind it (`CATALOGUE_ASSETS`), so no model in the catalogue
+ * stands empty. Seed ids, which the demo checks are there.
  */
 const CATALOGUE_MODELS: readonly {
   readonly name: string;
@@ -618,6 +619,178 @@ const CATALOGUE_MODELS: readonly {
     },
   },
 ];
+
+/**
+ * What the catalogue's models have on the books (2026-10-21), bought a few
+ * weeks after each was entered: devices — spares and evaluation units in
+ * the warehouse, shared machines placed at a location — and for an
+ * accessory or a component, a stock item.
+ */
+const CATALOGUE_ASSETS: Readonly<
+  Record<
+    string,
+    | {
+        readonly devices: readonly {
+          readonly name: string;
+          readonly serialNo: string;
+          /** Placed here (shared equipment); else a spare in the warehouse. */
+          readonly at?: 'floor3' | 'serverRoom' | 'japan';
+          readonly attributes?: Readonly<Record<string, unknown>>;
+        }[];
+        readonly price: number;
+      }
+    | {
+        readonly stock: {
+          readonly name: string;
+          readonly kind: 'accessory' | 'component';
+          readonly quantity: number;
+          readonly minimum: number;
+        };
+      }
+  >
+> = {
+  'MacBook Pro 16 M3 Pro': {
+    price: 23999,
+    devices: [
+      {
+        name: 'SG-LT-201',
+        serialNo: 'FVFZM3P16A01',
+        attributes: { os: 'macOS 15.6', hostname: 'SG-LT-201' },
+      },
+    ],
+  },
+  'ThinkPad X1 Carbon Gen 12': {
+    price: 14999,
+    devices: [
+      {
+        name: 'SG-LT-202',
+        serialNo: 'PF5X1C12A0',
+        attributes: { os: 'Windows 11 24H2', hostname: 'SG-LT-202' },
+      },
+    ],
+  },
+  'EliteBook 840 G11': {
+    price: 9999,
+    devices: [
+      {
+        name: 'SG-LT-203',
+        serialNo: '5CG4280E11',
+        attributes: { os: 'Windows 11 24H2', hostname: 'SG-LT-203' },
+      },
+    ],
+  },
+  'Surface Laptop 6': {
+    price: 10888,
+    devices: [
+      {
+        name: 'SG-LT-204',
+        serialNo: '0F33A2R24093',
+        attributes: { os: 'Windows 11 24H2', hostname: 'SG-LT-204' },
+      },
+    ],
+  },
+  'Mac mini M2': {
+    price: 5999,
+    devices: [
+      {
+        name: 'SG-DT-201',
+        serialNo: 'H9VM2MINI01',
+        at: 'floor3',
+        attributes: { os: 'macOS 15.6', hostname: 'SG-DT-201' },
+      },
+    ],
+  },
+  'ThinkCentre M90q Gen 4': {
+    price: 7299,
+    devices: [
+      {
+        name: 'SG-DT-202',
+        serialNo: 'MJ0K90Q4A1',
+        at: 'floor3',
+        attributes: { os: 'Windows 11 24H2', hostname: 'SG-DT-202' },
+      },
+    ],
+  },
+  P2723DE: {
+    price: 2299,
+    devices: [
+      { name: 'SG-MON-201', serialNo: 'CN0P2723DE01', at: 'floor3' },
+      { name: 'SG-MON-202', serialNo: 'CN0P2723DE02' },
+    ],
+  },
+  'Studio Display': {
+    price: 11499,
+    devices: [{ name: 'SG-MON-203', serialNo: 'C02STDISP01' }],
+  },
+  'iPhone 15 Pro': {
+    price: 8999,
+    devices: [{ name: 'SG-PH-201', serialNo: 'F4QIP15PRO01' }],
+  },
+  'Galaxy S24': {
+    price: 5999,
+    devices: [{ name: 'SG-PH-202', serialNo: 'R5CXS24A001' }],
+  },
+  'Color LaserJet Pro MFP M479fdw': {
+    price: 6499,
+    devices: [
+      {
+        name: 'SG-PRN-JP-01',
+        serialNo: 'VNB3M479A1',
+        at: 'japan',
+        attributes: { ipAddress: '10.20.0.50' },
+      },
+    ],
+  },
+  'Catalyst 9120AXI': {
+    price: 7800,
+    devices: [
+      {
+        name: 'SG-AP-3F-01',
+        serialNo: 'FJC2501AP01',
+        at: 'floor3',
+        attributes: { managementIp: '10.0.3.11' },
+      },
+      {
+        name: 'SG-AP-3F-02',
+        serialNo: 'FJC2501AP02',
+        at: 'floor3',
+        attributes: { managementIp: '10.0.3.12' },
+      },
+    ],
+  },
+  'ThinkPad Thunderbolt 4 Dock': {
+    stock: {
+      name: 'ThinkPad Thunderbolt 4 Dock',
+      kind: 'accessory',
+      quantity: 4,
+      minimum: 1,
+    },
+  },
+  'MX Keys Mini': {
+    stock: {
+      name: 'Logitech MX Keys Mini',
+      kind: 'accessory',
+      quantity: 6,
+      minimum: 2,
+    },
+  },
+  'MX Anywhere 3S': {
+    stock: {
+      name: 'Logitech MX Anywhere 3S',
+      kind: 'accessory',
+      quantity: 6,
+      minimum: 2,
+    },
+  },
+  '870 EVO 1 TB': {
+    stock: {
+      name: 'Samsung 870 EVO 1 TB',
+      kind: 'component',
+      quantity: 3,
+      minimum: 1,
+    },
+  },
+};
 
 const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   'en-US': {
@@ -3429,11 +3602,15 @@ export function createDemoService(dependencies: {
         await takeBack(smallRam, 'device', thinkpads[1], -20);
         // The rest of the catalogue (2026-10-20, `CATALOGUE_MODELS`), each
         // on the day it was entered.
+        const catalogue: {
+          entry: (typeof CATALOGUE_MODELS)[number];
+          model: Row;
+        }[] = [];
         for (const entry of CATALOGUE_MODELS) {
           await seeded(entry.categoryId);
           await seededIn('manufacturers', entry.manufacturerId);
           await on(entry.day);
-          await named('models', {
+          const model = await named('models', {
             name: entry.name,
             categoryId: entry.categoryId,
             manufacturerId: entry.manufacturerId,
@@ -3443,6 +3620,56 @@ export function createDemoService(dependencies: {
             specification:
               entry.spec[locale as DemoLanguage] ?? entry.spec['en-US'],
           });
+          catalogue.push({ entry, model });
+        }
+        // Each catalogue model's assets (`CATALOGUE_ASSETS`), bought three
+        // weeks after it was entered.
+        const places = { floor3, serverRoom, japan };
+        for (const { entry, model } of catalogue) {
+          const assets = CATALOGUE_ASSETS[entry.name];
+          if (!assets) continue;
+          const bought = entry.day + 21;
+          if ('stock' in assets) {
+            const item = await stockItem(
+              {
+                kind: assets.stock.kind,
+                name: assets.stock.name,
+                categoryId: entry.categoryId,
+                modelId: model.id,
+                manufacturerId: entry.manufacturerId,
+                totalQuantity: assets.stock.quantity,
+                minimumQuantity: assets.stock.minimum,
+              },
+              bought,
+            );
+            // Used since, as all stock is: two went out, one came back. A
+            // component goes into a desktop, an accessory to a person.
+            const [holderType, firstHolder, secondHolder]: [Holder, Row, Row] =
+              assets.stock.kind === 'component'
+                ? ['device', deskPc, expiredLaptop]
+                : ['person', liNa, zhangWei];
+            await issue(item, holderType, firstHolder, 1, bought + 5);
+            await issue(item, holderType, secondHolder, 1, bought + 30);
+            await takeBack(item, holderType, firstHolder, bought + 60);
+            continue;
+          }
+          for (const spec of assets.devices) {
+            const made = await device({
+              modelId: model.id,
+              serialNo: spec.serialNo,
+              name: spec.name,
+              locationId: spec.at ? places[spec.at].id : warehouse.id,
+              vendorId: reseller.id,
+              purchaseDate: daysFromNow(bought),
+              purchasePrice: assets.price,
+              warrantyEndDate: daysFromNow(
+                bought + Math.round(entry.warrantyMonths * 30.44),
+              ),
+              ...(spec.attributes ? { attributes: spec.attributes } : {}),
+            });
+            if (spec.at)
+              await assignTo(made.id, places[spec.at].id, bought + 2);
+          }
         }
         // The models and the maker the demo added have changed since too
         // (2026-10-16): Duracell's site was filled in, the webcam's

@@ -28,6 +28,7 @@ import { dataRoutes } from '../../server/routes/itam/data.js';
 import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { purchaseOrderRoutes } from '../../server/routes/itam/purchase-orders.js';
+import { stockRoutes } from '../../server/routes/itam/stock.js';
 import { workbenchRoutes } from '../../server/routes/itam/workbench.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
 
@@ -71,6 +72,7 @@ describe('CSV import / export and demo data', () => {
       deviceRoutes,
       entitlementRoutes,
       purchaseOrderRoutes,
+      stockRoutes,
       workbenchRoutes,
       dataRoutes,
     ])
@@ -481,13 +483,34 @@ describe('CSV import / export and demo data', () => {
     // Every model has its part code and a picture, the demo's own too
     // (2026-10-20).
     const models = (await (await get('master/models?pageSize=200')).json()) as {
-      data: { name: string; code: string | null; imageFileId: string | null }[];
+      data: {
+        id: string;
+        name: string;
+        code: string | null;
+        imageFileId: string | null;
+      }[];
     };
     expect(
       models.data
         .filter((model) => !model.code || !model.imageFileId)
         .map((model) => model.name),
     ).toEqual(['vSphere VM']);
+    // Every model has something on the books, devices or stock (2026-10-21).
+    const devicesNow = (await (await get('devices?pageSize=500')).json()) as {
+      data: { modelId: string }[];
+    };
+    const stockNow = (await (await get('stock?pageSize=500')).json()) as {
+      data: { modelId: string | null }[];
+    };
+    const used = new Set([
+      ...devicesNow.data.map((row) => row.modelId),
+      ...stockNow.data.map((row) => row.modelId),
+    ]);
+    expect(
+      models.data
+        .filter((model) => !used.has(model.id))
+        .map((model) => model.name),
+    ).toEqual([]);
     // A photo carries the credit its license asks for.
     const credits = (await (
       await get('master/models?pageSize=200')
@@ -759,8 +782,8 @@ describe('CSV import / export and demo data', () => {
       'subscription',
     ]);
 
-    // More than devices (2026-10-16): six accessories, five consumables and
-    // four components, three perpetual licences and seven subscriptions.
+    // More than devices (2026-10-16): nine accessories, five consumables and
+    // five components, three perpetual licences and seven subscriptions.
     const kindsOfStock = await db
       .selectFrom('stockItems')
       .select(['id', 'kind', 'name', 'totalQuantity', 'usedQuantity'])
@@ -776,10 +799,11 @@ describe('CSV import / export and demo data', () => {
         (counts, value) => ({ ...counts, [value]: (counts[value] ?? 0) + 1 }),
         {},
       );
+    // With the catalogue's three accessories and a component (2026-10-21).
     expect(countBy(kindsOfStock.map((row) => row.kind))).toEqual({
-      accessory: 6,
+      accessory: 9,
       consumable: 5,
-      component: 4,
+      component: 5,
     });
     const licences = await db
       .selectFrom('entitlements')

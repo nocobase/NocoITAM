@@ -47,6 +47,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   model with no such photo keeps a drawing rather than another
   generation's. Every demo model has
   its manufacturer part code and a picture; only `vSphere VM` has no code.
+- Every model and every category without children has assets behind it in
+  the demo (2026-10-21): devices, or a stock item for an accessory,
+  consumable or component model, so no catalogue entry stands empty. The
+  catalogue's own models get theirs from `CATALOGUE_ASSETS` in `demo.ts`
+  (spares in the warehouse, shared machines placed at a location, stock
+  issued and returned over the weeks after), and the demo test checks no
+  model is left without.
 - Demo data is generated through the services, never by raw inserts, and
   every created id is tracked in `demoRecords`; `demo.clear()` deletes only
   what is tracked. Anything the generator creates must be deletable in the
