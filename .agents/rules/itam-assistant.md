@@ -561,6 +561,15 @@ document-text`, which reads only a file uploaded within the hour and
   (AI 建议 in its history). Until then (2026-10-06, as AI 补充) it asked
   Asset Steward in the chat for an `update_master_record` plan, which the
   catalog skill and the tool still support.
+- A manufacturer is looked up on the web too (2026-10-21, the `manufacturer`
+  reading: name, official site, support site, business support phone and
+  mailbox, only when a page states them). `ManufacturerCaptureDialog` is
+  its one form, opened three ways: 创建制造商 beside an AI 整理 that named a
+  maker the books lack (looked up as it opens), 创建制造商 on the list
+  (AI 整理 / 表单录入), and 完善 on a maker's page (`context.refine`, 修改
+  where it differs, saved as an update). What a reading asks for when it
+  fills nothing is its reply, not an error (`CaptureFailure`, every AI
+  整理).
 - `ai.llmServices` in `config.yml` (typed by `server/config/ai.ts`, this
   application's own section since template 1.0.0-beta.64) is read **once**:
   at a start where the Agents plugin has no model service of that name, it

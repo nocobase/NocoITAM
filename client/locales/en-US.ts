@@ -1162,6 +1162,9 @@ const messages = {
   capture: { adjustPlaceholder: 'Tell the AI what to change' },
   // AI lookup on a model's or software product's page.
   manufacturerCapture: {
+    description:
+      'Name the maker; AI looks up its site and support, check before saving',
+    placeholder: 'The maker, e.g. Dell or Anthropic',
     searching: 'Looking up {{name}} on the web: site and support…',
     reading: 'Reading what is known about {{name}}…',
   },

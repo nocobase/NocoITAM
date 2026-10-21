@@ -8,6 +8,7 @@ import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { EmptyState } from '@/components/itam/empty-state';
 import { CategoryCreateDialog } from '@/components/itam/category-create-dialog';
+import { ManufacturerCaptureDialog } from '@/components/itam/manufacturer-capture-dialog';
 import { MasterCreateDialog } from '@/components/itam/master-create-dialog';
 import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
 import { parseTemplate } from '@/lib/itam/field-template';
@@ -489,6 +490,9 @@ export function MasterActions({
       {collection.name === 'categories' ? (
         <RefineCategoryAction record={record} />
       ) : null}
+      {collection.name === 'manufacturers' ? (
+        <RefineManufacturerAction record={record} />
+      ) : null}
       {collection.tree ? (
         <NewChildAction collection={collection} record={record} />
       ) : null}
@@ -518,6 +522,36 @@ function RefineCategoryAction({
         {t('categories.refine')}
       </AiShortcut>
       <CategoryCreateDialog
+        open={open}
+        onOpenChange={setOpen}
+        record={record}
+        onCreated={() => setOpen(false)}
+      />
+    </>
+  );
+}
+
+/**
+ * 完善 on a manufacturer's page (2026-10-21): its site and support looked
+ * up on the web and checked against what it holds, marked 修改 where they
+ * differ. For whoever may change the maker, while a model is there.
+ */
+function RefineManufacturerAction({
+  record,
+}: {
+  readonly record: ItamRecord;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  const ai = useItamAi();
+  const permissions = useCollectionPermissions('manufacturers', ['update']);
+  const [open, setOpen] = useState(false);
+  if (!ai.available || !permissions.update) return null;
+  return (
+    <>
+      <AiShortcut onClick={() => setOpen(true)}>
+        {t('masterEnrich.action')}
+      </AiShortcut>
+      <ManufacturerCaptureDialog
         open={open}
         onOpenChange={setOpen}
         record={record}

@@ -1133,6 +1133,8 @@ const zhCN: AppResource = {
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
   // 完善 on a model's or software product's page, as a category's.
   manufacturerCapture: {
+    description: '写上制造商名称，AI 联网补全官网和支持信息，核对后保存',
+    placeholder: '制造商名称，例如：Dell、Anthropic',
     searching: '正在联网查找「{{name}}」的官网和支持信息…',
     reading: '正在整理「{{name}}」的信息…',
   },

@@ -1,4 +1,5 @@
 import { CategoryCreateDialog } from '@/components/itam/category-create-dialog';
+import { ManufacturerCaptureDialog } from '@/components/itam/manufacturer-capture-dialog';
 import { MasterCreateDialog } from '@/components/itam/master-create-dialog';
 import { masterDataPath, type ItamRecord } from '@/lib/itam/api';
 import { isMasterCaptureCollection } from '@/lib/itam/master-capture';
@@ -229,22 +230,28 @@ function buildDomain(collection: MasterDataCollection): DomainConfig {
           function CreateWithCapture(props) {
             return <MasterCreateDialog collection={name} {...props} />;
           })(collection.name)
-      : collection.name === 'categories'
-        ? // A category too, with its kind, rules, defaults and fields
-          // (2026-10-20); the parent still fills 资产类型.
-          function CreateCategory(props) {
-            return (
-              <CategoryCreateDialog
-                {...props}
-                derive={({ key, value, record }) =>
-                  key === 'parentId' && value && record?.appliesTo
-                    ? { appliesTo: record.appliesTo }
-                    : undefined
-                }
-              />
-            );
+      : collection.name === 'manufacturers'
+        ? // A maker, looked up on the web for its site and support
+          // (2026-10-21).
+          function CreateManufacturer(props) {
+            return <ManufacturerCaptureDialog {...props} />;
           }
-        : undefined,
+        : collection.name === 'categories'
+          ? // A category too, with its kind, rules, defaults and fields
+            // (2026-10-20); the parent still fills 资产类型.
+            function CreateCategory(props) {
+              return (
+                <CategoryCreateDialog
+                  {...props}
+                  derive={({ key, value, record }) =>
+                    key === 'parentId' && value && record?.appliesTo
+                      ? { appliesTo: record.appliesTo }
+                      : undefined
+                  }
+                />
+              );
+            }
+          : undefined,
     Aside: collection.name === 'categories' ? CategoryTemplate : undefined,
   };
 }
