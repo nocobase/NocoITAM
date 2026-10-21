@@ -258,11 +258,12 @@
   @apply border border-border bg-transparent text-muted-foreground;
 }
 
-/* An asset type (设备, 配件, 耗材, 组件, 授权) is a solid dark tag
-   (2026-10-16): the one tag drawn this way, so it stands apart from both a
-   status's light fill and a document kind's outline. */
+/* An asset type (设备, 配件, 耗材, 组件, 授权) is a solid tag in the
+   brand colour (2026-10-21; dark until then): the one tag drawn this way,
+   so it stands apart from both a status's light fill and a document kind's
+   outline. */
 [data-slot='badge'][data-tag='kind'][data-kind='asset'] {
-  @apply border-transparent bg-foreground text-background;
+  @apply border-transparent bg-primary text-primary-foreground;
 }
 
 /* A kind tag's icon is the tag's own colour, wherever the tag sits
