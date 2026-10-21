@@ -410,7 +410,9 @@ function TriagePanel({
     }
   };
   return (
-    <div className='space-y-1.5 text-sm'>
+    // Under the fault's own field, so the room above it is its own: as much
+    // as a disposal's 诊断 has between its fields (2026-10-20).
+    <div className='space-y-1.5 pt-2.5 text-sm'>
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
         <AiShortcut disabled={!ready || busy} onClick={() => void ask()}>
           {/* 诊断 (2026-10-20; it was 看看), and once answered, again — for
