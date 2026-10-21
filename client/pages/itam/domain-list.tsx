@@ -42,7 +42,7 @@ import {
 } from '@/lib/itam/api';
 import type { DomainConfig } from '@/lib/itam/domain';
 import type { FieldDefinition } from '@/lib/itam/fields';
-import { errorMessage, text, titlePrefixFor } from '@/lib/itam/format';
+import { errorMessage, text } from '@/lib/itam/format';
 import { masterDataByName } from '@/lib/itam/master-data';
 import {
   useCollectionPermissions,
@@ -207,10 +207,7 @@ function DomainList({
     const value = prefixField ? row[prefixField.key] : undefined;
     if (!prefixField?.reference || value === null || value === undefined)
       return '';
-    return titlePrefixFor(
-      names[prefixField.reference.collection]?.get(text(value)) ?? '',
-      row[domain.nameField],
-    );
+    return names[prefixField.reference.collection]?.get(text(value)) ?? '';
   };
 
   const filterFields = (domain.filterFields ?? []).map(

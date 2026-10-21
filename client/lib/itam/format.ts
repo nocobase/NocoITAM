@@ -135,9 +135,10 @@ export function daysOverdue(date: unknown): number {
 }
 
 /**
- * The maker in front of a record's name ("Apple / MacBook Air"), unless the
- * name already starts with it ("Microsoft 365", not "Microsoft / Microsoft
- * 365"; 2026-10-21).
+ * The maker to say before a record's name in a sentence ("Apple MacBook
+ * Air"), unless the name already starts with it ("Microsoft 365", not
+ * "Microsoft Microsoft 365"; 2026-10-21). A list and a title keep
+ * "maker / name" whatever the name says.
  */
 export function titlePrefixFor(prefix: string, name: unknown): string {
   const maker = prefix.trim().toLowerCase();
