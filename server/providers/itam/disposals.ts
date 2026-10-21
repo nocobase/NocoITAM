@@ -63,6 +63,13 @@ export const DISPOSAL_METHODS = [
   'lossWriteOff',
   'other',
 ] as const;
+/**
+ * The methods a disposal may name no recipient for (2026-10-20): a lost
+ * device goes to nobody, and 其他 may not either. The form's
+ * `RECIPIENT_OPTIONAL` (`client/lib/itam/operations.ts`) must agree.
+ */
+export const RECIPIENT_OPTIONAL: readonly (typeof DISPOSAL_METHODS)[number][] =
+  ['lossWriteOff', 'other'];
 export const DISPOSAL_REASONS = [
   'endOfLife',
   'damaged',
@@ -584,8 +591,10 @@ export function createDisposalService(dependencies: {
       const { deviceIds, ...fields } = input;
       assertInputFields(fields, conditions.fieldAccess?.input ?? '*');
       // Where the devices go is stated with the request, draft or not
-      // (2026-10-16), rather than first asked at execution.
+      // (2026-10-16), rather than first asked at execution — unless nobody
+      // receives them (2026-10-20): a lost device, or 其他.
       if (
+        !RECIPIENT_OPTIONAL.includes(input.method) &&
         !input.recipientVendorId &&
         !(typeof input.recipientName === 'string' && input.recipientName.trim())
       )

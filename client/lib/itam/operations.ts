@@ -337,6 +337,13 @@ export const DISPOSAL_METHODS = [
   'lossWriteOff',
   'other',
 ] as const;
+
+/**
+ * The methods a disposal may name no recipient for (2026-10-20): a lost
+ * device goes to nobody, and 其他 may not either. The service's
+ * `RECIPIENT_OPTIONAL` must agree.
+ */
+export const RECIPIENT_OPTIONAL: readonly string[] = ['lossWriteOff', 'other'];
 export const DISPOSAL_REASONS = [
   'endOfLife',
   'damaged',
@@ -530,8 +537,15 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
     // Or a name typed in for anyone who is not a vendor on the books: one
     // row, one answer, editable either way.
     alternateField: 'recipientName',
-    // Stated with the request (2026-10-16): a vendor or a typed name.
-    required: true,
+    // Stated with the request (2026-10-16): a vendor or a typed name —
+    // except where nobody receives them (2026-10-20): a lost device has no
+    // recipient, and 其他 may have none.
+    requiredWhen: (values) =>
+      !(
+        typeof values.method === 'string' &&
+        RECIPIENT_OPTIONAL.includes(values.method)
+      ),
+    visibleWhen: (values) => values.method !== 'lossWriteOff',
     // The choice and its select want a row of their own (2026-10-20).
     wide: true,
     group: 'groups.execution',

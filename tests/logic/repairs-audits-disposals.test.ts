@@ -367,6 +367,15 @@ describe('repairs, audits and disposals', () => {
       deviceIds: [device.id],
     });
     expect(unexplained.status).toBe(400);
+    // A lost device goes to nobody: written off, it names no recipient
+    // (2026-10-20).
+    const writtenOff = await post('disposals', {
+      method: 'lossWriteOff',
+      reason: 'lost',
+      description: 'Lost on a business trip',
+      deviceIds: [device.id],
+    });
+    expect(writtenOff.status).toBe(201);
   });
 
   it('lists the disposals a device is on, newest first, for its page', async () => {

@@ -10,7 +10,8 @@ import { ReviewMark } from '@/components/itam/review-mark';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { MultiReferenceInput } from '@/components/itam/multi-reference';
 import { Label } from '@/components/ui/label';
-import { useApi, type ItamRecord } from '@/lib/itam/api';
+import { useApi, useItamList, type ItamRecord } from '@/lib/itam/api';
+import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { text, todayIso } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
 import { useCurrentUserId } from '@/lib/itam/permissions';
@@ -66,6 +67,29 @@ export function DisposalCreateDialog({
   // Needed to submit right away, not to save a draft.
   const [approverId, setApproverId] = useState<string | null>(null);
   const currentUserId = useCurrentUserId();
+  // 返还租赁方 goes back to whoever lent them (2026-10-20): the devices'
+  // lender, when they share one, fills an empty recipient once.
+  const returning = values.method === 'returnToLessor';
+  const lent = useItamList<ItamRecord>(
+    DEVICES_PATH,
+    { ids: deviceIds, pageSize: Math.max(deviceIds.length, 1) },
+    { enabled: returning && deviceIds.length > 0 },
+  );
+  const lenders = new Set(
+    (lent.data?.data ?? []).map((row) => text(row.lenderVendorId)),
+  );
+  const lender = lenders.size === 1 ? [...lenders][0] || undefined : undefined;
+  const [lenderFilled, setLenderFilled] = useState(false);
+  if (
+    returning &&
+    lender &&
+    !lenderFilled &&
+    !values.recipientVendorId &&
+    !text(values.recipientName).trim()
+  ) {
+    setLenderFilled(true);
+    setValues((current) => ({ ...current, recipientVendorId: lender }));
+  }
   // Whoever is filing it is its 负责人 until they name someone else. The
   // signed-in id arrives after the first render, so it is read here rather
   // than stored: untouched means the filer, and clearing the field means
@@ -78,7 +102,16 @@ export function DisposalCreateDialog({
         await api.request<{ data: ItamRecord }>({
           path: DISPOSALS_PATH,
           method: 'POST',
-          json: { ...values, ownerId: valueOf('ownerId'), deviceIds },
+          json: {
+            ...values,
+            // A lost device goes to nobody (2026-10-20): a recipient typed
+            // before the method changed is not sent.
+            ...(values.method === 'lossWriteOff'
+              ? { recipientVendorId: null, recipientName: null }
+              : {}),
+            ownerId: valueOf('ownerId'),
+            deviceIds,
+          },
         })
       ).data;
       if (submit)
