@@ -497,9 +497,11 @@ function AdviceMark({
       >
         <Sparkles className='size-4' aria-hidden />
       </TooltipTrigger>
-      <TooltipContent className='max-w-xs'>
-        <p className='font-medium'>{text}</p>
-        {advice.reason ? <p>{advice.reason}</p> : null}
+      {/* The suggestion, then why, one under the other: the primitive
+          lays its children out in a row. */}
+      <TooltipContent className='max-w-xs flex-col items-start gap-1'>
+        <span className='font-medium'>{text}</span>
+        {advice.reason ? <span>{advice.reason}</span> : null}
       </TooltipContent>
     </Tooltip>
   );
