@@ -52,3 +52,16 @@ it('keeps the raw parameters folded until asked for', () => {
   fireEvent.click(screen.getByRole('button', { name: 'ai.plans.hideParams' }));
   expect(screen.queryByText(/deviceId/)).toBeNull();
 });
+
+// Inside MDM 核对's follow-up (2026-10-21): the steps alone, no parameters.
+it('offers no parameters inside a follow-up', () => {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PlanCard plan={plan} bare />
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText('Assign SG-LT-054 to Sun Qiang')).toBeTruthy();
+  expect(
+    screen.queryByRole('button', { name: 'ai.plans.showParams' }),
+  ).toBeNull();
+});

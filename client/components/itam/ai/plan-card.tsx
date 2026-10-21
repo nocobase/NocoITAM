@@ -126,17 +126,20 @@ export function PlanCard({
   const pending = plan.status === 'pending';
   const steps = plan.steps;
   const hasParams = steps.some((step) => step.check?.fields.length);
-  const toggleParams = hasParams ? (
-    <Button
-      size='sm'
-      variant='link'
-      className='mr-auto h-auto px-0 text-xs text-muted-foreground'
-      aria-expanded={showParams}
-      onClick={() => setShowParams((shown) => !shown)}
-    >
-      {t(showParams ? 'ai.plans.hideParams' : 'ai.plans.showParams')}
-    </Button>
-  ) : null;
+  // Not inside MDM 核对's follow-up (2026-10-21): each step's line says
+  // enough there.
+  const toggleParams =
+    hasParams && !bare ? (
+      <Button
+        size='sm'
+        variant='link'
+        className='mr-auto h-auto px-0 text-xs text-muted-foreground'
+        aria-expanded={showParams}
+        onClick={() => setShowParams((shown) => !shown)}
+      >
+        {t(showParams ? 'ai.plans.hideParams' : 'ai.plans.showParams')}
+      </Button>
+    ) : null;
   return (
     <div
       className={
@@ -213,7 +216,7 @@ export function PlanCard({
           {toggleParams}
           <PlanDecision plan={plan} skipped={skipped} />
         </div>
-      ) : plan.decidedAt || hasParams ? (
+      ) : plan.decidedAt || toggleParams ? (
         <div className='mt-2 flex items-center justify-end gap-2 text-xs text-muted-foreground'>
           {toggleParams}
           {plan.decidedAt ? formatDate(plan.decidedAt, true) : null}
