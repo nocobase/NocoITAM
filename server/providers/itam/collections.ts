@@ -163,7 +163,14 @@ export const MASTER_DATA_COLLECTIONS: readonly ItamCollectionDefinition[] = [
     searchByReference: [
       { field: 'manufacturerId', collection: 'manufacturers', column: 'name' },
     ],
-    defaultSort: 'name',
+    // Listed "maker / name" as models are (2026-10-21), so by maker first.
+    defaultSort: 'manufacturerName',
+    sortByReference: {
+      manufacturerName: {
+        collection: 'manufacturers',
+        field: 'manufacturerId',
+      },
+    },
   },
   {
     name: 'locations',

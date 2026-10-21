@@ -449,6 +449,9 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
     icon: Package,
     i18n: 'softwareProducts',
     nameField: 'name',
+    // "Microsoft / Office LTSC 2024", as a model reads (2026-10-21).
+    titlePrefixField: 'manufacturerId',
+    defaultSort: 'manufacturerName',
     countColumns: [{ key: 'entitlements', label: 'entitlements.object' }],
     extraTabs: [{ key: 'entitlements', label: 'entitlements.object' }],
     fields: [

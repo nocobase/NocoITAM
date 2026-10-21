@@ -133,3 +133,16 @@ export function daysOverdue(date: unknown): number {
   const to = Date.UTC(y2 ?? 1970, (m2 ?? 1) - 1, d2 ?? 1);
   return Math.round((to - from) / 86_400_000);
 }
+
+/**
+ * The maker in front of a record's name ("Apple / MacBook Air"), unless the
+ * name already starts with it ("Microsoft 365", not "Microsoft / Microsoft
+ * 365"; 2026-10-21).
+ */
+export function titlePrefixFor(prefix: string, name: unknown): string {
+  const maker = prefix.trim().toLowerCase();
+  const named = text(name).trim().toLowerCase();
+  return maker && (named === maker || named.startsWith(`${maker} `))
+    ? ''
+    : prefix;
+}

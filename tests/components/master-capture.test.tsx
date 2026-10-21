@@ -314,3 +314,31 @@ it('refines a model on the books in its own form', async () => {
     },
   ]);
 });
+
+// A software product has no category fields to wait for: 完善 asks at once
+// (it waited for them forever until 2026-10-21). A name that starts with
+// its maker is not said twice.
+it('refines a software product as it opens', async () => {
+  await act(async () => {
+    render(
+      <MasterCreateDialog
+        collection='softwareProducts'
+        open
+        record={{
+          id: 'sp1',
+          name: 'Dell Command Update',
+          manufacturerId: 'mfr-dell',
+          categoryId: 'cat-saas',
+        }}
+        onOpenChange={vi.fn()}
+        onCreated={vi.fn()}
+      />,
+    );
+  });
+  expect(state.asked).toHaveLength(1);
+  expect(state.asked[0]).toMatchObject({
+    task: 'softwareProduct',
+    material: 'Dell Command Update',
+    context: { refine: true },
+  });
+});

@@ -56,7 +56,12 @@ import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
 import { recordKindOf } from '@/lib/itam/record-kind';
 import type { DomainConfig } from '@/lib/itam/domain';
 import { resolveFormField, type FieldDefinition } from '@/lib/itam/fields';
-import { errorMessage, formatDate, text } from '@/lib/itam/format';
+import {
+  errorMessage,
+  formatDate,
+  text,
+  titlePrefixFor,
+} from '@/lib/itam/format';
 import { masterDataByName } from '@/lib/itam/master-data';
 import {
   useCollectionPermissions,
@@ -266,7 +271,10 @@ export function DomainDetailPage({
   );
   const titlePrefix =
     prefixField?.reference && data[prefixField.key]
-      ? (nameOf(prefixField.reference.collection, data[prefixField.key]) ?? '')
+      ? titlePrefixFor(
+          nameOf(prefixField.reference.collection, data[prefixField.key]) ?? '',
+          data[domain.nameField],
+        )
       : '';
   const editable =
     Boolean(permissions.update) &&

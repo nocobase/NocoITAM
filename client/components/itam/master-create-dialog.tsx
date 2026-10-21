@@ -27,7 +27,7 @@ import {
 } from '@/lib/itam/api';
 import { templateOf } from '@/lib/itam/field-template';
 import type { FieldDefinition } from '@/lib/itam/fields';
-import { formatDate, text } from '@/lib/itam/format';
+import { formatDate, text, titlePrefixFor } from '@/lib/itam/format';
 import {
   applyMasterCapture,
   attributeKey,
@@ -216,12 +216,20 @@ function MasterCreateForm({
     capture.ready &&
     // The maker's names loaded, though a maker since deleted has none.
     (!record?.manufacturerId || names.manufacturers !== undefined) &&
-    (!record?.categoryId || category.isSuccess);
+    // Only a model carries its category's extended fields; a software
+    // product has none to wait for.
+    (collection !== 'models' || !record?.categoryId || category.isSuccess);
   useEffect(() => {
     if (!refineReady || askedRef.current || !record) return;
     askedRef.current = true;
     capture.organise(
-      [maker, text(record.name), text(record.code)].filter(Boolean).join(' '),
+      [
+        titlePrefixFor(maker ?? '', record.name),
+        text(record.name),
+        text(record.code),
+      ]
+        .filter(Boolean)
+        .join(' '),
     );
   });
   // What 完善 changed, each with what it was, against the record.
@@ -281,7 +289,12 @@ function MasterCreateForm({
         title={
           record
             ? t('masterEnrich.title', {
-                name: [maker, text(record.name)].filter(Boolean).join(' '),
+                name: [
+                  titlePrefixFor(maker ?? '', record.name),
+                  text(record.name),
+                ]
+                  .filter(Boolean)
+                  .join(' '),
               })
             : t(`${meta.i18n}.new`)
         }
