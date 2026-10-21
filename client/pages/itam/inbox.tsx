@@ -198,12 +198,19 @@ function ReviewList({
   if (!items.length) return null;
   // A review the reader redid is replaced, not handled elsewhere.
   const redone = new Set(items.map((run) => run.revisesId).filter(Boolean));
+  // The handled ones follow the waiting ones under 已处理 (2026-10-21).
+  const firstHandled = items.find((run) => !isOpen(run))?.id;
   return (
     <ul className='flex flex-col gap-0.5' aria-label={t('agentInbox.category')}>
       {items.map((run) => {
         const open = isOpen(run);
         return (
           <li key={run.id}>
+            {run.id === firstHandled ? (
+              <h3 className='px-3 pt-3 pb-1 text-xs font-medium text-muted-foreground'>
+                {t('agentInbox.handled')}
+              </h3>
+            ) : null}
             <button
               type='button'
               data-decision-item=''
