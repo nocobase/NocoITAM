@@ -3440,6 +3440,7 @@ const zhCN: AppResource = {
   agentInbox: {
     category: 'AI 建议',
     waiting: '待处理',
+    nothingWaiting: '没有待处理的 AI 建议。',
     handled: '已处理',
     nothingPicked: '选一条 AI 建议查看。',
   },

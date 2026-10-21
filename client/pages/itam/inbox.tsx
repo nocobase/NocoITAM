@@ -1,5 +1,4 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { Check } from 'lucide-react';
 import { lazy, useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -15,6 +14,7 @@ import {
 } from '@/components/itam/inbox-notices';
 import { noticePath } from '@/lib/itam/inbox-notices';
 import { PagePane, RecordPane } from '@/components/itam/record-drawer';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInbox, type AgentRun } from '@/lib/itam/agents';
 import { relativeTime } from '@/lib/itam/format';
@@ -198,61 +198,88 @@ function ReviewList({
   if (!items.length) return null;
   // A review the reader redid is replaced, not handled elsewhere.
   const redone = new Set(items.map((run) => run.revisesId).filter(Boolean));
-  // The handled ones follow the waiting ones under 已处理 (2026-10-21).
-  const firstHandled = items.find((run) => !isOpen(run))?.id;
-  return (
-    <ul className='flex flex-col gap-0.5' aria-label={t('agentInbox.category')}>
-      {items.map((run) => {
-        const open = isOpen(run);
-        return (
-          <li key={run.id}>
-            {run.id === firstHandled ? (
-              <h3 className='px-3 pt-3 pb-1 text-xs font-medium text-muted-foreground'>
-                {t('agentInbox.handled')}
-              </h3>
-            ) : null}
-            <button
-              type='button'
-              data-decision-item=''
-              aria-current={run.id === selectedId ? 'true' : undefined}
-              onClick={() => onSelect(run.id)}
-              className={cn(
-                'flex w-full flex-col gap-0.5 rounded-lg border-l-2 px-3 py-2 text-left text-sm transition-colors',
-                run.id === selectedId
-                  ? 'border-l-primary bg-accent'
-                  : open
-                    ? 'border-l-(--status-warning) hover:bg-hover'
-                    : 'border-l-transparent hover:bg-hover',
-                !open && 'opacity-55',
+  // As NocoCRM's inbox (2026-10-21): what waits, or a line saying nothing
+  // does, then the handled ones under their heading and a rule, each led by
+  // what became of it.
+  const waiting = items.filter(isOpen);
+  const handled = items.filter((run) => !isOpen(run));
+  const row = (run: AgentRun) => {
+    const open = isOpen(run);
+    const summary = run.result?.summary;
+    return (
+      <li key={run.id}>
+        <button
+          type='button'
+          data-decision-item=''
+          aria-current={run.id === selectedId ? 'true' : undefined}
+          onClick={() => onSelect(run.id)}
+          className={cn(
+            'flex w-full flex-col gap-0.5 rounded-lg border-l-2 px-3 py-2 text-left text-sm transition-colors',
+            run.id === selectedId
+              ? 'border-l-primary bg-accent'
+              : open
+                ? 'border-l-(--status-warning) hover:bg-hover'
+                : 'border-l-transparent hover:bg-hover',
+            !open && 'opacity-55',
+          )}
+        >
+          <span className='flex items-center gap-2 text-xs text-muted-foreground'>
+            {run.agent === 'deviceSync'
+              ? t('deviceSyncRun.title')
+              : t('review.title')}
+            <span className='ml-auto tabular-nums'>
+              {relativeTime(
+                run.updatedAt,
+                i18n.language,
+                t('comments.justNow'),
               )}
-            >
-              <span className='flex items-center gap-2 text-xs text-muted-foreground'>
-                {open ? null : (
-                  <Check
-                    className='size-3.5 text-(--status-success)'
-                    aria-hidden
-                  />
-                )}
-                {run.agent === 'deviceSync'
-                  ? t('deviceSyncRun.title')
-                  : t('review.title')}
-                <span className='ml-auto tabular-nums'>
-                  {relativeTime(
-                    run.updatedAt,
-                    i18n.language,
-                    t('comments.justNow'),
-                  )}
-                </span>
-              </span>
-              <span className='truncate font-medium'>{titleOf(run, t)}</span>
-              <span className='truncate text-xs text-muted-foreground'>
+            </span>
+          </span>
+          <span className='truncate font-medium'>{titleOf(run, t)}</span>
+          {open ? (
+            <span className='truncate text-xs text-muted-foreground'>
+              {lineOf(run, t)}
+            </span>
+          ) : (
+            <span className='truncate text-xs text-muted-foreground'>
+              <Badge
+                variant='secondary'
+                className={
+                  run.status === 'accepted'
+                    ? 'bg-success text-success-foreground'
+                    : undefined
+                }
+              >
                 {redone.has(run.id) ? t('review.redone') : lineOf(run, t)}
-              </span>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
+              </Badge>
+              {summary ? ` ${summary}` : null}
+            </span>
+          )}
+        </button>
+      </li>
+    );
+  };
+  return (
+    <section
+      className='flex flex-col gap-1'
+      aria-label={t('agentInbox.category')}
+    >
+      {waiting.length ? (
+        <ul className='flex flex-col gap-0.5'>{waiting.map(row)}</ul>
+      ) : (
+        <p className='px-3 py-2 text-sm text-muted-foreground'>
+          {t('agentInbox.nothingWaiting')}
+        </p>
+      )}
+      {handled.length ? (
+        <div className='flex flex-col gap-1 pt-4'>
+          <h3 className='border-b border-border px-3 pb-1.5 text-xs font-medium text-muted-foreground'>
+            {t('agentInbox.handled')}
+          </h3>
+          <ul className='flex flex-col gap-0.5'>{handled.map(row)}</ul>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

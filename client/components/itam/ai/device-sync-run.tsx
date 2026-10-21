@@ -210,18 +210,22 @@ function FollowUpReviewCard({
       onOpenChange={setOpen}
       className='rounded-lg border bg-card'
     >
-      <div className='flex flex-wrap items-center gap-2 px-4 py-2.5'>
-        <CollapsibleTrigger className='group flex min-w-0 flex-1 items-center gap-1.5 text-left text-sm'>
+      {/* Beside the inbox's list the pane is narrow (2026-10-21): the
+          buttons drop below the title rather than squeeze it into a column. */}
+      <div className='flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-2.5'>
+        <CollapsibleTrigger className='group flex min-w-64 flex-1 items-center gap-1.5 text-left text-sm'>
           <ChevronRight
             className='size-4 shrink-0 text-muted-foreground transition-transform group-data-[panel-open]:rotate-90'
             aria-hidden
           />
           <span className='font-medium'>{followUpTitle(run, t)}</span>
           {facts.length ? (
-            <span className='text-muted-foreground'>· {facts.join(' · ')}</span>
+            <span className='whitespace-nowrap text-muted-foreground'>
+              · {facts.join(' · ')}
+            </span>
           ) : null}
         </CollapsibleTrigger>
-        <div className='flex items-center gap-2'>
+        <div className='ml-auto flex items-center gap-2'>
           {pendingPlan ? (
             <PlanDecision plan={pendingPlan} skipped={skipped} />
           ) : !decided ? (
