@@ -19,6 +19,8 @@ interface Session {
   readonly mode: Mode;
   readonly phase: 'reading' | 'done' | 'failed';
   readonly message?: string;
+  /** The model answered but filled nothing: what it said, not an error. */
+  readonly answered?: boolean;
 }
 
 export interface MasterCaptureState {
@@ -31,6 +33,8 @@ export interface MasterCaptureState {
   readonly busy: boolean;
   readonly mode: Mode | undefined;
   readonly failure: string | undefined;
+  /** `failure` is the model asking for more, not something going wrong. */
+  readonly failureAnswered: boolean;
   readonly turns: readonly Turn[];
   /** What the assistant said after organising, before any adjustment. */
   readonly summary: string | undefined;
@@ -140,6 +144,7 @@ export function useMasterCapture({
             mode,
             phase: 'failed',
             message: answer.said || t('masterCapture.nothing'),
+            answered: true,
           });
           return;
         }
@@ -174,6 +179,7 @@ export function useMasterCapture({
     busy: session?.phase === 'reading',
     mode: session?.mode,
     failure: session?.phase === 'failed' ? session.message : undefined,
+    failureAnswered: session?.phase === 'failed' && session.answered === true,
     turns,
     summary,
     searched,
