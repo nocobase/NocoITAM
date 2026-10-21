@@ -15,7 +15,6 @@ import { z } from 'zod';
 
 import {
   DEVICE_STATUSES,
-  ASSIGNEE_TYPES,
   RESERVATION_TYPES,
   RETURN_TARGETS,
 } from '../../providers/itam/device-status.js';
@@ -44,48 +43,11 @@ import {
   type ItamContext,
 } from './http.js';
 import { ValidationError } from '../../providers/itam/errors.js';
+import { assignSchema, deviceSchema } from './device-schemas.js';
 
 /** `/api/itam/devices`: CRUD, statistics, and the lifecycle operations. */
 
-const optionalText = z.string().trim().max(512).nullable().optional();
-const optionalDate = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .nullable()
-  .optional();
-const optionalNumber = z.number().nullable().optional();
 const id = z.string().min(1).max(64);
-
-export const deviceSchema = z.object({
-  modelId: id,
-  locationId: id,
-  deviceNo: optionalText,
-  serialNo: optionalText,
-  name: optionalText,
-  ownership: z.enum(['owned', 'leased', 'borrowed', 'byod']).optional(),
-  status: z.literal('inStock').optional(),
-  lenderVendorId: id.nullable().optional(),
-  returnDueDate: optionalDate,
-  departmentId: id.nullable().optional(),
-  vendorId: id.nullable().optional(),
-  purchaseOrderId: id.nullable().optional(),
-  purchaseDate: optionalDate,
-  purchasePrice: optionalNumber,
-  currency: z.string().trim().max(8).nullable().optional(),
-  warrantyEndDate: optionalDate,
-  depreciationMethod: z.enum(['none', 'straightLine']).optional(),
-  usefulLifeMonths: z.number().int().min(0).nullable().optional(),
-  residualRate: z.number().min(0).max(1).nullable().optional(),
-  notes: z.string().max(20000).nullable().optional(),
-  attributes: z.record(z.string(), z.unknown()).nullable().optional(),
-  ownerId: id.optional(),
-});
-
-export const assignSchema = z.object({
-  targetType: z.enum(ASSIGNEE_TYPES),
-  targetId: id,
-  locationId: id.optional(),
-});
 
 const loanSchema = assignSchema.extend({
   expectedReturnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

@@ -21,7 +21,7 @@ import { seatsRequired } from '../../providers/itam/entitlements.js';
 import { ValidationError } from '../../providers/itam/errors.js';
 import { HOLDER_TYPES } from '../../providers/itam/stock.js';
 import { taskSchema } from './audits.js';
-import { assignSchema, deviceSchema } from './devices.js';
+import { assignSchema, deviceSchema } from './device-schemas.js';
 import { entitlementSchema } from './entitlements.js';
 import { CREATE_DEFAULTS, masterDataSchema } from './master-data-schemas.js';
 import { repairSchema } from './repairs.js';
