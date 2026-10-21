@@ -1038,7 +1038,7 @@ const zhCN: AppResource = {
     defaultKitName: '{{department}}默认配置',
     positionKitName: '{{department}} · {{position}}',
     setDefault: '设置本部门默认配置',
-    removeDefault: '改为沿用上级部门',
+    removeDefault: '沿用上级部门的配置',
     inheritConfirmTitle: '改为沿用上级部门的配置？',
     removeDefaultHint: '删除本部门的默认配置，改用上级部门的',
     inherits: '本部门没有自己的默认配置，沿用上级部门',

@@ -1054,7 +1054,7 @@ const messages = {
     defaultKitName: '{{department}} default kit',
     positionKitName: '{{department}} · {{position}}',
     setDefault: 'Set a default for this department',
-    removeDefault: 'Take the parent department’s',
+    removeDefault: 'Use the parent department’s kit',
     inheritConfirmTitle: 'Use the parent department’s kit instead?',
     removeDefaultHint:
       'Delete this department’s default kit and take its parent’s',
