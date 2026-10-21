@@ -17,6 +17,7 @@ const state = vi.hoisted(() => ({
   },
   requests: [] as { path: string; json?: unknown }[],
   created: [] as unknown[],
+  updated: [] as unknown[],
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -60,6 +61,7 @@ vi.mock('../../client/lib/itam/api.js', () => ({
         { id: 'cat-saas', name: 'SaaS', appliesTo: 'entitlement' },
       ],
     },
+    isSuccess: true,
   }),
   useItamRecord: () => ({ data: undefined }),
   useItamMutations: () => ({
@@ -72,14 +74,25 @@ vi.mock('../../client/lib/itam/api.js', () => ({
       isPending: false,
       error: undefined,
     },
+    update: {
+      mutateAsync: (input: unknown) => {
+        state.updated.push(input);
+        return Promise.resolve({ id: 'm9' });
+      },
+      reset: vi.fn(),
+      isPending: false,
+      error: undefined,
+    },
   }),
 }));
 vi.mock('../../client/lib/itam/references.js', () => ({
   referencePath: (collection: string) => `itam/master/${collection}`,
-  useReferenceNames: () => ({}),
+  useReferenceNames: () => ({
+    manufacturers: new Map([['mfr-dell', 'Dell']]),
+  }),
 }));
 vi.mock('../../client/lib/itam/permissions.js', () => ({
-  useCollectionPermissions: () => ({ create: true }),
+  useCollectionPermissions: () => ({ create: true, update: true }),
 }));
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useItamAi: () => ({ available: state.available }),
@@ -127,6 +140,7 @@ beforeEach(() => {
   };
   state.requests = [];
   state.created = [];
+  state.updated = [];
 });
 
 const dialog = (initial?: Record<string, unknown>) => (
@@ -243,4 +257,60 @@ it('says what the reading said when it filled nothing', async () => {
   });
   expect(state.requests).toHaveLength(0);
   expect(screen.getByText('Which maker is it?')).toBeVisible();
+});
+
+// 完善 (2026-10-21): the record's own form, read as it opens, marked 修改
+// where the reading differs, and saved over the record with the AI tag.
+it('refines a model on the books in its own form', async () => {
+  await act(async () => {
+    render(
+      <MasterCreateDialog
+        collection='models'
+        open
+        record={{
+          id: 'm9',
+          name: 'OptiPlex 7010',
+          manufacturerId: 'mfr-dell',
+          code: 'OLD',
+          warrantyMonths: 12,
+        }}
+        onOpenChange={vi.fn()}
+        onCreated={vi.fn()}
+      />,
+    );
+  });
+  // Asked once, as it opened: the record checked, not a blank form filled.
+  expect(state.asked).toHaveLength(1);
+  expect(state.asked[0]).toMatchObject({
+    task: 'model',
+    material: 'Dell OptiPlex 7010 OLD',
+    context: { refine: true, form: expect.objectContaining({ code: 'OLD' }) },
+  });
+  expect(
+    screen.getByText('masterEnrich.title:Dell OptiPlex 7010'),
+  ).toBeVisible();
+  expect(screen.queryByRole('tab')).toBeNull();
+  expect(screen.getByLabelText('form-code')).toHaveValue('OPT7010SFF');
+  // Name, code, category (empty before) and warranty differ from the
+  // record; each is marked.
+  expect(screen.getAllByText('fieldTemplate.changedTag')).toHaveLength(4);
+  // Itself is no duplicate; the other record of that name still shows.
+  expect(screen.queryByRole('link', { name: 'OptiPlex 7010' })).toBeNull();
+  expect(
+    screen.getByRole('link', { name: 'OptiPlex 7010 Tower' }),
+  ).toBeVisible();
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'actions.save' }));
+  });
+  expect(state.created).toHaveLength(0);
+  expect(state.updated).toEqual([
+    {
+      id: 'm9',
+      input: expect.objectContaining({
+        code: 'OPT7010SFF',
+        warrantyMonths: 36,
+        $origin: 'ai',
+      }),
+    },
+  ]);
 });

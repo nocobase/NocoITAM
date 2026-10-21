@@ -1,7 +1,14 @@
 import { resolveAppUrl } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { Globe, Sparkles } from 'lucide-react';
-import { Fragment, useMemo, useState, type ReactElement } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+} from 'react';
 
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import {
@@ -20,7 +27,7 @@ import {
 } from '@/lib/itam/api';
 import { templateOf } from '@/lib/itam/field-template';
 import type { FieldDefinition } from '@/lib/itam/fields';
-import { text } from '@/lib/itam/format';
+import { formatDate, text } from '@/lib/itam/format';
 import {
   applyMasterCapture,
   attributeKey,
@@ -48,6 +55,31 @@ export interface MasterCreateDialogProps {
   /** Tightens a field, e.g. a purchase line's model must be of its kind. */
   readonly narrow?: (field: FieldDefinition) => FieldDefinition;
   readonly onCreated: (record: ItamRecord) => void;
+  /**
+   * 完善 (2026-10-21): the record on the books, which the reading checks and
+   * completes in this same dialog, marked 修改 where it differs; saving
+   * updates it.
+   */
+  readonly record?: ItamRecord;
+}
+
+/** A record's extended fields, as the form holds them (`attributes.<key>`). */
+function attributeValues(
+  record: ItamRecord | undefined,
+): Record<string, unknown> {
+  let attributes: unknown = record?.attributes;
+  if (typeof attributes === 'string')
+    try {
+      attributes = JSON.parse(attributes);
+    } catch {
+      attributes = undefined;
+    }
+  if (!attributes || typeof attributes !== 'object') return {};
+  return Object.fromEntries(
+    Object.entries(attributes as Record<string, unknown>).map(
+      ([key, value]) => [attributeKey(key), value],
+    ),
+  );
 }
 
 /**
@@ -79,6 +111,7 @@ function MasterCreateForm({
   initial,
   narrow,
   onCreated,
+  record,
 }: MasterCreateDialogProps): ReactElement {
   const { t } = useTranslation();
   const meta = masterDataByName(collection)!;
@@ -91,7 +124,9 @@ function MasterCreateForm({
     [meta, narrow],
   );
   const [values, setValues] = useState<Record<string, unknown>>(() =>
-    initialFormValues(fields, initial),
+    record
+      ? { ...initialFormValues(fields, record), ...attributeValues(record) }
+      : initialFormValues(fields, initial),
   );
   // A model fills its category's extended fields (2026-10-06), right after
   // its specification: they are the structured half of it, and a new device
@@ -166,8 +201,64 @@ function MasterCreateForm({
       setResult(next);
       setTab('form');
     },
+    refine: Boolean(record),
   });
-  const current = tab ?? (capture.available ? 'ai' : 'form');
+  // 完善 has no AI 整理 tab: it is the form, once the reading is in.
+  const current = record
+    ? 'form'
+    : (tab ?? (capture.available ? 'ai' : 'form'));
+  const maker = names.manufacturers?.get(text(record?.manufacturerId));
+  // 完善 asks once, as it opens, when the categories, the record's maker and
+  // its category's fields are there to send with it.
+  const askedRef = useRef(false);
+  const refineReady =
+    Boolean(record) &&
+    capture.ready &&
+    // The maker's names loaded, though a maker since deleted has none.
+    (!record?.manufacturerId || names.manufacturers !== undefined) &&
+    (!record?.categoryId || category.isSuccess);
+  useEffect(() => {
+    if (!refineReady || askedRef.current || !record) return;
+    askedRef.current = true;
+    capture.organise(
+      [maker, text(record.name), text(record.code)].filter(Boolean).join(' '),
+    );
+  });
+  // What 完善 changed, each with what it was, against the record.
+  const changes = useMemo(() => {
+    if (!record || !result) return undefined;
+    const held: Record<string, unknown> = {
+      ...record,
+      ...attributeValues(record),
+    };
+    const shown = (field: FieldDefinition, value: unknown): string => {
+      if (value === null || value === undefined || value === '') return '—';
+      if (field.key === 'manufacturerId')
+        return names.manufacturers?.get(text(value)) ?? text(value);
+      if (field.key === 'categoryId')
+        return names.categories?.get(text(value)) ?? text(value);
+      if (field.type === 'date') return formatDate(value);
+      return text(value);
+    };
+    const same = (a: unknown, b: unknown) =>
+      (a === null || a === undefined || a === '' ? '' : text(a)) ===
+      (b === null || b === undefined || b === '' ? '' : text(b));
+    return new Map(
+      formFields.flatMap((field) =>
+        same(held[field.key], values[field.key])
+          ? []
+          : [
+              [
+                field.key,
+                t('fieldTemplate.changedFrom', {
+                  before: shown(field, held[field.key]),
+                  reason: '',
+                }),
+              ] as const,
+            ],
+      ),
+    );
+  }, [record, result, formFields, values, names, t]);
   const [creatingManufacturer, setCreatingManufacturer] = useState(false);
   const mayCreateManufacturer = useCollectionPermissions('manufacturers', [
     'create',
@@ -176,6 +267,7 @@ function MasterCreateForm({
   const close = (next: boolean) => {
     if (!next) {
       mutations.create.reset();
+      mutations.update.reset();
       capture.release();
     }
     onOpenChange(next);
@@ -186,9 +278,16 @@ function MasterCreateForm({
       <RecordFormDialog
         open={open}
         onOpenChange={close}
-        title={t(`${meta.i18n}.new`)}
+        title={
+          record
+            ? t('masterEnrich.title', {
+                name: [maker, text(record.name)].filter(Boolean).join(' '),
+              })
+            : t(`${meta.i18n}.new`)
+        }
+        {...(record ? { recordId: text(record.id) } : {})}
         description={
-          current === 'ai'
+          current === 'ai' && !record
             ? t(`masterCapture.description.${collection}`)
             : undefined
         }
@@ -196,7 +295,11 @@ function MasterCreateForm({
         columns={2}
         prelude={
           result && current === 'form' ? (
-            <CapturePrelude collection={collection} result={result} />
+            <CapturePrelude
+              collection={collection}
+              result={result}
+              self={record ? text(record.id) : undefined}
+            />
           ) : undefined
         }
         // The category's fields stand apart from the model's own, under
@@ -220,8 +323,9 @@ function MasterCreateForm({
             });
         }}
         marks={marks}
+        {...(changes ? { changes } : {})}
         titleAside={
-          capture.available ? (
+          capture.available && !record ? (
             <Tabs
               value={current}
               onValueChange={(value) => setTab(value as 'ai' | 'form')}
@@ -242,7 +346,23 @@ function MasterCreateForm({
           ) : undefined
         }
         replacement={
-          current === 'ai' ? (
+          // 完善 waits for the reading before showing the form.
+          record && !result ? (
+            capture.failure ? (
+              <p className='text-sm text-destructive'>
+                <CollapsibleText text={capture.failure} chars={160} lines={3} />
+              </p>
+            ) : (
+              <p className='flex items-center gap-2 py-6 text-sm text-muted-foreground'>
+                <Spinner />
+                {t(
+                  capture.searches
+                    ? 'masterEnrich.searching'
+                    : 'masterEnrich.refining',
+                )}
+              </p>
+            )
+          ) : current === 'ai' ? (
             <MaterialPane
               collection={collection}
               capture={capture}
@@ -264,9 +384,26 @@ function MasterCreateForm({
             />
           ) : undefined
         }
-        submitting={mutations.create.isPending}
-        error={mutations.create.error}
+        submitting={mutations.create.isPending || mutations.update.isPending}
+        error={mutations.create.error ?? mutations.update.error}
         onSubmit={async (payload) => {
+          if (record) {
+            const saved = await mutations.update.mutateAsync({
+              id: text(record.id),
+              input: {
+                ...withAttributes(
+                  payload,
+                  shared.map((field) => field.key),
+                ),
+                // Checked by 完善: its history says so.
+                $origin: 'ai',
+              },
+            });
+            capture.release();
+            onCreated(saved);
+            onOpenChange(false);
+            return;
+          }
           const created = await mutations.create.mutateAsync({
             ...withAttributes(
               payload,
@@ -549,14 +686,18 @@ function CaptureNotes({
 function CapturePrelude({
   collection,
   result,
+  self,
 }: {
   readonly collection: MasterCaptureCollection;
   readonly result: MasterCapture;
+  /** 完善: the record itself, which is no duplicate of itself. */
+  readonly self?: string;
 }): ReactElement | null {
   const { t } = useTranslation();
   const route = masterDataByName(collection)!.route;
-  const similar = result.similar ?? [];
-  if (result.duplicates.length === 0 && similar.length === 0) return null;
+  const duplicates = result.duplicates.filter((row) => row.id !== self);
+  const similar = (result.similar ?? []).filter((row) => row.id !== self);
+  if (duplicates.length === 0 && similar.length === 0) return null;
   // The label and its records on one line, the records as links.
   const line = (
     label: string,
@@ -583,8 +724,8 @@ function CapturePrelude({
   // One box for the records the books may already hold.
   return (
     <div className='grid gap-1.5 rounded-md border border-warning bg-warning/20 px-3 py-2 text-sm'>
-      {result.duplicates.length > 0
-        ? line(t(`masterCapture.duplicates.${collection}`), result.duplicates)
+      {duplicates.length > 0
+        ? line(t(`masterCapture.duplicates.${collection}`), duplicates)
         : null}
       {similar.length > 0
         ? line(t(`masterCapture.similar.${collection}`), similar)

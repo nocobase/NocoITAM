@@ -1160,7 +1160,12 @@ const messages = {
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: 'Tell the AI what to change' },
   // AI lookup on a model's or software product's page.
-  masterEnrich: { action: 'Refine' },
+  masterEnrich: {
+    action: 'Refine',
+    title: 'Refine {{name}}',
+    refining: 'Checking this record, completing and correcting it…',
+    searching: 'Searching the web to check this record…',
+  },
   categoryCapture: {
     fieldsInvalid:
       'Some extended fields are incomplete; check them before saving.',
@@ -3071,12 +3076,12 @@ const messages = {
         reconsider: 'Think again',
       },
     },
+    descriptionLabel: 'Reason in words',
     devicesFixed:
       'Filed for this device alone; to dispose of several together, create the request from the disposals list',
     devices: 'Devices to dispose of',
     newDescription:
       'Fill in the disposal and pick its devices; save a draft or submit for approval right away.',
-    descriptionLabel: 'Reason in words',
     addDevice: 'Add device',
     noAssets: 'No devices listed',
     noneForDevice: 'This device has never been on a disposal',
@@ -3476,14 +3481,6 @@ const messages = {
       costAnalysis: 'Cost & optimisation',
     },
     prompts: {
-      enrichModel:
-        'Following the catalog skill, check the model “{{name}}” (it is the page context) and fill in what is missing. {{search}} First tell me in a few sentences what is empty and can be filled, and what you would change; then propose the empty fields as a plan — the differing ones wait for my say.',
-      enrichSoftwareProduct:
-        'Following the catalog skill, check the software product “{{name}}” (it is the page context) and fill in what is missing. {{search}} First tell me in a few sentences what is empty and can be filled, and what you would change; then propose the empty fields as a plan — the differing ones wait for my say.',
-      masterSearch:
-        "Look it up on the web first, the maker's own site before others, and link the pages you took anything from.",
-      masterNoSearch:
-        'You cannot search the web: use only what you reliably know, and say what you are not sure of.',
       globalSearch:
         'Find what I am asking for: "{{text}}". If it asks for records of one kind, look them up and list them briefly with their numbers or names; otherwise answer directly and briefly.',
       reportInsight:

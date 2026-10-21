@@ -1131,7 +1131,12 @@ const zhCN: AppResource = {
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
   // 完善 on a model's or software product's page, as a category's.
-  masterEnrich: { action: '完善' },
+  masterEnrich: {
+    action: '完善',
+    title: '完善「{{name}}」',
+    refining: '正在核对这条记录，补全并更正…',
+    searching: '正在联网查找，核对这条记录…',
+  },
   categoryCapture: {
     fieldsInvalid: '扩展字段还有没填完的，请检查后再保存。',
     description:
@@ -2895,12 +2900,12 @@ const zhCN: AppResource = {
         reconsider: '建议再考虑',
       },
     },
+    descriptionLabel: '报废说明',
     devicesFixed:
       '从设备页创建，只报废这台设备；要一起报废多台，请在报废列表中创建',
     devices: '报废设备',
     newDescription: '填写报废信息并选择设备；可先保存草稿，也可直接提交审批',
     addDevice: '添加设备',
-    descriptionLabel: '报废说明',
     noAssets: '尚未添加设备',
     noneForDevice: '没有报废记录',
     approverForSubmit: '提交审批时必填；只保存草稿可以不选。',
@@ -3284,14 +3289,6 @@ const zhCN: AppResource = {
       costAnalysis: '成本与优化分析',
     },
     prompts: {
-      enrichModel:
-        '请按「型号与软件产品资料」技能核对型号「{{name}}」（就是页面上下文里的这条记录），补充缺的资料。{{search}}先用几句话告诉我：哪些现在空着、可以补上，哪些你认为要改；然后把可补的空字段整理成一份计划提出来，要改的等我决定。',
-      enrichSoftwareProduct:
-        '请按「型号与软件产品资料」技能核对软件产品「{{name}}」（就是页面上下文里的这条记录），补充缺的资料。{{search}}先用几句话告诉我：哪些现在空着、可以补上，哪些你认为要改；然后把可补的空字段整理成一份计划提出来，要改的等我决定。',
-      masterSearch:
-        '先联网查资料，制造商官网优先，补充的内容在回答里注明来源链接。',
-      masterNoSearch:
-        '这次无法联网：只按你可靠地知道的信息填写，没有把握的要说明。',
       globalSearch:
         '帮我找：「{{text}}」。如果问的是某一类记录，就查出来，用编号或名称简短列出；如果问的是别的，直接简短回答。',
       reportInsight:

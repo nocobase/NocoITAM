@@ -8,6 +8,7 @@ import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { EmptyState } from '@/components/itam/empty-state';
 import { CategoryCreateDialog } from '@/components/itam/category-create-dialog';
+import { MasterCreateDialog } from '@/components/itam/master-create-dialog';
 import { FieldTemplateEditor } from '@/components/itam/field-template-editor';
 import { parseTemplate } from '@/lib/itam/field-template';
 import { MasterDataTree } from '@/components/itam/master-data-tree';
@@ -27,9 +28,7 @@ import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { HideBreadcrumbContext } from '@/lib/itam/detail-chrome';
 import type { DomainTreeProps } from '@/lib/itam/domain';
 import { errorMessage, text } from '@/lib/itam/format';
-import { useAiStatus } from '@/lib/itam/ai';
-import { useAiPageContext, useItamAi } from '@/lib/itam/ai-chat';
-import { useReferenceNames } from '@/lib/itam/references';
+import { useItamAi } from '@/lib/itam/ai-chat';
 import {
   isMasterCaptureCollection,
   type MasterCaptureCollection,
@@ -528,13 +527,13 @@ function RefineCategoryAction({
 }
 
 /**
- * 完善 (AI 补充 until 2026-10-20) on a model's or software product's page (2026-10-06): opens the
- * assistant's panel on a new conversation and asks Asset Steward to check the record
- * under the catalog skill, with the record as page context. Asset Steward says what
- * it found and proposes the change as a plan (`update_master_record`), whose
- * card the user confirms or declines. There is no web search on the Agents
- * plugin's chat (template 1.0.0-beta.64). Offered to whoever may edit the
- * record, while the assistant is available.
+ * 完善 on a model's or software product's page: until 2026-10-21 it asked
+ * Asset Steward in the chat (AI 补充 until 2026-10-20); now it opens the
+ * record's own form, as a category's 完善 does (2026-10-21). The reading —
+ * the web too, with a DeepSeek model service — checks and completes the
+ * record, the form marks 修改 where it differs, and saving writes it with
+ * the AI tag in its history. For whoever may change the record, while a
+ * model is there.
  */
 function EnrichAction({
   collection,
@@ -543,55 +542,23 @@ function EnrichAction({
   readonly collection: MasterCaptureCollection;
   readonly record: ItamRecord;
 }): ReactElement | null {
+  const { t } = useTranslation();
   const ai = useItamAi();
   const permissions = useCollectionPermissions(collection, ['update']);
+  const [open, setOpen] = useState(false);
   if (!ai.available || !permissions.update) return null;
-  return <EnrichShortcut collection={collection} record={record} />;
-}
-
-/**
- * The shortcut itself: the record is the chat's page context, and the
- * assistant reads it and its category's fields with its tools — the web
- * too, with a DeepSeek model service — then proposes the empty fields it
- * can fill as a plan (the catalog skill).
- */
-function EnrichShortcut({
-  collection,
-  record,
-}: {
-  readonly collection: MasterCaptureCollection;
-  readonly record: ItamRecord;
-}): ReactElement {
-  const { t } = useTranslation();
-  const names = useReferenceNames([
-    { collection: 'manufacturers', ids: [text(record.manufacturerId)] },
-  ]);
-  const maker = names.manufacturers?.get(text(record.manufacturerId)) ?? '';
-  const web = useAiStatus().data?.webSearch === true;
-  const { ask } = useAiPageContext({
-    kind: collection,
-    id: text(record.id),
-    label: text(record.name),
-  });
   return (
-    <AiShortcut
-      onClick={() =>
-        ask(
-          t(
-            collection === 'models'
-              ? 'ai.prompts.enrichModel'
-              : 'ai.prompts.enrichSoftwareProduct',
-            {
-              name: [maker, text(record.name)].filter(Boolean).join(' '),
-              search: t(
-                web ? 'ai.prompts.masterSearch' : 'ai.prompts.masterNoSearch',
-              ),
-            },
-          ),
-        )
-      }
-    >
-      {t('masterEnrich.action')}
-    </AiShortcut>
+    <>
+      <AiShortcut onClick={() => setOpen(true)}>
+        {t('masterEnrich.action')}
+      </AiShortcut>
+      <MasterCreateDialog
+        collection={collection}
+        open={open}
+        onOpenChange={setOpen}
+        record={record}
+        onCreated={() => setOpen(false)}
+      />
+    </>
   );
 }

@@ -24,6 +24,8 @@ interface Session {
 export interface MasterCaptureState {
   /** A model is there to ask. */
   readonly available: boolean;
+  /** The categories a reading names are loaded, so one may start. */
+  readonly ready: boolean;
   /** Whether the reading searches the web: with a DeepSeek model service. */
   readonly searches: boolean;
   readonly busy: boolean;
@@ -57,8 +59,14 @@ export function useMasterCapture({
   collection,
   form,
   onFill,
+  refine = false,
 }: {
   readonly collection: MasterCaptureCollection;
+  /**
+   * 完善 (2026-10-21): the form is a record on the books, which the reading
+   * checks and completes rather than filling a blank form.
+   */
+  readonly refine?: boolean;
   /** The form as it stands, sent with each reading. */
   readonly form: () => Readonly<Record<string, unknown>>;
   readonly onFill: (capture: MasterCapture) => void;
@@ -122,6 +130,7 @@ export function useMasterCapture({
                   : {}),
               })),
             form: form(),
+            ...(refine ? { refine: true } : {}),
           },
           ...(instruction ? { instruction } : {}),
         });
@@ -160,6 +169,7 @@ export function useMasterCapture({
 
   return {
     available: ai.available,
+    ready: ai.available && categories.isSuccess,
     searches: status.data?.webSearch === true,
     busy: session?.phase === 'reading',
     mode: session?.mode,

@@ -548,18 +548,19 @@ document-text`, which reads only a file uploaded within the hour and
   the aside renders as a sibling of the form, never inside it: a submit in
   a portal still bubbles to the form around it in React's tree.
   A model's or software product's own page offers the same check as
-  **完善** (2026-10-06 as AI 补充, renamed 2026-10-20 to match a category's;
-  `EnrichAction` in
+  **完善** (`EnrichAction` in
   `client/pages/itam/master/master-domain-parts.tsx`, for whoever may update
-  the record): it starts a conversation with the record pinned. Under the
-  `catalog` skill's 补充已有记录 section Asset Steward reads the record and its
-  category with its tools, says what it found, then proposes the change
-  as a plan with one `update_master_record` step (`ai-writes.ts`): only the
-  fields the lookup fills — a model's code, specification, warranty, dates
-  and extended fields (held to the template by `holdAttributes`, merged into
-  what it holds), a product's delivery method, description and website —
-  never the name, maker or category. The user confirms or declines the
-  plan, and asks in the conversation for another selection.
+  the record). Since 2026-10-21 it opens the record's own form, as a
+  category's 完善 does: `MasterCreateDialog` with `record`, which runs the
+  same `model` / `softwareProduct` reading as AI 整理 as it opens, with
+  `context.refine` (the server adds `REFINE_READING`: check and complete
+  the record, keep what is right) and the web when there is one. The form
+  marks 修改 where the reading differs from the record (`changes`, the old
+  value in the tooltip), the record itself is no duplicate, an adjustment
+  goes beside the form, and saving updates the record with `$origin: 'ai'`
+  (AI 建议 in its history). Until then (2026-10-06, as AI 补充) it asked
+  Asset Steward in the chat for an `update_master_record` plan, which the
+  catalog skill and the tool still support.
 - `ai.llmServices` in `config.yml` (typed by `server/config/ai.ts`, this
   application's own section since template 1.0.0-beta.64) is read **once**:
   at a start where the Agents plugin has no model service of that name, it
