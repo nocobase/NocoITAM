@@ -2217,7 +2217,7 @@ const messages = {
       title: 'Platform review',
       settingsLink: 'MDM settings',
       followUp: 'MDM follow-up',
-      followUpAgain: 'Follow up again',
+      followUpAgain: 'Run MDM follow-up again',
       followUpNothing:
         'No new differences for you; those already settled or ignored are not raised again.',
       description:

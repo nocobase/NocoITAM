@@ -206,7 +206,7 @@ product or in release notes, until it is listed here.
   steps waiting, and the plan's 拒绝 / 确认执行 (`PlanDecision`); declining
   the plan sets the follow-up aside, so 忽略 shows only without a plan. The
   steps beneath are open while it waits, folded once decided. The
-  header's MDM 跟进 reads 重新跟进 while one works or waits; a new one
+  header's MDM 跟进 reads 重新运行 MDM 跟进 while one works or waits; a new one
   replaces it.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
