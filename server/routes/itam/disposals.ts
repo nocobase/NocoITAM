@@ -43,7 +43,8 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const disposalSchema = z.object({
   method: z.enum(DISPOSAL_METHODS),
   reason: z.enum(DISPOSAL_REASONS),
-  description: z.string().max(20000).nullable().optional(),
+  // Required from 2026-10-20: why the devices go, in words.
+  description: z.string().trim().min(1).max(20000),
   ownerId: id.optional(),
   requestedAt: date.nullable().optional(),
   currency: z.string().trim().max(8).nullable().optional(),

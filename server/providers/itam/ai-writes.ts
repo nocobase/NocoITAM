@@ -232,7 +232,8 @@ export const AI_WRITE_SCHEMAS = {
     method: z.enum(DISPOSAL_METHODS),
     reason: z.enum(DISPOSAL_REASONS),
     deviceIds: z.array(id).min(1).max(1000),
-    description: z.string().max(20000).optional(),
+    // Required, as on the form (2026-10-20).
+    description: z.string().trim().min(1).max(20000),
     dataWipe: z.enum(DATA_WIPE_OPTIONS),
     wipeMethod: z.enum(WIPE_METHODS).optional(),
     recipientVendorId: id.optional(),

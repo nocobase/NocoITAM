@@ -217,6 +217,7 @@ describe('main chain', () => {
         recipientName: 'Recycler',
         method: 'scrap',
         reason: 'damaged',
+        description: 'No longer fit for use',
         deviceIds: [deviceId],
       }),
     );

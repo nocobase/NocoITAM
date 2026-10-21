@@ -428,6 +428,9 @@ export function createDisposalService(dependencies: {
       throw new ValidationError('Invalid method', 'method');
     if (!DISPOSAL_REASONS.includes(input.reason))
       throw new ValidationError('Invalid reason', 'reason');
+    // Why the devices go, in words (2026-10-20).
+    if (!input.description?.trim())
+      throw new ValidationError('description is required', 'description');
     assertOneRecipient(input.recipientVendorId, input.recipientName);
     const { deviceIds, ...fields } = input;
     const id = crypto.randomUUID();

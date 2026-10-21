@@ -205,6 +205,7 @@ describe('repairs, audits and disposals', () => {
         recipientName: 'Recycler',
         method: 'scrap',
         reason: 'damaged',
+        description: 'No longer fit for use',
         deviceIds: [device.id],
         dataWipe: 'notRequired',
       }),
@@ -253,6 +254,7 @@ describe('repairs, audits and disposals', () => {
         recipientName: 'Recycler',
         method: 'scrap',
         reason: 'damaged',
+        description: 'No longer fit for use',
         deviceIds: [device.id],
         dataWipe: 'notRequired',
       }),
@@ -343,11 +345,12 @@ describe('repairs, audits and disposals', () => {
     expect(corrected.status).toBe(200);
   });
 
-  it('refuses a disposal that does not say where the devices go', async () => {
+  it('refuses a disposal that does not say where the devices go, or why', async () => {
     const device = await createDevice();
     const refused = await post('disposals', {
       method: 'scrap',
       reason: 'damaged',
+      description: 'No longer fit for use',
       deviceIds: [device.id],
     });
     expect(refused.status).toBe(400);
@@ -355,6 +358,15 @@ describe('repairs, audits and disposals', () => {
       code: 'VALIDATION',
       field: 'recipientVendorId',
     });
+    // Nor one that does not say why, in words (2026-10-20).
+    const unexplained = await post('disposals', {
+      recipientName: 'Recycler',
+      method: 'scrap',
+      reason: 'damaged',
+      description: '  ',
+      deviceIds: [device.id],
+    });
+    expect(unexplained.status).toBe(400);
   });
 
   it('lists the disposals a device is on, newest first, for its page', async () => {
@@ -364,6 +376,7 @@ describe('repairs, audits and disposals', () => {
         recipientName: 'Recycler',
         method: 'scrap',
         reason: 'damaged',
+        description: 'No longer fit for use',
         deviceIds: [device.id],
       }),
     );
@@ -377,6 +390,7 @@ describe('repairs, audits and disposals', () => {
         recipientName: 'Recycler',
         method: 'sale',
         reason: 'endOfLife',
+        description: 'No longer fit for use',
         deviceIds: [device.id],
       }),
     );
@@ -904,6 +918,7 @@ describe('repairs, audits and disposals', () => {
     const created = await post('disposals', {
       method: 'scrap',
       reason: 'endOfLife',
+      description: 'No longer fit for use',
       deviceIds: [device.id],
       recipientName: 'GreenLoop',
       dataWipe: 'wiped',
@@ -925,6 +940,7 @@ describe('repairs, audits and disposals', () => {
           recipientName: 'Recycler',
           method: 'sale',
           reason: 'other',
+          description: 'No longer fit for use',
           deviceIds: [device.id],
         })
       ).status,

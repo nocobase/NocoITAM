@@ -446,6 +446,9 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
     detailOrder: 10,
     label: 'fields.description',
     type: 'textarea',
+    // Why it goes, in words (2026-10-20): the record of the decision, and
+    // what 报废诊断 and the approval read.
+    required: true,
     readonlyWhen: approvedDisposal,
     group: 'groups.basic',
   },
