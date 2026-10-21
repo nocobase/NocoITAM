@@ -279,7 +279,7 @@ const zhCN: AppResource = {
       sync: '经设备同步',
       install: '随系统安装',
     },
-    updatedField: '更新 {{field}}',
+    updatedField: '修改 {{field}}',
     wasLabel: '原：',
     nowLabel: '新：',
     fieldsChanged_one: '更新了 {{count}} 个字段',
