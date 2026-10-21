@@ -177,6 +177,7 @@ const zhCN: AppResource = {
     loadFailed: '数据加载失败',
     notFound: '记录不存在',
     backToList: '返回列表',
+    open: '打开',
     openFullPage: '打开完整页面',
     actions: '操作',
     loadMore: '加载更多',

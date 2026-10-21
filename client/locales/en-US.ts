@@ -180,6 +180,7 @@ const messages = {
     loadFailed: 'Could not load data',
     notFound: 'Record not found',
     backToList: 'Back to list',
+    open: 'Open',
     openFullPage: 'Open full page',
     actions: 'Actions',
     loadMore: 'Load more',

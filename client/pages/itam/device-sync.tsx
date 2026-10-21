@@ -2,7 +2,13 @@ import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Info, MoreHorizontal, Settings2 } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactElement,
+} from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { DeviceSyncFollowUpBlock } from '@/components/itam/ai/device-sync-run';
@@ -15,6 +21,7 @@ import { CellText } from '@/components/itam/cell-text';
 import { DifferenceTag } from '@/components/itam/difference-tag';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { HolderLink } from '@/components/itam/holder-link';
+import { OpenFullPageButton } from '@/components/itam/open-full-page';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { RecordLink } from '@/components/itam/record-link';
 import { ReferenceSelect } from '@/components/itam/reference-select';
@@ -54,6 +61,7 @@ import {
   useItamSettings,
   type ItamRecord,
 } from '@/lib/itam/api';
+import { OpenFullPageContext } from '@/lib/itam/detail-chrome';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate, text } from '@/lib/itam/format';
@@ -82,6 +90,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
     action: 'update',
   });
   const counts = useReviewCounts();
+  const openFull = useContext(OpenFullPageContext);
   // While a follow-up works or waits under 等你决定, the header offers it
   // again rather than hiding (2026-10-21): a new one replaces it. One that
   // failed does not count.
@@ -142,7 +151,10 @@ export default function DeviceSyncReviewPage(): ReactElement {
                 )}
               </AiShortcut>
             ) : null}
-            {canSettle ? (
+            {/* Beside the inbox's list, 打开 in place of MDM 设置. */}
+            {openFull ? (
+              <OpenFullPageButton />
+            ) : canSettle ? (
               // A link drawn as a button: it goes to another page. Filled in
               // the foreground colour, as asked (2026-10-15).
               <Link

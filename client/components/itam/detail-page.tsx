@@ -3,7 +3,11 @@ import { useContext, type ReactElement, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { EmbeddedRecordContext } from '@/lib/itam/detail-chrome';
+import { OpenFullPageButton } from '@/components/itam/open-full-page';
+import {
+  EmbeddedRecordContext,
+  OpenFullPageContext,
+} from '@/lib/itam/detail-chrome';
 import { TAB_ICONS } from '@/lib/itam/tab-icons';
 import { cn } from '@/lib/utils';
 
@@ -92,6 +96,9 @@ export function DetailPage({
   // 返回 goes to the browser's previous entry, which a drawer never adds
   // and a tab switch replaces (`BackArrow`).
   const embedded = useContext(EmbeddedRecordContext);
+  // Beside the inbox's list, 打开 in place of the page's own actions.
+  const openFull = useContext(OpenFullPageContext);
+  const headerActions = openFull ? <OpenFullPageButton /> : actions;
   return (
     <>
       {/* Breakpoints follow the page's own width (container queries), not
@@ -137,9 +144,9 @@ export function DetailPage({
               )}
             </div>
           </div>
-          {actions ? (
+          {headerActions ? (
             <div className='flex shrink-0 flex-wrap items-center gap-2'>
-              {actions}
+              {headerActions}
             </div>
           ) : null}
         </header>

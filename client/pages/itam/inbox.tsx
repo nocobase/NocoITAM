@@ -14,6 +14,7 @@ import {
 } from '@/components/itam/inbox-notices';
 import { noticePath } from '@/lib/itam/inbox-notices';
 import { PagePane, RecordPane } from '@/components/itam/record-drawer';
+import { OpenFullPageContext } from '@/lib/itam/detail-chrome';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInbox, type AgentRun } from '@/lib/itam/agents';
@@ -319,17 +320,23 @@ function ReviewDetail({
             <DeviceSyncRunCard key={run.id} run={run} />
           </div>
         )}
-        {/* The page's 等你决定 shows the picked run alone. */}
+        {/* The page's 等你决定 shows the picked run alone; 打开 leads to
+            the page itself (2026-10-21). */}
         <FollowUpFocusContext.Provider value={run.id}>
-          <PagePane
-            key={run.id}
-            to='/device-sync'
-            page={DeviceSyncReviewPage}
-            onLeave={(path) => void navigate(path)}
-          />
+          <OpenFullPageContext.Provider
+            value={() => void navigate('/device-sync')}
+          >
+            <PagePane
+              key={run.id}
+              to='/device-sync'
+              page={DeviceSyncReviewPage}
+              onLeave={(path) => void navigate(path)}
+            />
+          </OpenFullPageContext.Provider>
         </FollowUpFocusContext.Provider>
       </div>
     );
+  const recordPath = `${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`;
   // The request itself, as a notification shows its record (2026-10-16):
   // its own page, whose 等你决定 carries the review while it waits on the
   // reader. One already handled is no longer on the page, so its card,
@@ -341,16 +348,18 @@ function ReviewDetail({
           <ApprovalReviewCard key={run.id} run={run} />
         </div>
       )}
-      <RecordPane
-        key={run.id}
-        to={`${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`}
-        onLeave={(path) => void navigate(path)}
-        fallback={
-          <p className='p-6 text-sm text-muted-foreground'>
-            {t('common.notFound')}
-          </p>
-        }
-      />
+      <OpenFullPageContext.Provider value={() => void navigate(recordPath)}>
+        <RecordPane
+          key={run.id}
+          to={recordPath}
+          onLeave={(path) => void navigate(path)}
+          fallback={
+            <p className='p-6 text-sm text-muted-foreground'>
+              {t('common.notFound')}
+            </p>
+          }
+        />
+      </OpenFullPageContext.Provider>
     </div>
   );
 }
