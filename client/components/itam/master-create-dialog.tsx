@@ -1,6 +1,6 @@
 import { resolveAppUrl } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
-import { CircleAlert, Globe, Sparkles } from 'lucide-react';
+import { Globe, Sparkles } from 'lucide-react';
 import {
   Fragment,
   useEffect,
@@ -10,6 +10,7 @@ import {
   type ReactElement,
 } from 'react';
 
+import { CaptureFailure } from '@/components/itam/ai/capture-failure';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { ManufacturerCaptureDialog } from '@/components/itam/manufacturer-capture-dialog';
 import {
@@ -358,9 +359,10 @@ function MasterCreateForm({
           // 完善 waits for the reading before showing the form.
           record && !result ? (
             capture.failure ? (
-              <p className='text-sm text-destructive'>
-                <CollapsibleText text={capture.failure} chars={160} lines={3} />
-              </p>
+              <CaptureFailure
+                text={capture.failure}
+                answered={capture.failureAnswered}
+              />
             ) : (
               <p className='flex items-center gap-2 py-6 text-sm text-muted-foreground'>
                 <Spinner />
@@ -516,24 +518,11 @@ function MaterialPane({
           )}
         </Button>
       </div>
-      {/* What the AI asks for reads as its reply, not as an error
-          (2026-10-21); a failure is still red. */}
       {capture.failure && capture.mode === 'organise' ? (
-        capture.failureAnswered ? (
-          <p className='flex gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
-            <Sparkles className='mt-0.5 size-4 shrink-0 text-primary' />
-            <span className='min-w-0'>
-              <CollapsibleText text={capture.failure} chars={200} lines={4} />
-            </span>
-          </p>
-        ) : (
-          <p className='flex gap-2 text-sm text-destructive'>
-            <CircleAlert className='mt-0.5 size-4 shrink-0' />
-            <span className='min-w-0'>
-              <CollapsibleText text={capture.failure} chars={160} lines={3} />
-            </span>
-          </p>
-        )
+        <CaptureFailure
+          text={capture.failure}
+          answered={capture.failureAnswered}
+        />
       ) : null}
     </div>
   );
@@ -649,9 +638,11 @@ function CaptureNotes({
           ),
         )}
         {capture.failure && capture.mode === 'adjust' ? (
-          <p className='text-destructive'>
-            <CollapsibleText text={capture.failure} chars={160} lines={3} />
-          </p>
+          <CaptureFailure
+            text={capture.failure}
+            answered={capture.failureAnswered}
+            inline
+          />
         ) : null}
         <Textarea
           value={instruction}

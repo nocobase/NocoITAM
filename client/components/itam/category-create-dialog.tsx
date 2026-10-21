@@ -11,6 +11,7 @@ import {
   type ReactElement,
 } from 'react';
 
+import { CaptureFailure } from '@/components/itam/ai/capture-failure';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import {
   FieldTemplateEditor,
@@ -131,6 +132,8 @@ function CategoryCreateForm({
   const [material, setMaterial] = useState(() => text(record?.name));
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string>();
+  // The model answered and filled nothing: its reply, not an error.
+  const [failureAnswered, setFailureAnswered] = useState(false);
   const [said, setSaid] = useState<string>();
   // The fields the editor starts from (the parent's, then the suggestions),
   // re-seeded when the model answers again; and what it holds now.
@@ -275,6 +278,7 @@ function CategoryCreateForm({
       const reading = answer.reading as CategoryReading | null;
       if (!reading?.values) {
         setFailure(answer.said || t('masterCapture.nothing'));
+        setFailureAnswered(true);
         return;
       }
       setMarks(
@@ -313,6 +317,7 @@ function CategoryCreateForm({
       }
     } catch (caught) {
       setFailure(apiErrorBody(caught)?.message ?? errorMessage(caught));
+      setFailureAnswered(false);
     } finally {
       setBusy(false);
     }
@@ -355,6 +360,7 @@ function CategoryCreateForm({
       setSaid(answer.said || undefined);
     } catch (caught) {
       setFailure(apiErrorBody(caught)?.message ?? errorMessage(caught));
+      setFailureAnswered(false);
     } finally {
       setBusy(false);
     }
@@ -440,9 +446,7 @@ function CategoryCreateForm({
         // 完善 waits for the model's first answer before showing the form.
         refining && !filled ? (
           failure ? (
-            <p className='text-sm text-destructive'>
-              <CollapsibleText text={failure} chars={160} lines={3} />
-            </p>
+            <CaptureFailure text={failure} answered={failureAnswered} />
           ) : (
             <p className='flex items-center gap-2 py-6 text-sm text-muted-foreground'>
               <Spinner />
@@ -486,9 +490,7 @@ function CategoryCreateForm({
               </Button>
             </div>
             {failure ? (
-              <p className='text-sm text-destructive'>
-                <CollapsibleText text={failure} chars={160} lines={3} />
-              </p>
+              <CaptureFailure text={failure} answered={failureAnswered} />
             ) : null}
           </div>
         ) : undefined
@@ -551,7 +553,11 @@ function CategoryCreateForm({
                 ),
               )}
               {failure && turns.length > 0 ? (
-                <p className='text-destructive'>{failure}</p>
+                <CaptureFailure
+                  text={failure}
+                  answered={failureAnswered}
+                  inline
+                />
               ) : null}
               <Textarea
                 value={instruction}

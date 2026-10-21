@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FileText, Sparkles, Upload, X } from 'lucide-react';
 import { useRef, useState, type ReactElement } from 'react';
 
+import { CaptureFailure } from '@/components/itam/ai/capture-failure';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { QuickCreateDialog } from '@/components/itam/quick-create-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
@@ -124,9 +125,10 @@ export function CapturePane({
         </Button>
       </div>
       {capture.failure && capture.mode === 'organise' ? (
-        <p className='text-sm text-destructive'>
-          <CollapsibleText text={capture.failure} chars={160} lines={3} />
-        </p>
+        <CaptureFailure
+          text={capture.failure}
+          answered={capture.failureAnswered}
+        />
       ) : null}
     </div>
   );
@@ -224,9 +226,11 @@ export function CaptureNotice({
           ),
         )}
         {capture.failure && capture.mode === 'adjust' ? (
-          <p className='text-destructive'>
-            <CollapsibleText text={capture.failure} chars={160} lines={3} />
-          </p>
+          <CaptureFailure
+            text={capture.failure}
+            answered={capture.failureAnswered}
+            inline
+          />
         ) : null}
         {/* Stacked: the column beside the form is too narrow for the
             request and its button on one line. */}

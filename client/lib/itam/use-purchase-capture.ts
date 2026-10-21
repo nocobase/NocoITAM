@@ -24,6 +24,8 @@ interface Session {
   readonly mode: Mode;
   readonly phase: 'uploading' | 'reading' | 'done' | 'failed';
   readonly message?: string;
+  /** The model answered but filled nothing: what it said, not an error. */
+  readonly answered?: boolean;
 }
 
 interface Material {
@@ -46,6 +48,8 @@ export interface PurchaseOrderCaptureState {
   readonly mode: Mode | undefined;
   readonly phase: Session['phase'] | undefined;
   readonly failure: string | undefined;
+  /** `failure` is the model asking for more, not something going wrong. */
+  readonly failureAnswered: boolean;
   /** The adjustments asked so far, and what the assistant said to each. */
   readonly turns: readonly Turn[];
   /** The summary of the last organise, before any adjustment. */
@@ -148,6 +152,7 @@ export function usePurchaseOrderCapture({
             mode,
             phase: 'failed',
             message: answer.said || t('procurement.capture.nothing'),
+            answered: true,
           });
           return;
         }
@@ -266,6 +271,7 @@ export function usePurchaseOrderCapture({
     mode: session?.mode,
     phase: session?.phase,
     failure: session?.phase === 'failed' ? session.message : undefined,
+    failureAnswered: session?.phase === 'failed' && session.answered === true,
     turns,
     summary,
     fileId,
