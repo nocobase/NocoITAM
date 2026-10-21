@@ -6677,6 +6677,14 @@ export function createDemoService(dependencies: {
         ]);
       const allIds = tracked.map((row) => row.recordId);
       await database.transaction(async (connection) => {
+        // What the demo wrote on records it did not make (2026-10-21): toner
+        // issued to a seeded floor stayed on the floor's history after a
+        // clear, under the demo account the next import replaced, and
+        // piled up import after import as 已删除的用户.
+        await connection.query
+          .deleteFrom('historyEvents')
+          .where('sourceType', '=', 'demo')
+          .execute();
         if (allIds.length > 0) {
           for (const dependent of DEPENDENTS) {
             await connection.query

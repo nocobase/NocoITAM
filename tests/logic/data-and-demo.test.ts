@@ -1014,9 +1014,22 @@ describe('CSV import / export and demo data', () => {
         })
       ).status,
     ).toBe(201);
+    // What it wrote on records it did not make, toner issued to a seeded
+    // floor (2026-10-21), goes with it rather than staying on that record
+    // under an account the next import replaces.
+    const onSeeded = () =>
+      database
+        .query()
+        .selectFrom('historyEvents')
+        .select('id')
+        .where('subjectType', '=', 'locations')
+        .where('sourceType', '=', 'demo')
+        .execute();
+    expect((await onSeeded()).length).toBeGreaterThan(0);
     const cleared = await data<{ generated: boolean }>(
       await post('demo/clear'),
     );
+    expect(await onSeeded()).toEqual([]);
     expect(
       await database
         .query()

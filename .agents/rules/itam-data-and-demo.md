@@ -99,7 +99,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   the demo's requests go with them (`DEPENDENTS`). Clearing also sweeps
   any run whose records are gone — a review of a request, an MDM
   follow-up none of whose devices is left, a failed follow-up — with its
-  plan, which an import before this tracking left behind. Each part is extra:
+  plan, which an import before this tracking left behind. It also deletes
+  every history event the demo wrote (`sourceType` `demo`, 2026-10-21),
+  those on records it did not make included — toner issued to a seeded
+  floor stayed on the floor under the replaced demo account, one more
+  已删除的用户 line per import. Each part is extra:
   one that fails leaves the demo without it rather than failing the
   import.
   Every department has a default 入职配置 once the demo is in (2026-10-06):
