@@ -268,7 +268,7 @@ describe('MDM 核对 → 信息不一致: 已忽略', () => {
       ],
     };
     render(
-      <MemoryRouter initialEntries={['/device-sync']}>
+      <MemoryRouter initialEntries={['/device-sync?view=checks']}>
         <DeviceSyncReviewPage />
       </MemoryRouter>,
     );
@@ -312,7 +312,7 @@ describe('MDM 核对 → 信息不一致', () => {
   };
   const show = () =>
     render(
-      <MemoryRouter initialEntries={['/device-sync']}>
+      <MemoryRouter initialEntries={['/device-sync?view=checks']}>
         <DeviceSyncReviewPage />
       </MemoryRouter>,
     );

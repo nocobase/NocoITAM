@@ -372,7 +372,10 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
     <>
       {visible.length ? (
         <section className='space-y-2'>
-          <h2 className='text-sm font-semibold'>{t('review.waiting')}</h2>
+          {/* The same size as 全部差异 below it (2026-10-21): two sections. */}
+          <h2 className='font-heading text-lg font-semibold tracking-tight'>
+            {t('review.waiting')}
+          </h2>
           {visible.map((run) => (
             <FollowUpReviewCard key={run.id} run={run} />
           ))}

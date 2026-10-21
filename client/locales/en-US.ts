@@ -2237,6 +2237,7 @@ const messages = {
         'No new differences for you; those already settled or ignored are not raised again.',
       description:
         'Where the device management platforms and the register disagree',
+      listHeading: 'All differences',
       views: {
         checks: 'Mismatched',
         unregistered: 'Only in MDM',

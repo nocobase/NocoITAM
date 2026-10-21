@@ -127,7 +127,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
           ? 'checks'
           : TABS.includes(requested as (typeof TABS)[number])
             ? (requested as (typeof TABS)[number])
-            : 'checks';
+            : TABS[0];
   const ignoredRef = useRef<HTMLElement>(null);
   const ignoredShown = view === 'unregistered' && (counts.ignored ?? 0) > 0;
   // What was linked here by hand, under 只在 MDM's rows (2026-10-16).
@@ -207,14 +207,21 @@ export default function DeviceSyncReviewPage(): ReactElement {
       {/* Three ways the two lists disagree (2026-10-15): both have the
           device but say otherwise, only MDM has it, only the register has
           it — each with its count. What was kept off is not a fourth to-do:
-          it is listed under 只在 MDM, beneath what still waits. */}
+          it is listed under 只在 MDM, beneath what still waits. Apart from
+          Asset Steward's suggestions above, under a rule and a heading of
+          their own as 等你决定 has (2026-10-21). */}
+      <h2 className='mt-6 font-heading text-lg font-semibold tracking-tight'>
+        {t('deviceSync.review.listHeading')}
+      </h2>
       <Tabs
         value={view}
         onValueChange={(next) =>
           setParams({ view: String(next) }, { replace: true })
         }
       >
-        <TabsList variant='line'>
+        {/* A switch, not a heading: the pill tabs set the lists apart
+            from the suggestions' line headings above. */}
+        <TabsList>
           {TABS.map((key) => (
             <TabsTrigger key={key} value={key}>
               {t(`deviceSync.review.views.${key}`)}
@@ -335,8 +342,11 @@ export default function DeviceSyncReviewPage(): ReactElement {
   );
 }
 
-/** The views shown as tabs; 已忽略 is listed under 只在 MDM. */
-const TABS = ['checks', 'unregistered', 'unmanaged'] as const;
+/**
+ * The views shown as tabs; 已忽略 is listed under 只在 MDM. 信息不一致 last
+ * (2026-10-21), the first one opening by default.
+ */
+const TABS = ['unregistered', 'unmanaged', 'checks'] as const;
 
 /** Each view's count, as its own list reads it (undefined while loading). */
 function useReviewCounts(): Partial<
