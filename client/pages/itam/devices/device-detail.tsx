@@ -138,7 +138,13 @@ type DialogKind =
   | 'delete';
 
 /** The dialogs another page may open here through `?do=`. */
-const LINKED_DIALOGS = ['assign', 'transfer', 'restore', 'markLost'] as const;
+const LINKED_DIALOGS = [
+  'assign',
+  'transfer',
+  'restore',
+  'markLost',
+  'correctStatus',
+] as const;
 
 export default function DeviceDetailPage(): ReactElement {
   const { t } = useTranslation();

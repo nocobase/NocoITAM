@@ -2192,14 +2192,6 @@ const messages = {
     syncedOn: 'synced with {{source}} on {{date}}',
     notOnRegister: '(not on the register)',
     unknownDevice: 'Unknown device',
-    prompts: {
-      checksAction: 'Explain these',
-      checks:
-        'Using the device sync method, go through every device where MDM and the register disagree: the most urgent first, each with its most likely cause and how to check it; put what can be settled on the register into one plan.',
-      unregisteredAction: 'Sort these out',
-      unregistered:
-        'Using the device sync method, handle the platform devices the register lacks: register what can be registered, find the right device for shared serials, keep off the register what does not belong there, all in one plan; list anything you are unsure of and ask me.',
-    },
     checks: {
       kinds: {
         stale: 'Silent',
@@ -2220,6 +2212,21 @@ const messages = {
       'This device will no longer show what {{source}} reports, and later syncs will not link it by serial again. Link it again from the platform review page if needed.',
     onlineAfterLeaving_one: '{{count}} device online after leaving',
     onlineAfterLeaving_other: '{{count}} devices online after leaving',
+    advice: {
+      says: 'Asset Steward suggests: {{action}}',
+      actions: {
+        register: 'register it',
+        link: 'link it to a device',
+        ignore: 'keep it off the register',
+        transfer: 'transfer it to its platform user',
+        assign: 'assign it to its platform user',
+        correct: 'correct its status',
+        keep: 'the register is right; ignore it',
+        exempt: 'it needs no platform',
+        verify: 'check first',
+        escalate: "leave it to the platform's administrator",
+      },
+    },
     review: {
       title: 'Platform review',
       settingsLink: 'MDM settings',

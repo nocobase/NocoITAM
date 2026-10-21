@@ -17,7 +17,7 @@ const state = vi.hoisted(() => ({
   records: [] as Record<string, unknown>[],
   ai: false,
   // MDM 跟进 runs still open, and what the reader may do to devices.
-  open: [] as { agent: string; status?: string }[],
+  open: [] as { agent: string; status?: string; result?: unknown }[],
   permissions: {} as Record<string, boolean>,
   followUp: {
     mutate: vi.fn(),
@@ -364,6 +364,38 @@ describe('MDM 核对 → 信息不一致', () => {
     );
   });
 
+  it('leads with 忽略 where the follow-up says the register is right', () => {
+    state.views = { checks: [check] };
+    state.open = [
+      {
+        agent: 'deviceSync',
+        status: 'pending',
+        result: {
+          advice: [
+            {
+              subject: 'd9',
+              kind: 'stale',
+              action: 'keep',
+              reason: null,
+              target: null,
+              planned: true,
+            },
+          ],
+        },
+      },
+    ];
+    show();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.checks.keepRegister' }),
+    );
+    expect(state.action).toHaveBeenCalledWith({
+      kind: 'dismiss',
+      deviceId: 'd9',
+      check: 'stale',
+    });
+    state.open = [];
+  });
+
   it('offers to follow up again while one waits', () => {
     state.ai = true;
     state.views = { checks: [check] };
@@ -657,5 +689,44 @@ describe('MDM 核对 → 只在 MDM: 补登记', () => {
     state.views = { unregistered: [record(null)] };
     open();
     expect(state.create?.locked).toBeUndefined();
+  });
+
+  // What MDM 跟进 suggested, on its row (2026-10-21): marked, its button
+  // first, with the reason it gave filled in.
+  it('leads with what the follow-up suggested, and fills in its reason', () => {
+    state.views = { unregistered: [record('PF5DEMO01')] };
+    state.open = [
+      {
+        agent: 'deviceSync',
+        status: 'pending',
+        result: {
+          advice: [
+            {
+              subject: 'm1',
+              kind: 'unregistered',
+              action: 'ignore',
+              reason: 'A contractor’s laptop',
+              target: null,
+              planned: true,
+            },
+          ],
+        },
+      },
+    ];
+    render(
+      <MemoryRouter initialEntries={['/device-sync?view=unregistered']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByLabelText('deviceSync.advice.says')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'deviceSync.review.register' }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.review.ignore' }),
+    );
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('textbox')).toHaveValue('A contractor’s laptop');
+    state.open = [];
   });
 });

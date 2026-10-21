@@ -55,6 +55,29 @@ export interface DeviceSyncResult {
   readonly planId: string | null;
   readonly notes: readonly string[];
   readonly summary: string;
+  /** Each item's suggestion, for its row on MDM 核对 (2026-10-21). */
+  readonly advice?: readonly FollowUpAdvice[];
+}
+
+/** What MDM 跟进 suggested for one difference or platform record. */
+export interface FollowUpAdvice {
+  readonly subject: string;
+  readonly kind: DeviceSyncResult['items'][number]['kind'];
+  readonly action:
+    | 'register'
+    | 'link'
+    | 'ignore'
+    | 'transfer'
+    | 'assign'
+    | 'correct'
+    | 'keep'
+    | 'exempt'
+    | 'verify'
+    | 'escalate';
+  readonly reason: string | null;
+  readonly target: string | null;
+  /** Carried out by the plan, rather than left to the reader. */
+  readonly planned: boolean;
 }
 
 interface RunBase {

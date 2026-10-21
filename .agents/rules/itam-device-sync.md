@@ -209,6 +209,14 @@ product or in release notes, until it is listed here.
   steps beneath are open while it waits, folded once decided. The
   header's MDM 跟进 reads 重新运行 MDM 跟进 while one works or waits; a new one
   replaces it.
+- **Suggestions on the rows** (2026-10-21): a follow-up's result carries
+  `advice` — per item the action, reason, target and whether the plan does
+  it. MDM 核对 reads the reader's waiting follow-ups (`useAdvice`) and marks
+  each row they cover with a sparkle whose tooltip says the action and why;
+  the suggested action becomes the row's button (忽略 for keep, 关联 with the
+  suggested device, 不纳入台账 / 不需要纳管 with the reason filled in,
+  transfer / assign / correct status through the device page's `?do=`).
+  The tabs' own AI shortcuts went: the header's MDM 跟进 is the one way in.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

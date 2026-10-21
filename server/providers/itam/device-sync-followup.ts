@@ -133,12 +133,27 @@ export type FollowUpAnswerer = (
   material: readonly Readonly<Record<string, unknown>>[],
 ) => readonly FollowUpDecision[];
 
+/**
+ * What was suggested for one item (2026-10-21), for MDM 核对 to show on
+ * its row: the action, why, the person or device it names, and whether the
+ * plan carries it out or it is left to the reader.
+ */
+export interface FollowUpAdvice {
+  readonly subject: string;
+  readonly kind: FollowUpKind;
+  readonly action: (typeof ACTIONS)[number];
+  readonly reason: string | null;
+  readonly target: string | null;
+  readonly planned: boolean;
+}
+
 export interface FollowUpResult {
   readonly items: readonly FollowUpItem[];
   readonly planId: string | null;
   /** What is not a plan step: register it, verify first, ask the admin. */
   readonly notes: readonly string[];
   readonly summary: string;
+  readonly advice?: readonly FollowUpAdvice[];
 }
 
 /** Another person's open suggestion, as an asset manager reads it. */
@@ -680,12 +695,20 @@ export function createDeviceSyncFollowUp(dependencies: {
     };
     let steps: Step[] = [];
     const decided = new Set<string>();
+    const advised: Omit<FollowUpAdvice, 'planned'>[] = [];
     for (const decision of decisions) {
       const item = refs.get(decision.item);
       if (!item || decided.has(item.key)) continue;
       decided.add(item.key);
       const target = asText(decision.target);
       const why = asText(decision.reason)?.trim().slice(0, 200);
+      advised.push({
+        subject: item.subject,
+        kind: item.kind,
+        action: decision.action,
+        reason: why || null,
+        target: target || null,
+      });
       // The step's line says what it does to what, and why.
       const label = why
         ? zh()
@@ -917,11 +940,23 @@ export function createDeviceSyncFollowUp(dependencies: {
         );
       }
     }
-    const planned = new Set(steps.map((entry) => entry.item.key)).size;
+    const plannedKeys = new Set(steps.map((entry) => entry.item.key));
+    const planned = plannedKeys.size;
     return {
       items,
       planId,
       notes: notes.slice(0, 60),
+      advice: advised.map((entry) => ({
+        ...entry,
+        planned:
+          Boolean(planId) &&
+          items.some(
+            (item) =>
+              item.subject === entry.subject &&
+              item.kind === entry.kind &&
+              plannedKeys.has(item.key),
+          ),
+      })),
       summary: words(
         `${String(items.length)} 处差异：${String(planned)} 项可直接执行，${String(items.length - planned)} 项需要你看一下。`,
         `${String(items.length)} differences: ${String(planned)} can be carried out, ${String(items.length - planned)} need a look.`,

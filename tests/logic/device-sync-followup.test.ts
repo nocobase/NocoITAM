@@ -269,6 +269,15 @@ describe('MDM follow-up', () => {
     expect(minePlan.steps.map((step) => step.op)).toEqual([
       'dismiss_device_difference',
     ]);
+    // Each item's suggestion, for its row on MDM 核对 (2026-10-21).
+    expect(mine.result?.advice).toContainEqual(
+      expect.objectContaining({
+        subject: spare,
+        kind: 'statusMismatch',
+        action: 'keep',
+        planned: true,
+      }),
+    );
     expect(
       (
         await plans().execute('mia', minePlan.id, {

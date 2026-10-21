@@ -2096,14 +2096,6 @@ const zhCN: AppResource = {
     syncedOn: '{{date}} 仍在 {{source}} 同步',
     notOnRegister: '（台账未登记）',
     unknownDevice: '未知设备',
-    prompts: {
-      checksAction: '解释这些差异',
-      checks:
-        '请按「MDM 核对」技能（device-sync）看看现在所有 MDM 信息不一致的设备：最要紧的先说，每条说明最可能的原因和怎么核实；能在台账上处理的，整理成一份计划。',
-      unregisteredAction: '整理这批设备',
-      unregistered:
-        '请按「MDM 核对」技能（device-sync）处理 MDM 里有、台账未登记的设备：能补登记的补登记，序列号重复的找出该关联的那台，不该进台账的标为不纳入台账，整理成一份计划；拿不准的单独列出来问我。',
-    },
     checks: {
       kinds: {
         stale: '失联',
@@ -2124,6 +2116,21 @@ const zhCN: AppResource = {
       '这台设备将不再显示 {{source}} 的信息。之后的同步也不会再按序列号自动关联它，需要时可以在 MDM 核对页重新关联。',
     onlineAfterLeaving_one: '{{count}} 台设备离职后仍在线',
     onlineAfterLeaving_other: '{{count}} 台设备离职后仍在线',
+    advice: {
+      says: '资产管家建议：{{action}}',
+      actions: {
+        register: '补登记',
+        link: '关联到已有设备',
+        ignore: '不纳入台账',
+        transfer: '调拨给 MDM 上的使用人',
+        assign: '分配给 MDM 上的使用人',
+        correct: '修正状态',
+        keep: '以台账为准，忽略',
+        exempt: '不需要纳管',
+        verify: '先核实',
+        escalate: '交给平台管理员在 MDM 里处理',
+      },
+    },
     review: {
       title: 'MDM 核对',
       settingsLink: 'MDM 设置',

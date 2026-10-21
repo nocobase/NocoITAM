@@ -1,10 +1,17 @@
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { ExternalLink, Info, MoreHorizontal, Settings2 } from 'lucide-react';
+import {
+  ExternalLink,
+  Info,
+  MoreHorizontal,
+  Settings2,
+  Sparkles,
+} from 'lucide-react';
 import {
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactElement,
@@ -13,7 +20,11 @@ import { Link, useSearchParams } from 'react-router';
 
 import { DeviceSyncFollowUpBlock } from '@/components/itam/ai/device-sync-run';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAskFollowUp, useInbox } from '@/lib/itam/agents';
+import {
+  useAskFollowUp,
+  useInbox,
+  type FollowUpAdvice,
+} from '@/lib/itam/agents';
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { EmptyState } from '@/components/itam/empty-state';
@@ -44,6 +55,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Textarea } from '@/components/ui/textarea';
 import {
   DEVICE_SYNC_PATH,
@@ -211,20 +227,11 @@ export default function DeviceSyncReviewPage(): ReactElement {
           ))}
         </TabsList>
       </Tabs>
-      <div className='flex flex-wrap items-center justify-between gap-2'>
-        <p className='text-sm text-muted-foreground'>
-          {t(`deviceSync.review.hints.${view}`)}
-        </p>
-        {/* Asset Steward explains the differences, or sorts out the records the
-            register lacks into one plan (device-sync skill, step 4). */}
-        {ai.available &&
-        (view === 'checks' || view === 'unregistered') &&
-        (counts[view] ?? 0) > 0 ? (
-          <AiShortcut onClick={() => ai.ask(t(`deviceSync.prompts.${view}`))}>
-            {t(`deviceSync.prompts.${view}Action`)}
-          </AiShortcut>
-        ) : null}
-      </div>
+      {/* One way to Asset Steward on the page, its header's (2026-10-21):
+          what it suggests shows on the rows, marked. */}
+      <p className='text-sm text-muted-foreground'>
+        {t(`deviceSync.review.hints.${view}`)}
+      </p>
       {view === 'checks' ? (
         <ChecksView />
       ) : view === 'unmanaged' ? (
@@ -386,13 +393,17 @@ type RowAction = {
 function RowActions({
   main,
   more = [],
+  advice,
 }: {
   readonly main: RowAction;
   readonly more?: readonly RowAction[];
+  /** What MDM 跟进 suggested for the row, marked before its button. */
+  readonly advice?: FollowUpAdvice;
 }): ReactElement {
   const { t } = useTranslation();
   return (
     <span className='flex items-center justify-end gap-1'>
+      {advice ? <AdviceMark advice={advice} /> : null}
       {'to' in main ? (
         <Button
           variant='outline'
@@ -443,6 +454,58 @@ function RowActions({
 }
 
 /**
+ * What the reader's waiting MDM 跟进 suggested (2026-10-21), by the item it
+ * is about and its kind: shown on the row, whose button it then picks.
+ */
+function useAdvice(): ReadonlyMap<string, FollowUpAdvice> {
+  const inbox = useInbox();
+  return useMemo(() => {
+    const advice = new Map<string, FollowUpAdvice>();
+    // Newest first, as the inbox lists them: the newer one wins.
+    for (const run of inbox.data?.open ?? [])
+      if (run.agent === 'deviceSync' && run.status === 'pending')
+        for (const entry of run.result?.advice ?? []) {
+          const key = adviceKey(entry.subject, entry.kind);
+          if (!advice.has(key)) advice.set(key, entry);
+        }
+    return advice;
+  }, [inbox.data]);
+}
+
+const adviceKey = (subject: string, kind: string) => `${subject}|${kind}`;
+
+/** The sparkle marking a row MDM 跟进 has a suggestion for, why on hover. */
+function AdviceMark({
+  advice,
+}: {
+  readonly advice: FollowUpAdvice;
+}): ReactElement {
+  const { t } = useTranslation();
+  const text = t('deviceSync.advice.says', {
+    action: t(`deviceSync.advice.actions.${advice.action}`),
+  });
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <span
+            tabIndex={0}
+            aria-label={text}
+            className='inline-flex px-1 text-primary'
+          />
+        }
+      >
+        <Sparkles className='size-4' aria-hidden />
+      </TooltipTrigger>
+      <TooltipContent className='max-w-xs'>
+        <p className='font-medium'>{text}</p>
+        {advice.reason ? <p>{advice.reason}</p> : null}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/**
  * What settles a difference (2026-10-21), as the device page's MDM group
  * offers it: a silent device marked lost, a device the platform puts with
  * another person moved to them, one in stock handed to its platform user,
@@ -453,9 +516,31 @@ function checkAction(
   row: DeviceCheck,
   can: Readonly<Record<string, boolean>>,
   t: (key: string, options?: Record<string, unknown>) => string,
+  advice?: FollowUpAdvice,
 ): RowAction {
   const page = `/devices/${row.deviceId}`;
   const user = row.userName ?? '';
+  // What MDM 跟进 suggested leads, where the reader may do it.
+  if (
+    advice &&
+    (advice.action === 'transfer' || advice.action === 'assign') &&
+    advice.target &&
+    can[advice.action]
+  )
+    return {
+      label: t(
+        advice.action === 'transfer'
+          ? 'deviceSync.checks.transferTo'
+          : 'deviceSync.checks.assignTo',
+        { user },
+      ),
+      to: `${page}?do=${advice.action}&to=${advice.target}`,
+    };
+  if (advice?.action === 'correct' && can.correctStatus)
+    return {
+      label: t('deviceActions.correctStatus.title'),
+      to: `${page}?do=correctStatus`,
+    };
   if (
     row.kind === 'stale' &&
     can.update &&
@@ -509,7 +594,9 @@ function ChecksView(): ReactElement {
     'update',
     'assign',
     'transfer',
+    'correctStatus',
   ]);
+  const advice = useAdvice();
   const rows = review.data ?? [];
   const people = useReferenceNames([
     {
@@ -580,21 +667,40 @@ function ChecksView(): ReactElement {
                   </CellText>
                 </TableCell>
                 <TableCell>
-                  <RowActions
-                    main={checkAction(row, permissions, t)}
-                    more={[
-                      {
-                        label: t('deviceSync.checks.keepRegister'),
-                        disabled: action.isPending,
-                        onSelect: () =>
-                          action.mutate({
-                            kind: 'dismiss',
-                            deviceId: row.deviceId,
-                            check: row.kind,
-                          }),
-                      },
-                    ]}
-                  />
+                  {(() => {
+                    const suggested = advice.get(
+                      adviceKey(row.deviceId, row.kind),
+                    );
+                    const dismiss: RowAction = {
+                      label: t('deviceSync.checks.keepRegister'),
+                      disabled: action.isPending,
+                      onSelect: () =>
+                        action.mutate({
+                          kind: 'dismiss',
+                          deviceId: row.deviceId,
+                          check: row.kind,
+                        }),
+                    };
+                    // The register is right, as suggested: 忽略 leads.
+                    return suggested?.action === 'keep' ? (
+                      <RowActions
+                        advice={suggested}
+                        main={dismiss}
+                        more={[
+                          {
+                            label: t('common.view'),
+                            to: `/devices/${row.deviceId}`,
+                          },
+                        ]}
+                      />
+                    ) : (
+                      <RowActions
+                        advice={suggested}
+                        main={checkAction(row, permissions, t, suggested)}
+                        more={[dismiss]}
+                      />
+                    );
+                  })()}
                 </TableCell>
               </TableRow>
             ))}
@@ -907,6 +1013,7 @@ function UnmanagedView({
   const action = useDeviceReviewAction();
   const [exempting, setExempting] = useState<UnmanagedDevice>();
   const [reason, setReason] = useState('');
+  const advice = useAdvice();
   const rows: readonly (UnmanagedDevice & Partial<ExemptDevice>)[] =
     review.data ?? [];
   const names = useReferenceNames([
@@ -1023,15 +1130,24 @@ function UnmanagedView({
                         {t('deviceSync.review.restore')}
                       </Button>
                     ) : (
-                      <Button
-                        variant='outline'
-                        onClick={() => {
-                          setReason('');
-                          setExempting(row);
+                      // The reason MDM 跟进 gave, when it suggested this.
+                      <RowActions
+                        advice={advice.get(adviceKey(row.id, 'unmanaged'))}
+                        main={{
+                          label: t('deviceSync.review.exempt'),
+                          onSelect: () => {
+                            const suggested = advice.get(
+                              adviceKey(row.id, 'unmanaged'),
+                            );
+                            setReason(
+                              suggested?.action === 'exempt'
+                                ? (suggested.reason ?? '')
+                                : '',
+                            );
+                            setExempting(row);
+                          },
                         }}
-                      >
-                        {t('deviceSync.review.exempt')}
-                      </Button>
+                      />
                     )}
                   </span>
                 </TableCell>
@@ -1107,6 +1223,7 @@ function RecordsView({
   const [now] = useState(() => Date.now());
   const [ignoring, setIgnoring] = useState<UnregisteredDevice>();
   const [reason, setReason] = useState('');
+  const advice = useAdvice();
   const rows = review.data ?? [];
   const people = useReferenceNames([
     {
@@ -1378,17 +1495,33 @@ function RecordsView({
                             setRegistering(row);
                           },
                         };
+                        // What MDM 跟进 suggested picks the button, and
+                        // fills in the device or the reason it gave.
+                        const suggested =
+                          view === 'unregistered'
+                            ? advice.get(adviceKey(row.id, 'unregistered'))
+                            : undefined;
                         const link: RowAction = {
                           label: t('deviceSync.review.link'),
                           onSelect: () => {
-                            setTarget(row.candidates[0]?.id ?? null);
+                            setTarget(
+                              (suggested?.action === 'link'
+                                ? suggested.target
+                                : null) ??
+                                row.candidates[0]?.id ??
+                                null,
+                            );
                             setLinking(row);
                           },
                         };
                         const ignore: RowAction = {
                           label: t('deviceSync.review.ignore'),
                           onSelect: () => {
-                            setReason('');
+                            setReason(
+                              suggested?.action === 'ignore'
+                                ? (suggested.reason ?? '')
+                                : '',
+                            );
                             setIgnoring(row);
                           },
                         };
@@ -1398,10 +1531,28 @@ function RecordsView({
                         const registrable =
                           row.matchState === 'unlinked' &&
                           row.candidates.length === 0;
-                        return registrable ? (
-                          <RowActions main={register} more={[link, ignore]} />
-                        ) : (
-                          <RowActions main={link} more={[ignore]} />
+                        if (suggested?.action === 'ignore')
+                          return (
+                            <RowActions
+                              advice={suggested}
+                              main={ignore}
+                              more={registrable ? [register, link] : [link]}
+                            />
+                          );
+                        if (suggested?.action === 'link' || !registrable)
+                          return (
+                            <RowActions
+                              advice={suggested}
+                              main={link}
+                              more={registrable ? [register, ignore] : [ignore]}
+                            />
+                          );
+                        return (
+                          <RowActions
+                            advice={suggested}
+                            main={register}
+                            more={[link, ignore]}
+                          />
                         );
                       })()
                     )}
