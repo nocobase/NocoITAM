@@ -42,6 +42,7 @@ vi.mock('../../client/lib/itam/references.js', () => ({
 // The plan's own card is tested with the chat; here, that it is shown.
 vi.mock('../../client/components/itam/ai/plan-card.js', () => ({
   PlanCard: ({ plan }: { plan: { title: string } }) => <p>plan:{plan.title}</p>,
+  PlanDecision: () => <button type='button'>decide</button>,
 }));
 
 const run = (overrides: Partial<DeviceSyncRun> = {}): DeviceSyncRun => ({
@@ -173,6 +174,35 @@ it('lists the reader’s open follow-ups under 等你决定, and nothing else', 
     </MemoryRouter>,
   );
   expect(screen.queryByText('review.waiting')).not.toBeInTheDocument();
+});
+
+// Folded to a line on MDM 核对 (2026-10-21): the plan's decision in it,
+// declining standing for 忽略; the steps when opened.
+it('folds a waiting plan to its header line, with the plan’s decision', () => {
+  state.plan = {
+    id: 'plan-1',
+    title: 'MDM follow-up: 2 differences',
+    status: 'pending',
+    steps: [{ position: 0 }, { position: 1 }],
+  };
+  state.inbox = { open: [run()], handled: [] };
+  render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText(/deviceSyncRun\.stepsWaiting/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'decide' })).toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'review.dismiss' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByText('plan:MDM follow-up: 2 differences'),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText('deviceSyncRun.ownDifferences'));
+  expect(
+    screen.getByText('plan:MDM follow-up: 2 differences'),
+  ).toBeInTheDocument();
 });
 
 // Beside a run in 收件箱, that run alone (2026-10-17).

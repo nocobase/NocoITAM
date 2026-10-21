@@ -26,7 +26,7 @@ import { useApi } from '@/lib/itam/api';
 import { relativeTime } from '@/lib/itam/format';
 import { PLANS_PATH, type Plan } from '@/lib/itam/plans';
 
-import { PlanCard } from './plan-card.js';
+import { PlanCard, PlanDecision } from './plan-card.js';
 
 /**
  * MDM 跟进's card (2026-10-17): what a device sync left for the reader —
@@ -47,20 +47,9 @@ export function DeviceSyncRunCard({
   readonly onReview?: boolean;
 }): ReactElement {
   const { t, i18n } = useTranslation();
-  const api = useApi();
   const dismiss = useDismissReview();
   const result = run.result;
-  const planId = result?.planId ?? null;
-  const plan = useQuery({
-    queryKey: ['itam', PLANS_PATH, planId],
-    queryFn: async () =>
-      (
-        await api.request<{ data: Plan }>({
-          path: `${PLANS_PATH}/${encodeURIComponent(String(planId))}`,
-        })
-      ).data,
-    enabled: Boolean(planId),
-  });
+  const plan = useRunPlan(run);
   const when = relativeTime(
     run.updatedAt,
     i18n.language,
@@ -150,6 +139,127 @@ export function DeviceSyncRunCard({
   );
 }
 
+/** The plan a run proposed, if it proposed one. */
+function useRunPlan(run: DeviceSyncRun) {
+  const api = useApi();
+  const planId = run.result?.planId ?? null;
+  return useQuery({
+    queryKey: ['itam', PLANS_PATH, planId],
+    queryFn: async () =>
+      (
+        await api.request<{ data: Plan }>({
+          path: `${PLANS_PATH}/${encodeURIComponent(String(planId))}`,
+        })
+      ).data,
+    enabled: Boolean(planId),
+  });
+}
+
+/**
+ * One follow-up on MDM 核对 (2026-10-21), folded to a line so the lists
+ * stay in view: what it is about and how many steps wait, with the plan's
+ * own 拒绝 / 确认执行 — declining it sets the follow-up aside too, so there
+ * is no separate 忽略 then. Opened, the steps to tick and what is left to
+ * look at. Without a plan, its notes show at once, with 忽略.
+ */
+function FollowUpReviewCard({
+  run,
+}: {
+  readonly run: DeviceSyncRun;
+}): ReactElement {
+  const { t } = useTranslation();
+  const dismiss = useDismissReview();
+  const plan = useRunPlan(run);
+  const [open, setOpen] = useState<boolean>();
+  const [skipped, setSkipped] = useState<ReadonlySet<number>>(() => new Set());
+  const notes = run.result?.notes ?? [];
+  const pendingPlan = plan.data?.status === 'pending' ? plan.data : null;
+  const decided = run.status !== 'pending';
+  if (run.status === 'running' || run.status === 'failed')
+    return (
+      <div className='space-y-3 rounded-lg border bg-card p-4'>
+        <h3 className='text-sm font-medium'>{followUpTitle(run, t)}</h3>
+        <DeviceSyncRunCard run={run} onReview />
+      </div>
+    );
+  const facts = [
+    pendingPlan
+      ? t('deviceSyncRun.stepsWaiting', { count: pendingPlan.steps.length })
+      : null,
+    !decided && notes.length
+      ? t('deviceSyncRun.notesWaiting', { count: notes.length })
+      : null,
+    decided
+      ? run.status === 'accepted'
+        ? t('deviceSyncRun.accepted')
+        : run.status === 'dismissed'
+          ? t('review.dismissed')
+          : t('review.superseded')
+      : null,
+  ].filter(Boolean);
+  return (
+    <Collapsible
+      // Folded while a plan waits; its notes alone are shown at once.
+      open={open ?? (!pendingPlan && !decided && notes.length > 0)}
+      onOpenChange={setOpen}
+      className='rounded-lg border bg-card'
+    >
+      <div className='flex flex-wrap items-center gap-2 px-4 py-2.5'>
+        <CollapsibleTrigger className='group flex min-w-0 flex-1 items-center gap-1.5 text-left text-sm'>
+          <ChevronRight
+            className='size-4 shrink-0 text-muted-foreground transition-transform group-data-[panel-open]:rotate-90'
+            aria-hidden
+          />
+          <span className='font-medium'>{followUpTitle(run, t)}</span>
+          {facts.length ? (
+            <span className='text-muted-foreground'>· {facts.join(' · ')}</span>
+          ) : null}
+        </CollapsibleTrigger>
+        <div className='flex items-center gap-2'>
+          {pendingPlan ? (
+            <PlanDecision plan={pendingPlan} skipped={skipped} />
+          ) : !decided ? (
+            <Button
+              variant='ghost'
+              disabled={dismiss.isPending}
+              onClick={() => dismiss.mutate(run)}
+            >
+              {t('review.dismiss')}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      <CollapsibleContent className='space-y-3 border-t px-4 py-3 text-sm'>
+        {plan.data ? (
+          <PlanCard
+            plan={plan.data}
+            bare
+            skipped={skipped}
+            onSkippedChange={setSkipped}
+          />
+        ) : null}
+        {notes.length ? (
+          <section className='space-y-1'>
+            <h4 className='text-xs text-muted-foreground'>
+              {t('deviceSyncRun.notes')}
+            </h4>
+            <ul className='list-disc space-y-0.5 pl-5'>
+              {notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </CollapsibleContent>
+      {dismiss.error ? (
+        <p className='px-4 pb-3 text-sm text-destructive'>
+          {dismiss.error.message}
+        </p>
+      ) : null}
+    </Collapsible>
+  );
+}
+
 const isOpenRun = (run: { readonly status: string }) =>
   run.status === 'running' ||
   run.status === 'pending' ||
@@ -190,13 +300,7 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
         <section className='space-y-2'>
           <h2 className='text-sm font-semibold'>{t('review.waiting')}</h2>
           {visible.map((run) => (
-            <div
-              key={run.id}
-              className='space-y-3 rounded-lg border bg-card p-4'
-            >
-              <h3 className='text-sm font-medium'>{followUpTitle(run, t)}</h3>
-              <DeviceSyncRunCard run={run} onReview />
-            </div>
+            <FollowUpReviewCard key={run.id} run={run} />
           ))}
         </section>
       ) : null}

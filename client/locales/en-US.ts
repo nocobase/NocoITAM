@@ -2226,11 +2226,11 @@ const messages = {
       },
       hints: {
         checks:
-          'On the register and in MDM, but they disagree: silent, with another user, or online against their status. Settle each on its page, or ignore it.',
+          'On the register and in MDM, but they disagree: silent, with another user, or online against their status.',
         unregistered:
           'Devices a platform reports that the register lacks. Register one, link it to a device, or keep it off the register.',
         unmanaged:
-          'Register devices in use or on loan, of a managed category (changed in the MDM settings), that no connected MDM reports. Enrol them in MDM, or mark one that rightly is not as not to be managed.',
+          'Devices in use, of a managed category, that no MDM reports. Enrol them in MDM, or mark one as not to be managed.',
       },
       ignoredHeading: 'Ignored ({{count}})',
       ignoredManual_one:
@@ -2248,8 +2248,7 @@ const messages = {
         holder: 'Assigned to',
         platformModel: 'Model on the platform',
         reason: 'Reason',
-        markedBy: 'Marked by',
-        markedAt: 'Marked on',
+        marked: 'Marked',
         linkedDevice: 'Linked to',
         linkedSerial: 'Register serial',
       },
@@ -3779,6 +3778,10 @@ const messages = {
     steps: 'What the plan would do',
     working: 'Asset Steward is sorting the differences on the MDM review…',
     accepted: 'Carried out',
+    stepsWaiting_one: '{{count}} step to confirm',
+    stepsWaiting_other: '{{count}} steps to confirm',
+    notesWaiting_one: '{{count}} to look at',
+    notesWaiting_other: '{{count}} to look at',
     notes: 'For you to look at',
     openReview: 'Open MDM 核对',
     failedHint:

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import {
   Fragment,
+  useEffect,
   useMemo,
   useState,
   type ReactElement,
@@ -32,6 +33,7 @@ import {
   useNavigate,
   useParams,
   useResolvedPath,
+  useSearchParams,
 } from 'react-router';
 
 import {
@@ -135,6 +137,9 @@ type DialogKind =
   | 'correctStatus'
   | 'delete';
 
+/** The dialogs another page may open here through `?do=`. */
+const LINKED_DIALOGS = ['assign', 'transfer', 'restore', 'markLost'] as const;
+
 export default function DeviceDetailPage(): ReactElement {
   const { t } = useTranslation();
   const { id = '' } = useParams();
@@ -188,6 +193,31 @@ export default function DeviceDetailPage(): ReactElement {
   // The person a platform says has the device, offered by MDM's
   // 分配给 / 调拨给 (device sync, 2026-10-15).
   const [suggested, setSuggested] = useState<string>();
+  // MDM 核对 settles a difference here (2026-10-21): `?do=` names the
+  // dialog to open and `&to=` the person the platform reports, read once
+  // the device is loaded and then dropped from the address.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requested = searchParams.get('do');
+  const loaded = Boolean(device.data);
+  const [opened, setOpened] = useState<string | null>(null);
+  if (requested && loaded && opened !== requested) {
+    setOpened(requested);
+    if ((LINKED_DIALOGS as readonly string[]).includes(requested)) {
+      setSuggested(searchParams.get('to') ?? undefined);
+      setDialog(requested as DialogKind);
+    }
+  } else if (!requested && opened) setOpened(null);
+  useEffect(() => {
+    if (!requested || !loaded) return;
+    setSearchParams(
+      (current) => {
+        current.delete('do');
+        current.delete('to');
+        return current;
+      },
+      { replace: true },
+    );
+  }, [requested, loaded, setSearchParams]);
   const impact = useDeleteImpact(
     DEVICES_PATH,
     dialog === 'delete' ? id : undefined,

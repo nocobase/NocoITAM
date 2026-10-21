@@ -1,13 +1,13 @@
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { ExternalLink, Info, Settings2 } from 'lucide-react';
+import { ExternalLink, Info, MoreHorizontal, Settings2 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { DeviceSyncFollowUpBlock } from '@/components/itam/ai/device-sync-run';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAskFollowUp } from '@/lib/itam/agents';
+import { useAskFollowUp, useInbox } from '@/lib/itam/agents';
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { EmptyState } from '@/components/itam/empty-state';
@@ -20,6 +20,12 @@ import { RecordLink } from '@/components/itam/record-link';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -51,6 +57,7 @@ import {
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate, text } from '@/lib/itam/format';
+import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { useReferenceNames } from '@/lib/itam/references';
 import { cn } from '@/lib/utils';
 
@@ -75,6 +82,12 @@ export default function DeviceSyncReviewPage(): ReactElement {
     action: 'update',
   });
   const counts = useReviewCounts();
+  // One way to Asset Steward's follow-up at a time (2026-10-21): while one
+  // waits under 等你决定, the header does not offer another.
+  const inbox = useInbox();
+  const following = (inbox.data?.open ?? []).some(
+    (run) => run.agent === 'deviceSync',
+  );
   const requested = params.get('view');
   // 已忽略 is a section of 只在 MDM: a link to it (the settings page's)
   // opens that tab and scrolls down to it.
@@ -116,7 +129,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
           <>
             {/* MDM 跟进 on the page (2026-10-17): the follow-up for the reader alone, now
                 rather than after the next pull. */}
-            {ai.available ? (
+            {ai.available && !following ? (
               <AiShortcut
                 disabled={followUp.isPending}
                 onClick={() => followUp.mutate()}
@@ -344,6 +357,130 @@ const deviceLabel = (row: {
   readonly name?: string | null;
 }) => [row.deviceNo, row.deviceName ?? row.name].filter(Boolean).join(' / ');
 
+type RowAction = {
+  readonly label: string;
+  readonly disabled?: boolean;
+} & ({ readonly to: string } | { readonly onSelect: () => void });
+
+/**
+ * A row's actions on one line (2026-10-21): the one that settles it as a
+ * button, the rest under "···", so the last column stays in view.
+ */
+function RowActions({
+  main,
+  more = [],
+}: {
+  readonly main: RowAction;
+  readonly more?: readonly RowAction[];
+}): ReactElement {
+  const { t } = useTranslation();
+  return (
+    <span className='flex items-center justify-end gap-1'>
+      {'to' in main ? (
+        <Button
+          variant='outline'
+          disabled={main.disabled}
+          render={<Link to={main.to} />}
+          nativeButton={false}
+        >
+          {main.label}
+        </Button>
+      ) : (
+        <Button
+          variant='outline'
+          disabled={main.disabled}
+          onClick={main.onSelect}
+        >
+          {main.label}
+        </Button>
+      )}
+      {more.length ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant='ghost'
+                size='icon-sm'
+                aria-label={t('common.more')}
+              />
+            }
+          >
+            <MoreHorizontal />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end'>
+            {more.map((item) => (
+              <DropdownMenuItem
+                key={item.label}
+                disabled={item.disabled}
+                onClick={'onSelect' in item ? item.onSelect : undefined}
+                render={'to' in item ? <Link to={item.to} /> : undefined}
+              >
+                {item.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+    </span>
+  );
+}
+
+/**
+ * What settles a difference (2026-10-21), as the device page's MDM group
+ * offers it: a silent device marked lost, a device the platform puts with
+ * another person moved to them, one in stock handed to its platform user,
+ * one marked lost brought back — each opening the device page's own dialog
+ * (`?do=`). Otherwise, or without the grant, the device page itself.
+ */
+function checkAction(
+  row: DeviceCheck,
+  can: Readonly<Record<string, boolean>>,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): RowAction {
+  const page = `/devices/${row.deviceId}`;
+  const user = row.userName ?? '';
+  if (
+    row.kind === 'stale' &&
+    can.update &&
+    ['inUse', 'onLoan'].includes(row.status)
+  )
+    return {
+      label: t('deviceActions.markLost.title'),
+      to: `${page}?do=markLost`,
+    };
+  if (
+    row.kind === 'userMismatch' &&
+    row.personId &&
+    can.transfer &&
+    row.status === 'inUse'
+  )
+    return {
+      label: t('deviceSync.checks.transferTo', { user }),
+      to: `${page}?do=transfer&to=${row.personId}`,
+    };
+  if (row.kind === 'statusMismatch') {
+    if (row.status === 'inStock' && row.personId && can.assign)
+      return {
+        label: t('deviceSync.checks.assignTo', { user }),
+        to: `${page}?do=assign&to=${row.personId}`,
+      };
+    if (row.status === 'lost' && can.update)
+      return {
+        label: t('deviceSync.checks.restore'),
+        to: `${page}?do=restore`,
+      };
+  }
+  return { label: t('common.view'), to: page };
+}
+
+/**
+ * When a row was marked and by whom, in one column: the date first, so a
+ * narrow column still shows it.
+ */
+function marked(by: string | null | undefined, at: string | null | undefined) {
+  return [at ? formatDate(at) : null, by].filter(Boolean).join(' · ') || '—';
+}
+
 /** Devices whose platform record says otherwise than the register. */
 function ChecksView(): ReactElement {
   const { t } = useTranslation();
@@ -351,6 +488,11 @@ function ChecksView(): ReactElement {
   // 忽略 at once (2026-10-16): it is listed under 已忽略 and 恢复 takes
   // it back, so nothing is lost by a wrong click.
   const action = useDeviceReviewAction();
+  const permissions = useCollectionPermissions('devices', [
+    'update',
+    'assign',
+    'transfer',
+  ]);
   const rows = review.data ?? [];
   const people = useReferenceNames([
     {
@@ -420,20 +562,22 @@ function ChecksView(): ReactElement {
                       : '—'}
                   </CellText>
                 </TableCell>
-                <TableCell className='text-right'>
-                  <Button
-                    variant='outline'
-                    disabled={action.isPending}
-                    onClick={() =>
-                      action.mutate({
-                        kind: 'dismiss',
-                        deviceId: row.deviceId,
-                        check: row.kind,
-                      })
-                    }
-                  >
-                    {t('deviceSync.checks.keepRegister')}
-                  </Button>
+                <TableCell>
+                  <RowActions
+                    main={checkAction(row, permissions, t)}
+                    more={[
+                      {
+                        label: t('deviceSync.checks.keepRegister'),
+                        disabled: action.isPending,
+                        onSelect: () =>
+                          action.mutate({
+                            kind: 'dismiss',
+                            deviceId: row.deviceId,
+                            check: row.kind,
+                          }),
+                      },
+                    ]}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -676,8 +820,7 @@ function DismissedView(): ReactElement {
           <TableRow>
             <TableHead>{t('deviceSync.review.columns.device')}</TableHead>
             <TableHead>{t('deviceSync.review.columns.difference')}</TableHead>
-            <TableHead>{t('deviceSync.review.columns.markedBy')}</TableHead>
-            <TableHead>{t('deviceSync.review.columns.markedAt')}</TableHead>
+            <TableHead>{t('deviceSync.review.columns.marked')}</TableHead>
             <TableHead className='text-right'>{t('common.actions')}</TableHead>
           </TableRow>
         </TableHeader>
@@ -699,15 +842,15 @@ function DismissedView(): ReactElement {
                   {t(`deviceSync.checks.kinds.${row.kind}`)}
                 </Badge>
               </TableCell>
-              <TableCell className='text-muted-foreground'>
-                <CellText className='max-w-48'>
-                  {row.dismissedById
-                    ? (people.users?.get(row.dismissedById) ?? '…')
-                    : '—'}
-                </CellText>
-              </TableCell>
               <TableCell className='text-muted-foreground tabular-nums'>
-                {formatDate(row.dismissedAt ?? null)}
+                <CellText className='max-w-44'>
+                  {marked(
+                    row.dismissedById
+                      ? (people.users?.get(row.dismissedById) ?? '…')
+                      : null,
+                    row.dismissedAt,
+                  )}
+                </CellText>
               </TableCell>
               <TableCell className='text-right'>
                 <Button
@@ -779,17 +922,13 @@ function UnmanagedView({
               {/* Who answers for it, as on 信息不一致 (2026-10-17): their
                   MDM 跟进 has it. */}
               <TableHead>{t('fields.owner')}</TableHead>
-              {/* Who said so and when in columns of their own (2026-10-16):
-                  under the reason they made the row two lines tall. */}
+              {/* Who said so and when beside the reason, not under it
+                  (2026-10-16), and in one column (2026-10-21), so the row's
+                  恢复 stays in view. */}
               {view === 'exempted' ? (
                 <>
                   <TableHead>{t('deviceSync.review.columns.reason')}</TableHead>
-                  <TableHead>
-                    {t('deviceSync.review.columns.markedBy')}
-                  </TableHead>
-                  <TableHead>
-                    {t('deviceSync.review.columns.markedAt')}
-                  </TableHead>
+                  <TableHead>{t('deviceSync.review.columns.marked')}</TableHead>
                 </>
               ) : null}
               <TableHead className='text-right'>
@@ -840,17 +979,17 @@ function UnmanagedView({
                 {view === 'exempted' ? (
                   <>
                     <TableCell>
-                      <CellText className='max-w-md'>{row.reason}</CellText>
-                    </TableCell>
-                    <TableCell className='text-muted-foreground'>
-                      <CellText className='max-w-48'>
-                        {row.exemptedById
-                          ? (names.users?.get(row.exemptedById) ?? '…')
-                          : '—'}
-                      </CellText>
+                      <CellText className='max-w-40'>{row.reason}</CellText>
                     </TableCell>
                     <TableCell className='text-muted-foreground tabular-nums'>
-                      {formatDate(row.exemptedAt ?? null)}
+                      <CellText className='max-w-44'>
+                        {marked(
+                          row.exemptedById
+                            ? (names.users?.get(row.exemptedById) ?? '…')
+                            : null,
+                          row.exemptedAt,
+                        )}
+                      </CellText>
                     </TableCell>
                   </>
                 ) : null}
@@ -1098,12 +1237,7 @@ function RecordsView({
               {view === 'ignored' ? (
                 <>
                   <TableHead>{t('deviceSync.review.columns.reason')}</TableHead>
-                  <TableHead>
-                    {t('deviceSync.review.columns.markedBy')}
-                  </TableHead>
-                  <TableHead>
-                    {t('deviceSync.review.columns.markedAt')}
-                  </TableHead>
+                  <TableHead>{t('deviceSync.review.columns.marked')}</TableHead>
                 </>
               ) : (
                 <TableHead>{t('deviceSync.fields.lastSync')}</TableHead>
@@ -1178,7 +1312,7 @@ function RecordsView({
                 {view === 'ignored' ? (
                   <>
                     <TableCell>
-                      <CellText className='max-w-md'>
+                      <CellText className='max-w-40'>
                         {row.ignoredByRule
                           ? t('deviceSync.review.byRule')
                           : row.ignoreReason}
@@ -1186,15 +1320,15 @@ function RecordsView({
                     </TableCell>
                     {/* A personal device is kept off by the rule, not by
                         anybody, on no particular day. */}
-                    <TableCell className='text-muted-foreground'>
-                      <CellText className='max-w-48'>
-                        {row.ignoredById
-                          ? (people.users?.get(row.ignoredById) ?? '…')
-                          : '—'}
-                      </CellText>
-                    </TableCell>
                     <TableCell className='text-muted-foreground tabular-nums'>
-                      {row.ignoredAt ? formatDate(row.ignoredAt) : '—'}
+                      <CellText className='max-w-44'>
+                        {marked(
+                          row.ignoredById
+                            ? (people.users?.get(row.ignoredById) ?? '…')
+                            : null,
+                          row.ignoredAt,
+                        )}
+                      </CellText>
                     </TableCell>
                   </>
                 ) : (
@@ -1217,41 +1351,42 @@ function RecordsView({
                         {t('deviceSync.review.restore')}
                       </Button>
                     ) : (
-                      <>
-                        {/* A serial already on the register would be refused
-                            as a duplicate: that record is linked, not
-                            registered (2026-10-16). */}
-                        {row.matchState === 'unlinked' &&
-                        row.candidates.length === 0 ? (
-                          <Button
-                            variant='outline'
-                            onClick={() => {
-                              setDone(undefined);
-                              setRegistering(row);
-                            }}
-                          >
-                            {t('deviceSync.review.register')}
-                          </Button>
-                        ) : null}
-                        <Button
-                          variant='outline'
-                          onClick={() => {
+                      // 补登记 leads when it can be done, 关联 otherwise;
+                      // the rest under "···" (2026-10-21).
+                      (() => {
+                        const register: RowAction = {
+                          label: t('deviceSync.review.register'),
+                          onSelect: () => {
+                            setDone(undefined);
+                            setRegistering(row);
+                          },
+                        };
+                        const link: RowAction = {
+                          label: t('deviceSync.review.link'),
+                          onSelect: () => {
                             setTarget(row.candidates[0]?.id ?? null);
                             setLinking(row);
-                          }}
-                        >
-                          {t('deviceSync.review.link')}
-                        </Button>
-                        <Button
-                          variant='outline'
-                          onClick={() => {
+                          },
+                        };
+                        const ignore: RowAction = {
+                          label: t('deviceSync.review.ignore'),
+                          onSelect: () => {
                             setReason('');
                             setIgnoring(row);
-                          }}
-                        >
-                          {t('deviceSync.review.ignore')}
-                        </Button>
-                      </>
+                          },
+                        };
+                        // A serial already on the register would be refused
+                        // as a duplicate: that record is linked, not
+                        // registered (2026-10-16).
+                        const registrable =
+                          row.matchState === 'unlinked' &&
+                          row.candidates.length === 0;
+                        return registrable ? (
+                          <RowActions main={register} more={[link, ignore]} />
+                        ) : (
+                          <RowActions main={link} more={[ignore]} />
+                        );
+                      })()
                     )}
                   </span>
                 </TableCell>

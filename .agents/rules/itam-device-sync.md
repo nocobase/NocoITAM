@@ -194,6 +194,18 @@ product or in release notes, until it is listed here.
   from the device list header while a platform is connected and from the
   MDM 核对 column header (查看全部), empty or not, since 2026-10-14); the
   settings tab's 核对规则 card (`deviceSync` settings key).
+- **MDM 核对's layout** (2026-10-21): each row ends in one button and a
+  "···" menu (`RowActions`), so the last column stays in view at 1280 px.
+  A 信息不一致 row's button settles it through the device page's own dialog,
+  opened by `?do=` (`markLost`, `transfer`, `assign`, `restore`) and
+  `&to=` the platform's person, which the device page reads once and drops;
+  without the grant, or for a difference no dialog settles, it is 查看.
+  忽略 is in the menu. 只在 MDM leads with 补登记 (or 关联 when a register
+  device has the serial). Who marked a row and when share one column, the
+  date first. 等你决定 folds each MDM 跟进 to one line — its subject, the
+  steps waiting, and the plan's 拒绝 / 确认执行 (`PlanDecision`); declining
+  the plan sets the follow-up aside, so 忽略 shows only without a plan. The
+  header's MDM 跟进 hides while a follow-up is open.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

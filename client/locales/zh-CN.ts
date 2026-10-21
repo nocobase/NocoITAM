@@ -2128,12 +2128,11 @@ const zhCN: AppResource = {
         ignored: '已忽略',
       },
       hints: {
-        checks:
-          '台账和 MDM 都有，但信息对不上：失联、使用人不一致、状态不符。到设备页处理，或忽略。',
+        checks: '台账和 MDM 都有，但信息对不上：失联、使用人不一致、状态不符。',
         unregistered:
           'MDM 里有、台账里没有的设备。补登记、关联到已有设备，或标为不纳入台账。',
         unmanaged:
-          '台账里使用中或借出、分类属于应纳管分类（可在 MDM 设置中修改），却没有出现在任何已连接 MDM 中的设备，需要在 MDM 那边注册；确实不该进 MDM 的，标为不需要纳管。',
+          '台账里在用、属于应纳管分类，却不在任何 MDM 里的设备。去 MDM 注册，或标为不需要纳管。',
       },
       ignoredHeading: '已忽略 {{count}} 台',
       ignoredManual_one:
@@ -2151,8 +2150,7 @@ const zhCN: AppResource = {
         holder: '分配给',
         platformModel: '平台上的型号',
         reason: '原因',
-        markedBy: '标记人',
-        markedAt: '标记日期',
+        marked: '标记',
         linkedDevice: '关联到',
         linkedSerial: '台账序列号',
       },
@@ -3576,6 +3574,10 @@ const zhCN: AppResource = {
     steps: '方案会做的事',
     working: '资产管家正在整理 MDM 核对上的差异…',
     accepted: '已按方案处理',
+    stepsWaiting_one: '{{count}} 步待确认',
+    stepsWaiting_other: '{{count}} 步待确认',
+    notesWaiting_one: '{{count}} 项要你看',
+    notesWaiting_other: '{{count}} 项要你看',
     notes: '需要你看一下',
     openReview: '去 MDM 核对',
     failedHint:

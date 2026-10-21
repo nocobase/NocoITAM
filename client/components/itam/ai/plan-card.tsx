@@ -34,16 +34,22 @@ const STATUS_TONE: Readonly<
   expired: 'outline',
 };
 
-export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
+/**
+ * Carrying a plan out or declining it: the steps left unticked are skipped.
+ * The card's own buttons, and MDM 核对's folded follow-up header's
+ * (2026-10-21), which carries them without the steps in view.
+ */
+export function PlanDecision({
+  plan,
+  skipped = NONE,
+}: {
+  readonly plan: Plan;
+  readonly skipped?: ReadonlySet<number>;
+}): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
   const client = useQueryClient();
   const toaster = useToaster();
-  const [skipped, setSkipped] = useState<ReadonlySet<number>>(() => new Set());
-  // Each step's line already says what it does; the raw parameters behind it
-  // (ids, references, JSON) stay folded until asked for (2026-10-16).
-  const [showParams, setShowParams] = useState(false);
-  const pending = plan.status === 'pending';
   const decide = useMutation({
     mutationFn: async (decision: 'execute' | 'void') =>
       (
@@ -72,6 +78,52 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
       await client.invalidateQueries({ queryKey: ['itam', PLANS_PATH] });
     },
   });
+  const left = plan.steps.filter((step) => !skipped.has(step.position)).length;
+  return (
+    <>
+      <Button
+        variant='ghost'
+        disabled={decide.isPending}
+        onClick={() => decide.mutate('void')}
+      >
+        {t('ai.plans.decline')}
+      </Button>
+      <Button
+        disabled={decide.isPending || left === 0}
+        onClick={() => decide.mutate('execute')}
+      >
+        {t('ai.plans.execute', { count: left })}
+      </Button>
+    </>
+  );
+}
+
+const NONE: ReadonlySet<number> = new Set();
+
+export function PlanCard({
+  plan,
+  bare = false,
+  skipped: given,
+  onSkippedChange,
+}: {
+  readonly plan: Plan;
+  /**
+   * The steps alone, inside a card that says what the plan is and carries
+   * its decision (MDM 核对's follow-up, 2026-10-21).
+   */
+  readonly bare?: boolean;
+  /** The unticked steps, when the decision is outside the card. */
+  readonly skipped?: ReadonlySet<number>;
+  readonly onSkippedChange?: (skipped: ReadonlySet<number>) => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  const [own, setOwn] = useState<ReadonlySet<number>>(() => new Set());
+  const skipped = given ?? own;
+  const setSkipped = onSkippedChange ?? setOwn;
+  // Each step's line already says what it does; the raw parameters behind it
+  // (ids, references, JSON) stay folded until asked for (2026-10-16).
+  const [showParams, setShowParams] = useState(false);
+  const pending = plan.status === 'pending';
   const steps = plan.steps;
   const hasParams = steps.some((step) => step.check?.fields.length);
   const toggleParams = hasParams ? (
@@ -85,27 +137,34 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
       {t(showParams ? 'ai.plans.hideParams' : 'ai.plans.showParams')}
     </Button>
   ) : null;
-  const left = steps.filter((step) => !skipped.has(step.position)).length;
   return (
-    <div className='my-2 rounded-lg border border-border bg-card p-3 text-sm'>
-      <div className='flex items-start gap-2'>
-        <ListChecks
-          className='mt-0.5 size-4 shrink-0 text-primary'
-          aria-hidden='true'
-        />
-        <div className='min-w-0 flex-1'>
-          <div className='flex flex-wrap items-center gap-2'>
-            <span className='font-medium'>{plan.title}</span>
-            <Badge variant={STATUS_TONE[plan.status]}>
-              {t(`ai.plans.status.${plan.status}`)}
-            </Badge>
+    <div
+      className={
+        bare
+          ? 'text-sm'
+          : 'my-2 rounded-lg border border-border bg-card p-3 text-sm'
+      }
+    >
+      {bare ? null : (
+        <div className='flex items-start gap-2'>
+          <ListChecks
+            className='mt-0.5 size-4 shrink-0 text-primary'
+            aria-hidden='true'
+          />
+          <div className='min-w-0 flex-1'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <span className='font-medium'>{plan.title}</span>
+              <Badge variant={STATUS_TONE[plan.status]}>
+                {t(`ai.plans.status.${plan.status}`)}
+              </Badge>
+            </div>
+            {plan.summary ? (
+              <p className='mt-1 text-muted-foreground'>{plan.summary}</p>
+            ) : null}
           </div>
-          {plan.summary ? (
-            <p className='mt-1 text-muted-foreground'>{plan.summary}</p>
-          ) : null}
         </div>
-      </div>
-      <ol className='mt-3 space-y-2'>
+      )}
+      <ol className={bare ? 'space-y-2' : 'mt-3 space-y-2'}>
         {steps.map((step) => (
           <li key={step.id} className='flex items-start gap-2'>
             {pending && steps.length > 1 ? (
@@ -113,14 +172,12 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
                 className='mt-0.5'
                 checked={!skipped.has(step.position)}
                 aria-label={step.check?.title ?? step.op}
-                onCheckedChange={(checked) =>
-                  setSkipped((current) => {
-                    const next = new Set(current);
-                    if (checked) next.delete(step.position);
-                    else next.add(step.position);
-                    return next;
-                  })
-                }
+                onCheckedChange={(checked) => {
+                  const next = new Set(skipped);
+                  if (checked) next.delete(step.position);
+                  else next.add(step.position);
+                  setSkipped(next);
+                }}
               />
             ) : (
               <StepMark status={step.status} />
@@ -151,22 +208,10 @@ export function PlanCard({ plan }: { readonly plan: Plan }): ReactElement {
           </li>
         ))}
       </ol>
-      {pending ? (
+      {pending && !bare ? (
         <div className='mt-3 flex flex-wrap items-center justify-end gap-2'>
           {toggleParams}
-          <Button
-            variant='ghost'
-            disabled={decide.isPending}
-            onClick={() => decide.mutate('void')}
-          >
-            {t('ai.plans.decline')}
-          </Button>
-          <Button
-            disabled={decide.isPending || left === 0}
-            onClick={() => decide.mutate('execute')}
-          >
-            {t('ai.plans.execute', { count: left })}
-          </Button>
+          <PlanDecision plan={plan} skipped={skipped} />
         </div>
       ) : plan.decidedAt || hasParams ? (
         <div className='mt-2 flex items-center justify-end gap-2 text-xs text-muted-foreground'>

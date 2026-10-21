@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,6 +16,9 @@ const state = vi.hoisted(() => ({
   device: undefined as Record<string, unknown> | undefined,
   records: [] as Record<string, unknown>[],
   ai: false,
+  // MDM 跟进 runs still open, and what the reader may do to devices.
+  open: [] as { agent: string }[],
+  permissions: {} as Record<string, boolean>,
   followUp: {
     mutate: vi.fn(),
     isPending: false,
@@ -68,6 +72,10 @@ vi.mock('../../client/lib/itam/ai-chat.js', () => ({
 }));
 vi.mock('../../client/lib/itam/agents.js', () => ({
   useAskFollowUp: () => state.followUp,
+  useInbox: () => ({ data: { open: state.open, handled: [] } }),
+}));
+vi.mock('../../client/lib/itam/permissions.js', () => ({
+  useCollectionPermissions: () => state.permissions,
 }));
 vi.mock('../../client/components/itam/ai/device-sync-run.js', () => ({
   DeviceSyncFollowUpBlock: () => <p>follow-up block</p>,
@@ -267,7 +275,8 @@ describe('MDM 核对 → 信息不一致: 已忽略', () => {
     const section = screen
       .getByText('deviceSync.review.dismissedHeading:1')
       .closest('section')!;
-    expect(within(section).getByText('Mia')).toBeInTheDocument();
+    // Who and when in one column, the date first.
+    expect(within(section).getByText(/· Mia$/)).toBeInTheDocument();
     fireEvent.click(
       within(section).getByRole('button', {
         name: 'deviceSync.review.restore',
@@ -278,6 +287,93 @@ describe('MDM 核对 → 信息不一致: 已忽略', () => {
       deviceId: 'd9',
       check: 'stale',
     });
+  });
+});
+
+// Each difference with what settles it (2026-10-21): the device page's own
+// dialog, opened through `?do=`; 忽略 under "···".
+describe('MDM 核对 → 信息不一致', () => {
+  const check = {
+    kind: 'stale',
+    critical: false,
+    deviceId: 'd9',
+    deviceNo: 'DE-000009',
+    deviceName: 'SG-LT-009',
+    status: 'inUse',
+    ownerId: 'mia',
+    assigneeType: 'person',
+    assigneeId: 'pat',
+    managedDeviceId: 'm9',
+    source: 'intune',
+    lastSyncAt: '2026-08-29T06:10:00.000',
+    goneAt: null,
+    personId: null,
+    userName: null,
+  };
+  const show = () =>
+    render(
+      <MemoryRouter initialEntries={['/device-sync']}>
+        <DeviceSyncReviewPage />
+      </MemoryRouter>,
+    );
+
+  beforeEach(() => {
+    state.action.mockReset();
+    state.permissions = { update: true, assign: true, transfer: true };
+  });
+
+  it('marks a silent device lost, and ignores it from the menu', async () => {
+    state.views = { checks: [check] };
+    show();
+    expect(
+      screen.getByRole('button', { name: 'deviceActions.markLost.title' }),
+    ).toHaveAttribute('href', '/devices/d9?do=markLost');
+    screen.getByRole('button', { name: 'common.more' }).focus();
+    await userEvent.keyboard('{ArrowDown}');
+    fireEvent.click(
+      await screen.findByRole('menuitem', {
+        name: 'deviceSync.checks.keepRegister',
+      }),
+    );
+    expect(state.action).toHaveBeenCalledWith({
+      kind: 'dismiss',
+      deviceId: 'd9',
+      check: 'stale',
+    });
+  });
+
+  it('moves a device to the platform’s user', () => {
+    state.views = {
+      checks: [
+        { ...check, kind: 'userMismatch', personId: 'p2', userName: 'Liu' },
+      ],
+    };
+    show();
+    expect(
+      screen.getByRole('button', { name: 'deviceSync.checks.transferTo' }),
+    ).toHaveAttribute('href', '/devices/d9?do=transfer&to=p2');
+  });
+
+  it('opens the device without the grant to settle it', () => {
+    state.permissions = {};
+    state.views = { checks: [check] };
+    show();
+    expect(screen.getByRole('button', { name: 'common.view' })).toHaveAttribute(
+      'href',
+      '/devices/d9',
+    );
+  });
+
+  it('offers no second follow-up while one waits', () => {
+    state.ai = true;
+    state.views = { checks: [check] };
+    state.open = [{ agent: 'deviceSync' }];
+    show();
+    expect(
+      screen.queryByRole('button', { name: 'deviceSync.review.followUp' }),
+    ).toBeNull();
+    state.open = [];
+    state.ai = false;
   });
 });
 
