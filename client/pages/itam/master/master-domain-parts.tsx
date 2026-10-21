@@ -120,8 +120,13 @@ function TreePanes({
       },
       { replace: true },
     );
+  // Nothing chosen opens the first place at the top of the tree
+  // (2026-10-21; an empty pane asking for a click until then), as does the
+  // one left after the open record is deleted.
+  const first = nodes?.find((node) => !node.parentId) ?? nodes?.[0];
   useEffect(() => {
     if (gone) select(undefined);
+    else if (!selected && first) select(String(first.id));
   });
   return (
     // As tall as the page leaves (`treeFills`): each pane scrolls on its
