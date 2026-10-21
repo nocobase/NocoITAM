@@ -26,6 +26,7 @@ import {
 } from '@/lib/itam/agents';
 import {
   FollowUpFocusContext,
+  followUpParts,
   followUpTitle,
 } from '@/lib/itam/device-sync-followup';
 import { useReferenceNames } from '@/lib/itam/references';
@@ -424,9 +425,9 @@ function OthersFollowUps(): ReactElement | null {
             className='space-y-2 rounded-lg border bg-card p-4 text-sm'
           >
             <h3 className='font-medium'>
-              {t('deviceSyncRun.otherTitle', {
+              {t('deviceSyncRun.otherDevices', {
                 name: names.users?.get(row.deciderId) ?? '…',
-                count: row.items.length,
+                parts: followUpParts(row.items, t, false),
               })}
             </h3>
             {row.status === 'running' ? (

@@ -221,7 +221,7 @@ it('heads a waiting plan with its decision, its steps open beneath', () => {
   expect(
     screen.getByText('plan:MDM follow-up: 2 differences'),
   ).toBeInTheDocument();
-  fireEvent.click(screen.getByText('deviceSyncRun.ownDifferences'));
+  fireEvent.click(screen.getByText('deviceSyncRun.ownDevices'));
   expect(
     screen.queryByText('plan:MDM follow-up: 2 differences'),
   ).not.toBeInTheDocument();
@@ -242,7 +242,7 @@ it('shows the run picked in 收件箱 alone', () => {
   );
   expect(screen.getByText('deviceSyncRun.sharedDevices')).toBeInTheDocument();
   expect(
-    screen.queryByText('deviceSyncRun.ownDifferences'),
+    screen.queryByText('deviceSyncRun.ownDevices'),
   ).not.toBeInTheDocument();
 });
 
@@ -269,7 +269,7 @@ it('lists the other owners’ follow-ups to read, with nothing to act on', () =>
   fireEvent.click(
     screen.getByRole('button', { name: /^deviceSyncRun\.others/ }),
   );
-  expect(screen.getByText('deviceSyncRun.otherTitle')).toBeInTheDocument();
+  expect(screen.getByText('deviceSyncRun.otherDevices')).toBeInTheDocument();
   expect(screen.getByText('Transfer DE-2 to Liu Yang')).toBeInTheDocument();
   expect(screen.getByText('DE-1: ask its user')).toBeInTheDocument();
   expect(
@@ -310,6 +310,25 @@ it('titles the asset managers’ follow-up by kind, in devices', () => {
       t,
     ),
   ).toBe('sharedDevices(onlyInMdm(1), unowned(1))');
+  // A person's, by MDM 核对's tabs.
+  expect(
+    followUpTitle(
+      run({
+        result: {
+          items: [
+            item('stale', 'd1'),
+            item('userMismatch', 'd1'),
+            item('statusMismatch', 'd2'),
+            item('unmanaged', 'd3'),
+          ],
+          planId: null,
+          notes: [],
+          summary: '',
+        },
+      }),
+      t,
+    ),
+  ).toBe('ownDevices(mismatch(2), onlyOnRegister(1))');
 });
 
 // Settled on its row below (2026-10-21): its steps are left out, and once
