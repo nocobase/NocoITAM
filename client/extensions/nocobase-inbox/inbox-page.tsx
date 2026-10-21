@@ -210,10 +210,16 @@ function InboxPageContent({
     [waiting.data, items, notices.data],
   );
   const groups = groupEntries(entries, categories);
-  const unread = Object.values(unreadByCategory(groups)).reduce(
-    (sum, count) => sum + count,
-    0,
-  );
+  // Application change (2026-10-21): the count on All is the server's
+  // unread total, as the sidebar's 收件箱 counts it, rather than the unread
+  // among the items loaded so far — a first page of 25 said 25 while 36
+  // waited unread. The loaded count stands in until the total arrives.
+  const unread =
+    unreadTotal.data ??
+    Object.values(unreadByCategory(groups)).reduce(
+      (sum, count) => sum + count,
+      0,
+    );
   const waitingCounts = waitingByCategory(groups, categories, pending.data);
   const visible = shownEntries(filter, groups, categories);
 
