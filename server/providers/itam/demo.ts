@@ -1088,6 +1088,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     syncMeetingRoom:
       'Meeting room computer run by Administration; not on the IT register',
     syncContractor: 'Li Gong (contractor)',
+    syncNewcomer: 'Feng Hao',
     syncTestPhone: 'Test phone, wiped for every release; not enrolled in MDM',
     historicalOrder: 'Bought before the register; entered with it',
     itSpareOrder: 'Spare laptops for IT',
@@ -1211,6 +1212,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     extraDockCancel: '现有库存已够用，无需再采购',
     syncMeetingRoom: '会议室公用电脑，由行政部管理，不入 IT 资产台账',
     syncContractor: '李工（外包）',
+    syncNewcomer: '冯浩',
     syncTestPhone: '研发测试机，每次发版都要刷机，不注册 MDM',
     historicalOrder: '上线前的采购，随台账一起录入',
     itSpareOrder: 'IT 备用笔记本',
@@ -6371,6 +6373,17 @@ export function createDemoService(dependencies: {
               model: 'Dell Latitude 7450',
               userPrincipal: 'li.gong@partner.example',
               userName: texts.syncContractor,
+            }),
+            // A company laptop of a model the register has, under a company
+            // account that is no person on it (2026-10-21): somebody HR has
+            // not entered yet, so 补登记 cannot hand it to anyone.
+            extra('demo-newcomer-laptop', {
+              serialNo: 'FHDEMO05',
+              deviceName: 'LAPTOP-FHDEMO05',
+              manufacturer: 'Lenovo',
+              model: 'ThinkPad T14 Gen 5',
+              userPrincipal: 'feng.hao@northbridge.example',
+              userName: texts.syncNewcomer,
             }),
             // Kept off the register by a person, below.
             extra('demo-meeting-room', {

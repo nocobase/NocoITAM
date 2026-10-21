@@ -529,6 +529,14 @@ export async function writeDemoSuggestions(input: {
             : `Intune's primary user is ${user ?? ''}; the ${model} is a model on the register, serial ${serial} is not.`,
           { modelId },
         );
+      // A model the register has, under someone who is no person on it.
+      if (modelId && user)
+        return answer(
+          'verify',
+          zh
+            ? `Intune 主用户${user}不在台账人员里，型号 ${model} 台账里有。先确认此人（可能刚入职还没录入），录入后再补登记并分配。`
+            : `Intune's primary user ${user} is no person on the register; the ${model} is a model on it. Find out who they are (perhaps a joiner not yet entered), then register it and assign it.`,
+        );
       if (!modelId && user)
         return answer(
           'ignore',

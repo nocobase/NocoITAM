@@ -631,12 +631,17 @@ describe('CSV import / export and demo data', () => {
       'demo-build-vm',
       'demo-contractor-laptop',
       'demo-meeting-room',
+      'demo-newcomer-laptop',
       'demo-personal-phone',
       'demo-unregistered-laptop',
     ]);
     const record = (externalId: string) =>
       managed.find((row) => row.externalId === externalId);
     expect(record('demo-personal-phone')?.ownership).toBe('personal');
+    // A company account that is no person on the register (2026-10-21).
+    expect(record('demo-newcomer-laptop')).toMatchObject({
+      matchState: 'unlinked',
+    });
     // 2026-10-15: every situation of MDM 核对 — a record a person kept off
     // the register with a reason, and one Intune stopped reporting on the
     // second pull. (A serial two devices share went on 2026-10-16: the
@@ -713,8 +718,8 @@ describe('CSV import / export and demo data', () => {
     expect(
       checks.filter((check) => check.kind === 'statusMismatch'),
     ).toHaveLength(2);
-    // The new laptop, the contractor's and the VM.
-    expect(await review.unregistered()).toHaveLength(3);
+    // The new laptop, the newcomer's, the contractor's and the VM.
+    expect(await review.unregistered()).toHaveLength(4);
     expect((await review.unmanaged()).length).toBeGreaterThanOrEqual(1);
     // A test phone marked 不需要纳管, with its reason (2026-10-15).
     expect(await review.exempted()).toHaveLength(1);
