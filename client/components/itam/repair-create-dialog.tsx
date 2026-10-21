@@ -394,19 +394,13 @@ function TriagePanel({
     }
   };
   return (
-    <div className='space-y-2 text-sm'>
+    <div className='space-y-1.5 text-sm'>
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
         <AiShortcut disabled={!ready || busy} onClick={() => void ask()}>
           {/* 诊断 (2026-10-20; it was 看看), and once answered, again — for
               a description changed since. */}
           {t(triage ? 'repairs.triage.again' : 'repairs.triage.ask')}
         </AiShortcut>
-        {/* Until it has answered, it asks to be run first (2026-10-20). */}
-        {!triage && !busy ? (
-          <span className='text-xs text-muted-foreground'>
-            {t('repairs.triage.hint')}
-          </span>
-        ) : null}
         {busy ? (
           <span
             role='status'
@@ -417,6 +411,13 @@ function TriagePanel({
           </span>
         ) : null}
       </div>
+      {/* On a line of its own under the button, with room under it
+          before the fields (2026-10-20). */}
+      {!triage && !busy ? (
+        <p className='pb-2 text-xs text-muted-foreground'>
+          {t('repairs.triage.hint')}
+        </p>
+      ) : null}
       {failure ? <p className='text-destructive'>{failure}</p> : null}
       {triage && !busy ? (
         <div className='space-y-2 rounded-md bg-muted/50 px-3 py-2'>

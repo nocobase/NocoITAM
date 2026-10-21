@@ -97,16 +97,11 @@ export function DisposalTriage({
     }
   };
   return (
-    <div className='space-y-2 text-sm'>
+    <div className='space-y-1.5 text-sm'>
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
         <AiShortcut disabled={!ready || busy} onClick={() => void ask()}>
           {t(diagnosis ? 'disposals.triage.again' : 'disposals.triage.ask')}
         </AiShortcut>
-        {!diagnosis && !busy ? (
-          <span className='text-xs text-muted-foreground'>
-            {t('disposals.triage.hint')}
-          </span>
-        ) : null}
         {busy ? (
           <span
             role='status'
@@ -117,6 +112,13 @@ export function DisposalTriage({
           </span>
         ) : null}
       </div>
+      {/* On a line of its own under the button, with room under it
+          before the fields (2026-10-20). */}
+      {!diagnosis && !busy ? (
+        <p className='pb-2 text-xs text-muted-foreground'>
+          {t('disposals.triage.hint')}
+        </p>
+      ) : null}
       {failure ? <p className='text-destructive'>{failure}</p> : null}
       {diagnosis && !busy ? (
         <div className='space-y-2 rounded-md bg-muted/50 px-3 py-2'>
