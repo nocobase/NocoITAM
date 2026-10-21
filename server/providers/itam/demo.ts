@@ -326,25 +326,52 @@ const ORDER: readonly string[] = [
   'manufacturers',
 ];
 
-/** Demo vendor names by locale. */
+/**
+ * Demo vendor names, contacts and addresses by locale; an address is in
+ * Shanghai, where their 021 numbers are (2026-10-21).
+ */
 const VENDOR_NAMES: Readonly<
   Record<
     string,
     Record<
       'reseller' | 'repair' | 'recycler',
-      { name: string; contact: string }
+      { name: string; contact: string; address: string }
     >
   >
 > = {
   'en-US': {
-    reseller: { name: 'Northbridge IT Supply', contact: 'Peter Grant' },
-    repair: { name: 'Northbridge Repair Center', contact: 'Helen Ward' },
-    recycler: { name: 'GreenLoop Recycling', contact: 'Sam Fischer' },
+    reseller: {
+      name: 'Northbridge IT Supply',
+      contact: 'Peter Grant',
+      address: 'Floor 12, 88 Zhangjiang Road, Pudong, Shanghai',
+    },
+    repair: {
+      name: 'Northbridge Repair Center',
+      contact: 'Helen Ward',
+      address: 'Unit 3, 501 Jinke Road, Pudong, Shanghai',
+    },
+    recycler: {
+      name: 'GreenLoop Recycling',
+      contact: 'Sam Fischer',
+      address: '1200 Huaxu Road, Qingpu, Shanghai',
+    },
   },
   'zh-CN': {
-    reseller: { name: '北桥 IT 供应有限公司', contact: '孙强' },
-    repair: { name: '北桥维修中心', contact: '周磊' },
-    recycler: { name: '绿环回收', contact: '徐萍' },
+    reseller: {
+      name: '北桥 IT 供应有限公司',
+      contact: '孙强',
+      address: '上海市浦东新区张江路 88 号 12 楼',
+    },
+    repair: {
+      name: '北桥维修中心',
+      contact: '周磊',
+      address: '上海市浦东新区金科路 501 号 3 单元',
+    },
+    recycler: {
+      name: '绿环回收',
+      contact: '徐萍',
+      address: '上海市青浦区华徐公路 1200 号',
+    },
   },
 };
 
@@ -1747,6 +1774,8 @@ export function createDemoService(dependencies: {
           contactName: vendorNames.reseller.contact,
           phone: '021-5000 1001',
           email: 'sales@demo-reseller.example',
+          address: vendorNames.reseller.address,
+          website: 'https://www.demo-reseller.example',
         });
         const repairShop = await md('vendors', {
           name: vendorNames.repair.name,
@@ -1754,6 +1783,8 @@ export function createDemoService(dependencies: {
           contactName: vendorNames.repair.contact,
           phone: '021-5000 2002',
           email: 'service@demo-repair.example',
+          address: vendorNames.repair.address,
+          website: 'https://www.demo-repair.example',
         });
         const recycler = await md('vendors', {
           name: vendorNames.recycler.name,
@@ -1761,6 +1792,8 @@ export function createDemoService(dependencies: {
           contactName: vendorNames.recycler.contact,
           phone: '021-5000 3003',
           email: 'recycle@demo-greenloop.example',
+          address: vendorNames.recycler.address,
+          website: 'https://www.demo-greenloop.example',
         });
         // Their records changed since (2026-10-16), so a vendor's history
         // reads as years of dealing with it rather than one line saying it

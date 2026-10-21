@@ -644,4 +644,52 @@ describe('ITAM seeds', () => {
     expect(rows[0]).toEqual({ id: 'model-latitude-5440', imageFileId: null });
     expect(rows[1]?.imageFileId).toBeTruthy();
   });
+
+  // No starter vendors on a fresh install (2026-10-21); one a database
+  // already uses stays.
+  it('removes the starter vendors nobody uses', async () => {
+    db = await createTestDatabase();
+    const query = db.database.query();
+    await createSeeder({
+      database: db.database,
+      packageName: 'itam',
+      directory: seedsDirectory,
+    }).run();
+    expect(await query.selectFrom('vendors').select('id').execute()).toEqual(
+      [],
+    );
+    const now = new Date();
+    for (const id of ['vendor-equipment', 'vendor-repair'])
+      await query
+        .insertInto('vendors')
+        .values({ id, name: id, types: [], createdAt: now, updatedAt: now })
+        .execute();
+    await query
+      .insertInto('devices')
+      .values({
+        id: 'd1',
+        deviceNo: 'DE-1',
+        name: 'Laptop',
+        modelId: 'model-latitude-5440',
+        categoryId: 'cat-laptop',
+        manufacturerId: 'mfr-dell',
+        status: 'inStock',
+        ownership: 'owned',
+        locationId: 'loc-hq-warehouse',
+        depreciationMethod: 'none',
+        ownerId: 'u1',
+        vendorId: 'vendor-repair',
+        createdAt: now,
+        updatedAt: now,
+      } as never)
+      .execute();
+    const { default: remove } =
+      await import('../../database/main/seeds/202610210003_remove_starter_vendors.js');
+    await remove.run({ query } as never);
+    expect(
+      (await query.selectFrom('vendors').select('id').execute()).map(
+        (row) => row.id,
+      ),
+    ).toEqual(['vendor-repair']);
+  });
 });

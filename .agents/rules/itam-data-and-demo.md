@@ -25,10 +25,12 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
 - Demo data uses the seeded categories (`cat-laptop`, …), manufacturers
   (`mfr-apple`, …), models (`model-macbook-pro-14-m3`, …), software
   products (`sp-figma`, …), locations (`loc-hq`, …) and departments
-  (`dept-rd`, …); vendors and people are seeded too (`vendor-equipment`,
-  `person-li-xiao`) but the demo creates its own, demo-marked vendors and
-  people because it mutates them (a leaver, seat holders); it creates the
-  rest of its master data itself;
+  (`dept-rd`, …); a first employee is seeded too (`person-li-xiao`;
+  starter vendors were until 2026-10-21, when
+  `202610210003_remove_starter_vendors` took the unused ones off) but the
+  demo creates its own, demo-marked vendors and people because it mutates
+  them (a leaver, seat holders); it creates the rest of its master data
+  itself;
   it refuses to run when a seed record is missing. The seeds reuse an
   existing manufacturer or product of the same name (names are unique), so
   a test that seeds must not create "Apple" or "Figma". Model seeds must be

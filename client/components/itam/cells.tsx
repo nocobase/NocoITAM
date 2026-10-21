@@ -146,7 +146,11 @@ export function FieldValue({
         return <DisposalStatusBadge status={value} />;
       if (isAuditStatusField(field) && !plainEnums)
         return <AuditStatusBadge status={value} />;
-      if (!plainEnums) return <EnumBadge field={field} value={value} />;
+      // Several choices read as a tag each, even where one choice is plain
+      // text (2026-10-21): a vendor's 设备供应商 and 软件经销商 rather than a
+      // comma-separated line.
+      if (!plainEnums || field.type === 'multiselect')
+        return <EnumBadge field={field} value={value} />;
       const values = Array.isArray(value) ? value : [value];
       return (
         <>

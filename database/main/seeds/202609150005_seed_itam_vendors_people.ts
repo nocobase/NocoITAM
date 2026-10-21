@@ -4,11 +4,12 @@ import {
   type SeedDefinition,
 } from '@nocobase/db';
 
-// Starter vendors, one per role, and a first employee, so purchase orders,
-// repairs and assignments can be recorded from the first day. Names are data
-// written once in the deployment's default language and renamed by the
-// administrator afterwards. Each record is written only when its id is
-// absent; a vendor whose name already exists (names are unique) is left alone.
+// A first employee, so assignments can be recorded from the first day. The
+// name is data written once in the deployment's default language. It is
+// written only when its id is absent. Until 2026-10-21 it wrote a starter
+// vendor per role too ("IT equipment reseller", …), placeholders nobody
+// dealt with; `202610210003_remove_starter_vendors` takes them off a
+// database that has them.
 
 /**
  * The language this deployment writes installation data in.
@@ -35,12 +36,6 @@ function resolveLocale(context: SeedContext): string {
 }
 
 
-interface VendorSeed {
-  readonly id: string;
-  readonly name: string;
-  readonly types: readonly string[];
-}
-
 interface PersonSeed {
   readonly id: string;
   readonly name: string;
@@ -50,21 +45,6 @@ interface PersonSeed {
   readonly locationId: string;
   readonly position: string;
 }
-
-const VENDORS: readonly VendorSeed[] = [
-  {
-    id: 'vendor-equipment',
-    name: 'IT equipment reseller',
-    types: ['equipment', 'softwareReseller'],
-  },
-  {
-    id: 'vendor-software',
-    name: 'Software reseller',
-    types: ['softwareReseller'],
-  },
-  { id: 'vendor-repair', name: 'Repair provider', types: ['repairProvider'] },
-  { id: 'vendor-recycler', name: 'Recycler', types: ['recycler'] },
-];
 
 const PEOPLE: readonly PersonSeed[] = [
   // The id keeps the name it was first seeded under: a database that ran
@@ -83,10 +63,6 @@ const PEOPLE: readonly PersonSeed[] = [
 /** Names by id for locales other than English. */
 const NAMES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   'zh-CN': {
-    'vendor-equipment': 'IT 设备经销商',
-    'vendor-software': '软件经销商',
-    'vendor-repair': '维修服务商',
-    'vendor-recycler': '回收商',
     'person-li-xiao': '黎晓',
     'email:person-li-xiao': 'li.xiao@example.com',
     'position:person-li-xiao': 'IT 管理员',
@@ -103,32 +79,6 @@ const seed: SeedDefinition = defineSeed({
     const { query } = context;
     const locale = resolveLocale(context);
     const now = new Date();
-    for (const vendor of VENDORS) {
-      const name = localized(vendor.id, vendor.name, locale);
-      const existing = await query
-        .selectFrom('vendors')
-        .select('id')
-        .where((eb) => eb.or([eb('id', '=', vendor.id), eb('name', '=', name)]))
-        .executeTakeFirst();
-      if (existing) continue;
-      await query
-        .insertInto('vendors')
-        .values({
-          id: vendor.id,
-          name,
-          types: vendor.types,
-          contactName: null,
-          phone: null,
-          email: null,
-          address: null,
-          website: null,
-          notes: null,
-          createdById: null,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .execute();
-    }
     for (const person of PEOPLE) {
       const existing = await query
         .selectFrom('people')
