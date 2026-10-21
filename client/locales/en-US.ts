@@ -1161,6 +1161,10 @@ const messages = {
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: 'Tell the AI what to change' },
   // AI lookup on a model's or software product's page.
+  manufacturerCapture: {
+    searching: 'Looking up {{name}} on the web: site and support…',
+    reading: 'Reading what is known about {{name}}…',
+  },
   masterEnrich: {
     action: 'Refine',
     title: 'Refine {{name}}',
@@ -1860,6 +1864,7 @@ const messages = {
     generatedOthers: 'Stock and entitlements',
   },
   image: {
+    dropHint: 'or drop a picture here',
     upload: 'Upload picture',
     view: 'View picture',
     replace: 'Replace picture',

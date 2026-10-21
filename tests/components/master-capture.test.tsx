@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import { MasterCreateDialog } from '../../client/components/itam/master-create-dialog.js';
@@ -18,6 +18,11 @@ const state = vi.hoisted(() => ({
   requests: [] as { path: string; json?: unknown }[],
   created: [] as unknown[],
   updated: [] as unknown[],
+  /** A task's own answer, over `answer`. */
+  answers: {} as Record<
+    string,
+    { reading: Record<string, unknown> | null; said: string }
+  >,
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -101,7 +106,7 @@ vi.mock('../../client/lib/itam/ai-chat.js', () => ({
     () =>
     (input: (typeof state.asked)[number]): Promise<typeof state.answer> => {
       state.asked.push(input);
-      return Promise.resolve(state.answer);
+      return Promise.resolve(state.answers[input.task] ?? state.answer);
     },
 }));
 // Whether the web can be searched (a DeepSeek model service): not here.
@@ -141,6 +146,7 @@ beforeEach(() => {
   state.requests = [];
   state.created = [];
   state.updated = [];
+  state.answers = {};
 });
 
 const dialog = (initial?: Record<string, unknown>) => (
@@ -340,5 +346,51 @@ it('refines a software product as it opens', async () => {
     task: 'softwareProduct',
     material: 'Dell Command Update',
     context: { refine: true },
+  });
+});
+
+// 创建制造商 (2026-10-21): the maker the reading named is looked up as the
+// dialog opens, and created with what was found.
+it('looks a missing maker up before creating it', async () => {
+  state.answers.manufacturer = {
+    reading: {
+      name: 'Dell',
+      website: 'https://www.dell.com',
+      supportUrl: 'https://www.dell.com/support',
+      uncertain: ['supportUrl'],
+      sources: [{ title: 'Dell', url: 'https://www.dell.com' }],
+    },
+    said: 'No business support phone published.',
+  };
+  render(dialog({ name: 'Dell OptiPlex 7010' }));
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole('button', { name: 'procurement.capture.organise' }),
+    );
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'manufacturers.new' }));
+  });
+  expect(state.asked.at(-1)).toMatchObject({
+    task: 'manufacturer',
+    material: 'Dell Technologies',
+  });
+  expect(
+    screen.getByText('No business support phone published.'),
+  ).toBeVisible();
+  const dialogs = screen.getAllByRole('dialog');
+  const maker = dialogs.at(-1)!;
+  expect(within(maker).getByLabelText('form-website')).toHaveValue(
+    'https://www.dell.com',
+  );
+  await act(async () => {
+    fireEvent.click(
+      within(maker).getByRole('button', { name: 'actions.create' }),
+    );
+  });
+  expect(state.created.at(-1)).toMatchObject({
+    name: 'Dell',
+    website: 'https://www.dell.com',
+    $origin: 'ai',
   });
 });

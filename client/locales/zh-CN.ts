@@ -1132,6 +1132,10 @@ const zhCN: AppResource = {
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
   // 完善 on a model's or software product's page, as a category's.
+  manufacturerCapture: {
+    searching: '正在联网查找「{{name}}」的官网和支持信息…',
+    reading: '正在整理「{{name}}」的信息…',
+  },
   masterEnrich: {
     action: '完善',
     title: '完善「{{name}}」',
@@ -1784,6 +1788,7 @@ const zhCN: AppResource = {
     generatedOthers: '库存与授权',
   },
   image: {
+    dropHint: '或把图片拖到这里',
     upload: '上传图片',
     view: '查看大图',
     replace: '更换图片',

@@ -46,6 +46,9 @@ export const READING_TASKS = [
   'purchaseLines',
   'model',
   'softwareProduct',
+  // 创建制造商 from AI 整理 (2026-10-21): the maker a reading named,
+  // looked up on the web.
+  'manufacturer',
   'deliveryDocument',
   // 维修单整理 (2026-10-17): the kind of fault, and whether to repair at all.
   'repairTriage',
@@ -77,6 +80,7 @@ export const READING_GRANTS: Readonly<
     ['softwareProducts', 'create'],
     ['softwareProducts', 'update'],
   ],
+  manufacturer: [['manufacturers', 'create']],
   deliveryDocument: [['purchaseOrders', 'receive']],
   repairTriage: [['repairs', 'create']],
   disposalTriage: [['disposals', 'create']],
@@ -162,6 +166,15 @@ const SHAPES: Readonly<Record<ReadingTask, z.ZodType>> = {
     deliveryMethod: text,
     description: text,
     website: text,
+    uncertain: z.array(z.string()).optional(),
+    sources: z.array(z.object({ title: text, url: z.string() })).optional(),
+  }),
+  manufacturer: z.object({
+    name: z.string(),
+    website: text,
+    supportUrl: text,
+    supportPhone: text,
+    supportEmail: text,
     uncertain: z.array(z.string()).optional(),
     sources: z.array(z.object({ title: text, url: z.string() })).optional(),
   }),
@@ -292,6 +305,7 @@ const TASKS: Readonly<Record<ReadingTask, string>> = {
   purchaseOrder: `Organise the material into one purchase order for the new purchase order form. It may be a purchase request, an email, a quote, an invoice or a delivery note. Fill only what the material states or plainly shows and leave the rest out; never guess. reason: one of the context's \`reasons\` (its value). description: what is bought, for whom and why, close to the material's words. neededBy: YYYY-MM-DD, only when the material gives a date (today is in the context). vendorName and departmentName as the material names them (the form matches them); vendorId only when the context's form already names that vendor. ${LINE_RULES} uncertain: the header fields (reason, description, neededBy, vendor, department) you filled but are not sure of. In \`said\`, one plain sentence: what the person should check or add, without repeating what the form shows.`,
   purchaseLines: `Read the lines of the document (a quote, an invoice or a delivery note) for the purchase order on screen. Lines only: the order's reason, description, vendor and department are set already, and the lines in the context's \`form.existingLines\` are not repeated. ${LINE_RULES} In \`said\`, one plain sentence: what to check or add, without repeating what is filled in.`,
   model: `Fill the new model form for the model the material names, following the catalog method below. Put every field you are not certain of in \`uncertain\`, and never estimate a date. categoryId: one of the context's \`categories\` ids (the closest; mark it uncertain when unsure). attributes: by the keys of that category's \`fields\`, as defaults every device of the model starts with: never what each unit has of its own (a MAC or IP address, a host name, a serial or asset number); and a configuration that differs from unit to unit (memory, storage, a processor option) only when the part code or the name pins one configuration, else leave it empty and say so in \`said\`. manufacturerName as the maker is called. A model you cannot confirm is still answered with what the material gives — name, maker, the closest category, marked uncertain — and nothing else. In \`said\`, one plain sentence: what you could not fill and what to check.`,
+  manufacturer: `Fill the new manufacturer form for the maker the material names. name: as the maker is commonly called in IT (Dell, Lenovo, Anthropic — no Inc., Ltd. or Corporation unless that is the name everyone uses). website: the maker's official home page. supportUrl: its support or help site for business customers. supportPhone and supportEmail: its business support contact, only when a page states it; leave them out rather than guess. Put every field you are not certain of in \`uncertain\`. In \`said\`, one plain sentence: what you could not fill and what to check.`,
   softwareProduct: `Fill the new software product form for the product the material names, following the catalog method below. Put every field you are not certain of in \`uncertain\`. categoryId: one of the context's \`categories\` ids. deliveryMethod: onPremise, saas or both. In \`said\`, one plain sentence: what you could not fill and what to check.`,
   repairTriage: `The material is how a person describes a device's fault, for a new repair. The context's \`device\` is that device as the register has it: its model, age, warranty, book value (when the person may see costs), its earlier repairs, and how often devices of the same model were repaired in the last year. faultCategory: the kind of fault, exactly one of these values: ${REPAIR_FAULT_CATEGORIES.join(', ')}. screen for the display, keyboard for keys and the touchpad, battery for charge holding, power for not starting or not charging, storage for disks and lost data, network for Wi-Fi, Ethernet and Bluetooth, system for the operating system and software, peripheral for ports, cameras, speakers and docks, physical for a broken case, hinge or liquid damage, other for anything else; null when the description says too little. recommendation: exactly one of repair, replace, inspect — repair when it is worth fixing (under warranty, or young with book value left, or a cheap part); replace when fixing is likely to cost more than the device is worth — old, past its useful life or planned replacement date, out of warranty with little book value, repaired again and again, or physically wrecked; inspect when the description cannot tell (a vague complaint, or a fault that may be software). method: how to repair it, exactly one of ${REPAIR_METHODS.join(', ')} — vendorWarranty only when the device's \`underWarranty\` is true, and then always; out of warranty, internal when IT can do it in-house (the operating system or software, a reinstall, a clean, a common part swapped from spares), else sendOut; null when the recommendation is replace. reasons: at most three, each one short sentence with the fact from the device it rests on (a date, an age, a count, a value), never a fact the context does not give; the first always states the warranty — under warranty until its end date, out of warranty since it ended, or no warranty on record — since it decides how the repair is made. description: the material tidied into a clear note for the record, as the person would write it at their best — what is wrong and when it shows, in plain sentences; keep every fact the material gives, add none (nothing from the context), at most 200 characters; null when it reads well already. In \`said\`, one plain sentence for the person filing the repair: what to check or ask the user before sending it.`,
   disposalTriage: `The material is why a person wants to dispose of the devices in the context's \`devices\`, each as the register has it: model, category, ownership, status, who holds it (\`assigneeName\`), age, warranty and \`underWarranty\`, planned replacement date, purchase price and book value when the person may see costs, and its repairs. Fill the request for all of them together. reason: exactly one of ${DISPOSAL_REASONS.join(', ')} — endOfLife past its useful life or planned replacement date, damaged when broken beyond repair, uneconomicalRepair when repairing would cost more than it is worth, insufficientPerformance when too slow for the work, lost, leaseEnded for a leased device going back, other; null when the material says too little. method: exactly one of ${DISPOSAL_METHODS.join(', ')} — returnToLessor whenever a device is leased or borrowed (its \`ownership\`), lossWriteOff for a lost one, sale or donation for one that still works, scrap for one that does not, other. dataWipe: exactly one of ${DATA_WIPE_OPTIONS.join(', ')} — notRequired only when none of the devices holds data (a monitor, a dock, a keyboard), else notWiped: the wipe is done and recorded when the disposal is carried out. advice: dispose when disposing of them is reasonable, reconsider when any should not be disposed of yet — still under warranty (repair it under warranty instead), young with much book value left, or leased but not returned to its lessor. concerns: at most five, one per device that needs attention, each with its \`deviceNo\` and one short sentence naming the fact from the context (under warranty until a date, the book value, leased, still held by someone who must return it first, never a fact the context does not give); none for a device with nothing to say. description: the material tidied into a clear note for the record — why these devices go, in plain sentences; keep every fact the material gives, add none (nothing from the context), at most 200 characters; null when it reads well already. In \`said\`, one plain sentence for the person: what to do before submitting.`,
@@ -421,7 +435,9 @@ export async function readForForm(
     context.catalog = await catalogFor(container, actorId);
   // The device is read here, as the person, not taken from the page.
   const catalogTask =
-    input.task === 'model' || input.task === 'softwareProduct';
+    input.task === 'model' ||
+    input.task === 'softwareProduct' ||
+    input.task === 'manufacturer';
   const web = catalogTask ? await webFor(container, input.material) : null;
   if (web) context.web = web;
   if (input.task === 'categoryFields') {

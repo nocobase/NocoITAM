@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import { CollapsibleText } from '@/components/itam/collapsible-text';
+import { ManufacturerCaptureDialog } from '@/components/itam/manufacturer-capture-dialog';
 import {
   initialFormValues,
   RecordFormDialog,
@@ -42,10 +43,6 @@ import {
   useMasterCapture,
   type MasterCaptureState,
 } from '@/lib/itam/use-master-capture';
-
-const MANUFACTURER_FIELDS = masterDataByName('manufacturers')!.fields.filter(
-  (field) => field.form !== false,
-);
 
 export interface MasterCreateDialogProps {
   readonly collection: MasterCaptureCollection;
@@ -271,7 +268,6 @@ function MasterCreateForm({
   const mayCreateManufacturer = useCollectionPermissions('manufacturers', [
     'create',
   ]).create;
-  const manufacturers = useItamMutations(referencePath('manufacturers'));
   const close = (next: boolean) => {
     if (!next) {
       mutations.create.reset();
@@ -431,31 +427,25 @@ function MasterCreateForm({
         }}
       />
       {/* A sibling, not inside the form: a submit inside a portal still
-          bubbles to the form around it in React's tree. */}
-      <RecordFormDialog
-        key={creatingManufacturer ? 'manufacturer' : 'manufacturer-closed'}
-        open={creatingManufacturer}
-        onOpenChange={(next) => {
-          if (!next) manufacturers.create.reset();
-          setCreatingManufacturer(next);
-        }}
-        title={t('manufacturers.new')}
-        fields={MANUFACTURER_FIELDS}
-        initial={{ name: result?.manufacturerName ?? '' }}
-        submitting={manufacturers.create.isPending}
-        error={manufacturers.create.error}
-        onSubmit={async (payload) => {
-          const created = await manufacturers.create.mutateAsync(payload);
-          setValues((known) => ({
-            ...known,
-            manufacturerId: text(created.id),
-          }));
-          setResult((known) =>
-            known ? { ...known, manufacturerName: null } : known,
-          );
-          setCreatingManufacturer(false);
-        }}
-      />
+          bubbles to the form around it in React's tree. Looked up on the
+          web as it opens (2026-10-21), mounted only while open. */}
+      {creatingManufacturer ? (
+        <ManufacturerCaptureDialog
+          open
+          onOpenChange={setCreatingManufacturer}
+          name={result?.manufacturerName ?? ''}
+          onCreated={(created) => {
+            setValues((known) => ({
+              ...known,
+              manufacturerId: text(created.id),
+            }));
+            setResult((known) =>
+              known ? { ...known, manufacturerName: null } : known,
+            );
+            setCreatingManufacturer(false);
+          }}
+        />
+      ) : null}
     </>
   );
 }

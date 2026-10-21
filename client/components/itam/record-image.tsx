@@ -5,9 +5,16 @@ import {
 } from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { ImageIcon, Trash2, Upload } from 'lucide-react';
-import { useMemo, useRef, useState, type ReactElement } from 'react';
+import {
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type ReactElement,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 import { ConfirmDialog } from './confirm-dialog.js';
@@ -129,6 +136,27 @@ export function RecordImage({
       }}
     />
   );
+  // An image dropped on the frame uploads as a chosen one does (2026-10-21),
+  // replacing the picture there; the frame lights up while one is over it.
+  const [dragging, setDragging] = useState(false);
+  const dropZone = editable
+    ? {
+        onDragOver: (event: DragEvent<HTMLElement>) => {
+          if (!event.dataTransfer.types.includes('Files')) return;
+          event.preventDefault();
+          setDragging(true);
+        },
+        onDragLeave: () => setDragging(false),
+        onDrop: (event: DragEvent<HTMLElement>) => {
+          event.preventDefault();
+          setDragging(false);
+          const file = [...event.dataTransfer.files].find((each) =>
+            each.type.startsWith('image/'),
+          );
+          if (file && !busy) void upload(file);
+        },
+      }
+    : {};
   // No picture (2026-10-21, when the drawn placeholders went): nothing for
   // a reader; for whoever may edit, an empty frame the size of a picture,
   // the whole of it the place to add one.
@@ -140,10 +168,21 @@ export function RecordImage({
           type='button'
           disabled={busy}
           onClick={() => inputRef.current?.click()}
-          className='flex aspect-4/3 w-full flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-muted/30 text-sm text-muted-foreground transition-colors hover:border-ring hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60'
+          {...dropZone}
+          className={cn(
+            'flex aspect-4/3 w-full flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-muted/30 px-2 text-center text-sm text-muted-foreground transition-colors hover:border-ring hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60',
+            dragging && 'border-ring bg-muted/60 text-foreground',
+          )}
         >
-          <ImageIcon className='size-6' aria-hidden='true' />
+          {busy ? (
+            <Spinner />
+          ) : (
+            <ImageIcon className='size-6' aria-hidden='true' />
+          )}
           {t('image.upload')}
+          <span className='text-xs text-muted-foreground'>
+            {t('image.dropHint')}
+          </span>
         </button>
         {picker}
         {error ? <p className='text-xs text-destructive'>{error}</p> : null}
@@ -152,7 +191,13 @@ export function RecordImage({
   }
   return (
     <div className={cn('space-y-1', className)}>
-      <div className='group/image relative aspect-4/3 w-full overflow-hidden rounded-md border border-border bg-muted/40'>
+      <div
+        {...dropZone}
+        className={cn(
+          'group/image relative aspect-4/3 w-full overflow-hidden rounded-md border border-border bg-muted/40',
+          dragging && 'border-ring ring-2 ring-ring/30',
+        )}
+      >
         {src ? (
           <button
             type='button'
