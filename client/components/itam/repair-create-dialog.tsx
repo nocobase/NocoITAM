@@ -391,9 +391,11 @@ function TriagePanel({
               a description changed since. */}
           {t(triage ? 'repairs.triage.again' : 'repairs.triage.ask')}
         </AiShortcut>
-        {!ready && !triage && !busy ? (
+        {/* Until it has answered, it says what it does: how to start it,
+            then — the fault written — to run it first (2026-10-20). */}
+        {!triage && !busy ? (
           <span className='text-xs text-muted-foreground'>
-            {t('repairs.triage.hint')}
+            {t(ready ? 'repairs.triage.nudge' : 'repairs.triage.hint')}
           </span>
         ) : null}
         {busy ? (
