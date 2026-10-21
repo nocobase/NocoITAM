@@ -105,6 +105,13 @@ describe('ITAM seeds', () => {
       .where('id', '=', 'model-latitude-5440')
       .executeTakeFirstOrThrow<{ imageFileId: string | null }>();
     expect(drawn.imageFileId).toBeNull();
+    // A seeded maker says where its support is (2026-10-21).
+    const dell = await query
+      .selectFrom('manufacturers')
+      .select('supportUrl')
+      .where('id', '=', 'mfr-dell')
+      .executeTakeFirstOrThrow<{ supportUrl: string | null }>();
+    expect(dell.supportUrl).toBe('https://www.dell.com/support');
     // An English deployment's first employee has an English name.
     const person = await query
       .selectFrom('people')
