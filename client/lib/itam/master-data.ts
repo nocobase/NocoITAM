@@ -366,11 +366,9 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
     countField: 'modelId',
     defaultSort: 'manufacturerName',
     // A model belongs to one category, so it has either devices or stock
-    // items; only the matching tab is shown.
-    extraTabs: [
-      { key: 'devices', label: 'tabs.devices', appliesTo: ['device'] },
-      { key: 'stock', label: 'tabs.stock', appliesTo: ['stock'] },
-    ],
+    // items: one 资产 tab lists whichever it holds (2026-10-21; until then a
+    // 设备 tab and a 库存 tab, one of them shown).
+    extraTabs: [{ key: 'assets', label: 'tabs.assets' }],
     fields: [
       {
         key: 'name',

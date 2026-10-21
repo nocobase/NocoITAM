@@ -483,13 +483,8 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
           detail: () => import('./pages/itam/master/models-detail.js'),
           tabs: [
             {
-              path: 'stock',
-              loader: () => import('./pages/itam/master/models-stock-tab.js'),
-            },
-            {
-              path: 'devices',
-              loader: () =>
-                import('./pages/itam/locations/model-devices-tab.js'),
+              path: 'assets',
+              loader: () => import('./pages/itam/master/models-assets-tab.js'),
             },
           ],
         }),

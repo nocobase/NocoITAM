@@ -1,6 +1,8 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMemo, useState, type ReactElement } from 'react';
 
+import type { DataTableColumn } from './data-table.js';
+
 import { useItamList, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { deviceLabel, formatDate } from '@/lib/itam/format';
@@ -18,9 +20,12 @@ export function DeviceListEmbed({
   filter,
   // Inside a record's tab the list is a plain "none yet", not a filter miss.
   emptyKey = 'devices.noneInTab',
+  leading = [],
 }: {
   readonly filter: Readonly<Record<string, string | undefined>>;
   readonly emptyKey?: string;
+  /** Columns before the device's own, e.g. a model's 资产 tab's type. */
+  readonly leading?: readonly DataTableColumn<ItamRecord>[];
 }): ReactElement {
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
@@ -43,6 +48,7 @@ export function DeviceListEmbed({
   return (
     <DataTable
       columns={[
+        ...leading,
         {
           // 编号 / 名称 in one cell, the way a device is named everywhere.
           key: 'device',

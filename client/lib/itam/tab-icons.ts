@@ -6,6 +6,7 @@ import {
   FileText,
   History,
   KeyRound,
+  Laptop,
   Link2,
   ListChecks,
   ListTree,
@@ -36,6 +37,8 @@ export const TAB_ICONS: Readonly<Record<string, LucideIcon>> = {
   related: Link2,
   documents: FileText,
   // Lists of another collection.
+  // A model's devices or stock (2026-10-21), as the menu's 资产 group.
+  assets: Laptop,
   devices: MonitorSmartphone,
   stock: Boxes,
   accessories: Boxes,

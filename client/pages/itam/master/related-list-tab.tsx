@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactElement } from 'react';
 import { useParams } from 'react-router';
 
 import { FieldValue } from '@/components/itam/cells';
-import { DataTable } from '@/components/itam/data-table';
+import { DataTable, type DataTableColumn } from '@/components/itam/data-table';
 import { EmptyState } from '@/components/itam/empty-state';
 import { useApi, useItamList, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
@@ -26,6 +26,7 @@ export function RelatedListTab({
   countKind = 'devices',
   countLabel = 'tabs.total',
   countColumns: explicitCountColumns,
+  leading = [],
 }: {
   /** A master-data collection to list, e.g. `models`; or pass `target`. */
   readonly collection?: string;
@@ -41,6 +42,8 @@ export function RelatedListTab({
   readonly countLabel?: string;
   /** Overrides the listed collection's own `countColumns`. */
   readonly countColumns?: readonly { key: string; label: string }[];
+  /** Columns before the listed records' own, e.g. a model's 资产 tab's type. */
+  readonly leading?: readonly DataTableColumn<ItamRecord>[];
 }): ReactElement {
   const { t } = useTranslation();
   const { id = '' } = useParams();
@@ -134,6 +137,7 @@ export function RelatedListTab({
   return (
     <DataTable
       columns={[
+        ...leading,
         ...columns.slice(0, 4).map((field) => ({
           key: field.key,
           header: t(field.label),
