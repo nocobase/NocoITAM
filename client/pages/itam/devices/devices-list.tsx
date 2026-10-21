@@ -177,11 +177,12 @@ function DevicesList(): ReactElement {
         <DeviceStatusBadge status={row.status} />
       ) : isTreeReference(field) && row[field.key] ? (
         // The list keeps tree columns short: the device's own category,
-        // the top-level department and site. The full path is on the detail page.
+        // department and place (2026-10-21; the top-level department and
+        // site until then), the whole path on hover and on the detail page.
         <TreePath
           collection={field.reference!.collection}
           nodeId={row[field.key]}
-          show={field.key === 'categoryId' ? 'leaf' : 'root'}
+          show='leaf'
         />
       ) : (
         <FieldValue field={field} value={row[field.key]} names={names} />
@@ -197,13 +198,15 @@ function DevicesList(): ReactElement {
       className: 'whitespace-nowrap',
       // The holder with its kind's icon; the status column already says
       // whether it is an assignment or a loan. A reservation is not a
-      // holder, so a reserved device reads as empty here.
+      // holder, so a reserved device reads as empty here. A place by its
+      // own name, its whole path on hover (2026-10-21; its top-level site
+      // until then, the same 上海总部 on most rows).
       render: (row: ItamRecord) =>
         row.assigneeId ? (
           <DeviceRelation
             device={row}
             names={names}
-            locationShow='root'
+            locationShow='leaf'
             dates={false}
           />
         ) : (
