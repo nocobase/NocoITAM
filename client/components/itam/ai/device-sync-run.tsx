@@ -1,7 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronRight, RefreshCw } from 'lucide-react';
-import { useContext, useState, type ReactElement } from 'react';
+import { useContext, useMemo, useState, type ReactElement } from 'react';
 import { Link } from 'react-router';
 
 import { Button } from '#components/ui/button';
@@ -23,6 +23,7 @@ import {
 } from '@/lib/itam/device-sync-followup';
 import { useReferenceNames } from '@/lib/itam/references';
 import { useApi } from '@/lib/itam/api';
+import { useDeviceReview } from '@/lib/itam/device-sync';
 import { relativeTime } from '@/lib/itam/format';
 import { PLANS_PATH, type Plan } from '@/lib/itam/plans';
 
@@ -178,9 +179,16 @@ function FollowUpReviewCard({
   const plan = useRunPlan(run);
   const [open, setOpen] = useState<boolean>();
   const [skipped, setSkipped] = useState<ReadonlySet<number>>(() => new Set());
+  const handled = useHandledSteps(run);
+  // What was settled on its row is left out, as if unticked.
+  const leftOut = new Set([...skipped, ...handled]);
   const notes = run.result?.notes ?? [];
   const pendingPlan = plan.data?.status === 'pending' ? plan.data : null;
   const decided = run.status !== 'pending';
+  const allHandled =
+    pendingPlan !== null &&
+    pendingPlan.steps.length > 0 &&
+    pendingPlan.steps.every((step) => handled.has(step.position));
   if (run.status === 'running' || run.status === 'failed')
     return (
       <div className='space-y-3 rounded-lg border bg-card p-4'>
@@ -189,8 +197,16 @@ function FollowUpReviewCard({
       </div>
     );
   const facts = [
-    pendingPlan
-      ? t('deviceSyncRun.stepsWaiting', { count: pendingPlan.steps.length })
+    pendingPlan && !allHandled
+      ? t('deviceSyncRun.stepsWaiting', {
+          count: pendingPlan.steps.filter((step) => !handled.has(step.position))
+            .length,
+        })
+      : null,
+    pendingPlan && handled.size
+      ? allHandled
+        ? t('deviceSyncRun.allHandledBelow')
+        : t('deviceSyncRun.handledBelow', { count: handled.size })
       : null,
     !decided && notes.length
       ? t('deviceSyncRun.notesWaiting', { count: notes.length })
@@ -226,8 +242,18 @@ function FollowUpReviewCard({
           ) : null}
         </CollapsibleTrigger>
         <div className='ml-auto flex items-center gap-2'>
-          {pendingPlan ? (
-            <PlanDecision plan={pendingPlan} skipped={skipped} />
+          {/* Every step settled on its row: nothing is left to carry out,
+              so the follow-up is set aside as done. */}
+          {pendingPlan && allHandled ? (
+            <Button
+              variant='outline'
+              disabled={dismiss.isPending}
+              onClick={() => dismiss.mutate(run)}
+            >
+              {t('deviceSyncRun.done')}
+            </Button>
+          ) : pendingPlan ? (
+            <PlanDecision plan={pendingPlan} skipped={leftOut} />
           ) : !decided ? (
             <Button
               variant='ghost'
@@ -246,6 +272,8 @@ function FollowUpReviewCard({
             bare
             skipped={skipped}
             onSkippedChange={setSkipped}
+            settled={handled}
+            settledLabel={t('deviceSyncRun.stepHandledBelow')}
           />
         ) : null}
         {notes.length ? (
@@ -268,6 +296,31 @@ function FollowUpReviewCard({
       ) : null}
     </Collapsible>
   );
+}
+
+/**
+ * The plan steps whose difference or record is no longer listed on MDM 核对
+ * (2026-10-21): settled on its row there, by hand, since the plan was
+ * proposed. Nothing until all three lists have loaded.
+ */
+function useHandledSteps(run: DeviceSyncRun): ReadonlySet<number> {
+  const checks = useDeviceReview('checks');
+  const unregistered = useDeviceReview('unregistered');
+  const unmanaged = useDeviceReview('unmanaged');
+  return useMemo(() => {
+    if (!checks.data || !unregistered.data || !unmanaged.data)
+      return new Set<number>();
+    const listed = new Set([
+      ...checks.data.map((row) => `${row.deviceId}|${row.kind}`),
+      ...unregistered.data.map((row) => `${row.id}|unregistered`),
+      ...unmanaged.data.map((row) => `${row.id}|unmanaged`),
+    ]);
+    return new Set(
+      (run.result?.advice ?? [])
+        .filter((entry) => !listed.has(`${entry.subject}|${entry.kind}`))
+        .flatMap((entry) => entry.steps ?? []),
+    );
+  }, [checks.data, unregistered.data, unmanaged.data, run.result]);
 }
 
 const isOpenRun = (run: { readonly status: string }) =>

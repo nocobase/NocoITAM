@@ -17,6 +17,8 @@ const state = vi.hoisted(() => ({
   plan: null as unknown,
   inbox: { open: [] as unknown[], handled: [] as unknown[] },
   others: [] as unknown[],
+  // What MDM 核对 lists now, by view; undefined while loading.
+  review: undefined as Record<string, unknown[]> | undefined,
 }));
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({
@@ -39,6 +41,9 @@ vi.mock('../../client/lib/itam/agents.js', () => ({
   }),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({ useApi: () => ({}) }));
+vi.mock('../../client/lib/itam/device-sync.js', () => ({
+  useDeviceReview: (view: string) => ({ data: state.review?.[view] }),
+}));
 vi.mock('../../client/lib/itam/references.js', () => ({
   useReferenceNames: () => ({ users: new Map([['wujing', 'Wu Jing']]) }),
 }));
@@ -96,6 +101,7 @@ beforeEach(() => {
   state.dismiss.mockClear();
   state.inbox = { open: [], handled: [] };
   state.others = [];
+  state.review = undefined;
   state.plan = { id: 'plan-1', title: 'MDM follow-up: 2 differences' };
 });
 
@@ -302,4 +308,52 @@ it('titles the asset managers’ follow-up by kind, in devices', () => {
       t,
     ),
   ).toBe('sharedDevices(onlyInMdm(1), unowned(1))');
+});
+
+// Settled on its row below (2026-10-21): its steps are left out, and once
+// every one is, the follow-up is done.
+it('leaves out the steps settled on their rows, and is done once all are', () => {
+  state.plan = {
+    id: 'plan-1',
+    title: 'MDM follow-up',
+    status: 'pending',
+    steps: [{ position: 1 }, { position: 2 }],
+  };
+  const advised = () =>
+    run({
+      result: {
+        items: [],
+        planId: 'plan-1',
+        notes: [],
+        summary: '',
+        advice: ['r1', 'r2'].map((subject, index) => ({
+          subject,
+          kind: 'unregistered' as const,
+          action: 'ignore' as const,
+          reason: null,
+          target: null,
+          planned: true,
+          steps: [index + 1],
+        })),
+      },
+    });
+  // r1 is gone from 只在 MDM: settled below.
+  state.review = { checks: [], unregistered: [{ id: 'r2' }], unmanaged: [] };
+  state.inbox = { open: [advised()], handled: [] };
+  const { unmount } = render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText(/deviceSyncRun\.handledBelow/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'decide' })).toBeInTheDocument();
+  unmount();
+  state.review = { checks: [], unregistered: [], unmanaged: [] };
+  render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'deviceSyncRun.done' }));
+  expect(state.dismiss).toHaveBeenCalled();
 });

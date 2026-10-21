@@ -276,6 +276,7 @@ describe('MDM follow-up', () => {
         kind: 'statusMismatch',
         action: 'keep',
         planned: true,
+        steps: [1],
       }),
     );
     expect(

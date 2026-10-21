@@ -216,7 +216,10 @@ product or in release notes, until it is listed here.
   the suggested action becomes the row's button (忽略 for keep, 关联 with the
   suggested device, 不纳入台账 / 不需要纳管 with the reason filled in,
   transfer / assign / correct status through the device page's `?do=`).
-  The tabs' own AI shortcuts went: the header's MDM 跟进 is the one way in.
+  The tabs' own AI shortcuts went: the header's MDM 跟进 is the one way in. Each advice entry also names its plan steps
+  (`steps`, positions from 1): once its row is gone from the lists, the
+  follow-up's card unticks them, marks them 已在下方处理 and leaves them out
+  of 确认执行; with every step settled so, 完成 sets the follow-up aside.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

@@ -105,6 +105,8 @@ export function PlanCard({
   bare = false,
   skipped: given,
   onSkippedChange,
+  settled = NONE,
+  settledLabel,
 }: {
   readonly plan: Plan;
   /**
@@ -115,6 +117,12 @@ export function PlanCard({
   /** The unticked steps, when the decision is outside the card. */
   readonly skipped?: ReadonlySet<number>;
   readonly onSkippedChange?: (skipped: ReadonlySet<number>) => void;
+  /**
+   * Steps already done some other way (MDM 核对's rows, 2026-10-21): shown
+   * unticked and struck through with `settledLabel`, and not to be ticked.
+   */
+  readonly settled?: ReadonlySet<number>;
+  readonly settledLabel?: string;
 }): ReactElement {
   const { t } = useTranslation();
   const [own, setOwn] = useState<ReadonlySet<number>>(() => new Set());
@@ -173,7 +181,10 @@ export function PlanCard({
             {pending && steps.length > 1 ? (
               <Checkbox
                 className='mt-0.5'
-                checked={!skipped.has(step.position)}
+                checked={
+                  !skipped.has(step.position) && !settled.has(step.position)
+                }
+                disabled={settled.has(step.position)}
                 aria-label={step.check?.title ?? step.op}
                 onCheckedChange={(checked) => {
                   const next = new Set(skipped);
@@ -188,13 +199,20 @@ export function PlanCard({
             <div className='min-w-0 flex-1'>
               <div
                 className={
-                  step.status === 'removed' || skipped.has(step.position)
+                  step.status === 'removed' ||
+                  skipped.has(step.position) ||
+                  settled.has(step.position)
                     ? 'text-muted-foreground line-through'
                     : undefined
                 }
               >
                 {step.check?.title || t(`ai.plans.ops.${step.op}`)}
               </div>
+              {settled.has(step.position) && settledLabel ? (
+                <div className='mt-0.5 text-xs text-muted-foreground'>
+                  {settledLabel}
+                </div>
+              ) : null}
               {showParams && step.check?.fields.length ? (
                 <div className='mt-0.5 text-xs wrap-anywhere text-muted-foreground'>
                   {step.check.fields

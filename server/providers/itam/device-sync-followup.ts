@@ -145,6 +145,8 @@ export interface FollowUpAdvice {
   readonly reason: string | null;
   readonly target: string | null;
   readonly planned: boolean;
+  /** Its steps' positions in the plan, so MDM 核对 can untick them. */
+  readonly steps?: readonly number[];
 }
 
 export interface FollowUpResult {
@@ -942,21 +944,23 @@ export function createDeviceSyncFollowUp(dependencies: {
     }
     const plannedKeys = new Set(steps.map((entry) => entry.item.key));
     const planned = plannedKeys.size;
+    // A step's position is its place in the plan, from 1.
+    const positionsOf = (subject: string, kind: FollowUpKind) =>
+      planId
+        ? steps.flatMap((entry, index) =>
+            entry.item.subject === subject && entry.item.kind === kind
+              ? [index + 1]
+              : [],
+          )
+        : [];
     return {
       items,
       planId,
       notes: notes.slice(0, 60),
-      advice: advised.map((entry) => ({
-        ...entry,
-        planned:
-          Boolean(planId) &&
-          items.some(
-            (item) =>
-              item.subject === entry.subject &&
-              item.kind === entry.kind &&
-              plannedKeys.has(item.key),
-          ),
-      })),
+      advice: advised.map((entry) => {
+        const positions = positionsOf(entry.subject, entry.kind);
+        return { ...entry, planned: positions.length > 0, steps: positions };
+      }),
       summary: words(
         `${String(items.length)} 处差异：${String(planned)} 项可直接执行，${String(items.length - planned)} 项需要你看一下。`,
         `${String(items.length)} differences: ${String(planned)} can be carried out, ${String(items.length - planned)} need a look.`,

@@ -78,6 +78,8 @@ export interface FollowUpAdvice {
   readonly target: string | null;
   /** Carried out by the plan, rather than left to the reader. */
   readonly planned: boolean;
+  /** Its steps' positions in the plan. */
+  readonly steps?: readonly number[];
 }
 
 interface RunBase {
