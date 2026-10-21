@@ -480,7 +480,9 @@ export async function readForForm(
       ? REFINE_READING
       : '',
     web ? WEB_READING : catalogTask ? NO_WEB_READING : '',
-    `Write \`said\` and every sentence you write in ${language}.`,
+    // Plain words for what the form shows (2026-10-21): a reading said
+    // "onPremise" where the form reads 本地安装.
+    `Write \`said\` and every sentence you write in ${language}, naming fields and choices as a person reads them on the form in that language (本地安装 or on-premises, never onPremise; 交付方式, never deliveryMethod) — never a key, a code value or an id.`,
     input.instruction
       ? `The form was filled from this material and the person has looked at it (\`form\` in the context, their own edits included). Change it as they ask and return the whole of it again: change only what they mention, keep everything else as the form has it now, and leave a field they cleared empty. In \`said\`, what you changed, or plainly what cannot be done. Their request: ${input.instruction}`
       : '',
