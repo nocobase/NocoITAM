@@ -197,22 +197,25 @@ export function PlanCard({
               <StepMark status={step.status} />
             )}
             <div className='min-w-0 flex-1'>
-              <div
-                className={
-                  step.status === 'removed' ||
-                  skipped.has(step.position) ||
-                  settled.has(step.position)
-                    ? 'text-muted-foreground line-through'
-                    : undefined
-                }
-              >
-                {step.check?.title || t(`ai.plans.ops.${step.op}`)}
+              <div>
+                <span
+                  className={
+                    step.status === 'removed' ||
+                    skipped.has(step.position) ||
+                    settled.has(step.position)
+                      ? 'text-muted-foreground line-through'
+                      : undefined
+                  }
+                >
+                  {step.check?.title || t(`ai.plans.ops.${step.op}`)}
+                </span>
+                {/* At the end of the line, not struck through. */}
+                {settled.has(step.position) && settledLabel ? (
+                  <span className='ml-2 text-xs text-muted-foreground'>
+                    {settledLabel}
+                  </span>
+                ) : null}
               </div>
-              {settled.has(step.position) && settledLabel ? (
-                <div className='mt-0.5 text-xs text-muted-foreground'>
-                  {settledLabel}
-                </div>
-              ) : null}
               {showParams && step.check?.fields.length ? (
                 <div className='mt-0.5 text-xs wrap-anywhere text-muted-foreground'>
                   {step.check.fields
