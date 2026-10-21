@@ -56,10 +56,12 @@
   --card-foreground: oklch(0.16 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.16 0 0);
-  --primary: #002ad1;
-  --auth-brand-background: #101c3b;
-  --auth-brand-highlight: #8ca9ff;
-  --auth-brand-muted: #b8c4df;
+  /* Application change (ITAM, 2026-10-21): an emerald brand instead of
+     NocoBase's blue; the template's was #002ad1 with #8ca9ff in the dark. */
+  --primary: #047857;
+  --auth-brand-background: #022c22;
+  --auth-brand-highlight: #6ee7b7;
+  --auth-brand-muted: #b3d4c6;
   --status-success: rgb(21 112 70);
   --status-success-background: rgb(236 249 241);
   --status-warning: rgb(150 79 10);
@@ -69,8 +71,8 @@
   --secondary-foreground: oklch(0.22 0 0);
   --muted: oklch(0.96 0 0);
   --muted-foreground: oklch(0.52 0 0);
-  --accent: rgb(237 242 255);
-  --accent-foreground: rgb(0 42 209);
+  --accent: rgb(236 253 245);
+  --accent-foreground: #047857;
   --hover: color-mix(in srgb, var(--muted) 70%, var(--card));
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.9 0 0 / 60%);
@@ -100,18 +102,18 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.18 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: #8ca9ff;
+  --primary: #6ee7b7;
   --status-success: rgb(119 216 160);
   --status-success-background: rgb(23 49 37);
   --status-warning: rgb(242 190 103);
   --status-warning-background: rgb(57 43 24);
-  --primary-foreground: rgb(10 24 64);
+  --primary-foreground: #022c22;
   --secondary: oklch(0.24 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.23 0 0);
   --muted-foreground: oklch(0.7 0 0);
-  --accent: rgb(30 42 72);
-  --accent-foreground: rgb(174 194 255);
+  --accent: rgb(17 48 38);
+  --accent-foreground: #a7f3d0;
   --hover: color-mix(in srgb, var(--muted) 70%, var(--card));
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);

@@ -206,7 +206,8 @@
    across themes. */
 :root {
   --destructive-foreground: oklch(0.985 0 0);
-  /* Links in the theme's blue, NocoBase's (2026-10-14; they were green). */
+  /* Links in the theme's primary: NocoBase's blue from 2026-10-14, the
+     emerald brand since 2026-10-21. */
   --link: var(--primary);
   --warning: oklch(0.96 0.06 85);
   --warning-foreground: oklch(0.45 0.12 70);
