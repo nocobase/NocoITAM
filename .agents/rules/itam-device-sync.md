@@ -224,6 +224,12 @@ product or in release notes, until it is listed here.
   of 确认执行; with every step settled so, it closes by itself as handled (accepted,
   decision `settled`, through `dismiss` with `settled: true`), shown 已全部处理.
   已处理 is a tag at the end of the step's line.
+- **Registering is one step** (2026-10-21): `create_record` of a device
+  takes `assignTo { targetType, targetId }`, as the create dialog's 使用中
+  does, and checks the `assign` grant as well as `create`. MDM 跟进 and the
+  device-sync skill register a platform record and hand it to its user in
+  that one step (登记新设备并分配给…), no longer a second `assign_device`. The
+  follow-up's header no longer counts the steps waiting: 确认执行 N 步 says it.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

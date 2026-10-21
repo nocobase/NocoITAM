@@ -216,12 +216,7 @@ function FollowUpReviewCard({
       </div>
     );
   const facts = [
-    pendingPlan && !allHandled
-      ? t('deviceSyncRun.stepsWaiting', {
-          count: pendingPlan.steps.filter((step) => !handled.has(step.position))
-            .length,
-        })
-      : null,
+    // How many steps wait is the 确认执行 button's to say (2026-10-21).
     pendingPlan && handled.size
       ? allHandled
         ? t('deviceSyncRun.allHandledBelow')

@@ -21,7 +21,7 @@ import { seatsRequired } from '../../providers/itam/entitlements.js';
 import { ValidationError } from '../../providers/itam/errors.js';
 import { HOLDER_TYPES } from '../../providers/itam/stock.js';
 import { taskSchema } from './audits.js';
-import { deviceSchema } from './devices.js';
+import { assignSchema, deviceSchema } from './devices.js';
 import { entitlementSchema } from './entitlements.js';
 import { CREATE_DEFAULTS, masterDataSchema } from './master-data-schemas.js';
 import { repairSchema } from './repairs.js';
@@ -72,9 +72,26 @@ const domainCreate =
     );
 
 const CREATE_TARGETS: Readonly<Record<string, CreateTarget>> = {
+  // A device may start in use, assigned in the same step as the create
+  // dialog's 使用中 does (2026-10-21): MDM 跟进 registers a platform record
+  // and hands it to its user as one step. Each grant is still checked.
   devices: {
-    schema: deviceSchema,
-    create: domainCreate('devices', (c) => c.resolve(deviceServiceToken)),
+    schema: deviceSchema.extend({ assignTo: assignSchema.strict().optional() }),
+    create: async (container, input, context, scope) => {
+      const { assignTo, ...rest } = input;
+      return container.resolve(deviceServiceToken).create(
+        rest,
+        context,
+        await scope.decide('devices', 'create'),
+        assignTo
+          ? {
+              action: 'assign',
+              input: assignTo as never,
+              conditions: await scope.decide('devices', 'assign'),
+            }
+          : undefined,
+      );
+    },
   },
   stockItems: {
     schema: stockSchema,
@@ -186,7 +203,7 @@ async function requireDialogFields(
 
 /** The conditional requirements, told to the model beside the field list. */
 export const CREATE_REQUIREMENTS: string = [
-  "devices: ownership and locationId are required; lenderVendorId and returnDueDate when ownership is leased or borrowed; serialNo when the model's category requires serials (laptops, desktops, phones… do — ask for it).",
+  "devices: ownership and locationId are required; lenderVendorId and returnDueDate when ownership is leased or borrowed; serialNo when the model's category requires serials (laptops, desktops, phones… do — ask for it). assignTo { targetType, targetId } creates it in use, assigned in the same step.",
   'entitlements: licensingModel for a perpetual; billingModel, billingCycle and expiryDate for a subscription; seatCount unless the licence is site / free or the subscription is billed flat.',
   'repairs: expectedReturnAt is required (sentAt defaults to today); vendorId unless the method is internal.',
 ].join('\n');
@@ -353,6 +370,14 @@ export async function screenRecord(
       code: 'FORBIDDEN',
       message: `Not allowed: ${collection}.${action}`,
     };
+  // A device created in use is assigned too.
+  if (collection === 'devices' && input?.assignTo)
+    if (!(await scope.may('devices', 'assign')))
+      return {
+        ok: false,
+        code: 'FORBIDDEN',
+        message: 'Not allowed: devices.assign',
+      };
   try {
     if (input) await requireDialogFields(container, collection, input);
   } catch (error) {

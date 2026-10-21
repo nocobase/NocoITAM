@@ -81,7 +81,7 @@ export const deviceSchema = z.object({
   ownerId: id.optional(),
 });
 
-const assignSchema = z.object({
+export const assignSchema = z.object({
   targetType: z.enum(ASSIGNEE_TYPES),
   targetId: id,
   locationId: id.optional(),

@@ -266,6 +266,15 @@ describe('MDM follow-up', () => {
         : item.kind === 'unregistered'
           ? { action: 'register', modelId: 'model-thinkpad-t14-gen5' }
           : null;
+    // The record's user is a person on the register (2026-10-21): it is
+    // registered and handed to them in one step.
+    await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .updateTable('managedDevices')
+      .set({ personId: liNa })
+      .where('externalId', '=', 'x')
+      .execute();
     await followUp().afterSync(null);
     const mine = await settled(() => latest('owner:mia'));
     const minePlan = await plans().get('mia', String(mine.result?.planId));
@@ -299,6 +308,9 @@ describe('MDM follow-up', () => {
     const anns = await settled(() => latest('shared:ann'));
     const annPlan = await plans().get('ann', String(anns.result?.planId));
     expect(annPlan.steps.map((step) => step.op)).toEqual(['create_record']);
+    expect(annPlan.steps[0].check?.fields).toContainEqual(
+      expect.objectContaining({ field: 'input' }),
+    );
     expect(
       (await plans().execute('ann', annPlan.id, { revision: annPlan.revision }))
         .status,
@@ -307,10 +319,17 @@ describe('MDM follow-up', () => {
       .resolve(databaseManagerToken)
       .query()
       .selectFrom('devices')
-      .select(['locationId'])
+      .select(['locationId', 'status', 'assigneeId'])
       .where('serialNo', '=', 'SN-UNKNOWN')
-      .executeTakeFirst<{ locationId: unknown }>();
-    expect(registered?.locationId).toBe('loc-hq');
+      .executeTakeFirst<{
+        locationId: unknown;
+        status: unknown;
+        assigneeId: unknown;
+      }>();
+    expect(registered).toMatchObject({
+      status: 'inUse',
+      assigneeId: liNa,
+    });
   });
 
   // MDM 跟进 on MDM 核对 (2026-10-17).

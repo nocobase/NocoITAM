@@ -803,35 +803,31 @@ export function createDeviceSyncFollowUp(dependencies: {
             );
             break;
           }
-          const ref = `new${String(steps.length + 1)}`;
-          step(
-            'create_record',
-            {
-              title: words(`登记新设备：${label}`, `Register ${label}`),
-              collection: 'devices',
-              input: {
-                modelId,
-                serialNo: asText(record.serialNo) ?? null,
-                name: asText(record.deviceName) ?? null,
-                locationId,
-                ownership: 'owned',
-                ...(asText(record.suggestedDepartmentId)
-                  ? { departmentId: asText(record.suggestedDepartmentId) }
-                  : {}),
-              },
+          // Registered and handed to its platform user in one step, as
+          // the create dialog's 使用中 does (2026-10-21).
+          const user = asText(record.userName);
+          step('create_record', {
+            title: personId
+              ? words(
+                  `登记新设备并分配给${user ?? 'MDM 上的使用人'}：${label}`,
+                  `Register ${label} and assign it to ${user ?? 'its platform user'}`,
+                )
+              : words(`登记新设备：${label}`, `Register ${label}`),
+            collection: 'devices',
+            input: {
+              modelId,
+              serialNo: asText(record.serialNo) ?? null,
+              name: asText(record.deviceName) ?? null,
+              locationId,
+              ownership: 'owned',
+              ...(asText(record.suggestedDepartmentId)
+                ? { departmentId: asText(record.suggestedDepartmentId) }
+                : {}),
+              ...(personId
+                ? { assignTo: { targetType: 'person', targetId: personId } }
+                : {}),
             },
-            ref,
-          );
-          if (personId)
-            step('assign_device', {
-              title: words(
-                `把新登记的 ${item.label} 分配给 MDM 上的使用人`,
-                `Assign the new ${item.label} to its platform user`,
-              ),
-              deviceId: `$${ref}`,
-              targetType: 'person',
-              targetId: personId,
-            });
+          });
           break;
         }
         case 'correct': {

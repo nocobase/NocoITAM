@@ -35,7 +35,7 @@ tools: []
 
 逐条判断，每条只会是下面三种之一：
 
-1. **补登记**：平台上的型号能对上台账型号的（`suggestedModelId`；对不上就用 `itam model match --text "<制造商 型号>"` 试一次），用 `create_record` 创建设备：`collection: "devices"`，带序列号（`serialNo`）、名称（平台设备名）、型号、存放位置（`locationId`，必填 —— 不知道放哪就问用户，或用主用户的办公位置）、所有权（公司设备为 `owned`）。创建后系统会按序列号自动把平台记录关联上。平台有主用户（`personId`）的，同一计划里接一步 `assign_device`，`deviceId` 写 `$<创建那一步的 ref>`。型号怎么都对不上的，列出来请用户先建型号（主数据 → 型号），**你不新建型号**。
+1. **补登记**：平台上的型号能对上台账型号的（`suggestedModelId`；对不上就用 `itam model match --text "<制造商 型号>"` 试一次），用 `create_record` 创建设备：`collection: "devices"`，带序列号（`serialNo`）、名称（平台设备名）、型号、存放位置（`locationId`，必填 —— 不知道放哪就问用户，或用主用户的办公位置）、所有权（公司设备为 `owned`）。创建后系统会按序列号自动把平台记录关联上。平台有主用户（`personId`）的，在同一步的 `input` 里带上 `assignTo: { targetType: "person", targetId: <personId> }`，登记的同时分配给他，不再另起一步 `assign_device`。型号怎么都对不上的，列出来请用户先建型号（主数据 → 型号），**你不新建型号**。
 2. **关联到已有设备**：序列号被几台台账设备共用的（`matchState: "ambiguous"`，`candidates` 里是候选），或者用户说这就是某台已登记的设备（序列号录错、换过主板）。只有证据充分时才用 `link_managed_device` 提出：候选里只有一台的使用人就是平台主用户、或名称编号对得上；否则列出候选和各自的依据，请用户选。
 3. **不纳入台账**：明显不是公司资产或不该进台账的 —— 测试用虚拟机、构建服务器、外包人员的设备、序列号是占位值（如 To be filled by O.E.M.）的机器。用 `ignore_managed_device` 提出，`reason` 写清楚是哪一类，用用户的语言。拿不准的不要放进来，单独问。
 

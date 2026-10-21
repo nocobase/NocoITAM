@@ -214,7 +214,6 @@ it('heads a waiting plan with its decision, its steps open beneath', () => {
       <DeviceSyncFollowUpBlock />
     </MemoryRouter>,
   );
-  expect(screen.getByText(/deviceSyncRun\.stepsWaiting/)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'decide' })).toBeInTheDocument();
   expect(
     screen.queryByRole('button', { name: 'review.dismiss' }),

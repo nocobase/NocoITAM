@@ -133,7 +133,7 @@ export function evalPrompt(item: EvalCase): string {
     `This is what the itam commands show:\n${JSON.stringify(item.data, null, 2)}`,
     'Following your method, decide for every item that needs one what you would do: ' +
       'transfer (plan: transfer_device to a person), assign (plan: assign_device to a person), ' +
-      'register (plan: create_record of the device, and assign it when it has a user), ' +
+      'register (plan: create_record of the device, with assignTo its user when it has one), ' +
       'link (plan: link_managed_device to a register device), ignore (plan: ignore_managed_device), ' +
       'restore (the person restores it to stock on the device page), keep (the person keeps the register as it is), ' +
       'verify (ask the person to check before anything changes), escalate (the platform administrator must act; nothing changes on the register). ' +
