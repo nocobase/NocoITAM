@@ -323,6 +323,21 @@ function FollowUpReviewCard({
   );
 }
 
+/** How a decided follow-up ended, as its card says it. */
+function decidedLabel(
+  run: DeviceSyncRun | undefined,
+  t: (key: string) => string,
+): string {
+  if (run?.status === 'accepted')
+    return t(
+      run.decision === 'settled'
+        ? 'deviceSyncRun.allHandledBelow'
+        : 'deviceSyncRun.accepted',
+    );
+  if (run?.status === 'dismissed') return t('review.dismissed');
+  return t('deviceSyncRun.superseded');
+}
+
 /**
  * The plan steps whose difference or record is no longer listed on MDM 核对
  * (2026-10-21): settled on its row there, by hand, since the plan was
@@ -575,7 +590,15 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
         (run.status === 'accepted' || run.status === 'dismissed')),
   );
   if (!visible.length && !hasOthers) return null;
-  const waitingRuns = visible.filter((run) => run.status === 'pending');
+  // Waiting or still being worked out: one card for them all (2026-10-21),
+  // so asking again shows no second one while the new runs work.
+  const waitingRuns = visible.filter(
+    (run) => run.status === 'pending' || run.status === 'running',
+  );
+  const working = waitingRuns.some((run) => run.status === 'running');
+  const decidedRuns = visible.filter(
+    (run) => run.status === 'accepted' || run.status === 'dismissed',
+  );
   // Asset Steward's part of the page on a tinted panel (2026-10-21), so the
   // lists below it read as the page's own.
   return (
@@ -588,10 +611,36 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
           </h2>
           {/* The waiting ones as one card when there are several. */}
           {waitingRuns.length > 1 ? (
-            <FollowUpGroupCard runs={waitingRuns} />
+            working ? (
+              <div className='space-y-2 rounded-lg border bg-card px-4 py-2.5 text-sm'>
+                <h3 className='font-medium'>{t('deviceSyncRun.title')}</h3>
+                <p
+                  role='status'
+                  className='flex items-center gap-2 text-muted-foreground'
+                >
+                  <Spinner />
+                  {t('deviceSyncRun.working')}
+                </p>
+              </div>
+            ) : (
+              <FollowUpGroupCard runs={waitingRuns} />
+            )
+          ) : null}
+          {/* Decided here together, they fold into one line too. */}
+          {decidedRuns.length > 1 ? (
+            <div className='flex flex-wrap items-center gap-x-1.5 rounded-lg border bg-card px-4 py-2.5 text-sm'>
+              <span className='font-medium'>{t('deviceSyncRun.title')}</span>
+              <span className='text-muted-foreground'>
+                · {decidedLabel(decidedRuns[0], t)}
+              </span>
+            </div>
           ) : null}
           {visible
-            .filter((run) => waitingRuns.length < 2 || run.status !== 'pending')
+            .filter(
+              (run) =>
+                (waitingRuns.length < 2 || !waitingRuns.includes(run)) &&
+                (decidedRuns.length < 2 || !decidedRuns.includes(run)),
+            )
             .map((run) => (
               <FollowUpReviewCard key={run.id} run={run} />
             ))}

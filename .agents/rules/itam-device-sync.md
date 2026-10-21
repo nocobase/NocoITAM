@@ -236,7 +236,11 @@ product or in release notes, until it is listed here.
   wait they are one: one card on MDM 核对 (`FollowUpGroupCard`, a section
   each, one 拒绝 / 确认执行 over both plans), one entry in 收件箱 (the newest
   stands for both, the other's title as its second line, the detail showing
-  every waiting one), and one in `waitingCount`.
+  every waiting one), and one in `waitingCount`. Runs still being worked
+  out count as waiting, so asking again shows one card working; runs
+  started within two minutes of each other (one pull or ask) are one
+  entry among 收件箱's handled too, and decided together they fold into one
+  line on MDM 核对.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the
