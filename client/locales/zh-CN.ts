@@ -3602,7 +3602,6 @@ const zhCN: AppResource = {
     handledBelow_one: '{{count}} 项已处理',
     handledBelow_other: '{{count}} 项已处理',
     allHandledBelow: '已全部处理',
-    done: '完成',
     accepted: '已按方案处理',
     stepsWaiting_one: '{{count}} 项待确认',
     stepsWaiting_other: '{{count}} 项待确认',

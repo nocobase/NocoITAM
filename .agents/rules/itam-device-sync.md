@@ -219,7 +219,9 @@ product or in release notes, until it is listed here.
   The tabs' own AI shortcuts went: the header's MDM 跟进 is the one way in. Each advice entry also names its plan steps
   (`steps`, positions from 1): once its row is gone from the lists, the
   follow-up's card unticks them, marks them 已处理 and leaves them out
-  of 确认执行; with every step settled so, 完成 sets the follow-up aside.
+  of 确认执行; with every step settled so, it closes by itself as handled (accepted,
+  decision `settled`, through `dismiss` with `settled: true`), shown 已全部处理.
+  已处理 is a tag at the end of the step's line.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

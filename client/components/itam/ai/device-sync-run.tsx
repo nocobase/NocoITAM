@@ -1,7 +1,13 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronRight, RefreshCw } from 'lucide-react';
-import { useContext, useMemo, useState, type ReactElement } from 'react';
+import {
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactElement,
+} from 'react';
 import { Link } from 'react-router';
 
 import { Button } from '#components/ui/button';
@@ -14,6 +20,7 @@ import {
 import {
   useDismissReview,
   useInbox,
+  useSettleFollowUp,
   useOtherFollowUps,
   type DeviceSyncRun,
 } from '@/lib/itam/agents';
@@ -102,7 +109,11 @@ export function DeviceSyncRunCard({
         <p className='flex items-center gap-2 text-muted-foreground'>
           <Check className='size-4 text-(--status-success)' aria-hidden />
           {run.status === 'accepted'
-            ? t('deviceSyncRun.accepted')
+            ? t(
+                run.decision === 'settled'
+                  ? 'deviceSyncRun.allHandledBelow'
+                  : 'deviceSyncRun.accepted',
+              )
             : run.status === 'dismissed'
               ? t('review.dismissed')
               : t('deviceSyncRun.superseded')}
@@ -189,6 +200,14 @@ function FollowUpReviewCard({
     pendingPlan !== null &&
     pendingPlan.steps.length > 0 &&
     pendingPlan.steps.every((step) => handled.has(step.position));
+  // Every step settled on its row: it closes by itself, as handled
+  // (2026-10-21), once — a failure leaves 拒绝 to the reader.
+  const settle = useSettleFollowUp();
+  const settleOnce = settle.mutate;
+  const waiting = run.status === 'pending';
+  useEffect(() => {
+    if (allHandled && waiting) settleOnce(run);
+  }, [allHandled, waiting, settleOnce, run]);
   if (run.status === 'running' || run.status === 'failed')
     return (
       <div className='space-y-3 rounded-lg border bg-card p-4'>
@@ -213,7 +232,11 @@ function FollowUpReviewCard({
       : null,
     decided
       ? run.status === 'accepted'
-        ? t('deviceSyncRun.accepted')
+        ? t(
+            run.decision === 'settled'
+              ? 'deviceSyncRun.allHandledBelow'
+              : 'deviceSyncRun.accepted',
+          )
         : run.status === 'dismissed'
           ? t('review.dismissed')
           : t('deviceSyncRun.superseded')
@@ -242,17 +265,8 @@ function FollowUpReviewCard({
           ) : null}
         </CollapsibleTrigger>
         <div className='ml-auto flex items-center gap-2'>
-          {/* Every step settled on its row: nothing is left to carry out,
-              so the follow-up is set aside as done. */}
-          {pendingPlan && allHandled ? (
-            <Button
-              variant='outline'
-              disabled={dismiss.isPending}
-              onClick={() => dismiss.mutate(run)}
-            >
-              {t('deviceSyncRun.done')}
-            </Button>
-          ) : pendingPlan ? (
+          {/* Every step settled on its row: it is closing by itself. */}
+          {pendingPlan && allHandled ? null : pendingPlan ? (
             <PlanDecision plan={pendingPlan} skipped={leftOut} />
           ) : !decided ? (
             <Button

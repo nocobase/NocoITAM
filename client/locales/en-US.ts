@@ -3807,7 +3807,6 @@ const messages = {
     handledBelow_one: '{{count}} settled',
     handledBelow_other: '{{count}} settled',
     allHandledBelow: 'All settled',
-    done: 'Done',
     accepted: 'Carried out',
     stepsWaiting_one: '{{count}} step to confirm',
     stepsWaiting_other: '{{count}} steps to confirm',

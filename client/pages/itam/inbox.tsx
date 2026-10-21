@@ -272,7 +272,12 @@ function titleOf(run: AgentRun, t: Translate): string {
 function lineOf(run: AgentRun, t: Translate): string {
   if (run.agent === 'deviceSync') {
     if (run.status === 'running') return t('deviceSyncRun.working');
-    if (run.status === 'accepted') return t('deviceSyncRun.accepted');
+    if (run.status === 'accepted')
+      return t(
+        run.decision === 'settled'
+          ? 'deviceSyncRun.allHandledBelow'
+          : 'deviceSyncRun.accepted',
+      );
     if (run.status === 'superseded') return t('deviceSyncRun.superseded');
     if (run.status === 'pending') return run.result?.summary ?? '';
   }

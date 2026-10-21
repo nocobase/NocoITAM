@@ -206,7 +206,17 @@ export interface DeviceSyncFollowUp {
   /** A plan decided on its card: the run that proposed it goes with it. */
   planDecided(outcome: PlanOutcome): Promise<void>;
   /** Its person sets it aside (nothing to carry out, or not now). */
-  dismiss(runId: string, actorId: string): Promise<AgentRun>;
+  dismiss(
+    runId: string,
+    actorId: string,
+    options?: {
+      /**
+       * Every step was settled on MDM 核对's rows (2026-10-21): it ends as
+       * handled (accepted, decision `settled`), not as set aside.
+       */
+      readonly settled?: boolean;
+    },
+  ): Promise<AgentRun>;
 }
 
 export const deviceSyncFollowUpToken: ServiceToken<DeviceSyncFollowUp> =
@@ -479,7 +489,7 @@ export function createDeviceSyncFollowUp(dependencies: {
       await settleShared(run);
     },
 
-    async dismiss(runId, actorId) {
+    async dismiss(runId, actorId, options = {}) {
       const run = await runs().get(runId);
       if (!run || run.agent !== AGENT)
         throw new RecordNotFoundError('itamAgentRuns', runId);
@@ -490,8 +500,9 @@ export function createDeviceSyncFollowUp(dependencies: {
         );
       if (
         !(await runs().decide(run.id, {
-          status: 'dismissed',
+          status: options.settled ? 'accepted' : 'dismissed',
           decidedById: actorId,
+          ...(options.settled ? { decision: 'settled' } : {}),
         }))
       )
         throw new BusinessRuleError(

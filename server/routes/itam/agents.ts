@@ -440,9 +440,17 @@ export const agentRoutes: AppApiRouteContribution<Application> =
           const id = context.req.param('id');
           const me = principalId(context);
           const found = await runs().get(id);
+          // MDM 跟进 whose every step was settled on its row ends as
+          // handled rather than set aside (2026-10-21).
+          const input = z
+            .object({ settled: z.boolean().default(false) })
+            .strict()
+            .parse(await readJsonObject(context));
           const run =
             found?.agent === 'deviceSync'
-              ? await container.resolve(deviceSyncFollowUpToken).dismiss(id, me)
+              ? await container
+                  .resolve(deviceSyncFollowUpToken)
+                  .dismiss(id, me, { settled: input.settled })
               : await container.resolve(approvalReviewerToken).dismiss(id, me);
           return context.json({ data: run });
         } catch (error) {

@@ -93,7 +93,8 @@ interface RunBase {
   readonly failure: string | null;
   readonly revisesId: string | null;
   readonly instruction: string | null;
-  readonly decision: 'approved' | 'rejected' | null;
+  /** `settled`: an MDM 跟进 whose steps were all settled on their rows. */
+  readonly decision: 'approved' | 'rejected' | 'settled' | null;
   readonly comment: string | null;
   readonly decidedById: string | null;
   readonly decidedAt: string | null;
@@ -387,6 +388,28 @@ export function useDecideReview(): UseMutationResult<
         queryClient.invalidateQueries({ queryKey: ['itam', 'itam/approvals'] }),
       ]);
     },
+  });
+}
+
+/**
+ * Closes an MDM 跟进 whose every step was settled on MDM 核对's rows
+ * (2026-10-21): handled, not set aside.
+ */
+export function useSettleFollowUp(): UseMutationResult<
+  unknown,
+  Error,
+  AgentRun
+> {
+  const api = useApi();
+  const refresh = useRefreshRuns();
+  return useMutation({
+    mutationFn: (run) =>
+      api.request({
+        path: `${AGENT_RUNS_PATH}/${run.id}/dismiss`,
+        method: 'POST',
+        json: { settled: true },
+      }),
+    onSuccess: refresh,
   });
 }
 

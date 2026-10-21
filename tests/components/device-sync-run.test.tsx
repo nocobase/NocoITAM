@@ -14,6 +14,7 @@ import type { DeviceSyncRun } from '../../client/lib/itam/agents.js';
 
 const state = vi.hoisted(() => ({
   dismiss: vi.fn(),
+  settle: vi.fn(),
   plan: null as unknown,
   inbox: { open: [] as unknown[], handled: [] as unknown[] },
   others: [] as unknown[],
@@ -39,6 +40,7 @@ vi.mock('../../client/lib/itam/agents.js', () => ({
     isPending: false,
     error: null,
   }),
+  useSettleFollowUp: () => ({ mutate: state.settle, isPending: false }),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({ useApi: () => ({}) }));
 vi.mock('../../client/lib/itam/device-sync.js', () => ({
@@ -99,6 +101,7 @@ const show = (value: DeviceSyncRun) =>
 
 beforeEach(() => {
   state.dismiss.mockClear();
+  state.settle.mockClear();
   state.inbox = { open: [], handled: [] };
   state.others = [];
   state.review = undefined;
@@ -311,8 +314,8 @@ it('titles the asset managers’ follow-up by kind, in devices', () => {
 });
 
 // Settled on its row below (2026-10-21): its steps are left out, and once
-// every one is, the follow-up is done.
-it('leaves out the steps settled on their rows, and is done once all are', () => {
+// every one is, the follow-up closes by itself, as handled.
+it('leaves out the steps settled on their rows, and closes once all are', () => {
   state.plan = {
     id: 'plan-1',
     title: 'MDM follow-up',
@@ -347,6 +350,7 @@ it('leaves out the steps settled on their rows, and is done once all are', () =>
   );
   expect(screen.getByText(/deviceSyncRun\.handledBelow/)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'decide' })).toBeInTheDocument();
+  expect(state.settle).not.toHaveBeenCalled();
   unmount();
   state.review = { checks: [], unregistered: [], unmanaged: [] };
   render(
@@ -354,6 +358,8 @@ it('leaves out the steps settled on their rows, and is done once all are', () =>
       <DeviceSyncFollowUpBlock />
     </MemoryRouter>,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'deviceSyncRun.done' }));
-  expect(state.dismiss).toHaveBeenCalled();
+  expect(state.settle).toHaveBeenCalledWith(
+    expect.objectContaining({ id: 'run-1' }),
+  );
+  expect(screen.queryByRole('button', { name: 'decide' })).toBeNull();
 });

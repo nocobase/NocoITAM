@@ -211,9 +211,9 @@ export function PlanCard({
                 </span>
                 {/* At the end of the line, not struck through. */}
                 {settled.has(step.position) && settledLabel ? (
-                  <span className='ml-2 text-xs text-muted-foreground'>
+                  <Badge variant='secondary' className='ml-2 align-text-bottom'>
                     {settledLabel}
-                  </span>
+                  </Badge>
                 ) : null}
               </div>
               {showParams && step.check?.fields.length ? (
