@@ -83,7 +83,8 @@ export function MasterTree({
 /**
  * A tree of reference data reads as two panes (categories, then locations
  * and departments, 2026-10-06): the tree in a narrow column — names only,
- * since the kind and the count are on the record — and the clicked node's
+ * since the kind and the count are on the record, but a department's
+ * people — and the clicked node's
  * own detail page beside it, where it is read and edited without a drawer
  * over the tree. The node is named in the address (`?selected=`), so a
  * refresh or a link keeps it open; leaving it from inside (its 返回, or
@@ -147,7 +148,10 @@ function TreePanes({
                   <Button
                     variant='ghost'
                     size='icon-sm'
-                    className='text-muted-foreground hover:text-destructive'
+                    // On hover, on the open row or on focus (2026-10-21):
+                    // a bin on every row read as clutter; a touch screen,
+                    // which cannot hover, keeps them all.
+                    className='text-muted-foreground opacity-0 group-data-selected/tree-row:opacity-100 group-hover/tree-row:opacity-100 hover:text-destructive focus-visible:opacity-100 pointer-coarse:opacity-100'
                     aria-label={t('actions.deleteObject', {
                       object: t(`${collection.i18n}.object`),
                     })}

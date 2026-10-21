@@ -39,6 +39,8 @@ export interface TreeViewProps {
   readonly countLabel?: (node: TreeNode) => ReactNode;
   /** Whether the count of a node should include its descendants. */
   readonly subtreeCounts?: boolean;
+  /** The count as a muted figure, not a labelled badge (a narrow column). */
+  readonly plainCounts?: boolean;
   readonly onSelect?: (id: string) => void;
   readonly selectedId?: string;
   /** When set, nodes can be dragged above / below siblings or onto a parent. */
@@ -64,6 +66,7 @@ export function TreeView({
   counts,
   countLabel,
   subtreeCounts = true,
+  plainCounts = false,
   onSelect,
   selectedId,
   onMove,
@@ -148,8 +151,10 @@ export function TreeView({
       return (
         <li key={item.node.id}>
           <div
+            // `group/tree-row`: row actions may show on hover alone.
+            data-selected={selectedId === item.node.id || undefined}
             className={cn(
-              'relative flex items-center gap-1 rounded-md py-1 pr-2 pl-1 text-sm hover:bg-muted',
+              'group/tree-row relative flex items-center gap-1 rounded-md py-1 pr-2 pl-1 text-sm hover:bg-muted',
               selectedId === item.node.id && 'bg-muted',
               dragging === item.node.id && 'opacity-40',
               mark === 'inside' && 'bg-primary/10 ring-1 ring-primary/40',
@@ -231,7 +236,11 @@ export function TreeView({
                   {detail.value}
                 </span>
               ))}
-              {counts ? (
+              {counts && plainCounts ? (
+                <span className='shrink-0 text-xs text-muted-foreground tabular-nums'>
+                  {total(item)}
+                </span>
+              ) : counts ? (
                 <Badge
                   variant='secondary'
                   className='w-20 shrink-0 justify-center gap-1 tabular-nums'

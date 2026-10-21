@@ -6,6 +6,7 @@ import { useParams } from 'react-router';
 import { FieldValue } from '@/components/itam/cells';
 import { DataTable, type DataTableColumn } from '@/components/itam/data-table';
 import { EmptyState } from '@/components/itam/empty-state';
+import { TreePath } from '@/components/itam/tree-path';
 import { useApi, useItamList, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { STOCK_PATH } from '@/lib/itam/stock';
@@ -27,6 +28,9 @@ export function RelatedListTab({
   countLabel = 'tabs.total',
   countColumns: explicitCountColumns,
   leading = [],
+  filterValue,
+  showFilterField = false,
+  badges = [],
 }: {
   /** A master-data collection to list, e.g. `models`; or pass `target`. */
   readonly collection?: string;
@@ -44,6 +48,12 @@ export function RelatedListTab({
   readonly countColumns?: readonly { key: string; label: string }[];
   /** Columns before the listed records' own, e.g. a model's 资产 tab's type. */
   readonly leading?: readonly DataTableColumn<ItamRecord>[];
+  /** What `filterField` matches; the current record by default. */
+  readonly filterValue?: string | readonly string[];
+  /** Keep `filterField`'s column, when the rows point at several records. */
+  readonly showFilterField?: boolean;
+  /** Choice fields shown as their tag rather than plain text. */
+  readonly badges?: readonly string[];
 }): ReactElement {
   const { t } = useTranslation();
   const { id = '' } = useParams();
@@ -56,7 +66,7 @@ export function RelatedListTab({
     pageSize: 20,
     sort: target.defaultSort ?? target.nameField,
     order: target.defaultOrder,
-    filter: { ...target.listFilter, [filterField]: id },
+    filter: { ...target.listFilter, [filterField]: filterValue ?? id },
   });
   const rows = useMemo(() => list.data?.data ?? [], [list.data]);
   // Device counts are grouped by the listed collection's foreign key.
@@ -127,7 +137,7 @@ export function RelatedListTab({
     (field) =>
       field.column &&
       field.type !== 'boolean' &&
-      field.key !== filterField &&
+      (showFilterField || field.key !== filterField) &&
       !['createdAt', 'updatedAt', 'createdById'].includes(field.key),
   );
 
@@ -144,12 +154,20 @@ export function RelatedListTab({
           render: (row: ItamRecord) =>
             field.key === target.nameField ? (
               <span className='font-medium'>{text(row[field.key])}</span>
+            ) : field.key === filterField && field.reference ? (
+              // Each row's own node under the record (研发 under 技术部),
+              // not the path the record already names.
+              <TreePath
+                collection={field.reference.collection}
+                nodeId={row[field.key]}
+                show='leaf'
+              />
             ) : (
               <FieldValue
                 field={field}
                 value={row[field.key]}
                 names={names}
-                plainEnums
+                plainEnums={!badges.includes(field.key)}
               />
             ),
         })),

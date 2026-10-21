@@ -715,6 +715,66 @@ describe('master data routes', () => {
     ]);
   });
 
+  it("counts a department's sub-departments' people and sorts by several fields", async () => {
+    const manager = { user: 'mia', role: 'manager' } as const;
+    const create = async (collection: string, body: Record<string, unknown>) =>
+      (
+        (await (
+          await app.request(`/api/itam/master/${collection}`, {
+            ...json(body),
+            ...manager,
+          })
+        ).json()) as { data: { id: string } }
+      ).data;
+    const tech = await create('departments', { name: 'Tech' });
+    const rd = await create('departments', { name: 'R&D', parentId: tech.id });
+    await create('people', {
+      name: 'Joiner',
+      employeeNo: 'E1',
+      departmentId: rd.id,
+      hireDate: addDays(today(), 5),
+    });
+    await create('people', {
+      name: 'Head',
+      employeeNo: 'E3',
+      departmentId: tech.id,
+    });
+    await create('people', {
+      name: 'Engineer',
+      employeeNo: 'E2',
+      departmentId: rd.id,
+    });
+    await create('people', {
+      name: 'Gone',
+      employeeNo: 'E0',
+      departmentId: rd.id,
+      leaveDate: '2020-01-01',
+    });
+
+    const stats = (await (
+      await app.request(
+        `/api/itam/master/departments/${tech.id}/stats`,
+        manager,
+      )
+    ).json()) as { data: { counts: Record<string, number> } };
+    // Everybody not gone, R&D's included; its children stay its own.
+    expect(stats.data.counts.people).toBe(3);
+    expect(stats.data.counts.children).toBe(1);
+
+    const list = (await (
+      await app.request(
+        `/api/itam/master/people?sort=employmentStatus,employeeNo&filter[departmentId]=${tech.id}&filter[departmentId]=${rd.id}&filter[employmentStatus]=active&filter[employmentStatus]=pending`,
+        manager,
+      )
+    ).json()) as { data: { name: string }[] };
+    // 在职 before 待入职, each by employee number.
+    expect(list.data.map((row) => row.name)).toEqual([
+      'Engineer',
+      'Head',
+      'Joiner',
+    ]);
+  });
+
   it("reports a record's footprint and ancestors", async () => {
     const manager = { user: 'mia', role: 'manager' } as const;
     const create = async (collection: string, body: Record<string, unknown>) =>

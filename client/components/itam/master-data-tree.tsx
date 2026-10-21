@@ -61,7 +61,7 @@ export function MasterDataTree({
   readonly rowActions?: (row: ItamRecord) => ReactNode;
   /**
    * The names alone, for a narrow column beside the record (the categories
-   * page): no kind tag and no count.
+   * page): no kind tag, and no count but a department's people.
    */
   readonly compact?: boolean;
   readonly selectedId?: string;
@@ -131,6 +131,19 @@ export function MasterDataTree({
       (
         await api.request<{ data: Record<string, Record<string, number>> }>({
           path: `${masterDataPath('categories')}/counts`,
+        })
+      ).data,
+  });
+  // Beside the department record, each department's people (2026-10-21),
+  // its sub-departments' included, as its 人员 tab counts them.
+  const isDepartments = collection.name === 'departments';
+  const peopleCounts = useQuery({
+    queryKey: ['itam', masterDataPath('departments'), 'counts'],
+    enabled: isDepartments && compact,
+    queryFn: async () =>
+      (
+        await api.request<{ data: Record<string, Record<string, number>> }>({
+          path: `${masterDataPath('departments')}/counts`,
         })
       ).data,
   });
@@ -227,7 +240,14 @@ export function MasterDataTree({
       key={`${group ?? ''}-${expandAll === false && !filtering ? 'collapsed' : 'expanded'}-${filtering ? needle : ''}`}
       defaultCollapsed={expandAll === false && !filtering}
       nodes={treeNodes}
-      counts={compact ? undefined : mergedCounts}
+      counts={
+        compact
+          ? isDepartments
+            ? (peopleCounts.data?.people ?? {})
+            : undefined
+          : mergedCounts
+      }
+      plainCounts={compact}
       countLabel={(node) => {
         const applies = isCategories
           ? text(rows.find((row) => row.id === node.id)?.appliesTo)

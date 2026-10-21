@@ -36,6 +36,7 @@ import {
 import { addDays, addMonths, today } from './dates.js';
 import type { LeaverAccounts } from './leaver-accounts.js';
 import { OWNED_BY_USER, recoveryPlan, type RecoveryItem } from './recovery.js';
+import { subtreeIds } from './tree-scope.js';
 import type { HistoryOrigin, HistoryService } from './history.js';
 
 /**
@@ -1653,6 +1654,12 @@ export function createMasterDataService(
 
     async stats(collection, id) {
       require(collection);
+      // A department counts its sub-departments' people and devices too
+      // (2026-10-21), as its tabs list them; its children stay its own.
+      const scope =
+        collection === 'departments'
+          ? [...(await subtreeIds(database, 'departments', [id]))]
+          : [id];
       const count = async (
         table: string,
         field: string,
@@ -1661,12 +1668,13 @@ export function createMasterDataService(
           op: 'in' | 'not in' | '=';
           value: string | string[];
         },
+        ids: readonly string[] = [id],
       ) => {
         let query = database
           .query()
           .selectFrom(table)
           .select((eb) => [eb.fn.countAll().as('total')])
-          .where(field, '=', id);
+          .where(field, 'in', [...ids]);
         if (extra) query = query.where(extra.field, extra.op, extra.value);
         const row = await query.executeTakeFirst<{ total: unknown }>();
         return Number(row?.total ?? 0);
@@ -1688,7 +1696,7 @@ export function createMasterDataService(
           .query()
           .selectFrom('devices')
           .select((eb) => ['status', eb.fn.countAll().as('total')])
-          .where(field, '=', id)
+          .where(field, 'in', scope)
           .where('status', '!=', 'disposed')
           .groupBy('status')
           .execute<{ status: string; total: unknown }>();
@@ -1742,11 +1750,12 @@ export function createMasterDataService(
         case 'departments':
           counts.children = await count('departments', 'parentId');
           // Everybody not gone, 待入职 included, as the list counts them.
-          counts.people = await count('people', 'departmentId', {
-            field: 'employmentStatus',
-            op: 'not in',
-            value: ['left'],
-          });
+          counts.people = await count(
+            'people',
+            'departmentId',
+            { field: 'employmentStatus', op: 'not in', value: ['left'] },
+            scope,
+          );
           await devicesBy('departmentId');
           break;
         case 'people': {

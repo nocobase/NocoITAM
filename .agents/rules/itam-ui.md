@@ -135,15 +135,22 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   (2026-10-06, every master-data tree): two panes, each
   scrolling on its own (`treeFills` on the domain makes the page fill the
   window, as a board does). The tree is a narrow column of names only —
-  `MasterDataTree`'s `compact` drops the kind tag and the count — and a
-  row's one action is a delete icon (`DomainTreeProps.onDelete`, through the
-  list's own confirmation), since editing is the pane's. The clicked
+  `MasterDataTree`'s `compact` drops the kind tag and the count, except a
+  department's people as a muted figure, its sub-departments' included
+  (2026-10-21) — and a row's one action is a delete icon
+  (`DomainTreeProps.onDelete`, through the list's own confirmation), since
+  editing is the pane's; it shows on hover, on the open row and on a touch
+  screen (2026-10-21). A department's 人员 and 设备 tabs, and the counts on
+  them, take in its sub-departments (`useSubtree`, the server's
+  `subtreeIds`), each row naming its own department; its people list those
+  on the books by status, then employee number (a list's `sort` takes
+  several comma-separated fields), and those who left in a section below. The clicked
   node's own detail page — its tabs included — sits beside it through
   `RecordPane` (`TreePanes` in `master-domain-parts.tsx`), named in
   the address as `?selected=` (a list parameter, not a filter: `RESERVED`
   in `domain-list.tsx`), followed when the pane moves to its parent and
-  cleared when it is deleted or left; with nothing chosen the pane says to
-  pick one. The pane leaves out the breadcrumb (`HideBreadcrumbContext`),
+  cleared when it is deleted or left; with nothing chosen the first root
+  node opens (2026-10-21). The pane leaves out the breadcrumb (`HideBreadcrumbContext`),
   which the tree beside it already states; the drawer keeps it. On the
   categories page the left column is grouped by asset type (设备, 配件, 耗材, 组件, 授权, each under
   its tag, an empty one saying so): a top-level category chooses its type

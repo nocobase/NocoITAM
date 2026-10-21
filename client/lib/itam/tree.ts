@@ -1,4 +1,4 @@
-import type { ItamRecord } from './api.js';
+import { masterDataPath, useItamList, type ItamRecord } from './api.js';
 import { masterDataByName } from './master-data.js';
 
 /** Root-first chain from the tree's nodes to `nodeId`, itself included. */
@@ -35,4 +35,32 @@ export function treePathLabel(
   return treeChain(nodes, nodeId)
     .map((entry) => (typeof entry.name === 'string' ? entry.name : ''))
     .join(' › ');
+}
+
+/** `nodeId` and every node under it. */
+export function subtreeOf(
+  nodes: readonly ItamRecord[],
+  nodeId: string,
+): string[] {
+  const ids = [nodeId];
+  for (let at = 0; at < ids.length; at++)
+    for (const node of nodes)
+      if (node.parentId === ids[at] && !ids.includes(node.id))
+        ids.push(node.id);
+  return ids;
+}
+
+/**
+ * A tree node and its descendants, from the list the tree pane reads (the
+ * same query, so usually cached); undefined until it has loaded.
+ */
+export function useSubtree(
+  collection: 'departments' | 'locations',
+  nodeId: string,
+): readonly string[] | undefined {
+  const nodes = useItamList<ItamRecord>(masterDataPath(collection), {
+    pageSize: 200,
+    sort: 'sort',
+  }).data?.data;
+  return nodes ? subtreeOf(nodes, nodeId) : undefined;
 }

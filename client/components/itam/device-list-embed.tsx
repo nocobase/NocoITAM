@@ -26,7 +26,9 @@ export function DeviceListEmbed({
   omit = [],
   show = [],
 }: {
-  readonly filter: Readonly<Record<string, string | undefined>>;
+  readonly filter: Readonly<
+    Record<string, string | readonly string[] | undefined>
+  >;
   readonly emptyKey?: string;
   /** Columns before the device's own, e.g. a model's 资产 tab's type. */
   readonly leading?: readonly DataTableColumn<ItamRecord>[];
@@ -34,9 +36,12 @@ export function DeviceListEmbed({
   readonly omit?: readonly string[];
   /**
    * Columns most tabs leave out: the serial number, who holds it, and the
-   * number and name apart (`noAndName`) rather than in one cell.
+   * number and name apart (`noAndName`) rather than in one cell, and the
+   * department (a parent department's tab lists its sub-departments' too).
    */
-  readonly show?: readonly ('serialNo' | 'assignee' | 'noAndName')[];
+  readonly show?: readonly (
+    'serialNo' | 'assignee' | 'noAndName' | 'department'
+  )[];
 }): ReactElement {
   const { t } = useTranslation();
   const openRecord = useOpenRecord();
@@ -99,6 +104,26 @@ export function DeviceListEmbed({
                   ),
                 },
               ]),
+          ...(show.includes('department')
+            ? [
+                {
+                  key: 'departmentId',
+                  header: t('fields.department'),
+                  className: 'w-px whitespace-nowrap',
+                  // Its own, not the path: the tab names the parent.
+                  render: (row: ItamRecord) =>
+                    row.departmentId ? (
+                      <TreePath
+                        collection='departments'
+                        nodeId={row.departmentId}
+                        show='leaf'
+                      />
+                    ) : (
+                      '—'
+                    ),
+                },
+              ]
+            : []),
           {
             key: 'modelId',
             header: t('fields.model'),

@@ -24,6 +24,7 @@ export function asText(value: unknown): string | undefined {
 export interface ListOptions {
   readonly page?: number;
   readonly pageSize?: number;
+  /** A registered field, or several comma-separated, each breaking ties. */
   readonly sort?: string;
   readonly order?: 'asc' | 'desc';
   readonly q?: string;
@@ -184,7 +185,11 @@ export async function listCollection(
   const fields = outputFields(definition.fields, conditions);
   const page = Math.max(1, options.page ?? 1);
   const pageSize = Math.min(200, Math.max(1, options.pageSize ?? 20));
-  const requested = options.sort ?? definition.defaultSort;
+  // `a,b` sorts by a, then by b among equals (2026-10-21: a department's
+  // people by status, then by employee number); only registered fields.
+  const [requested, ...thenBy] = (options.sort ?? definition.defaultSort)
+    .split(',')
+    .map((key) => key.trim());
   const byReference = definition.sortByReference?.[requested];
   const sort =
     !byReference && definition.fields.includes(requested)
@@ -228,6 +233,9 @@ export async function listCollection(
       .orderBy(`${definition.name}.name`, order);
   } else if (sort) {
     listQuery = listQuery.orderBy(sort, order);
+    for (const key of thenBy)
+      if (key !== sort && definition.fields.includes(key))
+        listQuery = listQuery.orderBy(key, order);
     // Rows tied on the sort key (repairs sent the same day) keep a stable,
     // newest-first order instead of insertion order.
     if (sort !== 'createdAt' && definition.fields.includes('createdAt'))

@@ -24,7 +24,7 @@ export interface RelatedTarget {
   /** Route for a row; stock items route by their kind. */
   readonly routeFor: (row: ItamRecord) => string;
   /** Fixed filter, e.g. a stock kind. */
-  readonly listFilter?: Readonly<Record<string, string>>;
+  readonly listFilter?: Readonly<Record<string, string | readonly string[]>>;
   /** How many of `fields` the list shows; four unless it says. */
   readonly columns?: number;
 }
