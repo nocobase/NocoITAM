@@ -2,15 +2,14 @@ import { useTranslation } from '@nocobase/i18n/client';
 import type { ReactElement } from 'react';
 import { useParams } from 'react-router';
 
-import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
-import type { DataTableColumn } from '@/components/itam/data-table';
 import { DeviceListEmbed } from '@/components/itam/device-list-embed';
-import { masterDataPath, useItamRecord, type ItamRecord } from '@/lib/itam/api';
+import { masterDataPath, useItamRecord } from '@/lib/itam/api';
 import { text } from '@/lib/itam/format';
 import { stockTarget } from '@/lib/itam/related-targets';
 
 import { kindOfAppliesTo } from './master-stats.js';
 import { RelatedListTab } from './related-list-tab.js';
+import { stockTypeColumn } from './stock-type-column.js';
 
 /**
  * A model's 设备 or 库存 tab (2026-10-21): its devices or its stock items,
@@ -26,14 +25,6 @@ export default function ModelAssetsTab(): ReactElement | null {
     text(model.data?.categoryId) || undefined,
   );
   const kind = kindOfAppliesTo(category.data?.appliesTo);
-  const typeColumn = (
-    typeOf: (row: ItamRecord) => unknown,
-  ): DataTableColumn<ItamRecord> => ({
-    key: 'assetType',
-    header: t('fields.appliesTo'),
-    className: 'w-px whitespace-nowrap',
-    render: (row) => <AssetTypeBadge value={typeOf(row)} />,
-  });
   if (kind === 'device')
     return (
       <DeviceListEmbed
@@ -50,7 +41,7 @@ export default function ModelAssetsTab(): ReactElement | null {
         target={stockTarget}
         filterField='modelId'
         countKind='none'
-        leading={[typeColumn((row) => row.kind)]}
+        leading={[stockTypeColumn(t)]}
       />
     );
   return null;
