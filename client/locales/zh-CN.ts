@@ -2767,7 +2767,7 @@ const zhCN: AppResource = {
     },
     deviceFixed: '从设备页创建，设备不可更改',
     triage: {
-      ask: '诊断',
+      ask: '维修诊断',
       again: '重新诊断',
       hint: '建议先诊断再继续填写：资产管家会填好故障类型和维修方式，并建议修还是换。',
       working: '资产管家正在诊断…',
@@ -2870,7 +2870,7 @@ const zhCN: AppResource = {
     decideDescription: '批准后清单内设备转待报废，并自动回收其上的席位与组件',
     executeDescription: '设备将转为已报废并永久只读',
     triage: {
-      ask: '诊断',
+      ask: '报废诊断',
       again: '重新诊断',
       hint: '建议先诊断再继续填写：资产管家会填好报废原因、报废方式和数据清除，并检查这些设备是否适合报废。',
       working: '资产管家正在诊断…',

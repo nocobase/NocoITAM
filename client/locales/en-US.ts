@@ -2933,7 +2933,7 @@ const messages = {
     },
     deviceFixed: 'Filed from the device’s page, so the device is fixed',
     triage: {
-      ask: 'Diagnose',
+      ask: 'Repair diagnosis',
       again: 'Diagnose again',
       hint: 'Diagnose before filling in the rest: Asset Steward fills the kind of fault and how to repair it, and suggests repairing or replacing.',
       working: 'Asset Steward is diagnosing…',
@@ -3046,7 +3046,7 @@ const messages = {
       'Approving moves every listed device to pending disposal and reclaims its seats and components.',
     executeDescription: 'Devices become disposed and read-only.',
     triage: {
-      ask: 'Diagnose',
+      ask: 'Disposal diagnosis',
       again: 'Diagnose again',
       hint: 'Diagnose before filling in the rest: Asset Steward fills the reason, method and data wipe, and checks whether these devices should be disposed of.',
       working: 'Asset Steward is diagnosing…',
