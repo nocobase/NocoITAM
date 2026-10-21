@@ -570,7 +570,11 @@ describe('onboarding', () => {
       data<{
         defaultKit: { id: string } | null;
         inherited: unknown;
-        positions: { name: string; kit: { id: string } | null; holders: number }[];
+        positions: {
+          name: string;
+          kit: { id: string } | null;
+          holders: number;
+        }[];
       }>(
         await app.request(
           '/api/itam/master/departments/dept-product/onboarding-kits',
@@ -632,6 +636,7 @@ describe('onboarding', () => {
     const result = await data<{
       defaultKit: unknown;
       inherited: { department: { id: string }; kit: { id: string } } | null;
+      inheritable: boolean;
     }>(
       await app.request(
         `/api/itam/master/departments/${team.id}/onboarding-kits`,
@@ -643,6 +648,17 @@ describe('onboarding', () => {
       department: { id: 'dept-rd' },
       kit: { id: 'kit-rd' },
     });
+    expect(result.inheritable).toBe(true);
+    // R&D has its own, and nothing above it to fall back on: 技术部 has no
+    // kit of its own and no parent (2026-10-21).
+    const rd = await data<{ defaultKit: unknown; inheritable: boolean }>(
+      await app.request(
+        '/api/itam/master/departments/dept-rd/onboarding-kits',
+        manager,
+      ),
+    );
+    expect(rd.defaultKit).not.toBeNull();
+    expect(rd.inheritable).toBe(false);
   });
 
   it('keeps one kit per department and position, each item one thing', async () => {

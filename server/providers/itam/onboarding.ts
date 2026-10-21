@@ -233,7 +233,10 @@ export function isJoiner(hireDate: unknown, createdAt: unknown): boolean {
   const entered =
     createdAt instanceof Date ? isoDate(createdAt) : asText(createdAt);
   if (!entered) return false;
-  return hire.slice(0, 10) >= addDays(entered.slice(0, 10), -JOINER_ENTERED_WITHIN_DAYS);
+  return (
+    hire.slice(0, 10) >=
+    addDays(entered.slice(0, 10), -JOINER_ENTERED_WITHIN_DAYS)
+  );
 }
 
 /** Whether a plan has everything in hand: each item held, reserved or 不需要. */
@@ -422,6 +425,12 @@ export interface DepartmentKits {
     readonly department: { readonly id: string; readonly name: string };
     readonly kit: KitSummary;
   } | null;
+  /**
+   * Whether a department above has a default kit to fall back on
+   * (2026-10-21): without one, giving up its own kit would leave the
+   * department with none.
+   */
+  readonly inheritable: boolean;
   readonly positions: readonly {
     readonly name: string;
     readonly kit: KitSummary | null;
@@ -455,7 +464,10 @@ export function createOnboardingService(
 ): OnboardingService {
   const q = () => database.query();
 
-  const kitFor: OnboardingService['kitFor'] = async (departmentId, position) => {
+  const kitFor: OnboardingService['kitFor'] = async (
+    departmentId,
+    position,
+  ) => {
     let current = departmentId;
     const seen = new Set<string>();
     while (current && !seen.has(current)) {
@@ -1640,21 +1652,19 @@ export function createOnboardingService(
     const defaultKit = defaultRow ? await kitRow(String(defaultRow.id)) : null;
     let inherited: DepartmentKits['inherited'] = null;
     const parentId = asText(department.parentId);
-    if (!defaultKit && parentId) {
-      const found = await kitFor(parentId, null);
-      if (found) {
-        const owner = await q()
-          .selectFrom('departments')
-          .select(['id', 'name'])
-          .where('id', '=', found.departmentId)
-          .executeTakeFirst<Row>();
-        const kit = await kitRow(found.id);
-        if (owner && kit)
-          inherited = {
-            department: { id: String(owner.id), name: String(owner.name) },
-            kit,
-          };
-      }
+    const above = parentId ? await kitFor(parentId, null) : undefined;
+    if (!defaultKit && above) {
+      const owner = await q()
+        .selectFrom('departments')
+        .select(['id', 'name'])
+        .where('id', '=', above.departmentId)
+        .executeTakeFirst<Row>();
+      const kit = await kitRow(above.id);
+      if (owner && kit)
+        inherited = {
+          department: { id: String(owner.id), name: String(owner.name) },
+          kit,
+        };
     }
     const holders = await q()
       .selectFrom('people')
@@ -1680,6 +1690,7 @@ export function createOnboardingService(
       department: { id: String(department.id), name: String(department.name) },
       defaultKit,
       inherited,
+      inheritable: Boolean(above),
       positions,
     };
   };

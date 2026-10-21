@@ -7,13 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import {
-  apiErrorBody,
-  masterDataPath,
-  useApi,
-  useItamRecord,
-  type ItamRecord,
-} from '@/lib/itam/api';
+import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
 import { errorMessage } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { samePosition } from '@/lib/itam/positions';
@@ -37,6 +31,7 @@ interface DepartmentKitsData {
     readonly department: { readonly id: string; readonly name: string };
     readonly kit: KitSummary;
   } | null;
+  readonly inheritable: boolean;
   readonly positions: readonly {
     readonly name: string;
     readonly kit: KitSummary | null;
@@ -71,9 +66,6 @@ export function DepartmentKits({
         })
       ).data,
   });
-  // Only a department under another can fall back to its parent's kit.
-  const department = useItamRecord<ItamRecord>(departmentsPath, departmentId);
-  const hasParent = Boolean(department.data?.parentId);
   const [confirmingInherit, setConfirmingInherit] = useState(false);
   // The position asked to be removed, until the reader confirms.
   const [removing, setRemoving] = useState<{
@@ -207,9 +199,9 @@ export function DepartmentKits({
           editable={Boolean(kits.update)}
           onSave={(items) => saveItems(String(data.defaultKit?.id), items)}
           actions={
-            // A top-level department has nothing above it to take a kit
-            // from, so it keeps its own.
-            kits.delete && hasParent ? (
+            // Only with a kit above to take (2026-10-21): a top-level
+            // department, or one whose parents have none, keeps its own.
+            kits.delete && data.inheritable ? (
               <Button
                 variant='ghost'
                 className='text-muted-foreground'
