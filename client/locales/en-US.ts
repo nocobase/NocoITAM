@@ -3062,7 +3062,7 @@ const messages = {
       ask: 'Disposal diagnosis',
       again: 'Diagnose again',
       hint: 'Diagnose before filling in the rest: Asset Steward fills the reason, method and data wipe, and checks whether these devices should be disposed of.',
-      tidied: 'Tidied description',
+      tidied: 'Tidied reason',
       working: 'Asset Steward is diagnosing…',
       nothing: 'Asset Steward gave no suggestion; fill it in as you see fit.',
       concern: '{{deviceNo}}: {{note}}',
@@ -3076,6 +3076,7 @@ const messages = {
     devices: 'Devices to dispose of',
     newDescription:
       'Fill in the disposal and pick its devices; save a draft or submit for approval right away.',
+    descriptionLabel: 'Reason in words',
     addDevice: 'Add device',
     noAssets: 'No devices listed',
     noneForDevice: 'This device has never been on a disposal',

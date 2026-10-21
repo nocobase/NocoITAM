@@ -444,7 +444,8 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
   {
     key: 'description',
     detailOrder: 10,
-    label: 'fields.description',
+    // 报废说明 (2026-10-20): why these devices go.
+    label: 'disposals.descriptionLabel',
     type: 'textarea',
     // Why it goes, in words (2026-10-20): the record of the decision, and
     // what 报废诊断 and the approval read.
