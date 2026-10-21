@@ -279,6 +279,9 @@ const zhCN: AppResource = {
       sync: '经设备同步',
       install: '随系统安装',
     },
+    updatedField: '更新 {{field}}',
+    wasLabel: '原：',
+    nowLabel: '新：',
     fieldsChanged_one: '更新了 {{count}} 个字段',
     fieldsChanged_other: '更新了 {{count}} 个字段',
     showFields: '查看',
@@ -3580,6 +3583,7 @@ const zhCN: AppResource = {
     notesWaiting_other: '{{count}} 项要你看',
     notes: '需要你看一下',
     openReview: '去 MDM 核对',
+    failedHintHere: '这次没整理出来，可以点右上角的“MDM 跟进”再试一次。',
     failedHint:
       '这次没整理出来，可以到 MDM 核对页查看，或者在那里点“MDM 跟进”再试一次。',
   },

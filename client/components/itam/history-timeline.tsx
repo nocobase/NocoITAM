@@ -16,6 +16,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useApi } from '@/lib/itam/api';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { formatDate, formatMoney, relativeTime, text } from '@/lib/itam/format';
@@ -572,6 +577,12 @@ function TimelineRow({
   // status again.
   const single =
     !event && item.changes.length === 1 ? item.changes[0] : undefined;
+  // One field set to a plain value reads as one line (2026-10-21):
+  // 「更新 规格说明 → 新值」, the value cut to the line, the old and the
+  // whole new one on hover. Lists and structured values keep their lines.
+  const compact = Boolean(
+    single?.field && isCompactChange(single, fieldByKey.get(single.field)),
+  );
   const folded = single
     ? []
     : item.changes.filter(
@@ -607,17 +618,32 @@ function TimelineRow({
             <div className='flex items-start gap-3'>
               {/* A sentence: who, what they did, what changed. Inline text,
                   so it wraps like one. */}
-              <p className='min-w-0 flex-1 leading-6 whitespace-pre-wrap'>
+              <p
+                className={cn(
+                  'min-w-0 flex-1 leading-6',
+                  compact
+                    ? 'flex items-baseline gap-x-1.5 whitespace-nowrap'
+                    : 'whitespace-pre-wrap',
+                )}
+              >
                 {actor && !nested ? (
-                  <span className='font-semibold'>{actor} </span>
+                  <span className={cn('font-semibold', compact && 'shrink-0')}>
+                    {actor}{' '}
+                  </span>
                 ) : null}
-                <span className='text-muted-foreground'>
+                <span
+                  className={cn('text-muted-foreground', compact && 'shrink-0')}
+                >
                   {event
                     ? t(`history.types.${event.type}`, {
                         defaultValue: event.type,
                       })
                     : single
-                      ? fieldLabel(single)
+                      ? compact
+                        ? t('history.updatedField', {
+                            field: fieldLabel(single),
+                          })
+                        : fieldLabel(single)
                       : t('history.fieldsChanged', {
                           count: item.changes.length,
                         })}
@@ -667,8 +693,13 @@ function TimelineRow({
                   </span>
                 ) : null}
                 {single?.field ? (
-                  <span className='text-foreground/80'>
-                    {' '}
+                  <span
+                    className={cn(
+                      'text-foreground/80',
+                      compact && 'flex min-w-0',
+                    )}
+                  >
+                    {compact ? null : ' '}
                     <ChangeValue
                       field={fieldByKey.get(single.field)}
                       fieldKey={single.field}
@@ -677,6 +708,7 @@ function TimelineRow({
                       names={names}
                       keyLabels={keyLabels}
                       t={t}
+                      compact={compact}
                     />
                   </span>
                 ) : null}
@@ -822,6 +854,7 @@ function ChangeValue({
   names,
   keyLabels,
   t,
+  compact = false,
 }: {
   readonly field: FieldDefinition | undefined;
   readonly fieldKey: string;
@@ -830,6 +863,8 @@ function ChangeValue({
   readonly names: Record<string, ReadonlyMap<string, string> | undefined>;
   readonly keyLabels?: Readonly<Record<string, string>>;
   readonly t: Translate;
+  /** `→ new` on one line, the rest on hover (`isCompactChange`). */
+  readonly compact?: boolean;
 }): ReactElement {
   const currency = useContext(CurrencyContext);
   const displayValue = useContext(DisplayContext);
@@ -837,6 +872,12 @@ function ChangeValue({
     field && !isEmpty(value) ? displayValue?.(field, value) : undefined;
   const ownFrom = shown(oldValue);
   const ownTo = shown(newValue);
+  if (compact && (ownFrom !== undefined || ownTo !== undefined))
+    return (
+      <CompactChange from={ownFrom ?? '—'} to={ownTo ?? '—'} t={t}>
+        {ownTo ?? '—'}
+      </CompactChange>
+    );
   if (ownFrom !== undefined || ownTo !== undefined)
     return (
       <span className='inline-flex flex-wrap items-baseline gap-x-2 break-words'>
@@ -957,6 +998,12 @@ function ChangeValue({
       </RecordLink>
     );
   };
+  if (compact)
+    return (
+      <CompactChange from={from} to={to} t={t}>
+        {reference(newValue, to, false)}
+      </CompactChange>
+    );
   return (
     <span className='inline-flex flex-wrap items-baseline gap-x-2 break-words'>
       {long ? (
@@ -969,6 +1016,57 @@ function ChangeValue({
       </span>
       {long ? <CollapsibleText text={to} /> : reference(newValue, to, false)}
     </span>
+  );
+}
+
+/**
+ * Whether a change reads as one line: a plain value (text, a number, a
+ * date, a choice, a reference), not a list, a structured value, an
+ * attachment or the asset type's tags.
+ */
+function isCompactChange(
+  change: {
+    readonly field?: string | null;
+    oldValue: unknown;
+    newValue: unknown;
+  },
+  field: FieldDefinition | undefined,
+): boolean {
+  if (!change.field || change.field === 'attachments') return false;
+  if (field && (isAssetTypeField(field) || field.type === 'multiselect'))
+    return false;
+  const plain = (value: unknown) => value === null || typeof value !== 'object';
+  return plain(change.oldValue) && plain(change.newValue);
+}
+
+/** `→ new`, cut to the line; the old and the whole new one on hover. */
+function CompactChange({
+  from,
+  to,
+  t,
+  children,
+}: {
+  readonly from: ReactNode;
+  readonly to: ReactNode;
+  readonly t: Translate;
+  readonly children: ReactNode;
+}): ReactElement {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={<span className='flex min-w-0 items-baseline gap-x-1.5' />}
+      >
+        <span aria-hidden='true' className='shrink-0 text-muted-foreground'>
+          →
+        </span>
+        <span className='min-w-0 truncate'>{children}</span>
+      </TooltipTrigger>
+      <TooltipContent className='max-w-sm whitespace-pre-wrap'>
+        {t('history.wasLabel')} {from}
+        {'\n'}
+        {t('history.nowLabel')} {to}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

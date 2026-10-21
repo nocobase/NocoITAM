@@ -237,3 +237,35 @@ it('keeps no comment box where a history keeps no comments', () => {
   );
   expect(screen.queryByRole('textbox', { name: 'comments.label' })).toBeNull();
 });
+
+// One field set to a plain value reads as one line (2026-10-21): 更新
+// 规格说明 → the new value, cut to the line; the old one waits for hover.
+it('shows a one-field update as the field and its new value', () => {
+  const at = '2026-01-03T03:04:05.000';
+  state.items = [
+    {
+      id: 'change:s1',
+      createdAt: at,
+      actorId: 'sam',
+      origin: 'ai',
+      changes: [
+        {
+          id: 's1',
+          action: 'update',
+          field: 'specification',
+          oldValue: '2U, dual Xeon Silver 4410Y, 256 GB memory',
+          newValue: '2U rack server, dual Xeon Scalable platform',
+          actorId: 'sam',
+          createdAt: at,
+        },
+      ],
+    },
+  ];
+  renderTimeline();
+  expect(screen.getByText('history.updatedField')).toBeVisible();
+  const value = screen.getByText('2U rack server, dual Xeon Scalable platform');
+  expect(value.closest('.truncate')).not.toBeNull();
+  expect(
+    screen.queryByText('2U, dual Xeon Silver 4410Y, 256 GB memory'),
+  ).toBeNull();
+});

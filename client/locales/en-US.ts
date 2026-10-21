@@ -287,6 +287,9 @@ const messages = {
       sync: 'through device sync',
       install: 'with the installation',
     },
+    updatedField: 'updated {{field}}',
+    wasLabel: 'Was:',
+    nowLabel: 'Now:',
     fieldsChanged_one: '{{count}} field updated',
     fieldsChanged_other: '{{count}} fields updated',
     showFields: 'Show',
@@ -3784,6 +3787,8 @@ const messages = {
     notesWaiting_other: '{{count}} to look at',
     notes: 'For you to look at',
     openReview: 'Open MDM 核对',
+    failedHintHere:
+      'Nothing was sorted this time; try MDM follow-up at the top right again.',
     failedHint:
       'Nothing was sorted this time; look on the MDM review, or try MDM follow-up there again.',
   },
