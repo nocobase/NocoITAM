@@ -268,8 +268,10 @@
 
 /* A kind tag's icon is the tag's own colour, wherever the tag sits
    (2026-10-21): a highlighted dropdown option recolours what is inside it,
-   and the icon went green inside a black tag. */
-[data-slot='badge'][data-tag='kind'] svg {
+   and the icon went green inside a black tag — its strokes too, which
+   vanished into the green tag the same colour. */
+[data-slot='badge'][data-tag='kind'] svg,
+[data-slot='badge'][data-tag='kind'] svg * {
   color: inherit;
 }
 
