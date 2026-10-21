@@ -3077,6 +3077,11 @@ const messages = {
       },
     },
     descriptionLabel: 'Reason in words',
+    wipeRemotely: {
+      title: 'Wipe or lock it in your MDM first',
+      description:
+        '{{devices}} is still managed by your MDM and may hold company data. Before submitting, wipe or lock it remotely in Intune / Jamf.',
+    },
     devicesFixed:
       'Filed for this device alone; to dispose of several together, create the request from the disposals list',
     devices: 'Devices to dispose of',

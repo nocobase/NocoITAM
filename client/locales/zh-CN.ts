@@ -2901,6 +2901,11 @@ const zhCN: AppResource = {
       },
     },
     descriptionLabel: '报废说明',
+    wipeRemotely: {
+      title: '先在 MDM 中远程擦除或锁定',
+      description:
+        '{{devices}} 仍由 MDM 管理，设备里可能还有公司数据。提交报废前，请先在 Intune / Jamf 中远程擦除或锁定。',
+    },
     devicesFixed:
       '从设备页创建，只报废这台设备；要一起报废多台，请在报废列表中创建',
     devices: '报废设备',

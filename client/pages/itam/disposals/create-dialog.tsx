@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { TriangleAlert } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Fragment, useState, type ReactElement } from 'react';
 
@@ -9,6 +10,7 @@ import { FieldLabel } from '@/components/itam/field-label';
 import { ReviewMark } from '@/components/itam/review-mark';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { MultiReferenceInput } from '@/components/itam/multi-reference';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { useApi, useItamList, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
@@ -70,11 +72,18 @@ export function DisposalCreateDialog({
   // 返还租赁方 goes back to whoever lent them (2026-10-20): the devices'
   // lender, when they share one, fills an empty recipient once.
   const returning = values.method === 'returnToLessor';
+  // A lost device a platform still manages should be wiped or locked there
+  // first (2026-10-20): it holds the company's data, out of reach.
+  const writingOff = values.method === 'lossWriteOff';
   const lent = useItamList<ItamRecord>(
     DEVICES_PATH,
     { ids: deviceIds, pageSize: Math.max(deviceIds.length, 1) },
-    { enabled: returning && deviceIds.length > 0 },
+    { enabled: (returning || writingOff) && deviceIds.length > 0 },
   );
+  // On a platform: the list says when one last heard from it.
+  const managed = writingOff
+    ? (lent.data?.data ?? []).filter((row) => Boolean(row.lastSyncAt))
+    : [];
   const lenders = new Set(
     (lent.data?.data ?? []).map((row) => text(row.lenderVendorId)),
   );
@@ -265,6 +274,19 @@ export function DisposalCreateDialog({
                 }}
               />
             </div>
+            {field.key === 'reason' && managed.length > 0 ? (
+              <Alert className='sm:col-span-2'>
+                <TriangleAlert />
+                <AlertTitle>{t('disposals.wipeRemotely.title')}</AlertTitle>
+                <AlertDescription>
+                  {t('disposals.wipeRemotely.description', {
+                    devices: managed
+                      .map((row) => text(row.deviceNo))
+                      .join(t('common.listSeparator')),
+                  })}
+                </AlertDescription>
+              </Alert>
+            ) : null}
             {/* 诊断 right under the description it reads (2026-10-20), as
                 a repair's is under its fault. */}
             {field.key === 'description' ? (
