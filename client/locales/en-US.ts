@@ -2231,8 +2231,8 @@ const messages = {
     review: {
       title: 'Platform review',
       settingsLink: 'MDM settings',
-      followUp: 'MDM follow-up',
-      followUpAgain: 'Run MDM follow-up again',
+      followUp: 'MDM difference follow-up',
+      followUpAgain: 'Run MDM difference follow-up again',
       followUpNothing:
         'No new differences for you; those already settled or ignored are not raised again.',
       description:
@@ -2874,7 +2874,7 @@ const messages = {
       dateFormat: 'Date format',
       aiLanguage: 'AI working language',
       aiLanguageHint:
-        'What the AI writes is in this language: repair and disposal diagnosis, AI tidy-up, the approval assistant’s advice and MDM follow-up. Asset Steward’s chat still answers in the language it is asked in.',
+        'What the AI writes is in this language: repair and disposal diagnosis, AI tidy-up, the approval assistant’s advice and MDM difference follow-up. Asset Steward’s chat still answers in the language it is asked in.',
       aiLanguages: {
         auto: 'Follow the system default',
         'zh-CN': '中文',
@@ -3768,7 +3768,7 @@ const messages = {
       },
     },
     deviceSync: {
-      name: 'MDM follow-up',
+      name: 'MDM difference follow-up',
       description:
         "After each pull from a device platform, works the new differences that need a judgement into a plan: a device whose platform user is not its holder goes to the device's owner; a platform record the register lacks goes to the asset managers. Each with its reason, the uncertain ones left to a person; the plan is carried out from the inbox.",
       triggers: {
@@ -3782,7 +3782,7 @@ const messages = {
     },
   },
   deviceSyncRun: {
-    title: 'MDM follow-up',
+    title: 'MDM difference follow-up',
     afterSync: 'Differences on the MDM review',
     ownTitle: 'Your devices',
     sharedTitle: 'For the asset managers',
@@ -3816,9 +3816,9 @@ const messages = {
     notes: 'For you to look at',
     openReview: 'Open MDM 核对',
     failedHintHere:
-      'Nothing was sorted this time; try MDM follow-up at the top right again.',
+      'Nothing was sorted this time; try MDM difference follow-up at the top right again.',
     failedHint:
-      'Nothing was sorted this time; look on the MDM review, or try MDM follow-up there again.',
+      'Nothing was sorted this time; look on the MDM review, or try MDM difference follow-up there again.',
   },
   loginActivity: {
     heading: 'Where every device is, and who has it.',

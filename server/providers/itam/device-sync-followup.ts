@@ -785,8 +785,8 @@ export function createDeviceSyncFollowUp(dependencies: {
             reason:
               why ??
               words(
-                'MDM 跟进建议不纳入台账',
-                'MDM follow-up: not an asset to register',
+                'MDM 差异跟进建议不纳入台账',
+                'MDM difference follow-up: not an asset to register',
               ),
           });
           break;
@@ -846,8 +846,8 @@ export function createDeviceSyncFollowUp(dependencies: {
             reason:
               why ??
               words(
-                'MDM 跟进建议更正状态',
-                'MDM follow-up: correct the status',
+                'MDM 差异跟进建议更正状态',
+                'MDM difference follow-up: correct the status',
               ),
           });
           break;
@@ -873,8 +873,8 @@ export function createDeviceSyncFollowUp(dependencies: {
             reason:
               why ??
               words(
-                'MDM 跟进建议不需要纳管',
-                'MDM follow-up: needs no platform',
+                'MDM 差异跟进建议不需要纳管',
+                'MDM difference follow-up: needs no platform',
               ),
           });
           break;
@@ -914,8 +914,8 @@ export function createDeviceSyncFollowUp(dependencies: {
           run.deciderId,
           {
             title: words(
-              `MDM 跟进：${String(items.length)} 处差异`,
-              `MDM follow-up: ${String(items.length)} differences`,
+              `MDM 差异跟进：${String(items.length)} 处差异`,
+              `MDM difference follow-up: ${String(items.length)} differences`,
             ),
             steps: steps.map((entry) => ({
               op: entry.op,

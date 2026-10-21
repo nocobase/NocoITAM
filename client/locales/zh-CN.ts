@@ -2135,8 +2135,8 @@ const zhCN: AppResource = {
     review: {
       title: 'MDM 核对',
       settingsLink: 'MDM 设置',
-      followUp: 'MDM 跟进',
-      followUpAgain: '重新运行 MDM 跟进',
+      followUp: 'MDM 差异跟进',
+      followUpAgain: '重新运行 MDM 差异跟进',
       followUpNothing: '没有要你处理的新差异；已经处理或忽略过的不会再提。',
       description: '设备管理平台（MDM）报告的设备与台账不一致的地方',
       views: {
@@ -2709,7 +2709,7 @@ const zhCN: AppResource = {
       dateFormat: '日期格式',
       aiLanguage: 'AI 工作语言',
       aiLanguageHint:
-        'AI 生成的内容用这种语言撰写：维修诊断、报废诊断、AI 整理、审批助手的建议和 MDM 跟进。资产管家对话仍跟随提问的语言。',
+        'AI 生成的内容用这种语言撰写：维修诊断、报废诊断、AI 整理、审批助手的建议和 MDM 差异跟进。资产管家对话仍跟随提问的语言。',
       aiLanguages: {
         auto: '跟随系统默认语言',
         'zh-CN': '中文',
@@ -3564,7 +3564,7 @@ const zhCN: AppResource = {
       },
     },
     deviceSync: {
-      name: 'MDM 跟进',
+      name: 'MDM 差异跟进',
       description:
         '每次从 MDM 同步后，把新出现、需要判断的差异整理成处理方案：MDM 上的使用人和台账不一致的设备，交给设备负责人；只在 MDM、台账里没有的记录，交给资产管理员。每项附理由，拿不准的留给人看；方案在收件箱里勾选后执行。',
       triggers: {
@@ -3577,7 +3577,7 @@ const zhCN: AppResource = {
     },
   },
   deviceSyncRun: {
-    title: 'MDM 跟进',
+    title: 'MDM 差异跟进',
     afterSync: 'MDM 核对上的差异',
     ownTitle: '你负责的设备',
     sharedTitle: '待资产管理员处理的差异',
@@ -3610,9 +3610,9 @@ const zhCN: AppResource = {
     notesWaiting_other: '{{count}} 项要你看',
     notes: '需要你看一下',
     openReview: '去 MDM 核对',
-    failedHintHere: '这次没整理出来，可以点右上角的“MDM 跟进”再试一次。',
+    failedHintHere: '这次没整理出来，可以点右上角的“MDM 差异跟进”再试一次。',
     failedHint:
-      '这次没整理出来，可以到 MDM 核对页查看，或者在那里点“MDM 跟进”再试一次。',
+      '这次没整理出来，可以到 MDM 核对页查看，或者在那里点“MDM 差异跟进”再试一次。',
   },
   loginActivity: {
     heading: '每一台设备在哪、谁在用，一目了然。',

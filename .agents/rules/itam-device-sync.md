@@ -4,6 +4,10 @@ Read this before changing device sync: the platform connectors, the `managedDevi
 
 The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); all four steps are built.
 
+**MDM 差异跟进** (2026-10-21): the follow-up Asset Steward writes after a
+pull is called MDM 差异跟进 (MDM difference follow-up) wherever a person
+reads it; these notes and the code still say MDM 跟进 / `deviceSync`.
+
 **Naming** (2026-10-15): the interface calls a device management platform
 **MDM** — the device page's MDM group, MDM 核对, 已关联 MDM — and spells it
 out once where it is first met, as 设备管理平台（MDM）. The skill's library
