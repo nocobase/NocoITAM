@@ -216,8 +216,6 @@ const zhCN: AppResource = {
     relatedAssets: '关联资产',
     devices: '设备',
     purchaseOrders: '采购',
-    // A model's devices or stock, whichever its category holds.
-    assets: '资产',
     stock: '库存',
     total: '合计',
     components: '组件',

@@ -81,7 +81,7 @@ function landOn(domainName: string, route: string) {
 
 // Every record opens on its history, the first tab (2026-10-14); a model's
 // other tabs still follow its category.
-it('opens a stock model on its history, beside one assets tab', () => {
+it('opens a stock model on its history, beside its stock tab', () => {
   state.records = {
     'itam/master/models/r1': {
       id: 'r1',
@@ -97,9 +97,8 @@ it('opens a stock model on its history, beside one assets tab', () => {
     .getAllByRole('link')
     .map((link) => link.textContent);
   expect(tabs[0]).toBe('tabs.history');
-  // A model has devices or stock, never both: one 资产 tab lists either.
-  expect(screen.getByRole('link', { name: 'tabs.assets' })).toBeVisible();
-  expect(screen.queryByRole('link', { name: 'tabs.stock' })).toBeNull();
+  // A model has devices or stock, never both: the tab is named for which.
+  expect(screen.getByRole('link', { name: 'tabs.stock' })).toBeVisible();
   expect(screen.queryByRole('link', { name: 'tabs.devices' })).toBeNull();
   // "Manufacturer / Name" in the title, the picture at the head of the card.
   expect(screen.getByText('Logitech /')).toBeVisible();

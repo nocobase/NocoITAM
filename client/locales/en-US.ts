@@ -223,8 +223,6 @@ const messages = {
     relatedAssets: 'Related assets',
     devices: 'Devices',
     purchaseOrders: 'Purchases',
-    // A model's devices or stock, whichever its category holds.
-    assets: 'Assets',
     stock: 'Stock',
     total: 'Total',
     components: 'Components',

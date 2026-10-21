@@ -13,10 +13,10 @@ import { kindOfAppliesTo } from './master-stats.js';
 import { RelatedListTab } from './related-list-tab.js';
 
 /**
- * A model's 资产 (2026-10-21): its devices or its stock items, whichever its
- * category holds, in one tab rather than a 设备 and a 库存 tab of which only
- * one ever showed. Each row leads with its asset type, so the list reads the
- * same for a laptop model and a toner.
+ * A model's 设备 or 库存 tab (2026-10-21): its devices or its stock items,
+ * whichever its category holds, one list for both routes. Each row leads
+ * with its asset type, so the list reads the same for a laptop model and a
+ * toner.
  */
 export default function ModelAssetsTab(): ReactElement | null {
   const { t } = useTranslation();

@@ -25,12 +25,6 @@ export function statsTabCount(
   if (key === 'devices')
     return Object.values(stats.devicesByStatus).reduce((a, b) => a + b, 0);
   if (key === 'stock') return stats.counts.stockItems;
-  // A model's 资产: its devices or its stock items, whichever it holds.
-  if (key === 'assets')
-    return (
-      Object.values(stats.devicesByStatus).reduce((a, b) => a + b, 0) +
-      (stats.counts.stockItems ?? 0)
-    );
   return stats.counts[key];
 }
 
