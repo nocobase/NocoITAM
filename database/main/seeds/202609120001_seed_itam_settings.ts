@@ -62,7 +62,7 @@ const BUSINESS_NOTES: Readonly<Record<string, string>> = {
 - 收回的设备先清除数据，再重新分配或报废。
 
 ## 命名习惯
-- 设备名称用「地点代码-类型-序号」：新加坡总部为 SG，日本分公司为 JP；笔记本 LT、台式机 DT、显示器 MN、手机 PH，例如 SG-LT-001。`,
+- 设备名称用「地点代码-类型-序号」：上海总部为 SH，日本分公司为 JP；笔记本 LT、台式机 DT、显示器 MN、手机 PH，例如 SH-LT-001。`,
   'en-US': `## Onboarding
 - The standard kits are kept by department and position in Master data → Departments → Onboarding kits; onboarding follows them, so they are not repeated here.
 - Use stock first and raise a purchase only for what is missing; reserve before the first day, assign on it.
@@ -85,7 +85,7 @@ const BUSINESS_NOTES: Readonly<Record<string, string>> = {
 - Wipe returned devices before reassigning or disposing of them.
 
 ## Naming
-- Device names are "site-type-number": SG for the Singapore HQ, JP for the Japan office; LT laptop, DT desktop, MN monitor, PH phone, e.g. SG-LT-001.`,
+- Device names are "site-type-number": SH for the Shanghai HQ, JP for the Japan office; LT laptop, DT desktop, MN monitor, PH phone, e.g. SH-LT-001.`,
 };
 
 

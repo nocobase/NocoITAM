@@ -85,8 +85,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   The two joiners are entered **last** (2026-10-06), because saving one sets
   Asset Steward choosing their equipment, and four spare MacBook Pro 14s and two
   spare monitors give it something to weigh: the rule's pick (own floor,
-  longest warranty) is SG-LT-050, whose keyboard was repaired twice, and
-  SG-MON-006, with a dead pixel; SG-LT-053 is due for replacement within
+  longest warranty) is SH-LT-050, whose keyboard was repaired twice, and
+  SH-MON-006, with a dead pixel; SH-LT-053 is due for replacement within
   months.
   The demo comes with the work agents' suggestions written, never asked
   of a model (2026-10-16, `demo-suggestions.ts`; see `itam-assistant.md`):
@@ -94,7 +94,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   approve-on-conditions, one ask-for-more, one reject), the MDM follow-up
   on every item MDM 核对 lists, its plans set to wait 30 days rather
   than one, and Asset Steward's picks for the two joiners, which pass
-  over SG-LT-050, SG-LT-053 and SG-MON-006. The runs and plans are
+  over SH-LT-050, SH-LT-053 and SH-MON-006. The runs and plans are
   tracked (`itamAgentRuns`, `itamPlans`, first in `ORDER`), and runs on
   the demo's requests go with them (`DEPENDENTS`). Clearing also sweeps
   any run whose records are gone — a review of a request, an MDM
@@ -252,7 +252,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   than marking an item 不需要 for each. Only the two joiners entered last
   (孙浩 / 林雪, Noah Harris / Grace Lee) are not equipped; 入职准备 lists
   exactly them, which the data test asserts, and the rule still picks
-  SG-LT-050 and SG-MON-006 for them. A change to a kit's seed, or to who
+  SH-LT-050 and SH-MON-006 for them. A change to a kit's seed, or to who
   the demo's people are, needs the matching change in `CREW_KITS` /
   `crewWants` and the gap fills of the six original employees and the
   staff, or 入职准备 fills up again.

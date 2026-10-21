@@ -30,7 +30,7 @@ const plan: Plan = {
       position: 0,
       op: 'assign',
       check: {
-        title: 'Assign SG-LT-054 to Sun Qiang',
+        title: 'Assign SH-LT-054 to Sun Qiang',
         fields: [{ field: 'deviceId', value: '$laptop' }],
       },
       status: 'pending',
@@ -45,7 +45,7 @@ it('keeps the raw parameters folded until asked for', () => {
       <PlanCard plan={plan} />
     </QueryClientProvider>,
   );
-  expect(screen.getByText('Assign SG-LT-054 to Sun Qiang')).toBeTruthy();
+  expect(screen.getByText('Assign SH-LT-054 to Sun Qiang')).toBeTruthy();
   expect(screen.queryByText(/deviceId/)).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'ai.plans.showParams' }));
   expect(screen.getByText('deviceId: $laptop')).toBeTruthy();
@@ -60,7 +60,7 @@ it('offers no parameters inside a follow-up', () => {
       <PlanCard plan={plan} bare />
     </QueryClientProvider>,
   );
-  expect(screen.getByText('Assign SG-LT-054 to Sun Qiang')).toBeTruthy();
+  expect(screen.getByText('Assign SH-LT-054 to Sun Qiang')).toBeTruthy();
   expect(
     screen.queryByRole('button', { name: 'ai.plans.showParams' }),
   ).toBeNull();

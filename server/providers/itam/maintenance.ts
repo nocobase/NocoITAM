@@ -499,7 +499,7 @@ export function createMaintenanceService(dependencies: {
   const previewOf = (row: ReminderRow): ReminderPreview => {
     const data = row.data;
     const label =
-      // A device by its name (SG-LT-001), its number when it has none: a
+      // A device by its name (SH-LT-001), its number when it has none: a
       // card has room for a few names, not for 编号 / 名称 pairs.
       row.subjectType === 'devices'
         ? (asText(data.name) ?? asText(data.deviceNo) ?? row.subjectId)

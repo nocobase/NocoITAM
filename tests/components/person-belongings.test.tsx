@@ -226,7 +226,7 @@ it('takes everything ticked back at once, each its own way', async () => {
       {
         kind: 'device',
         id: 'd1',
-        label: 'SG-LT-006',
+        label: 'SH-LT-006',
         handling: 'wait',
         status: 'inRepair',
         ownerId: 'mia',

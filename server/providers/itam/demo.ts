@@ -883,9 +883,9 @@ const CATALOGUE_ASSETS: Readonly<
     price: 23999,
     devices: [
       {
-        name: 'SG-LT-201',
+        name: 'SH-LT-201',
         serialNo: 'FVFZM3P16A01',
-        attributes: { os: 'macOS 15.6', hostname: 'SG-LT-201' },
+        attributes: { os: 'macOS 15.6', hostname: 'SH-LT-201' },
       },
     ],
   },
@@ -893,9 +893,9 @@ const CATALOGUE_ASSETS: Readonly<
     price: 14999,
     devices: [
       {
-        name: 'SG-LT-202',
+        name: 'SH-LT-202',
         serialNo: 'PF5X1C12A0',
-        attributes: { os: 'Windows 11 24H2', hostname: 'SG-LT-202' },
+        attributes: { os: 'Windows 11 24H2', hostname: 'SH-LT-202' },
       },
     ],
   },
@@ -903,9 +903,9 @@ const CATALOGUE_ASSETS: Readonly<
     price: 9999,
     devices: [
       {
-        name: 'SG-LT-203',
+        name: 'SH-LT-203',
         serialNo: '5CG4280E11',
-        attributes: { os: 'Windows 11 24H2', hostname: 'SG-LT-203' },
+        attributes: { os: 'Windows 11 24H2', hostname: 'SH-LT-203' },
       },
     ],
   },
@@ -913,9 +913,9 @@ const CATALOGUE_ASSETS: Readonly<
     price: 10888,
     devices: [
       {
-        name: 'SG-LT-204',
+        name: 'SH-LT-204',
         serialNo: '0F33A2R24093',
-        attributes: { os: 'Windows 11 24H2', hostname: 'SG-LT-204' },
+        attributes: { os: 'Windows 11 24H2', hostname: 'SH-LT-204' },
       },
     ],
   },
@@ -923,11 +923,11 @@ const CATALOGUE_ASSETS: Readonly<
     price: 5999,
     devices: [
       {
-        name: 'SG-DT-201',
+        name: 'SH-DT-201',
         serialNo: 'H9VM2MINI01',
         at: 'floor3',
         importerOwns: true,
-        attributes: { os: 'macOS 15.6', hostname: 'SG-DT-201' },
+        attributes: { os: 'macOS 15.6', hostname: 'SH-DT-201' },
       },
     ],
   },
@@ -935,37 +935,37 @@ const CATALOGUE_ASSETS: Readonly<
     price: 7299,
     devices: [
       {
-        name: 'SG-DT-202',
+        name: 'SH-DT-202',
         serialNo: 'MJ0K90Q4A1',
         at: 'floor3',
-        attributes: { os: 'Windows 11 24H2', hostname: 'SG-DT-202' },
+        attributes: { os: 'Windows 11 24H2', hostname: 'SH-DT-202' },
       },
     ],
   },
   P2723DE: {
     price: 2299,
     devices: [
-      { name: 'SG-MON-201', serialNo: 'CN0P2723DE01', at: 'floor3' },
-      { name: 'SG-MON-202', serialNo: 'CN0P2723DE02' },
+      { name: 'SH-MON-201', serialNo: 'CN0P2723DE01', at: 'floor3' },
+      { name: 'SH-MON-202', serialNo: 'CN0P2723DE02' },
     ],
   },
   'Studio Display': {
     price: 11499,
-    devices: [{ name: 'SG-MON-203', serialNo: 'C02STDISP01' }],
+    devices: [{ name: 'SH-MON-203', serialNo: 'C02STDISP01' }],
   },
   'iPhone 15 Pro': {
     price: 8999,
-    devices: [{ name: 'SG-PH-201', serialNo: 'F4QIP15PRO01' }],
+    devices: [{ name: 'SH-PH-201', serialNo: 'F4QIP15PRO01' }],
   },
   'Galaxy S24': {
     price: 5999,
-    devices: [{ name: 'SG-PH-202', serialNo: 'R5CXS24A001' }],
+    devices: [{ name: 'SH-PH-202', serialNo: 'R5CXS24A001' }],
   },
   'Color LaserJet Pro MFP M479fdw': {
     price: 6499,
     devices: [
       {
-        name: 'SG-PRN-JP-01',
+        name: 'SH-PRN-JP-01',
         serialNo: 'VNB3M479A1',
         at: 'japan',
         attributes: { ipAddress: '10.20.0.50' },
@@ -976,13 +976,13 @@ const CATALOGUE_ASSETS: Readonly<
     price: 7800,
     devices: [
       {
-        name: 'SG-AP-3F-01',
+        name: 'SH-AP-3F-01',
         serialNo: 'FJC2501AP01',
         at: 'floor3',
         attributes: { managementIp: '10.0.3.11' },
       },
       {
-        name: 'SG-AP-3F-02',
+        name: 'SH-AP-3F-02',
         serialNo: 'FJC2501AP02',
         at: 'floor3',
         attributes: { managementIp: '10.0.3.12' },
@@ -2319,7 +2319,7 @@ export function createDemoService(dependencies: {
             await device({
               modelId: mbp.id,
               serialNo: `C02XK1A0${index}MD6T`,
-              name: `SG-LT-00${index + 1}`,
+              name: `SH-LT-00${index + 1}`,
               departmentId: index < 3 ? rnd.id : sales.id,
               // The Macs came through the Apple reseller (2026-10-21).
               vendorId: more.apple.id,
@@ -2332,7 +2332,7 @@ export function createDemoService(dependencies: {
               attributes: {
                 os: 'macOS 15.6',
                 macAddress: macFor(index),
-                hostname: `SG-LT-00${index + 1}`,
+                hostname: `SH-LT-00${index + 1}`,
               },
             }),
           );
@@ -2344,7 +2344,7 @@ export function createDemoService(dependencies: {
         const expiredLaptop = await device({
           modelId: latitude.id,
           serialNo: '7YQ2K73',
-          name: 'SG-LT-006',
+          name: 'SH-LT-006',
           departmentId: sales.id,
           vendorId: reseller.id,
           ownerId: supportUserId ?? writerId,
@@ -2354,13 +2354,13 @@ export function createDemoService(dependencies: {
           attributes: {
             os: 'Windows 11 23H2',
             macAddress: 'b0:4f:13:20:01:01',
-            hostname: 'SG-LT-006',
+            hostname: 'SH-LT-006',
           },
         });
         const idleLaptop = await device({
           modelId: latitude.id,
           serialNo: '7YQ2K74',
-          name: 'SG-LT-007',
+          name: 'SH-LT-007',
           locationId: warehouse.id,
           vendorId: reseller.id,
           purchaseDate: daysFromNow(-700),
@@ -2374,7 +2374,7 @@ export function createDemoService(dependencies: {
             memory: '32 GB',
             storage: '1 TB',
             macAddress: 'b0:4f:13:20:02:02',
-            hostname: 'SG-LT-007',
+            hostname: 'SH-LT-007',
           },
         });
         const airs: Row[] = [];
@@ -2383,7 +2383,7 @@ export function createDemoService(dependencies: {
             await device({
               modelId: air.id,
               serialNo: `C02YH2B1${index}Q6LR`,
-              name: `SG-LT-01${index}`,
+              name: `SH-LT-01${index}`,
               // The second one was never issued, so it is in the warehouse.
               locationId: index === 1 ? warehouse.id : floor3.id,
               departmentId: sales.id,
@@ -2394,7 +2394,7 @@ export function createDemoService(dependencies: {
               attributes: {
                 os: 'macOS 15.6',
                 macAddress: `a4:83:e7:2${index}:2${index}:2${index}`,
-                hostname: `SG-LT-01${index}`,
+                hostname: `SH-LT-01${index}`,
               },
             }),
           );
@@ -2405,7 +2405,7 @@ export function createDemoService(dependencies: {
             await device({
               modelId: thinkpad.id,
               serialNo: `PF4R7C${index}X`,
-              name: `SG-LT-02${index}`,
+              name: `SH-LT-02${index}`,
               locationId: index === 1 ? warehouse.id : floor3.id,
               departmentId: rnd.id,
               vendorId: reseller.id,
@@ -2415,7 +2415,7 @@ export function createDemoService(dependencies: {
               attributes: {
                 os: 'Windows 11 24H2',
                 macAddress: `b0:4f:13:3${index}:3${index}:3${index}`,
-                hostname: `SG-LT-02${index}`,
+                hostname: `SH-LT-02${index}`,
               },
             }),
           );
@@ -2426,7 +2426,7 @@ export function createDemoService(dependencies: {
             await device({
               modelId: u2723.id,
               serialNo: `CN0F5K7Y${3000 + index}`,
-              name: `SG-MON-00${index + 1}`,
+              name: `SH-MON-00${index + 1}`,
               locationId: index === 2 ? warehouse.id : floor3.id,
               vendorId: reseller.id,
               purchaseDate: daysFromNow(-300),
@@ -2438,12 +2438,12 @@ export function createDemoService(dependencies: {
         await reached(15);
         // Spares in stock for the joiners, where choosing is not obvious
         // (2026-10-06): the rule takes the joiner's own floor first and then
-        // the longest warranty, which lands on SG-LT-050 — the one whose
-        // keyboard has been repaired twice — and on SG-MON-006, with its dead
+        // the longest warranty, which lands on SH-LT-050 — the one whose
+        // keyboard has been repaired twice — and on SH-MON-006, with its dead
         // pixel. Asset Steward reads the repairs, the notes and the replacement dates
         // and picks otherwise, with a reason the 入职负责人 can check:
-        // SG-LT-051 for the first joiner, the clean warehouse SG-LT-052 for
-        // the second (051 being held for the first), never SG-LT-053, which
+        // SH-LT-051 for the first joiner, the clean warehouse SH-LT-052 for
+        // the second (051 being held for the first), never SH-LT-053, which
         // is due for replacement within months.
         const spare = (
           name: string,
@@ -2464,21 +2464,21 @@ export function createDemoService(dependencies: {
               hostname: name,
             },
           });
-        const repairedSpare = await spare('SG-LT-050', 'C02ZK3A00MD6T', 0, {
+        const repairedSpare = await spare('SH-LT-050', 'C02ZK3A00MD6T', 0, {
           purchaseDate: daysFromNow(-420),
           warrantyEndDate: daysFromNow(675),
           notes: texts.spareKeyboard,
         });
-        await spare('SG-LT-051', 'C02ZK3A01MD6T', 1, {
+        await spare('SH-LT-051', 'C02ZK3A01MD6T', 1, {
           purchaseDate: daysFromNow(-400),
           warrantyEndDate: daysFromNow(655),
         });
-        await spare('SG-LT-052', 'C02ZK3A02MD6T', 2, {
+        await spare('SH-LT-052', 'C02ZK3A02MD6T', 2, {
           locationId: warehouse.id,
           purchaseDate: daysFromNow(-390),
           warrantyEndDate: daysFromNow(665),
         });
-        await spare('SG-LT-053', 'C02ZK3A03MD6T', 3, {
+        await spare('SH-LT-053', 'C02ZK3A03MD6T', 3, {
           // Four years old next spring: the laptop cycle is 48 months.
           purchaseDate: daysFromNow(-1400),
           warrantyEndDate: daysFromNow(25),
@@ -2487,7 +2487,7 @@ export function createDemoService(dependencies: {
           await device({
             modelId: u2723.id,
             serialNo: `CN0F5K7Y${3003 + index}`,
-            name: `SG-MON-00${index + 6}`,
+            name: `SH-MON-00${index + 6}`,
             vendorId: reseller.id,
             purchaseDate: daysFromNow(-200 + index * 30),
             purchasePrice: 4299,
@@ -2502,7 +2502,7 @@ export function createDemoService(dependencies: {
         const deskPc = await device({
           modelId: optiplex.id,
           serialNo: '8HN3L94',
-          name: 'SG-DT-001',
+          name: 'SH-DT-001',
           departmentId: sales.id,
           vendorId: reseller.id,
           purchaseDate: daysFromNow(-500),
@@ -2511,13 +2511,13 @@ export function createDemoService(dependencies: {
           attributes: {
             os: 'Windows 11 24H2',
             macAddress: 'b0:4f:13:40:01:01',
-            hostname: 'SG-DT-001',
+            hostname: 'SH-DT-001',
           },
         });
         const rack = await device({
           modelId: poweredge.id,
           serialNo: 'JQ7M2B3',
-          name: 'SG-SRV-FILE-01',
+          name: 'SH-SRV-FILE-01',
           locationId: serverRoom.id,
           departmentId: rnd.id,
           vendorId: more.network.id,
@@ -2532,7 +2532,7 @@ export function createDemoService(dependencies: {
         const coreSwitch = await device({
           modelId: catalyst.id,
           serialNo: 'FOC2437L1AB',
-          name: 'SG-SW-CORE-01',
+          name: 'SH-SW-CORE-01',
           locationId: serverRoom.id,
           departmentId: rnd.id,
           vendorId: more.network.id,
@@ -2547,7 +2547,7 @@ export function createDemoService(dependencies: {
         const mobile = await device({
           modelId: iphone.id,
           serialNo: 'F2LVX4Q9PLJN',
-          name: 'SG-PH-001',
+          name: 'SH-PH-001',
           departmentId: sales.id,
           vendorId: more.apple.id,
           purchaseDate: daysFromNow(-200),
@@ -2562,7 +2562,7 @@ export function createDemoService(dependencies: {
         const officePrinter = await device({
           modelId: laserjet.id,
           serialNo: 'PHBNC12345',
-          name: 'SG-PRN-3F-01',
+          name: 'SH-PRN-3F-01',
           vendorId: reseller.id,
           purchaseDate: daysFromNow(-600),
           purchasePrice: 2599,
@@ -2573,7 +2573,7 @@ export function createDemoService(dependencies: {
         });
         const vm = await device({
           modelId: vmModel.id,
-          name: 'SG-VM-BUILD-01',
+          name: 'SH-VM-BUILD-01',
           locationId: serverRoom.id,
           departmentId: rnd.id,
           purchaseDate: daysFromNow(-100),
@@ -2598,7 +2598,7 @@ export function createDemoService(dependencies: {
               serialNo: index === 0 ? 'C02XK1A05MD6T' : 'PF4ZTQ07',
               // 00x / 01x / 02x are the employees' machines and 03x the ones
               // received from the demo purchase order, so IT's own start at 04x.
-              name: `SG-LT-04${index}`,
+              name: `SH-LT-04${index}`,
               departmentId: itDepartment.id,
               vendorId: reseller.id,
               purchaseDate: daysFromNow(-300),
@@ -2612,7 +2612,7 @@ export function createDemoService(dependencies: {
                       memory: '16 GB',
                       storage: '512 GB',
                       macAddress: 'a4:83:e7:15:25:35',
-                      hostname: 'SG-LT-040',
+                      hostname: 'SH-LT-040',
                       screenSize: '14',
                     }
                   : {
@@ -2621,7 +2621,7 @@ export function createDemoService(dependencies: {
                       memory: '32 GB',
                       storage: '1 TB',
                       macAddress: 'a4:83:e7:16:26:36',
-                      hostname: 'SG-LT-041',
+                      hostname: 'SH-LT-041',
                       screenSize: '14',
                     },
             }),
@@ -2637,7 +2637,7 @@ export function createDemoService(dependencies: {
             await device({
               modelId: mbp.id,
               serialNo: 'C02XK1A06MD6T',
-              name: 'SG-LT-042',
+              name: 'SH-LT-042',
               departmentId: itDepartment.id,
               vendorId: reseller.id,
               purchaseDate: daysFromNow(-420),
@@ -2649,14 +2649,14 @@ export function createDemoService(dependencies: {
                 memory: '32 GB',
                 storage: '1 TB',
                 macAddress: 'a4:83:e7:17:27:37',
-                hostname: 'SG-LT-042',
+                hostname: 'SH-LT-042',
                 screenSize: '14',
               },
             }),
             await device({
               modelId: u2723.id,
               serialNo: 'CN0F5K7Y3010',
-              name: 'SG-MON-004',
+              name: 'SH-MON-004',
               departmentId: itDepartment.id,
               vendorId: reseller.id,
               purchaseDate: daysFromNow(-420),
@@ -2671,7 +2671,7 @@ export function createDemoService(dependencies: {
             await device({
               modelId: iphone.id,
               serialNo: 'F2LVX4Q9PLK0',
-              name: 'SG-PH-002',
+              name: 'SH-PH-002',
               departmentId: itDepartment.id,
               vendorId: reseller.id,
               purchaseDate: daysFromNow(-260),
@@ -2701,7 +2701,7 @@ export function createDemoService(dependencies: {
             await device({
               modelId: u2723.id,
               serialNo: `CN0F5K7Y${3020 + index}`,
-              name: `SG-MON-01${index}`,
+              name: `SH-MON-01${index}`,
               vendorId: reseller.id,
               purchaseDate: daysFromNow(-300),
               purchasePrice: 4299,
@@ -2712,7 +2712,7 @@ export function createDemoService(dependencies: {
         const salesPhone = await device({
           modelId: iphone.id,
           serialNo: 'HG7Q2X01PLM',
-          name: 'SG-PH-003',
+          name: 'SH-PH-003',
           departmentId: sales.id,
           vendorId: reseller.id,
           purchaseDate: daysFromNow(-1100),
@@ -2753,7 +2753,7 @@ export function createDemoService(dependencies: {
           if (spec.inherits === undefined) {
             computerNo += 1;
             const n = String(computerNo).padStart(2, '0');
-            const name = `SG-LT-1${n}`;
+            const name = `SH-LT-1${n}`;
             const laptop =
               kit === 'engineering' || kit === 'product'
                 ? {
@@ -2816,7 +2816,7 @@ export function createDemoService(dependencies: {
                 await device({
                   modelId: u2723.id,
                   serialNo: `CN0F5K7Y31${m}`,
-                  name: `SG-MON-1${m}`,
+                  name: `SH-MON-1${m}`,
                   departmentId,
                   locationId,
                   vendorId: reseller.id,
@@ -2835,7 +2835,7 @@ export function createDemoService(dependencies: {
                 await device({
                   modelId: iphone.id,
                   serialNo: `HG7R${p}Q9PLM`,
-                  name: `SG-PH-1${p}`,
+                  name: `SH-PH-1${p}`,
                   departmentId,
                   locationId,
                   vendorId: reseller.id,
@@ -4377,7 +4377,7 @@ export function createDemoService(dependencies: {
               serialNos: [serial],
               locationId: String(warehouse.id),
               extra: {
-                name: `SG-LT-03${index}`,
+                name: `SH-LT-03${index}`,
                 warrantyEndDate: daysFromNow(1075),
                 ownerId: writerId,
               },
@@ -5439,7 +5439,7 @@ export function createDemoService(dependencies: {
         const swollenLaptop = await device({
           modelId: latitude.id,
           serialNo: '7YQ2K75',
-          name: 'SG-LT-009',
+          name: 'SH-LT-009',
           locationId: warehouse.id,
           departmentId: sales.id,
           vendorId: reseller.id,
@@ -5452,7 +5452,7 @@ export function createDemoService(dependencies: {
             memory: '16 GB',
             storage: '512 GB',
             macAddress: 'b0:4f:13:20:03:03',
-            hostname: 'SG-LT-009',
+            hostname: 'SH-LT-009',
             screenSize: '14',
           },
         });
@@ -5535,7 +5535,7 @@ export function createDemoService(dependencies: {
         const brokenMonitor = await device({
           modelId: u2723.id,
           serialNo: 'CN0F5K7Y3009',
-          name: 'SG-MON-009',
+          name: 'SH-MON-009',
           locationId: warehouse.id,
           vendorId: reseller.id,
           purchaseDate: daysFromNow(-1400),
@@ -5598,7 +5598,7 @@ export function createDemoService(dependencies: {
         const retiredLaptop = await device({
           modelId: latitude.id,
           serialNo: '7YQ2K60',
-          name: 'SG-LT-008',
+          name: 'SH-LT-008',
           locationId: warehouse.id,
           vendorId: reseller.id,
           purchaseDate: daysFromNow(-1900),
@@ -5610,7 +5610,7 @@ export function createDemoService(dependencies: {
             memory: '8 GB',
             storage: '256 GB',
             macAddress: 'b0:4f:13:20:01:08',
-            hostname: 'SG-LT-008',
+            hostname: 'SH-LT-008',
             screenSize: '14',
           },
         });

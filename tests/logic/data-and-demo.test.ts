@@ -576,7 +576,7 @@ describe('CSV import / export and demo data', () => {
       status.accountsByLanguage['en-US']?.map((account) => account.username),
     ).toEqual(['daniel', 'emily', 'ryan', 'mark']);
     const laptops = await data<{ attributes: Record<string, unknown> }[]>(
-      await get('devices?q=SG-LT-00&pageSize=5'),
+      await get('devices?q=SH-LT-00&pageSize=5'),
     );
     expect(laptops.length).toBeGreaterThan(0);
     expect(laptops[0]?.attributes.os).toBe('macOS 15.6');
@@ -585,7 +585,7 @@ describe('CSV import / export and demo data', () => {
     // states its own processor.
     expect(laptops[0]?.attributes.screenSize).toBe('14');
     const upgraded = await data<{ attributes: Record<string, unknown> }[]>(
-      await get('devices?q=SG-LT-007&pageSize=1'),
+      await get('devices?q=SH-LT-007&pageSize=1'),
     );
     expect(upgraded[0]?.attributes.memory).toBe('32 GB');
     expect(upgraded[0]?.attributes.cpu).toBe('Intel Core i7-1355U');
@@ -911,7 +911,7 @@ describe('CSV import / export and demo data', () => {
       new Set(history.map((row) => row.createdAt.slice(0, 10))).size,
     ).toBeGreaterThan(60);
     const oldLaptop = await data<{ id: string }[]>(
-      await get('devices?q=SG-LT-003&pageSize=1'),
+      await get('devices?q=SH-LT-003&pageSize=1'),
     );
     const laptopHistory = history
       .filter((row) => row.subjectId === oldLaptop[0]?.id)

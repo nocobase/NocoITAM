@@ -27,7 +27,7 @@ export function isTreeReference(field: {
   );
 }
 
-/** The chain's names joined for a single line: 新加坡总部 › 3 楼. */
+/** The chain's names joined for a single line: 上海总部 › 3 楼. */
 export function treePathLabel(
   nodes: readonly ItamRecord[],
   nodeId: unknown,

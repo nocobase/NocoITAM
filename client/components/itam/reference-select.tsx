@@ -125,7 +125,7 @@ export function ReferenceSelect({
   // A model or a software product reads with what classifies it: two of
   // them may share a name, and the category and maker are what tell them
   // apart at the moment of choosing.
-  // A device reads with its category (2026-10-16): SG-LT-001 and a
+  // A device reads with its category (2026-10-16): SH-LT-001 and a
   // monitor of a similar name are told apart before they are chosen.
   const isDevice = reference.collection === 'devices';
   const classified =

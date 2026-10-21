@@ -127,7 +127,7 @@ describe('the demo’s AI suggestions', () => {
     ]);
     // Written from the records: the monitors in stock, by tag.
     expect(
-      reviews.some((run) => String(result(run).comment).includes('SG-MON-006')),
+      reviews.some((run) => String(result(run).comment).includes('SH-MON-006')),
     ).toBe(true);
 
     // The follow-up covers MDM 核对, in the demo's language, its plans
@@ -162,7 +162,7 @@ describe('the demo’s AI suggestions', () => {
     ]);
     // The laptop repaired twice is passed over.
     expect(
-      advice.every((run) => String(run.summary).includes('SG-LT-050')),
+      advice.every((run) => String(run.summary).includes('SH-LT-050')),
     ).toBe(true);
   }, 120_000);
 

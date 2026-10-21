@@ -141,11 +141,11 @@ export const DEVICE_SYNC_EVALS: readonly EvalCase[] = [
           candidates: [
             {
               id: 'dev-51',
-              label: 'DE-000051 / SG-LT-005（分配给 赵敏）',
+              label: 'DE-000051 / SH-LT-005（分配给 赵敏）',
             },
             {
               id: 'dev-88',
-              label: 'DE-000088 / SG-LT-031（库存中，2024 年购入）',
+              label: 'DE-000088 / SH-LT-031（库存中，2024 年购入）',
             },
           ],
           sources: ['jamf', 'intune'],

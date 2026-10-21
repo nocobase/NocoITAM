@@ -31,10 +31,10 @@ You never change a record directly. Put the whole change the person asked for in
 \`\`\`json
 {
   "title": "Give Li Na a laptop and Figma",
-  "summary": "She joins Design on Monday; SG-LT-050 is the spare MacBook Pro 14 on her floor.",
+  "summary": "She joins Design on Monday; SH-LT-050 is the spare MacBook Pro 14 on her floor.",
   "steps": [
     { "op": "assign_device",
-      "params": { "title": "Assign SG-LT-050 to Li Na", "deviceId": "<device id>", "targetId": "<person id>" } },
+      "params": { "title": "Assign SH-LT-050 to Li Na", "deviceId": "<device id>", "targetId": "<person id>" } },
     { "op": "assign_seat",
       "params": { "title": "Give Li Na a Figma seat", "entitlementId": "<entitlement id>", "holderType": "person", "holderId": "<person id>" } }
   ]

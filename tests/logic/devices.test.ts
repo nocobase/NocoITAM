@@ -145,9 +145,9 @@ describe('devices', () => {
   });
 
   it('finds a device by its model name, not only its own fields', async () => {
-    // Devices are named by asset tag (SG-LT-001) while people search for
+    // Devices are named by asset tag (SH-LT-001) while people search for
     // "MacBook", which is the model's name.
-    const device = await createDevice({ name: 'SG-LT-001' });
+    const device = await createDevice({ name: 'SH-LT-001' });
     const list = async (q: string) =>
       (
         (await (
@@ -158,7 +158,7 @@ describe('devices', () => {
         ).json()) as { data: { id: string }[] }
       ).data.map((row) => row.id);
     expect(await list('MacBook')).toEqual([device.id]);
-    expect(await list('SG-LT')).toEqual([device.id]);
+    expect(await list('SH-LT')).toEqual([device.id]);
     expect(await list('ThinkPad')).toEqual([]);
   });
 

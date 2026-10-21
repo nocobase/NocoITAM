@@ -20,7 +20,7 @@ export interface ItamCollectionDefinition {
   /**
    * References a full-text search also matches through: a record whose
    * `field` points at a row of `collection` whose `column` matches. A
-   * device is named SG-LT-001 while what people type is "MacBook", which is
+   * device is named SH-LT-001 while what people type is "MacBook", which is
    * its model's name (added 2026-10-05).
    */
   readonly searchByReference?: readonly {

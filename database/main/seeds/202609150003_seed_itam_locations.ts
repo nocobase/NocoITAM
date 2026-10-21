@@ -43,10 +43,23 @@ interface LocationSeed {
   readonly type: string;
   readonly parentId?: string;
   readonly sort: number;
+  /** A site's street address; a floor or room is where its site is. */
+  readonly address?: Readonly<Record<string, string>>;
 }
 
 const LOCATIONS: readonly LocationSeed[] = [
-  { id: 'loc-hq', name: 'Singapore HQ', type: 'company', sort: 10 },
+  // Shanghai since 2026-10-21 (Singapore until then): the vendors, the
+  // phone numbers and the sign-in page's floor plan were all Shanghai's.
+  {
+    id: 'loc-hq',
+    name: 'Shanghai HQ',
+    type: 'company',
+    sort: 10,
+    address: {
+      'en-US': '1568 Century Avenue, Pudong, Shanghai',
+      'zh-CN': '上海市浦东新区世纪大道 1568 号',
+    },
+  },
   {
     id: 'loc-hq-floor-3',
     name: 'Level 3',
@@ -68,13 +81,22 @@ const LOCATIONS: readonly LocationSeed[] = [
     parentId: 'loc-hq',
     sort: 30,
   },
-  { id: 'loc-japan', name: 'Japan branch', type: 'company', sort: 20 },
+  {
+    id: 'loc-japan',
+    name: 'Japan branch',
+    type: 'company',
+    sort: 20,
+    address: {
+      'en-US': '6-10-1 Roppongi, Minato-ku, Tokyo',
+      'zh-CN': '东京都港区六本木 6-10-1',
+    },
+  },
 ];
 
 /** Location names by id for locales other than English. */
 const NAMES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   'zh-CN': {
-    'loc-hq': '新加坡总部',
+    'loc-hq': '上海总部',
     'loc-hq-floor-3': '3 楼',
     'loc-hq-warehouse': '仓库',
     'loc-hq-server-room': '机房',
@@ -116,7 +138,8 @@ const seed: SeedDefinition = defineSeed({
           parentId: location.parentId ?? null,
           type: location.type,
           path: `${parent ? parent.path : '/'}${location.id}/`,
-          address: null,
+          address:
+            location.address?.[locale] ?? location.address?.['en-US'] ?? null,
           notes: null,
           sort: location.sort,
           createdById: null,
