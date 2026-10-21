@@ -83,8 +83,9 @@ it('shows a model’s stock as stocked total and in stock, by asset type', () =>
   expect(screen.getByText('7')).toBeTruthy();
 });
 
-it('shows a location’s stock the same way, by model', () => {
+it('shows a location’s stock the same way, each with its asset type', () => {
   expect(headers(<LocationsStockTab />)).toEqual([
+    'fields.appliesTo',
     'fields.name',
     'fields.model',
     'fields.stockedTotal',
