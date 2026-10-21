@@ -204,7 +204,7 @@ export function DisposalCreateDialog({
             <div
               className={cn(
                 'grid content-start gap-1.5',
-                field.type === 'textarea' && 'sm:col-span-2',
+                (field.type === 'textarea' || field.wide) && 'sm:col-span-2',
               )}
             >
               <Label htmlFor={`disposal-${field.key}`}>

@@ -532,6 +532,8 @@ export const DISPOSAL_FIELDS: readonly FieldDefinition[] = [
     alternateField: 'recipientName',
     // Stated with the request (2026-10-16): a vendor or a typed name.
     required: true,
+    // The choice and its select want a row of their own (2026-10-20).
+    wide: true,
     group: 'groups.execution',
   },
   {
