@@ -44,15 +44,27 @@ import { FOUND_IDS, FOUND_TITLE, foundIds } from '@/lib/itam/search';
  * Who has a device, by name and kind's icon, on a board card: plain text,
  * since the card itself opens the device.
  */
-function HolderName({ row }: { readonly row: ItamRecord }): ReactElement {
-  const collection = holderCollection(text(row.assigneeType));
-  const id = text(row.assigneeId);
+function HolderName({
+  row,
+  reserved = false,
+}: {
+  readonly row: ItamRecord;
+  /** Whom it is set aside for, rather than who has it (2026-10-22). */
+  readonly reserved?: boolean;
+}): ReactElement {
+  const { t } = useTranslation();
+  const type = text(reserved ? row.reservedForType : row.assigneeType);
+  const collection = holderCollection(type);
+  const id = text(reserved ? row.reservedForId : row.assigneeId);
   const names = useReferenceNames([{ collection, ids: [id] }]);
+  // 分配给 before the name (2026-10-22), as 借给 is on a lent one's card.
   return (
     <span className='inline-flex min-w-0 items-center gap-1.5'>
-      <HolderIcon type={text(row.assigneeType)} />
+      <HolderIcon type={type} />
       <span className='min-w-0 truncate'>
-        {names[collection]?.get(id) ?? '…'}
+        {t(reserved ? 'devices.cardReservedFor' : 'devices.cardAssignedTo', {
+          name: names[collection]?.get(id) ?? '…',
+        })}
       </span>
     </span>
   );
@@ -98,13 +110,14 @@ const DeviceBoard = createStatusBoard({
   title: (record) =>
     [text(record.deviceNo), text(record.name)].filter(Boolean).join(' / '),
   card: {
-    // Each state with what matters in it (2026-10-22): in use, who has it,
-    // not the model; on loan, whom it is lent to and when it is due back,
-    // as 待办's overdue loans read; otherwise the model.
+    // Each state with what matters in it (2026-10-22): in stock, whom it is
+    // set aside for and where; in use, who has it and where; on loan, whom
+    // it is lent to and when it is due back, as 待办's overdue loans read;
+    // otherwise the model.
     lines: [
       {
         part: (record) =>
-          ['inUse', 'onLoan'].includes(text(record.status))
+          ['inStock', 'inUse', 'onLoan'].includes(text(record.status))
             ? null
             : createElement(ModelName, { id: text(record.modelId) }),
         icon: Package,
@@ -113,6 +126,13 @@ const DeviceBoard = createStatusBoard({
         part: (record) =>
           record.assigneeId && text(record.status) !== 'onLoan'
             ? createElement(HolderName, { row: record })
+            : null,
+      },
+      // On the shelf: whom it is set aside for, if anyone, then where.
+      {
+        part: (record) =>
+          text(record.status) === 'inStock' && record.reservedForId
+            ? createElement(HolderName, { row: record, reserved: true })
             : null,
       },
       {
@@ -139,11 +159,15 @@ const DeviceBoard = createStatusBoard({
               className: 'mt-1',
             })
           : null,
-      // Where it is kept only while nobody holds it: a place it is assigned
-      // to is its holder already, and said twice read as a mistake.
+      // Where it is: kept while nobody holds it, and in use with a person,
+      // where they have it (2026-10-22). Not for one assigned to a place,
+      // which is its holder already: said twice it read as a mistake.
       {
         part: (record) =>
-          !record.assigneeId && record.locationId
+          record.locationId &&
+          (!record.assigneeId ||
+            (text(record.status) === 'inUse' &&
+              text(record.assigneeType) !== 'location'))
             ? createElement(PlaceName, { id: text(record.locationId) })
             : null,
         icon: MapPin,

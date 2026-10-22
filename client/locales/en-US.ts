@@ -1483,6 +1483,9 @@ const messages = {
       'Computed: per seat, unit price × total seats × cycles per year; flat, price per cycle × cycles per year. Counts the seats bought, not those assigned',
   },
   devices: {
+    // Who has a device, on its board card (2026-10-22).
+    cardAssignedTo: 'Assigned to {{name}}',
+    cardReservedFor: 'Reserved for {{name}}',
     // The moves on Settings > Flows > Devices, by the lifecycle's transition names.
     transitions: {
       $create: 'Register in stock',

@@ -1431,6 +1431,9 @@ const zhCN: AppResource = {
       '系统计算：按席位为 单价 × 总席位 × 每年期数；固定费用为 每期费用 × 每年期数。按购买的席位算，不按已分配',
   },
   devices: {
+    // Who has a device, on its board card (2026-10-22).
+    cardAssignedTo: '分配给 {{name}}',
+    cardReservedFor: '预留给 {{name}}',
     // The moves on 设置 → 流程 → 设备, by the lifecycle's transition names.
     transitions: {
       $create: '登记入库',
