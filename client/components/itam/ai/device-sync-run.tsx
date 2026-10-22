@@ -550,7 +550,8 @@ function OthersFollowUps({
             key={row.id}
             className='space-y-2 rounded-lg border bg-card p-4 text-sm'
           >
-            <h3 className='font-medium'>
+            {/* A row, so a 暂不处理 tag sits centred on the title. */}
+            <h3 className='flex flex-wrap items-center gap-x-2 gap-y-1 font-medium'>
               {/* Nothing counted yet while it works: the name alone. */}
               {row.items.length
                 ? t('deviceSyncRun.otherDevices', {
@@ -635,7 +636,7 @@ function FollowUpNote({ note }: { note: string }) {
 function SetAside({ at }: { at: string }) {
   const { t, i18n } = useTranslation();
   return (
-    <span className='ml-2 inline-flex items-center gap-1.5 align-text-bottom text-sm font-normal whitespace-nowrap text-muted-foreground'>
+    <span className='inline-flex items-center gap-1.5 text-sm font-normal whitespace-nowrap text-muted-foreground'>
       <Badge variant='secondary'>{t('deviceSyncRun.setAside')}</Badge>
       <span className='tabular-nums'>
         {relativeTime(at, i18n.language, t('comments.justNow'))}
