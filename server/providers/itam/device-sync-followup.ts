@@ -992,17 +992,25 @@ export function createDeviceSyncFollowUp(dependencies: {
           const place = await locationFor(personId);
           if (!record || !modelId) {
             note(
-              '需要登记为新设备，但型号对不上，请在 MDM 核对页补登记',
-              'register it as a new device on MDM 核对: its model could not be matched',
+              '需要登记为新设备，但型号对不上，请在下面的列表补登记',
+              'register it as a new device in the list below: its model could not be matched',
             );
             break;
           }
           // No guessed place (2026-10-22): the person picks it there.
+          // The note says which (2026-10-22): no person on the register,
+          // or one with no location. It is read on MDM 核对, by the list.
           if (!place) {
-            note(
-              '需要登记为新设备，但主用户没有登记位置，请在 MDM 核对页补登记并选择存放位置',
-              'register it as a new device on MDM 核对 and choose where it is kept: its primary user has no location',
-            );
+            if (personId)
+              note(
+                '需要登记为新设备，但主用户没有登记位置，请在下面的列表补登记并选择存放位置',
+                'register it as a new device in the list below and choose where it is kept: its primary user has no location',
+              );
+            else
+              note(
+                '需要登记为新设备，但 MDM 上的主用户不在台账人员里，请在下面的列表补登记，选好使用人和存放位置',
+                'register it as a new device in the list below, choosing its user and where it is kept: its platform user is no person on the register',
+              );
             break;
           }
           // Registered and handed to its platform user in one step, as
@@ -1100,8 +1108,8 @@ export function createDeviceSyncFollowUp(dependencies: {
       if (!decided.has(item.key))
         notes.push(
           words(
-            `${item.label}：资产管家没有给出处理，请到 MDM 核对页查看`,
-            `${item.label}: no suggestion; see MDM 核对`,
+            `${item.label}：资产管家没有给出处理，请在下面的列表查看`,
+            `${item.label}: no suggestion; see the list below`,
           ),
         );
     steps = steps.slice(0, 30);
@@ -1144,8 +1152,8 @@ export function createDeviceSyncFollowUp(dependencies: {
         steps = steps.filter((entry) => entry.item.key !== dropped.key);
         notes.push(
           words(
-            `${dropped.label}：建议的操作现在做不了，请到 MDM 核对页查看`,
-            `${dropped.label}: the suggested step cannot be taken now; see MDM 核对`,
+            `${dropped.label}：建议的操作现在做不了，请在下面的列表查看`,
+            `${dropped.label}: the suggested step cannot be taken now; see the list below`,
           ),
         );
       }
