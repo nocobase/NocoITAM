@@ -1549,9 +1549,9 @@ const zhCN: AppResource = {
       title: '标记丢失',
       description: '记录该资产无法找到，找回后可恢复',
       confirm: '标记丢失',
-      notes: '丢失经过',
+      notes: '备注',
       notesPlaceholder: '例如：盘点时没找到，最后一次见到是在 3 楼会议室',
-      notesRequired: '请填写丢失经过',
+      notesRequired: '请填写备注',
     },
     restore: {
       title: '恢复为库存中',

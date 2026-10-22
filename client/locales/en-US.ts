@@ -1613,10 +1613,10 @@ const messages = {
       description:
         'Record that this device cannot be found. It can be restored later.',
       confirm: 'Mark lost',
-      notes: 'What happened',
+      notes: 'Notes',
       notesPlaceholder:
         'For example: not found at the stocktake, last seen in the 3rd-floor meeting room',
-      notesRequired: 'Say what happened',
+      notesRequired: 'Add a note',
     },
     restore: {
       title: 'Restore to stock',
