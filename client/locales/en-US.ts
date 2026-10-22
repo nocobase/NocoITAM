@@ -1022,7 +1022,7 @@ const messages = {
     runAll_one: 'Do all ({{count}})',
     runAll_other: 'Do all ({{count}})',
     advice: {
-      none: 'Asset Steward has not chosen for them yet; it can go through the stock.',
+      none: "Below are the rule's picks: their own location first, then the warranty. Asset Steward also weighs repair history and notes.",
       running: 'Asset Steward is choosing from the stock…',
       ready: 'Chosen by Asset Steward ({{date}})',
       failed: 'Asset Steward could not choose this time.',
@@ -1030,7 +1030,7 @@ const messages = {
       first: 'Choose',
       again: 'Choose again',
       firstHint:
-        'The candidates now are ranked by rule (their own location first, then the longest warranty). Asset Steward also reads repair history and notes, swaps out the doubtful ones and says why. Only a suggestion: nothing is held until you reserve it.',
+        'Asset Steward goes through them again with repair history and notes, swaps out the doubtful ones and says why. Only a suggestion: nothing is held until you reserve it.',
       againHint:
         'Asset Steward picks again from the stock as it is now, replacing the note above. What is already reserved stays.',
       notStarted: {
