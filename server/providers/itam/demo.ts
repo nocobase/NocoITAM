@@ -6872,9 +6872,11 @@ export function createDemoService(dependencies: {
           ...requests.filter((run) => !present.has(String(run.subjectId))),
           ...followUps.filter((run) => {
             const items = subjectsOf(run);
+            // One with nothing to show goes once it ended — failed, or
+            // replaced before it got anywhere (2026-10-22).
             return items.length
               ? !items.some((id) => present.has(id))
-              : run.status === 'failed';
+              : run.status !== 'pending' && run.status !== 'running';
           }),
         ].map((run) => String(run.id));
         if (gone.length) {

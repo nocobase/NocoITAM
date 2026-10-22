@@ -117,8 +117,13 @@ function useReviewsCollection({
   // (2026-10-21): the card goes down there rather than out of sight.
   // Each MDM 跟进 its own entry, the reader's devices' and the asset
   // managers' apart: they were one for a day (2026-10-21).
+  // One replaced before it worked anything out says nothing (2026-10-22):
+  // it is left out.
   const items = useMemo(
-    () => [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])],
+    () =>
+      [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])].filter(
+        (run) => run.status !== 'superseded' || run.result !== null,
+      ),
     [inbox.data],
   );
   const chosen = filter.kind === REVIEWS_CATEGORY;
