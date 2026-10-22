@@ -2277,6 +2277,7 @@ const messages = {
         reason: 'Reason',
         marked: 'Marked',
         linkedDevice: 'Linked to register device',
+        linkedSerial: 'Register serial',
         how: 'How',
       },
       sharedSerial_one: '{{count}} register device has this serial',
@@ -2334,7 +2335,6 @@ const messages = {
       silentHeading: 'Long silent ({{count}})',
       silentHint:
         'MDM records not on the register that have not synced for longer than a device counts as silent, most likely out of use. They can still be registered, linked or kept off the register.',
-      registerSerial: 'register serial {{serial}}',
       linkedHint:
         'MDM records linked to a register device by hand, or registered in the last 30 days; a serial that differs is highlighted. Unlink puts a record back in the list above.',
       how: { registered: 'Registered', linked: 'Linked' },
