@@ -111,6 +111,7 @@ export function FieldValue({
   currency,
   plainEnums,
   treeShow = 'path',
+  accountShow = 'full',
 }: {
   readonly field: FieldDefinition;
   readonly value: unknown;
@@ -121,6 +122,8 @@ export function FieldValue({
   readonly currency?: string | null;
   /** How a tree node reads: with its ancestors (detail) or just itself (a list column). */
   readonly treeShow?: 'path' | 'leaf' | 'root';
+  /** A sign-in in full (detail) or as its 启用 / 已停用 tag (a list column). */
+  readonly accountShow?: 'full' | 'tag';
 }): ReactElement | null {
   const { t } = useTranslation();
   if (value === null || value === undefined || value === '') {
@@ -183,7 +186,7 @@ export function FieldValue({
         );
       // A sign-in reads as one: its username and whether it is enabled.
       if (field.reference?.account && value)
-        return <UserAccount id={text(value)} />;
+        return <UserAccount id={text(value)} tagOnly={accountShow === 'tag'} />;
       return (
         <ReferenceLink
           collection={collection}

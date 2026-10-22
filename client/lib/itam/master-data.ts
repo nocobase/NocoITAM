@@ -681,6 +681,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         label: 'fields.linkedUser',
         type: 'reference',
         reference: { collection: 'users', account: true },
+        // In the people list (2026-10-22): who signs in as whom.
+        column: true,
         group: 'groups.basic',
       },
       {

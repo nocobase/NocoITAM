@@ -42,6 +42,11 @@ export function PeopleUnderTab({
     <RelatedListTab
       target={{
         ...masterTarget('people'),
+        // The sign-in is the people list's; a department's or a place's
+        // tab keeps to who they are and where (2026-10-22).
+        fields: masterTarget('people').fields.filter(
+          (field) => field.key !== 'userId',
+        ),
         defaultSort: 'employmentStatus,employeeNo',
         listFilter: { employmentStatus: statuses },
         // Every column: 姓名, 工号, 部门, 职位, (位置,) 在职状态.

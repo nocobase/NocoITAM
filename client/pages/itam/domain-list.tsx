@@ -264,6 +264,7 @@ function DomainList({
           // the whole path on hover and on the detail page (2026-10-22;
           // reference-data lists showed the path until then).
           treeShow='leaf'
+          accountShow='tag'
         />
       ),
   }));
