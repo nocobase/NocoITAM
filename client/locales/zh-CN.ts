@@ -1966,6 +1966,7 @@ const zhCN: AppResource = {
       // MDM 核对 (2026-10-15): the differences as cards, and a count for
       // each of the other two tabs.
       deviceChecks: 'MDM 核对',
+      mdmChecks: '失联、使用人不一致或状态不符',
       mdmUnregistered: '补登记，或标为不纳入台账',
       mdmUnmanaged: '需要在 MDM 中注册',
       leaverRecovery: '离职交接',

@@ -2052,6 +2052,7 @@ const messages = {
       activeAudits: 'Audits in progress',
       loansDueToday: 'Loans overdue',
       deviceChecks: 'MDM review',
+      mdmChecks: 'Silent, in other hands, or in another state',
       mdmUnregistered: 'Register them, or keep them off the register',
       mdmUnmanaged: 'Enrol them in MDM',
       leaverRecovery: 'Offboarding',

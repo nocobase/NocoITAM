@@ -151,8 +151,14 @@ export interface MyWorkItem {
   readonly count: number;
   readonly url: string;
   readonly records: readonly MyWorkRecord[];
-  /** MDM 核对 only: the other two tabs' counts (see the server's). */
+  /**
+   * MDM 核对 only: the differences by kind, and the other two tabs' counts
+   * (see the server's).
+   */
   readonly summary?: {
+    readonly checks?: Partial<
+      Record<'stale' | 'userMismatch' | 'statusMismatch', number>
+    >;
     readonly unregistered?: number;
     readonly unmanaged: number;
   };

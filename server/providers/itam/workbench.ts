@@ -108,6 +108,13 @@ export interface MyWorkItem {
    * for a reader who may not register devices.
    */
   readonly summary?: {
+    /**
+     * The differences by kind (2026-10-22): the workbench shows them as one
+     * card, as it does the other two tabs, rather than a card a device.
+     */
+    readonly checks?: Partial<
+      Record<'stale' | 'userMismatch' | 'statusMismatch', number>
+    >;
     readonly unregistered?: number;
     readonly unmanaged: number;
   };
@@ -1029,6 +1036,24 @@ export function createWorkbenchService(dependencies: {
           key: 'deviceChecks',
           count: checks.length,
           summary: {
+            ...(checks.length
+              ? {
+                  checks: checks.reduce<
+                    Partial<
+                      Record<
+                        'stale' | 'userMismatch' | 'statusMismatch',
+                        number
+                      >
+                    >
+                  >(
+                    (byKind, check) => ({
+                      ...byKind,
+                      [check.kind]: (byKind[check.kind] ?? 0) + 1,
+                    }),
+                    {},
+                  ),
+                }
+              : {}),
             ...(registrable
               ? { unregistered: (await review.unregistered()).length }
               : {}),

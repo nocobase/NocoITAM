@@ -680,6 +680,8 @@ describe('device review', () => {
     expect(items.find((item) => item.key === 'deviceChecks')).toMatchObject({
       count: 1,
       records: [{ id: laptop, check: { kind: 'stale', critical: false } }],
+      // By kind, for the workbench's one card (2026-10-22).
+      summary: { checks: { stale: 1 } },
     });
     const mine = await workbench.myWork('somebody-else', decide, {
       scope: 'mine',

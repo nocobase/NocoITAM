@@ -31,13 +31,18 @@ export interface WorkCard {
   /** Where "see all" goes; several when one card merges several to-dos. */
   readonly links: readonly { readonly label: string; readonly url: string }[];
   /**
-   * MDM 核对: the tabs its records are not on, each a count that opens the
-   * tab (2026-10-15). Only those with something in them.
+   * MDM 核对: each tab a count that opens it (2026-10-15; the differences
+   * too, by kind, rather than a card a device, 2026-10-22). Only those with
+   * something in them.
    */
   readonly summary?: readonly {
-    readonly key: 'unregistered' | 'unmanaged';
+    readonly key: 'checks' | 'unregistered' | 'unmanaged';
     readonly count: number;
     readonly url: string;
+    /** 信息不一致's count of each kind. */
+    readonly kinds?: Partial<
+      Record<'stale' | 'userMismatch' | 'statusMismatch', number>
+    >;
   }[];
 }
 
@@ -135,24 +140,45 @@ export function useWorkCards(): readonly WorkCard[] {
     const item = find(key);
     if (!item) continue;
     const tag = TAGGED[key];
-    // MDM 核对 counts every tab: the differences, listed, and 只在 MDM and
-    // 只在台账, one count each.
-    const summary = (['unregistered', 'unmanaged'] as const).flatMap((view) => {
-      const count = item.summary?.[view] ?? 0;
-      return count > 0
-        ? [{ key: view, count, url: `/device-sync?view=${view}` }]
-        : [];
-    });
+    // MDM 核对 counts every tab, one card each (2026-10-22: the
+    // differences were a card a device, which read as a list of their own).
+    const devicesChecked = key === 'deviceChecks';
+    const summary = devicesChecked
+      ? [
+          ...(item.count > 0
+            ? [
+                {
+                  key: 'checks' as const,
+                  count: item.count,
+                  url: '/device-sync?view=checks',
+                  ...(item.summary?.checks
+                    ? { kinds: item.summary.checks }
+                    : {}),
+                },
+              ]
+            : []),
+          ...(['unregistered', 'unmanaged'] as const).flatMap((view) => {
+            const count = item.summary?.[view] ?? 0;
+            return count > 0
+              ? [{ key: view, count, url: `/device-sync?view=${view}` }]
+              : [];
+          }),
+        ]
+      : [];
     cards.push({
       key,
       label: t(`workbench.work.${key}`),
-      count: item.count + summary.reduce((sum, entry) => sum + entry.count, 0),
+      count: devicesChecked
+        ? summary.reduce((sum, entry) => sum + entry.count, 0)
+        : item.count,
       ...(summary.length > 0 ? { summary } : {}),
-      records: tag
-        ? item.records.map((record) => ({ ...record, tag }))
-        : item.records,
+      records: devicesChecked
+        ? []
+        : tag
+          ? item.records.map((record) => ({ ...record, tag }))
+          : item.records,
       links:
-        item.count > MY_WORK_PREVIEW
+        !devicesChecked && item.count > MY_WORK_PREVIEW
           ? [{ label: t('workbench.seeAll'), url: item.url }]
           : [],
     });

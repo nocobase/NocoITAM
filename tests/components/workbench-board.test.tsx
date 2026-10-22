@@ -330,6 +330,36 @@ it('counts the MDM 核对 tabs its cards are not on, each opening its tab', () =
   expect(within(checks).queryByText('workbench.nothingPending')).toBeNull();
 });
 
+// The differences as one card by kind, as the other two tabs are, rather
+// than a card a device (2026-10-22).
+it('shows the MDM differences as one card, by kind', () => {
+  state.items = [
+    {
+      key: 'deviceChecks',
+      count: 3,
+      url: '/device-sync?view=checks',
+      records: [record('DE-000001 / SH-LT-001', '2026-09-04', '/devices/d1')],
+      summary: { checks: { stale: 2, statusMismatch: 1 }, unmanaged: 1 },
+    },
+  ];
+  show();
+  const checks = column('workbench.work.deviceChecks');
+  // 3 differences and 1 只在台账.
+  expect(within(checks).getByText('4')).toBeInTheDocument();
+  expect(
+    within(checks)
+      .getByText('deviceSync.review.views.checks')
+      .closest('a')
+      ?.getAttribute('href'),
+  ).toBe('/device-sync?view=checks');
+  expect(
+    within(checks).getByText(
+      'deviceSync.checks.kinds.stale 2 · deviceSync.checks.kinds.statusMismatch 1',
+    ),
+  ).toBeInTheDocument();
+  expect(within(checks).queryByText('DE-000001 / SH-LT-001')).toBeNull();
+});
+
 it('keeps leavers and joiners in one column, says what waits, and lays the columns out as a list', () => {
   state.items = [
     {

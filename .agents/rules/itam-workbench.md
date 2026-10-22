@@ -55,7 +55,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `client/lib/itam/format.ts`). Device sync added two rules on 2026-10-15
   and took them out the same day: 只在 MDM and 只在台账 are counts on the
   MDM 核对 column after 借出逾期 (see `itam-device-sync.md`), so MDM is one
-  place on the board, not a column and two risks. Neither 需要关注 nor 待办 carries a count
+  place on the board, not a column and two risks. Since 2026-10-22 the
+  differences are a count too, the first card, with their kinds beneath
+  (`summary.checks`; 失联 2 · 状态不符 1): a card a device read as a list
+  of its own beside the two counts. Neither 需要关注 nor 待办 carries a count
   beside its heading: a sum of unrelated rules is not something anybody acts
   on.
 - An entitlement's dates are three reminders, not one (2026-09-28): a

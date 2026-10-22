@@ -471,11 +471,20 @@ function SummaryCard({
         </span>
       </span>
       <span className='mt-1 block text-xs text-muted-foreground'>
-        {t(
-          entry.key === 'unregistered'
-            ? 'workbench.work.mdmUnregistered'
-            : 'workbench.work.mdmUnmanaged',
-        )}
+        {entry.key === 'checks'
+          ? // Each kind with its count (2026-10-22).
+            (['stale', 'userMismatch', 'statusMismatch'] as const)
+              .filter((kind) => (entry.kinds?.[kind] ?? 0) > 0)
+              .map(
+                (kind) =>
+                  `${t(`deviceSync.checks.kinds.${kind}`)} ${String(entry.kinds?.[kind])}`,
+              )
+              .join(' · ') || t('workbench.work.mdmChecks')
+          : t(
+              entry.key === 'unregistered'
+                ? 'workbench.work.mdmUnregistered'
+                : 'workbench.work.mdmUnmanaged',
+            )}
       </span>
     </Link>
   );
