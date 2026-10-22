@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
   me: 'u1' as string | undefined,
   aiAvailable: false,
   opened: [] as string[],
+  asked: [] as string[],
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -26,7 +27,7 @@ vi.mock('../../client/lib/itam/onboarding.js', async (original) => ({
 vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useAiPageContext: () => ({
     available: state.aiAvailable,
-    ask: () => undefined,
+    ask: (prompt: string) => state.asked.push(prompt),
   }),
   useItamAi: () => ({
     available: state.aiAvailable,
@@ -168,6 +169,7 @@ beforeEach(() => {
   state.me = 'u1';
   state.aiAvailable = false;
   state.opened = [];
+  state.asked = [];
 });
 
 /** The plan with Asset Steward's pick on the laptop, from a run made as `u1`. */
@@ -394,4 +396,18 @@ it('says where planned things come from, with no button, and when to order the r
   ).toBeNull();
   // A shortfall whose last order day has passed is to be ordered now.
   expect(screen.getByText(/onboarding\.orderNow/)).toBeTruthy();
+});
+
+it('asks Asset Steward to draft the order from beside a shortfall, and offers no plan of its own', () => {
+  state.aiAvailable = true;
+  state.plan = plan('2099-01-10');
+  show();
+  // The header's plan shortcut repeated 全部执行 (removed 2026-10-22).
+  expect(
+    screen.queryByRole('button', { name: /onboarding\.askAi/ }),
+  ).toBeNull();
+  fireEvent.click(
+    screen.getByRole('button', { name: /onboarding\.draftOrder/ }),
+  );
+  expect(state.asked).toEqual(['ai.prompts.onboardingOrder']);
 });
