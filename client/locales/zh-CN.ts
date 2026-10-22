@@ -279,7 +279,7 @@ const zhCN: AppResource = {
       install: '随系统安装',
     },
     formerUser: '已删除的用户',
-    updatedField: '修改 {{field}}',
+    updatedField: '{{verb}} {{field}}',
     wasLabel: '原：',
     nowLabel: '新：',
     fieldsChanged_one: '更新了 {{count}} 个字段',

@@ -583,6 +583,18 @@ function TimelineRow({
   const compact = Boolean(
     single?.field && isCompactChange(single, fieldByKey.get(single.field)),
   );
+  // The one entry a list change added, removed or changed, said up front.
+  const soleKind =
+    single?.field && !compact
+      ? soleEntryKind(
+          single.field,
+          single.oldValue,
+          single.newValue,
+          fieldByKey.get(single.field),
+          t,
+          keyLabels,
+        )
+      : undefined;
   const folded = single
     ? []
     : item.changes.filter(
@@ -639,8 +651,12 @@ function TimelineRow({
                         defaultValue: event.type,
                       })
                     : single
-                      ? compact
+                      ? // A verb before the field (2026-10-22): one entry of a
+                        // list added or removed says which, 新增 职位 计数总监;
+                        // anything else 修改 扩展字段, its entries following.
+                        single.field
                         ? t('history.updatedField', {
+                            verb: t(`history.entry.${soleKind ?? 'changed'}`),
                             field: fieldLabel(single),
                           })
                         : fieldLabel(single)
@@ -709,6 +725,7 @@ function TimelineRow({
                       keyLabels={keyLabels}
                       t={t}
                       compact={compact}
+                      kindSaid={Boolean(soleKind)}
                     />
                   </span>
                 ) : null}
@@ -890,6 +907,7 @@ function ChangeValue({
   keyLabels,
   t,
   compact = false,
+  kindSaid = false,
 }: {
   readonly field: FieldDefinition | undefined;
   readonly fieldKey: string;
@@ -900,6 +918,8 @@ function ChangeValue({
   readonly t: Translate;
   /** `→ new` on one line, the rest on hover (`isCompactChange`). */
   readonly compact?: boolean;
+  /** The sentence already said 新增 / 删除 / 修改 for a lone entry. */
+  readonly kindSaid?: boolean;
 }): ReactElement {
   const currency = useContext(CurrencyContext);
   const displayValue = useContext(DisplayContext);
@@ -950,7 +970,7 @@ function ChangeValue({
       const line = lines[0];
       return (
         <span className='inline-flex flex-wrap items-baseline gap-x-2'>
-          {line.kind ? <KindTag kind={line.kind} t={t} /> : null}
+          {line.kind && !kindSaid ? <KindTag kind={line.kind} t={t} /> : null}
           {line.label ? (
             <span className='text-muted-foreground'>{line.label}</span>
           ) : null}
@@ -1117,14 +1137,10 @@ interface DiffLine {
 type Entry = Record<string, unknown> | undefined;
 
 const KIND_ORDER = { changed: 0, added: 1, removed: 2 } as const;
-const KIND_TONE = {
-  added: 'bg-primary/10 text-primary',
-  changed: 'bg-warning text-warning-foreground',
-  // Not muted: the folded list it sits in is muted already.
-  removed: 'bg-destructive/10 text-destructive',
-} as const;
-
-/** 修改 / 新增 / 删除 before an entry of a list, as the editor tags them. */
+/**
+ * 修改 / 新增 / 删除 before an entry of a list, as a muted word (2026-10-22;
+ * a coloured tag until then), the way 「修改 字段」 reads on one line.
+ */
 function KindTag({
   kind,
   t,
@@ -1133,15 +1149,27 @@ function KindTag({
   readonly t: Translate;
 }): ReactElement {
   return (
-    <span
-      className={cn(
-        'shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium',
-        KIND_TONE[kind],
-      )}
-    >
+    <span className='shrink-0 text-muted-foreground'>
       {t(`history.entry.${kind}`)}
     </span>
   );
+}
+
+/** The kind of a list change's one entry, when it changed exactly one. */
+function soleEntryKind(
+  fieldKey: string,
+  oldValue: unknown,
+  newValue: unknown,
+  field: FieldDefinition | undefined,
+  t: Translate,
+  keyLabels: Readonly<Record<string, string>> | undefined,
+): DiffLine['kind'] {
+  const structured =
+    (oldValue !== null && typeof oldValue === 'object') ||
+    (newValue !== null && typeof newValue === 'object');
+  if (!structured || field?.type === 'multiselect') return undefined;
+  const lines = diffStructured(fieldKey, oldValue, newValue, t, keyLabels);
+  return lines.length === 1 ? lines[0].kind : undefined;
 }
 
 /**
@@ -1188,7 +1216,11 @@ function diffStructured(
         value.map((entry, index) => [
           entry && typeof entry === 'object' && 'key' in entry
             ? String((entry as { key: unknown }).key)
-            : String(index),
+            : // A plain entry by itself, so removing one in the middle
+              // does not read as the rest each changing (2026-10-22).
+              typeof entry === 'string' || typeof entry === 'number'
+              ? `=${String(entry)}`
+              : String(index),
           entry,
         ]),
       );
@@ -1206,6 +1238,14 @@ function diffStructured(
    * when that changed, else the label names it and only the rest differs.
    */
   const changedEntry = (key: string, a: unknown, b: unknown): DiffLine => {
+    if (!a || typeof a !== 'object' || !b || typeof b !== 'object')
+      return {
+        key,
+        kind: 'changed',
+        label: '',
+        from: describeEntry(a),
+        to: describeEntry(b),
+      };
     const one = (entry: unknown, part: string): string => {
       const e = entry as Record<string, unknown>;
       if (part === 'type')
@@ -1251,8 +1291,28 @@ function diffStructured(
           to: join(b, parts),
         };
   };
+  // An entry gone and another come at the same place is one entry edited
+  // (2026-10-22): renaming CPU to CPU1 gives it a new key, and read as
+  // CPU removed and CPU1 added.
+  const renamed = new Map<string, string>();
+  if (isArray) {
+    const oldKeys = [...before.keys()];
+    const newKeys = [...after.keys()];
+    for (const [index, key] of newKeys.entries()) {
+      const was = oldKeys[index];
+      if (
+        was !== undefined &&
+        !before.has(key) &&
+        !after.has(was) &&
+        ![...renamed.values()].includes(was)
+      )
+        renamed.set(key, was);
+    }
+  }
+  const replaced = new Set(renamed.values());
   for (const key of new Set([...before.keys(), ...after.keys()])) {
-    const a = before.get(key);
+    if (replaced.has(key)) continue;
+    const a = before.get(renamed.get(key) ?? key);
     const b = after.get(key);
     if (JSON.stringify(a ?? null) === JSON.stringify(b ?? null)) continue;
     if (isArray && a !== undefined && b !== undefined) {

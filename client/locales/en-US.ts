@@ -259,7 +259,7 @@ const messages = {
     deleteDescription: 'Its text and files go; replies to it stay.',
   },
   history: {
-    entry: { added: 'Added', changed: 'Changed', removed: 'Removed' },
+    entry: { added: 'added', changed: 'updated', removed: 'removed' },
     buckets: {
       today: 'Today',
       yesterday: 'Yesterday',
@@ -287,7 +287,7 @@ const messages = {
       install: 'with the installation',
     },
     formerUser: 'Former user',
-    updatedField: 'updated {{field}}',
+    updatedField: '{{verb}} {{field}}',
     wasLabel: 'Was:',
     nowLabel: 'Now:',
     fieldsChanged_one: '{{count}} field updated',
