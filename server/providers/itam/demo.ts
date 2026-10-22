@@ -3094,6 +3094,14 @@ export function createDemoService(dependencies: {
         await assign(laptops[3].id, wangFang.id, -1054);
         await assign(airs[0].id, zhaoMin.id, -145);
         await assign(thinkpads[0].id, liuYang.id, -55);
+        // IT's spare, handed to the QA engineer without moving it out of IT
+        // (2026-10-22): 需要关注's 所属部门与使用人不一致 has one to show.
+        await database
+          .query()
+          .updateTable('devices')
+          .set({ departmentId: String(itDept.id) })
+          .where('id', '=', String(thinkpads[0].id))
+          .execute();
         await assign(expiredLaptop.id, chenJie.id, -1495);
         // A second thing in the leaver's hands, this one answering to the
         // importer (吴静 without the accounts plugins): their laptop is at the
@@ -3806,6 +3814,9 @@ export function createDemoService(dependencies: {
         // For the Latitude the sales manager had then, and for IT support's.
         await issue(batteries, 'person', wangFang, 1, -600);
         await issue(batteries, 'person', chenJie, 1, -250);
+        // One more lately, and none reordered (2026-10-22): below its
+        // minimum, so 低于水位的耗材 has one to show.
+        await issue(batteries, 'person', zhangWei, 1, -40);
         await on(-401);
         const paperModel = await named('models', {
           name: 'Office Paper A4 80 g',
@@ -3888,6 +3899,10 @@ export function createDemoService(dependencies: {
         // this; what it shows is that recovering a device recovers what is in
         // it.
         await issue(ssd, 'device', airs[1], 1, -100);
+        // And two upgrades lately (2026-10-22): below its minimum, so
+        // 低于水位的组件 has one to show.
+        if (laptops[3]) await issue(ssd, 'device', laptops[3], 1, -30);
+        if (airs[0]) await issue(ssd, 'device', airs[0], 1, -20);
         const ram = await stockItem(
           {
             kind: 'component',

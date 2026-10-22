@@ -224,7 +224,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (恢复为库存中, then 分配给 them —
   the stock laptop last touched, so the idle one 保养提醒 shows stays idle;
   not one in use, whose holder would fall back into 入职准备), and the
-  disposed one. Their platform ids start `demo-` (or `computer:demo-` /
+  disposed one. Every 需要关注 rule has a case too (2026-10-22): a Latitude battery
+  and the 1 TB SSD issued below their minimum, beside the mouse, and the
+  QA engineer's ThinkPad still filed under IT. Their platform ids start `demo-` (or `computer:demo-` /
   `mobile:demo-`), which is how `device-demo-source.ts` knows them: with no
   connection, a platform holding demo records reads as connected (`demo`)
   and its pulls replay them, last syncs moved on by the time since the

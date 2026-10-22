@@ -663,11 +663,13 @@ describe('CSV import / export and demo data', () => {
     expect(count('warrantyExpiring')).toBeGreaterThanOrEqual(4);
     expect(count('idleDevice')).toBeGreaterThanOrEqual(1);
     expect(count('entitlementOverAllocated')).toBe(1);
-    expect(
-      count('lowAccessories') +
-        count('lowConsumables') +
-        count('lowComponents'),
-    ).toBe(1);
+    // Every rule has something to show (2026-10-22): one below its minimum
+    // of each kind kept as a quantity, and a device filed under another
+    // department than its holder's.
+    expect(count('lowAccessories')).toBe(1);
+    expect(count('lowConsumables')).toBe(1);
+    expect(count('lowComponents')).toBe(1);
+    expect(count('departmentMismatch')).toBeGreaterThanOrEqual(1);
     // The demo's overdue loan is a to-do card and a notification, not a
     // reminder, since 2026-09-28; its leaver became a to-do the same way,
     // scoped to whoever is responsible for what they still hold.
