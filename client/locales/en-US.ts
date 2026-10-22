@@ -3824,7 +3824,7 @@ const messages = {
     others_one: 'Other owners’ follow-ups ({{count}})',
     others_other: 'Other owners’ follow-ups ({{count}})',
     othersHint: 'to read; their owners settle them',
-    steps: 'What the plan would do',
+    steps: 'Ready to carry out',
     working: 'Asset Steward is sorting the differences on the MDM review…',
     superseded: 'Followed up again',
     stepHandledBelow: 'Settled',

@@ -3618,7 +3618,7 @@ const zhCN: AppResource = {
     others_one: '其他负责人的跟进（{{count}}）',
     others_other: '其他负责人的跟进（{{count}}）',
     othersHint: '只能查看，由负责人自己处理',
-    steps: '方案会做的事',
+    steps: '可直接执行',
     working: '资产管家正在整理 MDM 核对上的差异…',
     superseded: '已重新跟进',
     stepHandledBelow: '已处理',
