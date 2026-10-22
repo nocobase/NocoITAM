@@ -203,6 +203,14 @@ function FollowUpReviewCard({
   const plan = useRunPlan(run);
   const [open, setOpen] = useState<boolean>();
   const [skipped, setSkipped] = useState<ReadonlySet<number>>(() => new Set());
+  // Ticked afresh once carried out (2026-10-22): what is left starts
+  // ticked, as the plan did at first.
+  const stage = `${run.status}:${plan.data?.status ?? ''}`;
+  const [seenStage, setSeenStage] = useState(stage);
+  if (stage !== seenStage) {
+    setSeenStage(stage);
+    setSkipped(new Set());
+  }
   const listed = useListed();
   const handled = handledOf(run, listed);
   // What was settled on its row is left out, as if unticked.
@@ -250,12 +258,15 @@ function FollowUpReviewCard({
     run.status === 'accepted' && notes.length > 0 && stillListed(run, listed);
   // Steps a carried-out plan left out, on items still listed: ticked again
   // on the card as at first, and carried out (2026-10-22).
+  // Carried out later from here: done, like the rest (2026-10-22).
+  const resumed = new Set(run.result?.resumed ?? []);
   const retry = new Set(
     run.status === 'accepted' && plan.data?.status === 'executed' && listed
       ? plan.data.steps
           .filter(
             (step) =>
               step.status === 'removed' &&
+              !resumed.has(step.position) &&
               (run.result?.advice ?? []).some(
                 (entry) =>
                   entry.steps?.includes(step.position) &&
@@ -307,7 +318,12 @@ function FollowUpReviewCard({
           {retry.size ? (
             <Button
               disabled={resume.isPending || retryTicked.length === 0}
-              onClick={() => resume.mutate({ id: run.id, steps: retryTicked })}
+              onClick={() =>
+                resume.mutate(
+                  { id: run.id, steps: retryTicked },
+                  { onSuccess: () => setSkipped(new Set()) },
+                )
+              }
             >
               {t('ai.plans.execute', { count: retryTicked.length })}
             </Button>
@@ -340,6 +356,7 @@ function FollowUpReviewCard({
             settled={handled}
             settledLabel={t('deviceSyncRun.stepHandledBelow')}
             tickable={retry}
+            doneSince={resumed}
           />
         ) : null}
         {notes.length ? (

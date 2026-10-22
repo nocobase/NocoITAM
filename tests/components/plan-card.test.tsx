@@ -137,3 +137,24 @@ it('tags a step carried out inside a follow-up', () => {
     'text-muted-foreground',
   );
 });
+
+// Left out, then carried out from the card: done like the rest (2026-10-22).
+it('shows a step carried out later as done', () => {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PlanCard
+        plan={{
+          ...plan,
+          status: 'executed',
+          steps: [{ ...plan.steps[0]!, status: 'removed' }],
+        }}
+        bare
+        settled={new Set([0])}
+        settledLabel='handled'
+        doneSince={new Set([0])}
+      />
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText('ai.plans.stepDone')).toBeTruthy();
+  expect(screen.queryByText('handled')).toBeNull();
+});

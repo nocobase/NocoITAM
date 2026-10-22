@@ -111,6 +111,7 @@ export function PlanCard({
   settled = NONE,
   settledLabel,
   tickable = NONE,
+  doneSince = NONE,
 }: {
   readonly plan: Plan;
   /**
@@ -132,6 +133,8 @@ export function PlanCard({
    * first (MDM 核对's follow-up, 2026-10-22); carried out from outside.
    */
   readonly tickable?: ReadonlySet<number>;
+  /** Steps left out and carried out later, shown done (2026-10-22). */
+  readonly doneSince?: ReadonlySet<number>;
 }): ReactElement {
   const { t } = useTranslation();
   const [own, setOwn] = useState<ReadonlySet<number>>(() => new Set());
@@ -141,7 +144,9 @@ export function PlanCard({
   // (ids, references, JSON) stay folded until asked for (2026-10-16).
   const [showParams, setShowParams] = useState(false);
   const pending = plan.status === 'pending';
-  const steps = plan.steps;
+  const steps = plan.steps.map((step) =>
+    doneSince.has(step.position) ? { ...step, status: 'done' as const } : step,
+  );
   const hasParams = steps.some((step) => step.check?.fields.length);
   // Not inside MDM 核对's follow-up (2026-10-21): each step's line says
   // enough there.
@@ -230,20 +235,20 @@ export function PlanCard({
                 {(pending || step.status === 'removed') &&
                 settled.has(step.position) &&
                 settledLabel ? (
-                  <Badge variant='secondary' className='ml-2 align-text-bottom'>
+                  <Badge variant='secondary' className='ml-2 align-middle'>
                     {settledLabel}
                   </Badge>
                 ) : !pending &&
                   step.status === 'removed' &&
                   // Tickable again, its checkbox says it (2026-10-22).
                   !tickable.has(step.position) ? (
-                  <Badge variant='secondary' className='ml-2 align-text-bottom'>
+                  <Badge variant='secondary' className='ml-2 align-middle'>
                     {t('ai.plans.notRun')}
                   </Badge>
                 ) : bare && step.status === 'done' ? (
                   // Inside a follow-up, with no status of the plan's own to
                   // say it (2026-10-22).
-                  <Badge variant='secondary' className='ml-2 align-text-bottom'>
+                  <Badge variant='secondary' className='ml-2 align-middle'>
                     {t('ai.plans.stepDone')}
                   </Badge>
                 ) : null}

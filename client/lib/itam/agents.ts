@@ -60,6 +60,11 @@ export interface DeviceSyncResult {
   readonly summary: string;
   /** Each item's suggestion, for its row on MDM 核对 (2026-10-21). */
   readonly advice?: readonly FollowUpAdvice[];
+  /**
+   * The plan's steps left out and carried out later from its card, by
+   * their place in it (2026-10-22).
+   */
+  readonly resumed?: readonly number[];
 }
 
 /** What MDM 跟进 suggested for one difference or platform record. */

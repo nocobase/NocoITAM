@@ -706,6 +706,27 @@ export function createDeviceSyncFollowUp(dependencies: {
       const done = await plans.execute(actorId, again.id, {
         revision: again.revision,
       });
+      // The first plan's steps carried out now, by their place in it
+      // (2026-10-22): its card shows them 已执行 like the rest.
+      const carried = done.steps.flatMap((step, index) =>
+        step.status === 'done' ? [steps[index].position] : [],
+      );
+      if (carried.length) {
+        const before = ((run.result?.resumed ?? []) as number[]).filter(
+          (position) => typeof position === 'number',
+        );
+        await database()
+          .query()
+          .updateTable('itamAgentRuns')
+          .set({
+            result: {
+              ...run.result,
+              resumed: [...new Set([...before, ...carried])],
+            },
+          })
+          .where('id', '=', run.id)
+          .execute();
+      }
       await settleShared(run);
       return done;
     },

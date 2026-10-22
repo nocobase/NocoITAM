@@ -278,6 +278,10 @@ describe('MDM follow-up', () => {
     expect(again.data.steps.map((step) => step.op)).toEqual([
       'dismiss_device_difference',
     ]);
+    // Its card shows it done (2026-10-22).
+    expect((await runs().get(mine.id))?.result?.resumed).toEqual([
+      keep.position,
+    ]);
     expect(
       (await app.container.resolve(deviceReviewServiceToken).checks()).some(
         (check) => check.kind === 'statusMismatch',

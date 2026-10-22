@@ -610,5 +610,8 @@ it('carries out the steps a plan left out, ticked again', () => {
     </MemoryRouter>,
   );
   fireEvent.click(screen.getByRole('button', { name: 'ai.plans.execute' }));
-  expect(state.resume).toHaveBeenCalledWith({ id: 'run-1', steps: [2] });
+  expect(state.resume).toHaveBeenCalledWith(
+    { id: 'run-1', steps: [2] },
+    expect.anything(),
+  );
 });
