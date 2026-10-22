@@ -898,7 +898,7 @@ function AttentionBand(): ReactElement {
         <>
           {/* Side by side, filling the row (2026-10-17): as many to a row
               as fit at 14rem, each stretched to share it. */}
-          <div className='grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-1.5'>
+          <div className='grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-2'>
             {found.map((entry) => (
               <Link
                 key={entry.kind}
@@ -914,11 +914,13 @@ function AttentionBand(): ReactElement {
                 // is at risk without being opened (2026-10-05). Compact: eleven
                 // rules share one column. Only a critical rule is red; severity
                 // is the rule's, not today's.
+                // On the white band (2026-10-22), a light fill rather than a
+                // white card with a border and shadow, which blurred into it.
                 className={cn(
-                  'block min-w-0 rounded-lg border bg-card px-2.5 py-1.5 shadow-xs transition hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                  'block min-w-0 rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                   entry.severity === 'critical'
-                    ? 'border-destructive/40 hover:border-destructive/60'
-                    : 'border-border/50 hover:border-border',
+                    ? 'bg-destructive/[0.06] hover:bg-destructive/10'
+                    : 'bg-muted/60 hover:bg-muted',
                 )}
               >
                 {/* The number is what the eye looks for, the sentence what
@@ -933,7 +935,8 @@ function AttentionBand(): ReactElement {
                   >
                     {entry.count}
                   </span>
-                  <span className='min-w-0 text-xs leading-tight text-muted-foreground'>
+                  {/* What it counts above the records it found. */}
+                  <span className='min-w-0 text-xs leading-tight font-medium text-foreground'>
                     {label(entry.kind)}
                   </span>
                 </span>
