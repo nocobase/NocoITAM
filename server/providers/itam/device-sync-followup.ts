@@ -1178,8 +1178,8 @@ export function createDeviceSyncFollowUp(dependencies: {
         return { ...entry, planned: positions.length > 0, steps: positions };
       }),
       summary: words(
-        `${String(items.length)} 处差异：${String(planned)} 项可直接执行，${String(items.length - planned)} 项需要你看一下。`,
-        `${String(items.length)} differences: ${String(planned)} can be carried out, ${String(items.length - planned)} need a look.`,
+        `${String(items.length)} 处差异：${String(planned)} 项可直接执行，${String(items.length - planned)} 项需人工处理。`,
+        `${String(items.length)} differences: ${String(planned)} can be carried out, ${String(items.length - planned)} need a person.`,
       ),
     };
   };

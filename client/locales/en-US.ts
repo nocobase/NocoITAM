@@ -3834,7 +3834,7 @@ const messages = {
     rerun: 'Run again',
     setAside: 'Not now',
     accepted: 'Carried out',
-    notes: 'For you to look at',
+    notes: 'For a person to handle',
     openReview: 'Open MDM 核对',
     failedHintHere:
       'Nothing was sorted this time; try MDM difference follow-up at the top right again.',
