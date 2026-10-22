@@ -1035,9 +1035,9 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     monitorOrder: 'Monitors for the sales floor',
     dockOrder: 'Docking station stock',
     keyboardOrder: 'Keyboards for the new desks',
-    mouseOrder: 'Mice to restock',
-    dockOrder: 'Docks for the R&D desks',
-    headsetOrder: 'Headsets for the sales team',
+    mouseRestock: 'Mice to restock',
+    dockRestock: 'Docks for the R&D desks',
+    headsetRestock: 'Headsets for the sales team',
     hubOrder: 'Travel hubs to restock',
     webcamOrder: 'Webcams for presenters',
     officeOrder: 'Office LTSC device licenses',
@@ -1178,9 +1178,9 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     monitorOrder: '销售部显示器扩容',
     dockOrder: '扩展坞补货',
     keyboardOrder: '新工位键盘',
-    mouseOrder: '鼠标补货',
-    dockOrder: '研发工位扩展坞',
-    headsetOrder: '销售团队耳机',
+    mouseRestock: '鼠标补货',
+    dockRestock: '研发工位扩展坞',
+    headsetRestock: '销售团队耳机',
     hubOrder: '出差用扩展坞补货',
     webcamOrder: '演示用摄像头',
     officeOrder: 'Office LTSC 设备授权',
@@ -3651,7 +3651,7 @@ export function createDemoService(dependencies: {
         // so their pages show a purchase; each started that much lower, and
         // ends where it did.
         await purchasedStock({
-          description: texts.mouseOrder,
+          description: texts.mouseRestock,
           itemType: 'accessory',
           modelId: String(mxMaster.id),
           quantity: 2,
@@ -3693,7 +3693,7 @@ export function createDemoService(dependencies: {
         await issue(docks, 'person', wangFang, 1, -600);
         await takeBack(docks, 'person', wangFang, -510);
         await purchasedStock({
-          description: texts.dockOrder,
+          description: texts.dockRestock,
           itemType: 'accessory',
           modelId: String(wd22.id),
           quantity: 4,
@@ -3719,7 +3719,7 @@ export function createDemoService(dependencies: {
         await issue(headsets, 'person', wangFang, 1, -390);
         await issue(headsets, 'person', zhaoMin, 1, -325);
         await purchasedStock({
-          description: texts.headsetOrder,
+          description: texts.headsetRestock,
           itemType: 'accessory',
           modelId: String(zoneVibe.id),
           quantity: 6,
