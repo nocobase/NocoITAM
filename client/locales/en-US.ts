@@ -2049,7 +2049,7 @@ const messages = {
       purchasing: 'Purchasing',
       pendingOrders: 'Orders to place',
       awaitingReceipt: 'Orders awaiting receipt',
-      pendingDisposalExecution: 'To dispose',
+      pendingDisposalExecution: 'Disposing',
       activeRepairs: 'In repair',
       activeAudits: 'Auditing',
       loanOverdueDays_one: '{{count}} day overdue',
