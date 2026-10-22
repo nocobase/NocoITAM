@@ -424,7 +424,12 @@ function PlanLine({
           <span className='shrink-0 tabular-nums'>×{line.required}</span>
         </span>
         <Badge variant='secondary'>{t('onboarding.waived')}</Badge>
-        <Button variant='ghost' disabled={busy} onClick={() => onWaive(false)}>
+        <Button
+          variant='ghost'
+          className='-mx-2.5'
+          disabled={busy}
+          onClick={() => onWaive(false)}
+        >
           {t('onboarding.restore')}
         </Button>
       </li>

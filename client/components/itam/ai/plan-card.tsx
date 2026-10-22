@@ -87,8 +87,11 @@ export function PlanDecision({
   const left = plan.steps.filter((step) => !skipped.has(step.position)).length;
   return (
     <>
+      {/* A text button among others: its padding taken back, so its word
+          sits the row's gap from its neighbours (2026-10-22). */}
       <Button
         variant='ghost'
+        className='-mx-2.5'
         disabled={decide.isPending}
         onClick={() => decide.mutate('void')}
       >

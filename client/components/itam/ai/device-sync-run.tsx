@@ -149,6 +149,8 @@ export function DeviceSyncRunCard({
           {!decided ? (
             <Button
               variant='ghost'
+              // Its padding taken back, as the plan's 暂不处理 (2026-10-22).
+              className='-mx-2.5'
               disabled={dismiss.isPending}
               onClick={() =>
                 dismiss.mutate(run, { onSuccess: () => onDecided?.() })
@@ -374,6 +376,8 @@ function FollowUpReviewCard({
           ) : !decided ? (
             <Button
               variant='ghost'
+              // Its padding taken back, as the plan's 暂不处理 (2026-10-22).
+              className='-mx-2.5'
               disabled={dismiss.isPending}
               onClick={() => dismiss.mutate(run)}
             >

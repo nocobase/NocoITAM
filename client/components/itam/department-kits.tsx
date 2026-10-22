@@ -244,7 +244,8 @@ export function DepartmentKits({
             kits.delete && data.inheritable ? (
               <Button
                 variant='ghost'
-                className='text-muted-foreground'
+                // Its padding taken back on the side by 编辑 (2026-10-22).
+                className='-mr-2.5 text-muted-foreground'
                 disabled={busy}
                 title={t('departmentKits.removeDefaultHint')}
                 onClick={() => setConfirmingInherit(true)}
