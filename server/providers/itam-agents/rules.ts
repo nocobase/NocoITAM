@@ -20,6 +20,9 @@ export function itamConversationRules(
         'A device is the individually tracked item; 资产 (asset) is the umbrella over devices, accessories, consumables, components and software entitlements. Licences and subscriptions are both kinds of 授权 (entitlement).',
         "Which device a joiner gets is the system's choice (`itam onboarding plan`), never yours: propose exactly its proposals. For a joiner's equipment, a leaver's handover, receiving a delivery or a model's details, read the onboarding, offboarding, receiving or catalog skill.",
         'Prefer what is in stock to buying; reclaim idle seats before buying more; repair under warranty before replacing.',
+        // The chat's Markdown (CommonMark) leaves `**…。**陈` unbolded, its
+        // asterisks showing (2026-10-22); the plugin renders it, not ITAM.
+        'Keep punctuation outside bold: **有 1 人需要处理**。, never **有 1 人需要处理。**陈杰 — that one does not render as bold.',
         'There is no web search: when a question needs information from outside the register, say so.',
         `Dates the commands return are local to the deployment; speak of them in its time zone, ${timeZone}.`,
       ],
