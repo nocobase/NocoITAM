@@ -7,6 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
 import { errorMessage } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
@@ -318,34 +323,36 @@ export function DepartmentKits({
                         {t('departmentKits.useCustom')}
                       </label>
                       {departments.update ? (
-                        // The reason on hover sits on a wrapper (2026-10-22): a
-                        // disabled button takes no pointer, so its own title
-                        // never showed.
-                        <span
-                          className='inline-flex'
-                          title={
-                            position.holders > 0
+                        // The reason in a tooltip on a wrapper (2026-10-22): a
+                        // disabled button takes no pointer, and the browser's
+                        // own title did not show in every browser.
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={<span className='inline-flex' />}
+                          >
+                            <Button
+                              size='icon'
+                              variant='ghost'
+                              aria-label={t('departmentKits.removePosition')}
+                              disabled={busy || position.holders > 0}
+                              onClick={() =>
+                                setRemoving({
+                                  name: position.name,
+                                  hasKit: Boolean(position.kit),
+                                })
+                              }
+                            >
+                              <Trash2 />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {position.holders > 0
                               ? t('departmentKits.positionInUse', {
                                   count: position.holders,
                                 })
-                              : t('departmentKits.removePosition')
-                          }
-                        >
-                          <Button
-                            size='icon'
-                            variant='ghost'
-                            aria-label={t('departmentKits.removePosition')}
-                            disabled={busy || position.holders > 0}
-                            onClick={() =>
-                              setRemoving({
-                                name: position.name,
-                                hasKit: Boolean(position.kit),
-                              })
-                            }
-                          >
-                            <Trash2 />
-                          </Button>
-                        </span>
+                              : t('departmentKits.removePosition')}
+                          </TooltipContent>
+                        </Tooltip>
                       ) : null}
                     </div>
                     {position.kit ? (
@@ -355,6 +362,9 @@ export function DepartmentKits({
                           position: position.name,
                         })}
                         value={position.kit.items}
+                        // Set apart from the positions list it sits in
+                        // (2026-10-22).
+                        className='bg-muted/60'
                         editable={Boolean(kits.update)}
                         onSave={(items) =>
                           saveItems(String(position.kit?.id), items)

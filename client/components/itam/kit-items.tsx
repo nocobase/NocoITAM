@@ -21,6 +21,7 @@ import {
 import { masterDataPath, useItamList } from '@/lib/itam/api';
 import { text } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
+import { cn } from '@/lib/utils';
 
 import { AssetTypeBadge } from './asset-type-badge.js';
 import { ReferenceSelect } from './reference-select.js';
@@ -112,6 +113,7 @@ export function KitItems({
   onSave,
   title,
   actions,
+  className,
 }: {
   readonly value: unknown;
   readonly editable: boolean;
@@ -120,6 +122,7 @@ export function KitItems({
   readonly title?: ReactNode;
   /** More of the heading's buttons, before 编辑. */
   readonly actions?: ReactNode;
+  readonly className?: string;
 }): ReactElement {
   const { t } = useTranslation();
   const stored = parseKitItems(value);
@@ -166,7 +169,7 @@ export function KitItems({
   };
 
   return (
-    <Card className='py-0'>
+    <Card className={cn('py-0', className)}>
       <CardContent className='space-y-3 p-4'>
         <div className='flex min-h-9 items-center justify-between gap-3 border-b border-border/60 pb-2'>
           <h2 className='font-heading text-sm font-semibold'>
