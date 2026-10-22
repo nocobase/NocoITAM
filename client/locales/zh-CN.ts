@@ -2012,7 +2012,7 @@ const zhCN: AppResource = {
       idleDevice: '库存中超过 {{idleDays}} 天',
       auditOverdue: '超过 {{auditDays}} 天未盘点',
       departmentMismatch: '所属部门与使用人不一致',
-      entitlementOverAllocated: '超量使用',
+      entitlementOverAllocated: '授权超量使用',
       lowAccessories: '低于水位的配件',
       lowConsumables: '低于水位的耗材',
       lowComponents: '低于水位的组件',
