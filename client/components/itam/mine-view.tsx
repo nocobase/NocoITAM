@@ -1,7 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import type { ReactElement } from 'react';
 
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SegmentedControl } from './segmented-control.js';
 
 export interface ViewsProps {
   readonly filter: Readonly<Record<string, string | undefined>>;
@@ -22,16 +22,16 @@ export function MineView({ filter, onFilter }: ViewsProps): ReactElement {
   const { t } = useTranslation();
   const mine = filter.view === 'mine' || filter.view === 'myApproval';
   return (
-    <Tabs
+    <SegmentedControl
       value={mine ? 'mine' : 'all'}
-      onValueChange={(value) =>
+      onChange={(value) =>
         onFilter({ view: value === 'mine' ? 'mine' : undefined })
       }
-    >
-      <TabsList>
-        <TabsTrigger value='all'>{t('common.all')}</TabsTrigger>
-        <TabsTrigger value='mine'>{t('common.mine')}</TabsTrigger>
-      </TabsList>
-    </Tabs>
+      label={t('common.mine')}
+      options={[
+        { value: 'all', label: t('common.all') },
+        { value: 'mine', label: t('common.mine') },
+      ]}
+    />
   );
 }

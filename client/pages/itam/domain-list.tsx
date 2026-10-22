@@ -20,11 +20,11 @@ import { FoundRecords } from '@/components/itam/found-records';
 import { ImportExport } from '@/components/itam/import-export';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
+import { SegmentedControl } from '@/components/itam/segmented-control';
 import { RecordThumbnail } from '@/components/itam/record-image';
 import { MasterDataFilters } from '@/components/itam/master-data-filters';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { Button } from '@/components/ui/button';
-import { ButtonGroup } from '@/components/ui/button-group';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -395,26 +395,26 @@ function DomainList({
               </Button>
             ) : null}
             {boardable ? (
-              <ButtonGroup aria-label={t('common.layout')}>
-                <Button
-                  variant={layout === 'board' ? 'secondary' : 'outline'}
-                  size='icon'
-                  aria-label={t('common.boardLayout')}
-                  aria-pressed={layout === 'board'}
-                  onClick={() => setParam({ layout: undefined })}
-                >
-                  <Columns3 />
-                </Button>
-                <Button
-                  variant={layout === 'table' ? 'secondary' : 'outline'}
-                  size='icon'
-                  aria-label={t('common.tableLayout')}
-                  aria-pressed={layout === 'table'}
-                  onClick={() => setParam({ layout: 'table' })}
-                >
-                  <List />
-                </Button>
-              </ButtonGroup>
+              // Named, as the workbench's (2026-10-22; icons alone until then).
+              <SegmentedControl
+                value={layout === 'board' ? 'board' : 'table'}
+                onChange={(next) =>
+                  setParam({ layout: next === 'board' ? undefined : 'table' })
+                }
+                label={t('common.layout')}
+                options={[
+                  {
+                    value: 'board',
+                    label: t('common.boardLayout'),
+                    icon: Columns3,
+                  },
+                  {
+                    value: 'table',
+                    label: t('common.tableLayout'),
+                    icon: List,
+                  },
+                ]}
+              />
             ) : null}
             {permissions.create ? (
               <Button onClick={() => setCreating(true)}>

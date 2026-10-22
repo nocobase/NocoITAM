@@ -22,10 +22,10 @@ import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { DifferenceTag } from '@/components/itam/difference-tag';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { Page, PageHeader } from '@/components/itam/page-header';
+import { SegmentedControl } from '@/components/itam/segmented-control';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { useWorkScope } from '@/lib/itam/work-scope';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDragPan } from '@/hooks/use-drag-pan';
 import { useItamList, useItamSettings, type ItamRecord } from '@/lib/itam/api';
@@ -120,8 +120,11 @@ export default function WorkbenchPage(): ReactElement {
         ref={barRef}
         // The switches keep the top right (2026-10-22): wrapped as one row,
         // they fell to a line of their own under the counts; now the counts
-        // wrap within their own side, every one in view.
-        className='sticky top-0 z-10 -mx-6 flex items-start justify-between gap-4 bg-background/85 px-6 py-2.5 backdrop-blur-xl'
+        // wrap within their own side, every one in view. Too narrow for
+        // both, the switches take a line above the counts rather than
+        // covering them: wrap-reverse puts the later item on top, which
+        // also turns items-end into the top edge.
+        className='sticky top-0 z-10 -mx-6 flex flex-wrap-reverse items-end justify-between gap-x-4 gap-y-2 bg-background/85 px-6 py-2.5 backdrop-blur-xl'
       >
         {loading ? <span /> : <WorkCounts cards={cards} offset={bar + 8} />}
         <div className='ml-auto flex shrink-0 items-center gap-2'>
@@ -173,29 +176,16 @@ function WorkViewToggle({
 }): ReactElement {
   const { t } = useTranslation();
   return (
-    <div
-      role='radiogroup'
-      aria-label={t('workbench.view.label')}
-      className='inline-flex rounded-lg border border-border p-0.5'
-    >
-      {WORK_VIEWS.map((option) => (
-        <Button
-          key={option}
-          role='radio'
-          aria-checked={value === option}
-          variant={value === option ? 'default' : 'ghost'}
-          className='h-7 px-2.5'
-          onClick={() => onChange(option)}
-        >
-          {option === 'board' ? (
-            <Columns3 data-icon='inline-start' />
-          ) : (
-            <List data-icon='inline-start' />
-          )}
-          {t(`workbench.view.${option}`)}
-        </Button>
-      ))}
-    </div>
+    <SegmentedControl
+      value={value}
+      onChange={onChange}
+      label={t('workbench.view.label')}
+      options={WORK_VIEWS.map((option) => ({
+        value: option,
+        label: t(`workbench.view.${option}`),
+        icon: option === 'board' ? Columns3 : List,
+      }))}
+    />
   );
 }
 
@@ -216,7 +206,7 @@ function WorkCounts({
   // Each a small capsule (2026-10-17): the name, then its count in the pill
   // the columns' headings wear, so the line reads as the columns it leads to.
   return (
-    <nav className='flex min-w-0 flex-wrap items-center gap-1.5'>
+    <nav className='flex min-w-0 flex-1 basis-80 flex-wrap items-center gap-1.5'>
       {waiting.map((card) => (
         <button
           key={card.key}
@@ -758,11 +748,13 @@ function LeaverCard({
                 )}
               </Badge>
             ) : null}
-            <span className='max-w-full shrink-0 truncate text-sm font-semibold'>
+            {/* A long name truncates beside the tag rather than running out
+                of the card; the job shrinks far sooner, so it goes first. */}
+            <span className='min-w-0 truncate text-sm font-semibold'>
               {record.title}
             </span>
             {record.subtitle ? (
-              <span className='min-w-0 truncate text-xs text-muted-foreground'>
+              <span className='min-w-0 shrink-[100] truncate text-xs text-muted-foreground'>
                 {record.subtitle}
               </span>
             ) : null}
