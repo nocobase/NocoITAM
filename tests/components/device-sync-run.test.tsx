@@ -418,3 +418,37 @@ it('shows the reader’s waiting follow-ups as one card, decided at once', () =>
   fireEvent.click(screen.getByRole('button', { name: 'ai.plans.decline' }));
   expect(state.decide).toHaveBeenCalledWith('void');
 });
+
+// Decided here, a card stays folded until a newer follow-up of the same
+// subject comes (2026-10-22): asking again left it under the new one.
+it('drops a card decided here once a newer follow-up comes', () => {
+  state.plan = null;
+  state.inbox = { open: [run({ id: 'old' })], handled: [] };
+  const view = render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  state.inbox = {
+    open: [],
+    handled: [run({ id: 'old', status: 'accepted' })],
+  };
+  view.rerender(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText(/deviceSyncRun\.accepted/)).toBeInTheDocument();
+  state.inbox = {
+    open: [
+      run({ id: 'new', createdAt: new Date(Date.now() + 1000).toISOString() }),
+    ],
+    handled: [run({ id: 'old', status: 'accepted' })],
+  };
+  view.rerender(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.queryByText(/deviceSyncRun\.accepted/)).toBeNull();
+});

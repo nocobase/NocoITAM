@@ -611,11 +611,19 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
   // plan nobody should carry out any more.
   const others = useOtherFollowUps();
   const hasOthers = !focus && (others.data?.length ?? 0) > 0;
+  // One decided here stays, folded, until a newer one of the same subject
+  // comes (2026-10-22): asking again left the old card under the new one.
+  const newer = (run: DeviceSyncRun) =>
+    runs.some(
+      (other) =>
+        other.subjectId === run.subjectId && other.createdAt > run.createdAt,
+    );
   const visible = runs.filter(
     (run) =>
       isOpenRun(run) ||
       (shown.includes(run.id) &&
-        (run.status === 'accepted' || run.status === 'dismissed')),
+        (run.status === 'accepted' || run.status === 'dismissed') &&
+        !newer(run)),
   );
   if (!visible.length && !hasOthers) return null;
   // Waiting or still being worked out: one card for them all (2026-10-21),
