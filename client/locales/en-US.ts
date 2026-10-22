@@ -2051,7 +2051,7 @@ const messages = {
       awaitingReceipt: 'Orders awaiting receipt',
       pendingDisposalExecution: 'Disposals in progress',
       activeRepairs: 'In repair',
-      activeAudits: 'Audits in progress',
+      activeAudits: 'Auditing',
       loanOverdueDays_one: '{{count}} day overdue',
       loanOverdueDays_other: '{{count}} days overdue',
       loansDueToday: 'Loans overdue',
