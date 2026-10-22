@@ -281,7 +281,11 @@ function DrawerToolbar({
   // The drawer's own location: the full page opens on the same tab.
   const location = useLocation();
   return (
-    <div className='-mb-3 flex h-12 shrink-0 items-center gap-1 px-3 pr-12'>
+    // -mb-6 takes back the page's top padding: with the line above the
+    // title up here, the title follows the row closely (2026-10-22). Above
+    // the page, whose padding it now overlaps, so its buttons stay clickable;
+    // the row itself lets clicks through to the drawer's close button.
+    <div className='pointer-events-none relative z-10 -mb-6 flex h-12 shrink-0 items-center gap-1 px-3 pr-12 *:pointer-events-auto'>
       {/* 返回 at the far left, where a way back is looked for; the drawer's
           own controls stay at the right beside its close button. */}
       {canGoBack ? (
