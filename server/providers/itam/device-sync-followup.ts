@@ -261,6 +261,12 @@ export interface DeviceSyncFollowUp {
    * records' suggestions are left out: an asset manager has their own.
    */
   others(reader: string): Promise<readonly OtherFollowUp[]>;
+  /**
+   * The reader's follow-ups carried out with work left by hand
+   * (2026-10-22): each the latest of its part, by how many of its items
+   * MDM 核对 still lists. 收件箱 keeps them waiting, and counts them.
+   */
+  leftToDo(reader: string): Promise<ReadonlyMap<string, number>>;
   runEntry(runId: string, signal?: AbortSignal): Promise<void>;
   /** A plan decided on its card: the run that proposed it goes with it. */
   planDecided(outcome: PlanOutcome): Promise<void>;
@@ -606,6 +612,29 @@ export function createDeviceSyncFollowUp(dependencies: {
         });
       }
       return result;
+    },
+
+    async leftToDo(reader) {
+      const latest = new Map<string, AgentRun>();
+      for (const run of await runs().list(AGENT, {
+        since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
+        limit: 200,
+      }))
+        if (run.deciderId === reader && !latest.has(run.subjectId))
+          latest.set(run.subjectId, run);
+      const done = [...latest.values()].filter(
+        (run) => run.status === 'accepted',
+      );
+      const left = new Map<string, number>();
+      if (!done.length) return left;
+      const listed = await listedNow();
+      for (const run of done) {
+        const count = ((run.result?.items ?? []) as FollowUpItem[]).filter(
+          (item) => listed.has(`${item.subject}|${item.kind}`),
+        ).length;
+        if (count) left.set(run.id, count);
+      }
+      return left;
     },
 
     runEntry: (runId, signal) => work(runId, askModel, signal),

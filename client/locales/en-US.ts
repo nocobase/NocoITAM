@@ -3834,6 +3834,7 @@ const messages = {
     rerun: 'Run again',
     setAside: 'Not now',
     accepted: 'Carried out',
+    notesLeft: 'Left to handle by hand: {{count}}',
     notes: 'For a person to handle',
     openReview: 'Open MDM 核对',
     failedHintHere:

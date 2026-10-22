@@ -12,6 +12,7 @@ import { deviceReviewServiceToken } from '../../server/providers/itam/device-rev
 import { deviceSyncFollowUpToken } from '../../server/providers/itam/device-sync-followup.js';
 import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.js';
 import { planServiceToken } from '../../server/providers/itam/plans.js';
+import { agentRoutes } from '../../server/routes/itam/agents.js';
 import { deviceSyncRoutes } from '../../server/routes/itam/device-sync.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
@@ -122,7 +123,12 @@ describe('MDM follow-up', () => {
     model.decide = () => null;
     managers = ['ann'];
     app = await createTestApp({ seeds: true });
-    for (const routes of [masterDataRoutes, deviceRoutes, deviceSyncRoutes])
+    for (const routes of [
+      masterDataRoutes,
+      deviceRoutes,
+      deviceSyncRoutes,
+      agentRoutes,
+    ])
       await app.mount(routes);
     // The asset manager set's holders, as the authorization plugin lists them.
     Object.assign(app.container.resolve(authorizationToken), {
@@ -574,6 +580,21 @@ describe('MDM follow-up', () => {
       steps: [],
     });
     expect((anns.data[0]!.notes as string[]).length).toBeGreaterThan(0);
+    // Mia's 收件箱 keeps it waiting, and counts it (2026-10-22).
+    const inbox = (await (
+      await app.request('/api/itam/inbox', { ...mia })
+    ).json()) as { data: { open: Record<string, unknown>[] } };
+    const waiting = inbox.data.open.find((run) => run.id === mine.id);
+    expect(waiting).toMatchObject({ status: 'accepted' });
+    expect(waiting!.leftToDo).toBeGreaterThan(0);
+    const count = (await (
+      await app.request('/api/itam/inbox/count', { ...mia })
+    ).json()) as { data: { waiting: number } };
+    expect(count.data.waiting).toBe(
+      inbox.data.open.filter(
+        (run) => run.status === 'pending' || Number(run.leftToDo) > 0,
+      ).length,
+    );
   });
 
   it('runs only while switched on', async () => {

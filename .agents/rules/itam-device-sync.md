@@ -390,7 +390,11 @@ tab)`); each card's 重新运行 runs its part and tab. 收件箱 lists one entr
   and its time: carried out with notes left, open on them; otherwise
   folded. The other asset managers read it the same way under 其他负责人的
   跟进 (`others()`), with what a set-aside plan would have done. One just
-  carried out on the page stays, folded, till the page is left. 收件箱 shows MDM 核对 itself beside an MDM
+  carried out on the page stays, folded, till the page is left. 收件箱
+  keeps one carried out waiting, and counts it, while any of its items is
+  still listed (`leftToDo()`, the inbox routes' `leftToDo`; its line says
+  how many are left by hand), and shows the picked follow-up only in the
+  page's 等你决定, however it ended — no card of its own above the page. 收件箱 shows MDM 核对 itself beside an MDM
   跟进 (`PagePane`), as it shows a request beside its review, with that run
   alone in 等你决定 (`FollowUpFocusContext`). Its title says whose it is —
   你负责的设备 (`owner:`) or 资产管理员 (`shared:`), `followUpTitle` — and a

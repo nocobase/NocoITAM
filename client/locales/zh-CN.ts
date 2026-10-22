@@ -3628,6 +3628,7 @@ const zhCN: AppResource = {
     rerun: '重新运行',
     setAside: '暂不处理',
     accepted: '已按方案处理',
+    notesLeft: '还有 {{count}} 项需人工处理',
     notes: '需人工处理',
     openReview: '去 MDM 核对',
     failedHintHere: '这次没整理出来，可以点右上角的“MDM 差异跟进”再试一次。',

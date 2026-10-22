@@ -4,7 +4,6 @@ import { lazy, useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
 import { ApprovalReviewCard } from '@/components/itam/ai/approval-review';
-import { DeviceSyncRunCard } from '@/components/itam/ai/device-sync-run';
 import {
   FollowUpFocusContext,
   followUpPlace,
@@ -108,10 +107,12 @@ function reviewsCategory(label: string): InboxCollectionCategory {
 // MDM 核对, shown beside an MDM 跟进: loaded when one is opened.
 const DeviceSyncReviewPage = lazy(() => import('./device-sync.js'));
 
+// An MDM 跟进 carried out with items left by hand waits still (2026-10-22).
 const isOpen = (run: AgentRun): boolean =>
   run.status === 'pending' ||
   run.status === 'running' ||
-  run.status === 'failed';
+  run.status === 'failed' ||
+  (run.leftToDo ?? 0) > 0;
 
 function useReviewsCollection({
   filter,
@@ -165,7 +166,9 @@ function useReviewsCollection({
     count: items.length,
     loaded: !inbox.isLoading,
     // What waits on the reader, counted on the AI 建议 tab.
-    waiting: items.filter((run) => run.status === 'pending').length,
+    waiting: items.filter(
+      (run) => run.status === 'pending' || (run.leftToDo ?? 0) > 0,
+    ).length,
     group: list,
     list,
   };
@@ -316,6 +319,8 @@ function titleOf(run: AgentRun, t: Translate): string {
 function lineOf(run: AgentRun, t: Translate): string {
   if (run.agent === 'deviceSync') {
     if (run.status === 'running') return t('deviceSyncRun.working');
+    if (run.leftToDo)
+      return t('deviceSyncRun.notesLeft', { count: run.leftToDo });
     if (run.status === 'accepted')
       return t(
         run.decision === 'settled'
@@ -376,16 +381,11 @@ function ReviewDetail({
       </div>
     );
   // MDM 核对 itself (2026-10-17), as a review shows its request: the page's
-  // 等你决定 carries the suggestion while it is open. One already handled
-  // is no longer on the page, so its card, folded, sits above it.
+  // 等你决定 carries the picked suggestion however it ended (2026-10-22;
+  // a handled one had its own card above the page, saying it twice).
   if (run.agent === 'deviceSync')
     return (
       <div className='min-w-0'>
-        {isOpen(run) ? null : (
-          <div className='px-6 pt-6'>
-            <DeviceSyncRunCard key={run.id} run={run} />
-          </div>
-        )}
         {/* The page's 等你决定 shows the picked run alone; 打开 leads to
             the page itself (2026-10-21). */}
         <FollowUpFocusContext.Provider value={run.id}>

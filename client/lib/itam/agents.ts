@@ -103,6 +103,11 @@ interface RunBase {
   readonly updatedAt: string;
   /** The request it is about, as its approval names it. */
   readonly title: string | null;
+  /**
+   * An MDM 跟进 carried out: how many of its items MDM 核对 still lists
+   * (2026-10-22). Above nothing, 收件箱 keeps it waiting.
+   */
+  readonly leftToDo?: number;
 }
 
 export interface ApprovalReviewRun extends RunBase {

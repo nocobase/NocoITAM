@@ -248,18 +248,29 @@ export const agentRoutes: AppApiRouteContribution<Application> =
         summary: '待我决定',
         operationId: 'itamInbox',
         description:
-          'The runs the reader decides: waiting, running and failed first, then those handled in the last 30 days.',
+          'The runs the reader decides: waiting, running and failed first — with an MDM follow-up carried out while items it noted are still listed (`leftToDo`) — then those handled in the last 30 days.',
       }),
       async (context) => {
         try {
           const me = principalId(context);
-          const { open, handled } = await runs().inbox(me);
+          const inbox = await runs().inbox(me);
+          // An MDM 跟进 carried out with work left by hand waits still
+          // (2026-10-22), saying how many items are left.
+          const left = await container
+            .resolve(deviceSyncFollowUpToken)
+            .leftToDo(me);
+          const open = [
+            ...inbox.open,
+            ...inbox.handled.filter((run) => left.has(run.id)),
+          ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          const handled = inbox.handled.filter((run) => !left.has(run.id));
           const titles = await subjectsOf([...open, ...handled]);
+          const entry = (run: AgentRun) => ({
+            ...shown(run, me, titles),
+            leftToDo: left.get(run.id) ?? 0,
+          });
           return context.json({
-            data: {
-              open: open.map((run) => shown(run, me, titles)),
-              handled: handled.map((run) => shown(run, me, titles)),
-            },
+            data: { open: open.map(entry), handled: handled.map(entry) },
           });
         } catch (error) {
           return errorResponse(context, error);
@@ -273,12 +284,17 @@ export const agentRoutes: AppApiRouteContribution<Application> =
         tags,
         summary: 'How many wait for the reader',
         operationId: 'itamInboxCount',
-        description: "The number of runs waiting for the reader's decision.",
+        description:
+          "The number of runs waiting for the reader's decision, and MDM follow-ups carried out with work left by hand.",
       }),
       async (context) => {
         try {
+          const me = principalId(context);
+          const left = await container
+            .resolve(deviceSyncFollowUpToken)
+            .leftToDo(me);
           return context.json({
-            data: { waiting: await runs().waitingCount(principalId(context)) },
+            data: { waiting: (await runs().waitingCount(me)) + left.size },
           });
         } catch (error) {
           return errorResponse(context, error);

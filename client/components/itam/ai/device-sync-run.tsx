@@ -462,8 +462,11 @@ export function DeviceSyncFollowUpBlock({
   // (2026-10-22): its notes may be left to do, and it offers to run again.
   // One just carried out here stays till the page is left.
   const listed = useListed();
+  // Beside it in 收件箱, the picked one however it ended (2026-10-22): no
+  // card of its own above the page any more.
   const visible = runs.filter(
     (run) =>
+      Boolean(focus) ||
       isOpenRun(run) ||
       (!newer(run) &&
         (run.status === 'dismissed' || run.status === 'accepted') &&
