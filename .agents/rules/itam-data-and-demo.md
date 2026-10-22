@@ -226,7 +226,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   not one in use, whose holder would fall back into 入职准备), and the
   disposed one. Every 需要关注 rule has a case too (2026-10-22): a Latitude battery
   and the 1 TB SSD issued below their minimum, beside the mouse, and the
-  QA engineer's ThinkPad still filed under IT. Their platform ids start `demo-` (or `computer:demo-` /
+  QA engineer's ThinkPad still filed under IT. Each accessory came in
+  through an order too (2026-10-22: only the keyboards did) — the mice,
+  docks, headsets, hubs and webcams a restock received into their record,
+  each starting that much lower so it ends where it did. Their platform ids start `demo-` (or `computer:demo-` /
   `mobile:demo-`), which is how `device-demo-source.ts` knows them: with no
   connection, a platform holding demo records reads as connected (`demo`)
   and its pulls replay them, last syncs moved on by the time since the
