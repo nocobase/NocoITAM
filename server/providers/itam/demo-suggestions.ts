@@ -612,6 +612,26 @@ export async function writeDemoSuggestions(input: {
           ? `已 ${String(daysSince(synced))} 天没同步（最后 ${day(lang, synced)}），先问${user ?? '使用人'}设备还在不在用。`
           : `Not synced for ${String(daysSince(synced))} days (last ${day(lang, synced)}); ask ${user ?? 'its user'} whether it is still in use.`,
       );
+    // Lost, and online under a person (2026-10-22): found in their hands.
+    if (kind === 'statusMismatch' && difference.value === 'lost')
+      return answer(
+        'verify',
+        zh
+          ? `台账上已丢失，但 ${day(lang, synced)}还在 Intune 同步${user ? `，主用户是${user}` : ''}；确认找回后恢复为库存中${user ? `，再分配给${user}` : ''}`
+          : `Lost on the register yet syncing with Intune on ${day(lang, synced)}${user ? ` under ${user}` : ''}; once found, restore it to stock${user ? ` and assign it to ${user}` : ''}.`,
+      );
+    // In stock, and online under a person: handed out by hand.
+    if (
+      kind === 'statusMismatch' &&
+      difference.value === 'inStock' &&
+      asText(difference.personId)
+    )
+      return answer(
+        'verify',
+        zh
+          ? `台账上在库，但 ${day(lang, synced)}还在 Intune 同步，主用户是${user ?? ''}；确认后分配给${user ?? '主用户'}`
+          : `In stock on the register yet syncing with Intune on ${day(lang, synced)} under ${user ?? 'a person'}; once confirmed, assign it to them.`,
+      );
     if (kind === 'statusMismatch' && difference.critical)
       return answer(
         'escalate',
