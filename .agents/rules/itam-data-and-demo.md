@@ -169,7 +169,12 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   我负责的 is not empty: it decides one order and one disposal, owns two
   orders awaiting receipt and the two drafts (so it can try 比较报价,
   offered only to a draft's 负责人 or writer), an in-house repair and the
-  disposal to carry out, and counts in the open stocktake — the demo is written as 吴静 (`writerId`), who
+  disposal to carry out, and counts in the open stocktake. Since
+  2026-10-22 every column of 待办 → 我的 has a row: 沈雨桐 (Grace Turner,
+  `keeps` in `CREW`) left three days ago with everything still out, and the
+  laptop they hold is the importer's; the importer is the first joiner's 入职负责人; and
+  SH-LT-031 is a loaner two days overdue that it answers for. The data test
+  checks no column of its 我的 is empty — the demo is written as 吴静 (`writerId`), who
   raises the requests 孙强 decides; repairs and audits are 周宇's. `demoAccountUsernames()`
   keeps the retired `manager` / `support`, and the pinyin usernames an English
   demo had before 2026-10-06, so a reset still removes them.

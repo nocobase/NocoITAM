@@ -22,6 +22,7 @@ import {
 import { deviceConnectionsServiceToken } from '../../server/providers/itam/device-connections.js';
 import { deviceReviewServiceToken } from '../../server/providers/itam/device-review.js';
 import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.js';
+import { workbenchServiceToken } from '../../server/providers/itam/workbench.js';
 import { today } from '../../server/providers/itam/dates.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { dataRoutes } from '../../server/routes/itam/data.js';
@@ -1218,6 +1219,32 @@ describe('CSV import / export and demo data', () => {
     ).toBeGreaterThanOrEqual(3);
     // Two of them the importer's own.
     expect(checks.filter((check) => check.ownerId === 'admin')).toHaveLength(2);
+    // Under 待办 → 我的, every column has something (2026-10-22): a leaver
+    // holding the importer's laptop, a joiner they equip, a loan overdue.
+    const everything = async (collection: string, action: string) =>
+      ({
+        type: 'database',
+        collection,
+        action,
+        scope: true,
+        fields: [],
+        fieldAccess: { input: '*', output: '*' },
+      }) as never;
+    const mine = await resolve(workbenchServiceToken).myWork(
+      'admin',
+      everything,
+      { scope: 'mine' },
+    );
+    expect(mine.map((item) => item.key)).toEqual(
+      expect.arrayContaining([
+        'leaverRecovery',
+        'pendingOnboarding',
+        'loansDueToday',
+      ]),
+    );
+    expect(mine.filter((item) => !item.count).map((item) => item.key)).toEqual(
+      [],
+    );
     // And its records carry comment threads, three of which mention it.
     expect(written.length).toBeGreaterThanOrEqual(8);
     expect(written.filter((entry) => entry.actor === 'admin')).toHaveLength(1);

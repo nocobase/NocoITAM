@@ -1405,6 +1405,12 @@ interface CrewSpec {
   readonly hired: number;
   /** Days ago they left, everything handed back: a former employee. */
   readonly left?: number;
+  /**
+   * Left, but nothing handed back yet (2026-10-22): the 离职交接 to-do a
+   * fresh demo has without anybody pressing 标记离职, their laptop
+   * answering to whoever imported the demo, so 待办 → 我的 has it too.
+   */
+  readonly keeps?: boolean;
   /** Works at the Japan branch rather than on the third floor. */
   readonly japan?: boolean;
   /** Product's designers have a kit of their own (Adobe on top). */
@@ -1417,6 +1423,10 @@ interface CrewSpec {
   readonly 'en-US': readonly [string, string, string];
   readonly 'zh-CN': readonly [string, string, string];
 }
+
+/** Left with everything handed back, rather than still holding it. */
+const handedBack = (spec: CrewSpec) =>
+  spec.left !== undefined && spec.keeps !== true;
 
 /**
  * The rest of the company (2026-10-16): the demo had six employees and its
@@ -1541,6 +1551,15 @@ const CREW: readonly CrewSpec[] = [
     hired: 640,
     'en-US': ['Samuel Young', 'samuel.young', 'Frontend Engineer'],
     'zh-CN': ['袁博文', 'yuan.bowen', '前端工程师'],
+  },
+  // Left this week, everything still out: 离职交接's to-do.
+  {
+    department: 'dept-customer',
+    hired: 600,
+    left: 3,
+    keeps: true,
+    'en-US': ['Grace Turner', 'grace.turner', 'Customer Success Manager'],
+    'zh-CN': ['沈雨桐', 'shen.yutong', '客户成功经理'],
   },
   {
     department: 'dept-customer',
@@ -2289,7 +2308,7 @@ export function createDemoService(dependencies: {
         } as const;
         /** How many still here want something: what stock and seats must cover. */
         const crewCount = (wants: (spec: CrewSpec) => boolean) =>
-          CREW.filter((spec) => spec.left === undefined && wants(spec)).length;
+          CREW.filter((spec) => !handedBack(spec) && wants(spec)).length;
 
         // The staff sign-ins get a person record of their own, in IT, so the
         // equipment they are issued has somebody to be assigned to.
@@ -2831,6 +2850,7 @@ export function createDemoService(dependencies: {
                 locationId,
                 // The Japan branch buys from its Tokyo supplier (2026-10-21).
                 vendorId: spec.japan ? more.japan.id : reseller.id,
+                ...(spec.keeps && importerId ? { ownerId: importerId } : {}),
                 purchaseDate: daysFromNow(day),
                 purchasePrice: laptop.price,
                 warrantyEndDate: warrantyFrom(day, laptop.warrantyDays),
@@ -3112,9 +3132,9 @@ export function createDemoService(dependencies: {
               Math.max(dayOf(owned.purchaseDate) + 3, -spec.hired),
             );
         for (const [index, spec] of CREW.entries())
-          if (spec.left !== undefined)
+          if (handedBack(spec))
             for (const owned of crewDevices.get(index) ?? [])
-              await giveBack(owned.id, -spec.left);
+              await giveBack(owned.id, -spec.left!);
         for (const [index, spec] of CREW.entries())
           if (spec.inherits !== undefined)
             for (const owned of crewDevices.get(spec.inherits) ?? [])
@@ -3361,10 +3381,10 @@ export function createDemoService(dependencies: {
           for (const [index, spec] of CREW.entries()) {
             if (!wants(spec)) continue;
             const day = Math.max(-spec.hired + 1, stockedOn + 1);
-            if (spec.left !== undefined && day > -spec.left - 60) continue;
+            if (handedBack(spec) && day > -spec.left! - 60) continue;
             await issue(item, 'person', crew[index], 1, day);
-            if (spec.left !== undefined)
-              await takeBack(item, 'person', crew[index], -spec.left);
+            if (handedBack(spec))
+              await takeBack(item, 'person', crew[index], -spec.left!);
           }
         };
         const approver = staff.get('approver')!;
@@ -4161,10 +4181,10 @@ export function createDemoService(dependencies: {
           for (const [index, spec] of CREW.entries()) {
             if (!wants(spec)) continue;
             const day = Math.max(-spec.hired + 2, from);
-            if (spec.left !== undefined && day > -spec.left - 60) continue;
+            if (handedBack(spec) && day > -spec.left! - 60) continue;
             await seatsTo(entitlement, [crew[index]], day);
-            if (spec.left !== undefined)
-              await reclaimFrom(entitlement, crew[index], -spec.left);
+            if (handedBack(spec))
+              await reclaimFrom(entitlement, crew[index], -spec.left!);
           }
         };
         await seatsToCrew(ideLicense, -195, crewWants.intellij);
@@ -4459,7 +4479,8 @@ export function createDemoService(dependencies: {
               extra: {
                 name: `SH-LT-03${index}`,
                 warrantyEndDate: daysFromNow(1075),
-                ownerId: writerId,
+                // The second goes out on loan below, and is the importer's.
+                ownerId: index === 1 ? (importerId ?? writerId) : writerId,
               },
             },
             context,
@@ -4468,6 +4489,36 @@ export function createDemoService(dependencies: {
         const generated = await procurement.generated(String(order.id));
         for (const entry of generated)
           if (entry.type === 'device') await track('devices', { id: entry.id });
+        // A loaner out past its date that answers to whoever imported the
+        // demo (2026-10-22), so 借出逾期 has a row under 待办 → 我的 too:
+        // the other overdue loan is the leaver's to hand over.
+        const loaner = await database
+          .query()
+          .selectFrom('devices')
+          .select(['id'])
+          .where(
+            'id',
+            'in',
+            generated
+              .filter((entry) => entry.type === 'device')
+              .map((entry) => String(entry.id)),
+          )
+          .where('name', '=', 'SH-LT-031')
+          .executeTakeFirst<Row>();
+        if (loaner) {
+          await on(-12);
+          await devices.loan(
+            String(loaner.id),
+            {
+              targetType: 'person',
+              targetId: String(liuYang.id),
+              expectedReturnDate: daysFromNow(3),
+            },
+            context,
+            all('devices', 'loan'),
+          );
+          await dueOn(loaner.id, daysFromNow(-2));
+        }
 
         // A repair in progress on the expired laptop, IT support's: a repair
         // belongs to its 负责人, so the 维修中 card has something to show
@@ -6251,6 +6302,11 @@ export function createDemoService(dependencies: {
             departmentId: index === 0 ? rnd.id : productDept.id,
             locationId: floor3.id,
             hireDate: daysFromNow(index === 0 ? 5 : 9),
+            // The first is the importer's to equip (2026-10-22), so 入职准备
+            // has a joiner under 待办 → 我的; the other stays with 吴静.
+            ...(index === 0 && importerId
+              ? { onboardingOwnerId: importerId }
+              : {}),
           });
           joinerIds.push(String(joiner.id));
         }
