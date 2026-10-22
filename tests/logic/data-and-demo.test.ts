@@ -933,6 +933,18 @@ describe('CSV import / export and demo data', () => {
         unlikely.push(`${item.name}: all on one or two days`);
     }
     expect(unlikely).toEqual([]);
+    // Nobody holds two accessories of a kind (2026-10-22): 张伟 held two
+    // docks, two keyboards and two mice.
+    const held = await db
+      .selectFrom('stockHoldings')
+      .innerJoin('stockItems', 'stockItems.id', 'stockHoldings.stockItemId')
+      .select(['stockHoldings.holderId', 'stockItems.categoryId'])
+      .where('stockHoldings.holderType', '=', 'person')
+      .where('stockHoldings.quantity', '>', 0)
+      .where('stockItems.kind', '=', 'accessory')
+      .execute<{ holderId: string; categoryId: string }>();
+    const pairs = held.map((row) => `${row.holderId}:${row.categoryId}`);
+    expect(pairs.length).toBe(new Set(pairs).size);
     // The history runs over years, not one afternoon: a laptop of the 2023
     // batch was entered three years back, and nothing is dated ahead.
     const history = await db

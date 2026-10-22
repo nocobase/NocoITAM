@@ -60,6 +60,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (spares in the warehouse, shared machines placed at a location, stock
   issued and returned over the weeks after), and the demo test checks no
   model is left without.
+- Nobody holds two accessories of a kind (2026-10-22): the demo's `issue`
+  skips a person who already holds one of the same category (and the
+  matching `takeBack`), and a catalogue accessory goes to the first two
+  people without one; the demo test checks it. 张伟 held two docks, two
+  keyboards and two mice before.
 - Demo data is generated through the services, never by raw inserts, and
   every created id is tracked in `demoRecords`; `demo.clear()` deletes only
   what is tracked. Anything the generator creates must be deletable in the

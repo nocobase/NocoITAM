@@ -3273,6 +3273,28 @@ export function createDemoService(dependencies: {
           );
         };
         type Holder = 'person' | 'location' | 'device';
+        // What a person already holds of a kind (2026-10-22): nobody gets a
+        // second dock, keyboard or mouse — 张伟 held two of each — so an
+        // issue to somebody who has one of the same category is skipped,
+        // and so is its return.
+        const skipped = new Set<string>();
+        const holdsSameKind = async (item: Row, holder: Row) => {
+          const held = await database
+            .query()
+            .selectFrom('stockHoldings')
+            .innerJoin(
+              'stockItems',
+              'stockItems.id',
+              'stockHoldings.stockItemId',
+            )
+            .select('stockHoldings.id')
+            .where('stockHoldings.holderType', '=', 'person')
+            .where('stockHoldings.holderId', '=', String(holder.id))
+            .where('stockHoldings.quantity', '>', 0)
+            .where('stockItems.categoryId', '=', String(item.categoryId))
+            .executeTakeFirst();
+          return Boolean(held);
+        };
         const issue = async (
           item: Row,
           holderType: Holder,
@@ -3280,6 +3302,14 @@ export function createDemoService(dependencies: {
           quantity: number,
           day: number,
         ) => {
+          if (
+            holderType === 'person' &&
+            item.kind === 'accessory' &&
+            (await holdsSameKind(item, holder))
+          ) {
+            skipped.add(`${String(item.id)}:${String(holder.id)}`);
+            return;
+          }
           await on(day);
           await stock.issue(
             String(item.id),
@@ -3294,6 +3324,7 @@ export function createDemoService(dependencies: {
           holder: Row,
           day: number,
         ) => {
+          if (skipped.has(`${String(item.id)}:${String(holder.id)}`)) return;
           await on(day);
           await stock.takeBack(
             String(item.id),
@@ -3938,10 +3969,26 @@ export function createDemoService(dependencies: {
             );
             // Used since, as all stock is: two went out, one came back. A
             // component goes into a desktop, an accessory to a person.
+            // An accessory to the first two without one of its kind
+            // (2026-10-22): always 李娜 and 张伟 until then, each holding two
+            // docks, keyboards and mice.
+            const free: Row[] = [];
+            if (assets.stock.kind !== 'component')
+              for (const person of [
+                liNa,
+                zhangWei,
+                liuYang,
+                wangFang,
+                zhaoMin,
+                ...crew.filter((_, index) => CREW[index]?.left === undefined),
+              ]) {
+                if (free.length === 2) break;
+                if (!(await holdsSameKind(item, person))) free.push(person);
+              }
             const [holderType, firstHolder, secondHolder]: [Holder, Row, Row] =
               assets.stock.kind === 'component'
                 ? ['device', deskPc, expiredLaptop]
-                : ['person', liNa, zhangWei];
+                : ['person', free[0] ?? liNa, free[1] ?? zhangWei];
             await issue(item, holderType, firstHolder, 1, bought + 5);
             await issue(item, holderType, secondHolder, 1, bought + 30);
             await takeBack(item, holderType, firstHolder, bought + 60);
