@@ -1091,6 +1091,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
       'Meeting room computer run by Administration; not on the IT register',
     syncContractor: 'Li Gong (contractor)',
     syncNewcomer: 'Feng Hao',
+    syncLost: 'Not found at the stocktake',
     syncTestPhone: 'Test phone, wiped for every release; not enrolled in MDM',
     historicalOrder: 'Bought before the register; entered with it',
     itSpareOrder: 'Spare laptops for IT',
@@ -1222,6 +1223,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     syncMeetingRoom: '会议室公用电脑，由行政部管理，不入 IT 资产台账',
     syncContractor: '李工（外包）',
     syncNewcomer: '冯浩',
+    syncLost: '盘点时没找到',
     syncTestPhone: '研发测试机，每次发版都要刷机，不注册 MDM',
     historicalOrder: '上线前的采购，随台账一起录入',
     itSpareOrder: 'IT 备用笔记本',
@@ -6260,7 +6262,8 @@ export function createDemoService(dependencies: {
         // and desktops in use sync daily under their holder. Every situation
         // MDM 核对 knows is there once (2026-10-15):
         // - 信息不一致: one silent for seven weeks, one in another person's
-        //   hands, one on the shelf yet online, a disposed one still online
+        //   hands, one on the shelf yet online (and one under a person),
+        //   one marked lost yet online again, a disposed one still online
         //   (critical), and one Intune stopped reporting (a second pull
         //   leaves it out); one more syncs but is non-compliant and
         //   unencrypted, which its page shows;
@@ -6294,6 +6297,7 @@ export function createDemoService(dependencies: {
               'devices.serialNo as serialNo',
               'devices.name as name',
               'devices.status as status',
+              'devices.updatedAt as updatedAt',
               'devices.assigneeType as assigneeType',
               'devices.modelId as modelId',
               'people.email as email',
@@ -6382,6 +6386,44 @@ export function createDemoService(dependencies: {
                 lastSyncAt: syncedAgo(0),
               }),
             );
+          // On the shelf, yet syncing every day under a person (2026-10-22):
+          // handed out without the register knowing, so 分配给 that person.
+          const handedOut = onShelf[1];
+          const holder = inUse[5] ?? inUse[0];
+          if (handedOut && holder)
+            observed.push(
+              observation(handedOut, observed.length, {
+                userPrincipal: (holder.email as string | null) ?? null,
+                userName: (holder.personName as string | null) ?? null,
+                lastSyncAt: syncedAgo(0),
+              }),
+            );
+          // Missing at a stocktake six weeks ago and marked lost, online
+          // again yesterday (2026-10-22): found, so 恢复为库存中. The stock
+          // laptop most recently touched, so the one idle on the shelf
+          // (保养提醒's 闲置) stays.
+          const found = onShelf
+            .slice(2, -2)
+            .sort((a, b) =>
+              String(b.updatedAt).localeCompare(String(a.updatedAt)),
+            )[0];
+          if (found) {
+            await on(-42);
+            await devices.markLost(
+              String(found.id),
+              texts.syncLost,
+              context,
+              all('devices', 'markLost'),
+            );
+            await off();
+            observed.push(
+              observation(found, observed.length, {
+                userPrincipal: null,
+                userName: null,
+                lastSyncAt: syncedAgo(1),
+              }),
+            );
+          }
           // Disposed, yet online two days ago: a data risk, raised as critical.
           const disposed = computers.find((row) => row.status === 'disposed');
           if (disposed)
@@ -6523,11 +6565,11 @@ export function createDemoService(dependencies: {
           // The computers on the shelf or at the repairer are on Intune too
           // (2026-10-16), as a returned laptop stays enrolled, with no user and
           // a sync weeks back — long enough not to read as 状态不符. Not the
-          // one the case above uses, nor the last two on the shelf: new, and
-          // not set up yet. (A serial two devices share went on 2026-10-16:
+          // three the cases above use, nor the last two on the shelf: new,
+          // and not set up yet. (A serial two devices share went on 2026-10-16:
           // the register no longer takes the same serial twice.)
           const resting = [
-            ...onShelf.slice(1, -2),
+            ...onShelf.slice(2, -2).filter((row) => row !== found),
             ...computers.filter((row) => row.status === 'inRepair'),
           ];
           resting.forEach((row, index) =>

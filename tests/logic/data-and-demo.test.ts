@@ -705,7 +705,9 @@ describe('CSV import / export and demo data', () => {
     expect(checks.some((check) => check.critical)).toBe(true);
     // The computers on the shelf or at the repairer are on Intune too, with
     // a sync weeks back (2026-10-16): linked, yet no 状态不符 — only the
-    // shelved one syncing daily and the disposed one are.
+    // shelved ones syncing daily (one under a person, to 分配给), the one
+    // found after it was lost (恢复为库存中) and the disposed one are
+    // (2026-10-22).
     const resting = await app.container
       .resolve(databaseManagerToken)
       .query()
@@ -716,9 +718,14 @@ describe('CSV import / export and demo data', () => {
       .where('devices.status', 'in', ['inStock', 'inRepair'])
       .execute<{ id: string }>();
     expect(resting.length).toBeGreaterThan(2);
+    const mismatched = checks.filter(
+      (check) => check.kind === 'statusMismatch',
+    );
+    expect(mismatched).toHaveLength(4);
     expect(
-      checks.filter((check) => check.kind === 'statusMismatch'),
-    ).toHaveLength(2);
+      mismatched.some((check) => check.status === 'inStock' && check.personId),
+    ).toBe(true);
+    expect(mismatched.some((check) => check.status === 'lost')).toBe(true);
     // The new laptop, the newcomer's, the contractor's, the VM and the
     // desktop with a new board.
     const unregistered = await review.unregistered();
