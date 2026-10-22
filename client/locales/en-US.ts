@@ -1007,8 +1007,9 @@ const messages = {
       noShortages:
         'Nothing short: stock, orders on their way and returns cover it.',
       empty: 'No joiners waiting to be equipped.',
-      fromStock: 'Stock: {{label}}',
-      fromSeats: 'Free seat: {{label}}',
+      joiners: 'Joiners to equip',
+      onOrder: '{{count}} on order',
+      returning: '{{count}} coming back',
     },
     progress: '{{done}} of {{total}} prepared',
     shortfallTotal_one: '{{count}} item to buy',
@@ -3554,6 +3555,8 @@ const messages = {
         'Find what I am asking for: "{{text}}". If it asks for records of one kind, look them up and list them briefly with their numbers or names; otherwise answer directly and briefly.',
       reportInsight:
         'Interpret the {{report}} report with these filters: {{filters}}. Run it with itam stats, then in three to five sentences give the most important number and change first, any anomaly, then one recommendation.',
+      supplyOrder:
+        "Using the onboarding skill, draft one new-hire purchase order for what onboarding supply is short of: {{items}}. Read each of these joiners' onboarding plans first to check the quantities, ask me for the vendor, and propose it as a plan for me to confirm.",
       onboardingOrder:
         "Using the onboarding skill, draft one new-hire purchase order for what {{name}}'s onboarding kit is short of: read the onboarding plan first, list the missing items and quantities, ask me for the vendor, and propose it as a plan for me to confirm.",
       groupDifferences:

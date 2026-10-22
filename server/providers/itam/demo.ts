@@ -4237,8 +4237,10 @@ export function createDemoService(dependencies: {
         const ideLicense = await purchasedEntitlement({
           description: texts.ideOrder,
           softwareProductId: String(intellij.id),
-          // Two to spare beyond the engineers who have one (2026-10-16).
-          quantity: 5 + crewCount(crewWants.intellij),
+          // None to spare beyond the engineers who have one (2026-10-22;
+          // two until then): the R&D joiner's seat is still to buy, the
+          // shortage 入职供需 shows.
+          quantity: 3 + crewCount(crewWants.intellij),
           unitPrice: 700,
           orderedDaysAgo: 200,
           extra: {
@@ -4395,8 +4397,9 @@ export function createDemoService(dependencies: {
           all('entitlements', 'update'),
         );
         // Adobe Creative Cloud: a seat that went unused was taken back and
-        // given to the presales consultant; one is kept free for the designer
-        // joining next week.
+        // given to the presales consultant. None is free (2026-10-22): the
+        // designer joining next week has theirs from the seats on order, which
+        // 入职供需 shows as on its way.
         const adobe = await subscription(
           {
             name: texts.adobeLicense,
@@ -4404,7 +4407,7 @@ export function createDemoService(dependencies: {
               await seededIn('softwareProducts', 'sp-adobe-creative-cloud')
             ).id,
             billingModel: 'perSeat',
-            seatCount: 3 + crewCount(crewWants.adobe),
+            seatCount: 2 + crewCount(crewWants.adobe),
             billingCycle: 'year',
             unitPrice: 1080,
             currency: 'USD',
@@ -5374,7 +5377,7 @@ export function createDemoService(dependencies: {
           why: texts.headsetCancel,
         });
         // The software reseller and the lessor have business too
-        // (2026-10-21): the design team's seats, approved, and the leasing
+        // (2026-10-21): the design team's seats, placed, and the leasing
         // trial that was turned down.
         await queuedOrder({
           description: texts.softwareRenewalOrder,
@@ -5391,7 +5394,8 @@ export function createDemoService(dependencies: {
             ),
             software('subscription', figma, 5, 1440),
           ],
-          stage: 'approved',
+          // Placed, and due before the designer starts (2026-10-22).
+          stage: 'ordered',
           raisedDaysAgo: 9,
         });
         await queuedOrder({

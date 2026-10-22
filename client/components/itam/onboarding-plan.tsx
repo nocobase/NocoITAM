@@ -35,6 +35,7 @@ import {
 } from '@/lib/itam/format';
 import {
   isPrepared,
+  TARGET_ROUTES,
   useOnboardingPlan,
   type OnboardingPlan,
   type OnboardingPlanLine,
@@ -365,15 +366,6 @@ export function OnboardingPlanCard({
     </Card>
   );
 }
-
-/** Where a kit item's own record is, by what it names. */
-const TARGET_ROUTES: Readonly<
-  Record<OnboardingPlanLine['target']['type'], string>
-> = {
-  model: 'models',
-  category: 'categories',
-  softwareProduct: 'software-products',
-};
 
 function PlanLine({
   line,

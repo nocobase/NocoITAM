@@ -993,8 +993,9 @@ const zhCN: AppResource = {
       shortages: '需要采购',
       noShortages: '没有缺口：库存、在途采购和离职归还够用。',
       empty: '没有待配齐的新人。',
-      fromStock: '库存 {{label}}',
-      fromSeats: '空闲席位 {{label}}',
+      joiners: '待配齐的新人',
+      onOrder: '在途 {{count}}',
+      returning: '归还 {{count}}',
     },
     progress: '已配备 {{done}} / {{total}}',
     shortfallTotal_one: '缺 {{count}} 项需采购',
@@ -3357,6 +3358,8 @@ const zhCN: AppResource = {
         '帮我找：「{{text}}」。如果问的是某一类记录，就查出来，用编号或名称简短列出；如果问的是别的，直接简短回答。',
       reportInsight:
         '请解读报表 {{report}}，筛选条件：{{filters}}。先用 itam stats 跑出这张报表，再用三到五句话说明：最重要的数字和变化、异常，最后给一条建议。',
+      supplyOrder:
+        '请按「入职配备」技能，把入职供需里的缺口合成一张新员工配备采购单：{{items}}。先逐个读取这些人的入职配备方案核对数量，供应商问我，起草成计划由我确认。',
       onboardingOrder:
         '请按「入职配备」技能为 {{name}} 的入职配备缺口起草一张新员工配备采购单：先读取入职配备方案，列出缺的项和数量，供应商问我，起草成计划由我确认。',
       groupDifferences:

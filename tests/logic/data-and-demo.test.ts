@@ -802,6 +802,24 @@ describe('CSV import / export and demo data', () => {
       'Noah Harris',
       'Grace Lee',
     ]);
+    // 入职供需 shows each way a joiner is equipped (2026-10-22): from stock,
+    // from an order on its way (the designer's Adobe seat) and short (the
+    // engineer's IntelliJ seat, no seat spare and none on order).
+    const supply = await data<{
+      shortages: { target: { name: string }; people: { name: string }[] }[];
+      joiners: { name: string; plan: { lines: { onOrder: number }[] } }[];
+    }>(await get('workbench/onboarding-supply'));
+    expect(
+      supply.shortages.map((entry) => [
+        entry.target.name,
+        entry.people.map((person) => person.name),
+      ]),
+    ).toEqual([['IntelliJ IDEA Ultimate', ['Noah Harris']]]);
+    expect(
+      supply.joiners
+        .find((joiner) => joiner.name === 'Grace Lee')
+        ?.plan.lines.some((line) => line.onOrder > 0),
+    ).toBe(true);
 
     // One placed order carries every kind of line, so receiving it shows
     // every way goods arrive: the placed order with the most kinds of line.

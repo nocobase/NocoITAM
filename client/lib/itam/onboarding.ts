@@ -100,6 +100,15 @@ export interface OnboardingPlan {
 }
 
 /** 入职供需: every joiner still being equipped, and what is short. */
+/** Where a kit item's own record is, by what it names. */
+export const TARGET_ROUTES: Readonly<
+  Record<OnboardingPlanLine['target']['type'], string>
+> = {
+  model: 'models',
+  category: 'categories',
+  softwareProduct: 'software-products',
+};
+
 export interface OnboardingSupply {
   readonly joiners: readonly {
     readonly id: string;
