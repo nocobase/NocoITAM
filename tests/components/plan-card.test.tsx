@@ -117,3 +117,20 @@ it('ticks a step not run again, and marks one settled since', () => {
   expect(screen.getByText('handled')).toBeTruthy();
   expect(screen.queryByText('ai.plans.notRun')).toBeNull();
 });
+
+// Inside a follow-up, a step carried out says so (2026-10-22).
+it('tags a step carried out inside a follow-up', () => {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PlanCard
+        plan={{
+          ...plan,
+          status: 'executed',
+          steps: [{ ...plan.steps[0]!, status: 'done' }],
+        }}
+        bare
+      />
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText('ai.plans.stepDone')).toBeTruthy();
+});

@@ -238,6 +238,12 @@ export function PlanCard({
                   <Badge variant='secondary' className='ml-2 align-text-bottom'>
                     {t('ai.plans.notRun')}
                   </Badge>
+                ) : bare && step.status === 'done' ? (
+                  // Inside a follow-up, with no status of the plan's own to
+                  // say it (2026-10-22).
+                  <Badge variant='secondary' className='ml-2 align-text-bottom'>
+                    {t('ai.plans.stepDone')}
+                  </Badge>
                 ) : null}
               </div>
               {showParams && step.check?.fields.length ? (

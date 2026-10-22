@@ -3464,6 +3464,7 @@ const messages = {
       execute_other: 'Carry out {{count}} steps',
       decline: 'Decline',
       notRun: 'Not run',
+      stepDone: 'Done',
       showParams: 'Show parameters',
       hideParams: 'Hide parameters',
       status: {

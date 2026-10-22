@@ -3269,6 +3269,7 @@ const zhCN: AppResource = {
       execute_other: '确认执行 {{count}} 步',
       decline: '拒绝',
       notRun: '未执行',
+      stepDone: '已执行',
       showParams: '查看参数',
       hideParams: '收起参数',
       status: {
