@@ -15,8 +15,9 @@ import { useWorkCards } from './my-work.js';
 
 /**
  * The numbers beside the sidebar's 待办 and 收件箱 (2026-10-17, asked for
- * by the product owner). 待办: every to-do on the board, in the scope the
- * workbench is set to (全部 / 我负责的), kept live with it. 收件箱: what
+ * by the product owner). 待办: the reader's own to-dos (我的, 2026-10-22;
+ * it followed the board's 全部 / 我的 until then), kept live with the board.
+ * 收件箱: what
  * waits on the reader's decision and the notifications they have not read —
  * rather than the decisions alone: the
  * inbox is where notifications are read now, and a number that stayed at
@@ -29,7 +30,7 @@ export function useNavigationCounts(): {
   const api = useApiClient();
   const realtime = useService(realtimeClientToken);
   const queryClient = useQueryClient();
-  const cards = useWorkCards();
+  const cards = useWorkCards('mine');
   const decisions = useInboxCount().data ?? 0;
   // The same query, and the same live refresh, as the header's bell.
   const unread = useQuery({

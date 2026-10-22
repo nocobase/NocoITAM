@@ -4,6 +4,7 @@ import { expect, it, vi } from 'vitest';
 
 import WorkbenchPage from '../../client/pages/itam/workbench.js';
 import type { MyWorkItem } from '../../client/lib/itam/workbench.js';
+import { setWorkScope } from '../../client/lib/itam/work-scope.js';
 
 const state = vi.hoisted(() => ({
   items: [] as MyWorkItem[],
@@ -268,6 +269,8 @@ it('marks, in the team view, the approvals that wait on the reader', () => {
       { id: 'po-b', orderNo: 'PO-000002' },
     ],
   };
+  // The team view: 我的 is the default since 2026-10-22.
+  setWorkScope('all');
   show();
   const approvals = column('workbench.work.pendingApprovals');
   // One card says so: the one addressed to this reader.
@@ -287,6 +290,7 @@ it('marks, in the team view, the approvals that wait on the reader', () => {
     within(footer).getByText(LONG_NAME).closest('.truncate'),
   ).not.toBeNull();
   state.rows = {};
+  setWorkScope('mine');
 });
 
 it('leads from the device checks column to MDM 核对, even when it is empty', () => {

@@ -2,6 +2,7 @@ import { useTranslation } from '@nocobase/i18n/client';
 
 import type { DocumentKind } from './document-kinds.js';
 import { todayIso } from './format.js';
+import type { WorkScope } from './work-scope.js';
 import {
   MY_WORK_PREVIEW,
   useMyWork,
@@ -54,9 +55,9 @@ export interface WorkCard {
  * being worked on. Which records are waiting, and the merging of the two
  * kinds of approval into one card, is decided once.
  */
-export function useWorkCards(): readonly WorkCard[] {
+export function useWorkCards(scope?: WorkScope): readonly WorkCard[] {
   const { t } = useTranslation();
-  const work = useMyWork();
+  const work = useMyWork(scope);
   const items = work.data ?? [];
   const find = (key: string) => items.find((item) => item.key === key);
   const cards: WorkCard[] = [];

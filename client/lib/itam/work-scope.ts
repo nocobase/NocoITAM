@@ -1,11 +1,11 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * Whose to-dos the workbench and the inbox show: the team's (`all`, the
- * default) or only the reader's part (`mine`, 我负责的). One choice for both
- * pages and the greeting's count, so they never disagree; remembered in this
+ * Whose to-dos the workbench shows: only the reader's part (`mine`, 我的,
+ * the default since 2026-10-22) or the team's (`all`). Remembered in this
  * browser, which is a convenience — blocked storage only means it starts at
- * the team's again.
+ * the reader's again. The sidebar's number counts the reader's whatever the
+ * board is set to (`navigation-counts.ts`).
  */
 export type WorkScope = 'all' | 'mine';
 
@@ -14,9 +14,9 @@ const listeners = new Set<() => void>();
 
 function read(): WorkScope {
   try {
-    return localStorage.getItem(KEY) === 'mine' ? 'mine' : 'all';
+    return localStorage.getItem(KEY) === 'all' ? 'all' : 'mine';
   } catch {
-    return 'all';
+    return 'mine';
   }
 }
 
@@ -39,6 +39,6 @@ export function useWorkScope(): WorkScope {
       return () => listeners.delete(listener);
     },
     () => (current ??= read()),
-    () => 'all',
+    () => 'mine',
   );
 }

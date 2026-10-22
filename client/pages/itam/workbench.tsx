@@ -725,7 +725,7 @@ function LeaverCard({
     >
       {/* No avatar (2026-10-22): the tag and name lead the card. */}
       <div className='min-w-0'>
-        <div className='flex min-w-0 items-baseline gap-1.5'>
+        <div className='flex min-w-0 items-center gap-1.5'>
           {tagged ? (
             // 离职 and 入职 told apart at a glance: the one to recover
             // from, the one to equip.

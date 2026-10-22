@@ -88,12 +88,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
 - 待办 (it was 我的待办) is **one queue for the whole team** (2026-10-05):
   `GET /itam/workbench/my-work` lists everybody's records on every card,
   so work addressed to somebody away is still seen, and `?scope=mine`
-  (the 全部 / 我负责的 switch in the workbench's header,
-  `client/lib/itam/work-scope.ts`, remembered per browser) narrows each
+  (the 全部 / 我的 switch in the workbench's header,
+  `client/lib/itam/work-scope.ts`, remembered per browser; 我的 is the
+  default since 2026-10-22) narrows each
   card back to the reader's part by the rules below. A row's buttons keep
   their own rules either way — another person's approval is still only
   theirs to decide — so 待审批 (no longer 待我审批) links to every pending
-  request in the team view. The sidebar's 待办 carries the board's total, in the scope the workbench is set to, and 收件箱 the decisions waiting plus the unread notifications (`useNavigationCounts`, 2026-10-17, the product owner's request, rather than the decisions alone). The
+  request in the team view. The sidebar's 待办 carries the reader's own total (我的, 2026-10-22; it followed the board's switch until then), and 收件箱 the decisions waiting plus the unread notifications (`useNavigationCounts`, 2026-10-17, the product owner's request, rather than the decisions alone). The
   queue is **live**: every successful write through `/api/itam`
   (`server/itam-changes.ts`, an application-wide HTTP middleware
   registered in `server/app.ts`), every confirmed AI write and every
