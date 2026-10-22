@@ -246,7 +246,7 @@ it('says whom an overdue device is lent to and when it was due back', () => {
 
 const LONG_NAME = 'Maximiliana Alexandrovna Konstantinopolskaya-Wellington';
 
-it('marks, in the team view, the approvals that wait on the reader', () => {
+it('marks the approvals that wait on the reader once, with the tag the list uses', () => {
   state.items = [
     {
       key: 'pendingPurchaseApprovals',
@@ -265,27 +265,25 @@ it('marks, in the team view, the approvals that wait on the reader', () => {
         orderNo: 'PO-000001',
         ownerId: LONG_NAME,
         createdAt: '2026-10-05T21:13:00.000',
+        awaitingMe: true,
       },
       { id: 'po-b', orderNo: 'PO-000002' },
     ],
   };
-  // The team view: 我的 is the default since 2026-10-22.
   setWorkScope('all');
   show();
   const approvals = column('workbench.work.pendingApprovals');
-  // One card says so: the one addressed to this reader.
+  // One card says so, the one addressed to this reader, and only once: the
+  // 待你审批 at its foot repeated the tag (2026-10-22).
+  expect(within(approvals).getAllByText('common.awaitingMe')).toHaveLength(1);
   expect(
-    within(approvals).getAllByText('workbench.work.awaitingYou'),
-  ).toHaveLength(1);
+    within(approvals).queryByText('workbench.work.awaitingYou'),
+  ).toBeNull();
   const mine = within(approvals).getByText('PO-000001').closest('button')!;
-  const marker = within(mine).getByText('workbench.work.awaitingYou');
-  // After the time, on the bottom line, and never the part that is cut.
-  const footer = marker.closest('p')!;
-  expect(footer.textContent).toMatch(
-    /2026-10-05 21:13.*workbench\.work\.awaitingYou/,
-  );
-  expect(marker.className).toContain('shrink-0');
-  // A long name is what gives way.
+  within(mine).getByText('common.awaitingMe');
+  // A long name on the bottom line is what gives way, never the time.
+  const footer = within(mine).getByText(LONG_NAME).closest('p')!;
+  expect(footer.textContent).toMatch(/2026-10-05 21:13/);
   expect(
     within(footer).getByText(LONG_NAME).closest('.truncate'),
   ).not.toBeNull();
@@ -306,7 +304,7 @@ it('leads from the device checks column to MDM 核对, even when it is empty', (
   const checks = column('workbench.work.deviceChecks');
   expect(
     within(checks)
-      .getByRole('link', { name: 'workbench.seeAll' })
+      .getByRole('link', { name: 'workbench.seeDetails' })
       .getAttribute('href'),
   ).toBe('/device-sync');
 });

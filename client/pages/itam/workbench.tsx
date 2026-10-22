@@ -24,7 +24,6 @@ import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { SegmentedControl } from '@/components/itam/segmented-control';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
-import { useWorkScope } from '@/lib/itam/work-scope';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDragPan } from '@/hooks/use-drag-pan';
@@ -377,12 +376,14 @@ function WorkColumn({
         ) : // MDM 核对, empty column or not: the page has no menu entry,
         // and what is settled there — ignored records, the rules — is
         // not on the board.
+        // 查看详情 rather than 查看全部 (2026-10-22): the column holds counts,
+        // not a few of a longer list.
         card.key === 'deviceChecks' ? (
           <Link
             to='/device-sync'
             className='flex items-center gap-0.5 text-xs text-link underline-offset-4 hover:underline'
           >
-            {t('workbench.seeAll')}
+            {t('workbench.seeDetails')}
             <ArrowRight aria-hidden='true' className='size-3' />
           </Link>
         ) : null
@@ -537,9 +538,7 @@ function ColumnCards({
   readonly card: WorkCard;
   readonly grid?: boolean;
 }): ReactElement {
-  const { t } = useTranslation();
   const openRecord = useOpenRecord();
-  const scope = useWorkScope();
   const idsOf = (kind: DocumentKind) =>
     card.records
       .filter((record) => kindOf(card.key, record) === kind)
@@ -569,12 +568,9 @@ function ColumnCards({
           spec: card.key === 'purchasing' ? PURCHASING_CARD : board.spec,
           row,
           url: record.url,
-          // In the team's view, which approvals are this reader's to
-          // decide; under 我负责的 every one of them is, so none says so.
-          marker:
-            card.key === 'pendingApprovals' && scope === 'all' && record.mine
-              ? t('workbench.work.awaitingYou')
-              : undefined,
+          // Which approvals are this reader's to decide is the card's own
+          // 待我审批 tag (`row.awaitingMe`), as on the list: a 待你审批 at
+          // the foot as well said it twice (2026-10-22).
         }
       : null;
   });
