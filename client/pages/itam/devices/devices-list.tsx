@@ -1,6 +1,13 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { MonitorCheck, Plus } from 'lucide-react';
-import { useMemo, useState, type ReactElement } from 'react';
+import {
+  Columns3,
+  List,
+  MapPin,
+  MonitorCheck,
+  Package,
+  Plus,
+} from 'lucide-react';
+import { createElement, useMemo, useState, type ReactElement } from 'react';
 import { useNavigate, useOutlet, useSearchParams } from 'react-router';
 
 import { FieldValue } from '@/components/itam/cells';
@@ -14,6 +21,9 @@ import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { FoundRecords } from '@/components/itam/found-records';
 import { ImportExport } from '@/components/itam/import-export';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
+import { SegmentedControl } from '@/components/itam/segmented-control';
+import { createStatusBoard } from '@/components/itam/status-board';
+import { HolderIcon } from '@/components/itam/device-relation';
 import { DeviceStatusBadge } from '@/components/itam/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +36,78 @@ import type { FieldDefinition } from '@/lib/itam/fields';
 import { useReferenceNames } from '@/lib/itam/references';
 import { isTreeReference } from '@/lib/itam/tree';
 import { FOUND_IDS, FOUND_TITLE, foundIds } from '@/lib/itam/search';
+
+/**
+ * Who has a device, by name and kind's icon, on a board card: plain text,
+ * since the card itself opens the device.
+ */
+function HolderName({ row }: { readonly row: ItamRecord }): ReactElement {
+  const collection = holderCollection(text(row.assigneeType));
+  const id = text(row.assigneeId);
+  const names = useReferenceNames([{ collection, ids: [id] }]);
+  return (
+    <span className='inline-flex min-w-0 items-center gap-1.5'>
+      <HolderIcon type={text(row.assigneeType)} />
+      <span className='min-w-0 truncate'>
+        {names[collection]?.get(id) ?? '…'}
+      </span>
+    </span>
+  );
+}
+
+/** Where an unheld device is kept, by its place's own name, as plain text. */
+function PlaceName({ id }: { readonly id: string }): ReactElement {
+  const names = useReferenceNames([{ collection: 'locations', ids: [id] }]);
+  return <>{names.locations?.get(id) ?? '…'}</>;
+}
+
+/**
+ * The devices as a board by status (2026-10-22), beside the table: the
+ * states a device is in while the company has it, in the order it moves
+ * through them; retired and disposed ones stay in the table. A card is the
+ * device's name, its number, model, and who has it or where it is kept.
+ */
+const DeviceBoard = createStatusBoard({
+  path: DEVICES_PATH,
+  route: 'devices',
+  fields: DEVICE_FIELDS,
+  nameField: 'name',
+  card: {
+    meta: 'deviceNo',
+    lines: [
+      { part: 'modelId', icon: Package },
+      (record) =>
+        record.assigneeId ? createElement(HolderName, { row: record }) : null,
+      // Where it is kept only while nobody holds it: a place it is assigned
+      // to is its holder already, and said twice read as a mistake.
+      {
+        part: (record) =>
+          !record.assigneeId && record.locationId
+            ? createElement(PlaceName, { id: text(record.locationId) })
+            : null,
+        icon: MapPin,
+      },
+    ],
+    footer: ['ownerId'],
+  },
+  statuses: [
+    'inStock',
+    'inUse',
+    'onLoan',
+    'inRepair',
+    'pendingDisposal',
+    'lost',
+  ],
+  dots: {
+    inStock: 'bg-info-foreground',
+    inUse: 'bg-success-foreground',
+    onLoan: 'bg-loan-foreground',
+    inRepair: 'bg-warning-foreground',
+    pendingDisposal: 'bg-muted-foreground',
+    lost: 'bg-destructive',
+  },
+  defaultSort: 'deviceNo',
+});
 
 /**
  * 同步状态 (device sync, 2026-10-15): a filter no column holds — the server
@@ -74,6 +156,9 @@ function DevicesList(): ReactElement {
   const syncState = params.get('syncState') ?? undefined;
   // The devices Asset Steward found for a question asked on the workbench.
   const found = foundIds(params);
+  // 看板 or 列表 (2026-10-22): the table unless the board is chosen, and
+  // always for the devices Asset Steward found.
+  const board = params.get('layout') === 'board' && !found;
 
   const setParam = (updates: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params);
@@ -92,6 +177,8 @@ function DevicesList(): ReactElement {
     order: sortOrder,
     filter: { view, status, categoryId, locationId, departmentId, syncState },
     ids: found,
+    // On the board each column reads its own; this only gives the total.
+    ...(board ? { pageSize: 1 } : {}),
   });
   // Whether any management platform is connected: the 同步状态 filter and
   // the 最后同步 column are only there then.
@@ -233,12 +320,37 @@ function DevicesList(): ReactElement {
   ];
 
   return (
-    <Page>
+    <Page fill={board}>
       <PageHeader
         title={t('devices.title')}
         total={list.data?.total}
         actions={
           <>
+            {found ? null : (
+              <SegmentedControl
+                value={board ? 'board' : 'table'}
+                onChange={(next) =>
+                  setParam({
+                    layout: next === 'board' ? 'board' : undefined,
+                    page: undefined,
+                  })
+                }
+                label={t('common.layout')}
+                iconOnly
+                options={[
+                  {
+                    value: 'board',
+                    label: t('common.boardLayout'),
+                    icon: Columns3,
+                  },
+                  {
+                    value: 'table',
+                    label: t('common.tableLayout'),
+                    icon: List,
+                  },
+                ]}
+              />
+            )}
             <SearchToggle
               active={searchOpen}
               onClick={() => setSearchOpen((current) => !current)}
@@ -345,29 +457,44 @@ function DevicesList(): ReactElement {
           </button>
         </div>
       ) : null}
-      <DataTable
-        columns={tableColumns}
-        rows={list.data?.data}
-        loading={list.isFetching}
-        error={list.error}
-        sort={{ field: sortField, order: sortOrder }}
-        onSortChange={(field) =>
-          setParam({
-            sort: field,
-            order: sortField === field && sortOrder === 'asc' ? 'desc' : 'asc',
-          })
-        }
-        onRowClick={(row) => void navigate(`/devices/${row.id}`)}
-        empty={<EmptyState title={t('devices.empty')} />}
-        pagination={{
-          page,
-          pageSize,
-          total: list.data?.total ?? 0,
-          onPageChange: (next) => setParam({ page: String(next) }),
-          onPageSizeChange: (next) =>
-            setParam({ pageSize: String(next), page: undefined }),
-        }}
-      />
+      {board ? (
+        <DeviceBoard
+          filter={{
+            view,
+            status,
+            categoryId,
+            locationId,
+            departmentId,
+            syncState,
+          }}
+          q={q}
+        />
+      ) : (
+        <DataTable
+          columns={tableColumns}
+          rows={list.data?.data}
+          loading={list.isFetching}
+          error={list.error}
+          sort={{ field: sortField, order: sortOrder }}
+          onSortChange={(field) =>
+            setParam({
+              sort: field,
+              order:
+                sortField === field && sortOrder === 'asc' ? 'desc' : 'asc',
+            })
+          }
+          onRowClick={(row) => void navigate(`/devices/${row.id}`)}
+          empty={<EmptyState title={t('devices.empty')} />}
+          pagination={{
+            page,
+            pageSize,
+            total: list.data?.total ?? 0,
+            onPageChange: (next) => setParam({ page: String(next) }),
+            onPageSizeChange: (next) =>
+              setParam({ pageSize: String(next), page: undefined }),
+          }}
+        />
+      )}
 
       <DeviceCreateDialog
         open={creating}
