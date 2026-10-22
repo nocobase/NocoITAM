@@ -1423,12 +1423,6 @@ interface CrewSpec {
   readonly hired: number;
   /** Days ago they left, everything handed back: a former employee. */
   readonly left?: number;
-  /**
-   * Left, but nothing handed back yet (2026-10-22): the 离职交接 to-do a
-   * fresh demo has without anybody pressing 标记离职, their laptop
-   * answering to whoever imported the demo, so 待办 → 我的 has it too.
-   */
-  readonly keeps?: boolean;
   /** Works at the Japan branch rather than on the third floor. */
   readonly japan?: boolean;
   /** Product's designers have a kit of their own (Adobe on top). */
@@ -1441,10 +1435,6 @@ interface CrewSpec {
   readonly 'en-US': readonly [string, string, string];
   readonly 'zh-CN': readonly [string, string, string];
 }
-
-/** Left with everything handed back, rather than still holding it. */
-const handedBack = (spec: CrewSpec) =>
-  spec.left !== undefined && spec.keeps !== true;
 
 /**
  * The rest of the company (2026-10-16): the demo had six employees and its
@@ -1569,15 +1559,6 @@ const CREW: readonly CrewSpec[] = [
     hired: 640,
     'en-US': ['Samuel Young', 'samuel.young', 'Frontend Engineer'],
     'zh-CN': ['袁博文', 'yuan.bowen', '前端工程师'],
-  },
-  // Left this week, everything still out: 离职交接's to-do.
-  {
-    department: 'dept-customer',
-    hired: 600,
-    left: 3,
-    keeps: true,
-    'en-US': ['Grace Turner', 'grace.turner', 'Customer Success Manager'],
-    'zh-CN': ['沈雨桐', 'shen.yutong', '客户成功经理'],
   },
   {
     department: 'dept-customer',
@@ -2326,7 +2307,7 @@ export function createDemoService(dependencies: {
         } as const;
         /** How many still here want something: what stock and seats must cover. */
         const crewCount = (wants: (spec: CrewSpec) => boolean) =>
-          CREW.filter((spec) => !handedBack(spec) && wants(spec)).length;
+          CREW.filter((spec) => spec.left === undefined && wants(spec)).length;
 
         // The staff sign-ins get a person record of their own, in IT, so the
         // equipment they are issued has somebody to be assigned to.
@@ -2871,7 +2852,6 @@ export function createDemoService(dependencies: {
                 locationId,
                 // The Japan branch buys from its Tokyo supplier (2026-10-21).
                 vendorId: spec.japan ? more.japan.id : reseller.id,
-                ...(spec.keeps && importerId ? { ownerId: importerId } : {}),
                 purchaseDate: daysFromNow(day),
                 purchasePrice: laptop.price,
                 warrantyEndDate: warrantyFrom(day, laptop.warrantyDays),
@@ -3162,9 +3142,9 @@ export function createDemoService(dependencies: {
               Math.max(dayOf(owned.purchaseDate) + 3, -spec.hired),
             );
         for (const [index, spec] of CREW.entries())
-          if (handedBack(spec))
+          if (spec.left !== undefined)
             for (const owned of crewDevices.get(index) ?? [])
-              await giveBack(owned.id, -spec.left!);
+              await giveBack(owned.id, -spec.left);
         for (const [index, spec] of CREW.entries())
           if (spec.inherits !== undefined)
             for (const owned of crewDevices.get(spec.inherits) ?? [])
@@ -3411,10 +3391,10 @@ export function createDemoService(dependencies: {
           for (const [index, spec] of CREW.entries()) {
             if (!wants(spec)) continue;
             const day = Math.max(-spec.hired + 1, stockedOn + 1);
-            if (handedBack(spec) && day > -spec.left! - 60) continue;
+            if (spec.left !== undefined && day > -spec.left - 60) continue;
             await issue(item, 'person', crew[index], 1, day);
-            if (handedBack(spec))
-              await takeBack(item, 'person', crew[index], -spec.left!);
+            if (spec.left !== undefined)
+              await takeBack(item, 'person', crew[index], -spec.left);
           }
         };
         const approver = staff.get('approver')!;
@@ -4278,10 +4258,10 @@ export function createDemoService(dependencies: {
           for (const [index, spec] of CREW.entries()) {
             if (!wants(spec)) continue;
             const day = Math.max(-spec.hired + 2, from);
-            if (handedBack(spec) && day > -spec.left! - 60) continue;
+            if (spec.left !== undefined && day > -spec.left - 60) continue;
             await seatsTo(entitlement, [crew[index]], day);
-            if (handedBack(spec))
-              await reclaimFrom(entitlement, crew[index], -spec.left!);
+            if (spec.left !== undefined)
+              await reclaimFrom(entitlement, crew[index], -spec.left);
           }
         };
         await seatsToCrew(ideLicense, -195, crewWants.intellij);
@@ -6769,24 +6749,12 @@ export function createDemoService(dependencies: {
             ),
           );
           // After leaving (2026-10-22): 陈杰's laptop still syncs, one device
-          // 离职后仍在线 on their card; a leaver who handed nothing back yet
-          // (`keeps`) went quiet the day they left.
+          // 离职后仍在线 on their card.
           const leaverMail = asText(chenJie.email);
-          const quietSince = new Map(
-            CREW.flatMap((spec, index) =>
-              spec.keeps && spec.left !== undefined
-                ? [[asText(crew[index]?.email) ?? '', spec.left] as const]
-                : [],
-            ),
-          );
-          const afterLeaving = (device: ObservedDevice): ObservedDevice => {
-            if (leaverMail && device.userPrincipal === leaverMail)
-              return { ...device, lastSyncAt: syncedAgo(0) };
-            const left = quietSince.get(device.userPrincipal ?? '');
-            return left === undefined
-              ? device
-              : { ...device, lastSyncAt: syncedAgo(left, 9) };
-          };
+          const afterLeaving = (device: ObservedDevice): ObservedDevice =>
+            leaverMail && device.userPrincipal === leaverMail
+              ? { ...device, lastSyncAt: syncedAgo(0) }
+              : device;
           observed.splice(0, observed.length, ...observed.map(afterLeaving));
           // Two pulls: the first with every device, the second without the
           // one Intune stopped reporting, which the second marks gone.

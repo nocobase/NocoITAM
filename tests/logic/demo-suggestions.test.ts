@@ -155,14 +155,16 @@ describe('the demo’s AI suggestions', () => {
         Date.now() + 20 * 86_400_000,
       );
 
+    // Picks for the second joiner only: the first, the importer's to
+    // equip, shows the rule's picks and 挑选 to try (2026-10-22).
     const advice = await rows('onboardingRuns');
     expect(advice.map((run) => [run.trigger, run.status])).toEqual([
       ['demo', 'ready'],
-      ['demo', 'ready'],
     ]);
-    // The laptop repaired twice is passed over.
+    // The laptop due for replacement is passed over. (The one repaired
+    // twice goes to the first joiner by the rule, so is not among 林雪's.)
     expect(
-      advice.every((run) => String(run.summary).includes('SH-LT-050')),
+      advice.every((run) => String(run.summary).includes('SH-LT-053')),
     ).toBe(true);
   }, 120_000);
 
