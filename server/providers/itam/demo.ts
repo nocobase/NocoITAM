@@ -1433,19 +1433,19 @@ const CREW: readonly CrewSpec[] = [
     department: 'dept-tech',
     hired: 2350,
     'en-US': ['Henry Walsh', 'henry.walsh', 'Technical Director'],
-    'zh-CN': ['郑涛', 'zheng.tao', '技术总监'],
+    'zh-CN': ['郑海涛', 'zheng.haitao', '技术总监'],
   },
   {
     department: 'dept-finance',
     hired: 2200,
     'en-US': ['Rachel Moore', 'rachel.moore', 'Finance Manager'],
-    'zh-CN': ['何丽', 'he.li', '财务经理'],
+    'zh-CN': ['何丽娟', 'he.lijuan', '财务经理'],
   },
   {
     department: 'dept-hr',
     hired: 2000,
     'en-US': ['Megan Price', 'megan.price', 'HR Business Partner'],
-    'zh-CN': ['高婷', 'gao.ting', 'HRBP'],
+    'zh-CN': ['高雅婷', 'gao.yating', 'HRBP'],
   },
   {
     department: 'dept-admin',
@@ -1457,19 +1457,19 @@ const CREW: readonly CrewSpec[] = [
     department: 'dept-rd',
     hired: 1820,
     'en-US': ['Jacob Foster', 'jacob.foster', 'Backend Engineer'],
-    'zh-CN': ['马超', 'ma.chao', '后端工程师'],
+    'zh-CN': ['马志超', 'ma.zhichao', '后端工程师'],
   },
   {
     department: 'dept-qa',
     hired: 1700,
     'en-US': ['Andrew Collins', 'andrew.collins', 'QA Manager'],
-    'zh-CN': ['胡斌', 'hu.bin', '质量经理'],
+    'zh-CN': ['胡文斌', 'hu.wenbin', '质量经理'],
   },
   {
     department: 'dept-product',
     hired: 1450,
     'en-US': ['Nathan Reed', 'nathan.reed', 'Product Manager'],
-    'zh-CN': ['林峰', 'lin.feng', '产品经理'],
+    'zh-CN': ['林晓峰', 'lin.xiaofeng', '产品经理'],
   },
   // Left a year ago; Dylan Cooper (程亮) took over the laptop and phone.
   {
@@ -1483,7 +1483,7 @@ const CREW: readonly CrewSpec[] = [
     department: 'dept-marketing',
     hired: 1380,
     'en-US': ['Victoria Hayes', 'victoria.hayes', 'Marketing Manager'],
-    'zh-CN': ['郭静', 'guo.jing', '市场经理'],
+    'zh-CN': ['郭静怡', 'guo.jingyi', '市场经理'],
   },
   {
     department: 'dept-sales',
@@ -1495,7 +1495,7 @@ const CREW: readonly CrewSpec[] = [
     department: 'dept-customer',
     hired: 1150,
     'en-US': ['Amelia Clarke', 'amelia.clarke', 'Customer Success Manager'],
-    'zh-CN': ['宋佳', 'song.jia', '客户成功经理'],
+    'zh-CN': ['宋佳琪', 'song.jiaqi', '客户成功经理'],
   },
   // Left in the spring; Logan Hall (叶帆) took over the laptop and monitor.
   {
@@ -1509,13 +1509,13 @@ const CREW: readonly CrewSpec[] = [
     department: 'dept-rd',
     hired: 980,
     'en-US': ['Isaac Rivera', 'isaac.rivera', 'Mobile Engineer'],
-    'zh-CN': ['许晨', 'xu.chen', '移动端工程师'],
+    'zh-CN': ['许晨阳', 'xu.chenyang', '移动端工程师'],
   },
   {
     department: 'dept-finance',
     hired: 900,
     'en-US': ['Emma Lewis', 'emma.lewis', 'Accountant'],
-    'zh-CN': ['冯悦', 'feng.yue', '会计'],
+    'zh-CN': ['冯思悦', 'feng.siyue', '会计'],
   },
   {
     department: 'dept-product',
@@ -1528,7 +1528,7 @@ const CREW: readonly CrewSpec[] = [
     department: 'dept-sales',
     hired: 760,
     'en-US': ['Caleb Russell', 'caleb.russell', 'Presales Consultant'],
-    'zh-CN': ['彭飞', 'peng.fei', '售前顾问'],
+    'zh-CN': ['彭鹏飞', 'peng.pengfei', '售前顾问'],
   },
   {
     department: 'dept-marketing',
@@ -1540,7 +1540,7 @@ const CREW: readonly CrewSpec[] = [
     department: 'dept-rd',
     hired: 640,
     'en-US': ['Samuel Young', 'samuel.young', 'Frontend Engineer'],
-    'zh-CN': ['袁博', 'yuan.bo', '前端工程师'],
+    'zh-CN': ['袁博文', 'yuan.bowen', '前端工程师'],
   },
   {
     department: 'dept-customer',
@@ -1553,7 +1553,7 @@ const CREW: readonly CrewSpec[] = [
     department: 'dept-product',
     hired: 520,
     'en-US': ['Ava Robinson', 'ava.robinson', 'Product Manager'],
-    'zh-CN': ['蒋欣', 'jiang.xin', '产品经理'],
+    'zh-CN': ['蒋欣怡', 'jiang.xinyi', '产品经理'],
   },
   {
     department: 'dept-qa',
@@ -1566,7 +1566,7 @@ const CREW: readonly CrewSpec[] = [
     hired: 370,
     inherits: 7,
     'en-US': ['Dylan Cooper', 'dylan.cooper', 'Sales Representative'],
-    'zh-CN': ['程亮', 'cheng.liang', '销售代表'],
+    'zh-CN': ['程明亮', 'cheng.mingliang', '销售代表'],
   },
   {
     department: 'dept-hr',
@@ -1591,7 +1591,7 @@ const CREW: readonly CrewSpec[] = [
     hired: 150,
     inherits: 11,
     'en-US': ['Logan Hall', 'logan.hall', 'Mobile Engineer'],
-    'zh-CN': ['叶帆', 'ye.fan', '移动端工程师'],
+    'zh-CN': ['叶一帆', 'ye.yifan', '移动端工程师'],
   },
   {
     department: 'dept-sales',
@@ -1610,7 +1610,7 @@ const CREW: readonly CrewSpec[] = [
     department: 'dept-customer',
     hired: 40,
     'en-US': ['Ivy Coleman', 'ivy.coleman', 'Support Specialist'],
-    'zh-CN': ['钟慧', 'zhong.hui', '技术支持'],
+    'zh-CN': ['钟慧敏', 'zhong.huimin', '技术支持'],
   },
 ];
 
@@ -2303,11 +2303,12 @@ export function createDemoService(dependencies: {
             spec.key,
             await md('people', {
               name: spec.name,
-              // EMP-001 belongs to a seeded person, and EMP-1xx to the demo
-              // employees above.
-              employeeNo: `EMP-${String(index + 201).padStart(3, '0')}`,
+              // Right after the seeded EMP-001, so the people who sign in
+              // lead the people list (2026-10-22; EMP-2xx until then, on
+              // its second page). EMP-1xx are the demo employees above.
+              employeeNo: `EMP-${String(index + 2).padStart(3, '0')}`,
               email: spec.email,
-              phone: `138 0013 0${String(index + 201)}`,
+              phone: `138 0013 0${String(index + 2).padStart(3, '0')}`,
               position: spec.position,
               departmentId: itDepartment.id,
               locationId: floor3.id,
