@@ -1920,7 +1920,7 @@ const zhCN: AppResource = {
     title: '待办',
     description: '有什么、在谁那里、需要关注什么',
     myWork: '待办',
-    scope: { label: '显示谁的待办', all: '全部', mine: '我负责的' },
+    scope: { label: '显示谁的待办', all: '全部', mine: '我的' },
     seeAll: '查看全部',
     nothingPending: '暂无待办',
     attentionLeavers: '（离职 {{count}}）',

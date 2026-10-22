@@ -118,7 +118,10 @@ export default function WorkbenchPage(): ReactElement {
           is still said. */}
       <div
         ref={barRef}
-        className='sticky top-0 z-10 -mx-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-background/85 px-6 py-2.5 backdrop-blur-xl'
+        // One row (2026-10-22): wrapped, the switches fell to a line of
+        // their own under the counts; now the counts scroll sideways where
+        // they do not fit, and the switches keep the right end.
+        className='sticky top-0 z-10 -mx-6 flex items-center justify-between gap-4 bg-background/85 px-6 py-2.5 backdrop-blur-xl'
       >
         {loading ? <span /> : <WorkCounts cards={cards} offset={bar + 8} />}
         <div className='ml-auto flex shrink-0 items-center gap-2'>
@@ -213,12 +216,13 @@ function WorkCounts({
   // Each a small capsule (2026-10-17): the name, then its count in the pill
   // the columns' headings wear, so the line reads as the columns it leads to.
   return (
-    <nav className='flex flex-wrap items-center gap-1.5'>
+    // A fade at the right end says more scroll in when they do not fit.
+    <nav className='-my-1 flex min-w-0 items-center gap-1.5 overflow-x-auto py-1 pr-6 [mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)] [scrollbar-width:none]'>
       {waiting.map((card) => (
         <button
           key={card.key}
           type='button'
-          className='flex h-7 items-center gap-1.5 rounded-full border border-border/60 bg-card pr-1 pl-3 text-xs text-muted-foreground shadow-xs transition-colors hover:border-border hover:text-foreground'
+          className='flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card pr-1 pl-3.5 text-sm text-muted-foreground shadow-xs transition-colors hover:border-border hover:text-foreground'
           onClick={() => {
             const target = document.getElementById(`work-${card.key}`);
             if (!target) return;
@@ -231,7 +235,7 @@ function WorkCounts({
           }}
         >
           {card.label}
-          <span className='rounded-full bg-muted px-1.5 leading-5 font-semibold text-foreground tabular-nums'>
+          <span className='rounded-full bg-muted px-2 leading-6 font-semibold text-foreground tabular-nums'>
             {card.count}
           </span>
         </button>
