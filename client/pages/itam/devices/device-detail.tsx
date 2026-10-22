@@ -1020,6 +1020,10 @@ function NotesDialog({
 }): ReactElement {
   const { t } = useTranslation();
   const [notes, setNotes] = useState('');
+  // Required, as the server requires it (2026-10-22): an empty one came
+  // back as a bare 输入无效 that stayed while the reader typed.
+  const [tried, setTried] = useState(false);
+  const missing = tried && !notes.trim();
   return (
     <ConfirmDialog
       open
@@ -1030,18 +1034,30 @@ function NotesDialog({
       error={error}
       destructive
       confirmLabel={t('deviceActions.markLost.confirm')}
-      onConfirm={() => onConfirm(notes)}
+      onConfirm={() => {
+        setTried(true);
+        if (notes.trim()) onConfirm(notes);
+      }}
     >
       <div className='grid gap-1.5'>
-        {/* What happened is worth writing down, but a device is lost
-            whether or not anyone can say why. */}
-        <Label htmlFor='notes-dialog'>{t('fields.notes')}</Label>
+        <Label htmlFor='notes-dialog'>
+          {t('deviceActions.markLost.notes')}{' '}
+          <span className='text-destructive'>*</span>
+        </Label>
         <Textarea
           id='notes-dialog'
           rows={3}
           value={notes}
+          placeholder={t('deviceActions.markLost.notesPlaceholder')}
+          aria-invalid={missing || undefined}
+          aria-describedby={missing ? 'notes-dialog-error' : undefined}
           onChange={(event) => setNotes(event.target.value)}
         />
+        {missing ? (
+          <p id='notes-dialog-error' className='text-sm text-destructive'>
+            {t('deviceActions.markLost.notesRequired')}
+          </p>
+        ) : null}
       </div>
     </ConfirmDialog>
   );
