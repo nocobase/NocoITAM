@@ -444,7 +444,11 @@ function PlanLine({
             ×{line.required}
           </span>
         </span>
-        <span className='flex max-w-full min-w-0 flex-wrap items-center justify-end gap-1.5'>
+        {/* One even gap between every word on the row (2026-10-22): the
+            text buttons (更换, 不需要) take back their padding with a
+            negative margin, so their words sit a gap from their
+            neighbours like the name and the outlined button do. */}
+        <span className='flex max-w-full min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1.5'>
           {line.prepared.map((thing) => (
             <RecordLink
               key={`p:${thing.type}:${thing.id}`}
@@ -501,14 +505,14 @@ function PlanLine({
             return (
               <span
                 key={`o:${original.type}:${original.id}`}
-                className='inline-flex max-w-full min-w-0 items-center gap-1'
+                className='inline-flex max-w-full min-w-0 items-center gap-3'
               >
                 {/* What is proposed opens its record, to be looked at
                     before it is reserved; the button beside it only acts
                     (2026-10-22: the label was inside the button). */}
                 <RecordLink
                   to={recordOf(thing)}
-                  className='mr-1 min-w-0 truncate underline-offset-4 hover:underline'
+                  className='min-w-0 truncate underline-offset-4 hover:underline'
                 >
                   {thing.label}
                 </RecordLink>
@@ -534,6 +538,7 @@ function PlanLine({
                 {thing.type === 'device' ? (
                   <Button
                     variant='ghost'
+                    className='-mx-2.5'
                     disabled={busy}
                     onClick={() => setChanging(original.id)}
                   >
@@ -549,7 +554,7 @@ function PlanLine({
           {line.preparedCount < line.required ? (
             <Button
               variant='ghost'
-              className='text-muted-foreground'
+              className='-mx-2.5 text-muted-foreground'
               disabled={busy}
               onClick={() => onWaive(true)}
             >
