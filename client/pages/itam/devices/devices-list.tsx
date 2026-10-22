@@ -65,15 +65,17 @@ function PlaceName({ id }: { readonly id: string }): ReactElement {
  * The devices as a board by status (2026-10-22), beside the table: the
  * states a device is in while the company has it, in the order it moves
  * through them; retired and disposed ones stay in the table. A card is the
- * device's name, its number, model, and who has it or where it is kept.
+ * device's number and name, model, and who has it or where it is kept.
  */
 const DeviceBoard = createStatusBoard({
   path: DEVICES_PATH,
   route: 'devices',
   fields: DEVICE_FIELDS,
   nameField: 'name',
+  // Its number and name, as the workbench heads a device (2026-10-22).
+  title: (record) =>
+    [text(record.deviceNo), text(record.name)].filter(Boolean).join(' / '),
   card: {
-    meta: 'deviceNo',
     lines: [
       { part: 'modelId', icon: Package },
       (record) =>

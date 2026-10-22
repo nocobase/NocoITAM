@@ -38,6 +38,11 @@ export interface BoardCardSpec {
   /** The field a card is headed by (its number or name). */
   readonly nameField: string;
   /**
+   * A heading made of several fields, in place of `nameField`'s alone: a
+   * device's number and name, as the workbench heads it (2026-10-22).
+   */
+  readonly title?: (record: ItamRecord) => string;
+  /**
    * The document kind a card is tagged with before its heading, on its
    * board and on the workbench alike.
    */
@@ -165,7 +170,7 @@ export function BoardCards({
                   ) : null}
                   {entry.badge}
                   <span className='min-w-0 truncate text-sm font-semibold'>
-                    {text(row[spec.nameField])}
+                    {spec.title ? spec.title(row) : text(row[spec.nameField])}
                   </span>
                 </span>
                 {meta ? (

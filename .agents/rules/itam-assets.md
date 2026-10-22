@@ -296,7 +296,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   in `client/pages/itam/devices/devices-list.tsx`, `?layout=board`; the
   table stays the default): a column per state a device is in while the
   company has it — 库存中, 使用中, 借出中, 维修中, 待报废, 已丢失 — through
-  the shared `createStatusBoard`. A card is the device's name, its number,
+  the shared `createStatusBoard`. A card is the device's number / name,
   model, and who has it, or where it is kept while nobody does. The status
   tags are all light tints: 使用中 green, 待报废 grey with 已停用 and 已报废,
   red only for 已丢失.
