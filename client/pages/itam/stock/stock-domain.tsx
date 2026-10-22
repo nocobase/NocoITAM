@@ -643,30 +643,10 @@ export function StockHoldersTab({
             key: 'type',
             header: t('stock.movementType'),
             className: 'w-px whitespace-nowrap',
-            // Where it came from beneath, when not by hand (2026-10-22: a
-            // column of its own read 手动 on nearly every row): a receipt
-            // its purchase order, a disposal's reclaim saying so.
-            render: (row) => (
-              <div>
-                {t(`stock.movementTypes.${text(row.type)}`, {
-                  defaultValue: text(row.type),
-                })}
-                {row.sourceType === 'purchaseOrder' ? (
-                  <div className='text-xs'>
-                    <ReferenceLink
-                      collection='purchaseOrders'
-                      route='procurement'
-                      id={row.sourceId}
-                      names={orderNames.purchaseOrders}
-                    />
-                  </div>
-                ) : row.sourceType === 'disposal' ? (
-                  <div className='text-xs text-muted-foreground'>
-                    {t('stock.sources.disposal')}
-                  </div>
-                ) : null}
-              </div>
-            ),
+            render: (row) =>
+              t(`stock.movementTypes.${text(row.type)}`, {
+                defaultValue: text(row.type),
+              }),
           },
           {
             key: 'quantity',
@@ -686,6 +666,29 @@ export function StockHoldersTab({
             },
           },
           holderColumn,
+          {
+            // A column of its own again (2026-10-22; under the type for an
+            // hour): a receipt links its purchase order, a disposal's
+            // reclaim says so, everything else was recorded by hand.
+            key: 'source',
+            header: t('stock.source'),
+            className: 'w-px whitespace-nowrap',
+            render: (row) =>
+              row.sourceType === 'purchaseOrder' ? (
+                <ReferenceLink
+                  collection='purchaseOrders'
+                  route='procurement'
+                  id={row.sourceId}
+                  names={orderNames.purchaseOrders}
+                />
+              ) : (
+                <span className='text-muted-foreground'>
+                  {t(
+                    `stock.sources.${row.sourceType === 'disposal' ? 'disposal' : 'manual'}`,
+                  )}
+                </span>
+              ),
+          },
           {
             key: 'createdAt',
             header: t('stock.movementTime'),
