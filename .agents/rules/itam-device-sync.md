@@ -364,7 +364,11 @@ tab)`); each card's 重新运行 runs its part and tab. 收件箱 lists one entr
   (忽略 a difference) and `exempt_device` (不需要纳管) — the last two added
   for it, under the device's `update` like their buttons. Verify and
   escalate (and enrolling a device on a platform) are notes, as is a step
-  the plan screen refuses, with whatever followed from it. An item is new
+  the plan screen refuses, with whatever followed from it. A note is
+  `<name>：<what to do>`, the model's reason on its own line beneath, shown
+  muted (2026-10-22: the reason in brackets before a colon read as too
+  much); the reason is asked for in at most 40 characters, no brackets, no
+  serial. An item is new
   until a run holding it was carried out or set aside (90 days); a waiting
   run is replaced by the next pull's, since a plan lasts a day. Carrying
   out or withdrawing the plan settles the run (`PlanService.onDecided`,

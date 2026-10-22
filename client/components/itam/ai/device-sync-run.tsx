@@ -133,9 +133,9 @@ export function DeviceSyncRunCard({
           <h3 className='text-xs text-muted-foreground'>
             {t('deviceSyncRun.notes')}
           </h3>
-          <ul className='list-disc space-y-0.5 pl-5'>
+          <ul className='list-disc space-y-1.5 pl-5'>
             {result.notes.map((note) => (
-              <li key={note}>{note}</li>
+              <FollowUpNote key={note} note={note} />
             ))}
           </ul>
         </section>
@@ -312,9 +312,9 @@ function FollowUpReviewCard({
             <h4 className='text-xs text-muted-foreground'>
               {t('deviceSyncRun.notes')}
             </h4>
-            <ul className='list-disc space-y-0.5 pl-5'>
+            <ul className='list-disc space-y-1.5 pl-5'>
               {notes.map((note) => (
-                <li key={note}>{note}</li>
+                <FollowUpNote key={note} note={note} />
               ))}
             </ul>
           </section>
@@ -584,9 +584,9 @@ function OthersFollowUps({
                     <h4 className='text-xs text-muted-foreground'>
                       {t('deviceSyncRun.notes')}
                     </h4>
-                    <ul className='list-disc space-y-0.5 pl-5'>
+                    <ul className='list-disc space-y-1.5 pl-5'>
                       {row.notes.map((note) => (
-                        <li key={note}>{note}</li>
+                        <FollowUpNote key={note} note={note} />
                       ))}
                     </ul>
                   </section>
@@ -597,5 +597,21 @@ function OthersFollowUps({
         ))}
       </CollapsibleContent>
     </Collapsible>
+  );
+}
+
+/**
+ * A note: what to do, and beneath it, muted, why (2026-10-22). Notes kept
+ * before then are one line.
+ */
+function FollowUpNote({ note }: { note: string }) {
+  const [line, ...why] = note.split('\n');
+  return (
+    <li>
+      {line}
+      {why.length ? (
+        <p className='text-xs text-muted-foreground'>{why.join(' ')}</p>
+      ) : null}
+    </li>
   );
 }

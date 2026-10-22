@@ -760,7 +760,7 @@ export function createDeviceSyncFollowUp(dependencies: {
     const prompt = [
       `The pull from the device platforms left these items on MDM 核对. Following your method, decide each one by its \`ref\` (\`item\`), or say why a person must look first. Allowed per kind — stale: correct, keep, verify, escalate; userMismatch: transfer, assign, keep, verify, escalate; statusMismatch: correct, keep, verify, escalate; unmanaged: exempt, verify, escalate; unregistered: register, link, ignore, verify.`,
       "What each does: register — put the platform record on the register (modelId: the register model it is, from suggestedModelId or the candidates; the device goes to its platform user when it has one); link — it is the register device `target` (a candidate id, or one of its sameNameDevices: a register device of the same name under another serial is most likely this one with a new board or a mistyped serial — link it, never register a duplicate); ignore — keep the record off the register (not a company asset); transfer / assign — the device goes to the person `target` (the platform user's personId); correct — set the device's register status to `status` (inStock, inUse, onLoan, inRepair or retired — never lost: a person finds that out); keep — the register is right, ignore this difference; exempt — the device rightly is on no platform; verify — a person must check first (say what); escalate — the platform's administrator must act (say what).",
-      `Every decision has a \`reason\`: one short sentence in ${zh() ? 'Chinese' : 'English'} with the fact it rests on (the platform user, the serial, the last sync, a matching device), never an id. Propose a change only where the evidence is clear; otherwise verify.`,
+      `Every decision has a \`reason\`: one short sentence in ${zh() ? 'Chinese' : 'English'}, at most 40 characters and without brackets, with the fact it rests on (the platform user, the last sync, a matching device), never an id or a serial: the item's name is shown beside it. Propose a change only where the evidence is clear; otherwise verify.`,
       `<items>\n${JSON.stringify(material)}\n</items>`,
       `Return only one JSON object matching this JSON Schema:\n${shapeOf(DECIDED)}`,
     ].join('\n\n');
@@ -863,8 +863,14 @@ export function createDeviceSyncFollowUp(dependencies: {
           ? `${item.label}（${why}）`
           : `${item.label} (${why})`
         : item.label;
+      // A note leads with what to do; the reason follows on its own line,
+      // which the card shows muted (2026-10-22): one line in brackets and
+      // after a colon read as too much.
       const note = (zhText: string, enText: string) =>
-        notes.push(words(`${label}：${zhText}`, `${label}: ${enText}`));
+        notes.push(
+          words(`${item.label}：${zhText}`, `${item.label}: ${enText}`) +
+            (why ? `\n${why}` : ''),
+        );
       if (!ALLOWED[item.kind].includes(decision.action)) {
         note('请先核实再处理', 'check before anything changes');
         continue;

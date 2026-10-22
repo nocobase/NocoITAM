@@ -271,7 +271,7 @@ it('lists the other owners’ follow-ups to read, with nothing to act on', () =>
       createdAt: '2026-10-17T08:00:00.000Z',
       items: [{ key: 'k', kind: 'stale', subject: 'd', label: 'DE-1' }],
       summary: '1 difference',
-      notes: ['DE-1: ask its user'],
+      notes: ['DE-1: ask its user\nNo sync for 40 days'],
       steps: ['Transfer DE-2 to Liu Yang'],
     },
   ];
@@ -286,6 +286,8 @@ it('lists the other owners’ follow-ups to read, with nothing to act on', () =>
   expect(screen.getByText('deviceSyncRun.otherDevices')).toBeInTheDocument();
   expect(screen.getByText('Transfer DE-2 to Liu Yang')).toBeInTheDocument();
   expect(screen.getByText('DE-1: ask its user')).toBeInTheDocument();
+  // The reason sits beneath, on its own line.
+  expect(screen.getByText('No sync for 40 days')).toBeInTheDocument();
   expect(
     screen.queryByRole('button', { name: 'deviceSyncRun.setAside' }),
   ).not.toBeInTheDocument();
