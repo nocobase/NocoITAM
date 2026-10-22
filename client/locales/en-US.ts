@@ -2347,7 +2347,7 @@ const messages = {
         firstSeen: 'First seen',
       },
       dismissedHint:
-        'No longer raised; they come back if what MDM reports changes. Restore lists one again.',
+        'Differences where the register is right: no longer raised, and listed again when MDM reports a change or on Restore.',
       exemptedHint:
         'Devices that need no MDM: no longer listed as only on the register, and Restore lists them again.',
     },

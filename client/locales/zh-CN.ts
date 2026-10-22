@@ -2240,7 +2240,7 @@ const zhCN: AppResource = {
         firstSeen: '首次出现',
       },
       dismissedHint:
-        '以后不再提示；MDM 里的信息变化时会重新出现。点「恢复」重新列入。',
+        '以台账为准的差异，不再提示；MDM 信息有变化或点「恢复」会重新列入。',
       exemptedHint:
         '不需要注册 MDM 的设备，不再列入只在台账；点「恢复」重新列入。',
     },
