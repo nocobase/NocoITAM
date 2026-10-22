@@ -6409,7 +6409,20 @@ export function createDemoService(dependencies: {
             .sort((a, b) =>
               String(b.updatedAt).localeCompare(String(a.updatedAt)),
             )[0];
-          const finder = inUse[8] ?? inUse[0];
+          // Someone with one computer and in no other case, so the row
+          // reads as nobody else's (2026-10-22).
+          const taken = new Set(
+            [inUse[1], inUse[2], other, inUse[4], holder].map(
+              (row) => row?.email,
+            ),
+          );
+          const finder =
+            inUse.find(
+              (row, index) =>
+                index > 5 &&
+                !taken.has(row.email) &&
+                inUse.filter((each) => each.email === row.email).length === 1,
+            ) ?? inUse[0];
           if (found) {
             await on(-42);
             await devices.markLost(
