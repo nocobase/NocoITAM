@@ -143,13 +143,13 @@ export function KitItems({
   // A row being edited says its asset type once chosen; a stored one reads
   // it from its model, category or product.
   const rowKind = (row: KitItem) => row.kind ?? kindOf(row);
-  // A record deleted since it was put in reads as such, not as its id
-  // (2026-10-22); nothing shows while the names load.
-  const nameOf = (item: KitItem) => {
-    const known = names[COLLECTION[item.type]];
-    if (!item.id || !known) return '';
-    return known.get(item.id) ?? t('onboardingKits.deletedItem');
-  };
+  const nameOf = (item: KitItem) =>
+    (item.id && names[COLLECTION[item.type]]?.get(item.id)) || '';
+  // A record deleted since it was put in is not listed (2026-10-22):
+  // deleting it takes it out of the kits, and a cleanup took out what an
+  // earlier deletion left; its names loaded and it is not among them.
+  const gone = (item: KitItem) =>
+    Boolean(item.id && names[COLLECTION[item.type]]) && !nameOf(item);
   const update = (index: number, patch: Partial<KitItem>) =>
     setRows((current) =>
       current.map((row, at) => (at === index ? { ...row, ...patch } : row)),
@@ -211,36 +211,38 @@ export function KitItems({
             </p>
           ) : (
             <ul className='divide-y divide-border/60 text-sm'>
-              {stored.map((item, index) => {
-                const kind = kindOf(item);
-                return (
-                  <li
-                    // Positional: the list has no ids of its own.
-                    // eslint-disable-next-line @eslint-react/no-array-index-key -- see above
-                    key={index}
-                    className='flex items-center gap-2 py-2'
-                  >
-                    {/* What kind of asset it is leads the row, the way the
+              {stored
+                .filter((item) => !gone(item))
+                .map((item, index) => {
+                  const kind = kindOf(item);
+                  return (
+                    <li
+                      // Positional: the list has no ids of its own.
+                      // eslint-disable-next-line @eslint-react/no-array-index-key -- see above
+                      key={index}
+                      className='flex items-center gap-2 py-2'
+                    >
+                      {/* What kind of asset it is leads the row, the way the
                         lists tag a record; the tag carries its own icon. */}
-                    {kind ? (
-                      <AssetTypeBadge value={kind} className='shrink-0' />
-                    ) : (
-                      <Icon type={item.type} />
-                    )}
-                    <span className='min-w-0 flex-1 truncate'>
-                      {nameOf(item)}
-                      {item.type === 'category' ? (
-                        <span className='ml-1.5 text-xs text-muted-foreground'>
-                          {t('onboardingKits.anyModel')}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className='shrink-0 text-muted-foreground tabular-nums'>
-                      ×{item.quantity}
-                    </span>
-                  </li>
-                );
-              })}
+                      {kind ? (
+                        <AssetTypeBadge value={kind} className='shrink-0' />
+                      ) : (
+                        <Icon type={item.type} />
+                      )}
+                      <span className='min-w-0 flex-1 truncate'>
+                        {nameOf(item)}
+                        {item.type === 'category' ? (
+                          <span className='ml-1.5 text-xs text-muted-foreground'>
+                            {t('onboardingKits.anyModel')}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className='shrink-0 text-muted-foreground tabular-nums'>
+                        ×{item.quantity}
+                      </span>
+                    </li>
+                  );
+                })}
             </ul>
           )
         ) : (

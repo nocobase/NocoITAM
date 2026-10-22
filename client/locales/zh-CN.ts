@@ -1080,7 +1080,6 @@ const zhCN: AppResource = {
     positionPlaceholder: '留空即该部门的默认配置',
     items: '配置清单',
     noItems: '还没有物品',
-    deletedItem: '已删除',
     anyModel: '（该分类下任意型号）',
     quantity: '数量',
     addItem: '添加物品',
