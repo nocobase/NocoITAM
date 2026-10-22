@@ -700,11 +700,12 @@ export function StockHoldersTab({
           permissions.issue
             ? (row) => {
                 const target = takeBackOf(row);
-                // Quiet (2026-10-22): a column of outlined buttons stood out
-                // above the movements themselves.
+                // Small (2026-10-22): a column of full-size buttons stood out
+                // above the movements themselves; outlined, so it still
+                // reads as a button.
                 return target ? (
                   <Button
-                    variant='ghost'
+                    variant='outline'
                     size='sm'
                     disabled={takeBack.isPending}
                     onClick={() => {
