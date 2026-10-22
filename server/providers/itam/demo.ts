@@ -6421,7 +6421,8 @@ export function createDemoService(dependencies: {
               (row, index) =>
                 index > 5 &&
                 !taken.has(row.email) &&
-                inUse.filter((each) => each.email === row.email).length === 1,
+                computers.filter((each) => each.email === row.email).length ===
+                  1,
             ) ?? inUse[0];
           if (found) {
             await on(-42);
