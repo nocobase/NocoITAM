@@ -62,7 +62,9 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         // Application change (ITAM, 2026-10-22): a line tab picked reads in
         // the brand colour, its text and its line, as every tab bar of the
         // application does. Keep on a registry upgrade.
-        'group-data-[variant=line]/tabs-list:after:bg-primary group-data-[variant=line]/tabs-list:data-active:text-primary dark:group-data-[variant=line]/tabs-list:data-active:text-primary',
+        // Marked important: the group variant's selector weighs no more
+        // than `data-active:text-foreground` above and came out under it.
+        'group-data-[variant=line]/tabs-list:after:bg-primary! group-data-[variant=line]/tabs-list:data-active:text-primary!',
         className,
       )}
       {...props}
