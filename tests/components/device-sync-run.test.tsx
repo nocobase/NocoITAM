@@ -459,3 +459,44 @@ it('drops a card decided here once a newer follow-up comes', () => {
   );
   expect(screen.queryByText(/deviceSyncRun\.accepted/)).toBeNull();
 });
+
+// Set aside, it stays folded with a 暂不处理 tag while what it was about is
+// still listed, and goes once it is not (2026-10-22).
+it('keeps a follow-up set aside while its items are listed', () => {
+  state.plan = null;
+  const setAside = run({
+    id: 'aside',
+    status: 'dismissed',
+    decidedAt: '2026-10-22T10:00:00.000Z',
+    result: {
+      items: [
+        {
+          key: 'r1|unregistered',
+          kind: 'unregistered',
+          subject: 'r1',
+          label: 'r1',
+        },
+      ],
+      planId: null,
+      notes: [],
+      summary: '',
+    },
+  });
+  state.inbox = { open: [], handled: [setAside] };
+  state.review = { checks: [], unregistered: [{ id: 'r1' }], unmanaged: [] };
+  const { unmount } = render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('deviceSyncRun.setAside')).toBeInTheDocument();
+  expect(screen.getByText('deviceSyncRun.rerun')).toBeInTheDocument();
+  unmount();
+  state.review = { checks: [], unregistered: [], unmanaged: [] };
+  render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.queryByText('deviceSyncRun.setAside')).toBeNull();
+});

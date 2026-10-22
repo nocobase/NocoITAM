@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { Link } from 'react-router';
 
+import { Badge } from '#components/ui/badge';
 import { Button } from '#components/ui/button';
 import { Spinner } from '#components/ui/spinner';
 import {
@@ -243,7 +244,7 @@ function FollowUpReviewCard({
               : 'deviceSyncRun.accepted',
           )
         : run.status === 'dismissed'
-          ? t('deviceSyncRun.setAside')
+          ? null
           : t('deviceSyncRun.superseded')
       : null,
   ].filter(Boolean);
@@ -263,6 +264,9 @@ function FollowUpReviewCard({
             aria-hidden
           />
           <span className='font-medium'>{followUpTitle(run, t)}</span>
+          {run.status === 'dismissed' ? (
+            <SetAside at={run.decidedAt ?? run.updatedAt} />
+          ) : null}
           {facts.length ? (
             <span className='whitespace-nowrap text-muted-foreground'>
               · {facts.join(' · ')}
@@ -461,12 +465,20 @@ export function DeviceSyncFollowUpBlock({
       (other) =>
         other.subjectId === run.subjectId && other.createdAt > run.createdAt,
     );
+  // Set aside stays, folded, while what it was about is still listed
+  // (2026-10-22): it says the part was looked at, and offers to run again.
+  const listed = useListed();
+  const stillListed = (run: DeviceSyncRun) =>
+    !listed ||
+    (run.result?.items ?? []).some((item) =>
+      listed.keys.has(`${item.subject}|${item.kind}`),
+    );
   const visible = runs.filter(
     (run) =>
       isOpenRun(run) ||
-      (shown.includes(run.id) &&
-        (run.status === 'accepted' || run.status === 'dismissed') &&
-        !newer(run)),
+      (!newer(run) &&
+        ((run.status === 'dismissed' && stillListed(run)) ||
+          (shown.includes(run.id) && run.status === 'accepted'))),
   );
   const cards = visible.length;
   useEffect(() => {
@@ -500,7 +512,7 @@ export function DeviceSyncFollowUpBlock({
 }
 
 /**
- * The other people's open MDM 跟进, for an asset manager to read
+ * The other people's MDM 跟进, open or set aside,, for an asset manager to read
  * (2026-10-17): whose devices, the suggestion, what its plan would do and
  * what is left to look at. Their person carries it out, so nothing here
  * acts. Nothing for anybody else.
@@ -548,6 +560,9 @@ function OthersFollowUps({
                 : t('deviceSyncRun.otherOwn', {
                     name: names.users?.get(row.deciderId) ?? '…',
                   })}
+              {row.status === 'dismissed' ? (
+                <SetAside at={row.decidedAt ?? row.createdAt} />
+              ) : null}
             </h3>
             {row.status === 'running' ? (
               // With the spinner, as one's own card says it (2026-10-22).
@@ -613,5 +628,18 @@ function FollowUpNote({ note }: { note: string }) {
         <p className='text-xs text-muted-foreground'>{why.join(' ')}</p>
       ) : null}
     </li>
+  );
+}
+
+/** 暂不处理 as a tag, and when (2026-10-22). */
+function SetAside({ at }: { at: string }) {
+  const { t, i18n } = useTranslation();
+  return (
+    <span className='ml-2 inline-flex items-center gap-1.5 align-text-bottom text-sm font-normal whitespace-nowrap text-muted-foreground'>
+      <Badge variant='secondary'>{t('deviceSyncRun.setAside')}</Badge>
+      <span className='tabular-nums'>
+        {relativeTime(at, i18n.language, t('comments.justNow'))}
+      </span>
+    </span>
   );
 }

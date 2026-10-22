@@ -523,6 +523,19 @@ describe('MDM follow-up', () => {
     expect(anns.data).toHaveLength(1);
     expect(anns.data[0]).toMatchObject({ deciderId: 'mia', status: 'pending' });
     expect((anns.data[0]!.steps as string[]).length).toBe(1);
+    // Set aside, it stays to read while its items are listed (2026-10-22),
+    // with what it would have done.
+    await followUp().dismiss(String(anns.data[0]!.id), 'mia');
+    const after = (await (
+      await read({ user: 'ann', role: 'manager' })
+    ).json()) as { data: Record<string, unknown>[] };
+    expect(after.data).toHaveLength(1);
+    expect(after.data[0]).toMatchObject({
+      deciderId: 'mia',
+      status: 'dismissed',
+    });
+    expect(after.data[0]!.decidedAt).toBeTruthy();
+    expect((after.data[0]!.steps as string[]).length).toBe(1);
     // Mia holds no asset manager set.
     expect(
       ((await (await read(mia)).json()) as { data: unknown[] }).data,

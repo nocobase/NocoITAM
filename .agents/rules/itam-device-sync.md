@@ -381,8 +381,12 @@ tab)`); each card's 重新运行 runs its part and tab. 收件箱 lists one entr
   started — none when nothing is new for them, which the page says in an
   alert. The page's 等你决定 (`DeviceSyncFollowUpBlock`, from the 收件箱's
   runs) shows the reader's open follow-ups as their cards, a run just asked
-  for at once, working; one carried out or set aside there stays folded,
-  one a newer run replaced goes. 收件箱 shows MDM 核对 itself beside an MDM
+  for at once, working; one carried out there stays folded, one a newer
+  run replaced goes. One set aside (暂不处理) stays, folded with a
+  暂不处理 tag and its time, while any of its items is still listed —
+  wherever it was set aside, and for the other asset managers too, under
+  其他负责人的跟进 with what its plan would have done (2026-10-22: a part
+  looked at and left should not read as never followed up). 收件箱 shows MDM 核对 itself beside an MDM
   跟进 (`PagePane`), as it shows a request beside its review, with that run
   alone in 等你决定 (`FollowUpFocusContext`). Its title says whose it is —
   你负责的设备 (`owner:`) or 资产管理员 (`shared:`), `followUpTitle` — and a

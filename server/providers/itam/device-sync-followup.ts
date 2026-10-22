@@ -215,6 +215,8 @@ export interface OtherFollowUp {
   readonly status: string;
   readonly failure: string | null;
   readonly createdAt: string;
+  /** When it was set aside, for one that was. */
+  readonly decidedAt: string | null;
   readonly items: readonly FollowUpItem[];
   readonly summary: string;
   readonly notes: readonly string[];
@@ -526,17 +528,33 @@ export function createDeviceSyncFollowUp(dependencies: {
 
     async others(reader) {
       if (!(await assetManagers()).includes(reader)) return [];
-      const open = (
-        await runs().list(AGENT, {
-          since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
-          statuses: ['running', 'pending', 'failed'],
-          limit: 200,
-        })
-      ).filter(
-        (run) =>
+      // Each person's latest of a tab: open, or set aside while what it
+      // was about is still listed (2026-10-22), so the others see it was
+      // looked at and left. A newer one, carried out or not, replaces it.
+      const latest = new Map<string, AgentRun>();
+      for (const run of await runs().list(AGENT, {
+        since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
+        limit: 200,
+      }))
+        if (
           run.subjectId.startsWith('owner:') &&
           run.deciderId !== null &&
-          run.deciderId !== reader,
+          run.deciderId !== reader &&
+          !latest.has(run.subjectId)
+        )
+          latest.set(run.subjectId, run);
+      const shown = [...latest.values()].filter((run) =>
+        ['running', 'pending', 'failed', 'dismissed'].includes(run.status),
+      );
+      const listed = shown.some((run) => run.status === 'dismissed')
+        ? await listedNow()
+        : new Set<string>();
+      const open = shown.filter(
+        (run) =>
+          run.status !== 'dismissed' ||
+          ((run.result?.items ?? []) as FollowUpItem[]).some((item) =>
+            listed.has(`${item.subject}|${item.kind}`),
+          ),
       );
       const result: OtherFollowUp[] = [];
       for (const run of open) {
@@ -549,8 +567,9 @@ export function createDeviceSyncFollowUp(dependencies: {
               .where('id', '=', planId)
               .executeTakeFirst<{ status: unknown }>()
           : undefined;
+        // What it would have done, too, once set aside.
         const steps =
-          planId && plan?.status === 'pending'
+          planId && (plan?.status === 'pending' || plan?.status === 'voided')
             ? await database()
                 .query()
                 .selectFrom('itamPlanSteps')
@@ -565,6 +584,7 @@ export function createDeviceSyncFollowUp(dependencies: {
           status: run.status,
           failure: run.failure,
           createdAt: run.createdAt,
+          decidedAt: run.decidedAt,
           items: (run.result?.items ?? []) as FollowUpItem[],
           summary: asText(run.result?.summary) ?? '',
           notes: (run.result?.notes ?? []) as string[],
