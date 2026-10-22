@@ -771,35 +771,41 @@ function LeaverCard({
         </div>
         {/* The job on a line of its own (2026-10-22), whole under a long
             name rather than squeezed out beside it. */}
-        {/* Each fact with its icon, as the other cards' (2026-10-22). */}
-        {record.subtitle ? (
-          <p className='mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground'>
-            <BriefcaseBusiness
-              aria-hidden='true'
-              className='size-3.5 shrink-0'
-            />
-            <span className='min-w-0 truncate'>{record.subtitle}</span>
-          </p>
-        ) : null}
-        {record.date ? (
-          // Each phrase whole: on a narrow card the countdown moves under
-          // the date rather than either breaking mid-phrase.
-          <p className='flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground tabular-nums'>
-            <CalendarClock aria-hidden='true' className='size-3.5 shrink-0' />
-            <span className='whitespace-nowrap'>
-              {t(joining ? 'workbench.work.joinsOn' : 'workbench.work.leftOn', {
-                date: formatDate(record.date),
-              })}
-            </span>
-            {/* A joiner's column runs from next week to months out, so
-                  each card says how far off the first day is. */}
-            {joining ? (
-              <span className='font-medium whitespace-nowrap text-foreground'>
-                {countdown}
+        {/* Each fact with its icon, spaced as the other cards' lines
+            (2026-10-22). */}
+        <div className='mt-1.5 space-y-0.5'>
+          {record.subtitle ? (
+            <p className='flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground'>
+              <BriefcaseBusiness
+                aria-hidden='true'
+                className='size-3.5 shrink-0'
+              />
+              <span className='min-w-0 truncate'>{record.subtitle}</span>
+            </p>
+          ) : null}
+          {record.date ? (
+            // Each phrase whole: on a narrow card the countdown moves under
+            // the date rather than either breaking mid-phrase.
+            <p className='flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground tabular-nums'>
+              <CalendarClock aria-hidden='true' className='size-3.5 shrink-0' />
+              <span className='whitespace-nowrap'>
+                {t(
+                  joining ? 'workbench.work.joinsOn' : 'workbench.work.leftOn',
+                  {
+                    date: formatDate(record.date),
+                  },
+                )}
               </span>
-            ) : null}
-          </p>
-        ) : null}
+              {/* A joiner's column runs from next week to months out, so
+                  each card says how far off the first day is. */}
+              {joining ? (
+                <span className='font-medium whitespace-nowrap text-foreground'>
+                  {countdown}
+                </span>
+              ) : null}
+            </p>
+          ) : null}
+        </div>
         {/* Device sync: their devices still synced after they left. */}
         {!joining && record.onlineAfterLeaving ? (
           <p className='mt-1 text-xs font-medium text-warning-foreground'>
