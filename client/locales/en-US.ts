@@ -2036,7 +2036,7 @@ const messages = {
     showMoreCards_one: 'Show {{count}} more',
     showMoreCards_other: 'Show {{count}} more',
     work: {
-      people: 'Joiners and leavers',
+      people: 'Staff changes',
       tagLeaving: 'Leaving',
       tagJoining: 'Joining',
       pendingApprovals: 'Waiting for approval',
