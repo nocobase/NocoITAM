@@ -615,3 +615,45 @@ it('carries out the steps a plan left out, ticked again', () => {
     expect.anything(),
   );
 });
+
+// A note's item settled on its row is 已处理; every item settled, the
+// follow-up closes by itself (2026-10-22).
+it('marks a note settled below, and closes once every item is', () => {
+  state.plan = null;
+  state.settle.mockReset();
+  const noted = run({
+    result: {
+      items: ['r1', 'r2'].map((subject) => ({
+        key: `${subject}|unregistered`,
+        kind: 'unregistered' as const,
+        subject,
+        label: subject,
+      })),
+      planId: null,
+      notes: ['r1: register it by hand', 'r2: register it by hand'],
+      summary: '',
+    },
+  });
+  state.inbox = { open: [noted], handled: [] };
+  state.review = { checks: [], unregistered: [{ id: 'r2' }], unmanaged: [] };
+  const { unmount } = render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('r1: register it by hand').closest('li')).toHaveClass(
+    'text-muted-foreground',
+  );
+  expect(screen.getAllByText('deviceSyncRun.stepHandledBelow')).toHaveLength(1);
+  expect(state.settle).not.toHaveBeenCalled();
+  unmount();
+  state.review = { checks: [], unregistered: [], unmanaged: [] };
+  render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(state.settle).toHaveBeenCalledWith(
+    expect.objectContaining({ id: 'run-1' }),
+  );
+});

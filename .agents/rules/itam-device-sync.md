@@ -402,7 +402,10 @@ tab)`); each card's 重新运行 runs its part and tab. 收件箱 lists one entr
   and settled on its row since, a step shows 已处理 rather than 未执行;
   carried out later from the card, 已执行 like the rest (`result.resumed`,
   its places in the first plan). The ticks start afresh once a plan is
-  carried out. 收件箱 shows MDM 核对 itself beside an MDM
+  carried out. A note whose item MDM 核对 no
+  longer lists (by lists read after the run) is muted with 已处理; every
+  item gone, a waiting follow-up settles itself and one carried out reads
+  已全部处理, staying folded till the page is left. 收件箱 shows MDM 核对 itself beside an MDM
   跟进 (`PagePane`), as it shows a request beside its review, with that run
   alone in 等你决定 (`FollowUpFocusContext`). Its title says whose it is —
   你负责的设备 (`owner:`) or 资产管理员 (`shared:`), `followUpTitle` — and a

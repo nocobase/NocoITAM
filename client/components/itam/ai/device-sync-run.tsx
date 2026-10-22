@@ -222,6 +222,22 @@ function FollowUpReviewCard({
     pendingPlan !== null &&
     pendingPlan.steps.length > 0 &&
     pendingPlan.steps.every((step) => handled.has(step.position));
+  // What MDM 核对 no longer lists, by lists read after the run was written:
+  // a note's item settled on its row is 已处理 (2026-10-22), and once every
+  // item is, so is the follow-up.
+  const fresh = listed !== null && !(listed.at < Date.parse(run.updatedAt));
+  const items = run.result?.items ?? [];
+  const gone = (item: { subject: string; kind: string }) =>
+    fresh && !listed.keys.has(`${item.subject}|${item.kind}`);
+  const noteHandled = (note: string) => {
+    const item = items.find(
+      (entry) =>
+        note.startsWith(`${entry.label}：`) ||
+        note.startsWith(`${entry.label}:`),
+    );
+    return item !== undefined && gone(item);
+  };
+  const allItemsHandled = items.length > 0 && items.every(gone);
   // Every step settled on its row: it closes by itself, as handled
   // (2026-10-21), once — a failure leaves 拒绝 to the reader.
   const settle = useSettleFollowUp();
@@ -229,9 +245,10 @@ function FollowUpReviewCard({
   const ask = useAskFollowUp();
   const resume = useResumeFollowUp();
   const waiting = run.status === 'pending';
+  const settles = allHandled || allItemsHandled;
   useEffect(() => {
-    if (allHandled && waiting) settleOnce(run);
-  }, [allHandled, waiting, settleOnce, run]);
+    if (settles && waiting) settleOnce(run);
+  }, [settles, waiting, settleOnce, run]);
   if (run.status === 'running' || run.status === 'failed')
     return (
       <div className='space-y-3 rounded-lg border bg-card p-4'>
@@ -296,7 +313,12 @@ function FollowUpReviewCard({
           <span className='font-medium'>{followUpTitle(run, t)}</span>
           {decidedTag(run, t) ? (
             <DecidedTag
-              label={decidedTag(run, t) ?? ''}
+              label={
+                // Carried out, and the rest settled by hand since.
+                run.status === 'accepted' && allItemsHandled
+                  ? t('deviceSyncRun.allHandledBelow')
+                  : (decidedTag(run, t) ?? '')
+              }
               at={run.decidedAt ?? run.updatedAt}
             />
           ) : null}
@@ -366,7 +388,15 @@ function FollowUpReviewCard({
             </h4>
             <ul className='list-disc space-y-1.5 pl-5'>
               {notes.map((note) => (
-                <FollowUpNote key={note} note={note} />
+                <FollowUpNote
+                  key={note}
+                  note={note}
+                  handled={
+                    noteHandled(note)
+                      ? t('deviceSyncRun.stepHandledBelow')
+                      : undefined
+                  }
+                />
               ))}
             </ul>
           </section>
@@ -489,7 +519,16 @@ export function DeviceSyncFollowUpBlock({
     );
   // The runs open while the page was: once decided here they stay.
   const [shown, setShown] = useState<readonly string[]>([]);
-  const opened = runs.filter(isOpenRun).map((run) => run.id);
+  // Carried out with items listed counts as shown too (2026-10-22): settled
+  // by hand to the last, it stays, folded, as 已全部处理.
+  const listed = useListed();
+  const opened = runs
+    .filter(
+      (run) =>
+        isOpenRun(run) ||
+        (run.status === 'accepted' && stillListed(run, listed)),
+    )
+    .map((run) => run.id);
   if (opened.some((id) => !shown.includes(id)))
     setShown([...new Set([...shown, ...opened])]);
   // Replaced by a newer run is gone, not decided: its card would offer a
@@ -507,7 +546,6 @@ export function DeviceSyncFollowUpBlock({
   // Carried out or set aside stays while what it was about is still listed
   // (2026-10-22): its notes may be left to do, and it offers to run again.
   // One just carried out here stays till the page is left.
-  const listed = useListed();
   // Beside it in 收件箱, the picked one however it ended (2026-10-22): no
   // card of its own above the page any more.
   const visible = runs.filter(
@@ -660,11 +698,23 @@ function OthersFollowUps({
  * A note: what to do, and beneath it, muted, why (2026-10-22). Notes kept
  * before then are one line.
  */
-function FollowUpNote({ note }: { note: string }) {
+function FollowUpNote({
+  note,
+  handled,
+}: {
+  note: string;
+  /** Settled on its row since (2026-10-22): muted, with this tag. */
+  handled?: string;
+}) {
   const [line, ...why] = note.split('\n');
   return (
-    <li>
+    <li className={handled ? 'text-muted-foreground' : undefined}>
       {line}
+      {handled ? (
+        <Badge variant='secondary' className='ml-2 align-middle'>
+          {handled}
+        </Badge>
+      ) : null}
       {why.length ? (
         <p className='text-xs text-muted-foreground'>{why.join(' ')}</p>
       ) : null}
