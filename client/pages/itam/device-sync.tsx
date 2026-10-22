@@ -199,7 +199,12 @@ export default function DeviceSyncReviewPage(): ReactElement {
             }
           >
             {/* Each led by its icon, as a record's tabs are (2026-10-22). */}
-            <TabsList variant='line'>
+            {/* Scrolls sideways on a phone rather than cutting the last
+                tab off (2026-10-22). */}
+            <TabsList
+              variant='line'
+              className='max-w-full justify-start overflow-x-auto'
+            >
               {TABS.map((key) => {
                 const Icon = TAB_ICONS[key];
                 return (
