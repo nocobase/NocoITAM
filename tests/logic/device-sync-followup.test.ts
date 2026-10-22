@@ -288,8 +288,8 @@ describe('MDM follow-up', () => {
     await followUp().afterSync(null);
     const first = await settled(() => latest('owner:mia'));
     await settled(() => latest('shared:mia'));
-    // Her own and the shared one are one entry in 收件箱 (2026-10-21).
-    expect(await runs().waitingCount('mia')).toBe(1);
+    // Her own and the shared one, each its entry in 收件箱.
+    expect(await runs().waitingCount('mia')).toBe(2);
     // The next pull replaces what still waits.
     await followUp().afterSync(null);
     expect((await runs().get(first.id))?.status).toBe('superseded');

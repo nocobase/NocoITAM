@@ -392,17 +392,10 @@ it('leaves out the steps settled on their rows, and closes once all are', () => 
   expect(screen.queryByRole('button', { name: 'decide' })).toBeNull();
 });
 
-// Her own and the shared one waiting are one card on MDM 核对 (2026-10-21),
-// a section each, with one decision for both.
-it('shows the reader’s waiting follow-ups as one card, decided at once', () => {
-  state.plan = {
-    id: 'plan-1',
-    title: 'MDM follow-up',
-    status: 'pending',
-    revision: 1,
-    steps: [{ position: 1 }],
-  };
-  state.review = { checks: [], unregistered: [], unmanaged: [] };
+// Her own and the shared one waiting are each its own card, decided apart
+// (2026-10-22; one card for a day).
+it('shows the reader’s waiting follow-ups as a card each', () => {
+  state.plan = null;
   state.inbox = {
     open: [run({ id: 'own' }), run({ id: 'shared', subjectId: 'shared:mia' })],
     handled: [],
@@ -412,11 +405,11 @@ it('shows the reader’s waiting follow-ups as one card, decided at once', () =>
       <DeviceSyncFollowUpBlock />
     </MemoryRouter>,
   );
-  expect(screen.getByText('deviceSyncRun.title')).toBeInTheDocument();
   expect(screen.getByText('deviceSyncRun.ownDevices')).toBeInTheDocument();
   expect(screen.getByText('deviceSyncRun.sharedDevices')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'ai.plans.decline' }));
-  expect(state.decide).toHaveBeenCalledWith('void');
+  expect(
+    screen.getAllByRole('button', { name: 'review.dismiss' }),
+  ).toHaveLength(2);
 });
 
 // Decided here, a card stays folded until a newer follow-up of the same

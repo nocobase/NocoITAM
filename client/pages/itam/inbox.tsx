@@ -113,48 +113,12 @@ function useReviewsCollection({
   const inbox = useInbox();
   // An MDM 跟进 run again is listed among the handled, as replaced
   // (2026-10-21): the card goes down there rather than out of sight.
-  // The reader's waiting MDM 跟进 — their devices' and the asset
-  // managers' — are one entry (2026-10-21), as on MDM 核对: the newest
-  // stands for them, its title theirs.
-  const { items, grouped } = useMemo(() => {
-    const all = [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])];
-    // Being worked out counts too (2026-10-21): asking again lists no
-    // second entry while the new runs work.
-    const waits = (run: AgentRun) =>
-      run.agent === 'deviceSync' &&
-      (run.status === 'pending' || run.status === 'running');
-    const groups = new Map<string, AgentRun[]>();
-    const waiting = all.filter(waits);
-    if (waiting.length > 1 && waiting[0]) groups.set(waiting[0].id, waiting);
-    // The handled ones too, by the pull or the ask that started them
-    // together: their runs begin within moments of each other.
-    const handled = all
-      .filter(
-        (run) => run.agent === 'deviceSync' && !waits(run) && !isOpen(run),
-      )
-      .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt));
-    let batch: AgentRun[] = [];
-    const close = () => {
-      if (batch.length > 1 && batch[0]) groups.set(batch[0].id, batch);
-      batch = [];
-    };
-    for (const run of handled) {
-      const head = batch[0];
-      if (
-        head &&
-        Date.parse(head.createdAt) - Date.parse(run.createdAt) > BATCH_MS
-      )
-        close();
-      batch.push(run);
-    }
-    close();
-    const hidden = new Set(
-      [...groups.values()].flatMap((runs) =>
-        runs.slice(1).map((run) => run.id),
-      ),
-    );
-    return { items: all.filter((run) => !hidden.has(run.id)), grouped: groups };
-  }, [inbox.data]);
+  // Each MDM 跟进 its own entry, the reader's devices' and the asset
+  // managers' apart: they were one for a day (2026-10-21).
+  const items = useMemo(
+    () => [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])],
+    [inbox.data],
+  );
   const chosen = filter.kind === REVIEWS_CATEGORY;
   // Beside the list on a wide screen, the first suggestion stands open
   // before any pick, as the inbox's first item does; narrow, the list and
@@ -175,7 +139,6 @@ function useReviewsCollection({
   const list = (
     <ReviewList
       items={items}
-      grouped={grouped}
       selectedId={selectedId}
       onSelect={onSelect}
       loading={inbox.isLoading}
@@ -196,18 +159,12 @@ function useReviewsCollection({
 
 function ReviewList({
   items,
-  grouped,
   selectedId,
   onSelect,
   loading,
   error,
 }: {
   readonly items: readonly AgentRun[];
-  /**
-   * MDM 跟进 shown as one entry: by the run that stands for them, all of
-   * them, it first.
-   */
-  readonly grouped: ReadonlyMap<string, readonly AgentRun[]>;
   readonly selectedId: string | null;
   readonly onSelect: (id: string) => void;
   readonly loading: boolean;
@@ -260,8 +217,7 @@ function ReviewList({
           <span className='truncate font-medium'>{titleOf(run, t)}</span>
           {open ? (
             <span className='truncate text-xs text-muted-foreground'>
-              {/* The others it stands for, one under the other's title. */}
-              {grouped.has(run.id) ? othersOf(grouped, run, t) : lineOf(run, t)}
+              {lineOf(run, t)}
             </span>
           ) : (
             <span className='truncate text-xs text-muted-foreground'>
@@ -275,11 +231,7 @@ function ReviewList({
               >
                 {redone.has(run.id) ? t('review.redone') : lineOf(run, t)}
               </Badge>
-              {grouped.has(run.id)
-                ? ` ${othersOf(grouped, run, t)}`
-                : summary
-                  ? ` ${summary}`
-                  : null}
+              {summary ? ` ${summary}` : null}
             </span>
           )}
         </button>
@@ -311,21 +263,6 @@ function ReviewList({
 }
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
-
-/** MDM 跟进 runs this close together were started by one pull or ask. */
-const BATCH_MS = 2 * 60_000;
-
-/** The titles of the runs an entry stands for, besides its own. */
-function othersOf(
-  grouped: ReadonlyMap<string, readonly AgentRun[]>,
-  run: AgentRun,
-  t: Translate,
-): string {
-  return (grouped.get(run.id) ?? [])
-    .filter((entry) => entry.id !== run.id)
-    .map((entry) => titleOf(entry, t))
-    .join('；');
-}
 
 /** What a run is about: the request, or the differences a sync left. */
 function titleOf(run: AgentRun, t: Translate): string {
@@ -392,9 +329,7 @@ function ReviewDetail({
         )}
         {/* The page's 等你决定 shows the picked run alone; 打开 leads to
             the page itself (2026-10-21). */}
-        {/* While it waits, every waiting one shows, as the one card the
-            inbox lists them as (2026-10-21). */}
-        <FollowUpFocusContext.Provider value={isOpen(run) ? null : run.id}>
+        <FollowUpFocusContext.Provider value={run.id}>
           <OpenFullPageContext.Provider
             value={() => void navigate('/device-sync')}
           >

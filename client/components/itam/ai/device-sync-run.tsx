@@ -1,17 +1,10 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { useToaster } from '@nocobase/app-client';
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronRight, RefreshCw, Sparkles } from 'lucide-react';
 import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactElement,
 } from 'react';
@@ -25,7 +18,6 @@ import {
   CollapsibleTrigger,
 } from '#components/ui/collapsible';
 import {
-  AGENT_RUNS_PATH,
   useDismissReview,
   useInbox,
   useSettleFollowUp,
@@ -40,7 +32,7 @@ import {
 import { useReferenceNames } from '@/lib/itam/references';
 import { useApi } from '@/lib/itam/api';
 import { useDeviceReview } from '@/lib/itam/device-sync';
-import { errorMessage, relativeTime } from '@/lib/itam/format';
+import { relativeTime } from '@/lib/itam/format';
 import { PLANS_PATH, type Plan } from '@/lib/itam/plans';
 
 import { PlanCard, PlanDecision } from './plan-card.js';
@@ -323,21 +315,6 @@ function FollowUpReviewCard({
   );
 }
 
-/** How a decided follow-up ended, as its card says it. */
-function decidedLabel(
-  run: DeviceSyncRun | undefined,
-  t: (key: string) => string,
-): string {
-  if (run?.status === 'accepted')
-    return t(
-      run.decision === 'settled'
-        ? 'deviceSyncRun.allHandledBelow'
-        : 'deviceSyncRun.accepted',
-    );
-  if (run?.status === 'dismissed') return t('review.dismissed');
-  return t('deviceSyncRun.superseded');
-}
-
 /**
  * The plan steps whose difference or record is no longer listed on MDM 核对
  * (2026-10-21): settled on its row there, by hand, since the plan was
@@ -408,179 +385,6 @@ function handledOf(
   );
 }
 
-/**
- * The reader's waiting follow-ups as one (2026-10-21): their own devices'
- * and, as an asset manager, the shared one are two runs on the server — the
- * shared one settles across the asset managers — but one card here, a
- * section each, with one 拒绝 and one 确认执行 for every plan. A run whose
- * steps were all settled on their rows closes by itself, as alone.
- */
-function FollowUpGroupCard({
-  runs,
-}: {
-  readonly runs: readonly DeviceSyncRun[];
-}): ReactElement {
-  const { t } = useTranslation();
-  const api = useApi();
-  const client = useQueryClient();
-  const toaster = useToaster();
-  const plans = useQueries({ queries: runs.map((run) => planQuery(api, run)) });
-  const listed = useListed();
-  const [skipped, setSkipped] = useState<
-    Readonly<Record<string, ReadonlySet<number>>>
-  >({});
-  const [open, setOpen] = useState(true);
-  const parts = runs.map((run, index) => {
-    const plan = plans[index]?.data ?? null;
-    const pendingPlan = plan?.status === 'pending' ? plan : null;
-    const handled = handledOf(run, listed);
-    const allHandled =
-      pendingPlan !== null &&
-      pendingPlan.steps.length > 0 &&
-      pendingPlan.steps.every((step) => handled.has(step.position));
-    const leftOut = new Set([...(skipped[run.id] ?? []), ...handled]);
-    const left = pendingPlan
-      ? pendingPlan.steps.filter((step) => !leftOut.has(step.position)).length
-      : 0;
-    return { run, plan, pendingPlan, handled, allHandled, leftOut, left };
-  });
-  const settle = useSettleFollowUp();
-  const settleOnce = settle.mutate;
-  const settledRef = useRef(new Set<string>());
-  const toSettle = parts
-    .filter((part) => part.allHandled)
-    .map((part) => part.run);
-  useEffect(() => {
-    for (const run of toSettle)
-      if (!settledRef.current.has(run.id)) {
-        settledRef.current.add(run.id);
-        settleOnce(run);
-      }
-  }, [toSettle, settleOnce]);
-  const steps = parts.reduce((sum, part) => sum + part.left, 0);
-  const decide = useMutation({
-    mutationFn: async (decision: 'execute' | 'void') => {
-      for (const part of parts) {
-        if (part.allHandled) continue;
-        if (part.pendingPlan) {
-          if (decision === 'execute' && part.left === 0) continue;
-          await api.request({
-            path: `${PLANS_PATH}/${encodeURIComponent(part.pendingPlan.id)}/${decision}`,
-            method: 'POST',
-            json:
-              decision === 'execute'
-                ? {
-                    revision: part.pendingPlan.revision,
-                    ...(part.leftOut.size ? { skip: [...part.leftOut] } : {}),
-                  }
-                : { revision: part.pendingPlan.revision },
-          });
-        } else if (decision === 'void')
-          // A follow-up with only notes is set aside with the rest.
-          await api.request({
-            path: `${AGENT_RUNS_PATH}/${part.run.id}/dismiss`,
-            method: 'POST',
-            json: {},
-          });
-      }
-    },
-    onSuccess: async (_, decision) => {
-      toaster.show({
-        type: 'success',
-        title: t(
-          decision === 'execute'
-            ? 'ai.plans.toast.executed'
-            : 'ai.plans.toast.voided',
-          { title: t('deviceSyncRun.title') },
-        ),
-      });
-      await client.invalidateQueries({ queryKey: ['itam'] });
-    },
-    onError: async (error) => {
-      toaster.show({ type: 'error', title: errorMessage(error) });
-      await client.invalidateQueries({ queryKey: ['itam'] });
-    },
-  });
-  return (
-    <Collapsible
-      open={open}
-      onOpenChange={setOpen}
-      className='rounded-lg border bg-card'
-    >
-      <div className='flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-2.5'>
-        <CollapsibleTrigger className='group flex min-w-64 flex-1 items-center gap-1.5 text-left text-sm'>
-          <ChevronRight
-            className='size-4 shrink-0 text-muted-foreground transition-transform group-data-[panel-open]:rotate-90'
-            aria-hidden
-          />
-          <span className='font-medium'>{t('deviceSyncRun.title')}</span>
-        </CollapsibleTrigger>
-        <div className='ml-auto flex items-center gap-2'>
-          <Button
-            variant='ghost'
-            disabled={decide.isPending}
-            onClick={() => decide.mutate('void')}
-          >
-            {t('ai.plans.decline')}
-          </Button>
-          {steps > 0 ? (
-            <Button
-              disabled={decide.isPending}
-              onClick={() => decide.mutate('execute')}
-            >
-              {t('ai.plans.execute', { count: steps })}
-            </Button>
-          ) : null}
-        </div>
-      </div>
-      <CollapsibleContent className='divide-y border-t text-sm'>
-        {parts.map((part) => {
-          const notes = part.run.result?.notes ?? [];
-          return (
-            <section key={part.run.id} className='space-y-2 px-4 py-3'>
-              <h3 className='font-medium'>
-                {followUpTitle(part.run, t)}
-                {part.allHandled ? (
-                  <span className='ml-2 font-normal text-muted-foreground'>
-                    · {t('deviceSyncRun.allHandledBelow')}
-                  </span>
-                ) : null}
-              </h3>
-              {part.plan ? (
-                <PlanCard
-                  plan={part.plan}
-                  bare
-                  skipped={skipped[part.run.id] ?? NO_STEPS}
-                  onSkippedChange={(next) =>
-                    setSkipped((current) => ({
-                      ...current,
-                      [part.run.id]: next,
-                    }))
-                  }
-                  settled={part.handled}
-                  settledLabel={t('deviceSyncRun.stepHandledBelow')}
-                />
-              ) : null}
-              {notes.length ? (
-                <section className='space-y-1'>
-                  <h4 className='text-xs text-muted-foreground'>
-                    {t('deviceSyncRun.notes')}
-                  </h4>
-                  <ul className='list-disc space-y-0.5 pl-5'>
-                    {notes.map((note) => (
-                      <li key={note}>{note}</li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
-            </section>
-          );
-        })}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
 const isOpenRun = (run: { readonly status: string }) =>
   run.status === 'running' ||
   run.status === 'pending' ||
@@ -626,17 +430,12 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
         !newer(run)),
   );
   if (!visible.length && !hasOthers) return null;
-  // Waiting or still being worked out: one card for them all (2026-10-21),
-  // so asking again shows no second one while the new runs work.
-  const waitingRuns = visible.filter(
-    (run) => run.status === 'pending' || run.status === 'running',
-  );
-  const working = waitingRuns.some((run) => run.status === 'running');
-  const decidedRuns = visible.filter(
-    (run) => run.status === 'accepted' || run.status === 'dismissed',
-  );
+  // Being worked out again: the others' wait till it is done.
+  const working = visible.some((run) => run.status === 'running');
   // Asset Steward's part of the page on a tinted panel (2026-10-21), so the
-  // lists below it read as the page's own.
+  // lists below it read as the page's own. Each follow-up its own card: the
+  // reader's devices' and the asset managers' were one for a day
+  // (2026-10-21), and read better apart.
   return (
     <div className='space-y-3 rounded-xl bg-muted p-4'>
       {visible.length ? (
@@ -645,41 +444,9 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
             <Sparkles className='size-4 text-primary' aria-hidden />
             {t('review.waiting')}
           </h2>
-          {/* The waiting ones as one card when there are several. */}
-          {waitingRuns.length > 1 ? (
-            working ? (
-              <div className='space-y-2 rounded-lg border bg-card px-4 py-2.5 text-sm'>
-                <h3 className='font-medium'>{t('deviceSyncRun.title')}</h3>
-                <p
-                  role='status'
-                  className='flex items-center gap-2 text-muted-foreground'
-                >
-                  <Spinner />
-                  {t('deviceSyncRun.working')}
-                </p>
-              </div>
-            ) : (
-              <FollowUpGroupCard runs={waitingRuns} />
-            )
-          ) : null}
-          {/* Decided here together, they fold into one line too. */}
-          {decidedRuns.length > 1 ? (
-            <div className='flex flex-wrap items-center gap-x-1.5 rounded-lg border bg-card px-4 py-2.5 text-sm'>
-              <span className='font-medium'>{t('deviceSyncRun.title')}</span>
-              <span className='text-muted-foreground'>
-                · {decidedLabel(decidedRuns[0], t)}
-              </span>
-            </div>
-          ) : null}
-          {visible
-            .filter(
-              (run) =>
-                (waitingRuns.length < 2 || !waitingRuns.includes(run)) &&
-                (decidedRuns.length < 2 || !decidedRuns.includes(run)),
-            )
-            .map((run) => (
-              <FollowUpReviewCard key={run.id} run={run} />
-            ))}
+          {visible.map((run) => (
+            <FollowUpReviewCard key={run.id} run={run} />
+          ))}
         </section>
       ) : null}
       {/* Not while the reader's own are worked out again (2026-10-22):
