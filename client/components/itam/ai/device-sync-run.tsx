@@ -613,11 +613,9 @@ function OthersFollowUps({
           className='size-4 transition-transform group-data-[panel-open]:rotate-90'
           aria-hidden
         />
+        {/* No hint that they are only to read (2026-10-22): no card here
+            offers anything to do. */}
         {t('deviceSyncRun.others', { count: rows.length })}
-        {/* Set apart by room, not a dot (2026-10-22). */}
-        <span className='ml-2 font-normal text-muted-foreground'>
-          {t('deviceSyncRun.othersHint')}
-        </span>
       </CollapsibleTrigger>
       <CollapsibleContent className='space-y-2'>
         {rows.map((row) => (
