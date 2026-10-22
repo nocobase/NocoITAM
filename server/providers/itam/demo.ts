@@ -8,6 +8,7 @@ import type { DeviceService, OperationContext } from './devices.js';
 import type { ObservedDevice } from './device-sources.js';
 import type { DeviceSyncService } from './device-sync.js';
 import { writeDemoSuggestions, type DemoAgents } from './demo-suggestions.js';
+import { pruneKitItems } from './kit-prune.js';
 import type { AuditService, CountInput } from './audits.js';
 import type { CommentService } from './comments.js';
 import { unrestricted } from './authz-filter.js';
@@ -6765,6 +6766,10 @@ export function createDemoService(dependencies: {
           .deleteFrom('demoRecords')
           .where('recordId', 'in', allIds.length ? allIds : ['__none__'])
           .execute();
+        // The models, categories and products it made go out of the kits
+        // they were added to (2026-10-22): a model of the demo put in a
+        // department's kit stayed there as a bare id after a re-import.
+        await pruneKitItems(connection);
         // The numbers the demo took go with its records: importing it again
         // starts where the remaining data ends (PO-000001 on a database that
         // held only the demo), so the demo reads the same every time instead

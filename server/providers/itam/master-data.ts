@@ -36,6 +36,7 @@ import {
 import { addDays, addMonths, today } from './dates.js';
 import type { LeaverAccounts } from './leaver-accounts.js';
 import { OWNED_BY_USER, recoveryPlan, type RecoveryItem } from './recovery.js';
+import { pruneKitItems } from './kit-prune.js';
 import { subtreeIds } from './tree-scope.js';
 import type { HistoryOrigin, HistoryService } from './history.js';
 
@@ -2002,6 +2003,9 @@ export function createMasterDataService(
         );
         if (collection === 'onboardingKits')
           await recordKitChange(connection, existing, undefined, { actorId });
+        // What a kit named goes out of it with the record.
+        if (['models', 'categories', 'softwareProducts'].includes(collection))
+          await pruneKitItems(connection);
       });
     },
   };

@@ -1102,6 +1102,7 @@ const messages = {
     positionPlaceholder: 'Leave empty for the department default',
     items: 'Kit items',
     noItems: 'No items yet',
+    deletedItem: 'Deleted',
     anyModel: '(any model in this category)',
     quantity: 'Quantity',
     addItem: 'Add item',

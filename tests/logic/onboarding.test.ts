@@ -703,6 +703,35 @@ describe('onboarding', () => {
     ).not.toBe('model-wd22tb4');
   });
 
+  it('takes a deleted model out of the kits that named it', async () => {
+    const model = await create('master/models', {
+      name: 'Short-lived dock',
+      manufacturerId: 'mfr-dell',
+      categoryId: 'cat-dock',
+    });
+    const kit = await data<{ items: Record<string, unknown>[] }>(
+      await app.request('/api/itam/master/onboardingKits/kit-rd', manager),
+    );
+    await app.request('/api/itam/master/onboardingKits/kit-rd', {
+      ...json({ items: [...kit.items, { modelId: model.id, quantity: 1 }] }),
+      method: 'PATCH',
+      ...manager,
+    });
+    expect(
+      (
+        await app.request(`/api/itam/master/models/${model.id}`, {
+          method: 'DELETE',
+          ...manager,
+        })
+      ).status,
+    ).toBeLessThan(300);
+    const after = await data<{ items: Record<string, unknown>[] }>(
+      await app.request('/api/itam/master/onboardingKits/kit-rd', manager),
+    );
+    expect(after.items.map((item) => item.modelId)).not.toContain(model.id);
+    expect(after.items).toHaveLength(kit.items.length);
+  });
+
   it('keeps one kit per department and position, each item one thing', async () => {
     // Research & Development already has its default kit.
     const duplicate = await post('master/onboardingKits', {

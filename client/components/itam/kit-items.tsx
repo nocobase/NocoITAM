@@ -143,8 +143,13 @@ export function KitItems({
   // A row being edited says its asset type once chosen; a stored one reads
   // it from its model, category or product.
   const rowKind = (row: KitItem) => row.kind ?? kindOf(row);
-  const nameOf = (item: KitItem) =>
-    (item.id && names[COLLECTION[item.type]]?.get(item.id)) || item.id || '';
+  // A record deleted since it was put in reads as such, not as its id
+  // (2026-10-22); nothing shows while the names load.
+  const nameOf = (item: KitItem) => {
+    const known = names[COLLECTION[item.type]];
+    if (!item.id || !known) return '';
+    return known.get(item.id) ?? t('onboardingKits.deletedItem');
+  };
   const update = (index: number, patch: Partial<KitItem>) =>
     setRows((current) =>
       current.map((row, at) => (at === index ? { ...row, ...patch } : row)),
