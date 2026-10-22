@@ -194,6 +194,21 @@ it('lists the reader’s open follow-ups under 等你决定, and nothing else', 
       run({ id: 'replaced', status: 'superseded' }),
     ],
   };
+  // The others' stay beneath while the reader's own works (2026-10-22).
+  state.others = [
+    {
+      id: 'zoe',
+      deciderId: 'zoe',
+      status: 'pending',
+      failure: null,
+      createdAt: '2026-10-22T10:00:00.000Z',
+      decidedAt: null,
+      items: [{ key: 'k', kind: 'stale', subject: 'd', label: 'DE-1' }],
+      summary: '',
+      notes: [],
+      steps: [],
+    },
+  ];
   const { unmount } = render(
     <MemoryRouter>
       <DeviceSyncFollowUpBlock />
@@ -201,6 +216,10 @@ it('lists the reader’s open follow-ups under 等你决定, and nothing else', 
   );
   expect(screen.getByText('review.waiting')).toBeInTheDocument();
   expect(screen.getAllByText('deviceSyncRun.working')).toHaveLength(1);
+  expect(
+    screen.getByRole('button', { name: /^deviceSyncRun\.others/ }),
+  ).toBeInTheDocument();
+  state.others = [];
   expect(screen.queryByText('deviceSyncRun.accepted')).not.toBeInTheDocument();
   expect(screen.queryByText('review.superseded')).not.toBeInTheDocument();
   unmount();

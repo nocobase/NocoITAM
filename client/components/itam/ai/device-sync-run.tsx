@@ -485,8 +485,6 @@ export function DeviceSyncFollowUpBlock({
     onCards?.(cards);
   }, [cards, onCards]);
   if (!visible.length && !hasOthers) return null;
-  // Being worked out again: the others' wait till it is done.
-  const working = visible.some((run) => run.status === 'running');
   // Asset Steward's part of the page on a tinted panel (2026-10-21), so the
   // lists below it read as the page's own. Each follow-up its own card: the
   // reader's devices' and the asset managers' were one for a day
@@ -504,9 +502,9 @@ export function DeviceSyncFollowUpBlock({
           ))}
         </section>
       ) : null}
-      {/* Not while the reader's own are worked out again (2026-10-22):
-          the one working line is the panel's news then. */}
-      {hasOthers && !working ? <OthersFollowUps tab={tab} /> : null}
+      {/* Beneath, folded, even while the reader's own are worked out again
+          (2026-10-22; hidden then for a day): the place does not jump. */}
+      {hasOthers ? <OthersFollowUps tab={tab} /> : null}
     </div>
   );
 }
