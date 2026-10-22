@@ -108,6 +108,9 @@ export function useWorkCards(scope?: WorkScope): readonly WorkCard[] {
     'people',
     // 借出逾期 next (2026-10-22): late, and a person to chase.
     'loansDueToday',
+    // MDM 核对 after it (2026-10-22): devices too, seen otherwise than the
+    // register says. Device sync, only while a platform is connected.
+    'deviceChecks',
     // 待下单 and 待到货入库 as one column, 采购中 (2026-10-06).
     'purchasing',
     // 维修中 a column of its own again, after 采购中 (2026-10-22; one with
@@ -115,8 +118,6 @@ export function useWorkCards(scope?: WorkScope): readonly WorkCard[] {
     // devices that are late).
     'activeRepairs',
     'pendingDisposalExecution',
-    // Device sync (2026-10-15): only while a platform is connected.
-    'deviceChecks',
     'activeAudits',
   ]) {
     if (key === 'people') {

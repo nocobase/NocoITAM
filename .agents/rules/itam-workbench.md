@@ -266,8 +266,9 @@ overdue loan is drawn from its to-do (`LOAN_CARD`, the 设备 tag through
 `BoardCardEntry.badge`): the device, 借给 whom — the server returns the
 borrower's name as the record's `subtitle` — and when it was due back.
 The workbench's columns run 需要关注 (on a warning-tinted ground, since it
-holds risks rather than to-dos), 离职交接, 待审批, 采购中,
-待执行报废, 维修中, 借出逾期, 进行中的盘点. 待下单 (`pendingOrders`,
+holds risks rather than to-dos), then, since 2026-10-22, 待审批, 人员变动,
+借出逾期, MDM 核对, 采购中, 维修中, 待执行报废, 进行中的盘点 (the list in
+`useWorkCards`). 待下单 (`pendingOrders`,
 2026-10-05) is the approved purchase orders nobody has placed yet, granted
 by `order` and scoped like 待到货入库: without it an approved order sat in
 已批准 with nothing on the board asking for it. The two are one column,
