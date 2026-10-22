@@ -118,10 +118,10 @@ export default function WorkbenchPage(): ReactElement {
           is still said. */}
       <div
         ref={barRef}
-        // One row (2026-10-22): wrapped, the switches fell to a line of
-        // their own under the counts; now the counts scroll sideways where
-        // they do not fit, and the switches keep the right end.
-        className='sticky top-0 z-10 -mx-6 flex items-center justify-between gap-4 bg-background/85 px-6 py-2.5 backdrop-blur-xl'
+        // The switches keep the top right (2026-10-22): wrapped as one row,
+        // they fell to a line of their own under the counts; now the counts
+        // wrap within their own side, every one in view.
+        className='sticky top-0 z-10 -mx-6 flex items-start justify-between gap-4 bg-background/85 px-6 py-2.5 backdrop-blur-xl'
       >
         {loading ? <span /> : <WorkCounts cards={cards} offset={bar + 8} />}
         <div className='ml-auto flex shrink-0 items-center gap-2'>
@@ -216,8 +216,7 @@ function WorkCounts({
   // Each a small capsule (2026-10-17): the name, then its count in the pill
   // the columns' headings wear, so the line reads as the columns it leads to.
   return (
-    // A fade at the right end says more scroll in when they do not fit.
-    <nav className='-my-1 flex min-w-0 items-center gap-1.5 overflow-x-auto py-1 pr-6 [mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)] [scrollbar-width:none]'>
+    <nav className='flex min-w-0 flex-wrap items-center gap-1.5'>
       {waiting.map((card) => (
         <button
           key={card.key}
