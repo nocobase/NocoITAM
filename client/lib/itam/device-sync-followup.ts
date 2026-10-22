@@ -44,7 +44,7 @@ export function followUpParts(
         ['unowned', devices((kind) => kind !== 'unregistered')],
       ]
     : [
-        // In the order of the tabs (2026-10-21).
+        // 只在台账 before 信息不一致, as asked (2026-10-21).
         ['onlyInMdm', devices((kind) => kind === 'unregistered')],
         ['onlyOnRegister', devices((kind) => kind === 'unmanaged')],
         [

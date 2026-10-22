@@ -387,17 +387,51 @@ export function createDeviceSyncFollowUp(dependencies: {
   };
 
   /** Siblings of a shared suggestion go once one of them is decided. */
+  /**
+   * The other asset managers' copies of a shared suggestion, once one of
+   * them decided theirs (2026-10-22): no longer closed with it — a step
+   * carried out shows as 已处理 on their cards, the rest still theirs to
+   * decide, and declining is the decider's own. A copy whose every step is
+   * now settled closes as handled, so it does not wait in their 收件箱.
+   */
   const settleShared = async (run: AgentRun) => {
     if (!run.subjectId.startsWith('shared:')) return;
     const open = await runs().list(AGENT, {
       since: new Date(Date.now() - 7 * 86_400_000),
-      statuses: ['running', 'pending', 'failed'],
+      statuses: ['pending'],
       limit: 200,
     });
-    for (const other of open)
-      if (other.id !== run.id && other.subjectId.startsWith('shared:'))
-        await runs().supersede(AGENT, other.subjectType, other.subjectId);
+    const others = open.filter(
+      (other) => other.id !== run.id && other.subjectId.startsWith('shared:'),
+    );
+    if (!others.length) return;
+    const listed = await listedNow();
+    for (const other of others) {
+      const planned = ((other.result?.advice ?? []) as FollowUpAdvice[]).filter(
+        (entry) => (entry.steps?.length ?? 0) > 0,
+      );
+      if (
+        planned.length > 0 &&
+        other.deciderId &&
+        planned.every((entry) => !listed.has(`${entry.subject}|${entry.kind}`))
+      )
+        await service
+          .dismiss(other.id, other.deciderId, { settled: true })
+          .catch(() => undefined);
+    }
   };
+
+  /** What MDM 核对 lists now, by item and kind. */
+  const listedNow = async (): Promise<ReadonlySet<string>> =>
+    new Set([
+      ...(await review().checks()).map(
+        (check) => `${check.deviceId}|${check.kind}`,
+      ),
+      ...(await review().unregistered()).map(
+        (record) => `${record.id}|unregistered`,
+      ),
+      ...(await review().unmanaged()).map((device) => `${device.id}|unmanaged`),
+    ]);
 
   const words = (zhText: string, enText: string) => (zh() ? zhText : enText);
 
@@ -560,17 +594,7 @@ export function createDeviceSyncFollowUp(dependencies: {
       // to do (2026-10-22): a page with stale lists closed a new import's
       // follow-up the moment it appeared.
       if (options.settled) {
-        const listed = new Set([
-          ...(await review().checks()).map(
-            (check) => `${check.deviceId}|${check.kind}`,
-          ),
-          ...(await review().unregistered()).map(
-            (record) => `${record.id}|unregistered`,
-          ),
-          ...(await review().unmanaged()).map(
-            (device) => `${device.id}|unmanaged`,
-          ),
-        ]);
+        const listed = await listedNow();
         const advice = (run.result?.advice ?? []) as FollowUpAdvice[];
         if (
           advice.some(

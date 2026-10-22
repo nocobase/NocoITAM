@@ -281,6 +281,11 @@ product or in release notes, until it is listed here.
   the follow-up's prompt and the device-sync skill say to link to one rather
   than register a duplicate. A skill library provisioned earlier keeps its
   old text; the prompt carries the rule regardless.
+- **Asset managers' copies stay theirs** (2026-10-22): deciding one shared
+  copy no longer closes the others (`settleShared`). A step carried out
+  shows as 已处理 on the others' cards; declining is the decider's own. A
+  copy whose every planned item is off the lists closes as settled on the
+  server, so it does not wait in its manager's 收件箱.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

@@ -346,10 +346,10 @@ export default function DeviceSyncReviewPage(): ReactElement {
 }
 
 /**
- * The views shown as tabs; 已忽略 is listed under 只在 MDM. 信息不一致 last
- * (2026-10-21), the first one opening by default.
+ * The views shown as tabs; 不纳入台账 is listed under 只在 MDM. 信息不一致
+ * first again (2026-10-22), the first one opening by default.
  */
-const TABS = ['unregistered', 'unmanaged', 'checks'] as const;
+const TABS = ['checks', 'unregistered', 'unmanaged'] as const;
 
 /** Each view's count, as its own list reads it (undefined while loading). */
 function useReviewCounts(): Partial<

@@ -283,7 +283,7 @@ describe('MDM follow-up', () => {
     ]);
   });
 
-  it('replaces a suggestion left waiting, and settles the other asset managers’ with the first', async () => {
+  it('replaces a suggestion left waiting, and leaves the other asset managers’ copies to them', async () => {
     managers = ['ann', 'mia'];
     await followUp().afterSync(null);
     const first = await settled(() => latest('owner:mia'));
@@ -294,12 +294,33 @@ describe('MDM follow-up', () => {
     await followUp().afterSync(null);
     expect((await runs().get(first.id))?.status).toBe('superseded');
 
+    // Declining is Ann's own (2026-10-22): Mia's copy still waits.
     const anns = await settled(() => latest('shared:ann'));
     await followUp().dismiss(anns.id, 'ann');
-    expect((await latest('shared:mia'))?.status).toBe('superseded');
+    expect((await latest('shared:mia'))?.status).toBe('pending');
     // Only its person sets it aside.
     const mine = await settled(() => latest('owner:mia'));
     await expect(followUp().dismiss(mine.id, 'ann')).rejects.toThrow();
+  });
+
+  // Carried out by one asset manager, the others' copies close as handled
+  // once nothing on them is left to do (2026-10-22).
+  it('closes the other asset managers’ copies once their steps are done', async () => {
+    managers = ['ann', 'mia'];
+    model.decide = (item) =>
+      item.kind === 'unregistered' ? { action: 'ignore' } : null;
+    await followUp().afterSync(null);
+    const anns = await settled(() => latest('shared:ann'));
+    await settled(() => latest('shared:mia'));
+    const plan = await plans().get('ann', String(anns.result?.planId));
+    const done = await plans().execute('ann', plan.id, {
+      revision: plan.revision,
+    });
+    await followUp().planDecided({ plan: done, decision: 'executed' });
+    expect(await latest('shared:mia')).toMatchObject({
+      status: 'accepted',
+      decision: 'settled',
+    });
   });
 
   it('covers every kind: registers a record, and ignores a difference the register has right', async () => {
