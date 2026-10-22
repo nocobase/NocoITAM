@@ -500,6 +500,24 @@ export async function writeDemoSuggestions(input: {
     ).map((row) => [String(row.id), String(row.name)]),
   );
   const nameOf = (id: unknown) => people.get(String(id)) ?? '';
+  // The register's devices by name, for a platform record that reports a
+  // device under another serial (2026-10-21).
+  const devicesByName = new Map(
+    (
+      await q()
+        .selectFrom('devices')
+        .select(['id', 'name', 'deviceNo', 'serialNo'])
+        .execute<{
+          id: unknown;
+          name: unknown;
+          deviceNo: unknown;
+          serialNo: unknown;
+        }>()
+    ).flatMap((row) => {
+      const name = asText(row.name);
+      return name ? [[name, row] as const] : [];
+    }),
+  );
   const decide = (entry: Readonly<Record<string, unknown>>) => {
     const ref = String(entry.ref);
     const kind = String(entry.kind);
@@ -521,6 +539,17 @@ export async function writeDemoSuggestions(input: {
             : 'A virtual machine with no serial; not an asset to register.',
         );
       const modelId = asText(entry.suggestedModelId);
+      // A register device of that name, under another serial: the same
+      // machine, its board replaced.
+      const same = devicesByName.get(asText(entry.deviceName) ?? '');
+      if (same)
+        return answer(
+          'link',
+          zh
+            ? `台账里有同名设备 ${String(same.deviceNo)}，序列号是 ${asText(same.serialNo) ?? '—'}，MDM 上报的是 ${serial}，应是换过主板，关联到这台。`
+            : `The register has ${String(same.deviceNo)} by that name, serial ${asText(same.serialNo) ?? '—'}; MDM reports ${serial}. Its board was likely replaced; link it to that device.`,
+          { target: String(same.id) },
+        );
       if (modelId && asText(entry.personId))
         return answer(
           'register',

@@ -628,6 +628,7 @@ describe('CSV import / export and demo data', () => {
         .map((row) => row.externalId)
         .sort(),
     ).toEqual([
+      'demo-board-swap',
       'demo-build-vm',
       'demo-contractor-laptop',
       'demo-meeting-room',
@@ -718,8 +719,9 @@ describe('CSV import / export and demo data', () => {
     expect(
       checks.filter((check) => check.kind === 'statusMismatch'),
     ).toHaveLength(2);
-    // The new laptop, the newcomer's, the contractor's and the VM.
-    expect(await review.unregistered()).toHaveLength(4);
+    // The new laptop, the newcomer's, the contractor's, the VM and the
+    // desktop with a new board.
+    expect(await review.unregistered()).toHaveLength(5);
     expect((await review.unmanaged()).length).toBeGreaterThanOrEqual(1);
     // A test phone marked 不需要纳管, with its reason (2026-10-15).
     expect(await review.exempted()).toHaveLength(1);

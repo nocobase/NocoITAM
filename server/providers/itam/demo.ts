@@ -6454,6 +6454,16 @@ export function createDemoService(dependencies: {
               userPrincipal: 'feng.hao@northbridge.example',
               userName: texts.syncNewcomer,
             }),
+            // A register device under another serial (2026-10-21): SH-DT-202
+            // had its board replaced and reports the new one, so it is both
+            // only in MDM and only on the register until a person links the
+            // two (关联到已有设备); matching never goes by name.
+            extra('demo-board-swap', {
+              serialNo: 'MJ0K90Q4B7',
+              deviceName: 'SH-DT-202',
+              manufacturer: 'Lenovo',
+              model: 'ThinkCentre M90q Gen 4',
+            }),
             // Kept off the register by a person, below.
             extra('demo-meeting-room', {
               serialNo: 'MRDEMO04',

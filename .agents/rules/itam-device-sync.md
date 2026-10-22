@@ -103,7 +103,9 @@ product or in release notes, until it is listed here.
   online, and three not on the books (a laptop, a personal iPhone, a VM with
   a placeholder serial), and since 2026-10-21 a company ThinkPad under a
   company account that is no person on the register (冯浩, LAPTOP-FHDEMO05),
-  which the demo's follow-up leaves to verify rather than register. Both tables are in `ORDER` and in
+  which the demo's follow-up leaves to verify rather than register. And SH-DT-202
+  reporting a new board's serial (`demo-board-swap`): only in MDM and only
+  on the register at once, which the follow-up links by its name. Both tables are in `ORDER` and in
   `scripts/data-reset.ts`. The devices behind 信息不一致 answer to IT
   support, the importing account and 吴静 (2026-10-17), so the 负责人
   column and each person's MDM 跟进 differ; never the leaver. SH-DT-201, a Mac mini under 只在台账, is the
