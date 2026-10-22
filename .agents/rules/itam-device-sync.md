@@ -288,8 +288,9 @@ product or in release notes, until it is listed here.
   (`followUpSubject`, `parseFollowUpSubject`; runs from before have no tab
   and stand under their first item's). Each tab shows its own cards under
   its hint (`DeviceSyncFollowUpBlock tab`), the reader's devices' first; the
-  page has no 等你决定 panel above the tabs any more. With no card on the
-  tab, its hint's line offers MDM 差异跟进 for that tab (`ask(by, part,
+  page has no 等你决定 panel above the tabs any more. With no card shown on
+  the tab, folded ones included (`onCards`), its hint's line offers MDM
+  差异跟进 for that tab (`ask(by, part,
 tab)`); each card's 重新运行 runs its part and tab. 收件箱 lists one entry
   per follow-up and opens it on its tab (`?view=`). Shared copies settle
   across asset managers per tab.

@@ -92,7 +92,6 @@ import {
 } from '@/lib/itam/api';
 import { OpenFullPageContext } from '@/lib/itam/detail-chrome';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
-import { followUpPlace } from '@/lib/itam/device-sync-followup';
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate, text } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
@@ -121,7 +120,6 @@ export default function DeviceSyncReviewPage(): ReactElement {
   });
   const counts = useReviewCounts();
   const openFull = useContext(OpenFullPageContext);
-  const inbox = useInbox();
   const requested = params.get('view');
   // 已忽略 is a section of 只在 MDM: a link to it (the settings page's)
   // opens that tab and scrolls down to it.
@@ -136,13 +134,9 @@ export default function DeviceSyncReviewPage(): ReactElement {
           : TABS.includes(requested as (typeof TABS)[number])
             ? (requested as (typeof TABS)[number])
             : TABS[0];
-  // This tab's follow-ups working or waiting: their cards run them again.
-  const followingHere = (inbox.data?.open ?? []).some(
-    (run) =>
-      run.agent === 'deviceSync' &&
-      run.status !== 'failed' &&
-      followUpPlace(run).tab === view,
-  );
+  // This tab's follow-up cards, folded ones included: they run again on
+  // their own, so the tab offers to start one only with none (2026-10-22).
+  const [cardsHere, setCardsHere] = useState(0);
   const ignoredRef = useRef<HTMLElement>(null);
   const ignoredShown = view === 'unregistered' && (counts.ignored ?? 0) > 0;
   // What was linked here by hand, under 只在 MDM's rows (2026-10-16).
@@ -229,7 +223,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
             <p className='text-sm text-muted-foreground'>
               {t(`deviceSync.review.hints.${view}`)}
             </p>
-            {ai.available && !followingHere ? (
+            {ai.available && cardsHere === 0 ? (
               <AiShortcut
                 disabled={followUp.isPending}
                 onClick={() => followUp.mutate({ tab: view })}
@@ -238,7 +232,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
               </AiShortcut>
             ) : null}
           </div>
-          <DeviceSyncFollowUpBlock tab={view} />
+          <DeviceSyncFollowUpBlock tab={view} onCards={setCardsHere} />
           {followUp.isSuccess && followUp.data.length === 0 ? (
             <Alert>
               <Info aria-hidden />

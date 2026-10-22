@@ -24,6 +24,8 @@ const state = vi.hoisted(() => ({
     result?: unknown;
   }[],
   permissions: {} as Record<string, boolean>,
+  // How many follow-up cards the tab shows.
+  cards: 0,
   followUp: {
     mutate: vi.fn(),
     isPending: false,
@@ -82,9 +84,20 @@ vi.mock('../../client/lib/itam/agents.js', () => ({
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCollectionPermissions: () => state.permissions,
 }));
-vi.mock('../../client/components/itam/ai/device-sync-run.js', () => ({
-  DeviceSyncFollowUpBlock: () => <p>follow-up block</p>,
-}));
+vi.mock('../../client/components/itam/ai/device-sync-run.js', async () => {
+  const { useEffect } = await import('react');
+  return {
+    // Says how many cards it shows, as the real one does.
+    DeviceSyncFollowUpBlock: ({
+      onCards,
+    }: {
+      onCards?: (count: number) => void;
+    }) => {
+      useEffect(() => onCards?.(state.cards), [onCards]);
+      return <p>follow-up block</p>;
+    },
+  };
+});
 vi.mock('../../client/lib/itam/references.js', () => ({
   useReferenceNames: () => ({
     users: new Map([['mia', 'Mia']]),
@@ -404,15 +417,16 @@ describe('MDM 核对 → 信息不一致', () => {
 
   // The cards each run again on their own (2026-10-22): no header button
   // while one is there.
-  it('leaves running again to the cards while both wait', () => {
+  // A card shown, folded or not, runs again on its own (2026-10-22).
+  it('leaves running again to the cards the tab shows', () => {
     state.ai = true;
     state.views = { checks: [check] };
-    state.open = [{ agent: 'deviceSync', subjectId: 'owner:mia:checks' }];
+    state.cards = 1;
     show();
     expect(
       screen.queryByRole('button', { name: 'deviceSync.review.followUp' }),
     ).toBeNull();
-    state.open = [];
+    state.cards = 0;
     state.ai = false;
   });
 

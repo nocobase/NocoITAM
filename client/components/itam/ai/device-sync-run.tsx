@@ -418,9 +418,15 @@ const isOpenRun = (run: { readonly status: string }) =>
  */
 export function DeviceSyncFollowUpBlock({
   tab,
+  onCards,
 }: {
   /** The tab of MDM 核对 it stands under: its follow-ups alone (2026-10-22). */
   readonly tab?: FollowUpTab;
+  /**
+   * How many cards it shows, folded ones included (2026-10-22): the tab
+   * offers to start a follow-up only while there is none to run again.
+   */
+  readonly onCards?: (count: number) => void;
 } = {}): ReactElement | null {
   const { t } = useTranslation();
   const focus = useContext(FollowUpFocusContext);
@@ -462,6 +468,10 @@ export function DeviceSyncFollowUpBlock({
         (run.status === 'accepted' || run.status === 'dismissed') &&
         !newer(run)),
   );
+  const cards = visible.length;
+  useEffect(() => {
+    onCards?.(cards);
+  }, [cards, onCards]);
   if (!visible.length && !hasOthers) return null;
   // Being worked out again: the others' wait till it is done.
   const working = visible.some((run) => run.status === 'running');
