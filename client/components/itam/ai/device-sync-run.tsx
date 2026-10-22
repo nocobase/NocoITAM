@@ -566,7 +566,7 @@ function OthersFollowUps({
               </p>
             ) : (
               <>
-                {row.summary ? <p>{row.summary}</p> : null}
+                {/* No count line (2026-10-22): the title counts, the steps and notes say the rest. */}
                 {row.steps.length ? (
                   <section className='space-y-1'>
                     <h4 className='text-xs text-muted-foreground'>

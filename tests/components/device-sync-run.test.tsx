@@ -286,6 +286,7 @@ it('lists the other owners’ follow-ups to read, with nothing to act on', () =>
   expect(screen.getByText('deviceSyncRun.otherDevices')).toBeInTheDocument();
   expect(screen.getByText('Transfer DE-2 to Liu Yang')).toBeInTheDocument();
   expect(screen.getByText('DE-1: ask its user')).toBeInTheDocument();
+  expect(screen.queryByText('1 difference')).not.toBeInTheDocument();
   // The reason sits beneath, on its own line.
   expect(screen.getByText('No sync for 40 days')).toBeInTheDocument();
   expect(
