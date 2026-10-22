@@ -546,6 +546,36 @@ describe('MDM follow-up', () => {
     ).toEqual([]);
   });
 
+  it('shows the others a follow-up carried out while its notes are listed', async () => {
+    model.decide = (item) =>
+      item.kind === 'userMismatch'
+        ? { action: 'transfer', target: wangWu }
+        : null;
+    await followUp().afterSync(null);
+    const mine = await settled(() => latest('owner:mia:checks'));
+    await settled(() => latest('shared:ann:unregistered'));
+    const plan = await plans().get('mia', String(mine.result?.planId));
+    const done = await plans().execute('mia', plan.id, {
+      revision: plan.revision,
+    });
+    await followUp().planDecided({ plan: done, decision: 'executed' });
+    const anns = (await (
+      await app.request('/api/itam/device-sync/followUps', {
+        user: 'ann',
+        role: 'manager',
+      })
+    ).json()) as { data: Record<string, unknown>[] };
+    // Its notes are left to do (2026-10-22); its plan is done.
+    expect(anns.data).toHaveLength(1);
+    expect(anns.data[0]).toMatchObject({
+      deciderId: 'mia',
+      status: 'accepted',
+      decision: 'executed',
+      steps: [],
+    });
+    expect((anns.data[0]!.notes as string[]).length).toBeGreaterThan(0);
+  });
+
   it('runs only while switched on', async () => {
     await app.container
       .resolve(databaseManagerToken)

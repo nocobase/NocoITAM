@@ -215,8 +215,9 @@ export interface OtherFollowUp {
   readonly status: string;
   readonly failure: string | null;
   readonly createdAt: string;
-  /** When it was set aside, for one that was. */
+  /** When it was carried out or set aside, for one that was, and how. */
   readonly decidedAt: string | null;
+  readonly decision: string | null;
   readonly items: readonly FollowUpItem[];
   readonly summary: string;
   readonly notes: readonly string[];
@@ -528,9 +529,9 @@ export function createDeviceSyncFollowUp(dependencies: {
 
     async others(reader) {
       if (!(await assetManagers()).includes(reader)) return [];
-      // Each person's latest of a tab: open, or set aside while what it
-      // was about is still listed (2026-10-22), so the others see it was
-      // looked at and left. A newer one, carried out or not, replaces it.
+      // Each person's latest of a tab: open, or carried out or set aside
+      // while what it was about is still listed (2026-10-22), so the others
+      // see it was looked at and what is left. A newer one replaces it.
       const latest = new Map<string, AgentRun>();
       for (const run of await runs().list(AGENT, {
         since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
@@ -544,14 +545,18 @@ export function createDeviceSyncFollowUp(dependencies: {
         )
           latest.set(run.subjectId, run);
       const shown = [...latest.values()].filter((run) =>
-        ['running', 'pending', 'failed', 'dismissed'].includes(run.status),
+        ['running', 'pending', 'failed', 'dismissed', 'accepted'].includes(
+          run.status,
+        ),
       );
-      const listed = shown.some((run) => run.status === 'dismissed')
+      const decided = (run: AgentRun) =>
+        run.status === 'dismissed' || run.status === 'accepted';
+      const listed = shown.some(decided)
         ? await listedNow()
         : new Set<string>();
       const open = shown.filter(
         (run) =>
-          run.status !== 'dismissed' ||
+          !decided(run) ||
           ((run.result?.items ?? []) as FollowUpItem[]).some((item) =>
             listed.has(`${item.subject}|${item.kind}`),
           ),
@@ -585,6 +590,7 @@ export function createDeviceSyncFollowUp(dependencies: {
           failure: run.failure,
           createdAt: run.createdAt,
           decidedAt: run.decidedAt,
+          decision: run.decision,
           items: (run.result?.items ?? []) as FollowUpItem[],
           summary: asText(run.result?.summary) ?? '',
           notes: (run.result?.notes ?? []) as string[],

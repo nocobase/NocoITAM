@@ -202,7 +202,8 @@ function FollowUpReviewCard({
   const plan = useRunPlan(run);
   const [open, setOpen] = useState<boolean>();
   const [skipped, setSkipped] = useState<ReadonlySet<number>>(() => new Set());
-  const handled = useHandledSteps(run);
+  const listed = useListed();
+  const handled = handledOf(run, listed);
   // What was settled on its row is left out, as if unticked.
   const leftOut = new Set([...skipped, ...handled]);
   const notes = run.result?.notes ?? [];
@@ -236,22 +237,20 @@ function FollowUpReviewCard({
         : t('deviceSyncRun.handledBelow', { count: handled.size })
       : null,
     // No count of notes to look at (2026-10-22): they are listed beneath.
-    decided
-      ? run.status === 'accepted'
-        ? t(
-            run.decision === 'settled'
-              ? 'deviceSyncRun.allHandledBelow'
-              : 'deviceSyncRun.accepted',
-          )
-        : run.status === 'dismissed'
-          ? null
-          : t('deviceSyncRun.superseded')
+    // Carried out or set aside, a tag says so.
+    decided && run.status !== 'accepted' && run.status !== 'dismissed'
+      ? t('deviceSyncRun.superseded')
       : null,
   ].filter(Boolean);
+  // Carried out with notes still listed (2026-10-22): open on them, as
+  // what is left to do by hand.
+  const notesLeft =
+    run.status === 'accepted' && notes.length > 0 && stillListed(run, listed);
   return (
     <Collapsible
-      // Open while it waits, as asked (2026-10-21); folded once decided.
-      open={open ?? !decided}
+      // Open while it waits, as asked (2026-10-21); folded once decided,
+      // unless notes are left to do.
+      open={open ?? (!decided || notesLeft)}
       onOpenChange={setOpen}
       className='rounded-lg border bg-card'
     >
@@ -264,8 +263,11 @@ function FollowUpReviewCard({
             aria-hidden
           />
           <span className='font-medium'>{followUpTitle(run, t)}</span>
-          {run.status === 'dismissed' ? (
-            <SetAside at={run.decidedAt ?? run.updatedAt} />
+          {decidedTag(run, t) ? (
+            <DecidedTag
+              label={decidedTag(run, t) ?? ''}
+              at={run.decidedAt ?? run.updatedAt}
+            />
           ) : null}
           {facts.length ? (
             <span className='whitespace-nowrap text-muted-foreground'>
@@ -331,15 +333,6 @@ function FollowUpReviewCard({
       ) : null}
     </Collapsible>
   );
-}
-
-/**
- * The plan steps whose difference or record is no longer listed on MDM 核对
- * (2026-10-21): settled on its row there, by hand, since the plan was
- * proposed. Nothing until all three lists have loaded.
- */
-function useHandledSteps(run: DeviceSyncRun): ReadonlySet<number> {
-  return handledOf(run, useListed());
 }
 
 /**
@@ -465,19 +458,16 @@ export function DeviceSyncFollowUpBlock({
       (other) =>
         other.subjectId === run.subjectId && other.createdAt > run.createdAt,
     );
-  // Set aside stays, folded, while what it was about is still listed
-  // (2026-10-22): it says the part was looked at, and offers to run again.
+  // Carried out or set aside stays while what it was about is still listed
+  // (2026-10-22): its notes may be left to do, and it offers to run again.
+  // One just carried out here stays till the page is left.
   const listed = useListed();
-  const stillListed = (run: DeviceSyncRun) =>
-    !listed ||
-    (run.result?.items ?? []).some((item) =>
-      listed.keys.has(`${item.subject}|${item.kind}`),
-    );
   const visible = runs.filter(
     (run) =>
       isOpenRun(run) ||
       (!newer(run) &&
-        ((run.status === 'dismissed' && stillListed(run)) ||
+        (run.status === 'dismissed' || run.status === 'accepted') &&
+        (stillListed(run, listed) ||
           (shown.includes(run.id) && run.status === 'accepted'))),
   );
   const cards = visible.length;
@@ -559,8 +549,11 @@ function OthersFollowUps({
                 : t('deviceSyncRun.otherOwn', {
                     name: names.users?.get(row.deciderId) ?? '…',
                   })}
-              {row.status === 'dismissed' ? (
-                <SetAside at={row.decidedAt ?? row.createdAt} />
+              {decidedTag(row, t) ? (
+                <DecidedTag
+                  label={decidedTag(row, t) ?? ''}
+                  at={row.decidedAt ?? row.createdAt}
+                />
               ) : null}
             </h3>
             {row.status === 'running' ? (
@@ -630,12 +623,47 @@ function FollowUpNote({ note }: { note: string }) {
   );
 }
 
-/** 暂不处理 as a tag, and when (2026-10-22). */
-function SetAside({ at }: { at: string }) {
+/**
+ * How a follow-up ended, as a tag (2026-10-22): carried out, settled on its
+ * rows, or set aside. Nothing for one still open.
+ */
+function decidedTag(
+  run: { readonly status: string; readonly decision?: string | null },
+  t: (key: string) => string,
+): string | null {
+  if (run.status === 'dismissed') return t('deviceSyncRun.setAside');
+  if (run.status === 'accepted')
+    return t(
+      run.decision === 'settled'
+        ? 'deviceSyncRun.allHandledBelow'
+        : 'deviceSyncRun.accepted',
+    );
+  return null;
+}
+
+/** Whether MDM 核对 still lists any of a follow-up's items; no till known. */
+function stillListed(
+  run: {
+    readonly result?: {
+      readonly items?: readonly { subject: string; kind: string }[];
+    } | null;
+  },
+  listed: Listed | null,
+): boolean {
+  return (
+    listed !== null &&
+    (run.result?.items ?? []).some((item) =>
+      listed.keys.has(`${item.subject}|${item.kind}`),
+    )
+  );
+}
+
+/** How a follow-up ended as a tag, and when. */
+function DecidedTag({ label, at }: { label: string; at: string }) {
   const { t, i18n } = useTranslation();
   return (
     <span className='inline-flex items-center gap-1.5 text-sm font-normal whitespace-nowrap text-muted-foreground'>
-      <Badge variant='secondary'>{t('deviceSyncRun.setAside')}</Badge>
+      <Badge variant='secondary'>{label}</Badge>
       <span className='tabular-nums'>
         {relativeTime(at, i18n.language, t('comments.justNow'))}
       </span>

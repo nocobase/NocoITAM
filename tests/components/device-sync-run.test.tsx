@@ -519,3 +519,41 @@ it('keeps a follow-up set aside while its items are listed', () => {
   );
   expect(screen.queryByText('deviceSyncRun.setAside')).toBeNull();
 });
+
+// Carried out with notes left to do: it stays, open on them, tagged
+// (2026-10-22).
+it('keeps a follow-up carried out open while its notes are listed', () => {
+  state.plan = null;
+  state.inbox = {
+    open: [],
+    handled: [
+      run({
+        id: 'done',
+        status: 'accepted',
+        decision: 'executed',
+        decidedAt: '2026-10-22T10:00:00.000Z',
+        result: {
+          items: [
+            {
+              key: 'r1|unregistered',
+              kind: 'unregistered',
+              subject: 'r1',
+              label: 'r1',
+            },
+          ],
+          planId: null,
+          notes: ['r1: register it by hand'],
+          summary: '',
+        },
+      }),
+    ],
+  };
+  state.review = { checks: [], unregistered: [{ id: 'r1' }], unmanaged: [] };
+  render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('deviceSyncRun.accepted')).toBeInTheDocument();
+  expect(screen.getByText('r1: register it by hand')).toBeVisible();
+});

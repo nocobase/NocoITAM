@@ -125,11 +125,15 @@ export type AgentRun = ApprovalReviewRun | DeviceSyncRun;
 export interface OtherFollowUp {
   readonly id: string;
   readonly deciderId: string;
-  /** Set aside, while what it was about is still listed (2026-10-22). */
-  readonly status: 'running' | 'pending' | 'failed' | 'dismissed';
+  /**
+   * Carried out or set aside, while what it was about is still listed
+   * (2026-10-22).
+   */
+  readonly status: 'running' | 'pending' | 'failed' | 'dismissed' | 'accepted';
   readonly failure: string | null;
   readonly createdAt: string;
   readonly decidedAt: string | null;
+  readonly decision: string | null;
   readonly items: DeviceSyncResult['items'];
   readonly summary: string;
   readonly notes: readonly string[];
