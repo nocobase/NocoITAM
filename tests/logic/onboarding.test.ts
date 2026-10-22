@@ -661,6 +661,48 @@ describe('onboarding', () => {
     expect(rd.inheritable).toBe(false);
   });
 
+  it("tells a kit's changes on its department's history", async () => {
+    // R&D's kit loses its dock, gets a second monitor and gains a mouse.
+    const kit = await data<{ items: Record<string, unknown>[] }>(
+      await app.request('/api/itam/master/onboardingKits/kit-rd', manager),
+    );
+    const items = kit.items
+      .filter((item) => item.modelId !== 'model-wd22tb4')
+      .map((item) =>
+        item.modelId === 'model-u2723qe' ? { ...item, quantity: 2 } : item,
+      );
+    expect(
+      (
+        await app.request('/api/itam/master/onboardingKits/kit-rd', {
+          ...json({ items }),
+          method: 'PATCH',
+          ...manager,
+        })
+      ).status,
+    ).toBe(200);
+    const timeline = await data<
+      { event: { type: string; payload: Record<string, unknown> } | null }[]
+    >(
+      await app.request(
+        '/api/itam/master/departments/dept-rd/history',
+        manager,
+      ),
+    );
+    const changed = timeline.find(
+      (item) => item.event?.type === 'onboardingKitChanged',
+    )?.event;
+    expect(changed?.payload).toMatchObject({
+      position: null,
+      added: [],
+      removed: [{ quantity: 1 }],
+      changed: [{ from: 1, to: 2 }],
+    });
+    // By name, not by id.
+    expect(
+      (changed?.payload.removed as { label: string }[])[0]?.label,
+    ).not.toBe('model-wd22tb4');
+  });
+
   it('keeps one kit per department and position, each item one thing', async () => {
     // Research & Development already has its default kit.
     const duplicate = await post('master/onboardingKits', {

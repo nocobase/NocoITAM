@@ -62,3 +62,44 @@ it('translates counted events in both languages without rewriting comments', asy
     describe('devicesChanged', '1 device(s) listed', { deviceIds: ['a'] }),
   ).toBe('1 device listed');
 });
+
+it("says what a department's onboarding kit gained, lost and changed", async () => {
+  const runtime = new I18nRuntime({ defaultLocale: 'zh-CN' });
+  runtime.registerApplicationNamespace('test', {
+    'zh-CN': async () => ({ default: zhCN }),
+    'en-US': async () => ({ default: enUS }),
+  });
+  await runtime.init('zh-CN');
+  const describe = (payload: Record<string, unknown>) =>
+    describeEvent(
+      {
+        id: 'event',
+        actorId: 'user',
+        createdAt: '2026-10-22',
+        type: 'onboardingKitChanged',
+        summary: 'Onboarding kit changed',
+        payload,
+      },
+      runtime.getFixedT('test'),
+      'deviceStatus',
+    );
+  expect(
+    describe({
+      position: null,
+      added: [{ label: 'MX Keys', quantity: 1 }],
+      removed: [{ label: 'WD22TB4', quantity: 1 }],
+      changed: [{ label: 'U2723QE', from: 1, to: 2 }],
+    }),
+  ).toBe(
+    '部门默认配置：新增 MX Keys ×1；删除 WD22TB4 ×1；修改 U2723QE ×1 → ×2',
+  );
+  expect(
+    describe({
+      position: '前端工程师',
+      deleted: true,
+      added: [],
+      removed: [{ label: 'WD22TB4', quantity: 1 }],
+      changed: [],
+    }),
+  ).toBe('删除 前端工程师 的配置');
+});

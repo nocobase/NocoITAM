@@ -488,6 +488,102 @@ export function createMasterDataService(
     return decoded;
   };
 
+  /**
+   * A department's 入职配置 changed (2026-10-22): a kit has no page of its
+   * own, so what changed is told on its department's history — which kit,
+   * and the items added, removed or changed in number, by name.
+   */
+  const recordKitChange = async (
+    connection: DatabaseConnection,
+    before: Row | undefined,
+    after: Row | undefined,
+    source: { readonly actorId: string; readonly origin?: HistoryOrigin },
+  ): Promise<void> => {
+    const kit = after ?? before;
+    const departmentId = asText(kit?.departmentId);
+    if (!kit || !departmentId) return;
+    const REFS = [
+      ['modelId', 'models'],
+      ['categoryId', 'categories'],
+      ['softwareProductId', 'softwareProducts'],
+    ] as const;
+    const itemsOf = (row: Row | undefined) => {
+      const items = new Map<
+        string,
+        { collection: string; id: string; quantity: number }
+      >();
+      const list = row ? decode('onboardingKits', row).items : undefined;
+      for (const entry of Array.isArray(list) ? list : []) {
+        const item = (entry ?? {}) as Record<string, unknown>;
+        for (const [field, collection] of REFS) {
+          const id = asText(item[field]);
+          if (!id) continue;
+          items.set(`${collection}:${id}`, {
+            collection,
+            id,
+            quantity: Math.max(1, Number(item.quantity) || 1),
+          });
+        }
+      }
+      return items;
+    };
+    const was = itemsOf(before);
+    const now = itemsOf(after);
+    const added = [...now].filter(([key]) => !was.has(key));
+    const removed = [...was].filter(([key]) => !now.has(key));
+    const changed = [...now].filter(
+      ([key, item]) => was.has(key) && was.get(key)!.quantity !== item.quantity,
+    );
+    if (before && after && !added.length && !removed.length && !changed.length)
+      return;
+    const names = new Map<string, string>();
+    for (const [, collection] of REFS) {
+      const ids = [...was.values(), ...now.values()]
+        .filter((item) => item.collection === collection)
+        .map((item) => item.id);
+      if (ids.length === 0) continue;
+      for (const row of await connection.query
+        .selectFrom(collection)
+        .select(['id', 'name'])
+        .where('id', 'in', ids)
+        .execute<{ id: string; name: string }>())
+        names.set(`${collection}:${row.id}`, row.name);
+    }
+    const label = (key: string) => names.get(key) ?? key.split(':')[1];
+    const position = asText(kit.position) ?? null;
+    await history.record(
+      {
+        subjectType: 'departments',
+        subjectId: departmentId,
+        type: 'onboardingKitChanged',
+        summary: `Onboarding kit${position ? ` for ${position}` : ''} ${
+          !before ? 'set' : !after ? 'removed' : 'changed'
+        }`,
+        payload: {
+          position,
+          ...(!before ? { created: true } : {}),
+          ...(!after ? { deleted: true } : {}),
+          added: added.map(([key, item]) => ({
+            label: label(key),
+            quantity: item.quantity,
+          })),
+          removed: removed.map(([key, item]) => ({
+            label: label(key),
+            quantity: item.quantity,
+          })),
+          changed: changed.map(([key, item]) => ({
+            label: label(key),
+            from: was.get(key)!.quantity,
+            to: item.quantity,
+          })),
+        },
+        actorId: source.actorId,
+        ...(source.origin ? { origin: source.origin } : {}),
+      },
+      connection,
+    );
+  };
+
   const findRaw = async (
     collection: string,
     id: string,
@@ -806,6 +902,11 @@ export function createMasterDataService(
             values.departmentId,
             values.position,
           );
+        if (collection === 'onboardingKits')
+          await recordKitChange(connection, undefined, values, {
+            actorId,
+            ...(origin ? { origin } : {}),
+          });
       });
       const created = await findRaw(collection, id);
       return pickFields(
@@ -1018,6 +1119,13 @@ export function createMasterDataService(
           { actorId, ...(origin ? { origin } : {}) },
           connection,
         );
+        if (collection === 'onboardingKits')
+          await recordKitChange(
+            connection,
+            before,
+            { ...previous, ...input },
+            { actorId, ...(origin ? { origin } : {}) },
+          );
         // The planned replacement date is the category's rule applied to
         // the purchase date, so a changed cycle moves every device filed
         // under the category.
@@ -1874,7 +1982,7 @@ export function createMasterDataService(
       const existing = await database
         .query()
         .selectFrom(collection)
-        .select('id')
+        .selectAll()
         .where('id', '=', id)
         .where((eb) => compileAuthzScope(eb, conditions.scope))
         .executeTakeFirst();
@@ -1892,6 +2000,8 @@ export function createMasterDataService(
           { subjectType: collection, subjectId: id, action: 'delete', actorId },
           connection,
         );
+        if (collection === 'onboardingKits')
+          await recordKitChange(connection, existing, undefined, { actorId });
       });
     },
   };

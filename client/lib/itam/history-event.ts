@@ -61,6 +61,50 @@ export function describeEvent(
       from: label('from'),
       to: label('to'),
     });
+  // A department's 入职配置 changed (2026-10-22): which kit, and its items
+  // added, removed or changed in number, by name.
+  if (row.type === 'onboardingKitChanged') {
+    const position = label('position');
+    const kit = position
+      ? t('departmentKits.positionKit', { position })
+      : t('departmentKits.default');
+    const entries = (key: string) =>
+      Array.isArray(payload[key])
+        ? (payload[key] as Record<string, unknown>[])
+        : [];
+    const items = (key: string) =>
+      entries(key)
+        .map((item) => `${String(item.label)} ×${String(item.quantity)}`)
+        .join(t('history.summaries.kitItemsJoin'));
+    const parts = [
+      entries('added').length
+        ? `${t('history.entry.added')} ${items('added')}`
+        : '',
+      entries('removed').length && payload.deleted !== true
+        ? `${t('history.entry.removed')} ${items('removed')}`
+        : '',
+      entries('changed').length
+        ? `${t('history.entry.changed')} ${entries('changed')
+            .map(
+              (item) =>
+                `${String(item.label)} ×${String(item.from)} → ×${String(item.to)}`,
+            )
+            .join(t('history.summaries.kitItemsJoin'))}`
+        : '',
+    ].filter(Boolean);
+    const head =
+      payload.deleted === true
+        ? t('history.summaries.kitRemoved', { kit })
+        : payload.created === true
+          ? t('history.summaries.kitSet', { kit })
+          : kit;
+    return parts.length
+      ? t('history.summaries.kitChanges', {
+          kit: head,
+          changes: parts.join(t('history.summaries.kitPartsJoin')),
+        })
+      : head;
+  }
   // Audit, receiving and disposal-list events: counts and a
   // name from the payload. An older event without the name keeps its
   // stored summary rather than reading half a sentence.
