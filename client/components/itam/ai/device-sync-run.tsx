@@ -529,13 +529,23 @@ function OthersFollowUps({
             className='space-y-2 rounded-lg border bg-card p-4 text-sm'
           >
             <h3 className='font-medium'>
-              {t('deviceSyncRun.otherDevices', {
-                name: names.users?.get(row.deciderId) ?? '…',
-                parts: followUpParts(row.items, t, false),
-              })}
+              {/* Nothing counted yet while it works: the name alone. */}
+              {row.items.length
+                ? t('deviceSyncRun.otherDevices', {
+                    name: names.users?.get(row.deciderId) ?? '…',
+                    parts: followUpParts(row.items, t, false),
+                  })
+                : t('deviceSyncRun.otherOwn', {
+                    name: names.users?.get(row.deciderId) ?? '…',
+                  })}
             </h3>
             {row.status === 'running' ? (
-              <p className='text-muted-foreground'>
+              // With the spinner, as one's own card says it (2026-10-22).
+              <p
+                role='status'
+                className='flex items-center gap-2 text-muted-foreground'
+              >
+                <Spinner />
                 {t('deviceSyncRun.working')}
               </p>
             ) : row.status === 'failed' ? (

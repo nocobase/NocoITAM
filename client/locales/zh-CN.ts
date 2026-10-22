@@ -3603,6 +3603,7 @@ const zhCN: AppResource = {
     sharedDevices: '待资产管理员处理：{{parts}}',
     ownDevices: '你负责的设备：{{parts}}',
     otherDevices: '{{name}}负责的设备：{{parts}}',
+    otherOwn: '{{name}}负责的设备',
     sharedParts: {
       onlyInMdm_one: '{{count}} 台只在 MDM',
       onlyInMdm_other: '{{count}} 台只在 MDM',

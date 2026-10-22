@@ -3809,6 +3809,7 @@ const messages = {
     sharedDevices: 'For the asset managers: {{parts}}',
     ownDevices: 'Your devices: {{parts}}',
     otherDevices: '{{name}}’s devices: {{parts}}',
+    otherOwn: '{{name}}’s devices',
     sharedParts: {
       onlyInMdm_one: '{{count}} only in MDM',
       onlyInMdm_other: '{{count}} only in MDM',
