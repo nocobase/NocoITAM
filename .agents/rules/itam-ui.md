@@ -312,6 +312,12 @@ every menu anchored to an icon button one button wide and wrapped each label.
 Items stay on one line. Keep that when the primitive is upgraded from the
 registry.
 
+A picked tab reads in the brand colour, text and line (2026-10-22): the
+`line` variant of `TabsTrigger` carries it (an application change to the
+primitive — keep it on a registry upgrade), and so do the hand-drawn tab
+bars (`detail-page.tsx`, `link-tabs.tsx`, settings' `shared.tsx`, the
+inbox's `inbox-list.tsx`) with `border-primary text-primary`.
+
 `RadioGroupItem` dims itself through `data-disabled:` as well as `disabled:`.
 The registry default styles only the CSS `:disabled` pseudo-class, which a
 `<span role="radio">` never matches, so a disabled radio refused clicks while

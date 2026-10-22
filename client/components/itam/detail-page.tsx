@@ -204,7 +204,7 @@ export function DetailPage({
               detail page, so the two sides read as one. */}
             <TabsFrame>
               {/* NocoCRM's record tabs (DetailTabBar): underlined on a thin
-                  rule, the open tab in the foreground over a 2px line of it,
+                  rule, the open tab in the brand colour (2026-10-22) over a 2px line of it,
                   the others muted until hovered, each led by its icon and
                   followed by its count in plain muted figures. The first
                   tab's text lines up with the content below. */}
@@ -225,7 +225,7 @@ export function DetailPage({
                         cn(
                           '-mb-px flex h-10 items-center gap-1.5 border-b-2 text-sm font-medium transition-colors outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
                           isActive
-                            ? 'border-foreground text-foreground'
+                            ? 'border-primary text-primary'
                             : 'border-transparent text-muted-foreground hover:text-foreground',
                         )
                       }
