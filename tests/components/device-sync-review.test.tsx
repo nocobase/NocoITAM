@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { RecordDrawerContext } from '../../client/lib/itam/record-drawer.js';
 import DeviceSyncReviewPage from '../../client/pages/itam/device-sync.js';
 import type {
   ExemptDevice,
@@ -372,14 +373,20 @@ describe('MDM 核对 → 信息不一致', () => {
     ).toHaveAttribute('href', '/devices/d9?do=transfer&to=p2');
   });
 
-  it('opens the device without the grant to settle it', () => {
+  // In the record drawer (2026-10-22), the list staying behind.
+  it('opens the device in the drawer without the grant to settle it', () => {
     state.permissions = {};
     state.views = { checks: [check] };
-    show();
-    expect(screen.getByRole('button', { name: 'common.view' })).toHaveAttribute(
-      'href',
-      '/devices/d9',
+    const open = vi.fn();
+    render(
+      <RecordDrawerContext.Provider value={{ open }}>
+        <MemoryRouter initialEntries={['/device-sync?view=checks']}>
+          <DeviceSyncReviewPage />
+        </MemoryRouter>
+      </RecordDrawerContext.Provider>,
     );
+    fireEvent.click(screen.getByRole('button', { name: 'common.view' }));
+    expect(open).toHaveBeenCalledWith('/devices/d9');
   });
 
   it('leads with 忽略 where the follow-up says the register is right', () => {

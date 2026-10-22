@@ -40,6 +40,7 @@ import { HolderLink } from '@/components/itam/holder-link';
 import { OpenFullPageButton } from '@/components/itam/open-full-page';
 import { Page, PageHeader } from '@/components/itam/page-header';
 import { RecordLink } from '@/components/itam/record-link';
+import { useOpenRecord } from '@/lib/itam/record-drawer';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -432,6 +433,20 @@ function RowActions({
   readonly advice?: FollowUpAdvice;
 }): ReactElement {
   const { t } = useTranslation();
+  // A record's page alone (查看) opens in the record drawer (2026-10-22),
+  // so the list stays behind; one that opens a dialog there (`?do=`) still
+  // goes to the page.
+  const openRecord = useOpenRecord();
+  const inDrawer = (action: RowAction): RowAction =>
+    'to' in action && !action.to.includes('?')
+      ? {
+          label: action.label,
+          disabled: action.disabled,
+          onSelect: () => openRecord(action.to),
+        }
+      : action;
+  main = inDrawer(main);
+  more = more.map(inDrawer);
   return (
     <span className='flex items-center justify-end gap-1'>
       {advice ? <AdviceMark advice={advice} /> : null}

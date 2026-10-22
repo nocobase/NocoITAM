@@ -205,6 +205,8 @@ product or in release notes, until it is listed here.
   settings tab's 核对规则 card (`deviceSync` settings key).
 - **MDM 核对's layout** (2026-10-21): each row ends in one button and a
   "···" menu (`RowActions`), so the last column stays in view at 1280 px.
+  An action that is a record's page alone (查看) opens in the record drawer
+  (2026-10-22); one opening a dialog there (`?do=`) goes to the page.
   A 信息不一致 row's button settles it through the device page's own dialog,
   opened by `?do=` (`markLost`, `transfer`, `assign`, `restore`) and
   `&to=` the platform's person, which the device page reads once and drops;
