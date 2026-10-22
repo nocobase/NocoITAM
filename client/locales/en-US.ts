@@ -1070,6 +1070,8 @@ const messages = {
     useCustom: 'Own kit',
     positionKit: 'Kit for {{position}}',
     addPosition: 'Add position',
+    positionTaken:
+      'A position by that name exists; positions need distinct names',
     removePositionTitle: 'Remove the position “{{position}}”?',
     removePositionWithKit: 'Its own onboarding kit is removed with it.',
     removePosition: 'Remove position',

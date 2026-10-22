@@ -1157,6 +1157,10 @@ function diffStructured(
   keyLabels: Readonly<Record<string, string>> = {},
 ): DiffLine[] {
   const describeEntry = (entry: unknown): string => {
+    // A plain entry (a department's position) as itself, not quoted JSON
+    // (2026-10-22).
+    if (typeof entry === 'string' || typeof entry === 'number')
+      return String(entry);
     if (entry && typeof entry === 'object' && 'label' in entry) {
       const e = entry as {
         label?: unknown;

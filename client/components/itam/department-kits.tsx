@@ -139,6 +139,9 @@ export function DepartmentKits({
       json: { positions },
     });
   const names = data.positions.map((position) => position.name);
+  // The department already has a position by that name.
+  const taken =
+    draft.trim() !== '' && names.some((known) => samePosition(known, draft));
   const addPosition = () => {
     const name = draft.trim();
     if (!name || names.some((known) => samePosition(known, name))) return;
@@ -357,31 +360,37 @@ export function DepartmentKits({
             </ul>
           )}
           {departments.update ? (
-            <div className='flex gap-2 border-t border-border/60 pt-3'>
-              <Input
-                value={draft}
-                placeholder={t('positions.newPlaceholder')}
-                aria-label={t('positions.newPlaceholder')}
-                onChange={(event) => setDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    addPosition();
-                  }
-                }}
-              />
-              <Button
-                variant='outline'
-                disabled={
-                  busy ||
-                  !draft.trim() ||
-                  names.some((known) => samePosition(known, draft))
-                }
-                onClick={addPosition}
-              >
-                <Plus data-icon='inline-start' />
-                {t('departmentKits.addPosition')}
-              </Button>
+            <div className='grid gap-1.5 border-t border-border/60 pt-3'>
+              <div className='flex gap-2'>
+                <Input
+                  value={draft}
+                  placeholder={t('positions.newPlaceholder')}
+                  aria-label={t('positions.newPlaceholder')}
+                  aria-invalid={taken || undefined}
+                  aria-describedby={taken ? 'position-taken' : undefined}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      addPosition();
+                    }
+                  }}
+                />
+                <Button
+                  variant='outline'
+                  disabled={busy || !draft.trim() || taken}
+                  onClick={addPosition}
+                >
+                  <Plus data-icon='inline-start' />
+                  {t('departmentKits.addPosition')}
+                </Button>
+              </div>
+              {/* Why 添加职位 is off (2026-10-22): a name the department has. */}
+              {taken ? (
+                <p id='position-taken' className='text-sm text-destructive'>
+                  {t('departmentKits.positionTaken')}
+                </p>
+              ) : null}
             </div>
           ) : null}
           {error ? <p className='text-sm text-destructive'>{error}</p> : null}

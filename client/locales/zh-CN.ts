@@ -1051,6 +1051,7 @@ const zhCN: AppResource = {
     useCustom: '自定义配置',
     positionKit: '{{position}} 的配置',
     addPosition: '添加职位',
+    positionTaken: '已有同名职位，职位不能重名',
     removePositionTitle: '删除职位「{{position}}」？',
     removePositionWithKit: '这个职位自己的入职配置会一起删除。',
     removePosition: '删除职位',
