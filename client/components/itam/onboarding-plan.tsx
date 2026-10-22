@@ -522,8 +522,12 @@ function PlanLine({
                 >
                   {thing.label}
                 </RecordLink>
+                {/* Words like 更换 and 不需要 beside it (2026-10-22), the
+                    action in the brand colour so it still leads; the
+                    padding taken back like theirs. */}
                 <Button
-                  variant='outline'
+                  variant='ghost'
+                  className='-mx-2.5 text-primary hover:text-primary'
                   disabled={busy || (thing.needsAccount && !thing.account)}
                   title={
                     thing.needsAccount && !thing.account
