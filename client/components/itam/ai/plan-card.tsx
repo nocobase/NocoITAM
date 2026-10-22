@@ -151,20 +151,19 @@ export function PlanCard({
     doneSince.has(step.position) ? { ...step, status: 'done' as const } : step,
   );
   const hasParams = steps.some((step) => step.check?.fields.length);
-  // Not inside MDM 核对's follow-up (2026-10-21): each step's line says
-  // enough there.
-  const toggleParams =
-    hasParams && !bare ? (
-      <Button
-        size='sm'
-        variant='link'
-        className='mr-auto h-auto px-0 text-xs text-muted-foreground'
-        aria-expanded={showParams}
-        onClick={() => setShowParams((shown) => !shown)}
-      >
-        {t(showParams ? 'ai.plans.hideParams' : 'ai.plans.showParams')}
-      </Button>
-    ) : null;
+  // Inside MDM 核对's follow-up too (2026-10-22; left out from 2026-10-21
+  // while the details read as one blurred line).
+  const toggleParams = hasParams ? (
+    <Button
+      size='sm'
+      variant='link'
+      className='mr-auto h-auto px-0 text-xs text-muted-foreground'
+      aria-expanded={showParams}
+      onClick={() => setShowParams((shown) => !shown)}
+    >
+      {t(showParams ? 'ai.plans.hideParams' : 'ai.plans.showParams')}
+    </Button>
+  ) : null;
   return (
     <div
       className={
@@ -341,6 +340,8 @@ function StepParams({
       if (/Ids?$/.test(field.field)) return undefined;
       if (field.field === 'nextStatus' || field.field === 'status')
         return t(`enums.deviceStatus.${raw}`, { defaultValue: raw });
+      if (field.field === 'ownership')
+        return t(`enums.ownership.${raw}`, { defaultValue: raw });
       return raw;
     }
     const json = JSON.stringify(raw) ?? '';

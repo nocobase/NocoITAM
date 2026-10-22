@@ -86,17 +86,16 @@ it('keeps the parameters folded until asked for', () => {
   expect(screen.queryByText(/deviceId/)).toBeNull();
 });
 
-// Inside MDM 核对's follow-up (2026-10-21): the steps alone, no parameters.
-it('offers no parameters inside a follow-up', () => {
+// Inside MDM 核对's follow-up, its details too (2026-10-22).
+it('offers the details inside a follow-up too', () => {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <PlanCard plan={plan} bare />
     </QueryClientProvider>,
   );
   expect(screen.getByText('Assign SH-LT-054 to Sun Qiang')).toBeTruthy();
-  expect(
-    screen.queryByRole('button', { name: 'ai.plans.showParams' }),
-  ).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'ai.plans.showParams' }));
+  expect(screen.getAllByRole('term').length).toBeGreaterThan(0);
 });
 
 // A step left out of a plan carried out is not done, not struck through

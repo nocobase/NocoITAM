@@ -339,7 +339,9 @@ function FollowUpReviewCard({
             </span>
           ) : null}
         </CollapsibleTrigger>
-        <div className='ml-auto flex items-center gap-3'>
+        {/* Wraps in a narrow pane rather than pushing 确认执行 out of the
+            card (2026-10-22). */}
+        <div className='ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5'>
           {/* This part alone, worked out again (2026-10-22): the page's
               header button does both. */}
           <AiShortcut

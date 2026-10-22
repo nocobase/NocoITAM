@@ -247,7 +247,13 @@ describe('the assistant’s commands and plans', () => {
   });
 
   it('lets a later step name the record an earlier one creates', async () => {
-    const proposed = await data<{ id: string; revision: number }>(
+    const proposed = await data<{
+      id: string;
+      revision: number;
+      steps: {
+        check: { fields: { field: string; value: unknown; name?: string }[] };
+      }[];
+    }>(
       await post('assistant/plans', {
         title: 'Register and assign a laptop',
         steps: [
@@ -270,6 +276,18 @@ describe('the assistant’s commands and plans', () => {
           },
         ],
       }),
+    );
+    // A record step's own fields, named, not `collection` and an `input`
+    // object (2026-10-22).
+    const fields = proposed.steps[0].check.fields;
+    expect(fields.map((field) => field.field)).not.toContain('input');
+    expect(fields.map((field) => field.field)).not.toContain('collection');
+    expect(fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'serialNo', value: 'SN-NEW' }),
+        expect.objectContaining({ field: 'modelId', name: expect.any(String) }),
+        expect.objectContaining({ field: 'ownership', value: 'owned' }),
+      ]),
     );
     const done = await data<{
       status: string;

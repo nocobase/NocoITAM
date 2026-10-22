@@ -246,8 +246,25 @@ export function createPlanService(container: ServiceContainer): PlanService {
   async function checkOf(actorId: string, params: Row): Promise<StepCheck> {
     const scope = scopeFor(container, actorId);
     const flat: Record<string, unknown> = {};
-    for (const [field, value] of Object.entries(params))
-      if (field !== 'title') flat[field] = value;
+    const input =
+      params.input && typeof params.input === 'object'
+        ? (params.input as Row)
+        : null;
+    for (const [field, value] of Object.entries(params)) {
+      if (field === 'title') continue;
+      // A record step's own fields rather than `collection` and an `input`
+      // object read as JSON (2026-10-22); its `assignTo` as whom it goes to.
+      if (input && (field === 'collection' || field === 'input')) continue;
+      flat[field] = value;
+    }
+    if (input)
+      for (const [field, value] of Object.entries(input)) {
+        if (field === 'assignTo' && value && typeof value === 'object') {
+          const to = value as Row;
+          flat.assigneeType = to.targetType ?? 'person';
+          flat.assigneeId = to.targetId;
+        } else flat[field] = value;
+      }
     // The operations name whom a device goes to as `targetId` (a person
     // unless stated otherwise), which the lookup knows as an assignee.
     const lookupOf = (row: Row): Record<string, unknown> => {
