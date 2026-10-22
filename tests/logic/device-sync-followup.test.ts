@@ -415,6 +415,25 @@ describe('MDM follow-up', () => {
       status: 'inUse',
       assigneeId: liNa,
     });
+
+    // Undone since — the record unlinked by a person — it is raised again
+    // (2026-10-22): nothing is kept as handled once it is back on a list.
+    const record = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('managedDevices')
+      .select('id')
+      .where('externalId', '=', 'x')
+      .executeTakeFirstOrThrow<{ id: string }>();
+    await review.unlink(record.id, 'ann');
+    await followUp().afterSync(null);
+    const again = await settled(() => latest('shared:ann:unregistered'));
+    expect(again.id).not.toBe(anns.id);
+    expect(
+      (again.result?.items as { subject: string }[]).map(
+        (item) => item.subject,
+      ),
+    ).toContain(record.id);
   });
 
   // MDM 跟进 on MDM 核对 (2026-10-17).

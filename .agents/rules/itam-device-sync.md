@@ -252,14 +252,12 @@ product or in release notes, until it is listed here.
   the platform first reported them — each tagged 补登记 or 关联. A platform
   record's name on MDM 核对 opens a sheet of what the platform reports
   (`ManagedRecordSheet`), with the console link; it has no register device.
-- **Only what was done is handled** (2026-10-22): of a follow-up carried
-  out (accepted), an item counts among `handled()` only when one of its plan
-  steps ran (`done`). Unticked steps, notes to look at and items with no
-  suggestion are raised again by the next follow-up. One set aside (拒绝, 忽略) settles
-  nothing: declining a suggestion leaves the difference, so every follow-up,
-  a pull's or one asked for, works it out again; runs from before `advice`
-  count whole. A step
-  left out shows as 未执行.
+- **Nothing is kept as handled** (2026-10-22): a follow-up works out
+  whatever MDM 核对 lists now (`pending`); there is no record of items
+  handled before. What was carried out has left the lists; what is still on
+  them — set aside, only noted, unticked, or undone since (a registered
+  record a person unlinked) — is worked out again by every follow-up, a
+  pull's or one asked for. A step left out shows as 未执行.
 - **Asking again refreshes the shared part for all** (2026-10-22): `ask`
   starts the reader's own devices' follow-up, and — when the reader holds
   the asset manager set — the shared one for every asset manager, as a pull

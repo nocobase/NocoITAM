@@ -310,69 +310,6 @@ export function createDeviceSyncFollowUp(dependencies: {
     local = local.then(() => service.runEntry(runId).catch(() => undefined));
   };
 
-  /**
-   * What a person carried out lately: not raised again. Set aside (拒绝,
-   * 忽略) counts no more (2026-10-22): declining a suggestion leaves the
-   * difference, so the next follow-up — a pull's or one asked for — works
-   * it out again. A difference the register is right about is settled by
-   * 忽略 on its row, which takes it off the list.
-   */
-  const handled = async (): Promise<ReadonlySet<string>> => {
-    const decided = await runs().list(AGENT, {
-      since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
-      statuses: ['accepted'],
-      limit: 500,
-    });
-    const keys = new Set<string>();
-    for (const run of decided) {
-      const left = await leftOut(run);
-      for (const item of (run.result?.items ?? []) as FollowUpItem[])
-        if (
-          item &&
-          typeof item.key === 'string' &&
-          !left.has(`${item.subject}|${item.kind}`)
-        )
-          keys.add(item.key);
-    }
-    return keys;
-  };
-
-  /**
-   * The items of a follow-up carried out that nothing was done about
-   * (2026-10-22): every plan step left out, or no step at all — a note to
-   * look at, or no suggestion. The next follow-up raises them again rather
-   * than letting them go quietly. One set aside (拒绝, 忽略) keeps all its
-   * items handled; so does one written before suggestions were kept per
-   * item.
-   */
-  const leftOut = async (run: AgentRun): Promise<ReadonlySet<string>> => {
-    const advice = run.result?.advice as FollowUpAdvice[] | undefined;
-    if (run.status !== 'accepted' || !advice) return new Set();
-    const planId = asText(run.result?.planId);
-    const plan =
-      planId && run.deciderId
-        ? await container
-            .resolve(planServiceToken)
-            .get(run.deciderId, planId)
-            .catch(() => null)
-        : null;
-    const done = new Set(
-      (plan?.steps ?? [])
-        .filter((step) => step.status === 'done')
-        .map((step) => step.position),
-    );
-    const acted = new Set(
-      advice
-        .filter((entry) => (entry.steps ?? []).some((at) => done.has(at)))
-        .map((entry) => `${entry.subject}|${entry.kind}`),
-    );
-    return new Set(
-      ((run.result?.items ?? []) as FollowUpItem[])
-        .map((item) => `${item.subject}|${item.kind}`)
-        .filter((key) => !acted.has(key)),
-    );
-  };
-
   /** Everyone holding the asset manager set who has not left. */
   const assetManagers = async (): Promise<string[]> => {
     const sets = container.resolve(authorizationToken).permissionSets;
@@ -391,18 +328,22 @@ export function createDeviceSyncFollowUp(dependencies: {
     return [...new Set(ids)].filter((id) => !gone.has(id));
   };
 
-  /** The new items to judge, by who judges them. */
+  /**
+   * The items to judge, by who judges them: whatever MDM 核对 lists now
+   * (2026-10-22). Nothing is skipped as handled before: what was carried out
+   * has left the lists, and what is still on them — set aside, only noted,
+   * or undone since, as a registered record a person unlinked — is worked
+   * out again.
+   */
   const pending = async (): Promise<{
     readonly byOwner: Map<string, FollowUpItem[]>;
     readonly shared: FollowUpItem[];
   }> => {
-    const done = await handled();
     const byOwner = new Map<string, FollowUpItem[]>();
     const shared: FollowUpItem[] = [];
     // A device nobody answers for is the asset managers', as a record the
     // register lacks is.
     const add = (owner: string | undefined, item: FollowUpItem) => {
-      if (done.has(item.key)) return;
       if (owner) byOwner.set(owner, [...(byOwner.get(owner) ?? []), item]);
       else shared.push(item);
     };
