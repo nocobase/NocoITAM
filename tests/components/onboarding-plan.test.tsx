@@ -439,3 +439,15 @@ it('reads the plan again once a choosing run has started, so the press shows', a
     queryKey: ['itam', 'itam/master/people', 'onboarding', 'p1'],
   });
 });
+
+it('shows a spinner while Asset Steward is choosing', () => {
+  const base = advised();
+  state.plan = {
+    ...base,
+    advice: { ...base.advice!, status: 'running', finishedAt: null },
+  };
+  state.aiAvailable = true;
+  show();
+  const running = screen.getByText('onboarding.advice.running');
+  expect(running.querySelector('[data-slot=spinner]')).not.toBeNull();
+});

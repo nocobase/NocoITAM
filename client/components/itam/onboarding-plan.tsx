@@ -15,6 +15,7 @@ import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Tooltip,
   TooltipContent,
@@ -746,7 +747,11 @@ function AdviceStrip({
           {!advice ? (
             t('onboarding.advice.none')
           ) : advice.status === 'running' ? (
-            t('onboarding.advice.running')
+            // The app's own spinner while it chooses (2026-10-22).
+            <span className='inline-flex items-center gap-1.5'>
+              <Spinner className='size-3.5 shrink-0' />
+              {t('onboarding.advice.running')}
+            </span>
           ) : advice.status === 'failed' ? (
             <span className='text-destructive'>
               {t('onboarding.advice.failed')}
