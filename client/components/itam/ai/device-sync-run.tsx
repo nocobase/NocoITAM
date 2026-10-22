@@ -136,8 +136,8 @@ export function DeviceSyncRunCard({
             {t('deviceSyncRun.notes')}
           </h3>
           <ul className='list-disc space-y-1.5 pl-5'>
-            {result.notes.map((note) => (
-              <FollowUpNote key={note} note={note} />
+            {result.notes.map((note, at) => (
+              <FollowUpNote key={`${String(at)}-${note}`} note={note} />
             ))}
           </ul>
         </section>
@@ -229,26 +229,35 @@ function FollowUpReviewCard({
   const items = run.result?.items ?? [];
   const gone = (item: { subject: string; kind: string }) =>
     fresh && !listed.keys.has(`${item.subject}|${item.kind}`);
-  const noteHandled = (note: string) => {
-    const item = items.find(
-      (entry) =>
-        note.startsWith(`${entry.label}：`) ||
-        note.startsWith(`${entry.label}:`),
-    );
+  // By its item's key (2026-10-22); a run of before them, by its label.
+  const noteItems = run.result?.noteItems ?? [];
+  const noteHandled = (note: string, at: number) => {
+    const key = noteItems[at];
+    const item = key
+      ? items.find((entry) => `${entry.subject}|${entry.kind}` === key)
+      : items.find(
+          (entry) =>
+            note.startsWith(`${entry.label}：`) ||
+            note.startsWith(`${entry.label}:`),
+        );
     return item !== undefined && gone(item);
   };
   const allItemsHandled = items.length > 0 && items.every(gone);
-  // Every step settled on its row: it closes by itself, as handled
-  // (2026-10-21), once — a failure leaves 拒绝 to the reader.
+  // Every item settled on its row, the noted ones too: it closes by
+  // itself, as handled (2026-10-21; notes counted 2026-10-22), once — a
+  // failure shows, with 暂不处理 back. Not while its plan is being decided:
+  // the plan's own refresh would race it.
   const settle = useSettleFollowUp();
   const settleOnce = settle.mutate;
   const ask = useAskFollowUp();
   const resume = useResumeFollowUp();
   const waiting = run.status === 'pending';
-  const settles = allHandled || allItemsHandled;
+  const settles =
+    allItemsHandled && (!run.result?.planId || pendingPlan !== null);
   useEffect(() => {
     if (settles && waiting) settleOnce(run);
   }, [settles, waiting, settleOnce, run]);
+  const closing = settles && !settle.isError;
   if (run.status === 'running' || run.status === 'failed')
     return (
       <div className='space-y-3 rounded-lg border bg-card p-4'>
@@ -305,7 +314,9 @@ function FollowUpReviewCard({
       {/* Beside the inbox's list the pane is narrow (2026-10-21): the
           buttons drop below the title rather than squeeze it into a column. */}
       <div className='flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-2.5'>
-        <CollapsibleTrigger className='group flex min-w-64 flex-1 items-center gap-1.5 text-left text-sm'>
+        {/* At most 16rem wide before the buttons wrap, never wider than
+            the card (2026-10-22: a phone's card overflowed). */}
+        <CollapsibleTrigger className='group flex min-w-[min(16rem,100%)] flex-1 flex-wrap items-center gap-x-1.5 gap-y-1 text-left text-sm'>
           <ChevronRight
             className='size-4 shrink-0 text-muted-foreground transition-transform group-data-[panel-open]:rotate-90'
             aria-hidden
@@ -350,8 +361,8 @@ function FollowUpReviewCard({
               {t('ai.plans.execute', { count: retryTicked.length })}
             </Button>
           ) : null}
-          {/* Every step settled on its row: it is closing by itself. */}
-          {pendingPlan && allHandled ? null : pendingPlan ? (
+          {/* Every item settled on its row: it is closing by itself. */}
+          {closing ? null : pendingPlan ? (
             <PlanDecision
               plan={pendingPlan}
               skipped={leftOut}
@@ -387,12 +398,12 @@ function FollowUpReviewCard({
               {t('deviceSyncRun.notes')}
             </h4>
             <ul className='list-disc space-y-1.5 pl-5'>
-              {notes.map((note) => (
+              {notes.map((note, at) => (
                 <FollowUpNote
-                  key={note}
+                  key={`${String(at)}-${note}`}
                   note={note}
                   handled={
-                    noteHandled(note)
+                    noteHandled(note, at)
                       ? t('deviceSyncRun.stepHandledBelow')
                       : undefined
                   }
@@ -402,9 +413,9 @@ function FollowUpReviewCard({
           </section>
         ) : null}
       </CollapsibleContent>
-      {(dismiss.error ?? resume.error) ? (
+      {(dismiss.error ?? resume.error ?? settle.error) ? (
         <p className='px-4 pb-3 text-sm text-destructive'>
-          {(dismiss.error ?? resume.error)?.message}
+          {(dismiss.error ?? resume.error ?? settle.error)?.message}
         </p>
       ) : null}
     </Collapsible>
@@ -704,7 +715,7 @@ function OthersFollowUps({
                     <ul className='list-disc space-y-1.5 pl-5'>
                       {row.notes.map((note, at) => (
                         <FollowUpNote
-                          key={note}
+                          key={`${String(at)}-${note}`}
                           note={note}
                           handled={
                             row.handledNotes.includes(at)

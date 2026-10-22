@@ -18,6 +18,7 @@ const state = vi.hoisted(() => ({
   decide: vi.fn(),
   ask: vi.fn(),
   resume: vi.fn(),
+  settleError: null as Error | null,
   plan: null as unknown,
   inbox: { open: [] as unknown[], handled: [] as unknown[] },
   others: [] as unknown[],
@@ -52,7 +53,12 @@ vi.mock('../../client/lib/itam/agents.js', () => ({
     isPending: false,
     error: null,
   }),
-  useSettleFollowUp: () => ({ mutate: state.settle, isPending: false }),
+  useSettleFollowUp: () => ({
+    mutate: state.settle,
+    isPending: false,
+    isError: state.settleError !== null,
+    error: state.settleError,
+  }),
   useAskFollowUp: () => ({ mutate: state.ask, isPending: false }),
   useResumeFollowUp: () => ({ mutate: state.resume, isPending: false }),
 }));
@@ -393,7 +399,12 @@ it('leaves out the steps settled on their rows, and closes once all are', () => 
   const advised = () =>
     run({
       result: {
-        items: [],
+        items: ['r1', 'r2'].map((subject) => ({
+          key: `${subject}|unregistered`,
+          kind: 'unregistered' as const,
+          subject,
+          label: subject,
+        })),
         planId: 'plan-1',
         notes: [],
         summary: '',
@@ -668,4 +679,50 @@ it('marks a note settled below, and closes once every item is', () => {
   expect(state.settle).toHaveBeenCalledWith(
     expect.objectContaining({ id: 'run-1' }),
   );
+});
+
+// Every step settled but a note's item still listed: it stays open
+// (2026-10-22); and a close that fails says why, with 暂不处理 back.
+it('waits for the notes before closing, and shows a failed close', () => {
+  state.settle.mockReset();
+  state.plan = null;
+  const noted = run({
+    result: {
+      items: ['r1', 'r2'].map((subject) => ({
+        key: `${subject}|unregistered`,
+        kind: 'unregistered' as const,
+        subject,
+        label: subject,
+      })),
+      planId: null,
+      notes: ['r2: register it by hand'],
+      noteItems: ['r2|unregistered'],
+      summary: '',
+    },
+  });
+  state.inbox = { open: [noted], handled: [] };
+  state.review = { checks: [], unregistered: [{ id: 'r2' }], unmanaged: [] };
+  const { unmount } = render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(state.settle).not.toHaveBeenCalled();
+  unmount();
+  state.review = { checks: [], unregistered: [], unmanaged: [] };
+  state.settleError = new Error(
+    'Some of what it suggests is still to be settled',
+  );
+  render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  expect(
+    screen.getByText('Some of what it suggests is still to be settled'),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'deviceSyncRun.setAside' }),
+  ).toBeInTheDocument();
+  state.settleError = null;
 });

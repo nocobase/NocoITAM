@@ -3674,7 +3674,6 @@ const messages = {
   },
   agentInbox: {
     category: 'AI suggestions',
-    waiting: 'To do',
     nothingWaiting: 'No AI suggestion waits for you.',
     handled: 'Handled',
     nothingPicked: 'Pick an AI suggestion to read it',

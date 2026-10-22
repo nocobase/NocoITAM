@@ -57,6 +57,8 @@ export interface DeviceSyncResult {
   }[];
   readonly planId: string | null;
   readonly notes: readonly string[];
+  /** Each note's item as `subject|kind`, by place (2026-10-22). */
+  readonly noteItems?: readonly string[];
   readonly summary: string;
   /** Each item's suggestion, for its row on MDM 核对 (2026-10-21). */
   readonly advice?: readonly FollowUpAdvice[];

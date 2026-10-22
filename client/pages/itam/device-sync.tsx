@@ -418,37 +418,16 @@ function RowActions({
   // staying behind — with its dialog open (`?do=`) for 调拨, 标记丢失 and
   // the rest, as on the page.
   const openRecord = useOpenRecord();
-  const inDrawer = (action: RowAction): RowAction =>
-    'to' in action
-      ? {
-          label: action.label,
-          disabled: action.disabled,
-          onSelect: () => openRecord(action.to),
-        }
-      : action;
-  main = inDrawer(main);
-  more = more.map(inDrawer);
+  const select = (action: RowAction) => () => {
+    if ('to' in action) openRecord(action.to);
+    else action.onSelect();
+  };
   return (
     <span className='flex items-center justify-end gap-1'>
       {advice ? <AdviceMark advice={advice} /> : null}
-      {'to' in main ? (
-        <Button
-          variant='outline'
-          disabled={main.disabled}
-          render={<Link to={main.to} />}
-          nativeButton={false}
-        >
-          {main.label}
-        </Button>
-      ) : (
-        <Button
-          variant='outline'
-          disabled={main.disabled}
-          onClick={main.onSelect}
-        >
-          {main.label}
-        </Button>
-      )}
+      <Button variant='outline' disabled={main.disabled} onClick={select(main)}>
+        {main.label}
+      </Button>
       {more.length ? (
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -467,8 +446,7 @@ function RowActions({
               <DropdownMenuItem
                 key={item.label}
                 disabled={item.disabled}
-                onClick={'onSelect' in item ? item.onSelect : undefined}
-                render={'to' in item ? <Link to={item.to} /> : undefined}
+                onClick={select(item)}
               >
                 {item.label}
               </DropdownMenuItem>
@@ -517,6 +495,7 @@ function AdviceMark({
         render={
           <span
             tabIndex={0}
+            role='img'
             aria-label={text}
             className='inline-flex px-1 text-primary'
           />

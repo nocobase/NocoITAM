@@ -233,13 +233,14 @@ function ReviewList({
               selected
                 ? 'bg-primary'
                 : open
-                  ? 'bg-amber-500'
+                  ? 'bg-warning-foreground'
                   : 'bg-transparent',
             )}
           />
           <span className='flex min-w-0 items-baseline gap-1.5'>
             <Kind
               className='size-3.5 shrink-0 self-center text-muted-foreground'
+              role='img'
               aria-label={
                 run.agent === 'deviceSync'
                   ? t('deviceSyncRun.title')

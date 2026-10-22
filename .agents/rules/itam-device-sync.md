@@ -357,11 +357,12 @@ tab)`); each card's 重新运行 runs its part and tab. 收件箱 lists one entr
   worked out by Asset Steward with the `device-sync` skill (one call; each
   item under a short ref, material from `deviceSyncReview` read as the
   person; a decision per item with its reason) and left as a plan in 收件箱:
-  a run per device 负责人 for its devices (`owner:<id>`), and one per holder
-  of the asset manager set for the platform records and the devices nobody
-  owns (`shared:<id>`, the others superseded once one is decided). Steps:
-  `create_record` (+ `assign_device` to the platform user; the place is the
-  user's, else where most devices are kept), `link_managed_device`,
+  a run per device 负责人 and tab for its devices (`owner:<id>:<tab>`), and
+  one per holder of the asset manager set and tab for the platform records
+  and the devices nobody owns (`shared:<id>:<tab>`; another holder's copy
+  closes as settled once every item it holds is off the lists). Steps:
+  `create_record` (with `assignTo` the platform user, kept at that person's
+  location; with no location a note instead), `link_managed_device`,
   `ignore_managed_device`, `transfer_device` / `assign_device`,
   `correct_device_status` (never to lost), `dismiss_device_difference`
   (忽略 a difference) and `exempt_device` (不需要纳管) — the last two added
@@ -371,9 +372,10 @@ tab)`); each card's 重新运行 runs its part and tab. 收件箱 lists one entr
   `<name>：<what to do>`, the model's reason on its own line beneath, shown
   muted (2026-10-22: the reason in brackets before a colon read as too
   much); the reason is asked for in at most 40 characters, no brackets, no
-  serial. An item is new
-  until a run holding it was carried out or set aside (90 days); a waiting
-  run is replaced by the next pull's, since a plan lasts a day. Carrying
+  serial. Each note's item is kept beside it (`noteItems`, `subject|kind`),
+  a plan holds 30 steps and the items past them are noted. Nothing is kept
+  as handled: a waiting run is replaced by the next pull's, since a plan
+  lasts a day, and what is still listed comes back. Carrying
   out or withdrawing the plan settles the run (`PlanService.onDecided`,
   composed with the conversation news); 忽略 withdraws the plan.
   **MDM 跟进** on MDM 核对 (2026-10-17, `POST /api/itam/device-sync/followUp`,

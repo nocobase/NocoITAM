@@ -199,7 +199,7 @@ export function PlanCard({
                   !skipped.has(step.position) && !settled.has(step.position)
                 }
                 disabled={settled.has(step.position)}
-                aria-label={step.check?.title ?? step.op}
+                aria-label={step.check?.title || t(`ai.plans.ops.${step.op}`)}
                 onCheckedChange={(checked) => {
                   const next = new Set(skipped);
                   if (checked) next.delete(step.position);
