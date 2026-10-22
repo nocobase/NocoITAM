@@ -138,6 +138,50 @@ describe('the assistant’s commands and plans', () => {
         expect.objectContaining({ field: 'targetId', name: 'Li Na' }),
       ]),
     );
+    // A list's entries are named too, each its own fields (2026-10-22): the
+    // card showed a return's items as raw JSON, ids and all.
+    const held = await data<{ id: string }>(
+      await post('itam/devices', { modelId, locationId, serialNo: 'SN-2' }),
+    );
+    await post(`itam/devices/${held.id}/assign`, {
+      targetType: 'person',
+      targetId: personId,
+    });
+    const returning = await data<{
+      steps: {
+        check: {
+          fields: {
+            field: string;
+            items?: { field: string; name?: string }[][];
+          }[];
+        };
+      }[];
+    }>(
+      await post('assistant/plans', {
+        title: 'Take the laptop back',
+        steps: [
+          {
+            op: 'return_devices',
+            params: {
+              title: 'Return SN-2',
+              items: [{ deviceId: held.id, nextStatus: 'inStock' }],
+            },
+          },
+        ],
+      }),
+    );
+    const items = returning.steps[0].check.fields.find(
+      (field) => field.field === 'items',
+    )?.items;
+    expect(items?.[0]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'deviceId',
+          name: expect.any(String),
+        }),
+        expect.objectContaining({ field: 'nextStatus' }),
+      ]),
+    );
     // Nothing has changed yet.
     expect(
       (await data<{ status: string }>(await get(`itam/devices/${laptop.id}`)))

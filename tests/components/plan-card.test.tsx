@@ -6,7 +6,14 @@ import { PlanCard } from '../../client/components/itam/ai/plan-card.js';
 import type { Plan } from '../../client/lib/itam/plans.js';
 
 vi.mock('@nocobase/i18n/client', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) =>
+      options && 'label' in options
+        ? `${String(options.label)}: ${String(options.value)}`
+        : typeof options?.defaultValue === 'string'
+          ? options.defaultValue
+          : key,
+  }),
 }));
 vi.mock('@nocobase/app-client', () => ({
   useToaster: () => ({ show: () => undefined }),
@@ -31,7 +38,21 @@ const plan: Plan = {
       op: 'assign',
       check: {
         title: 'Assign SH-LT-054 to Sun Qiang',
-        fields: [{ field: 'deviceId', value: '$laptop' }],
+        fields: [
+          { field: 'deviceId', value: '$laptop', name: 'DE-000054' },
+          { field: 'targetType', value: 'person' },
+          { field: 'seatId', value: '3c682199-3e45-40e8-bb7c-83c1bb964dc4' },
+          {
+            field: 'items',
+            value: [],
+            items: [
+              [
+                { field: 'deviceId', value: 'd9', name: 'DE-000009' },
+                { field: 'nextStatus', value: 'inStock' },
+              ],
+            ],
+          },
+        ],
       },
       status: 'pending',
       result: null,
@@ -39,7 +60,10 @@ const plan: Plan = {
   ],
 };
 
-it('keeps the raw parameters folded until asked for', () => {
+// Unfolded, they read as the pages word them (2026-10-22): a record by its
+// name, a list's entries a line each, no kind beside a name and no id
+// nothing names.
+it('keeps the parameters folded until asked for', () => {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <PlanCard plan={plan} />
@@ -48,7 +72,11 @@ it('keeps the raw parameters folded until asked for', () => {
   expect(screen.getByText('Assign SH-LT-054 to Sun Qiang')).toBeTruthy();
   expect(screen.queryByText(/deviceId/)).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'ai.plans.showParams' }));
-  expect(screen.getByText('deviceId: $laptop')).toBeTruthy();
+  expect(screen.getByText('deviceId: DE-000054')).toBeTruthy();
+  expect(
+    screen.getByText('deviceId: DE-000009 · nextStatus: inStock'),
+  ).toBeTruthy();
+  expect(screen.queryByText(/targetType|seatId|3c682199/)).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'ai.plans.hideParams' }));
   expect(screen.queryByText(/deviceId/)).toBeNull();
 });

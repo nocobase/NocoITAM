@@ -5,17 +5,22 @@
  */
 export const PLANS_PATH = 'assistant/plans';
 
+/** A step's parameter, with the name of the record an id stands for. */
+export interface StepField {
+  readonly field: string;
+  readonly value: unknown;
+  readonly name?: string;
+  /** A list of entries (a return's items), each its own fields. */
+  readonly items?: readonly (readonly StepField[])[];
+}
+
 export interface PlanStep {
   readonly id: string;
   readonly position: number;
   readonly op: string;
   readonly check: {
     readonly title: string;
-    readonly fields: readonly {
-      readonly field: string;
-      readonly value: unknown;
-      readonly name?: string;
-    }[];
+    readonly fields: readonly StepField[];
   } | null;
   readonly status: 'pending' | 'done' | 'failed' | 'removed';
   readonly result: Record<string, unknown> | null;

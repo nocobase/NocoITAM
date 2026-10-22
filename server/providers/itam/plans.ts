@@ -100,11 +100,19 @@ export interface StepCheck {
   /** The step's own one-line description. */
   readonly title: string;
   /** Each parameter, with the name of the record an id stands for. */
-  readonly fields: readonly {
-    readonly field: string;
-    readonly value: unknown;
-    readonly name?: string;
-  }[];
+  readonly fields: readonly StepField[];
+}
+
+/** One parameter of a step, with the name of the record an id stands for. */
+export interface StepField {
+  readonly field: string;
+  readonly value: unknown;
+  readonly name?: string;
+  /**
+   * A list of entries (a return's `items`), each its own fields with their
+   * names (2026-10-22): the card showed the list as raw JSON, ids and all.
+   */
+  readonly items?: readonly (readonly StepField[])[];
 }
 
 export interface PlanStepView {
@@ -242,36 +250,56 @@ export function createPlanService(container: ServiceContainer): PlanService {
       if (field !== 'title') flat[field] = value;
     // The operations name whom a device goes to as `targetId` (a person
     // unless stated otherwise), which the lookup knows as an assignee.
-    const lookup: Record<string, unknown> = { ...flat };
-    if ('targetId' in flat) {
-      lookup.assigneeId = flat.targetId;
-      lookup.assigneeType = flat.targetType ?? 'person';
-    }
-    if ('reservedForId' in flat)
-      lookup.reservedForType = flat.reservedForType ?? 'person';
-    if ('holderId' in flat) lookup.holderType = flat.holderType ?? 'person';
-    const names = await referenceNames(database(), [lookup], {
+    const lookupOf = (row: Row): Record<string, unknown> => {
+      const lookup: Record<string, unknown> = { ...row };
+      if ('targetId' in row) {
+        lookup.assigneeId = row.targetId;
+        lookup.assigneeType = row.targetType ?? 'person';
+      }
+      if ('reservedForId' in row)
+        lookup.reservedForType = row.reservedForType ?? 'person';
+      if ('holderId' in row) lookup.holderType = row.holderType ?? 'person';
+      return lookup;
+    };
+    // A list of entries, each an object: its ids are named as the step's own.
+    const entriesOf = (value: unknown): Row[] | undefined =>
+      Array.isArray(value) &&
+      value.length > 0 &&
+      value.every((entry) => entry && typeof entry === 'object')
+        ? (value as Row[])
+        : undefined;
+    const lookups = [
+      lookupOf(flat),
+      ...Object.values(flat).flatMap((value) =>
+        (entriesOf(value) ?? []).map(lookupOf),
+      ),
+    ];
+    const names = await referenceNames(database(), lookups, {
       readable: async (collection) =>
         collection === 'user' || Boolean(await scope.may(collection, 'read')),
     }).catch(() => undefined);
-    const nameFor = (field: string): unknown => {
-      const key = field === 'targetId' ? 'assigneeId' : field;
-      return names && referenceOf(lookup, key)
-        ? nameOf(names, lookup, key)
-        : undefined;
-    };
-    return {
-      title: typeof params.title === 'string' ? params.title : '',
-      fields: Object.entries(flat).map(([field, value]) => {
-        const name = nameFor(field);
+    const fieldsOf = (row: Row): StepField[] => {
+      const lookup = lookupOf(row);
+      return Object.entries(row).map(([field, value]) => {
+        const key = field === 'targetId' ? 'assigneeId' : field;
+        const name =
+          names && referenceOf(lookup, key)
+            ? nameOf(names, lookup, key)
+            : undefined;
+        const entries = entriesOf(value);
         return {
           field,
           value,
           ...(typeof name === 'string' && name && name !== value
             ? { name }
             : {}),
+          ...(entries ? { items: entries.map(fieldsOf) } : {}),
         };
-      }),
+      });
+    };
+    return {
+      title: typeof params.title === 'string' ? params.title : '',
+      fields: fieldsOf(flat),
     };
   }
 

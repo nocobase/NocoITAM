@@ -19,9 +19,12 @@ import { errorMessage, formatDate } from '@/lib/itam/format';
  * back to the conversation (`plan-news.ts`), so Asset Steward reports it.
  */
 
-import { PLANS_PATH, type Plan, type PlanStep } from '@/lib/itam/plans';
-
-type StepField = NonNullable<PlanStep['check']>['fields'][number];
+import {
+  PLANS_PATH,
+  type Plan,
+  type PlanStep,
+  type StepField,
+} from '@/lib/itam/plans';
 
 const STATUS_TONE: Readonly<
   Record<Plan['status'], 'secondary' | 'outline' | 'destructive'>
@@ -254,11 +257,7 @@ export function PlanCard({
                 ) : null}
               </div>
               {showParams && step.check?.fields.length ? (
-                <div className='mt-0.5 text-xs wrap-anywhere text-muted-foreground'>
-                  {step.check.fields
-                    .map((field) => `${field.field}: ${fieldText(field)}`)
-                    .join(' · ')}
-                </div>
+                <StepParams fields={step.check.fields} />
               ) : null}
               {step.status === 'failed' && plan.failure ? (
                 <div className='mt-0.5 text-xs text-destructive'>
@@ -312,17 +311,76 @@ function StepMark({
   );
 }
 
-/** A parameter as the card shows it: the record's name for an id. */
-function fieldText(field: StepField): string {
-  if (field.name) return field.name;
-  const value = field.value;
-  if (value === null || value === undefined) return '—';
-  if (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    typeof value === 'boolean'
-  )
-    return String(value);
-  const json = JSON.stringify(value) ?? '';
-  return json.length > 120 ? `${json.slice(0, 117)}…` : json;
+/**
+ * A step's parameters as the pages word them (2026-10-22; field keys, ids
+ * and raw JSON until then): each field by its label, a record by its name,
+ * a state as the pages say it, and a list's entries a line each. A type
+ * beside a named record and an id nothing names are left out: the name, or
+ * the step's own line, already says it.
+ */
+function StepParams({
+  fields,
+}: {
+  readonly fields: readonly StepField[];
+}): ReactElement {
+  const { t } = useTranslation();
+  const label = (field: string) =>
+    t(`ai.plans.params.${field}`, {
+      defaultValue: t(`fields.${field.replace(/Ids?$/, '')}`, {
+        defaultValue: t(`fields.${field}`, { defaultValue: field }),
+      }),
+    });
+  const value = (field: StepField): string | undefined => {
+    if (field.name) return field.name;
+    const raw = field.value;
+    if (raw === null || raw === undefined || raw === '') return undefined;
+    if (typeof raw === 'boolean') return t(raw ? 'common.yes' : 'common.no');
+    if (typeof raw === 'number') return String(raw);
+    if (typeof raw === 'string') {
+      // An id nothing could name says nothing to the reader.
+      if (/Ids?$/.test(field.field)) return undefined;
+      if (field.field === 'nextStatus' || field.field === 'status')
+        return t(`enums.deviceStatus.${raw}`, { defaultValue: raw });
+      return raw;
+    }
+    const json = JSON.stringify(raw) ?? '';
+    return json.length > 120 ? `${json.slice(0, 117)}…` : json;
+  };
+  const line = (row: readonly StepField[]) =>
+    row
+      .filter(
+        (field) =>
+          // The holder's or target's kind: its name says it.
+          !/Type$/.test(field.field) && !field.items,
+      )
+      .flatMap((field) => {
+        const text = value(field);
+        return text === undefined
+          ? []
+          : [t('ai.plans.param', { label: label(field.field), value: text })];
+      })
+      .join(' · ');
+  // A list in a plan proposed before its entries were named: their fields
+  // as they are, ids left out.
+  const entriesOf = (field: StepField): readonly (readonly StepField[])[] =>
+    field.items ??
+    (Array.isArray(field.value) &&
+    field.value.length > 0 &&
+    field.value.every((entry) => entry && typeof entry === 'object')
+      ? (field.value as Record<string, unknown>[]).map((entry) =>
+          Object.entries(entry).map(([key, value]) => ({ field: key, value })),
+        )
+      : []);
+  const own = line(fields.filter((field) => !entriesOf(field).length));
+  const lists = fields.flatMap(entriesOf);
+  return (
+    <div className='mt-0.5 grid gap-0.5 text-xs wrap-anywhere text-muted-foreground'>
+      {own ? <div>{own}</div> : null}
+      {lists.map((row, index) => (
+        // Positional: an entry has no id of its own.
+        // eslint-disable-next-line @eslint-react/no-array-index-key -- see above
+        <div key={index}>{line(row)}</div>
+      ))}
+    </div>
+  );
 }
