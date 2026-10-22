@@ -276,21 +276,24 @@ export function OnboardingPlanCard({
         ) : (
           <>
             <div>
-              <div
-                aria-hidden='true'
-                className='h-1.5 overflow-hidden rounded-full bg-muted'
-              >
-                <div
-                  className='h-full rounded-full bg-primary'
-                  style={{ width: `${Math.round(ratio * 100)}%` }}
-                />
-              </div>
-              <p className='mt-1.5 flex items-center gap-2 text-xs text-muted-foreground tabular-nums'>
+              <p className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground tabular-nums'>
                 <span>
                   {t('onboarding.progress', {
                     done: data.prepared,
                     total: data.required,
                   })}
+                </span>
+                {/* A short bar on the count's own line (2026-10-22): full
+                    width under the AI strip, an empty one read as a thick
+                    divider. */}
+                <span
+                  aria-hidden='true'
+                  className='h-1 w-20 shrink-0 overflow-hidden rounded-full bg-muted'
+                >
+                  <span
+                    className='block h-full rounded-full bg-primary'
+                    style={{ width: `${Math.round(ratio * 100)}%` }}
+                  />
                 </span>
                 {shortfall > 0 ? (
                   <span className='text-destructive'>
@@ -692,11 +695,8 @@ function AdviceStrip({
     <div className='flex flex-wrap items-start gap-x-3 gap-y-1 rounded-md bg-accent px-3 py-2 text-xs'>
       {/* At least 15rem of text before the button takes a line of its
           own, rather than the text going down a word at a time. */}
-      <span className='flex min-w-0 flex-1 basis-60 gap-1.5'>
-        <Sparkles
-          aria-hidden='true'
-          className='mt-0.5 size-3.5 shrink-0 text-primary'
-        />
+      {/* No sparkle of its own (2026-10-22): the button beside it has one. */}
+      <span className='flex min-w-0 flex-1 basis-60'>
         <span className='min-w-0 text-muted-foreground'>
           {!advice ? (
             t('onboarding.advice.none')
@@ -721,7 +721,9 @@ function AdviceStrip({
           )}
         </span>
       </span>
-      <span className='flex shrink-0 items-center gap-3'>{again}</span>
+      {/* -my-1 takes back the shortcut's own padding, so its words sit on
+          the first line of the text rather than below it. */}
+      <span className='-my-1 flex shrink-0 items-center gap-3'>{again}</span>
     </div>
   );
 }
