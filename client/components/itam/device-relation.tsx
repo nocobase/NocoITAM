@@ -73,8 +73,13 @@ export function DeviceRelation({
           date: formatDate(device.reservedUntil),
         });
   return (
-    <span className='inline-flex flex-wrap items-center gap-1 whitespace-normal'>
-      <HolderIcon type={type} />
+    // Text flow, not a wrapping flex row (2026-10-22): as a row of its own
+    // the date dropped to the next line comma first; as text, Chinese line
+    // breaking keeps the comma with the holder.
+    <span className='whitespace-normal'>
+      <span className='mr-1 inline-flex align-[-2px]'>
+        <HolderIcon type={type} />
+      </span>
       {collection === 'locations' ? (
         <TreePath collection={collection} nodeId={id} show={locationShow} />
       ) : (

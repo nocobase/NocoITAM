@@ -177,7 +177,10 @@ export function DetailPage({
         {stats && stats.length > 0 ? <StatCards cards={stats} /> : null}
         <div
           className={cn(
-            'grid gap-6',
+            // One column no wider than the page on a narrow screen
+            // (2026-10-22): an auto column took its widest value's width,
+            // and a long email pushed the card past the screen's edge.
+            'grid grid-cols-[minmax(0,1fr)] gap-6',
             // Configuration-style records keep a third for their fields.
             layout === 'narrow'
               ? '@4xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]'
@@ -320,7 +323,9 @@ export function InfoRow({
     // and its like onto two lines).
     <div className='grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-start gap-3 text-sm'>
       <dt className='text-muted-foreground'>{label}</dt>
-      <dd className='min-w-0'>{children}</dd>
+      {/* A long token — an email, a URL, a serial — wraps anywhere rather
+          than running past the card on a narrow screen (2026-10-22). */}
+      <dd className='min-w-0 [overflow-wrap:anywhere]'>{children}</dd>
     </div>
   );
 }
