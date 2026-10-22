@@ -74,10 +74,10 @@ export const OPERATION_FROM: Readonly<
 
 /** Badge tone per status, mapped to semantic classes. */
 export const STATUS_TONE: Readonly<Record<DeviceStatus, string>> = {
-  // Blue, light on the shelf and solid in use (2026-10-21): the brand is
-  // green now, so neither borrows it, and green stays for what is fine.
+  // Light tints, as every other state's (2026-10-22: 使用中 was the one
+  // solid tag): blue on the shelf, green in use — in use is what is fine.
   inStock: 'bg-info text-info-foreground',
-  inUse: 'bg-info-foreground text-info',
+  inUse: 'bg-success text-success-foreground',
   // Lent and due back (2026-10-20): violet, apart from 库存中's blue.
   onLoan: 'bg-loan text-loan-foreground',
   // In progress, not wrong (2026-10-20): amber as 审批中 is; red is kept
