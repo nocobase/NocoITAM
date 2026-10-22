@@ -6399,14 +6399,16 @@ export function createDemoService(dependencies: {
               }),
             );
           // Missing at a stocktake six weeks ago and marked lost, online
-          // again yesterday (2026-10-22): found, so 恢复为库存中. The stock
-          // laptop most recently touched, so the one idle on the shelf
-          // (保养提醒's 闲置) stays.
+          // again yesterday under a person (2026-10-22): found, in their
+          // hands, so 恢复为库存中 and then 分配给 them. The stock laptop most
+          // recently touched, so the one idle on the shelf (保养提醒's 闲置)
+          // stays.
           const found = onShelf
             .slice(2, -2)
             .sort((a, b) =>
               String(b.updatedAt).localeCompare(String(a.updatedAt)),
             )[0];
+          const finder = inUse[7] ?? inUse[0];
           if (found) {
             await on(-42);
             await devices.markLost(
@@ -6418,8 +6420,8 @@ export function createDemoService(dependencies: {
             await off();
             observed.push(
               observation(found, observed.length, {
-                userPrincipal: null,
-                userName: null,
+                userPrincipal: (finder?.email as string | null) ?? null,
+                userName: (finder?.personName as string | null) ?? null,
                 lastSyncAt: syncedAgo(1),
               }),
             );

@@ -211,7 +211,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   enrolled — linked, yet no 状态不符 — but the last two on the shelf, new
   and not set up yet. 状态不符 holds each of its row actions (2026-10-22): a
   stock laptop online with no user (查看), one online under a person
-  (分配给), one marked lost at a stocktake and online again (恢复为库存中 —
+  (分配给), one marked lost at a stocktake and online again under a person
+  (恢复为库存中, then 分配给 them —
   the stock laptop last touched, so the idle one 保养提醒 shows stays idle;
   not one in use, whose holder would fall back into 入职准备), and the
   disposed one. Their platform ids start `demo-` (or `computer:demo-` /

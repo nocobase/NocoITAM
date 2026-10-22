@@ -725,7 +725,10 @@ describe('CSV import / export and demo data', () => {
     expect(
       mismatched.some((check) => check.status === 'inStock' && check.personId),
     ).toBe(true);
-    expect(mismatched.some((check) => check.status === 'lost')).toBe(true);
+    // Found in a person's hands: restored, then handed to them.
+    expect(
+      mismatched.some((check) => check.status === 'lost' && check.personId),
+    ).toBe(true);
     // The new laptop, the newcomer's, the contractor's, the VM and the
     // desktop with a new board.
     const unregistered = await review.unregistered();
