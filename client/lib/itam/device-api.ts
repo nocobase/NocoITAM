@@ -17,7 +17,12 @@ export type DeviceOperation =
   | 'reactivate'
   | 'correct-status';
 
-/** Runs one lifecycle operation; invalidates device queries on success. */
+/**
+ * Runs one lifecycle operation; invalidates everything ITAM on success
+ * (2026-10-22): a device's state is read beyond its own queries — MDM 核对's
+ * lists, behind the record drawer the operation now runs in, the workbench
+ * and the reminders — as the record edits do (`useItamMutations`).
+ */
 export function useDeviceOperation() {
   const api = useApi();
   const queryClient = useQueryClient();
@@ -38,7 +43,6 @@ export function useDeviceOperation() {
           json: body ?? {},
         })
       ).data,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['itam', DEVICES_PATH] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itam'] }),
   });
 }
