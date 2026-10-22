@@ -81,10 +81,11 @@ export const STATUS_TONE: Readonly<Record<DeviceStatus, string>> = {
   // Lent and due back (2026-10-20): violet, apart from 库存中's blue.
   onLoan: 'bg-loan text-loan-foreground',
   // In progress, not wrong (2026-10-20): amber as 审批中 is; red is kept
-  // for what has gone wrong — pending disposal, lost.
+  // for what has gone wrong — lost.
   inRepair: 'bg-warning text-warning-foreground',
   retired: 'bg-muted text-muted-foreground',
-  pendingDisposal: 'bg-destructive/10 text-destructive',
+  // Grey as the other ways out (2026-10-22): red is lost's alone.
+  pendingDisposal: 'bg-muted text-muted-foreground',
   disposed: 'bg-muted text-muted-foreground',
   // Light too (2026-10-22), as every other state.
   lost: 'bg-destructive/10 text-destructive',
