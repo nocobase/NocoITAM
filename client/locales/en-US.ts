@@ -3466,7 +3466,6 @@ const messages = {
       decline: 'Decline',
       notRun: 'Not run',
       stepDone: 'Done',
-      param: '{{label}}: {{value}}',
       params: {
         condition: 'Condition',
         method: 'Method',
@@ -3477,8 +3476,8 @@ const messages = {
         entitlementId: 'Entitlement',
         deviceIds: 'Devices',
       },
-      showParams: 'Show parameters',
-      hideParams: 'Hide parameters',
+      showParams: 'Show details',
+      hideParams: 'Hide details',
       status: {
         pending: 'Waiting for you',
         executing: 'Running',

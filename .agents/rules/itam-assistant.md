@@ -83,7 +83,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   time); unticking a step leaves it out. A card that follows an agent's
   reply sits inside it, above its time and copy row (2026-10-22,
   `Application change (ITAM)` in the block's `conversation-view.tsx` and
-  `message-item.tsx`: `withCards` / `attached`): the row closes the reply. Submitting, deciding, ordering,
+  `message-item.tsx`: `withCards` / `attached`): the row closes the reply.
+  A step's details stay folded behind 显示详情 / 收起详情 and, unfolded,
+  read as a name and value a row on a light panel under it (`StepParams`,
+  2026-10-22: 查看参数 said nothing, and one line joined by dots read as a
+  blur). Submitting, deciding, ordering,
   cancelling, executing a disposal and deleting are never plan steps — they
   stay on the pages.
 - The chat itself is the UI Library's `agent-chat` block in

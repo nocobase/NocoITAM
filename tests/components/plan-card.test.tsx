@@ -72,10 +72,15 @@ it('keeps the parameters folded until asked for', () => {
   expect(screen.getByText('Assign SH-LT-054 to Sun Qiang')).toBeTruthy();
   expect(screen.queryByText(/deviceId/)).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'ai.plans.showParams' }));
-  expect(screen.getByText('deviceId: DE-000054')).toBeTruthy();
+  // A row a field, its name then its value (2026-10-22).
+  expect(screen.getAllByRole('term').map((term) => term.textContent)).toEqual([
+    'deviceId',
+    'deviceId',
+    'nextStatus',
+  ]);
   expect(
-    screen.getByText('deviceId: DE-000009 · nextStatus: inStock'),
-  ).toBeTruthy();
+    screen.getAllByRole('definition').map((value) => value.textContent),
+  ).toEqual(['DE-000054', 'DE-000009', 'inStock']);
   expect(screen.queryByText(/targetType|seatId|3c682199/)).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'ai.plans.hideParams' }));
   expect(screen.queryByText(/deviceId/)).toBeNull();

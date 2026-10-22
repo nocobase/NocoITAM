@@ -3269,7 +3269,6 @@ const zhCN: AppResource = {
       decline: '拒绝',
       notRun: '未执行',
       stepDone: '已执行',
-      param: '{{label}}：{{value}}',
       params: {
         condition: '状况说明',
         method: '方式',
@@ -3280,8 +3279,8 @@ const zhCN: AppResource = {
         entitlementId: '授权',
         deviceIds: '设备',
       },
-      showParams: '查看参数',
-      hideParams: '收起参数',
+      showParams: '显示详情',
+      hideParams: '收起详情',
       status: {
         pending: '等待你确认',
         executing: '正在执行',

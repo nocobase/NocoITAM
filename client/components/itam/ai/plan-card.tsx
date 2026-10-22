@@ -2,7 +2,7 @@ import { useToaster } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, ListChecks, X } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { Fragment, useState, type ReactElement } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -322,7 +322,7 @@ function StepParams({
   fields,
 }: {
   readonly fields: readonly StepField[];
-}): ReactElement {
+}): ReactElement | null {
   const { t } = useTranslation();
   const label = (field: string) =>
     t(`ai.plans.params.${field}`, {
@@ -346,7 +346,9 @@ function StepParams({
     const json = JSON.stringify(raw) ?? '';
     return json.length > 120 ? `${json.slice(0, 117)}…` : json;
   };
-  const line = (row: readonly StepField[]) =>
+  // Each field a row of its own, its name then its value (2026-10-22: one
+  // line joined by dots read as a blur).
+  const rowsOf = (row: readonly StepField[]) =>
     row
       .filter(
         (field) =>
@@ -357,9 +359,24 @@ function StepParams({
         const text = value(field);
         return text === undefined
           ? []
-          : [t('ai.plans.param', { label: label(field.field), value: text })];
-      })
-      .join(' · ');
+          : [{ key: field.field, label: label(field.field), value: text }];
+      });
+  const table = (rows: ReturnType<typeof rowsOf>, key?: number) =>
+    rows.length ? (
+      <dl
+        key={key}
+        className='grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5'
+      >
+        {rows.map((row) => (
+          <Fragment key={row.key}>
+            <dt className='whitespace-nowrap text-muted-foreground'>
+              {row.label}
+            </dt>
+            <dd className='wrap-anywhere'>{row.value}</dd>
+          </Fragment>
+        ))}
+      </dl>
+    ) : null;
   // A list in a plan proposed before its entries were named: their fields
   // as they are, ids left out.
   const entriesOf = (field: StepField): readonly (readonly StepField[])[] =>
@@ -371,16 +388,17 @@ function StepParams({
           Object.entries(entry).map(([key, value]) => ({ field: key, value })),
         )
       : []);
-  const own = line(fields.filter((field) => !entriesOf(field).length));
-  const lists = fields.flatMap(entriesOf);
+  const own = rowsOf(fields.filter((field) => !entriesOf(field).length));
+  const lists = fields.flatMap(entriesOf).map(rowsOf);
+  if (!own.length && !lists.some((rows) => rows.length)) return null;
+  // On a light panel under the step, an entry of a list below a rule.
   return (
-    <div className='mt-0.5 grid gap-0.5 text-xs wrap-anywhere text-muted-foreground'>
-      {own ? <div>{own}</div> : null}
-      {lists.map((row, index) => (
+    <div className='mt-1 grid gap-1.5 divide-y divide-border rounded-md bg-muted/60 px-2.5 py-1.5 text-xs [&>*:not(:first-child)]:pt-1.5'>
+      {table(own)}
+      {lists.map((rows, index) =>
         // Positional: an entry has no id of its own.
-        // eslint-disable-next-line @eslint-react/no-array-index-key -- see above
-        <div key={index}>{line(row)}</div>
-      ))}
+        table(rows, index),
+      )}
     </div>
   );
 }
