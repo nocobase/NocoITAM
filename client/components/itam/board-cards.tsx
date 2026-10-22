@@ -26,7 +26,15 @@ export type CardPart =
  * what it is (an amount, a vendor) where the value alone would not.
  */
 export type CardLine =
-  CardPart | { readonly part: CardPart; readonly icon: LucideIcon };
+  | CardPart
+  | {
+      readonly part: CardPart;
+      /**
+       * Absent for a fact that brings its own icon (a holder, whose icon
+       * says its kind, 2026-10-22): still a fact line, drawn small.
+       */
+      readonly icon?: LucideIcon;
+    };
 
 /**
  * How a record reads as a card: its heading, figure, lines and footer. One
@@ -149,6 +157,7 @@ export function BoardCards({
           .map((line) => ({
             node: render(spec, partOf(line), row),
             Icon: typeof line === 'object' ? line.icon : undefined,
+            fact: typeof line === 'object',
           }))
           .filter((line) => !blank(line.node));
         const footer = (spec.card.footer ?? [])
@@ -181,7 +190,7 @@ export function BoardCards({
               </div>
               {lines.length > 0 ? (
                 <div className='mt-1.5 space-y-0.5 text-sm'>
-                  {lines.map(({ node, Icon }, index) => (
+                  {lines.map(({ node, Icon, fact }, index) => (
                     <p
                       // Lines are positional: the config's order.
                       // eslint-disable-next-line @eslint-react/no-array-index-key -- see above
@@ -190,7 +199,7 @@ export function BoardCards({
                       // amount, a vendor): a size down from what it is about.
                       className={cn(
                         'flex min-w-0 items-center gap-1.5',
-                        Icon && 'text-xs',
+                        fact && 'text-xs',
                         index > 0 && 'text-muted-foreground',
                       )}
                     >

@@ -1,11 +1,13 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import {
+  CalendarClock,
   Columns3,
   List,
   MapPin,
   MonitorCheck,
   Package,
   Plus,
+  User,
 } from 'lucide-react';
 import { createElement, useMemo, useState, type ReactElement } from 'react';
 import { useNavigate, useOutlet, useSearchParams } from 'react-router';
@@ -21,6 +23,7 @@ import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { FoundRecords } from '@/components/itam/found-records';
 import { ImportExport } from '@/components/itam/import-export';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
+import { OverdueBadge } from '@/components/itam/overdue-badge';
 import { SegmentedControl } from '@/components/itam/segmented-control';
 import { createStatusBoard } from '@/components/itam/status-board';
 import { HolderIcon } from '@/components/itam/device-relation';
@@ -46,14 +49,31 @@ function HolderName({ row }: { readonly row: ItamRecord }): ReactElement {
   const id = text(row.assigneeId);
   const names = useReferenceNames([{ collection, ids: [id] }]);
   return (
-    // The size of the card's other lines, which carry their icon as a line
-    // icon and so are drawn small (2026-10-22).
-    <span className='inline-flex min-w-0 items-center gap-1.5 text-xs'>
+    <span className='inline-flex min-w-0 items-center gap-1.5'>
       <HolderIcon type={text(row.assigneeType)} />
       <span className='min-w-0 truncate'>
         {names[collection]?.get(id) ?? '…'}
       </span>
     </span>
+  );
+}
+
+/** A device's model by name, as plain text. */
+function ModelName({ id }: { readonly id: string }): ReactElement {
+  const names = useReferenceNames([{ collection: 'models', ids: [id] }]);
+  return <>{names.models?.get(id) ?? '…'}</>;
+}
+
+/** 借给 whom a lent device is with, as 待办's overdue loans say it. */
+function LentTo({ row }: { readonly row: ItamRecord }): ReactElement {
+  const { t } = useTranslation();
+  const collection = holderCollection(text(row.assigneeType));
+  const id = text(row.assigneeId);
+  const names = useReferenceNames([{ collection, ids: [id] }]);
+  return (
+    <>
+      {t('workbench.work.lentTo', { name: names[collection]?.get(id) ?? '…' })}
+    </>
   );
 }
 
@@ -78,10 +98,47 @@ const DeviceBoard = createStatusBoard({
   title: (record) =>
     [text(record.deviceNo), text(record.name)].filter(Boolean).join(' / '),
   card: {
+    // Each state with what matters in it (2026-10-22): in use, who has it,
+    // not the model; on loan, whom it is lent to and when it is due back,
+    // as 待办's overdue loans read; otherwise the model.
     lines: [
-      { part: 'modelId', icon: Package },
+      {
+        part: (record) =>
+          ['inUse', 'onLoan'].includes(text(record.status))
+            ? null
+            : createElement(ModelName, { id: text(record.modelId) }),
+        icon: Package,
+      },
+      {
+        part: (record) =>
+          record.assigneeId && text(record.status) !== 'onLoan'
+            ? createElement(HolderName, { row: record })
+            : null,
+      },
+      {
+        part: (record) =>
+          text(record.status) === 'onLoan' && record.assigneeId
+            ? createElement(LentTo, { row: record })
+            : null,
+        icon: User,
+      },
+      {
+        part: (record, t) =>
+          text(record.status) === 'onLoan' && record.expectedReturnDate
+            ? t('workbench.work.dueBack', {
+                date: formatDate(record.expectedReturnDate),
+              })
+            : null,
+        icon: CalendarClock,
+      },
       (record) =>
-        record.assigneeId ? createElement(HolderName, { row: record }) : null,
+        text(record.status) === 'onLoan'
+          ? createElement(OverdueBadge, {
+              date: record.expectedReturnDate,
+              label: 'workbench.work.loanOverdueDays',
+              className: 'mt-1',
+            })
+          : null,
       // Where it is kept only while nobody holds it: a place it is assigned
       // to is its holder already, and said twice read as a mistake.
       {
