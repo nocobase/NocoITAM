@@ -42,9 +42,12 @@ const STATUS_TONE: Readonly<
 export function PlanDecision({
   plan,
   skipped = NONE,
+  declineLabel,
 }: {
   readonly plan: Plan;
   readonly skipped?: ReadonlySet<number>;
+  /** In place of 拒绝: MDM 跟进's 暂不处理 (2026-10-22). */
+  readonly declineLabel?: string;
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
@@ -86,7 +89,7 @@ export function PlanDecision({
         disabled={decide.isPending}
         onClick={() => decide.mutate('void')}
       >
-        {t('ai.plans.decline')}
+        {declineLabel ?? t('ai.plans.decline')}
       </Button>
       <Button
         disabled={decide.isPending || left === 0}

@@ -118,7 +118,7 @@ export function DeviceSyncRunCard({
                   : 'deviceSyncRun.accepted',
               )
             : run.status === 'dismissed'
-              ? t('review.dismissed')
+              ? t('deviceSyncRun.setAside')
               : t('deviceSyncRun.superseded')}
           <span className='tabular-nums'>· {when}</span>
         </p>
@@ -148,7 +148,7 @@ export function DeviceSyncRunCard({
                 dismiss.mutate(run, { onSuccess: () => onDecided?.() })
               }
             >
-              {t('review.dismiss')}
+              {t('deviceSyncRun.setAside')}
             </Button>
           ) : null}
         </div>
@@ -240,7 +240,7 @@ function FollowUpReviewCard({
               : 'deviceSyncRun.accepted',
           )
         : run.status === 'dismissed'
-          ? t('review.dismissed')
+          ? t('deviceSyncRun.setAside')
           : t('deviceSyncRun.superseded')
       : null,
   ].filter(Boolean);
@@ -279,14 +279,18 @@ function FollowUpReviewCard({
           </AiShortcut>
           {/* Every step settled on its row: it is closing by itself. */}
           {pendingPlan && allHandled ? null : pendingPlan ? (
-            <PlanDecision plan={pendingPlan} skipped={leftOut} />
+            <PlanDecision
+              plan={pendingPlan}
+              skipped={leftOut}
+              declineLabel={t('deviceSyncRun.setAside')}
+            />
           ) : !decided ? (
             <Button
               variant='ghost'
               disabled={dismiss.isPending}
               onClick={() => dismiss.mutate(run)}
             >
-              {t('review.dismiss')}
+              {t('deviceSyncRun.setAside')}
             </Button>
           ) : null}
         </div>

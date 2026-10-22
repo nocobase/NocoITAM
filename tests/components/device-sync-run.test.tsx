@@ -133,7 +133,7 @@ it('shows the plan, what is left to the reader, and sets it aside', () => {
   expect(
     screen.getByText('deviceSyncRun.openReview').closest('a'),
   ).toHaveAttribute('href', '/device-sync');
-  fireEvent.click(screen.getByRole('button', { name: 'review.dismiss' }));
+  fireEvent.click(screen.getByRole('button', { name: 'deviceSyncRun.setAside' }));
   expect(state.dismiss).toHaveBeenCalled();
 });
 
@@ -165,7 +165,7 @@ it('offers nothing to set aside once it is carried out', () => {
   show(run({ status: 'accepted' }));
   expect(screen.getByText('deviceSyncRun.accepted')).toBeInTheDocument();
   expect(
-    screen.queryByRole('button', { name: 'review.dismiss' }),
+    screen.queryByRole('button', { name: 'deviceSyncRun.setAside' }),
   ).not.toBeInTheDocument();
 });
 
@@ -228,7 +228,7 @@ it('heads a waiting plan with its decision, its steps open beneath', () => {
   );
   expect(screen.getByRole('button', { name: 'decide' })).toBeInTheDocument();
   expect(
-    screen.queryByRole('button', { name: 'review.dismiss' }),
+    screen.queryByRole('button', { name: 'deviceSyncRun.setAside' }),
   ).not.toBeInTheDocument();
   expect(
     screen.getByText('plan:MDM follow-up: 2 differences'),
@@ -285,7 +285,7 @@ it('lists the other owners’ follow-ups to read, with nothing to act on', () =>
   expect(screen.getByText('Transfer DE-2 to Liu Yang')).toBeInTheDocument();
   expect(screen.getByText('DE-1: ask its user')).toBeInTheDocument();
   expect(
-    screen.queryByRole('button', { name: 'review.dismiss' }),
+    screen.queryByRole('button', { name: 'deviceSyncRun.setAside' }),
   ).not.toBeInTheDocument();
 });
 
@@ -410,7 +410,7 @@ it('shows the reader’s waiting follow-ups as a card each', () => {
   expect(screen.getByText('deviceSyncRun.ownDevices')).toBeInTheDocument();
   expect(screen.getByText('deviceSyncRun.sharedDevices')).toBeInTheDocument();
   expect(
-    screen.getAllByRole('button', { name: 'review.dismiss' }),
+    screen.getAllByRole('button', { name: 'deviceSyncRun.setAside' }),
   ).toHaveLength(2);
   // The asset managers' first, wherever the newest is (2026-10-22), and
   // each worked out again alone.

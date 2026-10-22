@@ -290,7 +290,12 @@ function lineOf(run: AgentRun, t: Translate): string {
     });
   if (run.status === 'accepted')
     return t(`review.decided.${run.decision ?? 'approved'}`);
-  if (run.status === 'dismissed') return t('review.dismissed');
+  if (run.status === 'dismissed')
+    return t(
+      run.agent === 'deviceSync'
+        ? 'deviceSyncRun.setAside'
+        : 'review.dismissed',
+    );
   if (run.status === 'superseded') return t('review.superseded');
   return run.agent === 'approvalReview' && run.result
     ? `${t(`review.recommendation.${run.result.recommendation}`)} · ${run.result.summary}`

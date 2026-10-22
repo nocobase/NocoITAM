@@ -3615,6 +3615,7 @@ const zhCN: AppResource = {
     handledBelow_other: '{{count}} 项已处理',
     allHandledBelow: '已全部处理',
     rerun: '重新运行',
+    setAside: '暂不处理',
     accepted: '已按方案处理',
     notes: '需要你看一下',
     openReview: '去 MDM 核对',
