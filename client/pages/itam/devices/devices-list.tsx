@@ -192,8 +192,9 @@ const DeviceBoard = createStatusBoard({
       {
         part: (record) =>
           record.locationId &&
-          // Not at the repairer, where the shelf it came from says nothing.
-          text(record.status) !== 'inRepair' &&
+          // Not at the repairer, nor lost: the shelf it came from says
+          // nothing about where it is now.
+          !['inRepair', 'lost'].includes(text(record.status)) &&
           (!record.assigneeId ||
             (text(record.status) === 'inUse' &&
               text(record.assigneeType) !== 'location'))
