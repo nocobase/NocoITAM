@@ -262,10 +262,48 @@ export function createDeviceSyncFollowUp(dependencies: {
       limit: 500,
     });
     const keys = new Set<string>();
-    for (const run of decided)
+    for (const run of decided) {
+      const left = await leftOut(run);
       for (const item of (run.result?.items ?? []) as FollowUpItem[])
-        if (item && typeof item.key === 'string') keys.add(item.key);
+        if (
+          item &&
+          typeof item.key === 'string' &&
+          !left.has(`${item.subject}|${item.kind}`)
+        )
+          keys.add(item.key);
+    }
     return keys;
+  };
+
+  /**
+   * The items whose every plan step was left out when the plan was carried
+   * out (2026-10-22): nothing was done about them, so the next follow-up
+   * raises them again rather than letting them go quietly.
+   */
+  const leftOut = async (run: AgentRun): Promise<ReadonlySet<string>> => {
+    const planId = asText(run.result?.planId);
+    if (run.status !== 'accepted' || !planId || !run.deciderId)
+      return new Set();
+    const plan = await container
+      .resolve(planServiceToken)
+      .get(run.deciderId, planId)
+      .catch(() => null);
+    if (!plan) return new Set();
+    const removed = new Set(
+      plan.steps
+        .filter((step) => step.status === 'removed')
+        .map((step) => step.position),
+    );
+    const advice = (run.result?.advice ?? []) as FollowUpAdvice[];
+    return new Set(
+      advice
+        .filter(
+          (entry) =>
+            (entry.steps?.length ?? 0) > 0 &&
+            entry.steps!.every((position) => removed.has(position)),
+        )
+        .map((entry) => `${entry.subject}|${entry.kind}`),
+    );
   };
 
   /** Everyone holding the asset manager set who has not left. */

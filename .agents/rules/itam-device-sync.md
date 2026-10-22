@@ -253,6 +253,10 @@ product or in release notes, until it is listed here.
   the platform first reported them — each tagged 补登记 or 关联. A platform
   record's name on MDM 核对 opens a sheet of what the platform reports
   (`ManagedRecordSheet`), with the console link; it has no register device.
+- **Left out is not handled** (2026-10-22): an item of an accepted
+  follow-up whose every plan step was unticked when the plan was carried
+  out (`removed`) is not among `handled()`: the next follow-up raises it
+  again. Its card shows such a step as 未执行, not struck through.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

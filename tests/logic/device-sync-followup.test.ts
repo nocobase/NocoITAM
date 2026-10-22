@@ -226,6 +226,39 @@ describe('MDM follow-up', () => {
     ]);
   });
 
+  // Left out when the plan was carried out, an item comes back with the
+  // next follow-up (2026-10-22): nothing was done about it.
+  it('raises again what was left out of a plan carried out', async () => {
+    model.decide = (item) =>
+      item.kind === 'userMismatch'
+        ? { action: 'transfer', target: wangWu }
+        : item.kind === 'statusMismatch'
+          ? { action: 'keep' }
+          : null;
+    await followUp().afterSync(null);
+    const mine = await settled(() => latest('owner:mia'));
+    const plan = await plans().get('mia', String(mine.result?.planId));
+    expect(plan.steps.map((step) => step.op)).toEqual([
+      'transfer_device',
+      'dismiss_device_difference',
+    ]);
+    const done = await plans().execute('mia', plan.id, {
+      revision: plan.revision,
+      skip: [2],
+    });
+    await followUp().planDecided({ plan: done, decision: 'executed' });
+    expect((await runs().get(mine.id))?.status).toBe('accepted');
+
+    await followUp().afterSync(null);
+    const next = await settled(() => latest('owner:mia'));
+    expect(next.id).not.toBe(mine.id);
+    expect(
+      (next.result?.items as { kind: string; subject: string }[]).map(
+        (item) => [item.kind, item.subject],
+      ),
+    ).toEqual([['statusMismatch', spare]]);
+  });
+
   it('raises nothing again that a person carried out or set aside', async () => {
     await followUp().afterSync(null);
     const mine = await settled(() => latest('owner:mia'));
