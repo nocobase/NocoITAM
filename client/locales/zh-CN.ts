@@ -2158,9 +2158,9 @@ const zhCN: AppResource = {
       ignoredManual_other:
         '手动不纳入台账 {{count}} 台：以后的同步不再提示；点「恢复」会重新按序列号匹配。',
       ignoredPersonal_one:
-        '个人设备 {{count}} 台：「忽略个人设备」已开启，个人设备不参与核对。在 MDM 设置中关闭并保存后，会移到「只在 MDM」。',
+        '个人设备 {{count}} 台：MDM 设置中「忽略个人设备」已开启，个人设备不参与核对。',
       ignoredPersonal_other:
-        '个人设备 {{count}} 台：「忽略个人设备」已开启，个人设备不参与核对。在 MDM 设置中关闭并保存后，会移到「只在 MDM」。',
+        '个人设备 {{count}} 台：MDM 设置中「忽略个人设备」已开启，个人设备不参与核对。',
       empty: '没有需要处理的设备',
       columns: {
         device: '设备',

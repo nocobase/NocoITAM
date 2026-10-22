@@ -2257,9 +2257,9 @@ const messages = {
       ignoredManual_other:
         'Kept off the register by hand, {{count}}: syncs no longer raise them; Restore matches each by serial again.',
       ignoredPersonal_one:
-        'Personal device, {{count}}: Ignore personal devices is on, so it is left out of the review. Turn it off in the MDM settings and save, and it moves to Only in MDM.',
+        'Personal device, {{count}}: Ignore personal devices is on in the MDM settings, so it is left out of the review.',
       ignoredPersonal_other:
-        'Personal devices, {{count}}: Ignore personal devices is on, so they are left out of the review. Turn it off in the MDM settings and save, and they move to Only in MDM.',
+        'Personal devices, {{count}}: Ignore personal devices is on in the MDM settings, so they are left out of the review.',
       empty: 'Nothing to review',
       columns: {
         device: 'Device',
