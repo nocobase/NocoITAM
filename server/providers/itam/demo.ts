@@ -6412,9 +6412,19 @@ export function createDemoService(dependencies: {
           // Someone with one computer and in no other case, so the row
           // reads as nobody else's (2026-10-22).
           const taken = new Set(
-            [inUse[1], inUse[2], other, inUse[4], holder].map(
-              (row) => row?.email,
-            ),
+            [
+              inUse[1],
+              inUse[2],
+              other,
+              inUse[4],
+              holder,
+              // The non-compliant laptop and the one Intune drops, below.
+              ...inUse
+                .filter(
+                  (row, index) => index > 2 && row.manufacturer !== 'Apple',
+                )
+                .slice(0, 2),
+            ].map((row) => row?.email),
           );
           const finder =
             inUse.find(
