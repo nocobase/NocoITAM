@@ -115,6 +115,10 @@ departments/:id/positions/rename`): its holders and its kit move to the
   N / M, and one button per proposal through the operation that already
   exists — 预留 until the joining day while they have not started, 分配
   once they have, 领用, 分配席位 — with 全部执行 running them in order.
+  The card's only AI is 挑选 / 重新挑选 in its strip and, beside 缺 N 项需采购,
+  起草采购单, which asks Asset Steward in the chat (it needs a vendor). The
+  header's 准备 (配备计划), a chat that proposed the plan 全部执行 already
+  runs, was removed on 2026-10-22.
   The workbench's 入职准备 (`pendingOnboarding`, right after 离职交接) lists
   **joiners** — people entered in the register no more than 30 days before
   their first day (`isJoiner`; staff entered long after they started, such

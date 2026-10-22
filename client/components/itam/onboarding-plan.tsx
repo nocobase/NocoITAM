@@ -84,9 +84,9 @@ export function OnboardingPlanCard({
   const effective = (thing: PlanThing): PlanThing => chosen[thing.id] ?? thing;
   const data = plan.data;
   // The person goes along as page context, so Asset Steward reads this very plan
-  // (`itam onboarding plan`) and proposes it as a plan of its own (the
-  // onboarding skill) — with the purchase order for the shortfall, which
-  // needs a vendor the card does not ask for.
+  // (`itam onboarding plan`) when asked to draft the purchase order for the
+  // shortfall (the onboarding skill), which needs a vendor the card does not
+  // ask for.
   const { available: aiAvailable, ask } = useAiPageContext({
     kind: 'people',
     id: personId,
@@ -240,18 +240,11 @@ export function OnboardingPlanCard({
               </span>
             ) : null}
           </div>
-          {/* Together at the right (2026-10-22): spread apart, the AI
-              shortcut floated in the middle of the row. */}
+          {/* No AI shortcut here since 2026-10-22: its plan was what 全部执行
+              does, and 重新挑选 below is where Asset Steward chooses. What
+              it alone could do — draft the order for a shortfall — sits by
+              the shortfall. */}
           <div className='ml-auto flex shrink-0 items-center gap-3'>
-            {aiAvailable && data.kit ? (
-              <AiShortcut
-                onClick={() =>
-                  ask(t('ai.prompts.onboarding', { name: personName }))
-                }
-              >
-                {t('onboarding.askAi')}
-              </AiShortcut>
-            ) : null}
             {proposals.length > 0 ? (
               <Button
                 disabled={busy}
@@ -303,6 +296,18 @@ export function OnboardingPlanCard({
                   <span className='text-destructive'>
                     {t('onboarding.shortfallTotal', { count: shortfall })}
                   </span>
+                ) : null}
+                {/* The order needs a vendor the card does not ask for, so
+                    Asset Steward drafts it in the chat and asks. */}
+                {shortfall > 0 && aiAvailable ? (
+                  <AiShortcut
+                    className='text-xs'
+                    onClick={() =>
+                      ask(t('ai.prompts.onboardingOrder', { name: personName }))
+                    }
+                  >
+                    {t('onboarding.draftOrder')}
+                  </AiShortcut>
                 ) : null}
                 {data.waived > 0 ? (
                   <span>
