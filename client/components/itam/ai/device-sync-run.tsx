@@ -36,6 +36,7 @@ import {
   type FollowUpTab,
 } from '@/lib/itam/device-sync-followup';
 import { useReferenceNames } from '@/lib/itam/references';
+import { cn } from '@/lib/utils';
 import { useApi } from '@/lib/itam/api';
 import { useDeviceReview } from '@/lib/itam/device-sync';
 import { relativeTime } from '@/lib/itam/format';
@@ -395,7 +396,13 @@ function FollowUpReviewCard({
           />
         ) : null}
         {notes.length ? (
-          <section className='space-y-1'>
+          // Below the steps, a rule between them (2026-10-22).
+          <section
+            className={cn(
+              'space-y-1',
+              plan.data && 'border-t border-border pt-3',
+            )}
+          >
             <h4 className='text-xs text-muted-foreground'>
               {t('deviceSyncRun.notes')}
             </h4>
