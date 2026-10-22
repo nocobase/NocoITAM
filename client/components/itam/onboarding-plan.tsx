@@ -230,7 +230,7 @@ export function OnboardingPlanCard({
             {data.kit ? (
               <RecordLink
                 to={`/departments/${data.kit.departmentId}/onboarding`}
-                className='truncate text-sm text-muted-foreground hover:text-foreground'
+                className='truncate text-sm text-muted-foreground transition-colors hover:text-primary'
               >
                 {data.kit.name}
               </RecordLink>
@@ -323,7 +323,7 @@ export function OnboardingPlanCard({
                   <RecordLink
                     key={order.id}
                     to={`/procurement/${order.id}`}
-                    className='hover:text-foreground'
+                    className='transition-colors hover:text-primary'
                   >
                     {t('onboarding.order', {
                       orderNo: order.orderNo,
@@ -365,6 +365,15 @@ export function OnboardingPlanCard({
     </Card>
   );
 }
+
+/** Where a kit item's own record is, by what it names. */
+const TARGET_ROUTES: Readonly<
+  Record<OnboardingPlanLine['target']['type'], string>
+> = {
+  model: 'models',
+  category: 'categories',
+  softwareProduct: 'software-products',
+};
 
 function PlanLine({
   line,
@@ -440,7 +449,14 @@ function PlanLine({
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
         <span className='flex min-w-0 flex-1 items-center gap-2'>
           {tag}
-          <span className='truncate'>{line.target.name}</span>
+          {/* The kit's item opens its record too: the model, the category
+              or the software product (2026-10-22). */}
+          <RecordLink
+            to={`/${TARGET_ROUTES[line.target.type]}/${line.target.id}`}
+            className='truncate transition-colors hover:text-primary'
+          >
+            {line.target.name}
+          </RecordLink>
           {line.target.type === 'category' ? (
             <span className='shrink-0 text-xs text-muted-foreground'>
               {t('onboardingKits.anyModel')}
@@ -463,7 +479,7 @@ function PlanLine({
             >
               <Badge
                 variant='secondary'
-                className='max-w-full hover:bg-secondary/80'
+                className='max-w-full transition-colors hover:text-primary'
               >
                 <Check className='size-3' />
                 <span className='truncate'>
@@ -518,7 +534,7 @@ function PlanLine({
                     (2026-10-22: the label was inside the button). */}
                 <RecordLink
                   to={recordOf(thing)}
-                  className='min-w-0 truncate underline-offset-4 hover:underline'
+                  className='min-w-0 truncate transition-colors hover:text-primary'
                 >
                   {thing.label}
                 </RecordLink>
@@ -596,7 +612,7 @@ function PlanLine({
                     {t('onboarding.instead')}
                     <RecordLink
                       to={`/devices/${thing.instead.id}`}
-                      className='text-foreground underline-offset-4 hover:underline'
+                      className='text-foreground transition-colors hover:text-primary'
                     >
                       {thing.instead.label}
                     </RecordLink>
