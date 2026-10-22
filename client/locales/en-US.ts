@@ -2260,14 +2260,8 @@ const messages = {
           'Devices in use, of a managed category, that no MDM reports. Enrol them in MDM, or mark one as not to be managed.',
       },
       ignoredHeading: 'Kept off the register ({{count}})',
-      ignoredManual_one:
-        'Kept off the register by hand, {{count}}: syncs no longer raise it; Restore matches it by serial again.',
-      ignoredManual_other:
-        'Kept off the register by hand, {{count}}: syncs no longer raise them; Restore matches each by serial again.',
-      ignoredPersonal_one:
-        'Personal device, {{count}}: Ignore personal devices is on in the MDM settings, so it is left out of the review.',
-      ignoredPersonal_other:
-        'Personal devices, {{count}}: Ignore personal devices is on in the MDM settings, so they are left out of the review.',
+      ignoredHint:
+        'Platform records kept off the register: syncs no longer raise them, and Restore reviews them again.',
       empty: 'Nothing to review',
       columns: {
         device: 'Device',
@@ -2295,7 +2289,8 @@ const messages = {
       link: 'Link to a device',
       ignore: 'Keep off the register',
       restore: 'Restore',
-      byRule: 'Personal device',
+      byRule:
+        'Personal device; Ignore personal devices is on in the MDM settings',
       linkTitle: 'Link to a device',
       linkDescription:
         'Link the platform device “{{name}}” to a device on the register.',

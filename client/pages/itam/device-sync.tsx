@@ -296,21 +296,11 @@ export default function DeviceSyncReviewPage(): ReactElement {
                     count: counts.ignored,
                   })}
                 </h2>
-                {/* Each kind said once, and only the kinds there are. */}
-                {(counts.ignoredManual ?? 0) > 0 ? (
-                  <p className='text-sm text-muted-foreground'>
-                    {t('deviceSync.review.ignoredManual', {
-                      count: counts.ignoredManual,
-                    })}
-                  </p>
-                ) : null}
-                {(counts.ignoredByRule ?? 0) > 0 ? (
-                  <p className='text-sm text-muted-foreground'>
-                    {t('deviceSync.review.ignoredPersonal', {
-                      count: counts.ignoredByRule,
-                    })}
-                  </p>
-                ) : null}
+                {/* One line (2026-10-22): a personal device's reason says
+                    why on its row. */}
+                <p className='text-sm text-muted-foreground'>
+                  {t('deviceSync.review.ignoredHint')}
+                </p>
               </div>
               <RecordsView view='ignored' />
             </section>
@@ -371,9 +361,7 @@ const TAB_ICONS: Readonly<Record<(typeof TABS)[number], LucideIcon>> = {
 };
 
 /** Each view's count, as its own list reads it (undefined while loading). */
-function useReviewCounts(): Partial<
-  Record<ReviewView | 'ignoredManual' | 'ignoredByRule', number>
-> {
+function useReviewCounts(): Partial<Record<ReviewView, number>> {
   const checks = useDeviceReview('checks');
   const unregistered = useDeviceReview('unregistered');
   const unmanaged = useDeviceReview('unmanaged');
@@ -382,7 +370,6 @@ function useReviewCounts(): Partial<
   const dismissed = useDeviceReview('dismissed');
   const linked = useDeviceReview('linked');
   const silent = useDeviceReview('silent');
-  const byRule = ignored.data?.filter((row) => row.ignoredByRule).length;
   return {
     checks: checks.data?.length,
     unregistered: unregistered.data?.length,
@@ -392,12 +379,6 @@ function useReviewCounts(): Partial<
     dismissed: dismissed.data?.length,
     linked: linked.data?.length,
     silent: silent.data?.length,
-    // 已忽略's two kinds: kept off by a person, or by 忽略个人设备.
-    ignoredByRule: byRule,
-    ignoredManual:
-      ignored.data && byRule !== undefined
-        ? ignored.data.length - byRule
-        : undefined,
   };
 }
 

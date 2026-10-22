@@ -2160,14 +2160,8 @@ const zhCN: AppResource = {
           '台账里在用、属于应纳管分类，却不在任何 MDM 里的设备。去 MDM 注册，或标为不需要纳管。',
       },
       ignoredHeading: '不纳入台账 {{count}} 台',
-      ignoredManual_one:
-        '手动不纳入台账 {{count}} 台：以后的同步不再提示；点「恢复」会重新按序列号匹配。',
-      ignoredManual_other:
-        '手动不纳入台账 {{count}} 台：以后的同步不再提示；点「恢复」会重新按序列号匹配。',
-      ignoredPersonal_one:
-        '个人设备 {{count}} 台：MDM 设置中「忽略个人设备」已开启，个人设备不参与核对。',
-      ignoredPersonal_other:
-        '个人设备 {{count}} 台：MDM 设置中「忽略个人设备」已开启，个人设备不参与核对。',
+      ignoredHint:
+        '不进入台账的 MDM 记录，同步时不再提示；点「恢复」重新核对。',
       empty: '没有需要处理的设备',
       columns: {
         device: '设备',
@@ -2194,7 +2188,7 @@ const zhCN: AppResource = {
       link: '关联到已有设备',
       ignore: '不纳入台账',
       restore: '恢复',
-      byRule: '个人设备',
+      byRule: '个人设备，MDM 设置已开启「忽略个人设备」',
       linkTitle: '关联到已有设备',
       linkDescription: '把 MDM 设备「{{name}}」关联到台账里的一台设备。',
       linkRegister: '台账：',
