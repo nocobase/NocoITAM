@@ -431,3 +431,10 @@ and the comment keeps their names; they are not the record's attachments.
   record's comments carry as a group of their own (`source: 'comments'`
   from the attachment service), which it does not remove; a comment's
   author takes one off on the comment itself (`keepFileIds` on its edit).
+- A text button (`variant='ghost'` with words) in a row beside a link, an
+  outlined or filled button, or another text button takes back its padding
+  with a negative margin (`-mx-2.5` at the default size; one side only
+  where only one neighbour matters), so every word on the row sits the
+  same flex gap from the next (2026-10-22, the onboarding card's
+  预留 · 更换 · 不需要, the plans' 暂不处理, 沿用上级部门的配置). Without it
+  the gap beside a text button reads a padding wider than the others.
