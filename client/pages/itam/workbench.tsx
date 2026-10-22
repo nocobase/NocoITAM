@@ -8,7 +8,6 @@ import {
   GitCompareArrows,
   Columns3,
   List,
-  TriangleAlert,
   UserMinus,
   UserPlus,
 } from 'lucide-react';
@@ -928,15 +927,9 @@ function AttentionBand(): ReactElement | null {
       // Closer to the counts than the page's own spacing (2026-10-22).
       className='mb-3 shrink-0 rounded-2xl border border-border/60 bg-card px-3 py-2.5'
     >
-      {/* In line with the rows (2026-10-22): the icon over their numbers,
-          the title over their rules. */}
-      <h2 className='mb-1 flex items-center gap-3 px-1.5 text-sm font-semibold'>
-        <span className='flex w-7 shrink-0 justify-end'>
-          <TriangleAlert
-            aria-hidden='true'
-            className='size-4 text-warning-foreground'
-          />
-        </span>
+      {/* The title alone (2026-10-22; a warning icon before it until
+          then), in line with the rows' edge. */}
+      <h2 className='mb-1 px-1.5 text-sm font-semibold'>
         {t('workbench.attention')}
       </h2>
       {reminders.isLoading ? (
