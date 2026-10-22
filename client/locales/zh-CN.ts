@@ -1948,7 +1948,6 @@ const zhCN: AppResource = {
     showMoreCards_other: '展开其余 {{count}} 张',
     work: {
       people: '人员变动',
-      devices: '设备跟进',
       tagLeaving: '离职',
       tagJoining: '入职',
       pendingApprovals: '待审批',
@@ -1961,9 +1960,11 @@ const zhCN: AppResource = {
       purchasing: '采购中',
       pendingOrders: '待下单',
       awaitingReceipt: '待到货入库',
-      pendingDisposalExecution: '待执行报废',
+      pendingDisposalExecution: '待报废',
       activeRepairs: '维修中',
       activeAudits: '盘点中',
+      loanOverdueDays_one: '逾期 {{count}} 天',
+      loanOverdueDays_other: '逾期 {{count}} 天',
       loansDueToday: '借出逾期',
       // MDM 核对 (2026-10-15): the differences as cards, and a count for
       // each of the other two tabs.

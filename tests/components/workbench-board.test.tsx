@@ -84,13 +84,13 @@ it('lays the to-dos out as columns, 需要关注 first, and opens a record in th
       .map((region) => region.getAttribute('aria-label')),
   ).toEqual([
     'workbench.attention',
-    // 待到货入库 reads as 采购中, the column it shares with 待下单, and
-    // 借出逾期 as 设备跟进, with 维修中.
+    // 借出逾期 a column of its own again, before 采购中 (2026-10-22), where
+    // 待到货入库 reads, the column it shares with 待下单.
+    'workbench.work.loansDueToday',
     'workbench.work.purchasing',
-    'workbench.work.devices',
   ]);
   // An empty column stays, dimmed, and says so.
-  const loans = column('workbench.work.devices');
+  const loans = column('workbench.work.loansDueToday');
   expect(within(loans).getByText('workbench.nothingPending')).toBeTruthy();
   expect(loans.className).toContain('opacity-60');
   fireEvent.click(screen.getByText('PO-000020'));
@@ -209,7 +209,7 @@ it('keeps a long fault description to one truncated line on a repair card', () =
     ],
   };
   show();
-  const repairs = column('workbench.work.devices');
+  const repairs = column('workbench.work.activeRepairs');
   const line = within(repairs).getByText(fault);
   // One line, cut by CSS, with nothing to unfold.
   expect(line.className).toContain('truncate');
@@ -234,9 +234,13 @@ it('says whom an overdue device is lent to and when it was due back', () => {
     },
   ];
   show();
-  const loans = column('workbench.work.devices');
+  const loans = column('workbench.work.loansDueToday');
   expect(within(loans).getByText('workbench.work.lentTo')).toBeTruthy();
   expect(within(loans).getByText('workbench.work.dueBack')).toBeTruthy();
+  // How many days past it (2026-10-22).
+  expect(
+    within(loans).getByText('workbench.work.loanOverdueDays'),
+  ).toBeTruthy();
 });
 
 const LONG_NAME = 'Maximiliana Alexandrovna Konstantinopolskaya-Wellington';

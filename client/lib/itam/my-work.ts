@@ -105,23 +105,23 @@ export function useWorkCards(): readonly WorkCard[] {
     // company's equipment or joining without theirs yet (2026-10-17: one
     // column for 离职交接 and 入职准备, so fewer columns run off the board).
     'people',
+    // 借出逾期 next (2026-10-22): late, and a person to chase.
+    'loansDueToday',
     // 待下单 and 待到货入库 as one column, 采购中 (2026-10-06).
     'purchasing',
+    // 维修中 a column of its own again, after 采购中 (2026-10-22; one with
+    // 借出逾期 as 设备跟进 from 2026-10-17, which mixed a process with
+    // devices that are late).
+    'activeRepairs',
     'pendingDisposalExecution',
-    // 设备跟进: devices away — at the repairer, or lent and overdue
-    // (2026-10-17, 维修中 and 借出逾期 as one column).
-    'devices',
     // Device sync (2026-10-15): only while a platform is connected.
     'deviceChecks',
     'activeAudits',
   ]) {
-    if (key === 'people' || key === 'devices') {
+    if (key === 'people') {
       const merged = mergedCard(
         key,
-        key === 'people'
-          ? [find('leaverRecovery'), find('pendingOnboarding')]
-          : // Overdue loans first: they are late; a repair is only away.
-            [find('loansDueToday'), find('activeRepairs')],
+        [find('leaverRecovery'), find('pendingOnboarding')],
         t,
         TAGGED,
       );
@@ -188,13 +188,13 @@ export function useWorkCards(): readonly WorkCard[] {
 }
 
 /**
- * One column for several to-dos (人员变动, 设备跟进): each record remembers
+ * One column for several to-dos (人员变动): each record remembers
  * the to-do it came from (`origin`), the counts add up, and each to-do keeps
  * its own "see all" past the preview. The to-dos stay separate underneath,
  * each granted and scoped by its own act.
  */
 function mergedCard(
-  key: 'people' | 'devices',
+  key: 'people',
   items: readonly (MyWorkItem | undefined)[],
   t: (key: string) => string,
   tagged: Readonly<Record<string, DocumentKind>>,

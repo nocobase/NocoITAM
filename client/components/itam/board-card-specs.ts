@@ -211,6 +211,13 @@ export const LOAN_CARD: BoardCardSpec = {
             : null,
         icon: CalendarClock,
       },
+      // How many days past it (2026-10-22), as a late delivery says it.
+      (record) =>
+        createElement(OverdueBadge, {
+          date: record.date,
+          label: 'workbench.work.loanOverdueDays',
+          className: 'mt-1',
+        }),
     ],
     // Who answers for it, as every document card's footer says (2026-10-17),
     // and that it is the reader's own: the column lists everybody's.

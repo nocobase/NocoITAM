@@ -13,16 +13,19 @@ import { daysOverdue } from '@/lib/itam/format';
 export function OverdueBadge({
   date,
   className,
+  label = 'procurement.overdueDays',
 }: {
   readonly date: unknown;
   readonly className?: string;
+  /** What is late, by its key: a delivery unless said (2026-10-22). */
+  readonly label?: string;
 }): ReactElement | null {
   const { t } = useTranslation();
   const days = daysOverdue(date);
   if (days <= 0) return null;
   return (
     <Badge variant='destructive' className={className}>
-      {t('procurement.overdueDays', { count: days })}
+      {t(label, { count: days })}
     </Badge>
   );
 }
