@@ -86,7 +86,8 @@ export const STATUS_TONE: Readonly<Record<DeviceStatus, string>> = {
   retired: 'bg-muted text-muted-foreground',
   pendingDisposal: 'bg-destructive/10 text-destructive',
   disposed: 'bg-muted text-muted-foreground',
-  lost: 'bg-destructive text-destructive-foreground',
+  // Light too (2026-10-22), as every other state.
+  lost: 'bg-destructive/10 text-destructive',
 };
 
 const options = (group: string, values: readonly string[]): FieldOption[] =>
