@@ -57,6 +57,56 @@ const TURN_MS = 8 * 60_000;
 export type FollowUpKind =
   'stale' | 'userMismatch' | 'statusMismatch' | 'unmanaged' | 'unregistered';
 
+/** MDM 核对's tabs, which a follow-up is split by (2026-10-22). */
+export const FOLLOW_UP_TABS = ['checks', 'unregistered', 'unmanaged'] as const;
+export type FollowUpTab = (typeof FOLLOW_UP_TABS)[number];
+
+/** The tab an item is listed under. */
+export const tabOf = (kind: FollowUpKind): FollowUpTab =>
+  kind === 'unregistered'
+    ? 'unregistered'
+    : kind === 'unmanaged'
+      ? 'unmanaged'
+      : 'checks';
+
+/**
+ * A follow-up's subject (2026-10-22): whose part — a person's own devices
+ * (`owner`) or the asset managers' (`shared`) — whose, and which tab of MDM
+ * 核对 it is for. Runs from before carry no tab and stand for every tab.
+ */
+export const followUpSubject = (
+  part: 'owner' | 'shared',
+  userId: string,
+  tab: FollowUpTab,
+): string => `${part}:${userId}:${tab}`;
+
+export function parseFollowUpSubject(subjectId: string): {
+  readonly part: 'owner' | 'shared';
+  readonly userId: string;
+  readonly tab: FollowUpTab | null;
+} {
+  const [part, userId = '', tab] = subjectId.split(':');
+  return {
+    part: part === 'shared' ? 'shared' : 'owner',
+    userId,
+    tab: FOLLOW_UP_TABS.includes(tab as FollowUpTab)
+      ? (tab as FollowUpTab)
+      : null,
+  };
+}
+
+/** Items by the tab they are listed under, in the tabs' order. */
+const byTab = (
+  items: readonly FollowUpItem[],
+): [FollowUpTab, FollowUpItem[]][] =>
+  FOLLOW_UP_TABS.map(
+    (tab) =>
+      [tab, items.filter((item) => tabOf(item.kind) === tab)] as [
+        FollowUpTab,
+        FollowUpItem[],
+      ],
+  ).filter(([, of]) => of.length > 0);
+
 export interface FollowUpItem {
   /** The difference: device, kind and the value seen, or a platform record. */
   readonly key: string;
@@ -195,7 +245,11 @@ export interface DeviceSyncFollowUp {
    * manager (2026-10-22), being theirs together. Answers the reader's
    * runs. Asked by hand, it is never switched off.
    */
-  ask(by: string, part?: 'own' | 'shared'): Promise<readonly AgentRun[]>;
+  ask(
+    by: string,
+    part?: 'own' | 'shared',
+    tab?: FollowUpTab,
+  ): Promise<readonly AgentRun[]>;
   /**
    * For a holder of the asset manager set (2026-10-17): the suggestions
    * still open on the devices other people answer for, to read on MDM 核对
@@ -381,9 +435,9 @@ export function createDeviceSyncFollowUp(dependencies: {
   /** The items a run is for, worked out again when it runs. */
   const itemsOf = async (run: AgentRun): Promise<FollowUpItem[]> => {
     const { byOwner, shared } = await pending();
-    if (run.subjectId.startsWith('owner:'))
-      return byOwner.get(run.subjectId.slice('owner:'.length)) ?? [];
-    return shared;
+    const { part, userId, tab } = parseFollowUpSubject(run.subjectId);
+    const items = part === 'owner' ? (byOwner.get(userId) ?? []) : shared;
+    return tab ? items.filter((item) => tabOf(item.kind) === tab) : items;
   };
 
   /** Siblings of a shared suggestion go once one of them is decided. */
@@ -402,7 +456,12 @@ export function createDeviceSyncFollowUp(dependencies: {
       limit: 200,
     });
     const others = open.filter(
-      (other) => other.id !== run.id && other.subjectId.startsWith('shared:'),
+      (other) =>
+        other.id !== run.id &&
+        other.subjectId.startsWith('shared:') &&
+        // The same tab's copies (2026-10-22).
+        parseFollowUpSubject(other.subjectId).tab ===
+          parseFollowUpSubject(run.subjectId).tab,
     );
     if (!others.length) return;
     const listed = await listedNow();
@@ -483,29 +542,44 @@ export function createDeviceSyncFollowUp(dependencies: {
       const start = async (subjectId: string, deciderId: string) => {
         started.push(await begin('synced', by, subjectId, deciderId, answers));
       };
+      // One per tab of MDM 核对 (2026-10-22), as its cards are shown.
       for (const [owner, items] of byOwner)
-        if (items.length) await start(`owner:${owner}`, owner);
-      if (shared.length)
+        for (const [tab] of byTab(items))
+          await start(followUpSubject('owner', owner, tab), owner);
+      const tabs = byTab(shared);
+      if (tabs.length)
         for (const manager of await assetManagers())
-          await start(`shared:${manager}`, manager);
+          for (const [tab] of tabs)
+            await start(followUpSubject('shared', manager, tab), manager);
       return started;
     },
 
-    async ask(by, part) {
+    async ask(by, part, tab) {
       if (!(await review().active())) return [];
       const { byOwner, shared } = await pending();
       const started: AgentRun[] = [];
-      if (part !== 'shared' && byOwner.get(by)?.length)
-        started.push(await begin('asked', by, `owner:${by}`, by));
+      const wanted = ([at]: [FollowUpTab, FollowUpItem[]]) =>
+        !tab || at === tab;
+      if (part !== 'shared')
+        for (const [at] of byTab(byOwner.get(by) ?? []).filter(wanted))
+          started.push(
+            await begin('asked', by, followUpSubject('owner', by, at), by),
+          );
       // The shared part is every asset manager's (2026-10-22): asked by one,
       // it is worked out again for them all, as after a pull, so nobody
       // keeps a copy the asker's replaced or one closed with no successor.
       const managers = await assetManagers();
-      if (part !== 'own' && shared.length && managers.includes(by))
-        for (const manager of managers) {
-          const run = await begin('asked', by, `shared:${manager}`, manager);
-          if (manager === by) started.push(run);
-        }
+      if (part !== 'own' && managers.includes(by))
+        for (const [at] of byTab(shared).filter(wanted))
+          for (const manager of managers) {
+            const run = await begin(
+              'asked',
+              by,
+              followUpSubject('shared', manager, at),
+              manager,
+            );
+            if (manager === by) started.push(run);
+          }
       return started;
     },
 

@@ -282,6 +282,17 @@ product or in release notes, until it is listed here.
   shows as 已处理 on the others' cards; declining is the decider's own. A
   copy whose every planned item is off the lists closes as settled on the
   server, so it does not wait in its manager's 收件箱.
+- **A follow-up per tab** (2026-10-22): a person's own devices' MDM 跟进 and
+  the shared one are each split by MDM 核对's tab (`tabOf(kind)`: checks,
+  unregistered, unmanaged), subject `owner:<id>:<tab>` / `shared:<id>:<tab>`
+  (`followUpSubject`, `parseFollowUpSubject`; runs from before have no tab
+  and stand under their first item's). Each tab shows its own cards under
+  its hint (`DeviceSyncFollowUpBlock tab`), the reader's devices' first; the
+  page has no 等你决定 panel above the tabs any more. With no card on the
+  tab, its hint's line offers MDM 差异跟进 for that tab (`ask(by, part,
+tab)`); each card's 重新运行 runs its part and tab. 收件箱 lists one entry
+  per follow-up and opens it on its tab (`?view=`). Shared copies settle
+  across asset managers per tab.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

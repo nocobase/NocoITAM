@@ -6,6 +6,7 @@ import { ApprovalReviewCard } from '@/components/itam/ai/approval-review';
 import { DeviceSyncRunCard } from '@/components/itam/ai/device-sync-run';
 import {
   FollowUpFocusContext,
+  followUpPlace,
   followUpTitle,
 } from '@/lib/itam/device-sync-followup';
 import {
@@ -336,11 +337,14 @@ function ReviewDetail({
             the page itself (2026-10-21). */}
         <FollowUpFocusContext.Provider value={run.id}>
           <OpenFullPageContext.Provider
-            value={() => void navigate('/device-sync')}
+            value={() =>
+              void navigate(`/device-sync?view=${followUpPlace(run).tab}`)
+            }
           >
+            {/* On its own tab (2026-10-22). */}
             <PagePane
               key={run.id}
-              to='/device-sync'
+              to={`/device-sync?view=${followUpPlace(run).tab}`}
               page={DeviceSyncReviewPage}
               onLeave={(path) => void navigate(path)}
             />

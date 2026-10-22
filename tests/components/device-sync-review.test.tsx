@@ -407,10 +407,7 @@ describe('MDM 核对 → 信息不一致', () => {
   it('leaves running again to the cards while both wait', () => {
     state.ai = true;
     state.views = { checks: [check] };
-    state.open = [
-      { agent: 'deviceSync', subjectId: 'owner:mia' },
-      { agent: 'deviceSync', subjectId: 'shared:mia' },
-    ];
+    state.open = [{ agent: 'deviceSync', subjectId: 'owner:mia:checks' }];
     show();
     expect(
       screen.queryByRole('button', { name: 'deviceSync.review.followUp' }),
@@ -419,17 +416,19 @@ describe('MDM 核对 → 信息不一致', () => {
     state.ai = false;
   });
 
-  // One set aside, its part has no card: the header starts it alone
-  // (2026-10-22).
-  it('starts the part with no card alone', () => {
+  // Each tab its own follow-ups (2026-10-22): with none on this one, its
+  // hint's line starts them; one on another tab does not count.
+  it('starts this tab’s follow-up when it has none', () => {
     state.ai = true;
     state.views = { checks: [check] };
-    state.open = [{ agent: 'deviceSync', subjectId: 'shared:mia' }];
+    state.open = [
+      { agent: 'deviceSync', subjectId: 'shared:mia:unregistered' },
+    ];
     show();
     fireEvent.click(
       screen.getByRole('button', { name: 'deviceSync.review.followUp' }),
     );
-    expect(state.followUp.mutate).toHaveBeenCalledWith('own');
+    expect(state.followUp.mutate).toHaveBeenCalledWith({ tab: 'checks' });
     state.open = [];
     state.ai = false;
   });

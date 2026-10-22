@@ -23,7 +23,10 @@ import {
   SourceError,
 } from '../../providers/itam/device-sources.js';
 import { compileAuthzScope } from '../../providers/itam/authz-filter.js';
-import { deviceSyncFollowUpToken } from '../../providers/itam/device-sync-followup.js';
+import {
+  deviceSyncFollowUpToken,
+  FOLLOW_UP_TABS,
+} from '../../providers/itam/device-sync-followup.js';
 import { ITAM_SETTINGS_RESOURCE } from '../../providers/itam/collections.js';
 import { BusinessRuleError } from '../../providers/itam/errors.js';
 import {
@@ -267,12 +270,16 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
         // One part alone (2026-10-22): the reader's devices' (`own`) or the
         // asset managers' (`shared`); both when none is named.
         const body: unknown = await context.req.json().catch(() => ({}));
-        const { part } = z
-          .object({ part: z.enum(['own', 'shared']).optional() })
+        const { part, tab } = z
+          .object({
+            part: z.enum(['own', 'shared']).optional(),
+            // One tab of MDM 核对 alone (2026-10-22).
+            tab: z.enum(FOLLOW_UP_TABS).optional(),
+          })
           .strict()
           .parse(body ?? {});
         return context.json({
-          data: await followUp.ask(principalId(context), part),
+          data: await followUp.ask(principalId(context), part, tab),
         });
       } catch (error) {
         return errorResponse(context, error);

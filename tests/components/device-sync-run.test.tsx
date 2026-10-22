@@ -133,7 +133,9 @@ it('shows the plan, what is left to the reader, and sets it aside', () => {
   expect(
     screen.getByText('deviceSyncRun.openReview').closest('a'),
   ).toHaveAttribute('href', '/device-sync');
-  fireEvent.click(screen.getByRole('button', { name: 'deviceSyncRun.setAside' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'deviceSyncRun.setAside' }),
+  );
   expect(state.dismiss).toHaveBeenCalled();
 });
 
@@ -412,13 +414,13 @@ it('shows the reader’s waiting follow-ups as a card each', () => {
   expect(
     screen.getAllByRole('button', { name: 'deviceSyncRun.setAside' }),
   ).toHaveLength(2);
-  // The asset managers' first, wherever the newest is (2026-10-22), and
-  // each worked out again alone.
+  // The reader's own first, wherever the newest is (2026-10-22), and each
+  // worked out again alone, on its tab.
   const again = screen.getAllByRole('button', { name: 'deviceSyncRun.rerun' });
   fireEvent.click(again[0]!);
-  expect(state.ask).toHaveBeenCalledWith('shared');
+  expect(state.ask).toHaveBeenCalledWith({ part: 'own', tab: 'checks' });
   fireEvent.click(again[1]!);
-  expect(state.ask).toHaveBeenCalledWith('own');
+  expect(state.ask).toHaveBeenCalledWith({ part: 'shared', tab: 'checks' });
 });
 
 // Decided here, a card stays folded until a newer follow-up of the same

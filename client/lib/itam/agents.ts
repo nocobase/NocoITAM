@@ -337,18 +337,24 @@ export function useOtherFollowUps(): UseQueryResult<readonly OtherFollowUp[]> {
 export function useAskFollowUp(): UseMutationResult<
   readonly AgentRun[],
   Error,
-  /** One part alone (2026-10-22): the reader's devices' or the shared one. */
-  'own' | 'shared' | void
+  /**
+   * One part alone — the reader's devices' or the shared one — of one tab
+   * of MDM 核对, or all (2026-10-22).
+   */
+  {
+    readonly part?: 'own' | 'shared';
+    readonly tab?: 'checks' | 'unregistered' | 'unmanaged';
+  } | void
 > {
   const api = useApi();
   const refresh = useRefreshRuns();
   return useMutation({
-    mutationFn: async (part) =>
+    mutationFn: async (scope) =>
       (
         await api.request<{ data: readonly AgentRun[] }>({
           path: 'itam/device-sync/followUp',
           method: 'POST',
-          json: part ? { part } : {},
+          json: scope ?? {},
         })
       ).data,
     onSuccess: refresh,

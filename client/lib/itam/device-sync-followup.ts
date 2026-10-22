@@ -58,6 +58,37 @@ export function followUpParts(
     .join(t('deviceSyncRun.sharedParts.separator'));
 }
 
+/** MDM 核对's tabs, which a follow-up is split by (2026-10-22). */
+export type FollowUpTab = 'checks' | 'unregistered' | 'unmanaged';
+
+const TABS: readonly FollowUpTab[] = ['checks', 'unregistered', 'unmanaged'];
+
+/** The tab an item of a follow-up is listed under. */
+export const itemTab = (kind: string): FollowUpTab =>
+  kind === 'unregistered'
+    ? 'unregistered'
+    : kind === 'unmanaged'
+      ? 'unmanaged'
+      : 'checks';
+
+/**
+ * Whose part a follow-up is and which tab it is for, from its subject
+ * (`owner:<id>:<tab>`, `shared:<id>:<tab>`). One from before tabs stands
+ * under its first item's tab.
+ */
+export function followUpPlace(run: DeviceSyncRun): {
+  readonly part: 'own' | 'shared';
+  readonly tab: FollowUpTab;
+} {
+  const [part, , tab] = run.subjectId.split(':');
+  return {
+    part: part === 'shared' ? 'shared' : 'own',
+    tab: TABS.includes(tab as FollowUpTab)
+      ? (tab as FollowUpTab)
+      : itemTab(run.result?.items?.[0]?.kind ?? 'checks'),
+  };
+}
+
 /**
  * The run 收件箱 has picked, around MDM 核对 shown beside it: the page's
  * 等你决定 then shows that one alone.

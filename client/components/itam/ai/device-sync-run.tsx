@@ -28,7 +28,10 @@ import {
 import {
   FollowUpFocusContext,
   followUpParts,
+  followUpPlace,
   followUpTitle,
+  itemTab,
+  type FollowUpTab,
 } from '@/lib/itam/device-sync-followup';
 import { useReferenceNames } from '@/lib/itam/references';
 import { useApi } from '@/lib/itam/api';
@@ -271,9 +274,7 @@ function FollowUpReviewCard({
               header button does both. */}
           <AiShortcut
             disabled={ask.isPending}
-            onClick={() =>
-              ask.mutate(run.subjectId.startsWith('shared:') ? 'shared' : 'own')
-            }
+            onClick={() => ask.mutate(followUpPlace(run))}
           >
             {t('deviceSyncRun.rerun')}
           </AiShortcut>
@@ -398,6 +399,10 @@ function handledOf(
   );
 }
 
+/** The tab another person's follow-up is for, by its items. */
+const otherTab = (row: { readonly items: readonly { kind: string }[] }) =>
+  itemTab(row.items[0]?.kind ?? 'checks');
+
 const isOpenRun = (run: { readonly status: string }) =>
   run.status === 'running' ||
   run.status === 'pending' ||
@@ -411,20 +416,26 @@ const isOpenRun = (run: { readonly status: string }) =>
  * newer run replaced goes. Beside a run in 收件箱, that run alone. For an
  * asset manager, the other people's open suggestions follow, to read.
  */
-export function DeviceSyncFollowUpBlock(): ReactElement | null {
+export function DeviceSyncFollowUpBlock({
+  tab,
+}: {
+  /** The tab of MDM 核对 it stands under: its follow-ups alone (2026-10-22). */
+  readonly tab?: FollowUpTab;
+} = {}): ReactElement | null {
   const { t } = useTranslation();
   const focus = useContext(FollowUpFocusContext);
   const inbox = useInbox();
   const runs = [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])]
     .filter((run): run is DeviceSyncRun => run.agent === 'deviceSync')
     .filter((run) => !focus || run.id === focus)
-    // In a fixed place (2026-10-22): the asset managers' first, then the
-    // reader's devices' — running one again does not move it — and newest
+    .filter((run) => !tab || followUpPlace(run).tab === tab)
+    // In a fixed place (2026-10-22): the reader's devices' first, then the
+    // asset managers' — running one again does not move it — and newest
     // first within each.
     .sort(
       (a, b) =>
-        Number(b.subjectId.startsWith('shared:')) -
-          Number(a.subjectId.startsWith('shared:')) ||
+        Number(a.subjectId.startsWith('shared:')) -
+          Number(b.subjectId.startsWith('shared:')) ||
         b.createdAt.localeCompare(a.createdAt),
     );
   // The runs open while the page was: once decided here they stay.
@@ -435,7 +446,8 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
   // Replaced by a newer run is gone, not decided: its card would offer a
   // plan nobody should carry out any more.
   const others = useOtherFollowUps();
-  const hasOthers = !focus && (others.data?.length ?? 0) > 0;
+  const hasOthers =
+    !focus && (others.data ?? []).some((row) => !tab || otherTab(row) === tab);
   // One decided here stays, folded, until a newer one of the same subject
   // comes (2026-10-22): asking again left the old card under the new one.
   const newer = (run: DeviceSyncRun) =>
@@ -472,7 +484,7 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
       ) : null}
       {/* Not while the reader's own are worked out again (2026-10-22):
           the one working line is the panel's news then. */}
-      {hasOthers && !working ? <OthersFollowUps /> : null}
+      {hasOthers && !working ? <OthersFollowUps tab={tab} /> : null}
     </div>
   );
 }
@@ -483,10 +495,16 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
  * what is left to look at. Their person carries it out, so nothing here
  * acts. Nothing for anybody else.
  */
-function OthersFollowUps(): ReactElement | null {
+function OthersFollowUps({
+  tab,
+}: {
+  readonly tab?: FollowUpTab;
+}): ReactElement | null {
   const { t } = useTranslation();
   const others = useOtherFollowUps();
-  const rows = others.data ?? [];
+  const rows = (others.data ?? []).filter(
+    (row) => !tab || otherTab(row) === tab,
+  );
   const names = useReferenceNames([
     { collection: 'users', ids: rows.map((row) => row.deciderId) },
   ]);

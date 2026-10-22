@@ -87,6 +87,7 @@ import {
 } from '@/lib/itam/api';
 import { OpenFullPageContext } from '@/lib/itam/detail-chrome';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
+import { followUpPlace } from '@/lib/itam/device-sync-followup';
 import { useItamAi } from '@/lib/itam/ai-chat';
 import { formatDate, text } from '@/lib/itam/format';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
@@ -115,25 +116,7 @@ export default function DeviceSyncReviewPage(): ReactElement {
   });
   const counts = useReviewCounts();
   const openFull = useContext(OpenFullPageContext);
-  // While a follow-up works or waits under 等你决定, its card offers 重新运行
-  // (2026-10-22), so the header does not; it starts one when there is none,
-  // or after one failed.
   const inbox = useInbox();
-  // By part (2026-10-22): one set aside leaves its part with no card, so
-  // the header starts that part alone while the other's card is there.
-  const open = (inbox.data?.open ?? []).filter(
-    (run) => run.agent === 'deviceSync' && run.status !== 'failed',
-  );
-  const openOwn = open.some((run) => run.subjectId.startsWith('owner:'));
-  const openShared = open.some((run) => run.subjectId.startsWith('shared:'));
-  const missing =
-    openOwn && openShared
-      ? null
-      : openOwn
-        ? ('shared' as const)
-        : openShared
-          ? ('own' as const)
-          : undefined;
   const requested = params.get('view');
   // 已忽略 is a section of 只在 MDM: a link to it (the settings page's)
   // opens that tab and scrolls down to it.
@@ -148,6 +131,13 @@ export default function DeviceSyncReviewPage(): ReactElement {
           : TABS.includes(requested as (typeof TABS)[number])
             ? (requested as (typeof TABS)[number])
             : TABS[0];
+  // This tab's follow-ups working or waiting: their cards run them again.
+  const followingHere = (inbox.data?.open ?? []).some(
+    (run) =>
+      run.agent === 'deviceSync' &&
+      run.status !== 'failed' &&
+      followUpPlace(run).tab === view,
+  );
   const ignoredRef = useRef<HTMLElement>(null);
   const ignoredShown = view === 'unregistered' && (counts.ignored ?? 0) > 0;
   // What was linked here by hand, under 只在 MDM's rows (2026-10-16).
@@ -173,16 +163,6 @@ export default function DeviceSyncReviewPage(): ReactElement {
         description={t('deviceSync.review.description')}
         actions={
           <>
-            {/* MDM 跟进 on the page (2026-10-17): the follow-up for the reader alone, now
-                rather than after the next pull. */}
-            {ai.available && missing !== null ? (
-              <AiShortcut
-                disabled={followUp.isPending}
-                onClick={() => followUp.mutate(missing)}
-              >
-                {t('deviceSync.review.followUp')}
-              </AiShortcut>
-            ) : null}
             {/* Beside the inbox's list, 打开 in place of MDM 设置. */}
             {openFull ? (
               <OpenFullPageButton />
@@ -203,23 +183,6 @@ export default function DeviceSyncReviewPage(): ReactElement {
           </>
         }
       />
-      {/* What MDM 跟进 left the reader, as on a request's page; a run just
-          asked for shows here at once, working. When nothing was new for
-          them, the page says so where the card would be. */}
-      <DeviceSyncFollowUpBlock />
-      {followUp.isSuccess && followUp.data.length === 0 ? (
-        <Alert>
-          <Info aria-hidden />
-          <AlertDescription>
-            {t('deviceSync.review.followUpNothing')}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      {followUp.error ? (
-        <p role='alert' className='text-sm text-destructive'>
-          {followUp.error.message}
-        </p>
-      ) : null}
       {/* Three ways the two lists disagree (2026-10-15): both have the
           device but say otherwise, only MDM has it, only the register has
           it — each with its count. What was kept off is not a fourth to-do:
@@ -245,11 +208,38 @@ export default function DeviceSyncReviewPage(): ReactElement {
           ))}
         </TabsList>
       </Tabs>
-      {/* One way to Asset Steward on the page, its header's (2026-10-21):
-          what it suggests shows on the rows, marked. */}
-      <p className='text-sm text-muted-foreground'>
-        {t(`deviceSync.review.hints.${view}`)}
-      </p>
+      {/* Each tab its own follow-ups (2026-10-22): under its hint, the
+          reader's devices' and the asset managers', each run again on its
+          card; with none, the hint's line starts this tab's. What they
+          suggest also shows on the rows, marked. */}
+      <div className='flex flex-wrap items-center justify-between gap-2'>
+        <p className='text-sm text-muted-foreground'>
+          {t(`deviceSync.review.hints.${view}`)}
+        </p>
+        {ai.available && !followingHere ? (
+          <AiShortcut
+            disabled={followUp.isPending}
+            onClick={() => followUp.mutate({ tab: view })}
+          >
+            {t('deviceSync.review.followUp')}
+          </AiShortcut>
+        ) : null}
+      </div>
+      <DeviceSyncFollowUpBlock tab={view} />
+      {followUp.isSuccess && followUp.data.length === 0 ? (
+        <Alert>
+          <Info aria-hidden />
+          <AlertDescription>
+            {t('deviceSync.review.followUpNothing')}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {followUp.error ? (
+        <p role='alert' className='text-sm text-destructive'>
+          {followUp.error.message}
+        </p>
+      ) : null}
+
       {view === 'checks' ? (
         <ChecksView />
       ) : view === 'unmanaged' ? (

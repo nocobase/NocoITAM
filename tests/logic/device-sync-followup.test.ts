@@ -195,10 +195,10 @@ describe('MDM follow-up', () => {
           : null;
     const started = await followUp().afterSync(null);
     expect(started.map((run) => [run.subjectId, run.deciderId])).toEqual([
-      ['owner:mia', 'mia'],
-      ['shared:ann', 'ann'],
+      ['owner:mia:checks', 'mia'],
+      ['shared:ann:unregistered', 'ann'],
     ]);
-    const mine = await settled(() => latest('owner:mia'));
+    const mine = await settled(() => latest('owner:mia:checks'));
     // Mia's run was asked about her laptop, not the record nobody owns.
     const asked = await vi.waitFor(() => {
       expect(model.asked).toHaveLength(2);
@@ -219,7 +219,7 @@ describe('MDM follow-up', () => {
     expect((await runs().get(mine.id))?.status).toBe('accepted');
 
     // Ann's is the record nobody owns, as one step to keep it off.
-    const anns = await settled(() => latest('shared:ann'));
+    const anns = await settled(() => latest('shared:ann:unregistered'));
     const annPlan = await plans().get('ann', String(anns.result?.planId));
     expect(annPlan.steps.map((step) => step.op)).toEqual([
       'ignore_managed_device',
@@ -236,7 +236,7 @@ describe('MDM follow-up', () => {
           ? { action: 'keep' }
           : null;
     await followUp().afterSync(null);
-    const mine = await settled(() => latest('owner:mia'));
+    const mine = await settled(() => latest('owner:mia:checks'));
     const plan = await plans().get('mia', String(mine.result?.planId));
     expect(plan.steps.map((step) => step.op).sort()).toEqual([
       'dismiss_device_difference',
@@ -253,7 +253,7 @@ describe('MDM follow-up', () => {
     expect((await runs().get(mine.id))?.status).toBe('accepted');
 
     await followUp().afterSync(null);
-    const next = await settled(() => latest('owner:mia'));
+    const next = await settled(() => latest('owner:mia:checks'));
     expect(next.id).not.toBe(mine.id);
     expect(
       (next.result?.items as { kind: string; subject: string }[]).map(
@@ -266,28 +266,28 @@ describe('MDM follow-up', () => {
   // or only noted, is worked out again by the next follow-up.
   it('raises again what was set aside or only noted', async () => {
     await followUp().afterSync(null);
-    const mine = await settled(() => latest('owner:mia'));
+    const mine = await settled(() => latest('owner:mia:checks'));
     // Nothing to carry out: a note each, no plan.
     expect(mine.result).toMatchObject({ planId: null });
     expect((mine.result?.notes as string[]).length).toBe(2);
     await followUp().dismiss(mine.id, 'mia');
-    const anns = await settled(() => latest('shared:ann'));
+    const anns = await settled(() => latest('shared:ann:unregistered'));
     // Closed as settled (2026-10-21), it ends as handled, not set aside.
     const closed = await followUp().dismiss(anns.id, 'ann', { settled: true });
     expect(closed).toMatchObject({ status: 'accepted', decision: 'settled' });
 
     const again = await followUp().afterSync(null);
     expect(again.map((run) => run.subjectId)).toEqual([
-      'owner:mia',
-      'shared:ann',
+      'owner:mia:checks',
+      'shared:ann:unregistered',
     ]);
   });
 
   it('replaces a suggestion left waiting, and leaves the other asset managers’ copies to them', async () => {
     managers = ['ann', 'mia'];
     await followUp().afterSync(null);
-    const first = await settled(() => latest('owner:mia'));
-    await settled(() => latest('shared:mia'));
+    const first = await settled(() => latest('owner:mia:checks'));
+    await settled(() => latest('shared:mia:unregistered'));
     // Her own and the shared one, each its entry in 收件箱.
     expect(await runs().waitingCount('mia')).toBe(2);
     // The next pull replaces what still waits.
@@ -295,11 +295,11 @@ describe('MDM follow-up', () => {
     expect((await runs().get(first.id))?.status).toBe('superseded');
 
     // Declining is Ann's own (2026-10-22): Mia's copy still waits.
-    const anns = await settled(() => latest('shared:ann'));
+    const anns = await settled(() => latest('shared:ann:unregistered'));
     await followUp().dismiss(anns.id, 'ann');
-    expect((await latest('shared:mia'))?.status).toBe('pending');
+    expect((await latest('shared:mia:unregistered'))?.status).toBe('pending');
     // Only its person sets it aside.
-    const mine = await settled(() => latest('owner:mia'));
+    const mine = await settled(() => latest('owner:mia:checks'));
     await expect(followUp().dismiss(mine.id, 'ann')).rejects.toThrow();
   });
 
@@ -310,14 +310,14 @@ describe('MDM follow-up', () => {
     model.decide = (item) =>
       item.kind === 'unregistered' ? { action: 'ignore' } : null;
     await followUp().afterSync(null);
-    const anns = await settled(() => latest('shared:ann'));
-    await settled(() => latest('shared:mia'));
+    const anns = await settled(() => latest('shared:ann:unregistered'));
+    await settled(() => latest('shared:mia:unregistered'));
     const plan = await plans().get('ann', String(anns.result?.planId));
     const done = await plans().execute('ann', plan.id, {
       revision: plan.revision,
     });
     await followUp().planDecided({ plan: done, decision: 'executed' });
-    expect(await latest('shared:mia')).toMatchObject({
+    expect(await latest('shared:mia:unregistered')).toMatchObject({
       status: 'accepted',
       decision: 'settled',
     });
@@ -348,7 +348,7 @@ describe('MDM follow-up', () => {
       .where('id', '=', liNa)
       .execute();
     await followUp().afterSync(null);
-    const mine = await settled(() => latest('owner:mia'));
+    const mine = await settled(() => latest('owner:mia:checks'));
     const minePlan = await plans().get('mia', String(mine.result?.planId));
     expect(minePlan.steps.map((step) => step.op)).toEqual([
       'dismiss_device_difference',
@@ -377,7 +377,7 @@ describe('MDM follow-up', () => {
       ),
     ).toBe(false);
 
-    const anns = await settled(() => latest('shared:ann'));
+    const anns = await settled(() => latest('shared:ann:unregistered'));
     const annPlan = await plans().get('ann', String(anns.result?.planId));
     expect(annPlan.steps.map((step) => step.op)).toEqual(['create_record']);
     // Not settled while its record is still listed (2026-10-22): a page
@@ -443,8 +443,8 @@ describe('MDM follow-up', () => {
     const started = ((await asked.json()) as { data: AgentRun[] }).data;
     expect(
       started.map((run) => [run.subjectId, run.trigger, run.startedById]),
-    ).toEqual([['owner:mia', 'asked', 'mia']]);
-    const mine = await settled(() => latest('owner:mia'));
+    ).toEqual([['owner:mia:checks', 'asked', 'mia']]);
+    const mine = await settled(() => latest('owner:mia:checks'));
     expect((mine.result?.items as unknown[]).length).toBeGreaterThan(0);
 
     // Ann, an asset manager, gets the records nobody owns; Mia's stays.
@@ -455,12 +455,14 @@ describe('MDM follow-up', () => {
         data: AgentRun[];
       }
     ).data;
-    expect(anns.map((run) => run.subjectId)).toEqual(['shared:ann']);
+    expect(anns.map((run) => run.subjectId)).toEqual([
+      'shared:ann:unregistered',
+    ]);
     // One part alone (2026-10-22): asking for her own devices only.
     expect(
       (await followUp().ask('ann', 'own')).map((run) => run.subjectId),
     ).toEqual([]);
-    expect(await latest('shared:zoe')).toMatchObject({
+    expect(await latest('shared:zoe:unregistered')).toMatchObject({
       trigger: 'asked',
       startedById: 'ann',
       deciderId: 'zoe',
@@ -472,12 +474,12 @@ describe('MDM follow-up', () => {
     await followUp().dismiss(mine.id, 'mia');
     expect(
       (await followUp().afterSync(null)).map((run) => run.subjectId),
-    ).not.toContain('owner:mia');
+    ).not.toContain('owner:mia:checks');
     expect(
       ((await (await ask(mia)).json()) as { data: AgentRun[] }).data.map(
         (run) => run.subjectId,
       ),
-    ).toEqual(['owner:mia']);
+    ).toEqual(['owner:mia:checks']);
   });
 
   // For an asset manager on MDM 核对 (2026-10-17).
@@ -487,8 +489,8 @@ describe('MDM follow-up', () => {
         ? { action: 'transfer', target: wangWu }
         : null;
     await followUp().afterSync(null);
-    await settled(() => latest('owner:mia'));
-    await settled(() => latest('shared:ann'));
+    await settled(() => latest('owner:mia:checks'));
+    await settled(() => latest('shared:ann:unregistered'));
     const read = async (who?: { user: string; role: 'manager' | 'employee' }) =>
       app.request('/api/itam/device-sync/followUps', { ...who });
     expect((await read()).status).toBe(401);
