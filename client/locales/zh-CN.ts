@@ -3270,7 +3270,7 @@ const zhCN: AppResource = {
       notRun: '未执行',
       stepDone: '已执行',
       params: {
-        condition: '状况说明',
+        condition: '检查结论',
         method: '方式',
         kind: '类型',
         nextStatus: '归还后状态',

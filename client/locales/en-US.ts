@@ -3467,7 +3467,7 @@ const messages = {
       notRun: 'Not run',
       stepDone: 'Done',
       params: {
-        condition: 'Condition',
+        condition: 'Condition on return',
         method: 'Method',
         kind: 'Type',
         nextStatus: 'Status after return',
