@@ -127,6 +127,13 @@ export interface FieldDefinition {
   /** Translation key explaining why the field is read-only when it is. */
   readonly readonlyHint?: string;
   /**
+   * A note under the field in a form, as a translation key, while the
+   * values call for one (2026-10-22): what the value entered will mean.
+   */
+  readonly noteWhen?: (
+    values: Readonly<Record<string, unknown>>,
+  ) => string | undefined;
+  /**
    * Takes the whole row of a two-column form, as a long text does
    * (2026-10-20): a new repair's device, as wide as its fault.
    */

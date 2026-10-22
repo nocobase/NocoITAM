@@ -337,6 +337,11 @@ export function RecordFormDialog({
           autoFocus={field.key === autoFocusField}
         />
         {message ? <p className='text-xs text-destructive'>{message}</p> : null}
+        {field.noteWhen?.(values) ? (
+          <p className='text-xs text-muted-foreground'>
+            {t(field.noteWhen(values)!)}
+          </p>
+        ) : null}
         {fieldFooters?.[field.key]}
       </div>
     );

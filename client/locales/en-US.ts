@@ -1253,6 +1253,8 @@ const messages = {
     new: 'New person',
     edit: 'Edit person',
     empty: 'No people yet',
+    hireDateLongAgo:
+      'A start date over 30 days ago enters them as an existing employee: no onboarding preparation, and no kit to equip them to.',
     markLeft: 'Mark as left',
     markLeftTitle: 'Mark {{name}} as left?',
     markLeftHoldings_one:

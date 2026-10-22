@@ -748,6 +748,16 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         label: 'fields.hireDate',
         type: 'date',
         group: 'groups.employment',
+        // Entered for somebody who started over 30 days ago, a person is
+        // not a joiner (`isJoiner`, onboarding.ts): no 入职准备 and no
+        // 入职配备 card. Said as it is typed, on a new person (2026-10-22).
+        noteWhen: (values) =>
+          values.id === undefined &&
+          typeof values.hireDate === 'string' &&
+          values.hireDate.slice(0, 10) <
+            new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+            ? 'people.hireDateLongAgo'
+            : undefined,
       },
       {
         // 入职负责人 (2026-10-06): who gets this joiner equipped. Starts at

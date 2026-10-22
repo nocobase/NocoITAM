@@ -1215,6 +1215,8 @@ const zhCN: AppResource = {
     new: '创建人员',
     edit: '编辑人员',
     empty: '暂无人员',
+    hireDateLongAgo:
+      '入职日期早于 30 天前，会作为已入职的员工录入：不进入入职准备，也不按入职配置配备。',
     markLeft: '标记离职',
     markLeftTitle: '将 {{name}} 标记为离职？',
     markLeftHoldings_one:
