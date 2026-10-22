@@ -2039,7 +2039,7 @@ const messages = {
       people: 'Staff changes',
       tagLeaving: 'Leaving',
       tagJoining: 'Joining',
-      pendingApprovals: 'Waiting for approval',
+      pendingApprovals: 'To approve',
       tagPurchase: 'Purchase',
       tagDisposal: 'Disposal',
       tagRepair: 'Repair',

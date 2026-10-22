@@ -402,6 +402,7 @@ function DomainList({
                   setParam({ layout: next === 'board' ? undefined : 'table' })
                 }
                 label={t('common.layout')}
+                iconOnly
                 options={[
                   {
                     value: 'board',

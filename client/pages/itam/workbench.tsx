@@ -195,6 +195,7 @@ function WorkViewToggle({
       value={value}
       onChange={onChange}
       label={t('workbench.view.label')}
+      iconOnly
       options={WORK_VIEWS.map((option) => ({
         value: option,
         label: t(`workbench.view.${option}`),
