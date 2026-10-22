@@ -561,20 +561,41 @@ export function StockHoldersTab({
           id: String(row.id),
         }
       : undefined;
-  // Every column hugs its content; the note takes whatever is left.
+  // Every column hugs its content; where it went takes whatever is left,
+  // its note beneath in grey when it has one (2026-10-22: a column of its
+  // own, mostly empty, took the most room).
   const holderColumn: DataTableColumn<ItamRecord> = {
     key: 'holder',
     header: t('stock.destination'),
-    className: 'w-px whitespace-nowrap',
-    render: (row) =>
-      row.holderId ? (
-        <HolderLink
-          holderType={text(row.holderType)}
-          holderId={text(row.holderId)}
-        />
-      ) : (
-        <span className='text-muted-foreground'>—</span>
-      ),
+    className: 'w-full',
+    contentClassName: 'max-w-none',
+    render: (row) => (
+      <div className='min-w-0'>
+        {row.holderId ? (
+          <HolderLink
+            holderType={text(row.holderType)}
+            holderId={text(row.holderId)}
+          />
+        ) : (
+          <span className='text-muted-foreground'>—</span>
+        )}
+        {text(row.notes) ? (
+          <div className='text-xs text-muted-foreground'>
+            <CollapsibleText text={text(row.notes)} />
+          </div>
+        ) : null}
+      </div>
+    ),
+  };
+  // Out of stock reads negative, back in positive; an adjustment carries
+  // its own sign (2026-10-22: it read +-1). A current holder's row shows
+  // what is still out of that issue, signed the same way.
+  const signed = (row: ItamRecord): number => {
+    const amount = Number(view === 'holders' ? row.remaining : row.quantity);
+    const type = text(row.type);
+    if (['issue', 'consume', 'install'].includes(type))
+      return -Math.abs(amount);
+    return type === 'adjust' ? amount : Math.abs(amount);
   };
   return (
     <div className='space-y-3'>
@@ -622,55 +643,49 @@ export function StockHoldersTab({
             key: 'type',
             header: t('stock.movementType'),
             className: 'w-px whitespace-nowrap',
-            render: (row) =>
-              t(`stock.movementTypes.${text(row.type)}`, {
-                defaultValue: text(row.type),
-              }),
+            // Where it came from beneath, when not by hand (2026-10-22: a
+            // column of its own read 手动 on nearly every row): a receipt
+            // its purchase order, a disposal's reclaim saying so.
+            render: (row) => (
+              <div>
+                {t(`stock.movementTypes.${text(row.type)}`, {
+                  defaultValue: text(row.type),
+                })}
+                {row.sourceType === 'purchaseOrder' ? (
+                  <div className='text-xs'>
+                    <ReferenceLink
+                      collection='purchaseOrders'
+                      route='procurement'
+                      id={row.sourceId}
+                      names={orderNames.purchaseOrders}
+                    />
+                  </div>
+                ) : row.sourceType === 'disposal' ? (
+                  <div className='text-xs text-muted-foreground'>
+                    {t('stock.sources.disposal')}
+                  </div>
+                ) : null}
+              </div>
+            ),
           },
           {
             key: 'quantity',
             header: t('fields.quantity'),
-            className: 'w-px whitespace-nowrap tabular-nums',
-            // Out of stock reads negative, back in positive; a current
-            // holder's row shows what is still out of that issue, signed
-            // the same way.
-            render: (row) =>
-              `${['issue', 'consume', 'install'].includes(text(row.type)) ? '−' : '+'}${text(view === 'holders' ? row.remaining : row.quantity)}`,
+            className: 'w-px whitespace-nowrap text-right tabular-nums',
+            // Back in green, out in the text's own colour.
+            render: (row) => {
+              const amount = signed(row);
+              return (
+                <span
+                  className={amount > 0 ? 'text-success-foreground' : undefined}
+                >
+                  {amount > 0 ? '+' : '−'}
+                  {Math.abs(amount)}
+                </span>
+              );
+            },
           },
           holderColumn,
-          {
-            // A receipt links its purchase order, a disposal's reclaim says
-            // so; everything else was recorded by hand.
-            key: 'source',
-            header: t('stock.source'),
-            className: 'w-px whitespace-nowrap',
-            render: (row) =>
-              row.sourceType === 'purchaseOrder' ? (
-                <ReferenceLink
-                  collection='purchaseOrders'
-                  route='procurement'
-                  id={row.sourceId}
-                  names={orderNames.purchaseOrders}
-                />
-              ) : (
-                <span className='text-muted-foreground'>
-                  {t(
-                    `stock.sources.${row.sourceType === 'disposal' ? 'disposal' : 'manual'}`,
-                  )}
-                </span>
-              ),
-          },
-          {
-            key: 'notes',
-            header: t('fields.notes'),
-            // Long notes fold like every other multi-line text.
-            render: (row) =>
-              text(row.notes) ? (
-                <CollapsibleText text={text(row.notes)} />
-              ) : (
-                '—'
-              ),
-          },
           {
             key: 'createdAt',
             header: t('stock.movementTime'),
@@ -685,9 +700,12 @@ export function StockHoldersTab({
           permissions.issue
             ? (row) => {
                 const target = takeBackOf(row);
+                // Quiet (2026-10-22): a column of outlined buttons stood out
+                // above the movements themselves.
                 return target ? (
                   <Button
-                    variant='outline'
+                    variant='ghost'
+                    size='sm'
                     disabled={takeBack.isPending}
                     onClick={() => {
                       takeBack.reset();
