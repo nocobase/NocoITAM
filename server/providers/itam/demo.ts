@@ -877,6 +877,8 @@ const CATALOGUE_ASSETS: Readonly<
           readonly kind: 'accessory' | 'component';
           readonly quantity: number;
           readonly minimum: number;
+          /** Each, as the order that brought it in paid (2026-10-22). */
+          readonly price: number;
         };
       }
   >
@@ -997,6 +999,7 @@ const CATALOGUE_ASSETS: Readonly<
       kind: 'accessory',
       quantity: 4,
       minimum: 1,
+      price: 2299,
     },
   },
   'MX Keys Mini': {
@@ -1005,6 +1008,7 @@ const CATALOGUE_ASSETS: Readonly<
       kind: 'accessory',
       quantity: 6,
       minimum: 2,
+      price: 699,
     },
   },
   'MX Anywhere 3S': {
@@ -1013,6 +1017,7 @@ const CATALOGUE_ASSETS: Readonly<
       kind: 'accessory',
       quantity: 6,
       minimum: 2,
+      price: 549,
     },
   },
   '870 EVO 1 TB': {
@@ -1021,6 +1026,7 @@ const CATALOGUE_ASSETS: Readonly<
       kind: 'component',
       quantity: 3,
       minimum: 1,
+      price: 699,
     },
   },
 };
@@ -1035,6 +1041,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     monitorOrder: 'Monitors for the sales floor',
     dockOrder: 'Docking station stock',
     keyboardOrder: 'Keyboards for the new desks',
+    catalogueStockOrder: '{name} for stock',
     mouseRestock: 'Mice to restock',
     dockRestock: 'Docks for the R&D desks',
     headsetRestock: 'Headsets for the sales team',
@@ -1178,6 +1185,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     monitorOrder: '销售部显示器扩容',
     dockOrder: '扩展坞补货',
     keyboardOrder: '新工位键盘',
+    catalogueStockOrder: '{name} 备货',
     mouseRestock: '鼠标补货',
     dockRestock: '研发工位扩展坞',
     headsetRestock: '销售团队耳机',
@@ -4049,25 +4057,36 @@ export function createDemoService(dependencies: {
           catalogue.push({ entry, model });
         }
         // Each catalogue model's assets (`CATALOGUE_ASSETS`), bought three
-        // weeks after it was entered.
+        // weeks after it was entered — its stock through an order, received
+        // into a record of its own (2026-10-22: it was simply there, and the
+        // page showed no purchase).
         const places = { floor3, floor5, meetingRoom, serverRoom, tokyo };
         for (const { entry, model } of catalogue) {
           const assets = CATALOGUE_ASSETS[entry.name];
           if (!assets) continue;
           const bought = entry.day + 21;
           if ('stock' in assets) {
-            const item = await stockItem(
-              {
-                kind: assets.stock.kind,
-                name: assets.stock.name,
-                categoryId: entry.categoryId,
-                modelId: model.id,
-                manufacturerId: entry.manufacturerId,
-                totalQuantity: assets.stock.quantity,
-                minimumQuantity: assets.stock.minimum,
-              },
-              bought,
-            );
+            const received = await purchasedStock({
+              description: texts.catalogueStockOrder.replace(
+                '{name}',
+                assets.stock.name,
+              ),
+              itemType: assets.stock.kind,
+              modelId: String(model.id),
+              quantity: assets.stock.quantity,
+              unitPrice: assets.stock.price,
+              // Received on the day it was bought, eight days after ordering.
+              orderedDaysAgo: 8 - bought,
+              name: assets.stock.name,
+              minimumQuantity: assets.stock.minimum,
+            });
+            const item =
+              (await database
+                .query()
+                .selectFrom('stockItems')
+                .selectAll()
+                .where('id', '=', String(received.id))
+                .executeTakeFirst<Row>()) ?? received;
             // Used since, as all stock is: two went out, one came back. A
             // component goes into a desktop, an accessory to a person.
             // An accessory to the first two without one of its kind
