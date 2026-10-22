@@ -1,5 +1,12 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ArrowRight, Columns3, List, TriangleAlert } from 'lucide-react';
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  CalendarClock,
+  Columns3,
+  List,
+  TriangleAlert,
+} from 'lucide-react';
 import {
   useEffect,
   useRef,
@@ -748,15 +755,21 @@ function LeaverCard({
         </div>
         {/* The job on a line of its own (2026-10-22), whole under a long
             name rather than squeezed out beside it. */}
+        {/* Each fact with its icon, as the other cards' (2026-10-22). */}
         {record.subtitle ? (
-          <p className='mt-0.5 truncate text-xs text-muted-foreground'>
-            {record.subtitle}
+          <p className='mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground'>
+            <BriefcaseBusiness
+              aria-hidden='true'
+              className='size-3.5 shrink-0'
+            />
+            <span className='min-w-0 truncate'>{record.subtitle}</span>
           </p>
         ) : null}
         {record.date ? (
           // Each phrase whole: on a narrow card the countdown moves under
           // the date rather than either breaking mid-phrase.
-          <p className='flex flex-wrap gap-x-1.5 text-xs text-muted-foreground tabular-nums'>
+          <p className='flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground tabular-nums'>
+            <CalendarClock aria-hidden='true' className='size-3.5 shrink-0' />
             <span className='whitespace-nowrap'>
               {t(joining ? 'workbench.work.joinsOn' : 'workbench.work.leftOn', {
                 date: formatDate(record.date),
