@@ -576,7 +576,7 @@ function PlanLine({
       {reasons.length > 0 ? (
         // In a light box like the strip above (2026-10-22), each with the
         // device the rule would have proposed when it chose another.
-        <ul className='mt-1.5 space-y-1.5 rounded-md bg-accent/60 px-3 py-2 text-xs text-muted-foreground'>
+        <ul className='mt-1.5 space-y-1.5 rounded-md bg-accent px-3 py-2 text-xs text-muted-foreground'>
           {reasons.map((thing) => (
             <li key={`r:${thing.id}`} className='flex gap-1.5'>
               {/* Marked as Asset Steward's (2026-10-22). */}
