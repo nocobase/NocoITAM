@@ -721,7 +721,6 @@ function LeaverCard({
     >
       {/* No avatar (2026-10-22): the tag and name lead the card. */}
       <div className='min-w-0'>
-        {/* The job right after the name, and giving way first. */}
         <div className='flex min-w-0 items-baseline gap-1.5'>
           {tagged ? (
             // 离职 and 入职 told apart at a glance: the one to recover
@@ -742,16 +741,18 @@ function LeaverCard({
             </Badge>
           ) : null}
           {/* A long name truncates beside the tag rather than running out
-                of the card; the job shrinks far sooner, so it goes first. */}
+              of the card. */}
           <span className='min-w-0 truncate text-sm font-semibold'>
             {record.title}
           </span>
-          {record.subtitle ? (
-            <span className='min-w-0 shrink-[100] truncate text-xs text-muted-foreground'>
-              {record.subtitle}
-            </span>
-          ) : null}
         </div>
+        {/* The job on a line of its own (2026-10-22), whole under a long
+            name rather than squeezed out beside it. */}
+        {record.subtitle ? (
+          <p className='mt-0.5 truncate text-xs text-muted-foreground'>
+            {record.subtitle}
+          </p>
+        ) : null}
         {record.date ? (
           // Each phrase whole: on a narrow card the countdown moves under
           // the date rather than either breaking mid-phrase.
