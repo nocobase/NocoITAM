@@ -123,8 +123,10 @@ export default function WorkbenchPage(): ReactElement {
         // wrap within their own side, every one in view. Too narrow for
         // both, the switches take a line above the counts rather than
         // covering them: wrap-reverse puts the later item on top, which
-        // also turns items-end into the top edge.
-        className='sticky top-0 z-10 -mx-6 flex flex-wrap-reverse items-end justify-between gap-x-4 gap-y-2 bg-background/85 px-6 py-2.5 backdrop-blur-xl'
+        // also turns items-end into the top edge. No ground of its own
+        // while it sticks (2026-10-22, tried): the pills and switches carry
+        // their own.
+        className='sticky top-0 z-10 -mx-6 flex flex-wrap-reverse items-end justify-between gap-x-4 gap-y-2 px-6 py-2.5'
       >
         {loading ? <span /> : <WorkCounts cards={cards} offset={bar + 8} />}
         <div className='ml-auto flex shrink-0 items-center gap-2'>
