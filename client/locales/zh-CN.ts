@@ -1358,6 +1358,7 @@ const zhCN: AppResource = {
     anyType: '不限',
     destination: '去向',
     source: '来源',
+    reasonAndNote: '{{reason}}：{{note}}',
     sources: {
       manual: '手动',
       purchaseOrder: '采购单',

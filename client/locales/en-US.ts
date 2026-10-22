@@ -1409,6 +1409,7 @@ const messages = {
     anyType: 'Any type',
     destination: 'Holder',
     source: 'Source',
+    reasonAndNote: '{{reason}}: {{note}}',
     sources: {
       manual: 'Manual',
       purchaseOrder: 'Purchase order',

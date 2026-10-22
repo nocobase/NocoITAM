@@ -561,31 +561,20 @@ export function StockHoldersTab({
           id: String(row.id),
         }
       : undefined;
-  // Every column hugs its content; where it went takes whatever is left,
-  // its note beneath in grey when it has one (2026-10-22: a column of its
-  // own, mostly empty, took the most room).
+  // Every column hugs its content; the note takes whatever is left.
   const holderColumn: DataTableColumn<ItamRecord> = {
     key: 'holder',
     header: t('stock.destination'),
-    className: 'w-full',
-    contentClassName: 'max-w-none',
-    render: (row) => (
-      <div className='min-w-0'>
-        {row.holderId ? (
-          <HolderLink
-            holderType={text(row.holderType)}
-            holderId={text(row.holderId)}
-          />
-        ) : (
-          <span className='text-muted-foreground'>—</span>
-        )}
-        {text(row.notes) ? (
-          <div className='text-xs text-muted-foreground'>
-            <CollapsibleText text={text(row.notes)} />
-          </div>
-        ) : null}
-      </div>
-    ),
+    className: 'w-px whitespace-nowrap',
+    render: (row) =>
+      row.holderId ? (
+        <HolderLink
+          holderType={text(row.holderType)}
+          holderId={text(row.holderId)}
+        />
+      ) : (
+        <span className='text-muted-foreground'>—</span>
+      ),
   };
   // Out of stock reads negative, back in positive; an adjustment carries
   // its own sign (2026-10-22: it read +-1). A current holder's row shows
@@ -688,6 +677,32 @@ export function StockHoldersTab({
                   )}
                 </span>
               ),
+          },
+          {
+            // An adjustment's reason before its note (2026-10-22: only the
+            // note showed, under 去向 for an hour, which is not where it
+            // went). Long notes fold like every other multi-line text.
+            key: 'notes',
+            header: t('fields.notes'),
+            className: 'w-full',
+            contentClassName: 'max-w-none',
+            render: (row) => {
+              const reason = text(row.reason)
+                ? t(`enums.stockAdjustReason.${text(row.reason)}`, {
+                    defaultValue: text(row.reason),
+                  })
+                : '';
+              const note = text(row.notes);
+              const said =
+                reason && note
+                  ? t('stock.reasonAndNote', { reason, note })
+                  : reason || note;
+              return said ? (
+                <CollapsibleText text={said} />
+              ) : (
+                <span className='text-muted-foreground'>—</span>
+              );
+            },
           },
           {
             key: 'createdAt',
