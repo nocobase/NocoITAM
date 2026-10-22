@@ -668,28 +668,32 @@ function AdviceStrip({
   });
   // Nothing to say: Asset Steward has not run and the reader cannot ask it to.
   if (!advice && !(isOwner && aiAvailable)) return null;
+  const shortcut = (
+    <AiShortcut
+      className='text-xs'
+      disabled={advise.isPending}
+      onClick={() => advise.mutate()}
+    >
+      {t(advice ? 'onboarding.advice.again' : 'onboarding.advice.first')}
+    </AiShortcut>
+  );
+  // 重新挑选 says on hover what it replaces, in the app's tooltip (the
+  // browser's own title did not show in every browser); 挑选 needs none,
+  // the text beside it saying what it adds (2026-10-22).
   const again =
     isOwner && aiAvailable && advice?.status !== 'running' ? (
-      // What it does on hover (2026-10-22), in the app's tooltip: the
-      // browser's own title did not show in every browser.
-      <Tooltip>
-        <TooltipTrigger render={<span className='inline-flex' />}>
-          <AiShortcut
-            className='text-xs'
-            disabled={advise.isPending}
-            onClick={() => advise.mutate()}
-          >
-            {t(advice ? 'onboarding.advice.again' : 'onboarding.advice.first')}
-          </AiShortcut>
-        </TooltipTrigger>
-        <TooltipContent className='max-w-64'>
-          {t(
-            advice
-              ? 'onboarding.advice.againHint'
-              : 'onboarding.advice.firstHint',
-          )}
-        </TooltipContent>
-      </Tooltip>
+      advice ? (
+        <Tooltip>
+          <TooltipTrigger render={<span className='inline-flex' />}>
+            {shortcut}
+          </TooltipTrigger>
+          <TooltipContent className='max-w-64'>
+            {t('onboarding.advice.againHint')}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        shortcut
+      )
     ) : null;
   return (
     <div className='flex flex-wrap items-start gap-x-3 gap-y-1 rounded-md bg-accent px-3 py-2 text-xs'>

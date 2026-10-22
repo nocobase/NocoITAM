@@ -1022,15 +1022,13 @@ const messages = {
     runAll_one: 'Do all ({{count}})',
     runAll_other: 'Do all ({{count}})',
     advice: {
-      none: "Below are the rule's picks, which look only at stock, location and warranty. Let Asset Steward choose again with more to go on: repairs, planned replacement and more.",
+      none: "Below are the rule's picks, which look only at stock, location and warranty. Let Asset Steward narrow them down with more to go on: repairs, planned replacement and more.",
       running: 'Asset Steward is choosing from the stock…',
       ready: 'Chosen by Asset Steward ({{date}})',
       failed: 'Asset Steward could not choose this time.',
       conversation: 'See how',
       first: 'Choose',
       again: 'Choose again',
-      firstHint:
-        "Asset Steward also weighs repairs, planned replacement, each device's notes, when subscriptions end and the business notes in settings, swaps out the doubtful ones and says why. Only a suggestion: nothing is held until you reserve it.",
       againHint:
         'Asset Steward picks again from the stock as it is now, replacing the note above. What is already reserved stays.',
       notStarted: {
