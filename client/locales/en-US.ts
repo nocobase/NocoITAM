@@ -1030,9 +1030,9 @@ const messages = {
       first: 'Choose',
       again: 'Choose again',
       firstHint:
-        'Asset Steward picks devices, accessories and seats from stock for them, weighing repair history, notes and end dates, and says why. Only a suggestion: you still decide what to reserve.',
+        'The candidates now are ranked by rule (their own location first, then the longest warranty). Asset Steward also reads repair history and notes, swaps out the doubtful ones and says why. Only a suggestion: nothing is held until you reserve it.',
       againHint:
-        'When stock or records have changed, Asset Steward picks again from things as they are now, replacing its last picks. What is already reserved stays.',
+        'Asset Steward picks again from the stock as it is now, replacing the note above. What is already reserved stays.',
       notStarted: {
         disabled: 'Onboarding suggestions are switched off in the settings',
         unavailable:
