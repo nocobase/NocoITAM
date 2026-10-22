@@ -499,8 +499,9 @@ function OthersFollowUps(): ReactElement | null {
           aria-hidden
         />
         {t('deviceSyncRun.others', { count: rows.length })}
-        <span className='font-normal text-muted-foreground'>
-          · {t('deviceSyncRun.othersHint')}
+        {/* Set apart by room, not a dot (2026-10-22). */}
+        <span className='ml-2 font-normal text-muted-foreground'>
+          {t('deviceSyncRun.othersHint')}
         </span>
       </CollapsibleTrigger>
       <CollapsibleContent className='space-y-2'>
