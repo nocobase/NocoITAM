@@ -3446,6 +3446,7 @@ const messages = {
       execute_one: 'Carry out',
       execute_other: 'Carry out {{count}} steps',
       decline: 'Decline',
+      notRun: 'Not run',
       showParams: 'Show parameters',
       hideParams: 'Hide parameters',
       status: {

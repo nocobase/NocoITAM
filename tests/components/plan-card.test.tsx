@@ -65,3 +65,23 @@ it('offers no parameters inside a follow-up', () => {
     screen.queryByRole('button', { name: 'ai.plans.showParams' }),
   ).toBeNull();
 });
+
+// A step left out of a plan carried out is not done, not struck through
+// (2026-10-22).
+it('marks a step left out of a carried-out plan as not run', () => {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PlanCard
+        plan={{
+          ...plan,
+          status: 'executed',
+          steps: [{ ...plan.steps[0]!, status: 'removed' }],
+        }}
+        bare
+      />
+    </QueryClientProvider>,
+  );
+  const line = screen.getByText(plan.steps[0]!.check!.title);
+  expect(line.className).not.toContain('line-through');
+  expect(screen.getByText('ai.plans.notRun')).toBeTruthy();
+});

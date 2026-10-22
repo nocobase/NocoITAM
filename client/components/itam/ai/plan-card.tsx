@@ -198,21 +198,29 @@ export function PlanCard({
             )}
             <div className='min-w-0 flex-1'>
               <div>
+                {/* Struck through only while it waits and will be left out;
+                    one left out of a plan carried out is simply not done
+                    (2026-10-22): muted, with its tag. */}
                 <span
                   className={
-                    step.status === 'removed' ||
-                    skipped.has(step.position) ||
-                    settled.has(step.position)
+                    pending &&
+                    (skipped.has(step.position) || settled.has(step.position))
                       ? 'text-muted-foreground line-through'
-                      : undefined
+                      : step.status === 'removed'
+                        ? 'text-muted-foreground'
+                        : undefined
                   }
                 >
                   {step.check?.title || t(`ai.plans.ops.${step.op}`)}
                 </span>
                 {/* At the end of the line, not struck through. */}
-                {settled.has(step.position) && settledLabel ? (
+                {pending && settled.has(step.position) && settledLabel ? (
                   <Badge variant='secondary' className='ml-2 align-text-bottom'>
                     {settledLabel}
+                  </Badge>
+                ) : !pending && step.status === 'removed' ? (
+                  <Badge variant='secondary' className='ml-2 align-text-bottom'>
+                    {t('ai.plans.notRun')}
                   </Badge>
                 ) : null}
               </div>
