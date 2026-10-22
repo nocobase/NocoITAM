@@ -3473,7 +3473,9 @@ const zhCN: AppResource = {
     waiting: '待处理',
     nothingWaiting: '没有待处理的 AI 建议。',
     handled: '已处理',
-    nothingPicked: '选一条 AI 建议查看。',
+    nothingPicked: '选一条 AI 建议查看',
+    nothingPickedHint:
+      '资产管家的 MDM 差异跟进和审批建议都在左边，待处理的标着琥珀色竖条。',
   },
   review: {
     title: '审批助手',

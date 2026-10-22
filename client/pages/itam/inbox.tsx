@@ -1,5 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { MonitorCheck, Recycle, ShoppingCart } from 'lucide-react';
+import { MonitorCheck, Recycle, ShoppingCart, Sparkles } from 'lucide-react';
 import { lazy, useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -18,6 +18,13 @@ import { noticePath } from '@/lib/itam/inbox-notices';
 import { PagePane, RecordPane } from '@/components/itam/record-drawer';
 import { OpenFullPageContext } from '@/lib/itam/detail-chrome';
 import { Badge } from '@/components/ui/badge';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInbox, type AgentRun } from '@/lib/itam/agents';
 import { relativeTime } from '@/lib/itam/format';
@@ -350,11 +357,23 @@ function ReviewDetail({
     ...(inbox.data?.open ?? []),
     ...(inbox.data?.handled ?? []),
   ].find((item) => item.id === id);
+  // As the notifications' pane says it (2026-10-22): centred, with the
+  // suggestions' sparkle.
   if (!run)
     return (
-      <p className='p-6 text-sm text-muted-foreground'>
-        {t('agentInbox.nothingPicked')}
-      </p>
+      <div className='flex h-full items-center justify-center p-6'>
+        <Empty className='min-h-48'>
+          <EmptyHeader>
+            <EmptyMedia variant='icon'>
+              <Sparkles />
+            </EmptyMedia>
+            <EmptyTitle>{t('agentInbox.nothingPicked')}</EmptyTitle>
+            <EmptyDescription>
+              {t('agentInbox.nothingPickedHint')}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </div>
     );
   // MDM 核对 itself (2026-10-17), as a review shows its request: the page's
   // 等你决定 carries the suggestion while it is open. One already handled

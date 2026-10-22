@@ -3676,7 +3676,9 @@ const messages = {
     waiting: 'To do',
     nothingWaiting: 'No AI suggestion waits for you.',
     handled: 'Handled',
-    nothingPicked: 'Pick an AI suggestion to read it.',
+    nothingPicked: 'Pick an AI suggestion to read it',
+    nothingPickedHint:
+      'Asset Steward’s MDM difference follow-ups and approval reviews are on the left; those waiting carry an amber bar.',
   },
   review: {
     title: 'Approval assistant',
