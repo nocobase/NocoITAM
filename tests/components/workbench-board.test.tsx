@@ -10,6 +10,8 @@ const state = vi.hoisted(() => ({
   items: [] as MyWorkItem[],
   /** Full rows per list path, as the board cards read them; none by default. */
   rows: {} as Record<string, Record<string, unknown>[]>,
+  /** 需要关注's rules; none found by default. */
+  reminders: [] as Record<string, unknown>[],
   opened: vi.fn(),
 }));
 vi.mock('@nocobase/i18n/client', () => ({
@@ -20,7 +22,7 @@ vi.mock('../../client/lib/itam/workbench.js', async () => ({
     '../../client/lib/itam/workbench.js',
   )),
   useMyWork: () => ({ data: state.items, isLoading: false }),
-  useReminders: () => ({ data: [], isLoading: false }),
+  useReminders: () => ({ data: state.reminders, isLoading: false }),
 }));
 vi.mock('../../client/lib/itam/api.js', async () => ({
   ...(await vi.importActual<Record<string, unknown>>(
@@ -64,6 +66,14 @@ const show = () =>
 const column = (label: string) => screen.getByRole('region', { name: label });
 
 it('lays the to-dos out as columns, 需要关注 first, and opens a record in the drawer', () => {
+  state.reminders = [
+    {
+      kind: 'idleDevice',
+      count: 1,
+      severity: 'info',
+      preview: [{ label: 'SH-LT-007' }],
+    },
+  ];
   state.items = [
     {
       key: 'awaitingReceipt',
@@ -96,6 +106,21 @@ it('lays the to-dos out as columns, 需要关注 first, and opens a record in th
   expect(loans.className).toContain('opacity-60');
   fireEvent.click(screen.getByText('PO-000020'));
   expect(state.opened).toHaveBeenCalledWith('/procurement/a');
+  state.reminders = [];
+});
+
+// Nothing at risk, no band; a rule that found nothing is not listed
+// (2026-10-22).
+it('leaves 需要关注 out when no rule found anything', () => {
+  state.reminders = [
+    { kind: 'idleDevice', count: 0, severity: 'info', preview: [] },
+  ];
+  state.items = [];
+  show();
+  expect(
+    screen.queryByRole('region', { name: 'workbench.attention' }),
+  ).toBeNull();
+  state.reminders = [];
 });
 
 it('shows both kinds of approval in one column, each tagged', () => {

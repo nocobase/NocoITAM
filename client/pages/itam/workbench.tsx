@@ -883,7 +883,7 @@ const SEVERITY_TEXT: Readonly<Record<string, string>> = {
  * group** and dimmed: a rule that vanishes at zero cannot be told from one
  * that was never set up, and "0" is an answer — it says the check ran.
  */
-function AttentionBand(): ReactElement {
+function AttentionBand(): ReactElement | null {
   const { t } = useTranslation();
   const settings = useItamSettings();
   const thresholds = settings.data?.thresholds;
@@ -907,16 +907,6 @@ function AttentionBand(): ReactElement {
         b.count - a.count ||
         (order.get(a.kind) ?? 0) - (order.get(b.kind) ?? 0),
     );
-  // The rules that found nothing are still listed — "0" says the check ran
-  // — after the cards, in the same order.
-  const clear = entries
-    .filter((entry) => entry.count === 0)
-    .sort(
-      (a, b) =>
-        rank[a.severity] - rank[b.severity] ||
-        (order.get(a.kind) ?? 0) - (order.get(b.kind) ?? 0),
-    );
-
   const label = (kind: string) =>
     t(`workbench.reminders.${kind}`, {
       warrantyDays: thresholds?.warrantyDays ?? 30,
@@ -926,6 +916,8 @@ function AttentionBand(): ReactElement {
       maintenanceExpiryDays: thresholds?.maintenanceExpiryDays ?? 30,
     });
 
+  // Nothing at risk, no band (2026-10-22).
+  if (!reminders.isLoading && found.length === 0) return null;
   return (
     // A band across the top (2026-10-17): risks rather than to-dos, so it
     // takes no column of the board. On white (2026-10-22; the columns'
@@ -936,11 +928,15 @@ function AttentionBand(): ReactElement {
       // Closer to the counts than the page's own spacing (2026-10-22).
       className='mb-3 shrink-0 rounded-2xl border border-border/60 bg-card px-3 py-2.5'
     >
-      <h2 className='mb-2 flex items-center gap-1.5 px-0.5 text-sm font-semibold'>
-        <TriangleAlert
-          aria-hidden='true'
-          className='size-4 text-warning-foreground'
-        />
+      {/* In line with the rows (2026-10-22): the icon over their numbers,
+          the title over their rules. */}
+      <h2 className='mb-1 flex items-center gap-3 px-1.5 text-sm font-semibold'>
+        <span className='flex w-7 shrink-0 justify-end'>
+          <TriangleAlert
+            aria-hidden='true'
+            className='size-4 text-warning-foreground'
+          />
+        </span>
         {t('workbench.attention')}
       </h2>
       {reminders.isLoading ? (
@@ -963,8 +959,9 @@ function AttentionBand(): ReactElement {
                 })}
                 // A risk row says what is at risk without being opened
                 // (2026-10-05). Only a critical rule is red; severity is the
-                // rule's, not today's.
-                className='flex min-w-0 items-baseline gap-3 border-b border-border/60 px-1.5 py-2 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                // rule's, not today's. A hairline between rows, none above
+                // the first of a column nor under the last (2026-10-22).
+                className='flex min-w-0 items-baseline gap-3 border-t border-border/60 px-1.5 py-2 transition-colors first:border-t-0 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:nth-2:border-t-0'
               >
                 <span
                   className={cn(
@@ -979,28 +976,9 @@ function AttentionBand(): ReactElement {
               </Link>
             ))}
           </div>
-          {/* The rules that found nothing come last, each on its own line
-              and dimmed rather than folded into a count (2026-10-06): "0"
-              says the check ran, and a folded line hid which checks those
-              were. They are plain rows, not cards — there is nothing behind
-              a zero to open. */}
-          {clear.length > 0 ? (
-            <ul className='flex flex-wrap gap-x-4 gap-y-1 px-0.5 pt-2'>
-              {clear.map((entry) => (
-                <li
-                  key={entry.kind}
-                  className='flex items-baseline gap-1.5 text-muted-foreground/70'
-                >
-                  <span className='w-[1ch] text-sm leading-none tabular-nums'>
-                    0
-                  </span>
-                  <span className='min-w-0 text-xs leading-tight'>
-                    {label(entry.kind)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+          {/* A rule that found nothing is left out (2026-10-22; listed
+              dimmed as 0 from 2026-10-06), and with nothing found the band
+              is not drawn at all. */}
         </>
       )}
     </section>
