@@ -1,8 +1,11 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import {
   ArrowRight,
+  BookOpenText,
   BriefcaseBusiness,
   CalendarClock,
+  Cloud,
+  GitCompareArrows,
   Columns3,
   List,
   TriangleAlert,
@@ -450,6 +453,13 @@ function WorkColumn({
   );
 }
 
+/** MDM 核对's tabs' icons, as its page draws them. */
+const SUMMARY_ICONS = {
+  checks: GitCompareArrows,
+  unregistered: Cloud,
+  unmanaged: BookOpenText,
+} as const;
+
 /**
  * MDM 核对's 只在 MDM or 只在台账 (2026-10-15): a count rather than its
  * records — a record not on the register has no 负责人 and no drawer, and
@@ -462,12 +472,18 @@ function SummaryCard({
   readonly entry: NonNullable<WorkCard['summary']>[number];
 }): ReactElement {
   const { t } = useTranslation();
+  const SummaryIcon = SUMMARY_ICONS[entry.key];
   return (
     <Link
       to={entry.url}
       className='block w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
     >
-      <span className='flex items-baseline gap-2'>
+      <span className='flex items-center gap-2'>
+        {/* The tab's own icon on MDM 核对 (2026-10-22). */}
+        <SummaryIcon
+          aria-hidden='true'
+          className='size-4 shrink-0 text-muted-foreground'
+        />
         <span className='text-base leading-none font-semibold tabular-nums'>
           {entry.count}
         </span>
