@@ -1035,6 +1035,11 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     monitorOrder: 'Monitors for the sales floor',
     dockOrder: 'Docking station stock',
     keyboardOrder: 'Keyboards for the new desks',
+    mouseOrder: 'Mice to restock',
+    dockOrder: 'Docks for the R&D desks',
+    headsetOrder: 'Headsets for the sales team',
+    hubOrder: 'Travel hubs to restock',
+    webcamOrder: 'Webcams for presenters',
     officeOrder: 'Office LTSC device licenses',
     ideOrder: 'IntelliJ IDEA seats for R&D',
     tonerOrder: 'Toner for the third-floor printer',
@@ -1173,6 +1178,11 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     monitorOrder: '销售部显示器扩容',
     dockOrder: '扩展坞补货',
     keyboardOrder: '新工位键盘',
+    mouseOrder: '鼠标补货',
+    dockOrder: '研发工位扩展坞',
+    headsetOrder: '销售团队耳机',
+    hubOrder: '出差用扩展坞补货',
+    webcamOrder: '演示用摄像头',
     officeOrder: 'Office LTSC 设备授权',
     ideOrder: '研发部 IntelliJ IDEA 席位',
     tonerOrder: '3 楼打印机硒鼓',
@@ -3413,7 +3423,7 @@ export function createDemoService(dependencies: {
             manufacturerId: mxMaster.manufacturer.id,
             // Enough for everybody the kits give one (2026-10-16), and still
             // below the minimum at the end, as before.
-            totalQuantity: 7 + crewCount(crewWants.mouse),
+            totalQuantity: 5 + crewCount(crewWants.mouse),
             minimumQuantity: 5,
           },
           -900,
@@ -3636,6 +3646,19 @@ export function createDemoService(dependencies: {
         await issue(keyboards, 'person', liNa, 1, -695);
         await issue(keyboards, 'person', wangFang, 1, -690);
         await issue(keyboards, 'person', writer, 1, -415);
+        // The mice, the docks, the headsets, the hubs and the webcams were
+        // topped up by an order too (2026-10-22: only the keyboards were),
+        // so their pages show a purchase; each started that much lower, and
+        // ends where it did.
+        await purchasedStock({
+          description: texts.mouseOrder,
+          itemType: 'accessory',
+          modelId: String(mxMaster.id),
+          quantity: 2,
+          unitPrice: 699,
+          orderedDaysAgo: 600,
+          into: mice,
+        });
         await purchasedStock({
           description: texts.keyboardOrder,
           itemType: 'accessory',
@@ -3655,7 +3678,7 @@ export function createDemoService(dependencies: {
             categoryId: dockCat.id,
             modelId: wd22.id,
             manufacturerId: latitude.manufacturer.id,
-            totalQuantity: 9 + crewCount(crewWants.dock),
+            totalQuantity: 5 + crewCount(crewWants.dock),
             minimumQuantity: 2,
           },
           -800,
@@ -3669,6 +3692,15 @@ export function createDemoService(dependencies: {
         // Docks went out and came back, so returns show in the history.
         await issue(docks, 'person', wangFang, 1, -600);
         await takeBack(docks, 'person', wangFang, -510);
+        await purchasedStock({
+          description: texts.dockOrder,
+          itemType: 'accessory',
+          modelId: String(wd22.id),
+          quantity: 4,
+          unitPrice: 2299,
+          orderedDaysAgo: 408,
+          into: docks,
+        });
         await issue(docks, 'person', liuYang, 1, -280);
         if (supportPerson) await issue(docks, 'person', supportPerson, 1, -294);
         await toCrew(docks, -800, crewWants.dock);
@@ -3679,13 +3711,22 @@ export function createDemoService(dependencies: {
             categoryId: headsetCat.id,
             modelId: zoneVibe.id,
             manufacturerId: mxMaster.manufacturer.id,
-            totalQuantity: 11 + crewCount(crewWants.headset),
+            totalQuantity: 5 + crewCount(crewWants.headset),
             minimumQuantity: 3,
           },
           -400,
         );
         await issue(headsets, 'person', wangFang, 1, -390);
         await issue(headsets, 'person', zhaoMin, 1, -325);
+        await purchasedStock({
+          description: texts.headsetOrder,
+          itemType: 'accessory',
+          modelId: String(zoneVibe.id),
+          quantity: 6,
+          unitPrice: 599,
+          orderedDaysAgo: 200,
+          into: headsets,
+        });
         await toCrew(headsets, -400, crewWants.headset);
         // A USB-C hub for travelling, lent for trips and back.
         // Each model and category the stock needs is entered just before
@@ -3706,7 +3747,7 @@ export function createDemoService(dependencies: {
             categoryId: dockCat.id,
             modelId: hubModel.id,
             manufacturerId: latitude.manufacturer.id,
-            totalQuantity: 8,
+            totalQuantity: 4,
             minimumQuantity: 2,
           },
           -540,
@@ -3714,6 +3755,15 @@ export function createDemoService(dependencies: {
         await issue(hubs, 'person', wangFang, 1, -400);
         await takeBack(hubs, 'person', wangFang, -380);
         await issue(hubs, 'person', zhaoMin, 1, -320);
+        await purchasedStock({
+          description: texts.hubOrder,
+          itemType: 'accessory',
+          modelId: String(hubModel.id),
+          quantity: 4,
+          unitPrice: 399,
+          orderedDaysAgo: 260,
+          into: hubs,
+        });
         await issue(hubs, 'person', approver, 1, -200);
         await issue(hubs, 'person', zhangWei, 1, -60);
         await takeBack(hubs, 'person', zhangWei, -45);
@@ -3742,13 +3792,22 @@ export function createDemoService(dependencies: {
             categoryId: webcamCat.id,
             modelId: webcamModel.id,
             manufacturerId: mxMaster.manufacturer.id,
-            totalQuantity: 6,
+            totalQuantity: 3,
             minimumQuantity: 1,
           },
           -700,
         );
         await issue(webcams, 'location', meetingRoom, 1, -650);
         await issue(webcams, 'person', wangFang, 1, -640);
+        await purchasedStock({
+          description: texts.webcamOrder,
+          itemType: 'accessory',
+          modelId: String(webcamModel.id),
+          quantity: 3,
+          unitPrice: 499,
+          orderedDaysAgo: 500,
+          into: webcams,
+        });
         await issue(webcams, 'person', writer, 1, -410);
         await issue(webcams, 'person', liuYang, 1, -280);
         await takeBack(webcams, 'person', liuYang, -100);
@@ -6851,7 +6910,9 @@ export function createDemoService(dependencies: {
               internOrder: String(internOrder.id),
               printerDisposal: String(printerDisposal.id),
             },
-            joiners: joinerIds,
+            // Not the first joiner (2026-10-22): the importer equips them,
+            // so their card shows the rule's picks and 挑选 to try.
+            joiners: joinerIds.slice(1),
           });
 
         importPercent = 100;

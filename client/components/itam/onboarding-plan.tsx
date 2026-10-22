@@ -433,7 +433,7 @@ function PlanLine({
             ×{line.required}
           </span>
         </span>
-        <span className='flex flex-wrap items-center justify-end gap-1.5'>
+        <span className='flex max-w-full min-w-0 flex-wrap items-center justify-end gap-1.5'>
           {line.prepared.map((thing) => (
             <Badge key={`p:${thing.type}:${thing.id}`} variant='secondary'>
               <Check className='size-3' />
@@ -479,10 +479,13 @@ function PlanLine({
             return (
               <span
                 key={`o:${original.type}:${original.id}`}
-                className='inline-flex items-center gap-1'
+                className='inline-flex max-w-full min-w-0 items-center gap-1'
               >
+                {/* On a narrow card the label wraps inside the button
+                    rather than running past the card (2026-10-22). */}
                 <Button
                   variant='outline'
+                  className='h-auto min-h-8 min-w-0 shrink py-1 text-left whitespace-normal'
                   disabled={busy || (thing.needsAccount && !thing.account)}
                   title={
                     thing.needsAccount && !thing.account
