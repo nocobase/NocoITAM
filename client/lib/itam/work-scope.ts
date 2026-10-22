@@ -9,7 +9,10 @@ import { useSyncExternalStore } from 'react';
  */
 export type WorkScope = 'all' | 'mine';
 
-const KEY = 'nocoitam:work-scope';
+// A new key when 我的 became the default (2026-10-22): a browser that had
+// remembered 全部 under the old one, often from merely trying the switch,
+// starts at 我的 like everybody else.
+const KEY = 'nocoitam:work-scope:v2';
 const listeners = new Set<() => void>();
 
 function read(): WorkScope {
