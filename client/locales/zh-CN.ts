@@ -3616,8 +3616,6 @@ const zhCN: AppResource = {
     allHandledBelow: '已全部处理',
     rerun: '重新运行',
     accepted: '已按方案处理',
-    notesWaiting_one: '{{count}} 项要你看',
-    notesWaiting_other: '{{count}} 项要你看',
     notes: '需要你看一下',
     openReview: '去 MDM 核对',
     failedHintHere: '这次没整理出来，可以点右上角的“MDM 差异跟进”再试一次。',

@@ -3821,8 +3821,6 @@ const messages = {
     allHandledBelow: 'All settled',
     rerun: 'Run again',
     accepted: 'Carried out',
-    notesWaiting_one: '{{count}} to look at',
-    notesWaiting_other: '{{count}} to look at',
     notes: 'For you to look at',
     openReview: 'Open MDM 核对',
     failedHintHere:

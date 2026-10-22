@@ -231,11 +231,7 @@ function FollowUpReviewCard({
         ? t('deviceSyncRun.allHandledBelow')
         : t('deviceSyncRun.handledBelow', { count: handled.size })
       : null,
-    // Beside a plan only (2026-10-21): with none, every difference is one
-    // to look at, which the title already counts.
-    !decided && pendingPlan && notes.length
-      ? t('deviceSyncRun.notesWaiting', { count: notes.length })
-      : null,
+    // No count of notes to look at (2026-10-22): they are listed beneath.
     decided
       ? run.status === 'accepted'
         ? t(
