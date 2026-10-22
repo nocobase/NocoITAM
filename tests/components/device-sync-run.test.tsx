@@ -412,10 +412,13 @@ it('shows the reader’s waiting follow-ups as a card each', () => {
   expect(
     screen.getAllByRole('button', { name: 'review.dismiss' }),
   ).toHaveLength(2);
-  // Each worked out again alone (2026-10-22).
+  // The asset managers' first, wherever the newest is (2026-10-22), and
+  // each worked out again alone.
   const again = screen.getAllByRole('button', { name: 'deviceSyncRun.rerun' });
-  fireEvent.click(again[1]!);
+  fireEvent.click(again[0]!);
   expect(state.ask).toHaveBeenCalledWith('shared');
+  fireEvent.click(again[1]!);
+  expect(state.ask).toHaveBeenCalledWith('own');
 });
 
 // Decided here, a card stays folded until a newer follow-up of the same

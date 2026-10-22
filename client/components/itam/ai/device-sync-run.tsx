@@ -418,7 +418,15 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
   const runs = [...(inbox.data?.open ?? []), ...(inbox.data?.handled ?? [])]
     .filter((run): run is DeviceSyncRun => run.agent === 'deviceSync')
     .filter((run) => !focus || run.id === focus)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    // In a fixed place (2026-10-22): the asset managers' first, then the
+    // reader's devices' — running one again does not move it — and newest
+    // first within each.
+    .sort(
+      (a, b) =>
+        Number(b.subjectId.startsWith('shared:')) -
+          Number(a.subjectId.startsWith('shared:')) ||
+        b.createdAt.localeCompare(a.createdAt),
+    );
   // The runs open while the page was: once decided here they stay.
   const [shown, setShown] = useState<readonly string[]>([]);
   const opened = runs.filter(isOpenRun).map((run) => run.id);
