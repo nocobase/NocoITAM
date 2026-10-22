@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { MonitorCheck, Recycle, ShoppingCart } from 'lucide-react';
 import { lazy, useEffect, useMemo, useRef, type ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -183,45 +184,73 @@ function ReviewList({
   // what became of it.
   const waiting = items.filter(isOpen);
   const handled = items.filter((run) => !isOpen(run));
+  // Drawn as the notifications are (2026-10-22): the card pulled out by its
+  // padding so its words start under the tabs' icons, a bar in the gutter
+  // for what waits, the title and the time, then one line; its kind as the
+  // menu icon of what it is about, rather than a line of its own.
   const row = (run: AgentRun) => {
     const open = isOpen(run);
+    const selected = run.id === selectedId;
     const summary = run.result?.summary;
+    const Kind =
+      run.agent === 'deviceSync'
+        ? MonitorCheck
+        : run.subjectType === 'disposals'
+          ? Recycle
+          : ShoppingCart;
     return (
       <li key={run.id}>
         <button
           type='button'
           data-decision-item=''
-          aria-current={run.id === selectedId ? 'true' : undefined}
+          aria-current={selected ? 'true' : undefined}
           onClick={() => onSelect(run.id)}
           className={cn(
-            'flex w-full flex-col gap-0.5 rounded-lg border-l-2 px-3 py-2 text-left text-sm transition-colors',
-            run.id === selectedId
-              ? 'border-l-primary bg-accent'
-              : open
-                ? 'border-l-(--status-warning) hover:bg-hover'
-                : 'border-l-transparent hover:bg-hover',
+            'relative -mx-[calc(--spacing(3)+1px)] grid w-[calc(100%+--spacing(6)+2px)] gap-1 rounded-lg border border-transparent p-3 text-left transition-[background-color,opacity] duration-200',
+            selected ? 'bg-hover' : 'hover:bg-hover',
             !open && 'opacity-55',
           )}
         >
-          <span className='flex items-center gap-2 text-xs text-muted-foreground'>
-            {run.agent === 'deviceSync'
-              ? t('deviceSyncRun.title')
-              : t('review.title')}
-            <span className='ml-auto tabular-nums'>
+          <span
+            aria-hidden='true'
+            className={cn(
+              'absolute top-3 bottom-3 -left-px w-0.5 rounded-full',
+              selected
+                ? 'bg-primary'
+                : open
+                  ? 'bg-amber-500'
+                  : 'bg-transparent',
+            )}
+          />
+          <span className='flex min-w-0 items-baseline gap-1.5'>
+            <Kind
+              className='size-3.5 shrink-0 self-center text-muted-foreground'
+              aria-label={
+                run.agent === 'deviceSync'
+                  ? t('deviceSyncRun.title')
+                  : t('review.title')
+              }
+            />
+            <span className='min-w-0 truncate text-sm font-medium'>
+              {titleOf(run, t)}
+            </span>
+            <time
+              className='ml-auto shrink-0 text-xs text-muted-foreground tabular-nums'
+              dateTime={run.updatedAt}
+            >
               {relativeTime(
                 run.updatedAt,
                 i18n.language,
                 t('comments.justNow'),
               )}
-            </span>
+            </time>
           </span>
-          <span className='truncate font-medium'>{titleOf(run, t)}</span>
           {open ? (
-            <span className='truncate text-xs text-muted-foreground'>
+            <span className='line-clamp-1 text-xs text-muted-foreground'>
               {lineOf(run, t)}
             </span>
           ) : (
-            <span className='truncate text-xs text-muted-foreground'>
+            <span className='line-clamp-1 text-xs text-muted-foreground'>
               <Badge
                 variant='secondary'
                 className={
@@ -247,13 +276,13 @@ function ReviewList({
       {waiting.length ? (
         <ul className='flex flex-col gap-0.5'>{waiting.map(row)}</ul>
       ) : (
-        <p className='px-3 py-2 text-sm text-muted-foreground'>
+        <p className='py-2 text-sm text-muted-foreground'>
           {t('agentInbox.nothingWaiting')}
         </p>
       )}
       {handled.length ? (
         <div className='flex flex-col gap-1 pt-4'>
-          <h3 className='border-b border-border px-3 pb-1.5 text-xs font-medium text-muted-foreground'>
+          <h3 className='border-b border-border pb-1.5 text-xs font-medium text-muted-foreground'>
             {t('agentInbox.handled')}
           </h3>
           <ul className='flex flex-col gap-0.5'>{handled.map(row)}</ul>
