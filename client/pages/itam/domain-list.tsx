@@ -9,7 +9,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { useNavigate, useOutlet, useSearchParams } from 'react-router';
 
 import { FieldValue } from '@/components/itam/cells';
@@ -175,6 +175,14 @@ function DomainList({
     },
     { enabled: layout !== 'board' },
   );
+  // A page past the end — records removed since, or a link kept from a
+  // longer list — goes back to the last page that has rows (2026-10-22): it
+  // read 暂无人员 under a count of 1.
+  const lastPage = Math.max(1, Math.ceil((list.data?.total ?? 0) / pageSize));
+  useEffect(() => {
+    if (list.data && list.data.total > 0 && page > lastPage)
+      setParam({ page: lastPage === 1 ? undefined : String(lastPage) });
+  });
   // On the board the columns fetch their own records, so the header's total
   // is asked for on its own: one row, for the count (2026-10-20).
   const boardTotal = useItamList<ItamRecord>(
