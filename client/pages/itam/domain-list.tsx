@@ -260,15 +260,10 @@ function DomainList({
           names={names}
           currency={text(row.currency) || currency}
           plainEnums={domain.plainCells}
-          // An asset list shows the record's own category and place; the
-          // detail page has the full path, as on the device list. Plain
-          // cells read like the detail page, path and all.
-          treeShow={
-            !domain.plainCells &&
-            (field.key === 'categoryId' || field.key === 'locationId')
-              ? 'leaf'
-              : 'path'
-          }
+          // Every list shows a record's own category, place and department,
+          // the whole path on hover and on the detail page (2026-10-22;
+          // reference-data lists showed the path until then).
+          treeShow='leaf'
         />
       ),
   }));

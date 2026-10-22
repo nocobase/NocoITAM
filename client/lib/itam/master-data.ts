@@ -650,6 +650,10 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
     // A person opens on what they hold, where they are worked on; every
     // other record opens on its history.
     defaultTab: 'holdings',
+    // On the books first, then joining, then gone, each by employee number
+    // (2026-10-22): by name, Chinese names sorted by code point read as no
+    // order at all.
+    defaultSort: 'employmentStatus,employeeNo',
     countColumns: [
       { key: 'devices', label: 'tabs.devices' },
       { key: 'accessories', label: 'people.stockHeld' },
@@ -717,6 +721,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         label: 'fields.officeLocation',
         type: 'reference',
         reference: { collection: 'locations' },
+        // In the list in place of 更新时间 (2026-10-22).
+        column: true,
         group: 'groups.contact',
       },
       {
@@ -757,7 +763,9 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         group: 'groups.employment',
       },
       notes,
-      ...AUDIT_FIELDS,
+      ...AUDIT_FIELDS.map((field) =>
+        field.key === 'updatedAt' ? { ...field, column: false } : field,
+      ),
     ],
   },
 ];

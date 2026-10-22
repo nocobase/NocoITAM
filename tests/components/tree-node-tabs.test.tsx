@@ -106,11 +106,12 @@ it("lists a parent department's people with their department, those who left apa
   expect(state.lists[1]?.query).toMatchObject({
     filter: { employmentStatus: ['left'] },
   });
-  expect(headers().slice(0, 5)).toEqual([
+  expect(headers().slice(0, 6)).toEqual([
     'fields.personName',
     'fields.employeeNo',
     'fields.department',
     'fields.position',
+    'fields.officeLocation',
     'fields.employmentStatus',
   ]);
   expect(screen.getByText('enums.employmentStatus.left')).toBeTruthy();
