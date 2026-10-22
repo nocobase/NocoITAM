@@ -278,10 +278,11 @@ describe('MDM follow-up', () => {
     expect(again.data.steps.map((step) => step.op)).toEqual([
       'dismiss_device_difference',
     ]);
-    // Its card shows it done (2026-10-22).
+    // Its card shows it done (2026-10-22), and it is not carried out twice.
     expect((await runs().get(mine.id))?.result?.resumed).toEqual([
       keep.position,
     ]);
+    expect((await resume('mia', [keep.position])).status).toBe(422);
     expect(
       (await app.container.resolve(deviceReviewServiceToken).checks()).some(
         (check) => check.kind === 'statusMismatch',
@@ -328,9 +329,12 @@ describe('MDM follow-up', () => {
     expect((mine.result?.notes as string[]).length).toBe(2);
     await followUp().dismiss(mine.id, 'mia');
     const anns = await settled(() => latest('shared:ann:unregistered'));
-    // Closed as settled (2026-10-21), it ends as handled, not set aside.
-    const closed = await followUp().dismiss(anns.id, 'ann', { settled: true });
-    expect(closed).toMatchObject({ status: 'accepted', decision: 'settled' });
+    // Not settled while a noted item is still listed (2026-10-22).
+    await expect(
+      followUp().dismiss(anns.id, 'ann', { settled: true }),
+    ).rejects.toMatchObject({ rule: 'SUGGESTION_NOT_SETTLED' });
+    const aside = await followUp().dismiss(anns.id, 'ann');
+    expect(aside).toMatchObject({ status: 'dismissed' });
 
     const again = await followUp().afterSync(null);
     expect(again.map((run) => run.subjectId)).toEqual([

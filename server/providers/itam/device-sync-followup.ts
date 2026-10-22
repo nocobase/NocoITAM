@@ -18,6 +18,7 @@ import { agentOn } from './agent-switches.js';
 import { openSession, readSkill } from './ai-model.js';
 import { z } from 'zod';
 import { asText, type Row } from './collection-query.js';
+import { dbDateTime } from './dates.js';
 import { deviceReviewServiceToken } from './device-review.js';
 import { BusinessRuleError, RecordNotFoundError } from './errors.js';
 import {
@@ -44,18 +45,19 @@ import { settingsServiceToken } from './settings.js';
  * enrol one in the platform, ask the platform's administrator) is a note.
  * It never marks a device lost.
  *
- * Only what is new is looked at: a difference in a suggestion its person
- * carried out or set aside is not raised again; one left waiting comes
- * back with the next pull, whose run replaces the person's waiting one (a
- * plan lasts a day). Nothing changes until the person carries out the plan
- * — the card is the plan's own, with its ticks.
+ * Whatever MDM 核对 lists now is worked out, every time (2026-10-22):
+ * nothing is kept as handled — what was carried out has left the lists,
+ * and what is still on them comes back. A pull's run replaces the person's
+ * waiting one of the same tab (a plan lasts a day). Nothing changes until
+ * the person carries out the plan — the card is the plan's own, with its
+ * ticks.
  */
 
 const AGENT = 'deviceSync' as const;
 const SUBJECT = 'deviceSync';
 /** The asset manager set: who settles a platform record nobody owns. */
 const ASSET_MANAGER_SET = 'itam-asset-manager';
-/** How far back a decided suggestion still counts as handled. */
+/** How far back a person's latest follow-up of a tab is looked for. */
 const HANDLED_DAYS = 90;
 const TURN_MS = 8 * 60_000;
 
@@ -169,12 +171,6 @@ const DECIDED = z.object({
 export type FollowUpDecision = z.infer<typeof DECIDED>['decisions'][number];
 type Decision = FollowUpDecision;
 
-/**
- * Who decides the items instead of the model: the demo, whose follow-up is
- * written with it (2026-10-16). Given each item as the model would read it
- * — its `ref`, `kind` and what MDM 核对 shows — it answers for the item by
- * that ref, or not at all (a note to look first).
- */
 /** Who answers for a run's items: the model, or an answerer. */
 type Ask = (
   material: readonly Record<string, unknown>[],
@@ -209,6 +205,8 @@ export interface FollowUpResult {
   readonly planId: string | null;
   /** What is not a plan step: register it, verify first, ask the admin. */
   readonly notes: readonly string[];
+  /** Each note's item as `subject|kind`, by place (2026-10-22). */
+  readonly noteItems?: readonly string[];
   readonly summary: string;
   readonly advice?: readonly FollowUpAdvice[];
 }
@@ -415,7 +413,6 @@ export function createDeviceSyncFollowUp(dependencies: {
     return tab ? items.filter((item) => tabOf(item.kind) === tab) : items;
   };
 
-  /** Siblings of a shared suggestion go once one of them is decided. */
   /**
    * The other asset managers' copies of a shared suggestion, once one of
    * them decided theirs (2026-10-22): no longer closed with it — a step
@@ -441,17 +438,86 @@ export function createDeviceSyncFollowUp(dependencies: {
     if (!others.length) return;
     const listed = await listedNow();
     for (const other of others) {
-      const planned = ((other.result?.advice ?? []) as FollowUpAdvice[]).filter(
-        (entry) => (entry.steps?.length ?? 0) > 0,
-      );
+      const items = (other.result?.items ?? []) as FollowUpItem[];
+      // Every item off the lists, the noted ones too (2026-10-22); decided
+      // here, not through dismiss(), which would settle the siblings again.
       if (
-        planned.length > 0 &&
-        other.deciderId &&
-        planned.every((entry) => !listed.has(`${entry.subject}|${entry.kind}`))
+        !other.deciderId ||
+        !items.length ||
+        items.some((item) => listed.has(`${item.subject}|${item.kind}`))
       )
-        await service
-          .dismiss(other.id, other.deciderId, { settled: true })
-          .catch(() => undefined);
+        continue;
+      if (
+        await runs().decide(other.id, {
+          status: 'accepted',
+          decidedById: other.deciderId,
+          decision: 'settled',
+        })
+      ) {
+        const planId = asText(other.result?.planId);
+        const plans = container.resolve(planServiceToken);
+        const plan = planId
+          ? await plans.get(other.deciderId, planId).catch(() => null)
+          : null;
+        if (plan?.status === 'pending')
+          await plans
+            .void(other.deciderId, plan.id, plan.revision)
+            .catch(() => undefined);
+      }
+    }
+  };
+
+  /**
+   * The latest run of each tabbed subject within `HANDLED_DAYS`, by who
+   * decides it (2026-10-22): filtered in SQL rather than over every
+   * person's runs, since 收件箱's count asks on every poll. Subjects of
+   * before the tabs (`owner:<id>`, `shared:<id>`) are left out: no newer
+   * run ever replaces them.
+   */
+  const latestRuns = async (
+    decider: { readonly is: string } | { readonly not: string },
+    part: 'owner' | 'shared' | null,
+  ): Promise<AgentRun[]> => {
+    let query = database()
+      .query()
+      .selectFrom('itamAgentRuns')
+      .select(['id', 'subjectId'])
+      .where('agent', '=', AGENT)
+      .where(
+        'createdAt',
+        '>=',
+        dbDateTime(new Date(Date.now() - HANDLED_DAYS * 86_400_000)),
+      );
+    query =
+      'is' in decider
+        ? query.where('deciderId', '=', decider.is)
+        : query
+            .where('deciderId', 'is not', null)
+            .where('deciderId', '!=', decider.not);
+    if (part) query = query.where('subjectId', 'like', `${part}:%`);
+    const rows = await query
+      .orderBy('createdAt', 'desc')
+      .limit(2000)
+      .execute<{ id: unknown; subjectId: unknown }>();
+    const ids = new Map<string, string>();
+    for (const row of rows) {
+      const subject = String(row.subjectId);
+      if (!parseFollowUpSubject(subject).tab || ids.has(subject)) continue;
+      ids.set(subject, String(row.id));
+    }
+    const found = await Promise.all(
+      [...ids.values()].map((id) => runs().get(id)),
+    );
+    return found.filter((run): run is AgentRun => run !== undefined);
+  };
+
+  /** A plan step's stored params; nothing for one that will not parse. */
+  const paramsOf = (value: unknown): { title?: unknown } | null => {
+    if (typeof value !== 'string') return value ?? null;
+    try {
+      return JSON.parse(value) as { title?: unknown } | null;
+    } catch {
+      return null;
     }
   };
 
@@ -563,19 +629,7 @@ export function createDeviceSyncFollowUp(dependencies: {
       // Each person's latest of a tab: open, or carried out or set aside
       // while what it was about is still listed (2026-10-22), so the others
       // see it was looked at and what is left. A newer one replaces it.
-      const latest = new Map<string, AgentRun>();
-      for (const run of await runs().list(AGENT, {
-        since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
-        limit: 200,
-      }))
-        if (
-          run.subjectId.startsWith('owner:') &&
-          run.deciderId !== null &&
-          run.deciderId !== reader &&
-          !latest.has(run.subjectId)
-        )
-          latest.set(run.subjectId, run);
-      const shown = [...latest.values()].filter((run) =>
+      const shown = (await latestRuns({ not: reader }, 'owner')).filter((run) =>
         ['running', 'pending', 'failed', 'dismissed', 'accepted'].includes(
           run.status,
         ),
@@ -620,6 +674,7 @@ export function createDeviceSyncFollowUp(dependencies: {
           !listed.has(`${item.subject}|${item.kind}`);
         const advice = (run.result?.advice ?? []) as FollowUpAdvice[];
         const notes = (run.result?.notes ?? []) as string[];
+        const noteItems = (run.result?.noteItems ?? []) as string[];
         result.push({
           id: run.id,
           deciderId: String(run.deciderId),
@@ -632,20 +687,20 @@ export function createDeviceSyncFollowUp(dependencies: {
           summary: asText(run.result?.summary) ?? '',
           notes,
           handledNotes: notes.flatMap((note, index) => {
-            const item = items.find(
-              (entry) =>
-                note.startsWith(`${entry.label}：`) ||
-                note.startsWith(`${entry.label}:`),
-            );
+            // By its item's key; a run of before them, by its label.
+            const key = noteItems[index];
+            const item = key
+              ? items.find((entry) => `${entry.subject}|${entry.kind}` === key)
+              : items.find(
+                  (entry) =>
+                    note.startsWith(`${entry.label}：`) ||
+                    note.startsWith(`${entry.label}:`),
+                );
             return item && gone(item) ? [index] : [];
           }),
           allHandled: items.length > 0 && items.every(gone),
           steps: steps.flatMap((step) => {
-            const params = (
-              typeof step.params === 'string'
-                ? JSON.parse(step.params)
-                : step.params
-            ) as { title?: unknown } | null;
+            const params = paramsOf(step.params);
             const title = asText(params?.title);
             const position = Number(step.position);
             const about = advice.find((entry) =>
@@ -661,14 +716,7 @@ export function createDeviceSyncFollowUp(dependencies: {
     },
 
     async leftToDo(reader) {
-      const latest = new Map<string, AgentRun>();
-      for (const run of await runs().list(AGENT, {
-        since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
-        limit: 200,
-      }))
-        if (run.deciderId === reader && !latest.has(run.subjectId))
-          latest.set(run.subjectId, run);
-      const done = [...latest.values()].filter(
+      const done = (await latestRuns({ is: reader }, null)).filter(
         (run) => run.status === 'accepted',
       );
       const left = new Map<string, number>();
@@ -702,7 +750,13 @@ export function createDeviceSyncFollowUp(dependencies: {
       const plans = container.resolve(planServiceToken);
       const plan = await plans.get(actorId, planId);
       const listed = await listedNow();
-      // Left out, on an item still listed, standing alone, and ticked.
+      // Left out (or, after a failure, not reached), on an item still
+      // listed, not carried out since, standing alone, and ticked.
+      const done = new Set(
+        ((run.result?.resumed ?? []) as unknown[]).filter(
+          (position): position is number => typeof position === 'number',
+        ),
+      );
       const open = new Set(
         ((run.result?.advice ?? []) as FollowUpAdvice[])
           .filter((entry) => listed.has(`${entry.subject}|${entry.kind}`))
@@ -711,8 +765,10 @@ export function createDeviceSyncFollowUp(dependencies: {
       const ticked = new Set(positions);
       const steps = plan.steps.filter(
         (step) =>
-          step.status === 'removed' &&
+          (step.status === 'removed' ||
+            (plan.status === 'failed' && step.status !== 'done')) &&
           !step.ref &&
+          !done.has(step.position) &&
           open.has(step.position) &&
           ticked.has(step.position),
       );
@@ -734,18 +790,16 @@ export function createDeviceSyncFollowUp(dependencies: {
           conversationId: null,
         },
       );
-      const done = await plans.execute(actorId, again.id, {
+      const executed = await plans.execute(actorId, again.id, {
         revision: again.revision,
       });
       // The first plan's steps carried out now, by their place in it
       // (2026-10-22): its card shows them 已执行 like the rest.
-      const carried = done.steps.flatMap((step, index) =>
+      const carried = executed.steps.flatMap((step, index) =>
         step.status === 'done' ? [steps[index].position] : [],
       );
       if (carried.length) {
-        const before = ((run.result?.resumed ?? []) as number[]).filter(
-          (position) => typeof position === 'number',
-        );
+        const before = [...done];
         await database()
           .query()
           .updateTable('itamAgentRuns')
@@ -759,7 +813,7 @@ export function createDeviceSyncFollowUp(dependencies: {
           .execute();
       }
       await settleShared(run);
-      return done;
+      return executed;
     },
 
     runEntry: (runId, signal) => work(runId, askModel, signal),
@@ -789,13 +843,12 @@ export function createDeviceSyncFollowUp(dependencies: {
       // to do (2026-10-22): a page with stale lists closed a new import's
       // follow-up the moment it appeared.
       if (options.settled) {
+        // Every item, the noted ones too (2026-10-22): a note left to do
+        // keeps it open.
         const listed = await listedNow();
-        const advice = (run.result?.advice ?? []) as FollowUpAdvice[];
         if (
-          advice.some(
-            (entry) =>
-              (entry.steps?.length ?? 0) > 0 &&
-              listed.has(`${entry.subject}|${entry.kind}`),
+          ((run.result?.items ?? []) as FollowUpItem[]).some((item) =>
+            listed.has(`${item.subject}|${item.kind}`),
           )
         )
           throw new BusinessRuleError(
@@ -1015,6 +1068,13 @@ export function createDeviceSyncFollowUp(dependencies: {
   ): Promise<FollowUpResult> => {
     const items = [...refs.values()];
     const notes: string[] = [];
+    // Each note's item, by subject and kind (2026-10-22): a label names
+    // two differences of one device, or two records of one name, alike.
+    const noteItems: string[] = [];
+    const addNote = (item: FollowUpItem, text: string) => {
+      notes.push(text);
+      noteItems.push(`${item.subject}|${item.kind}`);
+    };
     type Step = {
       op: string;
       ref?: string;
@@ -1051,7 +1111,8 @@ export function createDeviceSyncFollowUp(dependencies: {
       // which the card shows muted (2026-10-22): one line in brackets and
       // after a colon read as too much.
       const note = (zhText: string, enText: string) =>
-        notes.push(
+        addNote(
+          item,
           words(`${item.label}：${zhText}`, `${item.label}: ${enText}`) +
             (why ? `\n${why}` : ''),
         );
@@ -1237,12 +1298,25 @@ export function createDeviceSyncFollowUp(dependencies: {
     }
     for (const item of items)
       if (!decided.has(item.key))
-        notes.push(
+        addNote(
+          item,
           words(
             `${item.label}：资产管家没有给出处理，请在下面的列表查看`,
             `${item.label}: no suggestion; see the list below`,
           ),
         );
+    // A plan holds 30 steps; the items past them are noted (2026-10-22),
+    // not dropped from the card.
+    for (const item of new Map(
+      steps.slice(30).map((entry) => [entry.item.key, entry.item]),
+    ).values())
+      addNote(
+        item,
+        words(
+          `${item.label}：这次的方案步骤太多，没有放进去，请在下面的列表处理`,
+          `${item.label}: left out of a plan already full; settle it in the list below`,
+        ),
+      );
     steps = steps.slice(0, 30);
     let planId: string | null = null;
     // A step the person may not take, or that no longer applies, is
@@ -1281,7 +1355,8 @@ export function createDeviceSyncFollowUp(dependencies: {
         if (!Number.isInteger(at) || at < 1 || at > steps.length) throw error;
         const dropped = steps[at - 1].item;
         steps = steps.filter((entry) => entry.item.key !== dropped.key);
-        notes.push(
+        addNote(
+          dropped,
           words(
             `${dropped.label}：建议的操作现在做不了，请在下面的列表查看`,
             `${dropped.label}: the suggested step cannot be taken now; see the list below`,
@@ -1304,6 +1379,7 @@ export function createDeviceSyncFollowUp(dependencies: {
       items,
       planId,
       notes: notes.slice(0, 60),
+      noteItems: noteItems.slice(0, 60),
       advice: advised.map((entry) => {
         const positions = positionsOf(entry.subject, entry.kind);
         return { ...entry, planned: positions.length > 0, steps: positions };

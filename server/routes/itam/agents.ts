@@ -259,9 +259,20 @@ export const agentRoutes: AppApiRouteContribution<Application> =
           const left = await container
             .resolve(deviceSyncFollowUpToken)
             .leftToDo(me);
+          // Every one the count counts, even past the handled list's
+          // window or length.
+          const known = new Set(inbox.handled.map((run) => run.id));
+          const fetched = (
+            await Promise.all(
+              [...left.keys()]
+                .filter((id) => !known.has(id))
+                .map((id) => runs().get(id)),
+            )
+          ).filter((run): run is AgentRun => run !== undefined);
           const open = [
             ...inbox.open,
             ...inbox.handled.filter((run) => left.has(run.id)),
+            ...fetched,
           ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
           const handled = inbox.handled.filter((run) => !left.has(run.id));
           const titles = await subjectsOf([...open, ...handled]);
@@ -449,7 +460,7 @@ export const agentRoutes: AppApiRouteContribution<Application> =
         summary: 'Set a run aside',
         operationId: 'itamDismissAgentRun',
         description:
-          "Its decider sets a review or a suggestion aside: a request still waits on them; MDM 跟进's plan is withdrawn and its differences are not raised again.",
+          "Its decider sets a review or a suggestion aside: a request still waits on them; MDM 跟进's plan is withdrawn, and what it was about comes back with the next follow-up while MDM 核对 still lists it.",
       }),
       async (context) => {
         try {
