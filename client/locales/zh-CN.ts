@@ -1963,7 +1963,7 @@ const zhCN: AppResource = {
       awaitingReceipt: '待到货入库',
       pendingDisposalExecution: '待执行报废',
       activeRepairs: '维修中',
-      activeAudits: '进行中的盘点',
+      activeAudits: '盘点中',
       loansDueToday: '借出逾期',
       // MDM 核对 (2026-10-15): the differences as cards, and a count for
       // each of the other two tabs.
