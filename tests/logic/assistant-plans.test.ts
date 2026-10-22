@@ -247,6 +247,11 @@ describe('the assistant’s commands and plans', () => {
   });
 
   it('lets a later step name the record an earlier one creates', async () => {
+    const floor = await create('master/locations', {
+      name: '3F',
+      type: 'floor',
+      parentId: locationId,
+    });
     const proposed = await data<{
       id: string;
       revision: number;
@@ -264,7 +269,7 @@ describe('the assistant’s commands and plans', () => {
               collection: 'devices',
               input: {
                 modelId,
-                locationId,
+                locationId: floor.id,
                 ownership: 'owned',
                 serialNo: 'SN-NEW',
               },
@@ -287,6 +292,8 @@ describe('the assistant’s commands and plans', () => {
         expect.objectContaining({ field: 'serialNo', value: 'SN-NEW' }),
         expect.objectContaining({ field: 'modelId', name: expect.any(String) }),
         expect.objectContaining({ field: 'ownership', value: 'owned' }),
+        // By its whole path (2026-10-22).
+        expect.objectContaining({ field: 'locationId', name: 'HQ › 3F' }),
       ]),
     );
     const done = await data<{

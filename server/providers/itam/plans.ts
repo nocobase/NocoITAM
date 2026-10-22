@@ -242,6 +242,46 @@ export function createPlanService(container: ServiceContainer): PlanService {
     return checks;
   }
 
+  /** Each location's whole path by name, joined by ›. */
+  async function locationPaths(
+    ids: readonly string[],
+  ): Promise<Map<string, string>> {
+    const paths = new Map<string, string>();
+    if (!ids.length) return paths;
+    const rows = await query()
+      .selectFrom('locations')
+      .select(['id', 'path'])
+      .where('id', 'in', [...new Set(ids)])
+      .execute<{ id: unknown; path: unknown }>();
+    const parts = new Map(
+      rows.map((row) => [
+        String(row.id),
+        (typeof row.path === 'string' && row.path
+          ? row.path
+          : `/${String(row.id)}/`
+        )
+          .split('/')
+          .filter(Boolean),
+      ]),
+    );
+    const all = [...new Set([...parts.values()].flat())];
+    const names = new Map(
+      (
+        await query()
+          .selectFrom('locations')
+          .select(['id', 'name'])
+          .where('id', 'in', all.length ? all : ['__none__'])
+          .execute<{ id: unknown; name: unknown }>()
+      ).map((row) => [
+        String(row.id),
+        typeof row.name === 'string' ? row.name : '',
+      ]),
+    );
+    for (const [id, chain] of parts)
+      paths.set(id, chain.map((part) => names.get(part) ?? part).join(' › '));
+    return paths;
+  }
+
   /** The step's parameters, each id with the name it stands for. */
   async function checkOf(actorId: string, params: Row): Promise<StepCheck> {
     const scope = scopeFor(container, actorId);
@@ -295,14 +335,25 @@ export function createPlanService(container: ServiceContainer): PlanService {
       readable: async (collection) =>
         collection === 'user' || Boolean(await scope.may(collection, 'read')),
     }).catch(() => undefined);
+    // A location by its whole path, 上海总部 › 3 楼, as the pickers and the
+    // step's title name it (2026-10-22).
+    const places = await locationPaths(
+      lookups.flatMap((row) =>
+        typeof row.locationId === 'string' ? [row.locationId] : [],
+      ),
+    ).catch(() => new Map<string, string>());
     const fieldsOf = (row: Row): StepField[] => {
       const lookup = lookupOf(row);
       return Object.entries(row).map(([field, value]) => {
         const key = field === 'targetId' ? 'assigneeId' : field;
         const name =
-          names && referenceOf(lookup, key)
-            ? nameOf(names, lookup, key)
-            : undefined;
+          field === 'locationId' &&
+          typeof value === 'string' &&
+          places.has(value)
+            ? places.get(value)
+            : names && referenceOf(lookup, key)
+              ? nameOf(names, lookup, key)
+              : undefined;
         const entries = entriesOf(value);
         return {
           field,
