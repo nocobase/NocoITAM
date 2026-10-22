@@ -638,9 +638,19 @@ function OthersFollowUps({
                   })}
               {decidedTag(row, t) ? (
                 <DecidedTag
-                  label={decidedTag(row, t) ?? ''}
+                  label={
+                    // Carried out, and the rest settled by hand since.
+                    row.status === 'accepted' && row.allHandled
+                      ? t('deviceSyncRun.allHandledBelow')
+                      : (decidedTag(row, t) ?? '')
+                  }
                   at={row.decidedAt ?? row.createdAt}
                 />
+              ) : row.allHandled ? (
+                // Still waiting on its person, though nothing is left.
+                <Badge variant='secondary' className='font-normal'>
+                  {t('deviceSyncRun.allHandledBelow')}
+                </Badge>
               ) : null}
             </h3>
             {row.status === 'running' ? (
@@ -668,7 +678,22 @@ function OthersFollowUps({
                     </h4>
                     <ul className='list-disc space-y-0.5 pl-5'>
                       {row.steps.map((step, at) => (
-                        <li key={`${String(at)}-${step}`}>{step}</li>
+                        <li
+                          key={`${String(at)}-${step.title}`}
+                          className={
+                            step.handled ? 'text-muted-foreground' : undefined
+                          }
+                        >
+                          {step.title}
+                          {step.handled ? (
+                            <Badge
+                              variant='secondary'
+                              className='ml-2 align-[1px]'
+                            >
+                              {t('deviceSyncRun.stepHandledBelow')}
+                            </Badge>
+                          ) : null}
+                        </li>
                       ))}
                     </ul>
                   </section>
@@ -679,8 +704,16 @@ function OthersFollowUps({
                       {t('deviceSyncRun.notes')}
                     </h4>
                     <ul className='list-disc space-y-1.5 pl-5'>
-                      {row.notes.map((note) => (
-                        <FollowUpNote key={note} note={note} />
+                      {row.notes.map((note, at) => (
+                        <FollowUpNote
+                          key={note}
+                          note={note}
+                          handled={
+                            row.handledNotes.includes(at)
+                              ? t('deviceSyncRun.stepHandledBelow')
+                              : undefined
+                          }
+                        />
                       ))}
                     </ul>
                   </section>

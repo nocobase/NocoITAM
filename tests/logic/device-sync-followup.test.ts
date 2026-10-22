@@ -578,11 +578,29 @@ describe('MDM follow-up', () => {
     // Mia's devices, with what the plan would do; not Ann's own.
     expect(anns.data).toHaveLength(1);
     expect(anns.data[0]).toMatchObject({ deciderId: 'mia', status: 'pending' });
-    expect((anns.data[0]!.steps as string[]).length).toBe(1);
+    type Step = { title: string; handled: boolean };
+    expect((anns.data[0]!.steps as Step[]).length).toBe(1);
     // The reason in brackets, without its full stop (2026-10-22).
-    expect((anns.data[0]!.steps as string[])[0]).toMatch(
+    expect((anns.data[0]!.steps as Step[])[0]!.title).toMatch(
       /[(（]Wang Wu uses it[)）]/,
     );
+    // Nothing settled yet (2026-10-22).
+    expect((anns.data[0]!.steps as Step[])[0]!.handled).toBe(false);
+    expect(anns.data[0]).toMatchObject({ handledNotes: [], allHandled: false });
+    // Settled on its row, the step reads so for the others too.
+    const mismatch = (
+      await app.container.resolve(deviceReviewServiceToken).checks()
+    ).find((check) => check.kind === 'userMismatch')!;
+    await app.container
+      .resolve(deviceReviewServiceToken)
+      .dismiss(mismatch.deviceId, 'userMismatch', 'ann');
+    const settledSince = (await (
+      await read({ user: 'ann', role: 'manager' })
+    ).json()) as { data: { steps: Step[] }[] };
+    expect(settledSince.data[0]!.steps[0]!.handled).toBe(true);
+    await app.container
+      .resolve(deviceReviewServiceToken)
+      .undismiss(mismatch.deviceId, 'userMismatch', 'ann');
     // Set aside, it stays to read while its items are listed (2026-10-22),
     // with what it would have done.
     await followUp().dismiss(String(anns.data[0]!.id), 'mia');
@@ -595,7 +613,7 @@ describe('MDM follow-up', () => {
       status: 'dismissed',
     });
     expect(after.data[0]!.decidedAt).toBeTruthy();
-    expect((after.data[0]!.steps as string[]).length).toBe(1);
+    expect((after.data[0]!.steps as Step[]).length).toBe(1);
     // Mia holds no asset manager set.
     expect(
       ((await (await read(mia)).json()) as { data: unknown[] }).data,

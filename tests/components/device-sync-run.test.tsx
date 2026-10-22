@@ -209,6 +209,8 @@ it('lists the reader’s open follow-ups under 等你决定, and nothing else', 
       summary: '',
       notes: [],
       steps: [],
+      handledNotes: [],
+      allHandled: false,
     },
   ];
   const { unmount } = render(
@@ -292,8 +294,14 @@ it('lists the other owners’ follow-ups to read, with nothing to act on', () =>
       createdAt: '2026-10-17T08:00:00.000Z',
       items: [{ key: 'k', kind: 'stale', subject: 'd', label: 'DE-1' }],
       summary: '1 difference',
-      notes: ['DE-1: ask its user\nNo sync for 40 days'],
-      steps: ['Transfer DE-2 to Liu Yang'],
+      notes: ['DE-1: ask its user\nNo sync for 40 days', 'DE-3: look'],
+      steps: [
+        { title: 'Transfer DE-2 to Liu Yang', handled: false },
+        { title: 'Ignore DE-4', handled: true },
+      ],
+      // DE-3 settled on its row since (2026-10-22).
+      handledNotes: [1],
+      allHandled: false,
     },
   ];
   render(
@@ -306,6 +314,10 @@ it('lists the other owners’ follow-ups to read, with nothing to act on', () =>
   );
   expect(screen.getByText('deviceSyncRun.otherDevices')).toBeInTheDocument();
   expect(screen.getByText('Transfer DE-2 to Liu Yang')).toBeInTheDocument();
+  // Settled on its row since: muted, tagged (2026-10-22).
+  expect(screen.getByText('Ignore DE-4')).toHaveClass('text-muted-foreground');
+  expect(screen.getByText('DE-3: look')).toHaveClass('text-muted-foreground');
+  expect(screen.getAllByText('deviceSyncRun.stepHandledBelow')).toHaveLength(2);
   expect(screen.getByText('DE-1: ask its user')).toBeInTheDocument();
   expect(screen.queryByText('1 difference')).not.toBeInTheDocument();
   // The reason sits beneath, on its own line.

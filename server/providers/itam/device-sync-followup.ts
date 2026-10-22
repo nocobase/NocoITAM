@@ -226,8 +226,18 @@ export interface OtherFollowUp {
   readonly items: readonly FollowUpItem[];
   readonly summary: string;
   readonly notes: readonly string[];
-  /** What its plan would do, while the plan waits. */
-  readonly steps: readonly string[];
+  /**
+   * What its plan would do, while the plan waits; each settled on its row
+   * since or not (2026-10-22).
+   */
+  readonly steps: readonly {
+    readonly title: string;
+    readonly handled: boolean;
+  }[];
+  /** The notes whose item MDM 核对 no longer lists, by place. */
+  readonly handledNotes: readonly number[];
+  /** Every item it was about is off the lists. */
+  readonly allHandled: boolean;
 }
 
 export interface DeviceSyncFollowUp {
@@ -572,9 +582,8 @@ export function createDeviceSyncFollowUp(dependencies: {
       );
       const decided = (run: AgentRun) =>
         run.status === 'dismissed' || run.status === 'accepted';
-      const listed = shown.some(decided)
-        ? await listedNow()
-        : new Set<string>();
+      // What MDM 核对 lists now, which also says what is settled since.
+      const listed = shown.length ? await listedNow() : new Set<string>();
       const open = shown.filter(
         (run) =>
           !decided(run) ||
@@ -599,11 +608,18 @@ export function createDeviceSyncFollowUp(dependencies: {
             ? await database()
                 .query()
                 .selectFrom('itamPlanSteps')
-                .select(['params'])
+                .select(['params', 'position'])
                 .where('planId', '=', planId)
                 .orderBy('position', 'asc')
-                .execute<{ params: unknown }>()
+                .execute<{ params: unknown; position: unknown }>()
             : [];
+        // Settled on its row since (2026-10-22): what its steps and notes
+        // were about is off the lists, as the person's own card shows it.
+        const items = (run.result?.items ?? []) as FollowUpItem[];
+        const gone = (item: { subject: string; kind: string }) =>
+          !listed.has(`${item.subject}|${item.kind}`);
+        const advice = (run.result?.advice ?? []) as FollowUpAdvice[];
+        const notes = (run.result?.notes ?? []) as string[];
         result.push({
           id: run.id,
           deciderId: String(run.deciderId),
@@ -612,9 +628,18 @@ export function createDeviceSyncFollowUp(dependencies: {
           createdAt: run.createdAt,
           decidedAt: run.decidedAt,
           decision: run.decision,
-          items: (run.result?.items ?? []) as FollowUpItem[],
+          items,
           summary: asText(run.result?.summary) ?? '',
-          notes: (run.result?.notes ?? []) as string[],
+          notes,
+          handledNotes: notes.flatMap((note, index) => {
+            const item = items.find(
+              (entry) =>
+                note.startsWith(`${entry.label}：`) ||
+                note.startsWith(`${entry.label}:`),
+            );
+            return item && gone(item) ? [index] : [];
+          }),
+          allHandled: items.length > 0 && items.every(gone),
           steps: steps.flatMap((step) => {
             const params = (
               typeof step.params === 'string'
@@ -622,7 +647,13 @@ export function createDeviceSyncFollowUp(dependencies: {
                 : step.params
             ) as { title?: unknown } | null;
             const title = asText(params?.title);
-            return title ? [title] : [];
+            const position = Number(step.position);
+            const about = advice.find((entry) =>
+              entry.steps?.includes(position),
+            );
+            return title
+              ? [{ title, handled: about !== undefined && gone(about) }]
+              : [];
           }),
         });
       }

@@ -150,8 +150,18 @@ export interface OtherFollowUp {
   readonly items: DeviceSyncResult['items'];
   readonly summary: string;
   readonly notes: readonly string[];
-  /** What its plan would do, while the plan waits. */
-  readonly steps: readonly string[];
+  /**
+   * What its plan would do, while the plan waits; each settled on its row
+   * since or not (2026-10-22).
+   */
+  readonly steps: readonly {
+    readonly title: string;
+    readonly handled: boolean;
+  }[];
+  /** The notes whose item MDM 核对 no longer lists, by place. */
+  readonly handledNotes: readonly number[];
+  /** Every item it was about is off the lists. */
+  readonly allHandled: boolean;
 }
 
 export interface RunCounts {
