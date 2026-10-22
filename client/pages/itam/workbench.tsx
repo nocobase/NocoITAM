@@ -730,12 +730,19 @@ function LeaverCard({
     progress && progress.total > 0 ? progress.done / progress.total : 0;
   // Negative while the first day is ahead.
   const since = daysOverdue(record.date);
-  const countdown =
-    since < 0
+  const countdown = joining
+    ? since < 0
       ? t('workbench.work.joinsIn', { count: -since })
       : since === 0
         ? t('workbench.work.joinsToday')
-        : t('workbench.work.joinedAgo', { count: since });
+        : t('workbench.work.joinedAgo', { count: since })
+    : // How long a leaver has been gone (2026-10-22): what has not come
+      // back gets later by the day.
+      since > 0
+      ? t('workbench.work.leftAgo', { count: since })
+      : since === 0
+        ? t('workbench.work.leavesToday')
+        : t('workbench.work.leavesIn', { count: -since });
   return (
     <button
       type='button'
@@ -804,12 +811,11 @@ function LeaverCard({
                 )}
               </span>
               {/* A joiner's column runs from next week to months out, so
-                  each card says how far off the first day is. */}
-              {joining ? (
-                <span className='font-medium whitespace-nowrap text-foreground'>
-                  {countdown}
-                </span>
-              ) : null}
+                  each card says how far off the first day is; a leaver's,
+                  how long ago the last one was. */}
+              <span className='font-medium whitespace-nowrap text-foreground'>
+                {countdown}
+              </span>
             </p>
           ) : null}
         </div>
