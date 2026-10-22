@@ -16,6 +16,7 @@ const state = vi.hoisted(() => ({
   dismiss: vi.fn(),
   settle: vi.fn(),
   decide: vi.fn(),
+  ask: vi.fn(),
   plan: null as unknown,
   inbox: { open: [] as unknown[], handled: [] as unknown[] },
   others: [] as unknown[],
@@ -51,6 +52,7 @@ vi.mock('../../client/lib/itam/agents.js', () => ({
     error: null,
   }),
   useSettleFollowUp: () => ({ mutate: state.settle, isPending: false }),
+  useAskFollowUp: () => ({ mutate: state.ask, isPending: false }),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({ useApi: () => ({}) }));
 vi.mock('../../client/lib/itam/device-sync.js', () => ({
@@ -410,6 +412,10 @@ it('shows the reader’s waiting follow-ups as a card each', () => {
   expect(
     screen.getAllByRole('button', { name: 'review.dismiss' }),
   ).toHaveLength(2);
+  // Each worked out again alone (2026-10-22).
+  const again = screen.getAllByRole('button', { name: 'deviceSyncRun.rerun' });
+  fireEvent.click(again[1]!);
+  expect(state.ask).toHaveBeenCalledWith('shared');
 });
 
 // Decided here, a card stays folded until a newer follow-up of the same

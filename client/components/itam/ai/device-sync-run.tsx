@@ -18,6 +18,7 @@ import {
   CollapsibleTrigger,
 } from '#components/ui/collapsible';
 import {
+  useAskFollowUp,
   useDismissReview,
   useInbox,
   useSettleFollowUp,
@@ -35,6 +36,7 @@ import { useDeviceReview } from '@/lib/itam/device-sync';
 import { relativeTime } from '@/lib/itam/format';
 import { PLANS_PATH, type Plan } from '@/lib/itam/plans';
 
+import { AiShortcut } from './ai-shortcut.js';
 import { PlanCard, PlanDecision } from './plan-card.js';
 
 /**
@@ -210,6 +212,7 @@ function FollowUpReviewCard({
   // (2026-10-21), once — a failure leaves 拒绝 to the reader.
   const settle = useSettleFollowUp();
   const settleOnce = settle.mutate;
+  const ask = useAskFollowUp();
   const waiting = run.status === 'pending';
   useEffect(() => {
     if (allHandled && waiting) settleOnce(run);
@@ -267,7 +270,17 @@ function FollowUpReviewCard({
             </span>
           ) : null}
         </CollapsibleTrigger>
-        <div className='ml-auto flex items-center gap-2'>
+        <div className='ml-auto flex items-center gap-3'>
+          {/* This part alone, worked out again (2026-10-22): the page's
+              header button does both. */}
+          <AiShortcut
+            disabled={ask.isPending}
+            onClick={() =>
+              ask.mutate(run.subjectId.startsWith('shared:') ? 'shared' : 'own')
+            }
+          >
+            {t('deviceSyncRun.rerun')}
+          </AiShortcut>
           {/* Every step settled on its row: it is closing by itself. */}
           {pendingPlan && allHandled ? null : pendingPlan ? (
             <PlanDecision plan={pendingPlan} skipped={leftOut} />

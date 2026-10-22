@@ -3820,6 +3820,7 @@ const messages = {
     handledBelow_one: '{{count}} settled',
     handledBelow_other: '{{count}} settled',
     allHandledBelow: 'All settled',
+    rerun: 'Run again',
     accepted: 'Carried out',
     notesWaiting_one: '{{count}} to look at',
     notesWaiting_other: '{{count}} to look at',

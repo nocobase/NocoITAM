@@ -195,7 +195,7 @@ export interface DeviceSyncFollowUp {
    * manager (2026-10-22), being theirs together. Answers the reader's
    * runs. Asked by hand, it is never switched off.
    */
-  ask(by: string): Promise<readonly AgentRun[]>;
+  ask(by: string, part?: 'own' | 'shared'): Promise<readonly AgentRun[]>;
   /**
    * For a holder of the asset manager set (2026-10-17): the suggestions
    * still open on the devices other people answer for, to read on MDM 核对
@@ -491,17 +491,17 @@ export function createDeviceSyncFollowUp(dependencies: {
       return started;
     },
 
-    async ask(by) {
+    async ask(by, part) {
       if (!(await review().active())) return [];
       const { byOwner, shared } = await pending();
       const started: AgentRun[] = [];
-      if (byOwner.get(by)?.length)
+      if (part !== 'shared' && byOwner.get(by)?.length)
         started.push(await begin('asked', by, `owner:${by}`, by));
       // The shared part is every asset manager's (2026-10-22): asked by one,
       // it is worked out again for them all, as after a pull, so nobody
       // keeps a copy the asker's replaced or one closed with no successor.
       const managers = await assetManagers();
-      if (shared.length && managers.includes(by))
+      if (part !== 'own' && shared.length && managers.includes(by))
         for (const manager of managers) {
           const run = await begin('asked', by, `shared:${manager}`, manager);
           if (manager === by) started.push(run);

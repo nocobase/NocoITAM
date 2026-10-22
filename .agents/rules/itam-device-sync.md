@@ -243,7 +243,8 @@ product or in release notes, until it is listed here.
   跟进 and the shared one are separate cards on MDM 核对, each with its own
   拒绝 / 确认执行, separate entries in 收件箱 and counted apart; they were
   one card for a day (2026-10-21) and read worse. While one is worked out
-  again, the others' follow-ups are hidden.
+  again, the others' follow-ups are hidden. Each card has its own 重新运行
+  (`ask(by, part)`, `part` `own` or `shared`); the page header's does both.
 - **已处理 and the record drawer** (2026-10-22): 只在 MDM's linked section
   (`linkedByHand`, view `linked`) is 已处理: records linked by hand and,
   for 30 days, those registered — linked by serial to a device made after

@@ -456,6 +456,10 @@ describe('MDM follow-up', () => {
       }
     ).data;
     expect(anns.map((run) => run.subjectId)).toEqual(['shared:ann']);
+    // One part alone (2026-10-22): asking for her own devices only.
+    expect(
+      (await followUp().ask('ann', 'own')).map((run) => run.subjectId),
+    ).toEqual([]);
     expect(await latest('shared:zoe')).toMatchObject({
       trigger: 'asked',
       startedById: 'ann',

@@ -337,16 +337,18 @@ export function useOtherFollowUps(): UseQueryResult<readonly OtherFollowUp[]> {
 export function useAskFollowUp(): UseMutationResult<
   readonly AgentRun[],
   Error,
-  void
+  /** One part alone (2026-10-22): the reader's devices' or the shared one. */
+  'own' | 'shared' | void
 > {
   const api = useApi();
   const refresh = useRefreshRuns();
   return useMutation({
-    mutationFn: async () =>
+    mutationFn: async (part) =>
       (
         await api.request<{ data: readonly AgentRun[] }>({
           path: 'itam/device-sync/followUp',
           method: 'POST',
+          json: part ? { part } : {},
         })
       ).data,
     onSuccess: refresh,

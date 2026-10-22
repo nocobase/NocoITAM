@@ -264,8 +264,15 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
     routes.post('/followUp', async (context) => {
       try {
         await decideFor(context, 'devices', 'read');
+        // One part alone (2026-10-22): the reader's devices' (`own`) or the
+        // asset managers' (`shared`); both when none is named.
+        const body: unknown = await context.req.json().catch(() => ({}));
+        const { part } = z
+          .object({ part: z.enum(['own', 'shared']).optional() })
+          .strict()
+          .parse(body ?? {});
         return context.json({
-          data: await followUp.ask(principalId(context)),
+          data: await followUp.ask(principalId(context), part),
         });
       } catch (error) {
         return errorResponse(context, error);
