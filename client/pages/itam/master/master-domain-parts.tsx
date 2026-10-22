@@ -34,7 +34,10 @@ import {
   isMasterCaptureCollection,
   type MasterCaptureCollection,
 } from '@/lib/itam/master-capture';
-import type { MasterDataCollection } from '@/lib/itam/master-data';
+import {
+  CATEGORY_APPLIES_TO,
+  type MasterDataCollection,
+} from '@/lib/itam/master-data';
 import { useCollectionPermissions } from '@/lib/itam/permissions';
 import { STOCK_PATH } from '@/lib/itam/stock';
 
@@ -124,7 +127,18 @@ function TreePanes({
   // Nothing chosen opens the first place at the top of the tree
   // (2026-10-21; an empty pane asking for a click until then), as does the
   // one left after the open record is deleted.
-  const first = nodes?.find((node) => !node.parentId) ?? nodes?.[0];
+  // The first as the tree draws it (2026-10-22): categories by asset type
+  // first, so not 摄像头 (配件, sorted 0) ahead of 终端设备.
+  const typeRank = (node: ItamRecord) =>
+    collection.name === 'categories'
+      ? CATEGORY_APPLIES_TO.indexOf(
+          text(node.appliesTo) as (typeof CATEGORY_APPLIES_TO)[number],
+        )
+      : 0;
+  const first =
+    nodes
+      ?.filter((node) => !node.parentId)
+      .sort((a, b) => typeRank(a) - typeRank(b))[0] ?? nodes?.[0];
   useEffect(() => {
     if (gone) select(undefined);
     else if (!selected && first) select(String(first.id));
