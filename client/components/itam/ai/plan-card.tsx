@@ -110,6 +110,7 @@ export function PlanCard({
   onSkippedChange,
   settled = NONE,
   settledLabel,
+  tickable = NONE,
 }: {
   readonly plan: Plan;
   /**
@@ -126,6 +127,11 @@ export function PlanCard({
    */
   readonly settled?: ReadonlySet<number>;
   readonly settledLabel?: string;
+  /**
+   * Steps of a plan carried out that left them out, to tick again as at
+   * first (MDM 核对's follow-up, 2026-10-22); carried out from outside.
+   */
+  readonly tickable?: ReadonlySet<number>;
 }): ReactElement {
   const { t } = useTranslation();
   const [own, setOwn] = useState<ReadonlySet<number>>(() => new Set());
@@ -181,7 +187,7 @@ export function PlanCard({
       <ol className={bare ? 'space-y-2' : 'mt-3 space-y-2'}>
         {steps.map((step) => (
           <li key={step.id} className='flex items-start gap-2'>
-            {pending && steps.length > 1 ? (
+            {(pending && steps.length > 1) || tickable.has(step.position) ? (
               <Checkbox
                 className='mt-0.5'
                 checked={
@@ -208,7 +214,9 @@ export function PlanCard({
                     (pending &&
                       (skipped.has(step.position) ||
                         settled.has(step.position))) ||
-                    step.status === 'removed'
+                    (step.status === 'removed' &&
+                      (!tickable.has(step.position) ||
+                        skipped.has(step.position)))
                       ? 'text-muted-foreground'
                       : undefined
                   }
@@ -216,7 +224,10 @@ export function PlanCard({
                   {step.check?.title || t(`ai.plans.ops.${step.op}`)}
                 </span>
                 {/* At the end of the line, not struck through. */}
-                {pending && settled.has(step.position) && settledLabel ? (
+                {/* Not run then and settled since: 已处理 (2026-10-22). */}
+                {(pending || step.status === 'removed') &&
+                settled.has(step.position) &&
+                settledLabel ? (
                   <Badge variant='secondary' className='ml-2 align-text-bottom'>
                     {settledLabel}
                   </Badge>
@@ -247,10 +258,11 @@ export function PlanCard({
           {toggleParams}
           <PlanDecision plan={plan} skipped={skipped} />
         </div>
-      ) : plan.decidedAt || toggleParams ? (
+      ) : (plan.decidedAt && !bare) || toggleParams ? (
         <div className='mt-2 flex items-center justify-end gap-2 text-xs text-muted-foreground'>
           {toggleParams}
-          {plan.decidedAt ? formatDate(plan.decidedAt, true) : null}
+          {/* Bare, the card's tag says when (2026-10-22). */}
+          {plan.decidedAt && !bare ? formatDate(plan.decidedAt, true) : null}
         </div>
       ) : null}
     </div>

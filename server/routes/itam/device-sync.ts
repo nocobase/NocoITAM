@@ -286,6 +286,28 @@ export const deviceSyncRoutes: AppApiRouteContribution<Application> =
       }
     });
 
+    // Steps a follow-up carried out left out, ticked on its card afterwards
+    // and carried out now (2026-10-22). Its person alone.
+    routes.post('/followUps/:id/resume', async (context) => {
+      try {
+        await decideFor(context, 'devices', 'read');
+        const body: unknown = await context.req.json().catch(() => ({}));
+        const { steps } = z
+          .object({ steps: z.array(z.number().int().min(1)).min(1).max(30) })
+          .strict()
+          .parse(body ?? {});
+        return context.json({
+          data: await followUp.resume(
+            context.req.param('id'),
+            principalId(context),
+            steps,
+          ),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
     // The other people's MDM 跟进 on MDM 核对, for an asset manager to read
     // (2026-10-17); an empty list for anybody else.
     routes.get('/followUps', async (context) => {

@@ -20,6 +20,7 @@ import {
 } from '#components/ui/collapsible';
 import {
   useAskFollowUp,
+  useResumeFollowUp,
   useDismissReview,
   useInbox,
   useSettleFollowUp,
@@ -218,6 +219,7 @@ function FollowUpReviewCard({
   const settle = useSettleFollowUp();
   const settleOnce = settle.mutate;
   const ask = useAskFollowUp();
+  const resume = useResumeFollowUp();
   const waiting = run.status === 'pending';
   useEffect(() => {
     if (allHandled && waiting) settleOnce(run);
@@ -246,6 +248,24 @@ function FollowUpReviewCard({
   // what is left to do by hand.
   const notesLeft =
     run.status === 'accepted' && notes.length > 0 && stillListed(run, listed);
+  // Steps a carried-out plan left out, on items still listed: ticked again
+  // on the card as at first, and carried out (2026-10-22).
+  const retry = new Set(
+    run.status === 'accepted' && plan.data?.status === 'executed' && listed
+      ? plan.data.steps
+          .filter(
+            (step) =>
+              step.status === 'removed' &&
+              (run.result?.advice ?? []).some(
+                (entry) =>
+                  entry.steps?.includes(step.position) &&
+                  listed.keys.has(`${entry.subject}|${entry.kind}`),
+              ),
+          )
+          .map((step) => step.position)
+      : [],
+  );
+  const retryTicked = [...retry].filter((position) => !skipped.has(position));
   return (
     <Collapsible
       // Open while it waits, as asked (2026-10-21); folded once decided,
@@ -284,6 +304,14 @@ function FollowUpReviewCard({
           >
             {t('deviceSyncRun.rerun')}
           </AiShortcut>
+          {retry.size ? (
+            <Button
+              disabled={resume.isPending || retryTicked.length === 0}
+              onClick={() => resume.mutate({ id: run.id, steps: retryTicked })}
+            >
+              {t('ai.plans.execute', { count: retryTicked.length })}
+            </Button>
+          ) : null}
           {/* Every step settled on its row: it is closing by itself. */}
           {pendingPlan && allHandled ? null : pendingPlan ? (
             <PlanDecision
@@ -311,6 +339,7 @@ function FollowUpReviewCard({
             onSkippedChange={setSkipped}
             settled={handled}
             settledLabel={t('deviceSyncRun.stepHandledBelow')}
+            tickable={retry}
           />
         ) : null}
         {notes.length ? (
@@ -326,9 +355,9 @@ function FollowUpReviewCard({
           </section>
         ) : null}
       </CollapsibleContent>
-      {dismiss.error ? (
+      {(dismiss.error ?? resume.error) ? (
         <p className='px-4 pb-3 text-sm text-destructive'>
-          {dismiss.error.message}
+          {(dismiss.error ?? resume.error)?.message}
         </p>
       ) : null}
     </Collapsible>

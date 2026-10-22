@@ -20,7 +20,12 @@ import { z } from 'zod';
 import { asText, type Row } from './collection-query.js';
 import { deviceReviewServiceToken } from './device-review.js';
 import { BusinessRuleError, RecordNotFoundError } from './errors.js';
-import { PlanError, planServiceToken, type PlanOutcome } from './plans.js';
+import {
+  PlanError,
+  planServiceToken,
+  type PlanOutcome,
+  type PlanView,
+} from './plans.js';
 import { shapeOf } from './ai-model.js';
 import { settingsServiceToken } from './settings.js';
 
@@ -267,6 +272,16 @@ export interface DeviceSyncFollowUp {
    * MDM 核对 still lists. 收件箱 keeps them waiting, and counts them.
    */
   leftToDo(reader: string): Promise<ReadonlyMap<string, number>>;
+  /**
+   * Steps a plan carried out left out, ticked on its card afterwards and
+   * carried out now (2026-10-22): those whose items are still listed, as a
+   * plan of their own on the same follow-up.
+   */
+  resume(
+    runId: string,
+    actorId: string,
+    positions: readonly number[],
+  ): Promise<PlanView>;
   runEntry(runId: string, signal?: AbortSignal): Promise<void>;
   /** A plan decided on its card: the run that proposed it goes with it. */
   planDecided(outcome: PlanOutcome): Promise<void>;
@@ -635,6 +650,64 @@ export function createDeviceSyncFollowUp(dependencies: {
         if (count) left.set(run.id, count);
       }
       return left;
+    },
+
+    async resume(runId, actorId, positions) {
+      const run = await runs().get(runId);
+      if (!run || run.agent !== AGENT)
+        throw new RecordNotFoundError('itamAgentRuns', runId);
+      if (run.deciderId !== actorId)
+        throw new BusinessRuleError(
+          'Only the person it was made for decides on it',
+          'NOT_DECIDER',
+        );
+      const latest = await runs().latest(AGENT, SUBJECT, run.subjectId);
+      const planId = asText(run.result?.planId);
+      if (run.status !== 'accepted' || latest?.id !== run.id || !planId)
+        throw new BusinessRuleError(
+          'The suggestion is no longer waiting',
+          'SUGGESTION_DECIDED',
+        );
+      const plans = container.resolve(planServiceToken);
+      const plan = await plans.get(actorId, planId);
+      const listed = await listedNow();
+      // Left out, on an item still listed, standing alone, and ticked.
+      const open = new Set(
+        ((run.result?.advice ?? []) as FollowUpAdvice[])
+          .filter((entry) => listed.has(`${entry.subject}|${entry.kind}`))
+          .flatMap((entry) => entry.steps ?? []),
+      );
+      const ticked = new Set(positions);
+      const steps = plan.steps.filter(
+        (step) =>
+          step.status === 'removed' &&
+          !step.ref &&
+          open.has(step.position) &&
+          ticked.has(step.position),
+      );
+      if (!steps.length)
+        throw new BusinessRuleError(
+          'Nothing it left out is still to do',
+          'SUGGESTION_NOT_SETTLED',
+        );
+      const again = await plans.create(
+        actorId,
+        {
+          title: plan.title,
+          steps: steps.map((step) => ({ op: step.op, params: step.params })),
+        },
+        {
+          agentId: null,
+          agentName: WORK_AGENTS[AGENT].name,
+          runId: run.id,
+          conversationId: null,
+        },
+      );
+      const done = await plans.execute(actorId, again.id, {
+        revision: again.revision,
+      });
+      await settleShared(run);
+      return done;
     },
 
     runEntry: (runId, signal) => work(runId, askModel, signal),

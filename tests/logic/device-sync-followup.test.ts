@@ -258,6 +258,52 @@ describe('MDM follow-up', () => {
     await followUp().planDecided({ plan: done, decision: 'executed' });
     expect((await runs().get(mine.id))?.status).toBe('accepted');
 
+    // Ticked again on the card, it is carried out (2026-10-22): its person
+    // alone, and only a step left out.
+    const resume = (who: string, steps: number[]) =>
+      app.request(`/api/itam/device-sync/followUps/${mine.id}/resume`, {
+        ...json({ steps }),
+        user: who,
+        role: 'manager',
+      });
+    const anns = await resume('ann', [keep.position]);
+    expect(anns.status).toBe(422);
+    expect(JSON.stringify(await anns.json())).toContain('NOT_DECIDER');
+    const other = plan.steps.find((step) => step.position !== keep.position)!;
+    expect((await resume('mia', [other.position])).status).toBe(422);
+    const again = (await (await resume('mia', [keep.position])).json()) as {
+      data: { status: string; runId: string; steps: { op: string }[] };
+    };
+    expect(again.data).toMatchObject({ status: 'executed', runId: mine.id });
+    expect(again.data.steps.map((step) => step.op)).toEqual([
+      'dismiss_device_difference',
+    ]);
+    expect(
+      (await app.container.resolve(deviceReviewServiceToken).checks()).some(
+        (check) => check.kind === 'statusMismatch',
+      ),
+    ).toBe(false);
+  });
+
+  it('raises again what a plan left out, on the next pull', async () => {
+    model.decide = (item) =>
+      item.kind === 'userMismatch'
+        ? { action: 'transfer', target: wangWu }
+        : item.kind === 'statusMismatch'
+          ? { action: 'keep' }
+          : null;
+    await followUp().afterSync(null);
+    const mine = await settled(() => latest('owner:mia:checks'));
+    const plan = await plans().get('mia', String(mine.result?.planId));
+    const keep = plan.steps.find(
+      (step) => step.op === 'dismiss_device_difference',
+    )!;
+    const done = await plans().execute('mia', plan.id, {
+      revision: plan.revision,
+      skip: [keep.position],
+    });
+    await followUp().planDecided({ plan: done, decision: 'executed' });
+
     await followUp().afterSync(null);
     const next = await settled(() => latest('owner:mia:checks'));
     expect(next.id).not.toBe(mine.id);

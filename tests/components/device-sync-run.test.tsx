@@ -17,6 +17,7 @@ const state = vi.hoisted(() => ({
   settle: vi.fn(),
   decide: vi.fn(),
   ask: vi.fn(),
+  resume: vi.fn(),
   plan: null as unknown,
   inbox: { open: [] as unknown[], handled: [] as unknown[] },
   others: [] as unknown[],
@@ -53,6 +54,7 @@ vi.mock('../../client/lib/itam/agents.js', () => ({
   }),
   useSettleFollowUp: () => ({ mutate: state.settle, isPending: false }),
   useAskFollowUp: () => ({ mutate: state.ask, isPending: false }),
+  useResumeFollowUp: () => ({ mutate: state.resume, isPending: false }),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({ useApi: () => ({}) }));
 vi.mock('../../client/lib/itam/device-sync.js', () => ({
@@ -556,4 +558,57 @@ it('keeps a follow-up carried out open while its notes are listed', () => {
   );
   expect(screen.getByText('deviceSyncRun.accepted')).toBeInTheDocument();
   expect(screen.getByText('r1: register it by hand')).toBeVisible();
+});
+
+// Left out when carried out, a step is ticked again on the card as at first
+// and carried out from its header (2026-10-22).
+it('carries out the steps a plan left out, ticked again', () => {
+  state.plan = {
+    id: 'plan-1',
+    title: 'MDM follow-up',
+    status: 'executed',
+    steps: [
+      { position: 1, status: 'done' },
+      { position: 2, status: 'removed' },
+    ],
+  };
+  state.review = { checks: [], unregistered: [{ id: 'r2' }], unmanaged: [] };
+  state.inbox = {
+    open: [],
+    handled: [
+      run({
+        status: 'accepted',
+        decision: 'executed',
+        result: {
+          items: [
+            {
+              key: 'r2|unregistered',
+              kind: 'unregistered',
+              subject: 'r2',
+              label: 'r2',
+            },
+          ],
+          planId: 'plan-1',
+          notes: [],
+          summary: '',
+          advice: ['r1', 'r2'].map((subject, index) => ({
+            subject,
+            kind: 'unregistered' as const,
+            action: 'ignore' as const,
+            reason: null,
+            target: null,
+            planned: true,
+            steps: [index + 1],
+          })),
+        },
+      }),
+    ],
+  };
+  render(
+    <MemoryRouter>
+      <DeviceSyncFollowUpBlock />
+    </MemoryRouter>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'ai.plans.execute' }));
+  expect(state.resume).toHaveBeenCalledWith({ id: 'run-1', steps: [2] });
 });

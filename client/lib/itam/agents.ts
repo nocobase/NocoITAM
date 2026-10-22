@@ -1,3 +1,5 @@
+import { useToaster } from '@nocobase/app-client';
+import { useTranslation } from '@nocobase/i18n/client';
 import {
   useMutation,
   useQuery,
@@ -7,6 +9,7 @@ import {
 } from '@tanstack/react-query';
 
 import { useApi } from './api.js';
+import type { Plan } from './plans.js';
 
 /**
  * The work agents on the client (2026-10-16, plan "Work agents", step 1;
@@ -369,6 +372,40 @@ export function useAskFollowUp(): UseMutationResult<
         })
       ).data,
     onSuccess: refresh,
+  });
+}
+
+/**
+ * Steps a follow-up carried out left out, ticked on its card afterwards and
+ * carried out now (2026-10-22); what the plan did, said as a plan's 确认执行
+ * says it.
+ */
+export function useResumeFollowUp(): UseMutationResult<
+  Plan,
+  Error,
+  { readonly id: string; readonly steps: readonly number[] }
+> {
+  const { t } = useTranslation();
+  const api = useApi();
+  const client = useQueryClient();
+  const toaster = useToaster();
+  return useMutation({
+    mutationFn: async ({ id, steps }) =>
+      (
+        await api.request<{ data: Plan }>({
+          path: `itam/device-sync/followUps/${encodeURIComponent(id)}/resume`,
+          method: 'POST',
+          json: { steps },
+        })
+      ).data,
+    onSuccess: async (done) => {
+      toaster.show({
+        type: done.status === 'failed' ? 'error' : 'success',
+        title: t(`ai.plans.toast.${done.status}`, { title: done.title }),
+      });
+      // The steps may have changed any record the pages show.
+      await client.invalidateQueries({ queryKey: ['itam'] });
+    },
   });
 }
 

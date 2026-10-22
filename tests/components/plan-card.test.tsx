@@ -85,3 +85,34 @@ it('marks a step left out of a carried-out plan as not run', () => {
   expect(line.className).not.toContain('line-through');
   expect(screen.getByText('ai.plans.notRun')).toBeTruthy();
 });
+
+// Not run, it can be ticked again (2026-10-22); settled since, 已处理.
+it('ticks a step not run again, and marks one settled since', () => {
+  const removed = { ...plan.steps[0]!, status: 'removed' as const };
+  const onSkippedChange = vi.fn();
+  const { unmount } = render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PlanCard
+        plan={{ ...plan, status: 'executed', steps: [removed] }}
+        bare
+        tickable={new Set([0])}
+        onSkippedChange={onSkippedChange}
+      />
+    </QueryClientProvider>,
+  );
+  fireEvent.click(screen.getByRole('checkbox'));
+  expect(onSkippedChange).toHaveBeenCalledWith(new Set([0]));
+  unmount();
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PlanCard
+        plan={{ ...plan, status: 'executed', steps: [removed] }}
+        bare
+        settled={new Set([0])}
+        settledLabel='handled'
+      />
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText('handled')).toBeTruthy();
+  expect(screen.queryByText('ai.plans.notRun')).toBeNull();
+});
