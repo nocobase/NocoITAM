@@ -2234,7 +2234,7 @@ const messages = {
       followUp: 'MDM difference follow-up',
       followUpAgain: 'Run MDM difference follow-up again',
       followUpNothing:
-        'No new differences for you; those already settled or ignored are not raised again.',
+        'No differences for you; those already carried out are not raised again.',
       description:
         'Where the device management platforms and the register disagree',
       views: {

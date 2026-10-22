@@ -444,11 +444,17 @@ describe('MDM follow-up', () => {
     });
     expect((await runs().get(mine.id))?.status).toBe('pending');
 
-    // Set aside, nothing is new for her.
+    // Set aside, a pull raises it no more, but asking again does
+    // (2026-10-22): declining a suggestion leaves the difference.
     await followUp().dismiss(mine.id, 'mia');
     expect(
-      ((await (await ask(mia)).json()) as { data: AgentRun[] }).data,
-    ).toEqual([]);
+      (await followUp().afterSync(null)).map((run) => run.subjectId),
+    ).not.toContain('owner:mia');
+    expect(
+      ((await (await ask(mia)).json()) as { data: AgentRun[] }).data.map(
+        (run) => run.subjectId,
+      ),
+    ).toEqual(['owner:mia']);
   });
 
   // For an asset manager on MDM 核对 (2026-10-17).

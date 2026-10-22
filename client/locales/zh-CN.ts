@@ -2137,7 +2137,7 @@ const zhCN: AppResource = {
       settingsLink: 'MDM 设置',
       followUp: 'MDM 差异跟进',
       followUpAgain: '重新运行 MDM 差异跟进',
-      followUpNothing: '没有要你处理的新差异；已经处理或忽略过的不会再提。',
+      followUpNothing: '没有要你处理的差异；已经执行过的不会再提。',
       description: '设备管理平台（MDM）报告的设备与台账不一致的地方',
       views: {
         checks: '信息不一致',

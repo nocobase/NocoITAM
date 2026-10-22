@@ -279,6 +279,10 @@ product or in release notes, until it is listed here.
   the follow-up's prompt and the device-sync skill say to link to one rather
   than register a duplicate. A skill library provisioned earlier keeps its
   old text; the prompt carries the rule regardless.
+- **Asked by hand, set aside comes back** (2026-10-22): a pull skips what
+  a person carried out or set aside (拒绝, 忽略); 重新运行 MDM 差异跟进
+  (`ask`, and its runs' `itemsOf`, trigger `asked`) skips only what was
+  carried out, since declining a suggestion leaves the difference.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

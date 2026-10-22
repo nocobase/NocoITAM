@@ -256,11 +256,15 @@ export function createDeviceSyncFollowUp(dependencies: {
     local = local.then(() => service.runEntry(runId).catch(() => undefined));
   };
 
-  /** What a person carried out or set aside lately: not raised again. */
-  const handled = async (): Promise<ReadonlySet<string>> => {
+  /**
+   * What a person carried out or set aside lately: not raised again. Asked
+   * for by hand (2026-10-22), what was set aside counts no more: declining
+   * a suggestion leaves the difference, and asking again is asking for it.
+   */
+  const handled = async (asked = false): Promise<ReadonlySet<string>> => {
     const decided = await runs().list(AGENT, {
       since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
-      statuses: ['accepted', 'dismissed'],
+      statuses: asked ? ['accepted'] : ['accepted', 'dismissed'],
       limit: 500,
     });
     const keys = new Set<string>();
@@ -332,11 +336,13 @@ export function createDeviceSyncFollowUp(dependencies: {
   };
 
   /** The new items to judge, by who judges them. */
-  const pending = async (): Promise<{
+  const pending = async (
+    asked = false,
+  ): Promise<{
     readonly byOwner: Map<string, FollowUpItem[]>;
     readonly shared: FollowUpItem[];
   }> => {
-    const done = await handled();
+    const done = await handled(asked);
     const byOwner = new Map<string, FollowUpItem[]>();
     const shared: FollowUpItem[] = [];
     // A device nobody answers for is the asset managers', as a record the
@@ -374,7 +380,7 @@ export function createDeviceSyncFollowUp(dependencies: {
 
   /** The items a run is for, worked out again when it runs. */
   const itemsOf = async (run: AgentRun): Promise<FollowUpItem[]> => {
-    const { byOwner, shared } = await pending();
+    const { byOwner, shared } = await pending(run.trigger === 'asked');
     if (run.subjectId.startsWith('owner:'))
       return byOwner.get(run.subjectId.slice('owner:'.length)) ?? [];
     return shared;
@@ -453,7 +459,7 @@ export function createDeviceSyncFollowUp(dependencies: {
 
     async ask(by) {
       if (!(await review().active())) return [];
-      const { byOwner, shared } = await pending();
+      const { byOwner, shared } = await pending(true);
       const started: AgentRun[] = [];
       if (byOwner.get(by)?.length)
         started.push(await begin('asked', by, `owner:${by}`, by));
