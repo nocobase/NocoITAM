@@ -100,6 +100,7 @@ const zhCN: AppResource = {
     aiModels: '模型',
     usage: '用量',
     settingsGroup: '设置',
+    systemSettings: '系统设置',
     settingsGeneral: '通用',
     users: '用户',
     permissionSets: '权限集',

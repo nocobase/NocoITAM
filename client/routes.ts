@@ -693,201 +693,217 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
     // whoever may open it. ITAM's settings tabs all check the page grant
     // `itam-settings` the settings page held, so no stored grant changes.
     {
+      // 系统设置 (2026-10-22): the settings page sits in a group of its own,
+      // named `settings` so that Foundation's 应用底座 joins it
+      // (`groupFoundationNavigation` merges into a group by that name) rather
+      // than standing in a second 系统设置 group below it.
       name: 'settings',
-      path: '/settings',
-      auth: 'required',
-      // Opens on the first tab its reader may open; API keys are everyone's.
-      authz: 'skip',
-      navigation: { title: 'navigation.settingsGroup', icon: Settings2 },
-      componentLoader: () => import('./pages/settings/index.js'),
+      navigation: { title: 'navigation.systemSettings', icon: Settings2 },
       children: [
         {
-          name: 'itam-settings',
-          path: 'itam',
-          authz: {
-            resource: { type: 'page', id: 'itam-settings' },
-            action: 'access',
-          },
-          componentLoader: () =>
-            import('./pages/itam/settings/itam-settings.js'),
-        },
-        {
-          name: 'itam-settings-mdm',
-          path: 'mdm',
-          authz: {
-            resource: { type: 'page', id: 'itam-settings' },
-            action: 'access',
-          },
-          componentLoader: () => import('./pages/itam/settings/mdm.js'),
-        },
-        {
-          name: 'itam-settings-flows',
-          path: 'flows',
-          authz: {
-            resource: { type: 'page', id: 'itam-settings' },
-            action: 'access',
-          },
-          componentLoader: () => import('./pages/itam/settings/flows.js'),
-        },
-        {
-          name: 'itam-settings-receipt-agent',
-          path: 'receipt-agent',
-          authz: {
-            resource: { type: 'page', id: 'itam-settings' },
-            action: 'access',
-          },
-          componentLoader: () =>
-            import('./pages/itam/settings/receipt-agent.js'),
-        },
-        {
-          // The users plugin's `user` record type, which it does not place
-          // in the permission catalog: only the unrestricted root set opens
-          // it.
-          name: 'settings-users',
-          path: 'users',
-          authz: { resource: { type: 'user', id: '*' }, action: 'read' },
-          componentLoader: () => import('./pages/settings/users/index.js'),
+          name: 'settings-home',
+          path: '/settings',
+          auth: 'required',
+          // Opens on the first tab its reader may open; API keys are everyone's.
+          authz: 'skip',
+          navigation: { title: 'navigation.settingsGroup', icon: Settings2 },
+          componentLoader: () => import('./pages/settings/index.js'),
           children: [
             {
-              name: 'settings-users-new',
-              path: 'new',
-              componentLoader: () => import('./pages/settings/users/new.js'),
-            },
-            {
-              name: 'settings-users-invite',
-              path: 'invite',
-              componentLoader: () => import('./pages/settings/users/invite.js'),
-            },
-            {
-              name: 'settings-users-edit',
-              path: ':userId/edit',
-              componentLoader: () => import('./pages/settings/users/edit.js'),
-            },
-            {
-              name: 'settings-users-roles',
-              path: ':userId/roles',
-              componentLoader: () => import('./pages/settings/users/roles.js'),
-            },
-            {
-              name: 'settings-users-password',
-              path: ':userId/password',
+              name: 'itam-settings',
+              path: 'itam',
+              authz: {
+                resource: { type: 'page', id: 'itam-settings' },
+                action: 'access',
+              },
               componentLoader: () =>
-                import('./pages/settings/users/password.js'),
-            },
-          ],
-        },
-        {
-          name: 'settings-permission-sets',
-          path: 'permission-sets',
-          authz: {
-            resource: {
-              type: 'settings',
-              id: 'authorization.permission-sets',
-            },
-            action: 'read',
-          },
-          componentLoader: () =>
-            import('./pages/settings/permission-sets/index.js'),
-          children: [
-            {
-              name: 'settings-permission-sets-new',
-              path: 'new',
-              componentLoader: () =>
-                import('./pages/settings/permission-sets/new.js'),
+                import('./pages/itam/settings/itam-settings.js'),
             },
             {
-              name: 'settings-permission-sets-rename',
-              path: 'edit/:setKey',
-              componentLoader: () =>
-                import('./pages/settings/permission-sets/rename.js'),
+              name: 'itam-settings-mdm',
+              path: 'mdm',
+              authz: {
+                resource: { type: 'page', id: 'itam-settings' },
+                action: 'access',
+              },
+              componentLoader: () => import('./pages/itam/settings/mdm.js'),
             },
             {
-              // A set's address: its permissions and its members are drawers
-              // over the list (pages/settings/permission-sets/detail/, after
-              // NocoCRM's, 2026-10-16); the address alone opens the
-              // permissions.
-              name: 'settings-permission-set',
-              path: ':setKey',
+              name: 'itam-settings-flows',
+              path: 'flows',
+              authz: {
+                resource: { type: 'page', id: 'itam-settings' },
+                action: 'access',
+              },
+              componentLoader: () => import('./pages/itam/settings/flows.js'),
+            },
+            {
+              name: 'itam-settings-receipt-agent',
+              path: 'receipt-agent',
+              authz: {
+                resource: { type: 'page', id: 'itam-settings' },
+                action: 'access',
+              },
               componentLoader: () =>
-                import('./pages/settings/permission-sets/detail/index.js'),
+                import('./pages/itam/settings/receipt-agent.js'),
+            },
+            {
+              // The users plugin's `user` record type, which it does not place
+              // in the permission catalog: only the unrestricted root set opens
+              // it.
+              name: 'settings-users',
+              path: 'users',
+              authz: { resource: { type: 'user', id: '*' }, action: 'read' },
+              componentLoader: () => import('./pages/settings/users/index.js'),
               children: [
                 {
-                  // One draft for the three areas: the drawer stays mounted
-                  // while :section changes.
-                  name: 'settings-permission-set-permissions',
-                  path: 'permissions',
+                  name: 'settings-users-new',
+                  path: 'new',
                   componentLoader: () =>
-                    import('./pages/settings/permission-sets/detail/permissions.js'),
-                  children: [
-                    {
-                      name: 'settings-permission-set-area',
-                      path: ':section',
-                      componentLoader: () =>
-                        import('./pages/settings/permission-sets/detail/area.js'),
-                    },
-                  ],
+                    import('./pages/settings/users/new.js'),
                 },
                 {
-                  name: 'settings-permission-set-members',
-                  path: 'members',
+                  name: 'settings-users-invite',
+                  path: 'invite',
                   componentLoader: () =>
-                    import('./pages/settings/permission-sets/detail/members.js'),
+                    import('./pages/settings/users/invite.js'),
+                },
+                {
+                  name: 'settings-users-edit',
+                  path: ':userId/edit',
+                  componentLoader: () =>
+                    import('./pages/settings/users/edit.js'),
+                },
+                {
+                  name: 'settings-users-roles',
+                  path: ':userId/roles',
+                  componentLoader: () =>
+                    import('./pages/settings/users/roles.js'),
+                },
+                {
+                  name: 'settings-users-password',
+                  path: ':userId/password',
+                  componentLoader: () =>
+                    import('./pages/settings/users/password.js'),
+                },
+              ],
+            },
+            {
+              name: 'settings-permission-sets',
+              path: 'permission-sets',
+              authz: {
+                resource: {
+                  type: 'settings',
+                  id: 'authorization.permission-sets',
+                },
+                action: 'read',
+              },
+              componentLoader: () =>
+                import('./pages/settings/permission-sets/index.js'),
+              children: [
+                {
+                  name: 'settings-permission-sets-new',
+                  path: 'new',
+                  componentLoader: () =>
+                    import('./pages/settings/permission-sets/new.js'),
+                },
+                {
+                  name: 'settings-permission-sets-rename',
+                  path: 'edit/:setKey',
+                  componentLoader: () =>
+                    import('./pages/settings/permission-sets/rename.js'),
+                },
+                {
+                  // A set's address: its permissions and its members are drawers
+                  // over the list (pages/settings/permission-sets/detail/, after
+                  // NocoCRM's, 2026-10-16); the address alone opens the
+                  // permissions.
+                  name: 'settings-permission-set',
+                  path: ':setKey',
+                  componentLoader: () =>
+                    import('./pages/settings/permission-sets/detail/index.js'),
                   children: [
                     {
-                      name: 'settings-permission-set-members-add',
-                      path: 'add',
+                      // One draft for the three areas: the drawer stays mounted
+                      // while :section changes.
+                      name: 'settings-permission-set-permissions',
+                      path: 'permissions',
                       componentLoader: () =>
-                        import('./pages/settings/permission-sets/detail/add-members.js'),
+                        import('./pages/settings/permission-sets/detail/permissions.js'),
+                      children: [
+                        {
+                          name: 'settings-permission-set-area',
+                          path: ':section',
+                          componentLoader: () =>
+                            import('./pages/settings/permission-sets/detail/area.js'),
+                        },
+                      ],
+                    },
+                    {
+                      name: 'settings-permission-set-members',
+                      path: 'members',
+                      componentLoader: () =>
+                        import('./pages/settings/permission-sets/detail/members.js'),
+                      children: [
+                        {
+                          name: 'settings-permission-set-members-add',
+                          path: 'add',
+                          componentLoader: () =>
+                            import('./pages/settings/permission-sets/detail/add-members.js'),
+                        },
+                      ],
                     },
                   ],
                 },
               ],
             },
-          ],
-        },
-        {
-          // Every signed-in person manages their own keys only; the API
-          // answers for the caller alone.
-          name: 'settings-api-keys',
-          path: 'api-keys',
-          authz: 'skip',
-          componentLoader: () => import('./pages/settings/api-keys/index.js'),
-          children: [
             {
-              name: 'settings-api-keys-new',
-              path: 'new',
-              componentLoader: () => import('./pages/settings/api-keys/new.js'),
-            },
-          ],
-        },
-        {
-          // The page grant the scheduler's API checks.
-          name: 'settings-scheduled-tasks',
-          path: 'scheduled-tasks',
-          authz: {
-            resource: { type: 'page', id: 'scheduler.schedules' },
-            action: 'access',
-          },
-          componentLoader: () =>
-            import('./pages/settings/scheduled-tasks/index.js'),
-          children: [
-            {
-              name: 'settings-scheduled-task',
-              path: ':scheduleId',
+              // Every signed-in person manages their own keys only; the API
+              // answers for the caller alone.
+              name: 'settings-api-keys',
+              path: 'api-keys',
+              authz: 'skip',
               componentLoader: () =>
-                import('./pages/settings/scheduled-tasks/detail.js'),
+                import('./pages/settings/api-keys/index.js'),
+              children: [
+                {
+                  name: 'settings-api-keys-new',
+                  path: 'new',
+                  componentLoader: () =>
+                    import('./pages/settings/api-keys/new.js'),
+                },
+              ],
+            },
+            {
+              // The page grant the scheduler's API checks.
+              name: 'settings-scheduled-tasks',
+              path: 'scheduled-tasks',
+              authz: {
+                resource: { type: 'page', id: 'scheduler.schedules' },
+                action: 'access',
+              },
+              componentLoader: () =>
+                import('./pages/settings/scheduled-tasks/index.js'),
+              children: [
+                {
+                  name: 'settings-scheduled-task',
+                  path: ':scheduleId',
+                  componentLoader: () =>
+                    import('./pages/settings/scheduled-tasks/detail.js'),
+                },
+              ],
+            },
+            {
+              // Last: a trial's, rarely opened once ITAM is in use.
+              name: 'itam-settings-demo',
+              path: 'demo',
+              authz: {
+                resource: { type: 'page', id: 'itam-settings' },
+                action: 'access',
+              },
+              componentLoader: () => import('./pages/itam/settings/demo.js'),
             },
           ],
-        },
-        {
-          // Last: a trial's, rarely opened once ITAM is in use.
-          name: 'itam-settings-demo',
-          path: 'demo',
-          authz: {
-            resource: { type: 'page', id: 'itam-settings' },
-            action: 'access',
-          },
-          componentLoader: () => import('./pages/itam/settings/demo.js'),
         },
       ],
     },

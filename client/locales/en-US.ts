@@ -103,6 +103,7 @@ const messages = {
     aiModels: 'Models',
     usage: 'Usage',
     settingsGroup: 'Settings',
+    systemSettings: 'System settings',
     settingsGeneral: 'General',
     users: 'Users',
     permissionSets: 'Permission sets',
