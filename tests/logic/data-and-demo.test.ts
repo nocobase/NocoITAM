@@ -721,7 +721,15 @@ describe('CSV import / export and demo data', () => {
     ).toHaveLength(2);
     // The new laptop, the newcomer's, the contractor's, the VM and the
     // desktop with a new board.
-    expect(await review.unregistered()).toHaveLength(5);
+    const unregistered = await review.unregistered();
+    expect(unregistered).toHaveLength(5);
+    // The desktop with a new board names its register device (2026-10-22).
+    expect(
+      unregistered.find((row) => row.serialNo === 'MJ0K90Q4B7')
+        ?.sameNameDevices,
+    ).toEqual([
+      expect.objectContaining({ name: 'SH-DT-202', serialNo: 'MJ0K90Q4A1' }),
+    ]);
     expect((await review.unmanaged()).length).toBeGreaterThanOrEqual(1);
     // A test phone marked 不需要纳管, with its reason (2026-10-15).
     expect(await review.exempted()).toHaveLength(1);

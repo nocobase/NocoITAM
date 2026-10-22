@@ -273,6 +273,12 @@ product or in release notes, until it is listed here.
   no step but a note to 补登记 on MDM 核对 and choose the place; it no
   longer guesses the place most devices are kept. 补登记's form starts with
   the same place (`suggestedLocationId`).
+- **Same-name devices** (2026-10-22): an 只在 MDM record carries
+  `sameNameDevices`, the register devices of its name under another serial
+  (a board replaced, a serial mistyped). Matching still never goes by name;
+  the follow-up's prompt and the device-sync skill say to link to one rather
+  than register a duplicate. A skill library provisioned earlier keeps its
+  old text; the prompt carries the rule regardless.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

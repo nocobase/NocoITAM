@@ -106,6 +106,18 @@ export interface UnregisteredDevice {
    * and Jamf is one row, its other records decided with it.
    */
   readonly sources: readonly string[];
+  /**
+   * Register devices of the same name under another serial (2026-10-22): a
+   * board replaced or a serial mistyped, which is 关联 rather than 补登记.
+   * Matching never goes by name; this is for the person and the follow-up.
+   */
+  readonly sameNameDevices?: readonly {
+    readonly id: string;
+    readonly deviceNo: string | null;
+    readonly name: string;
+    readonly serialNo: string | null;
+    readonly status: string;
+  }[];
 }
 
 /** A register device in use that no platform reports. */
@@ -625,6 +637,53 @@ export function createDeviceReviewService(deps: {
       .map((other) => other.id);
   };
 
+  /** Register devices named as each record is, by the record's name. */
+  const sameNames = async (rows: readonly UnregisteredDevice[]) => {
+    const names = [
+      ...new Set(
+        rows.flatMap((row) => {
+          const name = row.deviceName?.trim();
+          return name ? [name] : [];
+        }),
+      ),
+    ];
+    const byName = new Map<
+      string,
+      NonNullable<UnregisteredDevice['sameNameDevices']>[number][]
+    >();
+    if (!names.length) return byName;
+    for (const device of await database
+      .query()
+      .selectFrom('devices')
+      .select(['id', 'deviceNo', 'name', 'serialNo', 'status'])
+      .where('name', 'in', names)
+      .execute<Row>()) {
+      const name = asText(device.name) ?? '';
+      byName.set(name, [
+        ...(byName.get(name) ?? []),
+        {
+          id: String(device.id),
+          deviceNo: asText(device.deviceNo) ?? null,
+          name,
+          serialNo: asText(device.serialNo) ?? null,
+          status: String(device.status),
+        },
+      ]);
+    }
+    return byName;
+  };
+
+  /** Each record with the register's devices of its name, if any. */
+  const withSameNames = async (
+    rows: readonly UnregisteredDevice[],
+  ): Promise<UnregisteredDevice[]> => {
+    const byName = await sameNames(rows);
+    return rows.map((row) => {
+      const found = byName.get(row.deviceName?.trim() ?? '');
+      return found?.length ? { ...row, sameNameDevices: found } : row;
+    });
+  };
+
   /** Register devices sharing each serial, for the ambiguous rows. */
   const sharedSerials = async (rows: readonly Row[]) => {
     // Any record whose serial a register device has (2026-10-16): several
@@ -834,8 +893,8 @@ export function createDeviceReviewService(deps: {
       const models = await modelIndex();
       const shared = await sharedSerials(rows);
       const urlOf = await sync.consoleUrls();
-      return fold(
-        rows.map((row) => toUnregistered(row, models, shared, urlOf)),
+      return withSameNames(
+        fold(rows.map((row) => toUnregistered(row, models, shared, urlOf))),
       );
     },
 
