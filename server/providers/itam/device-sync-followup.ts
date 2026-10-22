@@ -751,13 +751,29 @@ export function createDeviceSyncFollowUp(dependencies: {
       .query()
       .selectFrom('people')
       .innerJoin('locations', 'locations.id', 'people.locationId')
-      .select(['locations.id as id', 'locations.name as name'])
+      .select(['locations.id as id', 'locations.path as path'])
       .where('people.id', '=', personId)
-      .executeTakeFirst<{ id: unknown; name: unknown }>();
+      .executeTakeFirst<{ id: unknown; path: unknown }>();
     // Where the primary user sits, and nowhere else (2026-10-22): the place
     // most devices are kept was a guess the plan did not show.
     const id = asText(row?.id);
-    return id ? { id, name: asText(row?.name) ?? id } : undefined;
+    if (!id) return undefined;
+    // Named by its whole path, 上海总部 › 3 楼, as the pickers show it.
+    const ids = (asText(row?.path) ?? `/${id}/`).split('/').filter(Boolean);
+    const names = new Map(
+      (
+        await database()
+          .query()
+          .selectFrom('locations')
+          .select(['id', 'name'])
+          .where('id', 'in', ids)
+          .execute<{ id: unknown; name: unknown }>()
+      ).map((entry) => [String(entry.id), asText(entry.name) ?? '']),
+    );
+    return {
+      id,
+      name: ids.map((part) => names.get(part) ?? part).join(' › '),
+    };
   };
 
   /** The decisions as a plan the person carries out, the rest as notes. */
@@ -886,7 +902,7 @@ export function createDeviceSyncFollowUp(dependencies: {
           step('create_record', {
             // Where it will be kept, said outright (2026-10-22).
             title: words(
-              `登记新设备并分配给${user ?? 'MDM 上的使用人'}，存放在${place.name}：${label}`,
+              `登记新设备并分配给${user ?? 'MDM 上的使用人'}，存放在 ${place.name}：${label}`,
               `Register ${label}, kept at ${place.name}, and assign it to ${user ?? 'its platform user'}`,
             ),
             collection: 'devices',
