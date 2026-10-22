@@ -260,6 +260,11 @@ product or in release notes, until it is listed here.
   follow-up whose every plan step was unticked when the plan was carried
   out (`removed`) is not among `handled()`: the next follow-up raises it
   again. Its card shows such a step as 未执行, not struck through.
+- **Asking again refreshes the shared part for all** (2026-10-22): `ask`
+  starts the reader's own devices' follow-up, and — when the reader holds
+  the asset manager set — the shared one for every asset manager, as a pull
+  does: deciding one closes the others' copies, so asking for oneself alone
+  left the other asset managers with none.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

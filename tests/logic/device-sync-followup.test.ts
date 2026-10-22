@@ -406,12 +406,19 @@ describe('MDM follow-up', () => {
     expect((mine.result?.items as unknown[]).length).toBeGreaterThan(0);
 
     // Ann, an asset manager, gets the records nobody owns; Mia's stays.
+    // Zoe, the other asset manager, gets them again too (2026-10-22).
+    managers = ['ann', 'zoe'];
     const anns = (
       (await (await ask({ user: 'ann', role: 'manager' })).json()) as {
         data: AgentRun[];
       }
     ).data;
     expect(anns.map((run) => run.subjectId)).toEqual(['shared:ann']);
+    expect(await latest('shared:zoe')).toMatchObject({
+      trigger: 'asked',
+      startedById: 'ann',
+      deciderId: 'zoe',
+    });
     expect((await runs().get(mine.id))?.status).toBe('pending');
 
     // Set aside, nothing is new for her.

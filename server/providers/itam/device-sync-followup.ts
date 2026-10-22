@@ -190,8 +190,10 @@ export interface DeviceSyncFollowUp {
    * A person asks on MDM 核对 (2026-10-17): a run for their own items only
    * — the devices they answer for, and the platform records nobody owns
    * when they hold the asset manager set — without waiting for a pull.
-   * Their waiting suggestion is replaced; nobody else's is touched. Asked
-   * by hand, it is never switched off.
+   * Their waiting suggestion is replaced; nobody else's devices' are
+   * touched, but the shared part is worked out again for every asset
+   * manager (2026-10-22), being theirs together. Answers the reader's
+   * runs. Asked by hand, it is never switched off.
    */
   ask(by: string): Promise<readonly AgentRun[]>;
   /**
@@ -450,8 +452,15 @@ export function createDeviceSyncFollowUp(dependencies: {
       const started: AgentRun[] = [];
       if (byOwner.get(by)?.length)
         started.push(await begin('asked', by, `owner:${by}`, by));
-      if (shared.length && (await assetManagers()).includes(by))
-        started.push(await begin('asked', by, `shared:${by}`, by));
+      // The shared part is every asset manager's (2026-10-22): asked by one,
+      // it is worked out again for them all, as after a pull, so nobody
+      // keeps a copy the asker's replaced or one closed with no successor.
+      const managers = await assetManagers();
+      if (shared.length && managers.includes(by))
+        for (const manager of managers) {
+          const run = await begin('asked', by, `shared:${manager}`, manager);
+          if (manager === by) started.push(run);
+        }
       return started;
     },
 
