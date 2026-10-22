@@ -1105,7 +1105,7 @@ function DismissedView(): ReactElement {
                 </Badge>
               </TableCell>
               <TableCell className='text-muted-foreground tabular-nums'>
-                <CellText className='max-w-44'>
+                <CellText className='max-w-none'>
                   {marked(
                     row.dismissedById
                       ? (people.users?.get(row.dismissedById) ?? '…')
@@ -1241,11 +1241,13 @@ function UnmanagedView({
                 </TableCell>
                 {view === 'exempted' ? (
                   <>
-                    <TableCell>
-                      <CellText className='max-w-40'>{row.reason}</CellText>
+                    {/* The reason takes what room the row has left, cut
+                        short only past it (2026-10-22). */}
+                    <TableCell className='w-full max-w-0'>
+                      <CellText className='max-w-none'>{row.reason}</CellText>
                     </TableCell>
                     <TableCell className='text-muted-foreground tabular-nums'>
-                      <CellText className='max-w-44'>
+                      <CellText className='max-w-none'>
                         {marked(
                           row.exemptedById
                             ? (names.users?.get(row.exemptedById) ?? '…')
@@ -1584,8 +1586,8 @@ function RecordsView({
                 </TableCell>
                 {view === 'ignored' ? (
                   <>
-                    <TableCell>
-                      <CellText className='max-w-40'>
+                    <TableCell className='w-full max-w-0'>
+                      <CellText className='max-w-none'>
                         {row.ignoredByRule
                           ? t('deviceSync.review.byRule')
                           : row.ignoreReason}
@@ -1594,7 +1596,7 @@ function RecordsView({
                     {/* A personal device is kept off by the rule, not by
                         anybody, on no particular day. */}
                     <TableCell className='text-muted-foreground tabular-nums'>
-                      <CellText className='max-w-44'>
+                      <CellText className='max-w-none'>
                         {marked(
                           row.ignoredById
                             ? (people.users?.get(row.ignoredById) ?? '…')
