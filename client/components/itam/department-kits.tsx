@@ -318,10 +318,11 @@ export function DepartmentKits({
                         {t('departmentKits.useCustom')}
                       </label>
                       {departments.update ? (
-                        <Button
-                          size='icon'
-                          variant='ghost'
-                          aria-label={t('departmentKits.removePosition')}
+                        // The reason on hover sits on a wrapper (2026-10-22): a
+                        // disabled button takes no pointer, so its own title
+                        // never showed.
+                        <span
+                          className='inline-flex'
                           title={
                             position.holders > 0
                               ? t('departmentKits.positionInUse', {
@@ -329,16 +330,22 @@ export function DepartmentKits({
                                 })
                               : t('departmentKits.removePosition')
                           }
-                          disabled={busy || position.holders > 0}
-                          onClick={() =>
-                            setRemoving({
-                              name: position.name,
-                              hasKit: Boolean(position.kit),
-                            })
-                          }
                         >
-                          <Trash2 />
-                        </Button>
+                          <Button
+                            size='icon'
+                            variant='ghost'
+                            aria-label={t('departmentKits.removePosition')}
+                            disabled={busy || position.holders > 0}
+                            onClick={() =>
+                              setRemoving({
+                                name: position.name,
+                                hasKit: Boolean(position.kit),
+                              })
+                            }
+                          >
+                            <Trash2 />
+                          </Button>
+                        </span>
                       ) : null}
                     </div>
                     {position.kit ? (
