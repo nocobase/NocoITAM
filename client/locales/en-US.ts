@@ -2349,7 +2349,7 @@ const messages = {
       dismissedHint:
         'No longer raised; they come back if what MDM reports changes. Restore lists one again.',
       exemptedHint:
-        'No longer listed as only on the register; the mark lapses once MDM reports the device. Restore lists it again.',
+        'Devices that need no MDM: no longer listed as only on the register, and Restore lists them again.',
     },
     group: 'Management platform',
     notFound: 'Not found on the connected management platforms',
@@ -3466,6 +3466,17 @@ const messages = {
       decline: 'Decline',
       notRun: 'Not run',
       stepDone: 'Done',
+      param: '{{label}}: {{value}}',
+      params: {
+        condition: 'Condition',
+        method: 'Method',
+        kind: 'Type',
+        nextStatus: 'Status after return',
+        holderId: 'Holder',
+        targetId: 'To',
+        entitlementId: 'Entitlement',
+        deviceIds: 'Devices',
+      },
       showParams: 'Show parameters',
       hideParams: 'Hide parameters',
       status: {

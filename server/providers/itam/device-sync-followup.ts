@@ -1137,10 +1137,18 @@ export function createDeviceSyncFollowUp(dependencies: {
               ? 'transfer_device'
               : 'assign_device',
             {
-              title: words(
-                `把 ${label} 交给 MDM 上的使用人`,
-                `Hand ${label} to its platform user`,
-              ),
+              // The act first, then what it acts on (2026-10-22), as every
+              // step reads.
+              title:
+                decision.action === 'transfer'
+                  ? words(
+                      `调拨给 MDM 上的使用人：${label}`,
+                      `Transfer to its platform user: ${label}`,
+                    )
+                  : words(
+                      `分配给 MDM 上的使用人：${label}`,
+                      `Assign to its platform user: ${label}`,
+                    ),
               deviceId: item.subject,
               targetType: 'person',
               targetId: target,
@@ -1154,8 +1162,8 @@ export function createDeviceSyncFollowUp(dependencies: {
           }
           step('link_managed_device', {
             title: words(
-              `把 MDM 记录 ${label} 关联到台账设备`,
-              `Link the platform record ${label} to its register device`,
+              `关联到台账设备：${label}`,
+              `Link to its register device: ${label}`,
             ),
             managedDeviceId: item.subject,
             deviceId: target,
@@ -1165,7 +1173,7 @@ export function createDeviceSyncFollowUp(dependencies: {
           step('ignore_managed_device', {
             title: words(
               `不纳入台账：${label}`,
-              `Keep ${label} off the register`,
+              `Keep off the register: ${label}`,
             ),
             managedDeviceId: item.subject,
             reason:
@@ -1212,7 +1220,7 @@ export function createDeviceSyncFollowUp(dependencies: {
             // Where it will be kept, said outright (2026-10-22).
             title: words(
               `登记新设备并分配给${user ?? 'MDM 上的使用人'}，存放在 ${place.name}：${label}`,
-              `Register ${label}, kept at ${place.name}, and assign it to ${user ?? 'its platform user'}`,
+              `Register, kept at ${place.name}, and assign to ${user ?? 'its platform user'}: ${label}`,
             ),
             collection: 'devices',
             input: {
@@ -1238,10 +1246,7 @@ export function createDeviceSyncFollowUp(dependencies: {
             break;
           }
           step('correct_device_status', {
-            title: words(
-              `更正 ${label} 的状态`,
-              `Correct the status of ${label}`,
-            ),
+            title: words(`更正状态：${label}`, `Correct the status: ${label}`),
             deviceId: item.subject,
             status,
             reason:

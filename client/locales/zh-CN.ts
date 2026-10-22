@@ -2242,7 +2242,7 @@ const zhCN: AppResource = {
       dismissedHint:
         '以后不再提示；MDM 里的信息变化时会重新出现。点「恢复」重新列入。',
       exemptedHint:
-        '以后不再列入只在台账；设备出现在 MDM 里后自动失效。点「恢复」重新列入。',
+        '不需要注册 MDM 的设备，不再列入只在台账；点「恢复」重新列入。',
     },
     group: 'MDM',
     notFound: '未在已连接的 MDM 中找到',
@@ -3269,6 +3269,17 @@ const zhCN: AppResource = {
       decline: '拒绝',
       notRun: '未执行',
       stepDone: '已执行',
+      param: '{{label}}：{{value}}',
+      params: {
+        condition: '状况说明',
+        method: '方式',
+        kind: '类型',
+        nextStatus: '归还后状态',
+        holderId: '持有人',
+        targetId: '给',
+        entitlementId: '授权',
+        deviceIds: '设备',
+      },
       showParams: '查看参数',
       hideParams: '收起参数',
       status: {
