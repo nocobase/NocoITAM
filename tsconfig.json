@@ -1,6 +1,7 @@
 {
   "extends": "@nocobase/dev-config/tsconfig/client.json",
   "compilerOptions": {
+    "types": ["node"],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
     // Application change (ITAM): the application's own code still imports
     // through `@/` (hundreds of files); the template's `#components/*` …
