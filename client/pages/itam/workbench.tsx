@@ -719,74 +719,65 @@ function LeaverCard({
       }}
       className='w-full rounded-xl border border-border/50 bg-card px-3.5 py-3 text-left shadow-xs transition hover:-translate-y-px hover:border-border hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
     >
-      <div className='flex items-center gap-2.5'>
-        {/* Avatars are not tags: a plain disc with the first letter. */}
-        <span
-          aria-hidden='true'
-          className='flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground'
-        >
-          {Array.from(record.title)[0] ?? ''}
-        </span>
-        <div className='min-w-0 flex-1'>
-          {/* The job right after the name, and giving way first. */}
-          <div className='flex min-w-0 items-baseline gap-1.5'>
-            {tagged ? (
-              // 离职 and 入职 told apart at a glance: the one to recover
-              // from, the one to equip.
-              <Badge
-                className={cn(
-                  'shrink-0',
-                  joining
-                    ? 'bg-success text-success-foreground'
-                    : 'bg-destructive/10 text-destructive',
-                )}
-              >
-                {t(
-                  joining
-                    ? 'workbench.work.tagJoining'
-                    : 'workbench.work.tagLeaving',
-                )}
-              </Badge>
-            ) : null}
-            {/* A long name truncates beside the tag rather than running out
-                of the card; the job shrinks far sooner, so it goes first. */}
-            <span className='min-w-0 truncate text-sm font-semibold'>
-              {record.title}
-            </span>
-            {record.subtitle ? (
-              <span className='min-w-0 shrink-[100] truncate text-xs text-muted-foreground'>
-                {record.subtitle}
-              </span>
-            ) : null}
-          </div>
-          {record.date ? (
-            // Each phrase whole: on a narrow card the countdown moves under
-            // the date rather than either breaking mid-phrase.
-            <p className='flex flex-wrap gap-x-1.5 text-xs text-muted-foreground tabular-nums'>
-              <span className='whitespace-nowrap'>
-                {t(
-                  joining ? 'workbench.work.joinsOn' : 'workbench.work.leftOn',
-                  { date: formatDate(record.date) },
-                )}
-              </span>
-              {/* A joiner's column runs from next week to months out, so
-                  each card says how far off the first day is. */}
-              {joining ? (
-                <span className='font-medium whitespace-nowrap text-foreground'>
-                  {countdown}
-                </span>
-              ) : null}
-            </p>
+      {/* No avatar (2026-10-22): the tag and name lead the card. */}
+      <div className='min-w-0'>
+        {/* The job right after the name, and giving way first. */}
+        <div className='flex min-w-0 items-baseline gap-1.5'>
+          {tagged ? (
+            // 离职 and 入职 told apart at a glance: the one to recover
+            // from, the one to equip.
+            <Badge
+              className={cn(
+                'shrink-0',
+                joining
+                  ? 'bg-success text-success-foreground'
+                  : 'bg-destructive/10 text-destructive',
+              )}
+            >
+              {t(
+                joining
+                  ? 'workbench.work.tagJoining'
+                  : 'workbench.work.tagLeaving',
+              )}
+            </Badge>
           ) : null}
-          {/* Device sync: their devices still synced after they left. */}
-          {!joining && record.onlineAfterLeaving ? (
-            <p className='mt-1 text-xs font-medium text-warning-foreground'>
-              {t('deviceSync.onlineAfterLeaving', {
-                count: record.onlineAfterLeaving,
-              })}
-            </p>
+          {/* A long name truncates beside the tag rather than running out
+                of the card; the job shrinks far sooner, so it goes first. */}
+          <span className='min-w-0 truncate text-sm font-semibold'>
+            {record.title}
+          </span>
+          {record.subtitle ? (
+            <span className='min-w-0 shrink-[100] truncate text-xs text-muted-foreground'>
+              {record.subtitle}
+            </span>
           ) : null}
         </div>
+        {record.date ? (
+          // Each phrase whole: on a narrow card the countdown moves under
+          // the date rather than either breaking mid-phrase.
+          <p className='flex flex-wrap gap-x-1.5 text-xs text-muted-foreground tabular-nums'>
+            <span className='whitespace-nowrap'>
+              {t(joining ? 'workbench.work.joinsOn' : 'workbench.work.leftOn', {
+                date: formatDate(record.date),
+              })}
+            </span>
+            {/* A joiner's column runs from next week to months out, so
+                  each card says how far off the first day is. */}
+            {joining ? (
+              <span className='font-medium whitespace-nowrap text-foreground'>
+                {countdown}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
+        {/* Device sync: their devices still synced after they left. */}
+        {!joining && record.onlineAfterLeaving ? (
+          <p className='mt-1 text-xs font-medium text-warning-foreground'>
+            {t('deviceSync.onlineAfterLeaving', {
+              count: record.onlineAfterLeaving,
+            })}
+          </p>
+        ) : null}
       </div>
       {progress || record.count !== undefined ? (
         <div className='mt-3'>
@@ -886,11 +877,12 @@ function AttentionBand(): ReactElement {
 
   return (
     // A band across the top (2026-10-17): risks rather than to-dos, so it
-    // takes no column of the board. On the columns' own quiet ground, the
-    // warning said by the heading's icon rather than a yellow wash.
+    // takes no column of the board. On white (2026-10-22; the columns'
+    // quiet ground before), the warning said by the heading's icon rather
+    // than a yellow wash.
     <section
       aria-label={t('workbench.attention')}
-      className='shrink-0 rounded-2xl bg-foreground/[0.025] px-3 py-2.5'
+      className='shrink-0 rounded-2xl border border-border/60 bg-card px-3 py-2.5'
     >
       <h2 className='mb-2 flex items-center gap-1.5 px-0.5 text-sm font-semibold'>
         <TriangleAlert
