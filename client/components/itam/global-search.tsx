@@ -330,7 +330,11 @@ function SearchPanel({
                     <Search />
                     {t('search.searchTab')}
                   </TabsTrigger>
-                  <TabsTrigger value='ask' className='px-2 text-xs'>
+                  {/* The AI's green, its words with its icon (2026-10-22). */}
+                  <TabsTrigger
+                    value='ask'
+                    className='px-2 text-xs text-primary!'
+                  >
                     <Sparkles className='text-primary' />
                     {t('search.askAi')}
                   </TabsTrigger>
