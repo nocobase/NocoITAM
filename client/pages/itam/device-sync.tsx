@@ -2,11 +2,15 @@ import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  BookOpenText,
+  Cloud,
   ExternalLink,
+  GitCompareArrows,
   Info,
   MoreHorizontal,
   Settings2,
   Sparkles,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   useContext,
@@ -195,17 +199,36 @@ export default function DeviceSyncReviewPage(): ReactElement {
           setParams({ view: String(next) }, { replace: true })
         }
       >
-        <TabsList variant='line'>
-          {TABS.map((key) => (
-            <TabsTrigger key={key} value={key}>
-              {t(`deviceSync.review.views.${key}`)}
-              {counts[key] === undefined ? null : (
-                <span className='text-xs text-muted-foreground tabular-nums'>
-                  {counts[key]}
-                </span>
-              )}
-            </TabsTrigger>
-          ))}
+        {/* Larger than a record's tabs (2026-10-22): they are the page's
+            three lists, each led by its icon, and what still waits counted
+            in a pill — amber while there is any. */}
+        <TabsList variant='line' className='h-auto gap-x-6'>
+          {TABS.map((key) => {
+            const Icon = TAB_ICONS[key];
+            const count = counts[key];
+            return (
+              <TabsTrigger
+                key={key}
+                value={key}
+                className='h-12 gap-2 px-0 text-base font-medium'
+              >
+                <Icon aria-hidden className='size-4' />
+                {t(`deviceSync.review.views.${key}`)}
+                {count === undefined ? null : (
+                  <span
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-xs font-medium tabular-nums',
+                      count > 0
+                        ? 'bg-warning text-warning-foreground'
+                        : 'bg-muted text-muted-foreground',
+                    )}
+                  >
+                    {count}
+                  </span>
+                )}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </Tabs>
       {/* Each tab its own follow-ups (2026-10-22): under its hint, the
@@ -348,6 +371,13 @@ export default function DeviceSyncReviewPage(): ReactElement {
  * first again (2026-10-22), the first one opening by default.
  */
 const TABS = ['checks', 'unregistered', 'unmanaged'] as const;
+
+/** Each tab's icon: two lists compared, the platform's, the register's. */
+const TAB_ICONS: Readonly<Record<(typeof TABS)[number], LucideIcon>> = {
+  checks: GitCompareArrows,
+  unregistered: Cloud,
+  unmanaged: BookOpenText,
+};
 
 /** Each view's count, as its own list reads it (undefined while loading). */
 function useReviewCounts(): Partial<
