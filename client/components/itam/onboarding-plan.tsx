@@ -40,7 +40,7 @@ import {
   type PlanThing,
 } from '@/lib/itam/onboarding';
 import { useCurrentUserId } from '@/lib/itam/permissions';
-import { STOCK_PATH } from '@/lib/itam/stock';
+import { STOCK_PATH, STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
 
 import { CollapsibleText } from './collapsible-text.js';
 import { RecordLink } from './record-link.js';
@@ -392,6 +392,14 @@ function PlanLine({
   // category (设备, 配件, 耗材, 组件).
   const kind =
     line.kind === 'entitlement' ? 'entitlement' : (line.itemType ?? undefined);
+  // Where a thing's own record is: what is already theirs opens it
+  // (2026-10-22), as a related record does anywhere else.
+  const recordOf = (thing: PlanThing) =>
+    thing.type === 'device'
+      ? `/devices/${thing.id}`
+      : thing.type === 'seat'
+        ? `/entitlements/${thing.id}`
+        : `/${STOCK_ROUTES[line.itemType as StockKind] ?? 'accessories'}/${thing.id}`;
   const tag = kind ? (
     <AssetTypeBadge value={kind} className='shrink-0' />
   ) : (
@@ -438,12 +446,23 @@ function PlanLine({
         </span>
         <span className='flex max-w-full min-w-0 flex-wrap items-center justify-end gap-1.5'>
           {line.prepared.map((thing) => (
-            <Badge key={`p:${thing.type}:${thing.id}`} variant='secondary'>
-              <Check className='size-3' />
-              {thing.type === 'device'
-                ? `${thing.label} · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
-                : thing.label}
-            </Badge>
+            <RecordLink
+              key={`p:${thing.type}:${thing.id}`}
+              to={recordOf(thing)}
+              className='max-w-full'
+            >
+              <Badge
+                variant='secondary'
+                className='max-w-full hover:bg-secondary/80'
+              >
+                <Check className='size-3' />
+                <span className='truncate'>
+                  {thing.type === 'device'
+                    ? `${thing.label} · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
+                    : thing.label}
+                </span>
+              </Badge>
+            </RecordLink>
           ))}
           {line.proposals.map((original) => {
             const thing = effective(original);
