@@ -9,6 +9,8 @@ import {
   Columns3,
   List,
   TriangleAlert,
+  UserMinus,
+  UserPlus,
 } from 'lucide-react';
 import {
   useEffect,
@@ -748,14 +750,19 @@ function LeaverCard({
           {tagged ? (
             // 离职 and 入职 told apart at a glance: the one to recover
             // from, the one to equip.
+            // Outlined with its icon (2026-10-22), as the documents' kind
+            // tags in the columns beside it.
             <Badge
-              className={cn(
-                'shrink-0',
-                joining
-                  ? 'bg-success text-success-foreground'
-                  : 'bg-destructive/10 text-destructive',
-              )}
+              variant='secondary'
+              data-tag='kind'
+              data-kind={joining ? 'joining' : 'leaving'}
+              className='shrink-0'
             >
+              {joining ? (
+                <UserPlus className='size-3' aria-hidden='true' />
+              ) : (
+                <UserMinus className='size-3' aria-hidden='true' />
+              )}
               {t(
                 joining
                   ? 'workbench.work.tagJoining'

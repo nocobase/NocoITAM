@@ -289,6 +289,14 @@
 [data-slot='badge'][data-tag='kind'][data-kind='disposals'] {
   @apply border-destructive/35 text-destructive;
 }
+/* Which way a person is going, on 人员变动 (2026-10-22): outlined as the
+   documents' kinds beside them, filled until then. */
+[data-slot='badge'][data-tag='kind'][data-kind='leaving'] {
+  @apply border-destructive/35 text-destructive;
+}
+[data-slot='badge'][data-tag='kind'][data-kind='joining'] {
+  @apply border-success-foreground/35 text-success-foreground;
+}
 
 /* One focus for every control, across the application and the plugins'
    pages: a half-strength border and a 2px halo at a fifth of the ring colour,
