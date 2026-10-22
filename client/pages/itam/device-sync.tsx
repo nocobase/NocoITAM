@@ -115,9 +115,9 @@ export default function DeviceSyncReviewPage(): ReactElement {
   });
   const counts = useReviewCounts();
   const openFull = useContext(OpenFullPageContext);
-  // While a follow-up works or waits under 等你决定, the header offers it
-  // again rather than hiding (2026-10-21): a new one replaces it. One that
-  // failed does not count.
+  // While a follow-up works or waits under 等你决定, its card offers 重新运行
+  // (2026-10-22), so the header does not; it starts one when there is none,
+  // or after one failed.
   const inbox = useInbox();
   const following = (inbox.data?.open ?? []).some(
     (run) => run.agent === 'deviceSync' && run.status !== 'failed',
@@ -163,16 +163,12 @@ export default function DeviceSyncReviewPage(): ReactElement {
           <>
             {/* MDM 跟进 on the page (2026-10-17): the follow-up for the reader alone, now
                 rather than after the next pull. */}
-            {ai.available ? (
+            {ai.available && !following ? (
               <AiShortcut
                 disabled={followUp.isPending}
                 onClick={() => followUp.mutate()}
               >
-                {t(
-                  following
-                    ? 'deviceSync.review.followUpAgain'
-                    : 'deviceSync.review.followUp',
-                )}
+                {t('deviceSync.review.followUp')}
               </AiShortcut>
             ) : null}
             {/* Beside the inbox's list, 打开 in place of MDM 设置. */}

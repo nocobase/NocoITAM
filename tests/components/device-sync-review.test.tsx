@@ -396,7 +396,9 @@ describe('MDM 核对 → 信息不一致', () => {
     state.open = [];
   });
 
-  it('offers to follow up again while one waits', () => {
+  // The cards each run again on their own (2026-10-22): no header button
+  // while one is there.
+  it('leaves running again to the cards while one waits', () => {
     state.ai = true;
     state.views = { checks: [check] };
     state.open = [{ agent: 'deviceSync' }];
@@ -404,9 +406,6 @@ describe('MDM 核对 → 信息不一致', () => {
     expect(
       screen.queryByRole('button', { name: 'deviceSync.review.followUp' }),
     ).toBeNull();
-    expect(
-      screen.getByRole('button', { name: 'deviceSync.review.followUpAgain' }),
-    ).toBeInTheDocument();
     state.open = [];
     state.ai = false;
   });
