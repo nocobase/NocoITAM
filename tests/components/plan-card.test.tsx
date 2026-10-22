@@ -133,4 +133,7 @@ it('tags a step carried out inside a follow-up', () => {
     </QueryClientProvider>,
   );
   expect(screen.getByText('ai.plans.stepDone')).toBeTruthy();
+  expect(screen.getByText(plan.steps[0]!.check!.title).className).toContain(
+    'text-muted-foreground',
+  );
 });

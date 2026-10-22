@@ -216,7 +216,9 @@ export function PlanCard({
                         settled.has(step.position))) ||
                     (step.status === 'removed' &&
                       (!tickable.has(step.position) ||
-                        skipped.has(step.position)))
+                        skipped.has(step.position))) ||
+                    // Done, inside a follow-up: what is left reads first.
+                    (bare && step.status === 'done')
                       ? 'text-muted-foreground'
                       : undefined
                   }
