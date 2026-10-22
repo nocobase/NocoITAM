@@ -265,6 +265,12 @@ product or in release notes, until it is listed here.
   the asset manager set — the shared one for every asset manager, as a pull
   does: deciding one closes the others' copies, so asking for oneself alone
   left the other asset managers with none.
+- **Where a registered device is kept** (2026-10-22): MDM 跟进's register
+  step keeps it where its primary user sits (`people.locationId`) and says
+  so in its line (…，存放在<位置>：…). With no person or no location there is
+  no step but a note to 补登记 on MDM 核对 and choose the place; it no
+  longer guesses the place most devices are kept. 补登记's form starts with
+  the same place (`suggestedLocationId`).
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

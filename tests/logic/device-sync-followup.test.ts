@@ -313,6 +313,14 @@ describe('MDM follow-up', () => {
       .set({ personId: liNa })
       .where('externalId', '=', 'x')
       .execute();
+    // Kept where she sits, said in the step (2026-10-22).
+    await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .updateTable('people')
+      .set({ locationId: 'loc-hq' })
+      .where('id', '=', liNa)
+      .execute();
     await followUp().afterSync(null);
     const mine = await settled(() => latest('owner:mia'));
     const minePlan = await plans().get('mia', String(mine.result?.planId));
@@ -354,6 +362,14 @@ describe('MDM follow-up', () => {
     expect(annPlan.steps[0].check?.fields).toContainEqual(
       expect.objectContaining({ field: 'input' }),
     );
+    const hq = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('locations')
+      .select('name')
+      .where('id', '=', 'loc-hq')
+      .executeTakeFirstOrThrow<{ name: string }>();
+    expect(annPlan.steps[0].check?.title).toContain(hq.name);
     expect(
       (await plans().execute('ann', annPlan.id, { revision: annPlan.revision }))
         .status,

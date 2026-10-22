@@ -742,28 +742,22 @@ export function createDeviceSyncFollowUp(dependencies: {
     return { decisions: answer.decisions, model };
   };
 
-  /** Where a registered device is kept: its user's place, else the main one. */
-  const locationFor = async (personId: string | undefined) => {
-    const query = database().query();
-    const person = personId
-      ? await query
-          .selectFrom('people')
-          .select(['locationId'])
-          .where('id', '=', personId)
-          .executeTakeFirst<{ locationId: unknown }>()
-      : undefined;
-    const own = asText(person?.locationId);
-    if (own) return own;
-    // Else where most of the register's devices are kept: the main office.
-    const busiest = await database()
+  /** Where a registered device is kept: where its user sits, or nowhere. */
+  const locationFor = async (
+    personId: string | undefined,
+  ): Promise<{ id: string; name: string } | undefined> => {
+    if (!personId) return undefined;
+    const row = await database()
       .query()
-      .selectFrom('devices')
-      .select((eb) => ['locationId', eb.fn.countAll().as('count')])
-      .where('locationId', 'is not', null)
-      .groupBy('locationId')
-      .orderBy('count', 'desc')
-      .executeTakeFirst<{ locationId: unknown }>();
-    return asText(busiest?.locationId);
+      .selectFrom('people')
+      .innerJoin('locations', 'locations.id', 'people.locationId')
+      .select(['locations.id as id', 'locations.name as name'])
+      .where('people.id', '=', personId)
+      .executeTakeFirst<{ id: unknown; name: unknown }>();
+    // Where the primary user sits, and nowhere else (2026-10-22): the place
+    // most devices are kept was a guess the plan did not show.
+    const id = asText(row?.id);
+    return id ? { id, name: asText(row?.name) ?? id } : undefined;
   };
 
   /** The decisions as a plan the person carries out, the rest as notes. */
@@ -870,11 +864,19 @@ export function createDeviceSyncFollowUp(dependencies: {
           const modelId =
             asText(decision.modelId) ?? asText(record?.suggestedModelId);
           const personId = asText(record?.personId);
-          const locationId = await locationFor(personId);
-          if (!record || !modelId || !locationId) {
+          const place = await locationFor(personId);
+          if (!record || !modelId) {
             note(
-              '需要登记为新设备，但型号或存放位置对不上，请在 MDM 核对页补登记',
-              'register it as a new device on MDM 核对: its model or place could not be matched',
+              '需要登记为新设备，但型号对不上，请在 MDM 核对页补登记',
+              'register it as a new device on MDM 核对: its model could not be matched',
+            );
+            break;
+          }
+          // No guessed place (2026-10-22): the person picks it there.
+          if (!place) {
+            note(
+              '需要登记为新设备，但主用户没有登记位置，请在 MDM 核对页补登记并选择存放位置',
+              'register it as a new device on MDM 核对 and choose where it is kept: its primary user has no location',
             );
             break;
           }
@@ -882,18 +884,17 @@ export function createDeviceSyncFollowUp(dependencies: {
           // the create dialog's 使用中 does (2026-10-21).
           const user = asText(record.userName);
           step('create_record', {
-            title: personId
-              ? words(
-                  `登记新设备并分配给${user ?? 'MDM 上的使用人'}：${label}`,
-                  `Register ${label} and assign it to ${user ?? 'its platform user'}`,
-                )
-              : words(`登记新设备：${label}`, `Register ${label}`),
+            // Where it will be kept, said outright (2026-10-22).
+            title: words(
+              `登记新设备并分配给${user ?? 'MDM 上的使用人'}，存放在${place.name}：${label}`,
+              `Register ${label}, kept at ${place.name}, and assign it to ${user ?? 'its platform user'}`,
+            ),
             collection: 'devices',
             input: {
               modelId,
               serialNo: asText(record.serialNo) ?? null,
               name: asText(record.deviceName) ?? null,
-              locationId,
+              locationId: place.id,
               ownership: 'owned',
               ...(asText(record.suggestedDepartmentId)
                 ? { departmentId: asText(record.suggestedDepartmentId) }
