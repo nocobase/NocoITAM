@@ -278,33 +278,38 @@ export function createDeviceSyncFollowUp(dependencies: {
   };
 
   /**
-   * The items whose every plan step was left out when the plan was carried
-   * out (2026-10-22): nothing was done about them, so the next follow-up
-   * raises them again rather than letting them go quietly.
+   * The items of a follow-up carried out that nothing was done about
+   * (2026-10-22): every plan step left out, or no step at all — a note to
+   * look at, or no suggestion. The next follow-up raises them again rather
+   * than letting them go quietly. One set aside (拒绝, 忽略) keeps all its
+   * items handled; so does one written before suggestions were kept per
+   * item.
    */
   const leftOut = async (run: AgentRun): Promise<ReadonlySet<string>> => {
+    const advice = run.result?.advice as FollowUpAdvice[] | undefined;
+    if (run.status !== 'accepted' || !advice) return new Set();
     const planId = asText(run.result?.planId);
-    if (run.status !== 'accepted' || !planId || !run.deciderId)
-      return new Set();
-    const plan = await container
-      .resolve(planServiceToken)
-      .get(run.deciderId, planId)
-      .catch(() => null);
-    if (!plan) return new Set();
-    const removed = new Set(
-      plan.steps
-        .filter((step) => step.status === 'removed')
+    const plan =
+      planId && run.deciderId
+        ? await container
+            .resolve(planServiceToken)
+            .get(run.deciderId, planId)
+            .catch(() => null)
+        : null;
+    const done = new Set(
+      (plan?.steps ?? [])
+        .filter((step) => step.status === 'done')
         .map((step) => step.position),
     );
-    const advice = (run.result?.advice ?? []) as FollowUpAdvice[];
-    return new Set(
+    const acted = new Set(
       advice
-        .filter(
-          (entry) =>
-            (entry.steps?.length ?? 0) > 0 &&
-            entry.steps!.every((position) => removed.has(position)),
-        )
+        .filter((entry) => (entry.steps ?? []).some((at) => done.has(at)))
         .map((entry) => `${entry.subject}|${entry.kind}`),
+    );
+    return new Set(
+      ((run.result?.items ?? []) as FollowUpItem[])
+        .map((item) => `${item.subject}|${item.kind}`)
+        .filter((key) => !acted.has(key)),
     );
   };
 

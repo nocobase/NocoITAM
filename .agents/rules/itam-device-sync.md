@@ -256,10 +256,12 @@ product or in release notes, until it is listed here.
   the platform first reported them — each tagged 补登记 or 关联. A platform
   record's name on MDM 核对 opens a sheet of what the platform reports
   (`ManagedRecordSheet`), with the console link; it has no register device.
-- **Left out is not handled** (2026-10-22): an item of an accepted
-  follow-up whose every plan step was unticked when the plan was carried
-  out (`removed`) is not among `handled()`: the next follow-up raises it
-  again. Its card shows such a step as 未执行, not struck through.
+- **Only what was done is handled** (2026-10-22): of a follow-up carried
+  out (accepted), an item counts among `handled()` only when one of its plan
+  steps ran (`done`). Unticked steps, notes to look at and items with no
+  suggestion are raised again by the next follow-up. One set aside (拒绝,
+  忽略) keeps all its items handled, as do runs from before `advice`. A step
+  left out shows as 未执行.
 - **Asking again refreshes the shared part for all** (2026-10-22): `ask`
   starts the reader's own devices' follow-up, and — when the reader holds
   the asset manager set — the shared one for every asset manager, as a pull

@@ -270,11 +270,18 @@ describe('MDM follow-up', () => {
     expect((mine.result?.notes as string[]).length).toBe(2);
     await followUp().dismiss(mine.id, 'mia');
     const anns = await settled(() => latest('shared:ann'));
-    // Every step settled on MDM 核对's rows (2026-10-21): handled, not set
-    // aside, and raised no more than one set aside.
+    // Closed as settled (2026-10-21), it ends as handled, not set aside;
+    // but what it only noted was not done, so it comes back (2026-10-22).
     const closed = await followUp().dismiss(anns.id, 'ann', { settled: true });
     expect(closed).toMatchObject({ status: 'accepted', decision: 'settled' });
 
+    const again = await followUp().afterSync(null);
+    expect(again.map((run) => run.subjectId)).toEqual(['shared:ann']);
+    // Set aside, it is not raised again.
+    await followUp().dismiss(
+      (await settled(() => latest('shared:ann'))).id,
+      'ann',
+    );
     expect(await followUp().afterSync(null)).toEqual([]);
   });
 
