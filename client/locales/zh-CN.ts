@@ -2171,6 +2171,7 @@ const zhCN: AppResource = {
         marked: '标记',
         linkedDevice: '关联到',
         linkedSerial: '台账序列号',
+        how: '处理方式',
       },
       sharedSerial_one: '{{count}} 台台账设备用了这个序列号',
       sharedSerial_other: '{{count}} 台台账设备用了这个序列号',
@@ -2218,12 +2219,20 @@ const zhCN: AppResource = {
       exemptPlaceholder: '例如：Linux 工作站，不支持注册 MDM',
       exemptedHeading: '不需要纳管 {{count}} 台',
       dismissedHeading: '已忽略 {{count}} 条',
-      linkedHeading: '手动关联 {{count}} 台',
+      linkedHeading: '已处理 {{count}} 台',
       silentHeading: '长期未同步 {{count}} 台',
       silentHint:
         '超过「失联」天数没同步、台账里也没有的 MDM 记录，多半已经不用了。需要的话照样可以补登记、关联或不纳入台账。',
       linkedHint:
-        '在这里手动关联到台账设备的 MDM 记录，序列号不一致的标黄。点「解除关联」会回到上面的列表。',
+        '手动关联到台账设备、或最近 30 天补登记的 MDM 记录，序列号不一致的标黄。点「解除关联」会回到上面的列表。',
+      how: { registered: '补登记', linked: '关联' },
+      recordTitle: 'MDM 记录',
+      recordFields: {
+        platform: '平台',
+        model: '平台上的型号',
+        principal: '主用户账号',
+        firstSeen: '首次出现',
+      },
       dismissedHint:
         '以后不再提示；MDM 里的信息变化时会重新出现。点「恢复」重新列入。',
       exemptedHint:

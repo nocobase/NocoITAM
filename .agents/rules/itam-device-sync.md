@@ -247,6 +247,12 @@ product or in release notes, until it is listed here.
   started within two minutes of each other (one pull or ask) are one
   entry among 收件箱's handled too, and decided together they fold into one
   line on MDM 核对.
+- **已处理 and the record drawer** (2026-10-22): 只在 MDM's linked section
+  (`linkedByHand`, view `linked`) is 已处理: records linked by hand and,
+  for 30 days, those registered — linked by serial to a device made after
+  the platform first reported them — each tagged 补登记 or 关联. A platform
+  record's name on MDM 核对 opens a sheet of what the platform reports
+  (`ManagedRecordSheet`), with the console link; it has no register device.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

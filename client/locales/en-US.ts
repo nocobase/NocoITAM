@@ -2270,6 +2270,7 @@ const messages = {
         marked: 'Marked',
         linkedDevice: 'Linked to',
         linkedSerial: 'Register serial',
+        how: 'How',
       },
       sharedSerial_one: '{{count}} register device has this serial',
       sharedSerial_other: '{{count}} register devices have this serial',
@@ -2322,12 +2323,20 @@ const messages = {
       exemptPlaceholder: 'e.g. Linux workstation that cannot enrol in MDM',
       exemptedHeading: 'Not to be managed ({{count}})',
       dismissedHeading: 'Ignored ({{count}})',
-      linkedHeading: 'Linked by hand ({{count}})',
+      linkedHeading: 'Settled ({{count}})',
       silentHeading: 'Long silent ({{count}})',
       silentHint:
         'MDM records not on the register that have not synced for longer than a device counts as silent, most likely out of use. They can still be registered, linked or kept off the register.',
       linkedHint:
-        'MDM records linked here to a register device by hand; a serial that differs is highlighted. Unlink puts a record back in the list above.',
+        'MDM records linked to a register device by hand, or registered in the last 30 days; a serial that differs is highlighted. Unlink puts a record back in the list above.',
+      how: { registered: 'Registered', linked: 'Linked' },
+      recordTitle: 'MDM record',
+      recordFields: {
+        platform: 'Platform',
+        model: 'Model on the platform',
+        principal: 'Primary user account',
+        firstSeen: 'First seen',
+      },
       dismissedHint:
         'No longer raised; they come back if what MDM reports changes. Restore lists one again.',
       exemptedHint:

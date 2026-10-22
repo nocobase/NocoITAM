@@ -437,6 +437,9 @@ describe('MDM 核对 → 只在 MDM: 手动关联', () => {
           externalId: 'demo-x',
           serialNo: 'MDM-1',
           deviceName: 'LAPTOP-X',
+          how: 'registered',
+          ownership: 'company',
+          compliance: 'compliant',
           linkedDevice: {
             id: 'd7',
             deviceNo: 'DE-000007',
@@ -454,6 +457,20 @@ describe('MDM 核对 → 只在 MDM: 手动关联', () => {
     const section = screen
       .getByText('deviceSync.review.linkedHeading:1')
       .closest('section')!;
+    // Registered, said so (2026-10-22); its name opens the platform's record.
+    expect(
+      within(section).getByText('deviceSync.review.how.registered'),
+    ).toBeInTheDocument();
+    fireEvent.click(within(section).getByRole('button', { name: 'LAPTOP-X' }));
+    expect(
+      screen.getByText('deviceSync.review.recordTitle'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('deviceSync.compliance.compliant'),
+    ).toBeInTheDocument();
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: 'Escape',
+    });
     expect(
       within(section).getByRole('link', { name: 'DE-000007 / SG-LT-007' }),
     ).toHaveAttribute('href', '/devices/d7');

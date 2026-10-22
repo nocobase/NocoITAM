@@ -276,6 +276,12 @@ export interface UnregisteredDevice {
   readonly ignoreReason: string | null;
   /** Kept off by 核对规则 (a personal device), not by a person. */
   readonly ignoredByRule: boolean;
+  /** What else the platform reports, for the record's drawer (2026-10-22). */
+  readonly userPrincipal?: string | null;
+  readonly compliance?: string | null;
+  readonly encrypted?: boolean | null;
+  readonly enrolledAt?: string | null;
+  readonly firstSeenAt?: string | null;
   readonly consoleUrl: string | null;
   /** Every platform that reports it; a co-managed Mac is one row. */
   readonly sources: readonly DeviceSourceKey[];
@@ -303,8 +309,12 @@ export interface Exemption {
 
 export interface ExemptDevice extends UnmanagedDevice, Exemption {}
 
-/** A platform record linked by hand, and its device (2026-10-16). */
+/**
+ * A platform record linked by hand, and its device (2026-10-16), or
+ * registered from lately (2026-10-22).
+ */
 export interface LinkedRecord extends UnregisteredDevice {
+  readonly how?: 'linked' | 'registered';
   readonly linkedDevice: {
     readonly id: string;
     readonly deviceNo: string | null;

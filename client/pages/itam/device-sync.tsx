@@ -15,6 +15,7 @@ import {
   useRef,
   useState,
   type ReactElement,
+  type ReactNode,
 } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
@@ -60,6 +61,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { InfoSection, InfoRow } from '@/components/itam/detail-page';
 import { Textarea } from '@/components/ui/textarea';
 import {
   DEVICE_SYNC_PATH,
@@ -738,6 +746,7 @@ function LinkedView(): ReactElement {
         <TableHeader>
           <TableRow>
             <TableHead>{t('deviceSync.fields.deviceName')}</TableHead>
+            <TableHead>{t('deviceSync.review.columns.how')}</TableHead>
             <TableHead>{t('fields.serialNo')}</TableHead>
             <TableHead>{t('deviceSync.review.columns.linkedDevice')}</TableHead>
             <TableHead>{t('deviceSync.review.columns.linkedSerial')}</TableHead>
@@ -749,13 +758,16 @@ function LinkedView(): ReactElement {
             <TableRow key={row.id}>
               <TableCell>
                 <CellText>
-                  <span className='font-medium'>
-                    {row.deviceName ?? row.externalId}
-                  </span>{' '}
+                  <RecordName row={row} />{' '}
                   <span className='text-xs text-muted-foreground'>
                     {t(`deviceSync.sources.${row.source}`)}
                   </span>
                 </CellText>
+              </TableCell>
+              <TableCell>
+                <Badge variant='secondary'>
+                  {t(`deviceSync.review.how.${row.how ?? 'linked'}`)}
+                </Badge>
               </TableCell>
               <TableCell className='tabular-nums'>
                 {row.serialNo ?? '—'}
@@ -796,6 +808,126 @@ function LinkedView(): ReactElement {
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+/**
+ * A platform record's name, opening what the platform reports about it
+ * (2026-10-22): it has no register device to open.
+ */
+function RecordName({
+  row,
+}: {
+  readonly row: UnregisteredDevice;
+}): ReactElement {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type='button'
+        className='font-medium text-link underline-offset-4 hover:underline'
+        onClick={() => setOpen(true)}
+      >
+        {row.deviceName ?? row.externalId}
+      </button>
+      <ManagedRecordSheet row={row} open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
+/** What a platform reports about a record no register device answers to. */
+function ManagedRecordSheet({
+  row,
+  open,
+  onOpenChange,
+}: {
+  readonly row: UnregisteredDevice;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  const source = t(`deviceSync.sourceNames.${row.source}`, {
+    defaultValue: row.source,
+  });
+  const rows: [string, ReactNode][] = [
+    ['deviceSync.review.recordFields.platform', source],
+    ['fields.serialNo', row.serialNo ?? '—'],
+    [
+      'deviceSync.review.recordFields.model',
+      platformModel(row.manufacturer, row.model),
+    ],
+    [
+      'deviceSync.fields.os',
+      [row.osName, row.osVersion].filter(Boolean).join(' ') || '—',
+    ],
+    [
+      'deviceSync.fields.user',
+      row.personId ? (
+        <HolderLink key='user' holderType='person' holderId={row.personId} />
+      ) : (
+        (row.userName ?? '—')
+      ),
+    ],
+    ['deviceSync.review.recordFields.principal', row.userPrincipal ?? '—'],
+    ['deviceSync.fields.ownership', t(`deviceSync.ownership.${row.ownership}`)],
+    [
+      'deviceSync.fields.compliance',
+      row.compliance
+        ? t(`deviceSync.compliance.${row.compliance}`, {
+            defaultValue: row.compliance,
+          })
+        : '—',
+    ],
+    [
+      'deviceSync.fields.encrypted',
+      row.encrypted === null || row.encrypted === undefined
+        ? '—'
+        : t(row.encrypted ? 'common.yes' : 'common.no'),
+    ],
+    ['deviceSync.fields.enrolledAt', formatDate(row.enrolledAt ?? null)],
+    [
+      'deviceSync.review.recordFields.firstSeen',
+      formatDate(row.firstSeenAt ?? null, true),
+    ],
+    ['deviceSync.fields.lastSync', formatDate(row.lastSyncAt, true)],
+  ];
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className='gap-0 overflow-y-auto data-[side=right]:w-[min(480px,88vw)] data-[side=right]:sm:max-w-none'>
+        <SheetHeader className='border-b'>
+          <p className='text-sm text-muted-foreground'>
+            {t('deviceSync.review.recordTitle')}
+          </p>
+          <SheetTitle className='font-heading text-xl'>
+            {row.deviceName ?? row.externalId}
+          </SheetTitle>
+        </SheetHeader>
+        <div className='space-y-4 p-4'>
+          <InfoSection
+            title={source}
+            action={
+              row.consoleUrl ? (
+                <a
+                  href={row.consoleUrl}
+                  target='_blank'
+                  rel='noreferrer'
+                  className='inline-flex items-center gap-1 text-sm text-link underline-offset-4 hover:underline'
+                >
+                  <ExternalLink className='size-3.5' aria-hidden />
+                  {t('deviceSync.openIn', { source })}
+                </a>
+              ) : null
+            }
+          >
+            {rows.map(([label, value]) => (
+              <InfoRow key={label} label={t(label)}>
+                {value}
+              </InfoRow>
+            ))}
+          </InfoSection>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -1396,8 +1528,8 @@ function RecordsView({
                       the console link stay. */}
                   <CellText>
                     <span className='flex min-w-0 items-center gap-2 [&>*]:shrink-0'>
-                      <span className='min-w-0 shrink! truncate font-medium'>
-                        {row.deviceName ?? row.externalId}
+                      <span className='min-w-0 shrink! truncate'>
+                        <RecordName row={row} />
                       </span>
                       {/* Which platforms report it: one row per device. */}
                       <span className='text-xs text-muted-foreground'>

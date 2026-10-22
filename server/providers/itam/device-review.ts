@@ -89,6 +89,15 @@ export interface UnregisteredDevice {
    * so it can be found; the rule, not a row's 恢复, brings it back.
    */
   readonly ignoredByRule: boolean;
+  /**
+   * What else the platform reports, for the record's own drawer on MDM 核对
+   * (2026-10-22).
+   */
+  readonly userPrincipal: string | null;
+  readonly compliance: string | null;
+  readonly encrypted: boolean | null;
+  readonly enrolledAt: string | null;
+  readonly firstSeenAt: string | null;
   readonly consoleUrl: string | null;
   /**
    * Every platform that reports this device (step 3): a Mac in both Intune
@@ -122,8 +131,13 @@ export interface ExemptDevice extends UnmanagedDevice {
   readonly exemptedAt: string | null;
 }
 
-/** A platform record linked by hand, and the device it was linked to. */
+/**
+ * A platform record settled on MDM 核对 (2026-10-22): linked to a register
+ * device by hand, or registered from — a device made after the platform
+ * reported it, linked by its serial — and that device.
+ */
 export interface LinkedRecord extends UnregisteredDevice {
+  readonly how: 'linked' | 'registered';
   readonly linkedDevice: {
     readonly id: string;
     readonly deviceNo: string | null;
@@ -131,6 +145,9 @@ export interface LinkedRecord extends UnregisteredDevice {
     readonly serialNo: string | null;
   };
 }
+
+/** How long a record registered on MDM 核对 stays listed as settled. */
+const REGISTERED_DAYS = 30;
 
 export interface DeviceReviewService {
   /**
@@ -161,7 +178,9 @@ export interface DeviceReviewService {
   /**
    * Platform records a person linked to a register device by hand
    * (2026-10-16), with the device: 只在 MDM lists them under its rows so a
-   * link made there does not vanish, and 解除关联 takes it back.
+   * link made there does not vanish, and 解除关联 takes it back. Since
+   * 2026-10-22 also those registered in the last 30 days — by 补登记 or a
+   * plan — which otherwise left the page without a trace.
    */
   linkedByHand(): Promise<LinkedRecord[]>;
   /**
@@ -541,6 +560,14 @@ export function createDeviceReviewService(deps: {
       ignoredAt: iso(row.ignoredAt),
       ignoreReason: asText(row.ignoreReason) ?? null,
       ignoredByRule: false,
+      userPrincipal: asText(row.userPrincipal) ?? null,
+      compliance: asText(row.compliance) ?? null,
+      encrypted:
+        row.encrypted === null || row.encrypted === undefined
+          ? null
+          : Boolean(row.encrypted),
+      enrolledAt: iso(row.enrolledAt),
+      firstSeenAt: iso(row.firstSeenAt),
       consoleUrl: urlOf(String(row.source), String(row.externalId)),
       sources: [String(row.source)],
     };
@@ -831,7 +858,7 @@ export function createDeviceReviewService(deps: {
         .selectFrom('managedDevices')
         .selectAll()
         .where('matchState', '=', 'linked')
-        .where('matchedBy', '=', 'manual')
+        .where('matchedBy', 'in', ['manual', 'serial'])
         .where('goneAt', 'is', null)
         .orderBy('updatedAt', 'desc')
         .execute<Row>();
@@ -844,19 +871,29 @@ export function createDeviceReviewService(deps: {
           : await database
               .query()
               .selectFrom('devices')
-              .select(['id', 'deviceNo', 'name', 'serialNo'])
+              .select(['id', 'deviceNo', 'name', 'serialNo', 'createdAt'])
               .where('id', 'in', ids)
               .execute<Row>()
         ).map((device) => [String(device.id), device]),
       );
       const models = await modelIndex();
       const urlOf = await sync.consoleUrls();
+      const since = Date.now() - REGISTERED_DAYS * 86_400_000;
+      const time = (value: unknown) => Date.parse(iso(value) ?? '') || 0;
       return rows.flatMap((row) => {
         const device = devices.get(String(row.deviceId));
         if (!device) return [];
+        // Linked by serial: listed only when its device was made after the
+        // platform reported it, lately — registered from it.
+        const registered =
+          row.matchedBy === 'serial' &&
+          time(device.createdAt) >= time(row.firstSeenAt) &&
+          time(device.createdAt) >= since;
+        if (row.matchedBy === 'serial' && !registered) return [];
         return [
           {
             ...toUnregistered(row, models, new Map(), urlOf),
+            how: registered ? ('registered' as const) : ('linked' as const),
             linkedDevice: {
               id: String(device.id),
               deviceNo: asText(device.deviceNo) ?? null,
