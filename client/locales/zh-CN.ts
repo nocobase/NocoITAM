@@ -2169,7 +2169,7 @@ const zhCN: AppResource = {
         platformModel: '平台上的型号',
         reason: '原因',
         marked: '标记',
-        linkedDevice: '关联到',
+        linkedDevice: '关联到台账设备',
         how: '处理方式',
       },
       sharedSerial_one: '{{count}} 台台账设备用了这个序列号',

@@ -2268,7 +2268,7 @@ const messages = {
         platformModel: 'Model on the platform',
         reason: 'Reason',
         marked: 'Marked',
-        linkedDevice: 'Linked to',
+        linkedDevice: 'Linked to register device',
         how: 'How',
       },
       sharedSerial_one: '{{count}} register device has this serial',
