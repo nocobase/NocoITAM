@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { useItamList, type ItamRecord } from '@/lib/itam/api';
 import { useDeviceReview } from '@/lib/itam/device-sync';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
+import { REPAIRS_PATH } from '@/lib/itam/operations';
 import { DEVICE_FIELDS, holderCollection } from '@/lib/itam/devices';
 import { formatDate, text } from '@/lib/itam/format';
 import type { FieldDefinition } from '@/lib/itam/fields';
@@ -68,6 +69,23 @@ function HolderName({
       </span>
     </span>
   );
+}
+
+/**
+ * When a device at the repairer is due back, from its open repair, as the
+ * repair's own card says it (2026-10-22); nothing without a date.
+ */
+function RepairDue({ id }: { readonly id: string }): ReactElement | null {
+  const { t } = useTranslation();
+  const repairs = useItamList<ItamRecord>(REPAIRS_PATH, {
+    page: 1,
+    pageSize: 1,
+    filter: { deviceId: id, result: 'inProgress' },
+  });
+  const due = repairs.data?.data[0]?.expectedReturnAt;
+  return due ? (
+    <>{t('board.expectedReturn', { date: formatDate(due) })}</>
+  ) : null;
 }
 
 /** A device's model by name, as plain text. */
@@ -113,7 +131,8 @@ const DeviceBoard = createStatusBoard({
     // Each state with what matters in it (2026-10-22): in stock, whom it is
     // set aside for and where; in use, who has it and where; on loan, whom
     // it is lent to and when it is due back, as 待办's overdue loans read;
-    // otherwise the model.
+    // at the repairer, the model and when it is due back; otherwise the
+    // model.
     lines: [
       {
         part: (record) =>
@@ -127,6 +146,14 @@ const DeviceBoard = createStatusBoard({
           record.assigneeId && text(record.status) !== 'onLoan'
             ? createElement(HolderName, { row: record })
             : null,
+      },
+      // At the repairer: when it is due back.
+      {
+        part: (record) =>
+          text(record.status) === 'inRepair'
+            ? createElement(RepairDue, { id: text(record.id) })
+            : null,
+        icon: CalendarClock,
       },
       // On the shelf: whom it is set aside for, if anyone, then where.
       {
@@ -165,6 +192,8 @@ const DeviceBoard = createStatusBoard({
       {
         part: (record) =>
           record.locationId &&
+          // Not at the repairer, where the shelf it came from says nothing.
+          text(record.status) !== 'inRepair' &&
           (!record.assigneeId ||
             (text(record.status) === 'inUse' &&
               text(record.assigneeType) !== 'location'))

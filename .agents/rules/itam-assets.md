@@ -300,7 +300,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   stock, 预留给 whom (if anyone) and where; in use, 分配给 whom and where
   (not the place twice for one assigned to a place); on loan, 借给 whom,
   when it is due back and how overdue, as 待办's loans read; otherwise its
-  model, and where it is kept while nobody holds it. A card line given as an object is a fact line,
+  model — at the repairer, with when it is due back and no place — and
+  where it is kept while nobody holds it. A card line given as an object is a fact line,
   drawn small, with or without its own icon (`CardLine`). The status
   tags are all light tints: 使用中 green, 待报废 grey with 已停用 and 已报废,
   red only for 已丢失.
