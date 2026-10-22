@@ -682,7 +682,9 @@ export function DeviceSyncFollowUpBlock(): ReactElement | null {
             ))}
         </section>
       ) : null}
-      {hasOthers ? <OthersFollowUps /> : null}
+      {/* Not while the reader's own are worked out again (2026-10-22):
+          the one working line is the panel's news then. */}
+      {hasOthers && !working ? <OthersFollowUps /> : null}
     </div>
   );
 }
