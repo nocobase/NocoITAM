@@ -1218,9 +1218,9 @@ const zhCN: AppResource = {
     markLeft: '标记离职',
     markLeftTitle: '将 {{name}} 标记为离职？',
     markLeftHoldings_one:
-      '离职日期记为今天。名下 {{count}} 项资产仍挂在他名下，待回收会进入各自负责人的待我处理。',
+      '离职日期记为今天。名下 {{count}} 项资产仍挂在他名下，待回收会出现在各自负责人的待办里。',
     markLeftHoldings_other:
-      '离职日期记为今天。名下 {{count}} 项资产仍挂在他名下，待回收会进入各自负责人的待我处理。',
+      '离职日期记为今天。名下 {{count}} 项资产仍挂在他名下，待回收会出现在各自负责人的待办里。',
     markLeftClean: '离职日期记为今天。名下没有持有物。',
     markLeftOwned_one: '另有 {{count}} 条记录由他负责，需要移交。',
     markLeftOwned_other: '另有 {{count}} 条记录由他负责，需要移交。',
