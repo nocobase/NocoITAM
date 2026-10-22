@@ -197,10 +197,11 @@ export function BoardCards({
                       key={index}
                       // A line with an icon is a fact about the record (an
                       // amount, a vendor): a size down from what it is about.
+                      // Every line one colour under the heading (2026-10-22:
+                      // the first was darker, as if it were a second heading).
                       className={cn(
-                        'flex min-w-0 items-center gap-1.5',
+                        'flex min-w-0 items-center gap-1.5 text-muted-foreground',
                         fact && 'text-xs',
-                        index > 0 && 'text-muted-foreground',
                       )}
                     >
                       {Icon ? (
