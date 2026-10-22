@@ -681,6 +681,7 @@ function AdviceStrip({
   const announce = useAnnounce();
   const advice = plan.advice;
   const isOwner = Boolean(me) && me === ownerId;
+  const queryClient = useQueryClient();
   const advise = useMutation({
     mutationFn: async () =>
       (
@@ -697,6 +698,13 @@ function AdviceStrip({
           t(`onboarding.advice.notStarted.${result.reason ?? 'unavailable'}`),
           [],
         );
+      // Read the plan again at once, so the strip says it is choosing and
+      // looks again until it has (2026-10-22: without this the press
+      // seemed to do nothing until the page was reloaded).
+      else
+        await queryClient.invalidateQueries({
+          queryKey: ['itam', masterDataPath('people'), 'onboarding', personId],
+        });
     },
   });
   // Nothing to say: Asset Steward has not run and the reader cannot ask it to.

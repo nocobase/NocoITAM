@@ -149,9 +149,10 @@ const plan = (hireDate: string): OnboardingPlan => ({
   ],
 });
 
+let queries = new QueryClient();
 const show = (ownerId = 'u1') =>
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={(queries = new QueryClient())}>
       <MemoryRouter>
         <OnboardingPlanCard
           personId='p1'
@@ -422,4 +423,19 @@ it('lets a proposed device be looked at before it is reserved', () => {
   expect(
     screen.getByRole('button', { name: 'onboarding.reserve' }),
   ).toBeTruthy();
+});
+
+it('reads the plan again once a choosing run has started, so the press shows', async () => {
+  state.plan = plan('2099-01-10');
+  state.aiAvailable = true;
+  show();
+  const invalidate = vi.spyOn(queries, 'invalidateQueries');
+  fireEvent.click(
+    screen.getByRole('button', { name: 'onboarding.advice.first' }),
+  );
+  await settle();
+  await settle();
+  expect(invalidate).toHaveBeenCalledWith({
+    queryKey: ['itam', 'itam/master/people', 'onboarding', 'p1'],
+  });
 });
