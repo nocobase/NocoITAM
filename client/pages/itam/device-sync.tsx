@@ -2,7 +2,11 @@ import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  BookOpenText,
+  Cloud,
   ExternalLink,
+  GitCompareArrows,
+  type LucideIcon,
   Info,
   MoreHorizontal,
   Settings2,
@@ -195,17 +199,22 @@ export default function DeviceSyncReviewPage(): ReactElement {
           setParams({ view: String(next) }, { replace: true })
         }
       >
+        {/* Each led by its icon, as a record's tabs are (2026-10-22). */}
         <TabsList variant='line'>
-          {TABS.map((key) => (
-            <TabsTrigger key={key} value={key}>
-              {t(`deviceSync.review.views.${key}`)}
-              {counts[key] === undefined ? null : (
-                <span className='text-xs text-muted-foreground tabular-nums'>
-                  {counts[key]}
-                </span>
-              )}
-            </TabsTrigger>
-          ))}
+          {TABS.map((key) => {
+            const Icon = TAB_ICONS[key];
+            return (
+              <TabsTrigger key={key} value={key}>
+                <Icon aria-hidden className='size-4' />
+                {t(`deviceSync.review.views.${key}`)}
+                {counts[key] === undefined ? null : (
+                  <span className='text-xs text-muted-foreground tabular-nums'>
+                    {counts[key]}
+                  </span>
+                )}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </Tabs>
       {/* Each tab its own follow-ups (2026-10-22): under its hint, the
@@ -348,6 +357,13 @@ export default function DeviceSyncReviewPage(): ReactElement {
  * first again (2026-10-22), the first one opening by default.
  */
 const TABS = ['checks', 'unregistered', 'unmanaged'] as const;
+
+/** Each tab's icon: two lists compared, the platform's, the register's. */
+const TAB_ICONS: Readonly<Record<(typeof TABS)[number], LucideIcon>> = {
+  checks: GitCompareArrows,
+  unregistered: Cloud,
+  unmanaged: BookOpenText,
+};
 
 /** Each view's count, as its own list reads it (undefined while loading). */
 function useReviewCounts(): Partial<
