@@ -2101,7 +2101,7 @@ const messages = {
       idleDevice: 'In stock over {{idleDays}} days',
       auditOverdue: 'Not audited for {{auditDays}} days',
       departmentMismatch: 'Department differs from the holder’s',
-      entitlementOverAllocated: 'Over-allocated',
+      entitlementOverAllocated: 'Over-allocated entitlements',
       lowAccessories: 'Accessories below minimum',
       lowConsumables: 'Consumables below minimum',
       lowComponents: 'Components below minimum',
