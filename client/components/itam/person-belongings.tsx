@@ -529,8 +529,10 @@ export function PersonBelongings({
                     />
                   ),
                   // Level with the row's first line, the tag's, rather than
-                  // the middle of a row that wraps.
-                  className: 'w-px align-top',
+                  // the middle of a row that wraps; the header's stays level
+                  // with the header's text (2026-10-22).
+                  className: 'w-px',
+                  cellClassName: 'align-top',
                   render: (item: (typeof rows)[number]) =>
                     actionable(item) ? (
                       <span className='flex h-6 items-center'>
@@ -565,6 +567,9 @@ export function PersonBelongings({
           {
             key: 'item',
             header: t('people.recovery.columns.item'),
+            // Tags and a name: not cut at 20rem, or the status tag is
+            // clipped (2026-10-22).
+            contentClassName: 'max-w-none',
             // Name and what identifies this one of it in a single cell,
             // the way a device's 编号 / 名称 are: the account a seat
             // carries, and how many of a stock item are held.

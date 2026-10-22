@@ -24,6 +24,13 @@ export interface DataTableColumn<T> {
   readonly render: (row: T) => ReactNode;
   readonly sortable?: boolean;
   readonly className?: string;
+  /** For the body's cells alone, not the header's — `align-top`, say. */
+  readonly cellClassName?: string;
+  /**
+   * For the cell's content box (`CellText`), whose 20rem cut suits a free
+   * value but clips a cell made of a name and its tags (2026-10-22).
+   */
+  readonly contentClassName?: string;
   readonly width?: string;
 }
 
@@ -151,11 +158,16 @@ export function DataTable<T extends { readonly id: string }>({
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                   >
                     {columns.map((column) => (
-                      <TableCell key={column.key} className={column.className}>
+                      <TableCell
+                        key={column.key}
+                        className={cn(column.className, column.cellClassName)}
+                      >
                         {/* One line per row (2026-10-15), cut short past
                             20rem (`CellText`); the table scrolls sideways
                             when wider than the page. */}
-                        <CellText>{column.render(row)}</CellText>
+                        <CellText className={column.contentClassName}>
+                          {column.render(row)}
+                        </CellText>
                       </TableCell>
                     ))}
                     {rowActions ? (
