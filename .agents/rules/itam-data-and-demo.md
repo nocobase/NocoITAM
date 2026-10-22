@@ -142,8 +142,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   accounts `manager` and `support`): the IT staff as people with names —
   two asset managers, 孙强 `sunqiang` and 吴静 `wujing`, and IT support
   周宇 `zhouyu` — and the leaver 陈杰 `chenjie`, who is IT support too and
-  leaves on the day of the import (marked left last, the way 标记离职 does,
-  so his handover snapshot is whole and his sign-in is disabled); each
+  left two days before the import (entered last with that leave date, which
+  marks them left the way 标记离职 does, so the handover snapshot is whole
+  and the sign-in disabled; it was the day itself until 2026-10-22, when the
+  laptop that answers to the importer, SH-LT-011, began syncing since, the
+  one 离职后仍在线 on their card); each
   password is the username and 123. The other demo people are employees and
   have none. Those are the Chinese demo's; the English demo has people of
   its own (2026-10-06, `DEMO_STAFF` and `PERSON_NAMES` by language) —
@@ -172,7 +175,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   disposal to carry out, and counts in the open stocktake. Since
   2026-10-22 every column of 待办 → 我的 has a row: 沈雨桐 (Grace Turner,
   `keeps` in `CREW`) left three days ago with everything still out, and the
-  laptop they hold is the importer's; the importer is the first joiner's 入职负责人; and
+  laptop they hold is the importer's — their devices went quiet that day, so
+  their card says nothing is online; the importer is the first joiner's 入职负责人; and
   SH-LT-031 is a loaner two days overdue that it answers for. The data test
   checks no column of its 我的 is empty — the demo is written as 吴静 (`writerId`), who
   raises the requests 孙强 decides; repairs and audits are 周宇's. `demoAccountUsernames()`

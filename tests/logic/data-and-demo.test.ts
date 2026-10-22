@@ -23,7 +23,7 @@ import { deviceConnectionsServiceToken } from '../../server/providers/itam/devic
 import { deviceReviewServiceToken } from '../../server/providers/itam/device-review.js';
 import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.js';
 import { workbenchServiceToken } from '../../server/providers/itam/workbench.js';
-import { today } from '../../server/providers/itam/dates.js';
+import { addDays, today } from '../../server/providers/itam/dates.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { dataRoutes } from '../../server/routes/itam/data.js';
 import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
@@ -409,11 +409,12 @@ describe('CSV import / export and demo data', () => {
     const people = await data<
       { name: string; employmentStatus: string; leaveDate: string | null }[]
     >(await get('master/people?pageSize=50'));
-    // 陈杰 leaves on the day the demo is imported, so the 离职交接 to-do
-    // has a whole handover to show.
+    // 陈杰 left two days before the demo was imported, so the 离职交接
+    // to-do has a whole handover to show and their laptop's syncs since
+    // read as 离职后仍在线 (2026-10-22; it was the day itself).
     expect(people.find((person) => person.name === '陈杰')).toMatchObject({
       employmentStatus: 'left',
-      leaveDate: today(),
+      leaveDate: addDays(today(), -2),
     });
   });
 

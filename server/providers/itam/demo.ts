@@ -1056,7 +1056,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     commentExpired:
       'Out of warranty, so this repair is charged to the IT budget.',
     commentLeaver:
-      '@{importer} {leaver} leaves next Friday and still has devices and a draft disposal in their name. Please plan the handover.',
+      '@{importer} {leaver} leaves next week and still has devices and a draft disposal in their name. Please plan the handover.',
     commentLaptopCycle:
       'Laptops are replaced every four years; the 2023 MacBook Pro batch comes due together next year, so budget for it in Q1.',
     commentMonitorRule:
@@ -1190,7 +1190,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     commentSwollenReply: '收到，已经提了报废单。',
     commentExpired: '已过保，这次维修费用走 IT 部门预算。',
     commentLeaver:
-      '@{importer} {leaver} 下周五最后一天，名下还有设备和一张报废草稿，记得安排交接。',
+      '@{importer} {leaver} 下周离职，名下还有设备和一张报废草稿，记得安排交接。',
     commentLaptopCycle:
       '笔记本按 4 年更换，2023 年那批 MacBook Pro 明年会集中到期，一季度预算要留出来。',
     commentMonitorRule:
@@ -2439,6 +2439,9 @@ export function createDemoService(dependencies: {
               // The second one was never issued, so it is in the warehouse.
               locationId: index === 1 ? warehouse.id : floor3.id,
               departmentId: sales.id,
+              // The leaver's later, answering to whoever imported the demo
+              // (2026-10-22), so 陈杰 is on their 待办 → 我的 too.
+              ...(index === 1 && importerId ? { ownerId: importerId } : {}),
               vendorId: more.apple.id,
               purchaseDate: daysFromNow(-150),
               purchasePrice: 9999,
@@ -3092,10 +3095,11 @@ export function createDemoService(dependencies: {
         await assign(airs[0].id, zhaoMin.id, -145);
         await assign(thinkpads[0].id, liuYang.id, -55);
         await assign(expiredLaptop.id, chenJie.id, -1495);
-        // A second thing in the leaver's hands, this one answering to 吴静,
-        // who writes the demo: their laptop is at the repair shop and answers
-        // to IT support, so without this somebody signed in as an asset
-        // manager has nothing on the recovery they can actually hand back.
+        // A second thing in the leaver's hands, this one answering to the
+        // importer (吴静 without the accounts plugins): their laptop is at the
+        // repair shop and answers to IT support, so without this somebody
+        // signed in as an asset manager has nothing on the recovery they can
+        // actually hand back.
         await assign(airs[1].id, chenJie.id, -140);
         await assign(monitors[0].id, liNa.id, -295);
         await assign(monitors[1].id, zhaoMin.id, -295);
@@ -5892,7 +5896,7 @@ export function createDemoService(dependencies: {
             expiredLaptop,
             texts.commentExpired,
           );
-          await comment(-1, writerId, 'people', chenJie, texts.commentLeaver, {
+          await comment(-9, writerId, 'people', chenJie, texts.commentLeaver, {
             mention: true,
           });
           // And on the master data the demo made (2026-10-16): the reseller's
@@ -6136,15 +6140,22 @@ export function createDemoService(dependencies: {
           await arrivedOn(String(row.id), `${arrived}T10:00:00.000`);
         }
 
-        // 陈杰 leaves today, last, once everything he holds and answers for
-        // is in place: marking him left the way 标记离职 does takes the
-        // snapshot his handover is measured against and disables his sign-in,
-        // so the 离职交接 to-do opens on a whole handover with nothing done.
-        await masterData.markPersonLeft(
+        // 陈杰 left two days ago (2026-10-22; it was today), entered last,
+        // once everything they hold and answer for is in place: a leave date
+        // in the past marks them left the way 标记离职 does — the snapshot
+        // their handover is measured against, their sign-in disabled — so
+        // the 离职交接 to-do opens on a whole handover with nothing done.
+        // Two days back so their laptop's syncs since count as 离职后仍在线
+        // (a sync counts on a later day than the leave date).
+        await on(-2);
+        await masterData.update(
+          'people',
           String(chenJie.id),
+          { leaveDate: daysFromNow(-2) },
           writerId,
           unrestricted('people', 'update'),
         );
+        await off();
 
         // Every department has a default 入职配置 (2026-10-06): the seeds give
         // one to each department but 技术部, and one deleted while trying the
@@ -6664,6 +6675,26 @@ export function createDemoService(dependencies: {
               }),
             ),
           );
+          // After leaving (2026-10-22): 陈杰's laptop still syncs, one device
+          // 离职后仍在线 on their card; a leaver who handed nothing back yet
+          // (`keeps`) went quiet the day they left.
+          const leaverMail = asText(chenJie.email);
+          const quietSince = new Map(
+            CREW.flatMap((spec, index) =>
+              spec.keeps && spec.left !== undefined
+                ? [[asText(crew[index]?.email) ?? '', spec.left] as const]
+                : [],
+            ),
+          );
+          const afterLeaving = (device: ObservedDevice): ObservedDevice => {
+            if (leaverMail && device.userPrincipal === leaverMail)
+              return { ...device, lastSyncAt: syncedAgo(0) };
+            const left = quietSince.get(device.userPrincipal ?? '');
+            return left === undefined
+              ? device
+              : { ...device, lastSyncAt: syncedAgo(left, 9) };
+          };
+          observed.splice(0, observed.length, ...observed.map(afterLeaving));
           // Two pulls: the first with every device, the second without the
           // one Intune stopped reporting, which the second marks gone.
           for (const batch of [
@@ -6745,10 +6776,16 @@ export function createDemoService(dependencies: {
             ),
           ];
           if (jamfObserved.length > 0) {
+            // Jamf leaves 陈杰's laptop to Intune, so it is the one device.
+            const jamfBatch = jamfObserved
+              .filter(
+                (device) => !leaverMail || device.userPrincipal !== leaverMail,
+              )
+              .map(afterLeaving);
             const jamfRun = await dependencies.deviceSync.ingest(
               'jamf',
               (async function* () {
-                yield jamfObserved;
+                yield jamfBatch;
               })(),
               'demo',
               actorId,
