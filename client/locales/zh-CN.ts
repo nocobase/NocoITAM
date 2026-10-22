@@ -2170,7 +2170,6 @@ const zhCN: AppResource = {
         reason: '原因',
         marked: '标记',
         linkedDevice: '关联到',
-        linkedSerial: '台账序列号',
         how: '处理方式',
       },
       sharedSerial_one: '{{count}} 台台账设备用了这个序列号',
@@ -2223,6 +2222,7 @@ const zhCN: AppResource = {
       silentHeading: '长期未同步 {{count}} 台',
       silentHint:
         '超过「失联」天数没同步、台账里也没有的 MDM 记录，多半已经不用了。需要的话照样可以补登记、关联或不纳入台账。',
+      registerSerial: '台账序列号 {{serial}}',
       linkedHint:
         '手动关联到台账设备、或最近 30 天补登记的 MDM 记录，序列号不一致的标黄。点「解除关联」会回到上面的列表。',
       how: { registered: '补登记', linked: '关联' },

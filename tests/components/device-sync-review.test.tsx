@@ -474,10 +474,11 @@ describe('MDM 核对 → 只在 MDM: 手动关联', () => {
     expect(
       within(section).getByRole('link', { name: 'DE-000007 / SG-LT-007' }),
     ).toHaveAttribute('href', '/devices/d7');
-    // A serial that is not the platform's is marked.
-    expect(within(section).getByText('REG-1').className).toContain(
-      'text-warning-foreground',
-    );
+    // A serial that is not the platform's is said, marked, beside the
+    // device (2026-10-22).
+    expect(
+      within(section).getByText('deviceSync.review.registerSerial').className,
+    ).toContain('text-warning-foreground');
     fireEvent.click(
       within(section).getByRole('button', { name: 'deviceSync.unlink' }),
     );

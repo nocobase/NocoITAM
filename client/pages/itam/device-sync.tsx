@@ -749,7 +749,6 @@ function LinkedView(): ReactElement {
             <TableHead>{t('deviceSync.review.columns.how')}</TableHead>
             <TableHead>{t('fields.serialNo')}</TableHead>
             <TableHead>{t('deviceSync.review.columns.linkedDevice')}</TableHead>
-            <TableHead>{t('deviceSync.review.columns.linkedSerial')}</TableHead>
             <TableHead className='text-right'>{t('common.actions')}</TableHead>
           </TableRow>
         </TableHeader>
@@ -780,17 +779,18 @@ function LinkedView(): ReactElement {
                   >
                     {deviceLabel(row.linkedDevice)}
                   </RecordLink>
+                  {/* The register's serial only where it is not the
+                      platform's (2026-10-22): the same serial twice said
+                      nothing. */}
+                  {row.serialNo &&
+                  !same(row.serialNo, row.linkedDevice.serialNo) ? (
+                    <span className='ml-2 text-xs text-warning-foreground tabular-nums'>
+                      {t('deviceSync.review.registerSerial', {
+                        serial: row.linkedDevice.serialNo ?? '—',
+                      })}
+                    </span>
+                  ) : null}
                 </CellText>
-              </TableCell>
-              <TableCell
-                className={cn(
-                  'tabular-nums',
-                  row.serialNo &&
-                    !same(row.serialNo, row.linkedDevice.serialNo) &&
-                    'text-warning-foreground',
-                )}
-              >
-                {row.linkedDevice.serialNo ?? '—'}
               </TableCell>
               <TableCell className='text-right'>
                 <Button
