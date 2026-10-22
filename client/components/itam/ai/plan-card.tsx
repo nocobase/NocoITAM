@@ -231,7 +231,10 @@ export function PlanCard({
                   <Badge variant='secondary' className='ml-2 align-text-bottom'>
                     {settledLabel}
                   </Badge>
-                ) : !pending && step.status === 'removed' ? (
+                ) : !pending &&
+                  step.status === 'removed' &&
+                  // Tickable again, its checkbox says it (2026-10-22).
+                  !tickable.has(step.position) ? (
                   <Badge variant='secondary' className='ml-2 align-text-bottom'>
                     {t('ai.plans.notRun')}
                   </Badge>

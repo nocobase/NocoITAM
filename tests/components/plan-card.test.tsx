@@ -100,6 +100,7 @@ it('ticks a step not run again, and marks one settled since', () => {
       />
     </QueryClientProvider>,
   );
+  expect(screen.queryByText('ai.plans.notRun')).toBeNull();
   fireEvent.click(screen.getByRole('checkbox'));
   expect(onSkippedChange).toHaveBeenCalledWith(new Set([0]));
   unmount();
