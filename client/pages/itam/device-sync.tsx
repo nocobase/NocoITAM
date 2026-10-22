@@ -43,6 +43,7 @@ import { RecordLink } from '@/components/itam/record-link';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -192,162 +193,171 @@ export default function DeviceSyncReviewPage(): ReactElement {
           it — each with its count. What was kept off is not a fourth to-do:
           it is listed under 只在 MDM, beneath what still waits. Asset
           Steward's suggestions above sit on a tinted panel of their own
-          (2026-10-21), so the lists need no heading. */}
-      <Tabs
-        value={view}
-        onValueChange={(next) =>
-          setParams({ view: String(next) }, { replace: true })
-        }
-      >
-        {/* Each led by its icon, as a record's tabs are (2026-10-22). */}
-        <TabsList variant='line'>
-          {TABS.map((key) => {
-            const Icon = TAB_ICONS[key];
-            return (
-              <TabsTrigger key={key} value={key}>
-                <Icon aria-hidden className='size-4' />
-                {t(`deviceSync.review.views.${key}`)}
-                {counts[key] === undefined ? null : (
-                  <span className='text-xs text-muted-foreground tabular-nums'>
-                    {counts[key]}
-                  </span>
-                )}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-      </Tabs>
-      {/* Each tab its own follow-ups (2026-10-22): under its hint, the
+          (2026-10-21), so the lists need no heading. The tabs and all they
+          hold sit on a card (2026-10-22), as a record's tabs do. */}
+      <Card className='py-0'>
+        <CardContent className='flex flex-col gap-4 p-4'>
+          <Tabs
+            value={view}
+            onValueChange={(next) =>
+              setParams({ view: String(next) }, { replace: true })
+            }
+          >
+            {/* Each led by its icon, as a record's tabs are (2026-10-22). */}
+            <TabsList variant='line'>
+              {TABS.map((key) => {
+                const Icon = TAB_ICONS[key];
+                return (
+                  <TabsTrigger key={key} value={key}>
+                    <Icon aria-hidden className='size-4' />
+                    {t(`deviceSync.review.views.${key}`)}
+                    {counts[key] === undefined ? null : (
+                      <span className='text-xs text-muted-foreground tabular-nums'>
+                        {counts[key]}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </Tabs>
+          {/* Each tab its own follow-ups (2026-10-22): under its hint, the
           reader's devices' and the asset managers', each run again on its
           card; with none, the hint's line starts this tab's. What they
           suggest also shows on the rows, marked. */}
-      <div className='flex flex-wrap items-center justify-between gap-2'>
-        <p className='text-sm text-muted-foreground'>
-          {t(`deviceSync.review.hints.${view}`)}
-        </p>
-        {ai.available && !followingHere ? (
-          <AiShortcut
-            disabled={followUp.isPending}
-            onClick={() => followUp.mutate({ tab: view })}
-          >
-            {t('deviceSync.review.followUp')}
-          </AiShortcut>
-        ) : null}
-      </div>
-      <DeviceSyncFollowUpBlock tab={view} />
-      {followUp.isSuccess && followUp.data.length === 0 ? (
-        <Alert>
-          <Info aria-hidden />
-          <AlertDescription>
-            {t('deviceSync.review.followUpNothing')}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      {followUp.error ? (
-        <p role='alert' className='text-sm text-destructive'>
-          {followUp.error.message}
-        </p>
-      ) : null}
+          <div className='flex flex-wrap items-center justify-between gap-2'>
+            <p className='text-sm text-muted-foreground'>
+              {t(`deviceSync.review.hints.${view}`)}
+            </p>
+            {ai.available && !followingHere ? (
+              <AiShortcut
+                disabled={followUp.isPending}
+                onClick={() => followUp.mutate({ tab: view })}
+              >
+                {t('deviceSync.review.followUp')}
+              </AiShortcut>
+            ) : null}
+          </div>
+          <DeviceSyncFollowUpBlock tab={view} />
+          {followUp.isSuccess && followUp.data.length === 0 ? (
+            <Alert>
+              <Info aria-hidden />
+              <AlertDescription>
+                {t('deviceSync.review.followUpNothing')}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          {followUp.error ? (
+            <p role='alert' className='text-sm text-destructive'>
+              {followUp.error.message}
+            </p>
+          ) : null}
 
-      {view === 'checks' ? (
-        <ChecksView />
-      ) : view === 'unmanaged' ? (
-        <UnmanagedView view='unmanaged' />
-      ) : (
-        <RecordsView view='unregistered' />
-      )}
-      {silentShown ? (
-        <section className='mt-4 flex flex-col gap-3'>
-          <div className='space-y-1'>
-            <h2 className='font-medium'>
-              {t('deviceSync.review.silentHeading', { count: counts.silent })}
-            </h2>
-            <p className='text-sm text-muted-foreground'>
-              {t('deviceSync.review.silentHint')}
-            </p>
-          </div>
-          <RecordsView view='silent' />
-        </section>
-      ) : null}
-      {linkedShown ? (
-        <section className='mt-4 flex flex-col gap-3'>
-          <div className='space-y-1'>
-            <h2 className='font-medium'>
-              {t('deviceSync.review.linkedHeading', { count: counts.linked })}
-            </h2>
-            <p className='text-sm text-muted-foreground'>
-              {t('deviceSync.review.linkedHint')}
-            </p>
-          </div>
-          <LinkedView />
-        </section>
-      ) : null}
-      {ignoredShown ? (
-        <section
-          ref={ignoredRef}
-          className='mt-4 flex scroll-mt-4 flex-col gap-3'
-        >
-          <div className='space-y-1'>
-            <h2 className='font-medium'>
-              {t('deviceSync.review.ignoredHeading', {
-                count: counts.ignored,
-              })}
-            </h2>
-            {/* Each kind said once, and only the kinds there are. */}
-            {(counts.ignoredManual ?? 0) > 0 ? (
-              <p className='text-sm text-muted-foreground'>
-                {t('deviceSync.review.ignoredManual', {
-                  count: counts.ignoredManual,
-                })}
-              </p>
-            ) : null}
-            {(counts.ignoredByRule ?? 0) > 0 ? (
-              <p className='text-sm text-muted-foreground'>
-                {t('deviceSync.review.ignoredPersonal', {
-                  count: counts.ignoredByRule,
-                })}
-              </p>
-            ) : null}
-          </div>
-          <RecordsView view='ignored' />
-        </section>
-      ) : null}
-      {dismissedShown ? (
-        <section
-          ref={ignoredRef}
-          className='mt-4 flex scroll-mt-4 flex-col gap-3'
-        >
-          <div className='space-y-1'>
-            <h2 className='font-medium'>
-              {t('deviceSync.review.dismissedHeading', {
-                count: counts.dismissed,
-              })}
-            </h2>
-            <p className='text-sm text-muted-foreground'>
-              {t('deviceSync.review.dismissedHint')}
-            </p>
-          </div>
-          <DismissedView />
-        </section>
-      ) : null}
-      {exemptedShown ? (
-        <section
-          ref={ignoredRef}
-          className='mt-4 flex scroll-mt-4 flex-col gap-3'
-        >
-          <div className='space-y-1'>
-            <h2 className='font-medium'>
-              {t('deviceSync.review.exemptedHeading', {
-                count: counts.exempted,
-              })}
-            </h2>
-            <p className='text-sm text-muted-foreground'>
-              {t('deviceSync.review.exemptedHint')}
-            </p>
-          </div>
-          <UnmanagedView view='exempted' />
-        </section>
-      ) : null}
+          {view === 'checks' ? (
+            <ChecksView />
+          ) : view === 'unmanaged' ? (
+            <UnmanagedView view='unmanaged' />
+          ) : (
+            <RecordsView view='unregistered' />
+          )}
+          {silentShown ? (
+            <section className='mt-4 flex flex-col gap-3'>
+              <div className='space-y-1'>
+                <h2 className='font-medium'>
+                  {t('deviceSync.review.silentHeading', {
+                    count: counts.silent,
+                  })}
+                </h2>
+                <p className='text-sm text-muted-foreground'>
+                  {t('deviceSync.review.silentHint')}
+                </p>
+              </div>
+              <RecordsView view='silent' />
+            </section>
+          ) : null}
+          {linkedShown ? (
+            <section className='mt-4 flex flex-col gap-3'>
+              <div className='space-y-1'>
+                <h2 className='font-medium'>
+                  {t('deviceSync.review.linkedHeading', {
+                    count: counts.linked,
+                  })}
+                </h2>
+                <p className='text-sm text-muted-foreground'>
+                  {t('deviceSync.review.linkedHint')}
+                </p>
+              </div>
+              <LinkedView />
+            </section>
+          ) : null}
+          {ignoredShown ? (
+            <section
+              ref={ignoredRef}
+              className='mt-4 flex scroll-mt-4 flex-col gap-3'
+            >
+              <div className='space-y-1'>
+                <h2 className='font-medium'>
+                  {t('deviceSync.review.ignoredHeading', {
+                    count: counts.ignored,
+                  })}
+                </h2>
+                {/* Each kind said once, and only the kinds there are. */}
+                {(counts.ignoredManual ?? 0) > 0 ? (
+                  <p className='text-sm text-muted-foreground'>
+                    {t('deviceSync.review.ignoredManual', {
+                      count: counts.ignoredManual,
+                    })}
+                  </p>
+                ) : null}
+                {(counts.ignoredByRule ?? 0) > 0 ? (
+                  <p className='text-sm text-muted-foreground'>
+                    {t('deviceSync.review.ignoredPersonal', {
+                      count: counts.ignoredByRule,
+                    })}
+                  </p>
+                ) : null}
+              </div>
+              <RecordsView view='ignored' />
+            </section>
+          ) : null}
+          {dismissedShown ? (
+            <section
+              ref={ignoredRef}
+              className='mt-4 flex scroll-mt-4 flex-col gap-3'
+            >
+              <div className='space-y-1'>
+                <h2 className='font-medium'>
+                  {t('deviceSync.review.dismissedHeading', {
+                    count: counts.dismissed,
+                  })}
+                </h2>
+                <p className='text-sm text-muted-foreground'>
+                  {t('deviceSync.review.dismissedHint')}
+                </p>
+              </div>
+              <DismissedView />
+            </section>
+          ) : null}
+          {exemptedShown ? (
+            <section
+              ref={ignoredRef}
+              className='mt-4 flex scroll-mt-4 flex-col gap-3'
+            >
+              <div className='space-y-1'>
+                <h2 className='font-medium'>
+                  {t('deviceSync.review.exemptedHeading', {
+                    count: counts.exempted,
+                  })}
+                </h2>
+                <p className='text-sm text-muted-foreground'>
+                  {t('deviceSync.review.exemptedHint')}
+                </p>
+              </div>
+              <UnmanagedView view='exempted' />
+            </section>
+          ) : null}
+        </CardContent>
+      </Card>
     </Page>
   );
 }
