@@ -6409,7 +6409,7 @@ export function createDemoService(dependencies: {
             .sort((a, b) =>
               String(b.updatedAt).localeCompare(String(a.updatedAt)),
             )[0];
-          const finder = inUse[7] ?? inUse[0];
+          const finder = inUse[8] ?? inUse[0];
           if (found) {
             await on(-42);
             await devices.markLost(
