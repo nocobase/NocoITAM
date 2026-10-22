@@ -17,7 +17,12 @@ const state = vi.hoisted(() => ({
   records: [] as Record<string, unknown>[],
   ai: false,
   // MDM 跟进 runs still open, and what the reader may do to devices.
-  open: [] as { agent: string; status?: string; result?: unknown }[],
+  open: [] as {
+    agent: string;
+    subjectId?: string;
+    status?: string;
+    result?: unknown;
+  }[],
   permissions: {} as Record<string, boolean>,
   followUp: {
     mutate: vi.fn(),
@@ -369,6 +374,7 @@ describe('MDM 核对 → 信息不一致', () => {
     state.open = [
       {
         agent: 'deviceSync',
+        subjectId: 'shared:mia',
         status: 'pending',
         result: {
           advice: [
@@ -398,10 +404,13 @@ describe('MDM 核对 → 信息不一致', () => {
 
   // The cards each run again on their own (2026-10-22): no header button
   // while one is there.
-  it('leaves running again to the cards while one waits', () => {
+  it('leaves running again to the cards while both wait', () => {
     state.ai = true;
     state.views = { checks: [check] };
-    state.open = [{ agent: 'deviceSync' }];
+    state.open = [
+      { agent: 'deviceSync', subjectId: 'owner:mia' },
+      { agent: 'deviceSync', subjectId: 'shared:mia' },
+    ];
     show();
     expect(
       screen.queryByRole('button', { name: 'deviceSync.review.followUp' }),
@@ -410,10 +419,27 @@ describe('MDM 核对 → 信息不一致', () => {
     state.ai = false;
   });
 
+  // One set aside, its part has no card: the header starts it alone
+  // (2026-10-22).
+  it('starts the part with no card alone', () => {
+    state.ai = true;
+    state.views = { checks: [check] };
+    state.open = [{ agent: 'deviceSync', subjectId: 'shared:mia' }];
+    show();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'deviceSync.review.followUp' }),
+    );
+    expect(state.followUp.mutate).toHaveBeenCalledWith('own');
+    state.open = [];
+    state.ai = false;
+  });
+
   it('offers it again after one failed', () => {
     state.ai = true;
     state.views = { checks: [check] };
-    state.open = [{ agent: 'deviceSync', status: 'failed' }];
+    state.open = [
+      { agent: 'deviceSync', subjectId: 'owner:mia', status: 'failed' },
+    ];
     show();
     expect(
       screen.getByRole('button', { name: 'deviceSync.review.followUp' }),
@@ -723,6 +749,7 @@ describe('MDM 核对 → 只在 MDM: 补登记', () => {
     state.open = [
       {
         agent: 'deviceSync',
+        subjectId: 'shared:mia',
         status: 'pending',
         result: {
           advice: [

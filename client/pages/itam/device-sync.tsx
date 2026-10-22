@@ -119,9 +119,21 @@ export default function DeviceSyncReviewPage(): ReactElement {
   // (2026-10-22), so the header does not; it starts one when there is none,
   // or after one failed.
   const inbox = useInbox();
-  const following = (inbox.data?.open ?? []).some(
+  // By part (2026-10-22): one set aside leaves its part with no card, so
+  // the header starts that part alone while the other's card is there.
+  const open = (inbox.data?.open ?? []).filter(
     (run) => run.agent === 'deviceSync' && run.status !== 'failed',
   );
+  const openOwn = open.some((run) => run.subjectId.startsWith('owner:'));
+  const openShared = open.some((run) => run.subjectId.startsWith('shared:'));
+  const missing =
+    openOwn && openShared
+      ? null
+      : openOwn
+        ? ('shared' as const)
+        : openShared
+          ? ('own' as const)
+          : undefined;
   const requested = params.get('view');
   // 已忽略 is a section of 只在 MDM: a link to it (the settings page's)
   // opens that tab and scrolls down to it.
@@ -163,10 +175,10 @@ export default function DeviceSyncReviewPage(): ReactElement {
           <>
             {/* MDM 跟进 on the page (2026-10-17): the follow-up for the reader alone, now
                 rather than after the next pull. */}
-            {ai.available && !following ? (
+            {ai.available && missing !== null ? (
               <AiShortcut
                 disabled={followUp.isPending}
-                onClick={() => followUp.mutate()}
+                onClick={() => followUp.mutate(missing)}
               >
                 {t('deviceSync.review.followUp')}
               </AiShortcut>
