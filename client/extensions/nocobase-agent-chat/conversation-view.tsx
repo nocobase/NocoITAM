@@ -180,6 +180,13 @@ interface Entry {
   readonly rank: number;
   readonly seq?: number;
   readonly node: ReactNode;
+  /**
+   * Application change (ITAM, 2026-10-22): an agent's reply that a card
+   * following it may sit inside (its last segment), and a timeline item's
+   * own node for that.
+   */
+  readonly withCards?: (cards: ReactNode) => ReactNode;
+  readonly card?: ReactNode;
 }
 
 function ConversationBody({
@@ -350,12 +357,8 @@ function ConversationBody({
     : [];
   const entries: Entry[] = timelineOrder([
     ...extraEntries,
-    ...segments.map((segment): Entry => ({
-      key: `m-${segment.key}`,
-      at: segment.at,
-      seq: segment.seq,
-      rank: 0,
-      node: (
+    ...segments.map((segment): Entry => {
+      const item = (attached?: ReactNode) => (
         <MessageItem
           key={`m-${segment.key}`}
           message={segment.message}
@@ -375,18 +378,31 @@ function ConversationBody({
               : null
           }
           approvalDisabled={receiving}
+          attached={attached}
           onApproval={
             conversationId
               ? (input) => chatController.approve(conversationId, input)
               : undefined
           }
         />
-      ),
-    })),
+      );
+      return {
+        key: `m-${segment.key}`,
+        at: segment.at,
+        seq: segment.seq,
+        rank: 0,
+        node: item(),
+        ...(segment.last && segment.message.role === 'assistant'
+          ? { withCards: item }
+          : {}),
+      };
+    }),
+
     ...timeline.map((item): Entry => ({
       key: `x-${item.key}`,
       at: item.at,
       rank: 1,
+      card: item.node,
       node: (
         <li
           key={`x-${item.key}`}
@@ -398,6 +414,33 @@ function ConversationBody({
       ),
     })),
   ]);
+
+  // Application change (ITAM, 2026-10-22): the cards a reply proposed (a
+  // plan) sit inside it, above its time and copy row, rather than after
+  // that row as items of their own — the row closes the reply. Only cards
+  // straight after an agent's reply; any other stays where it is.
+  const shownEntries: ReactNode[] = [];
+  let taking: { index: number; cards: ReactNode[]; entry: Entry } | null = null;
+  const settle = () => {
+    if (taking?.cards.length && taking.entry.withCards)
+      shownEntries[taking.index] = taking.entry.withCards(taking.cards);
+  };
+  for (const entry of entries) {
+    if (entry.card !== undefined && taking) {
+      taking.cards.push(
+        <div key={entry.key} data-chat-item={entry.key.slice(2)}>
+          {entry.card}
+        </div>,
+      );
+      continue;
+    }
+    settle();
+    taking = entry.withCards
+      ? { index: shownEntries.length, cards: [], entry }
+      : null;
+    shownEntries.push(entry.node);
+  }
+  settle();
 
   // Follow the end of the log as messages arrive; keep the place when older ones are loaded above.
   const listRef = useChatScroll(segments[0]?.seq);
@@ -571,7 +614,7 @@ function ConversationBody({
                 aria-label={t('chat.messages')}
                 className='flex min-w-0 flex-col gap-4 py-1'
               >
-                {entries.map((entry) => entry.node)}
+                {shownEntries}
                 {messages.pending.map((message) => (
                   <PendingItem
                     key={message.clientId}

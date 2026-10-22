@@ -80,7 +80,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   is `client/components/itam/ai/plan-card.tsx`, placed among a
   conversation's messages through the plugin's `ChatExtensionsContext`
   (`client/lib/itam/chat-extensions.tsx`, the conversation's plans by their
-  time); unticking a step leaves it out. Submitting, deciding, ordering,
+  time); unticking a step leaves it out. A card that follows an agent's
+  reply sits inside it, above its time and copy row (2026-10-22,
+  `Application change (ITAM)` in the block's `conversation-view.tsx` and
+  `message-item.tsx`: `withCards` / `attached`): the row closes the reply. Submitting, deciding, ordering,
   cancelling, executing a disposal and deleting are never plan steps — they
   stay on the pages.
 - The chat itself is the UI Library's `agent-chat` block in

@@ -71,6 +71,11 @@ export interface MessageItemProps {
   readonly segment?: ChatMessageSegment;
   readonly agentName: (agentId: string | undefined) => string;
   readonly extra?: ReactNode;
+  /**
+   * Application change (ITAM, 2026-10-22): cards that follow an agent's
+   * reply (its plan), drawn inside it above its time and copy row.
+   */
+  readonly attached?: ReactNode;
   readonly onApproval?: (input: AppUIToolApprovalInput) => Promise<void>;
   readonly approvalDisabled?: boolean;
   readonly readOnly?: boolean;
@@ -84,6 +89,7 @@ export function MessageItem({
   segment,
   agentName,
   extra,
+  attached,
   onApproval,
   approvalDisabled,
   readOnly = false,
@@ -357,6 +363,11 @@ export function MessageItem({
             {t('chat.approval.failed')}
           </p>
         ) : null}
+        {attached == null ? null : (
+          <div className='min-w-0 max-w-full space-y-2 overflow-x-auto wrap-anywhere'>
+            {attached}
+          </div>
+        )}
         {writing || !at ? null : <SentAt at={at} content={text} />}
         {extra == null ? null : (
           <div className='min-w-0 max-w-full overflow-x-auto wrap-anywhere'>
