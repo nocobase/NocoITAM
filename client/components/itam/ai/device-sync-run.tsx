@@ -711,7 +711,7 @@ function FollowUpNote({
     <li className={handled ? 'text-muted-foreground' : undefined}>
       {line}
       {handled ? (
-        <Badge variant='secondary' className='ml-2 align-middle'>
+        <Badge variant='secondary' className='ml-2 align-[1px]'>
           {handled}
         </Badge>
       ) : null}

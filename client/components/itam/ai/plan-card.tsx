@@ -235,20 +235,20 @@ export function PlanCard({
                 {(pending || step.status === 'removed') &&
                 settled.has(step.position) &&
                 settledLabel ? (
-                  <Badge variant='secondary' className='ml-2 align-middle'>
+                  <Badge variant='secondary' className='ml-2 align-[1px]'>
                     {settledLabel}
                   </Badge>
                 ) : !pending &&
                   step.status === 'removed' &&
                   // Tickable again, its checkbox says it (2026-10-22).
                   !tickable.has(step.position) ? (
-                  <Badge variant='secondary' className='ml-2 align-middle'>
+                  <Badge variant='secondary' className='ml-2 align-[1px]'>
                     {t('ai.plans.notRun')}
                   </Badge>
                 ) : bare && step.status === 'done' ? (
                   // Inside a follow-up, with no status of the plan's own to
                   // say it (2026-10-22).
-                  <Badge variant='secondary' className='ml-2 align-middle'>
+                  <Badge variant='secondary' className='ml-2 align-[1px]'>
                     {t('ai.plans.stepDone')}
                   </Badge>
                 ) : null}
