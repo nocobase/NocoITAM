@@ -76,8 +76,9 @@ it('shows a model’s stock as stocked total and in stock, by asset type', () =>
     'fields.appliesTo',
     'fields.name',
     'fields.location',
-    'fields.stockedTotal',
+    // In stock first, then everything ever stocked (2026-10-22).
     'fields.inStock',
+    'fields.stockedTotal',
   ]);
   expect(screen.getByText('12')).toBeTruthy();
   expect(screen.getByText('7')).toBeTruthy();
@@ -89,8 +90,9 @@ it('shows a location’s stock the same way, each with its asset type', () => {
     'fields.name',
     'fields.model',
     'fields.location',
-    'fields.stockedTotal',
+    // In stock first, then everything ever stocked (2026-10-22).
     'fields.inStock',
+    'fields.stockedTotal',
   ]);
 });
 

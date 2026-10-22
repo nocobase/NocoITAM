@@ -75,25 +75,14 @@ export function stockFields(kind: StockKind): readonly FieldDefinition[] {
       group: 'groups.basic',
     },
     {
-      // Everything ever stocked in; it only grows. Quantities come in
-      // through stock-ins (manual or an order's receipt), never on creation.
-      key: 'totalQuantity',
-      label: 'fields.stockedTotal',
-      type: 'number',
-      min: 0,
-      column: true,
-      form: false,
-      group: 'groups.quantity',
-    },
-    {
       // Derived on the server: stocked total minus what is out or used up.
       key: 'availableQuantity',
       label: 'fields.inStock',
       type: 'number',
       column: true,
       form: false,
-      // Leads 基本信息 on the detail page (`StockLead`), not 数量.
-      detail: false,
+      // In 数量 with the rest (2026-10-22; leading 基本信息 from
+      // 2026-10-16), first.
       group: 'groups.quantity',
     },
     {
@@ -106,7 +95,17 @@ export function stockFields(kind: StockKind): readonly FieldDefinition[] {
           : 'fields.outstandingQuantity',
       type: 'number',
       form: false,
-      detail: false,
+      group: 'groups.quantity',
+    },
+    {
+      // Everything ever stocked in; it only grows. Quantities come in
+      // through stock-ins (manual or an order's receipt), never on creation.
+      key: 'totalQuantity',
+      label: 'fields.stockedTotal',
+      type: 'number',
+      min: 0,
+      column: true,
+      form: false,
       group: 'groups.quantity',
     },
     {

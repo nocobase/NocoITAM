@@ -8,7 +8,6 @@ import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { DataTable, type DataTableColumn } from '@/components/itam/data-table';
-import { InfoRow } from '@/components/itam/detail-page';
 import { HolderLink } from '@/components/itam/holder-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,44 +98,10 @@ export function stockDomain(kind: StockKind): DomainConfig {
     Actions: function Actions({ record }) {
       return <StockActions record={record} kind={kind} />;
     },
-    // 在库, 在外 and who holds it lead 基本信息 (2026-10-16), as a
-    // device's status and holder do; no summary strip.
-    BasicLead: function BasicLead({ record }) {
-      return <StockLead record={record} kind={kind} />;
-    },
+    // No summary strip. 在库 and 在外 are in 数量 (2026-10-22), not
+    // leading 基本信息 as they did from 2026-10-16.
     summaryTimestamps: false,
   };
-}
-
-/**
- * The top of a stock item's 基本信息, above 负责人: how many are in stock,
- * and how many are out (used up, for a consumable). Who has them is the
- * holders' tab, not a row here as well (2026-10-16).
- */
-function StockLead({
-  record,
-  kind,
-}: {
-  readonly record: ItamRecord;
-  readonly kind: StockKind;
-}): ReactElement {
-  const { t } = useTranslation();
-  return (
-    <>
-      <InfoRow label={t('fields.inStock')}>
-        {text(record.availableQuantity) || '0'}
-      </InfoRow>
-      <InfoRow
-        label={t(
-          kind === 'consumable'
-            ? 'fields.consumedTotal'
-            : 'fields.outstandingQuantity',
-        )}
-      >
-        {text(record.usedQuantity) || '0'}
-      </InfoRow>
-    </>
-  );
 }
 
 /** Why a quantity goes up, or down; 其他 asks for a note. */
