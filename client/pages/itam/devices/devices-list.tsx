@@ -46,7 +46,9 @@ function HolderName({ row }: { readonly row: ItamRecord }): ReactElement {
   const id = text(row.assigneeId);
   const names = useReferenceNames([{ collection, ids: [id] }]);
   return (
-    <span className='inline-flex min-w-0 items-center gap-1.5'>
+    // The size of the card's other lines, which carry their icon as a line
+    // icon and so are drawn small (2026-10-22).
+    <span className='inline-flex min-w-0 items-center gap-1.5 text-xs'>
       <HolderIcon type={text(row.assigneeType)} />
       <span className='min-w-0 truncate'>
         {names[collection]?.get(id) ?? '…'}
