@@ -175,7 +175,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   disposal to carry out, and counts in the open stocktake. Since
   2026-10-22 every column of 待办 → 我的 has a row: the leaver 陈杰's
   SH-LT-011 is the importer's; the importer is the first joiner's 入职负责人
-  (and that joiner has no AI picks, so the card shows the rule's and 挑选); and
+  (their laptop SH-LT-051 already reserved, Asset Steward's picks for the rest); and
   SH-LT-031 is a loaner two days overdue that it answers for. The data test
   checks no column of its 我的 is empty — the demo is written as 吴静 (`writerId`), who
   raises the requests 孙强 decides; repairs and audits are 周宇's. `demoAccountUsernames()`

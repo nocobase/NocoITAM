@@ -2523,7 +2523,7 @@ export function createDemoService(dependencies: {
           warrantyEndDate: daysFromNow(675),
           notes: texts.spareKeyboard,
         });
-        await spare('SH-LT-051', 'C02ZK3A01MD6T', 1, {
+        const cleanSpare = await spare('SH-LT-051', 'C02ZK3A01MD6T', 1, {
           purchaseDate: daysFromNow(-400),
           warrantyEndDate: daysFromNow(655),
         });
@@ -6880,6 +6880,22 @@ export function createDemoService(dependencies: {
               .execute();
         }
 
+        // The first joiner's laptop already reserved (2026-10-22), by whoever
+        // equips them: the card opens part-way, one item held and Asset
+        // Steward's picks for the rest.
+        const [firstJoiner] = joinerIds;
+        if (firstJoiner)
+          await devices.reserve(
+            String(cleanSpare.id),
+            {
+              reservedForType: 'person',
+              reservedForId: firstJoiner,
+              reservedUntil: daysFromNow(5),
+            },
+            { actorId: importerId ?? writerId, sourceType: 'demo' },
+            all('devices', 'reserve'),
+          );
+
         // What the work agents would have left (2026-10-16), written rather
         // than asked of a model: reviews of the requests still waiting, the
         // MDM follow-up on the pulls above, and the joiners' picks.
@@ -6897,9 +6913,7 @@ export function createDemoService(dependencies: {
               internOrder: String(internOrder.id),
               printerDisposal: String(printerDisposal.id),
             },
-            // Not the first joiner (2026-10-22): the importer equips them,
-            // so their card shows the rule's picks and 挑选 to try.
-            joiners: joinerIds.slice(1),
+            joiners: joinerIds,
           });
 
         importPercent = 100;
