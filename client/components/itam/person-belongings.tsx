@@ -589,9 +589,10 @@ export function PersonBelongings({
                   {item.kind === 'device' && !item.done ? (
                     <DeviceStatusBadge status={item.status} />
                   ) : null}
-                  {item.kind === 'stock' ? (
+                  {/* How many, only when more than one (2026-10-22). */}
+                  {item.kind === 'stock' && (item.quantity ?? 0) > 1 ? (
                     <span className='ml-1 tabular-nums text-muted-foreground'>
-                      ×{item.quantity ?? 0}
+                      ×{item.quantity}
                     </span>
                   ) : null}
                 </span>
@@ -616,13 +617,8 @@ export function PersonBelongings({
               // reader is not meant to watch that; the ✓ beside it is the
               // whole of what the row still has to say.
               item.done ? null : item.ownerId ? (
-                <span
-                  className={
-                    item.ownerId === me
-                      ? 'font-medium'
-                      : 'text-muted-foreground'
-                  }
-                >
+                // One style for every owner (2026-10-22; 你 was bold).
+                <span className='text-muted-foreground'>
                   {item.ownerId === me
                     ? t('people.recovery.you')
                     : (owners.users?.get(item.ownerId) ?? item.ownerId)}
