@@ -2241,7 +2241,7 @@ const messages = {
         checks: 'Mismatched',
         unregistered: 'Only in MDM',
         unmanaged: 'Only on the register',
-        ignored: 'Ignored',
+        ignored: 'Kept off the register',
       },
       hints: {
         checks:
@@ -2251,7 +2251,7 @@ const messages = {
         unmanaged:
           'Devices in use, of a managed category, that no MDM reports. Enrol them in MDM, or mark one as not to be managed.',
       },
-      ignoredHeading: 'Ignored ({{count}})',
+      ignoredHeading: 'Kept off the register ({{count}})',
       ignoredManual_one:
         'Kept off the register by hand, {{count}}: syncs no longer raise it; Restore matches it by serial again.',
       ignoredManual_other:

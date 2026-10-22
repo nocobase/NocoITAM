@@ -2143,7 +2143,7 @@ const zhCN: AppResource = {
         checks: '信息不一致',
         unregistered: '只在 MDM',
         unmanaged: '只在台账',
-        ignored: '已忽略',
+        ignored: '不纳入台账',
       },
       hints: {
         checks: '台账和 MDM 都有，但信息对不上：失联、使用人不一致、状态不符。',
@@ -2152,7 +2152,7 @@ const zhCN: AppResource = {
         unmanaged:
           '台账里在用、属于应纳管分类，却不在任何 MDM 里的设备。去 MDM 注册，或标为不需要纳管。',
       },
-      ignoredHeading: '已忽略 {{count}} 台',
+      ignoredHeading: '不纳入台账 {{count}} 台',
       ignoredManual_one:
         '手动不纳入台账 {{count}} 台：以后的同步不再提示；点「恢复」会重新按序列号匹配。',
       ignoredManual_other:
