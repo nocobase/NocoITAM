@@ -126,7 +126,9 @@ export default function WorkbenchPage(): ReactElement {
         // also turns items-end into the top edge. No ground of its own
         // while it sticks (2026-10-22, tried): the pills and switches carry
         // their own.
-        className='sticky top-0 z-10 -mx-6 flex flex-wrap-reverse items-end justify-between gap-x-4 gap-y-2 px-6 py-2.5'
+        // Its own padding the room either side (2026-10-22): the page's
+        // spacing on top of it set the counts far from the band and board.
+        className='sticky top-0 z-10 -mx-6 mb-1 flex flex-wrap-reverse items-end justify-between gap-x-4 gap-y-2 px-6 py-2.5'
       >
         {loading ? <span /> : <WorkCounts cards={cards} offset={bar + 8} />}
         <div className='ml-auto flex shrink-0 items-center gap-2'>
@@ -885,7 +887,8 @@ function AttentionBand(): ReactElement {
     // than a yellow wash.
     <section
       aria-label={t('workbench.attention')}
-      className='shrink-0 rounded-2xl border border-border/60 bg-card px-3 py-2.5'
+      // Closer to the counts than the page's own spacing (2026-10-22).
+      className='mb-3 shrink-0 rounded-2xl border border-border/60 bg-card px-3 py-2.5'
     >
       <h2 className='mb-2 flex items-center gap-1.5 px-0.5 text-sm font-semibold'>
         <TriangleAlert
