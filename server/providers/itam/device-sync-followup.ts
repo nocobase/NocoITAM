@@ -869,7 +869,11 @@ export function createDeviceSyncFollowUp(dependencies: {
       if (!item || decided.has(item.key)) continue;
       decided.add(item.key);
       const target = asText(decision.target);
-      const why = asText(decision.reason)?.trim().slice(0, 200);
+      // No closing full stop (2026-10-22): it reads in brackets after a name.
+      const why = asText(decision.reason)
+        ?.trim()
+        .slice(0, 200)
+        .replace(/[。．.]+$/u, '');
       advised.push({
         subject: item.subject,
         kind: item.kind,

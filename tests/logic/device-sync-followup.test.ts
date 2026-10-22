@@ -505,7 +505,7 @@ describe('MDM follow-up', () => {
   it('shows an asset manager the other people’s open follow-ups to read, and nobody else', async () => {
     model.decide = (item) =>
       item.kind === 'userMismatch'
-        ? { action: 'transfer', target: wangWu }
+        ? { action: 'transfer', target: wangWu, reason: 'Wang Wu uses it.' }
         : null;
     await followUp().afterSync(null);
     await settled(() => latest('owner:mia:checks'));
@@ -523,6 +523,10 @@ describe('MDM follow-up', () => {
     expect(anns.data).toHaveLength(1);
     expect(anns.data[0]).toMatchObject({ deciderId: 'mia', status: 'pending' });
     expect((anns.data[0]!.steps as string[]).length).toBe(1);
+    // The reason in brackets, without its full stop (2026-10-22).
+    expect((anns.data[0]!.steps as string[])[0]).toMatch(
+      /[(（]Wang Wu uses it[)）]/,
+    );
     // Set aside, it stays to read while its items are listed (2026-10-22),
     // with what it would have done.
     await followUp().dismiss(String(anns.data[0]!.id), 'mia');
