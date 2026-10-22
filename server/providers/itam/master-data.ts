@@ -239,6 +239,17 @@ export interface MasterDataService {
   /** Counts shown at the top of a detail page, plus the ancestors of a tree node. */
   stats(collection: string, id: string): Promise<MasterDataStats>;
   /**
+   * Renames a department's position (2026-10-22), held or not: the people
+   * holding it and its own kit move to the new name with it.
+   */
+  renamePosition(
+    departmentId: string,
+    from: string,
+    to: string,
+    actorId: string,
+    conditions: DatabaseAuthorizationConditions,
+  ): Promise<Row>;
+  /**
    * Related-record counts for every record of a collection, for list
    * columns: `{ entitlements: { [id]: n } }`.
    * Only collections in `LIST_COUNTS` have any.
@@ -1759,6 +1770,96 @@ export function createMasterDataService(
         );
       }
       return result;
+    },
+
+    async renamePosition(departmentId, from, to, actorId, conditions) {
+      const name = to.trim();
+      if (!name) throw new ValidationError('A position needs a name');
+      const department = await database
+        .query()
+        .selectFrom('departments')
+        .selectAll()
+        .where('id', '=', departmentId)
+        .where((eb) => compileAuthzScope(eb, conditions.scope))
+        .executeTakeFirst<Row>();
+      if (!department)
+        throw new RecordNotFoundError('departments', departmentId);
+      const positions = positionsOf(department.positions);
+      const at = positions.findIndex((known) => samePosition(known, from));
+      if (at < 0) throw new RecordNotFoundError('positions', from);
+      // Another position by that name; the same one recased is a rename.
+      if (
+        positions.some(
+          (known, index) => index !== at && samePosition(known, name),
+        )
+      )
+        throw new BusinessRuleError(
+          `The department already has the position ${name}`,
+          'POSITION_TAKEN',
+        );
+      const old = positions[at];
+      if (old === name) return decode('departments', department);
+      const next = positions.map((known, index) =>
+        index === at ? name : known,
+      );
+      await database.transaction(async (connection) => {
+        await connection.query
+          .updateTable('departments')
+          .set({ positions: next, updatedAt: new Date() })
+          .where('id', '=', departmentId)
+          .execute();
+        await history.logChanges(
+          { subjectType: 'departments', subjectId: departmentId },
+          { positions },
+          { positions: next },
+          { actorId },
+          connection,
+        );
+        const holders = (
+          await connection.query
+            .selectFrom('people')
+            .select(['id', 'position'])
+            .where('departmentId', '=', departmentId)
+            .execute<Row>()
+        ).filter((row) => samePosition(row.position, old));
+        for (const person of holders) {
+          await connection.query
+            .updateTable('people')
+            .set({ position: name, updatedAt: new Date() })
+            .where('id', '=', String(person.id))
+            .execute();
+          await history.logChanges(
+            { subjectType: 'people', subjectId: String(person.id) },
+            { position: person.position },
+            { position: name },
+            { actorId },
+            connection,
+          );
+        }
+        const kits = (
+          await connection.query
+            .selectFrom('onboardingKits')
+            .select(['id', 'name', 'position'])
+            .where('departmentId', '=', departmentId)
+            .execute<Row>()
+        ).filter((row) => samePosition(row.position, old));
+        for (const kit of kits) {
+          // A kit still named after the position, as one is made, follows.
+          const named = asText(kit.name) ?? '';
+          await connection.query
+            .updateTable('onboardingKits')
+            .set({
+              position: name,
+              ...(named.endsWith(old)
+                ? { name: `${named.slice(0, -old.length)}${name}` }
+                : {}),
+              updatedAt: new Date(),
+            })
+            .where('id', '=', String(kit.id))
+            .execute();
+        }
+      });
+      return (await this.get('departments', departmentId, conditions))!;
     },
 
     async stats(collection, id) {

@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CornerLeftUp, Plus, Trash2 } from 'lucide-react';
+import { CornerLeftUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -86,6 +86,11 @@ export function DepartmentKits({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [draft, setDraft] = useState('');
+  // The position being renamed, and the name typed so far.
+  const [renaming, setRenaming] = useState<{
+    readonly from: string;
+    readonly value: string;
+  }>();
   const data = query.data;
   if (!data) return null;
 
@@ -147,6 +152,33 @@ export function DepartmentKits({
   // The department already has a position by that name.
   const taken =
     draft.trim() !== '' && names.some((known) => samePosition(known, draft));
+  // Another position has the name typed; the same one recased does not.
+  const renameTaken = Boolean(
+    renaming?.value.trim() &&
+    names.some(
+      (known) =>
+        !samePosition(known, renaming.from) &&
+        samePosition(known, renaming.value),
+    ),
+  );
+  /** Saves a rename (2026-10-22); its holders and its kit follow it. */
+  const finishRename = () => {
+    if (!renaming) return;
+    const to = renaming.value.trim();
+    const { from } = renaming;
+    if (!to || to === from || renameTaken) {
+      if (!renameTaken) setRenaming(undefined);
+      return;
+    }
+    setRenaming(undefined);
+    void run(() =>
+      api.request({
+        path: `${departmentsPath}/${departmentId}/positions/rename`,
+        method: 'POST',
+        json: { from, to },
+      }),
+    );
+  };
   const addPosition = () => {
     const name = draft.trim();
     if (!name || names.some((known) => samePosition(known, name))) return;
@@ -293,15 +325,67 @@ export function DepartmentKits({
                 const canSwitch = custom ? kits.delete : kits.create;
                 return (
                   <li key={position.name} className='space-y-2'>
-                    <div className='flex flex-wrap items-center gap-2 text-sm'>
-                      <span className='min-w-0 flex-1 truncate font-medium'>
-                        {position.name}
-                        <span className='ml-2 text-xs font-normal text-muted-foreground tabular-nums'>
-                          {t('departmentKits.holders', {
-                            count: position.holders,
-                          })}
+                    <div className='group/position flex flex-wrap items-center gap-2 text-sm'>
+                      {renaming?.from === position.name ? (
+                        // Renamed in place: Enter or leaving the field
+                        // saves, Escape keeps the old name.
+                        <Input
+                          autoFocus
+                          className='h-8 min-w-0 flex-1'
+                          value={renaming.value}
+                          aria-label={t('departmentKits.renamePosition')}
+                          aria-invalid={renameTaken || undefined}
+                          onChange={(event) =>
+                            setRenaming({
+                              from: position.name,
+                              value: event.target.value,
+                            })
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              finishRename();
+                            }
+                            if (event.key === 'Escape') {
+                              event.preventDefault();
+                              setRenaming(undefined);
+                            }
+                          }}
+                          onBlur={finishRename}
+                        />
+                      ) : (
+                        <span className='flex min-w-0 flex-1 items-center gap-1'>
+                          <span className='truncate font-medium'>
+                            {position.name}
+                          </span>
+                          <span className='ml-1 shrink-0 text-xs text-muted-foreground tabular-nums'>
+                            {t('departmentKits.holders', {
+                              count: position.holders,
+                            })}
+                          </span>
+                          {departments.update ? (
+                            // On hover, as a row's other quiet actions
+                            // (2026-10-22): held or not, a position may be
+                            // renamed.
+                            <Button
+                              size='icon-sm'
+                              variant='ghost'
+                              className='text-muted-foreground opacity-0 group-hover/position:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100'
+                              aria-label={t('departmentKits.renamePosition')}
+                              title={t('departmentKits.renamePosition')}
+                              disabled={busy}
+                              onClick={() =>
+                                setRenaming({
+                                  from: position.name,
+                                  value: position.name,
+                                })
+                              }
+                            >
+                              <Pencil />
+                            </Button>
+                          ) : null}
                         </span>
-                      </span>
+                      )}
                       {/* Off: the position takes the department's kit.
                           On: it has its own, starting as a copy of that one;
                           switching off again deletes it. */}
@@ -355,6 +439,11 @@ export function DepartmentKits({
                         </Tooltip>
                       ) : null}
                     </div>
+                    {renaming?.from === position.name && renameTaken ? (
+                      <p className='text-sm text-destructive'>
+                        {t('departmentKits.positionTaken')}
+                      </p>
+                    ) : null}
                     {position.kit ? (
                       <KitItems
                         key={`${position.kit.id}:${JSON.stringify(position.kit.items)}`}

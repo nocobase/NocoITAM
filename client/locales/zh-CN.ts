@@ -1060,6 +1060,7 @@ const zhCN: AppResource = {
     positionTaken: '已有同名职位，职位不能重名',
     removePositionTitle: '删除职位「{{position}}」？',
     removePositionWithKit: '这个职位自己的入职配置会一起删除。',
+    renamePosition: '重命名职位',
     removePosition: '删除职位',
     positionInUse_one: '有 {{count}} 人担任这个职位，不能删除',
     positionInUse_other: '有 {{count}} 人担任这个职位，不能删除',

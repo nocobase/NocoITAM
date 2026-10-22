@@ -1080,6 +1080,7 @@ const messages = {
       'A position by that name exists; positions need distinct names',
     removePositionTitle: 'Remove the position “{{position}}”?',
     removePositionWithKit: 'Its own onboarding kit is removed with it.',
+    renamePosition: 'Rename position',
     removePosition: 'Remove position',
     positionInUse_one:
       '{{count}} person holds this position, so it cannot be removed',

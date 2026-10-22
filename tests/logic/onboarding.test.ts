@@ -703,6 +703,39 @@ describe('onboarding', () => {
     ).not.toBe('model-wd22tb4');
   });
 
+  it('renames a held position, its holders and its kit with it', async () => {
+    const designer = await person('Dana Design', 'dept-product', 'Designer');
+    const rename = (to: string) =>
+      app.request(
+        '/api/itam/master/departments/dept-product/positions/rename',
+        {
+          ...json({ from: 'Designer', to }),
+          ...manager,
+        },
+      );
+    // Another position's name is refused.
+    const taken = await rename('product manager');
+    expect(taken.status).toBe(422);
+    expect(await taken.json()).toMatchObject({ rule: 'POSITION_TAKEN' });
+
+    expect((await rename('UX Designer')).status).toBe(200);
+    const department = await data<{ positions: string[] }>(
+      await app.request('/api/itam/master/departments/dept-product', manager),
+    );
+    expect(department.positions).toEqual(['Product Manager', 'UX Designer']);
+    const holder = await data<{ position: string }>(
+      await app.request(`/api/itam/master/people/${designer.id}`, manager),
+    );
+    expect(holder.position).toBe('UX Designer');
+    const kit = await data<{ position: string }>(
+      await app.request(
+        '/api/itam/master/onboardingKits/kit-product-designer',
+        manager,
+      ),
+    );
+    expect(kit.position).toBe('UX Designer');
+  });
+
   it('takes a deleted model out of the kits that named it', async () => {
     const model = await create('master/models', {
       name: 'Short-lived dock',

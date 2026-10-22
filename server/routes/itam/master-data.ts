@@ -96,6 +96,11 @@ const moveSchema = z.object({
   index: z.number().int().min(0),
 });
 
+const renamePositionSchema = z.object({
+  from: z.string().min(1),
+  to: z.string().trim().min(1).max(100),
+});
+
 /**
  * `?origin=ai`: what is saved was filled or changed by AI 整理 or 完善 and
  * checked by the person saving it (2026-10-20); its history says so. Only
@@ -349,6 +354,27 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
             .resolve(onboardingServiceToken)
             .departmentKits(id),
         });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // Renames a position (2026-10-22), held or not: its holders and its kit
+    // follow. A change to the department's positions, under that grant.
+    routes.post('/departments/:id/positions/rename', async (context) => {
+      try {
+        const body = renamePositionSchema.parse(await readJsonObject(context));
+        const conditions = await decideFor(context, 'departments', 'update', {
+          fields: { input: ['positions'] },
+        });
+        const department = await masterData.renamePosition(
+          context.req.param('id'),
+          body.from,
+          body.to,
+          principalId(context),
+          conditions,
+        );
+        return context.json({ data: department });
       } catch (error) {
         return errorResponse(context, error);
       }

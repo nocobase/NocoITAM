@@ -56,7 +56,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   spelled the way its kit is attached; one saved otherwise — an import, the
   assistant — joins the department's list (`enlistPosition`), and a
   position still held by somebody in the department cannot be removed
-  (`POSITION_IN_USE`), while removing one takes its kit with it. The old
+  (`POSITION_IN_USE`), while removing one takes its kit with it. Held or
+  not, it can be renamed (2026-10-22, `renamePosition`, `POST
+departments/:id/positions/rename`): its holders and its kit move to the
+  new name, and another position's name is refused (`POSITION_TAKEN`). A
+  kit's changes are told on its department's history
+  (`onboardingKitChanged`), and deleting a model, category or product
+  takes it out of every kit (`pruneKitItems`). The old
   `onboarding-kits` page grant is stripped (`STALE_PAGES`). Each kit row is
   chosen by asset type (设备 … 授权) and then a model of that type or, for 授权,
   a software product, and shows its asset-type tag first (`KitItems`; the
