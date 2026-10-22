@@ -40,7 +40,7 @@ export function LinkTabs({
           className={`-mb-px flex h-10 items-center gap-1.5 border-b-2 text-sm font-medium transition-colors outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset ${
             selected
               ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
+              : 'border-transparent text-foreground hover:text-primary'
           }`}
         >
           <Icon className='size-4' />
