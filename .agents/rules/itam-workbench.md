@@ -324,7 +324,10 @@ countdown each whole (`whitespace-nowrap`, wrapping between them), since the
 template's roomier spacing narrowed the column's text.
 
 - Fewer columns (2026-10-17): 需要关注 is a band above the board, not its
-  first column (`AttentionBand`); a line under it counts each column that
+  first column (`AttentionBand`; on white since 2026-10-22, its rules as
+  rows two to a line — the number, the rule, its first record and how many
+  besides — rather than cards, chosen over tiles and chips); a line under
+  it counts each column that
   holds something and scrolls to it (`WorkCounts`); 离职交接 and 入职准备
   are one column, 人员变动 (`people`) — `mergedCard` in
   `client/lib/itam/my-work.ts`, each record

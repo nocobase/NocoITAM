@@ -487,7 +487,8 @@ function SummaryCard({
           aria-hidden='true'
           className='size-4 shrink-0 text-muted-foreground'
         />
-        <span className='text-base leading-none font-semibold tabular-nums'>
+        {/* As large as its words (2026-10-22). */}
+        <span className='text-sm font-semibold tabular-nums'>
           {entry.count}
         </span>
         <span className='text-sm font-semibold'>
@@ -946,9 +947,10 @@ function AttentionBand(): ReactElement {
         <Skeleton className='h-12 w-full rounded-lg' />
       ) : (
         <>
-          {/* Side by side, filling the row (2026-10-17): as many to a row
-              as fit at 14rem, each stretched to share it. */}
-          <div className='grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-2'>
+          {/* Rows (2026-10-22, chosen over cards): two to a line on a
+              wide screen, one on a narrow, each the number, the rule and the
+              first record it found, a hairline between them. */}
+          <div className='grid grid-cols-1 gap-x-8 lg:grid-cols-2'>
             {found.map((entry) => (
               <Link
                 key={entry.kind}
@@ -959,37 +961,20 @@ function AttentionBand(): ReactElement {
                   maintenanceExpiryDays:
                     thresholds?.maintenanceExpiryDays ?? 30,
                 })}
-                // A risk card: the number, what it counts beside it, and the
-                // first few records it found on one line, so a card says what
-                // is at risk without being opened (2026-10-05). Compact: eleven
-                // rules share one column. Only a critical rule is red; severity
-                // is the rule's, not today's.
-                // On the white band (2026-10-22), a light fill rather than a
-                // white card with a border and shadow, which blurred into it.
-                className={cn(
-                  'block min-w-0 rounded-lg px-3 py-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                  entry.severity === 'critical'
-                    ? 'bg-destructive/[0.06] hover:bg-destructive/10'
-                    : 'bg-muted/60 hover:bg-muted',
-                )}
+                // A risk row says what is at risk without being opened
+                // (2026-10-05). Only a critical rule is red; severity is the
+                // rule's, not today's.
+                className='flex min-w-0 items-baseline gap-3 border-b border-border/60 px-1.5 py-2 transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
               >
-                {/* The number is what the eye looks for, the sentence what
-                    it means: a larger, bolder figure beside a quieter line,
-                    rather than two pieces of text of the same weight. */}
-                <span className='flex items-baseline gap-2'>
-                  <span
-                    className={cn(
-                      'text-base leading-none font-semibold tabular-nums',
-                      SEVERITY_TEXT[entry.severity],
-                    )}
-                  >
-                    {entry.count}
-                  </span>
-                  {/* What it counts above the records it found. */}
-                  <span className='min-w-0 text-xs leading-tight font-medium text-foreground'>
-                    {label(entry.kind)}
-                  </span>
+                <span
+                  className={cn(
+                    'w-7 shrink-0 text-right text-sm font-semibold tabular-nums',
+                    SEVERITY_TEXT[entry.severity],
+                  )}
+                >
+                  {entry.count}
                 </span>
+                <span className='shrink-0 text-sm'>{label(entry.kind)}</span>
                 <PreviewLine entry={entry} />
               </Link>
             ))}
@@ -1048,7 +1033,9 @@ function PreviewLine({
       .filter(Boolean)
       .join(' '),
   );
-  const more = entry.count - entry.preview.length;
+  // The first alone, and how many besides (2026-10-22): a list of names
+  // cut off at the card's edge read as broken.
+  const more = entry.count - 1;
   // 最早 only when there are several to be soonest among.
   const date = first?.date
     ? entry.count > 1
@@ -1057,9 +1044,9 @@ function PreviewLine({
     : undefined;
   // One line: the names give way to the edge, and how many more stays.
   return (
-    <span className='mt-0.5 flex min-w-0 gap-1 text-xs text-muted-foreground/70'>
+    <span className='flex min-w-0 flex-1 justify-end gap-1 text-xs text-muted-foreground'>
       <span className='min-w-0 truncate'>
-        {[date, ...names].filter(Boolean).join(' · ')}
+        {[date, names[0]].filter(Boolean).join(' · ')}
       </span>
       {more > 0 ? (
         <span className='shrink-0'>

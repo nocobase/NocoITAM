@@ -219,11 +219,8 @@ export const LOAN_CARD: BoardCardSpec = {
           className: 'mt-1',
         }),
     ],
-    // Who answers for it, as every document card's footer says (2026-10-17),
-    // and that it is the reader's own: the column lists everybody's.
-    footer: [
-      (record) => (record.owner ? text(record.owner) : null),
-      (record, t) => (record.mine ? t('workbench.work.yours') : null),
-    ],
+    // Who answers for it, as every document card's footer says (2026-10-17);
+    // not 你负责 beside it too (2026-10-22): the name says whose it is.
+    footer: [(record) => (record.owner ? text(record.owner) : null)],
   },
 };
