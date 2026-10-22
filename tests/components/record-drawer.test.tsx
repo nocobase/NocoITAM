@@ -47,9 +47,18 @@ vi.mock('../../client/lib/itam/record-pages.js', async () => {
   function DevicesTab(): React.JSX.Element {
     return <p>Devices content</p>;
   }
+  const { DetailPage } =
+    await import('../../client/components/itam/detail-page.js');
   function VendorPage(): React.JSX.Element {
     const { id } = useParams();
-    return <h2>Vendor page {id}</h2>;
+    return (
+      <DetailPage
+        breadcrumb={<span>Vendors crumb</span>}
+        title={`Vendor page ${String(id)}`}
+        info={null}
+        tabs={[]}
+      />
+    );
   }
   return {
     recordPage: (segment: string) =>
@@ -165,6 +174,18 @@ it('opens the full page on the tab the drawer shows and closes it', () => {
   );
   expect(pathname()).toBe('/disposals/c1/devices');
   expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+it("puts the page's line above its title in the drawer's top row", () => {
+  show();
+  fireEvent.click(screen.getByRole('button', { name: 'Vendor row' }));
+  const drawer = screen.getByRole('dialog');
+  // Beside 打开完整页面, not on a line of its own under it (2026-10-22).
+  const row = within(drawer).getByRole('button', {
+    name: 'common.openFullPage',
+  }).parentElement!;
+  expect(within(row).getByText('Vendors crumb')).toBeVisible();
+  expect(within(drawer).getAllByText('Vendors crumb')).toHaveLength(1);
 });
 
 it('hands a link that leaves the record to the page and closes the drawer', () => {

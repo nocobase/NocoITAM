@@ -1,10 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
 import { useContext, type ReactElement, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useLocation } from 'react-router';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { OpenFullPageButton } from '@/components/itam/open-full-page';
 import {
+  DrawerHeaderSlotContext,
   EmbeddedRecordContext,
   OpenFullPageContext,
 } from '@/lib/itam/detail-chrome';
@@ -99,6 +101,17 @@ export function DetailPage({
   // Beside the inbox's list, 打开 in place of the page's own actions.
   const openFull = useContext(OpenFullPageContext);
   const headerActions = openFull ? <OpenFullPageButton /> : actions;
+  // In the record drawer, the line above the title goes up into the
+  // drawer's top row (`DrawerHeaderSlotContext`).
+  const slot = useContext(DrawerHeaderSlotContext);
+  const kicker =
+    breadcrumb || subtitle ? (
+      <div className='flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-muted-foreground'>
+        {breadcrumb}
+        {breadcrumb && subtitle ? <span aria-hidden='true'>·</span> : null}
+        {subtitle ? <span>{subtitle}</span> : null}
+      </div>
+    ) : null;
   return (
     <>
       {/* Breakpoints follow the page's own width (container queries), not
@@ -116,15 +129,7 @@ export function DetailPage({
             is decided on; it still shrinks and wraps once on a line alone. */}
         <header className='flex flex-wrap items-start justify-between gap-x-4 gap-y-3'>
           <div className='min-w-0 flex-[1_1_auto] space-y-1'>
-            {breadcrumb || subtitle ? (
-              <div className='flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-muted-foreground'>
-                {breadcrumb}
-                {breadcrumb && subtitle ? (
-                  <span aria-hidden='true'>·</span>
-                ) : null}
-                {subtitle ? <span>{subtitle}</span> : null}
-              </div>
-            ) : null}
+            {kicker && slot ? createPortal(kicker, slot) : kicker}
             <div className='flex min-w-0 items-center gap-2'>
               {/* Beside the title, apart from the kind above it (2026-10-16):
                   "← 采购" read as a way to the procurement list, where this

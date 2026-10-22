@@ -25,3 +25,11 @@ export const EmbeddedRecordContext = createContext(false);
 export const OpenFullPageContext = createContext<((to: string) => void) | null>(
   null,
 );
+
+/**
+ * Where a detail page puts the line above its title (its breadcrumb and
+ * subtitle) when the record drawer offers a place for it: the drawer's own
+ * top row, beside 打开完整页面 (2026-10-22), rather than a line of its own
+ * under that row. Null everywhere else, where the page keeps it.
+ */
+export const DrawerHeaderSlotContext = createContext<HTMLElement | null>(null);

@@ -30,12 +30,16 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { useItamRecord, type ItamRecord } from '@/lib/itam/api';
 import {
   RecordDrawerContext,
   type RecordDrawerApi,
 } from '@/lib/itam/record-drawer';
-import { EmbeddedRecordContext } from '@/lib/itam/detail-chrome';
+import {
+  DrawerHeaderSlotContext,
+  EmbeddedRecordContext,
+} from '@/lib/itam/detail-chrome';
 import { recordPage } from '@/lib/itam/record-pages';
 import { recordTarget, type RecordTarget } from '@/lib/itam/record-view';
 import { referenceLabel } from '@/lib/itam/references';
@@ -127,6 +131,8 @@ function RecordDrawerBody({
   // The page inside carries the visible title; the drawer's own name is
   // for assistive technology only.
   const record = useItamRecord<ItamRecord>(target.path, target.id);
+  // The toolbar's place for the page's line above its title.
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
   const title = (
     <>
       <SheetTitle className='sr-only'>
@@ -138,26 +144,29 @@ function RecordDrawerBody({
     </>
   );
   return (
-    <RecordPane
-      to={to}
-      onLeave={onLeave}
-      toolbar={
-        <DrawerToolbar
-          title={title}
-          canGoBack={canGoBack}
-          onBack={onBack}
-          onLeave={onLeave}
-        />
-      }
-      fallback={
-        <>
-          {title}
-          <div className='p-4'>
-            <EmptyState title={t('common.notFound')} />
-          </div>
-        </>
-      }
-    />
+    <DrawerHeaderSlotContext.Provider value={slot}>
+      <RecordPane
+        to={to}
+        onLeave={onLeave}
+        toolbar={
+          <DrawerToolbar
+            title={title}
+            slotRef={setSlot}
+            canGoBack={canGoBack}
+            onBack={onBack}
+            onLeave={onLeave}
+          />
+        }
+        fallback={
+          <>
+            {title}
+            <div className='p-4'>
+              <EmptyState title={t('common.notFound')} />
+            </div>
+          </>
+        }
+      />
+    </DrawerHeaderSlotContext.Provider>
   );
 }
 
@@ -252,14 +261,18 @@ export function PagePane({
  * view, in a row of their own beside the close button. The page's own
  * action buttons sit at the top right of its header, so these must not
  * float over it: the row takes its height, and the page starts below.
+ * The page's line above its title (人员, 分类 › 外设) sits at the row's
+ * left (2026-10-22), so the title starts nearer the top.
  */
 function DrawerToolbar({
   title,
+  slotRef,
   canGoBack,
   onBack,
   onLeave,
 }: {
   readonly title: ReactNode;
+  readonly slotRef: (element: HTMLElement | null) => void;
   readonly canGoBack: boolean;
   readonly onBack: () => void;
   readonly onLeave: (path: string) => void;
@@ -268,15 +281,20 @@ function DrawerToolbar({
   // The drawer's own location: the full page opens on the same tab.
   const location = useLocation();
   return (
-    <div className='-mb-3 flex h-12 shrink-0 items-center justify-end gap-1 px-3 pr-12'>
+    <div className='-mb-3 flex h-12 shrink-0 items-center gap-1 px-3 pr-12'>
       {/* 返回 at the far left, where a way back is looked for; the drawer's
           own controls stay at the right beside its close button. */}
       {canGoBack ? (
-        <Button variant='ghost' className='mr-auto -ml-1' onClick={onBack}>
+        <Button variant='ghost' className='-ml-1' onClick={onBack}>
           <ArrowLeft data-icon='inline-start' />
           {t('common.back')}
         </Button>
       ) : null}
+      {/* Lined up with the page's own left edge (p-6) unless 返回 is there. */}
+      <div
+        ref={slotRef}
+        className={cn('min-w-0 flex-1 truncate', canGoBack ? 'pl-2' : 'pl-3')}
+      />
       {title}
       <Button
         variant='ghost'

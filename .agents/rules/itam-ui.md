@@ -183,7 +183,9 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   `drawer={false}` (breadcrumbs) navigate normally. The drawer shows the
   record's own detail page — header, actions, information card and tabs —
   at most 680px wide, with the drawer's own 返回 / 打开完整页面 / close
-  buttons in a short row above the page so they never cover its actions
+  buttons in a short row above the page so they never cover its actions —
+  the page's line above its title (人员, 分类 › 外设) at that row's left
+  since 2026-10-22, portalled there through `DrawerHeaderSlotContext`
   (the page's own ← before its breadcrumb, which steps back through the
   browser history, shows only on a full page — `EmbeddedRecordContext`
   keeps it out of the drawer and the tree panes, and record tabs `replace`
