@@ -469,9 +469,7 @@ describe('stock and software entitlements', () => {
         manager,
       ),
     );
-    expect(
-      log.some((row) => row.event?.summary?.includes('Li Na')),
-    ).toBe(true);
+    expect(log.some((row) => row.event?.summary?.includes('Li Na'))).toBe(true);
   });
 
   it('manages perpetual seats and compliance', async () => {

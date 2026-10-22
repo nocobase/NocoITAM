@@ -119,8 +119,7 @@ export function createLeaverAccounts(dependencies: {
       const userId = await userOf(personId);
       const users = management();
       const account = userId ? await accounts()?.get(userId) : undefined;
-      if (!userId || !users || !account || account.disabledAt === null)
-        return;
+      if (!userId || !users || !account || account.disabledAt === null) return;
       try {
         await users.enable(userId);
       } catch (error) {

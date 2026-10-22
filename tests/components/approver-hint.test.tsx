@@ -17,7 +17,9 @@ vi.mock('../../client/lib/itam/api.js', () => ({
 it('says so when nobody can be picked as the approver', () => {
   state.total = 0;
   render(<ApproverHint subject='disposal' hint='pick one' />);
-  expect(screen.getByRole('alert').textContent).toBe('settings.flows.noApprovers');
+  expect(screen.getByRole('alert').textContent).toBe(
+    'settings.flows.noApprovers',
+  );
   expect(screen.queryByText('pick one')).toBeNull();
 });
 

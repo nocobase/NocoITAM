@@ -204,11 +204,7 @@ export interface RecoveryItem {
    * is, and `kind` groups the three stock types under one name.
    */
   readonly assetType:
-    | 'device'
-    | 'accessory'
-    | 'consumable'
-    | 'component'
-    | 'entitlement';
+    'device' | 'accessory' | 'consumable' | 'component' | 'entitlement';
 }
 
 export function deviceHandling(status: string): RecoveryHandling {
@@ -290,8 +286,7 @@ export function recoveryPlan(holdings: {
       ownerId: asText(row.ownerId) ?? null,
       targetId: asText(row.stockItemId) ?? '',
       quantity: Number(row.quantity) || 0,
-      assetType: (asText(row.kind) ??
-        'accessory') as RecoveryItem['assetType'],
+      assetType: (asText(row.kind) ?? 'accessory') as RecoveryItem['assetType'],
     })),
     ...holdings.entitlementSeats.map((row) => ({
       kind: 'seat' as const,

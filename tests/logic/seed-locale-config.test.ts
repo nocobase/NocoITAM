@@ -79,8 +79,7 @@ describe('the language the seeds write master data in', () => {
     db = await runSeeds({
       get: <T>(key: string) =>
         (key === 'i18n' ? { defaultLocale: 'zh-CN' } : undefined) as
-          | T
-          | undefined,
+          T | undefined,
     });
     expect((await namesOf(db)).get('cat-endpoint')).toBe('终端设备');
   });
