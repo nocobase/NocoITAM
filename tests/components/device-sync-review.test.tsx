@@ -329,14 +329,19 @@ describe('MDM 核对 → 信息不一致', () => {
     personId: null,
     userName: null,
   };
+  // A device opens in the record drawer, its dialog with it (2026-10-22).
+  const drawer = vi.fn();
   const show = () =>
     render(
-      <MemoryRouter initialEntries={['/device-sync?view=checks']}>
-        <DeviceSyncReviewPage />
-      </MemoryRouter>,
+      <RecordDrawerContext.Provider value={{ open: drawer }}>
+        <MemoryRouter initialEntries={['/device-sync?view=checks']}>
+          <DeviceSyncReviewPage />
+        </MemoryRouter>
+      </RecordDrawerContext.Provider>,
     );
 
   beforeEach(() => {
+    drawer.mockReset();
     state.action.mockReset();
     state.permissions = { update: true, assign: true, transfer: true };
   });
@@ -344,9 +349,10 @@ describe('MDM 核对 → 信息不一致', () => {
   it('marks a silent device lost, and ignores it from the menu', async () => {
     state.views = { checks: [check] };
     show();
-    expect(
+    fireEvent.click(
       screen.getByRole('button', { name: 'deviceActions.markLost.title' }),
-    ).toHaveAttribute('href', '/devices/d9?do=markLost');
+    );
+    expect(drawer).toHaveBeenCalledWith('/devices/d9?do=markLost');
     screen.getByRole('button', { name: 'common.more' }).focus();
     await userEvent.keyboard('{ArrowDown}');
     fireEvent.click(
@@ -368,9 +374,10 @@ describe('MDM 核对 → 信息不一致', () => {
       ],
     };
     show();
-    expect(
+    fireEvent.click(
       screen.getByRole('button', { name: 'deviceSync.checks.transferTo' }),
-    ).toHaveAttribute('href', '/devices/d9?do=transfer&to=p2');
+    );
+    expect(drawer).toHaveBeenCalledWith('/devices/d9?do=transfer&to=p2');
   });
 
   // In the record drawer (2026-10-22), the list staying behind.

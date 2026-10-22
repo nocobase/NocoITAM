@@ -414,12 +414,12 @@ function RowActions({
   readonly advice?: FollowUpAdvice;
 }): ReactElement {
   const { t } = useTranslation();
-  // A record's page alone (查看) opens in the record drawer (2026-10-22),
-  // so the list stays behind; one that opens a dialog there (`?do=`) still
-  // goes to the page.
+  // A device's page opens in the record drawer (2026-10-22), the list
+  // staying behind — with its dialog open (`?do=`) for 调拨, 标记丢失 and
+  // the rest, as on the page.
   const openRecord = useOpenRecord();
   const inDrawer = (action: RowAction): RowAction =>
-    'to' in action && !action.to.includes('?')
+    'to' in action
       ? {
           label: action.label,
           disabled: action.disabled,
