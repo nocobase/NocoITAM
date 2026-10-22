@@ -1022,7 +1022,7 @@ const messages = {
     runAll_one: 'Do all ({{count}})',
     runAll_other: 'Do all ({{count}})',
     advice: {
-      none: "Below are the rule's picks: their own location first, then the warranty. Asset Steward also weighs repair history and notes.",
+      none: "Below are the rule's picks, which look only at stock, location and warranty, not at repair history or notes. Asset Steward weighs those too.",
       running: 'Asset Steward is choosing from the stock…',
       ready: 'Chosen by Asset Steward ({{date}})',
       failed: 'Asset Steward could not choose this time.',

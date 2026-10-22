@@ -1008,7 +1008,7 @@ const zhCN: AppResource = {
     runAll_one: '全部执行 ({{count}})',
     runAll_other: '全部执行 ({{count}})',
     advice: {
-      none: '下面是按规则挑的：同一地点优先，再看保修期。资产管家还会参考维修记录和备注。',
+      none: '下面是按规则挑的，只看库存、地点和保修，不看维修记录和备注。资产管家会把这些也考虑进去。',
       running: '资产管家正在从库存里为他挑选…',
       ready: '资产管家已挑选（{{date}}）',
       failed: '资产管家这次没挑成。',
