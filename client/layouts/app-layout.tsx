@@ -102,7 +102,14 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                 <LayoutHeader className='sticky top-0 z-40 justify-between'>
                   <div className='flex min-w-0 items-center gap-3'>
                     <AppSidebarToggle />
-                    <div className='md:hidden'>
+                    {/* Application change (ITAM, 2026-10-22): the mark alone
+                        on a phone-width pane, where the full logo ran under
+                        the header's buttons; the logo from `sm` until the
+                        sidebar shows it. */}
+                    <div className='shrink-0 sm:hidden'>
+                      <AppBrand compact />
+                    </div>
+                    <div className='hidden sm:block md:hidden'>
                       <AppBrand />
                     </div>
                     <div className='h-5 w-px shrink-0 bg-border' />
