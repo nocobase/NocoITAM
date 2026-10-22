@@ -238,13 +238,16 @@ describe('MDM follow-up', () => {
     await followUp().afterSync(null);
     const mine = await settled(() => latest('owner:mia'));
     const plan = await plans().get('mia', String(mine.result?.planId));
-    expect(plan.steps.map((step) => step.op)).toEqual([
-      'transfer_device',
+    expect(plan.steps.map((step) => step.op).sort()).toEqual([
       'dismiss_device_difference',
+      'transfer_device',
     ]);
+    const keep = plan.steps.find(
+      (step) => step.op === 'dismiss_device_difference',
+    )!;
     const done = await plans().execute('mia', plan.id, {
       revision: plan.revision,
-      skip: [2],
+      skip: [keep.position],
     });
     await followUp().planDecided({ plan: done, decision: 'executed' });
     expect((await runs().get(mine.id))?.status).toBe('accepted');
@@ -343,6 +346,11 @@ describe('MDM follow-up', () => {
     const anns = await settled(() => latest('shared:ann'));
     const annPlan = await plans().get('ann', String(anns.result?.planId));
     expect(annPlan.steps.map((step) => step.op)).toEqual(['create_record']);
+    // Not settled while its record is still listed (2026-10-22): a page
+    // with stale lists closed a new import's follow-up the moment it came.
+    await expect(
+      followUp().dismiss(anns.id, 'ann', { settled: true }),
+    ).rejects.toThrow('still to be settled');
     expect(annPlan.steps[0].check?.fields).toContainEqual(
       expect.objectContaining({ field: 'input' }),
     );

@@ -228,7 +228,10 @@ product or in release notes, until it is listed here.
   (`steps`, positions from 1): once its row is gone from the lists, the
   follow-up's card unticks them, marks them 已处理 and leaves them out
   of 确认执行; with every step settled so, it closes by itself as handled (accepted,
-  decision `settled`, through `dismiss` with `settled: true`), shown 已全部处理.
+  decision `settled`, through `dismiss` with `settled: true`), shown 已全部处理. Only by lists read after the run
+  was written (2026-10-22): lists cached from before a new import closed its
+  follow-up the moment it came. The server refuses `settled` while anything
+  its plan was to do is still listed (`SUGGESTION_NOT_SETTLED`).
   已处理 is a tag at the end of the step's line.
 - **Registering is one step** (2026-10-21): `create_record` of a device
   takes `assignTo { targetType, targetId }`, as the create dialog's 使用中

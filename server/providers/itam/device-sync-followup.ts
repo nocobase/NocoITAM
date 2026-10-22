@@ -536,6 +536,34 @@ export function createDeviceSyncFollowUp(dependencies: {
           'Only the person it was made for decides on it',
           'NOT_DECIDER',
         );
+      // Settled only when MDM 核对 no longer lists anything its plan was
+      // to do (2026-10-22): a page with stale lists closed a new import's
+      // follow-up the moment it appeared.
+      if (options.settled) {
+        const listed = new Set([
+          ...(await review().checks()).map(
+            (check) => `${check.deviceId}|${check.kind}`,
+          ),
+          ...(await review().unregistered()).map(
+            (record) => `${record.id}|unregistered`,
+          ),
+          ...(await review().unmanaged()).map(
+            (device) => `${device.id}|unmanaged`,
+          ),
+        ]);
+        const advice = (run.result?.advice ?? []) as FollowUpAdvice[];
+        if (
+          advice.some(
+            (entry) =>
+              (entry.steps?.length ?? 0) > 0 &&
+              listed.has(`${entry.subject}|${entry.kind}`),
+          )
+        )
+          throw new BusinessRuleError(
+            'Some of what it suggests is still to be settled',
+            'SUGGESTION_NOT_SETTLED',
+          );
+      }
       if (
         !(await runs().decide(run.id, {
           status: options.settled ? 'accepted' : 'dismissed',

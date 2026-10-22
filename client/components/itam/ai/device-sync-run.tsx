@@ -347,35 +347,63 @@ function useHandledSteps(run: DeviceSyncRun): ReadonlySet<number> {
   return handledOf(run, useListed());
 }
 
-/** What MDM 核对 lists now, by item and kind; null until all three load. */
-function useListed(): ReadonlySet<string> | null {
+/**
+ * What MDM 核对 lists now, by item and kind, and since when; null until all
+ * three load.
+ */
+interface Listed {
+  readonly keys: ReadonlySet<string>;
+  /** The oldest of the three lists' reads. */
+  readonly at: number;
+}
+
+function useListed(): Listed | null {
   const checks = useDeviceReview('checks');
   const unregistered = useDeviceReview('unregistered');
   const unmanaged = useDeviceReview('unmanaged');
   return useMemo(
     () =>
       checks.data && unregistered.data && unmanaged.data
-        ? new Set([
-            ...checks.data.map((row) => `${row.deviceId}|${row.kind}`),
-            ...unregistered.data.map((row) => `${row.id}|unregistered`),
-            ...unmanaged.data.map((row) => `${row.id}|unmanaged`),
-          ])
+        ? {
+            keys: new Set([
+              ...checks.data.map((row) => `${row.deviceId}|${row.kind}`),
+              ...unregistered.data.map((row) => `${row.id}|unregistered`),
+              ...unmanaged.data.map((row) => `${row.id}|unmanaged`),
+            ]),
+            at: Math.min(
+              checks.dataUpdatedAt,
+              unregistered.dataUpdatedAt,
+              unmanaged.dataUpdatedAt,
+            ),
+          }
         : null,
-    [checks.data, unregistered.data, unmanaged.data],
+    [
+      checks.data,
+      unregistered.data,
+      unmanaged.data,
+      checks.dataUpdatedAt,
+      unregistered.dataUpdatedAt,
+      unmanaged.dataUpdatedAt,
+    ],
   );
 }
 
 const NO_STEPS: ReadonlySet<number> = new Set();
 
-/** A run's plan steps whose item MDM 核对 no longer lists. */
+/**
+ * A run's plan steps whose item MDM 核对 no longer lists. Only by lists read
+ * after the run was written (2026-10-22): lists cached from before a new
+ * import know none of its items, and closed its follow-up as settled the
+ * moment it appeared.
+ */
 function handledOf(
   run: DeviceSyncRun,
-  listed: ReadonlySet<string> | null,
+  listed: Listed | null,
 ): ReadonlySet<number> {
-  if (!listed) return NO_STEPS;
+  if (!listed || listed.at < Date.parse(run.updatedAt)) return NO_STEPS;
   return new Set(
     (run.result?.advice ?? [])
-      .filter((entry) => !listed.has(`${entry.subject}|${entry.kind}`))
+      .filter((entry) => !listed.keys.has(`${entry.subject}|${entry.kind}`))
       .flatMap((entry) => entry.steps ?? []),
   );
 }
