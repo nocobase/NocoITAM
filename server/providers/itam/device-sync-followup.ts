@@ -257,14 +257,16 @@ export function createDeviceSyncFollowUp(dependencies: {
   };
 
   /**
-   * What a person carried out or set aside lately: not raised again. Asked
-   * for by hand (2026-10-22), what was set aside counts no more: declining
-   * a suggestion leaves the difference, and asking again is asking for it.
+   * What a person carried out lately: not raised again. Set aside (拒绝,
+   * 忽略) counts no more (2026-10-22): declining a suggestion leaves the
+   * difference, so the next follow-up — a pull's or one asked for — works
+   * it out again. A difference the register is right about is settled by
+   * 忽略 on its row, which takes it off the list.
    */
-  const handled = async (asked = false): Promise<ReadonlySet<string>> => {
+  const handled = async (): Promise<ReadonlySet<string>> => {
     const decided = await runs().list(AGENT, {
       since: new Date(Date.now() - HANDLED_DAYS * 86_400_000),
-      statuses: asked ? ['accepted'] : ['accepted', 'dismissed'],
+      statuses: ['accepted'],
       limit: 500,
     });
     const keys = new Set<string>();
@@ -336,13 +338,11 @@ export function createDeviceSyncFollowUp(dependencies: {
   };
 
   /** The new items to judge, by who judges them. */
-  const pending = async (
-    asked = false,
-  ): Promise<{
+  const pending = async (): Promise<{
     readonly byOwner: Map<string, FollowUpItem[]>;
     readonly shared: FollowUpItem[];
   }> => {
-    const done = await handled(asked);
+    const done = await handled();
     const byOwner = new Map<string, FollowUpItem[]>();
     const shared: FollowUpItem[] = [];
     // A device nobody answers for is the asset managers', as a record the
@@ -380,7 +380,7 @@ export function createDeviceSyncFollowUp(dependencies: {
 
   /** The items a run is for, worked out again when it runs. */
   const itemsOf = async (run: AgentRun): Promise<FollowUpItem[]> => {
-    const { byOwner, shared } = await pending(run.trigger === 'asked');
+    const { byOwner, shared } = await pending();
     if (run.subjectId.startsWith('owner:'))
       return byOwner.get(run.subjectId.slice('owner:'.length)) ?? [];
     return shared;
@@ -459,7 +459,7 @@ export function createDeviceSyncFollowUp(dependencies: {
 
     async ask(by) {
       if (!(await review().active())) return [];
-      const { byOwner, shared } = await pending(true);
+      const { byOwner, shared } = await pending();
       const started: AgentRun[] = [];
       if (byOwner.get(by)?.length)
         started.push(await begin('asked', by, `owner:${by}`, by));

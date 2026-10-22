@@ -259,8 +259,10 @@ product or in release notes, until it is listed here.
 - **Only what was done is handled** (2026-10-22): of a follow-up carried
   out (accepted), an item counts among `handled()` only when one of its plan
   steps ran (`done`). Unticked steps, notes to look at and items with no
-  suggestion are raised again by the next follow-up. One set aside (拒绝,
-  忽略) keeps all its items handled, as do runs from before `advice`. A step
+  suggestion are raised again by the next follow-up. One set aside (拒绝, 忽略) settles
+  nothing: declining a suggestion leaves the difference, so every follow-up,
+  a pull's or one asked for, works it out again; runs from before `advice`
+  count whole. A step
   left out shows as 未执行.
 - **Asking again refreshes the shared part for all** (2026-10-22): `ask`
   starts the reader's own devices' follow-up, and — when the reader holds
@@ -279,10 +281,6 @@ product or in release notes, until it is listed here.
   the follow-up's prompt and the device-sync skill say to link to one rather
   than register a duplicate. A skill library provisioned earlier keeps its
   old text; the prompt carries the rule regardless.
-- **Asked by hand, set aside comes back** (2026-10-22): a pull skips what
-  a person carried out or set aside (拒绝, 忽略); 重新运行 MDM 差异跟进
-  (`ask`, and its runs' `itemsOf`, trigger `asked`) skips only what was
-  carried out, since declining a suggestion leaves the difference.
 - **The device list** (2026-10-15): while a platform is connected the list
   response says `syncConnected` and each row carries `lastSyncAt` (the
   latest of its linked records), which the 最后同步 column shows; the

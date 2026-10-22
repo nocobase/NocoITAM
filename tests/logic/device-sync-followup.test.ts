@@ -262,7 +262,9 @@ describe('MDM follow-up', () => {
     ).toEqual([['statusMismatch', spare]]);
   });
 
-  it('raises nothing again that a person carried out or set aside', async () => {
+  // Only what was carried out settles an item (2026-10-22): one set aside,
+  // or only noted, is worked out again by the next follow-up.
+  it('raises again what was set aside or only noted', async () => {
     await followUp().afterSync(null);
     const mine = await settled(() => latest('owner:mia'));
     // Nothing to carry out: a note each, no plan.
@@ -270,19 +272,15 @@ describe('MDM follow-up', () => {
     expect((mine.result?.notes as string[]).length).toBe(2);
     await followUp().dismiss(mine.id, 'mia');
     const anns = await settled(() => latest('shared:ann'));
-    // Closed as settled (2026-10-21), it ends as handled, not set aside;
-    // but what it only noted was not done, so it comes back (2026-10-22).
+    // Closed as settled (2026-10-21), it ends as handled, not set aside.
     const closed = await followUp().dismiss(anns.id, 'ann', { settled: true });
     expect(closed).toMatchObject({ status: 'accepted', decision: 'settled' });
 
     const again = await followUp().afterSync(null);
-    expect(again.map((run) => run.subjectId)).toEqual(['shared:ann']);
-    // Set aside, it is not raised again.
-    await followUp().dismiss(
-      (await settled(() => latest('shared:ann'))).id,
-      'ann',
-    );
-    expect(await followUp().afterSync(null)).toEqual([]);
+    expect(again.map((run) => run.subjectId)).toEqual([
+      'owner:mia',
+      'shared:ann',
+    ]);
   });
 
   it('replaces a suggestion left waiting, and settles the other asset managers’ with the first', async () => {
