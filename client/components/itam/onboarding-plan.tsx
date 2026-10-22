@@ -503,11 +503,17 @@ function PlanLine({
                 key={`o:${original.type}:${original.id}`}
                 className='inline-flex max-w-full min-w-0 items-center gap-1'
               >
-                {/* On a narrow card the label wraps inside the button
-                    rather than running past the card (2026-10-22). */}
+                {/* What is proposed opens its record, to be looked at
+                    before it is reserved; the button beside it only acts
+                    (2026-10-22: the label was inside the button). */}
+                <RecordLink
+                  to={recordOf(thing)}
+                  className='mr-1 min-w-0 truncate underline-offset-4 hover:underline'
+                >
+                  {thing.label}
+                </RecordLink>
                 <Button
                   variant='outline'
-                  className='h-auto min-h-8 min-w-0 shrink py-1 text-left whitespace-normal'
                   disabled={busy || (thing.needsAccount && !thing.account)}
                   title={
                     thing.needsAccount && !thing.account
@@ -517,15 +523,13 @@ function PlanLine({
                   onClick={() => onRun(thing)}
                 >
                   {thing.type === 'device'
-                    ? t(started ? 'onboarding.assign' : 'onboarding.reserve', {
-                        label: thing.label,
-                      })
+                    ? t(started ? 'onboarding.assign' : 'onboarding.reserve')
                     : thing.type === 'stock'
-                      ? t('onboarding.issue', {
-                          label: thing.label,
-                          count: thing.quantity ?? 1,
-                        })
-                      : t('onboarding.seat', { label: thing.label })}
+                      ? // ×N only when more than one.
+                        (thing.quantity ?? 1) > 1
+                        ? t('onboarding.issueMany', { count: thing.quantity })
+                        : t('onboarding.issue')
+                      : t('onboarding.seat')}
                 </Button>
                 {thing.type === 'device' ? (
                   <Button

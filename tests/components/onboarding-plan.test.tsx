@@ -411,3 +411,15 @@ it('asks Asset Steward to draft the order from beside a shortfall, and offers no
   );
   expect(state.asked).toEqual(['ai.prompts.onboardingOrder']);
 });
+
+it('lets a proposed device be looked at before it is reserved', () => {
+  state.plan = plan('2099-01-10');
+  show();
+  // Its name opens its record (2026-10-22); the button beside it reserves.
+  expect(
+    screen.getByRole('link', { name: 'DE-000001 / Mac' }).getAttribute('href'),
+  ).toBe('/devices/d1');
+  expect(
+    screen.getByRole('button', { name: 'onboarding.reserve' }),
+  ).toBeTruthy();
+});
