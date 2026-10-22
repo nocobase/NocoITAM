@@ -981,7 +981,7 @@ const messages = {
     joins: 'Joins {{date}}',
     noKit:
       'No onboarding kit applies to this person’s department and position.',
-    askAi: 'Prepare',
+    askAi: 'Kit plan',
     needsAccount:
       'A subscription seat needs an account: give this person an e-mail, or assign it on the entitlement',
     change: 'Change',
@@ -1028,7 +1028,11 @@ const messages = {
       failed: 'Asset Steward could not choose this time.',
       conversation: 'See how',
       first: 'Choose',
-      again: 'Suggest again',
+      again: 'Choose again',
+      firstHint:
+        'Asset Steward picks devices, accessories and seats from stock for them, weighing repair history, notes and end dates, and says why. Only a suggestion: you still decide what to reserve.',
+      againHint:
+        'When stock or records have changed, Asset Steward picks again from things as they are now, replacing its last picks. What is already reserved stays.',
       notStarted: {
         disabled: 'Onboarding suggestions are switched off in the settings',
         unavailable:

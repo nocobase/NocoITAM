@@ -970,7 +970,7 @@ const zhCN: AppResource = {
     title: '入职配备',
     joins: '{{date}} 入职',
     noKit: '该人员的部门和职位没有适用的入职配置。',
-    askAi: '准备',
+    askAi: '配备计划',
     needsAccount: '订阅席位需要账号：先给这个人填写邮箱，或到授权页分配',
     change: '更换',
     order: '{{orderNo}} {{status}}',
@@ -1014,7 +1014,11 @@ const zhCN: AppResource = {
       failed: '资产管家这次没挑成。',
       conversation: '查看过程',
       first: '挑选',
-      again: '重新建议',
+      again: '重新挑选',
+      firstHint:
+        '让资产管家从库存里为他挑选设备、配件和席位，参考维修记录、备注和到期日，并说明理由。只是建议，预留哪个仍由你决定。',
+      againHint:
+        '库存或记录有变化时，让资产管家按现在的情况重新挑一遍，替换上次的挑选。已经预留的不受影响。',
       notStarted: {
         disabled: '入职建议已在设置中关闭',
         unavailable: '资产管家现在不可用：请在「Agent 团队 → 模型」检查模型',

@@ -15,6 +15,11 @@ import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useAiPageContext } from '@/lib/itam/ai-chat';
 import { useAnnounce } from '@/lib/itam/announce';
 import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
@@ -213,12 +218,12 @@ export function OnboardingPlanCard({
     <Card className='py-0'>
       <CardContent className='space-y-3 p-4'>
         <div className='flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-2'>
-          <div className='flex min-w-0 items-center gap-2'>
+          <div className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'>
             <PackageCheck
               aria-hidden='true'
               className='size-4 shrink-0 text-muted-foreground'
             />
-            <h2 className='font-heading text-sm font-semibold'>
+            <h2 className='shrink-0 font-heading text-sm font-semibold whitespace-nowrap'>
               {t('onboarding.title')}
             </h2>
             {data.kit ? (
@@ -235,27 +240,31 @@ export function OnboardingPlanCard({
               </span>
             ) : null}
           </div>
-          {aiAvailable && data.kit ? (
-            <AiShortcut
-              onClick={() =>
-                ask(t('ai.prompts.onboarding', { name: personName }))
-              }
-            >
-              {t('onboarding.askAi')}
-            </AiShortcut>
-          ) : null}
-          {proposals.length > 0 ? (
-            <Button
-              disabled={busy}
-              onClick={() =>
-                void run(proposals, (done) =>
-                  t('onboarding.done.all', { count: done }),
-                )
-              }
-            >
-              {t('onboarding.runAll', { count: proposals.length })}
-            </Button>
-          ) : null}
+          {/* Together at the right (2026-10-22): spread apart, the AI
+              shortcut floated in the middle of the row. */}
+          <div className='ml-auto flex shrink-0 items-center gap-3'>
+            {aiAvailable && data.kit ? (
+              <AiShortcut
+                onClick={() =>
+                  ask(t('ai.prompts.onboarding', { name: personName }))
+                }
+              >
+                {t('onboarding.askAi')}
+              </AiShortcut>
+            ) : null}
+            {proposals.length > 0 ? (
+              <Button
+                disabled={busy}
+                onClick={() =>
+                  void run(proposals, (done) =>
+                    t('onboarding.done.all', { count: done }),
+                  )
+                }
+              >
+                {t('onboarding.runAll', { count: proposals.length })}
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {data.kit ? (
@@ -650,17 +659,32 @@ function AdviceStrip({
   if (!advice && !(isOwner && aiAvailable)) return null;
   const again =
     isOwner && aiAvailable && advice?.status !== 'running' ? (
-      <AiShortcut
-        className='text-xs'
-        disabled={advise.isPending}
-        onClick={() => advise.mutate()}
-      >
-        {t(advice ? 'onboarding.advice.again' : 'onboarding.advice.first')}
-      </AiShortcut>
+      // What it does on hover (2026-10-22), in the app's tooltip: the
+      // browser's own title did not show in every browser.
+      <Tooltip>
+        <TooltipTrigger render={<span className='inline-flex' />}>
+          <AiShortcut
+            className='text-xs'
+            disabled={advise.isPending}
+            onClick={() => advise.mutate()}
+          >
+            {t(advice ? 'onboarding.advice.again' : 'onboarding.advice.first')}
+          </AiShortcut>
+        </TooltipTrigger>
+        <TooltipContent className='max-w-64'>
+          {t(
+            advice
+              ? 'onboarding.advice.againHint'
+              : 'onboarding.advice.firstHint',
+          )}
+        </TooltipContent>
+      </Tooltip>
     ) : null;
   return (
     <div className='flex flex-wrap items-start gap-x-3 gap-y-1 rounded-md bg-accent px-3 py-2 text-xs'>
-      <span className='flex min-w-0 flex-1 gap-1.5'>
+      {/* At least 15rem of text before the button takes a line of its
+          own, rather than the text going down a word at a time. */}
+      <span className='flex min-w-0 flex-1 basis-60 gap-1.5'>
         <Sparkles
           aria-hidden='true'
           className='mt-0.5 size-3.5 shrink-0 text-primary'

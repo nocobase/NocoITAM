@@ -402,7 +402,7 @@ locale })` — its own plans, the answers given — and the joiners'
   latest finished run) is **held back** from every other joiner's
   candidates and proposals (`heldForOthers`), or two joiners of one
   department were both offered the laptop it had just chosen for the first.
-  A run starts **only when the 入职负责人 asks** — 挑选 / 重新建议
+  A run starts **only when the 入职负责人 asks** — 挑选 / 重新挑选 (重新建议 until 2026-10-22; each says what it does on hover)
   on the card, which only they may press (`advise`, `POST /itam/master/people/:id/onboarding/advise`,
   `NOT_OWNER`) — for a joiner not yet equipped, however far off their
   first day, when Asset Steward has a choice (some item with more candidates than it
