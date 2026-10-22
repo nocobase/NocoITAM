@@ -36,7 +36,7 @@ export function NoticeRecord({
       ) : null}
       {/* 打开 in place of the record's own actions (2026-10-21), as beside
           an AI suggestion: the record's page, at what the notice is about. */}
-      <OpenFullPageContext.Provider value={() => void navigate(path)}>
+      <OpenFullPageContext.Provider value={(to) => void navigate(to)}>
         <RecordPane
           // A new pane for each notification, so its history scrolls to the
           // comment again even on the record already shown.

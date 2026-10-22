@@ -22,4 +22,6 @@ export const EmbeddedRecordContext = createContext(false);
  * suggestion, decided on its card, and a notification's record — where the
  * page's own buttons would act from beside the list. Null everywhere else.
  */
-export const OpenFullPageContext = createContext<(() => void) | null>(null);
+export const OpenFullPageContext = createContext<((to: string) => void) | null>(
+  null,
+);

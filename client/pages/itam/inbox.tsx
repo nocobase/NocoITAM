@@ -336,11 +336,7 @@ function ReviewDetail({
         {/* The page's 等你决定 shows the picked run alone; 打开 leads to
             the page itself (2026-10-21). */}
         <FollowUpFocusContext.Provider value={run.id}>
-          <OpenFullPageContext.Provider
-            value={() =>
-              void navigate(`/device-sync?view=${followUpPlace(run).tab}`)
-            }
-          >
+          <OpenFullPageContext.Provider value={(to) => void navigate(to)}>
             {/* On its own tab (2026-10-22). */}
             <PagePane
               key={run.id}
@@ -364,7 +360,7 @@ function ReviewDetail({
           <ApprovalReviewCard key={run.id} run={run} />
         </div>
       )}
-      <OpenFullPageContext.Provider value={() => void navigate(recordPath)}>
+      <OpenFullPageContext.Provider value={(to) => void navigate(to)}>
         <RecordPane
           key={run.id}
           to={recordPath}
