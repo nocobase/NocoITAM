@@ -75,6 +75,8 @@ export interface UnregisteredDevice {
   readonly suggestedManufacturerId: string | null;
   /** The primary user's department, for 补登记. */
   readonly suggestedDepartmentId: string | null;
+  /** The primary user's location, for 补登记's 存放位置 (2026-10-22). */
+  readonly suggestedLocationId: string | null;
   /** For a serial several devices share: those devices. */
   readonly candidates: readonly {
     readonly id: string;
@@ -492,12 +494,19 @@ export function createDeviceReviewService(deps: {
       if (key && !makers.has(key)) makers.set(key, maker.id);
     }
     const departments = new Map<string, string>();
+    const locations = new Map<string, string>();
     for (const person of await database
       .query()
       .selectFrom('people')
-      .select(['id', 'departmentId'])
-      .execute<{ id: string; departmentId: string | null }>())
+      .select(['id', 'departmentId', 'locationId'])
+      .execute<{
+        id: string;
+        departmentId: string | null;
+        locationId: string | null;
+      }>()) {
       if (person.departmentId) departments.set(person.id, person.departmentId);
+      if (person.locationId) locations.set(person.id, person.locationId);
+    }
     return {
       /**
        * The register model a platform names: as written, without the maker
@@ -521,6 +530,8 @@ export function createDeviceReviewService(deps: {
       maker: (maker: unknown) => makers.get(normalizeName(maker)),
       department: (personId: string | null) =>
         personId ? departments.get(personId) : undefined,
+      location: (personId: string | null) =>
+        personId ? locations.get(personId) : undefined,
     };
   };
 
@@ -555,6 +566,8 @@ export function createDeviceReviewService(deps: {
         model?.manufacturerId ?? models.maker(row.manufacturer) ?? null,
       // The primary user's department, when the user is a known person.
       suggestedDepartmentId: models.department(personId) ?? null,
+      // Where the primary user sits, for 补登记's 存放位置 (2026-10-22).
+      suggestedLocationId: models.location(personId) ?? null,
       candidates: serial ? (candidates.get(serial) ?? []) : [],
       ignoredById: asText(row.ignoredById) ?? null,
       ignoredAt: iso(row.ignoredAt),

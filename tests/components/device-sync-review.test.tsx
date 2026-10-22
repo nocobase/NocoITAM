@@ -533,12 +533,20 @@ describe('MDM 核对 → 只在 MDM: 补登记', () => {
 
   it('starts it in use by the primary user when they are a person on the register', () => {
     state.views = {
-      unregistered: [{ ...record('PF5DEMO01'), personId: 'p1' }],
+      unregistered: [
+        {
+          ...record('PF5DEMO01'),
+          personId: 'p1',
+          suggestedLocationId: 'loc-3f',
+        },
+      ],
     };
     open();
+    // Kept where they sit (2026-10-22).
     expect(state.create?.initial).toMatchObject({
       startStatus: 'inUse',
       assigneeId: 'p1',
+      locationId: 'loc-3f',
     });
   });
 

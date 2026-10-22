@@ -267,6 +267,8 @@ export interface UnregisteredDevice {
   readonly suggestedManufacturerId: string | null;
   /** The primary user's department, for 补登记. */
   readonly suggestedDepartmentId: string | null;
+  /** The primary user's location, for 补登记's 存放位置 (2026-10-22). */
+  readonly suggestedLocationId?: string | null;
   readonly candidates: readonly {
     readonly id: string;
     readonly label: string;

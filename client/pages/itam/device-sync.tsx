@@ -1415,6 +1415,7 @@ function RecordsView({
         categoryId: row.suggestedCategoryId,
         manufacturerId: row.suggestedManufacturerId,
         departmentId: row.suggestedDepartmentId,
+        locationId: row.suggestedLocationId,
         // In use by the platform's primary user when they are a person on
         // the register (2026-10-16): otherwise it would be saved 库存中
         // and come straight back as 状态不符.
