@@ -1,13 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Check,
-  Package,
-  PackageCheck,
-  Sparkles,
-  Truck,
-  Undo2,
-} from 'lucide-react';
+import { Check, Package, PackageCheck, Truck, Undo2 } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
@@ -570,20 +563,28 @@ function PlanLine({
         </span>
       </div>
       {reasons.length > 0 ? (
-        <ul className='mt-1 space-y-0.5 pl-6'>
+        // In a light box like the strip above (2026-10-22), each with the
+        // device the rule would have proposed when it chose another.
+        <ul className='mt-1.5 space-y-1.5 rounded-md bg-accent/60 px-3 py-2 text-xs text-muted-foreground'>
           {reasons.map((thing) => (
-            <li
-              key={`r:${thing.id}`}
-              className='flex gap-1.5 text-xs text-muted-foreground'
-            >
-              <Sparkles
-                aria-hidden='true'
-                className='mt-0.5 size-3 shrink-0 text-primary'
-              />
-              <span className='min-w-0'>
-                {reasons.length > 1 ? `${thing.label}：` : null}
+            <li key={`r:${thing.id}`} className='space-y-0.5'>
+              <p>
+                {reasons.length > 1 ? (
+                  <span className='text-foreground'>{`${thing.label}：`}</span>
+                ) : null}
                 <CollapsibleText text={thing.reason ?? ''} lines={2} />
-              </span>
+              </p>
+              {thing.instead ? (
+                <p>
+                  {t('onboarding.instead')}
+                  <RecordLink
+                    to={`/devices/${thing.instead.id}`}
+                    className='text-foreground underline-offset-4 hover:underline'
+                  >
+                    {thing.instead.label}
+                  </RecordLink>
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>

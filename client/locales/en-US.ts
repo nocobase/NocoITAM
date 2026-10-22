@@ -982,6 +982,7 @@ const messages = {
     noKit:
       'No onboarding kit applies to this person’s department and position.',
     draftOrder: 'Draft order',
+    instead: 'The rule had proposed ',
     needsAccount:
       'A subscription seat needs an account: give this person an e-mail, or assign it on the entitlement',
     change: 'Change',

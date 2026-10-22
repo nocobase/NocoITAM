@@ -75,6 +75,11 @@ export interface PlanThing {
   /** A proposal Asset Steward chose in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;
+  /**
+   * A device Asset Steward chose over the one the rule would have proposed
+   * (2026-10-22): that one, so the card can say what it replaced.
+   */
+  readonly instead?: { readonly id: string; readonly label: string };
   /** A planned thing: where it will come from, and from when. */
   readonly supply?: PlanSupply;
 }
@@ -1423,6 +1428,8 @@ export function createOnboardingService(
             });
             missing -= 1;
           };
+          // What the rule alone would propose from stock, before any pick.
+          const ruleChoice = inStock.slice(0, missing);
           // Asset Steward's picks first, from stock or from what comes back; then
           // stock; then what is being bought; then what comes back.
           for (const pick of picks?.keys() ?? []) {
@@ -1440,6 +1447,24 @@ export function createOnboardingService(
             if (missing <= 0) break;
             if (!pools.takenDevices.has(String(row.id))) proposeStock(row);
           }
+          // Each pick the rule would not have made names the one it displaced.
+          const proposedIds = new Set(proposals.map((thing) => thing.id));
+          const ruleIds = new Set(ruleChoice.map((row) => String(row.id)));
+          const displaced = ruleChoice.filter(
+            (row) => !proposedIds.has(String(row.id)),
+          );
+          proposals.forEach((thing, index) => {
+            if (thing.source !== 'noco' || ruleIds.has(thing.id)) return;
+            const row = displaced.shift();
+            if (row)
+              proposals[index] = {
+                ...thing,
+                instead: {
+                  id: String(row.id),
+                  label: `${String(row.deviceNo)} / ${String(row.name)}`,
+                },
+              };
+          });
           const ordered = fromOrders(
             lineFits,
             missing,

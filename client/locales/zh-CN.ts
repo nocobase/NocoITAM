@@ -971,6 +971,7 @@ const zhCN: AppResource = {
     joins: '{{date}} 入职',
     noKit: '该人员的部门和职位没有适用的入职配置。',
     draftOrder: '起草采购单',
+    instead: '规则原本挑的：',
     needsAccount: '订阅席位需要账号：先给这个人填写邮箱，或到授权页分配',
     change: '更换',
     order: '{{orderNo}} {{status}}',

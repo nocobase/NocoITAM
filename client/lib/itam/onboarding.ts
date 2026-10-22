@@ -17,6 +17,8 @@ export interface PlanThing {
   /** Chosen by Asset Steward in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;
+  /** The device the rule would have proposed, when Asset Steward chose another. */
+  readonly instead?: { readonly id: string; readonly label: string };
   /** Planned rather than in stock: where it comes from, and from when. */
   readonly supply?: PlanSupply;
 }

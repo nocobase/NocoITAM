@@ -130,6 +130,8 @@ describe('onboarding advisor', () => {
       id: other.id,
       source: 'noco',
       reason: 'Never repaired',
+      // And which device the rule had proposed (2026-10-22).
+      instead: { id: longer.id, label: expect.stringContaining('DE-') },
     });
     // The plan carries no candidates unless asked.
     expect(line.candidates).toBeUndefined();
