@@ -91,6 +91,14 @@ describe('application config', () => {
       },
     });
     expect(runtime.config.get<AppJobsConfig>('jobs')).toEqual({
+      // Application change (ITAM): the agents' background runs on a queue
+      // of their own, two at a time, one attempt each.
+      itamAgentRuns: {
+        adapter: 'memory',
+        concurrency: 2,
+        attempts: 1,
+        persistence: { path: runtime.paths.storage('jobs') },
+      },
       memory: {
         adapter: 'memory',
         persistence: { path: runtime.paths.storage('jobs') },

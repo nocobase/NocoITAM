@@ -40,8 +40,9 @@ it('leads each tab with its icon and shows counts as plain figures', () => {
   expect(
     tabs.getByRole('link', { name: 'Other' }).querySelector('svg'),
   ).toBeNull();
+  // The open tab in the brand colour (2026-10-21, da649b0).
   expect(tabs.getByRole('link', { name: 'History' }).className).toContain(
-    'border-foreground',
+    'border-primary',
   );
   expect(devices.className).toContain('border-transparent');
 });

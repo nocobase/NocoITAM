@@ -97,10 +97,11 @@ describe('application authentication pages', () => {
       name: 'About this application',
     });
     expect(panel).toHaveClass('hidden', 'xl:block');
-    expect(panel).toHaveTextContent('AI-native application platform');
-    expect(panel).toHaveTextContent('AI-native frontend');
-    expect(panel).toHaveTextContent('NocoBase foundation');
-    expect(panel).toHaveTextContent('Freedom above. Confidence below.');
+    // ITAM's own panel (2026-10-21): devices moving round a floor plan,
+    // in place of the template's platform pitch.
+    expect(panel).toHaveTextContent('Where every device is, and who has it.');
+    expect(panel).toHaveTextContent('Shanghai office · Floor plan');
+    expect(panel).toHaveTextContent('The register is ready');
   });
 
   it('shows the action error', () => {
