@@ -46,14 +46,11 @@ interface Proposal {
 export function DraftOrdersButton({
   personId,
   keys,
-  icon = true,
   className,
   children,
 }: {
   readonly personId?: string;
   readonly keys?: readonly string[];
-  /** Off where it sits among small words, as in a card's progress line. */
-  readonly icon?: boolean;
   readonly className?: string;
   readonly children?: ReactNode;
 }): ReactElement {
@@ -135,17 +132,17 @@ export function DraftOrdersButton({
     <>
       <Button
         variant='ghost'
-        // Words like the row's other actions, its padding taken back; on
-        // hover a light ground of their own green, as the AI shortcuts
-        // have, rather than grey under green (2026-10-22).
+        // Green words with their icon everywhere, no ground on hover — the
+        // words fade a little instead (2026-10-22); no padding, so they sit
+        // the row's own gap from what is beside them.
         className={cn(
-          '-mx-2.5 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15',
+          'h-auto gap-1 p-0 text-primary hover:bg-transparent hover:text-primary/80 has-data-[icon=inline-start]:pl-0 dark:hover:bg-transparent',
           className,
         )}
         disabled={propose.isPending}
         onClick={() => propose.mutate()}
       >
-        {icon ? <FilePlus2 data-icon='inline-start' /> : null}
+        <FilePlus2 data-icon='inline-start' />
         {children ?? t('onboarding.draftOrder')}
       </Button>
       {proposal && order ? (

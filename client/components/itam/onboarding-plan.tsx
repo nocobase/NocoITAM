@@ -309,8 +309,7 @@ export function OnboardingPlanCard({
                 {shortfall > 0 ? (
                   <DraftOrdersButton
                     personId={personId}
-                    icon={false}
-                    className='-mx-1.5 h-6 px-1.5 text-xs'
+                    className='text-xs [&_svg]:size-3.5'
                   />
                 ) : null}
                 {data.waived > 0 ? (

@@ -10,6 +10,7 @@ import { RecordLink } from '@/components/itam/record-link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { daysOverdue, formatDate, todayIso } from '@/lib/itam/format';
 import {
   TARGET_ROUTES,
@@ -47,6 +48,12 @@ export default function OnboardingSupplyPage(): ReactElement {
         back
         title={t('onboarding.supply.title')}
         description={t('onboarding.supply.description')}
+        // Orders for every shortage, a dialog each.
+        actions={
+          supply.data && anyShort(supply.data.joiners) ? (
+            <DraftOrdersButton />
+          ) : undefined
+        }
       />
       {supply.isLoading ? (
         <Skeleton className='h-40 w-full rounded-xl' />
@@ -101,42 +108,35 @@ function Quantity({ count }: { readonly count: number }): ReactElement | null {
   ) : null;
 }
 
+/** Whether any joiner is short of something: 起草采购单 for all of it. */
+const anyShort = (joiners: OnboardingSupply['joiners']) =>
+  joiners.some((joiner) =>
+    joiner.plan.lines.some((line) => !line.waived && line.shortfall > 0),
+  );
+
+/** A card per joiner (2026-10-22; rows of one card until then). */
 function Joiners({
   joiners,
 }: {
   readonly joiners: OnboardingSupply['joiners'];
 }): ReactElement {
   const { t } = useTranslation();
-  const short = joiners.some((joiner) =>
-    joiner.plan.lines.some((line) => !line.waived && line.shortfall > 0),
-  );
+  if (joiners.length === 0)
+    return (
+      <p className='text-sm text-muted-foreground'>
+        {t('onboarding.supply.empty')}
+      </p>
+    );
   return (
-    <Card className='py-0'>
-      <CardContent className='space-y-2 p-4'>
-        <div className='flex min-h-8 items-center gap-3 border-b border-border/60 pb-2'>
-          <h2 className='font-heading text-sm font-semibold'>
-            {t('onboarding.supply.joiners')}
-          </h2>
-          {/* Orders for every shortage, a dialog each. */}
-          {short ? <DraftOrdersButton className='ml-auto' /> : null}
-        </div>
-        {joiners.length === 0 ? (
-          <p className='text-sm text-muted-foreground'>
-            {t('onboarding.supply.empty')}
-          </p>
-        ) : (
-          <ul className='divide-y divide-border/60'>
-            {joiners.map((joiner) => (
-              <JoinerRow key={joiner.id} joiner={joiner} />
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+    <div className='space-y-3'>
+      {joiners.map((joiner) => (
+        <JoinerCard key={joiner.id} joiner={joiner} />
+      ))}
+    </div>
   );
 }
 
-function JoinerRow({
+function JoinerCard({
   joiner,
 }: {
   readonly joiner: OnboardingSupply['joiners'][number];
@@ -159,105 +159,115 @@ function JoinerRow({
   const since = daysOverdue(joiner.hireDate);
   const ratio = plan.required > 0 ? plan.prepared / plan.required : 0;
   return (
-    <li className='space-y-1.5 py-3 text-sm'>
-      <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
-        <span className='flex min-w-0 flex-1 items-baseline gap-2'>
-          <RecordLink
-            to={`/people/${joiner.id}/holdings`}
-            className='shrink-0 font-medium transition-colors hover:text-primary'
-          >
-            {joiner.name}
-          </RecordLink>
-          <span className='truncate text-xs text-muted-foreground'>
-            {[joiner.department, joiner.position].filter(Boolean).join(' · ')}
-          </span>
-        </span>
-        {joiner.hireDate ? (
-          <span className='text-xs text-muted-foreground tabular-nums'>
-            {t('workbench.work.joinsOn', {
-              date: formatDate(joiner.hireDate),
-            })}{' '}
-            <span className='font-medium text-foreground'>
-              {since < 0
-                ? t('workbench.work.joinsIn', { count: -since })
-                : since === 0
-                  ? t('workbench.work.joinsToday')
-                  : t('workbench.work.joinedAgo', { count: since })}
+    <Card className='py-0'>
+      <CardContent className='space-y-2 p-4 text-sm'>
+        <div
+          className={cn(
+            'flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1',
+            // Ruled off only from something under it.
+            (special.length > 0 || !plan.kit) &&
+              'border-b border-border/60 pb-2',
+          )}
+        >
+          <span className='flex min-w-0 flex-1 items-baseline gap-2'>
+            <RecordLink
+              to={`/people/${joiner.id}/holdings`}
+              className='shrink-0 font-medium transition-colors hover:text-primary'
+            >
+              {joiner.name}
+            </RecordLink>
+            <span className='truncate text-xs text-muted-foreground'>
+              {[joiner.department, joiner.position].filter(Boolean).join(' · ')}
             </span>
           </span>
-        ) : null}
-        {/* How far along, as on their card: the count and a short bar. */}
-        <span className='flex items-center gap-2 text-xs text-muted-foreground tabular-nums'>
-          {t('onboarding.progress', {
-            done: plan.prepared,
-            total: plan.required,
-          })}
-          <span
-            aria-hidden='true'
-            className='h-1 w-16 shrink-0 overflow-hidden rounded-full bg-muted'
-          >
+          {joiner.hireDate ? (
+            <span className='text-xs text-muted-foreground tabular-nums'>
+              {t('workbench.work.joinsOn', {
+                date: formatDate(joiner.hireDate),
+              })}{' '}
+              <span className='font-medium text-foreground'>
+                {since < 0
+                  ? t('workbench.work.joinsIn', { count: -since })
+                  : since === 0
+                    ? t('workbench.work.joinsToday')
+                    : t('workbench.work.joinedAgo', { count: since })}
+              </span>
+            </span>
+          ) : null}
+          {/* How far along, as on their card: the count and a short bar. */}
+          <span className='flex items-center gap-2 text-xs text-muted-foreground tabular-nums'>
+            {t('onboarding.progress', {
+              done: plan.prepared,
+              total: plan.required,
+            })}
             <span
-              className='block h-full rounded-full bg-primary'
-              style={{ width: `${Math.round(ratio * 100)}%` }}
-            />
-          </span>
-        </span>
-        {short > 0 ? (
-          <Badge
-            className={
-              late
-                ? 'bg-destructive/10 text-destructive'
-                : 'bg-warning/15 text-warning-foreground'
-            }
-          >
-            {t('onboarding.shortfall', { count: short })}
-          </Badge>
-        ) : null}
-        {ordered > 0 ? (
-          <Badge variant='outline'>
-            {t('onboarding.supply.onOrder', { count: ordered })}
-          </Badge>
-        ) : null}
-        {returning > 0 ? (
-          <Badge variant='outline'>
-            {t('onboarding.supply.returning', { count: returning })}
-          </Badge>
-        ) : null}
-      </div>
-      {!plan.kit ? (
-        <p className='text-xs text-muted-foreground'>{t('onboarding.noKit')}</p>
-      ) : special.length > 0 ? (
-        // In a hairline frame on white, a line between items (2026-10-22):
-        // on a grey box the outlined tags read as part of the ground.
-        <ul className='divide-y divide-border/60 rounded-md border border-border/60 px-3'>
-          {special.map((line) => (
-            <li
-              key={line.key}
-              className='flex flex-wrap items-center gap-x-3 gap-y-1 py-2'
+              aria-hidden='true'
+              className='h-1 w-16 shrink-0 overflow-hidden rounded-full bg-muted'
             >
-              {/* At least 10rem for the item, so on a narrow screen what it
+              <span
+                className='block h-full rounded-full bg-primary'
+                style={{ width: `${Math.round(ratio * 100)}%` }}
+              />
+            </span>
+          </span>
+          {short > 0 ? (
+            <Badge
+              className={
+                late
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-warning/15 text-warning-foreground'
+              }
+            >
+              {t('onboarding.shortfall', { count: short })}
+            </Badge>
+          ) : null}
+          {ordered > 0 ? (
+            <Badge variant='outline'>
+              {t('onboarding.supply.onOrder', { count: ordered })}
+            </Badge>
+          ) : null}
+          {returning > 0 ? (
+            <Badge variant='outline'>
+              {t('onboarding.supply.returning', { count: returning })}
+            </Badge>
+          ) : null}
+        </div>
+        {!plan.kit ? (
+          <p className='text-xs text-muted-foreground'>
+            {t('onboarding.noKit')}
+          </p>
+        ) : special.length > 0 ? (
+          // A line between items, on the card's white: on a grey box the
+          // outlined tags read as part of the ground (2026-10-22).
+          <ul className='divide-y divide-border/60'>
+            {special.map((line) => (
+              <li
+                key={line.key}
+                className='flex flex-wrap items-center gap-x-3 gap-y-1 py-2 last:pb-0'
+              >
+                {/* At least 10rem for the item, so on a narrow screen what it
                   comes from takes the next line rather than covering it. */}
-              <span className='flex min-w-0 flex-1 basis-40 items-center gap-2'>
-                <ItemTag kind={line.kind} itemType={line.itemType} />
-                <TargetLink target={line.target} />
-                <Quantity count={line.required} />
-              </span>
-              <span className='flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5'>
-                <LineOutlook line={line} />
-                {/* This item for this joiner, in the create dialog. */}
-                {line.shortfall > 0 ? (
-                  <DraftOrdersButton
-                    personId={joiner.id}
-                    keys={[line.key]}
-                    icon={false}
-                    className='-mx-1.5 h-6 px-1.5 text-xs'
-                  />
-                ) : null}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </li>
+                <span className='flex min-w-0 flex-1 basis-40 items-center gap-2'>
+                  <ItemTag kind={line.kind} itemType={line.itemType} />
+                  <TargetLink target={line.target} />
+                  <Quantity count={line.required} />
+                </span>
+                <span className='flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5'>
+                  <LineOutlook line={line} />
+                  {/* This item for this joiner, in the create dialog. */}
+                  {line.shortfall > 0 ? (
+                    <DraftOrdersButton
+                      personId={joiner.id}
+                      keys={[line.key]}
+                      className='text-xs [&_svg]:size-3.5'
+                    />
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
