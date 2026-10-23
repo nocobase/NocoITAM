@@ -66,8 +66,15 @@ export interface SupplyRow {
    * are not counted, so the balance is null (不限).
    */
   readonly unlimitedBy: { readonly label: string; readonly url: string } | null;
-  /** The model's or product's category; null for a category row. */
-  readonly category: { readonly id: string; readonly name: string } | null;
+  /**
+   * The model's or product's category, with its place on the categories
+   * page to sort by; null for a category row.
+   */
+  readonly category: {
+    readonly id: string;
+    readonly name: string;
+    readonly order: number;
+  } | null;
   /** Supply less demand; null where seats are unlimited. */
   readonly balance: number | null;
   /** When short: the last day to order it in time. */
@@ -98,6 +105,15 @@ const OPEN_ORDERS = [
   'partiallyReceived',
 ];
 const WITHDRAWN = ['cancelled', 'rejected'];
+
+/** The categories page's groups, in its order. */
+const CATEGORY_GROUPS = [
+  'device',
+  'accessory',
+  'consumable',
+  'component',
+  'entitlement',
+];
 
 const SOURCES: readonly SupplyEntry['kind'][] = [
   'stock',
@@ -571,21 +587,48 @@ export async function supplyDemand(
     (
       await q()
         .selectFrom('categories')
-        .select(['id', 'name', 'appliesTo'])
+        .select(['id', 'name', 'appliesTo', 'parentId', 'sort'])
         .execute<Row>()
     ).map((row) => [String(row.id), row]),
   );
+  // Where each category stands on the categories page: grouped by what it
+  // applies to, then the tree, siblings by their sort (2026-10-23).
+  const position = new Map<string, number>();
+  {
+    const children = new Map<string, Row[]>();
+    for (const row of categories.values()) {
+      const parent = asText(row.parentId) ?? '';
+      children.set(parent, [...(children.get(parent) ?? []), row]);
+    }
+    const bySort = (a: Row, b: Row) =>
+      (Number(a.sort) || 0) - (Number(b.sort) || 0) ||
+      String(a.name).localeCompare(String(b.name));
+    const visit = (row: Row) => {
+      position.set(String(row.id), position.size);
+      for (const child of (children.get(String(row.id)) ?? []).sort(bySort))
+        visit(child);
+    };
+    const roots = (children.get('') ?? []).sort(bySort);
+    for (const kind of CATEGORY_GROUPS)
+      for (const root of roots)
+        if (asText(root.appliesTo) === kind) visit(root);
+    for (const root of roots) if (!position.has(String(root.id))) visit(root);
+  }
   const appliesTo = new Map(
     [...categories].map(([id, row]) => [id, asText(row.appliesTo) ?? '']),
   );
   // Each item's category, shown beside its name (2026-10-23).
-  const categoryOf = new Map<string, { id: string; name: string }>();
+  const categoryOf = new Map<
+    string,
+    { id: string; name: string; order: number }
+  >();
   const noteCategory = (key: string, categoryId: unknown) => {
     const category = categories.get(String(categoryId));
     if (category)
       categoryOf.set(key, {
         id: String(category.id),
         name: String(category.name),
+        order: position.get(String(category.id)) ?? position.size,
       });
   };
   const STOCK_KINDS = new Set(['accessory', 'consumable', 'component']);
