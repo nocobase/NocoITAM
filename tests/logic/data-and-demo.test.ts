@@ -25,6 +25,7 @@ import { deviceSyncServiceToken } from '../../server/providers/itam/device-sync.
 import { workbenchServiceToken } from '../../server/providers/itam/workbench.js';
 import { addDays, today } from '../../server/providers/itam/dates.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
+import { disposalRoutes } from '../../server/routes/itam/disposals.js';
 import { dataRoutes } from '../../server/routes/itam/data.js';
 import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
@@ -71,6 +72,7 @@ describe('CSV import / export and demo data', () => {
     for (const routes of [
       masterDataRoutes,
       deviceRoutes,
+      disposalRoutes,
       entitlementRoutes,
       purchaseOrderRoutes,
       stockRoutes,
@@ -471,6 +473,27 @@ describe('CSV import / export and demo data', () => {
     // It is the user's kit, not the demo's: clearing leaves it.
     expect((await post('demo/clear')).status).toBe(200);
     expect((await kits()).map((kit) => kit.id)).toEqual([empty.id]);
+  });
+
+  // A draft made by hand for a demo device (改为报废, 2026-10-23) goes with
+  // the demo rather than staying behind with no devices and a stale count.
+  it('clears a draft disposal left with none of its devices', async () => {
+    expect((await generateDemo()).status).toBe(200);
+    const [device] = await data<{ id: string }[]>(
+      await get('devices?pageSize=1&filter[status]=inUse'),
+    );
+    const created = await post('disposals', {
+      method: 'scrap',
+      reason: 'uneconomicalRepair',
+      description: 'Not worth repairing',
+      deviceIds: [device!.id],
+      recipientName: 'Recycler',
+      dataWipe: 'notWiped',
+    });
+    expect(created.status, await created.clone().text()).toBe(201);
+    const draft = await data<{ id: string }>(created);
+    expect((await post('demo/clear')).status).toBe(200);
+    expect((await get(`disposals/${draft.id}`)).status).toBe(404);
   });
 
   it('clears the orders raised for its joiners, and leaves a real joiner’s', async () => {

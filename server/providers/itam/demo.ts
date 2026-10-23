@@ -13,7 +13,11 @@ import type { AuditService, CountInput } from './audits.js';
 import type { CommentService } from './comments.js';
 import { unrestricted } from './authz-filter.js';
 import { asText, decodeRow, type Row } from './collection-query.js';
-import type { DisposalService } from './disposals.js';
+import type {
+  DisposalInput,
+  DisposalService,
+  ExecuteDisposalInput,
+} from './disposals.js';
 import { BusinessRuleError } from './errors.js';
 import type { EntitlementService } from './entitlements.js';
 import type { NumberingService } from './numbering.js';
@@ -1127,6 +1131,16 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     disposalPrinter: 'Out of warranty and jamming; scrap it',
     leaverDisposal: 'Battery swollen and out of warranty; scrap it',
     disposalApproval: 'Approved: end of life',
+    batchScrap:
+      'Three Latitudes from 2021, long past replacement and in the warehouse since; scrap them with the disks destroyed',
+    monitorDonation:
+      'Two old 27-inch monitors, too dim for design work; give them to the school we support',
+    donationRecipient: 'Hope Primary School, Qingpu',
+    donationApproval: 'Approved: donate them, shipping on IT',
+    youngDisposal:
+      'Too slow for the new build tools; sell it and buy a faster one',
+    youngRejection:
+      'Rejected: under two years old and in warranty; add memory instead, or hand it to someone with lighter work',
     memoryOrder: 'Memory upgrade kits for R&D',
     headsetOrder: 'Headsets for the sales floor',
     internOrder: 'Laptops for the winter interns',
@@ -1293,6 +1307,14 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     disposalPrinter: '已过保且频繁卡纸，申请销毁',
     leaverDisposal: '电池鼓包且已过保，申请报废',
     disposalApproval: '同意报废：已到使用年限',
+    batchScrap:
+      '三台 2021 年的 Latitude，早过更换周期，一直放在仓库；报废，硬盘物理销毁',
+    monitorDonation: '两台旧 27 寸显示器，亮度不够做设计；捐给公司结对的学校',
+    donationRecipient: '青浦希望小学',
+    donationApproval: '同意捐赠，运费由 IT 承担',
+    youngDisposal: '跑新的构建工具太慢，申请出售后换一台更快的',
+    youngRejection:
+      '不同意：购入不到两年且在保修期内；建议加内存，或转给工作负荷轻的同事',
     memoryOrder: '研发部内存条补货',
     headsetOrder: '销售部耳机采购',
     internOrder: '实习生笔记本采购',
@@ -6314,6 +6336,158 @@ export function createDemoService(dependencies: {
           all('disposals', 'execute'),
         );
 
+        // More disposals (2026-10-23), so the list has every outcome and
+        // more than one way out: a batch of old laptops scrapped with their
+        // disks destroyed, two old monitors given to a school, and a young
+        // laptop the approver turned down.
+        const oldLaptops: Row[] = [];
+        for (let index = 0; index < 3; index += 1) {
+          oldLaptops.push(
+            await device({
+              modelId: latitude.id,
+              serialNo: `5HX2K7${index}`,
+              name: `SH-LT-07${index}`,
+              locationId: warehouse.id,
+              departmentId: sales.id,
+              vendorId: reseller.id,
+              purchaseDate: daysFromNow(-1900 + index * 10),
+              purchasePrice: 7499,
+              warrantyEndDate: daysFromNow(-800),
+            }),
+          );
+        }
+        const oldMonitors: Row[] = [];
+        for (let index = 0; index < 2; index += 1) {
+          oldMonitors.push(
+            await device({
+              modelId: u2723.id,
+              serialNo: `CN0F5K7Y${3900 + index}`,
+              name: `SH-MON-02${index + 1}`,
+              locationId: warehouse.id,
+              vendorId: reseller.id,
+              purchaseDate: daysFromNow(-2100),
+              purchasePrice: 2899,
+              warrantyEndDate: daysFromNow(-1000),
+            }),
+          );
+        }
+        const youngLaptop = await device({
+          modelId: latitude.id,
+          serialNo: '5HX2K79',
+          name: 'SH-LT-079',
+          locationId: warehouse.id,
+          departmentId: rnd.id,
+          vendorId: reseller.id,
+          purchaseDate: daysFromNow(-560),
+          purchasePrice: 8999,
+          warrantyEndDate: daysFromNow(535),
+        });
+        // Bought before the register, as the others of their day.
+        await enterHistoricalOrders([
+          ...oldLaptops.map((row) => String(row.id)),
+          ...oldMonitors.map((row) => String(row.id)),
+          String(youngLaptop.id),
+        ]);
+        /** A disposal carried from request to its end. */
+        const disposalStory = async (story: {
+          readonly input: DisposalInput;
+          readonly days: readonly [number, number, number?];
+          readonly decision: 'approved' | 'rejected';
+          readonly comment: string;
+          readonly execution?: ExecuteDisposalInput;
+        }) => {
+          const [requested, decided, executed] = story.days;
+          await on(requested);
+          const created = await track(
+            'disposals',
+            await disposals.create(
+              { ...story.input, requestedAt: daysFromNow(requested) },
+              context,
+              all('disposals', 'create'),
+            ),
+          );
+          const id = String(created.id);
+          await disposals.submit(
+            id,
+            approverId,
+            context,
+            all('disposals', 'submit'),
+          );
+          await on(decided);
+          if (
+            (await disposals.get(id, all('disposals', 'read')))?.status ===
+            'pendingApproval'
+          )
+            await disposals.decide(
+              id,
+              story.decision,
+              story.comment,
+              { actorId: approverId, sourceType: 'demo' },
+              all('disposals', 'approve'),
+            );
+          if (story.execution && executed !== undefined) {
+            await on(executed);
+            await disposals.execute(
+              id,
+              { ...story.execution, disposedAt: daysFromNow(executed) },
+              context,
+              all('disposals', 'execute'),
+            );
+          }
+        };
+        await disposalStory({
+          input: {
+            method: 'scrap',
+            reason: 'endOfLife',
+            description: texts.batchScrap,
+            deviceIds: oldLaptops.map((row) => String(row.id)),
+            recipientVendorId: String(recycler.id),
+            dataWipe: 'notWiped',
+          },
+          days: [-90, -86, -75],
+          decision: 'approved',
+          comment: texts.disposalApproval,
+          execution: {
+            expenses: 150,
+            currency: 'CNY',
+            recipientVendorId: String(recycler.id),
+            dataWipe: 'wiped',
+            wipeMethod: 'physicalDestruction',
+          },
+        });
+        await disposalStory({
+          input: {
+            method: 'donation',
+            reason: 'insufficientPerformance',
+            description: texts.monitorDonation,
+            deviceIds: oldMonitors.map((row) => String(row.id)),
+            recipientName: texts.donationRecipient,
+            dataWipe: 'notRequired',
+          },
+          days: [-60, -58, -50],
+          decision: 'approved',
+          comment: texts.donationApproval,
+          execution: {
+            expenses: 120,
+            currency: 'CNY',
+            recipientName: texts.donationRecipient,
+            dataWipe: 'notRequired',
+          },
+        });
+        await disposalStory({
+          input: {
+            method: 'sale',
+            reason: 'insufficientPerformance',
+            description: texts.youngDisposal,
+            deviceIds: [String(youngLaptop.id)],
+            recipientVendorId: String(recycler.id),
+            dataWipe: 'notWiped',
+          },
+          days: [-15, -13],
+          decision: 'rejected',
+          comment: texts.youngRejection,
+        });
+
         // A few comment threads (2026-10-16), so the 动态 of the records
         // being worked on reads as a team talking, and the importer is
         // @-mentioned on two of them — which lands in its 通知 — and answers
@@ -7553,10 +7727,57 @@ export function createDemoService(dependencies: {
             .deleteFrom('auditItems')
             .where('deviceId', 'in', allIds)
             .execute();
+          // A disposal made by hand for the demo's devices (2026-10-23: one
+          // 改为报废 opened) loses them with the demo. A draft left with none
+          // goes, as nothing of it is left; any other keeps its own count.
+          const touched = (
+            await connection.query
+              .selectFrom('disposalDevices')
+              .select('disposalId')
+              .where('deviceId', 'in', allIds)
+              .execute<{ disposalId: string }>()
+          )
+            .map((row) => String(row.disposalId))
+            .filter((id) => !allIds.includes(id));
           await connection.query
             .deleteFrom('disposalDevices')
             .where('deviceId', 'in', allIds)
             .execute();
+          for (const disposalId of new Set(touched)) {
+            const left = await connection.query
+              .selectFrom('disposalDevices')
+              .select('bookValue')
+              .where('disposalId', '=', disposalId)
+              .execute<{ bookValue: unknown }>();
+            const disposal = await connection.query
+              .selectFrom('disposals')
+              .select('status')
+              .where('id', '=', disposalId)
+              .executeTakeFirst<{ status: string }>();
+            if (left.length === 0 && disposal?.status === 'draft') {
+              for (const dependent of DEPENDENTS)
+                await connection.query
+                  .deleteFrom(dependent.table)
+                  .where(dependent.column, '=', disposalId)
+                  .execute();
+              await connection.query
+                .deleteFrom('disposals')
+                .where('id', '=', disposalId)
+                .execute();
+              continue;
+            }
+            await connection.query
+              .updateTable('disposals')
+              .set({
+                deviceCount: left.length,
+                bookValueTotal: left.reduce(
+                  (sum, row) => sum + (Number(row.bookValue) || 0),
+                  0,
+                ),
+              })
+              .where('id', '=', disposalId)
+              .execute();
+          }
         }
         for (const collection of ORDER) {
           const ids = byCollection.get(collection);

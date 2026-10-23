@@ -469,18 +469,16 @@ export const AUDIT_STATUS_TONE: Readonly<Record<string, string>> = {
   notStarted: 'bg-primary/10 text-primary',
   inProgress: 'bg-info text-info-foreground',
   pendingDifferences: 'bg-warning text-warning-foreground',
-  completed: 'bg-primary text-primary-foreground',
+  // A light tint as every other status (2026-10-23): done reads green.
+  completed: 'bg-success text-success-foreground',
   cancelled: 'bg-muted text-muted-foreground',
-  // Violet, a tint no other ending has (2026-10-23): not repaired, the
-  // device goes on to its disposal.
-  scrapped: 'bg-loan text-loan-foreground',
 };
 /** `AUDIT_STATUS_TONE` as a board column's dot; keep the two in step. */
 export const AUDIT_STATUS_DOT: Readonly<Record<string, string>> = {
   notStarted: 'bg-primary/40',
   inProgress: 'bg-info-foreground',
   pendingDifferences: 'bg-warning-foreground',
-  completed: 'bg-primary',
+  completed: 'bg-success-foreground',
   cancelled: 'bg-muted-foreground/50',
 };
 /**
@@ -506,7 +504,8 @@ export const DISPOSAL_STATUS_TONE: Readonly<Record<string, string>> = {
   pendingApproval: 'bg-warning text-warning-foreground',
   approved: 'bg-primary/10 text-primary',
   rejected: 'bg-destructive/10 text-destructive',
-  executed: 'bg-primary text-primary-foreground',
+  // Violet, as a repair 改为报废 (2026-10-23): the devices are gone.
+  executed: 'bg-loan text-loan-foreground',
 };
 /** `DISPOSAL_STATUS_TONE` as a board column's dot; keep the two in step. */
 export const DISPOSAL_STATUS_DOT: Readonly<Record<string, string>> = {
@@ -514,7 +513,7 @@ export const DISPOSAL_STATUS_DOT: Readonly<Record<string, string>> = {
   pendingApproval: 'bg-warning-foreground',
   approved: 'bg-primary/40',
   rejected: 'bg-destructive',
-  executed: 'bg-primary',
+  executed: 'bg-loan-foreground',
 };
 export const DATA_WIPE_OPTIONS = ['wiped', 'notWiped', 'notRequired'] as const;
 export const WIPE_METHODS = ['format', 'erase', 'physicalDestruction'] as const;
