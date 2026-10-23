@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -53,9 +53,7 @@ vi.mock('../../client/lib/itam/api.js', async (original) => ({
         throw new Error('Not enough in stock');
       return request.path.endsWith('/advise')
         ? { data: { started: true, runId: 'r2' } }
-        : request.path.endsWith('/joiner-proposals')
-          ? { data: { orders: [], skipped: [] } }
-          : {};
+        : {};
     },
   }),
 }));
@@ -401,27 +399,15 @@ it('says where planned things come from, with no button, and when to order the r
   expect(screen.getByText(/onboarding\.orderNow/)).toBeTruthy();
 });
 
-it('drafts the order for a shortfall from beside it, without the chat', async () => {
+it('leaves buying a shortfall to 供需分析', () => {
   state.aiAvailable = true;
   state.plan = plan('2099-01-10');
   show();
-  // The header's plan shortcut repeated 全部执行 (removed 2026-10-22).
+  // 创建采购单 left the row on 2026-10-23; the page weighs every need.
   expect(
-    screen.queryByRole('button', { name: /onboarding\.askAi/ }),
+    screen.queryByRole('button', { name: /onboarding\.draftOrder/ }),
   ).toBeNull();
-  fireEvent.click(
-    screen.getByRole('button', { name: /onboarding\.draftOrder/ }),
-  );
-  await waitFor(() => expect(state.requests).toHaveLength(1));
-  // Drafted straight away (2026-10-22), for this joiner only.
-  expect(state.requests).toEqual([
-    expect.objectContaining({
-      path: 'itam/purchase-orders/joiner-proposals',
-      method: 'POST',
-      json: expect.objectContaining({ personId: 'p1' }),
-    }),
-  ]);
-  expect(state.asked).toEqual([]);
+  expect(screen.getAllByText(/onboarding\.shortfall/).length).toBeGreaterThan(0);
 });
 
 it('lets a proposed device be looked at before it is reserved', () => {

@@ -21,8 +21,6 @@ import {
 } from '../../providers/index.js';
 import { RecordNotFoundError } from '../../providers/itam/errors.js';
 import { matchPurchaseCapture } from '../../providers/itam/purchase-capture.js';
-import { proposeJoinerOrders } from '../../providers/itam/onboarding-orders.js';
-import { onboardingServiceToken } from '../../providers/itam/onboarding.js';
 import { outputFields, pickFields } from '../../providers/itam/authz-filter.js';
 import {
   LINE_ITEM_TYPES,
@@ -189,14 +187,6 @@ function readableLines(
   }));
 }
 
-const joinerProposalsSchema = z
-  .object({
-    personId: z.string().min(1).max(64).optional(),
-    keys: z.array(z.string().min(1).max(200)).max(200).optional(),
-    locale: z.string().max(16).optional(),
-  })
-  .strict();
-
 export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
   defineApiRoutes((app) => {
     const router = new Hono();
@@ -309,31 +299,6 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
             const input = captureSchema.parse(await readJsonObject(context));
             return context.json({
               data: await matchPurchaseCapture(database, input),
-            });
-          } catch (error) {
-            return errorResponse(context, error);
-          }
-        });
-        // 起草采购单 for joiners (2026-10-22): the orders to put in the
-        // create dialog for what they are short of, a proposal per vendor
-        // and joiner, the vendor where each item was last bought
-        // (`onboarding-orders.ts`). It creates nothing. Registered before
-        // the `/:id` routes.
-        routes.post('/joiner-proposals', async (context) => {
-          try {
-            await decide(context, 'create');
-            await decideCollection(context, 'people', 'read');
-            const input = joinerProposalsSchema.parse(
-              await readJsonObject(context),
-            );
-            return context.json({
-              data: await proposeJoinerOrders(
-                {
-                  database,
-                  onboarding: app.container.resolve(onboardingServiceToken),
-                },
-                input,
-              ),
             });
           } catch (error) {
             return errorResponse(context, error);

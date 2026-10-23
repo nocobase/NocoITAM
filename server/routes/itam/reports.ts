@@ -8,10 +8,14 @@ import {
   defineApiRoutes,
   type AppApiRouteContribution,
 } from '@nocobase/app-server/router';
+import { databaseManagerToken } from '@nocobase/db';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { reportServiceToken } from '../../providers/index.js';
+import { onboardingServiceToken } from '../../providers/itam/onboarding.js';
+import { settingsServiceToken } from '../../providers/itam/settings.js';
+import { supplyDemand } from '../../providers/itam/supply-demand.js';
 import {
   REPORT_NAMES,
   type ReportResult,
@@ -31,6 +35,11 @@ const filtersSchema = z.object({
   departmentId: z.string().max(64).optional(),
   categoryId: z.string().max(64).optional(),
   format: z.enum(['json', 'csv']).optional(),
+});
+
+const supplyDemandSchema = z.object({
+  days: z.coerce.number().int().min(1).max(365).default(60),
+  replacements: z.enum(['0', '1']).default('0'),
 });
 
 function toCsv(report: ReportResult): string {
@@ -73,6 +82,38 @@ export const reportRoutes: AppApiRouteContribution<Application> =
     const reports = app.container.resolve(reportServiceToken);
 
     routes.use('*', auth.required(), authorization.middleware());
+
+    // 供需分析: what comes in and goes out per item over the next days. It
+    // works over every record, so it asks for read on what it shows —
+    // devices and stock, entitlements, purchase orders, people. Registered
+    // before `/:name`.
+    routes.get('/supply-demand', async (context) => {
+      try {
+        const { days, replacements } = supplyDemandSchema.parse(
+          Object.fromEntries(new URL(context.req.url).searchParams.entries()),
+        );
+        for (const collection of [
+          'devices',
+          'stockItems',
+          'entitlements',
+          'purchaseOrders',
+          'people',
+        ])
+          await decideCollection(context, collection, 'read');
+        return context.json({
+          data: await supplyDemand(
+            {
+              database: app.container.resolve(databaseManagerToken),
+              onboarding: app.container.resolve(onboardingServiceToken),
+              settings: app.container.resolve(settingsServiceToken),
+            },
+            { days, replacements: replacements === '1' },
+          ),
+        });
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
 
     routes.get('/:name', async (context) => {
       try {

@@ -30,10 +30,7 @@ vi.mock('../../client/lib/itam/api.js', async () => ({
     '../../client/lib/itam/api.js',
   )),
   useItamSettings: () => ({ data: undefined }),
-  // 全部创建采购单 on 人员变动 (2026-10-23) proposes nothing here.
-  useApi: () => ({
-    request: async () => ({ data: { orders: [], skipped: [] } }),
-  }),
+  useApi: () => ({ request: async () => ({ data: {} }) }),
   useItamList: (path: string, query: { ids?: readonly string[] }) => ({
     data: state.rows[path]
       ? {
@@ -453,10 +450,12 @@ it('says on a joiner’s card what is still to buy, red past its last order day'
   ];
   show();
   const people = column('workbench.work.people');
-  // And the column heading offers orders for all of it (2026-10-23).
+  // And the column heading leads to 供需分析, where it is bought.
   expect(
-    within(people).getByRole('button', { name: 'onboarding.draftAll' }),
-  ).toBeTruthy();
+    within(people)
+      .getByRole('link', { name: 'navigation.supplyDemand' })
+      .getAttribute('href'),
+  ).toBe('/supply-demand');
   const late = within(people).getByText(
     'onboarding.shortfall · onboarding.orderNow',
   );

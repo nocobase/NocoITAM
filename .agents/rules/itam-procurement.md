@@ -179,3 +179,27 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   update and lines routes. The approval assistant reads the comparison
   (`quoteComparison` in its material). The entry is in the lines card
   (`QuoteComparisonEntry`, `client/pages/itam/procurement/quote-comparison.tsx`).
+- **供需分析 is where what is short is bought** (2026-10-23,
+  `/supply-demand`, under 收件箱 in the menu; `supplyDemand` in
+  `server/providers/itam/supply-demand.ts`, `GET
+/itam/reports/supply-demand?days=&replacements=`). One row per item —
+  `model:<id>` for devices and stock, `softwareProduct:<id>` for seats,
+  `category:<id>` for a kit item naming a category — with, over the next 30 /
+  60 / 90 days: supply from stock (free devices not reserved or on an open
+  disposal, a stock item's total less used, free seats), open purchase
+  order lines (draft to partly received, by `expectedAt` or `neededBy`),
+  devices at the repairer by their expected return, and what leavers hand
+  back (devices from the leave date plus `onboardingPrepDays`, accessories,
+  seats); demand from joiners (required less prepared, waived items out; a
+  category line counts only the plan's own shortfall), a stock item's
+  minimum, a subscription ending unrenewed (all its seats), and, when asked,
+  devices due for replacement. Short, a row says the last day to order: the
+  earliest dated need less `purchaseLeadDays` (and the preparation days for
+  a device), or today when only the minimum is short. It reads every record
+  regardless of record scope, so it asks for `read` on devices, stock items,
+  entitlements, purchase orders and people.
+  创建采购单 (a row) and 全部创建采购单 (the page) open the create dialog
+  filled in (`ProposedOrdersButton`), an order per vendor each item was last
+  bought from, the reason 新员工配备 when only joiners need it, 批量更换 when
+  only replacements do, else 库存补充, needed by the earliest dated need.
+  Nothing is created until a dialog is saved.

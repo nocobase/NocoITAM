@@ -106,8 +106,9 @@ departments/:id/positions/rename`): its holders and its kit move to the
   counted. 入职供需, a page of every joiner's plan together
   (`/onboarding-supply`), was removed on 2026-10-23 with its endpoint: each
   joiner's 入职配备 card, their workbench card (缺 N · 应尽快下单) and
-  需要关注's 入职缺口已过最晚下单日 said all of it; 全部创建采购单 moved to
-  the heading of the workbench's 人员变动 column. 全部执行 carries on past a refused item and
+  需要关注's 入职缺口已过最晚下单日 said all of it. What joiners are short of
+  is bought on 供需分析 (see [purchasing](itam-procurement.md)), which the
+  人员变动 column's heading links to. 全部执行 carries on past a refused item and
   names each refusal, and its toast counts what went through.
   `GET /itam/master/people/:id/onboarding` returns it; it writes nothing.
   The 归属 tab of an active person whose 入职日期 is ahead or within the
@@ -118,24 +119,14 @@ departments/:id/positions/rename`): its holders and its kit move to the
   The card's only AI is 挑选 / 重新挑选 in its strip. The header's 准备
   (配备计划), a chat that proposed the plan 全部执行 already runs, was
   removed on 2026-10-22.
-- 创建采购单 (on a short item's row of the card, and 全部创建采购单 on the
-  workbench's 人员变动 column) opens the
-  purchase order's own create dialog filled in (2026-10-22;
-  `DraftOrdersButton`, `POST /itam/purchase-orders/joiner-proposals`,
-  `proposeJoinerOrders` in `onboarding-orders.ts`, which creates nothing):
-  新员工配备, needed by the joining day, their department, the vendor each
-  item was last bought from (empty where none was), a line per item short.
-  Several proposals — another vendor, another joiner — are tabs at the top
-  of the dialog, each its own form kept while another is looked at, one
-  saved showing its number; a line can be moved to another of them (移到…,
-  an item never bought here joining a vendor's order). Each opens with the
-  AI 整理 column beside it, seeded with its description, to be adjusted in
-  words. What was saved opens in the drawer at the end. Per joiner,
-  not merged across them: the plan counts an order as a joiner's own only by
-  department and needed-by date (`ownOrders`), so a merged order would be
-  proposed again. A kit item naming a category is left out and said in the
-  toast. It asked Asset Steward in the chat, then drafted straight away,
-  the same day.
+- The 入职配备 card and the workbench buy nothing (2026-10-23): 创建采购单
+  on a short item's row and 全部创建采购单 on the 人员变动 column
+  (2026-10-22, `DraftOrdersButton` and `POST
+/itam/purchase-orders/joiner-proposals`) went to 供需分析, which weighs a
+  joiner's need against every other on the same item before proposing an
+  order. An order made there counts for a joiner once placed and expected
+  in time; only one raised as theirs (department and needed-by date,
+  `ownOrders`) counts while still a draft.
   The workbench's 入职准备 (`pendingOnboarding`, right after 离职交接) lists
   **joiners** — people entered in the register no more than 30 days before
   their first day (`isJoiner`; staff entered long after they started, such

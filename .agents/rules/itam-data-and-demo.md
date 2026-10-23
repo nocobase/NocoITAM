@@ -335,7 +335,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   补登记 or a follow-up's plan) took the next import's record by serial, and
   只在 MDM never listed LAPTOP-PF5DEMO01 again.
 - Clearing the demo also deletes the 新员工配备 orders raised for its
-  joiners (2026-10-22): 起草采购单 files an order the demo did not make,
+  joiners (2026-10-22): 创建采购单 filed an order the demo did not make,
   which would otherwise outlive the clear and, matching the next import's
   joiner by department and joining day, cover their shortfall unasked. An
   order goes when its department, needed-by date and the name in its

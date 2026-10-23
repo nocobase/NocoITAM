@@ -11,7 +11,6 @@ import {
 import { useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
-import { DraftOrdersButton } from '@/components/itam/draft-orders-button';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -325,7 +324,6 @@ export function OnboardingPlanCard({
               {data.lines.map((line) => (
                 <PlanLine
                   key={`${line.target.type}:${line.target.id}`}
-                  personId={personId}
                   line={line}
                   busy={busy}
                   started={started}
@@ -354,7 +352,6 @@ export function OnboardingPlanCard({
 }
 
 function PlanLine({
-  personId,
   line,
   busy,
   started,
@@ -363,7 +360,6 @@ function PlanLine({
   onRun,
   onWaive,
 }: {
-  readonly personId: string;
   readonly line: OnboardingPlanLine;
   readonly busy: boolean;
   readonly started: boolean;
@@ -548,12 +544,9 @@ function PlanLine({
               </span>
             );
           })}
+          {/* What is short is bought on 供需分析 (2026-10-23; 创建采购单
+              on this row until then), weighed against what else wants it. */}
           <LineOutlook line={line} />
-          {/* What is short drafted from its own row (2026-10-22; from the
-              progress line until then), in the create dialog. */}
-          {line.shortfall > 0 && !line.waived ? (
-            <DraftOrdersButton personId={personId} keys={[line.key]} />
-          ) : null}
           {/* Something they will not be given — their own monitor, another
               laptop — is marked rather than left outstanding for ever. */}
           {line.preparedCount < line.required ? (

@@ -72,6 +72,7 @@ const messages = {
     inboxGroup: 'Inbox',
     // The inbox, first in the menu (2026-10-16); it said To-dos before, unused.
     inbox: 'Inbox',
+    supplyDemand: 'Supply & demand',
     notifications: 'Notifications',
     assetsGroup: 'Assets',
     operationsGroup: 'Operations',
@@ -999,16 +1000,6 @@ const messages = {
     joins: 'Joins {{date}}',
     noKit:
       'No onboarding kit applies to this person’s department and position.',
-    draftOrder: 'Create order',
-    draftAll: 'Create all orders',
-    drafts: {
-      noVendor: 'no vendor yet',
-      created_one: 'Created {{orders}}',
-      created_other: 'Created {{count}} orders: {{orders}}',
-      nothing: 'Nothing to buy',
-      skipped:
-        '{{items}}: the kit names a category, not a model; add it to the order by hand',
-    },
     instead: 'The rule had proposed ',
     needsAccount:
       'A subscription seat needs an account: give this person an e-mail, or assign it on the entitlement',
@@ -1844,7 +1835,7 @@ const messages = {
       filled:
         'The AI filled in the order from the text. Check it before saving.',
       proposed:
-        'Filled in from what the joiner is short of. To change it, tell AI: another vendor, the last unit prices, other quantities.',
+        'Filled in from what supply & demand finds short. To change it, tell AI: another vendor, the last unit prices, other quantities.',
       reviewHint: 'The AI was not sure of this one. Check it.',
       check: 'Check',
       vendorNotFound: 'The text says {{name}}, which is not on the vendor list',
@@ -3240,6 +3231,47 @@ const messages = {
     loading: 'Laying out diagram…',
     nodeHelp: 'Press Enter or Space to select a state.',
     edgeHelp: 'Press Enter or Space to select a transition.',
+  },
+  supplyDemand: {
+    title: 'Supply & demand',
+    description:
+      'What each item has coming in over the next days — stock, open purchase orders, repairs coming back, what leavers hand back — against what new hires, stock minimums and subscriptions ending unrenewed need. Buy what is short here.',
+    horizon: 'Period',
+    days: '{{count}} days',
+    show: 'Show',
+    showAll: 'All',
+    showShort: 'Short {{count}}',
+    replacements: 'Include due replacements',
+    unlimited: 'Unlimited',
+    empty: 'Nothing comes in or goes out in this period',
+    noShort: 'Nothing is short in this period',
+    orderNow: '{{date}}, passed',
+    columns: {
+      item: 'Item',
+      demand: 'Needed',
+      balance: 'Balance',
+      orderBy: 'Order by',
+    },
+    sources: {
+      stock: 'In stock',
+      order: 'On order',
+      repair: 'Back from repair',
+      return: 'From leavers',
+      joiner: 'New hires',
+      minimum: 'Stock minimum',
+      expiring: 'Ending unrenewed',
+      replacement: 'Due replacement',
+    },
+    orders: {
+      create: 'Create order',
+      createAll: 'Create all orders ({{count}} items)',
+      description: 'Restock from supply & demand: {{items}}',
+      titleMany: '{{items}} and {{count}} items in all',
+      noVendor: 'No vendor',
+      created_one: 'Created purchase order {{orders}}',
+      created_other: 'Created {{count}} purchase orders: {{orders}}',
+      nothing: 'Nothing to buy',
+    },
   },
   reports: {
     unassigned: 'Not set',

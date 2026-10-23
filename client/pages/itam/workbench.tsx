@@ -33,7 +33,6 @@ import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { DifferenceTag } from '@/components/itam/difference-tag';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { Page, PageHeader } from '@/components/itam/page-header';
-import { DraftOrdersButton } from '@/components/itam/draft-orders-button';
 import { SegmentedControl } from '@/components/itam/segmented-control';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { Badge } from '@/components/ui/badge';
@@ -380,17 +379,21 @@ function WorkColumn({
       dimmed={card.count === 0}
       layout={layout}
       action={
-        // Orders for every joiner's shortfall, in the create dialog
-        // (2026-10-23): 入职供需, the page that listed them together, went,
-        // each joiner's card and 入职配备 saying it already.
+        // A joiner short of something is bought for on 供需分析, which
+        // weighs it against stock, orders and leavers' returns (2026-10-23;
+        // 全部创建采购单 here, a dialog per order, until then).
         card.key === 'people' &&
         card.records.some(
           (record) =>
             record.origin === 'pendingOnboarding' && Boolean(record.shortfall),
         ) ? (
-          <DraftOrdersButton className='text-xs'>
-            {t('onboarding.draftAll')}
-          </DraftOrdersButton>
+          <Link
+            to='/supply-demand'
+            className='flex items-center gap-0.5 text-xs text-link'
+          >
+            {t('navigation.supplyDemand')}
+            <ArrowRight aria-hidden='true' className='size-3' />
+          </Link>
         ) : // MDM 核对, empty column or not: the page has no menu entry,
         // and what is settled there — ignored records, the rules — is
         // not on the board.

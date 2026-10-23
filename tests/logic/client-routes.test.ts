@@ -59,6 +59,8 @@ describe('app client routes', () => {
         .map((page) => page.authorizedAs),
     ).toEqual([
       'workbench',
+      // 供需分析 (2026-10-23), under 收件箱, which checks no grant.
+      'supply-demand',
       'devices',
       'accessories',
       'consumables',
