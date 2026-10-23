@@ -2,7 +2,6 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { Package } from 'lucide-react';
 import { Fragment, type ReactElement } from 'react';
 
-import { BackButton } from '@/components/back-button';
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { LineOutlook } from '@/components/itam/onboarding-plan';
@@ -41,8 +40,10 @@ export default function OnboardingSupplyPage(): ReactElement {
   const supply = useOnboardingSupply();
   return (
     <Page>
-      <BackButton to='/' />
+      {/* The way back as the detail pages and MDM 核对 have it, an arrow
+          beside the title (2026-10-22: a 返回 link above it until then). */}
       <PageHeader
+        back
         title={t('onboarding.supply.title')}
         description={t('onboarding.supply.description')}
       />
