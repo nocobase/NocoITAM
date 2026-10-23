@@ -76,6 +76,25 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     column: true,
     detail: false,
   },
+  {
+    // After the result in the list (2026-10-23). In 系统 above 创建人, where every other record's 负责人 sits — the two
+    // read together: who filed it, and who it now belongs to. Its candidates
+    // are its own, though: whoever may finish a repair, which is everybody
+    // but an employee, read from the permission sets.
+    key: 'ownerId',
+    label: 'fields.owner',
+    type: 'reference',
+    reference: { collection: 'repairOwners' },
+    required: true,
+    column: true,
+    // Fixed once the repair is finished: who saw it through is history. A
+    // repair being created has no result yet and is not finished
+    // (2026-10-16: the create form had it locked and empty).
+    readonlyWhen: (record) =>
+      record.id !== undefined && record.result !== 'inProgress',
+    group: 'groups.system',
+    detailOrder: -1,
+  },
   // Before 维修方式 in the list (2026-10-23); on the detail page it still
   // follows the fault description it sorts.
   {
@@ -112,7 +131,7 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     required: true,
   },
   // 时间 (2026-10-23): when it went, when it is due and when it came back,
-  // a group of their own under 基本信息.
+  // a group of their own under 基本信息; the list shows only when it went.
   {
     key: 'sentAt',
     label: 'fields.sentAt',
@@ -125,7 +144,6 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.expectedReturnAt',
     type: 'date',
     required: true,
-    column: true,
     group: 'groups.dates',
   },
   {
@@ -133,7 +151,6 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.actualReturnAt',
     type: 'date',
     // Set by completing; corrected afterwards.
-    column: true,
     readonlyWhen: (values) => values.result === 'inProgress',
     group: 'groups.dates',
   },
@@ -217,25 +234,6 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     options: options('repairQuoteDecision', REPAIR_QUOTE_DECISIONS),
     form: false,
     detail: false,
-  },
-  {
-    // In 系统 above 创建人, where every other record's 负责人 sits — the two
-    // read together: who filed it, and who it now belongs to. Its candidates
-    // are its own, though: whoever may finish a repair, which is everybody
-    // but an employee, read from the permission sets.
-    key: 'ownerId',
-    label: 'fields.owner',
-    type: 'reference',
-    reference: { collection: 'repairOwners' },
-    required: true,
-    column: true,
-    // Fixed once the repair is finished: who saw it through is history. A
-    // repair being created has no result yet and is not finished
-    // (2026-10-16: the create form had it locked and empty).
-    readonlyWhen: (record) =>
-      record.id !== undefined && record.result !== 'inProgress',
-    group: 'groups.system',
-    detailOrder: -1,
   },
   // 系统: who raised it and when, as every other record shows.
   ...AUDIT_FIELDS,

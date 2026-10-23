@@ -202,6 +202,11 @@ export interface DomainConfig {
     t: (key: string, options?: Record<string, unknown>) => string,
   ) => string;
   readonly defaultSort?: string;
+  /**
+   * The order the default sort reads in (2026-10-23): a document list
+   * reads newest first.
+   */
+  readonly defaultOrder?: 'asc' | 'desc';
   /** The tabs after the history timeline, which comes first. */
   readonly tabs?: readonly DomainTab[];
   /** The tab a record opens on; history unless one is named. */

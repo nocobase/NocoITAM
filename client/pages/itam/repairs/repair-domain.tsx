@@ -40,7 +40,10 @@ export const repairDomain: DomainConfig = {
   fields: REPAIR_FIELDS,
   createFields: ['deviceId', ...REPAIR_CREATE_FIELDS],
   nameField: 'repairNo',
-  defaultSort: 'createdAt',
+  // Newest sent first (2026-10-23): oldest first put every finished repair
+  // ahead of the ones still out.
+  defaultSort: 'sentAt',
+  defaultOrder: 'desc',
   // A record made by mistake goes; the device comes back from repair.
   // Who may delete is the grant's alone — the asset manager's and root's —
   // so the page offers it wherever `delete` is held.

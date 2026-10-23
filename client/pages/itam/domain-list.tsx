@@ -74,7 +74,13 @@ function DomainList({
   const q = params.get('q') ?? '';
   const sortField =
     params.get('sort') ?? domain.defaultSort ?? domain.nameField;
-  const sortOrder = params.get('order') === 'desc' ? 'desc' : 'asc';
+  // A column the reader sorts by starts ascending; the default sort reads
+  // in the domain's own order.
+  const sortOrder =
+    (params.get('order') ??
+      (params.get('sort') ? 'asc' : (domain.defaultOrder ?? 'asc'))) === 'desc'
+      ? 'desc'
+      : 'asc';
   const settings = useItamSettings();
   const permissions = useCollectionPermissions(domain.name, [
     'create',
