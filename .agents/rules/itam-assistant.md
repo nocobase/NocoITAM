@@ -259,7 +259,9 @@ triage.tsx`, under the description) fills only what is still empty,
   only a file linked to that record, under its `read`. The server builds the
   context from the id the page sends (the repair and its device, or the
   disposal's devices with their serials) and checks the reading against the
-  register: a repair report's printed serial (`serialMatches`), a
+  register: a repair report's or quote's device — its printed serial
+  (`serialMatches`) or another make and model the model names
+  (`otherDevice`) make `deviceMatches` false, shown as 单据上的设备不是这台, a
   certificate's serials (`missing`, `extra`) and its recipient matched to a
   vendor by name (`recipientVendorId`). The dialog fills only what the
   document states, marks `uncertain` fields 请核对, and saves nothing until

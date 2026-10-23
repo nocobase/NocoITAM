@@ -741,7 +741,7 @@ const zhCN: AppResource = {
     repairRecommendation: {
       repair: '建议维修',
       replace: '建议直接更换',
-      inspect: '建议先检测',
+      inspect: '先核对报价',
     },
     repairQuoteDecision: { repair: '继续维修', replace: '改为报废' },
     // Why a stock quantity was corrected (调整数量).
@@ -2865,8 +2865,9 @@ const zhCN: AppResource = {
     report: {
       placeholder:
         '粘贴维修报告或发票的内容，或拖入、上传维修单。AI 填好结果、费用和说明，你核对后完成',
-      serialMismatch:
-        '单据上的序列号 {{printed}} 与这台设备的 {{serialNo}} 不一致',
+      otherDevice: '单据上的设备不是这台',
+      otherDeviceDetail:
+        '单据：{{printed}}；这张维修单：{{device}}。请确认是不是传错了单据。',
     },
     // The moves on 设置 → 流程 → 维修, by the lifecycle's transition names.
     transitions: {

@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, TriangleAlert } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
@@ -8,6 +8,7 @@ import { DocumentReading } from '@/components/itam/ai/document-reading';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
 import { ReviewMark } from '@/components/itam/review-mark';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -39,6 +40,33 @@ interface Advice {
 const adviceKey = (amount: unknown, currency: unknown, work: string) =>
   `${String(amount)} ${String(currency)} ${work.trim()}`;
 
+/**
+ * 单据上的设备不是这台 (2026-10-23): a repair report or quote that names
+ * another device, by its serial or its make and model — most likely a
+ * document meant for another repair. Null when it is this device, or when
+ * the document does not say.
+ */
+export function DeviceMismatch({
+  reading,
+}: {
+  readonly reading: Record<string, unknown>;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  if (reading.deviceMatches !== false) return null;
+  return (
+    <Alert className='border-warning-foreground/25 bg-warning text-warning-foreground'>
+      <TriangleAlert />
+      <AlertTitle>{t('repairs.report.otherDevice')}</AlertTitle>
+      <AlertDescription className='text-warning-foreground'>
+        {t('repairs.report.otherDeviceDetail', {
+          printed: text(reading.otherDevice) || '—',
+          device: text(reading.deviceLabel) || '—',
+        })}
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 /** A filled tag, as a status is: amber for replace, calm blue otherwise. */
 function RecommendationBadge({
   recommendation,
@@ -55,7 +83,9 @@ function RecommendationBadge({
           : 'bg-info text-info-foreground'
       }
     >
-      {t(`repairs.triage.recommendation.${recommendation}`)}
+      {/* Its own words on a quote: 先核对报价 where the triage says
+          先检测 (2026-10-23). */}
+      {t(`enums.repairRecommendation.${recommendation}`)}
     </Badge>
   );
 }
@@ -99,7 +129,8 @@ export function RepairQuoteDialog({
   // weighed with the reading; one typed is weighed when asked.
   const [tab, setTab] = useState<'ai' | 'form'>('ai');
   const mode = ai.available ? tab : 'form';
-  const [serialWarning, setSerialWarning] = useState<string>();
+  // The reading's device check, kept for the form it switches to.
+  const [deviceCheck, setDeviceCheck] = useState<Record<string, unknown>>();
   const key = adviceKey(amount.amount, amount.currency, work);
   // The advice shown is the one for the quote as it stands now.
   const current = advice?.for === key ? advice : undefined;
@@ -157,14 +188,7 @@ export function RepairQuoteDialog({
       adviceFrom(reading, adviceKey(next.amount, next.currency, nextWork)),
     );
     setJudgeFailure(undefined);
-    setSerialWarning(
-      reading.serialMatches === false
-        ? t('repairs.report.serialMismatch', {
-            printed: text(reading.serialNo),
-            serialNo: text(reading.deviceSerialNo),
-          })
-        : undefined,
-    );
+    setDeviceCheck(reading);
     // What was read goes to the form, to be checked and saved there.
     setTab('form');
     return null;
@@ -275,9 +299,7 @@ export function RepairQuoteDialog({
         />
       ) : (
         <>
-          {serialWarning ? (
-            <p className='text-sm text-warning-foreground'>{serialWarning}</p>
-          ) : null}
+          {deviceCheck ? <DeviceMismatch reading={deviceCheck} /> : null}
           <div className='grid gap-1.5'>
             <Label htmlFor='quote-amount'>
               {t('fields.quoteAmount')}

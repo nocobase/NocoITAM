@@ -6,6 +6,7 @@ import { useState, type ReactElement, type ReactNode } from 'react';
 import { DocumentReading } from '@/components/itam/ai/document-reading';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
+import { DeviceMismatch } from '@/components/itam/repair-quote';
 import { ReviewMark } from '@/components/itam/review-mark';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -145,14 +146,7 @@ export function RepairCompleteDialog({
         ),
       ),
     );
-    return reading.serialMatches === false ? (
-      <p className='text-warning-foreground'>
-        {t('repairs.report.serialMismatch', {
-          printed: text(reading.serialNo),
-          serialNo: text(reading.deviceSerialNo),
-        })}
-      </p>
-    ) : null;
+    return <DeviceMismatch reading={reading} />;
   };
   const device = useItamRecord(DEVICES_PATH, text(repair.deviceId));
   const { label: returnLabel, relation } = useReturnLabel(device.data);

@@ -752,7 +752,7 @@ const messages = {
     repairRecommendation: {
       repair: 'Repair it',
       replace: 'Replace it',
-      inspect: 'Inspect first',
+      inspect: 'Check the quote first',
     },
     repairQuoteDecision: {
       repair: 'Keep repairing',
@@ -3041,8 +3041,9 @@ const messages = {
     report: {
       placeholder:
         'Paste the repair report or invoice, or drop or upload it. AI fills in the result, cost and notes for you to check',
-      serialMismatch:
-        "The document's serial number {{printed}} does not match this device's {{serialNo}}",
+      otherDevice: 'The document is for another device',
+      otherDeviceDetail:
+        'Document: {{printed}}; this repair: {{device}}. Check that it is the right document.',
     },
     // The moves on Settings → Flows → Repairs, by the lifecycle's transition
     // names.

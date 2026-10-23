@@ -167,6 +167,9 @@ describe('document reading', () => {
         cost: 480,
         deviceSerialNo: 'SN-0001',
         serialMatches: false,
+        // Another serial is another device: the page warns of it.
+        deviceMatches: false,
+        otherDevice: 'SN-OTHER',
       },
     });
     const context = askedContext();
