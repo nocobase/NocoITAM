@@ -41,6 +41,8 @@ export interface SupplyRow {
     readonly id: string;
     readonly name: string;
     readonly order: number;
+    /** Its names from the top of the tree down, itself last. */
+    readonly path: readonly string[];
   } | null;
   /** Null where seats are unlimited. */
   readonly balance: number | null;

@@ -324,18 +324,22 @@ function ItemName({
   readonly withCategory?: boolean;
 }): ReactElement {
   return (
-    <span className='flex min-w-0 items-center gap-2'>
-      <AssetTypeBadge value={row.kind} className='shrink-0' />
-      <RecordLink
-        to={`/${TARGET_ROUTES[row.target.type]}/${row.target.id}`}
-        className='truncate'
-        onClick={(event) => event.stopPropagation()}
-      >
-        {row.target.name}
-      </RecordLink>
+    // A category path that does not fit takes the next line; the tag and
+    // the name stay together.
+    <span className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5'>
+      <span className='flex min-w-0 max-w-full items-center gap-2'>
+        <AssetTypeBadge value={row.kind} className='shrink-0' />
+        <RecordLink
+          to={`/${TARGET_ROUTES[row.target.type]}/${row.target.id}`}
+          className='min-w-0 truncate'
+          onClick={(event) => event.stopPropagation()}
+        >
+          {row.target.name}
+        </RecordLink>
+      </span>
       {withCategory && row.category ? (
-        <span className='shrink-0 text-xs text-muted-foreground'>
-          {row.category.name}
+        <span className='text-xs text-muted-foreground'>
+          {row.category.path.join(' / ')}
         </span>
       ) : null}
     </span>
@@ -350,7 +354,7 @@ function CategoryLink({ row }: { readonly row: SupplyRow }): ReactElement {
       className='text-muted-foreground'
       onClick={(event) => event.stopPropagation()}
     >
-      {row.category.name}
+      {row.category.path.join(' / ')}
     </RecordLink>
   ) : (
     <span className='text-muted-foreground'>—</span>

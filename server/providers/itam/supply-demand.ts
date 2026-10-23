@@ -74,6 +74,8 @@ export interface SupplyRow {
     readonly id: string;
     readonly name: string;
     readonly order: number;
+    /** Its names from the top of the tree down, itself last. */
+    readonly path: readonly string[];
   } | null;
   /** Supply less demand; null where seats are unlimited. */
   readonly balance: number | null;
@@ -617,10 +619,24 @@ export async function supplyDemand(
   const appliesTo = new Map(
     [...categories].map(([id, row]) => [id, asText(row.appliesTo) ?? '']),
   );
+  // A category's names from the top down: 终端设备 / 笔记本电脑.
+  const pathOf = (id: string): string[] => {
+    const names: string[] = [];
+    const seen = new Set<string>();
+    for (
+      let current = categories.get(id);
+      current && !seen.has(String(current.id));
+      current = categories.get(asText(current.parentId) ?? '')
+    ) {
+      seen.add(String(current.id));
+      names.unshift(String(current.name));
+    }
+    return names;
+  };
   // Each item's category, shown beside its name (2026-10-23).
   const categoryOf = new Map<
     string,
-    { id: string; name: string; order: number }
+    { id: string; name: string; order: number; path: string[] }
   >();
   const noteCategory = (key: string, categoryId: unknown) => {
     const category = categories.get(String(categoryId));
@@ -629,6 +645,7 @@ export async function supplyDemand(
         id: String(category.id),
         name: String(category.name),
         order: position.get(String(category.id)) ?? position.size,
+        path: pathOf(String(category.id)),
       });
   };
   const STOCK_KINDS = new Set(['accessory', 'consumable', 'component']);
