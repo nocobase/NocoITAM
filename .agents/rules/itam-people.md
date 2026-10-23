@@ -122,17 +122,19 @@ departments/:id/positions/rename`): its holders and its kit move to the
   The card's only AI is 挑选 / 重新挑选 in its strip. The header's 准备
   (配备计划), a chat that proposed the plan 全部执行 already runs, was
   removed on 2026-10-22.
-- 起草采购单 (beside the card's 缺 N 项需采购, and on 入职供需) drafts
-  without a model since 2026-10-22 (`DraftOrdersButton`, `POST
-/itam/purchase-orders/draft-for-joiners`, `onboarding-orders.ts`; it
-  asked Asset Steward in the chat for the day before): 新员工配备 drafts,
-  one per vendor and joiner (people of one department starting the same day
-  share one), the vendor where each item was last bought — an item never
-  bought asks for one in a dialog first — and the first draft opens in the
-  drawer to check and submit. Per joiner, not merged across them: the plan
-  counts an order as a joiner's own only by department and needed-by date
-  (`ownOrders`), so a merged order would be ordered again on the next
-  press. A kit item naming a category is skipped, said in the toast.
+- 起草采购单 (beside the card's 缺 N 项需采购, and on 入职供需) opens the
+  purchase order's own create dialog filled in (2026-10-22;
+  `DraftOrdersButton`, `POST /itam/purchase-orders/joiner-proposals`,
+  `proposeJoinerOrders` in `onboarding-orders.ts`, which creates nothing):
+  新员工配备, needed by the joining day, their department, the vendor each
+  item was last bought from (empty where none was), a line per item short.
+  Several proposals — another vendor, another joiner — follow one another
+  as 第 1 / 2 张; what was saved opens in the drawer at the end. Per joiner,
+  not merged across them: the plan counts an order as a joiner's own only by
+  department and needed-by date (`ownOrders`), so a merged order would be
+  proposed again. A kit item naming a category is left out and said in the
+  toast. It asked Asset Steward in the chat, then drafted straight away,
+  the same day.
   The workbench's 入职准备 (`pendingOnboarding`, right after 离职交接) lists
   **joiners** — people entered in the register no more than 30 days before
   their first day (`isJoiner`; staff entered long after they started, such

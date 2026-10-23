@@ -1,53 +1,58 @@
-import type { DatabaseAuthorizationConditions } from '@nocobase/app-plugin-authorization/server';
 import type { DatabaseManager } from '@nocobase/db';
 
 import { asText, type Row } from './collection-query.js';
-import type { OperationContext } from './devices.js';
 import {
   isPrepared,
   type OnboardingPlanLine,
   type OnboardingService,
 } from './onboarding.js';
-import type {
-  LineInput,
-  LineItemType,
-  ProcurementService,
-} from './procurement.js';
+import type { LineItemType } from './procurement.js';
 
 /**
- * 起草采购单 for what joiners are short of (2026-10-22), without a model: the
- * plan already says what, how many, for whom and by when, and the vendor is
- * the one the item was last bought from. The drafts open for a person to
- * check and submit; nothing is ordered. It replaces asking Asset Steward in
- * the chat, which took a conversation to do what is arithmetic.
+ * 起草采购单 for what joiners are short of (2026-10-22): the orders to put
+ * in front of a person, header and lines filled, for the purchase order's
+ * own create dialog — nothing is created until they save it there. The plan
+ * already says what, how many, for whom and by when; the vendor is the one
+ * each item was last bought from, left empty where none was. It replaced
+ * asking Asset Steward in the chat, which took a conversation to do what is
+ * arithmetic, and then drafting straight away, which gave nobody the form.
  *
- * One draft per vendor and joiner (people of one department starting the
+ * One order per vendor and joiner (people of one department starting the
  * same day share one): a 新员工配备 order counts as a joiner's own only when
  * its department and needed-by date are theirs (`ownOrders` in
  * `onboarding.ts`), so an order spanning joiners would leave their shortfall
- * standing and the next press would order it again.
+ * standing and the next press would propose it again.
  */
 export interface JoinerOrderRequest {
   /** Only this joiner's shortfall; every joiner's when absent. */
   readonly personId?: string;
   /** Only these plan lines (`OnboardingPlanLine['key']`). */
   readonly keys?: readonly string[];
-  /** The vendor for an item with no purchase to go by, by line key. */
-  readonly vendors?: Readonly<Record<string, string>>;
-  /** The language the drafts' description is written in. */
+  /** The language the description is written in. */
   readonly locale?: string;
 }
 
-export interface JoinerOrderResult {
-  readonly created: readonly {
-    readonly id: string;
-    readonly orderNo: string;
+export interface ProposedOrder {
+  /** The header as the create dialog takes it. */
+  readonly values: {
+    readonly reason: 'newHire';
+    readonly description: string;
+    readonly vendorId?: string;
+    readonly departmentId?: string;
+    readonly neededBy?: string;
+  };
+  readonly lines: readonly {
+    readonly itemType: LineItemType;
+    readonly modelId: string | null;
+    readonly softwareProductId: string | null;
+    readonly quantity: number;
   }[];
-  /** Items no vendor could be found for: nothing is drafted until named. */
-  readonly needsVendor: readonly {
-    readonly key: string;
-    readonly name: string;
-  }[];
+  /** Whom it is for, by name. */
+  readonly people: readonly string[];
+}
+
+export interface JoinerOrderProposal {
+  readonly orders: readonly ProposedOrder[];
   /** Items naming a category rather than a model: a person picks the model. */
   readonly skipped: readonly { readonly key: string; readonly name: string }[];
 }
@@ -60,18 +65,14 @@ interface Short {
 /** Statuses an order no longer counts in as the place an item was bought. */
 const WITHDRAWN = ['cancelled', 'rejected'];
 
-export async function draftJoinerOrders(
+export async function proposeJoinerOrders(
   dependencies: {
     readonly database: DatabaseManager;
     readonly onboarding: OnboardingService;
-    readonly procurement: ProcurementService;
   },
   request: JoinerOrderRequest,
-  context: OperationContext,
-  conditions: DatabaseAuthorizationConditions,
-  lineConditions?: DatabaseAuthorizationConditions,
-): Promise<JoinerOrderResult> {
-  const { database, onboarding, procurement } = dependencies;
+): Promise<JoinerOrderProposal> {
+  const { database, onboarding } = dependencies;
   const plans = await onboarding.plans();
   const shorts: Short[] = [];
   for (const [personId, plan] of plans) {
@@ -91,6 +92,7 @@ export async function draftJoinerOrders(
   const buyable = shorts.filter(
     (short) => short.line.target.type !== 'category',
   );
+  if (buyable.length === 0) return { orders: [], skipped };
 
   // Where each item was last bought, and as what (a software product's
   // order line says perpetual or subscription).
@@ -124,13 +126,6 @@ export async function draftJoinerOrders(
       itemType: (asText(row?.itemType) as LineItemType | undefined) ?? null,
     });
   }
-  const vendorOf = (key: string) =>
-    request.vendors?.[key] ?? last.get(key)?.vendorId ?? null;
-  const needsVendor = unique(
-    buyable.filter((short) => !vendorOf(short.line.key)),
-  );
-  if (needsVendor.length > 0 || buyable.length === 0)
-    return { created: [], needsVendor, skipped };
 
   // A software product never bought here: its entitlements say which kind.
   const softwareKind = async (productId: string): Promise<LineItemType> => {
@@ -157,7 +152,7 @@ export async function draftJoinerOrders(
   const groups = new Map<
     string,
     {
-      vendorId: string;
+      vendorId: string | null;
       departmentId: string | null;
       hireDate: string | null;
       people: Set<string>;
@@ -166,10 +161,10 @@ export async function draftJoinerOrders(
   >();
   for (const { personId, line } of buyable) {
     const person = people.get(personId);
-    const vendorId = vendorOf(line.key)!;
+    const vendorId = last.get(line.key)?.vendorId ?? null;
     const departmentId = asText(person?.departmentId) ?? null;
     const hireDate = asText(person?.hireDate) ?? null;
-    const key = `${vendorId}|${departmentId ?? ''}|${hireDate ?? ''}`;
+    const key = `${vendorId ?? ''}|${departmentId ?? ''}|${hireDate ?? ''}`;
     const group = groups.get(key) ?? {
       vendorId,
       departmentId,
@@ -187,7 +182,7 @@ export async function draftJoinerOrders(
   }
 
   const chinese = (request.locale ?? '').startsWith('zh');
-  const created: { id: string; orderNo: string }[] = [];
+  const orders: ProposedOrder[] = [];
   for (const group of groups.values()) {
     const names = [...group.people].map(
       (id) => asText(people.get(id)?.name) ?? '',
@@ -195,18 +190,7 @@ export async function draftJoinerOrders(
     const description = chinese
       ? `新员工配备：${names.join('、')}${group.hireDate ? `，${group.hireDate} 入职` : ''}`
       : `New hire kit: ${names.join(', ')}${group.hireDate ? `, joining ${group.hireDate}` : ''}`;
-    const order = await procurement.create(
-      {
-        reason: 'newHire',
-        description,
-        vendorId: group.vendorId,
-        ...(group.departmentId ? { departmentId: group.departmentId } : {}),
-        ...(group.hireDate ? { neededBy: group.hireDate } : {}),
-      },
-      context,
-      conditions,
-    );
-    const lines: LineInput[] = [];
+    const lines: ProposedOrder['lines'][number][] = [];
     for (const { line, quantity } of group.lines.values()) {
       const model = line.target.type === 'model';
       lines.push({
@@ -214,22 +198,24 @@ export async function draftJoinerOrders(
           ? ((line.itemType as LineItemType | null) ?? 'device')
           : (last.get(line.key)?.itemType ??
             (await softwareKind(line.target.id))),
-        ...(model
-          ? { modelId: line.target.id }
-          : { softwareProductId: line.target.id }),
+        modelId: model ? line.target.id : null,
+        softwareProductId: model ? null : line.target.id,
         quantity,
       });
     }
-    await procurement.setLines(
-      String(order.id),
+    orders.push({
+      values: {
+        reason: 'newHire',
+        description,
+        ...(group.vendorId ? { vendorId: group.vendorId } : {}),
+        ...(group.departmentId ? { departmentId: group.departmentId } : {}),
+        ...(group.hireDate ? { neededBy: group.hireDate } : {}),
+      },
       lines,
-      context,
-      conditions,
-      lineConditions,
-    );
-    created.push({ id: String(order.id), orderNo: String(order.orderNo) });
+      people: names,
+    });
   }
-  return { created, needsVendor: [], skipped };
+  return { orders, skipped };
 }
 
 /** Each line once, by its key, named by its item. */

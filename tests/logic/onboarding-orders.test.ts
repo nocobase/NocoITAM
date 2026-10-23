@@ -6,19 +6,28 @@ import { purchaseOrderRoutes } from '../../server/routes/itam/purchase-orders.js
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
 
 const manager = { user: 'mia', role: 'manager' as const };
+const MACBOOK = 'model-macbook-pro-14-m3';
 
-interface Result {
-  created: { id: string; orderNo: string }[];
-  needsVendor: { key: string; name: string }[];
+interface Proposal {
+  orders: {
+    values: Record<string, unknown>;
+    lines: {
+      itemType: string;
+      modelId: string | null;
+      softwareProductId: string | null;
+      quantity: number;
+    }[];
+    people: string[];
+  }[];
   skipped: { key: string; name: string }[];
 }
 
 /**
- * 起草采购单 for what joiners are short of (2026-10-22): drafts without a
- * model, the vendor where each item was last bought, and one named by the
- * person where nothing was.
+ * 起草采购单 for what joiners are short of (2026-10-22): the orders proposed
+ * for the create dialog — nothing is created — a proposal per vendor and
+ * joiner, the vendor where each item was last bought.
  */
-describe('drafting orders for joiners', () => {
+describe('proposing orders for joiners', () => {
   let app: TestApp;
   const post = (path: string, body: Record<string, unknown>) =>
     app.request(`/api/itam/${path}`, { ...json(body), ...manager });
@@ -30,8 +39,17 @@ describe('drafting orders for joiners', () => {
       throw new Error(`${path}: ${await response.text()}`);
     return data<{ id: string }>(response);
   };
-  const draft = (body: Record<string, unknown>) =>
-    post('purchase-orders/draft-for-joiners', body);
+  const propose = (body: Record<string, unknown>) =>
+    post('purchase-orders/joiner-proposals', body);
+  const joiner = (name: string, hireDate: string) =>
+    create('master/people', {
+      name,
+      departmentId: 'dept-rd',
+      position: 'Frontend Engineer',
+      hireDate,
+    });
+  const orders = async () =>
+    data<unknown[]>(await app.request('/api/itam/purchase-orders', manager));
 
   beforeEach(async () => {
     app = await createTestApp({ seeds: true });
@@ -43,72 +61,41 @@ describe('drafting orders for joiners', () => {
     await app.destroy();
   });
 
-  it('asks for a vendor where nothing was bought, then drafts one order a joiner', async () => {
+  it('proposes an order a joiner, filled as the create dialog takes it, and creates nothing', async () => {
     // Nothing in stock: every item of the R&D kit is short.
     const hireDate = addDays(today(), 20);
-    const person = await create('master/people', {
-      name: 'Sun Hao',
-      departmentId: 'dept-rd',
-      position: 'Frontend Engineer',
-      hireDate,
-    });
+    const person = await joiner('Sun Hao', hireDate);
     expect(
       (
-        await app.request('/api/itam/purchase-orders/draft-for-joiners', {
+        await app.request('/api/itam/purchase-orders/joiner-proposals', {
           ...json({ personId: person.id }),
         })
       ).status,
     ).toBe(401);
 
-    const first = await data<Result>(await draft({ personId: person.id }));
-    expect(first.created).toEqual([]);
-    expect(first.needsVendor.length).toBeGreaterThan(0);
-
-    const vendor = await create('master/vendors', {
-      name: 'Reseller',
-      types: ['equipment'],
-    });
-    const second = await data<Result>(
-      await draft({
-        personId: person.id,
-        locale: 'en-US',
-        vendors: Object.fromEntries(
-          first.needsVendor.map((item) => [item.key, vendor.id]),
-        ),
-      }),
+    const proposal = await data<Proposal>(
+      await propose({ personId: person.id, locale: 'en-US' }),
     );
-    expect(second.created).toHaveLength(1);
-    const order = await data<Record<string, unknown>>(
-      await app.request(
-        `/api/itam/purchase-orders/${second.created[0]!.id}`,
-        manager,
-      ),
-    );
-    expect(order).toMatchObject({
-      status: 'draft',
+    // Never bought here: one order, its vendor left for the dialog.
+    expect(proposal.orders).toHaveLength(1);
+    const [order] = proposal.orders;
+    expect(order!.values).toEqual({
       reason: 'newHire',
-      vendorId: vendor.id,
+      description: `New hire kit: Sun Hao, joining ${hireDate}`,
       departmentId: 'dept-rd',
       neededBy: hireDate,
     });
-    expect(String(order.description)).toContain('Sun Hao');
-    const lines = await data<unknown[]>(
-      await app.request(
-        `/api/itam/purchase-orders/${second.created[0]!.id}/lines`,
-        manager,
-      ),
-    );
-    expect(lines).toHaveLength(first.needsVendor.length);
-
-    // The draft is theirs now: nothing short, nothing drafted again.
-    expect(await data<Result>(await draft({ personId: person.id }))).toEqual({
-      created: [],
-      needsVendor: [],
-      skipped: [],
+    expect(order!.people).toEqual(['Sun Hao']);
+    expect(order!.lines).toContainEqual({
+      itemType: 'device',
+      modelId: MACBOOK,
+      softwareProductId: null,
+      quantity: 1,
     });
+    expect(await orders()).toEqual([]);
   });
 
-  it('takes the vendor an item was last bought from, without asking', async () => {
+  it('takes the vendor an item was last bought from, and splits by vendor and joiner', async () => {
     const vendor = await create('master/vendors', {
       name: 'Apple reseller',
       types: ['equipment'],
@@ -124,38 +111,29 @@ describe('drafting orders for joiners', () => {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            lines: [
-              {
-                itemType: 'device',
-                modelId: 'model-macbook-pro-14-m3',
-                quantity: 1,
-              },
-            ],
+            lines: [{ itemType: 'device', modelId: MACBOOK, quantity: 1 }],
           }),
           ...manager,
         })
       ).status,
     ).toBe(200);
-    const person = await create('master/people', {
-      name: 'Lin Xue',
-      departmentId: 'dept-rd',
-      position: 'Frontend Engineer',
-      hireDate: addDays(today(), 20),
-    });
-    const result = await data<Result>(
-      await draft({
-        personId: person.id,
-        keys: ['model:model-macbook-pro-14-m3'],
-      }),
+    await joiner('Lin Xue', addDays(today(), 20));
+    await joiner('Ma Kai', addDays(today(), 30));
+    const proposal = await data<Proposal>(
+      await propose({ keys: [`model:${MACBOOK}`] }),
     );
-    expect(result.needsVendor).toEqual([]);
-    expect(result.created).toHaveLength(1);
-    const order = await data<Record<string, unknown>>(
-      await app.request(
-        `/api/itam/purchase-orders/${result.created[0]!.id}`,
-        manager,
-      ),
-    );
-    expect(order.vendorId).toBe(vendor.id);
+    // A joiner each (their days differ), both from the laptop's vendor.
+    expect(proposal.orders).toHaveLength(2);
+    for (const order of proposal.orders) {
+      expect(order.values.vendorId).toBe(vendor.id);
+      expect(order.lines).toEqual([
+        {
+          itemType: 'device',
+          modelId: MACBOOK,
+          softwareProductId: null,
+          quantity: 1,
+        },
+      ]);
+    }
   });
 });

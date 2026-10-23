@@ -53,8 +53,8 @@ vi.mock('../../client/lib/itam/api.js', async (original) => ({
         throw new Error('Not enough in stock');
       return request.path.endsWith('/advise')
         ? { data: { started: true, runId: 'r2' } }
-        : request.path.endsWith('/draft-for-joiners')
-          ? { data: { created: [], needsVendor: [], skipped: [] } }
+        : request.path.endsWith('/joiner-proposals')
+          ? { data: { orders: [], skipped: [] } }
           : {};
     },
   }),
@@ -416,7 +416,7 @@ it('drafts the order for a shortfall from beside it, without the chat', async ()
   // Drafted straight away (2026-10-22), for this joiner only.
   expect(state.requests).toEqual([
     expect.objectContaining({
-      path: 'itam/purchase-orders/draft-for-joiners',
+      path: 'itam/purchase-orders/joiner-proposals',
       method: 'POST',
       json: expect.objectContaining({ personId: 'p1' }),
     }),

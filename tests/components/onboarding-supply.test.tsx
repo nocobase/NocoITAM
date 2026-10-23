@@ -28,12 +28,16 @@ vi.mock('../../client/lib/itam/onboarding.js', async (original) => ({
   ...(await original<object>()),
   useOnboardingSupply: () => ({ data: state.supply, isLoading: false }),
 }));
+vi.mock('../../client/lib/itam/permissions.js', async (original) => ({
+  ...(await original<object>()),
+  useCurrentUserId: () => 'u1',
+}));
 vi.mock('../../client/lib/itam/api.js', async (original) => ({
   ...(await original<object>()),
   useApi: () => ({
     request: async (request: { path: string; json?: unknown }) => {
       state.requests.push(request);
-      return { data: { created: [], needsVendor: [], skipped: [] } };
+      return { data: { orders: [], skipped: [] } };
     },
   }),
 }));
@@ -113,7 +117,7 @@ const show = () =>
     </QueryClientProvider>,
   );
 
-it('leads with what to buy, and drafts orders for all of it straight away', async () => {
+it('leads with what to buy, and proposes orders for all of it', async () => {
   state.supply = supply;
   state.requests = [];
   show();
@@ -124,7 +128,7 @@ it('leads with what to buy, and drafts orders for all of it straight away', asyn
   await waitFor(() =>
     expect(state.requests).toEqual([
       expect.objectContaining({
-        path: 'itam/purchase-orders/draft-for-joiners',
+        path: 'itam/purchase-orders/joiner-proposals',
         json: {},
       }),
     ]),

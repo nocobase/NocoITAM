@@ -5,43 +5,43 @@ import { FilePlus2 } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { useApi, type ItamRecord } from '@/lib/itam/api';
+import { errorMessage, text } from '@/lib/itam/format';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useApi } from '@/lib/itam/api';
-import { errorMessage } from '@/lib/itam/format';
-import { PURCHASE_ORDERS_PATH } from '@/lib/itam/procurement';
+  PURCHASE_ORDERS_PATH,
+  type LineItemType,
+} from '@/lib/itam/procurement';
+import { useCurrentUserId } from '@/lib/itam/permissions';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
 import { cn } from '@/lib/utils';
+import { PurchaseOrderCreateDialog } from '@/pages/itam/procurement/create-dialog';
 
-import { ReferenceSelect } from './reference-select.js';
+interface ProposedOrder {
+  readonly values: Readonly<Record<string, unknown>>;
+  readonly lines: readonly {
+    readonly itemType: LineItemType;
+    readonly modelId: string | null;
+    readonly softwareProductId: string | null;
+    readonly quantity: number;
+  }[];
+  readonly people: readonly string[];
+}
 
-interface DraftResult {
-  readonly created: readonly {
-    readonly id: string;
-    readonly orderNo: string;
-  }[];
-  readonly needsVendor: readonly {
-    readonly key: string;
-    readonly name: string;
-  }[];
+interface Proposal {
+  readonly orders: readonly ProposedOrder[];
   readonly skipped: readonly { readonly key: string; readonly name: string }[];
 }
 
 /**
- * 起草采购单 for what joiners are short of (2026-10-22): drafts straight
- * away and opens the draft in the drawer to be checked and submitted — a
- * draft per vendor, the vendor where each item was last bought. An item
- * never bought here asks for its vendor first, in a small dialog. It
- * replaced asking Asset Steward in the chat for the same arithmetic.
+ * 起草采购单 for what joiners are short of (2026-10-22): opens the purchase
+ * order's own create dialog filled in — 新员工配备, needed by the joining
+ * day, their department, the vendor each item was last bought from, a line
+ * per item short — to be checked, priced and saved as a draft or submitted.
+ * Several orders (another vendor, another joiner) follow one another, 第 1 /
+ * 2 张; nothing is created until a dialog is saved. It asked Asset Steward
+ * in the chat, then drafted straight away, before.
  *
- * Without `personId` and `keys` it drafts for every joiner's shortfall.
+ * Without `personId` and `keys` it proposes every joiner's shortfall.
  */
 export function DraftOrdersButton({
   personId,
@@ -62,127 +62,108 @@ export function DraftOrdersButton({
   const toaster = useToaster();
   const queryClient = useQueryClient();
   const openRecord = useOpenRecord();
-  const [asking, setAsking] = useState<DraftResult['needsVendor']>([]);
-  const [vendors, setVendors] = useState<Record<string, string>>({});
+  // Whoever presses it follows the order through, as on any order they file.
+  const me = useCurrentUserId();
+  const [proposal, setProposal] = useState<Proposal>();
+  const [index, setIndex] = useState(0);
+  const [created, setCreated] = useState<readonly ItamRecord[]>([]);
 
-  const draft = useMutation({
-    mutationFn: async (chosen?: Record<string, string>) =>
+  const skippedNote = (skipped: Proposal['skipped']) =>
+    skipped.length > 0
+      ? t('onboarding.drafts.skipped', {
+          items: skipped
+            .map((item) => item.name)
+            .join(t('common.listSeparator')),
+        })
+      : undefined;
+
+  const propose = useMutation({
+    mutationFn: async () =>
       (
-        await api.request<{ data: DraftResult }>({
-          path: `${PURCHASE_ORDERS_PATH}/draft-for-joiners`,
+        await api.request<{ data: Proposal }>({
+          path: `${PURCHASE_ORDERS_PATH}/joiner-proposals`,
           method: 'POST',
           json: {
             ...(personId ? { personId } : {}),
             ...(keys ? { keys } : {}),
-            ...(chosen ? { vendors: chosen } : {}),
             ...(i18n?.language ? { locale: i18n.language } : {}),
           },
         })
       ).data,
-    onSuccess: async (result) => {
-      if (result.needsVendor.length > 0) {
-        setAsking(result.needsVendor);
-        return;
-      }
-      setAsking([]);
-      setVendors({});
-      await queryClient.invalidateQueries({ queryKey: ['itam'] });
-      const skipped = result.skipped.map((item) => item.name);
-      if (result.created.length === 0) {
+    onSuccess: (result) => {
+      if (result.orders.length === 0) {
+        const note = skippedNote(result.skipped);
         toaster.show({
-          type: skipped.length > 0 ? 'warning' : 'info',
-          title:
-            skipped.length > 0
-              ? t('onboarding.drafts.skipped', {
-                  items: skipped.join(t('common.listSeparator')),
-                })
-              : t('onboarding.drafts.nothing'),
+          type: note ? 'warning' : 'info',
+          title: note ?? t('onboarding.drafts.nothing'),
         });
         return;
       }
-      toaster.show({
-        type: 'success',
-        title: t('onboarding.drafts.created', {
-          count: result.created.length,
-          orders: result.created
-            .map((order) => order.orderNo)
-            .join(t('common.listSeparator')),
-        }),
-        ...(skipped.length > 0
-          ? {
-              description: t('onboarding.drafts.skipped', {
-                items: skipped.join(t('common.listSeparator')),
-              }),
-            }
-          : {}),
-      });
-      // The first draft opens to be checked; the toast names the rest.
-      const [first] = result.created;
-      if (first) openRecord(`/procurement/${first.id}`);
+      setCreated([]);
+      setIndex(0);
+      setProposal(result);
     },
     onError: (error) => {
       toaster.show({ type: 'error', title: errorMessage(error) });
     },
   });
 
-  const named = asking.every((item) => Boolean(vendors[item.key]));
+  /** Every dialog done or closed: say what was made, open the first. */
+  const finish = async (made: readonly ItamRecord[]) => {
+    const skipped = proposal?.skipped ?? [];
+    setProposal(undefined);
+    setCreated([]);
+    if (made.length === 0) return;
+    await queryClient.invalidateQueries({ queryKey: ['itam'] });
+    const note = skippedNote(skipped);
+    toaster.show({
+      type: 'success',
+      title: t('onboarding.drafts.created', {
+        count: made.length,
+        orders: made
+          .map((order) => text(order.orderNo))
+          .join(t('common.listSeparator')),
+      }),
+      ...(note ? { description: note } : {}),
+    });
+    const [first] = made;
+    if (first) openRecord(`/procurement/${text(first.id)}`);
+  };
+
+  const order = proposal?.orders[index];
   return (
     <>
       <Button
         variant='ghost'
         // Words like the row's other actions, its padding taken back.
         className={cn('-mx-2.5 text-primary hover:text-primary', className)}
-        disabled={draft.isPending}
-        onClick={() => draft.mutate(undefined)}
+        disabled={propose.isPending}
+        onClick={() => propose.mutate()}
       >
         {icon ? <FilePlus2 data-icon='inline-start' /> : null}
         {children ?? t('onboarding.draftOrder')}
       </Button>
-      <Dialog
-        open={asking.length > 0}
-        onOpenChange={(open) => {
-          if (!open) setAsking([]);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('onboarding.drafts.vendorTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('onboarding.drafts.vendorHint')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className='space-y-3'>
-            {asking.map((item) => (
-              <div key={item.key} className='space-y-1.5'>
-                <Label>{item.name}</Label>
-                <ReferenceSelect
-                  reference={{ collection: 'vendors' }}
-                  value={vendors[item.key] ?? null}
-                  onChange={(value) =>
-                    setVendors((current) => {
-                      const next = { ...current };
-                      if (value) next[item.key] = value;
-                      else delete next[item.key];
-                      return next;
-                    })
-                  }
-                />
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setAsking([])}>
-              {t('actions.cancel')}
-            </Button>
-            <Button
-              disabled={!named || draft.isPending}
-              onClick={() => draft.mutate(vendors)}
-            >
-              {t('onboarding.draftOrder')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {proposal && order ? (
+        <PurchaseOrderCreateDialog
+          // A fresh form for each proposed order.
+          key={index}
+          open
+          initialValues={me ? { ownerId: me, ...order.values } : order.values}
+          initialLines={order.lines}
+          step={{ index: index + 1, total: proposal.orders.length }}
+          onOpenChange={(open) => {
+            // Closing stops the run; what was saved stays.
+            if (!open) void finish(created);
+          }}
+          onCreated={(record) => {
+            const made = [...created, record];
+            if (index + 1 < proposal.orders.length) {
+              setCreated(made);
+              setIndex(index + 1);
+            } else void finish(made);
+          }}
+        />
+      ) : null}
     </>
   );
 }

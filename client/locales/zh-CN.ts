@@ -973,12 +973,10 @@ const zhCN: AppResource = {
     noKit: '该人员的部门和职位没有适用的入职配置。',
     draftOrder: '起草采购单',
     drafts: {
-      created_one: '已起草采购单 {{orders}}，请检查后提交审批',
-      created_other: '已起草 {{count}} 张采购单：{{orders}}，请检查后提交审批',
+      created_one: '已创建采购单 {{orders}}',
+      created_other: '已创建 {{count}} 张采购单：{{orders}}',
       nothing: '没有需要采购的项',
       skipped: '{{items}} 配置的是分类，没有型号，请在采购单里手动添加',
-      vendorTitle: '选择供应商',
-      vendorHint: '这些物品以前没在这里买过，选好供应商后起草采购单。',
     },
     instead: '规则原本挑的：',
     needsAccount: '订阅席位需要账号：先给这个人填写邮箱，或到授权页分配',
@@ -1736,6 +1734,7 @@ const zhCN: AppResource = {
     title: '采购',
     object: '采购单',
     new: '创建采购单',
+    step: '第 {{index}} / {{total}} 张',
     capture: {
       unreadable:
         '无法把这个文件读成文字。请粘贴内容，或上传表格、Word、PDF 或文本文件。',

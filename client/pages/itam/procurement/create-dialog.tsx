@@ -87,21 +87,41 @@ export function PurchaseOrderCreateDialog({
   open,
   onOpenChange,
   onCreated,
+  initialValues,
+  initialLines,
+  step,
 }: {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly onCreated: (record: ItamRecord) => void;
+  /**
+   * An order proposed rather than started empty (2026-10-22, 起草采购单 for
+   * joiners): the form opens filled, on the form tab, to be checked.
+   */
+  readonly initialValues?: Readonly<Record<string, unknown>>;
+  readonly initialLines?: readonly Pick<
+    PurchaseLineDraft,
+    'itemType' | 'modelId' | 'softwareProductId' | 'quantity'
+  >[];
+  /** Which of several proposed orders this is: 第 1 / 2 张. */
+  readonly step?: { readonly index: number; readonly total: number };
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
   const queryClient = useQueryClient();
   // A new order is in the default currency until someone says otherwise.
   const currency = useItamSettings().data?.general.currency ?? null;
-  const [values, setValues] = useState<Record<string, unknown>>({});
-  const [lines, setLines] = useState<readonly DialogLine[]>(() => [
-    newPurchaseLine(),
-  ]);
-  const [tab, setTab] = useState<'ai' | 'form'>();
+  const [values, setValues] = useState<Record<string, unknown>>(() => ({
+    ...initialValues,
+  }));
+  const [lines, setLines] = useState<readonly DialogLine[]>(() =>
+    initialLines && initialLines.length > 0
+      ? initialLines.map((line) => ({ ...newPurchaseLine(), ...line }))
+      : [newPurchaseLine()],
+  );
+  const [tab, setTab] = useState<'ai' | 'form' | undefined>(
+    initialValues ? 'form' : undefined,
+  );
   const [pasted, setPasted] = useState('');
   const [file, setFile] = useState<File>();
   const [result, setResult] = useState<PurchaseCapture>();
@@ -293,7 +313,14 @@ export function PurchaseOrderCreateDialog({
       size={result && current === 'form' ? 'wider' : 'wide'}
       // AI 整理 only organises; the order is saved from the form it fills.
       actions={current === 'form'}
-      title={t('procurement.new')}
+      title={
+        step && step.total > 1
+          ? `${t('procurement.new')} · ${t('procurement.step', {
+              index: step.index,
+              total: step.total,
+            })}`
+          : t('procurement.new')
+      }
       titleAside={
         capture.available ? (
           <Tabs

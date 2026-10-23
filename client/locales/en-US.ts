@@ -984,15 +984,11 @@ const messages = {
       'No onboarding kit applies to this person’s department and position.',
     draftOrder: 'Draft order',
     drafts: {
-      created_one: 'Drafted {{orders}}: check it and submit it for approval',
-      created_other:
-        'Drafted {{count}} orders, {{orders}}: check them and submit them for approval',
+      created_one: 'Created {{orders}}',
+      created_other: 'Created {{count}} orders: {{orders}}',
       nothing: 'Nothing to buy',
       skipped:
         '{{items}}: the kit names a category, not a model; add it to the order by hand',
-      vendorTitle: 'Choose vendors',
-      vendorHint:
-        'These items were never bought here before: choose where to buy them, then draft the order.',
     },
     instead: 'The rule had proposed ',
     needsAccount:
@@ -1814,6 +1810,7 @@ const messages = {
     title: 'Procurement',
     object: 'purchase order',
     new: 'New purchase order',
+    step: '{{index}} of {{total}}',
     capture: {
       unreadable:
         'This file could not be read as text. Paste its contents, or upload a spreadsheet, Word document, PDF or text file.',

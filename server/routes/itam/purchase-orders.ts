@@ -21,7 +21,7 @@ import {
 } from '../../providers/index.js';
 import { RecordNotFoundError } from '../../providers/itam/errors.js';
 import { matchPurchaseCapture } from '../../providers/itam/purchase-capture.js';
-import { draftJoinerOrders } from '../../providers/itam/onboarding-orders.js';
+import { proposeJoinerOrders } from '../../providers/itam/onboarding-orders.js';
 import { onboardingServiceToken } from '../../providers/itam/onboarding.js';
 import { outputFields, pickFields } from '../../providers/itam/authz-filter.js';
 import {
@@ -189,13 +189,10 @@ function readableLines(
   }));
 }
 
-const draftForJoinersSchema = z
+const joinerProposalsSchema = z
   .object({
     personId: z.string().min(1).max(64).optional(),
     keys: z.array(z.string().min(1).max(200)).max(200).optional(),
-    vendors: z
-      .record(z.string().max(200), z.string().min(1).max(64))
-      .optional(),
     locale: z.string().max(16).optional(),
   })
   .strict();
@@ -317,33 +314,25 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
             return errorResponse(context, error);
           }
         });
-        // 起草采购单 for joiners (2026-10-22): a draft per vendor and joiner
-        // for what they are short of, the vendor where each item was last
-        // bought (`onboarding-orders.ts`); an item with none comes back
-        // to be named. Registered before the `/:id` routes.
-        routes.post('/draft-for-joiners', async (context) => {
+        // 起草采购单 for joiners (2026-10-22): the orders to put in the
+        // create dialog for what they are short of, a proposal per vendor
+        // and joiner, the vendor where each item was last bought
+        // (`onboarding-orders.ts`). It creates nothing. Registered before
+        // the `/:id` routes.
+        routes.post('/joiner-proposals', async (context) => {
           try {
-            const conditions = await decide(context, 'create');
+            await decide(context, 'create');
             await decideCollection(context, 'people', 'read');
-            const lineConditions = await decideCollection(
-              context,
-              'purchaseOrderLines',
-              'read',
-            );
-            const input = draftForJoinersSchema.parse(
+            const input = joinerProposalsSchema.parse(
               await readJsonObject(context),
             );
             return context.json({
-              data: await draftJoinerOrders(
+              data: await proposeJoinerOrders(
                 {
                   database,
                   onboarding: app.container.resolve(onboardingServiceToken),
-                  procurement,
                 },
                 input,
-                operationContext(context),
-                conditions,
-                lineConditions,
               ),
             });
           } catch (error) {
