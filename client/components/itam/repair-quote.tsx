@@ -7,6 +7,7 @@ import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { DocumentReading } from '@/components/itam/ai/document-reading';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
+import { LongTextPreview } from '@/components/itam/long-text-field';
 import { ReviewMark } from '@/components/itam/review-mark';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -441,7 +442,6 @@ export function QuoteAdvice({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itam'] }),
   });
   const open = repair.result === 'inProgress' && !decision;
-  const [expanded, setExpanded] = useState(false);
   return (
     <div className='space-y-1.5 text-sm'>
       <div className='flex flex-wrap items-center gap-2'>
@@ -484,36 +484,13 @@ export function QuoteAdvice({
             .join('；')}
         </p>
       ) : null}
-      {/* Long text folds as every long field does (2026-10-23): the first
-          reason, the rest on 展开. */}
+      {/* Folded as every long field is (2026-10-23): three lines that
+          fade, the whole on a click. */}
       {reasons.length ? (
-        <ul className='list-disc space-y-0.5 pl-5'>
-          {(expanded ? reasons : reasons.slice(0, 1)).map((reason, index) => (
-            <li key={reason}>
-              {reason}
-              {index === 0 && !expanded && reasons.length > 1 ? (
-                <button
-                  type='button'
-                  className='ml-1 text-link'
-                  onClick={() => setExpanded(true)}
-                >
-                  {t('common.showMore')}
-                </button>
-              ) : null}
-            </li>
-          ))}
-          {expanded && reasons.length > 1 ? (
-            <li className='list-none'>
-              <button
-                type='button'
-                className='text-link'
-                onClick={() => setExpanded(false)}
-              >
-                {t('common.showLess')}
-              </button>
-            </li>
-          ) : null}
-        </ul>
+        <LongTextPreview
+          label={t('fields.quoteRecommendation')}
+          text={reasons.map((reason) => `• ${reason}`).join('\n')}
+        />
       ) : null}
       {open && canDecide ? (
         <div className='flex flex-wrap gap-2 pt-1'>

@@ -180,6 +180,46 @@ export function LongTextField({
   );
 }
 
+/**
+ * A long text that is read, not edited, inside a field that shows more
+ * (2026-10-23: 评估修还是换's reasons under its tag): the same three
+ * fading lines as `LongTextField`, opening on a click into the same pop-up
+ * to be read whole.
+ */
+export function LongTextPreview({
+  text,
+  label,
+}: {
+  readonly text: string;
+  readonly label: string;
+}): ReactElement {
+  return (
+    <Popover>
+      <PopoverTrigger
+        nativeButton={false}
+        aria-label={label}
+        render={<div />}
+        className='-mx-1.5 -my-0.5 block cursor-pointer rounded-md px-1.5 py-0.5 text-left transition-colors hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none'
+      >
+        <FadePreview>{text}</FadePreview>
+      </PopoverTrigger>
+      <PopoverContent
+        side='right'
+        align='start'
+        sideOffset={8}
+        className='max-h-[min(36rem,70vh)] w-[28rem] max-w-[calc(100vw-2rem)] gap-2 overflow-y-auto p-4'
+      >
+        <span className='truncate text-xs font-medium text-muted-foreground'>
+          {label}
+        </span>
+        <div className='text-sm leading-relaxed whitespace-pre-wrap wrap-anywhere'>
+          {text}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /** Three lines of a long text, the last fading out while there is more. */
 function FadePreview({
   children,
