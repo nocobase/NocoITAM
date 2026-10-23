@@ -507,7 +507,7 @@ export const ATTACHMENTS_COLLECTION: ItamCollectionDefinition = {
   defaultSort: 'createdAt',
 };
 
-export const REPAIR_COST_FIELDS: readonly string[] = ['cost'];
+export const REPAIR_COST_FIELDS: readonly string[] = ['cost', 'quoteAmount'];
 
 export const REPAIRS_COLLECTION: ItamCollectionDefinition = {
   name: 'repairs',
@@ -529,6 +529,13 @@ export const REPAIRS_COLLECTION: ItamCollectionDefinition = {
     'currency',
     'notes',
     'ownerId',
+    // The vendor's quote and 修还是换 (2026-10-23).
+    'quoteAmount',
+    'quoteNotes',
+    'quotedAt',
+    'quoteRecommendation',
+    'quoteReasons',
+    'quoteDecision',
     ...audit,
   ],
   costFields: REPAIR_COST_FIELDS,

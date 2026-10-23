@@ -40,6 +40,14 @@ export const REPAIR_FAULT_CATEGORIES = [
   'other',
 ] as const;
 
+/** 修还是换 on a quote: repair it, replace it, or look first. */
+export const REPAIR_RECOMMENDATIONS = ['repair', 'replace', 'inspect'] as const;
+/** What was decided on a quote. */
+export const REPAIR_QUOTE_DECISIONS = ['repair', 'replace'] as const;
+
+const hasQuote = (values: Readonly<Record<string, unknown>>): boolean =>
+  values.quoteAmount !== null && values.quoteAmount !== undefined;
+
 export const REPAIR_FIELDS: readonly FieldDefinition[] = [
   {
     key: 'repairNo',
@@ -136,6 +144,65 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     label: 'repairs.resultNotes',
     type: 'textarea',
     readonlyWhen: (values) => values.result === 'inProgress',
+  },
+  // 报价 (2026-10-23): what the vendor asks while the device is away,
+  // recorded through 记录报价 with Asset Steward's 修还是换; shown once
+  // there is one, never typed here.
+  {
+    key: 'quoteAmount',
+    label: 'fields.quoteAmount',
+    type: 'money',
+    currencyField: 'currency',
+    form: false,
+    readonlyWhen: () => true,
+    visibleWhen: hasQuote,
+    group: 'groups.quote',
+  },
+  {
+    key: 'quotedAt',
+    label: 'fields.quotedAt',
+    type: 'date',
+    form: false,
+    readonlyWhen: () => true,
+    visibleWhen: hasQuote,
+    group: 'groups.quote',
+  },
+  {
+    key: 'quoteNotes',
+    label: 'fields.quoteNotes',
+    type: 'textarea',
+    form: false,
+    readonlyWhen: () => true,
+    visibleWhen: hasQuote,
+    group: 'groups.quote',
+  },
+  {
+    // The advice, its reasons and what was decided, drawn as one block by
+    // the repair page (`QuoteAdvice`).
+    key: 'quoteRecommendation',
+    label: 'fields.quoteRecommendation',
+    type: 'select',
+    options: options('repairRecommendation', REPAIR_RECOMMENDATIONS),
+    form: false,
+    readonlyWhen: () => true,
+    visibleWhen: hasQuote,
+    group: 'groups.quote',
+  },
+  // Shown inside 修还是换; named here so the change log reads them.
+  {
+    key: 'quoteReasons',
+    label: 'fields.quoteReasons',
+    type: 'textarea',
+    form: false,
+    detail: false,
+  },
+  {
+    key: 'quoteDecision',
+    label: 'fields.quoteDecision',
+    type: 'select',
+    options: options('repairQuoteDecision', REPAIR_QUOTE_DECISIONS),
+    form: false,
+    detail: false,
   },
   {
     // In 系统 above 创建人, where every other record's 负责人 sits — the two

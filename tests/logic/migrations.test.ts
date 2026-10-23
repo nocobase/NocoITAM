@@ -4,6 +4,7 @@ import compositeGrants from '../../database/main/migrations/202609280007_composi
 import requestOwner from '../../database/main/migrations/202610050001_request_owner.js';
 import auditOwner from '../../database/main/migrations/202610050002_audit_owner.js';
 import disposalLifecycle from '../../database/main/migrations/202610180001_disposal_lifecycle.js';
+import repairQuotes from '../../database/main/migrations/202610270004_repair_quotes.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -452,13 +453,41 @@ describe('ITAM migrations', () => {
     expect(Number(row?.lifecycleVersion)).toBe(0);
   });
 
+  it("keeps a repair's quote, and drops it on down", async () => {
+    db = await createTestDatabase();
+    const client = await schemaClient(db.database);
+    const columns = [
+      'quote_amount',
+      'quote_notes',
+      'quoted_at',
+      'quote_recommendation',
+      'quote_reasons',
+      'quote_decision',
+    ];
+    const present = async () =>
+      Promise.all(
+        columns.map((column) => client.schema.hasColumn('repairs', column)),
+      );
+    expect(await present()).toEqual(columns.map(() => true));
+    const connection = db.database.connection();
+    const context = {
+      connection,
+      query: connection.query,
+      builder: connection.builder,
+    };
+    await repairQuotes.down!(context);
+    expect(await present()).toEqual(columns.map(() => false));
+    await repairQuotes.up(context);
+    expect(await present()).toEqual(columns.map(() => true));
+  });
+
   it('is applied once and rolls back cleanly', async () => {
     db = await createTestDatabase();
     const again = await db.migrator.latest();
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(114);
+    expect(rolledBack.rolledBack.length).toBe(115);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

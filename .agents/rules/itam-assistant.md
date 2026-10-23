@@ -263,6 +263,20 @@ triage.tsx`, under the description) fills only what is still empty,
   vendor by name (`recipientVendorId`). The dialog fills only what the
   document states, marks `uncertain` fields 请核对, and saves nothing until
   the person confirms.
+- **报价 / 修还是换** (2026-10-23, task `repairQuote`, grant `repairs.update`;
+  migration `202610270004_repair_quotes`): a quote arrives while the device
+  is away, so it is recorded on the repair page (记录报价 beside 完成维修,
+  `client/components/itam/repair-quote.tsx`), never in the completion. The
+  quote is read from a document with the same box, or typed; a typed
+  amount, or one changed after reading, is weighed again before saving, so
+  the repair keeps the advice it was given at that price
+  (`quoteRecommendation`, `quoteReasons`). The page adds the rule beside it
+  — the quote's share of the book value, amber from half, and a passed
+  replacement date — and 继续维修 / 改为报废 for whoever may finish the
+  repair. 改为报废 records `quoteDecision`, completes the repair as
+  `unrepairable` with the device to pending disposal, and opens a disposal
+  filled from the quote. A new quote clears the decision; completing
+  defaults its cost to the quote.
 - **Work agents** (2026-10-16, plan "Work agents", step 1, after
   NocoCRM's): agents that work on a record without being asked in a
   conversation, and only suggest. Until plugin 1.0 each was an online

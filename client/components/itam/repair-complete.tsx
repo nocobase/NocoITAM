@@ -108,7 +108,8 @@ export function RepairCompleteDialog({
   };
   // Amount with its currency; the record's currency, else the default one.
   const [cost, setCost] = useState<{ amount?: unknown; currency?: unknown }>({
-    amount: null,
+    // The quote, when there was one, is what the repair is expected to cost.
+    amount: repair.quoteAmount ?? null,
     currency: repair.currency ?? settings.data?.general.currency ?? null,
   });
   const [notes, setNotes] = useState('');

@@ -48,6 +48,9 @@ export const REPAIR_METHODS = [
   'sendOut',
   'internal',
 ] as const;
+/** What was decided on a quote: go on with the repair, or replace it. */
+export const REPAIR_QUOTE_DECISIONS = ['repair', 'replace'] as const;
+
 export const REPAIR_RESULTS = [
   'inProgress',
   'repaired',

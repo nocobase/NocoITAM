@@ -499,6 +499,7 @@ const zhCN: AppResource = {
     },
   },
   groups: {
+    quote: '报价',
     basic: '基本信息',
     contact: '联系方式',
     rules: '规则',
@@ -518,6 +519,12 @@ const zhCN: AppResource = {
     execution: '执行',
   },
   fields: {
+    quoteAmount: '报价金额',
+    quotedAt: '报价日期',
+    quoteNotes: '维修方案',
+    quoteRecommendation: '修还是换',
+    quoteReasons: '建议理由',
+    quoteDecision: '处理决定',
     attachments: '附件',
     attributes: '扩展字段',
     purchaseOrder: '采购单',
@@ -729,6 +736,12 @@ const zhCN: AppResource = {
     newHolder: '新使用人',
   },
   enums: {
+    repairRecommendation: {
+      repair: '建议维修',
+      replace: '建议直接更换',
+      inspect: '建议先检测',
+    },
+    repairQuoteDecision: { repair: '继续维修', replace: '改为报废' },
     // Why a stock quantity was corrected (调整数量).
     stockAdjustReason: {
       countSurplus: '盘盈',
@@ -2837,6 +2850,27 @@ const zhCN: AppResource = {
     emptyDescription: '没有已启用的插件提供你有权访问的设置页面。',
   },
   repairs: {
+    quote: {
+      record: '记录报价',
+      update: '更新报价',
+      title: '记录报价',
+      description: '记下供应商的报价，资产管家会对比设备价值，建议修还是换',
+      placeholder:
+        '粘贴供应商的报价内容，或上传报价单。AI 填好金额和维修方案，并建议修还是换',
+      typed: '供应商报价 {{amount}}，维修方案：{{work}}',
+      judging: '正在判断修还是换…',
+      noAdvice: '没有建议',
+      decided: { repair: '已决定继续维修', replace: '已改为报废' },
+      share: '报价约为设备净值 {{bookValue}} 的 {{share}}%',
+      pastReplacement: '设备已过计划更换日期',
+      keepRepairing: '继续维修',
+      replace: '改为报废',
+      replaceDescription:
+        '维修单以「无法修复」结束，设备转为待报废，然后为它创建报废单',
+      replacedNote: '报价 {{quote}}，不值得修，改为报废',
+      disposalNote:
+        '故障：{{fault}}\n维修报价 {{quote}}，不值得修：\n{{reasons}}',
+    },
     report: {
       placeholder:
         '粘贴维修报告或发票的内容，或上传维修单。AI 填好结果、费用和说明，你核对后完成',

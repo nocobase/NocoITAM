@@ -13,8 +13,10 @@ import {
   historyServiceToken,
   repairServiceToken,
 } from '../../providers/index.js';
+import { REPAIR_RECOMMENDATIONS } from '../../providers/itam/ai-reading.js';
 import {
   REPAIR_DISPOSITIONS,
+  REPAIR_QUOTE_DECISIONS,
   REPAIR_FAULT_CATEGORIES,
   REPAIR_METHODS,
   REPAIR_RESULTS,
@@ -70,6 +72,14 @@ export const repairRoutes: AppApiRouteContribution<Application> =
             ],
           ),
           actualReturnAt: date,
+          // The vendor's quote while the device is away (2026-10-23), with
+          // what Asset Steward advised at that price and what was decided.
+          quoteAmount: z.number().min(0).nullable(),
+          quoteNotes: z.string().max(20000).nullable(),
+          quotedAt: date.nullable(),
+          quoteRecommendation: z.enum(REPAIR_RECOMMENDATIONS).nullable(),
+          quoteReasons: z.string().max(2000).nullable(),
+          quoteDecision: z.enum(REPAIR_QUOTE_DECISIONS).nullable(),
         })
         .partial(),
       middleware: [auth.required(), authorization.middleware()],

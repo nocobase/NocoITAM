@@ -73,6 +73,9 @@ export const READING_TASKS = [
   // certificate, read into a disposal's execution.
   'repairReport',
   'disposalCertificate',
+  // 报价 (2026-10-23): a repair's quote read, and whether the device is
+  // worth repairing at that price.
+  'repairQuote',
 ] as const;
 export type ReadingTask = (typeof READING_TASKS)[number];
 
@@ -103,6 +106,7 @@ export const READING_GRANTS: Readonly<
     ['categories', 'update'],
   ],
   repairReport: [['repairs', 'complete']],
+  repairQuote: [['repairs', 'update']],
   disposalCertificate: [['disposals', 'execute']],
 };
 
@@ -315,6 +319,15 @@ const SHAPES: Readonly<Record<ReadingTask, z.ZodType>> = {
     serialNo: z.string().nullable().optional(),
     uncertain: z.array(z.string()).optional(),
   }),
+  repairQuote: z.object({
+    amount: lax,
+    currency: z.string().nullable().optional(),
+    work: z.string().nullable().optional(),
+    serialNo: z.string().nullable().optional(),
+    recommendation: z.string(),
+    reasons: z.array(z.string()).optional(),
+    uncertain: z.array(z.string()).optional(),
+  }),
   disposalCertificate: z.object({
     recipientName: z.string().nullable().optional(),
     disposedAt: z.string().nullable().optional(),
@@ -346,6 +359,7 @@ const TASKS: Readonly<Record<ReadingTask, string>> = {
   category: `Fill the new category form for the category the material describes (usually its name, sometimes what it is for). name: short, in the language the request names, as the material calls it without its parent's words. parentId: the id of the category in the context's \`categories\` it belongs under — the context's \`parent\` when one is chosen, else the one that plainly holds it, else leave it out for a top-level category. appliesTo, only for a top-level category: device (tracked one by one), accessory, consumable, component (stock counted in batches) or entitlement (software licences and subscriptions). requiresSerial and assignableToPerson: the category's rules — a serial number on every record for hardware tracked one by one; given to a person unless it stays in a room (a server, a rack, a printer on a floor). depreciationMethod (none or straightLine), usefulLifeMonths, residualRate (0 to 1), warrantyMonths, replacementMonths and auditCycleDays as an IT team would set them, consistent with similar categories in the context. With straightLine, always give usefulLifeMonths and residualRate. fieldTemplate: three to ten extended fields that kind of record needs beyond the ones every record has (name, number, serial number, model, maker, status, holder, location, department, purchase date and price, supplier, warranty end, notes), each { key (camelCase ASCII), label (short, in the request's language), type (text, number, date, select or boolean), options (for a select), required (only what every record must have) }, reusing the key, label and type a similar category in the context already uses for the same thing. uncertain: the fields you filled but are not sure of. In \`said\`, one plain sentence: what to check.`,
   deliveryDocument: `Read the delivery document against the purchase order in the context, following the receiving method below. One entry in \`rows\` per goods row of the document: lineId is the order line it matches (an id from the context's \`lines\`, or null when it matches none), description the row as printed, partCode the part number printed on it, quantity the quantity delivered, serialNos every serial number of that row, source where the row is ("Sheet1 row 4", "page 2 line 3"); warrantyMonths when the document states a warranty period covering the row, or warrantyEndDate (YYYY-MM-DD) when it prints an end date. deliveryNo, deliveryDate (YYYY-MM-DD) and vendorName from the header when printed. When the document cannot be read as a delivery of goods, return no rows and say why. In \`said\`, one or two plain sentences: how many rows were read and matched, and what the receiver must look at.`,
   repairReport: `The material is what the repair vendor (or the in-house technician) handed back for the repair in the context's \`repair\`: a repair report, a service sheet, an invoice or a quote. The context's \`device\` is the device repaired, as the register has it. Fill the completion of the repair from it. result: exactly one of ${REPAIR_RESULTS.filter((value) => value !== 'inProgress').join(', ')} — repaired when it was fixed (a part replaced inside the device still counts as repaired), unrepairable when it could not be fixed, replaced when the whole device was swapped for another unit; null when the material does not say (a quote for work not yet done says nothing about the result). cost: what the repair cost in total, a number in the material's currency (tax included when printed with it), 0 when it states the repair was free (under warranty), null when it gives no amount. currency: the ISO code of that amount (CNY for 元 or RMB), null with no amount. notes: the outcome for the record in plain sentences — what was found, what was done, the parts replaced, and any warranty on the repair itself with its length or end date; keep the material's facts, add none, at most 300 characters; null when it says nothing of the kind. serialNo: the device's serial number exactly as the material prints it, null when it prints none. uncertain: the fields you filled but are not sure of (result, cost, notes). When the material is not about a repair, return null fields and say so. In \`said\`, one plain sentence for the person: what to check before completing the repair.`,
+  repairQuote: `The material is the quote for the repair in the context's \`repair\` — the vendor's quote or estimate, or what the person typed of it. The context's \`device\` is the device as the register has it: its age, warranty, planned replacement date, purchase price and book value (when the person may see costs), its earlier repairs, and how often devices of its model were repaired in the last year. amount: the total the quote asks for the work, a number in its currency (tax included when printed with it), null when it gives none. currency: the ISO code of that amount (CNY for 元 or RMB). work: what the vendor proposes to do, the parts and the labour, in plain sentences close to the quote's words, at most 300 characters; null when it does not say. serialNo: the device's serial number exactly as the quote prints it, null when it prints none. recommendation: exactly one of ${REPAIR_RECOMMENDATIONS.join(', ')} — repair when the device is worth that price (the amount is small against its book value, it is young, the fault is a one-off); replace when it is not (the amount comes near or above its book value, or it is past its useful life or planned replacement date, or it keeps coming back for repair); inspect when the quote cannot be judged (no amount, or work that does not fit the fault). reasons: at most three, each one short sentence with its numbers from the context and the quote (the amount against the book value as a share, an age, a date, a count of repairs), never a fact neither gives. uncertain: the fields you read but are not sure of (amount, work). In \`said\`, one plain sentence for the person: what to ask the vendor or check before deciding.`,
   disposalCertificate: `The material is what came back from carrying out the disposal in the context's \`disposal\`: a recycler's or buyer's receipt, a data destruction certificate, a scrap or donation note. The context's \`devices\` are the devices it disposes of, each with its number and serial number. Fill the execution from it. recipientName: who took the devices (the recycler, buyer or receiving organisation) as printed. disposedAt: the date they were handed over or destroyed (YYYY-MM-DD). proceeds: what the company received for them in total, a number; expenses: what the company paid for the disposal in total (collection, destruction fees); each null when the material gives no amount. currency: the ISO code of those amounts (CNY for 元 or RMB). dataWipe: exactly one of ${DATA_WIPE_OPTIONS.join(', ')} — wiped when the material certifies that the data was erased or the storage destroyed, notWiped when it says the data was not dealt with, null when it is silent. wipeMethod, only with wiped: exactly one of ${WIPE_METHODS.join(', ')} — format for a format or reinstall, erase for an overwrite or certified erasure (NIST 800-88, DoD, a vendor's erase tool), physicalDestruction for shredded, crushed, drilled or degaussed storage. serialNos: every serial number the material lists, exactly as printed. uncertain: the fields you filled but are not sure of. When the material is not about these devices leaving, return null fields and say so. In \`said\`, one plain sentence for the person: what to check before confirming the execution.`,
 };
 
@@ -520,7 +534,7 @@ export async function readForForm(
   }
   // The serials the register holds, to check the document against.
   let registered: readonly { deviceNo: string; serialNo: string | null }[] = [];
-  if (input.task === 'repairReport') {
+  if (input.task === 'repairReport' || input.task === 'repairQuote') {
     const facts = await repairReportFacts(
       container,
       actorId,
@@ -581,7 +595,7 @@ export async function readForForm(
     if (!answer) return { reading: null, said: '', searched };
     const read = (answer.reading as Record<string, unknown> | null) ?? null;
     const reading =
-      read && input.task === 'repairReport'
+      read && (input.task === 'repairReport' || input.task === 'repairQuote')
         ? checkRepairReport(read, registered[0]?.serialNo ?? null)
         : read && input.task === 'disposalCertificate'
           ? await checkDisposalCertificate(container, read, registered)

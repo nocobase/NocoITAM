@@ -510,6 +510,7 @@ const messages = {
     },
   },
   groups: {
+    quote: 'Quote',
     basic: 'Basic information',
     contact: 'Contact',
     rules: 'Rules',
@@ -529,6 +530,12 @@ const messages = {
     execution: 'Execution',
   },
   fields: {
+    quoteAmount: 'Quoted amount',
+    quotedAt: 'Quoted on',
+    quoteNotes: 'Proposed work',
+    quoteRecommendation: 'Repair or replace',
+    quoteReasons: 'Reasons',
+    quoteDecision: 'Decision',
     attachments: 'Attachments',
     attributes: 'Extended fields',
     purchaseOrder: 'Purchase order',
@@ -740,6 +747,15 @@ const messages = {
     newHolder: 'New holder',
   },
   enums: {
+    repairRecommendation: {
+      repair: 'Repair it',
+      replace: 'Replace it',
+      inspect: 'Inspect first',
+    },
+    repairQuoteDecision: {
+      repair: 'Keep repairing',
+      replace: 'Dispose instead',
+    },
     // Why a stock quantity was corrected (调整数量).
     stockAdjustReason: {
       countSurplus: 'Count surplus',
@@ -3006,6 +3022,32 @@ const messages = {
       'No enabled plugin contributes a settings page you have access to.',
   },
   repairs: {
+    quote: {
+      record: 'Record quote',
+      update: 'Update quote',
+      title: 'Record quote',
+      description:
+        "Record the vendor's quote; Asset Steward weighs it against the device and advises repairing or replacing it",
+      placeholder:
+        "Paste the vendor's quote, or upload it. AI fills in the amount and the proposed work, and advises repairing or replacing",
+      typed: 'Vendor quote {{amount}}; proposed work: {{work}}',
+      judging: 'Weighing repair or replace…',
+      noAdvice: 'No advice',
+      decided: {
+        repair: 'Decided to keep repairing',
+        replace: 'Disposed of instead',
+      },
+      share: 'The quote is about {{share}}% of the book value of {{bookValue}}',
+      pastReplacement: 'The device is past its planned replacement date',
+      keepRepairing: 'Keep repairing',
+      replace: 'Dispose instead',
+      replaceDescription:
+        'The repair ends as unrepairable, the device goes to pending disposal, and a disposal is opened for it',
+      replacedNote:
+        'Quoted {{quote}}; not worth repairing, disposed of instead',
+      disposalNote:
+        'Fault: {{fault}}\nRepair quoted at {{quote}}, not worth it:\n{{reasons}}',
+    },
     report: {
       placeholder:
         'Paste the repair report or invoice, or upload it. AI fills in the result, cost and notes for you to check',

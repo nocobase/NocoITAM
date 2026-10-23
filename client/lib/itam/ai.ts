@@ -53,4 +53,5 @@ export type AiReadingTask =
   | 'categoryFields'
   | 'category'
   | 'repairReport'
-  | 'disposalCertificate';
+  | 'disposalCertificate'
+  | 'repairQuote';

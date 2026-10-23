@@ -21,6 +21,17 @@ vi.mock('../../server/providers/itam/ai-model.js', async (importOriginal) => ({
     ask: async () => '',
     askJson: async (content: string) => {
       model.asked.push(content);
+      if (content.includes('quote for the repair'))
+        return {
+          reading: {
+            amount: 2400,
+            currency: 'CNY',
+            work: 'Replace the mainboard',
+            recommendation: 'replace',
+            reasons: ['The quote is above the book value.'],
+          },
+          said: 'Ask whether a used board is available.',
+        };
       return content.includes('repair vendor')
         ? {
             reading: {
@@ -182,6 +193,43 @@ describe('document reading', () => {
     expect(askedContext().devices).toHaveLength(2);
   });
 
+  it('weighs a quote against the device, and keeps it on the repair', async () => {
+    const answer = await read('repairQuote', { repairId });
+    expect(answer.status).toBe(200);
+    expect(await data(answer)).toMatchObject({
+      reading: { amount: 2400, recommendation: 'replace' },
+    });
+    expect(askedContext().device).toMatchObject({ serialNo: 'SN-0001' });
+    const saved = await app.request(`/api/itam/repairs/${repairId}`, {
+      ...json({
+        quoteAmount: 2400,
+        quoteNotes: 'Replace the mainboard',
+        quotedAt: '2026-10-23',
+        quoteRecommendation: 'replace',
+        quoteReasons: 'The quote is above the book value.',
+        quoteDecision: null,
+      }),
+      method: 'PATCH',
+      ...manager,
+    });
+    expect(saved.status).toBe(200);
+    const repair = await data<Record<string, unknown>>(
+      await app.request(`/api/itam/repairs/${repairId}`, manager),
+    );
+    // A decimal reads back as text, as a repair's cost does.
+    expect(Number(repair.quoteAmount)).toBe(2400);
+    expect(repair).toMatchObject({
+      quoteRecommendation: 'replace',
+      quoteDecision: null,
+    });
+    const decided = await app.request(`/api/itam/repairs/${repairId}`, {
+      ...json({ quoteDecision: 'maybe' }),
+      method: 'PATCH',
+      ...manager,
+    });
+    expect(decided.status).toBe(400);
+  });
+
   it('is only for whoever may complete or carry out the record', async () => {
     expect((await read('repairReport', { repairId }, employee)).status).toBe(
       403,
@@ -189,6 +237,9 @@ describe('document reading', () => {
     expect(
       (await read('disposalCertificate', { disposalId }, employee)).status,
     ).toBe(403);
+    expect((await read('repairQuote', { repairId }, employee)).status).toBe(
+      403,
+    );
     expect((await read('repairReport', { repairId: 'nope' })).status).toBe(404);
   });
 
