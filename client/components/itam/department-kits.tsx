@@ -20,6 +20,7 @@ import { samePosition } from '@/lib/itam/positions';
 import { ConfirmDialog } from './confirm-dialog.js';
 import { KitItems } from './kit-items.js';
 import { RecordLink } from './record-link.js';
+import { TEXT_BUTTON } from '@/lib/itam/text-button';
 
 /** Mirrors `DepartmentKits` in `server/providers/itam/onboarding.ts`. */
 interface KitSummary {
@@ -245,7 +246,7 @@ export function DepartmentKits({
               <Button
                 variant='ghost'
                 // Its padding taken back on the side by 编辑 (2026-10-22).
-                className='-mr-2.5 text-muted-foreground'
+                className={`-mr-2.5 text-muted-foreground hover:text-muted-foreground ${TEXT_BUTTON}`}
                 disabled={busy}
                 title={t('departmentKits.removeDefaultHint')}
                 onClick={() => setConfirmingInherit(true)}

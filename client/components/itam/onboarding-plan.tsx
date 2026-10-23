@@ -49,6 +49,7 @@ import { STOCK_PATH, STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
 import { CollapsibleText } from './collapsible-text.js';
 import { RecordLink } from './record-link.js';
 import { ReferenceSelect } from './reference-select.js';
+import { TEXT_BUTTON } from '@/lib/itam/text-button';
 
 /**
  * 入职配备 on a joiner's 归属 tab (2026-10-05): their kit, what they already
@@ -415,7 +416,7 @@ function PlanLine({
         <Badge variant='secondary'>{t('onboarding.waived')}</Badge>
         <Button
           variant='ghost'
-          className='-mx-2.5'
+          className={`-mx-2.5 ${TEXT_BUTTON}`}
           disabled={busy}
           onClick={() => onWaive(false)}
         >
@@ -516,7 +517,7 @@ function PlanLine({
                     padding taken back like theirs. */}
                 <Button
                   variant='ghost'
-                  className='-mx-2.5 text-primary hover:text-primary'
+                  className={`-mx-2.5 text-primary hover:text-primary ${TEXT_BUTTON}`}
                   disabled={busy || (thing.needsAccount && !thing.account)}
                   title={
                     thing.needsAccount && !thing.account
@@ -537,7 +538,7 @@ function PlanLine({
                 {thing.type === 'device' ? (
                   <Button
                     variant='ghost'
-                    className='-mx-2.5'
+                    className={`-mx-2.5 ${TEXT_BUTTON}`}
                     disabled={busy}
                     onClick={() => setChanging(original.id)}
                   >
@@ -558,7 +559,7 @@ function PlanLine({
           {line.preparedCount < line.required ? (
             <Button
               variant='ghost'
-              className='-mx-2.5 text-muted-foreground'
+              className={`-mx-2.5 text-muted-foreground hover:text-muted-foreground ${TEXT_BUTTON}`}
               disabled={busy}
               onClick={() => onWaive(true)}
             >

@@ -25,6 +25,7 @@ import {
   type PlanStep,
   type StepField,
 } from '@/lib/itam/plans';
+import { TEXT_BUTTON } from '@/lib/itam/text-button';
 
 const STATUS_TONE: Readonly<
   Record<Plan['status'], 'secondary' | 'outline' | 'destructive'>
@@ -91,7 +92,7 @@ export function PlanDecision({
           sits the row's gap from its neighbours (2026-10-22). */}
       <Button
         variant='ghost'
-        className='-mx-2.5'
+        className={`-mx-2.5 ${TEXT_BUTTON}`}
         disabled={decide.isPending}
         onClick={() => decide.mutate('void')}
       >

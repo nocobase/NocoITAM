@@ -44,6 +44,7 @@ import { PLANS_PATH, type Plan } from '@/lib/itam/plans';
 
 import { AiShortcut } from './ai-shortcut.js';
 import { PlanCard, PlanDecision } from './plan-card.js';
+import { TEXT_BUTTON } from '@/lib/itam/text-button';
 
 /**
  * MDM 跟进's card (2026-10-17): what a device sync left for the reader —
@@ -150,7 +151,7 @@ export function DeviceSyncRunCard({
             <Button
               variant='ghost'
               // Its padding taken back, as the plan's 暂不处理 (2026-10-22).
-              className='-mx-2.5'
+              className={`-mx-2.5 ${TEXT_BUTTON}`}
               disabled={dismiss.isPending}
               onClick={() =>
                 dismiss.mutate(run, { onSuccess: () => onDecided?.() })
@@ -377,7 +378,7 @@ function FollowUpReviewCard({
             <Button
               variant='ghost'
               // Its padding taken back, as the plan's 暂不处理 (2026-10-22).
-              className='-mx-2.5'
+              className={`-mx-2.5 ${TEXT_BUTTON}`}
               disabled={dismiss.isPending}
               onClick={() => dismiss.mutate(run)}
             >

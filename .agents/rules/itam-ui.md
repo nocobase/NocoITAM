@@ -450,6 +450,8 @@ and the comment keeps their names; they are not the record's attachments.
 - A text link underlines on hover, across the application (2026-10-23): no
   ground, no other colour. `RecordLink` does it by default; the green
   `text-link` links get it from `client/styles.css`; any other text link says
-  `underline-offset-4 hover:underline`. Buttons, cards, tabs and menu items
-  rendered as links keep their own hover, and so do the AI shortcuts (a
-  light green ground, by request).
+  `underline-offset-4 hover:underline`. So do the buttons that read as
+  words: the AI shortcuts (`AiShortcut`), 起草采购单, and the text buttons
+  among others — 预留, 更换, 不需要, 暂不处理 — which add `TEXT_BUTTON`
+  (`client/lib/itam/text-button.ts`) to the ghost button. Buttons with a
+  frame or a fill, cards, tabs and menu items keep their own hover.
