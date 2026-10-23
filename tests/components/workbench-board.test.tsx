@@ -418,3 +418,35 @@ it('keeps leavers and joiners in one column, says what waits, and lays the colum
   fireEvent.click(screen.getByRole('radio', { name: /workbench\.view\.list/ }));
   expect(column('workbench.work.people').className).not.toContain('min-w-');
 });
+
+it('says on a joiner’s card what is still to buy, red past its last order day', () => {
+  state.items = [
+    {
+      key: 'pendingOnboarding',
+      count: 2,
+      url: '/people?view=joiners',
+      records: [
+        {
+          ...record('孙涵', '2099-10-30', '/people/a'),
+          progress: { done: 1, total: 8 },
+          shortfall: 1,
+          orderOverdue: true,
+        },
+        {
+          ...record('林雪', '2099-11-30', '/people/b'),
+          progress: { done: 0, total: 7 },
+          shortfall: 2,
+        },
+      ],
+    },
+  ];
+  show();
+  const people = column('workbench.work.people');
+  const late = within(people).getByText(
+    'onboarding.shortfall · onboarding.orderNow',
+  );
+  expect(late.className).toContain('text-destructive');
+  expect(
+    within(people).getByText('onboarding.shortfallTotal').className,
+  ).not.toContain('text-destructive');
+});

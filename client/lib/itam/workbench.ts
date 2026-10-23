@@ -22,6 +22,7 @@ export const REMINDER_KINDS = [
   'lowAccessories',
   'lowConsumables',
   'lowComponents',
+  'onboardingOrderOverdue',
 ] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
@@ -67,7 +68,14 @@ export const REMINDER_GROUPS: readonly {
   // tagged 逾期 N 天, and one set of records is not both work and risk.
   {
     key: 'supply',
-    kinds: ['lowAccessories', 'lowConsumables', 'lowComponents'],
+    // A joiner's item past its last day to order leads (2026-10-22): a
+    // first day is fixed, a stock level is not.
+    kinds: [
+      'onboardingOrderOverdue',
+      'lowAccessories',
+      'lowConsumables',
+      'lowComponents',
+    ],
   },
 ];
 
@@ -85,6 +93,7 @@ export const REMINDER_ROUTES: Readonly<Record<ReminderKind, string>> = {
   lowAccessories: '/accessories?view=lowStock',
   lowConsumables: '/consumables?view=lowStock',
   lowComponents: '/components?view=lowStock',
+  onboardingOrderOverdue: '/onboarding-supply',
 };
 
 /** A record a 需要关注 rule found, as its card names it. */
@@ -144,6 +153,9 @@ export interface MyWorkRecord {
   };
   /** A leaver's devices that synced after their leave date. */
   readonly onlineAfterLeaving?: number;
+  /** A joiner's items to buy, and whether one is past its last order day. */
+  readonly shortfall?: number;
+  readonly orderOverdue?: boolean;
 }
 
 export interface MyWorkItem {

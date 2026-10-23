@@ -2113,6 +2113,7 @@ const messages = {
       lowAccessories: 'Accessories below minimum',
       lowConsumables: 'Consumables below minimum',
       lowComponents: 'Components below minimum',
+      onboardingOrderOverdue: 'Joiner items past their last order day',
     },
     reminderCaptions: {
       warrantyExpiring: 'Devices in use',
@@ -2131,6 +2132,8 @@ const messages = {
       lowAccessories: 'Available quantity below its minimum',
       lowConsumables: 'Available quantity below its minimum',
       lowComponents: 'Available quantity below its minimum',
+      onboardingOrderOverdue:
+        'Items a joiner still needs bought, past the last day to order them',
     },
   },
   data: {

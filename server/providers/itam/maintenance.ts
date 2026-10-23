@@ -13,6 +13,7 @@ import { endedWhere, expiringWhere, leaverSeatCounts } from './entitlements.js';
 import type { EntitlementService } from './entitlements.js';
 import type { MasterDataService } from './master-data.js';
 import type { HistoryService } from './history.js';
+import { isPrepared, type OnboardingService } from './onboarding.js';
 import type { ItamNotifier } from './notifier.js';
 import { sweepSearchAnswers } from '../itam-agents/search-answers.js';
 
@@ -42,6 +43,8 @@ export const REMINDER_KINDS = [
   'lowAccessories',
   'lowConsumables',
   'lowComponents',
+  // A joiner's item still to buy past its last day to order (2026-10-22).
+  'onboardingOrderOverdue',
   // Device sync's 只在 MDM and 只在台账 were two rules here for a day; since
   // 2026-10-15 they are counts on 待办's MDM 核对 column, beside the
   // differences, so MDM is one place on the board rather than two.
@@ -127,6 +130,11 @@ export function createMaintenanceService(dependencies: {
   masterData: MasterDataService;
   notifier: ItamNotifier;
   history: HistoryService;
+  /**
+   * The joiners' plans, for 入职缺口已过最晚下单日; resolved when read, as
+   * the onboarding service is built after this one.
+   */
+  onboarding?: () => OnboardingService | undefined;
 }): MaintenanceService {
   const {
     database,
@@ -483,6 +491,43 @@ export function createMaintenanceService(dependencies: {
           severity: 'warning',
           data: { name: item.name, kind: item.kind, available, minimum },
         });
+    }
+
+    // 入职缺口已过最晚下单日 (2026-10-22): an item a joiner is short of whose
+    // last day to order has passed — until then said only on 入职供需 and
+    // the joiner's own card, which nobody may be looking at. One row per
+    // item and joiner, named as both, dated by that last day.
+    const plans = await dependencies.onboarding?.()?.plans();
+    if (plans && plans.size > 0) {
+      const names = new Map(
+        (
+          await query
+            .selectFrom('people')
+            .select(['id', 'name'])
+            .where('id', 'in', [...plans.keys()])
+            .execute<Row>()
+        ).map((row) => [String(row.id), String(row.name)]),
+      );
+      for (const [personId, plan] of plans) {
+        if (isPrepared(plan)) continue;
+        for (const line of plan.lines)
+          if (
+            !line.waived &&
+            line.shortfall > 0 &&
+            line.orderBy &&
+            line.orderBy < today
+          )
+            rows.push({
+              kind: 'onboardingOrderOverdue',
+              subjectType: 'onboardingLines',
+              subjectId: `${personId}:${line.key}`,
+              severity: 'warning',
+              data: {
+                name: `${line.target.name}（${names.get(personId) ?? ''}）`,
+                date: line.orderBy,
+              },
+            });
+      }
     }
 
     return rows;

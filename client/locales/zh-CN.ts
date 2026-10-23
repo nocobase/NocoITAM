@@ -2024,6 +2024,7 @@ const zhCN: AppResource = {
       lowAccessories: '低于水位的配件',
       lowConsumables: '低于水位的耗材',
       lowComponents: '低于水位的组件',
+      onboardingOrderOverdue: '入职缺口已过最晚下单日',
     },
     reminderCaptions: {
       warrantyExpiring: '在用设备',
@@ -2038,6 +2039,7 @@ const zhCN: AppResource = {
       lowAccessories: '可用数量低于最低库存水位',
       lowConsumables: '可用数量低于最低库存水位',
       lowComponents: '可用数量低于最低库存水位',
+      onboardingOrderOverdue: '新人入职前要买、但已过最晚下单日的物品',
     },
   },
   data: {

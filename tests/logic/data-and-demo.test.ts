@@ -678,6 +678,8 @@ describe('CSV import / export and demo data', () => {
     expect(count('auditOverdue')).toBeGreaterThanOrEqual(4);
     // The Zoom subscription the demo stopped renewing still holds a seat.
     expect(count('entitlementEnded')).toBe(1);
+    // The engineer's IntelliJ seat, past its last day to order (2026-10-22).
+    expect(count('onboardingOrderOverdue')).toBe(1);
     // Step 2 (2026-10-15): the demo shows every kind of difference — one
     // silent, one under another user, one on the shelf yet online — and the
     // other two tabs: the laptops and the VM not on the register (the
@@ -794,7 +796,15 @@ describe('CSV import / export and demo data', () => {
     expect(people.length).toBeGreaterThanOrEqual(35);
     const pendingOnboarding = (
       await data<
-        { key: string; count: number; records: { title: string }[] }[]
+        {
+          key: string;
+          count: number;
+          records: {
+            title: string;
+            shortfall?: number;
+            orderOverdue?: boolean;
+          }[];
+        }[]
       >(await get('workbench/my-work'))
     ).find((item) => item.key === 'pendingOnboarding');
     expect(pendingOnboarding?.count).toBe(2);
@@ -802,6 +812,11 @@ describe('CSV import / export and demo data', () => {
       'Noah Harris',
       'Grace Lee',
     ]);
+    // The card says what is short, and that its last order day has passed.
+    expect(pendingOnboarding?.records[0]).toMatchObject({
+      shortfall: 1,
+      orderOverdue: true,
+    });
     // 入职供需 shows each way a joiner is equipped (2026-10-22): from stock,
     // from an order on its way (the designer's Adobe seat) and short (the
     // engineer's IntelliJ seat, no seat spare and none on order).

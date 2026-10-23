@@ -80,6 +80,27 @@ export interface MyWorkRecord {
    * their leave date (device sync, 2026-10-15).
    */
   readonly onlineAfterLeaving?: number;
+  /**
+   * A joiner's items stock cannot cover, and whether the last day to order
+   * one has passed (2026-10-22): the card says 缺 N, red as 应尽快下单.
+   */
+  readonly shortfall?: number;
+  readonly orderOverdue?: boolean;
+}
+
+/** What a joiner is short of, as their workbench card says it. */
+function shortOf(
+  plan: OnboardingPlan,
+  today: string,
+): Pick<MyWorkRecord, 'shortfall' | 'orderOverdue'> {
+  const short = plan.lines.filter((line) => !line.waived && line.shortfall > 0);
+  if (short.length === 0) return {};
+  return {
+    shortfall: short.reduce((sum, line) => sum + line.shortfall, 0),
+    orderOverdue: short.some(
+      (line) => line.orderBy !== null && line.orderBy < today,
+    ),
+  };
 }
 
 export interface MyWorkItem {
@@ -899,6 +920,7 @@ export function createWorkbenchService(dependencies: {
             ...(plan.required > 0
               ? { progress: { done: plan.prepared, total: plan.required } }
               : {}),
+            ...shortOf(plan, today),
           });
         }
         items.push({
