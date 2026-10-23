@@ -19,7 +19,12 @@ export function SentContext({
   const tags: { key: string; label: string; title?: string }[] =
     context.items.map((item) => ({
       key: `${item.kind}:${item.id}`,
-      label: item.key ? `${item.key} ${item.title}` : item.title,
+      // A record whose title is its number (a repair's RP-000001) reads
+      // once, not "RP-000001 RP-000001" (2026-10-23, Application change ITAM).
+      label:
+        item.key && item.title !== item.key
+          ? `${item.key} ${item.title}`
+          : item.title,
     }));
   for (const item of context.ui?.items ?? [])
     tags.push({
