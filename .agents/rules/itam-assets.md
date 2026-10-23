@@ -294,8 +294,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   applied migration is not edited. Software products keep no values.
 - The device list has a board beside its table (2026-10-22, `DeviceBoard`
   in `client/pages/itam/devices/devices-list.tsx`, `?layout=board`; the
-  table stays the default): a column per state a device is in while the
-  company has it — 库存中, 使用中, 借出中, 维修中, 待报废, 已丢失 — through
+  table stays the default): a column per state — 库存中, 使用中, 借出中, 维修中, 已停用, 待报废,
+  已报废, 已丢失 — through
   the shared `createStatusBoard`. A card is the device's number / name and what matters in its state: in
   stock, 预留给 whom (if anyone) and where; in use, 分配给 whom and where
   (not the place twice for one assigned to a place); on loan, 借给 whom,

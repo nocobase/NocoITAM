@@ -114,9 +114,8 @@ function PlaceName({ id }: { readonly id: string }): ReactElement {
 }
 
 /**
- * The devices as a board by status (2026-10-22), beside the table: the
- * states a device is in while the company has it, in the order it moves
- * through them; retired and disposed ones stay in the table. A card is the
+ * The devices as a board by status (2026-10-22), beside the table: every
+ * state, in the order a device moves through them. A card is the
  * device's number and name, model, and who has it or where it is kept.
  */
 const DeviceBoard = createStatusBoard({
@@ -205,12 +204,16 @@ const DeviceBoard = createStatusBoard({
     ],
     footer: ['ownerId'],
   },
+  // Every state (2026-10-22; 已停用 and 已报废 left to the table for a
+  // day), in the order a device moves through them.
   statuses: [
     'inStock',
     'inUse',
     'onLoan',
     'inRepair',
+    'retired',
     'pendingDisposal',
+    'disposed',
     'lost',
   ],
   dots: {
@@ -218,7 +221,9 @@ const DeviceBoard = createStatusBoard({
     inUse: 'bg-success-foreground',
     onLoan: 'bg-loan-foreground',
     inRepair: 'bg-warning-foreground',
+    retired: 'bg-muted-foreground',
     pendingDisposal: 'bg-muted-foreground',
+    disposed: 'bg-muted-foreground',
     lost: 'bg-destructive',
   },
   defaultSort: 'deviceNo',
