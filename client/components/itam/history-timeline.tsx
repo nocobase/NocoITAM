@@ -52,6 +52,18 @@ import {
 } from './comments/comments.js';
 import { EmptyState } from './empty-state.js';
 import { RecordLink } from './record-link.js';
+import { TreePath } from './tree-path.js';
+import { HolderIcon } from './device-relation.js';
+
+/** The kind of holder a link opens, by its route; nothing for anything else. */
+const holderTypeOf = (to: string): string | undefined =>
+  to.startsWith('/people/')
+    ? 'person'
+    : to.startsWith('/locations/')
+      ? 'location'
+      : to.startsWith('/devices/')
+        ? 'device'
+        : undefined;
 
 /**
  * What put the line there, beside who it is attributed to. Absent on rows
@@ -673,9 +685,30 @@ function TimelineRow({
                       // it folds like any other summary (2026-10-16).
                       <>
                         {summaryParts?.before}
-                        <RecordLink to={target.to} className='text-link'>
-                          {target.label}
-                        </RecordLink>
+                        {/* A holder with its kind's icon, as the lists show
+                            one (2026-10-22). */}
+                        {holderTypeOf(target.to) ? (
+                          <span className='mr-1 inline-flex align-[-2px]'>
+                            <HolderIcon type={holderTypeOf(target.to) ?? ''} />
+                          </span>
+                        ) : null}
+                        {/* A place by its whole path (2026-10-22), as the
+                            pickers show it: 上海总部 › 3 楼 › 大会议室. */}
+                        {target.to.startsWith('/locations/') ? (
+                          <TreePath
+                            collection='locations'
+                            nodeId={target.to.slice('/locations/'.length)}
+                            fallback={
+                              <RecordLink to={target.to} className='text-link'>
+                                {target.label}
+                              </RecordLink>
+                            }
+                          />
+                        ) : (
+                          <RecordLink to={target.to} className='text-link'>
+                            {target.label}
+                          </RecordLink>
+                        )}
                         {summaryParts?.after ? (
                           <CollapsibleText text={summaryParts.after} />
                         ) : null}

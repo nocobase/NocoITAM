@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 import { masterDataPath, useItamList, type ItamRecord } from '@/lib/itam/api';
 import { masterDataByName } from '@/lib/itam/master-data';
@@ -19,6 +19,7 @@ export function TreePath({
   nodeId,
   drawer,
   show = 'path',
+  fallback = null,
 }: {
   readonly collection: string;
   readonly nodeId: unknown;
@@ -29,11 +30,13 @@ export function TreePath({
    * only the node itself (`leaf`) or only its top-level ancestor (`root`).
    */
   readonly show?: 'path' | 'leaf' | 'root';
+  /** Shown while the tree loads, or for a node no longer in it. */
+  readonly fallback?: ReactNode;
 }): ReactElement | null {
   const nodes = useItamList<ItamRecord>(masterDataPath(collection), {
     pageSize: 500,
   });
-  if (!nodes.data) return null;
+  if (!nodes.data) return <>{fallback}</>;
   const full = treeChain(nodes.data.data, nodeId);
   const chain =
     show === 'leaf'
@@ -41,7 +44,7 @@ export function TreePath({
       : show === 'root'
         ? full.slice(0, 1)
         : full;
-  if (chain.length === 0) return null;
+  if (chain.length === 0) return <>{fallback}</>;
   const route = masterDataByName(collection)?.route ?? collection;
   return (
     <span
