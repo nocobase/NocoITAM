@@ -380,7 +380,7 @@ function WorkColumn({
         card.records.some((record) => record.origin === 'pendingOnboarding') ? (
           <Link
             to='/onboarding-supply'
-            className='flex items-center gap-0.5 text-xs text-link underline-offset-4 hover:underline'
+            className='flex items-center gap-0.5 text-xs text-link'
           >
             {t('onboarding.supply.link')}
             <ArrowRight aria-hidden='true' className='size-3' />
@@ -393,7 +393,7 @@ function WorkColumn({
         card.key === 'deviceChecks' ? (
           <Link
             to='/device-sync'
-            className='flex items-center gap-0.5 text-xs text-link underline-offset-4 hover:underline'
+            className='flex items-center gap-0.5 text-xs text-link'
           >
             {t('workbench.seeDetails')}
             <ArrowRight aria-hidden='true' className='size-3' />
@@ -407,7 +407,7 @@ function WorkColumn({
               <Link
                 key={link.url}
                 to={link.url}
-                className='flex items-center gap-1 text-xs text-link underline-offset-4 hover:underline'
+                className='flex items-center gap-1 text-xs text-link'
               >
                 {link.label}
                 <ArrowRight aria-hidden='true' className='size-3' />
@@ -443,7 +443,7 @@ function WorkColumn({
           {folded > 0 ? (
             <button
               type='button'
-              className='mx-1.5 w-fit text-xs text-link underline-offset-4 hover:underline'
+              className='mx-1.5 w-fit text-xs text-link'
               onClick={() => setExpanded(true)}
             >
               {t('workbench.showMoreCards', { count: folded })}
@@ -859,6 +859,25 @@ function LeaverCard({
                 {t('workbench.work.mine', { count: record.count })}
               </span>
             )}
+            {/* What a joiner still needs bought (2026-10-22), red once the
+                last day to order it has passed: said until then only on
+                入职供需 and their own card. */}
+            {joining && record.shortfall ? (
+              <span
+                className={cn(
+                  'ml-auto font-medium',
+                  record.orderOverdue
+                    ? 'text-destructive'
+                    : 'text-warning-foreground',
+                )}
+              >
+                {record.orderOverdue
+                  ? `${t('onboarding.shortfall', { count: record.shortfall })} · ${t('onboarding.orderNow')}`
+                  : t('onboarding.shortfallTotal', {
+                      count: record.shortfall,
+                    })}
+              </span>
+            ) : null}
           </p>
         </div>
       ) : null}

@@ -63,7 +63,7 @@ export function TreePath({
             key={entry.id}
             to={`/${route}/${entry.id}`}
             drawer={drawer}
-            className='text-link underline-offset-4 hover:underline'
+            className='text-link'
             // Inside a clickable table row the link, not the row, wins.
             onClick={(event) => event.stopPropagation()}
           >

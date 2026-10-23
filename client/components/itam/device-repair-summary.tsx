@@ -20,10 +20,7 @@ export function DeviceRepairSummary({
   const late = daysOverdue(repair.expectedReturnAt);
   return (
     <span className='inline-flex flex-wrap items-center gap-2'>
-      <RecordLink
-        to={`/repairs/${text(repair.id)}`}
-        className='text-link underline-offset-4 hover:underline'
-      >
+      <RecordLink to={`/repairs/${text(repair.id)}`} className='text-link'>
         {text(repair.repairNo)}
       </RecordLink>
       {repair.expectedReturnAt ? (

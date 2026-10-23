@@ -18,10 +18,7 @@ export function DeviceDisposalSummary({
   const { t } = useTranslation();
   return (
     <span className='inline-flex flex-wrap items-center gap-2'>
-      <RecordLink
-        to={`/disposals/${text(disposal.id)}`}
-        className='text-link underline-offset-4 hover:underline'
-      >
+      <RecordLink to={`/disposals/${text(disposal.id)}`} className='text-link'>
         {text(disposal.disposalNo)}
       </RecordLink>
       <EnumBadge field={STATUS_FIELD} value={disposal.status} />

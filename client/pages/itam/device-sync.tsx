@@ -642,7 +642,7 @@ function ChecksView(): ReactElement {
                   <CellText>
                     <RecordLink
                       to={`/devices/${row.deviceId}`}
-                      className='font-medium text-link underline-offset-4 hover:underline'
+                      className='font-medium text-link'
                     >
                       {deviceLabel(row)}
                     </RecordLink>
@@ -774,7 +774,7 @@ function LinkedView(): ReactElement {
                 <CellText>
                   <RecordLink
                     to={`/devices/${row.linkedDevice.id}`}
-                    className='font-medium text-link underline-offset-4 hover:underline'
+                    className='font-medium text-link'
                   >
                     {deviceLabel(row.linkedDevice)}
                   </RecordLink>
@@ -825,7 +825,7 @@ function RecordName({
     <>
       <button
         type='button'
-        className='font-medium text-link underline-offset-4 hover:underline'
+        className='font-medium text-link'
         onClick={() => setOpen(true)}
       >
         {row.deviceName ?? row.externalId}
@@ -911,7 +911,7 @@ function ManagedRecordSheet({
                   href={row.consoleUrl}
                   target='_blank'
                   rel='noreferrer'
-                  className='inline-flex items-center gap-1 text-sm text-link underline-offset-4 hover:underline'
+                  className='inline-flex items-center gap-1 text-sm text-link'
                 >
                   <ExternalLink className='size-3.5' aria-hidden />
                   {t('deviceSync.openIn', { source })}
@@ -1093,7 +1093,7 @@ function DismissedView(): ReactElement {
                 <CellText>
                   <RecordLink
                     to={`/devices/${row.deviceId}`}
-                    className='font-medium text-link underline-offset-4 hover:underline'
+                    className='font-medium text-link'
                   >
                     {deviceLabel(row)}
                   </RecordLink>
@@ -1206,7 +1206,7 @@ function UnmanagedView({
                   <CellText>
                     <RecordLink
                       to={`/devices/${row.id}`}
-                      className='font-medium text-link underline-offset-4 hover:underline'
+                      className='font-medium text-link'
                     >
                       {deviceLabel(row)}
                     </RecordLink>

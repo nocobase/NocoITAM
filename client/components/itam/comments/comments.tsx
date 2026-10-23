@@ -812,7 +812,7 @@ export function CommentThread({
           {hiddenReplies > 0 ? (
             <button
               type='button'
-              className='w-fit text-xs text-link underline-offset-4 hover:underline'
+              className='w-fit text-xs text-link'
               onClick={() => setAllReplies(true)}
             >
               {t('comments.earlierReplies', { count: hiddenReplies })}
@@ -872,7 +872,7 @@ function CommentBody({
       {long ? (
         <button
           type='button'
-          className='text-link underline-offset-4 hover:underline'
+          className='text-link'
           onClick={() => setOpen((current) => !current)}
         >
           {open ? t('common.showLess') : t('common.showMore')}

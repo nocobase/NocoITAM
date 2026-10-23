@@ -93,7 +93,7 @@ export function ReferenceLink({
   if (!route) return <span data-collection={collection}>{name ?? key}</span>;
   return (
     <RecordLink
-      className='text-link underline-offset-4 hover:underline'
+      className='text-link'
       to={`/${route}/${key}`}
       data-collection={collection}
     >

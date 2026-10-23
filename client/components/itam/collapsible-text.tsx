@@ -34,7 +34,7 @@ export function CollapsibleText({
       {long ? (
         <button
           type='button'
-          className='ml-1 text-link underline-offset-4 hover:underline'
+          className='ml-1 text-link'
           onClick={(event) => {
             event.stopPropagation();
             setOpen((current) => !current);

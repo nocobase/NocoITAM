@@ -40,8 +40,11 @@ describe('DocumentCard', () => {
     expect(screen.getByText('Northbridge IT')).toBeVisible();
     expect(screen.getByText('CNY 79,995.00')).toBeVisible();
     expect(screen.getByText('Completed')).toBeVisible();
-    // Empty details leave no gap behind.
-    expect(screen.getAllByText('·')).toHaveLength(2);
+    // Empty details leave no gap behind: a dot after the type and one
+    // between the two details.
+    expect(
+      document.querySelectorAll('li span[aria-hidden="true"].rounded-full'),
+    ).toHaveLength(2);
   });
 
   it('leaves out the description and amount it was not given', () => {

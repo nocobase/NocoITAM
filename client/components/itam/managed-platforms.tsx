@@ -305,7 +305,7 @@ function PlatformRecord({
               href={record.consoleUrl}
               target='_blank'
               rel='noreferrer'
-              className='inline-flex items-center gap-1 text-xs text-link hover:underline'
+              className='inline-flex items-center gap-1 text-xs text-link'
             >
               {t('deviceSync.openIn', { source })}
               <ExternalLink className='size-3' />

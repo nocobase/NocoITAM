@@ -169,7 +169,7 @@ export function ReceiptAgentCard(): ReactElement {
                     <TableCell>
                       <RecordLink
                         to={`/procurement/${run.purchaseOrderId}`}
-                        className='font-medium text-link underline-offset-4 hover:underline'
+                        className='font-medium text-link'
                       >
                         {run.orderNo ?? '—'}
                       </RecordLink>

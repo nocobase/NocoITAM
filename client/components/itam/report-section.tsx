@@ -59,7 +59,7 @@ export function ReportSectionCard({
             <SectionChart section={section} spec={chart} currency={currency} />
             <button
               type='button'
-              className='inline-flex items-center gap-1 text-sm text-link underline-offset-4 hover:underline'
+              className='inline-flex items-center gap-1 text-sm text-link'
               aria-expanded={showTable}
               onClick={() => setShowTable(!showTable)}
             >

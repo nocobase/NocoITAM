@@ -281,7 +281,7 @@ export function DepartmentKits({
                   {t('departmentKits.inherits')}{' '}
                   <RecordLink
                     to={`/departments/${data.inherited.department.id}/onboarding`}
-                    className='text-link underline-offset-4 hover:underline'
+                    className='text-link'
                   >
                     {data.inherited.department.name}
                   </RecordLink>

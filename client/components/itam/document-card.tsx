@@ -60,10 +60,7 @@ export function DocumentCard({
       </span>
       <div className='min-w-0 flex-1 space-y-1'>
         <div className='flex min-w-0 items-baseline gap-2'>
-          <RecordLink
-            to={to}
-            className='shrink-0 font-medium text-link underline-offset-4 hover:underline'
-          >
+          <RecordLink to={to} className='shrink-0 font-medium text-link'>
             {number}
           </RecordLink>
           {title ? (
@@ -84,10 +81,14 @@ export function DocumentCard({
                 className='inline-flex items-center gap-1.5'
                 key={String(item)}
               >
+                {/* A drawn dot, not "·": in a Chinese font the character
+                    is full width and doubled the gap on each side
+                    (2026-10-23). */}
                 {index > 0 || kind ? (
-                  <span aria-hidden='true' className='text-border'>
-                    ·
-                  </span>
+                  <span
+                    aria-hidden='true'
+                    className='size-[3px] shrink-0 rounded-full bg-muted-foreground/40'
+                  />
                 ) : null}
                 <span className='break-words'>{item}</span>
               </span>

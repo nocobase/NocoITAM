@@ -371,7 +371,7 @@ export function HistoryTimeline({
                     <span className='w-5 shrink-0' />
                     <button
                       type='button'
-                      className='text-xs text-link underline-offset-4 hover:underline'
+                      className='text-xs text-link'
                       onClick={() =>
                         setOpened((current) => new Set([...current, entry.id]))
                       }
@@ -673,10 +673,7 @@ function TimelineRow({
                       // it folds like any other summary (2026-10-16).
                       <>
                         {summaryParts?.before}
-                        <RecordLink
-                          to={target.to}
-                          className='text-link underline-offset-4 hover:underline'
-                        >
+                        <RecordLink to={target.to} className='text-link'>
                           {target.label}
                         </RecordLink>
                         {summaryParts?.after ? (
@@ -693,10 +690,7 @@ function TimelineRow({
                     {link ? (
                       <>
                         {' '}
-                        <RecordLink
-                          to={link.to}
-                          className='text-link underline-offset-4 hover:underline'
-                        >
+                        <RecordLink to={link.to} className='text-link'>
                           {link.label}
                         </RecordLink>
                         {linkedDetail
@@ -1045,7 +1039,7 @@ function ChangeValue({
       <RecordLink
         to={`/${referenceRoute(collection)}/${value}`}
         className={cn(
-          'text-link underline-offset-4 hover:underline',
+          'text-link',
           muted && 'line-through decoration-link/50 opacity-70',
         )}
       >

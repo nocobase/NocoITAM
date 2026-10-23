@@ -660,7 +660,7 @@ function DisposalDevicesCard({
               render: (row: ItamRecord) => (
                 <RecordLink
                   to={`/devices/${text(row.deviceId)}`}
-                  className='font-medium text-link underline-offset-4 hover:underline'
+                  className='font-medium text-link'
                 >
                   {deviceLabel(row)}
                 </RecordLink>
