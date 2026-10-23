@@ -663,6 +663,25 @@ describe('CSV import / export and demo data', () => {
     expect(count('warrantyExpiring')).toBeGreaterThanOrEqual(4);
     expect(count('idleDevice')).toBeGreaterThanOrEqual(1);
     expect(count('entitlementOverAllocated')).toBe(1);
+    // Every status has a device (2026-10-22): a spare phone is retired.
+    const statuses = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('devices')
+      .select('status')
+      .execute<{ status: string }>();
+    expect(new Set(statuses.map((row) => row.status))).toEqual(
+      new Set([
+        'inStock',
+        'inUse',
+        'onLoan',
+        'inRepair',
+        'retired',
+        'pendingDisposal',
+        'disposed',
+        'lost',
+      ]),
+    );
     // Every rule has something to show (2026-10-22): one below its minimum
     // of each kind kept as a quantity, and a device filed under another
     // department than its holder's.

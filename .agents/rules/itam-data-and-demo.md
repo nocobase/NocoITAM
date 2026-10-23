@@ -232,7 +232,12 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   stock (`CATALOGUE_ASSETS`, each with its `price`) is bought by an order
   received into a record of its own; so is the first stock of the
   keyboards, docks, headsets, hubs and webcams (`boughtStock`), before
-  their restocks. Their platform ids start `demo-` (or `computer:demo-` /
+  their restocks, and of a few consumables and components (the cables,
+  paper, Latitude batteries, 1 TB SSD and 32 GB memory). Every device
+  status has a device (2026-10-22): a spare iPhone is retired
+  (SH-PH-004), and the laptop sold off (SH-LT-008), entered after the pass
+  that gives devices their pre-register order, gets one through
+  `enterHistoricalOrders` and three repairs before it was handed back. Their platform ids start `demo-` (or `computer:demo-` /
   `mobile:demo-`), which is how `device-demo-source.ts` knows them: with no
   connection, a platform holding demo records reads as connected (`demo`)
   and its pulls replay them, last syncs moved on by the time since the
