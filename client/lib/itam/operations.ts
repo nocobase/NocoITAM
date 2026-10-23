@@ -389,6 +389,17 @@ export const AUDIT_STATUS_DOT: Readonly<Record<string, string>> = {
   completed: 'bg-primary',
   cancelled: 'bg-muted-foreground/50',
 };
+/**
+ * A repair's result (2026-10-23): still in progress reads as attention, like
+ * the device's 维修中; repaired or replaced is done, solid like 已完成 and
+ * 已执行; beyond repair reads as a loss.
+ */
+export const REPAIR_RESULT_TONE: Readonly<Record<string, string>> = {
+  inProgress: 'bg-warning text-warning-foreground',
+  repaired: 'bg-primary text-primary-foreground',
+  replaced: 'bg-primary text-primary-foreground',
+  unrepairable: 'bg-destructive/10 text-destructive',
+};
 export const DISPOSAL_STATUS_TONE: Readonly<Record<string, string>> = {
   draft: 'bg-muted text-muted-foreground',
   pendingApproval: 'bg-warning text-warning-foreground',

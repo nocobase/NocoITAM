@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/itam/empty-state';
 import { Pagination } from '@/components/itam/pagination';
 import { DocumentCard, DocumentList } from '@/components/itam/document-card';
 import { RepairCompleteDialog } from '@/components/itam/repair-complete';
-import { Badge } from '@/components/ui/badge';
+import { RepairResultBadge } from '@/components/itam/status-badge';
 import { Button } from '@/components/ui/button';
 import { useItamList, type ItamRecord } from '@/lib/itam/api';
 import { formatDate, formatMoney, text } from '@/lib/itam/format';
@@ -73,24 +73,7 @@ export function RepairsList({
               kind={t(`enums.repairMethod.${text(row.method)}`, {
                 defaultValue: text(row.method),
               })}
-              status={
-                <Badge
-                  variant={
-                    row.result === 'inProgress' ? 'secondary' : 'outline'
-                  }
-                  className={
-                    // In progress reads as attention, like the device's
-                    // 维修中 status; finished results stay neutral.
-                    row.result === 'inProgress'
-                      ? 'bg-warning text-warning-foreground'
-                      : undefined
-                  }
-                >
-                  {t(`enums.repairResult.${text(row.result)}`, {
-                    defaultValue: text(row.result),
-                  })}
-                </Badge>
-              }
+              status={<RepairResultBadge result={row.result} />}
               details={[
                 // The device is implied on its own page; the vendor list
                 // names it.

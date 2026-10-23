@@ -5,7 +5,8 @@ import { RecordLink } from './record-link.js';
 
 /** Each kind's icon, tinted as the rest of the application tints it. */
 const TONES = {
-  purchase: 'bg-primary/10 text-primary',
+  // Blue, as the 采购 kind tag is (2026-10-23).
+  purchase: 'bg-info text-info-foreground',
   repair: 'bg-warning text-warning-foreground',
   disposal: 'bg-destructive/10 text-destructive',
 } as const;

@@ -2,7 +2,11 @@ import { useTranslation } from '@nocobase/i18n/client';
 import type { ReactElement } from 'react';
 
 import { STATUS_TONE, type DeviceStatus } from '@/lib/itam/devices';
-import { AUDIT_STATUS_TONE, DISPOSAL_STATUS_TONE } from '@/lib/itam/operations';
+import {
+  AUDIT_STATUS_TONE,
+  DISPOSAL_STATUS_TONE,
+  REPAIR_RESULT_TONE,
+} from '@/lib/itam/operations';
 import { PO_STATUS_TONE } from '@/lib/itam/procurement';
 import { Badge } from '@/components/ui/badge';
 
@@ -36,6 +40,24 @@ export function PurchaseOrderStatusBadge({
       className={PO_STATUS_TONE[status] ?? 'bg-muted text-muted-foreground'}
     >
       {t(`enums.poStatus.${status}`, { defaultValue: status })}
+    </Badge>
+  );
+}
+
+/** A repair's result, toned the way a disposal's status is (2026-10-23). */
+export function RepairResultBadge({
+  result,
+}: {
+  readonly result: unknown;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  if (typeof result !== 'string' || !result) return null;
+  return (
+    <Badge
+      variant='secondary'
+      className={REPAIR_RESULT_TONE[result] ?? 'bg-muted text-muted-foreground'}
+    >
+      {t(`enums.repairResult.${result}`, { defaultValue: result })}
     </Badge>
   );
 }

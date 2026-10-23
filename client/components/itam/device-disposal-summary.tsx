@@ -9,7 +9,7 @@ import { DISPOSAL_FIELDS } from '@/lib/itam/operations';
 
 const STATUS_FIELD = DISPOSAL_FIELDS.find((field) => field.key === 'status')!;
 
-/** The disposal a device is on: its number, status and, once executed, when. */
+/** The disposal a device is on: its number and status, or once executed, when. */
 export function DeviceDisposalSummary({
   disposal,
 }: {
@@ -21,12 +21,15 @@ export function DeviceDisposalSummary({
       <RecordLink to={`/disposals/${text(disposal.id)}`} className='text-link'>
         {text(disposal.disposalNo)}
       </RecordLink>
-      <EnumBadge field={STATUS_FIELD} value={disposal.status} />
+      {/* Carried out, it says when, which says 已执行 too: no tag beside
+          it (2026-10-23). Before that, the tag says how far it got. */}
       {disposal.status === 'executed' && disposal.disposedAt ? (
         <span className='text-muted-foreground'>
           {t('devices.disposedOn', { date: formatDate(disposal.disposedAt) })}
         </span>
-      ) : null}
+      ) : (
+        <EnumBadge field={STATUS_FIELD} value={disposal.status} />
+      )}
     </span>
   );
 }

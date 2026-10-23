@@ -277,6 +277,14 @@ export function isEmploymentStatusField(field: FieldDefinition): boolean {
   );
 }
 
+export function isRepairResultField(field: FieldDefinition): boolean {
+  return (
+    field.options?.every((option) =>
+      option.label.startsWith('enums.repairResult.'),
+    ) ?? false
+  );
+}
+
 export function isDisposalStatusField(field: FieldDefinition): boolean {
   return (
     field.options?.every((option) =>

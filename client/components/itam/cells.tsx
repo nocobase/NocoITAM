@@ -3,6 +3,7 @@ import {
   isEntitlementKindField,
   isAuditStatusField,
   isDisposalStatusField,
+  isRepairResultField,
   isEmploymentStatusField,
   isPurchaseOrderStatusField,
 } from '@/lib/itam/fields';
@@ -14,6 +15,7 @@ import {
   DisposalStatusBadge,
   EmploymentStatusBadge,
   PurchaseOrderStatusBadge,
+  RepairResultBadge,
 } from './status-badge.js';
 import { useTranslation } from '@nocobase/i18n/client';
 import { ExternalLink } from 'lucide-react';
@@ -45,6 +47,7 @@ export function EnumBadge({
     return <PurchaseOrderStatusBadge status={value} />;
   if (isDisposalStatusField(field))
     return <DisposalStatusBadge status={value} />;
+  if (isRepairResultField(field)) return <RepairResultBadge result={value} />;
   if (isAuditStatusField(field)) return <AuditStatusBadge status={value} />;
   if (isEmploymentStatusField(field))
     return <EmploymentStatusBadge status={value} />;
