@@ -7,17 +7,26 @@ vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
 }));
 
-// A repair's result is toned (2026-10-23): 已修复 solid like 已完成, not grey.
+// A repair's result is toned (2026-10-23): light tints as the device
+// statuses — 已修复 green, 已更换整机 blue, 已取消 grey.
 it('tones a repair result by how it ended', () => {
   render(
     <>
       <RepairResultBadge result='repaired' />
       <RepairResultBadge result='inProgress' />
       <RepairResultBadge result='unrepairable' />
+      <RepairResultBadge result='replaced' />
+      <RepairResultBadge result='cancelled' />
     </>,
   );
   expect(screen.getByText('enums.repairResult.repaired').className).toContain(
-    'bg-primary',
+    'bg-success',
+  );
+  expect(screen.getByText('enums.repairResult.replaced').className).toContain(
+    'bg-info',
+  );
+  expect(screen.getByText('enums.repairResult.cancelled').className).toContain(
+    'bg-muted',
   );
   expect(screen.getByText('enums.repairResult.inProgress').className).toContain(
     'bg-warning',

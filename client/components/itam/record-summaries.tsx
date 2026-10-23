@@ -11,8 +11,8 @@ import {
   AuditStatusBadge,
   DisposalStatusBadge,
   PurchaseOrderStatusBadge,
+  RepairResultBadge,
 } from '@/components/itam/status-badge';
-import { Badge } from '@/components/ui/badge';
 import { useItamList, type ItamRecord } from '@/lib/itam/api';
 import { useDeviceDisposals } from '@/lib/itam/device-disposals';
 import { deviceRelationLabel } from '@/lib/itam/devices';
@@ -155,20 +155,8 @@ export const RECORD_SUMMARIES: Readonly<Record<string, RecordSummary>> = {
       {
         key: 'result',
         label: t('fields.status'),
-        value: (
-          <Badge
-            variant={record.result === 'inProgress' ? 'secondary' : 'outline'}
-            className={
-              record.result === 'inProgress'
-                ? 'bg-warning text-warning-foreground'
-                : undefined
-            }
-          >
-            {t(`enums.repairResult.${text(record.result)}`, {
-              defaultValue: text(record.result),
-            })}
-          </Badge>
-        ),
+        // The same tag as the list's (2026-10-23).
+        value: <RepairResultBadge result={record.result} />,
       },
       // The cost reads above 维修备注 in the card (2026-10-23), not here.
     ],

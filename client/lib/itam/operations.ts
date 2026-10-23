@@ -483,8 +483,10 @@ export const AUDIT_STATUS_DOT: Readonly<Record<string, string>> = {
  */
 export const REPAIR_RESULT_TONE: Readonly<Record<string, string>> = {
   inProgress: 'bg-warning text-warning-foreground',
-  repaired: 'bg-primary text-primary-foreground',
-  replaced: 'bg-primary text-primary-foreground',
+  // Light tints, as the device statuses (2026-10-23): fixed reads green,
+  // a whole new unit the calm blue.
+  repaired: 'bg-success text-success-foreground',
+  replaced: 'bg-info text-info-foreground',
   unrepairable: 'bg-destructive/10 text-destructive',
   // Nothing was done: grey, as a cancelled order reads.
   cancelled: 'bg-muted text-muted-foreground',
