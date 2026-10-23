@@ -146,7 +146,9 @@ export function DocumentReading({
   return (
     <div
       className={cn(
-        'relative grid gap-2',
+        // One column no wider than the dialog, so a long file name
+        // shortens instead of widening it.
+        'relative grid grid-cols-[minmax(0,1fr)] gap-2',
         !bare && 'rounded-lg border border-border bg-muted/30 p-3',
         dragging && 'rounded-lg ring-2 ring-primary ring-offset-2',
       )}
@@ -215,9 +217,14 @@ export function DocumentReading({
           if (chosen) setFile(chosen);
         }}
       />
-      <div className='flex flex-wrap items-center justify-between gap-2'>
+      {/* One row: a long file name shortens rather than pushing the
+          button onto a line of its own (2026-10-23). */}
+      <div className='flex min-w-0 items-center gap-2'>
         {file ? (
-          <span className='inline-flex min-w-0 items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-sm'>
+          <span
+            className='inline-flex min-w-0 items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-sm'
+            title={file.name}
+          >
             <FileText className='size-4 shrink-0 text-muted-foreground' />
             <span className='min-w-0 truncate'>{file.name}</span>
             <button
@@ -247,7 +254,7 @@ export function DocumentReading({
         <Button
           type='button'
           size={bare ? 'default' : 'sm'}
-          className='bg-primary text-primary-foreground hover:bg-primary/90'
+          className='ml-auto shrink-0 bg-primary text-primary-foreground hover:bg-primary/90'
           disabled={busy || !ready}
           onClick={() => void go()}
         >
