@@ -1,0 +1,62 @@
+import type { InboxLocale } from './en-US.js';
+
+const deDE: InboxLocale = {
+  'inbox.title': 'Posteingang',
+  'inbox.description': 'Benachrichtigungen und Anfragen an Sie.',
+  // Application change (ITAM, 2026-10-16, after NocoCRM's): the views are the notifications and the work agents' suggestions waiting on the reader.
+  'inbox.views.all': 'Benachrichtigungen',
+  'inbox.views.todo': 'KI-Vorschläge',
+  'inbox.kinds.label': 'Typ',
+  'inbox.kinds.all': 'Alle Typen',
+  'inbox.kinds.decision': 'Entscheidungen',
+  'inbox.kinds.info': 'Benachrichtigungen',
+  'inbox.tabs.decision': 'Wartet auf meine Entscheidung',
+  'inbox.tabs.info': 'Benachrichtigungen',
+  'inbox.clearFilter': 'Filter zurücksetzen',
+  'inbox.noMatchDescription':
+    'Setzen Sie den Filter zurück, um alle Typen zu sehen.',
+  'inbox.readAll': 'Alle als gelesen markieren',
+  'inbox.allRead': 'Alle als gelesen markiert.',
+  'inbox.loading': 'Wird geladen',
+  'inbox.loadFailed': 'Der Posteingang kann nicht geladen werden',
+  'inbox.loadFailedDescription':
+    'Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.',
+  'inbox.retry': 'Erneut versuchen',
+  'inbox.loadMore': 'Mehr laden',
+  'inbox.emptyAll': 'Hier ist nichts',
+  'inbox.empty.todo': 'Nichts wartet auf Sie',
+  'inbox.empty.decision': 'Keine Entscheidungen warten auf Sie',
+  'inbox.empty.info': 'Keine Benachrichtigungen',
+  'inbox.emptyDescription':
+    'Benachrichtigungen und Anfragen an Sie erscheinen hier.',
+  'inbox.unread': 'Ungelesen',
+  'inbox.unreadCount': '{{count}} ungelesen',
+  'inbox.pendingDecisions': '{{count}} warten',
+  'inbox.resolved': 'Erledigt',
+  'inbox.outcomes.approved': 'Freigegeben',
+  'inbox.outcomes.rejected': 'Abgelehnt',
+  'inbox.outcomes.withdrawn': 'Zurückgezogen',
+  'inbox.count': '×{{count}}',
+  'inbox.actionsFor': 'Aktionen für {{title}}',
+  'inbox.actions.read': 'Als gelesen markieren',
+  'inbox.actions.unread': 'Als ungelesen markieren',
+  'inbox.actions.delete': 'Löschen',
+  'inbox.deleted': 'Gelöscht.',
+  'inbox.requestFailed':
+    'Die Anfrage ist fehlgeschlagen. Versuchen Sie es erneut.',
+  'inbox.forbidden': 'Sie dürfen das nicht tun.',
+  'inbox.nothingSelected': 'Wählen Sie einen Eintrag aus, um ihn anzusehen',
+  'inbox.back': 'Zurück zur Liste',
+  'inbox.open': 'Öffnen',
+  'inbox.keyMove': 'Bewegen',
+  'inbox.keyOpen': 'Öffnen',
+  'inbox.cancel': 'Abbrechen',
+  'inbox.request.approve': 'Freigeben',
+  'inbox.request.reject': 'Ablehnen',
+  'inbox.request.commentPlaceholder': 'Etwas schreiben…',
+  'inbox.request.commentFor': '{{action}}: {{title}}',
+  'inbox.request.quickSend': 'zum Senden',
+  'inbox.request.newLine': 'für eine neue Zeile',
+};
+
+export default deDE;

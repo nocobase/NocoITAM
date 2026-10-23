@@ -279,7 +279,8 @@ function ApproverRangeCard({
   const names = useReferenceNames([
     { collection: 'users', ids: range.updatedById ? [range.updatedById] : [] },
   ]);
-  const separator = i18n.language.startsWith('zh') ? '、' : ', ';
+  // The enumeration comma in Chinese and Japanese, a comma elsewhere.
+  const separator = /^(zh|ja)/.test(i18n.language) ? '、' : ', ';
   const byDefault = !range.updatedById || range.updatedById === 'system';
   return (
     <Card>

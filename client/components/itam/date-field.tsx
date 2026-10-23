@@ -1,7 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import type { ReactElement } from 'react';
-import { enUS, zhCN } from 'react-day-picker/locale';
 
+import { dayPickerLocale } from '@/lib/itam/day-picker-locale';
 import { DatePicker } from '#components/date-picker';
 
 /**
@@ -35,7 +35,7 @@ export function DateField({
       value={value ? value.slice(0, 10) : undefined}
       onChange={onChange}
       min={min}
-      locale={i18n.language.startsWith('zh') ? zhCN : enUS}
+      locale={dayPickerLocale(i18n.language)}
       placeholder={t('common.pickDate')}
       clearLabel={required ? undefined : t('common.clearDate')}
     />

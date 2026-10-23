@@ -1,9 +1,9 @@
+import { dayPickerLocale } from '@/lib/itam/day-picker-locale';
 import { isAssetTypeField } from '@/lib/itam/fields';
 import { AssetTypeBadge } from './asset-type-badge.js';
 import { useTranslation } from '@nocobase/i18n/client';
 import { X } from 'lucide-react';
 import type { PointerEvent, ReactElement } from 'react';
-import { enUS, zhCN } from 'react-day-picker/locale';
 
 import { DatePicker } from '#components/date-picker';
 
@@ -255,7 +255,7 @@ function FieldControl({
           onChange={(next) => onChange(next)}
           disabled={disabled}
           defaultOpen={autoFocus}
-          locale={i18n.language.startsWith('zh') ? zhCN : enUS}
+          locale={dayPickerLocale(i18n.language)}
           placeholder={placeholder ?? t('common.pickDate')}
           clearLabel={field.required ? undefined : t('common.clearDate')}
           onOpenChange={(open) => {

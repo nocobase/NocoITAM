@@ -57,7 +57,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
 - Every title this application registers with authorization — an
   `itam.<collection>` resource and each of its operations and data scopes,
   each database Collection, the ITAM settings item and its actions — is a
-  `{ key, ns: APP_NS }` key under `admin.authz.*` in `client/locales/admin.ts`
+  `{ key, ns: APP_NS }` key under `admin.authz.*` in `client/locales/admin/index.ts`
   (`collectionTitleOf`, `operationTitleOf` in `authz-resources.ts`), worded as
   the pages word the action (分配, 归还, 标记离职, 导出), the way the Agents
   plugin titles its own. Until 2026-10-16 the operations carried no title and

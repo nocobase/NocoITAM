@@ -664,6 +664,9 @@ export const adminWording = {
 } as const;
 
 type Wording = { readonly [key: string]: Wording | readonly [string, string] };
+/** The settings pages' copy in one language, the shape a locale file's `admin` takes. */
+export type AdminResource = Picked<typeof adminWording>;
+
 type Picked<T> = {
   -readonly [K in keyof T]: T[K] extends readonly [string, string]
     ? string

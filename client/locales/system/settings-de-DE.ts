@@ -1,0 +1,260 @@
+const settings = {
+  setup: {
+    title: 'Voraussetzungen der Funktion',
+    checking: 'Aktuelle Konfiguration wird geprüft…',
+    checkAgain: 'Erneut prüfen',
+    ready: 'Die geprüften Voraussetzungen sind erfüllt.',
+    missing: 'Prüfen Sie die folgenden Konfigurationspunkte.',
+    manageMembers: 'Mitglieder verwalten',
+    manageMembersFor: 'Mitglieder von {{role}} verwalten',
+    unavailable: 'Prüfung derzeit nicht möglich. Versuchen Sie es erneut.',
+    signIn:
+      'Ihre Sitzung ist abgelaufen. Melden Sie sich erneut an, um die Konfiguration zu prüfen.',
+    forbidden:
+      'Sie haben keinen Zugriff auf die Prüfung dieser Konfiguration. Wenden Sie sich an eine Administratorin oder einen Administrator.',
+    invalid:
+      'Diese Voraussetzung konnte nicht überprüft werden. Bitten Sie die Betreuung der Anwendung, ihre Konfiguration zu prüfen.',
+  },
+  roleFilterIncomplete:
+    'Wählen Sie sowohl einen Rollenbereich als auch eine Rolle, oder setzen Sie die Filter zurück.',
+  backToSource: 'Zurück zur vorherigen Seite',
+  roleFilter: 'Nach Rolle filtern',
+  allRoles: 'Alle Rollen',
+
+  permissionManagement: 'Berechtigungsverwaltung',
+  defaultAccess: {
+    noResourcesShort: 'Keine konfigurierbaren Objekte verfügbar',
+    scopeInvalid:
+      'Wählen Sie einen gültigen Datenbereich oder vervollständigen Sie seine Filterbedingungen.',
+
+    deleteChanged:
+      'Diese Regel wurde geändert oder entfernt. Die Liste wurde aktualisiert; prüfen Sie sie vor dem Löschen.',
+    filterDescription:
+      'Wenden Sie Bedingungen auf diesen Regelentwurf an und speichern Sie dann die Regel, damit sie wirksam werden.',
+    fieldLabels: { name: 'Name', id: 'ID' },
+    delete: 'Löschen',
+    title: 'Standard-Datenbereiche',
+    description:
+      'Ergänzt den Datenzugriff für Benutzer mit Berechtigung für den Vorgang, kombiniert mit den Bereichen aus Rollen und vorbehaltlich der Einschränkungsregeln.',
+    manage: 'Standard-Datenbereiche verwalten',
+    new: 'Neuer Standardbereich',
+    edit: 'Details des Standardbereichs',
+    resource: 'Geschäftsobjekt',
+    chooseResource: 'Geschäftsobjekt wählen',
+    action: 'Vorgang',
+    scope: 'Datenbereich',
+    scopes: 'Vorgänge und Datenbereiche',
+    none: 'Kein Standardbereich',
+    all: 'Alle Datensätze',
+    custom: 'Eigener Filter',
+    records: 'Ausgewählte Datensätze ({{count}})',
+    retained: 'Bestehende Konfiguration beibehalten',
+    search: 'Geschäftsobjekte oder Schlüssel suchen',
+    empty: 'Keine Standard-Datenbereiche',
+    emptyHint:
+      'Erstellen Sie eine Regel, um den Grundzugriff für ein Geschäftsobjekt zu konfigurieren.',
+    readOnlyEmpty:
+      'Bitten Sie eine Administratorin oder einen Administrator, den grundlegenden Datenzugriff zu konfigurieren.',
+    noResources:
+      'Jedes verfügbare Geschäftsobjekt hat bereits eine Standardregel, oder es sind keine konfigurierbaren Objekte registriert.',
+    unsupported:
+      'Diese Regel enthält Konfiguration, die im aktuellen Plugin-Katalog fehlt. Sie bleibt erhalten und wird schreibgeschützt angezeigt.',
+    changed:
+      'Diese Regel wurde während Ihrer Bearbeitung geändert oder entfernt. Laden Sie sie vor dem Speichern neu. Ihr Entwurf wurde nicht gespeichert.',
+    duplicate:
+      'Dieser Schlüssel oder dieses Geschäftsobjekt hat bereits eine Standardregel. Verwenden Sie einen anderen Schlüssel oder bearbeiten Sie die bestehende Regel.',
+    invalid:
+      'Die Konfiguration wird nicht akzeptiert. Prüfen Sie Geschäftsobjekt, Vorgang und Datenbereich.',
+    keyRequired:
+      'Geben Sie einen Schlüssel ein, der nicht options, subjects oder records lautet.',
+    resourceRequired: 'Wählen Sie ein Geschäftsobjekt.',
+    reload: 'Regel neu laden',
+    saved: 'Standardbereich „{{name}}“ gespeichert',
+    deleted: 'Standardbereich „{{name}}“ gelöscht',
+    deleteTitle: 'Standardbereich „{{name}}“ löschen?',
+    deleteHint:
+      'Damit entfällt der Grundzugriff aus dieser Regel. Bestehende Rollenberechtigungen und andere Regeln bleiben erhalten. Dies kann nicht rückgängig gemacht werden.',
+    back: 'Zurück zu den Standardbereichen',
+    open: 'Ansehen / bearbeiten',
+  },
+  scopeHintFor: 'Zum Datenbereich von {{name}}',
+  scopeExplanation:
+    'Jeder Bereich gilt für die zugehörigen Daten. Der Vorgang muss außerdem seine Berechtigungsprüfungen bestehen.',
+  noAdditionalScopeHint:
+    'Diese Aktion gewährt hier keinen zusätzlichen Zugriff auf Datensätze. Standardzugriff, Regeln zum Teilen und Einschränkungsregeln bestimmen weiterhin den tatsächlichen Zugriff.',
+  systemToolsHint:
+    'Systemkonfiguration und Werkzeuge verwalten. Prüfen Sie vor dem Gewähren, welche Funktionen jede Aktion umfasst.',
+  userAccountsHint:
+    'Benutzerdaten, Kontosicherheit und Rollenzuweisungen verwalten. Prüfen Sie jede Berechtigung einzeln.',
+  businessOperationsHint:
+    'Wählen Sie die Vorgänge, die diese Rolle ausführen darf, und die Daten, die jeder Vorgang nutzen darf.',
+  pageAccessHint:
+    'Legt fest, welche Seiten diese Rolle öffnen darf. Daten und Aktionen auf jeder Seite erfordern eigene Berechtigungen.',
+  roleAssignment: 'Rollenzuweisung',
+  accountSecurity: 'Kontosicherheit',
+  userInformation: 'Benutzerdaten',
+  unnamedPage: 'Unbenannte Seite ({{path}})',
+  revokeRoles: 'Rollen entziehen',
+  keyConflict: 'Dieser Rollenschlüssel wird bereits verwendet.',
+  userPermissions: 'Benutzer und Konten',
+  readUsers: 'Benutzer ansehen',
+  createUsers: 'Benutzer anlegen',
+  updateUsers: 'Benutzer bearbeiten',
+  inviteUsers: 'Benutzer einladen',
+  deleteUsers: 'Benutzer löschen',
+  resetUserPassword: 'Passwort zurücksetzen',
+  assignRole: 'Rollen zuweisen',
+
+  assignedRoles: 'Zugewiesene Rollen',
+  actionSaved: 'Zugriff für „{{name}}“ aktualisiert',
+  userActionSaved: {
+    disable: 'Benutzer „{{name}}“ deaktiviert',
+    enable: 'Benutzer „{{name}}“ aktiviert',
+    revokeSessions: 'Aktive Sitzungen von „{{name}}“ beendet',
+  },
+
+  identityConflict:
+    'Diese E-Mail-Adresse oder dieser Benutzername wird bereits verwendet.',
+  signInAgain: 'Erneut anmelden',
+  passwordPolicy: 'Das Passwort erfüllt die aktuelle Passwortrichtlinie nicht.',
+
+  reload: 'Rolle neu laden',
+  title: 'Systemeinstellungen',
+  users: 'Benutzer',
+  roles: 'Rollen und Berechtigungen',
+  usersDescription: 'Konten, Zugriff und aktive Sitzungen verwalten.',
+  rolesDescription:
+    'Festlegen, worauf jede Rolle zugreifen und was sie tun darf.',
+  userSearch: 'Namen, Benutzernamen oder E-Mail-Adressen suchen',
+  roleSearch: 'Rollennamen suchen',
+  newUser: 'Neuer Benutzer',
+  editUserFor: '{{name}} bearbeiten',
+  editUser: 'Benutzer bearbeiten',
+  newRole: 'Neue Rolle',
+  editRole: 'Rolle bearbeiten',
+  name: 'Name',
+  username: 'Benutzername',
+  email: 'E-Mail-Adresse',
+  password: 'Anfangspasswort',
+  roleType: 'Rollentyp',
+  roleName: 'Rollenname',
+  key: 'Schlüssel',
+  status: 'Status',
+  actions: 'Aktionen',
+  actionsFor: 'Aktionen für {{name}}',
+  all: 'Alle Status',
+  enabled: 'Aktiviert',
+  disabled: 'Deaktiviert',
+  clear: 'Filter zurücksetzen',
+  noResults: 'Keine passenden Ergebnisse',
+  clearHint:
+    'Versuchen Sie eine andere Suche oder setzen Sie die Filter zurück.',
+  noUsers: 'Noch keine Benutzer',
+  usersReadOnlyEmpty:
+    'Bitten Sie eine Administratorin oder einen Administrator, Benutzer hinzuzufügen oder Ihnen die Berechtigungen zum Anlegen von Benutzern und Zuweisen von Rollen zu geben.',
+  rolesReadOnlyEmpty:
+    'Bitten Sie eine Administratorin oder einen Administrator, eine Rolle anzulegen oder Ihnen die Berechtigung zum Anlegen von Rollen zu geben.',
+  noRoles: 'Noch keine Rollen',
+  create: 'Erstellen',
+  edit: 'Bearbeiten',
+  selectRoles: 'Rollen auswählen',
+  searchRoles: 'Rollen suchen',
+  noRolesFound: 'Keine Rollen gefunden.',
+  save: 'Speichern',
+  cancel: 'Abbrechen',
+  saving: 'Wird gespeichert…',
+  confirm: 'Bestätigen',
+  enable: 'Aktivieren',
+  disable: 'Deaktivieren',
+  revokeSessions: 'Sitzungen beenden',
+  disableTitle: 'Benutzer „{{name}}“ deaktivieren?',
+  disableHint:
+    'Dieser Benutzer kann sich nicht mehr anmelden, und bestehende Sitzungen werden beendet.',
+  enableTitle: 'Benutzer „{{name}}“ aktivieren?',
+  enableHint: 'Dieser Benutzer kann sich wieder anmelden.',
+  revokeTitle: 'Sitzungen von „{{name}}“ beenden?',
+  revokeHint: 'Dieser Benutzer muss sich erneut anmelden.',
+  revokeRoleTitle: 'Rollen von „{{name}}“ entziehen?',
+  revokeRoleHint:
+    'Der Zugriff, den die aufgeführten Rollen gewähren, wird entfernt.',
+  created: 'Benutzer „{{name}}“ angelegt',
+  saved: '„{{name}}“ gespeichert',
+  rolesSaved: 'Rollen von „{{name}}“ aktualisiert',
+  required: 'Geben Sie einen Wert für dieses Feld ein',
+  invalidEmail: 'Geben Sie eine gültige E-Mail-Adresse ein',
+  protected: 'Geschützt',
+  custom: 'Benutzerdefiniert',
+  protectedHint:
+    'Diese Rolle ist geschützt. Nur ausdrücklich erlaubte Änderungen sind möglich.',
+  unsaved: 'Ungespeicherte Änderungen',
+  discardTitle: 'Änderungen verwerfen?',
+  discardHint: 'Ihre ungespeicherten Änderungen gehen verloren.',
+  failed:
+    'Die Anfrage konnte nicht abgeschlossen werden. Versuchen Sie es erneut.',
+  invalidRequest:
+    'Einige Werte sind ungültig. Prüfen Sie Ihre Eingaben oder Filter und versuchen Sie es erneut.',
+  retry: 'Erneut versuchen',
+  loading: 'Wird geladen',
+  denied:
+    'Sie haben keinen Zugriff. Wenden Sie sich an eine Administratorin oder einen Administrator.',
+  missing: 'Dieser Datensatz existiert nicht oder wurde gelöscht.',
+  conflict:
+    'Die Anfrage steht im Widerspruch zu den aktuellen Daten. Prüfen Sie den neuesten Stand des Datensatzes, bevor Sie es erneut versuchen.',
+  sessionEnded: 'Ihre Sitzung ist beendet. Melden Sie sich erneut an.',
+  previous: 'Zurück',
+  next: 'Weiter',
+  total_one: '{{count}} Benutzer',
+  total_other: '{{count}} Benutzer',
+  access: 'Zugriff',
+  permissionSearch: 'Kategorien, Gruppen oder Berechtigungen suchen',
+  enabledOnly: 'Nur aktivierte',
+  noPermissions: 'Keine Berechtigungen zu konfigurieren',
+  permissionCategories: 'Berechtigungskategorien',
+  selectAllPermissions: 'Alle',
+  dataRanges: 'Datenbereiche ({{count}})',
+  selectVisiblePermissions: 'Sichtbare Berechtigungen in {{name}} auswählen',
+  permissionSummary: '{{enabled}} von {{total}} aktiviert',
+  preservedRecordScope: 'Bestehende Konfiguration beibehalten',
+  noRecordScope: 'Kein zusätzlicher Zugriff auf Datensätze',
+  permissionFilter: {
+    limit: 'Bis zu 20 Bedingungen',
+    configure: 'Bedingungen',
+    title: 'Datensatzfilter konfigurieren',
+    description:
+      'Wenden Sie Bedingungen auf den Rollenentwurf an und speichern Sie dann die Rolle, damit sie wirksam werden.',
+    all: 'Alle Bedingungen erfüllen',
+    any: 'Eine Bedingung erfüllen',
+    field: 'Feld',
+    operator: 'Operator',
+    valueType: 'Werttyp',
+    value: 'Wert',
+    text: 'Text',
+    number: 'Zahl',
+    boolean: 'Boolesch',
+    true: 'Ja',
+    false: 'Nein',
+    add: 'Bedingung hinzufügen',
+    remove: 'Entfernen',
+    cancel: 'Abbrechen',
+    apply: 'Übernehmen',
+    invalid:
+      'Wählen Sie gültige Felder und füllen Sie alle Werte aus. Geben Sie mindestens eine Bedingung an.',
+    advanced:
+      'Dieser bestehende Filter nutzt erweiterte Bedingungen. Er bleibt erhalten, sofern Sie ihn nicht ausdrücklich neu konfigurieren.',
+    reconfigure: 'Neu konfigurieren',
+    operators: {
+      $eq: 'Ist gleich',
+      $ne: 'Ist ungleich',
+      $includes: 'Enthält',
+      $gt: 'Größer als',
+      $gte: 'Mindestens',
+      $lt: 'Kleiner als',
+      $lte: 'Höchstens',
+      $empty: 'Ist leer',
+      $notEmpty: 'Ist nicht leer',
+    },
+  },
+  recordScope: 'Datensatzbereich',
+  levelFor: 'Bereich für {{name}}',
+};
+export default settings;
