@@ -361,40 +361,6 @@ describe('onboarding', () => {
       .where('id', '=', returning.id)
       .execute();
     expect(await macbook(last.id)).toMatchObject({ planned: [], shortfall: 1 });
-
-    // 入职供需: everybody still being equipped, earliest first, and what is
-    // short across them, the earliest last order day first.
-    const supply = await data<{
-      joiners: { id: string }[];
-      shortages: {
-        key: string;
-        quantity: number;
-        orderBy: string | null;
-        people: { id: string }[];
-      }[];
-    }>(await app.request('/api/itam/workbench/onboarding-supply', manager));
-    expect(supply.joiners.map((joiner) => joiner.id)).toEqual([
-      first.id,
-      second.id,
-      third.id,
-      last.id,
-    ]);
-    expect(
-      supply.shortages.find((entry) => entry.key === `model:${MAC}`),
-    ).toMatchObject({
-      quantity: 2,
-      orderBy: addDays(today(), 9 - 10),
-      people: [{ id: second.id }, { id: last.id }],
-    });
-    // Not for a reader the 入职准备 column is not for.
-    expect(
-      (
-        await app.request('/api/itam/workbench/onboarding-supply', {
-          user: 'eve',
-          role: 'employee',
-        })
-      ).status,
-    ).toBe(403);
   });
 
   it('lists a joiner as 入职准备 for the team until their kit is in hand', async () => {

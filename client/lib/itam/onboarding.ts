@@ -2,7 +2,6 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
 import { masterDataPath, useApi } from './api.js';
 import { addDays } from './format.js';
-import { WORKBENCH_PATH } from './workbench.js';
 
 /** Mirrors `OnboardingPlan` in `server/providers/itam/onboarding.ts`. */
 export interface PlanThing {
@@ -99,7 +98,6 @@ export interface OnboardingPlan {
   readonly advice: PlanAdvice | null;
 }
 
-/** 入职供需: every joiner still being equipped, and what is short. */
 /** Where a kit item's own record is, by what it names. */
 export const TARGET_ROUTES: Readonly<
   Record<OnboardingPlanLine['target']['type'], string>
@@ -108,42 +106,6 @@ export const TARGET_ROUTES: Readonly<
   category: 'categories',
   softwareProduct: 'software-products',
 };
-
-export interface OnboardingSupply {
-  readonly joiners: readonly {
-    readonly id: string;
-    readonly name: string;
-    readonly position: string | null;
-    readonly department: string | null;
-    readonly hireDate: string | null;
-    readonly ownerId: string | null;
-    readonly plan: OnboardingPlan;
-  }[];
-  readonly shortages: readonly {
-    readonly key: string;
-    readonly target: OnboardingPlanLine['target'];
-    readonly kind: OnboardingPlanLine['kind'];
-    readonly itemType: string | null;
-    readonly quantity: number;
-    readonly orderBy: string | null;
-    readonly people: readonly { readonly id: string; readonly name: string }[];
-  }[];
-}
-
-/** Mirrors `GET /itam/workbench/onboarding-supply`. */
-export function useOnboardingSupply(): UseQueryResult<OnboardingSupply> {
-  const api = useApi();
-  return useQuery({
-    // Under the workbench's key, so the change signal refreshes it.
-    queryKey: ['itam', WORKBENCH_PATH, 'onboarding-supply'],
-    queryFn: async () =>
-      (
-        await api.request<{ data: OnboardingSupply }>({
-          path: `${WORKBENCH_PATH}/onboarding-supply`,
-        })
-      ).data,
-  });
-}
 
 /** A person's 入职配备 plan: their kit, what they have, what stock would add. */
 export function useOnboardingPlan(

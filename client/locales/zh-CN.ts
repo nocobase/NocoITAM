@@ -1007,15 +1007,6 @@ const zhCN: AppResource = {
     },
     orderBy: '最晚 {{date}} 下单',
     orderNow: '应尽快下单',
-    supply: {
-      title: '入职供需',
-      description:
-        '所有还没配齐的新人按入职日期统一分配：先用库存，再算已下单的采购，最后是离职人员归还的设备和席位。只是计划，预留了才算定下。',
-      link: '入职供需',
-      empty: '没有待配齐的新人。',
-      onOrder: '在途 {{count}}',
-      returning: '归还 {{count}}',
-    },
     progress: '已配备 {{done}} / {{total}}',
     shortfallTotal_one: '缺 {{count}} 项需采购',
     shortfallTotal_other: '缺 {{count}} 项需采购',
@@ -2766,7 +2757,7 @@ const zhCN: AppResource = {
         '未分配席位占总席位超过这个比例，这份授权算闲置（0.3 即三成）',
       defaultStockMinimum: '新建库存记录时默认填的最低水位',
       onboardingPrepDays:
-        '设备归还或到货后，清数据、装系统、贴标签要的天数；入职供需按它判断来不来得及',
+        '设备归还或到货后，清数据、装系统、贴标签要的天数；入职配备按它判断来不来得及',
       purchaseLeadDays: '从下单到到货的天数；入职缺口的最晚下单日按它倒推',
     },
     pageTitle: '系统设置',

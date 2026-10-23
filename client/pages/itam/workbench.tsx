@@ -33,6 +33,7 @@ import { BoardCards, type BoardCardSpec } from '@/components/itam/board-cards';
 import { DifferenceTag } from '@/components/itam/difference-tag';
 import { DocumentTypeBadge } from '@/components/itam/document-type-badge';
 import { Page, PageHeader } from '@/components/itam/page-header';
+import { DraftOrdersButton } from '@/components/itam/draft-orders-button';
 import { SegmentedControl } from '@/components/itam/segmented-control';
 import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { Badge } from '@/components/ui/badge';
@@ -379,18 +380,17 @@ function WorkColumn({
       dimmed={card.count === 0}
       layout={layout}
       action={
-        // The joiners worked out together: what each will get, and what
-        // must be bought across them (入职供需).
+        // Orders for every joiner's shortfall, in the create dialog
+        // (2026-10-23): 入职供需, the page that listed them together, went,
+        // each joiner's card and 入职配备 saying it already.
         card.key === 'people' &&
-        card.records.some((record) => record.origin === 'pendingOnboarding') ? (
-          <Link
-            to='/onboarding-supply'
-            title={t('onboarding.supply.link')}
-            className='flex min-w-0 items-center gap-0.5 text-xs text-link'
-          >
-            <span className='truncate'>{t('onboarding.supply.link')}</span>
-            <ArrowRight aria-hidden='true' className='size-3 shrink-0' />
-          </Link>
+        card.records.some(
+          (record) =>
+            record.origin === 'pendingOnboarding' && Boolean(record.shortfall),
+        ) ? (
+          <DraftOrdersButton className='text-xs'>
+            {t('onboarding.draftAll')}
+          </DraftOrdersButton>
         ) : // MDM 核对, empty column or not: the page has no menu entry,
         // and what is settled there — ignored records, the rules — is
         // not on the board.
@@ -867,7 +867,7 @@ function LeaverCard({
             )}
             {/* What a joiner still needs bought (2026-10-22), red once the
                 last day to order it has passed: said until then only on
-                入职供需 and their own card. */}
+                their 入职配备 card. */}
             {joining && record.shortfall ? (
               <span
                 className={cn(

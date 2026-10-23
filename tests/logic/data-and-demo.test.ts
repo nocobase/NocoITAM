@@ -869,29 +869,31 @@ describe('CSV import / export and demo data', () => {
       shortfall: 1,
       orderOverdue: true,
     });
-    // 入职供需 shows each way a joiner is equipped (2026-10-22): from stock,
-    // from an order on its way (the designer's Adobe seat) and short (the
-    // engineer's IntelliJ seat, no seat spare and none on order, and the
-    // designer's test iPhone).
-    const supply = await data<{
-      shortages: { target: { name: string }; people: { name: string }[] }[];
-      joiners: { name: string; plan: { lines: { onOrder: number }[] } }[];
-    }>(await get('workbench/onboarding-supply'));
-    expect(
-      supply.shortages.map((entry) => [
-        entry.target.name,
-        entry.people.map((person) => person.name),
-      ]),
-    ).toEqual([
-      ['IntelliJ IDEA Ultimate', ['Noah Harris']],
-      // The interaction designer's test phone (2026-10-22): none in stock.
-      ['iPhone 15', ['Grace Lee']],
+    // The joiners show each way a joiner is equipped (2026-10-22): from
+    // stock, from an order on its way (the designer's Adobe seat) and short
+    // (the engineer's IntelliJ seat, no seat spare and none on order, and
+    // the designer's test iPhone).
+    const planOf = async (name: string) => {
+      const person = people.find((row) => row.name === name)!;
+      return data<{
+        lines: {
+          target: { name: string };
+          shortfall: number;
+          onOrder: number;
+        }[];
+      }>(await get(`master/people/${person.id}/onboarding`));
+    };
+    const short = (plan: Awaited<ReturnType<typeof planOf>>) =>
+      plan.lines
+        .filter((line) => line.shortfall > 0)
+        .map((line) => line.target.name);
+    expect(short(await planOf('Noah Harris'))).toEqual([
+      'IntelliJ IDEA Ultimate',
     ]);
-    expect(
-      supply.joiners
-        .find((joiner) => joiner.name === 'Grace Lee')
-        ?.plan.lines.some((line) => line.onOrder > 0),
-    ).toBe(true);
+    const grace = await planOf('Grace Lee');
+    // The interaction designer's test phone (2026-10-22): none in stock.
+    expect(short(grace)).toEqual(['iPhone 15']);
+    expect(grace.lines.some((line) => line.onOrder > 0)).toBe(true);
 
     // One placed order carries every kind of line, so receiving it shows
     // every way goods arrive: the placed order with the most kinds of line.

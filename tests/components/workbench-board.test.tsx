@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { expect, it, vi } from 'vitest';
 
@@ -29,6 +30,10 @@ vi.mock('../../client/lib/itam/api.js', async () => ({
     '../../client/lib/itam/api.js',
   )),
   useItamSettings: () => ({ data: undefined }),
+  // 全部创建采购单 on 人员变动 (2026-10-23) proposes nothing here.
+  useApi: () => ({
+    request: async () => ({ data: { orders: [], skipped: [] } }),
+  }),
   useItamList: (path: string, query: { ids?: readonly string[] }) => ({
     data: state.rows[path]
       ? {
@@ -45,6 +50,10 @@ vi.mock('../../client/lib/itam/references.js', async () => ({
   )),
   useReferenceNames: () => ({}),
 }));
+vi.mock('../../client/lib/itam/permissions.js', async (original) => ({
+  ...(await original<object>()),
+  useCurrentUserId: () => 'u1',
+}));
 vi.mock('../../client/lib/itam/record-drawer.js', () => ({
   useOpenRecord: () => state.opened,
 }));
@@ -58,9 +67,11 @@ const record = (id: string, date: string, url: string) => ({
 
 const show = () =>
   render(
-    <MemoryRouter>
-      <WorkbenchPage />
-    </MemoryRouter>,
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter>
+        <WorkbenchPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 
 const column = (label: string) => screen.getByRole('region', { name: label });
@@ -442,6 +453,10 @@ it('says on a joiner’s card what is still to buy, red past its last order day'
   ];
   show();
   const people = column('workbench.work.people');
+  // And the column heading offers orders for all of it (2026-10-23).
+  expect(
+    within(people).getByRole('button', { name: 'onboarding.draftAll' }),
+  ).toBeTruthy();
   const late = within(people).getByText(
     'onboarding.shortfall · onboarding.orderNow',
   );

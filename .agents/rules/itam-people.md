@@ -103,18 +103,11 @@ departments/:id/positions/rename`): its holders and its kit move to the
   less the preparation days (devices) and `purchaseLeadDays` — both in
   提醒阈值, 3 and 7 by default. Nothing is held by a plan: it is recomputed
   on every reading and only a reservation commits. Devices in repair are not
-  counted. 入职供需 (`/onboarding-supply`, linked beside the
-  heading of the workbench's 入职准备 column, no menu entry and no page grant; `GET
-/itam/workbench/onboarding-supply`, people `read` and devices `reserve`)
-  is one row per joiner (2026-10-22): date, progress, 缺 / 在途 / 归还
-  counts (缺 red once a last order day has passed, orange before), and under
-  it only the lines not taken straight from stock — short, with the last day
-  to order and 起草采购单 for that item, or coming on an order or back from a
-  leaver. 起草采购单 above the list drafts for every shortage. A 需要采购
-  card listing the shortages across joiners stood above it for the day and
-  was removed as a repetition; listing every line repeated each joiner's
-  入职配备 card. The demo shows all three sources: stock, an Adobe seat on
-  a placed order, an IntelliJ seat and a test iPhone short. 全部执行 carries on past a refused item and
+  counted. 入职供需, a page of every joiner's plan together
+  (`/onboarding-supply`), was removed on 2026-10-23 with its endpoint: each
+  joiner's 入职配备 card, their workbench card (缺 N · 应尽快下单) and
+  需要关注's 入职缺口已过最晚下单日 said all of it; 全部创建采购单 moved to
+  the heading of the workbench's 人员变动 column. 全部执行 carries on past a refused item and
   names each refusal, and its toast counts what went through.
   `GET /itam/master/people/:id/onboarding` returns it; it writes nothing.
   The 归属 tab of an active person whose 入职日期 is ahead or within the
@@ -125,7 +118,8 @@ departments/:id/positions/rename`): its holders and its kit move to the
   The card's only AI is 挑选 / 重新挑选 in its strip. The header's 准备
   (配备计划), a chat that proposed the plan 全部执行 already runs, was
   removed on 2026-10-22.
-- 起草采购单 (beside the card's 缺 N 项需采购, and on 入职供需) opens the
+- 创建采购单 (on a short item's row of the card, and 全部创建采购单 on the
+  workbench's 人员变动 column) opens the
   purchase order's own create dialog filled in (2026-10-22;
   `DraftOrdersButton`, `POST /itam/purchase-orders/joiner-proposals`,
   `proposeJoinerOrders` in `onboarding-orders.ts`, which creates nothing):

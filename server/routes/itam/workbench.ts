@@ -148,21 +148,6 @@ export const workbenchRoutes: AppApiRouteContribution<Application> =
       }
     });
 
-    // 入职供需: every joiner's plan, worked out together, and what is short.
-    routes.get('/onboarding-supply', async (context) => {
-      try {
-        const supply = await workbench.onboardingSupply(decider(context));
-        if (!supply)
-          return context.json(
-            { code: 'FORBIDDEN', message: 'Not allowed' },
-            403,
-          );
-        return context.json({ data: supply });
-      } catch (error) {
-        return errorResponse(context, error);
-      }
-    });
-
     routes.get('/reminders', async (context) => {
       try {
         await decideCollection(context, 'reminders', 'read');

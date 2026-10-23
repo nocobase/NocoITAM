@@ -494,7 +494,7 @@ export function createMaintenanceService(dependencies: {
     }
 
     // 入职缺口已过最晚下单日 (2026-10-22): an item a joiner is short of whose
-    // last day to order has passed — until then said only on 入职供需 and
+    // last day to order has passed — until then said only on
     // the joiner's own card, which nobody may be looking at. One row per
     // item and joiner, named as both, dated by that last day.
     const plans = await dependencies.onboarding?.()?.plans();

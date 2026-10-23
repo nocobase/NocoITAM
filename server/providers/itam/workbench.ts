@@ -16,7 +16,6 @@ import {
   isJoiner,
   isPrepared,
   type OnboardingPlan,
-  type OnboardingPlanLine,
   type OnboardingService,
 } from './onboarding.js';
 
@@ -158,36 +157,6 @@ export interface WorkbenchService {
     decide: Decider,
     options?: { readonly scope?: 'all' | 'mine' },
   ): Promise<readonly MyWorkItem[]>;
-  /**
-   * 入职供需 (2026-10-06): every joiner still being equipped with their
-   * plan, worked out together, and what must be bought across all of them
-   * with the last day to order each. Null for a reader the 入职准备 column
-   * is not for (people `read` and devices `reserve`).
-   */
-  onboardingSupply(decide: Decider): Promise<OnboardingSupply | null>;
-}
-
-/** 入职供需: the joiners, earliest first, and what is short across them. */
-export interface OnboardingSupply {
-  readonly joiners: readonly {
-    readonly id: string;
-    readonly name: string;
-    readonly position: string | null;
-    readonly department: string | null;
-    readonly hireDate: string | null;
-    readonly ownerId: string | null;
-    readonly plan: OnboardingPlan;
-  }[];
-  /** One row per item short, the earliest last order day first. */
-  readonly shortages: readonly {
-    readonly key: string;
-    readonly target: OnboardingPlanLine['target'];
-    readonly kind: OnboardingPlanLine['kind'];
-    readonly itemType: string | null;
-    readonly quantity: number;
-    readonly orderBy: string | null;
-    readonly people: readonly { readonly id: string; readonly name: string }[];
-  }[];
 }
 
 /**
@@ -1103,90 +1072,6 @@ export function createWorkbenchService(dependencies: {
         });
       }
       return items;
-    },
-
-    async onboardingSupply(decide) {
-      if (!onboarding) return null;
-      const people = await decide('people', 'read');
-      if (!people || !(await decide('devices', 'reserve'))) return null;
-      const plans = await onboarding.plans();
-      const ids = [...plans.keys()];
-      const rows =
-        ids.length === 0
-          ? []
-          : await database
-              .query()
-              .selectFrom('people')
-              .select([
-                'id',
-                'name',
-                'position',
-                'departmentId',
-                'hireDate',
-                'onboardingOwnerId',
-              ])
-              .where((eb) => compileAuthzScope(eb, people.scope))
-              .where('id', 'in', ids)
-              .execute<Row>();
-      const byId = new Map(rows.map((row) => [String(row.id), row]));
-      const departments = await referenceNames(
-        database,
-        rows.map((row) => ({ departmentId: row.departmentId })),
-      );
-      // In the order they were worked out: the earliest first day first.
-      const joiners = ids.flatMap((id) => {
-        const row = byId.get(id);
-        const plan = plans.get(id);
-        if (!row || !plan || isPrepared(plan)) return [];
-        return [
-          {
-            id,
-            name: String(row.name),
-            position: asText(row.position) ?? null,
-            department:
-              asText(nameOf(departments, row, 'departmentId')) ?? null,
-            hireDate: asText(row.hireDate) ?? null,
-            ownerId: asText(row.onboardingOwnerId) ?? null,
-            plan,
-          },
-        ];
-      });
-      const short = new Map<
-        string,
-        {
-          key: string;
-          target: OnboardingPlanLine['target'];
-          kind: OnboardingPlanLine['kind'];
-          itemType: string | null;
-          quantity: number;
-          orderBy: string | null;
-          people: { id: string; name: string }[];
-        }
-      >();
-      for (const joiner of joiners)
-        for (const line of joiner.plan.lines) {
-          if (line.shortfall <= 0) continue;
-          const entry = short.get(line.key) ?? {
-            key: line.key,
-            target: line.target,
-            kind: line.kind,
-            itemType: line.itemType,
-            quantity: 0,
-            orderBy: null,
-            people: [],
-          };
-          entry.quantity += line.shortfall;
-          if (line.orderBy && (!entry.orderBy || line.orderBy < entry.orderBy))
-            entry.orderBy = line.orderBy;
-          entry.people.push({ id: joiner.id, name: joiner.name });
-          short.set(line.key, entry);
-        }
-      return {
-        joiners,
-        shortages: [...short.values()].sort((a, b) =>
-          (a.orderBy ?? '9999').localeCompare(b.orderBy ?? '9999'),
-        ),
-      };
     },
   };
 }

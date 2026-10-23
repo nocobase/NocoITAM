@@ -4316,7 +4316,7 @@ export function createDemoService(dependencies: {
           softwareProductId: String(intellij.id),
           // None to spare beyond the engineers who have one (2026-10-22;
           // two until then): the R&D joiner's seat is still to buy, the
-          // shortage 入职供需 shows.
+          // shortage 入职配备 shows.
           quantity: 3 + crewCount(crewWants.intellij),
           unitPrice: 700,
           orderedDaysAgo: 200,
@@ -4476,7 +4476,7 @@ export function createDemoService(dependencies: {
         // Adobe Creative Cloud: a seat that went unused was taken back and
         // given to the presales consultant. None is free (2026-10-22): the
         // designer joining next week has theirs from the seats on order, which
-        // 入职供需 shows as on its way.
+        // 入职配备 shows as on its way.
         const adobe = await subscription(
           {
             name: texts.adobeLicense,
@@ -6561,7 +6561,7 @@ export function createDemoService(dependencies: {
         // The second joiner is an interaction designer (2026-10-22), a
         // position of the demo's own: a designer's kit and a test iPhone,
         // of which none is in stock and none on order — the device
-        // 入职供需 says to buy, beside the seat on its way.
+        // 入职配备 says to buy, beside the seat on its way.
         const designer = (JOINER_NAMES[locale] ??
           JOINER_NAMES['en-US'] ??
           [])[1];
@@ -7175,7 +7175,7 @@ export function createDemoService(dependencies: {
               tracked.push({ collection: 'devices', recordId: String(row.id) });
       }
       // The orders raised for the demo's joiners (2026-10-22): 起草采购单 on
-      // their card or on 入职供需 files a 新员工配备 order the demo did not
+      // their card or on 入职配备 files a 新员工配备 order the demo did not
       // make, which outlived the clear and, matching the next import's
       // joiner by department and joining day (`ownOrders`), covered their
       // shortfall before anybody asked. Matched by department and joining

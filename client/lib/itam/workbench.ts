@@ -93,7 +93,8 @@ export const REMINDER_ROUTES: Readonly<Record<ReminderKind, string>> = {
   lowAccessories: '/accessories?view=lowStock',
   lowConsumables: '/consumables?view=lowStock',
   lowComponents: '/components?view=lowStock',
-  onboardingOrderOverdue: '/onboarding-supply',
+  // The joiners: 入职供需 went (2026-10-23).
+  onboardingOrderOverdue: '/people?employmentStatus=pending',
 };
 
 /** A record a 需要关注 rule found, as its card names it. */

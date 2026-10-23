@@ -610,7 +610,7 @@ function PlanLine({
  * What a line expects rather than has in stock (2026-10-06): an open order
  * or somebody leaving, each with the day it can be handed over — nothing to
  * press, since it is not here yet — and what is still short, with the last
- * day to order it. Shared by the card and 入职供需.
+ * day to order it.
  */
 export function LineOutlook({
   line,
