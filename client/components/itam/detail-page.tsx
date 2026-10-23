@@ -48,6 +48,8 @@ export interface DetailPageProps {
   readonly titleEdit?: TitleEdit;
   readonly subtitle?: ReactNode;
   readonly breadcrumb?: ReactNode;
+  /** Where 返回 goes when the page was opened directly: its list. */
+  readonly backTo?: string;
   readonly actions?: ReactNode;
   /** Shown above the header, e.g. an inspection notice. */
   readonly notice?: ReactNode;
@@ -88,6 +90,7 @@ export function DetailPage({
   titleEdit,
   subtitle,
   breadcrumb,
+  backTo,
   actions,
   notice,
   decisions,
@@ -141,7 +144,7 @@ export function DetailPage({
               {/* Beside the title, apart from the kind above it (2026-10-16):
                   "← 采购" read as a way to the procurement list, where this
                   goes to the page before. Not inside another page. */}
-              <BackArrow hidden={embedded} />
+              <BackArrow hidden={embedded} fallback={backTo} />
               {titleEdit ? (
                 <EditableTitle
                   value={titleEdit.value}

@@ -344,6 +344,7 @@ export function DomainDetailPage({
     <>
       <DetailPage
         layout={domain.detailLayout ?? 'narrow'}
+        backTo={`/${domain.route}`}
         breadcrumb={
           hideBreadcrumb ? undefined : BreadcrumbTrail ? (
             <span className='inline-flex flex-wrap items-center gap-1'>

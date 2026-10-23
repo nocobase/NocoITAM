@@ -52,3 +52,17 @@ it('shows nothing on a page opened directly, or when hidden', () => {
     screen.queryByRole('button', { name: 'common.backPrevious' }),
   ).not.toBeInTheDocument();
 });
+
+// A detail page opened directly goes back to its list (2026-10-23).
+it('goes to its fallback from a page opened directly', () => {
+  render(
+    <MemoryRouter initialEntries={['/repairs/1']}>
+      <Routes>
+        <Route path='/repairs' element={<p>the list</p>} />
+        <Route path='/repairs/1' element={<BackArrow fallback='/repairs' />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'common.backPrevious' }));
+  expect(screen.getByText('the list')).toBeInTheDocument();
+});
