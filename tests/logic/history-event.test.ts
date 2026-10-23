@@ -28,9 +28,11 @@ it('translates counted events in both languages without rewriting comments', asy
       runtime.getFixedT('test'),
       'deviceStatus',
     );
-  expect(describe('seatsAdded', 'Seats added: 1', { quantity: 1 })).toBe(
-    '席位增加 1',
-  );
+  // The type label already says 席位增加: the summary is the count alone.
+  expect(describe('seatsAdded', 'Seats added: 1', { quantity: 1 })).toBe('1');
+  expect(
+    describe('issue', 'Issued 1', { quantity: 1, targetLabel: '刘洋' }),
+  ).toBe('1 给 刘洋');
   expect(
     describe('devicesChanged', '2 device(s) listed', {
       deviceIds: ['a', 'b'],
@@ -55,9 +57,7 @@ it('translates counted events in both languages without rewriting comments', asy
   ).toBe('席位不限');
   expect(describe('note', 'User typed this')).toBe('User typed this');
   await runtime.changeLanguage('en-US');
-  expect(describe('seatsAdded', 'Seats added: 2', { quantity: 2 })).toBe(
-    'Seats added: 2',
-  );
+  expect(describe('seatsAdded', 'Seats added: 2', { quantity: 2 })).toBe('2');
   expect(
     describe('devicesChanged', '1 device(s) listed', { deviceIds: ['a'] }),
   ).toBe('1 device listed');

@@ -2780,6 +2780,25 @@ export function createDemoService(dependencies: {
             carrier: 'China Mobile',
           },
         });
+        // A spare phone out of service (2026-10-22): its system no longer
+        // updated, kept rather than disposed of, so 已停用 has one.
+        const oldPhone = await device({
+          modelId: iphone.id,
+          serialNo: 'F17VQ2PHN04',
+          name: 'SH-PH-004',
+          locationId: warehouse.id,
+          vendorId: reseller.id,
+          purchaseDate: daysFromNow(-1700),
+          purchasePrice: 5299,
+          warrantyEndDate: daysFromNow(-1335),
+        });
+        await on(-60);
+        await devices.retire(
+          String(oldPhone.id),
+          context,
+          all('devices', 'retire'),
+        );
+        await off();
 
         // The crew's own equipment, bought ahead of their first day in the
         // batch that covered it (two-monthly), or — for those who started
@@ -2917,131 +2936,138 @@ export function createDemoService(dependencies: {
         // one day — is a completed order with a line per model and a receipt
         // per device, and a device names its order as one received here does.
         // Numbered before the demo's own orders, as the older ones.
-        if (dependencies.numbering) {
-          const tracked = (
-            await database
-              .query()
-              .selectFrom('demoRecords')
-              .select('recordId')
-              .where('collection', '=', 'devices')
-              .execute<{ recordId: string }>()
-          ).map((row) => row.recordId);
-          const unordered = tracked.length
-            ? await database
-                .query()
-                .selectFrom('devices')
-                .select([
-                  'id',
-                  'modelId',
-                  'vendorId',
-                  'departmentId',
-                  'purchaseDate',
-                  'purchasePrice',
-                  'currency',
-                ])
-                .where('id', 'in', tracked)
-                .where('purchaseOrderId', 'is', null)
-                .where('vendorId', 'is not', null)
-                .where('purchaseDate', 'is not', null)
-                .execute<Row>()
-            : [];
-          const batches = new Map<string, Row[]>();
-          for (const row of unordered) {
-            const key = `${String(row.vendorId)}|${String(row.purchaseDate)}`;
-            batches.set(key, [...(batches.get(key) ?? []), row]);
-          }
-          // Oldest first, so the numbers run with the dates.
-          const ordered = [...batches.values()].sort((a, b) =>
-            String(a[0]?.purchaseDate).localeCompare(
-              String(b[0]?.purchaseDate),
-            ),
-          );
-          for (const batch of ordered) {
-            const first = batch[0];
-            const day = String(first.purchaseDate);
-            const at = new Date(`${day}T09:00:00`);
-            const orderId = crypto.randomUUID();
-            await database
-              .query()
-              .insertInto('purchaseOrders')
-              .values({
-                id: orderId,
-                orderNo: await dependencies.numbering.next('purchaseOrder'),
-                reason: 'other',
-                description: texts.historicalOrder,
-                departmentId: asText(first.departmentId) ?? null,
-                vendorId: String(first.vendorId),
-                estimatedTotal: batch.reduce(
-                  (sum, row) => sum + Number(row.purchasePrice ?? 0),
-                  0,
-                ),
-                currency: asText(first.currency) ?? null,
-                status: 'completed',
-                orderedAt: day,
-                expectedAt: day,
-                receivedAt: day,
-                ownerId: writerId,
-                createdById: writerId,
-                createdAt: at,
-                updatedAt: at,
-              })
-              .execute();
-            await track('purchaseOrders', { id: orderId });
-            const byModel = new Map<string, Row[]>();
-            for (const row of batch)
-              byModel.set(String(row.modelId), [
-                ...(byModel.get(String(row.modelId)) ?? []),
-                row,
-              ]);
-            let sort = 0;
-            for (const [modelId, rows] of byModel) {
-              const lineId = crypto.randomUUID();
+        // Kept to call again for a device entered later (2026-10-22: the
+        // laptop sold off was, and showed no order).
+        const enterHistoricalOrders = async (only?: readonly string[]) => {
+          if (dependencies.numbering) {
+            const tracked = only
+              ? [...only]
+              : (
+                  await database
+                    .query()
+                    .selectFrom('demoRecords')
+                    .select('recordId')
+                    .where('collection', '=', 'devices')
+                    .execute<{ recordId: string }>()
+                ).map((row) => row.recordId);
+            const unordered = tracked.length
+              ? await database
+                  .query()
+                  .selectFrom('devices')
+                  .select([
+                    'id',
+                    'modelId',
+                    'vendorId',
+                    'departmentId',
+                    'purchaseDate',
+                    'purchasePrice',
+                    'currency',
+                  ])
+                  .where('id', 'in', tracked)
+                  .where('purchaseOrderId', 'is', null)
+                  .where('vendorId', 'is not', null)
+                  .where('purchaseDate', 'is not', null)
+                  .execute<Row>()
+              : [];
+            const batches = new Map<string, Row[]>();
+            for (const row of unordered) {
+              const key = `${String(row.vendorId)}|${String(row.purchaseDate)}`;
+              batches.set(key, [...(batches.get(key) ?? []), row]);
+            }
+            // Oldest first, so the numbers run with the dates.
+            const ordered = [...batches.values()].sort((a, b) =>
+              String(a[0]?.purchaseDate).localeCompare(
+                String(b[0]?.purchaseDate),
+              ),
+            );
+            for (const batch of ordered) {
+              const first = batch[0];
+              const day = String(first.purchaseDate);
+              const at = new Date(`${day}T09:00:00`);
+              const orderId = crypto.randomUUID();
               await database
                 .query()
-                .insertInto('purchaseOrderLines')
+                .insertInto('purchaseOrders')
                 .values({
-                  id: lineId,
-                  purchaseOrderId: orderId,
-                  itemType: 'device',
-                  modelId,
-                  quantity: rows.length,
-                  unitPrice: Number(rows[0]?.purchasePrice ?? 0),
-                  receivedQuantity: rows.length,
-                  sort: sort++,
+                  id: orderId,
+                  orderNo: await dependencies.numbering.next('purchaseOrder'),
+                  reason: 'other',
+                  description: texts.historicalOrder,
+                  departmentId: asText(first.departmentId) ?? null,
+                  vendorId: String(first.vendorId),
+                  estimatedTotal: batch.reduce(
+                    (sum, row) => sum + Number(row.purchasePrice ?? 0),
+                    0,
+                  ),
+                  currency: asText(first.currency) ?? null,
+                  status: 'completed',
+                  orderedAt: day,
+                  expectedAt: day,
+                  receivedAt: day,
+                  ownerId: writerId,
+                  createdById: writerId,
                   createdAt: at,
                   updatedAt: at,
                 })
                 .execute();
-              for (const row of rows) {
+              await track('purchaseOrders', { id: orderId });
+              const byModel = new Map<string, Row[]>();
+              for (const row of batch)
+                byModel.set(String(row.modelId), [
+                  ...(byModel.get(String(row.modelId)) ?? []),
+                  row,
+                ]);
+              let sort = 0;
+              for (const [modelId, rows] of byModel) {
+                const lineId = crypto.randomUUID();
                 await database
                   .query()
-                  .insertInto('purchaseReceipts')
+                  .insertInto('purchaseOrderLines')
                   .values({
-                    id: crypto.randomUUID(),
+                    id: lineId,
                     purchaseOrderId: orderId,
-                    lineId,
-                    quantity: 1,
-                    generatedType: 'device',
-                    generatedId: String(row.id),
-                    notes: null,
-                    actorId: writerId,
+                    itemType: 'device',
+                    modelId,
+                    quantity: rows.length,
+                    unitPrice: Number(rows[0]?.purchasePrice ?? 0),
+                    receivedQuantity: rows.length,
+                    sort: sort++,
                     createdAt: at,
+                    updatedAt: at,
                   })
                   .execute();
+                for (const row of rows) {
+                  await database
+                    .query()
+                    .insertInto('purchaseReceipts')
+                    .values({
+                      id: crypto.randomUUID(),
+                      purchaseOrderId: orderId,
+                      lineId,
+                      quantity: 1,
+                      generatedType: 'device',
+                      generatedId: String(row.id),
+                      notes: null,
+                      actorId: writerId,
+                      createdAt: at,
+                    })
+                    .execute();
+                }
               }
+              await database
+                .query()
+                .updateTable('devices')
+                .set({ purchaseOrderId: orderId })
+                .where(
+                  'id',
+                  'in',
+                  batch.map((row) => String(row.id)),
+                )
+                .execute();
             }
-            await database
-              .query()
-              .updateTable('devices')
-              .set({ purchaseOrderId: orderId })
-              .where(
-                'id',
-                'in',
-                batch.map((row) => String(row.id)),
-              )
-              .execute();
           }
-        }
+        };
+        await enterHistoricalOrders();
 
         await reached(30);
         // Idle: bought long ago, never assigned — make its updatedAt old so the idle rule sees it.
@@ -3532,7 +3558,7 @@ export function createDemoService(dependencies: {
           if (!itemId) throw new Error(`${order.description}: no stock item`);
           return track('stockItems', { id: itemId });
         };
-        // An accessory's first stock, bought by an order received into a
+        // A stock item's first stock, bought by an order received into a
         // record of its own on the day it came in (2026-10-22: it was
         // simply there, and its page showed no purchase but a restock).
         const boughtStock = async (
@@ -3545,7 +3571,7 @@ export function createDemoService(dependencies: {
               '{name}',
               String(input.name),
             ),
-            itemType: input.kind as 'accessory',
+            itemType: input.kind as 'accessory' | 'consumable' | 'component',
             modelId: String(input.modelId),
             quantity: Number(input.totalQuantity),
             unitPrice,
@@ -3865,7 +3891,7 @@ export function createDemoService(dependencies: {
         });
         for (const day of [-20, -6])
           await issue(toner, 'location', floor3, 2, day);
-        const cables = await stockItem(
+        const cables = await boughtStock(
           {
             kind: 'consumable',
             name: 'USB-C cable 1 m',
@@ -3875,6 +3901,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 10,
           },
           -500,
+          39,
         );
         for (const [day, quantity] of [
           [-480, 6],
@@ -3883,7 +3910,7 @@ export function createDemoService(dependencies: {
           [-15, 3],
         ] as const)
           await issue(cables, 'location', floor3, quantity, day);
-        const batteries = await stockItem(
+        const batteries = await boughtStock(
           {
             kind: 'consumable',
             name: 'Latitude 5440 battery',
@@ -3894,6 +3921,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 2,
           },
           -1000,
+          499,
         );
         // For the Latitude the sales manager had then, and for IT support's.
         await issue(batteries, 'person', wangFang, 1, -600);
@@ -3909,7 +3937,7 @@ export function createDemoService(dependencies: {
           code: 'CHP110',
           specification: texts.paperSpec,
         });
-        const paper = await stockItem(
+        const paper = await boughtStock(
           {
             kind: 'consumable',
             name: texts.paperItem,
@@ -3920,6 +3948,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 10,
           },
           -400,
+          25,
         );
         for (const [day, quantity] of [
           [-390, 8],
@@ -3960,7 +3989,7 @@ export function createDemoService(dependencies: {
         await issue(aaBatteries, 'location', floor3, 12, -350);
         await issue(aaBatteries, 'person', wangFang, 4, -200);
         await issue(aaBatteries, 'location', floor3, 8, -60);
-        const ssd = await stockItem(
+        const ssd = await boughtStock(
           {
             kind: 'component',
             name: '1 TB NVMe SSD',
@@ -3971,6 +4000,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 2,
           },
           -600,
+          699,
         );
         await issue(ssd, 'device', laptops[1], 1, -300);
         // A drive went into a laptop and came out again, so the component's
@@ -3987,7 +4017,7 @@ export function createDemoService(dependencies: {
         // 低于水位的组件 has one to show.
         if (laptops[3]) await issue(ssd, 'device', laptops[3], 1, -30);
         if (airs[0]) await issue(ssd, 'device', airs[0], 1, -20);
-        const ram = await stockItem(
+        const ram = await boughtStock(
           {
             kind: 'component',
             name: '32 GB DDR5 SO-DIMM',
@@ -3998,6 +4028,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 2,
           },
           -1000,
+          899,
         );
         await issue(ram, 'device', expiredLaptop, 1, -900);
         const supportLaptop = staffLaptops.get('support');
@@ -5863,9 +5894,73 @@ export function createDemoService(dependencies: {
             screenSize: '14',
           },
         });
+        // Bought before the register, as the others of its day.
+        await enterHistoricalOrders([String(retiredLaptop.id)]);
         // The second asset manager's laptop for four years, until her
         // MacBook Pro came.
         await assign(retiredLaptop.id, writer.id, -1395);
+        // Repaired three times while she had it (2026-10-22), each dearer
+        // than the last: why it was sold rather than mended again.
+        for (const entry of [
+          {
+            method: 'internal' as const,
+            fault: texts.repairKeyboard,
+            faultCategory: 'keyboard' as const,
+            sentDays: -1100,
+            returnDays: -1097,
+            cost: 380,
+          },
+          {
+            method: 'sendOut' as const,
+            vendorId: String(repairShop.id),
+            fault: texts.repairFault,
+            faultCategory: 'battery' as const,
+            sentDays: -760,
+            returnDays: -752,
+            cost: 680,
+          },
+          {
+            method: 'sendOut' as const,
+            vendorId: String(repairShop.id),
+            fault: texts.repairScreen,
+            faultCategory: 'screen' as const,
+            sentDays: -560,
+            returnDays: -548,
+            cost: 1200,
+          },
+        ]) {
+          await on(entry.sentDays);
+          const repair = await track(
+            'repairs',
+            await repairs.create(
+              {
+                deviceId: String(retiredLaptop.id),
+                method: entry.method,
+                vendorId: 'vendorId' in entry ? entry.vendorId : null,
+                faultDescription: entry.fault,
+                faultCategory: entry.faultCategory,
+                sentAt: daysFromNow(entry.sentDays),
+                expectedReturnAt: daysFromNow(entry.returnDays),
+                ownerId: supportUserId ?? writerId,
+              },
+              context,
+              all('repairs', 'create'),
+            ),
+          );
+          await on(entry.returnDays);
+          await repairs.complete(
+            String(repair.id),
+            {
+              result: 'repaired',
+              disposition: 'return',
+              actualReturnAt: daysFromNow(entry.returnDays),
+              cost: entry.cost,
+              notes: null,
+            },
+            supportContext,
+            all('repairs', 'complete'),
+          );
+        }
         await giveBack(retiredLaptop.id, -421);
         await on(-35);
         const sale = await track(
