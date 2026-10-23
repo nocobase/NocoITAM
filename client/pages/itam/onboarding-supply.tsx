@@ -123,9 +123,7 @@ function Shortages({
           <h2 className='font-heading text-sm font-semibold'>
             {t('onboarding.supply.shortages')}
           </h2>
-          {sorted.length > 0 ? (
-            <DraftOrdersButton className='ml-auto' />
-          ) : null}
+          {sorted.length > 0 ? <DraftOrdersButton className='ml-auto' /> : null}
         </div>
         {sorted.length === 0 ? (
           <p className='text-sm text-muted-foreground'>
@@ -178,7 +176,7 @@ function Shortages({
                   <DraftOrdersButton
                     keys={[entry.key]}
                     icon={false}
-                    className='-mx-1 h-auto px-1 py-0.5 text-xs'
+                    className='-mx-1.5 h-6 px-1.5 text-xs'
                   />
                 ) : null}
               </li>

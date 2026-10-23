@@ -309,7 +309,7 @@ export function OnboardingPlanCard({
                   <DraftOrdersButton
                     personId={personId}
                     icon={false}
-                    className='-mx-1 h-auto px-1 py-0.5 text-xs'
+                    className='-mx-1.5 h-6 px-1.5 text-xs'
                   />
                 ) : null}
                 {data.waived > 0 ? (

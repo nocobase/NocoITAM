@@ -135,8 +135,13 @@ export function DraftOrdersButton({
     <>
       <Button
         variant='ghost'
-        // Words like the row's other actions, its padding taken back.
-        className={cn('-mx-2.5 text-primary hover:text-primary', className)}
+        // Words like the row's other actions, its padding taken back; on
+        // hover a light ground of their own green, as the AI shortcuts
+        // have, rather than grey under green (2026-10-22).
+        className={cn(
+          '-mx-2.5 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15',
+          className,
+        )}
         disabled={propose.isPending}
         onClick={() => propose.mutate()}
       >
