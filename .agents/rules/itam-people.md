@@ -131,8 +131,12 @@ departments/:id/positions/rename`): its holders and its kit move to the
   `proposeJoinerOrders` in `onboarding-orders.ts`, which creates nothing):
   新员工配备, needed by the joining day, their department, the vendor each
   item was last bought from (empty where none was), a line per item short.
-  Several proposals — another vendor, another joiner — follow one another
-  as 第 1 / 2 张; what was saved opens in the drawer at the end. Per joiner,
+  Several proposals — another vendor, another joiner — are tabs at the top
+  of the dialog, each its own form kept while another is looked at, one
+  saved showing its number; a line can be moved to another of them (移到…,
+  an item never bought here joining a vendor's order). Each opens with the
+  AI 整理 column beside it, seeded with its description, to be adjusted in
+  words. What was saved opens in the drawer at the end. Per joiner,
   not merged across them: the plan counts an order as a joiner's own only by
   department and needed-by date (`ownOrders`), so a merged order would be
   proposed again. A kit item naming a category is left out and said in the

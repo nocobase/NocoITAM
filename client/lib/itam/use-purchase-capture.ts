@@ -91,12 +91,19 @@ export function usePurchaseOrderCapture({
   form,
   onFill,
   orderId,
+  seed,
 }: {
   /** The form as it stands, sent with each reading. */
   readonly form: () => CaptureForm;
   readonly onFill: (capture: PurchaseCapture) => void;
   /** The draft whose lines a document is read into. */
   readonly orderId?: string;
+  /**
+   * What an order filled by the application rather than read from a
+   * document goes by (2026-10-22, 起草采购单 for joiners): its description,
+   * so 让 AI 调整 has something besides the form to read.
+   */
+  readonly seed?: string;
 }): PurchaseOrderCapture {
   const { t } = useTranslation();
   const api = useApi();
@@ -107,7 +114,9 @@ export function usePurchaseOrderCapture({
   const [session, setSession] = useState<Session>();
   const [turns, setTurns] = useState<readonly Turn[]>([]);
   const [summary, setSummary] = useState<string>();
-  const materialRef = useRef<Material | undefined>(undefined);
+  const materialRef = useRef<Material | undefined>(
+    seed ? { pasted: seed } : undefined,
+  );
   const [fileId, setFileId] = useState<string>();
   // A reading answered after the dialog closed, or after a newer one was
   // asked, is dropped.

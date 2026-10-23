@@ -1814,6 +1814,8 @@ const messages = {
     saveDraft: 'Save draft',
     title: 'Procurement',
     object: 'purchase order',
+    moveLine: 'Move to another order',
+    moveLineTo: 'Move to {{order}}',
     new: 'New purchase order',
     capture: {
       unreadable:
@@ -1833,6 +1835,8 @@ const messages = {
         'The AI did not organise a purchase order. Add to the text and try again.',
       filled:
         'The AI filled in the order from the text. Check it before saving.',
+      proposed:
+        'Filled in from what the joiner is short of. To change it, tell AI: another vendor, the last unit prices, other quantities.',
       reviewHint: 'The AI was not sure of this one. Check it.',
       check: 'Check',
       vendorNotFound: 'The text says {{name}}, which is not on the vendor list',

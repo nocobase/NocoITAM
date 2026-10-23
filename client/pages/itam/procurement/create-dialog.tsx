@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { ArrowRightLeft, Plus } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 import {
   useMemo,
@@ -17,6 +17,12 @@ import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { ReviewMark } from '@/components/itam/review-mark';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import {
   Table,
@@ -67,6 +73,53 @@ import { CaptureNotice, CapturePane } from './po-capture.js';
 /** A line as the dialog edits it: AI 整理 may mark its item 请核对. */
 type DialogLine = PurchaseLineDraft & { readonly uncertain?: boolean };
 
+/** Nothing read yet: the column a proposed order opens with. */
+const EMPTY_CAPTURE: PurchaseCapture = {
+  values: {},
+  lines: [],
+  unmatched: [],
+  vendorName: null,
+  departmentName: null,
+  uncertain: [],
+};
+
+/** 移到…: a line moved to another of the proposed orders. */
+function MoveLine({
+  targets,
+  disabled,
+  onMove,
+}: {
+  readonly targets: readonly { readonly key: string; readonly label: string }[];
+  readonly disabled: boolean;
+  readonly onMove: (target: string) => void;
+}): ReactElement {
+  const { t } = useTranslation();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        disabled={disabled}
+        render={
+          <Button
+            size='icon-xs'
+            variant='ghost'
+            aria-label={t('procurement.moveLine')}
+            title={t('procurement.moveLine')}
+          />
+        }
+      >
+        <ArrowRightLeft />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end'>
+        {targets.map((target) => (
+          <DropdownMenuItem key={target.key} onClick={() => onMove(target.key)}>
+            {t('procurement.moveLineTo', { order: target.label })}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 const HEADER_FIELDS = PO_CREATE_FIELDS.map((key) =>
   PO_FIELDS.find((field) => field.key === key)!,
 );
@@ -96,6 +149,9 @@ export function PurchaseOrderCreateDialog({
   initialValues,
   initialLines,
   header,
+  moveTargets,
+  onMoveLine,
+  inbox,
 }: {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
@@ -114,6 +170,20 @@ export function PurchaseOrderCreateDialog({
    * 起草采购单 for every joiner's shortfall).
    */
   readonly header?: ReactNode;
+  /**
+   * The other orders a line may be moved to (2026-10-22): the proposed
+   * ones, so an item put on its own order can join another vendor's.
+   */
+  readonly moveTargets?: readonly {
+    readonly key: string;
+    readonly label: string;
+  }[];
+  readonly onMoveLine?: (line: PurchaseLineDraft, target: string) => void;
+  /** Lines moved here from another of the proposed orders. */
+  readonly inbox?: readonly {
+    readonly id: string;
+    readonly line: PurchaseLineDraft;
+  }[];
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
@@ -133,7 +203,22 @@ export function PurchaseOrderCreateDialog({
   );
   const [pasted, setPasted] = useState('');
   const [file, setFile] = useState<File>();
-  const [result, setResult] = useState<PurchaseCapture>();
+  // A proposed order opens with the assistant's column beside it, to be
+  // adjusted in words (2026-10-22), as one AI 整理 filled does.
+  const [result, setResult] = useState<PurchaseCapture | undefined>(() =>
+    initialValues ? EMPTY_CAPTURE : undefined,
+  );
+  // Lines moved in from another proposed order, each taken once — while
+  // rendering, when the inbox changes, rather than in an effect.
+  const [taken, setTaken] = useState<ReadonlySet<string>>(() => new Set());
+  const fresh = (inbox ?? []).filter((item) => !taken.has(item.id));
+  if (fresh.length > 0) {
+    setTaken(new Set([...taken, ...fresh.map((item) => item.id)]));
+    setLines((rows) => [
+      ...rows.filter((row) => !blankLine(row)),
+      ...fresh.map((item) => ({ ...item.line, key: crypto.randomUUID() })),
+    ]);
+  }
   // Header fields the assistant filled without being sure; a field leaves
   // the set when somebody changes it.
   const [review, setReview] = useState<ReadonlySet<string>>(() => new Set());
@@ -190,6 +275,7 @@ export function PurchaseOrderCreateDialog({
   });
   const capture = usePurchaseOrderCapture({
     form,
+    ...(initialValues ? { seed: text(initialValues.description) } : {}),
     onFill: (next) => {
       setValues((current) => applyCaptureValues(current, next));
       const captured = captureLines(next);
@@ -380,8 +466,8 @@ export function PurchaseOrderCreateDialog({
                 column of their own beside the form (2026-10-06). */}
             <div
               className={
-                result
-                  ? 'grid gap-4 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start'
+                result && capture.available
+                  ? 'grid gap-4 md:grid-cols-[minmax(0,1fr)_15rem] md:items-start'
                   : 'grid'
               }
             >
@@ -513,6 +599,22 @@ export function PurchaseOrderCreateDialog({
                                 ),
                               )
                             }
+                            extraAction={
+                              moveTargets && moveTargets.length > 0 ? (
+                                <MoveLine
+                                  targets={moveTargets}
+                                  disabled={save.isPending || Boolean(created)}
+                                  onMove={(target) => {
+                                    setLines((rows) =>
+                                      rows.filter(
+                                        (row) => row.key !== line.key,
+                                      ),
+                                    );
+                                    onMoveLine?.(line, target);
+                                  }}
+                                />
+                              ) : undefined
+                            }
                             onAdd={() => insertAfter(line.key)}
                             onRemove={() =>
                               setLines((rows) =>
@@ -571,11 +673,14 @@ export function PurchaseOrderCreateDialog({
                   />
                 </div>
               </div>
-              {result ? (
+              {result && capture.available ? (
                 <aside className='md:sticky md:top-0'>
                   <CaptureNotice
                     capture={capture}
                     result={result}
+                    {...(initialValues
+                      ? { intro: t('procurement.capture.proposed') }
+                      : {})}
                     currency={text(values.currency) || currency}
                     priced={priced}
                     onPlace={async (line, pick) => {

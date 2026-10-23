@@ -12,6 +12,7 @@ import {
   type LineItemType,
 } from '@/lib/itam/procurement';
 import { useCurrentUserId } from '@/lib/itam/permissions';
+import type { PurchaseLineDraft } from '@/lib/itam/purchase-lines';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
 import { useReferenceNames } from '@/lib/itam/references';
 import { cn } from '@/lib/utils';
@@ -75,6 +76,10 @@ export function DraftOrdersButton({
   const [index, setIndex] = useState(0);
   // The orders saved so far, by their place among the proposed ones.
   const [saved, setSaved] = useState<Readonly<Record<number, ItamRecord>>>({});
+  // Lines moved between the proposed orders, by the order they went to.
+  const [moved, setMoved] = useState<
+    Readonly<Record<number, readonly { id: string; line: PurchaseLineDraft }[]>>
+  >({});
   const vendorNames = useReferenceNames(
     useMemo(
       () => [
@@ -121,6 +126,7 @@ export function DraftOrdersButton({
         return;
       }
       setSaved({});
+      setMoved({});
       setIndex(0);
       setProposal(result);
     },
@@ -134,6 +140,7 @@ export function DraftOrdersButton({
     const skipped = proposal?.skipped ?? [];
     setProposal(undefined);
     setSaved({});
+    setMoved({});
     if (made.length === 0) return;
     await queryClient.invalidateQueries({ queryKey: ['itam'] });
     const note = skippedNote(skipped);
@@ -149,6 +156,14 @@ export function DraftOrdersButton({
     });
     const [first] = made;
     if (first) openRecord(`/procurement/${text(first.id)}`);
+  };
+
+  /** How an order is named in the switcher and in 移到…. */
+  const labelOf = (order: ProposedOrder, at: number) => {
+    const vendor = order.values.vendorId
+      ? vendorNames?.get(text(order.values.vendorId))
+      : undefined;
+    return `${String(at + 1)}. ${order.people.join(t('common.listSeparator'))} · ${vendor ?? t('onboarding.drafts.noVendor')}`;
   };
 
   // Every proposed order, to switch between (2026-10-22): each keeps what
@@ -208,6 +223,21 @@ export function DraftOrdersButton({
           initialValues={me ? { ownerId: me, ...order.values } : order.values}
           initialLines={order.lines}
           header={switcher}
+          // A line may go to any other order not saved yet (2026-10-22):
+          // one never bought here joins a vendor's order instead.
+          moveTargets={proposal.orders.flatMap((other, j) =>
+            j !== at && !saved[j]
+              ? [{ key: String(j), label: labelOf(other, j) }]
+              : [],
+          )}
+          onMoveLine={(line, target) => {
+            const to = Number(target);
+            setMoved((current) => ({
+              ...current,
+              [to]: [...(current[to] ?? []), { id: crypto.randomUUID(), line }],
+            }));
+          }}
+          inbox={moved[at]}
           onOpenChange={(open) => {
             // Closing stops the run; what was saved stays.
             if (!open) void finish(Object.values(saved));

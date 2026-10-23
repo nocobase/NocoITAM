@@ -17,6 +17,7 @@ import {
   useState,
   type DragEvent,
   type ReactElement,
+  type ReactNode,
 } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
@@ -814,6 +815,7 @@ export function LineEditor({
   onDragEnd,
   onDragOver,
   onDrop,
+  extraAction,
 }: {
   readonly draft: LineDraft;
   readonly priced: boolean;
@@ -831,6 +833,8 @@ export function LineEditor({
   readonly onDragEnd: () => void;
   readonly onDragOver: (event: DragEvent<HTMLElement>) => void;
   readonly onDrop: (event: DragEvent<HTMLElement>) => void;
+  /** One more action before 添加 and 删除 (moving it to another order). */
+  readonly extraAction?: ReactNode;
 }): ReactElement {
   const { t } = useTranslation();
   // The line picks one of the five asset types; an entitlement then says
@@ -1043,6 +1047,7 @@ export function LineEditor({
       ) : null}
       <TableCell>
         <div className='flex items-center justify-end gap-1'>
+          {extraAction}
           <Button
             size='icon-xs'
             variant='ghost'

@@ -1743,6 +1743,8 @@ const zhCN: AppResource = {
     saveDraft: '保存草稿',
     title: '采购',
     object: '采购单',
+    moveLine: '移到另一张单',
+    moveLineTo: '移到 {{order}}',
     new: '创建采购单',
     capture: {
       unreadable:
@@ -1760,6 +1762,8 @@ const zhCN: AppResource = {
       uploading: '正在上传…',
       nothing: 'AI 没有整理出采购单，请补充内容后再试。',
       filled: 'AI 已按原文填好采购单，请核对后保存。',
+      proposed:
+        '已按入职缺口填好这张单。需要改的话告诉 AI，比如换供应商、按上次的价格填单价、改数量。',
       reviewHint: 'AI 不确定这一项，请核对',
       check: '请核对',
       vendorNotFound: '原文：{{name}}，不在供应商列表里',
