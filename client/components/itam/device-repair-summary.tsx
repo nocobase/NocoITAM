@@ -18,20 +18,22 @@ export function DeviceRepairSummary({
 }): ReactElement {
   const { t } = useTranslation();
   const late = daysOverdue(repair.expectedReturnAt);
+  // One line, as a disposal's (2026-10-23): the number, then when it is
+  // expected back after a comma, then how late.
   return (
-    <span className='inline-flex flex-wrap items-center gap-2'>
+    <span>
       <RecordLink to={`/repairs/${text(repair.id)}`} className='text-link'>
         {text(repair.repairNo)}
       </RecordLink>
       {repair.expectedReturnAt ? (
         <span className='text-muted-foreground'>
-          {t('repairs.expectedBack', {
+          {t('repairs.expectedBackAfter', {
             date: formatDate(repair.expectedReturnAt),
           })}
         </span>
       ) : null}
       {late > 0 ? (
-        <Badge variant='destructive'>
+        <Badge variant='destructive' className='ml-2 align-middle'>
           {t('repairs.overdueDays', { count: late })}
         </Badge>
       ) : null}

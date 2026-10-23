@@ -2850,6 +2850,7 @@ const zhCN: AppResource = {
     },
     resultNotes: '维修备注',
     expectedBack: '预计 {{date}} 取回',
+    expectedBackAfter: '，预计 {{date}} 取回',
     overdueDays_one: '逾期 {{count}} 天',
     overdueDays_other: '逾期 {{count}} 天',
     delete: '删除维修单',

@@ -3025,6 +3025,7 @@ const messages = {
     object: 'repair',
     resultNotes: 'Result notes',
     expectedBack: 'expected back {{date}}',
+    expectedBackAfter: ', expected back {{date}}',
     overdueDays_one: '{{count}} day overdue',
     overdueDays_other: '{{count}} days overdue',
     delete: 'Delete repair record',
