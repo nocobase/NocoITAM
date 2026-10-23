@@ -33,6 +33,8 @@ export function DocumentReading({
   placeholder,
   onRead,
   bare = false,
+  actionLabel = 'documentReading.read',
+  workingLabel = 'documentReading.reading',
 }: {
   readonly ownerType: 'repairs' | 'disposals';
   readonly ownerId: string;
@@ -45,6 +47,12 @@ export function DocumentReading({
    * above a form: no frame of its own, and the room PO 整理 gives.
    */
   readonly bare?: boolean;
+  /**
+   * What the button says it does, and says while doing it, as translation
+   * keys: 记录报价's reading also weighs the quote (评估修还是换).
+   */
+  readonly actionLabel?: string;
+  readonly workingLabel?: string;
 }): ReactElement | null {
   const { t } = useTranslation();
   const ai = useItamAi();
@@ -212,8 +220,8 @@ export function DocumentReading({
             phase === 'uploading'
               ? 'documentReading.uploading'
               : phase === 'reading'
-                ? 'documentReading.reading'
-                : 'documentReading.read',
+                ? workingLabel
+                : actionLabel,
           )}
         </Button>
       </div>

@@ -269,6 +269,8 @@ export function RepairQuoteDialog({
           context={{ repairId: id }}
           placeholder={t('repairs.quote.placeholder')}
           bare
+          actionLabel='repairs.quote.judge'
+          workingLabel='repairs.quote.judging'
           onRead={applyQuote}
         />
       ) : (
