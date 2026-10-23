@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { expect, it, vi } from 'vitest';
 
@@ -11,7 +18,7 @@ import OnboardingSupplyPage from '../../client/pages/itam/onboarding-supply.js';
 
 const state = vi.hoisted(() => ({
   supply: undefined as unknown,
-  asked: [] as string[],
+  requests: [] as { path: string; json?: unknown }[],
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -21,10 +28,13 @@ vi.mock('../../client/lib/itam/onboarding.js', async (original) => ({
   ...(await original<object>()),
   useOnboardingSupply: () => ({ data: state.supply, isLoading: false }),
 }));
-vi.mock('../../client/lib/itam/ai-chat.js', () => ({
-  useItamAi: () => ({
-    available: true,
-    ask: (prompt: string) => state.asked.push(prompt),
+vi.mock('../../client/lib/itam/api.js', async (original) => ({
+  ...(await original<object>()),
+  useApi: () => ({
+    request: async (request: { path: string; json?: unknown }) => {
+      state.requests.push(request);
+      return { data: { created: [], needsVendor: [], skipped: [] } };
+    },
   }),
 }));
 
@@ -96,19 +106,29 @@ const supply: OnboardingSupply = {
 
 const show = () =>
   render(
-    <MemoryRouter>
-      <OnboardingSupplyPage />
-    </MemoryRouter>,
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter>
+        <OnboardingSupplyPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 
-it('leads with what to buy, and drafts one order for it in the chat', () => {
+it('leads with what to buy, and drafts orders for all of it straight away', async () => {
   state.supply = supply;
-  state.asked = [];
+  state.requests = [];
   show();
   fireEvent.click(
     screen.getByRole('button', { name: /onboarding\.draftOrder/ }),
   );
-  expect(state.asked).toEqual(['ai.prompts.supplyOrder']);
+  // Every joiner's shortfall, without the chat (2026-10-22).
+  await waitFor(() =>
+    expect(state.requests).toEqual([
+      expect.objectContaining({
+        path: 'itam/purchase-orders/draft-for-joiners',
+        json: {},
+      }),
+    ]),
+  );
 });
 
 it('lists each joiner once, with only what is not taken from stock', () => {
@@ -131,7 +151,7 @@ it('lists each joiner once, with only what is not taken from stock', () => {
   ).toBe('/software-products/ide');
 });
 
-it('drafts one item on its own from its row when there are several', () => {
+it('drafts one item on its own from its row when there are several', async () => {
   state.supply = {
     ...supply,
     shortages: [
@@ -147,7 +167,7 @@ it('drafts one item on its own from its row when there are several', () => {
       },
     ],
   };
-  state.asked = [];
+  state.requests = [];
   show();
   const buttons = screen.getAllByRole('button', {
     name: /onboarding\.draftOrder/,
@@ -155,5 +175,9 @@ it('drafts one item on its own from its row when there are several', () => {
   // The heading's, then one per row.
   expect(buttons).toHaveLength(3);
   fireEvent.click(buttons[2]!);
-  expect(state.asked).toEqual(['ai.prompts.supplyOrder']);
+  await waitFor(() =>
+    expect(state.requests).toEqual([
+      expect.objectContaining({ json: { keys: ['model:iphone'] } }),
+    ]),
+  );
 });

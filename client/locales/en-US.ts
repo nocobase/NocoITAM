@@ -3574,10 +3574,6 @@ const messages = {
         'Find what I am asking for: "{{text}}". If it asks for records of one kind, look them up and list them briefly with their numbers or names; otherwise answer directly and briefly.',
       reportInsight:
         'Interpret the {{report}} report with these filters: {{filters}}. Run it with itam stats, then in three to five sentences give the most important number and change first, any anomaly, then one recommendation.',
-      supplyOrder:
-        "Using the onboarding skill, draft new-hire purchase orders for what onboarding supply is short of: {{items}}. Read each of these joiners' onboarding plans first to check the quantities; then work out from past purchases and existing entitlements which vendor each item comes from, putting one vendor's items on one order and drafting separate orders for different vendors, and ask me where you cannot tell. Propose each as a plan for me to confirm.",
-      onboardingOrder:
-        "Using the onboarding skill, draft new-hire purchase orders for what {{name}}'s onboarding kit is short of: read the onboarding plan first and list the missing items and quantities; then work out from past purchases and existing entitlements which vendor each item comes from, putting one vendor's items on one order and drafting separate orders for different vendors, and ask me where you cannot tell. Propose each as a plan for me to confirm.",
       groupDifferences:
         'Analyse the open differences of this audit (read its items): group them by their most likely cause (moved desk, wrong holder record, in repair, leaver not returned, truly lost, unregistered device…), list the devices in each group, and say how to handle each.',
       planToday:

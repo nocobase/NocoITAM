@@ -2,7 +2,7 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { Package } from 'lucide-react';
 import { Fragment, type ReactElement } from 'react';
 
-import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { DraftOrdersButton } from '@/components/itam/draft-orders-button';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { LineOutlook } from '@/components/itam/onboarding-plan';
 import { Page, PageHeader } from '@/components/itam/page-header';
@@ -10,7 +10,6 @@ import { RecordLink } from '@/components/itam/record-link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useItamAi } from '@/lib/itam/ai-chat';
 import { daysOverdue, formatDate, todayIso } from '@/lib/itam/format';
 import {
   TARGET_ROUTES,
@@ -109,29 +108,14 @@ function Shortages({
   readonly shortages: OnboardingSupply['shortages'];
 }): ReactElement {
   const { t } = useTranslation();
-  const ai = useItamAi();
   const today = todayIso();
   // The most pressing first: the earliest last day to order.
   const sorted = [...shortages].sort((a, b) =>
     (a.orderBy ?? '9999').localeCompare(b.orderBy ?? '9999'),
   );
-  // One order for all of it, drafted in the chat: it needs a vendor the
-  // page does not ask for, and the agent reads each joiner's plan.
-  // All of it, or one row (2026-10-22): Asset Steward works the vendor out
-  // either way and drafts an order per vendor.
-  const draft = (entries: typeof sorted) =>
-    ai.ask(
-      t('ai.prompts.supplyOrder', {
-        items: entries
-          .map(
-            (entry) =>
-              `${entry.target.name} ×${String(entry.quantity)}（${entry.people
-                .map((person) => person.name)
-                .join(t('common.listSeparator'))}）`,
-          )
-          .join(t('common.listSeparator')),
-      }),
-    );
+  // All of it, or one row (2026-10-22): drafted straight away, an order
+  // per vendor and joiner, the first opened to check (`DraftOrdersButton`;
+  // asked of Asset Steward in the chat until then).
   return (
     <Card className='py-0'>
       <CardContent className='space-y-2 p-4'>
@@ -139,10 +123,8 @@ function Shortages({
           <h2 className='font-heading text-sm font-semibold'>
             {t('onboarding.supply.shortages')}
           </h2>
-          {sorted.length > 0 && ai.available ? (
-            <AiShortcut className='ml-auto' onClick={() => draft(sorted)}>
-              {t('onboarding.draftOrder')}
-            </AiShortcut>
+          {sorted.length > 0 ? (
+            <DraftOrdersButton className='ml-auto' />
           ) : null}
         </div>
         {sorted.length === 0 ? (
@@ -192,13 +174,12 @@ function Shortages({
                 ) : null}
                 {/* One item on its own; with a single row the heading's
                     button is the same thing. */}
-                {sorted.length > 1 && ai.available ? (
-                  <AiShortcut
-                    className='-mx-1 px-1 text-xs'
-                    onClick={() => draft([entry])}
-                  >
-                    {t('onboarding.draftOrder')}
-                  </AiShortcut>
+                {sorted.length > 1 ? (
+                  <DraftOrdersButton
+                    keys={[entry.key]}
+                    icon={false}
+                    className='-mx-1 h-auto px-1 py-0.5 text-xs'
+                  />
                 ) : null}
               </li>
             ))}

@@ -107,8 +107,7 @@ departments/:id/positions/rename`): its holders and its kit move to the
   heading of the workbench's 入职准备 column, no menu entry and no page grant; `GET
 /itam/workbench/onboarding-supply`, people `read` and devices `reserve`)
   is the buying view (2026-10-22): 需要采购 first, the earliest last order
-  day first, with 起草采购单 asking Asset Steward in the chat for one
-  new-hire order for all of it; then one row per joiner (date, progress,
+  day first, with 起草采购单 for all of it and one per row; then one row per joiner (date, progress,
   缺 / 在途 / 归还 counts) and under it only the lines not taken straight
   from stock. It listed every line until then, repeating each joiner's
   入职配备 card. The demo shows all three sources: stock, an Adobe seat on
@@ -120,10 +119,20 @@ departments/:id/positions/rename`): its holders and its kit move to the
   N / M, and one button per proposal through the operation that already
   exists — 预留 until the joining day while they have not started, 分配
   once they have, 领用, 分配席位 — with 全部执行 running them in order.
-  The card's only AI is 挑选 / 重新挑选 in its strip and, beside 缺 N 项需采购,
-  起草采购单, which asks Asset Steward in the chat (it needs a vendor). The
-  header's 准备 (配备计划), a chat that proposed the plan 全部执行 already
-  runs, was removed on 2026-10-22.
+  The card's only AI is 挑选 / 重新挑选 in its strip. The header's 准备
+  (配备计划), a chat that proposed the plan 全部执行 already runs, was
+  removed on 2026-10-22.
+- 起草采购单 (beside the card's 缺 N 项需采购, and on 入职供需) drafts
+  without a model since 2026-10-22 (`DraftOrdersButton`, `POST
+/itam/purchase-orders/draft-for-joiners`, `onboarding-orders.ts`; it
+  asked Asset Steward in the chat for the day before): 新员工配备 drafts,
+  one per vendor and joiner (people of one department starting the same day
+  share one), the vendor where each item was last bought — an item never
+  bought asks for one in a dialog first — and the first draft opens in the
+  drawer to check and submit. Per joiner, not merged across them: the plan
+  counts an order as a joiner's own only by department and needed-by date
+  (`ownOrders`), so a merged order would be ordered again on the next
+  press. A kit item naming a category is skipped, said in the toast.
   The workbench's 入职准备 (`pendingOnboarding`, right after 离职交接) lists
   **joiners** — people entered in the register no more than 30 days before
   their first day (`isJoiner`; staff entered long after they started, such

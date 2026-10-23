@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -53,7 +53,9 @@ vi.mock('../../client/lib/itam/api.js', async (original) => ({
         throw new Error('Not enough in stock');
       return request.path.endsWith('/advise')
         ? { data: { started: true, runId: 'r2' } }
-        : {};
+        : request.path.endsWith('/draft-for-joiners')
+          ? { data: { created: [], needsVendor: [], skipped: [] } }
+          : {};
     },
   }),
 }));
@@ -399,7 +401,7 @@ it('says where planned things come from, with no button, and when to order the r
   expect(screen.getByText(/onboarding\.orderNow/)).toBeTruthy();
 });
 
-it('asks Asset Steward to draft the order from beside a shortfall, and offers no plan of its own', () => {
+it('drafts the order for a shortfall from beside it, without the chat', async () => {
   state.aiAvailable = true;
   state.plan = plan('2099-01-10');
   show();
@@ -410,7 +412,16 @@ it('asks Asset Steward to draft the order from beside a shortfall, and offers no
   fireEvent.click(
     screen.getByRole('button', { name: /onboarding\.draftOrder/ }),
   );
-  expect(state.asked).toEqual(['ai.prompts.onboardingOrder']);
+  await waitFor(() => expect(state.requests).toHaveLength(1));
+  // Drafted straight away (2026-10-22), for this joiner only.
+  expect(state.requests).toEqual([
+    expect.objectContaining({
+      path: 'itam/purchase-orders/draft-for-joiners',
+      method: 'POST',
+      json: expect.objectContaining({ personId: 'p1' }),
+    }),
+  ]);
+  expect(state.asked).toEqual([]);
 });
 
 it('lets a proposed device be looked at before it is reserved', () => {

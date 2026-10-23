@@ -11,6 +11,7 @@ import {
 import { useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
+import { DraftOrdersButton } from '@/components/itam/draft-orders-button';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -85,11 +86,9 @@ export function OnboardingPlanCard({
   const [chosen, setChosen] = useState<Readonly<Record<string, PlanThing>>>({});
   const effective = (thing: PlanThing): PlanThing => chosen[thing.id] ?? thing;
   const data = plan.data;
-  // The person goes along as page context, so Asset Steward reads this very plan
-  // (`itam onboarding plan`) when asked to draft the purchase order for the
-  // shortfall (the onboarding skill), which needs a vendor the card does not
-  // ask for.
-  const { available: aiAvailable, ask } = useAiPageContext({
+  // The person goes along as page context, so Asset Steward asked about
+  // them in the chat reads this very plan (`itam onboarding plan`).
+  const { available: aiAvailable } = useAiPageContext({
     kind: 'people',
     id: personId,
     label: personName,
@@ -302,20 +301,16 @@ export function OnboardingPlanCard({
                     {t('onboarding.shortfallTotal', { count: shortfall })}
                   </span>
                 ) : null}
-                {/* The order needs a vendor the card does not ask for, so
-                    Asset Steward drafts it in the chat and asks. */}
-                {shortfall > 0 && aiAvailable ? (
-                  <AiShortcut
-                    // A narrow hover ground taken back as far (2026-10-22):
-                    // its words sit the row's gap from those before, and the
-                    // ground stays clear of them.
-                    className='-mx-1 px-1 text-xs'
-                    onClick={() =>
-                      ask(t('ai.prompts.onboardingOrder', { name: personName }))
-                    }
-                  >
-                    {t('onboarding.draftOrder')}
-                  </AiShortcut>
+                {/* Drafted straight away and opened to check (2026-10-22;
+                    asked of Asset Steward in the chat until then). A narrow
+                    hover ground taken back as far, so its words sit the
+                    row's gap from those before. */}
+                {shortfall > 0 ? (
+                  <DraftOrdersButton
+                    personId={personId}
+                    icon={false}
+                    className='-mx-1 h-auto px-1 py-0.5 text-xs'
+                  />
                 ) : null}
                 {data.waived > 0 ? (
                   <span>
