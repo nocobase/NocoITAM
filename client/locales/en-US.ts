@@ -1535,6 +1535,9 @@ const messages = {
       "Computed from the purchase date plus the category's replacement cycle",
     returnExpected: ', due back {{date}}',
     disposedOn: ', executed {{date}}',
+    // The rows naming the repair or disposal a device is on (2026-10-23).
+    repairLabel: 'Repair',
+    disposalLabel: 'Disposal',
     assignedTo: 'Assigned to',
     loanedTo: 'Loaned to',
     reservedFor: 'Reserved for',
@@ -3025,7 +3028,7 @@ const messages = {
     object: 'repair',
     resultNotes: 'Result notes',
     expectedBack: 'expected back {{date}}',
-    expectedBackAfter: ', expected back {{date}}',
+    expectedBackAfter: ', back {{date}}',
     overdueDays_one: '{{count}} day overdue',
     overdueDays_other: '{{count}} days overdue',
     delete: 'Delete repair record',

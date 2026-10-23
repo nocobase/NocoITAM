@@ -84,7 +84,7 @@ function useDeviceSummary(record: ItamRecord, t: Translate): SummaryItem[] {
       ? [
           {
             key: 'repair',
-            label: t('references.repairs'),
+            label: t('devices.repairLabel'),
             value: <DeviceRepairSummary repair={repair} />,
           },
         ]
@@ -93,7 +93,7 @@ function useDeviceSummary(record: ItamRecord, t: Translate): SummaryItem[] {
       ? [
           {
             key: 'disposal',
-            label: t('references.disposals'),
+            label: t('devices.disposalLabel'),
             value: <DeviceDisposalSummary disposal={disposal} />,
           },
         ]
