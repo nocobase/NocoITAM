@@ -182,7 +182,7 @@ export async function writeDemoSuggestions(input: {
         alternatives: use.length
           ? `先分配在库的 ${list(lang, tags)}，只采购差额 ${String(rest)} 台${flawed ? `；其中 ${String(flawed.name)} 备注“${String(flawed.notes)}”，适合给对显示要求不高的工位` : ''}。`
           : null,
-        precedents: `${intern.no} 实习生笔记本因本季度预算用完被驳回；同类小额补货一般直接同意。`,
+        precedents: `${intern.no} 实习生笔记本因本季度预算用完被拒绝；同类小额补货一般直接批准。`,
         risks: [
           ...(use.length ? ['库存没先用完就采购，会多出闲置显示器'] : []),
           ...(flawed
@@ -265,9 +265,9 @@ export async function writeDemoSuggestions(input: {
         alternatives: proTags.length
           ? `研发的标准配置是 MacBook Pro 14 M3，在库的 ${list(lang, proTags)} 可以先给新人，只采购差额。`
           : null,
-        precedents: `${intern.no} 实习生笔记本（${money(lang, intern.total)}）因“本季度预算已用完”被驳回；这张单 ${money(lang, order.total)}，金额更大。`,
+        precedents: `${intern.no} 实习生笔记本（${money(lang, intern.total)}）因“本季度预算已用完”被拒绝；这张单 ${money(lang, order.total)}，金额更大。`,
         risks: [
-          `本季度预算：${intern.no} 刚因预算被驳回`,
+          `本季度预算：${intern.no} 刚因预算被拒绝`,
           `新人名单和入职日期没列，${String(order.quantity)} 台的数量无法核对`,
           '在库笔记本没先用，可能重复购置',
         ],
@@ -326,7 +326,7 @@ export async function writeDemoSuggestions(input: {
             : '以前的单价：没有买过这个型号',
         ],
         alternatives: null,
-        precedents: `${intern.no} 因本季度预算用完被驳回；上万元的网络设备没有直接先例。`,
+        precedents: `${intern.no} 因本季度预算用完被拒绝；上万元的网络设备没有直接先例。`,
         risks: [
           '没写项目名称，必要性无法核实',
           '核心交换机要做机房割接，没附实施计划',

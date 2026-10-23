@@ -3637,9 +3637,9 @@ const zhCN: AppResource = {
     ask: '审阅',
     askAgain: '重新审阅',
     recommendation: {
-      approve: '建议同意',
-      conditional: '建议有条件同意',
-      reject: '建议驳回',
+      approve: '建议批准',
+      conditional: '建议有条件批准',
+      reject: '建议拒绝',
       needMore: '建议补充材料',
     },
     asked: '要的是什么',
@@ -3651,8 +3651,8 @@ const zhCN: AppResource = {
     risks: '风险',
     missing: '要补充的',
     comment: '审批意见',
-    approve: '同意',
-    reject: '驳回',
+    approve: '批准',
+    reject: '拒绝',
     dismiss: '忽略',
     redo: '修改',
     redoPlaceholder: '说说要改什么，比如「只采购 3 台」',
@@ -3666,8 +3666,8 @@ const zhCN: AppResource = {
       failed: '审阅没有完成。',
     },
     decided: {
-      approved: '已按审阅同意',
-      rejected: '已按审阅驳回',
+      approved: '已按审阅批准',
+      rejected: '已按审阅拒绝',
     },
     dismissed: '已忽略这次审阅',
     superseded: '已在别处处理',
@@ -3726,7 +3726,7 @@ const zhCN: AppResource = {
     approvalReview: {
       name: '审批助手',
       description:
-        '采购单、报废单提交审批后，替审批人看清要什么、花多少钱、库存或闲置能否顶上、以前怎么批的，给出同意、有条件同意、驳回或补充材料的建议，并起草审批意见。',
+        '采购单、报废单提交审批后，替审批人看清要什么、花多少钱、库存或闲置能否顶上、以前怎么批的，给出批准、有条件批准、拒绝或补充材料的建议，并起草审批意见。',
       triggers: {
         submitted: {
           title: '提交审批',
