@@ -171,8 +171,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   it answers for a share of the to-dos (`importerId`, 2026-10-16), so its
   我负责的 is not empty: it decides one order and one disposal, owns two
   orders awaiting receipt and the two drafts (so it can try 比较报价,
-  offered only to a draft's 负责人 or writer), an in-house repair and the
-  disposal to carry out, and counts in the open stocktake. Since
+  offered only to a draft's 负责人 or writer), an in-house repair, the
+  disposal to carry out and the draft disposal of a monitor (2026-10-23),
+  and counts in the open stocktake. Since
   2026-10-22 every column of 待办 → 我的 has a row: the leaver 陈杰's
   SH-LT-011 is the importer's; the importer is the first joiner's 入职负责人
   (their laptop SH-LT-051 already reserved, Asset Steward's picks for the rest); and

@@ -1302,7 +1302,7 @@ describe('CSV import / export and demo data', () => {
       ).length;
     expect(await owned('purchaseOrders')).toBe(4);
     expect(await owned('repairs')).toBe(1);
-    expect(await owned('disposals')).toBe(1);
+    expect(await owned('disposals')).toBe(2);
     // 信息不一致's devices answer to several people, not all to 吴静
     // (2026-10-17).
     const checks = await resolve(deviceReviewServiceToken).checks();

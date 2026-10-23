@@ -5778,6 +5778,9 @@ export function createDemoService(dependencies: {
               recipientVendorId: String(recycler.id),
               // A monitor holds nothing to wipe.
               dataWipe: 'notRequired',
+              // The importer's (2026-10-23), so its own 报废 has a draft to
+              // carry on with.
+              ...(importerId ? { ownerId: importerId } : {}),
             },
             context,
             all('disposals', 'create'),
