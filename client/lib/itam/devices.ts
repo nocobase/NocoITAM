@@ -145,7 +145,7 @@ export const DEVICE_FIELDS: readonly FieldDefinition[] = [
   {
     key: 'categoryId',
     // The detail reads 序列号、型号、分类、制造商; the list keeps its columns.
-    // Shown in the create dialog as the model fills it, never typed.
+    // Follows the model, never typed; not in the create dialog.
     label: 'fields.category',
     type: 'reference',
     required: true,
@@ -362,8 +362,8 @@ export const DEVICE_FIELDS: readonly FieldDefinition[] = [
 /** Fields the create dialog shows, in order. */
 export const DEVICE_CREATE_FIELDS: readonly string[] = [
   'modelId',
-  'categoryId',
-  'manufacturerId',
+  // Category and maker follow it and are read on the record, not asked
+  // for here (2026-10-23).
   'serialNo',
   'name',
   'locationId',

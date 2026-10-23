@@ -132,10 +132,9 @@ export function stockFields(kind: StockKind): readonly FieldDefinition[] {
 
 /** In the device dialog's order: model first, then what follows from it. */
 export const STOCK_CREATE_FIELDS: readonly string[] = [
-  // The model and what it brings read together, then the name it gives.
+  // The model, then the name it gives; category and maker follow it and
+  // are read on the record, not asked for here (2026-10-23).
   'modelId',
-  'categoryId',
-  'manufacturerId',
   'name',
   'locationId',
   'minimumQuantity',

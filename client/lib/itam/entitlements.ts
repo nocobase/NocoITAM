@@ -289,10 +289,9 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
 /** The create dialog: the kind first, then what that kind needs. */
 export const ENTITLEMENT_CREATE_FIELDS: readonly string[] = [
   'kind',
-  // The product and what it brings read together, then the name it gives.
+  // The product, then the name it gives; category and maker follow it and
+  // are read on the record, not asked for here (2026-10-23).
   'softwareProductId',
-  'categoryId',
-  'manufacturerId',
   'name',
   'licensingModel',
   'billingModel',
