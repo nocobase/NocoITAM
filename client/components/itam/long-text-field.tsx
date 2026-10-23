@@ -75,6 +75,7 @@ export function LongTextField({
     // 编辑 and 复制 on hover, as every other field has (2026-10-16).
     <FieldActions
       copyText={value}
+      leading='relaxed'
       onEdit={
         editable
           ? () => {
