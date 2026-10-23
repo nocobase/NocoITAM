@@ -66,6 +66,17 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     // Chosen when the repair is created; it never moves to another device.
     readonlyWhen: (values) => Boolean(values.id),
   },
+  // Before 维修方式 in the list (2026-10-23); on the detail page it still
+  // follows the fault description it sorts.
+  {
+    key: 'faultCategory',
+    label: 'fields.faultCategory',
+    type: 'select',
+    required: true,
+    options: options('faultCategory', REPAIR_FAULT_CATEGORIES),
+    column: true,
+    detailOrder: 1,
+  },
   {
     key: 'method',
     label: 'fields.repairMethod',
@@ -89,14 +100,6 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.faultDescription',
     type: 'textarea',
     required: true,
-  },
-  {
-    key: 'faultCategory',
-    label: 'fields.faultCategory',
-    type: 'select',
-    required: true,
-    options: options('faultCategory', REPAIR_FAULT_CATEGORIES),
-    column: true,
   },
   // 时间 (2026-10-23): when it went, when it is due and when it came back,
   // a group of their own under 基本信息.
@@ -154,6 +157,7 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     label: 'repairs.resultNotes',
     type: 'textarea',
     readonlyWhen: (values) => values.result === 'inProgress',
+    detailOrder: 2,
   },
   // 报价 (2026-10-23): what the vendor asks while the device is away,
   // recorded through 记录报价 with Asset Steward's 修还是换; shown once
