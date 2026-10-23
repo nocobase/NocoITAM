@@ -138,7 +138,9 @@ export interface DemoAccounts {
  * the system administrator and no employee: it gets no person record and
  * answers for no record — the demo is written as 吴静 (`writerId`).
  * A password is the username and 123: this is demonstration data, and
- * clearing it removes the accounts.
+ * clearing it removes the accounts. A username is therefore at least five
+ * letters, since a password must be at least eight characters (2026-10-23:
+ * `ryan` and `mark` failed the English import).
  */
 /** What each staff sign-in does in the demo, whatever it is called. */
 type StaffKey = 'approver' | 'writer' | 'support';
@@ -196,7 +198,7 @@ export const DEMO_STAFF: Readonly<Record<DemoLanguage, readonly StaffSpec[]>> =
       ),
       staff(
         'support',
-        'ryan',
+        'ryanm',
         'Ryan Mitchell',
         'ryan.mitchell',
         'IT Support Engineer',
@@ -251,14 +253,16 @@ export function demoAccountUsernames(): readonly string[] {
       ...DEMO_LANGUAGES.flatMap((language) =>
         demoAccountsIn(language).map((account) => account.username),
       ),
-      // A database generated before 2026-10-05 still holds these, and one
+      // A database generated before 2026-10-05 still holds these, one
       // generated before 2026-10-06 the pinyin usernames of the English
-      // demo.
+      // demo, and one before 2026-10-23 its four-letter ones.
       ...RETIRED_DEMO_USERNAMES,
       'sunqiang',
       'wujing',
       'zhouyu',
       'chenjie',
+      'ryan',
+      'mark',
     ]),
   ];
 }
@@ -1436,7 +1440,7 @@ const PERSON_NAMES: Readonly<
       name: 'Mark Taylor',
       mail: 'mark.taylor',
       position: 'IT Support Engineer',
-      username: 'mark',
+      username: 'markt',
     },
     { name: 'Lucas Martin', mail: 'lucas.martin', position: 'QA Engineer' },
     {
@@ -4751,7 +4755,7 @@ export function createDemoService(dependencies: {
 
         // A repair in progress on the expired laptop, IT support's: a repair
         // belongs to its 负责人, so the 维修中 card has something to show
-        // when you sign in as IT support (`zhouyu`, or `ryan` in English). The
+        // when you sign in as IT support (`zhouyu`, or `ryanm` in English). The
         // finished ones below are theirs too.
         await on(-3);
         const batteryRepair = await track(

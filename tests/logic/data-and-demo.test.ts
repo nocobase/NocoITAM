@@ -632,7 +632,12 @@ describe('CSV import / export and demo data', () => {
     // romanised, and so are their sign-ins.
     expect(
       status.accountsByLanguage['en-US']?.map((account) => account.username),
-    ).toEqual(['daniel', 'emily', 'ryan', 'mark']);
+    ).toEqual(['daniel', 'emily', 'ryanm', 'markt']);
+    // The users plugin refuses a password under eight characters, which
+    // the authentication double here does not check.
+    for (const accounts of Object.values(status.accountsByLanguage))
+      for (const account of accounts ?? [])
+        expect(account.password?.length ?? 0).toBeGreaterThanOrEqual(8);
     const laptops = await data<{ attributes: Record<string, unknown> }[]>(
       await get('devices?q=SH-LT-00&pageSize=5'),
     );

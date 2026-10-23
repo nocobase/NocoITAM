@@ -151,7 +151,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   have none. Those are the Chinese demo's; the English demo has people of
   its own (2026-10-06, `DEMO_STAFF` and `PERSON_NAMES` by language) —
   Daniel Brooks `daniel` and Emily Carter `emily` (asset managers), Ryan
-  Mitchell `ryan` (IT support) and the leaver Mark Taylor `mark` — rather
+  Mitchell `ryanm` (IT support) and the leaver Mark Taylor `markt` (not
+  `ryan` / `mark` since 2026-10-23: a password is at least eight
+  characters, and the users plugin refused theirs) — rather
   than the Chinese names romanised, and its employees, joiners and vendor
   contacts are English names too. Inside the generator the staff are known
   by what they do (`approver`, `writer`, `support`), not by a username. They are listed in `nocosolution/NocoITAM/SPEC.md ## 演示数据`

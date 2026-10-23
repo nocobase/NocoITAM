@@ -74,10 +74,10 @@ pnpm dev
 
 A banner offers the **demo data**, imported and removed on **Settings → Demo data**, in English or Chinese: a company of about forty people, its devices, stock and licences with years of history, purchase orders, repairs, stocktakes and disposals, a leaver and two joiners, and demo Intune and Jamf platforms, so the MDM features can be tried without connecting anything. It brings IT accounts whose password is the username followed by `123`:
 
-| Language | IT asset managers                                | IT support             | Leaver (sign-in disabled) |
-| -------- | ------------------------------------------------ | ---------------------- | ------------------------- |
-| English  | `daniel` (Daniel Brooks), `emily` (Emily Carter) | `ryan` (Ryan Mitchell) | `mark` (Mark Taylor)      |
-| Chinese  | `sunqiang` (孙强), `wujing` (吴静)               | `zhouyu` (周宇)        | `chenjie` (陈杰)          |
+| Language | IT asset managers                                | IT support              | Leaver (sign-in disabled) |
+| -------- | ------------------------------------------------ | ----------------------- | ------------------------- |
+| English  | `daniel` (Daniel Brooks), `emily` (Emily Carter) | `ryanm` (Ryan Mitchell) | `markt` (Mark Taylor)     |
+| Chinese  | `sunqiang` (孙强), `wujing` (吴静)               | `zhouyu` (周宇)         | `chenjie` (陈杰)          |
 
 The administrator who imports it becomes an IT asset manager too, with approvals, orders, a repair and a stocktake of their own. Removing the demo data removes all of it, its accounts and its notifications.
 
