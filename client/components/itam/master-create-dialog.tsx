@@ -296,11 +296,6 @@ function MasterCreateForm({
             : t(`${meta.i18n}.new`)
         }
         {...(record ? { recordId: text(record.id) } : {})}
-        description={
-          current === 'ai' && !record
-            ? t(`masterCapture.description.${collection}`)
-            : undefined
-        }
         fields={formFields}
         columns={2}
         prelude={

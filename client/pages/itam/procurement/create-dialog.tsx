@@ -345,8 +345,9 @@ export function PurchaseOrderCreateDialog({
       description={
         created
           ? t('procurement.createdAsDraft', { no: text(created.orderNo) })
-          : current === 'ai'
-            ? t('procurement.capture.description')
+          : // AI 整理 says what to give it in its box (2026-10-23).
+            current === 'ai'
+            ? undefined
             : t('procurement.newDescription')
       }
       busy={save.isPending}

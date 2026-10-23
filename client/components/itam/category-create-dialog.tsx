@@ -402,9 +402,6 @@ function CategoryCreateForm({
           ? t('categories.refineTitle', { name: text(record.name) })
           : t('categories.new'))
       }
-      description={
-        current === 'ai' ? t('categoryCapture.description') : undefined
-      }
       fields={fields}
       columns={2}
       {...(record ? { recordId: text(record.id) } : {})}

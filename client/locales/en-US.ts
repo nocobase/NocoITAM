@@ -1186,9 +1186,9 @@ const messages = {
   capture: { adjustPlaceholder: 'Tell the AI what to change' },
   // AI lookup on a model's or software product's page.
   manufacturerCapture: {
-    description:
-      'Name the maker; AI looks up its site and support, check before saving',
-    placeholder: 'The maker, e.g. Dell or Anthropic',
+    // What to write and what AI does with it, in the box itself (2026-10-23).
+    placeholder:
+      'The maker, e.g. Dell or Anthropic. AI looks up its site and support for you to check before saving',
     searching: 'Looking up {{name}} on the web: site and support…',
     reading: 'Reading what is known about {{name}}…',
   },
@@ -1201,22 +1201,16 @@ const messages = {
   categoryCapture: {
     fieldsInvalid:
       'Some extended fields are incomplete; check them before saving.',
-    description:
-      'Write the category, with what it is for if you like; AI fills its parent, rules, defaults and extended fields for you to check before saving',
     placeholder:
-      'The category, optionally what it is for, e.g. Projector, for meeting rooms',
+      'The category, optionally what it is for, e.g. Projector, for meeting rooms. AI fills its parent, rules, defaults and extended fields for you to check before saving',
     duplicates: 'A category with this name exists: ',
   },
   masterCapture: {
-    description: {
-      models:
-        'Type the maker and the model; AI looks up the rest and fills the form for you to check',
-      softwareProducts:
-        'Type the vendor and the product; AI looks up the rest and fills the form for you to check',
-    },
     placeholder: {
-      models: 'The maker and the model, e.g. Dell OptiPlex 7010 SFF',
-      softwareProducts: 'The vendor and the product, e.g. Figma Professional',
+      models:
+        'The maker and the model, e.g. Dell OptiPlex 7010 SFF. AI fills in the rest for you to check before saving',
+      softwareProducts:
+        'The vendor and the product, e.g. Figma Professional. AI fills in the rest for you to check before saving',
     },
     material: 'What you know about it',
     willSearch: 'AI searches the web to fill in more details',
@@ -1817,10 +1811,9 @@ const messages = {
         'This file could not be read as text. Paste its contents, or upload a spreadsheet, Word document, PDF or text file.',
       aiTab: 'AI organise',
       formTab: 'Fill in a form',
-      description:
-        'Paste the request or upload a quote and the AI organises it into a purchase order; check it before you save or submit it',
       material: 'The request or document text',
-      placeholder: 'Paste a purchase request, an email or a quote…',
+      placeholder:
+        'Paste a purchase request, an email or a quote, or upload a document. AI organises it into a purchase order for you to check before you save or submit it',
       upload: 'Upload a document',
       removeFile: 'Remove the file',
       hint: 'Excel, CSV, Word, PDF and images',

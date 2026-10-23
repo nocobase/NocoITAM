@@ -1155,8 +1155,9 @@ const zhCN: AppResource = {
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
   // 完善 on a model's or software product's page, as a category's.
   manufacturerCapture: {
-    description: '写上制造商名称，AI 联网补全官网和支持信息，核对后保存',
-    placeholder: '制造商名称，例如：Dell、Anthropic',
+    // What to write and what AI does with it, in the box itself (2026-10-23).
+    placeholder:
+      '写上制造商名称，例如：Dell、Anthropic。AI 联网补全官网和支持信息，你核对后保存',
     searching: '正在联网查找「{{name}}」的官网和支持信息…',
     reading: '正在整理「{{name}}」的信息…',
   },
@@ -1168,19 +1169,16 @@ const zhCN: AppResource = {
   },
   categoryCapture: {
     fieldsInvalid: '扩展字段还有没填完的，请检查后再保存。',
-    description:
-      '写上分类名称，可以加一句用途，AI 补全上级、规则、默认值和扩展字段，核对后保存',
-    placeholder: '分类名称，可加用途，例如：投影仪，会议室用',
+    placeholder:
+      '写上分类名称，可加一句用途，例如：投影仪，会议室用。AI 补全上级、规则、默认值和扩展字段，你核对后保存',
     duplicates: '已有同名分类：',
   },
   masterCapture: {
-    description: {
-      models: '写上制造商和型号，AI 补全其余信息，核对后保存',
-      softwareProducts: '写上厂商和产品名，AI 补全其余信息，核对后保存',
-    },
     placeholder: {
-      models: '制造商和型号，例如：Dell OptiPlex 7010 SFF',
-      softwareProducts: '厂商和产品名，例如：Figma 专业版',
+      models:
+        '写上制造商和型号，例如：Dell OptiPlex 7010 SFF。AI 补全其余信息，你核对后保存',
+      softwareProducts:
+        '写上厂商和产品名，例如：Figma 专业版。AI 补全其余信息，你核对后保存',
     },
     material: '已知信息',
     willSearch: 'AI 会联网搜索补充更多信息',
@@ -1741,10 +1739,9 @@ const zhCN: AppResource = {
         '无法把这个文件读成文字。请粘贴内容，或上传表格、Word、PDF 或文本文件。',
       aiTab: 'AI 整理',
       formTab: '表单录入',
-      description:
-        '粘贴采购需求或上传报价单，AI 整理成采购单；核对后再保存或提交审批',
       material: '采购需求或单据内容',
-      placeholder: '粘贴采购需求、邮件、报价单内容……',
+      placeholder:
+        '粘贴采购需求、邮件或报价单内容，也可以上传单据。AI 整理成采购单，你核对后再保存或提交审批',
       upload: '上传单据',
       removeFile: '移除文件',
       hint: '支持 Excel、CSV、Word、PDF 和图片',

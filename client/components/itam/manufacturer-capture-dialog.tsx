@@ -207,11 +207,6 @@ function ManufacturerCaptureForm({
           : t('manufacturers.new')
       }
       {...(record ? { recordId: text(record.id) } : {})}
-      description={
-        current === 'ai' && !filled
-          ? t('manufacturerCapture.description')
-          : undefined
-      }
       fields={FIELDS}
       values={values}
       onValuesChange={(next, key) => {

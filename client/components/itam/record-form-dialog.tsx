@@ -405,7 +405,10 @@ export function RecordFormDialog({
               // fields) wants the width a column beside them would take.
               postlude && !replacement
               ? 'sm:max-w-4xl'
-              : twoColumns && !replacement
+              : // AI 整理's box as wide as the form it fills (2026-10-23):
+                // at the narrow width its sentence wrapped after a few words,
+                // and switching to 表单录入 changed the dialog's size.
+                twoColumns || replacement
                 ? 'sm:max-w-2xl'
                 : 'sm:max-w-lg',
         )}
