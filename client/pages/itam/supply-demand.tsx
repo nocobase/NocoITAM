@@ -377,16 +377,20 @@ function Explained({ row }: { readonly row: SupplyRow }): ReactElement {
     label: string,
     entries: readonly SupplyEntry[],
     none: string,
+    lead: ReactNode = null,
   ) => (
     <p className='flex gap-2'>
       <span className='w-10 shrink-0 text-muted-foreground'>{label}</span>
       <span className='min-w-0 flex-1'>
+        {lead}
         {entries.length === 0 ? (
-          <span className='text-muted-foreground'>{none}</span>
+          lead ? null : (
+            <span className='text-muted-foreground'>{none}</span>
+          )
         ) : (
           entries.map((entry, at) => (
             <Fragment key={`${entry.kind}:${entry.url ?? ''}:${String(at)}`}>
-              {at > 0 ? (
+              {at > 0 || lead ? (
                 <span className='text-muted-foreground'>
                   {t('common.listSeparator')}
                 </span>
@@ -398,6 +402,15 @@ function Explained({ row }: { readonly row: SupplyRow }): ReactElement {
       </span>
     </p>
   );
+  // Seats not counted: say which entitlement, rather than a bare 不限.
+  const unlimited = row.unlimitedBy ? (
+    <span>
+      <RecordLink to={row.unlimitedBy.url} className='text-foreground'>
+        {row.unlimitedBy.label}
+      </RecordLink>{' '}
+      {t('supplyDemand.entry.unlimited')}
+    </span>
+  ) : null;
   return (
     <div className='space-y-1 text-muted-foreground'>
       {line(
@@ -409,6 +422,7 @@ function Explained({ row }: { readonly row: SupplyRow }): ReactElement {
         t('supplyDemand.explain.has'),
         compact(has),
         t('supplyDemand.explain.nothing'),
+        unlimited,
       )}
     </div>
   );

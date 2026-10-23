@@ -3084,6 +3084,7 @@ const zhCN: AppResource = {
       nothing: '没有可用的，也没有在途的',
     },
     entry: {
+      unlimited: '不限席位',
       inStock: '库存可用 {{number}}',
       freeSeats: '空闲席位 {{number}}',
       minimum: '保持最低库存 {{number}}',

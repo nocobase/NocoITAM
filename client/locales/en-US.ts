@@ -3272,6 +3272,7 @@ const messages = {
       nothing: 'Nothing free, nothing on its way',
     },
     entry: {
+      unlimited: 'seats not counted',
       inStock: '{{number}} in stock',
       freeSeats: '{{number}} free seats',
       minimum: 'keep {{number}} in stock',

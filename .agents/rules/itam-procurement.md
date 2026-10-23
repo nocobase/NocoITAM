@@ -193,7 +193,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   seats); demand from joiners (required less prepared, waived items out; a
   category line counts only the plan's own shortfall), a stock item's
   minimum, a subscription ending unrenewed (all its seats), and, when asked,
-  devices due for replacement. Short, a row says the last day to order: the
+  devices due for replacement. An entitlement with no seat count makes its
+  product 不限, named in the row, only while it lasts the window (no expiry,
+  auto-renewing, or ending after it); a trial ending sooner counts nothing.
+  Short, a row says the last day to order: the
   earliest dated need less `purchaseLeadDays` (and the preparation days for
   a device), or today when only the minimum is short. It reads every record
   regardless of record scope, so it asks for `read` on devices, stock items,

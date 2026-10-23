@@ -61,6 +61,11 @@ export interface SupplyRow {
   readonly totals: Readonly<Record<SupplyEntry['kind'], number>>;
   readonly supply: number;
   readonly demand: number;
+  /**
+   * An entitlement with no seat count that runs past the window: seats
+   * are not counted, so the balance is null (不限).
+   */
+  readonly unlimitedBy: { readonly label: string; readonly url: string } | null;
   /** Supply less demand; null where seats are unlimited. */
   readonly balance: number | null;
   /** When short: the last day to order it in time. */
@@ -126,7 +131,7 @@ export async function supplyDemand(
       target: SupplyRow['target'];
       kind: string;
       entries: SupplyEntry[];
-      unlimited: boolean;
+      unlimited: { label: string; url: string } | null;
       itemType: string | null;
       needs: string[];
     }
@@ -147,7 +152,7 @@ export async function supplyDemand(
         target: { type, id, name: '' },
         kind,
         entries: [],
-        unlimited: false,
+        unlimited: null,
         itemType: type === 'category' ? null : kind,
         needs: [],
       };
@@ -264,7 +269,11 @@ export async function supplyDemand(
     if (expiry && expiry.slice(0, 10) < now) continue;
     const url = `/entitlements/${String(row.id)}`;
     if (row.seatCount === null || row.seatCount === undefined) {
-      rowOf('softwareProduct', productId, 'entitlement').unlimited = true;
+      // No seat count is unlimited only while it lasts: a trial ending
+      // within the window gives nothing to count on (2026-10-23).
+      const lasts =
+        !expiry || Boolean(row.autoRenew) || expiry.slice(0, 10) > until;
+      if (lasts) product.unlimited = { label: String(row.name), url };
       continue;
     }
     const seats = Number(row.seatCount) || 0;
@@ -627,6 +636,7 @@ export async function supplyDemand(
       balance,
       orderBy,
       vendorId: lastVendor.get(key) ?? null,
+      unlimitedBy: row.unlimited,
       itemType:
         row.target.type === 'model'
           ? (stockKind.get(row.target.id) ?? row.itemType)

@@ -34,6 +34,8 @@ export interface SupplyRow {
   readonly totals: Readonly<Record<SupplySource, number>>;
   readonly supply: number;
   readonly demand: number;
+  /** An entitlement with no seat count lasting the window: 不限. */
+  readonly unlimitedBy: { readonly label: string; readonly url: string } | null;
   /** Null where seats are unlimited. */
   readonly balance: number | null;
   readonly orderBy: string | null;
