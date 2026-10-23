@@ -3072,6 +3072,7 @@ const zhCN: AppResource = {
     },
     columns: {
       item: '资产',
+      category: '分类',
       have: '现有',
       coming: '将到',
       using: '将用',

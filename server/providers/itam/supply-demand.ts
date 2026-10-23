@@ -66,6 +66,8 @@ export interface SupplyRow {
    * are not counted, so the balance is null (不限).
    */
   readonly unlimitedBy: { readonly label: string; readonly url: string } | null;
+  /** The model's or product's category; null for a category row. */
+  readonly category: { readonly id: string; readonly name: string } | null;
   /** Supply less demand; null where seats are unlimited. */
   readonly balance: number | null;
   /** When short: the last day to order it in time. */
@@ -565,14 +567,27 @@ export async function supplyDemand(
 
   // Every model and software product has a row (2026-10-23), nothing
   // coming or going included: the page lists all of them on request.
-  const appliesTo = new Map(
+  const categories = new Map(
     (
       await q()
         .selectFrom('categories')
-        .select(['id', 'appliesTo'])
+        .select(['id', 'name', 'appliesTo'])
         .execute<Row>()
-    ).map((row) => [String(row.id), asText(row.appliesTo) ?? '']),
+    ).map((row) => [String(row.id), row]),
   );
+  const appliesTo = new Map(
+    [...categories].map(([id, row]) => [id, asText(row.appliesTo) ?? '']),
+  );
+  // Each item's category, shown beside its name (2026-10-23).
+  const categoryOf = new Map<string, { id: string; name: string }>();
+  const noteCategory = (key: string, categoryId: unknown) => {
+    const category = categories.get(String(categoryId));
+    if (category)
+      categoryOf.set(key, {
+        id: String(category.id),
+        name: String(category.name),
+      });
+  };
   const STOCK_KINDS = new Set(['accessory', 'consumable', 'component']);
   for (const row of await q()
     .selectFrom('models')
@@ -585,13 +600,15 @@ export async function supplyDemand(
       STOCK_KINDS.has(applies) ? applies : 'device',
     );
     names.models.set(String(row.id), String(row.name));
+    noteCategory(`model:${String(row.id)}`, row.categoryId);
   }
   for (const row of await q()
     .selectFrom('softwareProducts')
-    .select(['id', 'name'])
+    .select(['id', 'name', 'categoryId'])
     .execute<Row>()) {
     rowOf('softwareProduct', String(row.id), 'entitlement');
     names.products.set(String(row.id), String(row.name));
+    noteCategory(`softwareProduct:${String(row.id)}`, row.categoryId);
   }
 
   const result: SupplyRow[] = [];
@@ -644,6 +661,8 @@ export async function supplyDemand(
       orderBy,
       vendorId: lastVendor.get(key) ?? null,
       unlimitedBy: row.unlimited,
+      category:
+        row.target.type === 'category' ? null : (categoryOf.get(key) ?? null),
       itemType:
         row.target.type === 'model'
           ? (stockKind.get(row.target.id) ?? row.itemType)

@@ -92,6 +92,7 @@ const row = (
   orderBy: balance < 0 ? '2098-12-30' : null,
   vendorId,
   unlimitedBy: null,
+  category: null,
   itemType: 'device',
   entries,
 });

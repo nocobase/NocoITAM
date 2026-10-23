@@ -36,6 +36,7 @@ export interface SupplyRow {
   readonly demand: number;
   /** An entitlement with no seat count lasting the window: 不限. */
   readonly unlimitedBy: { readonly label: string; readonly url: string } | null;
+  readonly category: { readonly id: string; readonly name: string } | null;
   /** Null where seats are unlimited. */
   readonly balance: number | null;
   readonly orderBy: string | null;

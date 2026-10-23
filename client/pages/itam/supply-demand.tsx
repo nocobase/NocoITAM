@@ -179,6 +179,11 @@ export default function SupplyDemandPage(): ReactElement {
         </span>
       ),
     },
+    {
+      key: 'category',
+      header: t('supplyDemand.columns.category'),
+      render: (row) => <CategoryLink row={row} />,
+    },
     numeric('have', t('supplyDemand.columns.have'), (row) =>
       count(figures(row).have),
     ),
@@ -309,7 +314,14 @@ export default function SupplyDemandPage(): ReactElement {
 }
 
 /** The item's type tag and its name, opening its model or product. */
-function ItemName({ row }: { readonly row: SupplyRow }): ReactElement {
+function ItemName({
+  row,
+  withCategory = false,
+}: {
+  readonly row: SupplyRow;
+  /** Its category after the name, where there is no column for it. */
+  readonly withCategory?: boolean;
+}): ReactElement {
   return (
     <span className='flex min-w-0 items-center gap-2'>
       <AssetTypeBadge value={row.kind} className='shrink-0' />
@@ -320,7 +332,27 @@ function ItemName({ row }: { readonly row: SupplyRow }): ReactElement {
       >
         {row.target.name}
       </RecordLink>
+      {withCategory && row.category ? (
+        <span className='shrink-0 text-xs text-muted-foreground'>
+          {row.category.name}
+        </span>
+      ) : null}
     </span>
+  );
+}
+
+/** A row's category, opening it. */
+function CategoryLink({ row }: { readonly row: SupplyRow }): ReactElement {
+  return row.category ? (
+    <RecordLink
+      to={`/categories/${row.category.id}`}
+      className='text-muted-foreground'
+      onClick={(event) => event.stopPropagation()}
+    >
+      {row.category.name}
+    </RecordLink>
+  ) : (
+    <span className='text-muted-foreground'>—</span>
   );
 }
 
@@ -339,7 +371,7 @@ function ShortItem({
     <div className='space-y-1.5 py-3 text-sm'>
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
         <span className='min-w-0 flex-1 basis-48'>
-          <ItemName row={row} />
+          <ItemName row={row} withCategory />
         </span>
         <span className='font-medium text-destructive tabular-nums'>
           {t('supplyDemand.short.missing', { count: -(row.balance ?? 0) })}

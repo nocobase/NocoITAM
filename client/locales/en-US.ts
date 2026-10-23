@@ -3260,6 +3260,7 @@ const messages = {
     },
     columns: {
       item: 'Item',
+      category: 'Category',
       have: 'Have',
       coming: 'Coming',
       using: 'Using',
