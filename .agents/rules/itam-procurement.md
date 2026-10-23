@@ -198,7 +198,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   a device), or today when only the minimum is short. It reads every record
   regardless of record scope, so it asks for `read` on devices, stock items,
   entitlements, purchase orders and people.
-  创建采购单 (a row) and 全部创建采购单 (the page) open the create dialog
+  The page reads 不够用 first (2026-10-23, the same day: one table of every
+  item with a column per source was not readable — most rows changed
+  nothing, and a minimum read as somebody's need): each short item says in
+  words what needs it, what there is, how many are missing and the last day
+  to order. Then 够用, only items with something coming or going unless
+  asked for all, as 现有 + 将到 − 将用 = 剩余 beside the minimum; a row opens
+  to its records.
+  创建采购单 (an item) and 全部创建采购单 (the heading) open the create dialog
   filled in (`ProposedOrdersButton`), an order per vendor each item was last
   bought from, the reason 新员工配备 when only joiners need it, 批量更换 when
   only replacements do, else 库存补充, needed by the earliest dated need.

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
@@ -128,31 +128,47 @@ beforeEach(() => {
       },
     ]),
     row('dock', 3, 'v1', []),
+    row('stand', 1, 'v1', [
+      {
+        kind: 'order',
+        quantity: 2,
+        label: 'PO-1',
+        date: '2099-01-10',
+        url: '/procurement/o1',
+      },
+    ]),
   ];
 });
 
-it('shows every item, the short ones as such, and opens a row to its records', () => {
+it('puts what is short first, in words, and the rest as have + coming − using', () => {
   show();
   // 60 days, replacements left out, unless asked.
   expect(state.asked.at(-1)).toEqual({ days: 60, replacements: false });
-  expect(screen.getByText('dock')).toBeTruthy();
-  fireEvent.click(
-    screen.getByRole('radio', { name: /supplyDemand\.showShort/ }),
-  );
-  expect(screen.queryByText('dock')).toBeNull();
-
-  fireEvent.click(screen.getByText('mac').closest('tr')!);
+  expect(screen.getByText('supplyDemand.short.title:2')).toBeTruthy();
+  // Why: who needs it, and what there is.
   expect(screen.getByRole('link', { name: 'Sun Hao' })).toBeTruthy();
+  expect(screen.getByText('supplyDemand.entry.minimum')).toBeTruthy();
+  expect(screen.getByText('supplyDemand.short.missing:2')).toBeTruthy();
+
+  // 够用 lists only what changes, unless asked for everything.
+  expect(screen.queryByText('dock')).toBeNull();
+  expect(screen.getByText('stand')).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole('switch', { name: /supplyDemand\.enough\.everything/ }),
+  );
+  expect(screen.getByText('dock')).toBeTruthy();
 
   fireEvent.click(screen.getByRole('radio', { name: 'supplyDemand.days:90' }));
-  fireEvent.click(screen.getByRole('switch'));
+  fireEvent.click(
+    screen.getByRole('switch', { name: 'supplyDemand.replacements' }),
+  );
   expect(state.asked.at(-1)).toEqual({ days: 90, replacements: true });
 });
 
-it('buys what is short, an order per vendor, from the page or a row', () => {
+it('buys what is short, an order per vendor, from the heading or an item', () => {
   show();
   fireEvent.click(
-    screen.getByRole('button', { name: 'supplyDemand.orders.createAll:2' }),
+    screen.getByRole('button', { name: 'supplyDemand.orders.createAll' }),
   );
   const shown = state.dialogs.slice(-2);
   expect(shown.map((dialog) => dialog.values)).toEqual([
@@ -173,11 +189,8 @@ it('buys what is short, an order per vendor, from the page or a row', () => {
     },
   ]);
   expect(shown.map((dialog) => dialog.open)).toEqual([true, false]);
-
-  // A row of its own: only that item. Rows with nothing short offer none.
-  const rows = screen.getAllByRole('row');
-  const dock = rows.find((tr) => within(tr).queryByText('dock'))!;
+  // Each short item has its own; nothing that is enough does.
   expect(
-    within(dock).queryByRole('button', { name: 'supplyDemand.orders.create' }),
-  ).toBeNull();
+    screen.getAllByRole('button', { name: 'supplyDemand.orders.create' }),
+  ).toHaveLength(2);
 });
