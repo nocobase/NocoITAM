@@ -455,3 +455,18 @@ and the comment keeps their names; they are not the record's attachments.
   among others — 预留, 更换, 不需要, 暂不处理 — which add `TEXT_BUTTON`
   (`client/lib/itam/text-button.ts`) to the ghost button. Buttons with a
   frame or a fill, cards, tabs and menu items keep their own hover.
+- Every list page filters beside its search box (2026-10-23): a domain's
+  `filterFields`, in column order — the device list adds 型号 as the stock
+  lists have it, and 采购, 维修, 报废 and 盘点 filter by their selects,
+  status first among them (a status chosen on a board narrows it to that
+  column; repairs have no board, so this is how to see the ones still out).
+  A master-data list derives its filters from its fields
+  (`filterableFields`); `filterable: false` keeps one out — a person's
+  linked account (only IT signs in) and a category's asset type (the tree
+  is grouped by it). A reference filter lists only the records that list
+  holds: device models and categories on devices, the kind's on stock.
+- A detail page's information groups may open on rows of their own
+  (`DomainConfig.groupLeads`, keyed by group heading, beside `BasicLead`
+  for 基本信息, 2026-10-23). A stocktake's 盘点进度 and 待处理 open 进度,
+  above when the count started and finished, through `SummaryLead`'s
+  `only`.

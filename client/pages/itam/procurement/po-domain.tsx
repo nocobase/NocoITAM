@@ -70,6 +70,9 @@ export const purchaseOrderDomain: DomainConfig = {
   i18n: 'procurement',
   fields: PO_FIELDS,
   createFields: PO_CREATE_FIELDS,
+  // Beside the search box, in column order (2026-10-23). On the board a
+  // status chosen here narrows it to that column.
+  filterFields: ['reason', 'status', 'vendorId'],
   // The same rule the service applies: the statuses it edits in
   // (`EDITABLE_STATUSES` in `procurement.ts`) and only for the side that
   // raised the order. A rejected order is open again, fields and lines both,

@@ -64,6 +64,8 @@ export const disposalDomain: DomainConfig = {
   i18n: 'disposals',
   fields: DISPOSAL_FIELDS,
   createFields: DISPOSAL_CREATE_FIELDS,
+  // Beside the search box, in column order (2026-10-23).
+  filterFields: ['method', 'reason', 'status'],
   // A draft or a rejected request is edited in full; an approved one only
   // where the decision did not reach — what happens to the data.
   // The recipient is one row: the vendor it names, or the name typed in.

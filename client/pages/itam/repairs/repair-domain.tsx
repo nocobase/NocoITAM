@@ -42,6 +42,9 @@ export const repairDomain: DomainConfig = {
   fields: REPAIR_FIELDS,
   createFields: ['deviceId', ...REPAIR_CREATE_FIELDS],
   nameField: 'repairNo',
+  // Beside the search box, in column order (2026-10-23): repairs have no
+  // board, so this is the only way to see the ones still out.
+  filterFields: ['result', 'faultCategory', 'method', 'vendorId'],
   // Newest sent first (2026-10-23): oldest first put every finished repair
   // ahead of the ones still out.
   defaultSort: 'sentAt',

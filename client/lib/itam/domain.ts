@@ -293,6 +293,13 @@ export interface DomainConfig {
   readonly InfoLead?: ComponentType<{ readonly record: ItamRecord }>;
   /** Rows that open 基本信息, above 负责人 (a stock item's quantities). */
   readonly BasicLead?: ComponentType<{ readonly record: ItamRecord }>;
+  /**
+   * Rows that open another information group, keyed by its heading (a
+   * stocktake's count progress opens 进度, 2026-10-23).
+   */
+  readonly groupLeads?: Readonly<
+    Record<string, ComponentType<{ readonly record: ItamRecord }>>
+  >;
   /** Detail column layout; `reversed` puts the aside and tabs on the left. */
   readonly detailLayout?: 'narrow' | 'reversed';
   /** Hide automatic timestamps when the system card already presents them. */

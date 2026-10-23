@@ -307,23 +307,25 @@ function DevicesList(): ReactElement {
   );
 
   const columns = DEVICE_FIELDS.filter((field) => field.column);
-  // Status, category (device categories only), location and department
-  // filter the list.
+  // Model and category (device ones only), status, department and location
+  // filter the list, in the columns' order. 型号 since 2026-10-23, as on the
+  // stock lists.
   const filterFields = useMemo(
     () =>
-      // In the columns' order: 分类、状态、所属部门、存放位置.
-      ['categoryId', 'status', 'departmentId', 'locationId'].map((key) => {
-        const field = DEVICE_FIELDS.find((entry) => entry.key === key)!;
-        return key === 'categoryId'
-          ? {
-              ...field,
-              reference: {
-                ...field.reference!,
-                filter: { appliesTo: 'device' },
-              },
-            }
-          : field;
-      }),
+      ['modelId', 'categoryId', 'status', 'departmentId', 'locationId'].map(
+        (key) => {
+          const field = DEVICE_FIELDS.find((entry) => entry.key === key)!;
+          return key === 'categoryId' || key === 'modelId'
+            ? {
+                ...field,
+                reference: {
+                  ...field.reference!,
+                  filter: { appliesTo: 'device' },
+                },
+              }
+            : field;
+        },
+      ),
     [],
   );
   const rows = useMemo(() => list.data?.data ?? [], [list.data]);

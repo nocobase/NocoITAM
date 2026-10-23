@@ -15,18 +15,24 @@ import type { ItamRecord } from '@/lib/itam/api';
 export function SummaryLead({
   record,
   summary,
+  only,
 }: {
   readonly record: ItamRecord;
   readonly summary: RecordSummary;
+  /** The summary's items to show, by key; all of them when absent. */
+  readonly only?: readonly string[];
 }): ReactElement {
   const { t } = useTranslation();
   return (
     <>
-      {summary.items(record, t).map((item) => (
-        <InfoRow key={item.key} label={item.label}>
-          {item.value}
-        </InfoRow>
-      ))}
+      {summary
+        .items(record, t)
+        .filter((item) => !only || only.includes(item.key))
+        .map((item) => (
+          <InfoRow key={item.key} label={item.label}>
+            {item.value}
+          </InfoRow>
+        ))}
     </>
   );
 }

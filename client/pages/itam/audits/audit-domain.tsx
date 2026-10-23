@@ -45,6 +45,8 @@ export const auditDomain: DomainConfig = {
   route: 'audits',
   i18n: 'audits',
   fields: AUDIT_TASK_FIELDS,
+  // Beside the search box (2026-10-23).
+  filterFields: ['status'],
   fieldDisplay: (field, record) =>
     field.key === 'executorIds' ? (
       <ExecutorNames ids={record.executorIds} />
@@ -101,10 +103,25 @@ export const auditDomain: DomainConfig = {
   defaultTab: 'items',
   Create: AuditCreateDialog,
   Actions: AuditActions,
-  // The summary leads 基本信息 (2026-10-16); no summary strip.
+  // The summary leads 基本信息 (2026-10-16); no summary strip. Its count
+  // progress and 待处理 open 进度 instead (2026-10-23), above when the
+  // count started and finished.
   BasicLead: ({ record }) => (
-    <SummaryLead record={record} summary={RECORD_SUMMARIES.auditTasks} />
+    <SummaryLead
+      record={record}
+      summary={RECORD_SUMMARIES.auditTasks}
+      only={['status']}
+    />
   ),
+  groupLeads: {
+    'groups.progress': ({ record }) => (
+      <SummaryLead
+        record={record}
+        summary={RECORD_SUMMARIES.auditTasks}
+        only={['progress', 'differences']}
+      />
+    ),
+  },
 };
 
 function ExecutorNames({ ids }: { readonly ids: unknown }): ReactElement {

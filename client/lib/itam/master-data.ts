@@ -280,6 +280,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         required: true,
         column: true,
         options: options('appliesTo', CATEGORY_APPLIES_TO),
+        // Not a filter (2026-10-23): the tree is already grouped by it.
+        filterable: false,
         // Only a top-level category chooses; a sub-category inherits.
         readonlyWhen: (values) => Boolean(values.parentId),
         readonlyHint: 'categories.appliesToInherited',
@@ -683,6 +685,9 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         reference: { collection: 'users', account: true },
         // In the people list (2026-10-22): who signs in as whom.
         column: true,
+        // Not a filter (2026-10-23): only IT signs in, so picking an
+        // account finds one person, which the search does too.
+        filterable: false,
         group: 'groups.basic',
       },
       {

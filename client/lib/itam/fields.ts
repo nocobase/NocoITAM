@@ -90,6 +90,12 @@ export interface FieldDefinition {
   readonly column?: boolean;
   /** Editable in the create / edit form. Defaults to true. */
   readonly form?: boolean;
+  /**
+   * Offered as a list filter where the list derives its filters from its
+   * fields (`filterableFields`). Defaults to true for a select or a
+   * reference; false keeps one out.
+   */
+  readonly filterable?: boolean;
   /** Group heading (translation key) on the detail page. */
   readonly group?: string;
   readonly min?: number;
@@ -250,6 +256,7 @@ export function filterableFields(
     (field) =>
       field.column &&
       field.form !== false &&
+      field.filterable !== false &&
       (field.type === 'select' ||
         field.type === 'multiselect' ||
         (field.type === 'reference' && field.key !== 'parentId')),

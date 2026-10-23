@@ -475,56 +475,60 @@ export function DomainDetailPage({
               />
             ) : null}
             {InfoLead ? <InfoLead record={data} /> : null}
-            {[...groups.entries()].map(([group, fields], groupIndex) => (
-              <Fragment key={group}>
-                <InfoSection title={t(group)}>
-                  {group === 'groups.basic' && BasicLead ? (
-                    <BasicLead record={data} />
-                  ) : null}
-                  {fields
-                    .toSorted(
-                      (a, b) => (a.detailOrder ?? 0) - (b.detailOrder ?? 0),
-                    )
-                    .map((field) => (
-                      <InfoRow
-                        key={field.key}
-                        label={
-                          <FieldLabel
-                            label={t(field.labelWhen?.(data) ?? field.label)}
-                            hint={
-                              field.readonlyHint &&
-                              ((field.form === false &&
-                                !domain.fieldEditor?.(field, data)) ||
-                                field.readonlyWhen?.(data))
-                                ? field.readonlyHint
-                                : undefined
-                            }
-                          />
-                        }
-                      >
-                        {inlineField(field)}
-                      </InfoRow>
-                    ))}
-                </InfoSection>
-                {/* A category's extended fields belong with the basics, the
+            {[...groups.entries()].map(([group, fields], groupIndex) => {
+              const GroupLead = domain.groupLeads?.[group];
+              return (
+                <Fragment key={group}>
+                  <InfoSection title={t(group)}>
+                    {group === 'groups.basic' && BasicLead ? (
+                      <BasicLead record={data} />
+                    ) : null}
+                    {GroupLead ? <GroupLead record={data} /> : null}
+                    {fields
+                      .toSorted(
+                        (a, b) => (a.detailOrder ?? 0) - (b.detailOrder ?? 0),
+                      )
+                      .map((field) => (
+                        <InfoRow
+                          key={field.key}
+                          label={
+                            <FieldLabel
+                              label={t(field.labelWhen?.(data) ?? field.label)}
+                              hint={
+                                field.readonlyHint &&
+                                ((field.form === false &&
+                                  !domain.fieldEditor?.(field, data)) ||
+                                  field.readonlyWhen?.(data))
+                                  ? field.readonlyHint
+                                  : undefined
+                              }
+                            />
+                          }
+                        >
+                          {inlineField(field)}
+                        </InfoRow>
+                      ))}
+                  </InfoSection>
+                  {/* A category's extended fields belong with the basics, the
                   way the device page places them, unless the domain says
                   otherwise. */}
-                {(domain.extendedFieldsAfter
-                  ? group === domain.extendedFieldsAfter
-                  : groupIndex === 0) && domain.extendedFields !== false ? (
-                  <ExtendedFields
-                    record={data}
-                    editable={editable}
-                    onSave={async (attributes: Record<string, unknown>) => {
-                      await mutations.update.mutateAsync({
-                        id,
-                        input: { attributes },
-                      });
-                    }}
-                  />
-                ) : null}
-              </Fragment>
-            ))}
+                  {(domain.extendedFieldsAfter
+                    ? group === domain.extendedFieldsAfter
+                    : groupIndex === 0) && domain.extendedFields !== false ? (
+                    <ExtendedFields
+                      record={data}
+                      editable={editable}
+                      onSave={async (attributes: Record<string, unknown>) => {
+                        await mutations.update.mutateAsync({
+                          id,
+                          input: { attributes },
+                        });
+                      }}
+                    />
+                  ) : null}
+                </Fragment>
+              );
+            })}
           </InfoCard>
         }
         // The record opens on its first tab at its own address (2026-10-23):
