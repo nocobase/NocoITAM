@@ -270,9 +270,9 @@ triage.tsx`, under the description) fills only what is still empty,
   quote is read from a document with the same box, or typed; a typed
   amount, or one changed after reading, is weighed again before saving, so
   the repair keeps the advice it was given at that price
-  (`quoteRecommendation`, `quoteReasons`). The page adds the rule beside it
-  — the quote's share of the book value, amber from half, and a passed
-  replacement date — and 继续维修 / 改为报废 for whoever may finish the
+  (`quoteRecommendation`, `quoteReasons`). Without the advice's reasons the page
+  shows the rule in their place — the quote's share of the book value,
+  amber from half, and a passed replacement date — and 继续维修 / 改为报废 for whoever may finish the
   repair. 改为报废 records `quoteDecision`, completes the repair as
   `unrepairable` with the device to pending disposal, and opens a disposal
   filled from the quote. A new quote clears the decision; completing

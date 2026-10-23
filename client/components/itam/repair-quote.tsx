@@ -349,7 +349,9 @@ export function QuoteAdvice({
           </span>
         ) : null}
       </div>
-      {share !== undefined || pastReplacement ? (
+      {/* The rule stands in for the reasons when there are none: the
+          advice's reasons already give the share and the dates. */}
+      {!reasons.length && (share !== undefined || pastReplacement) ? (
         <p
           className={
             (share !== undefined && share >= 50) || pastReplacement
