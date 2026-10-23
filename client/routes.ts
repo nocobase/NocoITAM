@@ -44,6 +44,8 @@ import {
   Wrench,
 } from 'lucide-react';
 
+import { LANDING_PATH } from './routing/landing.js';
+
 /**
  * ITAM navigation, following the specification's 导航 section. Detail pages
  * are children of their list page so they inherit its access check; their
@@ -94,7 +96,28 @@ interface MasterRoute {
     readonly path: string;
     readonly loader: AppClientRouteComponentLoader;
   }[];
+  /** The tab the record opens on, when not History (its `defaultTab`). */
+  readonly landing?: string;
 }
+
+const historyTab: AppClientRouteComponentLoader = () =>
+  import('./pages/itam/record-history-tab.js');
+
+/**
+ * The tab a record opens on, at the record's own address (2026-10-23), so
+ * opening a record no longer redirects to `…/history`; the tab keeps its own
+ * path too, for links that name it. The route registry takes no index
+ * routes and refuses a child at its parent's path, so this one is
+ * registered under `LANDING_PATH` and `renderRouteTree` renders it as the
+ * index route.
+ */
+const landingRoute = (
+  name: string,
+  loader: AppClientRouteComponentLoader | undefined,
+): readonly AppClientRouteDefinition[] =>
+  loader
+    ? [{ name: `${name}-landing`, path: LANDING_PATH, componentLoader: loader }]
+    : [];
 
 // Explicit loaders keep every page its own lazy chunk; a templated import
 // would bundle the whole directory together.
@@ -105,6 +128,7 @@ const master = ({
   list,
   detail,
   tabs = [],
+  landing,
 }: MasterRoute): AppClientRouteDefinition => ({
   name: file,
   path: `/${file}`,
@@ -117,6 +141,12 @@ const master = ({
       path: ':id',
       componentLoader: detail,
       children: [
+        ...landingRoute(
+          file,
+          landing
+            ? tabs.find((tab) => tab.path === landing)?.loader
+            : historyTab,
+        ),
         ...tabs.map((tab) => ({
           name: `${file}-${tab.path}`,
           path: tab.path,
@@ -125,7 +155,7 @@ const master = ({
         {
           name: `${file}-history`,
           path: 'history',
-          componentLoader: () => import('./pages/itam/record-history-tab.js'),
+          componentLoader: historyTab,
         },
       ],
     },
@@ -136,6 +166,8 @@ interface DomainRouteLoaders {
   readonly list: AppClientRouteComponentLoader;
   readonly detail: AppClientRouteComponentLoader;
   readonly tabs: Readonly<Record<string, AppClientRouteComponentLoader>>;
+  /** The tab the record opens on, when not History. */
+  readonly landing?: string;
 }
 
 /** A business collection: list page, detail page as child, tabs as grandchildren. */
@@ -155,11 +187,14 @@ const domainRoute = (
       name: `${name}-detail`,
       path: ':id',
       componentLoader: loaders.detail,
-      children: Object.entries(loaders.tabs).map(([tab, loader]) => ({
-        name: `${name}-${tab}`,
-        path: tab,
-        componentLoader: loader,
-      })),
+      children: [
+        ...landingRoute(name, loaders.tabs[loaders.landing ?? 'history']),
+        ...Object.entries(loaders.tabs).map(([tab, loader]) => ({
+          name: `${name}-${tab}`,
+          path: tab,
+          componentLoader: loader,
+        })),
+      ],
     },
   ],
 });
@@ -328,13 +363,16 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
               path: ':id',
               componentLoader: () =>
                 import('./pages/itam/devices/device-detail.js'),
-              children: ['history', 'related', 'attachments', 'documents'].map(
-                (tab) => ({
-                  name: `devices-${tab}`,
-                  path: tab,
-                  componentLoader: deviceTab(tab),
-                }),
-              ),
+              children: [
+                ...landingRoute('devices', deviceTab('history')),
+                ...['history', 'related', 'attachments', 'documents'].map(
+                  (tab) => ({
+                    name: `devices-${tab}`,
+                    path: tab,
+                    componentLoader: deviceTab(tab),
+                  }),
+                ),
+              ],
             },
           ],
         },
@@ -430,6 +468,8 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
             attachments: () => import('./pages/itam/audits/tab-attachments.js'),
             history: () => import('./pages/itam/audits/tab-history.js'),
           },
+          // A stocktake opens on its items (`defaultTab` in audit-domain).
+          landing: 'items',
         }),
         {
           name: 'reports',
@@ -613,6 +653,8 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
           file: 'people',
           title: 'navigation.people',
           icon: Users,
+          // A person opens on what they hold (`defaultTab`).
+          landing: 'holdings',
           list: () => import('./pages/itam/master/people.js'),
           detail: () => import('./pages/itam/master/people-detail.js'),
           tabs: [

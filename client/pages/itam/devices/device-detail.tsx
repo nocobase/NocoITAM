@@ -26,13 +26,9 @@ import {
 } from 'react';
 import {
   Link,
-  matchPath,
-  Navigate,
   Outlet,
-  useLocation,
   useNavigate,
   useParams,
-  useResolvedPath,
   useSearchParams,
 } from 'react-router';
 
@@ -150,8 +146,6 @@ export default function DeviceDetailPage(): ReactElement {
   const { t } = useTranslation();
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const parentPath = useResolvedPath('.');
   const device = useItamRecord<ItamRecord>(DEVICES_PATH, id);
   const attachments = useAttachmentGroups('devices', id);
   const relatedCount = useDeviceRelatedCount(id);
@@ -293,15 +287,6 @@ export default function DeviceDetailPage(): ReactElement {
   );
   const names = useReferenceNames(referenceRequests);
 
-  const isParentEntry = matchPath(
-    { path: parentPath.pathname, end: true },
-    location.pathname,
-  );
-  if (isParentEntry) {
-    return (
-      <Navigate to={{ pathname: 'history', search: location.search }} replace />
-    );
-  }
   if (device.isLoading) {
     return (
       <section className='mx-auto w-full max-w-7xl space-y-4 p-6'>

@@ -8,16 +8,7 @@ import {
   useState,
   type ReactElement,
 } from 'react';
-import {
-  Link,
-  matchPath,
-  Navigate,
-  Outlet,
-  useLocation,
-  useNavigate,
-  useParams,
-  useResolvedPath,
-} from 'react-router';
+import { Link, Outlet, useNavigate, useParams } from 'react-router';
 
 import { FieldValue } from '@/components/itam/cells';
 import { DeleteDialog } from '@/components/itam/delete-dialog';
@@ -84,8 +75,6 @@ export function DomainDetailPage({
   const hideBreadcrumb = useContext(HideBreadcrumbContext);
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const parentPath = useResolvedPath('.');
   const record = useItamRecord<ItamRecord>(domain.path, id);
   const mutations = useItamMutations<ItamRecord>(domain.path);
   const permissions = useCollectionPermissions(domain.name, [
@@ -173,33 +162,6 @@ export function DomainDetailPage({
   const nameOf = (collection: string, value: unknown) =>
     value ? names[collection]?.get(text(value)) : undefined;
 
-  const isParentEntry = matchPath(
-    { path: parentPath.pathname, end: true },
-    location.pathname,
-  );
-  if (isParentEntry) {
-    // A default tab some records lack (a model's devices, when the model is
-    // stock) waits for the record — and the record it depends on — so the
-    // page lands on a tab it has rather than bouncing through one it hasn't.
-    const conditional = (domain.tabs ?? []).find(
-      (tab) => tab.key === domain.defaultTab,
-    )?.visible;
-    let landing = domain.defaultTab ?? 'history';
-    if (conditional) {
-      if (record.isLoading || related.isLoading) return <></>;
-      if (data) {
-        const shown = (domain.tabs ?? []).filter(
-          (tab) => !tab.visible || tab.visible(data, related.data),
-        );
-        landing = shown.some((tab) => tab.key === domain.defaultTab)
-          ? landing
-          : (shown[0]?.key ?? 'history');
-      }
-    }
-    return (
-      <Navigate to={{ pathname: landing, search: location.search }} replace />
-    );
-  }
   if (record.isLoading) {
     return (
       <section className='mx-auto w-full max-w-7xl space-y-4 p-6'>
@@ -558,6 +520,9 @@ export function DomainDetailPage({
             ))}
           </InfoCard>
         }
+        // The record opens on its first tab at its own address (2026-10-23):
+        // the route's empty-path child shows it, so no redirect names it.
+        landing={domain.defaultTab ?? 'history'}
         // History first on every record, as NocoCRM's 动态 is: what happened
         // and what people said about it (2026-10-14).
         tabs={[

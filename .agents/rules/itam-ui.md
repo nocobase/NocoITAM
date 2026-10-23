@@ -115,6 +115,15 @@ shared.tsx` are NocoCRM's files with this application's adaptations: the
   row, so the handover rule and the read-only cases are unchanged. Neither the purchase order nor the disposal has a
   申请信息 group any more: 部门 and 需求日期, and 申请日期, sit under
   基本信息.
+- A record opens on its first tab **at its own address** (2026-10-23), not
+  by redirecting to `…/history`: `landingRoute()` in `client/routes.ts`
+  registers that tab (History, or the domain's `defaultTab`: a person's
+  holdings, a stocktake's items) under `LANDING_PATH`, which
+  `renderRouteTree` and the record drawer render as the detail route's index
+  (`client/routing/landing.ts`; the registry has no index routes and refuses
+  a child at its parent's path). `DetailPage`'s `landing` tab links to the
+  record itself and stays marked under an old link naming it. A new
+  `defaultTab` needs its `landing` in `routes.ts` too.
 - A record has one timeline, not a history tab beside a change-log tab: the
   events and the field changes of the same operation are one line, folded
   together by the `operationId` both writers stamp

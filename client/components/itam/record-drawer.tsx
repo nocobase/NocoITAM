@@ -41,6 +41,7 @@ import {
   EmbeddedRecordContext,
 } from '@/lib/itam/detail-chrome';
 import { recordPage } from '@/lib/itam/record-pages';
+import { isLandingPath } from '../../routing/landing.js';
 import { recordOrTabTarget, type RecordTarget } from '@/lib/itam/record-view';
 import { referenceLabel } from '@/lib/itam/references';
 
@@ -211,13 +212,22 @@ export function RecordPane({
             // width, so it reads like a narrow screen here.
             element={<RoutePage page={page.Detail} />}
           >
-            {page.tabs.map((tab) => (
-              <Route
-                key={tab.path}
-                path={tab.path}
-                element={<RoutePage page={tab.Component} />}
-              />
-            ))}
+            {page.tabs.map((tab) =>
+              // The tab the record opens on, at its own address.
+              isLandingPath(tab.path) ? (
+                <Route
+                  key={tab.path}
+                  index
+                  element={<RoutePage page={tab.Component} />}
+                />
+              ) : (
+                <Route
+                  key={tab.path}
+                  path={tab.path}
+                  element={<RoutePage page={tab.Component} />}
+                />
+              ),
+            )}
           </Route>
           {/* Anywhere else belongs to the page around the pane. */}
           <Route path='*' element={<LeaveDrawer onLeave={onLeave} />} />

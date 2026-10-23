@@ -68,6 +68,9 @@ function landOn(domainName: string, route: string) {
           path={`/${route}/:id`}
           element={<DomainDetailPage domain={masterDomain(domainName)} />}
         >
+          {/* The tab a record opens on, at its own address (2026-10-23):
+              the route tree renders it as the index. */}
+          <Route index element={<p>History tab</p>} />
           <Route path='devices' element={<p>Devices tab</p>} />
           <Route path='stock' element={<p>Stock tab</p>} />
           <Route path='models' element={<p>Models tab</p>} />
@@ -97,6 +100,11 @@ it('opens a stock model on its history, beside its stock tab', () => {
     .getAllByRole('link')
     .map((link) => link.textContent);
   expect(tabs[0]).toBe('tabs.history');
+  // At the record's own address, not …/history (2026-10-23).
+  expect(screen.getByRole('link', { name: 'tabs.history' })).toHaveAttribute(
+    'href',
+    '/models/r1',
+  );
   // A model has devices or stock, never both: the tab is named for which.
   expect(screen.getByRole('link', { name: 'tabs.stock' })).toBeVisible();
   expect(screen.queryByRole('link', { name: 'tabs.devices' })).toBeNull();

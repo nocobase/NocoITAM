@@ -72,6 +72,12 @@ export interface DetailPageProps {
    */
   readonly layout?: 'default' | 'narrow' | 'reversed';
   readonly tabs: readonly DetailTab[];
+  /**
+   * The tab the record opens on (2026-10-23), shown at the record's own
+   * address rather than one naming the tab: its link goes there, and it
+   * stays marked when an older link names it.
+   */
+  readonly landing?: string;
   /** The active tab's content, normally an <Outlet />. */
   readonly children: ReactNode;
 }
@@ -92,6 +98,7 @@ export function DetailPage({
   aside,
   layout = 'default',
   tabs,
+  landing = 'history',
   children,
 }: DetailPageProps): ReactElement {
   const location = useLocation();
@@ -222,17 +229,23 @@ export function DetailPage({
               >
                 {tabs.map((tab) => {
                   const Icon = tab.icon ?? TAB_ICONS[tab.key];
+                  const opens = tab.key === landing;
                   return (
                     <NavLink
                       key={tab.key}
-                      to={{ pathname: tab.to, search: location.search }}
+                      to={{
+                        pathname: opens ? '.' : tab.to,
+                        search: location.search,
+                      }}
+                      end={opens}
                       // A tab is a view of the same record, not a page:
                       // 返回 and the browser's back leave the record.
                       replace
                       className={({ isActive }) =>
                         cn(
                           '-mb-px flex h-10 items-center gap-1.5 border-b-2 text-sm font-medium transition-colors outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
-                          isActive
+                          isActive ||
+                            (opens && location.pathname.endsWith(`/${tab.to}`))
                             ? 'border-primary text-primary'
                             : 'border-transparent text-foreground hover:text-primary',
                         )
