@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router';
 
-import { recordTarget } from './record-view.js';
+import { recordOrTabTarget } from './record-view.js';
 
 /**
  * The record drawer the application shell provides (`RecordDrawerProvider`
@@ -26,7 +26,7 @@ export function useOpenRecord(): (to: string) => void {
   const navigate = useNavigate();
   return useCallback(
     (to: string) => {
-      if (drawer && recordTarget(to)) drawer.open(to);
+      if (drawer && recordOrTabTarget(to)) drawer.open(to);
       else void navigate(to);
     },
     [drawer, navigate],

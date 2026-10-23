@@ -1,4 +1,4 @@
-import { recordTarget, type RecordTarget } from './record-view.js';
+import { recordOrTabTarget, type RecordTarget } from './record-view.js';
 import type { InboxEntry } from '#extensions/nocobase-inbox/model';
 
 /**
@@ -23,8 +23,5 @@ export function noticePath(entry: InboxEntry): string | undefined {
 
 /** The record behind a path that may name one of its tabs. */
 export function noticeRecord(path: string): RecordTarget | undefined {
-  return (
-    recordTarget(path) ??
-    recordTarget(path.replace(/^(\/[^/?#]+\/[^/?#]+)\/[^/?#]+/, '$1'))
-  );
+  return recordOrTabTarget(path);
 }

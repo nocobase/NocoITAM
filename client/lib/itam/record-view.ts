@@ -103,3 +103,15 @@ export function recordTarget(to: string): RecordTarget | undefined {
   const view = recordViewByRoute(route);
   return view ? { ...view, id, to } : undefined;
 }
+
+/**
+ * The record a link opens, its tab named or not (`/people/1/holdings`, or a
+ * notification's `/audits/1/history?focus=…`): the drawer shows the record
+ * on that tab (2026-10-22 for links; a tab link navigated until then).
+ */
+export function recordOrTabTarget(to: string): RecordTarget | undefined {
+  return (
+    recordTarget(to) ??
+    recordTarget(to.replace(/^(\/[^/?#]+\/[^/?#]+)\/[^/?#]+/, '$1'))
+  );
+}

@@ -84,6 +84,7 @@ function Page(): React.JSX.Element {
     <div>
       <output data-testid='pathname'>{location.pathname}</output>
       <RecordLink to='/disposals/c1'>Laptop disposal</RecordLink>
+      <RecordLink to='/disposals/c1/devices'>Disposal devices</RecordLink>
       <RecordLink to='/disposals/c1' drawer={false}>
         Full disposal
       </RecordLink>
@@ -257,4 +258,13 @@ it('navigates as an ordinary link outside a detail page', () => {
   expect(pathname()).toBe('/disposals/c1');
   fireEvent.click(screen.getByRole('button', { name: 'Vendor row' }));
   expect(pathname()).toBe('/vendors/v1');
+});
+
+it("opens a link that names a record's tab in the drawer, on that tab", () => {
+  show();
+  fireEvent.click(screen.getByRole('link', { name: 'Disposal devices' }));
+  const drawer = screen.getByRole('dialog');
+  expect(within(drawer).getByText('Devices content')).toBeVisible();
+  // The page behind stays where it was (2026-10-22: it navigated).
+  expect(pathname()).toBe('/procurement/p1/lines');
 });

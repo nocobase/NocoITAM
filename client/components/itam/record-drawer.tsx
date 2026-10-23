@@ -41,7 +41,7 @@ import {
   EmbeddedRecordContext,
 } from '@/lib/itam/detail-chrome';
 import { recordPage } from '@/lib/itam/record-pages';
-import { recordTarget, type RecordTarget } from '@/lib/itam/record-view';
+import { recordOrTabTarget, type RecordTarget } from '@/lib/itam/record-view';
 import { referenceLabel } from '@/lib/itam/references';
 
 import { EmptyState } from './empty-state.js';
@@ -127,7 +127,7 @@ function RecordDrawerBody({
 }): ReactElement {
   const { t } = useTranslation();
   // `open` only accepts record links, so the target always resolves.
-  const target = recordTarget(to) as RecordTarget;
+  const target = recordOrTabTarget(to) as RecordTarget;
   // The page inside carries the visible title; the drawer's own name is
   // for assistive technology only.
   const record = useItamRecord<ItamRecord>(target.path, target.id);
@@ -197,9 +197,7 @@ export function RecordPane({
 }): ReactElement | null {
   // A link may name the record's tab (`/audits/1/history?focus=…`, as a
   // notification does): the page is the record's, opened on that tab.
-  const target =
-    recordTarget(to) ??
-    recordTarget(to.replace(/^(\/[^/?#]+\/[^/?#]+)\/[^/?#]+/, '$1'));
+  const target = recordOrTabTarget(to);
   const page = target ? recordPage(target.route) : undefined;
   if (!target || !page) return <>{fallback}</>;
   return (

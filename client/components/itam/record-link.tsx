@@ -2,7 +2,7 @@ import { useContext, type MouseEvent, type ReactElement } from 'react';
 import { Link, type LinkProps } from 'react-router';
 
 import { RecordDrawerContext } from '@/lib/itam/record-drawer';
-import { recordTarget } from '@/lib/itam/record-view';
+import { recordOrTabTarget } from '@/lib/itam/record-view';
 
 /** A plain left click; modified clicks keep their browser meaning (new tab). */
 const isPlainClick = (event: MouseEvent): boolean =>
@@ -43,7 +43,7 @@ export function RecordLink({
           !api ||
           (target && target !== '_self') ||
           !isPlainClick(event) ||
-          !recordTarget(to)
+          !recordOrTabTarget(to)
         )
           return;
         event.preventDefault();
