@@ -1082,6 +1082,10 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairFan: 'Fan grinds under load; clean it and replace if worn',
     repairNotes: 'Replaced under warranty',
     repairFault: 'Battery swollen; replace battery',
+    repairQuoteWork:
+      'Replace the battery assembly with an original part, labour included; the board to be checked for damage from the swelling',
+    repairQuoteReasons:
+      'The quote of {quote} is about {share}% of the book value of {bookValue}, more than the laptop is still worth\nIt is over four years old and past its planned replacement date\nIt is out of warranty, so the repair is paid in full',
     defaultKit: '{name} standard kit',
     spareKeyboard: 'Keyboard drops keys now and then; repaired twice',
     spareDeadPixel: 'One dead pixel in the lower right corner',
@@ -1226,6 +1230,9 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     spareKeyboard: '键盘偶发失灵，已两次返修',
     spareDeadPixel: '屏幕右下角有一个坏点',
     repairFault: '电池鼓包，需更换电池',
+    repairQuoteWork: '更换原厂电池总成（含人工），另需检测主板是否因鼓包受损',
+    repairQuoteReasons:
+      '报价 {quote} 约为设备净值 {bookValue} 的 {share}%，已超过这台笔记本的剩余价值\n设备已使用四年多，已过计划更换日期\n已过保修期，维修费用全部自付',
     auditName: '三季度盘点 · 3 楼',
     auditNotes: '季度例行盘点',
     leaverAuditName: '三季度盘点 · 仓库',
@@ -4675,7 +4682,7 @@ export function createDemoService(dependencies: {
         // when you sign in as IT support (`zhouyu`, or `ryan` in English). The
         // finished ones below are theirs too.
         await on(-3);
-        await track(
+        const batteryRepair = await track(
           'repairs',
           await repairs.create(
             {
@@ -4692,6 +4699,42 @@ export function createDemoService(dependencies: {
             all('repairs', 'create'),
           ),
         );
+        // The shop's quote came back yesterday (2026-10-23): a new battery
+        // costs more than the old laptop is still worth, so Asset Steward
+        // advised replacing it and the decision waits on its 负责人 — 修还是换
+        // on the repair page has something to show.
+        await on(-1);
+        {
+          const laptop = await devices.get(
+            String(expiredLaptop.id),
+            all('devices', 'read'),
+          );
+          const quote = 650;
+          const bookValue = Number(laptop?.bookValue ?? 0);
+          const currency = asText(laptop?.currency) ?? 'CNY';
+          const money = (value: number) =>
+            `${currency} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          await repairs.update(
+            String(batteryRepair.id),
+            {
+              quoteAmount: quote,
+              quoteNotes: texts.repairQuoteWork,
+              quotedAt: daysFromNow(-1),
+              quoteRecommendation: 'replace',
+              quoteReasons: texts.repairQuoteReasons
+                .replace('{quote}', money(quote))
+                .replace('{bookValue}', money(bookValue))
+                .replace(
+                  '{share}',
+                  String(
+                    bookValue > 0 ? Math.round((quote / bookValue) * 100) : 0,
+                  ),
+                ),
+            },
+            context,
+            all('repairs', 'update'),
+          );
+        }
 
         // More repairs: two finished (one internal, one under warranty) and a
         // second one out at the shop, so the 维修 list and the vendor tab have
