@@ -112,7 +112,6 @@
     "@nocobase/app-plugin-file": "^1.0.0-beta.26",
     "@nocobase/app-plugin-foundation": "^0.1.0-beta.1",
     "@nocobase/app-plugin-i18n": "^1.0.0-beta.18",
-    "@nocobase/app-plugin-knowledge": "^0.1.0-beta.9",
     "@nocobase/app-plugin-mail": "^1.0.0-beta.16",
     "@nocobase/app-plugin-notification": "^2.0.0-beta.0",
     "@nocobase/app-plugin-notification-in-app": "^2.0.0-beta.0",
