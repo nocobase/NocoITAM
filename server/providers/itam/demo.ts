@@ -1719,6 +1719,68 @@ const CREW: readonly CrewSpec[] = [
   },
 ];
 
+/**
+ * The demo's prices are written in yuan (2026-10-23). In a register kept in
+ * another currency they are brought to it at a round rate, so a MacBook
+ * reads about 2,300 in dollars rather than 15,999.
+ */
+const PRICE_RATES: Readonly<Record<string, number>> = {
+  CNY: 1,
+  USD: 1 / 7,
+  EUR: 1 / 7.8,
+  GBP: 1 / 9,
+  HKD: 1.1,
+  JPY: 21,
+};
+/** A yuan amount at a rate: whole above 100, to the cent below. */
+const atRate = (yuan: number, rate: number): number => {
+  const value = yuan * rate;
+  return rate === 1
+    ? yuan
+    : Math.abs(value) >= 100
+      ? Math.round(value)
+      : Math.round(value * 100) / 100;
+};
+
+/** The fields a service takes money in. */
+const MONEY_KEYS = new Set([
+  'purchasePrice',
+  'unitPrice',
+  'cost',
+  'proceeds',
+  'expenses',
+]);
+
+/** A service whose money arguments are converted at `scale.rate`. */
+function withPrices<T extends object>(service: T, scale: { rate: number }): T {
+  const convert = (value: unknown): unknown => {
+    if (scale.rate === 1 || value === null || typeof value !== 'object')
+      return value;
+    if (Array.isArray(value)) return value.map(convert);
+    if (Object.getPrototypeOf(value) !== Object.prototype) return value;
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        MONEY_KEYS.has(key) && typeof entry === 'number'
+          ? atRate(entry, scale.rate)
+          : convert(entry),
+      ]),
+    );
+  };
+  return new Proxy(service, {
+    get(target, property, receiver) {
+      const member = Reflect.get(target, property, receiver) as unknown;
+      return typeof member === 'function'
+        ? (...args: unknown[]) =>
+            (member as (...a: unknown[]) => unknown).apply(
+              target,
+              args.map(convert),
+            )
+        : member;
+    },
+  });
+}
+
 export function createDemoService(dependencies: {
   database: DatabaseManager;
   masterData: MasterDataService;
@@ -1752,17 +1814,17 @@ export function createDemoService(dependencies: {
    */
   agents?: DemoAgents;
 }): DemoService {
-  const {
-    database,
-    masterData,
-    devices,
-    stock,
-    entitlements,
-    procurement,
-    repairs,
-    audits,
-    disposals,
-  } = dependencies;
+  const { database, masterData, audits } = dependencies;
+  // Prices in the register's currency while the demo is generated.
+  const priceScale = { rate: 1 };
+  const devices = withPrices(dependencies.devices, priceScale);
+  const stock = withPrices(dependencies.stock, priceScale);
+  const entitlements = withPrices(dependencies.entitlements, priceScale);
+  const procurement = withPrices(dependencies.procurement, priceScale);
+  const repairs = withPrices(dependencies.repairs, priceScale);
+  const disposals = withPrices(dependencies.disposals, priceScale);
+  /** A price the demo writes in yuan, in the register's currency. */
+  const price = (yuan: number): number => atRate(yuan, priceScale.rate);
 
   const counts = async (): Promise<Record<string, number>> => {
     const rows = await database
@@ -1882,6 +1944,18 @@ export function createDemoService(dependencies: {
         await new Promise<void>((done) => setImmediate(done));
       };
       try {
+        const general = await database
+          .query()
+          .selectFrom('itamSettings')
+          .select('value')
+          .where('key', '=', 'general')
+          .executeTakeFirst<{ value: unknown }>();
+        const settings = (
+          typeof general?.value === 'string'
+            ? JSON.parse(general.value)
+            : (general?.value ?? {})
+        ) as { currency?: string };
+        priceScale.rate = PRICE_RATES[settings.currency ?? 'CNY'] ?? 1;
         const all = (collection: string, action: string) =>
           unrestricted(collection, action);
         const track = async (collection: string, row: Row): Promise<Row> => {
@@ -4786,7 +4860,7 @@ export function createDemoService(dependencies: {
             String(expiredLaptop.id),
             all('devices', 'read'),
           );
-          const quote = 650;
+          const quote = price(650);
           const bookValue = Number(laptop?.bookValue ?? 0);
           const currency = asText(laptop?.currency) ?? 'CNY';
           const money = (value: number) =>
@@ -4996,7 +5070,7 @@ export function createDemoService(dependencies: {
             await repairs.update(
               String(repair.id),
               {
-                quoteAmount: entry.quote.amount,
+                quoteAmount: price(entry.quote.amount),
                 quoteNotes: entry.quote.work,
                 quotedAt: daysFromNow(entry.sentDays + 2),
                 quoteRecommendation: 'repair',
@@ -5049,7 +5123,7 @@ export function createDemoService(dependencies: {
             String(laptops[3].id),
             all('devices', 'read'),
           );
-          const quote = 580;
+          const quote = price(580);
           const bookValue = Number(laptop?.bookValue ?? 0);
           const currency = asText(laptop?.currency) ?? 'CNY';
           const money = (value: number) =>
@@ -6010,7 +6084,7 @@ export function createDemoService(dependencies: {
         await repairs.update(
           String(swollenRepair.id),
           {
-            quoteAmount: 1280,
+            quoteAmount: price(1280),
             quoteNotes: texts.swollenQuoteWork,
             quotedAt: daysFromNow(-10),
             quoteRecommendation: 'replace',
@@ -6029,7 +6103,7 @@ export function createDemoService(dependencies: {
             // In the register's own currency, as the quote was.
             notes: texts.swollenScrapped.replace(
               '{quote}',
-              `${asText(swollenLaptop.currency) ?? 'CNY'} 1,280.00`,
+              `${asText(swollenLaptop.currency) ?? 'CNY'} ${price(1280).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
             ),
           },
           {
@@ -6267,7 +6341,7 @@ export function createDemoService(dependencies: {
             await repairs.update(
               String(repair.id),
               {
-                quoteAmount: quote.amount,
+                quoteAmount: price(quote.amount),
                 quoteNotes: quote.work,
                 quotedAt: daysFromNow(entry.sentDays + 2),
                 quoteRecommendation: 'repair',
@@ -7561,6 +7635,7 @@ export function createDemoService(dependencies: {
         return await this.status();
       } finally {
         importPercent = undefined;
+        priceScale.rate = 1;
       }
     },
 

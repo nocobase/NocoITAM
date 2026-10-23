@@ -77,7 +77,7 @@ const BUSINESS_NOTES: Readonly<Record<string, string>> = {
 ## Purchasing and approval
 - Purchase orders and disposals both need approval; the owner names the approver on submission, usually the IT Asset Manager.
 - For software, reclaim idle seats and leavers' seats before buying more; before adding seats to a subscription, check its renewal date and adjust at renewal where possible.
-- For a device over 10,000 or a subscription over 50,000 a year, the purchase order's description states the reason and the alternatives.
+- For a device over 1,500 or a subscription over 7,000 a year, the purchase order's description states the reason and the alternatives.
 
 ## Offboarding
 - Take back every device, accessory and software seat on the last working day.

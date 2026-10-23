@@ -346,3 +346,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   order goes when its department, needed-by date and the name in its
   description are a demo joiner's, and it is not yet placed; a real joiner
   starting the same day keeps theirs.
+- **The demo's prices follow the register's currency** (2026-10-23). They
+  are written in yuan; `withPrices` in `demo.ts` converts every money field
+  (`purchasePrice`, `unitPrice`, `cost`, `proceeds`, `expenses`) passed to
+  the services at a round rate (`PRICE_RATES`: USD 1/7, EUR 1/7.8, …) taken
+  from 设置 → 通用's currency when the import starts, and `price()` does it
+  for an amount the demo writes itself (a quote, a sentence naming one). A
+  new deployment's currency follows its default locale (the settings seed:
+  CNY for Chinese, USD otherwise), so the English demo reads in dollars.
