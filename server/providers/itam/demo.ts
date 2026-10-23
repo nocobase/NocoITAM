@@ -2041,7 +2041,8 @@ export function createDemoService(dependencies: {
         // is there (2026-10-16, as NocoCRM's importer is its sales manager):
         // it may be named an approver or a 负责人 and work the register as the
         // demo's managers do. Taken back when the demo is cleared, unless it
-        // held the set before.
+        // held the set before — which the initial administrator does since
+        // 2026-10-23 (seed `202610230001_assign_initial_admin_asset_manager`).
         if (dependencies.accounts && managerUserId) {
           const granted = await dependencies.accounts
             .grant(actorId, 'itam-asset-manager')

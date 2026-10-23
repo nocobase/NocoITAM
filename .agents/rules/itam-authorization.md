@@ -155,3 +155,11 @@ key>', ns: 'itam' }`, the way the plugin's own 成员 and 系统管理员 are
   deleting. Routes refuse it with
   `requireGrant` (`server/routes/itam/http.ts`), which calls the context's
   `require`: the plugin's `guard` middleware is gone. Deleting a device likewise stays with root.
+- The initial administrator (`users.initialAdmin.username`) is also
+  assigned `itam-asset-manager`, beside `root` (2026-10-23, seed
+  `202610230001_assign_initial_admin_asset_manager`). That is not a second
+  "may do everything": it is an explicit per-user assignment, there because
+  approver and 负责人 pickers list only accounts holding an `itam.*`
+  operation, which `root` holds none of, so a fresh deployment's one account
+  could not be asked to approve anything. It is a seed, run once: an
+  administrator who removes it keeps it removed.

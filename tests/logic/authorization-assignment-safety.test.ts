@@ -55,6 +55,22 @@ test('initialization does not silently grant business roles to every signed-in u
     grants,
     'The inherited platform member role must not conceal application business grants. Assign a separate business role to explicit users.',
   ).toEqual([]);
+  // The initial administrator holds 资产管理员 beside root (2026-10-23), an
+  // explicit per-user assignment, so pickers can offer the one account a
+  // fresh deployment has.
+  const admin = await connection.query
+    .selectFrom('user')
+    .select('id')
+    .where('username', '=', 'nocobase')
+    .executeTakeFirstOrThrow();
+  const held = assignments
+    .filter(
+      (assignment) =>
+        assignment.subjectType === 'user' &&
+        assignment.subjectId === String(admin.id),
+    )
+    .map((assignment) => assignment.permissionSetKey);
+  expect(held).toEqual(expect.arrayContaining(['root', 'itam-asset-manager']));
 });
 
 it('detects wildcard recipients regardless of the role name, while preserving explicit user assignments', () => {
