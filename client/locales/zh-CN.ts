@@ -2919,7 +2919,7 @@ const zhCN: AppResource = {
     empty: '暂无维修单',
     complete: '完成维修',
     completeDescription:
-      '维修结果记录修了什么；「维修后设备」决定设备回到送修前的状态还是转待报废',
+      '记下维修怎么结束、花了多少，设备回到送修前的状态或转为待报废',
     disposition: '维修后设备',
     dispositions: {
       return: '回到原状态',

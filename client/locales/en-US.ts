@@ -3097,7 +3097,7 @@ const messages = {
     empty: 'No repairs',
     complete: 'Complete repair',
     completeDescription:
-      'The result records what the repair achieved; the disposition decides whether the device goes back to where it was before the repair or to pending disposal.',
+      'Record how the repair ended and what it cost; the device goes back to where it was, or to pending disposal',
     disposition: 'Device afterwards',
     dispositions: {
       return: 'Back to its previous state',

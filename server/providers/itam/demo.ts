@@ -1060,6 +1060,13 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairReplaced:
       'Logic board fault; Apple replaced the whole unit under warranty',
     repairNoPower: 'Will not start',
+    batteryQuoteWork:
+      'Replace the battery with an original part, labour included',
+    batteryQuoteReasons:
+      'The quote is about a fifth of what the laptop is still worth\nThe battery is the only fault; the board and screen test fine\nIt has two years of its useful life left',
+    screenQuoteWork: 'Replace the display assembly, labour included',
+    screenQuoteReasons:
+      'The quote is under half of what the laptop is still worth\nA cracked screen is a one-off, not a sign of wear\nIt has more than a year of its useful life left',
     repairCancelled:
       'Found to be the charger before sending it out; charger replaced, repair cancelled',
     repairScreen: 'Cracked screen; replace the panel',
@@ -1217,6 +1224,12 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairLogicBoard: '无法开机，充电指示灯不亮',
     repairReplaced: '主板故障，Apple 保内整机更换',
     repairNoPower: '无法开机',
+    batteryQuoteWork: '更换原厂电池（含人工）',
+    batteryQuoteReasons:
+      '报价约为设备当前净值的五分之一\n只有电池故障，主板和屏幕检测正常\n设备还有两年使用年限',
+    screenQuoteWork: '更换屏幕总成（含人工）',
+    screenQuoteReasons:
+      '报价不到设备当前净值的一半\n屏幕碎裂属意外损坏，不是老化\n设备还有一年多使用年限',
     repairCancelled: '送修前确认是电源适配器故障，已更换适配器，取消维修',
     repairScreen: '屏幕碎裂，更换面板',
     commentMonitorAsk:
@@ -6023,6 +6036,12 @@ export function createDemoService(dependencies: {
             sentDays: -760,
             returnDays: -752,
             cost: 680,
+            // The shop's quotes, weighed and taken (2026-10-23).
+            quote: {
+              amount: 680,
+              work: texts.batteryQuoteWork,
+              reasons: texts.batteryQuoteReasons,
+            },
           },
           {
             method: 'sendOut' as const,
@@ -6032,6 +6051,11 @@ export function createDemoService(dependencies: {
             sentDays: -560,
             returnDays: -548,
             cost: 1200,
+            quote: {
+              amount: 1200,
+              work: texts.screenQuoteWork,
+              reasons: texts.screenQuoteReasons,
+            },
           },
         ]) {
           await on(entry.sentDays);
@@ -6052,6 +6076,24 @@ export function createDemoService(dependencies: {
               all('repairs', 'create'),
             ),
           );
+          // Quoted two days in, advised and decided on before the work.
+          const quote = 'quote' in entry ? entry.quote : undefined;
+          if (quote) {
+            await on(entry.sentDays + 2);
+            await repairs.update(
+              String(repair.id),
+              {
+                quoteAmount: quote.amount,
+                quoteNotes: quote.work,
+                quotedAt: daysFromNow(entry.sentDays + 2),
+                quoteRecommendation: 'repair',
+                quoteReasons: quote.reasons,
+                quoteDecision: 'repair',
+              },
+              context,
+              all('repairs', 'update'),
+            );
+          }
           await on(entry.returnDays);
           await repairs.complete(
             String(repair.id),
