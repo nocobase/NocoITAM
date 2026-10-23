@@ -259,7 +259,7 @@ function JoinerCard({
                     <DraftOrdersButton
                       personId={joiner.id}
                       keys={[line.key]}
-                      className='text-xs [&_svg]:size-3.5'
+                      className='text-xs'
                     />
                   ) : null}
                 </span>

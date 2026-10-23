@@ -1,7 +1,7 @@
 import { useToaster } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, FilePlus2 } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useMemo, useState, type ReactElement, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -201,17 +201,16 @@ export function DraftOrdersButton({
     <>
       <Button
         variant='ghost'
-        // Green words with their icon everywhere, underlined on hover as
+        // Green words, no icon (2026-10-23), underlined on hover as
         // every text link is (2026-10-23; no ground, no other colour); no
         // padding, so they sit the row's own gap from what is beside them.
         className={cn(
-          'h-auto gap-1 p-0 text-primary underline-offset-4 hover:bg-transparent hover:text-primary hover:underline has-data-[icon=inline-start]:pl-0 dark:hover:bg-transparent',
+          'h-auto gap-1 p-0 text-primary underline-offset-4 hover:bg-transparent hover:text-primary hover:underline dark:hover:bg-transparent',
           className,
         )}
         disabled={propose.isPending}
         onClick={() => propose.mutate()}
       >
-        <FilePlus2 data-icon='inline-start' />
         {children ?? t('onboarding.draftOrder')}
       </Button>
       {/* Each proposed order its own dialog, all kept mounted so what is
