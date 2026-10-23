@@ -78,7 +78,7 @@ describe('repair lifecycle', () => {
     ).toBe('INVALID_STATE');
   });
 
-  it('corrects a finished result among the three, never back to in progress', async () => {
+  it('corrects a finished result among the endings, never back to in progress', async () => {
     const { kit, repair } = setup();
     const filed = repair();
     expect(
@@ -93,5 +93,26 @@ describe('repair lifecycle', () => {
       ),
     ).toMatchObject({ code: 'INVALID_INPUT', field: 'result' });
     expect(await kit.history(filed)).toEqual(['complete', 'correct']);
+  });
+
+  // Not carried out (2026-10-23): ended as cancelled, which a correction may
+  // also reach or leave.
+  it('ends a repair that was not carried out as cancelled', async () => {
+    const { kit, repair } = setup();
+    const filed = repair();
+    await kit.fire(
+      filed,
+      'complete',
+      { result: 'cancelled' },
+      { actor: 'mia' },
+    );
+    expect(kit.get(filed).result).toBe('cancelled');
+    await kit.fire(
+      filed,
+      'correct',
+      { result: 'unrepairable' },
+      { actor: 'lee' },
+    );
+    expect(kit.get(filed).result).toBe('unrepairable');
   });
 });

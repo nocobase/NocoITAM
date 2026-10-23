@@ -715,6 +715,22 @@ describe('CSV import / export and demo data', () => {
         'lost',
       ]),
     );
+    // And every way a repair ends (2026-10-23).
+    const results = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('repairs')
+      .select('result')
+      .execute<{ result: string }>();
+    expect(new Set(results.map((row) => row.result))).toEqual(
+      new Set([
+        'inProgress',
+        'repaired',
+        'unrepairable',
+        'replaced',
+        'cancelled',
+      ]),
+    );
     // Every rule has something to show (2026-10-22): one below its minimum
     // of each kind kept as a quantity, and a device filed under another
     // department than its holder's.

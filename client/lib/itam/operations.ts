@@ -23,6 +23,8 @@ export const REPAIR_RESULTS = [
   'repaired',
   'unrepairable',
   'replaced',
+  // Ended without the repair (2026-10-23): not worth it, or not needed.
+  'cancelled',
 ] as const;
 /** Where the device goes when a repair ends. */
 export const REPAIR_DISPOSITIONS = ['return', 'dispose'] as const;
@@ -484,6 +486,8 @@ export const REPAIR_RESULT_TONE: Readonly<Record<string, string>> = {
   repaired: 'bg-primary text-primary-foreground',
   replaced: 'bg-primary text-primary-foreground',
   unrepairable: 'bg-destructive/10 text-destructive',
+  // Nothing was done: grey, as a cancelled order reads.
+  cancelled: 'bg-muted text-muted-foreground',
 };
 export const DISPOSAL_STATUS_TONE: Readonly<Record<string, string>> = {
   draft: 'bg-muted text-muted-foreground',

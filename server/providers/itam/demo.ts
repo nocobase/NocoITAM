@@ -1053,6 +1053,15 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     tonerOrder: 'Toner for the third-floor printer',
     repairKeyboard: 'Several keys do not respond',
     repairPanel: 'Panel shows a vertical line',
+    repairBacklight: 'Backlight uneven, dark patches on the left',
+    repairUnrepairable:
+      'Backlight module discontinued, no part available; returned as it was and still usable',
+    repairLogicBoard: 'Will not power on; no charging light',
+    repairReplaced:
+      'Logic board fault; Apple replaced the whole unit under warranty',
+    repairNoPower: 'Will not start',
+    repairCancelled:
+      'Found to be the charger before sending it out; charger replaced, repair cancelled',
     repairScreen: 'Cracked screen; replace the panel',
     commentMonitorAsk:
       '@{importer} Three new starters join sales next Monday. Could the monitors be approved this week?',
@@ -1203,6 +1212,12 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     tonerOrder: '3 楼打印机硒鼓',
     repairKeyboard: '键盘部分按键失灵',
     repairPanel: '面板出现竖线',
+    repairBacklight: '背光不均，左侧有暗斑',
+    repairUnrepairable: '背光模组已停产，无配件可换；原样取回，仍可使用',
+    repairLogicBoard: '无法开机，充电指示灯不亮',
+    repairReplaced: '主板故障，Apple 保内整机更换',
+    repairNoPower: '无法开机',
+    repairCancelled: '送修前确认是电源适配器故障，已更换适配器，取消维修',
     repairScreen: '屏幕碎裂，更换面板',
     commentMonitorAsk:
       '@{importer} 销售部下周一有三位新人到岗，显示器能否这周批下来？',
@@ -4741,7 +4756,7 @@ export function createDemoService(dependencies: {
         // something to show.
         const finishedRepairs: readonly {
           readonly deviceId: string;
-          readonly method: 'internal' | 'vendorWarranty';
+          readonly method: 'internal' | 'vendorWarranty' | 'sendOut';
           readonly vendorId?: string;
           readonly fault: string;
           readonly faultCategory: (typeof REPAIR_FAULT_CATEGORIES)[number];
@@ -4749,6 +4764,9 @@ export function createDemoService(dependencies: {
           readonly returnDays: number;
           readonly cost: number;
           readonly notes?: string;
+          /** How it ended; repaired unless said (2026-10-23). */
+          readonly result?:
+            'repaired' | 'unrepairable' | 'replaced' | 'cancelled';
         }[] = [
           {
             deviceId: String(airs[1].id),
@@ -4815,6 +4833,45 @@ export function createDemoService(dependencies: {
             cost: 0,
             notes: texts.repairNotes,
           },
+          // Every way a repair ends (2026-10-23), each device back with its
+          // holder: a monitor the shop could not fix and that is still used,
+          // a MacBook Apple swapped under warranty, and an Air that never
+          // needed the shop — its charger was at fault.
+          {
+            deviceId: String(monitors[1].id),
+            method: 'sendOut',
+            vendorId: String(repairShop.id),
+            fault: texts.repairBacklight,
+            faultCategory: 'screen',
+            sentDays: -90,
+            returnDays: -83,
+            cost: 80,
+            notes: texts.repairUnrepairable,
+            result: 'unrepairable',
+          },
+          {
+            deviceId: String(laptops[4].id),
+            method: 'vendorWarranty',
+            vendorId: String(more.apple.id),
+            fault: texts.repairLogicBoard,
+            faultCategory: 'power',
+            sentDays: -120,
+            returnDays: -110,
+            cost: 0,
+            notes: texts.repairReplaced,
+            result: 'replaced',
+          },
+          {
+            deviceId: String(airs[0].id),
+            method: 'internal',
+            fault: texts.repairNoPower,
+            faultCategory: 'power',
+            sentDays: -8,
+            returnDays: -8,
+            cost: 0,
+            notes: texts.repairCancelled,
+            result: 'cancelled',
+          },
         ];
         await reached(55);
         // Finished repairs are IT support's work: 周宇 is their 负责人, and only
@@ -4846,7 +4903,7 @@ export function createDemoService(dependencies: {
           await repairs.complete(
             String(repair.id),
             {
-              result: 'repaired',
+              result: entry.result ?? 'repaired',
               disposition: 'return',
               actualReturnAt: daysFromNow(entry.returnDays),
               cost: entry.cost,

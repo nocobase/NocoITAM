@@ -918,6 +918,7 @@ const zhCN: AppResource = {
       repaired: '已修复',
       unrepairable: '无法修复',
       replaced: '已更换整机',
+      cancelled: '已取消',
     },
     auditStatus: {
       notStarted: '未开始',
@@ -2669,7 +2670,7 @@ const zhCN: AppResource = {
         markLost:
           '标记丢失：使用中、借出中、库存中、已停用的设备都可以标记丢失，找回后可恢复为库存中。',
         markPendingDisposal:
-          '转待报废：报废单获批，或维修判定无法修复时，设备从除已报废外的任何状态转为待报废。',
+          '转待报废：报废单获批，或维修结束时选择转待报废，设备从除已报废外的任何状态转为待报废。',
         return: '归还时也可以直接送修、转待报废或停用，而不回库存。',
         correct:
           '修正状态：除已报废外，任何状态都可以填写原因后更正为库存中、使用中、借出中、维修中、已停用或已丢失。',
@@ -2857,7 +2858,7 @@ const zhCN: AppResource = {
       keepRepairing: '继续维修',
       replace: '改为报废',
       replaceDescription:
-        '维修单以「无法修复」结束，设备转为待报废，然后为它创建报废单',
+        '维修单以「已取消」结束，设备转为待报废，然后为它创建报废单',
       replacedNote: '报价 {{quote}}，不值得修，改为报废',
       disposalNote:
         '故障：{{fault}}\n维修报价 {{quote}}，不值得修：\n{{reasons}}',

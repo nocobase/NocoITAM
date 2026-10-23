@@ -85,7 +85,8 @@ function useReturnLabel(device: ItamRecord | undefined): {
 
 /**
  * Finishes a repair: the result drives the device (repaired → back to its
- * holder or stock; unrepairable / replaced → pending disposal).
+ * holder or stock; replaced → pending disposal by default; unrepairable
+ * or cancelled → back, unless pending disposal is chosen).
  */
 export function RepairCompleteDialog({
   repair,

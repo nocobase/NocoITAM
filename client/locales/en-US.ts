@@ -931,6 +931,7 @@ const messages = {
       repaired: 'Repaired',
       unrepairable: 'Unrepairable',
       replaced: 'Replaced',
+      cancelled: 'Cancelled',
     },
     auditStatus: {
       notStarted: 'Not started',
@@ -2829,7 +2830,7 @@ const messages = {
         markLost:
           'Mark lost: a device in use, on loan, in stock or retired can be marked lost, and goes back to stock when found.',
         markPendingDisposal:
-          'To pending disposal: when a disposal is approved, or a repair finds the device unrepairable, it goes to pending disposal from any status but disposed.',
+          'To pending disposal: when a disposal is approved, or a repair ends with the device sent to pending disposal, it goes there from any status but disposed.',
         return:
           'A return can also send the device straight to repair, pending disposal or retirement instead of stock.',
         correct:
@@ -3032,7 +3033,7 @@ const messages = {
       keepRepairing: 'Keep repairing',
       replace: 'Dispose instead',
       replaceDescription:
-        'The repair ends as unrepairable, the device goes to pending disposal, and a disposal is opened for it',
+        'The repair ends as cancelled, the device goes to pending disposal, and a disposal is opened for it',
       replacedNote:
         'Quoted {{quote}}; not worth repairing, disposed of instead',
       disposalNote:

@@ -14,7 +14,9 @@ import {
  * may be corrected among the three, never back to in progress. The runtime
  * writes the result, its version and the log entry in the repair service's
  * own transaction; the service moves the device — to repair, back, or to
- * pending disposal — in that same transaction. A repair tells nobody, so
+ * pending disposal — in that same transaction. Cancelled (2026-10-23) ends
+ * a repair that was not carried out: not worth it at the quote, or not
+ * needed after all. A repair tells nobody, so
  * there are no effects.
  *
  * The names below are stored with every log entry: never rename the
@@ -24,12 +26,13 @@ import {
 export const REPAIR_LIFECYCLE = 'repairs';
 
 export type RepairState =
-  'inProgress' | 'repaired' | 'unrepairable' | 'replaced';
+  'inProgress' | 'repaired' | 'unrepairable' | 'replaced' | 'cancelled';
 
 const FINISHED: readonly RepairState[] = [
   'repaired',
   'unrepairable',
   'replaced',
+  'cancelled',
 ];
 
 export interface RepairRecord extends LifecycleRecord {
@@ -83,7 +86,7 @@ export const repairLifecycle: Lifecycle<RepairTypes> =
     name: REPAIR_LIFECYCLE,
     stateField: 'result',
     initial: 'inProgress',
-    states: ['inProgress', 'repaired', 'unrepairable', 'replaced'],
+    states: ['inProgress', 'repaired', 'unrepairable', 'replaced', 'cancelled'],
     transitions: {
       complete: {
         title: 'Complete',

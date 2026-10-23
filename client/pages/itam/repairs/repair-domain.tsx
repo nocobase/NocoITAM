@@ -213,7 +213,8 @@ function QuoteDecision({
         path: `${path}/complete`,
         method: 'POST',
         json: {
-          result: 'unrepairable',
+          // Not carried out, rather than could not be fixed (2026-10-23).
+          result: 'cancelled',
           disposition: 'dispose',
           notes: t('repairs.quote.replacedNote', { quote }),
         },
