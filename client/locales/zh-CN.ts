@@ -2981,6 +2981,7 @@ const zhCN: AppResource = {
     addUnregisteredDescription: '记录现场发现但没有资产档案的设备',
   },
   disposals: {
+    keepOneDevice: '报废单至少要有一台设备',
     certificate: {
       placeholder:
         '粘贴回收或数据销毁证明的内容，或拖入、上传证明。AI 填好接收方、日期、金额和数据清除，并核对设备序列号',

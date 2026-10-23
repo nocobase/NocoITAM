@@ -3165,6 +3165,7 @@ const messages = {
       'Record something found on site that has no device record.',
   },
   disposals: {
+    keepOneDevice: 'A disposal keeps at least one device',
     certificate: {
       placeholder:
         'Paste the recycling or data destruction certificate, or drop or upload it. AI fills in the recipient, date, amounts and data wipe, and checks the serial numbers',

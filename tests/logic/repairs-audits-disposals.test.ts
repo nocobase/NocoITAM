@@ -217,6 +217,35 @@ describe('repairs, audits and disposals', () => {
     ).toEqual([]);
   });
 
+  // A disposal is of devices (2026-10-23): none to start with, or to be
+  // left with, is refused.
+  it('keeps at least one device on a disposal', async () => {
+    const device = await createDevice();
+    const empty = await post('disposals', {
+      recipientName: 'Recycler',
+      method: 'scrap',
+      reason: 'damaged',
+      description: 'Broken',
+      deviceIds: [],
+      dataWipe: 'notRequired',
+    });
+    expect(empty.status).toBe(400);
+    const disposal = await data<{ id: string }>(
+      await post('disposals', {
+        recipientName: 'Recycler',
+        method: 'scrap',
+        reason: 'damaged',
+        description: 'Broken',
+        deviceIds: [device.id],
+        dataWipe: 'notRequired',
+      }),
+    );
+    expect(
+      (await post(`disposals/${disposal.id}/devices`, { deviceIds: [] }))
+        .status,
+    ).toBe(400);
+  });
+
   it('deletes a repair created by mistake, restoring the device', async () => {
     const device = await createDevice();
     await assign(device.id, fixture.personId);

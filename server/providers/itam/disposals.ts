@@ -439,6 +439,10 @@ export function createDisposalService(dependencies: {
     if (!input.description?.trim())
       throw new ValidationError('description is required', 'description');
     assertOneRecipient(input.recipientVendorId, input.recipientName);
+    // A disposal is of devices (2026-10-23): the form asks for them, and so
+    // does the service, so none is left empty.
+    if (!input.deviceIds?.length)
+      throw new ValidationError('Choose at least one device', 'deviceIds');
     const { deviceIds, ...fields } = input;
     const id = crypto.randomUUID();
     const now = new Date();
@@ -717,6 +721,8 @@ export function createDisposalService(dependencies: {
     async setDevices(id, deviceIds, context, conditions) {
       await records.mutate(id, conditions, async (connection, disposal) => {
         records.requireStatus(disposal, ['draft', 'rejected'], 'setDevices');
+        if (deviceIds.length === 0)
+          throw new ValidationError('Keep at least one device', 'deviceIds');
         await replaceDevices(connection, id, deviceIds);
         await history.record(
           {

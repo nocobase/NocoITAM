@@ -817,7 +817,14 @@ function DisposalDevicesCard({
                     size='icon-sm'
                     variant='ghost'
                     aria-label={t('actions.remove')}
-                    disabled={save.isPending}
+                    // The last device stays (2026-10-23): a disposal is of
+                    // at least one; the service refuses none too.
+                    title={
+                      currentIds.length <= 1
+                        ? t('disposals.keepOneDevice')
+                        : t('actions.remove')
+                    }
+                    disabled={save.isPending || currentIds.length <= 1}
                     onClick={() =>
                       confirmRemove.ask({
                         title: t('actions.remove'),
