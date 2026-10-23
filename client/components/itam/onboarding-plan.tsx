@@ -306,7 +306,9 @@ export function OnboardingPlanCard({
                     Asset Steward drafts it in the chat and asks. */}
                 {shortfall > 0 && aiAvailable ? (
                   <AiShortcut
-                    className='text-xs'
+                    // ml-0: its hover ground stays clear of the words before
+                    // it rather than reaching back over the gap (2026-10-22).
+                    className='ml-0 text-xs'
                     onClick={() =>
                       ask(t('ai.prompts.onboardingOrder', { name: personName }))
                     }
