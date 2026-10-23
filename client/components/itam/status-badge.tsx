@@ -109,10 +109,11 @@ export function EmploymentStatusBadge({
 }
 
 const COMPLIANCE_TONE: Readonly<Record<string, string>> = {
-  // 超量 in red, what is wrong; 闲置 amber, money idle (2026-10-22: as
-  // plain text, 超量 read as calmly as 合规).
+  // Read as a warranty's tags do (2026-10-23): 合规 grey like its days
+  // left, 闲置 amber text like 即将到期, 超量 red like 已过期.
+  compliant: 'bg-secondary text-secondary-foreground',
   overAllocated: 'bg-destructive/10 text-destructive',
-  idle: 'bg-warning text-warning-foreground',
+  idle: 'bg-secondary text-warning-foreground',
 };
 
 /** An entitlement's 合规状态, worked out from its seats. */
@@ -123,16 +124,13 @@ export function ComplianceStatusBadge({
 }): ReactElement | null {
   const { t } = useTranslation();
   if (typeof status !== 'string' || !status) return null;
-  const label = t(`enums.complianceStatus.${status}`, { defaultValue: status });
-  // 合规 is the usual case and reads as plain text, so only a problem
-  // stands out as a tag.
-  const tone = COMPLIANCE_TONE[status];
-  return tone ? (
-    <Badge variant='secondary' className={tone}>
-      {label}
+  return (
+    <Badge
+      variant='secondary'
+      className={COMPLIANCE_TONE[status] ?? 'bg-muted text-muted-foreground'}
+    >
+      {t(`enums.complianceStatus.${status}`, { defaultValue: status })}
     </Badge>
-  ) : (
-    <>{label}</>
   );
 }
 
