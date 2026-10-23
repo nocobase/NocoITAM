@@ -264,7 +264,7 @@ function FollowUpReviewCard({
   const closing = settles && !settle.isError;
   if (run.status === 'running' || run.status === 'failed')
     return (
-      <div className='space-y-3 rounded-lg border bg-card p-4'>
+      <div className='space-y-3 rounded-lg border border-l-4 border-l-primary bg-card p-4'>
         <h3 className='text-sm font-medium'>{followUpTitle(run, t)}</h3>
         <DeviceSyncRunCard run={run} onReview />
       </div>
@@ -313,7 +313,9 @@ function FollowUpReviewCard({
       // unless notes are left to do.
       open={open ?? (!decided || notesLeft)}
       onOpenChange={setOpen}
-      className='rounded-lg border bg-card'
+      // The blue-green bar of an AI suggestion, as the approval assistant's
+      // (2026-10-23).
+      className='rounded-lg border border-l-4 border-l-primary bg-card'
     >
       {/* Beside the inbox's list the pane is narrow (2026-10-21): the
           buttons drop below the title rather than squeeze it into a column. */}

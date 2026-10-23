@@ -539,7 +539,7 @@ function QuoteComparisonDialog({
             {t('quotes.recommending')}
           </p>
         ) : recommendation && quotes.length >= 2 ? (
-          <section className='space-y-2 rounded-lg border border-l-4 border-l-(--status-warning) bg-card p-4 text-sm'>
+          <section className='space-y-2 rounded-lg border border-l-4 border-l-primary bg-card p-4 text-sm'>
             <StatusBadge tone='warning' size='sm'>
               {recommendation.quoteIndex === null
                 ? t('quotes.noneFits')
