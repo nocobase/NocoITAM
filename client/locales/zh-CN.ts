@@ -2849,6 +2849,8 @@ const zhCN: AppResource = {
       placeholder:
         '粘贴供应商的报价内容，或上传报价单。AI 填好金额和维修方案，并建议修还是换',
       typed: '供应商报价 {{amount}}，维修方案：{{work}}',
+      judge: '评估修还是换',
+      judgeAgain: '重新评估',
       judging: '正在判断修还是换…',
       noAdvice: '没有建议',
       decided: { repair: '已决定继续维修', replace: '已改为报废' },

@@ -267,9 +267,12 @@ triage.tsx`, under the description) fills only what is still empty,
   migration `202610270004_repair_quotes`): a quote arrives while the device
   is away, so it is recorded on the repair page (记录报价 beside 完成维修,
   `client/components/itam/repair-quote.tsx`), never in the completion. The
-  quote is read from a document with the same box, or typed; a typed
-  amount, or one changed after reading, is weighed again before saving, so
-  the repair keeps the advice it was given at that price
+  dialog has AI 整理 / 表单录入 as 新建采购单 does: AI 整理 reads the quote
+  with the same box and weighs it in that call, then shows the filled form;
+  a typed quote is weighed with 评估修还是换. Advice belongs to the amount
+  and work it was given for — changing either hides it until weighed again
+  — and is saved with the quote, so the repair keeps the advice it was
+  given at that price
   (`quoteRecommendation`, `quoteReasons`). Without the advice's reasons the page
   shows the rule in their place — the quote's share of the book value,
   amber from half, and a passed replacement date — and 继续维修 / 改为报废 for whoever may finish the

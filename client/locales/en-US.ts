@@ -3022,6 +3022,8 @@ const messages = {
       placeholder:
         "Paste the vendor's quote, or upload it. AI fills in the amount and the proposed work, and advises repairing or replacing",
       typed: 'Vendor quote {{amount}}; proposed work: {{work}}',
+      judge: 'Weigh repair or replace',
+      judgeAgain: 'Weigh again',
       judging: 'Weighing repair or replace…',
       noAdvice: 'No advice',
       decided: {

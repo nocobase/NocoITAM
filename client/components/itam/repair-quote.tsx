@@ -1,7 +1,9 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Sparkles } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
 
+import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { DocumentReading } from '@/components/itam/ai/document-reading';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
@@ -10,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useAiReading, useItamAi } from '@/lib/itam/ai-chat';
 import {
@@ -20,7 +23,7 @@ import {
 } from '@/lib/itam/api';
 import { CURRENCIES } from '@/lib/itam/currencies';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
-import { formatMoney, text, todayIso } from '@/lib/itam/format';
+import { errorMessage, formatMoney, text, todayIso } from '@/lib/itam/format';
 import { REPAIRS_PATH, REPAIR_RECOMMENDATIONS } from '@/lib/itam/operations';
 
 type Recommendation = (typeof REPAIR_RECOMMENDATIONS)[number];
@@ -32,8 +35,9 @@ interface Advice {
   readonly for: string;
 }
 
-const adviceKey = (amount: unknown, currency: unknown) =>
-  `${String(amount)} ${String(currency)}`;
+/** What advice was given for: any change to these asks for it again. */
+const adviceKey = (amount: unknown, currency: unknown, work: string) =>
+  `${String(amount)} ${String(currency)} ${work.trim()}`;
 
 /** A filled tag, as a status is: amber for replace, calm blue otherwise. */
 function RecommendationBadge({
@@ -57,12 +61,13 @@ function RecommendationBadge({
 }
 
 /**
- * 记录报价 (2026-10-23): the vendor's quote while the device is away. The
- * quote is pasted or uploaded and read (`repairQuote`), or its amount is
- * typed; either way Asset Steward weighs the amount against the device —
- * its book value, age, replacement date and repairs — before it is saved,
- * so the repair keeps the advice it was given and why. A new quote clears
- * what was decided on the last one.
+ * 记录报价 (2026-10-23): the vendor's quote while the device is away, by
+ * AI 整理 or 表单录入. AI 整理 reads the pasted or uploaded quote
+ * (`repairQuote`) and weighs it against the device — its book value, age,
+ * replacement date and repairs — in the same call, then shows the form it
+ * filled; a typed quote is weighed with 评估修还是换. The repair keeps the
+ * advice given for the quote as saved, and why; a new quote clears what
+ * was decided on the last one.
  */
 export function RepairQuoteDialog({
   repair,
@@ -89,6 +94,15 @@ export function RepairQuoteDialog({
   const [advice, setAdvice] = useState<Advice>();
   const [review, setReview] = useState<ReadonlySet<string>>(() => new Set());
   const [judging, setJudging] = useState(false);
+  const [judgeFailure, setJudgeFailure] = useState<string>();
+  // AI 整理 or 表单录入, as 新建采购单 (2026-10-23): a quote read by AI is
+  // weighed with the reading; one typed is weighed when asked.
+  const [tab, setTab] = useState<'ai' | 'form'>('ai');
+  const mode = ai.available ? tab : 'form';
+  const [serialWarning, setSerialWarning] = useState<string>();
+  const key = adviceKey(amount.amount, amount.currency, work);
+  // The advice shown is the one for the quote as it stands now.
+  const current = advice?.for === key ? advice : undefined;
   const checked = (key: string) =>
     setReview((current) => {
       if (!current.has(key)) return current;
@@ -135,50 +149,63 @@ export function RepairQuoteDialog({
         ),
       ),
     );
-    const given = adviceFrom(reading, adviceKey(next.amount, next.currency));
-    setAdvice(given);
-    return (
-      <>
-        {reading.serialMatches === false ? (
-          <p className='text-warning-foreground'>
-            {t('repairs.report.serialMismatch', {
-              printed: text(reading.serialNo),
-              serialNo: text(reading.deviceSerialNo),
-            })}
-          </p>
-        ) : null}
-        {given ? <AdviceBody advice={given} /> : null}
-      </>
+    const nextWork =
+      typeof reading.work === 'string' && reading.work.trim()
+        ? reading.work.trim()
+        : work;
+    setAdvice(
+      adviceFrom(reading, adviceKey(next.amount, next.currency, nextWork)),
     );
+    setJudgeFailure(undefined);
+    setSerialWarning(
+      reading.serialMatches === false
+        ? t('repairs.report.serialMismatch', {
+            printed: text(reading.serialNo),
+            serialNo: text(reading.deviceSerialNo),
+          })
+        : undefined,
+    );
+    // What was read goes to the form, to be checked and saved there.
+    setTab('form');
+    return null;
+  };
+
+  // 评估修还是换: the quote as typed, weighed against the device.
+  const judge = async (): Promise<Advice | undefined> => {
+    const value = amount.amount;
+    if (typeof value !== 'number') return undefined;
+    setJudging(true);
+    setJudgeFailure(undefined);
+    try {
+      const answer = await read({
+        task: 'repairQuote',
+        material: t('repairs.quote.typed', {
+          amount: formatMoney(value, text(amount.currency)),
+          work: work.trim() || '—',
+        }),
+        context: { repairId: id },
+      });
+      const given = answer.reading
+        ? adviceFrom(answer.reading, key)
+        : undefined;
+      setAdvice(given);
+      if (!given) setJudgeFailure(answer.said || t('repairs.quote.noAdvice'));
+      return given;
+    } catch (caught) {
+      setJudgeFailure(errorMessage(caught));
+      return undefined;
+    } finally {
+      setJudging(false);
+    }
   };
 
   const save = useMutation({
     mutationFn: async () => {
       const value = amount.amount;
       if (typeof value !== 'number') return;
-      let given = advice;
-      // A typed amount, or one changed after reading, is weighed as typed.
-      if (ai.available && given?.for !== adviceKey(value, amount.currency)) {
-        setJudging(true);
-        try {
-          const answer = await read({
-            task: 'repairQuote',
-            material: t('repairs.quote.typed', {
-              amount: formatMoney(value, text(amount.currency)),
-              work: work.trim() || '—',
-            }),
-            context: { repairId: id },
-          });
-          given = answer.reading
-            ? adviceFrom(answer.reading, adviceKey(value, amount.currency))
-            : undefined;
-        } catch {
-          // The quote is kept without advice rather than lost.
-          given = undefined;
-        } finally {
-          setJudging(false);
-        }
-      }
+      // Saved with the advice given for it as it stands, if any: a typed
+      // quote is weighed only when asked.
+      const given = current;
       await api.request({
         path: `${REPAIRS_PATH}/${id}`,
         method: 'PATCH',
@@ -204,66 +231,121 @@ export function RepairQuoteDialog({
       open
       onOpenChange={(open) => !open && onClose()}
       title={t('repairs.quote.title')}
-      description={t('repairs.quote.description')}
+      // AI 整理 says what to give it in its box.
+      description={mode === 'ai' ? undefined : t('repairs.quote.description')}
       busy={save.isPending}
       error={save.error}
       disabled={typeof amount.amount !== 'number'}
-      confirmLabel={judging ? t('repairs.quote.judging') : t('actions.save')}
+      confirmLabel={t('actions.save')}
+      actions={mode === 'form'}
+      titleAside={
+        ai.available ? (
+          <Tabs
+            value={mode}
+            onValueChange={(value) => setTab(value as 'ai' | 'form')}
+          >
+            <TabsList>
+              <TabsTrigger
+                value='ai'
+                className='text-primary data-active:text-primary'
+              >
+                <Sparkles data-icon='inline-start' />
+                {t('procurement.capture.aiTab')}
+              </TabsTrigger>
+              <TabsTrigger value='form'>
+                {t('procurement.capture.formTab')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : undefined
+      }
       onConfirm={() => save.mutate()}
     >
-      <DocumentReading
-        ownerType='repairs'
-        ownerId={id}
-        task='repairQuote'
-        context={{ repairId: id }}
-        placeholder={t('repairs.quote.placeholder')}
-        onRead={applyQuote}
-      />
-      <div className='grid gap-1.5'>
-        <Label htmlFor='quote-amount'>
-          {t('fields.quoteAmount')}
-          <span className='text-destructive'> *</span>
-          {review.has('amount') ? <ReviewMark /> : null}
-        </Label>
-        <FieldInput
-          id='quote-amount'
-          field={{
-            key: 'quoteAmount',
-            label: 'fields.quoteAmount',
-            type: 'money',
-            currencyField: 'currency',
-          }}
-          value={amount}
-          onChange={(value) => {
-            checked('amount');
-            setAmount(value ?? {});
-          }}
+      {mode === 'ai' ? (
+        <DocumentReading
+          ownerType='repairs'
+          ownerId={id}
+          task='repairQuote'
+          context={{ repairId: id }}
+          placeholder={t('repairs.quote.placeholder')}
+          onRead={applyQuote}
         />
-      </div>
-      <div className='grid gap-1.5'>
-        <Label htmlFor='quote-work'>
-          {t('fields.quoteNotes')}
-          {review.has('work') ? <ReviewMark /> : null}
-        </Label>
-        <Textarea
-          id='quote-work'
-          rows={2}
-          value={work}
-          onChange={(event) => {
-            checked('work');
-            setWork(event.target.value);
-          }}
-        />
-      </div>
-      {judging ? (
-        <p
-          role='status'
-          className='flex items-center gap-2 text-sm text-muted-foreground'
-        >
-          <Spinner />
-          {t('repairs.quote.judging')}
-        </p>
-      ) : null}
+      ) : (
+        <>
+          {serialWarning ? (
+            <p className='text-sm text-warning-foreground'>{serialWarning}</p>
+          ) : null}
+          <div className='grid gap-1.5'>
+            <Label htmlFor='quote-amount'>
+              {t('fields.quoteAmount')}
+              <span className='text-destructive'> *</span>
+              {review.has('amount') ? <ReviewMark /> : null}
+            </Label>
+            <FieldInput
+              id='quote-amount'
+              field={{
+                key: 'quoteAmount',
+                label: 'fields.quoteAmount',
+                type: 'money',
+                currencyField: 'currency',
+              }}
+              value={amount}
+              onChange={(value) => {
+                checked('amount');
+                setAmount(value ?? {});
+              }}
+            />
+          </div>
+          <div className='grid gap-1.5'>
+            <Label htmlFor='quote-work'>
+              {t('fields.quoteNotes')}
+              {review.has('work') ? <ReviewMark /> : null}
+            </Label>
+            <Textarea
+              id='quote-work'
+              rows={2}
+              value={work}
+              onChange={(event) => {
+                checked('work');
+                setWork(event.target.value);
+              }}
+            />
+          </div>
+          {ai.available ? (
+            <div className='space-y-1.5 text-sm'>
+              <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+                <AiShortcut
+                  disabled={typeof amount.amount !== 'number' || judging}
+                  onClick={() => void judge()}
+                >
+                  {t(
+                    current
+                      ? 'repairs.quote.judgeAgain'
+                      : 'repairs.quote.judge',
+                  )}
+                </AiShortcut>
+                {judging ? (
+                  <span
+                    role='status'
+                    className='flex items-center gap-2 text-muted-foreground'
+                  >
+                    <Spinner />
+                    {t('repairs.quote.judging')}
+                  </span>
+                ) : null}
+              </div>
+              {judgeFailure && !judging ? (
+                <p className='text-muted-foreground'>{judgeFailure}</p>
+              ) : null}
+              {current && !judging ? (
+                <div className='rounded-md bg-muted/50 px-3 py-2'>
+                  <AdviceBody advice={current} />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </>
+      )}
     </ConfirmDialog>
   );
 }
