@@ -97,8 +97,8 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.system',
     detailOrder: -1,
   },
-  // Before 维修方式 in the list (2026-10-23); on the detail page it still
-  // follows the fault description it sorts.
+  // Before 维修方式 in the list, and above the fault description it sorts
+  // on the detail page (2026-10-23).
   {
     key: 'faultCategory',
     label: 'fields.faultCategory',
@@ -131,6 +131,8 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.faultDescription',
     type: 'textarea',
     required: true,
+    // Under its 故障类型 on the detail page (2026-10-23).
+    detailOrder: 1.2,
   },
   // 时间 (2026-10-23): when it went, when it is due and when it came back,
   // a group of their own under 基本信息; the list shows only when it went.
@@ -162,8 +164,10 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     type: 'money',
     currencyField: 'currency',
     column: true,
-    // Entered when completing; the detail page shows it in the summary.
-    detail: false,
+    // Entered when completing, then corrected here; on the detail page
+    // above 维修备注 (2026-10-23), between the fault and the notes.
+    readonlyWhen: (values) => values.result === 'inProgress',
+    detailOrder: 1.5,
   },
   {
     key: 'currency',

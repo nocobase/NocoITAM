@@ -170,17 +170,7 @@ export const RECORD_SUMMARIES: Readonly<Record<string, RecordSummary>> = {
           </Badge>
         ),
       },
-      // The cost reaches only readers with cost access; without it the
-      // field is absent and so is the item.
-      ...('cost' in record
-        ? [
-            {
-              key: 'cost',
-              label: t('fields.cost'),
-              value: formatMoney(record.cost, text(record.currency)) || '—',
-            },
-          ]
-        : []),
+      // The cost reads above 维修备注 in the card (2026-10-23), not here.
     ],
   },
   purchaseOrders: {
