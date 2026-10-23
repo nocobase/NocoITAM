@@ -445,8 +445,9 @@ describe('MDM follow-up', () => {
     await expect(
       followUp().dismiss(anns.id, 'ann', { settled: true }),
     ).rejects.toThrow('still to be settled');
+    // The record's own fields, each named (2026-10-23), not one `input`.
     expect(annPlan.steps[0].check?.fields).toContainEqual(
-      expect.objectContaining({ field: 'input' }),
+      expect.objectContaining({ field: 'serialNo', value: 'SN-UNKNOWN' }),
     );
     const hq = await app.container
       .resolve(databaseManagerToken)

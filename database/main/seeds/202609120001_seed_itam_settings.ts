@@ -92,10 +92,21 @@ const BUSINESS_NOTES: Readonly<Record<string, string>> = {
 // Default ITAM configuration. The settings service merges defaults over
 // whatever is stored, so this seed exists to make the defaults visible and
 // editable; it never overwrites a key an administrator has already saved.
+/**
+ * Where the deployment's default locale says it is (2026-10-23): yuan and
+ * Shanghai time for Chinese, dollars and US Eastern time otherwise. Both are
+ * a starting point an administrator changes in 设置 → 通用.
+ */
+const REGIONAL: Readonly<
+  Record<string, { readonly currency: string; readonly timeZone: string }>
+> = {
+  'zh-CN': { currency: 'CNY', timeZone: 'Asia/Shanghai' },
+  'en-US': { currency: 'USD', timeZone: 'America/New_York' },
+};
+
 const defaults = (locale: string): Readonly<Record<string, unknown>> => ({
   general: {
-    currency: 'CNY',
-    timeZone: 'Asia/Shanghai',
+    ...(REGIONAL[locale] ?? REGIONAL['en-US']),
     dateFormat: 'YYYY-MM-DD',
   },
   thresholds: {

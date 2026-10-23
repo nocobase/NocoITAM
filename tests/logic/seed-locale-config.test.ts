@@ -40,6 +40,20 @@ const runSeeds = async (config?: DatabaseTaskConfig) => {
   return db;
 };
 
+const generalOf = async (db: TestDatabase) => {
+  const row = await db.database
+    .query()
+    .selectFrom('itamSettings')
+    .select('value')
+    .where('key', '=', 'general')
+    .executeTakeFirst<{ value: unknown }>();
+  const value = row?.value;
+  return (typeof value === 'string' ? JSON.parse(value) : value) as {
+    currency: string;
+    timeZone: string;
+  };
+};
+
 const namesOf = (db: TestDatabase) =>
   db.database
     .query()
@@ -73,6 +87,11 @@ describe('the language the seeds write master data in', () => {
     const names = await namesOf(db);
     expect(names.get('cat-endpoint')).toBe('终端设备');
     expect(names.get('cat-laptop')).toBe('笔记本电脑');
+    // And the currency and time zone it starts with (2026-10-23).
+    expect(await generalOf(db)).toMatchObject({
+      currency: 'CNY',
+      timeZone: 'Asia/Shanghai',
+    });
   });
 
   it('comes from the configuration, by the section', async () => {
@@ -97,5 +116,9 @@ describe('the language the seeds write master data in', () => {
   it('falls back to English when neither says', async () => {
     db = await runSeeds();
     expect((await namesOf(db)).get('cat-endpoint')).toBe('End-user devices');
+    expect(await generalOf(db)).toMatchObject({
+      currency: 'USD',
+      timeZone: 'America/New_York',
+    });
   });
 });
