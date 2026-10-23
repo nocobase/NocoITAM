@@ -103,3 +103,39 @@ it("says what a department's onboarding kit gained, lost and changed", async () 
     }),
   ).toBe('删除 前端工程师 的配置');
 });
+
+// A stock movement says its note after what it did (2026-10-22).
+it("adds a stock movement's note after it", async () => {
+  const runtime = new I18nRuntime({ defaultLocale: 'zh-CN' });
+  runtime.registerApplicationNamespace('test', {
+    'zh-CN': async () => ({ default: zhCN }),
+    'en-US': async () => ({ default: enUS }),
+  });
+  await runtime.init('zh-CN');
+  const describe = (type: string, payload: Record<string, unknown>) =>
+    describeEvent(
+      {
+        id: 'event',
+        actorId: 'user',
+        createdAt: '2026-10-22',
+        type,
+        summary: type,
+        payload,
+      },
+      runtime.getFixedT('test'),
+      'deviceStatus',
+    );
+  expect(describe('stockIn', { quantity: 110, notes: '年度备货' })).toBe(
+    '110：年度备货',
+  );
+  expect(
+    describe('issue', {
+      quantity: 1,
+      targetLabel: '王芳',
+      notes: '出差借用',
+    }),
+  ).toBe('1 给 王芳：出差借用');
+  expect(describe('issue', { quantity: 1, targetLabel: '王芳' })).toBe(
+    '1 给 王芳',
+  );
+});

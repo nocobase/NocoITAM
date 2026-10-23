@@ -323,7 +323,7 @@ export function describeEvent(
                                   payload.expired === true
                                 ? 'history.summaries.unreserveExpired'
                                 : `history.summaries.${row.type}`;
-  return t(key, {
+  const said = t(key, {
     defaultValue: row.summary,
     count: Number(payload.count ?? 0),
     condition: label('condition'),
@@ -357,6 +357,16 @@ export function describeEvent(
       typeof payload.quantity === 'number' ? Math.abs(payload.quantity) : '',
     name: label('filename'),
   });
+  // A stock movement's note after what it did (2026-10-22): 入库 110：…,
+  // 发放 1 给 王芳：…. An adjustment says its own, with its reason.
+  const movement =
+    ['stockIn', 'issue', 'consume', 'install', 'uninstall'].includes(
+      row.type,
+    ) ||
+    (row.type === 'return' && typeof payload.quantity === 'number');
+  return movement && label('notes')
+    ? t('history.summaries.withNote', { summary: said, note: label('notes') })
+    : said;
 }
 
 /**

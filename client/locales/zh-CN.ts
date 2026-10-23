@@ -484,6 +484,7 @@ const zhCN: AppResource = {
       // possible and stated a reason; nothing writes it now.
       linesChangedWithReason: '{{count}} 条明细：{{reason}}',
       stockIn: '{{quantity}}',
+      withNote: '{{summary}}：{{note}}',
       adjustAdded: '增加 {{quantity}}：{{reason}}',
       adjustRemoved: '减少 {{quantity}}：{{reason}}',
       seatsAdded: '{{quantity}}',

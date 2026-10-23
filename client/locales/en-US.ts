@@ -495,6 +495,7 @@ const messages = {
       // possible and stated a reason; nothing writes it now.
       linesChangedWithReason: '{{count}} lines: {{reason}}',
       stockIn: '{{quantity}}',
+      withNote: '{{summary}}: {{note}}',
       adjustAdded: 'up {{quantity}}: {{reason}}',
       adjustRemoved: 'down {{quantity}}: {{reason}}',
       seatsAdded: '{{quantity}}',
@@ -2248,7 +2249,7 @@ const messages = {
     unlink: 'Unlink',
     unlinkTitle: 'Unlink',
     unlinkDescription:
-      'This device will no longer show what {{source}} reports, and later syncs will not link it by serial again. Link it again from the platform review page if needed.',
+      'This device will no longer show what {{source}} reports, and later syncs will not link it by serial again. Link it again from the MDM review if needed.',
     onlineAfterLeaving_one: '{{count}} device online after leaving',
     onlineAfterLeaving_other: '{{count}} devices online after leaving',
     advice: {
@@ -2267,7 +2268,7 @@ const messages = {
       },
     },
     review: {
-      title: 'Platform review',
+      title: 'MDM review',
       settingsLink: 'MDM settings',
       followUp: 'MDM difference follow-up',
       followUpNothing:
@@ -3831,11 +3832,11 @@ const messages = {
       triggers: {
         synced: {
           title: 'After an MDM sync',
-          hint: 'The 01:30 sync, and 立即同步 in Settings; only new differences.',
+          hint: 'The 01:30 sync, and Sync now in Settings; only new differences.',
         },
       },
       byHand:
-        'Whatever is switched off, Asset Steward can always be asked on MDM 核对 to sort a batch of devices.',
+        'Whatever is switched off, Asset Steward can always be asked on the MDM review to sort a batch of devices.',
     },
   },
   deviceSyncRun: {
@@ -3872,7 +3873,7 @@ const messages = {
     accepted: 'Carried out',
     notesLeft: 'Left to handle by hand: {{count}}',
     notes: 'For a person to handle',
-    openReview: 'Open MDM 核对',
+    openReview: 'Open the MDM review',
     failedHintHere:
       'Nothing was sorted this time; try MDM difference follow-up at the top right again.',
     failedHint:
