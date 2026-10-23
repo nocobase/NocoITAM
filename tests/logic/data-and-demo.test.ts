@@ -490,7 +490,7 @@ describe('CSV import / export and demo data', () => {
       recipientName: 'Recycler',
       dataWipe: 'notWiped',
     });
-    expect(created.status, await created.clone().text()).toBe(201);
+    expect(created.status).toBe(201);
     const draft = await data<{ id: string }>(created);
     expect((await post('demo/clear')).status).toBe(200);
     expect((await get(`disposals/${draft.id}`)).status).toBe(404);

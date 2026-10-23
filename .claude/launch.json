@@ -4,22 +4,14 @@
     {
       "name": "dev",
       "runtimeExecutable": "env",
-      "runtimeArgs": [
-        "APP_SERVER_PORT=13002",
-        "pnpm",
-        "dev"
-      ],
+      "runtimeArgs": ["APP_SERVER_PORT=13002", "pnpm", "dev"],
       "port": 13002,
       "url": "http://127.0.0.1:13002"
     },
     {
       "name": "dev-alt",
       "runtimeExecutable": "env",
-      "runtimeArgs": [
-        "APP_SERVER_PORT=13003",
-        "pnpm",
-        "dev"
-      ],
+      "runtimeArgs": ["APP_SERVER_PORT=13003", "pnpm", "dev"],
       "port": 13003,
       "url": "http://127.0.0.1:13003"
     }
