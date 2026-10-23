@@ -206,7 +206,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   item with a column per source was not readable — most rows changed
   nothing, and a minimum read as somebody's need): each short item says in
   words what needs it, what there is, how many are missing and the last day
-  to order. Then 够用, every other item, as 现有 + 将到 − 将用 = 剩余 beside the minimum; a row opens
+  to order. Then 全部, every item, the short ones' 剩余 in red, as 现有 + 将到 − 将用 = 剩余 beside the minimum; a row opens
   to its records.
   创建采购单 (an item) and 全部创建采购单 (the heading) open the create dialog
   filled in (`ProposedOrdersButton`), an order per vendor each item was last

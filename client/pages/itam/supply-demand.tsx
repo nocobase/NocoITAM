@@ -71,9 +71,8 @@ function figures(row: SupplyRow) {
  * a column per source was not readable — most rows changed nothing, and a
  * minimum counted as a need): each short item says in words what needs it,
  * what there is, how many are missing and the last day to order, with
- * 创建采购单. Then 够用, every other model and software product (only those
- * with something coming or going until the user asked for all, the same
- * day), as 现有 + 将到 − 将用 = 剩余, the minimum beside it; a
+ * 创建采购单. Then 全部, every model and software product, the short
+ * ones' 剩余 in red (够用的, the rest alone, earlier the same day), as 现有 + 将到 − 将用 = 剩余, the minimum beside it; a
  * row opens to the records behind its numbers.
  */
 export default function SupplyDemandPage(): ReactElement {
@@ -84,18 +83,18 @@ export default function SupplyDemandPage(): ReactElement {
   const result = useSupplyDemand(days, replacements);
   const all = result.data?.rows ?? [];
   const short = all.filter(isShort);
-  // In the categories page's order — by type, then the category tree —
-  // then by name (2026-10-23); what is short keeps its most pressing first.
-  const enough = all
-    .filter((row) => !isShort(row))
-    .sort(
-      (a, b) =>
-        kindOrder(a) - kindOrder(b) ||
-        (a.category?.order ?? Infinity) - (b.category?.order ?? Infinity) ||
-        a.target.name.localeCompare(b.target.name),
-    );
+  // Every item, the short ones too, marked (2026-10-23: the short ones
+  // alone, as 够用的, until then), in the categories page's order — by
+  // type, then the category tree — then by name. 不够用 above keeps its
+  // most pressing first.
+  const listed = [...all].sort(
+    (a, b) =>
+      kindOrder(a) - kindOrder(b) ||
+      (a.category?.order ?? Infinity) - (b.category?.order ?? Infinity) ||
+      a.target.name.localeCompare(b.target.name),
+  );
   const rows: readonly Row[] | undefined = result.data
-    ? enough.map((row) => ({ ...row, id: row.key }))
+    ? listed.map((row) => ({ ...row, id: row.key }))
     : undefined;
 
   /** An order per vendor last bought from, for these rows. */
@@ -200,7 +199,15 @@ export default function SupplyDemandPage(): ReactElement {
           {t('supplyDemand.unlimited')}
         </span>
       ) : (
-        <span className='font-medium tabular-nums'>{figures(row).left}</span>
+        // Below its minimum: short, as in 不够用 above.
+        <span
+          className={cn(
+            'font-medium tabular-nums',
+            isShort(row) && 'text-destructive',
+          )}
+        >
+          {figures(row).left}
+        </span>
       ),
     ),
     numeric('minimum', t('supplyDemand.columns.minimum'), (row) =>
@@ -279,7 +286,7 @@ export default function SupplyDemandPage(): ReactElement {
           <section className='space-y-2'>
             <div className='flex min-h-8 flex-wrap items-center justify-between gap-2'>
               <h2 className='text-base font-semibold'>
-                {t('supplyDemand.enough.title', { count: enough.length })}
+                {t('supplyDemand.enough.title', { count: listed.length })}
               </h2>
             </div>
             <p className='text-xs text-muted-foreground'>

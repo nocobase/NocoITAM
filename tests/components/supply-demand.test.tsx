@@ -152,8 +152,8 @@ it('puts what is short first, in words, and every other item as have + coming �
   expect(screen.getByText('supplyDemand.entry.minimum')).toBeTruthy();
   expect(screen.getByText('supplyDemand.short.missing:2')).toBeTruthy();
 
-  // 够用 lists every other item, changing or not.
-  expect(screen.getByText('supplyDemand.enough.title:2')).toBeTruthy();
+  // 全部 lists every item, the short ones too, changing or not.
+  expect(screen.getByText('supplyDemand.enough.title:4')).toBeTruthy();
   expect(screen.getByText('dock')).toBeTruthy();
   expect(screen.getByText('stand')).toBeTruthy();
 

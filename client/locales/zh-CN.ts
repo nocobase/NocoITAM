@@ -3066,7 +3066,7 @@ const zhCN: AppResource = {
       orderToday: '今天就要下单',
     },
     enough: {
-      title: '够用的 {{count}} 项',
+      title: '全部 {{count}} 项',
       hint: '剩余 = 现有 + 将到 − 将用，剩余不低于最低库存就够用。点一行看明细。',
       empty: '没有资产有进出',
     },
