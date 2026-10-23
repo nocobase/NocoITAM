@@ -129,13 +129,12 @@ const show = () =>
     </QueryClientProvider>,
   );
 
-it('drafts orders for every shortage from the list’s heading', async () => {
+it('drafts orders for every shortage from the page’s heading', async () => {
   state.supply = supply;
   state.requests = [];
   show();
-  fireEvent.click(
-    screen.getAllByRole('button', { name: /onboarding\.draftOrder/ })[0]!,
-  );
+  // 全部起草采购单: named as all of it (2026-10-22).
+  fireEvent.click(screen.getByRole('button', { name: /onboarding\.draftAll/ }));
   // Every joiner's shortfall, in the create dialog (2026-10-22).
   await waitFor(() =>
     expect(state.requests).toEqual([
@@ -171,8 +170,8 @@ it('lists under each joiner only what is short or on its way, once', async () =>
   const buttons = screen.getAllByRole('button', {
     name: /onboarding\.draftOrder/,
   });
-  expect(buttons).toHaveLength(2);
-  fireEvent.click(buttons[1]!);
+  expect(buttons).toHaveLength(1);
+  fireEvent.click(buttons[0]!);
   await waitFor(() =>
     expect(state.requests).toEqual([
       expect.objectContaining({ json: { personId: 'p1', keys: ['ide'] } }),

@@ -983,6 +983,7 @@ const messages = {
     noKit:
       'No onboarding kit applies to this person’s department and position.',
     draftOrder: 'Draft order',
+    draftAll: 'Draft all orders',
     drafts: {
       created_one: 'Created {{orders}}',
       created_other: 'Created {{count}} orders: {{orders}}',

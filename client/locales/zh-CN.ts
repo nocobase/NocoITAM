@@ -972,6 +972,7 @@ const zhCN: AppResource = {
     joins: '{{date}} 入职',
     noKit: '该人员的部门和职位没有适用的入职配置。',
     draftOrder: '起草采购单',
+    draftAll: '全部起草采购单',
     drafts: {
       created_one: '已创建采购单 {{orders}}',
       created_other: '已创建 {{count}} 张采购单：{{orders}}',

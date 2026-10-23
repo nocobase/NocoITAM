@@ -51,7 +51,7 @@ export default function OnboardingSupplyPage(): ReactElement {
         // Orders for every shortage, a dialog each.
         actions={
           supply.data && anyShort(supply.data.joiners) ? (
-            <DraftOrdersButton />
+            <DraftOrdersButton>{t('onboarding.draftAll')}</DraftOrdersButton>
           ) : undefined
         }
       />
