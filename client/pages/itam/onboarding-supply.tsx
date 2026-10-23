@@ -117,10 +117,12 @@ function Shortages({
   );
   // One order for all of it, drafted in the chat: it needs a vendor the
   // page does not ask for, and the agent reads each joiner's plan.
-  const draft = () =>
+  // All of it, or one row (2026-10-22): Asset Steward works the vendor out
+  // either way and drafts an order per vendor.
+  const draft = (entries: typeof sorted) =>
     ai.ask(
       t('ai.prompts.supplyOrder', {
-        items: sorted
+        items: entries
           .map(
             (entry) =>
               `${entry.target.name} ×${String(entry.quantity)}（${entry.people
@@ -138,7 +140,7 @@ function Shortages({
             {t('onboarding.supply.shortages')}
           </h2>
           {sorted.length > 0 && ai.available ? (
-            <AiShortcut className='ml-auto' onClick={draft}>
+            <AiShortcut className='ml-auto' onClick={() => draft(sorted)}>
               {t('onboarding.draftOrder')}
             </AiShortcut>
           ) : null}
@@ -187,6 +189,16 @@ function Shortages({
                           date: formatDate(entry.orderBy),
                         })}
                   </span>
+                ) : null}
+                {/* One item on its own; with a single row the heading's
+                    button is the same thing. */}
+                {sorted.length > 1 && ai.available ? (
+                  <AiShortcut
+                    className='ml-0 text-xs'
+                    onClick={() => draft([entry])}
+                  >
+                    {t('onboarding.draftOrder')}
+                  </AiShortcut>
                 ) : null}
               </li>
             ))}

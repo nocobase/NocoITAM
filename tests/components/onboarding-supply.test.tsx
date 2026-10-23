@@ -130,3 +130,30 @@ it('lists each joiner once, with only what is not taken from stock', () => {
       .getAttribute('href'),
   ).toBe('/software-products/ide');
 });
+
+it('drafts one item on its own from its row when there are several', () => {
+  state.supply = {
+    ...supply,
+    shortages: [
+      ...supply.shortages,
+      {
+        key: 'model:iphone',
+        target: { type: 'model', id: 'iphone', name: 'iPhone 15' },
+        kind: 'device',
+        itemType: 'device',
+        quantity: 1,
+        orderBy: '2099-01-05',
+        people: [{ id: 'p2', name: 'Lin Xue' }],
+      },
+    ],
+  };
+  state.asked = [];
+  show();
+  const buttons = screen.getAllByRole('button', {
+    name: /onboarding\.draftOrder/,
+  });
+  // The heading's, then one per row.
+  expect(buttons).toHaveLength(3);
+  fireEvent.click(buttons[2]!);
+  expect(state.asked).toEqual(['ai.prompts.supplyOrder']);
+});
