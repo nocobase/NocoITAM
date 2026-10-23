@@ -2,7 +2,7 @@ import { useService } from '@nocobase/app-client';
 import { clientFileRepositoryManagerToken } from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { FileText, Sparkles, Upload, X } from 'lucide-react';
+import { FileCheck, FileText, Sparkles, Upload, X } from 'lucide-react';
 import { useRef, useState, type ReactElement, type ReactNode } from 'react';
 
 import { CaptureFailure } from '@/components/itam/ai/capture-failure';
@@ -66,6 +66,15 @@ export function DocumentReading({
   // Several documents may go together (2026-10-23): a quote and the
   // inspection report it rests on are read as one.
   const [chosen, setChosen] = useState<readonly File[]>([]);
+  // Documents already on the record and read: their text goes with every
+  // later go, never into the box, which holds only what the person typed.
+  const [loaded, setLoaded] = useState<
+    readonly {
+      readonly id: string;
+      readonly name: string;
+      readonly text: string;
+    }[]
+  >([]);
   // A file dragged over the box (2026-10-23): dropped, it is taken as if
   // chosen with 上传单据.
   const [dragging, setDragging] = useState(false);
@@ -80,14 +89,14 @@ export function DocumentReading({
   }>();
   if (!ai.available) return null;
   const busy = phase !== undefined;
-  const ready = Boolean(pasted.trim() || chosen.length);
+  const ready = Boolean(pasted.trim() || chosen.length || loaded.length);
 
   const go = async () => {
     if (!ready || busy) return;
     setFailure(undefined);
     setResult(undefined);
     try {
-      let material = pasted.trim();
+      let readDocs: typeof loaded = loaded;
       if (chosen.length) {
         setPhase('uploading');
         const uploaded: { id: string; name: string }[] = [];
@@ -110,7 +119,7 @@ export function DocumentReading({
         // their text rather than uploading them again.
         setChosen([]);
         const unreadable: string[] = [];
-        const documents: string[] = [];
+        const documents: { id: string; name: string; text: string }[] = [];
         for (const file of uploaded) {
           const { data } = await api.request<{
             data: { text: string | null };
@@ -119,14 +128,11 @@ export function DocumentReading({
             method: 'POST',
             json: { fileId: file.id },
           });
-          if (data.text)
-            documents.push(
-              `<document filename="${file.name}">\n${data.text}\n</document>`,
-            );
+          if (data.text) documents.push({ ...file, text: data.text });
           else unreadable.push(file.name);
         }
-        material = [material, ...documents].filter(Boolean).join('\n\n');
-        setPasted(material);
+        readDocs = [...loaded, ...documents];
+        setLoaded(readDocs);
         if (unreadable.length) {
           setFailure({
             text: t('documentReading.noText', {
@@ -135,9 +141,18 @@ export function DocumentReading({
             answered: false,
           });
           // What could be read is still read; nothing at all stops here.
-          if (!material) return;
+          if (!pasted.trim() && !readDocs.length) return;
         }
       }
+      const material = [
+        pasted.trim(),
+        ...readDocs.map(
+          (document) =>
+            `<document filename="${document.name}">\n${document.text}\n</document>`,
+        ),
+      ]
+        .filter(Boolean)
+        .join('\n\n');
       setPhase('reading');
       const answer = await read({ task, material, context });
       if (!answer.reading) {
@@ -255,8 +270,32 @@ export function DocumentReading({
       />
       {/* The chosen files on lines of their own, above the actions, which
           stay where they are whether or not any is chosen (2026-10-23). */}
-      {chosen.length ? (
+      {chosen.length || loaded.length ? (
         <div className='flex min-w-0 flex-wrap gap-1.5'>
+          {/* Read already: on the record, and read again with the next go. */}
+          {loaded.map((document) => (
+            <span
+              key={document.id}
+              className='inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-sm'
+              title={document.name}
+            >
+              <FileCheck className='size-4 shrink-0 text-primary' />
+              <span className='min-w-0 truncate'>{document.name}</span>
+              <button
+                type='button'
+                className='rounded-sm text-muted-foreground hover:text-foreground disabled:opacity-50'
+                aria-label={t('documentReading.removeFile')}
+                disabled={busy}
+                onClick={() =>
+                  setLoaded((current) =>
+                    current.filter((one) => one.id !== document.id),
+                  )
+                }
+              >
+                <X className='size-3.5' />
+              </button>
+            </span>
+          ))}
           {chosen.map((file) => (
             <span
               key={`${file.name}:${file.size}`}
