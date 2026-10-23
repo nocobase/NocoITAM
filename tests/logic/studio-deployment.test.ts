@@ -133,6 +133,26 @@ describe('the Studio release deployment', () => {
     ).toThrow('Invalid HTTPS base URL: STUDIO_APP_URL');
   });
 
+  // An application starts a while after Studio reports it deployed (cn,
+  // 1.0.0-beta.26): the checks are asked again until the deadline.
+  it('asks the health check again while the application starts', async () => {
+    const { options } = scenario();
+    let calls = 0;
+    options.health = vi.fn(async () => {
+      calls += 1;
+      if (calls < 3) throw new Error('Health check HTTP 404');
+    });
+    expect(await deploy(options)).toBe('succeeded');
+    expect(options.health).toHaveBeenCalledTimes(3);
+    const down = scenario();
+    down.options.health = vi.fn(async () => {
+      throw new Error('Health check HTTP 404');
+    });
+    await expect(deploy({ ...down.options, timeout: 60_000 })).rejects.toThrow(
+      'Health check HTTP 404',
+    );
+  });
+
   it('uploads the archive, waits for the deployment and checks the application runs it', async () => {
     const { options } = scenario();
     expect(await deploy(options)).toBe('succeeded');

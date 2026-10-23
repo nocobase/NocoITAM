@@ -280,15 +280,29 @@ export async function deploy({
         deploymentId,
         'The application no longer runs this deployment',
       );
-      await health(`${env.STUDIO_APP_URL.replace(/\/$/u, '')}/api/healthz`);
-      // What the application's address serves is this build's page: a
-      // deployment Studio reports while the address answers from elsewhere
-      // (another Studio, another host process) is not a deployment.
-      const served = await page(`${env.STUDIO_APP_URL.replace(/\/$/u, '')}/`);
-      assert(
-        served.includes(metadata.clientScript),
-        `The address does not serve this build's page (${metadata.clientScript})`,
-      );
+      // The application may start a while after Studio reports the
+      // deployment (cn, 1.0.0-beta.26: about 90 seconds, and the single
+      // check failed a healthy deploy), so the checks are asked again until
+      // they pass or the deadline comes.
+      const address = env.STUDIO_APP_URL.replace(/\/$/u, '');
+      for (;;) {
+        try {
+          await health(`${address}/api/healthz`);
+          // What the application's address serves is this build's page: a
+          // deployment Studio reports while the address answers from
+          // elsewhere (another Studio, another host process) is not a
+          // deployment.
+          const served = await page(`${address}/`);
+          assert(
+            served.includes(metadata.clientScript),
+            `The address does not serve this build's page (${metadata.clientScript})`,
+          );
+          break;
+        } catch (error) {
+          if (now() >= deadline) throw error;
+          await wait(10_000);
+        }
+      }
       summary(
         "Deployed: Studio runs this commit and archive, the health check passed, and the address serves this build's page.\n\n",
       );
