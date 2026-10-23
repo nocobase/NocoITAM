@@ -67,8 +67,9 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     readonlyWhen: (values) => values.id !== undefined,
     column: true,
     group: 'groups.basic',
-    // Reads under the manufacturer, after what the entitlement is for.
-    detailOrder: 0,
+    // 基本信息 reads 授权类型, 负责人, 软件产品, 制造商, 分类 (2026-10-22): the
+    // kind first, above the owner (who leads at -1000).
+    detailOrder: -2000,
   },
   {
     key: 'softwareProductId',
@@ -78,8 +79,7 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     reference: { collection: 'softwareProducts' },
     column: true,
     group: 'groups.basic',
-    // Above the kind: what it is for, then what kind it is.
-    detailOrder: -1,
+    detailOrder: -900,
   },
   // Category and manufacturer follow the software product, as a device's
   // follow its model: shown, filterable, never edited here.
@@ -95,8 +95,7 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     readonlyWhen: () => true,
     readonlyHint: 'entitlements.followsProduct',
     group: 'groups.basic',
-    // Above the kind: what it is for, then what kind it is.
-    detailOrder: -1,
+    detailOrder: -700,
   },
   {
     key: 'manufacturerId',
@@ -107,8 +106,7 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     readonlyWhen: () => true,
     readonlyHint: 'entitlements.followsProduct',
     group: 'groups.basic',
-    // Above the kind: what it is for, then what kind it is.
-    detailOrder: -1,
+    detailOrder: -800,
   },
   {
     key: 'licensingModel',
