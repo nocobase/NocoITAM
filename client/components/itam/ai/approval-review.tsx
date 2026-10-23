@@ -217,7 +217,9 @@ export function ApprovalReviewCard({
                 autoFocus
               />
               <div>
+                {/* An AI action, so its sparkle (2026-10-23). */}
                 <Button type='submit' disabled={busy || !instruction.trim()}>
+                  <Sparkles data-icon='inline-start' />
                   {t('review.redoSend')}
                 </Button>
               </div>

@@ -3656,7 +3656,7 @@ const zhCN: AppResource = {
     dismiss: '忽略',
     redo: '修改',
     redoPlaceholder: '说说要改什么，比如「只采购 3 台」',
-    redoSend: '重做',
+    redoSend: '调整',
     revised: '按你的意思重做：{{text}}',
     failed: {
       unavailable: '没有可用的模型，审阅没有完成。',

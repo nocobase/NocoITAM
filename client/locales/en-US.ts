@@ -3866,7 +3866,7 @@ const messages = {
     dismiss: 'Dismiss',
     redo: 'Revise',
     redoPlaceholder: 'Say what to change, such as "buy only 3"',
-    redoSend: 'Redo',
+    redoSend: 'Adjust',
     revised: 'Redone your way: {{text}}',
     failed: {
       unavailable: 'No model is available; the review did not finish.',
