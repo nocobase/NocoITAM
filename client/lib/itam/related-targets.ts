@@ -48,9 +48,19 @@ export const stockTarget: RelatedTarget = {
   // A related tab keeps its first four columns: the quantities read as
   // 累计入库 and 在库, as on the record, and the category (which follows the
   // model) gives way to 在库.
-  fields: stockFields('accessory').filter(
-    (field) => field.key !== 'categoryId',
-  ),
+  // Where it is before how many (2026-10-22): the record keeps its place
+  // in 归属与位置 under 数量, which moved it after them.
+  fields: (() => {
+    const fields = stockFields('accessory').filter(
+      (field) => field.key !== 'categoryId',
+    );
+    const quantity = (field: { readonly group?: string }) =>
+      field.group === 'groups.quantity';
+    return [
+      ...fields.filter((field) => !quantity(field)),
+      ...fields.filter(quantity),
+    ];
+  })(),
   nameField: 'name',
   i18n: 'stock',
   defaultSort: 'name',

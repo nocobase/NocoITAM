@@ -66,15 +66,6 @@ export function stockFields(kind: StockKind): readonly FieldDefinition[] {
       group: 'groups.basic',
     },
     {
-      key: 'locationId',
-      label: 'fields.location',
-      type: 'reference',
-      required: true,
-      reference: { collection: 'locations' },
-      column: true,
-      group: 'groups.basic',
-    },
-    {
       // Derived on the server: stocked total minus what is out or used up.
       key: 'availableQuantity',
       label: 'fields.inStock',
@@ -116,6 +107,16 @@ export function stockFields(kind: StockKind): readonly FieldDefinition[] {
       placeholder: 'stock.minimumFromSettings',
       column: true,
       group: 'groups.quantity',
+    },
+    {
+      // In 归属与位置, under 数量 (2026-10-22), as a device's place is.
+      key: 'locationId',
+      label: 'fields.location',
+      type: 'reference',
+      required: true,
+      reference: { collection: 'locations' },
+      column: true,
+      group: 'groups.ownership',
     },
     {
       key: 'notes',
