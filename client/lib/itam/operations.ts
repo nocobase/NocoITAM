@@ -66,6 +66,16 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     // Chosen when the repair is created; it never moves to another device.
     readonlyWhen: (values) => Boolean(values.id),
   },
+  {
+    key: 'result',
+    label: 'fields.repairResult',
+    type: 'select',
+    options: options('repairResult', REPAIR_RESULTS),
+    // Right after the device in the list (2026-10-23). Set by completing. The detail page shows it once, as a tag in the
+    // summary, so the information card leaves it out.
+    column: true,
+    detail: false,
+  },
   // Before 维修方式 in the list (2026-10-23); on the detail page it still
   // follows the fault description it sorts.
   {
@@ -126,16 +136,6 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     column: true,
     readonlyWhen: (values) => values.result === 'inProgress',
     group: 'groups.dates',
-  },
-  {
-    key: 'result',
-    label: 'fields.repairResult',
-    type: 'select',
-    options: options('repairResult', REPAIR_RESULTS),
-    // Set by completing. The detail page shows it once, as a tag in the
-    // summary, so the information card leaves it out.
-    column: true,
-    detail: false,
   },
   {
     key: 'cost',
