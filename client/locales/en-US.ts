@@ -983,6 +983,17 @@ const messages = {
     noKit:
       'No onboarding kit applies to this person’s department and position.',
     draftOrder: 'Draft order',
+    drafts: {
+      created_one: 'Drafted {{orders}}: check it and submit it for approval',
+      created_other:
+        'Drafted {{count}} orders, {{orders}}: check them and submit them for approval',
+      nothing: 'Nothing to buy',
+      skipped:
+        '{{items}}: the kit names a category, not a model; add it to the order by hand',
+      vendorTitle: 'Choose vendors',
+      vendorHint:
+        'These items were never bought here before: choose where to buy them, then draft the order.',
+    },
     instead: 'The rule had proposed ',
     needsAccount:
       'A subscription seat needs an account: give this person an e-mail, or assign it on the entitlement',

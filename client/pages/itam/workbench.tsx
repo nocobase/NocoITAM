@@ -281,9 +281,11 @@ function Column({
         )}
       >
         <header className='flex h-11 items-center gap-2 px-3.5'>
-          <span className='truncate text-sm font-semibold'>{title}</span>
+          <span className='shrink-0 text-sm font-semibold'>{title}</span>
           {count === undefined ? null : <CountPill>{count}</CountPill>}
-          {action ? <span className='ml-auto shrink-0'>{action}</span> : null}
+          {action ? (
+            <span className='ml-auto flex min-w-0'>{action}</span>
+          ) : null}
         </header>
         <div className='flex flex-col gap-2 px-2'>
           {children}
@@ -303,9 +305,12 @@ function Column({
       )}
     >
       <header className='flex h-11 shrink-0 items-center gap-2 px-3.5'>
-        <span className='truncate text-sm font-semibold'>{title}</span>
+        {/* The title keeps its width; a link beside it gives way
+            (2026-10-23: in English 人员变动's read "Staff c…" beside
+            "Onboarding supply"). */}
+        <span className='shrink-0 text-sm font-semibold'>{title}</span>
         {count === undefined ? null : <CountPill>{count}</CountPill>}
-        {action ? <span className='ml-auto shrink-0'>{action}</span> : null}
+        {action ? <span className='ml-auto flex min-w-0'>{action}</span> : null}
       </header>
       <div className='flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2'>
         {children}
@@ -380,10 +385,11 @@ function WorkColumn({
         card.records.some((record) => record.origin === 'pendingOnboarding') ? (
           <Link
             to='/onboarding-supply'
-            className='flex items-center gap-0.5 text-xs text-link'
+            title={t('onboarding.supply.link')}
+            className='flex min-w-0 items-center gap-0.5 text-xs text-link'
           >
-            {t('onboarding.supply.link')}
-            <ArrowRight aria-hidden='true' className='size-3' />
+            <span className='truncate'>{t('onboarding.supply.link')}</span>
+            <ArrowRight aria-hidden='true' className='size-3 shrink-0' />
           </Link>
         ) : // MDM 核对, empty column or not: the page has no menu entry,
         // and what is settled there — ignored records, the rules — is
