@@ -1,7 +1,7 @@
 import type { LocaleResource } from '@nocobase/i18n';
 
 import agentChatEnUS from '../extensions/nocobase-agent-chat/locales/en-US.js';
-import { adminIn, adminWording } from './admin.js';
+import { adminIn, adminWording } from './admin/index.js';
 import systemEnUS from './system/en-US.js';
 
 const messages = {
@@ -2892,7 +2892,7 @@ const messages = {
         'What the AI writes is in this language: repair and disposal diagnosis, AI tidy-up, the approval assistant’s advice and MDM difference follow-up. Asset Steward’s chat still answers in the language it is asked in.',
       aiLanguages: {
         auto: 'Follow the system default',
-        'zh-CN': '中文',
+        'zh-CN': '中文（简体）',
         'en-US': 'English',
       },
     },
@@ -2939,7 +2939,7 @@ const messages = {
       none: 'No demo data has been imported.',
       present: 'Demo data imported on {{date}}: {{count}} records.',
       language: 'Demo data language',
-      languages: { 'zh-CN': '中文', 'en-US': 'English' },
+      languages: { 'zh-CN': '中文（简体）', 'en-US': 'English' },
       accounts: 'Demo accounts',
       accountsHint:
         'Once imported, sign in as any of these to see the system as that role.',

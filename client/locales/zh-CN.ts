@@ -1,6 +1,6 @@
 import type { AppResource } from './en-US.js';
 import agentChatZhCN from '../extensions/nocobase-agent-chat/locales/zh-CN.js';
-import { adminIn, adminWording } from './admin.js';
+import { adminIn, adminWording } from './admin/index.js';
 import systemZhCN from './system/zh-CN.js';
 
 const zhCN: AppResource = {
@@ -2726,7 +2726,7 @@ const zhCN: AppResource = {
         'AI 生成的内容用这种语言撰写：维修诊断、报废诊断、AI 整理、审批助手的建议和 MDM 差异跟进。资产管家对话仍跟随提问的语言。',
       aiLanguages: {
         auto: '跟随系统默认语言',
-        'zh-CN': '中文',
+        'zh-CN': '中文（简体）',
         'en-US': 'English',
       },
     },
@@ -2771,7 +2771,7 @@ const zhCN: AppResource = {
       none: '尚未导入演示数据',
       present: '演示数据于 {{date}} 导入，共 {{count}} 条记录',
       language: '演示数据语言',
-      languages: { 'zh-CN': '中文', 'en-US': 'English' },
+      languages: { 'zh-CN': '中文（简体）', 'en-US': 'English' },
       accounts: '演示账号',
       accountsHint: '导入后可以用这些账号登录，体验不同角色看到的系统。',
       username: '用户名',

@@ -44,9 +44,22 @@ the administration pages in `client/pages/settings/` (users, permission
 sets, API keys, scheduled tasks), each tab its own child route at
 `/settings/<tab>` checking its own grant and shown only to whoever it lets in,
 built on the plugins' client APIs and worded through `admin.*`
-(`client/locales/admin.ts`). AI is a section too, holding the Agents
+(`client/locales/admin/index.ts`). AI is a section too, holding the Agents
 plugin's own pages; its model services page is at `/ai-models`, since
 `/models` is the asset models page.
+
+## Interface languages
+
+The interface is offered in ten languages (2026-10-23): en-US, zh-CN, zh-TW, ja-JP, es-ES, pt-BR, fr-FR, de-DE,
+vi-VN and id-ID — the codes the NocoBase plugins ship their own copy in. Each has, on the client, `client/locales/<L>.ts`
+(the application's copy), `system/<L>.ts` and `system/settings-<L>.ts` (the template's), `admin/<L>.ts` (the settings
+pages; en-US and zh-CN are the pairs in `admin/index.ts`) and a file in each of `client/extensions/nocobase-agent-chat`,
+`nocobase-inbox` and `nocobase-device-approval`'s `locales/`, and on the server `server/locales/<L>.ts`; both
+`index.ts` loaders list all ten, and `pnpm nocobase locales check` holds them equal. That check reads every `.ts` file
+beside a loader as a language, which is why the settings copy lives in a folder. `AppResource` and the other locale
+types make a key missing from any language a type error, so a new string is written in all ten. The calendar follows
+the language through `dayPickerLocale()` (`client/lib/itam/day-picker-locale.ts`). Only the interface is translated:
+demo data, seeds, scheduled-task titles and the assistant's prompts stay Chinese or English and fall back to English.
 
 The assistant is the Agents plugin's chat (`client/layouts/agent-chat.tsx`,
 the UI Library's `agent-chat` block in `client/extensions/nocobase-agent-chat/`).

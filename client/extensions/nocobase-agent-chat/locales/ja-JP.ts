@@ -1,0 +1,277 @@
+import type { AgentChatLocale } from './en-US.js';
+
+const agentChatJaJP: AgentChatLocale = {
+  chat: {
+    retrySaving: '保存を再試行',
+    contextFailed:
+      '選択したコンテキストを読み取れないか、メッセージを送信できませんでした。現在のページを確認して、もう一度お試しください。',
+    approval: {
+      request: 'このツールを実行するには、あなたの承認が必要です。',
+      approve: '承認',
+      deny: '拒否',
+      denied: 'ツールの実行は拒否されました。',
+      failed:
+        '承認が確定しませんでした。保存済みのメッセージを更新してから、もう一度お試しください。',
+    },
+    feedback: {
+      sending: '送信しています…',
+      waiting: 'エージェントを待っています…',
+      thinking: '考えています…',
+      stopping: '停止を要求しました。エージェントが終了するのを待っています…',
+      completed: '完了しました。',
+      cancelled:
+        'キャンセルしました。完了した可能性のある操作を確認してから繰り返してください。',
+      failed:
+        '応答に失敗しました。もう一度送信するかどうかは、履歴を確認してから判断してください。',
+      unknown:
+        '結果またはその保存済み履歴が確定していません。もう一度送信するかどうかは、履歴を更新してから判断してください。',
+      effectReview:
+        '一部の操作は完了している可能性があります。結果を確認してから繰り返してください。',
+    },
+
+    executionFailed:
+      '実行に失敗しました。保存済みの履歴と、完了した可能性のある操作を確認してから繰り返してください。',
+    historicalReadOnly:
+      'この過去の会話は読み取り専用です。続けるには新しいチャットを始めてください。',
+    connectionUnknown:
+      '接続が中断され、結果は不明です。もう一度送信するかどうかは、保存済みの履歴を更新してから判断してください。',
+    allowAnother: 'もう一度送信を許可 (重複する可能性があります)',
+    creationUnknown:
+      '会話が作成された可能性がありますが、その ID を受け取れませんでした。もう一度作成すると、空の会話が重複して残る可能性があります。メッセージが自動で再送信されることはありません。',
+    retryCreation: '別の会話を作成して送信',
+    refreshHistory: '履歴を更新',
+    signIn: 'サインイン',
+    title: 'エージェントチャット',
+    ask: 'エージェントに質問',
+    close: '閉じる',
+    expand: '全幅で表示',
+    restoreSize: 'サイドパネルに戻す',
+    openPage: '全画面で開く',
+    openInPanel: 'サイドパネルで開く',
+    more: 'その他',
+    newConversation: '新しい会話',
+    untitled: '無題の会話',
+    rename: '名前を変更',
+    renameHint: '{{title}} (クリックして名前を変更)',
+    archive: 'アーカイブ',
+    unarchive: 'アーカイブを解除',
+    archivedNote: 'この会話はアーカイブされています。',
+    renamed: '会話の名前を変更しました',
+    archivedNamed: '「{{title}}」をアーカイブしました',
+    unarchived: '会話のアーカイブを解除しました',
+    undo: '元に戻す',
+    you: 'あなた',
+    agentGone: '削除されたエージェント',
+    anyAgent: 'エージェント',
+    loadFailed: '会話を読み込めませんでした',
+    notFound: 'この会話は開けません',
+    notFoundDescription: '削除されたか、ほかの人の会話である可能性があります。',
+    emptyTitle: '{{name}} に何を手伝ってもらいますか？',
+    emptyDescription:
+      '何でも質問するか、整理したい作業を説明してください。このページに表示されている内容はコンテキストとして一緒に送られます。',
+    noAgent:
+      'チャットできるエージェントがありません。管理者にエージェントを有効にしてもらうか、ランナーを接続してください。',
+    chooseAgent:
+      '下でチャットする相手を選んでください。毎回同じエージェントで始めるには、プロフィールでデフォルトを設定してください。',
+    messages: 'メッセージ',
+    olderMessages: '以前のメッセージ',
+    sources: {
+      panel: 'チャットパネル',
+    },
+    availability: {
+      online: 'オンライン',
+      agentMissing: '削除済み',
+      agentArchived: '未有効',
+      forbidden: '利用できません',
+      noModel: '先にチャットモデルを設定してください',
+      noRunner: 'オンラインのランナーがないため選べません',
+      othersPersonal: 'ほかの人の個人ランナーにしかありません',
+      // The reason earlier versions wrote on a notice that their online fallback could not answer.
+      modelUnavailable: 'モデルを利用できません',
+    },
+    reply: {
+      writing: '書いています…',
+      interrupted: '返信はここで止まりました。',
+    },
+    offline: {
+      agentMissing: '{{name}} はもう存在しません',
+      agentArchived: '{{name}} は有効になっていません',
+      forbidden: '{{name}} はもう利用できません',
+      noModel: '先にチャットモデルを設定してください',
+      noRunner: '{{name}} には現在オンラインのランナーがありません',
+      othersPersonal:
+        '{{name}} はほかの人の個人ランナーにしかありません。ご自身のランナーを接続してください',
+      modelUnavailable:
+        '{{name}} のモデルを利用できません。管理者に問い合わせてください',
+      kept: 'メッセージは保持され、応答できるようになった時点で回答されます。',
+      fallback: 'ここでは別のエージェントを使う',
+      usingDefault:
+        'この会話では、一時的に {{own}} の代わりに {{name}} を使っています。',
+      restore: '{{own}} に戻す',
+    },
+    notice: {
+      switchedToDefault:
+        '{{own}} が戻るまで、システムのデフォルトである {{name}} に切り替えました。',
+      switchedToOnline:
+        '現在 {{own}} にはあなた用のランナーがないため、{{own}} が戻るまで {{name}} が回答します。',
+      onlineFallbackUnavailable:
+        'オンラインの代替エージェントは回答できません ({{reason}})。この会話はランナーを待つ間、{{own}} のままです。',
+      switchedBack: '{{name}} に戻りました。',
+      runFailed: 'エージェントは回答する前に停止しました。',
+      runFailedReason: 'エージェントは回答する前に停止しました：{{reason}}',
+      runCancelled: 'キャンセルを要求しました。',
+    },
+    consultation: {
+      title: '{{name}} に相談しました',
+      question: '質問',
+      answer: '回答',
+      steps: '実行したステップ',
+      usage:
+        '入力 {{input}} トークン、出力 {{output}} トークンを使用しました。',
+      state: {
+        running: '回答しています…',
+        completed: '回答済み',
+        failed: '失敗',
+        refused: '拒否',
+      },
+    },
+    steps: {
+      title: 'ステップ',
+      waiting: 'ランナーが引き受けるのを待っています…',
+      starting: '開始しています…',
+      thinking: '考えています…',
+      reading: '{{subject}} を確認しています',
+      working: '{{subject}} に取り組んでいます',
+      count_one: '{{count}} ステップ',
+      count_other: '{{count}} ステップ',
+      started: 'エージェントが返信しています。',
+      finished: 'エージェントが返信を終えました。',
+    },
+    pending: {
+      sending: '送信しています…',
+      failed: '未送信',
+      retry: 'もう一度送信',
+      discard: '破棄',
+    },
+    composer: {
+      label: 'エージェントへのメッセージ',
+      placeholder: '質問するか、整理したい作業を説明してください…',
+      hint: 'Enter で送信、Shift+Enter で改行',
+      runningHint: '作業中です。この実行は停止できます。',
+      tooLong: '{{max}} 文字までです。',
+      send: '送信',
+      stop: '停止',
+      stopping: '停止しています…',
+    },
+    attachments: {
+      attach: 'ファイルを添付',
+      label: '次のメッセージに添付するファイル',
+      sent: 'このメッセージで送信したファイル',
+      images: '画像',
+      files: 'ファイル',
+      remove: '{{name}} を外す',
+      uploading: 'アップロードしています…',
+      tooLarge: '{{max}} を超えています',
+      failed: 'アップロードできませんでした',
+      tooMany: '1 つのメッセージに添付できるファイルは {{max}} 個までです。',
+      blocked:
+        '送信するには、アップロードできなかったファイルを外してください。',
+      waiting: 'ファイルのアップロードが終わり次第送信します…',
+      drop: 'ファイルをドロップして添付',
+      preview: '{{name}} をプレビュー',
+      download: '{{name}} をダウンロード',
+      previous: '前の画像',
+      next: '次の画像',
+    },
+    context: {
+      label: '次のメッセージに含めるコンテキスト',
+      sent: 'このメッセージに含めたコンテキスト',
+      filter: '絞り込み：{{filter}}',
+      selection: '選択したテキスト：「{{text}}」',
+      remove: 'コンテキストを外す：{{label}}',
+    },
+    agents: {
+      models: 'モデル',
+      defaultModel: 'デフォルトのモデル',
+      runnerAgents: 'エージェント',
+      modelPlaceholder: 'モデルを選択',
+      modelSwitch:
+        'モデル：{{name}} · {{service}}。モデルまたはエージェントを選択',
+      modelHint: 'チャットするオンラインモデルを選んでください。',
+      mixedHint:
+        'チャットするオンラインモデル、またはランナー上のエージェントを選んでください。',
+      search: 'モデルまたはエージェントを検索',
+      noResults: '一致するモデルまたはエージェントはありません',
+      switch: 'エージェント：{{name}}。別のエージェントを選択',
+      withStatus: '{{name}}、{{status}}',
+      chooseFor: 'チャットの相手',
+      startWith: '次の相手と新しい会話を始める',
+      boundHint:
+        '会話はそのエージェントと結び付いています。別のエージェントを選ぶと新しい会話が始まります。',
+      empty: 'チャットできるエージェントはありません',
+      none: 'エージェントなし',
+      field: 'エージェント：{{name}}',
+      unknown: '不明なエージェント',
+      placeholder: 'エージェントを選択',
+      myDefault: '自分のデフォルト',
+      systemDefault: 'システムのデフォルト',
+      personal: '個人ランナーのみ',
+      temporary: '一時的',
+      hint: '有効なエージェントを選んでください。オンラインエージェントは、設定されたチャットモデルを使って直接回答します。',
+    },
+    history: {
+      title: '会話',
+      search: '会話を検索',
+      show: '表示',
+      active: '進行中',
+      archived: 'アーカイブ済み',
+      agent: 'エージェント',
+      allAgents: 'すべてのエージェント',
+      source: '開始元',
+      allSources: 'すべて',
+      loadFailed: '会話を読み込めませんでした',
+      noMatch: '一致する会話はありません',
+      clearFilters: '絞り込みをクリア',
+      noArchived: 'アーカイブ済みの会話はありません',
+      empty: '会話はまだありません',
+      more: 'さらに読み込む',
+      unread: '新しい返信',
+      actions: '{{title}} の操作',
+    },
+    loading: '読み込み中',
+    retry: '再試行',
+    errors: {
+      forbidden: 'この操作を行う権限がありません。',
+      notFound: 'もう存在しません。',
+      requestFailed: 'リクエストが失敗しました。もう一度お試しください。',
+      signInRequired:
+        'セッションの有効期限が切れました。続けるにはサインインしてください。',
+    },
+    transcript: {
+      waiting: 'エージェントの開始を待っています…',
+      empty: 'この実行で記録されたイベントはありません。',
+      fetchFailed: '新しいイベントを取得できません。再試行しています…',
+      expand: 'すべて表示',
+      truncated:
+        '途中で切り詰められました：全文が長すぎて保持できませんでした。',
+      events: '実行の記録',
+      inputDelivered: '{{count}} 件の入力をエージェントに渡しました',
+      tokens: '入力 {{input}} トークン、出力 {{output}} トークン',
+      kinds: {
+        text: 'エージェント',
+        thinking: '思考',
+        toolUse: 'ツール',
+        toolResult: '結果',
+        allowed: '許可',
+        denied: '拒否',
+        input: '入力',
+        checkout: 'チェックアウト',
+        status: 'ステータス',
+        error: 'エラー',
+        usage: '使用量',
+      },
+    },
+  },
+};
+
+export default agentChatJaJP;
