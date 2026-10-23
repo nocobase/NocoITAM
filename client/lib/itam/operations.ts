@@ -23,8 +23,10 @@ export const REPAIR_RESULTS = [
   'repaired',
   'unrepairable',
   'replaced',
-  // Ended without the repair (2026-10-23): not worth it, or not needed.
+  // Ended without the repair (2026-10-23): not needed, or decided against.
   'cancelled',
+  // Ended for a disposal instead, not worth repairing (2026-10-23).
+  'scrapped',
 ] as const;
 /** Where the device goes when a repair ends. */
 export const REPAIR_DISPOSITIONS = ['return', 'dispose'] as const;
@@ -469,6 +471,7 @@ export const AUDIT_STATUS_TONE: Readonly<Record<string, string>> = {
   pendingDifferences: 'bg-warning text-warning-foreground',
   completed: 'bg-primary text-primary-foreground',
   cancelled: 'bg-muted text-muted-foreground',
+  scrapped: 'bg-muted text-muted-foreground',
 };
 /** `AUDIT_STATUS_TONE` as a board column's dot; keep the two in step. */
 export const AUDIT_STATUS_DOT: Readonly<Record<string, string>> = {
@@ -492,6 +495,7 @@ export const REPAIR_RESULT_TONE: Readonly<Record<string, string>> = {
   unrepairable: 'bg-destructive/10 text-destructive',
   // Nothing was done: grey, as a cancelled order reads.
   cancelled: 'bg-muted text-muted-foreground',
+  scrapped: 'bg-muted text-muted-foreground',
 };
 export const DISPOSAL_STATUS_TONE: Readonly<Record<string, string>> = {
   draft: 'bg-muted text-muted-foreground',

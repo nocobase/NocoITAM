@@ -280,7 +280,8 @@ triage.tsx`, under the description) fills only what is still empty,
   shows the rule in their place — the quote's share of the book value,
   amber from half, and a passed replacement date — and 继续维修 / 改为报废 for whoever may finish the
   repair. 改为报废 records `quoteDecision`, completes the repair as
-  `cancelled` with the device to pending disposal, and opens a disposal
+  `scrapped` (改为报废, its own ending beside `cancelled`) with the device
+  to pending disposal, and opens a disposal
   filled from the quote. A new quote clears the decision; completing
   defaults its cost to the quote.
 - **Work agents** (2026-10-16, plan "Work agents", step 1, after

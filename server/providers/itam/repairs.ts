@@ -56,9 +56,12 @@ export const REPAIR_RESULTS = [
   'repaired',
   'unrepairable',
   'replaced',
-  // Ended without the repair (2026-10-23): not worth it at the quote, a
-  // false alarm, or decided against — not the same as could not be fixed.
+  // Ended without the repair (2026-10-23): a false alarm, or decided
+  // against — not the same as could not be fixed.
   'cancelled',
+  // Ended because the device is to be disposed of instead: not worth
+  // repairing at its quote (2026-10-23, 改为报废).
+  'scrapped',
 ] as const;
 export type RepairResult = (typeof REPAIR_RESULTS)[number];
 /** The kinds of fault a repair is filed under (2026-10-17). */
@@ -486,7 +489,9 @@ export function createRepairService(dependencies: {
             .executeTakeFirst<{ status: string; deviceNo: string }>();
           const disposition: RepairDisposition =
             input.disposition ??
-            (input.result === 'replaced' ? 'dispose' : 'return');
+            (input.result === 'replaced' || input.result === 'scrapped'
+              ? 'dispose'
+              : 'return');
           if (device?.status === 'inRepair') {
             await devices.transition(
               deviceId,

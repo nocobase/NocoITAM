@@ -729,6 +729,7 @@ describe('CSV import / export and demo data', () => {
         'unrepairable',
         'replaced',
         'cancelled',
+        'scrapped',
       ]),
     );
     // Every rule has something to show (2026-10-22): one below its minimum

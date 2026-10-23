@@ -110,6 +110,7 @@ export const repairRoutes: AppApiRouteContribution<Application> =
                       'unrepairable',
                       'replaced',
                       'cancelled',
+                      'scrapped',
                     ],
                   ),
                   actualReturnAt: date.optional(),

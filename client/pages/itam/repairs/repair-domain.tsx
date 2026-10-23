@@ -213,8 +213,9 @@ function QuoteDecision({
         path: `${path}/complete`,
         method: 'POST',
         json: {
-          // Not carried out, rather than could not be fixed (2026-10-23).
-          result: 'cancelled',
+          // Its own ending, 改为报废 (2026-10-23): not repaired because
+          // the device goes instead.
+          result: 'scrapped',
           disposition: 'dispose',
           notes: t('repairs.quote.replacedNote', { quote }),
         },

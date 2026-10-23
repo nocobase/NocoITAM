@@ -932,6 +932,7 @@ const messages = {
       unrepairable: 'Unrepairable',
       replaced: 'Replaced',
       cancelled: 'Cancelled',
+      scrapped: 'Disposed instead',
     },
     auditStatus: {
       notStarted: 'Not started',
@@ -3033,7 +3034,7 @@ const messages = {
       keepRepairing: 'Keep repairing',
       replace: 'Dispose instead',
       replaceDescription:
-        'The repair ends as cancelled, the device goes to pending disposal, and a disposal is opened for it',
+        'The repair ends as disposed instead, the device goes to pending disposal, and a disposal is opened for it',
       replacedNote:
         'Quoted {{quote}}; not worth repairing, disposed of instead',
       disposalNote:

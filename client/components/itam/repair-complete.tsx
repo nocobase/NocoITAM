@@ -106,7 +106,9 @@ export function RepairCompleteDialog({
   const [disposition, setDisposition] = useState<string>('return');
   const chooseResult = (next: string) => {
     setResult(next);
-    setDisposition(next === 'replaced' ? 'dispose' : 'return');
+    setDisposition(
+      next === 'replaced' || next === 'scrapped' ? 'dispose' : 'return',
+    );
   };
   // Amount with its currency; the record's currency, else the default one.
   const [cost, setCost] = useState<{ amount?: unknown; currency?: unknown }>({

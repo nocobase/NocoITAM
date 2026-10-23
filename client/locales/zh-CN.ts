@@ -919,6 +919,7 @@ const zhCN: AppResource = {
       unrepairable: '无法修复',
       replaced: '已更换整机',
       cancelled: '已取消',
+      scrapped: '改为报废',
     },
     auditStatus: {
       notStarted: '未开始',
@@ -2858,7 +2859,7 @@ const zhCN: AppResource = {
       keepRepairing: '继续维修',
       replace: '改为报废',
       replaceDescription:
-        '维修单以「已取消」结束，设备转为待报废，然后为它创建报废单',
+        '维修单以「改为报废」结束，设备转为待报废，然后为它创建报废单',
       replacedNote: '报价 {{quote}}，不值得修，改为报废',
       disposalNote:
         '故障：{{fault}}\n维修报价 {{quote}}，不值得修：\n{{reasons}}',
