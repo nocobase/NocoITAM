@@ -14,7 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useAiReading, useItamAi } from '@/lib/itam/ai-chat';
 import {
@@ -127,12 +126,6 @@ export function RepairQuoteDialog({
   const [review, setReview] = useState<ReadonlySet<string>>(() => new Set());
   const [judging, setJudging] = useState(false);
   const [judgeFailure, setJudgeFailure] = useState<string>();
-  // AI 整理 or 表单录入, as 新建采购单 (2026-10-23): a quote read by AI is
-  // weighed with the reading; one typed is weighed when asked.
-  const [tab, setTab] = useState<'ai' | 'form'>('ai');
-  const mode = ai.available ? tab : 'form';
-  // The reading's device check, kept for the form it switches to.
-  const [deviceCheck, setDeviceCheck] = useState<Record<string, unknown>>();
   const key = adviceKey(amount.amount, amount.currency, work);
   // The advice shown is the one for the quote as it stands now.
   const current = advice?.for === key ? advice : undefined;
@@ -190,10 +183,7 @@ export function RepairQuoteDialog({
       adviceFrom(reading, adviceKey(next.amount, next.currency, nextWork)),
     );
     setJudgeFailure(undefined);
-    setDeviceCheck(reading);
-    // What was read goes to the form, to be checked and saved there.
-    setTab('form');
-    return null;
+    return <DeviceMismatch reading={reading} />;
   };
 
   // 评估修还是换: the quote as typed, weighed against the device.
@@ -257,122 +247,89 @@ export function RepairQuoteDialog({
       open
       onOpenChange={(open) => !open && onClose()}
       title={t('repairs.quote.title')}
-      // AI 整理 says what to give it in its box.
-      description={mode === 'ai' ? undefined : t('repairs.quote.description')}
+      description={t('repairs.quote.description')}
       busy={save.isPending}
       error={save.error}
       disabled={typeof amount.amount !== 'number'}
       confirmLabel={t('actions.save')}
-      actions={mode === 'form'}
-      titleAside={
-        ai.available ? (
-          <Tabs
-            value={mode}
-            onValueChange={(value) => setTab(value as 'ai' | 'form')}
-          >
-            <TabsList>
-              <TabsTrigger
-                value='ai'
-                className='text-primary data-active:text-primary'
-              >
-                <Sparkles data-icon='inline-start' />
-                {t('procurement.capture.aiTab')}
-              </TabsTrigger>
-              <TabsTrigger value='form'>
-                {t('procurement.capture.formTab')}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        ) : undefined
-      }
       onConfirm={() => save.mutate()}
     >
-      {mode === 'ai' ? (
-        <DocumentReading
-          ownerType='repairs'
-          ownerId={id}
-          task='repairQuote'
-          context={{ repairId: id }}
-          placeholder={t('repairs.quote.placeholder')}
-          bare
-          actionLabel='repairs.quote.judge'
-          workingLabel='repairs.quote.judging'
-          onRead={applyQuote}
+      {/* As 完成维修 (2026-10-23): the document's box above the form it
+          fills; reading it weighs the quote too, and a typed one is
+          weighed with 评估修还是换 under the fields. */}
+      <DocumentReading
+        ownerType='repairs'
+        ownerId={id}
+        task='repairQuote'
+        context={{ repairId: id }}
+        placeholder={t('repairs.quote.placeholder')}
+        onRead={applyQuote}
+      />
+      <div className='grid gap-1.5'>
+        <Label htmlFor='quote-amount'>
+          {t('fields.quoteAmount')}
+          <span className='text-destructive'> *</span>
+          {review.has('amount') ? <ReviewMark /> : null}
+        </Label>
+        <FieldInput
+          id='quote-amount'
+          field={{
+            key: 'quoteAmount',
+            label: 'fields.quoteAmount',
+            type: 'money',
+            currencyField: 'currency',
+          }}
+          value={amount}
+          onChange={(value) => {
+            checked('amount');
+            setAmount(value ?? {});
+          }}
         />
-      ) : (
-        <>
-          {deviceCheck ? <DeviceMismatch reading={deviceCheck} /> : null}
-          <div className='grid gap-1.5'>
-            <Label htmlFor='quote-amount'>
-              {t('fields.quoteAmount')}
-              <span className='text-destructive'> *</span>
-              {review.has('amount') ? <ReviewMark /> : null}
-            </Label>
-            <FieldInput
-              id='quote-amount'
-              field={{
-                key: 'quoteAmount',
-                label: 'fields.quoteAmount',
-                type: 'money',
-                currencyField: 'currency',
-              }}
-              value={amount}
-              onChange={(value) => {
-                checked('amount');
-                setAmount(value ?? {});
-              }}
-            />
+      </div>
+      <div className='grid gap-1.5'>
+        <Label htmlFor='quote-work'>
+          {t('fields.quoteNotes')}
+          {review.has('work') ? <ReviewMark /> : null}
+        </Label>
+        <Textarea
+          id='quote-work'
+          rows={2}
+          value={work}
+          onChange={(event) => {
+            checked('work');
+            setWork(event.target.value);
+          }}
+        />
+      </div>
+      {ai.available ? (
+        <div className='space-y-1.5 text-sm'>
+          <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+            <AiShortcut
+              disabled={typeof amount.amount !== 'number' || judging}
+              onClick={() => void judge()}
+            >
+              {t(current ? 'repairs.quote.judgeAgain' : 'repairs.quote.judge')}
+            </AiShortcut>
+            {judging ? (
+              <span
+                role='status'
+                className='flex items-center gap-2 text-muted-foreground'
+              >
+                <Spinner />
+                {t('repairs.quote.judging')}
+              </span>
+            ) : null}
           </div>
-          <div className='grid gap-1.5'>
-            <Label htmlFor='quote-work'>
-              {t('fields.quoteNotes')}
-              {review.has('work') ? <ReviewMark /> : null}
-            </Label>
-            <Textarea
-              id='quote-work'
-              rows={2}
-              value={work}
-              onChange={(event) => {
-                checked('work');
-                setWork(event.target.value);
-              }}
-            />
-          </div>
-          {ai.available ? (
-            <div className='space-y-1.5 text-sm'>
-              <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
-                <AiShortcut
-                  disabled={typeof amount.amount !== 'number' || judging}
-                  onClick={() => void judge()}
-                >
-                  {t(
-                    current
-                      ? 'repairs.quote.judgeAgain'
-                      : 'repairs.quote.judge',
-                  )}
-                </AiShortcut>
-                {judging ? (
-                  <span
-                    role='status'
-                    className='flex items-center gap-2 text-muted-foreground'
-                  >
-                    <Spinner />
-                    {t('repairs.quote.judging')}
-                  </span>
-                ) : null}
-              </div>
-              {judgeFailure && !judging ? (
-                <p className='text-muted-foreground'>{judgeFailure}</p>
-              ) : null}
-              {current && !judging ? (
-                <div className='rounded-md bg-muted/50 px-3 py-2'>
-                  <AdviceBody advice={current} />
-                </div>
-              ) : null}
+          {judgeFailure && !judging ? (
+            <p className='text-muted-foreground'>{judgeFailure}</p>
+          ) : null}
+          {current && !judging ? (
+            <div className='rounded-md bg-muted/50 px-3 py-2'>
+              <AdviceBody advice={current} />
             </div>
           ) : null}
-        </>
-      )}
+        </div>
+      ) : null}
     </ConfirmDialog>
   );
 }

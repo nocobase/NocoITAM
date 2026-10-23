@@ -33,9 +33,6 @@ export function DocumentReading({
   context,
   placeholder,
   onRead,
-  bare = false,
-  actionLabel = 'documentReading.read',
-  workingLabel = 'documentReading.reading',
 }: {
   readonly ownerType: 'repairs' | 'disposals';
   readonly ownerId: string;
@@ -43,17 +40,6 @@ export function DocumentReading({
   readonly context: Readonly<Record<string, unknown>>;
   readonly placeholder: string;
   readonly onRead: (reading: Record<string, unknown>) => ReactNode;
-  /**
-   * The whole of a tab (记录报价's AI 整理, 2026-10-23) rather than a box
-   * above a form: no frame of its own, and the room PO 整理 gives.
-   */
-  readonly bare?: boolean;
-  /**
-   * What the button says it does, and says while doing it, as translation
-   * keys: 记录报价's reading also weighs the quote (评估修还是换).
-   */
-  readonly actionLabel?: string;
-  readonly workingLabel?: string;
 }): ReactElement | null {
   const { t } = useTranslation();
   const ai = useItamAi();
@@ -208,7 +194,7 @@ export function DocumentReading({
         // One column no wider than the dialog, so a long file name
         // shortens instead of widening it.
         'relative grid grid-cols-[minmax(0,1fr)] gap-2',
-        !bare && 'rounded-lg border border-border bg-muted/30 p-3',
+        'rounded-lg border border-border bg-muted/30 p-3',
         dragging && 'rounded-lg ring-2 ring-primary ring-offset-2',
       )}
       onDragOver={(event) => {
@@ -240,12 +226,9 @@ export function DocumentReading({
         disabled={busy}
         rows={3}
         maxLength={40000}
-        autoFocus={bare}
-        className={
-          bare
-            ? 'max-h-[45svh] min-h-40'
-            : 'max-h-[30svh] min-h-20 bg-background'
-        }
+        // The focus ring drawn inside (2026-10-23): outside, it ate into the
+        // box's padding above the text and the box read uneven.
+        className='max-h-[30svh] min-h-20 bg-background focus-visible:ring-inset'
         placeholder={placeholder}
         aria-label={t('documentReading.material')}
         onChange={(event) => setPasted(event.target.value)}
@@ -323,7 +306,7 @@ export function DocumentReading({
         <Button
           type='button'
           variant='outline'
-          size={bare ? 'default' : 'sm'}
+          size='sm'
           disabled={busy}
           onClick={() => inputRef.current?.click()}
         >
@@ -334,7 +317,7 @@ export function DocumentReading({
             action. */}
         <Button
           type='button'
-          size={bare ? 'default' : 'sm'}
+          size='sm'
           className='ml-auto shrink-0 bg-primary text-primary-foreground hover:bg-primary/90'
           disabled={busy || !ready}
           onClick={() => void go()}
@@ -348,8 +331,8 @@ export function DocumentReading({
             phase === 'uploading'
               ? 'documentReading.uploading'
               : phase === 'reading'
-                ? workingLabel
-                : actionLabel,
+                ? 'documentReading.reading'
+                : 'documentReading.read',
           )}
         </Button>
       </div>
