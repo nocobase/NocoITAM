@@ -1,8 +1,8 @@
 import { useToaster } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FilePlus2 } from 'lucide-react';
-import { useState, type ReactElement, type ReactNode } from 'react';
+import { Check, FilePlus2 } from 'lucide-react';
+import { useMemo, useState, type ReactElement, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { useApi, type ItamRecord } from '@/lib/itam/api';
@@ -13,6 +13,7 @@ import {
 } from '@/lib/itam/procurement';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
+import { useReferenceNames } from '@/lib/itam/references';
 import { cn } from '@/lib/utils';
 import { PurchaseOrderCreateDialog } from '@/pages/itam/procurement/create-dialog';
 
@@ -26,6 +27,15 @@ interface ProposedOrder {
   }[];
   readonly people: readonly string[];
 }
+
+/** An order's place among the proposed ones: a vendor and a joiner's day. */
+const keyOf = (order: ProposedOrder) =>
+  [
+    order.values.vendorId,
+    order.values.departmentId,
+    order.values.neededBy,
+    ...order.people,
+  ].join('|');
 
 interface Proposal {
   readonly orders: readonly ProposedOrder[];
@@ -63,7 +73,21 @@ export function DraftOrdersButton({
   const me = useCurrentUserId();
   const [proposal, setProposal] = useState<Proposal>();
   const [index, setIndex] = useState(0);
-  const [created, setCreated] = useState<readonly ItamRecord[]>([]);
+  // The orders saved so far, by their place among the proposed ones.
+  const [saved, setSaved] = useState<Readonly<Record<number, ItamRecord>>>({});
+  const vendorNames = useReferenceNames(
+    useMemo(
+      () => [
+        {
+          collection: 'vendors',
+          ids: (proposal?.orders ?? []).map((order) =>
+            text(order.values.vendorId),
+          ),
+        },
+      ],
+      [proposal],
+    ),
+  ).vendors;
 
   const skippedNote = (skipped: Proposal['skipped']) =>
     skipped.length > 0
@@ -96,7 +120,7 @@ export function DraftOrdersButton({
         });
         return;
       }
-      setCreated([]);
+      setSaved({});
       setIndex(0);
       setProposal(result);
     },
@@ -109,7 +133,7 @@ export function DraftOrdersButton({
   const finish = async (made: readonly ItamRecord[]) => {
     const skipped = proposal?.skipped ?? [];
     setProposal(undefined);
-    setCreated([]);
+    setSaved({});
     if (made.length === 0) return;
     await queryClient.invalidateQueries({ queryKey: ['itam'] });
     const note = skippedNote(skipped);
@@ -127,7 +151,37 @@ export function DraftOrdersButton({
     if (first) openRecord(`/procurement/${text(first.id)}`);
   };
 
-  const order = proposal?.orders[index];
+  // Every proposed order, to switch between (2026-10-22): each keeps what
+  // was typed into it, and one saved shows its number instead.
+  const switcher =
+    proposal && proposal.orders.length > 1 ? (
+      <div className='flex flex-wrap gap-1.5'>
+        {proposal.orders.map((order, at) => {
+          const done = saved[at];
+          const vendor = order.values.vendorId
+            ? vendorNames?.get(text(order.values.vendorId))
+            : undefined;
+          return (
+            <Button
+              key={keyOf(order)}
+              size='sm'
+              variant={at === index ? 'default' : 'outline'}
+              disabled={Boolean(done)}
+              onClick={() => setIndex(at)}
+            >
+              {done ? <Check data-icon='inline-start' /> : null}
+              {`${String(at + 1)}. ${order.people.join(t('common.listSeparator'))}`}
+              <span className='opacity-70'>
+                {done
+                  ? text(done.orderNo)
+                  : (vendor ?? t('onboarding.drafts.noVendor'))}
+              </span>
+            </Button>
+          );
+        })}
+      </div>
+    ) : undefined;
+
   return (
     <>
       <Button
@@ -145,27 +199,28 @@ export function DraftOrdersButton({
         <FilePlus2 data-icon='inline-start' />
         {children ?? t('onboarding.draftOrder')}
       </Button>
-      {proposal && order ? (
+      {/* Each proposed order its own dialog, all kept mounted so what is
+          typed into one survives looking at another; one shown at a time. */}
+      {proposal?.orders.map((order, at) => (
         <PurchaseOrderCreateDialog
-          // A fresh form for each proposed order.
-          key={index}
-          open
+          key={keyOf(order)}
+          open={at === index && !saved[at]}
           initialValues={me ? { ownerId: me, ...order.values } : order.values}
           initialLines={order.lines}
-          step={{ index: index + 1, total: proposal.orders.length }}
+          header={switcher}
           onOpenChange={(open) => {
             // Closing stops the run; what was saved stays.
-            if (!open) void finish(created);
+            if (!open) void finish(Object.values(saved));
           }}
           onCreated={(record) => {
-            const made = [...created, record];
-            if (index + 1 < proposal.orders.length) {
-              setCreated(made);
-              setIndex(index + 1);
-            } else void finish(made);
+            const next = { ...saved, [at]: record };
+            setSaved(next);
+            const left = proposal.orders.findIndex((_, j) => !next[j]);
+            if (left === -1) void finish(Object.values(next));
+            else setIndex(left);
           }}
         />
-      ) : null}
+      ))}
     </>
   );
 }

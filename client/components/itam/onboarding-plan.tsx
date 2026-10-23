@@ -302,16 +302,6 @@ export function OnboardingPlanCard({
                     {t('onboarding.shortfallTotal', { count: shortfall })}
                   </span>
                 ) : null}
-                {/* Drafted straight away and opened to check (2026-10-22;
-                    asked of Asset Steward in the chat until then). A narrow
-                    hover ground taken back as far, so its words sit the
-                    row's gap from those before. */}
-                {shortfall > 0 ? (
-                  <DraftOrdersButton
-                    personId={personId}
-                    className='text-xs [&_svg]:size-3.5'
-                  />
-                ) : null}
                 {data.waived > 0 ? (
                   <span>
                     {t('onboarding.waivedTotal', { count: data.waived })}
@@ -338,6 +328,7 @@ export function OnboardingPlanCard({
               {data.lines.map((line) => (
                 <PlanLine
                   key={`${line.target.type}:${line.target.id}`}
+                  personId={personId}
                   line={line}
                   busy={busy}
                   started={started}
@@ -366,6 +357,7 @@ export function OnboardingPlanCard({
 }
 
 function PlanLine({
+  personId,
   line,
   busy,
   started,
@@ -374,6 +366,7 @@ function PlanLine({
   onRun,
   onWaive,
 }: {
+  readonly personId: string;
   readonly line: OnboardingPlanLine;
   readonly busy: boolean;
   readonly started: boolean;
@@ -565,6 +558,11 @@ function PlanLine({
             );
           })}
           <LineOutlook line={line} />
+          {/* What is short drafted from its own row (2026-10-22; from the
+              progress line until then), in the create dialog. */}
+          {line.shortfall > 0 && !line.waived ? (
+            <DraftOrdersButton personId={personId} keys={[line.key]} />
+          ) : null}
           {/* Something they will not be given — their own monitor, another
               laptop — is marked rather than left outstanding for ever. */}
           {line.preparedCount < line.required ? (

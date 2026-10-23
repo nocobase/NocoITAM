@@ -985,6 +985,7 @@ const messages = {
     draftOrder: 'Draft order',
     draftAll: 'Draft all orders',
     drafts: {
+      noVendor: 'no vendor yet',
       created_one: 'Created {{orders}}',
       created_other: 'Created {{count}} orders: {{orders}}',
       nothing: 'Nothing to buy',
@@ -1181,6 +1182,18 @@ const messages = {
   // AI 整理 in the new model / software product dialogs.
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: 'Tell the AI what to change' },
+  // Reading a document into the dialog it opens in (2026-10-23).
+  documentReading: {
+    material: 'Document text',
+    upload: 'Upload document',
+    removeFile: 'Remove file',
+    read: 'Read with AI',
+    uploading: 'Uploading…',
+    reading: 'Reading…',
+    noText:
+      'No text could be read from "{{file}}". Upload Excel, Word or a text PDF, or paste the text',
+    nothing: 'Nothing in it could fill the form',
+  },
   // AI lookup on a model's or software product's page.
   manufacturerCapture: {
     // What to write and what AI does with it, in the box itself (2026-10-23).
@@ -1802,7 +1815,6 @@ const messages = {
     title: 'Procurement',
     object: 'purchase order',
     new: 'New purchase order',
-    step: '{{index}} of {{total}}',
     capture: {
       unreadable:
         'This file could not be read as text. Paste its contents, or upload a spreadsheet, Word document, PDF or text file.',
@@ -2990,6 +3002,12 @@ const messages = {
       'No enabled plugin contributes a settings page you have access to.',
   },
   repairs: {
+    report: {
+      placeholder:
+        'Paste the repair report or invoice, or upload it. AI fills in the result, cost and notes for you to check',
+      serialMismatch:
+        "The document's serial number {{printed}} does not match this device's {{serialNo}}",
+    },
     // The moves on Settings → Flows → Repairs, by the lifecycle's transition
     // names.
     transitions: {
@@ -3108,6 +3126,13 @@ const messages = {
       'Record something found on site that has no device record.',
   },
   disposals: {
+    certificate: {
+      placeholder:
+        'Paste the recycling or data destruction certificate, or upload it. AI fills in the recipient, date, amounts and data wipe, and checks the serial numbers',
+      missing: 'Not on the certificate: {{list}}',
+      extra: 'On the certificate but not in this disposal: {{list}}',
+      allListed: 'Every device in this disposal is on the certificate',
+    },
     deviceCountLabel: '{{count}} device(s)',
     myApproval: 'Waiting for me',
     title: 'Disposals',

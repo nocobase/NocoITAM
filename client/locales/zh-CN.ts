@@ -974,6 +974,7 @@ const zhCN: AppResource = {
     draftOrder: '起草采购单',
     draftAll: '全部起草采购单',
     drafts: {
+      noVendor: '未选供应商',
       created_one: '已创建采购单 {{orders}}',
       created_other: '已创建 {{count}} 张采购单：{{orders}}',
       nothing: '没有需要采购的项',
@@ -1151,6 +1152,18 @@ const zhCN: AppResource = {
   },
   // Shared by the AI 整理 of every create dialog.
   capture: { adjustPlaceholder: '告诉 AI 要改什么' },
+  // Reading a document into the dialog it opens in (2026-10-23).
+  documentReading: {
+    material: '单据内容',
+    upload: '上传单据',
+    removeFile: '移除文件',
+    read: 'AI 读取',
+    uploading: '正在上传…',
+    reading: '正在读取…',
+    noText:
+      '读不出「{{file}}」里的文字，请上传 Excel、Word 或文字版 PDF，或直接粘贴文字',
+    nothing: '没有读到可以填写的内容',
+  },
   // 完善 on a model's or software product's page, as a category's.
   manufacturerCapture: {
     // What to write and what AI does with it, in the box itself (2026-10-23).
@@ -1731,7 +1744,6 @@ const zhCN: AppResource = {
     title: '采购',
     object: '采购单',
     new: '创建采购单',
-    step: '第 {{index}} / {{total}} 张',
     capture: {
       unreadable:
         '无法把这个文件读成文字。请粘贴内容，或上传表格、Word、PDF 或文本文件。',
@@ -2821,6 +2833,12 @@ const zhCN: AppResource = {
     emptyDescription: '没有已启用的插件提供你有权访问的设置页面。',
   },
   repairs: {
+    report: {
+      placeholder:
+        '粘贴维修报告或发票的内容，或上传维修单。AI 填好结果、费用和说明，你核对后完成',
+      serialMismatch:
+        '单据上的序列号 {{printed}} 与这台设备的 {{serialNo}} 不一致',
+    },
     // The moves on 设置 → 流程 → 维修, by the lifecycle's transition names.
     transitions: {
       $create: '送修',
@@ -2931,6 +2949,13 @@ const zhCN: AppResource = {
     addUnregisteredDescription: '记录现场发现但没有资产档案的设备',
   },
   disposals: {
+    certificate: {
+      placeholder:
+        '粘贴回收或数据销毁证明的内容，或上传证明。AI 填好接收方、日期、金额和数据清除，并核对设备序列号',
+      missing: '证明上没有这些设备：{{list}}',
+      extra: '证明上有不在本单的序列号：{{list}}',
+      allListed: '本单的设备都在证明上',
+    },
     deviceCountLabel: '设备 {{count}} 台',
     myApproval: '待我审批',
     title: '报废',

@@ -2,7 +2,13 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
-import { useMemo, useState, type DragEvent, type ReactElement } from 'react';
+import {
+  useMemo,
+  useState,
+  type DragEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
 import { ApproverHint } from '@/components/itam/approver-hint';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
@@ -89,7 +95,7 @@ export function PurchaseOrderCreateDialog({
   onCreated,
   initialValues,
   initialLines,
-  step,
+  header,
 }: {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
@@ -103,8 +109,11 @@ export function PurchaseOrderCreateDialog({
     PurchaseLineDraft,
     'itemType' | 'modelId' | 'softwareProductId' | 'quantity'
   >[];
-  /** Which of several proposed orders this is: 第 1 / 2 张. */
-  readonly step?: { readonly index: number; readonly total: number };
+  /**
+   * Above the form: several proposed orders to switch between (2026-10-22,
+   * 起草采购单 for every joiner's shortfall).
+   */
+  readonly header?: ReactNode;
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
@@ -313,14 +322,7 @@ export function PurchaseOrderCreateDialog({
       size={result && current === 'form' ? 'wider' : 'wide'}
       // AI 整理 only organises; the order is saved from the form it fills.
       actions={current === 'form'}
-      title={
-        step && step.total > 1
-          ? `${t('procurement.new')} · ${t('procurement.step', {
-              index: step.index,
-              total: step.total,
-            })}`
-          : t('procurement.new')
-      }
+      title={t('procurement.new')}
       titleAside={
         capture.available ? (
           <Tabs
@@ -362,6 +364,7 @@ export function PurchaseOrderCreateDialog({
       onSecondary={() => save.mutate(false)}
     >
       <div className='grid gap-3'>
+        {header}
         {current === 'ai' ? (
           <CapturePane
             capture={capture}
