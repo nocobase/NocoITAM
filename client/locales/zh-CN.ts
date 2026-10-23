@@ -984,8 +984,8 @@ const zhCN: AppResource = {
     title: '入职配备',
     joins: '{{date}} 入职',
     noKit: '该人员的部门和职位没有适用的入职配置。',
-    draftOrder: '起草采购单',
-    draftAll: '全部起草采购单',
+    draftOrder: '创建采购单',
+    draftAll: '全部创建采购单',
     drafts: {
       noVendor: '未选供应商',
       created_one: '已创建采购单 {{orders}}',

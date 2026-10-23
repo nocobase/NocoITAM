@@ -998,8 +998,8 @@ const messages = {
     joins: 'Joins {{date}}',
     noKit:
       'No onboarding kit applies to this person’s department and position.',
-    draftOrder: 'Draft order',
-    draftAll: 'Draft all orders',
+    draftOrder: 'Create order',
+    draftAll: 'Create all orders',
     drafts: {
       noVendor: 'no vendor yet',
       created_one: 'Created {{orders}}',
