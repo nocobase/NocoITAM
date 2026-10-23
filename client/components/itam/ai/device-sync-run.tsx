@@ -599,7 +599,8 @@ export function DeviceSyncFollowUpBlock({
         <section className='space-y-2'>
           <h2 className='flex items-center gap-1.5 text-sm font-semibold'>
             <Sparkles className='size-4 text-primary' aria-hidden />
-            {t('review.waiting')}
+            {/* Named for what it is (2026-10-23), not 等你决定. */}
+            {t('deviceSyncRun.title')}
           </h2>
           {visible.map((run) => (
             <FollowUpReviewCard key={run.id} run={run} />

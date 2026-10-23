@@ -191,7 +191,7 @@ it('leaves out the way to MDM 核对 when shown there', () => {
   expect(screen.getAllByText('deviceSyncRun.openReview')).toHaveLength(1);
 });
 
-it('lists the reader’s open follow-ups under 等你决定, and nothing else', () => {
+it('lists the reader’s open follow-ups under MDM 差异跟进, and nothing else', () => {
   state.inbox = {
     open: [
       run({ id: 'mine', status: 'running', result: null }),
@@ -224,7 +224,7 @@ it('lists the reader’s open follow-ups under 等你决定, and nothing else', 
       <DeviceSyncFollowUpBlock />
     </MemoryRouter>,
   );
-  expect(screen.getByText('review.waiting')).toBeInTheDocument();
+  expect(screen.getByText('deviceSyncRun.title')).toBeInTheDocument();
   expect(screen.getAllByText('deviceSyncRun.working')).toHaveLength(1);
   expect(
     screen.getByRole('button', { name: /^deviceSyncRun\.others/ }),
@@ -239,7 +239,7 @@ it('lists the reader’s open follow-ups under 等你决定, and nothing else', 
       <DeviceSyncFollowUpBlock />
     </MemoryRouter>,
   );
-  expect(screen.queryByText('review.waiting')).not.toBeInTheDocument();
+  expect(screen.queryByText('deviceSyncRun.title')).not.toBeInTheDocument();
 });
 
 // On MDM 核对 (2026-10-21): the plan's decision in the header line,
