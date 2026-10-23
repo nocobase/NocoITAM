@@ -10,9 +10,15 @@ import { useRef, useState, type ReactElement, type ReactNode } from 'react';
 export function FieldActions({
   onEdit,
   copyText,
+  copy: copyable = true,
   children,
 }: {
   readonly onEdit?: () => void;
+  /**
+   * `false` for a value with its own copy, such as a product key, whose
+   * shown mask is not what a copy should give.
+   */
+  readonly copy?: boolean;
   /** What 复制 copies, where the field shows only part of it. */
   readonly copyText?: string;
   readonly children: ReactNode;
@@ -49,19 +55,21 @@ export function FieldActions({
             <Pencil className='size-3' aria-hidden />
           </button>
         ) : null}
-        <button
-          type='button'
-          className={icon}
-          aria-label={t('actions.copy')}
-          title={t(copied ? 'actions.copied' : 'actions.copy')}
-          onClick={copy}
-        >
-          {copied ? (
-            <Check className='size-3' aria-hidden />
-          ) : (
-            <Copy className='size-3' aria-hidden />
-          )}
-        </button>
+        {copyable ? (
+          <button
+            type='button'
+            className={icon}
+            aria-label={t('actions.copy')}
+            title={t(copied ? 'actions.copied' : 'actions.copy')}
+            onClick={copy}
+          >
+            {copied ? (
+              <Check className='size-3' aria-hidden />
+            ) : (
+              <Copy className='size-3' aria-hidden />
+            )}
+          </button>
+        ) : null}
       </div>
     </div>
   );

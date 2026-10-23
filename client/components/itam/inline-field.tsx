@@ -95,7 +95,7 @@ export function InlineField({
 
   if (!editable)
     return (
-      <FieldActions>
+      <FieldActions copy={!field.writeOnly}>
         <div className='min-w-0'>{display}</div>
       </FieldActions>
     );
@@ -241,7 +241,7 @@ export function InlineField({
   }
 
   return (
-    <FieldActions onEdit={startEditing}>
+    <FieldActions onEdit={startEditing} copy={!field.writeOnly}>
       <div
         role='button'
         tabIndex={0}

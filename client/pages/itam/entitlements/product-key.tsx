@@ -82,7 +82,7 @@ export function ProductKeyValue({
       <Button
         variant='ghost'
         size='icon'
-        className='size-8'
+        className='size-6'
         aria-label={
           revealed === undefined
             ? t('entitlements.revealKey')
@@ -108,15 +108,15 @@ export function ProductKeyValue({
         onDoubleClick={stop}
       >
         {revealed === undefined ? (
-          <Eye className='size-5' />
+          <Eye className='size-4' />
         ) : (
-          <EyeOff className='size-5' />
+          <EyeOff className='size-4' />
         )}
       </Button>
       <Button
         variant='ghost'
         size='icon'
-        className='size-8'
+        className='size-6'
         aria-label={copied ? t('entitlements.keyCopied') : t('actions.copy')}
         title={copied ? t('entitlements.keyCopied') : t('actions.copy')}
         disabled={copy.isPending}
@@ -129,16 +129,16 @@ export function ProductKeyValue({
         {/* A square glyph beside a wide, flat one: the same box reads as
             bigger, so the copy is drawn one step smaller. */}
         {copied ? (
-          <Check className='size-4 text-primary' />
+          <Check className='size-3.5 text-primary' />
         ) : (
-          <Copy className='size-4' />
+          <Copy className='size-3.5' />
         )}
       </Button>
     </>
   ) : null;
 
   return (
-    <span className='inline-flex flex-wrap items-center gap-1'>
+    <span className='inline-flex flex-wrap items-center gap-0.5'>
       {revealed === undefined ? (
         <span className='font-mono'>••••••••</span>
       ) : (
