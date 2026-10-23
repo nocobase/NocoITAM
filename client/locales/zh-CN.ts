@@ -1659,8 +1659,8 @@ const zhCN: AppResource = {
     aiFilledFrom: 'AI 按送货单填写：{{source}}',
     documentChecks: '单据核对',
     document: {
-      prompt: '交给 AI 读送货单，自动填好下面的表格',
-      choose: '选择送货单',
+      prompt: '拖入或上传送货单，AI 自动填好下面的表格',
+      choose: '上传送货单',
       hint: '支持 Excel、CSV、Word 和文字版 PDF；照片和扫描件需要能看图的模型。',
       uploading: '正在上传「{{file}}」…',
       reading: 'AI 正在读「{{file}}」…',

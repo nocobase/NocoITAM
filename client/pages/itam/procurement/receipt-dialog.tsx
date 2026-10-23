@@ -1138,9 +1138,40 @@ function DocumentStrip({
 }): ReactElement {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
   const name = session?.file.name ?? '';
+  // The same grey box as the other documents read into a form (2026-10-23:
+  // 完成维修, 记录报价, 执行报废), a dropped file taken as a chosen one.
   return (
-    <div className='grid gap-2 rounded-md border border-dashed border-border p-3'>
+    <div
+      className={cn(
+        'relative grid gap-2 rounded-lg border border-border bg-muted/30 p-3',
+        dragging && 'ring-2 ring-primary ring-offset-2',
+      )}
+      onDragOver={(event) => {
+        if (busy || !event.dataTransfer.types.includes('Files')) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+        setDragging(true);
+      }}
+      onDragLeave={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null))
+          return;
+        setDragging(false);
+      }}
+      onDrop={(event) => {
+        setDragging(false);
+        const file = event.dataTransfer.files[0];
+        if (!file) return;
+        event.preventDefault();
+        read(file);
+      }}
+    >
+      {dragging ? (
+        <div className='pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/85 text-sm font-medium text-primary'>
+          {t('documentReading.dropHere')}
+        </div>
+      ) : null}
       <input
         ref={inputRef}
         type='file'
@@ -1178,7 +1209,11 @@ function DocumentStrip({
             {t('receipt.document.again')}
           </AiShortcut>
         ) : (
-          <Button variant='outline' onClick={() => inputRef.current?.click()}>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => inputRef.current?.click()}
+          >
             <Upload data-icon='inline-start' />
             {t('receipt.document.choose')}
           </Button>
