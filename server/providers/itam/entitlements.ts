@@ -71,7 +71,10 @@ export interface SeatInput {
   readonly holderType?: SeatHolderType;
   readonly holderId?: string | null;
   readonly account?: string | null;
-  /** A perpetual seat's own key, where the licence issues one per copy. */
+  /**
+   * A seat's own key, where the licence issues one per copy or the
+   * subscription activates by key.
+   */
   readonly productKey?: string | null;
 }
 
@@ -1108,11 +1111,9 @@ export function createEntitlementService(
             : String(seat.account ?? '')
                 .trim()
                 .toLowerCase();
-          // Only a perpetual seat carries a key of its own; a subscription
-          // seat is an account on the vendor's console.
-          const seatKey = perpetual
-            ? String(seat.productKey ?? '').trim() || null
-            : null;
+          // Either kind's seat may carry a key of its own: a perpetual copy's,
+          // or a subscription's where the vendor activates by key (2026-10-23).
+          const seatKey = String(seat.productKey ?? '').trim() || null;
           if (perpetual) {
             if (!holderId)
               throw new ValidationError('holderId is required', 'holderId');
@@ -1354,12 +1355,7 @@ export function createEntitlementService(
     },
 
     setSeatKey: (id, seatId, productKey, context, conditions) =>
-      mutate(id, conditions, async (connection, record) => {
-        if (record.kind !== 'perpetual')
-          throw new BusinessRuleError(
-            'Only a perpetual seat carries its own key',
-            'SEAT_KEY_NOT_APPLICABLE',
-          );
+      mutate(id, conditions, async (connection) => {
         const seat = await connection.query
           .selectFrom('entitlementSeats')
           .selectAll()

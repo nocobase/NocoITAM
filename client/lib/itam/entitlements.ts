@@ -264,7 +264,8 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.productKey',
     type: 'text',
     writeOnly: true,
-    visibleWhen: perpetual,
+    // Both kinds (2026-10-23): some subscriptions activate by key, such as
+    // a security suite's yearly licence key.
     group: 'groups.basic',
   },
   {

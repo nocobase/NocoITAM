@@ -16,7 +16,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAnnounce } from '@/lib/itam/announce';
-import { useApi, useItamRecord, type ItamRecord } from '@/lib/itam/api';
+import {
+  masterDataPath,
+  useApi,
+  useItamRecord,
+  type ItamRecord,
+} from '@/lib/itam/api';
 import type { DomainConfig } from '@/lib/itam/domain';
 import {
   ENTITLEMENT_CREATE_FIELDS,
@@ -148,7 +153,27 @@ function EntitlementActions({
   const [seatChangeNotes, setSeatChangeNotes] = useState('');
   const [holderId, setHolderId] = useState<string | null>(null);
   const [account, setAccount] = useState('');
-  // A perpetual seat may carry its own key; empty means the shared one.
+  // The email last filled in from the chosen person: replaced when another
+  // person is chosen, kept once the account has been typed over.
+  const [filledAccount, setFilledAccount] = useState('');
+  const chooseHolder = (next: string | null) => {
+    setHolderId(next);
+    if (!subscription || !next) return;
+    void api
+      .request<{ data: ItamRecord }>({
+        path: `${masterDataPath('people')}/${next}`,
+      })
+      .then(({ data }) => {
+        const email = text(data.email);
+        if (!email) return;
+        setAccount((current) =>
+          !current.trim() || current === filledAccount ? email : current,
+        );
+        setFilledAccount(email);
+      })
+      .catch(() => undefined);
+  };
+  // A seat may carry its own key; empty means the shared one.
   const [seatKey, setSeatKey] = useState('');
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['itam', ENTITLEMENTS_PATH] });
@@ -159,9 +184,12 @@ function EntitlementActions({
         method: 'POST',
         json: {
           seats: [
-            subscription
-              ? { holderType: 'person', holderId, account }
-              : { holderType, holderId, productKey: seatKey.trim() || null },
+            {
+              ...(subscription
+                ? { holderType: 'person', holderId, account }
+                : { holderType, holderId }),
+              productKey: seatKey.trim() || null,
+            },
           ],
         },
       }),
@@ -170,6 +198,7 @@ function EntitlementActions({
       setDialog(undefined);
       setHolderId(null);
       setAccount('');
+      setFilledAccount('');
       setSeatKey('');
     },
   });
@@ -257,7 +286,7 @@ function EntitlementActions({
                 : {}),
             }}
             value={holderId}
-            onChange={setHolderId}
+            onChange={chooseHolder}
           />
         </div>
         {subscription ? (
@@ -272,19 +301,20 @@ function EntitlementActions({
               onChange={(event) => setAccount(event.target.value)}
             />
           </div>
-        ) : (
-          <div className='grid gap-1.5'>
-            <Label htmlFor='seat-key'>{t('entitlements.seatKey')}</Label>
-            <Input
-              id='seat-key'
-              value={seatKey}
-              onChange={(event) => setSeatKey(event.target.value)}
-            />
-            <p className='text-xs text-muted-foreground'>
-              {t('entitlements.seatKeyHint')}
-            </p>
-          </div>
-        )}
+        ) : null}
+        {/* Optional on either kind: a subscription may activate by key too
+            (2026-10-23). */}
+        <div className='grid gap-1.5'>
+          <Label htmlFor='seat-key'>{t('entitlements.seatKey')}</Label>
+          <Input
+            id='seat-key'
+            value={seatKey}
+            onChange={(event) => setSeatKey(event.target.value)}
+          />
+          <p className='text-xs text-muted-foreground'>
+            {t('entitlements.seatKeyHint')}
+          </p>
+        </div>
       </ConfirmDialog>
       <ConfirmDialog
         open={dialog === 'seats'}
@@ -457,8 +487,7 @@ export default function EntitlementSeatsTab(): ReactElement {
                 <span className='text-muted-foreground'>—</span>
               ),
           },
-          // A subscription seat is an account on the vendor's console; a
-          // perpetual one may carry its own key instead of the shared one.
+          // A subscription seat is an account on the vendor's console.
           ...(subscription
             ? [
                 {
@@ -471,7 +500,14 @@ export default function EntitlementSeatsTab(): ReactElement {
                     ),
                 },
               ]
-            : [
+            : []),
+          // Its own key instead of the shared one: always for a perpetual
+          // seat, and for a subscription once it has a key at all — most
+          // sign in by account (2026-10-23).
+          ...(!subscription ||
+          record.data?.hasProductKey ||
+          rows.some((seat) => seat.hasProductKey)
+            ? [
                 {
                   key: 'productKey',
                   header: t('fields.seatProductKey'),
@@ -499,7 +535,8 @@ export default function EntitlementSeatsTab(): ReactElement {
                     />
                   ),
                 },
-              ]),
+              ]
+            : []),
           {
             key: 'assignedAt',
             header: t('fields.assignedAt'),

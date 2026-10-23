@@ -748,7 +748,8 @@ describe('stock and software entitlements', () => {
       {
         seats: [
           { holderId: fixture.personId, account: 'LiNa@Example.com' },
-          { account: 'guest@example.com' },
+          // A subscription that activates by key keeps the seat's own key.
+          { account: 'guest@example.com', productKey: 'SUB-KEY' },
         ],
       },
     );
@@ -757,7 +758,7 @@ describe('stock and software entitlements', () => {
       (await data<{ assignedCount: number }>(assigned)).assignedCount,
     ).toBe(2);
     const seats = await data<{
-      seats: { account: string; holderId: string | null }[];
+      seats: { id: string; account: string; holderId: string | null }[];
     }>(
       await app.request(
         `/api/itam/entitlements/${subscription.id}/seats`,
@@ -768,6 +769,15 @@ describe('stock and software entitlements', () => {
       'guest@example.com',
       'lina@example.com',
     ]);
+    const guest = seats.seats.find(
+      (seat) => seat.account === 'guest@example.com',
+    )!;
+    const seatKey = await post(`entitlements/${subscription.id}/reveal-key`, {
+      seatId: guest.id,
+    });
+    expect((await data<{ productKey: string }>(seatKey)).productKey).toBe(
+      'SUB-KEY',
+    );
 
     // Usage is not tracked: there is no import to feed a last-used date.
     const usage = await post(`entitlements/${subscription.id}/import-usage`, {
