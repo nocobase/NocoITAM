@@ -171,6 +171,8 @@ export function RepairCompleteDialog({
       onOpenChange={(open) => !open && onClose()}
       title={t('repairs.complete')}
       description={t('repairs.completeDescription')}
+      // Room for the document's box above the fields (2026-10-23).
+      size='form'
       busy={complete.isPending}
       error={complete.error}
       confirmLabel={t('repairs.complete')}

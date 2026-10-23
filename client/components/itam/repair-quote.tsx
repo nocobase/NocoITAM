@@ -248,6 +248,8 @@ export function RepairQuoteDialog({
       onOpenChange={(open) => !open && onClose()}
       title={t('repairs.quote.title')}
       description={t('repairs.quote.description')}
+      // Room for the document's box above the fields (2026-10-23).
+      size='form'
       busy={save.isPending}
       error={save.error}
       disabled={typeof amount.amount !== 'number'}
