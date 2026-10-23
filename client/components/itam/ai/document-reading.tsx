@@ -32,6 +32,7 @@ export function DocumentReading({
   context,
   placeholder,
   onRead,
+  bare = false,
 }: {
   readonly ownerType: 'repairs' | 'disposals';
   readonly ownerId: string;
@@ -39,6 +40,11 @@ export function DocumentReading({
   readonly context: Readonly<Record<string, unknown>>;
   readonly placeholder: string;
   readonly onRead: (reading: Record<string, unknown>) => ReactNode;
+  /**
+   * The whole of a tab (记录报价's AI 整理, 2026-10-23) rather than a box
+   * above a form: no frame of its own, and the room PO 整理 gives.
+   */
+  readonly bare?: boolean;
 }): ReactElement | null {
   const { t } = useTranslation();
   const ai = useItamAi();
@@ -122,13 +128,24 @@ export function DocumentReading({
   };
 
   return (
-    <div className='grid gap-2 rounded-lg border border-border bg-muted/30 p-3'>
+    <div
+      className={
+        bare
+          ? 'grid gap-2'
+          : 'grid gap-2 rounded-lg border border-border bg-muted/30 p-3'
+      }
+    >
       <Textarea
         value={pasted}
         disabled={busy}
         rows={3}
         maxLength={40000}
-        className='max-h-[30svh] min-h-20 bg-background'
+        autoFocus={bare}
+        className={
+          bare
+            ? 'max-h-[45svh] min-h-40'
+            : 'max-h-[30svh] min-h-20 bg-background'
+        }
         placeholder={placeholder}
         aria-label={t('documentReading.material')}
         onChange={(event) => setPasted(event.target.value)}
@@ -169,7 +186,7 @@ export function DocumentReading({
           <Button
             type='button'
             variant='outline'
-            size='sm'
+            size={bare ? 'default' : 'sm'}
             disabled={busy}
             onClick={() => inputRef.current?.click()}
           >
@@ -181,7 +198,7 @@ export function DocumentReading({
             action. */}
         <Button
           type='button'
-          size='sm'
+          size={bare ? 'default' : 'sm'}
           className='bg-primary text-primary-foreground hover:bg-primary/90'
           disabled={busy || !ready}
           onClick={() => void go()}

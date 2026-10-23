@@ -268,6 +268,7 @@ export function RepairQuoteDialog({
           task='repairQuote'
           context={{ repairId: id }}
           placeholder={t('repairs.quote.placeholder')}
+          bare
           onRead={applyQuote}
         />
       ) : (
