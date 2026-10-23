@@ -139,8 +139,9 @@ export const STOCK_CREATE_FIELDS: readonly string[] = [
   'name',
   'locationId',
   'minimumQuantity',
-  'notes',
+  // 负责人 above 备注, the long text closing the dialog (2026-10-23).
   'ownerId',
+  'notes',
 ];
 
 export interface StockStats {

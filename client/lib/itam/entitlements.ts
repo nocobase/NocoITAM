@@ -306,8 +306,9 @@ export const ENTITLEMENT_CREATE_FIELDS: readonly string[] = [
   'productKey',
   'reassignable',
   'consoleUrl',
-  'notes',
+  // 负责人 above 备注, the long text closing the dialog (2026-10-23).
   'ownerId',
+  'notes',
 ];
 
 export interface EntitlementStats {
