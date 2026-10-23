@@ -5,13 +5,15 @@ import { DISPOSAL_CARD } from '@/components/itam/board-card-specs';
 import { createStatusBoard } from '@/components/itam/status-board';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Plus, Recycle, Send, Trash2, Undo2 } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { useParams } from 'react-router';
 
 import { DisposalCreateDialog } from './create-dialog.js';
 
 import { AttachmentsTab } from '@/components/itam/attachments-tab';
+import { DocumentReading } from '@/components/itam/ai/document-reading';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
+import { ReviewMark } from '@/components/itam/review-mark';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { EmptyState } from '@/components/itam/empty-state';
 import { FieldInput } from '@/components/itam/field-input';
@@ -28,6 +30,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { apiErrorBody, useApi, type ItamRecord } from '@/lib/itam/api';
+import { CURRENCIES } from '@/lib/itam/currencies';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import type { DomainConfig } from '@/lib/itam/domain';
 import {
@@ -194,6 +197,15 @@ function DisposalActions({
     dataWipe: record.dataWipe ?? 'notRequired',
     wipeMethod: record.wipeMethod ?? null,
   }));
+  // What 读处置证明 filled without being sure of it, until it is changed.
+  const [review, setReview] = useState<ReadonlySet<string>>(() => new Set());
+  const checked = (key: string) =>
+    setReview((current) => {
+      if (!current.has(key)) return current;
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
   const run = useMutation({
     mutationFn: async (input: {
       operation: string;
@@ -376,6 +388,69 @@ function DisposalActions({
       },
     },
   ];
+  // Fills what the certificate states, and says how its serials compare
+  // with the devices on the disposal.
+  const applyCertificate = (reading: Record<string, unknown>): ReactNode => {
+    const next: Record<string, unknown> = {};
+    const recipient = text(reading.recipientName).trim();
+    if (recipient) {
+      const vendorId = text(reading.recipientVendorId) || null;
+      next.recipientVendorId = vendorId;
+      next.recipientName = vendorId ? null : recipient;
+    }
+    const disposedAt = text(reading.disposedAt);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(disposedAt)) next.disposedAt = disposedAt;
+    for (const key of ['proceeds', 'expenses']) {
+      const amount = Number(reading[key]);
+      if (reading[key] !== null && reading[key] !== undefined && amount >= 0)
+        next[key] = amount;
+    }
+    if (CURRENCIES.includes(text(reading.currency)))
+      next.currency = text(reading.currency);
+    const wipe = DATA_WIPE_OPTIONS.find((value) => value === reading.dataWipe);
+    if (wipe) {
+      next.dataWipe = wipe;
+      next.wipeMethod =
+        wipe === 'wiped'
+          ? (WIPE_METHODS.find((value) => value === reading.wipeMethod) ?? null)
+          : null;
+    }
+    setExecution((current) => ({ ...current, ...next }));
+    setReview(
+      new Set(
+        (Array.isArray(reading.uncertain) ? reading.uncertain : []).map((key) =>
+          text(key),
+        ),
+      ),
+    );
+    const missing = (Array.isArray(reading.missing) ? reading.missing : []).map(
+      (entry) => text((entry as { deviceNo?: unknown }).deviceNo),
+    );
+    const extra = (Array.isArray(reading.extra) ? reading.extra : []).map(
+      (serial) => text(serial),
+    );
+    const listed = Array.isArray(reading.serialNos)
+      ? reading.serialNos.length
+      : 0;
+    return (
+      <>
+        {missing.length ? (
+          <p className='text-warning-foreground'>
+            {t('disposals.certificate.missing', { list: missing.join('、') })}
+          </p>
+        ) : listed ? (
+          <p className='text-success-foreground'>
+            {t('disposals.certificate.allListed')}
+          </p>
+        ) : null}
+        {extra.length ? (
+          <p className='text-warning-foreground'>
+            {t('disposals.certificate.extra', { list: extra.join('、') })}
+          </p>
+        ) : null}
+      </>
+    );
+  };
   return (
     <>
       {confirm.dialog}
@@ -485,6 +560,14 @@ function DisposalActions({
           })
         }
       >
+        <DocumentReading
+          ownerType='disposals'
+          ownerId={text(record.id)}
+          task='disposalCertificate'
+          context={{ disposalId: text(record.id) }}
+          placeholder={t('disposals.certificate.placeholder')}
+          onRead={applyCertificate}
+        />
         {executionFields.map((field) =>
           field.key === 'recipient' ? (
             <RecipientInput
@@ -507,6 +590,7 @@ function DisposalActions({
                 {field.required ? (
                   <span className='text-destructive'> *</span>
                 ) : null}
+                {review.has(field.key) ? <ReviewMark /> : null}
               </Label>
               <FieldInput
                 id={`execute-${field.key}`}
@@ -525,6 +609,7 @@ function DisposalActions({
                       : executionValue(field.key)
                 }
                 onChange={(value) => {
+                  checked(field.key);
                   const pair = (value ?? {}) as Record<string, unknown>;
                   if (field.currencyField) {
                     setExecution((current) => ({

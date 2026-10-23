@@ -51,4 +51,6 @@ export type AiReadingTask =
   | 'purchaseQuote'
   | 'quoteRecommendation'
   | 'categoryFields'
-  | 'category';
+  | 'category'
+  | 'repairReport'
+  | 'disposalCertificate';

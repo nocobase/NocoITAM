@@ -17,7 +17,10 @@ import {
 import { Hono } from 'hono';
 import { z } from 'zod';
 
-import { attachmentServiceToken } from '../../providers/index.js';
+import {
+  attachmentServiceToken,
+  documentReaderToken,
+} from '../../providers/index.js';
 import {
   ATTACHMENT_OWNER_TYPES,
   type AttachmentOwnerType,
@@ -184,6 +187,49 @@ export const attachmentLinkRoutes: AppRouteContribution<Application> =
           },
           201,
         );
+      } catch (error) {
+        return errorResponse(context, error);
+      }
+    });
+
+    // The text of a document attached to a record, for AI to read into a
+    // form on it (2026-10-23: a repair's report, a disposal's certificate).
+    // Only a file linked to that record is read, under the record's `read`:
+    // it is the text of a file the reader may already open.
+    routes.post('/:ownerType/:ownerId/document-text', async (context) => {
+      try {
+        const type = ownerType.parse(context.req.param('ownerType'));
+        if (!(await allowed(context, type, 'read')))
+          return context.json(
+            { code: 'FORBIDDEN', message: 'Not allowed' },
+            403,
+          );
+        const { fileId } = z
+          .object({ fileId: z.string().min(1).max(64) })
+          .strict()
+          .parse(await readJsonObject(context));
+        const groups = await attachments.grouped(
+          type,
+          context.req.param('ownerId'),
+        );
+        if (
+          !groups.some((group) =>
+            group.files.some((file) => String(file.id) === fileId),
+          )
+        )
+          return context.json(
+            { code: 'NOT_FOUND', message: 'File not found' },
+            404,
+          );
+        const document = await app.container
+          .resolve(documentReaderToken)(fileId)
+          .catch(() => undefined);
+        return context.json({
+          data: {
+            text: document?.text ?? null,
+            truncated: document?.truncated ?? false,
+          },
+        });
       } catch (error) {
         return errorResponse(context, error);
       }

@@ -3,8 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCheck } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
 
+import { DocumentReading } from '@/components/itam/ai/document-reading';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { FieldInput } from '@/components/itam/field-input';
+import { ReviewMark } from '@/components/itam/review-mark';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -23,6 +25,7 @@ import {
   type ItamRecord,
 } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
+import { CURRENCIES } from '@/lib/itam/currencies';
 import { formatDate, text } from '@/lib/itam/format';
 import { holderCollection } from '@/lib/itam/devices';
 import {
@@ -109,6 +112,47 @@ export function RepairCompleteDialog({
     currency: repair.currency ?? settings.data?.general.currency ?? null,
   });
   const [notes, setNotes] = useState('');
+  // What 读维修单 filled without being sure of it, until it is changed.
+  const [review, setReview] = useState<ReadonlySet<string>>(() => new Set());
+  const checked = (key: string) =>
+    setReview((current) => {
+      if (!current.has(key)) return current;
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
+  // Fills what the report states and leaves the rest as the person set it.
+  const applyReport = (reading: Record<string, unknown>): ReactNode => {
+    const read = REPAIR_RESULTS.find(
+      (value) => value !== 'inProgress' && value === reading.result,
+    );
+    if (read) chooseResult(read);
+    const amount = Number(reading.cost);
+    if (reading.cost !== null && reading.cost !== undefined && amount >= 0)
+      setCost((current) => ({
+        amount,
+        currency: CURRENCIES.includes(text(reading.currency))
+          ? text(reading.currency)
+          : current.currency,
+      }));
+    if (typeof reading.notes === 'string' && reading.notes.trim())
+      setNotes(reading.notes.trim());
+    setReview(
+      new Set(
+        (Array.isArray(reading.uncertain) ? reading.uncertain : []).map((key) =>
+          text(key),
+        ),
+      ),
+    );
+    return reading.serialMatches === false ? (
+      <p className='text-warning-foreground'>
+        {t('repairs.report.serialMismatch', {
+          printed: text(reading.serialNo),
+          serialNo: text(reading.deviceSerialNo),
+        })}
+      </p>
+    ) : null;
+  };
   const device = useItamRecord(DEVICES_PATH, text(repair.deviceId));
   const { label: returnLabel, relation } = useReturnLabel(device.data);
   const complete = useMutation({
@@ -145,8 +189,19 @@ export function RepairCompleteDialog({
         })
       }
     >
+      <DocumentReading
+        ownerType='repairs'
+        ownerId={text(repair.id)}
+        task='repairReport'
+        context={{ repairId: text(repair.id) }}
+        placeholder={t('repairs.report.placeholder')}
+        onRead={applyReport}
+      />
       <div className='grid gap-1.5'>
-        <Label htmlFor='repair-result'>{t('fields.repairResult')}</Label>
+        <Label htmlFor='repair-result'>
+          {t('fields.repairResult')}
+          {review.has('result') ? <ReviewMark /> : null}
+        </Label>
         <FieldInput
           id='repair-result'
           field={{
@@ -158,7 +213,10 @@ export function RepairCompleteDialog({
             ),
           }}
           value={result}
-          onChange={(value) => chooseResult(text(value))}
+          onChange={(value) => {
+            checked('result');
+            chooseResult(text(value));
+          }}
         />
       </div>
       <div className='grid gap-1.5'>
@@ -196,7 +254,10 @@ export function RepairCompleteDialog({
         ) : null}
       </div>
       <div className='grid gap-1.5'>
-        <Label htmlFor='repair-cost'>{t('fields.cost')}</Label>
+        <Label htmlFor='repair-cost'>
+          {t('fields.cost')}
+          {review.has('cost') ? <ReviewMark /> : null}
+        </Label>
         <FieldInput
           id='repair-cost'
           field={{
@@ -206,16 +267,25 @@ export function RepairCompleteDialog({
             currencyField: 'currency',
           }}
           value={cost}
-          onChange={(value) => setCost(value ?? {})}
+          onChange={(value) => {
+            checked('cost');
+            setCost(value ?? {});
+          }}
         />
       </div>
       <div className='grid gap-1.5'>
-        <Label htmlFor='repair-notes'>{t('repairs.resultNotes')}</Label>
+        <Label htmlFor='repair-notes'>
+          {t('repairs.resultNotes')}
+          {review.has('notes') ? <ReviewMark /> : null}
+        </Label>
         <Textarea
           id='repair-notes'
           rows={2}
           value={notes}
-          onChange={(event) => setNotes(event.target.value)}
+          onChange={(event) => {
+            checked('notes');
+            setNotes(event.target.value);
+          }}
         />
       </div>
     </ConfirmDialog>

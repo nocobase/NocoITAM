@@ -14,13 +14,18 @@ import {
   newCategoryFacts,
 } from './category-reading.js';
 import { aiLanguageToken } from './ai-language.js';
-import { BusinessRuleError } from './errors.js';
+import { BusinessRuleError, RecordNotFoundError } from './errors.js';
 import {
   DATA_WIPE_OPTIONS,
   DISPOSAL_METHODS,
   DISPOSAL_REASONS,
+  WIPE_METHODS,
 } from './disposals.js';
-import { REPAIR_FAULT_CATEGORIES, REPAIR_METHODS } from './repairs.js';
+import {
+  REPAIR_FAULT_CATEGORIES,
+  REPAIR_METHODS,
+  REPAIR_RESULTS,
+} from './repairs.js';
 import { settingsServiceToken } from './settings.js';
 import { searchWeb, webSearchAvailable, type WebResult } from './web-search.js';
 
@@ -63,6 +68,11 @@ export const READING_TASKS = [
   // with its rules and defaults; and AI 整理 of a new category.
   'categoryFields',
   'category',
+  // 读维修单 (2026-10-23): the vendor's repair report or invoice, read
+  // into the completion; and 读处置证明: the recycler's or wipe
+  // certificate, read into a disposal's execution.
+  'repairReport',
+  'disposalCertificate',
 ] as const;
 export type ReadingTask = (typeof READING_TASKS)[number];
 
@@ -92,6 +102,8 @@ export const READING_GRANTS: Readonly<
     ['categories', 'create'],
     ['categories', 'update'],
   ],
+  repairReport: [['repairs', 'complete']],
+  disposalCertificate: [['disposals', 'execute']],
 };
 
 export interface ReadingInput {
@@ -295,6 +307,25 @@ const SHAPES: Readonly<Record<ReadingTask, z.ZodType>> = {
       .array(z.object({ deviceNo: z.string(), note: z.string() }))
       .optional(),
   }),
+  repairReport: z.object({
+    result: z.string().nullable().optional(),
+    cost: lax,
+    currency: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    serialNo: z.string().nullable().optional(),
+    uncertain: z.array(z.string()).optional(),
+  }),
+  disposalCertificate: z.object({
+    recipientName: z.string().nullable().optional(),
+    disposedAt: z.string().nullable().optional(),
+    proceeds: lax,
+    expenses: lax,
+    currency: z.string().nullable().optional(),
+    dataWipe: z.string().nullable().optional(),
+    wipeMethod: z.string().nullable().optional(),
+    serialNos: z.array(z.string()).optional(),
+    uncertain: z.array(z.string()).optional(),
+  }),
 };
 
 const LINE_RULES =
@@ -314,6 +345,8 @@ const TASKS: Readonly<Record<ReadingTask, string>> = {
   categoryFields: `Suggest the extended fields of the category in the context's \`category\`: what each record of that kind needs beyond the fields every record already has (name, number, serial number, model, maker, category, status, who holds it, location, department, purchase date and price, supplier, warranty end, notes) — never one of those, and none of the category's \`currentFields\`. Suggest what an IT team records for that kind of asset, three to ten fields, the most useful first. key: camelCase ASCII starting with a letter, unique. label: short, in the language the request names. type: text, number, date, select or boolean; a select gives its \`options\` (short labels in that language); a number's label names its unit when it has one ("内存 (GB)"). required only for what every record of the kind must have to be told apart or used. When \`otherCategories\` record the same thing, reuse that field's key, label and type exactly, so reports read one field across categories. For the category's \`currentFields\`, suggest \`changes\` only where one is plainly off — a select missing common options, a number whose label lacks its unit, a type that does not fit, an unclear label: each with the field's key (never changed), only what changes (label, type, options, required) and a short \`reason\` in the request's language; none when they are fine. Also suggest the category's \`defaults\`, its rules and the values its new records start with, as an IT team would set them for that kind of asset: requiresSerial (whether each record must carry a serial number: true for hardware tracked one by one), assignableToPerson (whether a record may be given to a person: false for what stays in a room, such as a server or a rack), depreciationMethod (none or straightLine), usefulLifeMonths, residualRate (0 to 1, e.g. 0.05), warrantyMonths (the usual manufacturer warranty), replacementMonths (when it is usually replaced) and auditCycleDays (how often it is counted). Whenever depreciationMethod is straightLine — suggested or already set — give usefulLifeMonths and residualRate too, which only straight-line depreciation uses. The category's \`currentDefaults\` and the other categories' \`defaults\` show what is set now: keep a current value unless it is plainly off for this kind, and stay consistent with similar categories. In \`said\`, one plain sentence: what the fields cover and any default you would change, or why there is little to add.`,
   category: `Fill the new category form for the category the material describes (usually its name, sometimes what it is for). name: short, in the language the request names, as the material calls it without its parent's words. parentId: the id of the category in the context's \`categories\` it belongs under — the context's \`parent\` when one is chosen, else the one that plainly holds it, else leave it out for a top-level category. appliesTo, only for a top-level category: device (tracked one by one), accessory, consumable, component (stock counted in batches) or entitlement (software licences and subscriptions). requiresSerial and assignableToPerson: the category's rules — a serial number on every record for hardware tracked one by one; given to a person unless it stays in a room (a server, a rack, a printer on a floor). depreciationMethod (none or straightLine), usefulLifeMonths, residualRate (0 to 1), warrantyMonths, replacementMonths and auditCycleDays as an IT team would set them, consistent with similar categories in the context. With straightLine, always give usefulLifeMonths and residualRate. fieldTemplate: three to ten extended fields that kind of record needs beyond the ones every record has (name, number, serial number, model, maker, status, holder, location, department, purchase date and price, supplier, warranty end, notes), each { key (camelCase ASCII), label (short, in the request's language), type (text, number, date, select or boolean), options (for a select), required (only what every record must have) }, reusing the key, label and type a similar category in the context already uses for the same thing. uncertain: the fields you filled but are not sure of. In \`said\`, one plain sentence: what to check.`,
   deliveryDocument: `Read the delivery document against the purchase order in the context, following the receiving method below. One entry in \`rows\` per goods row of the document: lineId is the order line it matches (an id from the context's \`lines\`, or null when it matches none), description the row as printed, partCode the part number printed on it, quantity the quantity delivered, serialNos every serial number of that row, source where the row is ("Sheet1 row 4", "page 2 line 3"); warrantyMonths when the document states a warranty period covering the row, or warrantyEndDate (YYYY-MM-DD) when it prints an end date. deliveryNo, deliveryDate (YYYY-MM-DD) and vendorName from the header when printed. When the document cannot be read as a delivery of goods, return no rows and say why. In \`said\`, one or two plain sentences: how many rows were read and matched, and what the receiver must look at.`,
+  repairReport: `The material is what the repair vendor (or the in-house technician) handed back for the repair in the context's \`repair\`: a repair report, a service sheet, an invoice or a quote. The context's \`device\` is the device repaired, as the register has it. Fill the completion of the repair from it. result: exactly one of ${REPAIR_RESULTS.filter((value) => value !== 'inProgress').join(', ')} — repaired when it was fixed (a part replaced inside the device still counts as repaired), unrepairable when it could not be fixed, replaced when the whole device was swapped for another unit; null when the material does not say (a quote for work not yet done says nothing about the result). cost: what the repair cost in total, a number in the material's currency (tax included when printed with it), 0 when it states the repair was free (under warranty), null when it gives no amount. currency: the ISO code of that amount (CNY for 元 or RMB), null with no amount. notes: the outcome for the record in plain sentences — what was found, what was done, the parts replaced, and any warranty on the repair itself with its length or end date; keep the material's facts, add none, at most 300 characters; null when it says nothing of the kind. serialNo: the device's serial number exactly as the material prints it, null when it prints none. uncertain: the fields you filled but are not sure of (result, cost, notes). When the material is not about a repair, return null fields and say so. In \`said\`, one plain sentence for the person: what to check before completing the repair.`,
+  disposalCertificate: `The material is what came back from carrying out the disposal in the context's \`disposal\`: a recycler's or buyer's receipt, a data destruction certificate, a scrap or donation note. The context's \`devices\` are the devices it disposes of, each with its number and serial number. Fill the execution from it. recipientName: who took the devices (the recycler, buyer or receiving organisation) as printed. disposedAt: the date they were handed over or destroyed (YYYY-MM-DD). proceeds: what the company received for them in total, a number; expenses: what the company paid for the disposal in total (collection, destruction fees); each null when the material gives no amount. currency: the ISO code of those amounts (CNY for 元 or RMB). dataWipe: exactly one of ${DATA_WIPE_OPTIONS.join(', ')} — wiped when the material certifies that the data was erased or the storage destroyed, notWiped when it says the data was not dealt with, null when it is silent. wipeMethod, only with wiped: exactly one of ${WIPE_METHODS.join(', ')} — format for a format or reinstall, erase for an overwrite or certified erasure (NIST 800-88, DoD, a vendor's erase tool), physicalDestruction for shredded, crushed, drilled or degaussed storage. serialNos: every serial number the material lists, exactly as printed. uncertain: the fields you filled but are not sure of. When the material is not about these devices leaving, return null fields and say so. In \`said\`, one plain sentence for the person: what to check before confirming the execution.`,
 };
 
 /**
@@ -485,6 +518,33 @@ export async function readForForm(
     );
     context.today = today();
   }
+  // The serials the register holds, to check the document against.
+  let registered: readonly { deviceNo: string; serialNo: string | null }[] = [];
+  if (input.task === 'repairReport') {
+    const facts = await repairReportFacts(
+      container,
+      actorId,
+      asText(input.context.repairId),
+    );
+    Object.assign(context, facts, { today: today() });
+    delete context.repairId;
+    registered = [
+      {
+        deviceNo: asText(facts.device.deviceNo) ?? '',
+        serialNo: asText(facts.device.serialNo) ?? null,
+      },
+    ];
+  }
+  if (input.task === 'disposalCertificate') {
+    const facts = await disposalCertificateFacts(
+      container,
+      actorId,
+      asText(input.context.disposalId),
+    );
+    Object.assign(context, facts, { today: today() });
+    delete context.disposalId;
+    registered = facts.devices;
+  }
   // The AI working language (2026-10-20, `ai-language.ts`), not the
   // reader's interface; a container without it — a test's — keeps theirs.
   const language = container.has(aiLanguageToken)
@@ -519,7 +579,13 @@ export async function readForForm(
     );
     const searched = web !== null;
     if (!answer) return { reading: null, said: '', searched };
-    const reading = (answer.reading as Record<string, unknown> | null) ?? null;
+    const read = (answer.reading as Record<string, unknown> | null) ?? null;
+    const reading =
+      read && input.task === 'repairReport'
+        ? checkRepairReport(read, registered[0]?.serialNo ?? null)
+        : read && input.task === 'disposalCertificate'
+          ? await checkDisposalCertificate(container, read, registered)
+          : read;
     return {
       // A new category's reading is checked before the form takes it.
       reading:
@@ -632,6 +698,8 @@ async function repairFacts(
       'bookValue',
       'currency',
       'notes',
+      // What a repair report or certificate is checked against (2026-10-23).
+      'serialNo',
     ]),
     // Said outright rather than left to compare dates (2026-10-20): it
     // decides the method and leads the reasons.
@@ -648,5 +716,164 @@ async function repairFacts(
       ...(repair.cost === undefined ? {} : { cost: repair.cost }),
     })),
     ...(sameModel ? { sameModel } : {}),
+  };
+}
+
+/** A serial number compared the way labels and documents print it. */
+const serialKey = (value: string): string =>
+  value.replace(/[\s-]/g, '').toUpperCase();
+
+/**
+ * 读维修单's context: the repair as the person completing it reads it, and
+ * its device as 维修单整理 weighs it.
+ */
+async function repairReportFacts(
+  container: ServiceContainer,
+  actorId: string,
+  repairId: string | undefined,
+): Promise<{ repair: Row; device: Row }> {
+  const reader = readerFor(container, actorId);
+  const repair = repairId ? await reader.get('repairs', repairId) : undefined;
+  if (!repair) throw new RecordNotFoundError('repairs', repairId ?? '');
+  const vendorId = asText(repair.vendorId);
+  const vendor = vendorId
+    ? await container
+        .resolve(databaseManagerToken)
+        .query()
+        .selectFrom('vendors')
+        .select('name')
+        .where('id', '=', vendorId)
+        .executeTakeFirst<{ name: unknown }>()
+    : undefined;
+  const device = await repairFacts(
+    container,
+    actorId,
+    asText(repair.deviceId) ?? '',
+  );
+  return {
+    repair: {
+      repairNo: repair.repairNo,
+      fault: asText(repair.faultDescription)?.slice(0, 500),
+      faultCategory: repair.faultCategory ?? undefined,
+      method: repair.method ?? undefined,
+      vendorName: asText(vendor?.name),
+      sentAt: repair.sentAt ?? undefined,
+    },
+    device,
+  };
+}
+
+/**
+ * 读处置证明's context: the disposal as the person carrying it out reads
+ * it, and the number and serial of each device it lists.
+ */
+async function disposalCertificateFacts(
+  container: ServiceContainer,
+  actorId: string,
+  disposalId: string | undefined,
+): Promise<{
+  disposal: Row;
+  devices: { deviceNo: string; serialNo: string | null; model?: string }[];
+}> {
+  const disposal = disposalId
+    ? await readerFor(container, actorId).get('disposals', disposalId)
+    : undefined;
+  if (!disposal) throw new RecordNotFoundError('disposals', disposalId ?? '');
+  const rows = await container
+    .resolve(databaseManagerToken)
+    .query()
+    .selectFrom('disposalDevices')
+    .innerJoin('devices', 'devices.id', 'disposalDevices.deviceId')
+    .leftJoin('models', 'models.id', 'devices.modelId')
+    .select([
+      'devices.deviceNo as deviceNo',
+      'devices.serialNo as serialNo',
+      'models.name as model',
+    ])
+    .where('disposalDevices.disposalId', '=', disposalId!)
+    .orderBy('devices.deviceNo', 'asc')
+    .limit(200)
+    .execute<{ deviceNo: unknown; serialNo: unknown; model: unknown }>();
+  return {
+    disposal: {
+      disposalNo: disposal.disposalNo,
+      method: disposal.method,
+      reason: disposal.reason ?? undefined,
+      recipientName: disposal.recipientName ?? undefined,
+    },
+    devices: rows.map((row) => ({
+      deviceNo: asText(row.deviceNo) ?? '',
+      serialNo: asText(row.serialNo) ?? null,
+      ...(asText(row.model) ? { model: asText(row.model) } : {}),
+    })),
+  };
+}
+
+/**
+ * The serial a repair report prints, checked against the device's:
+ * `serialMatches` is null when either is missing.
+ */
+function checkRepairReport(
+  reading: Record<string, unknown>,
+  serialNo: string | null,
+): Record<string, unknown> {
+  const printed = asText(reading.serialNo);
+  return {
+    ...reading,
+    deviceSerialNo: serialNo,
+    serialMatches:
+      printed && serialNo ? serialKey(printed) === serialKey(serialNo) : null,
+  };
+}
+
+/**
+ * A certificate's serials checked against the disposal's devices — which
+ * of them it does not list, and what it lists that is not among them — and
+ * its recipient matched to a vendor on the books by name.
+ */
+async function checkDisposalCertificate(
+  container: ServiceContainer,
+  reading: Record<string, unknown>,
+  devices: readonly { deviceNo: string; serialNo: string | null }[],
+): Promise<Record<string, unknown>> {
+  const printed = (
+    Array.isArray(reading.serialNos) ? reading.serialNos : []
+  ).flatMap((value) => {
+    const serial = asText(value)?.trim();
+    return serial ? [serial] : [];
+  });
+  const listed = new Set(printed.map(serialKey));
+  const known = new Set(
+    devices.flatMap((device) =>
+      device.serialNo ? [serialKey(device.serialNo)] : [],
+    ),
+  );
+  const recipient = asText(reading.recipientName)?.trim();
+  const vendor = recipient
+    ? (
+        await container
+          .resolve(databaseManagerToken)
+          .query()
+          .selectFrom('vendors')
+          .select(['id', 'name'])
+          .execute<{ id: unknown; name: unknown }>()
+      ).find(
+        (row) =>
+          asText(row.name)?.trim().toLowerCase() === recipient.toLowerCase(),
+      )
+    : undefined;
+  return {
+    ...reading,
+    // Only a certificate that lists serials at all can leave one out.
+    missing: printed.length
+      ? devices
+          .filter(
+            (device) =>
+              !device.serialNo || !listed.has(serialKey(device.serialNo)),
+          )
+          .map(({ deviceNo, serialNo }) => ({ deviceNo, serialNo }))
+      : [],
+    extra: printed.filter((serial) => !known.has(serialKey(serial))),
+    recipientVendorId: asText(vendor?.id) ?? null,
   };
 }

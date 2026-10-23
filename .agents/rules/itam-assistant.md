@@ -249,6 +249,20 @@ triage.tsx`, under the description) fills only what is still empty,
   `uneconomicalRepair` (`onReplace`). The person decides. Chosen over a
   background agent because it is asked at the moment a repair is filed,
   with the material on screen.
+- **读维修单 / 读处置证明** (2026-10-23, tasks `repairReport` with grant
+  `repairs.complete`, `disposalCertificate` with `disposals.execute`): a box
+  at the top of 完成维修 and 执行报废 (`DocumentReading` in
+  `client/components/itam/ai/document-reading.tsx`) takes pasted text or a
+  file. A file is attached to the record first and read as text through
+  `POST /itam/attachments/:ownerType/:ownerId/document-text`, which reads
+  only a file linked to that record, under its `read`. The server builds the
+  context from the id the page sends (the repair and its device, or the
+  disposal's devices with their serials) and checks the reading against the
+  register: a repair report's printed serial (`serialMatches`), a
+  certificate's serials (`missing`, `extra`) and its recipient matched to a
+  vendor by name (`recipientVendorId`). The dialog fills only what the
+  document states, marks `uncertain` fields 请核对, and saves nothing until
+  the person confirms.
 - **Work agents** (2026-10-16, plan "Work agents", step 1, after
   NocoCRM's): agents that work on a record without being asked in a
   conversation, and only suggest. Until plugin 1.0 each was an online
