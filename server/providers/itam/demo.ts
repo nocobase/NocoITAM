@@ -1060,6 +1060,13 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairReplaced:
       'Logic board fault; Apple replaced the whole unit under warranty',
     repairNoPower: 'Will not start',
+    panelQuoteWork:
+      'Replace the display panel with a third-party part, labour included',
+    panelQuoteReasons:
+      'The quote of {quote} is about {share}% of the book value of {bookValue}\nIt is still within its useful life and before its planned replacement\nA cracked screen is accidental damage, not wear',
+    backlightQuoteWork: 'Replace the backlight module, labour included',
+    backlightQuoteReasons:
+      'The backlight is at fault; the panel itself is fine\nThe monitor is within its useful life\nThe quote is well under the price of a new monitor of its size',
     batteryQuoteWork:
       'Replace the battery with an original part, labour included',
     batteryQuoteReasons:
@@ -1224,6 +1231,12 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     repairLogicBoard: '无法开机，充电指示灯不亮',
     repairReplaced: '主板故障，Apple 保内整机更换',
     repairNoPower: '无法开机',
+    panelQuoteWork: '更换第三方屏幕面板（含人工）',
+    panelQuoteReasons:
+      '报价 {quote} 约为设备净值 {bookValue} 的 {share}%\n设备仍在使用年限内，未到计划更换日期\n屏幕碎裂属意外损坏，不是老化',
+    backlightQuoteWork: '更换背光模组（含人工）',
+    backlightQuoteReasons:
+      '故障在背光，面板本身正常\n显示器仍在使用年限内\n报价远低于同尺寸新显示器的价格',
     batteryQuoteWork: '更换原厂电池（含人工）',
     batteryQuoteReasons:
       '报价约为设备当前净值的五分之一\n只有电池故障，主板和屏幕检测正常\n设备还有两年使用年限',
@@ -4777,6 +4790,12 @@ export function createDemoService(dependencies: {
           readonly returnDays: number;
           readonly cost: number;
           readonly notes?: string;
+          /** The shop's quote, advised on and decided (2026-10-23). */
+          readonly quote?: {
+            readonly amount: number;
+            readonly work: string;
+            readonly reasons: string;
+          };
           /** How it ended; repaired unless said (2026-10-23). */
           readonly result?:
             'repaired' | 'unrepairable' | 'replaced' | 'cancelled';
@@ -4861,6 +4880,12 @@ export function createDemoService(dependencies: {
             cost: 80,
             notes: texts.repairUnrepairable,
             result: 'unrepairable',
+            // Quoted and taken, then the part could not be had.
+            quote: {
+              amount: 1450,
+              work: texts.backlightQuoteWork,
+              reasons: texts.backlightQuoteReasons,
+            },
           },
           {
             deviceId: String(laptops[4].id),
@@ -4912,6 +4937,22 @@ export function createDemoService(dependencies: {
               all('repairs', 'create'),
             ),
           );
+          if (entry.quote) {
+            await on(entry.sentDays + 2);
+            await repairs.update(
+              String(repair.id),
+              {
+                quoteAmount: entry.quote.amount,
+                quoteNotes: entry.quote.work,
+                quotedAt: daysFromNow(entry.sentDays + 2),
+                quoteRecommendation: 'repair',
+                quoteReasons: entry.quote.reasons,
+                quoteDecision: 'repair',
+              },
+              context,
+              all('repairs', 'update'),
+            );
+          }
           await on(entry.returnDays);
           await repairs.complete(
             String(repair.id),
@@ -4927,7 +4968,7 @@ export function createDemoService(dependencies: {
           );
         }
         await on(-1);
-        await track(
+        const screenRepair = await track(
           'repairs',
           await repairs.create(
             {
@@ -4946,6 +4987,40 @@ export function createDemoService(dependencies: {
             all('repairs', 'create'),
           ),
         );
+        // Its quote came in the same day (2026-10-23): a third-party panel,
+        // under what the laptop is still worth, advised to go ahead and
+        // waiting on whoever takes the repair over.
+        {
+          const laptop = await devices.get(
+            String(laptops[3].id),
+            all('devices', 'read'),
+          );
+          const quote = 580;
+          const bookValue = Number(laptop?.bookValue ?? 0);
+          const currency = asText(laptop?.currency) ?? 'CNY';
+          const money = (value: number) =>
+            `${currency} ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          await repairs.update(
+            String(screenRepair.id),
+            {
+              quoteAmount: quote,
+              quoteNotes: texts.panelQuoteWork,
+              quotedAt: daysFromNow(-1),
+              quoteRecommendation: 'repair',
+              quoteReasons: texts.panelQuoteReasons
+                .replace('{quote}', money(quote))
+                .replace('{bookValue}', money(bookValue))
+                .replace(
+                  '{share}',
+                  String(
+                    bookValue > 0 ? Math.round((quote / bookValue) * 100) : 0,
+                  ),
+                ),
+            },
+            context,
+            all('repairs', 'update'),
+          );
+        }
         // The importer's repair: the spare ThinkPad back from a loan of RAM
         // with a noisy fan, looked at in house.
         if (importerId)
