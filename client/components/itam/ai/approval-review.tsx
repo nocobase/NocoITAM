@@ -79,9 +79,10 @@ export function ApprovalReviewCard({
     );
 
   return (
+    // The brand's blue-green, as every AI entry (2026-10-23; amber before).
     <section
       aria-label={t('review.title')}
-      className='rounded-lg border border-l-4 border-l-(--status-warning) bg-card p-4 text-sm'
+      className='rounded-lg border border-l-4 border-l-primary bg-card p-4 text-sm'
     >
       <header className='flex flex-wrap items-center gap-2'>
         <Sparkles className='size-4 text-primary' aria-hidden />
