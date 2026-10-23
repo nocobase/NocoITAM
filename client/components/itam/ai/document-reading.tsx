@@ -14,6 +14,7 @@ import { useAiReading, useItamAi } from '@/lib/itam/ai-chat';
 import { useApi } from '@/lib/itam/api';
 import { errorMessage, text } from '@/lib/itam/format';
 import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
+import { cn } from '@/lib/utils';
 
 /**
  * A document read into the dialog it opens in (2026-10-23): a repair's
@@ -63,6 +64,9 @@ export function DocumentReading({
   const inputRef = useRef<HTMLInputElement>(null);
   const [pasted, setPasted] = useState('');
   const [file, setFile] = useState<File>();
+  // A file dragged over the box (2026-10-23): dropped, it is taken as if
+  // chosen with 上传单据.
+  const [dragging, setDragging] = useState(false);
   const [phase, setPhase] = useState<'uploading' | 'reading'>();
   const [result, setResult] = useState<{
     readonly said: string;
@@ -135,14 +139,50 @@ export function DocumentReading({
     }
   };
 
+  const accepted = (dropped: File) =>
+    DOCUMENT_ACCEPT.split(',').some((ext) =>
+      dropped.name.toLowerCase().endsWith(ext),
+    );
   return (
     <div
-      className={
-        bare
-          ? 'grid gap-2'
-          : 'grid gap-2 rounded-lg border border-border bg-muted/30 p-3'
-      }
+      className={cn(
+        'relative grid gap-2',
+        !bare && 'rounded-lg border border-border bg-muted/30 p-3',
+        dragging && 'rounded-lg ring-2 ring-primary ring-offset-2',
+      )}
+      onDragOver={(event) => {
+        if (busy || !event.dataTransfer.types.includes('Files')) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+        setDragging(true);
+      }}
+      onDragLeave={(event) => {
+        // Leaving for a child is still inside the box.
+        if (event.currentTarget.contains(event.relatedTarget as Node | null))
+          return;
+        setDragging(false);
+      }}
+      onDrop={(event) => {
+        setDragging(false);
+        const dropped = event.dataTransfer.files[0];
+        if (!dropped) return;
+        event.preventDefault();
+        if (!accepted(dropped)) {
+          setFailure({
+            text: t('documentReading.unsupported', { file: dropped.name }),
+            answered: false,
+          });
+          return;
+        }
+        setFailure(undefined);
+        setFile(dropped);
+      }}
     >
+      {dragging ? (
+        <div className='pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/85 text-sm font-medium text-primary'>
+          {t('documentReading.dropHere')}
+        </div>
+      ) : null}
       <Textarea
         value={pasted}
         disabled={busy}

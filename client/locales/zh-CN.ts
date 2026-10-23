@@ -1152,6 +1152,9 @@ const zhCN: AppResource = {
   // Reading a document into the dialog it opens in (2026-10-23).
   documentReading: {
     material: '单据内容',
+    dropHere: '松开即可上传',
+    unsupported:
+      '不支持「{{file}}」这种文件，请上传 Excel、CSV、Word、PDF 或文本文件',
     upload: '上传单据',
     removeFile: '移除文件',
     read: 'AI 读取',
@@ -2840,7 +2843,7 @@ const zhCN: AppResource = {
       title: '记录报价',
       description: '记下供应商的报价，资产管家会对比设备价值，建议修还是换',
       placeholder:
-        '粘贴供应商的报价内容，或上传报价单。AI 填好金额和维修方案，并建议修还是换',
+        '粘贴供应商的报价内容，或拖入、上传报价单。AI 填好金额和维修方案，并建议修还是换',
       typed: '供应商报价 {{amount}}，维修方案：{{work}}',
       judge: '评估修还是换',
       judgeAgain: '重新评估',
@@ -2859,7 +2862,7 @@ const zhCN: AppResource = {
     },
     report: {
       placeholder:
-        '粘贴维修报告或发票的内容，或上传维修单。AI 填好结果、费用和说明，你核对后完成',
+        '粘贴维修报告或发票的内容，或拖入、上传维修单。AI 填好结果、费用和说明，你核对后完成',
       serialMismatch:
         '单据上的序列号 {{printed}} 与这台设备的 {{serialNo}} 不一致',
     },
@@ -2975,7 +2978,7 @@ const zhCN: AppResource = {
   disposals: {
     certificate: {
       placeholder:
-        '粘贴回收或数据销毁证明的内容，或上传证明。AI 填好接收方、日期、金额和数据清除，并核对设备序列号',
+        '粘贴回收或数据销毁证明的内容，或拖入、上传证明。AI 填好接收方、日期、金额和数据清除，并核对设备序列号',
       missing: '证明上没有这些设备：{{list}}',
       extra: '证明上有不在本单的序列号：{{list}}',
       allListed: '本单的设备都在证明上',

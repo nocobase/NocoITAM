@@ -1184,6 +1184,9 @@ const messages = {
   // Reading a document into the dialog it opens in (2026-10-23).
   documentReading: {
     material: 'Document text',
+    dropHere: 'Drop to upload',
+    unsupported:
+      '"{{file}}" is not a supported file. Upload Excel, CSV, Word, PDF or text',
     upload: 'Upload document',
     removeFile: 'Remove file',
     read: 'Read with AI',
@@ -3012,7 +3015,7 @@ const messages = {
       description:
         "Record the vendor's quote; Asset Steward weighs it against the device and advises repairing or replacing it",
       placeholder:
-        "Paste the vendor's quote, or upload it. AI fills in the amount and the proposed work, and advises repairing or replacing",
+        "Paste the vendor's quote, or drop or upload it. AI fills in the amount and the proposed work, and advises repairing or replacing",
       typed: 'Vendor quote {{amount}}; proposed work: {{work}}',
       judge: 'Weigh repair or replace',
       judgeAgain: 'Weigh again',
@@ -3035,7 +3038,7 @@ const messages = {
     },
     report: {
       placeholder:
-        'Paste the repair report or invoice, or upload it. AI fills in the result, cost and notes for you to check',
+        'Paste the repair report or invoice, or drop or upload it. AI fills in the result, cost and notes for you to check',
       serialMismatch:
         "The document's serial number {{printed}} does not match this device's {{serialNo}}",
     },
@@ -3159,7 +3162,7 @@ const messages = {
   disposals: {
     certificate: {
       placeholder:
-        'Paste the recycling or data destruction certificate, or upload it. AI fills in the recipient, date, amounts and data wipe, and checks the serial numbers',
+        'Paste the recycling or data destruction certificate, or drop or upload it. AI fills in the recipient, date, amounts and data wipe, and checks the serial numbers',
       missing: 'Not on the certificate: {{list}}',
       extra: 'On the certificate but not in this disposal: {{list}}',
       allListed: 'Every device in this disposal is on the certificate',
