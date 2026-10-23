@@ -213,7 +213,12 @@ export function ReferenceSelect({
           <ChevronsUpDown className='size-3.5 opacity-50' />
         </span>
       </PopoverTrigger>
-      <PopoverContent className='w-(--anchor-width) min-w-64 p-0' align='start'>
+      {/* At least wide enough for a device's number, name and kind on one
+          line (2026-10-23); wider still with a wider field. */}
+      <PopoverContent
+        className='w-(--anchor-width) max-w-[calc(100vw-2rem)] min-w-80 p-0'
+        align='start'
+      >
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={t('common.searchPlaceholder')}
