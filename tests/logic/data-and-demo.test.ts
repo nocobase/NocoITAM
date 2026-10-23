@@ -473,6 +473,39 @@ describe('CSV import / export and demo data', () => {
     expect((await kits()).map((kit) => kit.id)).toEqual([empty.id]);
   });
 
+  it('clears the orders raised for its joiners, and leaves a real joiner’s', async () => {
+    expect((await generateDemo()).status).toBe(200);
+    const people = await data<
+      {
+        id: string;
+        name: string;
+        departmentId: string;
+        hireDate: string | null;
+      }[]
+    >(await get('master/people?pageSize=100'));
+    const noah = people.find((person) => person.name === 'Noah Harris')!;
+    const [vendor] = await data<{ id: string }[]>(
+      await get('master/vendors?pageSize=1'),
+    );
+    // 起草采购单 for the demo joiner, and an order of the user's for
+    // somebody real starting the same day in the same department.
+    const order = async (name: string) =>
+      data<{ id: string }>(
+        await post('purchase-orders', {
+          reason: 'newHire',
+          description: `New hire kit: ${name}, joining ${noah.hireDate!}`,
+          departmentId: noah.departmentId,
+          neededBy: noah.hireDate,
+          vendorId: vendor!.id,
+        }),
+      );
+    const demoJoiner = await order('Noah Harris');
+    const realJoiner = await order('Real Person');
+    expect((await post('demo/clear')).status).toBe(200);
+    expect((await get(`purchase-orders/${demoJoiner.id}`)).status).toBe(404);
+    expect((await get(`purchase-orders/${realJoiner.id}`)).status).toBe(200);
+  });
+
   it('generates the demo chain with its problem records and clears it without a trace', async () => {
     const generated = await generateDemo();
     expect(generated.status).toBe(200);

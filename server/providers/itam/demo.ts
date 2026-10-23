@@ -7128,6 +7128,63 @@ export function createDemoService(dependencies: {
             if (!demoDevices.has(String(row.id)))
               tracked.push({ collection: 'devices', recordId: String(row.id) });
       }
+      // The orders raised for the demo's joiners (2026-10-22): 起草采购单 on
+      // their card or on 入职供需 files a 新员工配备 order the demo did not
+      // make, which outlived the clear and, matching the next import's
+      // joiner by department and joining day (`ownOrders`), covered their
+      // shortfall before anybody asked. Matched by department and joining
+      // day and the joiner's name in its description (起草采购单 writes it),
+      // so a real joiner starting the same day keeps theirs. Not yet placed
+      // only: one ordered may have received goods, which stay the user's.
+      const demoPeople = tracked
+        .filter((row) => row.collection === 'people')
+        .map((row) => row.recordId);
+      if (demoPeople.length > 0) {
+        const joiners = (
+          await database
+            .query()
+            .selectFrom('people')
+            .select(['name', 'departmentId', 'hireDate'])
+            .where('id', 'in', demoPeople)
+            .where('hireDate', 'is not', null)
+            .execute<Row>()
+        ).map((row) => ({
+          name: asText(row.name) ?? '',
+          key: `${asText(row.departmentId) ?? ''}|${asText(row.hireDate) ?? ''}`,
+        }));
+        const demoOrders = new Set(
+          tracked
+            .filter((row) => row.collection === 'purchaseOrders')
+            .map((row) => row.recordId),
+        );
+        for (const order of await database
+          .query()
+          .selectFrom('purchaseOrders')
+          .select(['id', 'departmentId', 'neededBy', 'description'])
+          .where('reason', '=', 'newHire')
+          .where('status', 'in', [
+            'draft',
+            'pendingApproval',
+            'approved',
+            'rejected',
+            'cancelled',
+          ])
+          .execute<Row>())
+          if (
+            !demoOrders.has(String(order.id)) &&
+            joiners.some(
+              (joiner) =>
+                joiner.name !== '' &&
+                joiner.key ===
+                  `${asText(order.departmentId) ?? ''}|${asText(order.neededBy) ?? ''}` &&
+                (asText(order.description) ?? '').includes(joiner.name),
+            )
+          )
+            tracked.push({
+              collection: 'purchaseOrders',
+              recordId: String(order.id),
+            });
+      }
       const byCollection = new Map<string, string[]>();
       for (const row of tracked)
         byCollection.set(row.collection, [
