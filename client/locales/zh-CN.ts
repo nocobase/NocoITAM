@@ -1155,6 +1155,8 @@ const zhCN: AppResource = {
     dropHere: '松开即可上传',
     unsupported:
       '不支持「{{file}}」这种文件，请上传 Excel、CSV、Word、PDF 或文本文件',
+    // Between file names inside one pair of 「」.
+    separator: '」「',
     upload: '上传单据',
     removeFile: '移除文件',
     read: 'AI 读取',

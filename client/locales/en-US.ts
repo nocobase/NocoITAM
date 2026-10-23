@@ -1187,6 +1187,8 @@ const messages = {
     dropHere: 'Drop to upload',
     unsupported:
       '"{{file}}" is not a supported file. Upload Excel, CSV, Word, PDF or text',
+    // Between file names inside one pair of quotes.
+    separator: '", "',
     upload: 'Upload document',
     removeFile: 'Remove file',
     read: 'Read with AI',

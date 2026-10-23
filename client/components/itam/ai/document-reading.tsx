@@ -63,7 +63,9 @@ export function DocumentReading({
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [pasted, setPasted] = useState('');
-  const [file, setFile] = useState<File>();
+  // Several documents may go together (2026-10-23): a quote and the
+  // inspection report it rests on are read as one.
+  const [chosen, setChosen] = useState<readonly File[]>([]);
   // A file dragged over the box (2026-10-23): dropped, it is taken as if
   // chosen with 上传单据.
   const [dragging, setDragging] = useState(false);
@@ -78,7 +80,7 @@ export function DocumentReading({
   }>();
   if (!ai.available) return null;
   const busy = phase !== undefined;
-  const ready = Boolean(pasted.trim() || file);
+  const ready = Boolean(pasted.trim() || chosen.length);
 
   const go = async () => {
     if (!ready || busy) return;
@@ -86,41 +88,55 @@ export function DocumentReading({
     setResult(undefined);
     try {
       let material = pasted.trim();
-      if (file) {
+      if (chosen.length) {
         setPhase('uploading');
-        const { record: uploaded } = await files
-          .repository('itamAttachments')
-          .uploadOne({ file });
-        const fileId = text(uploaded.id);
+        const uploaded: { id: string; name: string }[] = [];
+        for (const file of chosen) {
+          const { record } = await files
+            .repository('itamAttachments')
+            .uploadOne({ file });
+          uploaded.push({ id: text(record.id), name: file.name });
+        }
         // Kept with the record, as 解析单据 keeps what it reads.
         await api.request({
           path: `itam/attachments/${ownerType}/${ownerId}`,
           method: 'POST',
-          json: { fileIds: [fileId] },
+          json: { fileIds: uploaded.map((file) => file.id) },
         });
         void queryClient.invalidateQueries({
           queryKey: ['itam', 'attachments', ownerType, ownerId],
         });
-        // Read once: the file is on the record now, so a second go reads
-        // the text rather than uploading it again.
-        setFile(undefined);
-        const { data } = await api.request<{
-          data: { text: string | null };
-        }>({
-          path: `itam/attachments/${ownerType}/${ownerId}/document-text`,
-          method: 'POST',
-          json: { fileId },
-        });
-        if (!data.text) {
+        // Read once: the files are on the record now, so a second go reads
+        // their text rather than uploading them again.
+        setChosen([]);
+        const unreadable: string[] = [];
+        const documents: string[] = [];
+        for (const file of uploaded) {
+          const { data } = await api.request<{
+            data: { text: string | null };
+          }>({
+            path: `itam/attachments/${ownerType}/${ownerId}/document-text`,
+            method: 'POST',
+            json: { fileId: file.id },
+          });
+          if (data.text)
+            documents.push(
+              `<document filename="${file.name}">\n${data.text}\n</document>`,
+            );
+          else unreadable.push(file.name);
+        }
+        material = [material, ...documents].filter(Boolean).join('\n\n');
+        setPasted(material);
+        if (unreadable.length) {
           setFailure({
-            text: t('documentReading.noText', { file: file.name }),
+            text: t('documentReading.noText', {
+              file: unreadable.join(t('documentReading.separator')),
+            }),
             answered: false,
           });
-          return;
+          // What could be read is still read; nothing at all stops here.
+          if (!material) return;
         }
-        const document = `<document filename="${file.name}">\n${data.text}\n</document>`;
-        material = material ? `${material}\n\n${document}` : document;
-        setPasted(material);
       }
       setPhase('reading');
       const answer = await read({ task, material, context });
@@ -137,6 +153,34 @@ export function DocumentReading({
     } finally {
       setPhase(undefined);
     }
+  };
+
+  /** Adds what was chosen or dropped; a format no reader takes is named. */
+  const take = (picked: readonly File[]) => {
+    const refused = picked.filter((one) => !accepted(one));
+    const taken = picked.filter(accepted);
+    setFailure(
+      refused.length
+        ? {
+            text: t('documentReading.unsupported', {
+              file: refused
+                .map((one) => one.name)
+                .join(t('documentReading.separator')),
+            }),
+            answered: false,
+          }
+        : undefined,
+    );
+    if (taken.length)
+      setChosen((current) => [
+        ...current,
+        ...taken.filter(
+          (one) =>
+            !current.some(
+              (had) => had.name === one.name && had.size === one.size,
+            ),
+        ),
+      ]);
   };
 
   const accepted = (dropped: File) =>
@@ -166,18 +210,9 @@ export function DocumentReading({
       }}
       onDrop={(event) => {
         setDragging(false);
-        const dropped = event.dataTransfer.files[0];
-        if (!dropped) return;
+        if (event.dataTransfer.files.length === 0) return;
         event.preventDefault();
-        if (!accepted(dropped)) {
-          setFailure({
-            text: t('documentReading.unsupported', { file: dropped.name }),
-            answered: false,
-          });
-          return;
-        }
-        setFailure(undefined);
-        setFile(dropped);
+        take([...event.dataTransfer.files]);
       }}
     >
       {dragging ? (
@@ -210,45 +245,52 @@ export function DocumentReading({
         ref={inputRef}
         type='file'
         accept={DOCUMENT_ACCEPT}
+        multiple
         hidden
         onChange={(event) => {
-          const chosen = event.target.files?.[0];
+          const picked = [...(event.target.files ?? [])];
           event.target.value = '';
-          if (chosen) setFile(chosen);
+          take(picked);
         }}
       />
-      {/* One row: a long file name shortens rather than pushing the
-          button onto a line of its own (2026-10-23). */}
-      <div className='flex min-w-0 items-center gap-2'>
-        {file ? (
-          <span
-            className='inline-flex min-w-0 items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-sm'
-            title={file.name}
-          >
-            <FileText className='size-4 shrink-0 text-muted-foreground' />
-            <span className='min-w-0 truncate'>{file.name}</span>
-            <button
-              type='button'
-              className='rounded-sm text-muted-foreground hover:text-foreground disabled:opacity-50'
-              aria-label={t('documentReading.removeFile')}
-              disabled={busy}
-              onClick={() => setFile(undefined)}
+      {/* The chosen files on lines of their own, above the actions, which
+          stay where they are whether or not any is chosen (2026-10-23). */}
+      {chosen.length ? (
+        <div className='flex min-w-0 flex-wrap gap-1.5'>
+          {chosen.map((file) => (
+            <span
+              key={`${file.name}:${file.size}`}
+              className='inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-sm'
+              title={file.name}
             >
-              <X className='size-3.5' />
-            </button>
-          </span>
-        ) : (
-          <Button
-            type='button'
-            variant='outline'
-            size={bare ? 'default' : 'sm'}
-            disabled={busy}
-            onClick={() => inputRef.current?.click()}
-          >
-            <Upload data-icon='inline-start' />
-            {t('documentReading.upload')}
-          </Button>
-        )}
+              <FileText className='size-4 shrink-0 text-muted-foreground' />
+              <span className='min-w-0 truncate'>{file.name}</span>
+              <button
+                type='button'
+                className='rounded-sm text-muted-foreground hover:text-foreground disabled:opacity-50'
+                aria-label={t('documentReading.removeFile')}
+                disabled={busy}
+                onClick={() =>
+                  setChosen((current) => current.filter((one) => one !== file))
+                }
+              >
+                <X className='size-3.5' />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <div className='flex min-w-0 items-center gap-2'>
+        <Button
+          type='button'
+          variant='outline'
+          size={bare ? 'default' : 'sm'}
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload data-icon='inline-start' />
+          {t('documentReading.upload')}
+        </Button>
         {/* Blue like every AI entry, filled because it is this box's one
             action. */}
         <Button

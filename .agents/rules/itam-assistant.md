@@ -252,8 +252,9 @@ triage.tsx`, under the description) fills only what is still empty,
 - **读维修单 / 读处置证明** (2026-10-23, tasks `repairReport` with grant
   `repairs.complete`, `disposalCertificate` with `disposals.execute`): a box
   at the top of 完成维修 and 执行报废 (`DocumentReading` in
-  `client/components/itam/ai/document-reading.tsx`) takes pasted text or a
-  file. A file is attached to the record first and read as text through
+  `client/components/itam/ai/document-reading.tsx`) takes pasted text and
+  any number of files, chosen or dropped, read together as one material.
+  Each file is attached to the record first and read as text through
   `POST /itam/attachments/:ownerType/:ownerId/document-text`, which reads
   only a file linked to that record, under its `read`. The server builds the
   context from the id the page sends (the repair and its device, or the
