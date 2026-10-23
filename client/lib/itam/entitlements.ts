@@ -167,7 +167,8 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.reassignable',
     type: 'boolean',
     visibleWhen: perpetual,
-    group: 'groups.seats',
+    // With the seat counts (2026-10-22), not a group of its own.
+    group: 'groups.quantity',
   },
   {
     key: 'billingModel',
