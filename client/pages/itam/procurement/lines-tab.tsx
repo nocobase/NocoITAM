@@ -68,7 +68,6 @@ import { useReferenceNames, type ReferenceNames } from '@/lib/itam/references';
 import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 
 import { CaptureNotice } from './po-capture';
-import { QuoteComparisonEntry } from './quote-comparison';
 import { ReceiptDialog } from './receipt-dialog';
 import { CellText } from '@/components/itam/cell-text';
 
@@ -697,15 +696,6 @@ export function PurchaseOrderLinesCard({
             ) : null}
           </Table>
         </div>
-        {/* 报价比较 (2026-10-17): offered on a draft with lines while they are
-            not being edited; once saved, a line says what was compared. */}
-        {!drafts ? (
-          <QuoteComparisonEntry
-            record={record}
-            lines={rows}
-            canEdit={canEdit}
-          />
-        ) : null}
         {/* Past the draft, a change to the lines states why: the approval was
           given for what the order said then. */}
         {batch ? (

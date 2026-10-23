@@ -170,7 +170,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   clearing, and an importer that held the set already keeps it. With the set
   it answers for a share of the to-dos (`importerId`, 2026-10-16), so its
   我负责的 is not empty: it decides one order and one disposal, owns two
-  orders awaiting receipt and the two drafts (so it can try 比较报价,
+  orders awaiting receipt and the two drafts (so it can try 解析单据,
   offered only to a draft's 负责人 or writer), an in-house repair, the
   disposal to carry out and the draft disposal of a monitor (2026-10-23),
   and counts in the open stocktake. Since

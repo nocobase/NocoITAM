@@ -41,10 +41,6 @@ import {
   readJsonObject,
   requireGrant,
 } from './http.js';
-import {
-  comparisonInputSchema,
-  quoteComparisonServiceToken,
-} from '../../providers/itam/quote-comparisons.js';
 
 /** `/api/itam/purchase-orders`: lines, the approval steps, ordering and receiving. */
 const id = z.string().min(1).max(64);
@@ -207,7 +203,6 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
     const receiptRuns = app.container.resolve(receiptRunServiceToken);
     const readDocument = app.container.resolve(documentReaderToken);
     const database = app.container.resolve(databaseManagerToken);
-    const quotes = app.container.resolve(quoteComparisonServiceToken);
     /** The order must be one the caller's grant reaches, not merely exist. */
     const visible = async (
       orderId: string,
@@ -366,29 +361,6 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
                 await procurement.lines(context.req.param('id')),
                 await decideCollection(context, 'purchaseOrderLines', 'read'),
               ),
-            });
-          } catch (error) {
-            return errorResponse(context, error);
-          }
-        });
-        // 报价比较 (2026-10-17): the quotes the order was weighed against,
-        // with the table counted from them. Prices answer to the lines'
-        // own read grant, as the lines' unit prices do.
-        routes.get('/:id/quote-comparison', async (context) => {
-          try {
-            const orderId = context.req.param('id');
-            await visible(orderId, await decide(context, 'read'));
-            const lineConditions = await decideCollection(
-              context,
-              'purchaseOrderLines',
-              'read',
-            );
-            return context.json({
-              data: await quotes.view(orderId, {
-                prices: outputFields(['unitPrice'], lineConditions).includes(
-                  'unitPrice',
-                ),
-              }),
             });
           } catch (error) {
             return errorResponse(context, error);
@@ -574,19 +546,6 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
               text: document?.text ?? null,
               truncated: document?.truncated ?? false,
             };
-          },
-        );
-        // Saving it, as the order's requester while its lines may change.
-        operation(
-          'quote-comparison',
-          'update',
-          async (context, orderId, body, conditions) => {
-            await visible(orderId, conditions);
-            return quotes.save(
-              orderId,
-              comparisonInputSchema.parse(body),
-              principalId(context),
-            );
           },
         );
         // Receiving by delivery document: a run is started when the

@@ -5557,8 +5557,8 @@ export function createDemoService(dependencies: {
           quantity,
           unitPrice,
         });
-        // The two drafts are the importer's (2026-10-16), so 比较报价 — offered
-        // only to a draft's 负责人 or writer — is there to try.
+        // The two drafts are the importer's (2026-10-16), so 解析单据 —
+        // offered only to a draft's 负责人 or writer — is there to try.
         await queuedOrder({
           description: texts.itSpareOrder,
           reason: 'batchReplacement',
