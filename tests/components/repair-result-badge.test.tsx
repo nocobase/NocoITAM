@@ -36,10 +36,9 @@ it('tones a repair result by how it ended', () => {
   ).toContain('text-destructive');
 });
 
-// 改为报废 outlined in red, beside 无法修复's light red fill (2026-10-23).
-it('outlines a repair turned into a disposal', () => {
+// 改为报废 in violet, a tint no other ending has (2026-10-23).
+it('tints a repair turned into a disposal violet', () => {
   render(<RepairResultBadge result='scrapped' />);
   const tag = screen.getByText('enums.repairResult.scrapped');
-  expect(tag.className).toContain('border-destructive/40');
-  expect(tag.className).toContain('text-destructive');
+  expect(tag.className).toContain('bg-loan');
 });

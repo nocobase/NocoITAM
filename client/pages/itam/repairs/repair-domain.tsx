@@ -5,6 +5,8 @@ import { useState, type ReactElement } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import { AttachmentsTab } from '@/components/itam/attachments-tab';
+import type { ViewsProps } from '@/components/itam/mine-view';
+import { SegmentedControl } from '@/components/itam/segmented-control';
 import { RECORD_SUMMARIES } from '@/components/itam/record-summaries';
 import { SummaryLead } from '@/components/itam/summary-lead';
 import { RepairCompleteDialog } from '@/components/itam/repair-complete';
@@ -50,6 +52,8 @@ export const repairDomain: DomainConfig = {
   // Beside 完成维修 in the header; deletion goes in the "more" menu.
   deleteInMenu: true,
   tabs: [{ key: 'attachments', label: 'tabs.attachments' }],
+  // 全部 | 我的 (2026-10-23): 我的 is the repairs this reader is 负责人 of.
+  Views: RepairMineView,
   Actions: RepairActions,
   // 修还是换 under the quote (2026-10-23).
   fieldDisplay: (field, record) =>
@@ -115,6 +119,30 @@ function RepairCreate({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * 全部 | 我的 as on purchase orders and disposals; a repair waits on no
+ * approval, so 我的 is simply the ones this reader is 负责人 of
+ * (`filter[ownerId]`).
+ */
+function RepairMineView({ filter, onFilter }: ViewsProps): ReactElement {
+  const { t } = useTranslation();
+  const me = useCurrentUserId();
+  const mine = Boolean(me) && filter.ownerId === me;
+  return (
+    <SegmentedControl
+      value={mine ? 'mine' : 'all'}
+      onChange={(value) =>
+        onFilter({ ownerId: value === 'mine' ? (me ?? undefined) : undefined })
+      }
+      label={t('common.mine')}
+      options={[
+        { value: 'all', label: t('common.all') },
+        { value: 'mine', label: t('common.mine') },
+      ]}
+    />
   );
 }
 

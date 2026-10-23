@@ -4806,6 +4806,11 @@ export function createDemoService(dependencies: {
             readonly work: string;
             readonly reasons: string;
           };
+          /**
+           * The importing account's rather than IT support's (2026-10-23),
+           * so 我的 on the repairs list has some to show it.
+           */
+          readonly importers?: boolean;
           /** How it ended; repaired unless said (2026-10-23). */
           readonly result?:
             'repaired' | 'unrepairable' | 'replaced' | 'cancelled';
@@ -4890,6 +4895,7 @@ export function createDemoService(dependencies: {
             cost: 80,
             notes: texts.repairUnrepairable,
             result: 'unrepairable',
+            importers: true,
             // Quoted and taken, then the part could not be had.
             quote: {
               amount: 1450,
@@ -4908,6 +4914,7 @@ export function createDemoService(dependencies: {
             cost: 0,
             notes: texts.repairReplaced,
             result: 'replaced',
+            importers: true,
           },
           {
             deviceId: String(airs[0].id),
@@ -4919,6 +4926,7 @@ export function createDemoService(dependencies: {
             cost: 0,
             notes: texts.repairCancelled,
             result: 'cancelled',
+            importers: true,
           },
         ];
         await reached(55);
@@ -4929,6 +4937,16 @@ export function createDemoService(dependencies: {
           sourceType: 'demo',
         };
         for (const entry of finishedRepairs) {
+          // Only a repair's 负责人 (or a supervisor) completes it, so whoever
+          // it belongs to completes it too.
+          const ownerId =
+            entry.importers && importerId
+              ? importerId
+              : (supportUserId ?? writerId);
+          const ownerContext: OperationContext = {
+            actorId: ownerId,
+            sourceType: 'demo',
+          };
           await on(entry.sentDays);
           const repair = await track(
             'repairs',
@@ -4941,7 +4959,7 @@ export function createDemoService(dependencies: {
                 faultCategory: entry.faultCategory,
                 sentAt: daysFromNow(entry.sentDays),
                 expectedReturnAt: daysFromNow(entry.returnDays),
-                ownerId: supportUserId ?? writerId,
+                ownerId,
               },
               context,
               all('repairs', 'create'),
@@ -4973,7 +4991,7 @@ export function createDemoService(dependencies: {
               cost: entry.cost,
               notes: entry.notes ?? null,
             },
-            supportContext,
+            ownerContext,
             all('repairs', 'complete'),
           );
         }
@@ -5954,7 +5972,9 @@ export function createDemoService(dependencies: {
               faultCategory: 'battery',
               sentAt: daysFromNow(-12),
               expectedReturnAt: daysFromNow(-5),
-              ownerId: supportUserId ?? writerId,
+              // The importing account's (2026-10-23), as are three of the
+              // finished ones above.
+              ownerId: importerId ?? supportUserId ?? writerId,
             },
             context,
             all('repairs', 'create'),
@@ -5982,7 +6002,10 @@ export function createDemoService(dependencies: {
             actualReturnAt: daysFromNow(-10),
             notes: texts.swollenScrapped,
           },
-          { actorId: supportUserId ?? writerId, sourceType: 'demo' },
+          {
+            actorId: importerId ?? supportUserId ?? writerId,
+            sourceType: 'demo',
+          },
           all('repairs', 'complete'),
         );
         await on(-5);

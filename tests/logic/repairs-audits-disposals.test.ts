@@ -197,6 +197,26 @@ describe('repairs, audits and disposals', () => {
     ).toMatchObject({ method: 'internal', vendorId: null });
   });
 
+  // 我的 on the repairs list (2026-10-23): the ones the reader is 负责人 of.
+  it('lists the repairs a person is responsible for', async () => {
+    const device = await createDevice();
+    await post('repairs', {
+      deviceId: device.id,
+      method: 'internal',
+      expectedReturnAt: '2030-01-01',
+      faultDescription: 'Fan noise',
+      faultCategory: 'other',
+    });
+    const mine = await data<{ ownerId: string }[]>(
+      await get('repairs?filter[ownerId]=mia'),
+    );
+    expect(mine.length).toBeGreaterThan(0);
+    expect(mine.every((row) => row.ownerId === 'mia')).toBe(true);
+    expect(
+      await data<unknown[]>(await get('repairs?filter[ownerId]=nobody')),
+    ).toEqual([]);
+  });
+
   it('deletes a repair created by mistake, restoring the device', async () => {
     const device = await createDevice();
     await assign(device.id, fixture.personId);

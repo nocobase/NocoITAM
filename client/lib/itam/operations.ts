@@ -471,8 +471,9 @@ export const AUDIT_STATUS_TONE: Readonly<Record<string, string>> = {
   pendingDifferences: 'bg-warning text-warning-foreground',
   completed: 'bg-primary text-primary-foreground',
   cancelled: 'bg-muted text-muted-foreground',
-  // Outlined red: not repaired, the device goes — beside 无法修复's fill.
-  scrapped: 'border-destructive/40 bg-transparent text-destructive',
+  // Violet, a tint no other ending has (2026-10-23): not repaired, the
+  // device goes on to its disposal.
+  scrapped: 'bg-loan text-loan-foreground',
 };
 /** `AUDIT_STATUS_TONE` as a board column's dot; keep the two in step. */
 export const AUDIT_STATUS_DOT: Readonly<Record<string, string>> = {
@@ -496,8 +497,9 @@ export const REPAIR_RESULT_TONE: Readonly<Record<string, string>> = {
   unrepairable: 'bg-destructive/10 text-destructive',
   // Nothing was done: grey, as a cancelled order reads.
   cancelled: 'bg-muted text-muted-foreground',
-  // Outlined red: not repaired, the device goes — beside 无法修复's fill.
-  scrapped: 'border-destructive/40 bg-transparent text-destructive',
+  // Violet, a tint no other ending has (2026-10-23): not repaired, the
+  // device goes on to its disposal.
+  scrapped: 'bg-loan text-loan-foreground',
 };
 export const DISPOSAL_STATUS_TONE: Readonly<Record<string, string>> = {
   draft: 'bg-muted text-muted-foreground',
