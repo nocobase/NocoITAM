@@ -158,9 +158,9 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     options: options('complianceStatus', COMPLIANCE_STATUSES),
     column: true,
     form: false,
-    // Under 授权类型 in 基本信息 (2026-10-22).
-    group: 'groups.basic',
-    detailOrder: -1500,
+    // In 数量 after the counts it is worked out from (2026-10-22): more
+    // assigned than owned is 超量, too many free 闲置.
+    group: 'groups.quantity',
   },
   {
     key: 'reassignable',
