@@ -256,11 +256,7 @@ function JoinerCard({
                   <LineOutlook line={line} />
                   {/* This item for this joiner, in the create dialog. */}
                   {line.shortfall > 0 ? (
-                    <DraftOrdersButton
-                      personId={joiner.id}
-                      keys={[line.key]}
-                      className='text-xs'
-                    />
+                    <DraftOrdersButton personId={joiner.id} keys={[line.key]} />
                   ) : null}
                 </span>
               </li>

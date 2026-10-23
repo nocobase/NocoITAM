@@ -660,10 +660,11 @@ export function LineOutlook({
       })}
       {line.shortfall > 0 ? (
         // Red once its last day to order has passed, orange before
-        // (2026-10-22), as the workbench's joiner cards say it.
+        // (2026-10-22), as the workbench's joiner cards say it; the row's
+        // own size, as the item and its actions (2026-10-23).
         <span
           className={cn(
-            'text-xs',
+            'text-sm',
             line.orderBy && line.orderBy >= today
               ? 'text-warning-foreground'
               : 'text-destructive',
