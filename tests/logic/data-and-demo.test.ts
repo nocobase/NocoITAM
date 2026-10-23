@@ -1320,7 +1320,9 @@ describe('CSV import / export and demo data', () => {
           .execute()
       ).length;
     expect(await owned('purchaseOrders')).toBe(4);
-    expect(await owned('repairs')).toBe(1);
+    // One in progress and four ended (2026-10-23), so 我的 on the repairs
+    // list has some of each.
+    expect(await owned('repairs')).toBe(5);
     expect(await owned('disposals')).toBe(2);
     // 信息不一致's devices answer to several people, not all to 吴静
     // (2026-10-17).
