@@ -108,6 +108,32 @@ export function EmploymentStatusBadge({
   );
 }
 
+const COMPLIANCE_TONE: Readonly<Record<string, string>> = {
+  // 超量 in red, what is wrong; 闲置 amber, money idle; 合规 green
+  // (2026-10-22: plain text, 超量 read as calmly as 合规).
+  compliant: 'bg-success text-success-foreground',
+  overAllocated: 'bg-destructive/10 text-destructive',
+  idle: 'bg-warning text-warning-foreground',
+};
+
+/** An entitlement's 合规状态, worked out from its seats. */
+export function ComplianceStatusBadge({
+  status,
+}: {
+  readonly status: unknown;
+}): ReactElement | null {
+  const { t } = useTranslation();
+  if (typeof status !== 'string' || !status) return null;
+  return (
+    <Badge
+      variant='secondary'
+      className={COMPLIANCE_TONE[status] ?? 'bg-muted text-muted-foreground'}
+    >
+      {t(`enums.complianceStatus.${status}`, { defaultValue: status })}
+    </Badge>
+  );
+}
+
 /** An audit task's status, toned the way a purchase order's is. */
 export function AuditStatusBadge({
   status,

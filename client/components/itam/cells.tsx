@@ -4,6 +4,7 @@ import {
   isAuditStatusField,
   isDisposalStatusField,
   isRepairResultField,
+  isComplianceStatusField,
   isEmploymentStatusField,
   isPurchaseOrderStatusField,
 } from '@/lib/itam/fields';
@@ -13,6 +14,7 @@ import {
   EntitlementKindBadge,
   AuditStatusBadge,
   DisposalStatusBadge,
+  ComplianceStatusBadge,
   EmploymentStatusBadge,
   PurchaseOrderStatusBadge,
   RepairResultBadge,
@@ -51,6 +53,8 @@ export function EnumBadge({
   if (isAuditStatusField(field)) return <AuditStatusBadge status={value} />;
   if (isEmploymentStatusField(field))
     return <EmploymentStatusBadge status={value} />;
+  if (isComplianceStatusField(field))
+    return <ComplianceStatusBadge status={value} />;
   const values = Array.isArray(value) ? value : [value];
   return (
     <span className='flex flex-wrap gap-1'>
@@ -160,6 +164,9 @@ export function FieldValue({
       // people list's plain cells included, as an asset type is.
       if (isEmploymentStatusField(field))
         return <EmploymentStatusBadge status={value} />;
+      // An entitlement's 合规状态 too (2026-10-22): 超量 has to stand out.
+      if (isComplianceStatusField(field))
+        return <ComplianceStatusBadge status={value} />;
       // Several choices read as a tag each, even where one choice is plain
       // text (2026-10-21): a vendor's 设备供应商 and 软件经销商 rather than a
       // comma-separated line.
