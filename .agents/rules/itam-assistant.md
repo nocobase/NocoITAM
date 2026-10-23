@@ -320,7 +320,9 @@ triage.tsx`, under the description) fills only what is still empty,
     conditional, reject, needMore), the calculation, the basis, what could
     serve instead, risks, what is missing, and a drafted comment. Only the
     approver sees the result (`/itam/agentRuns/latest` blanks it for anyone
-    else). Deciding from the review is the request's own decision under its
+    else). The card offers the one decision its comment was drafted for
+    (批准 or 拒绝, 2026-10-23); the other way is the request's own 审批 after
+    忽略. Deciding from the review is the request's own decision under its
     `approve` grant (`POST /itam/agentRuns/:id/decide`, the run accepted
     first so its own `settled` leaves it so, reopened when the decision is
     refused); 忽略 leaves the request waiting; 修改 (按我的意思重做 until

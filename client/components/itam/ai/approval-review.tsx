@@ -235,18 +235,18 @@ export function ApprovalReviewCard({
 }
 
 /** The recommended decision first and solid; the other beside it. */
+/**
+ * The one decision the review drafted its comment for (2026-10-23): 批准
+ * for approve or conditional, 拒绝 for reject or need-more (there is no
+ * 退回补充; the comment says what to add). Deciding the other way is the
+ * request's own 审批, after 忽略 — the drafted comment argues for this one.
+ */
 function decisionButtons(
   recommendation: ApprovalReviewResult['recommendation'],
 ): { readonly decision: 'approved' | 'rejected'; readonly solid: boolean }[] {
   return recommendation === 'approve' || recommendation === 'conditional'
-    ? [
-        { decision: 'approved', solid: true },
-        { decision: 'rejected', solid: false },
-      ]
-    : [
-        { decision: 'rejected', solid: true },
-        { decision: 'approved', solid: false },
-      ];
+    ? [{ decision: 'approved', solid: true }]
+    : [{ decision: 'rejected', solid: true }];
 }
 
 function Field({

@@ -77,15 +77,12 @@ beforeEach(() => {
 // The approver's decision card: the recommended decision leads, the comment
 // drafted is theirs to edit, and setting it aside or revising it are a
 // click away; while it works it says so, and a failure offers to try again.
-it('leads with the recommended decision and sends the comment as edited', () => {
+// Only the decision the comment was drafted for (2026-10-23): the other
+// way is the request's own 审批, after 忽略.
+it('offers the recommended decision alone and sends the comment as edited', () => {
   render(<ApprovalReviewCard run={run()} />);
   expect(screen.getByText('review.recommendation.reject')).toBeInTheDocument();
-  const buttons = screen
-    .getAllByRole('button')
-    .map((button) => button.textContent);
-  expect(buttons.indexOf('review.reject')).toBeLessThan(
-    buttons.indexOf('review.approve'),
-  );
+  expect(screen.queryByRole('button', { name: 'review.approve' })).toBeNull();
   fireEvent.change(screen.getByDisplayValue('Use the stock first.'), {
     target: { value: 'Take DE-000012 instead.' },
   });
