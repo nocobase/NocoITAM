@@ -441,6 +441,7 @@ export function QuoteAdvice({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itam'] }),
   });
   const open = repair.result === 'inProgress' && !decision;
+  const [expanded, setExpanded] = useState(false);
   return (
     <div className='space-y-1.5 text-sm'>
       <div className='flex flex-wrap items-center gap-2'>
@@ -483,11 +484,35 @@ export function QuoteAdvice({
             .join('；')}
         </p>
       ) : null}
+      {/* Long text folds as every long field does (2026-10-23): the first
+          reason, the rest on 展开. */}
       {reasons.length ? (
         <ul className='list-disc space-y-0.5 pl-5'>
-          {reasons.map((reason) => (
-            <li key={reason}>{reason}</li>
+          {(expanded ? reasons : reasons.slice(0, 1)).map((reason, index) => (
+            <li key={reason}>
+              {reason}
+              {index === 0 && !expanded && reasons.length > 1 ? (
+                <button
+                  type='button'
+                  className='ml-1 text-link'
+                  onClick={() => setExpanded(true)}
+                >
+                  {t('common.showMore')}
+                </button>
+              ) : null}
+            </li>
           ))}
+          {expanded && reasons.length > 1 ? (
+            <li className='list-none'>
+              <button
+                type='button'
+                className='text-link'
+                onClick={() => setExpanded(false)}
+              >
+                {t('common.showLess')}
+              </button>
+            </li>
+          ) : null}
         </ul>
       ) : null}
       {open && canDecide ? (
