@@ -258,6 +258,18 @@ describe('receiving in batch and by delivery document', () => {
     expect(stock).toHaveLength(0);
   });
 
+  // Pasted instead of a file (2026-10-23): the text is the document.
+  it('reads pasted text as the document when there is no file', async () => {
+    const started = await post(`purchase-orders/${order.id}/receipt-runs`, {
+      documentName: 'Pasted text',
+      text: 'DN-9  Test Book 14 x2  serials D1, D2',
+    });
+    expect(started.status).toBe(200);
+    expect(await data<{ documentText: string | null }>(started)).toMatchObject({
+      documentText: 'DN-9  Test Book 14 x2  serials D1, D2',
+    });
+  });
+
   it('records a run from document to receipt, with what the receiver kept', async () => {
     const started = await post(`purchase-orders/${order.id}/receipt-runs`, {
       documentName: 'delivery-note.xlsx',

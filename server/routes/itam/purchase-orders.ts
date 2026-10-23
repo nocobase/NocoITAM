@@ -603,6 +603,8 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
                 .object({
                   fileId: id.nullable().optional(),
                   documentName: z.string().trim().min(1).max(255),
+                  // Pasted instead of, or beside, the file (2026-10-23).
+                  text: z.string().max(40000).nullable().optional(),
                 })
                 .strict()
                 .parse(body),

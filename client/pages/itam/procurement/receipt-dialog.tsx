@@ -2,7 +2,7 @@ import { useService } from '@nocobase/app-client';
 import { clientFileRepositoryManagerToken } from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileText, Plus, Sparkles, Trash2, Upload } from 'lucide-react';
+import { FileText, Plus, Sparkles, Trash2, Upload, X } from 'lucide-react';
 import {
   useEffect,
   useMemo,
@@ -12,7 +12,6 @@ import {
   type ReactElement,
 } from 'react';
 
-import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { FieldInput } from '@/components/itam/field-input';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
@@ -22,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
@@ -132,7 +132,10 @@ const TERM_DEFAULTS: Readonly<Record<string, unknown>> = {
 
 /** Where reading a delivery document stands. */
 interface DocumentSession {
-  readonly file: File;
+  /** The file's name, or 粘贴的内容 for text pasted alone. */
+  readonly name: string;
+  /** A picture: the server reads no text from one. */
+  readonly image: boolean;
   readonly phase: 'uploading' | 'reading' | 'done' | 'failed';
   readonly runId?: string;
   readonly plan?: ReceiptPlan;
@@ -511,7 +514,7 @@ export function ReceiptDialog({
   useEffect(() => {
     if (startedRef.current || !initialFile) return;
     startedRef.current = true;
-    read(initialFile);
+    read({ file: initialFile });
   });
 
   const [saved, setSaved] = useState(false);
@@ -1126,7 +1129,11 @@ function IssueText({
   );
 }
 
-/** What the document strip shows: pick a file, then how reading it went. */
+/**
+ * The delivery note's box (2026-10-23), as the other documents read into a
+ * form: what the receiver pastes, the file chosen or dropped, and 上传单据 /
+ * AI 读取; then how reading it went.
+ */
 function DocumentStrip({
   session,
   busy,
@@ -1134,18 +1141,24 @@ function DocumentStrip({
 }: {
   readonly session: DocumentSession | undefined;
   readonly busy: boolean;
-  readonly read: (file: File) => void;
+  readonly read: DeliveryDocument['read'];
 }): ReactElement {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
-  const name = session?.file.name ?? '';
-  // The same grey box as the other documents read into a form (2026-10-23:
-  // 完成维修, 记录报价, 执行报废), a dropped file taken as a chosen one.
+  const [pasted, setPasted] = useState('');
+  const [file, setFile] = useState<File>();
+  const ready = Boolean(pasted.trim() || file);
+  const name = session?.name ?? '';
+  const go = () => {
+    if (!ready || busy) return;
+    read({ file, text: pasted });
+    setFile(undefined);
+  };
   return (
     <div
       className={cn(
-        'relative grid gap-2 rounded-lg border border-border bg-muted/30 p-3',
+        'relative grid grid-cols-[minmax(0,1fr)] gap-2 rounded-lg border border-border bg-muted/30 p-3',
         dragging && 'ring-2 ring-primary ring-offset-2',
       )}
       onDragOver={(event) => {
@@ -1161,10 +1174,10 @@ function DocumentStrip({
       }}
       onDrop={(event) => {
         setDragging(false);
-        const file = event.dataTransfer.files[0];
-        if (!file) return;
+        const dropped = event.dataTransfer.files[0];
+        if (!dropped) return;
         event.preventDefault();
-        read(file);
+        setFile(dropped);
       }}
     >
       {dragging ? (
@@ -1172,53 +1185,88 @@ function DocumentStrip({
           {t('documentReading.dropHere')}
         </div>
       ) : null}
+      <Textarea
+        value={pasted}
+        disabled={busy}
+        rows={3}
+        maxLength={40000}
+        className='max-h-[30svh] min-h-20 bg-background focus-visible:ring-inset'
+        placeholder={t('receipt.document.prompt')}
+        aria-label={t('documentReading.material')}
+        onChange={(event) => setPasted(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+            event.preventDefault();
+            go();
+          }
+        }}
+      />
       <input
         ref={inputRef}
         type='file'
         accept={DOCUMENT_ACCEPT}
         hidden
         onChange={(event) => {
-          const file = event.target.files?.[0];
+          const chosen = event.target.files?.[0];
           event.target.value = '';
-          if (file) read(file);
+          if (chosen) setFile(chosen);
         }}
       />
-      <div className='flex flex-wrap items-center justify-between gap-2'>
-        <div className='flex min-w-0 items-center gap-2 text-sm'>
-          {busy ? (
-            <Spinner className='size-4 shrink-0' />
-          ) : session ? (
-            <FileText className='size-4 shrink-0 text-muted-foreground' />
-          ) : (
-            <Sparkles className='size-4 shrink-0 text-primary' />
-          )}
-          <span className='min-w-0 wrap-anywhere'>
-            {!session
-              ? t('receipt.document.prompt')
-              : session.phase === 'uploading'
-                ? t('receipt.document.uploading', { file: name })
-                : session.phase === 'reading'
-                  ? t('receipt.document.reading', { file: name })
-                  : session.phase === 'done'
-                    ? t('receipt.document.done', { file: name })
-                    : t('receipt.document.failed', { file: name })}
-          </span>
-        </div>
-        {session ? (
-          <AiShortcut disabled={busy} onClick={() => inputRef.current?.click()}>
-            {t('receipt.document.again')}
-          </AiShortcut>
-        ) : (
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => inputRef.current?.click()}
+      {file ? (
+        <span
+          className='inline-flex w-fit max-w-full min-w-0 items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-sm'
+          title={file.name}
+        >
+          <FileText className='size-4 shrink-0 text-muted-foreground' />
+          <span className='min-w-0 truncate'>{file.name}</span>
+          <button
+            type='button'
+            className='rounded-sm text-muted-foreground hover:text-foreground disabled:opacity-50'
+            aria-label={t('documentReading.removeFile')}
+            disabled={busy}
+            onClick={() => setFile(undefined)}
           >
-            <Upload data-icon='inline-start' />
-            {t('receipt.document.choose')}
-          </Button>
-        )}
+            <X className='size-3.5' />
+          </button>
+        </span>
+      ) : null}
+      <div className='flex min-w-0 items-center gap-2'>
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload data-icon='inline-start' />
+          {t('documentReading.upload')}
+        </Button>
+        <Button
+          type='button'
+          size='sm'
+          className='ml-auto shrink-0 bg-primary text-primary-foreground hover:bg-primary/90'
+          disabled={busy || !ready}
+          onClick={go}
+        >
+          {busy ? (
+            <Spinner data-icon='inline-start' />
+          ) : (
+            <Sparkles data-icon='inline-start' />
+          )}
+          {t(
+            session?.phase === 'uploading'
+              ? 'documentReading.uploading'
+              : busy
+                ? 'documentReading.reading'
+                : 'documentReading.read',
+          )}
+        </Button>
       </div>
+      {session?.phase === 'done' ? (
+        <p className='text-xs text-muted-foreground'>
+          {t('receipt.document.done', { file: name })}
+        </p>
+      ) : null}
       {session?.phase === 'done' && session.plan ? (
         <DocumentHeader plan={session.plan} />
       ) : null}
@@ -1233,19 +1281,13 @@ function DocumentStrip({
       ) : null}
       {session?.phase === 'failed' ? (
         <p className='text-xs text-destructive'>
+          {t('receipt.document.failed', { file: name })}{' '}
           <CollapsibleText
             text={plain(session.message ?? '')}
             chars={160}
             lines={3}
           />
-          {session.file.type.startsWith('image/')
-            ? ` ${t('receipt.document.imageUnsupported')}`
-            : null}
-        </p>
-      ) : null}
-      {!session ? (
-        <p className='text-xs text-muted-foreground'>
-          {t('receipt.document.hint')}
+          {session.image ? ` ${t('receipt.document.imageUnsupported')}` : null}
         </p>
       ) : null}
     </div>
@@ -1274,7 +1316,10 @@ interface DeliveryDocument {
   readonly available: boolean;
   readonly busy: boolean;
   readonly session: DocumentSession | undefined;
-  readonly read: (file: File) => void;
+  readonly read: (input: {
+    readonly file?: File;
+    readonly text?: string;
+  }) => void;
   /** Lets go of a run that was not saved, as the dialog closes. */
   readonly release: () => void;
 }
@@ -1361,45 +1406,56 @@ function useDeliveryDocument({
       }),
   });
 
-  const read = (file: File) => {
-    if (!ai.available) return;
+  const read = ({ file, text: pasted }: { file?: File; text?: string }) => {
+    if (!ai.available || (!file && !pasted?.trim())) return;
     discard(session?.runId);
-    setSession({ file, phase: 'uploading' });
+    const name = file?.name ?? t('receipt.document.pasted');
+    const image = Boolean(file?.type.startsWith('image/'));
+    const step = (rest: Omit<DocumentSession, 'name' | 'image'>) =>
+      setSession({ name, image, ...rest });
+    step({ phase: 'uploading' });
     void (async () => {
       let runId: string | undefined;
       try {
         // Kept on the order first: the document is the evidence the
         // receipt rests on, whatever the assistant makes of it.
-        const { record } = await files
-          .repository('itamAttachments')
-          .uploadOne({ file });
-        const fileId = text(record.id);
-        await api
-          .request({
-            path: `itam/attachments/purchaseOrders/${orderId}`,
-            method: 'POST',
-            json: { fileIds: [fileId] },
-          })
-          .catch(() => undefined);
+        let fileId: string | null = null;
+        if (file) {
+          const { record } = await files
+            .repository('itamAttachments')
+            .uploadOne({ file });
+          fileId = text(record.id);
+          await api
+            .request({
+              path: `itam/attachments/purchaseOrders/${orderId}`,
+              method: 'POST',
+              json: { fileIds: [fileId] },
+            })
+            .catch(() => undefined);
+        }
         const run = await api.request<{
           data: { id: string; documentText?: string | null };
         }>({
           path: `${PURCHASE_ORDERS_PATH}/${orderId}/receipt-runs`,
           method: 'POST',
-          json: { fileId, documentName: file.name },
+          json: {
+            fileId,
+            documentName: name,
+            ...(pasted?.trim() ? { text: pasted.trim() } : {}),
+          },
         });
         runId = run.data.id;
         const documentText = run.data.documentText;
         if (!documentText) {
           const message = t('receipt.document.unreadable');
           fail(runId, message);
-          setSession({ file, phase: 'failed', runId, message });
+          step({ phase: 'failed', runId, message });
           return;
         }
-        setSession({ file, phase: 'reading', runId });
+        step({ phase: 'reading', runId });
         const answer = await readAi({
           task: 'deliveryDocument',
-          material: `<delivery_document filename="${file.name.replace(/"/g, "'")}">\n${documentText}\n</delivery_document>`,
+          material: `<delivery_document filename="${name.replace(/"/g, "'")}">\n${documentText}\n</delivery_document>`,
           context: {
             order: {
               orderNo: order.orderNo,
@@ -1428,7 +1484,7 @@ function useDeliveryDocument({
         if (!answer.reading || !Array.isArray(rows) || rows.length === 0) {
           const message = plain(answer.said) || t('receipt.document.noRows');
           fail(runId, message);
-          setSession({ file, phase: 'failed', runId, message });
+          step({ phase: 'failed', runId, message });
           return;
         }
         const { data } = await api.request<{ data: { plan: ReceiptPlan } }>({
@@ -1437,8 +1493,7 @@ function useDeliveryDocument({
           json: draftOf(answer.reading),
         });
         onPlan(data.plan);
-        setSession({
-          file,
+        step({
           phase: 'done',
           runId,
           plan: data.plan,
@@ -1447,7 +1502,7 @@ function useDeliveryDocument({
       } catch (error) {
         const message = errorMessage(error);
         fail(runId, message);
-        setSession({ file, phase: 'failed', runId, message });
+        step({ phase: 'failed', runId, message });
       }
     })();
   };

@@ -7,7 +7,7 @@ import {
 import type { Row } from './collection-query.js';
 import { today } from './dates.js';
 import type { OperationContext } from './devices.js';
-import type { ReadDocument } from './document-text.js';
+import { documentText, type ReadDocument } from './document-text.js';
 import {
   BusinessRuleError,
   RecordNotFoundError,
@@ -61,7 +61,12 @@ export interface ReceiptRunSummary {
 export interface ReceiptRunService {
   start(
     orderId: string,
-    input: { readonly fileId?: string | null; readonly documentName: string },
+    input: {
+      readonly fileId?: string | null;
+      readonly documentName: string;
+      /** What the receiver pasted, read with the file or in its place. */
+      readonly text?: string | null;
+    },
     context: OperationContext,
   ): Promise<Row>;
   /** Runs the assistant's proposal through the rules and keeps both. */
@@ -295,18 +300,22 @@ export function createReceiptRunService(deps: {
       // A document the server cannot read as text — a picture, a format no
       // loader takes, a file that fails to parse — leaves the text empty,
       // and the page sends the file itself to a model that may read it.
-      if (input.fileId && readDocument) {
-        const document = await readDocument(input.fileId).catch(
-          () => undefined,
-        );
-        if (document)
-          await database
-            .query()
-            .updateTable('receiptRuns')
-            .set({ documentText: document.text })
-            .where('id', '=', id)
-            .execute();
-      }
+      const document =
+        input.fileId && readDocument
+          ? await readDocument(input.fileId).catch(() => undefined)
+          : undefined;
+      // Pasted text (2026-10-23) reads before the file's, or alone.
+      const pasted = documentText(input.text ?? '');
+      const combined = [pasted?.text, document?.text]
+        .filter(Boolean)
+        .join('\n\n');
+      if (combined)
+        await database
+          .query()
+          .updateTable('receiptRuns')
+          .set({ documentText: combined })
+          .where('id', '=', id)
+          .execute();
       return (await database
         .query()
         .selectFrom('receiptRuns')

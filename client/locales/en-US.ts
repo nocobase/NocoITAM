@@ -1727,7 +1727,9 @@ const messages = {
     aiFilledFrom: 'Filled by AI from the delivery note: {{source}}',
     documentChecks: 'Delivery note checks',
     document: {
-      prompt: 'Let AI read the delivery note and fill in the form below',
+      prompt:
+        'Paste the delivery note, or drop or upload it. AI fills in the form below for you to check',
+      pasted: 'Pasted text',
       choose: 'Choose delivery note',
       hint: 'Excel, CSV, Word and text PDFs work with any model; photos and scans need a model that reads images.',
       uploading: 'Uploading “{{file}}”…',
