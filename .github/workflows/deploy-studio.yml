@@ -1,0 +1,107 @@
+name: Deploy to Studio
+
+# A release deploys itself: the "Release <version>" commit is pushed to main
+# with the tag v<version>, and that tag runs this. The release is checked and
+# built once, then deployed to each Studio in parallel, each in its own
+# GitHub environment holding that Studio's settings (scripts/ci/deploy-studio.mjs
+# checks them):
+#   studio-internal  studio.v2.test.nocobase.com
+#   studio-cn        solutions-cn.nocobase.com
+#   studio-global    solutions.nocobase.com
+# with the variables NB_STUDIO_SERVER (the Studio's address, e.g.
+# https://studio.v2.test.nocobase.com/main) and STUDIO_APP_URL (the application's
+# address there, e.g. https://studio.v2.test.nocobase.com/itam/), and the
+# secret NB_STUDIO_API_KEY. A Studio failing does not stop the others. Run it
+# by hand on a release tag to deploy that release again.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the release is on main
+        run: git merge-base --is-ancestor HEAD origin/main
+      - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+        with:
+          # package.json names no packageManager; the lockfile is pnpm 10's.
+          version: 10.34.5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The checks a release starts with (.agents/rules/build-and-deploy.md).
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm test --maxWorkers=2 --passWithNoTests=false
+      - run: pnpm build --target linux-x64 --node-version 24 --tar
+        env:
+          # The client build outgrows Node's default heap on the runner
+          # (about 2 GB there), which has 8 GB for a private repository.
+          NODE_OPTIONS: --max-old-space-size=6144
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-archive
+          path: storage/exports/dist.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    # Up to 10 minutes to upload and 20 to wait for the release to run.
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        studio: [internal, cn, global]
+    environment: studio-${{ matrix.studio }}
+    concurrency:
+      group: studio-${{ matrix.studio }}-itam
+      cancel-in-progress: false
+    env:
+      NB_STUDIO_SERVER: ${{ vars.NB_STUDIO_SERVER }}
+      STUDIO_APP_URL: ${{ vars.STUDIO_APP_URL }}
+      STUDIO_TARGET: linux-x64
+      STUDIO_NODE_MAJOR: '24'
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - name: Check deployment configuration
+        env:
+          NB_STUDIO_API_KEY: ${{ secrets.NB_STUDIO_API_KEY }}
+          STUDIO_CLI: ${{ runner.temp }}/studio-cli/node_modules/.bin/nb-studio
+        run: node scripts/ci/deploy-studio.mjs --check-config
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-archive
+          path: storage/exports
+      # 1.0.0-beta.58 is the last npm release that holds the CLI: from
+      # 1.0.0-beta.59 the package is intentionally empty (Studio is developed
+      # privately). Install it from a Studio server once CI can.
+      - name: Install nb-studio
+        run: npm install --prefix "$RUNNER_TEMP/studio-cli" --ignore-scripts --no-audit --no-fund @nocobase/studio-cli@1.0.0-beta.58
+      - name: Deploy or request Studio approval
+        env:
+          NB_STUDIO_API_KEY: ${{ secrets.NB_STUDIO_API_KEY }}
+          STUDIO_CLI: ${{ runner.temp }}/studio-cli/node_modules/.bin/nb-studio
+        run: node scripts/ci/deploy-studio.mjs
