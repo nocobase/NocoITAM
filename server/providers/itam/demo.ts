@@ -1068,8 +1068,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
       'Replace the battery and the bottom cover it bent, labour included',
     swollenQuoteReasons:
       'The quote is several times what the laptop is still worth\nIt is past its useful life and its planned replacement\nIt is out of warranty and has been a spare for over a year',
-    swollenScrapped:
-      'Quoted CNY 1,280.00; not worth repairing, disposed of instead',
+    swollenScrapped: 'Quoted {quote}; not worth repairing, disposed of instead',
     panelQuoteWork:
       'Replace the display panel with a third-party part, labour included',
     panelQuoteReasons:
@@ -1254,7 +1253,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     swollenQuoteWork: '更换电池及被顶变形的底壳（含人工）',
     swollenQuoteReasons:
       '报价是设备当前净值的好几倍\n设备已过使用年限和计划更换日期\n已过保修期，且作为备用机闲置一年多',
-    swollenScrapped: '报价 CNY 1,280.00，不值得修，改为报废',
+    swollenScrapped: '报价 {quote}，不值得修，改为报废',
     panelQuoteWork: '更换第三方屏幕面板（含人工）',
     panelQuoteReasons:
       '报价 {quote} 约为设备净值 {bookValue} 的 {share}%\n设备仍在使用年限内，未到计划更换日期\n屏幕碎裂属意外损坏，不是老化',
@@ -6022,7 +6021,11 @@ export function createDemoService(dependencies: {
             result: 'scrapped',
             disposition: 'dispose',
             actualReturnAt: daysFromNow(-10),
-            notes: texts.swollenScrapped,
+            // In the register's own currency, as the quote was.
+            notes: texts.swollenScrapped.replace(
+              '{quote}',
+              `${asText(swollenLaptop.currency) ?? 'CNY'} 1,280.00`,
+            ),
           },
           {
             actorId: importerId ?? supportUserId ?? writerId,
@@ -6449,7 +6452,6 @@ export function createDemoService(dependencies: {
           comment: texts.disposalApproval,
           execution: {
             expenses: 150,
-            currency: 'CNY',
             recipientVendorId: String(recycler.id),
             dataWipe: 'wiped',
             wipeMethod: 'physicalDestruction',
@@ -6469,7 +6471,6 @@ export function createDemoService(dependencies: {
           comment: texts.donationApproval,
           execution: {
             expenses: 120,
-            currency: 'CNY',
             recipientName: texts.donationRecipient,
             dataWipe: 'notRequired',
           },
