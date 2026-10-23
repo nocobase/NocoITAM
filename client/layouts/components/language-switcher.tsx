@@ -13,6 +13,24 @@ import {
 } from '#components/ui/dropdown-menu';
 import { cn } from 'cn';
 
+/**
+ * Application change (ITAM, 2026-10-23): the two Chinese variants are named
+ * by script, as Chinese readers look for them, rather than by the region
+ * `Intl.DisplayNames` gives (中文（中国） / 中文（台灣）). `@nocobase/i18n`
+ * takes no label of its own, so the picker substitutes these.
+ */
+const LOCALE_LABELS: Readonly<Record<string, string>> = {
+  'zh-CN': '中文（简体）',
+  'zh-TW': '中文（繁體）',
+};
+
+function localeLabel(definition: {
+  readonly locale: string;
+  readonly label: string;
+}): string {
+  return LOCALE_LABELS[definition.locale] ?? definition.label;
+}
+
 export interface LanguageSwitcherProps {
   readonly className?: string;
 }
@@ -69,8 +87,12 @@ export function LanguageSwitcher({
           {t('actions.language', { defaultValue: 'Language' })}
         </span>
         <span className='text-muted-foreground'>
-          {locales.find((definition) => definition.locale === locale)?.label ??
-            locale}
+          {(() => {
+            const current = locales.find(
+              (definition) => definition.locale === locale,
+            );
+            return current ? localeLabel(current) : locale;
+          })()}
         </span>
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
@@ -85,7 +107,7 @@ export function LanguageSwitcher({
               value={definition.locale}
               disabled={switching}
             >
-              {definition.label}
+              {localeLabel(definition)}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
