@@ -356,7 +356,7 @@ const zhCN: AppResource = {
       consume: '消耗',
       install: '安装',
       uninstall: '拆卸',
-      adjust: '数量调整',
+      adjust: '调整数量',
     },
     actions: {
       create: '创建',
