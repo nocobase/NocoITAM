@@ -135,7 +135,7 @@ export function Breadcrumbs({
                 </BreadcrumbPage>
               ) : level.to ? (
                 <BreadcrumbLink
-                  className='max-w-48 truncate'
+                  className='max-w-48 truncate underline-offset-4 hover:text-inherit hover:underline'
                   render={<Link to={level.to} />}
                 >
                   {level.label}

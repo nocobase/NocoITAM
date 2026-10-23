@@ -341,7 +341,7 @@ export function AncestorsTrail({
           <span aria-hidden='true'>›</span>
           <Link
             to={`/${collection.route}/${entry.id}`}
-            className='hover:text-foreground'
+            className='underline-offset-4 hover:underline'
           >
             {entry.name}
           </Link>

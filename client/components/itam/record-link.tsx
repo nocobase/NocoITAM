@@ -2,6 +2,7 @@ import { useContext, type MouseEvent, type ReactElement } from 'react';
 import { Link, type LinkProps } from 'react-router';
 
 import { RecordDrawerContext } from '@/lib/itam/record-drawer';
+import { cn } from '@/lib/utils';
 import { recordOrTabTarget } from '@/lib/itam/record-view';
 
 /** A plain left click; modified clicks keep their browser meaning (new tab). */
@@ -28,6 +29,7 @@ export function RecordLink({
   drawer = true,
   onClick,
   target,
+  className,
   ...props
 }: RecordLinkProps): ReactElement {
   const api = useContext(RecordDrawerContext);
@@ -35,6 +37,10 @@ export function RecordLink({
     <Link
       to={to}
       target={target}
+      // A text link underlines on hover, across the application
+      // (2026-10-23): not a ground, not another colour. A link wrapping a
+      // tag says hover:no-underline.
+      className={cn('underline-offset-4 hover:underline', className)}
       onClick={(event) => {
         onClick?.(event);
         if (

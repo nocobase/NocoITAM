@@ -1553,7 +1553,7 @@ function RecordsView({
                           aria-label={t('deviceSync.openIn', {
                             source: t(`deviceSync.sources.${row.source}`),
                           })}
-                          className='text-muted-foreground hover:text-foreground'
+                          className='text-muted-foreground underline-offset-4 hover:underline'
                         >
                           <ExternalLink className='size-3.5' />
                         </a>

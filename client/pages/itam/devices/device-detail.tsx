@@ -505,7 +505,7 @@ export default function DeviceDetailPage(): ReactElement {
         breadcrumb={
           // Only the way back to the list; category, model and serial are
           // in the information column.
-          <Link to='/devices' className='hover:text-foreground'>
+          <Link to='/devices' className='underline-offset-4 hover:underline'>
             {t('devices.title')}
           </Link>
         }

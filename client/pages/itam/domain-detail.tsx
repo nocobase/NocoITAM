@@ -347,13 +347,19 @@ export function DomainDetailPage({
         breadcrumb={
           hideBreadcrumb ? undefined : BreadcrumbTrail ? (
             <span className='inline-flex flex-wrap items-center gap-1'>
-              <Link to={`/${domain.route}`} className='hover:text-foreground'>
+              <Link
+                to={`/${domain.route}`}
+                className='underline-offset-4 hover:underline'
+              >
                 {t(`${domain.i18n}.title`)}
               </Link>
               <BreadcrumbTrail record={data} />
             </span>
           ) : (
-            <Link to={`/${domain.route}`} className='hover:text-foreground'>
+            <Link
+              to={`/${domain.route}`}
+              className='underline-offset-4 hover:underline'
+            >
               {t(`${domain.i18n}.title`)}
             </Link>
           )

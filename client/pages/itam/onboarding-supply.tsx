@@ -92,7 +92,7 @@ function TargetLink({
   return (
     <RecordLink
       to={`/${TARGET_ROUTES[target.type]}/${target.id}`}
-      className='truncate transition-colors hover:text-primary'
+      className='truncate'
     >
       {target.name}
     </RecordLink>
@@ -172,7 +172,7 @@ function JoinerCard({
           <span className='flex min-w-0 flex-1 items-baseline gap-2'>
             <RecordLink
               to={`/people/${joiner.id}/holdings`}
-              className='shrink-0 font-medium transition-colors hover:text-primary'
+              className='shrink-0 font-medium'
             >
               {joiner.name}
             </RecordLink>

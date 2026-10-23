@@ -201,11 +201,11 @@ export function DraftOrdersButton({
     <>
       <Button
         variant='ghost'
-        // Green words with their icon everywhere, no ground on hover — the
-        // words fade a little instead (2026-10-22); no padding, so they sit
-        // the row's own gap from what is beside them.
+        // Green words with their icon everywhere, underlined on hover as
+        // every text link is (2026-10-23; no ground, no other colour); no
+        // padding, so they sit the row's own gap from what is beside them.
         className={cn(
-          'h-auto gap-1 p-0 text-primary hover:bg-transparent hover:text-primary/80 has-data-[icon=inline-start]:pl-0 dark:hover:bg-transparent',
+          'h-auto gap-1 p-0 text-primary underline-offset-4 hover:bg-transparent hover:text-primary hover:underline has-data-[icon=inline-start]:pl-0 dark:hover:bg-transparent',
           className,
         )}
         disabled={propose.isPending}

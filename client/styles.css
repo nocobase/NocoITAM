@@ -841,3 +841,11 @@ label:has(> .sr-only:focus-visible),
     0 6px 18px -8px color-mix(in oklch, var(--primary) 32%, transparent),
     var(--itam-ai-lift, 0 0 #0000);
 }
+
+/* Application change (ITAM, 2026-10-23): a text link underlines on hover,
+   across the application — not a ground, not another colour. The green
+   `text-link` links take it here; the others say hover:underline. */
+a.text-link:hover {
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+}

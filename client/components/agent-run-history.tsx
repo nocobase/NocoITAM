@@ -975,7 +975,7 @@ export function RunActivityRow({
         <RunLink
           run={run}
           opener={opener}
-          className='text-xs underline-offset-4 hover:text-foreground hover:underline'
+          className='text-xs underline-offset-4 hover:underline'
         >
           {labels.viewTranscript}
         </RunLink>

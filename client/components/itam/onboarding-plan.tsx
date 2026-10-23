@@ -231,7 +231,7 @@ export function OnboardingPlanCard({
             {data.kit ? (
               <RecordLink
                 to={`/departments/${data.kit.departmentId}/onboarding`}
-                className='truncate text-sm text-muted-foreground transition-colors hover:text-primary'
+                className='truncate text-sm text-muted-foreground'
               >
                 {data.kit.name}
               </RecordLink>
@@ -309,11 +309,7 @@ export function OnboardingPlanCard({
                 ) : null}
                 {/* What is already being bought for them, and where. */}
                 {data.orders.map((order) => (
-                  <RecordLink
-                    key={order.id}
-                    to={`/procurement/${order.id}`}
-                    className='transition-colors hover:text-primary'
-                  >
+                  <RecordLink key={order.id} to={`/procurement/${order.id}`}>
                     {t('onboarding.order', {
                       orderNo: order.orderNo,
                       status: t(`enums.poStatus.${order.status}`, {
@@ -436,7 +432,7 @@ function PlanLine({
               or the software product (2026-10-22). */}
           <RecordLink
             to={`/${TARGET_ROUTES[line.target.type]}/${line.target.id}`}
-            className='truncate transition-colors hover:text-primary'
+            className='truncate'
           >
             {line.target.name}
           </RecordLink>
@@ -460,10 +456,7 @@ function PlanLine({
               to={recordOf(thing)}
               className='max-w-full'
             >
-              <Badge
-                variant='secondary'
-                className='max-w-full transition-colors hover:text-primary'
-              >
+              <Badge variant='secondary' className='max-w-full'>
                 <Check className='size-3' />
                 <span className='truncate'>
                   {thing.type === 'device'
@@ -515,10 +508,7 @@ function PlanLine({
                 {/* What is proposed opens its record, to be looked at
                     before it is reserved; the button beside it only acts
                     (2026-10-22: the label was inside the button). */}
-                <RecordLink
-                  to={recordOf(thing)}
-                  className='min-w-0 truncate transition-colors hover:text-primary'
-                >
+                <RecordLink to={recordOf(thing)} className='min-w-0 truncate'>
                   {thing.label}
                 </RecordLink>
                 {/* Words like 更换 and 不需要 beside it (2026-10-22), the
@@ -600,7 +590,7 @@ function PlanLine({
                     {t('onboarding.instead')}
                     <RecordLink
                       to={`/devices/${thing.instead.id}`}
-                      className='text-foreground transition-colors hover:text-primary'
+                      className='text-foreground'
                     >
                       {thing.instead.label}
                     </RecordLink>

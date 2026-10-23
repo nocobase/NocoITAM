@@ -37,7 +37,7 @@ export function BackButton({
     <Link
       replace
       className={cn(
-        'inline-flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground',
+        'inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline-offset-4 hover:underline',
         className,
       )}
       to={to ?? { pathname: '..', search: location.search }}

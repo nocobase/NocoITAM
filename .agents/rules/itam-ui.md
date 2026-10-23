@@ -447,3 +447,9 @@ and the comment keeps their names; they are not the record's attachments.
   same flex gap from the next (2026-10-22, the onboarding card's
   预留 · 更换 · 不需要, the plans' 暂不处理, 沿用上级部门的配置). Without it
   the gap beside a text button reads a padding wider than the others.
+- A text link underlines on hover, across the application (2026-10-23): no
+  ground, no other colour. `RecordLink` does it by default; the green
+  `text-link` links get it from `client/styles.css`; any other text link says
+  `underline-offset-4 hover:underline`. Buttons, cards, tabs and menu items
+  rendered as links keep their own hover, and so do the AI shortcuts (a
+  light green ground, by request).
