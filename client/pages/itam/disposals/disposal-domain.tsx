@@ -541,6 +541,8 @@ function DisposalActions({
         onOpenChange={(open) => !open && setDialog(undefined)}
         title={t('disposals.execute')}
         description={t('disposals.executeDescription')}
+        // Room for the certificate's box above the fields (2026-10-23).
+        size='form'
         busy={run.isPending}
         error={run.error}
         disabled={
