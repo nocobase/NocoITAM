@@ -305,7 +305,9 @@ function JoinerRow({
       {!plan.kit ? (
         <p className='text-xs text-muted-foreground'>{t('onboarding.noKit')}</p>
       ) : special.length > 0 ? (
-        <ul className='space-y-1 rounded-md bg-muted/50 px-3 py-2'>
+        // The tags inside on a white ground of their own (2026-10-22): on
+        // the box's grey they read as part of it.
+        <ul className='space-y-1 rounded-md bg-muted/50 px-3 py-2 [&_[data-slot=badge]]:bg-card'>
           {special.map((line) => (
             <li
               key={line.key}
