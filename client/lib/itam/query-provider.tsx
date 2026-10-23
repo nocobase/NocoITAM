@@ -10,7 +10,12 @@ import {
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { registerErrorTranslator } from '@/lib/itam/server-errors';
 
-/** One QueryClient for the application lifetime, plus the tooltip context. */
+/**
+ * One QueryClient for the application lifetime, plus the tooltip context.
+ * The pages do not read this cache: the framework mounts its own innermost
+ * around the routes, so the retry rule the pages follow is set on that one
+ * (`useItamQueryDefaults`, from the layout).
+ */
 export function QueryProvider({ children }: PropsWithChildren): ReactElement {
   // Server error messages are translated on display; the translator follows
   // the active language.

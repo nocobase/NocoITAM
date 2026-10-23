@@ -16,6 +16,7 @@ import { DemoBanner } from '@/components/itam/demo-banner';
 import { RecordDrawerProvider } from '@/components/itam/record-drawer';
 import { useNavigationCounts } from '@/lib/itam/navigation-counts';
 import { useLiveWork } from '@/lib/itam/live-work';
+import { useItamQueryDefaults } from '@/lib/itam/query-defaults';
 
 import { RouteTreeProvider } from '../routing/route-context.js';
 
@@ -46,6 +47,10 @@ export interface AppLayoutProps {
 export function AppLayout({ routes }: AppLayoutProps): ReactElement {
   // The browser decides what it renders; this tells the server the same language so its messages match.
   useSyncServerLocale();
+  // Application change (ITAM, 2026-10-23): a request the server refused as
+  // wrong (a missing record) is not asked again three times; see
+  // `client/lib/itam/query-defaults.ts`.
+  useItamQueryDefaults();
   // Application change (ITAM): to-dos stay current while a page is open.
   useLiveWork();
   // Application change (ITAM): the numbers beside 待办 and 收件箱.
