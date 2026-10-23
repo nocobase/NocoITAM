@@ -116,6 +116,8 @@ export const purchaseOrderDomain: DomainConfig = {
   // What the service allows: anything submitted keeps its approval trail.
   deletable: (record) => ['draft', 'cancelled'].includes(text(record.status)),
   defaultSort: 'createdAt',
+  // Newest first, as repairs (2026-10-23).
+  defaultOrder: 'desc',
   tabs: [
     // No approvals tab: requested, withdrawn and decided are history events,
     // and the comment reads with the decision there.

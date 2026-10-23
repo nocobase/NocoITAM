@@ -93,6 +93,8 @@ export const disposalDomain: DomainConfig = {
   }),
   nameField: 'disposalNo',
   defaultSort: 'createdAt',
+  // Newest first, as repairs (2026-10-23).
+  defaultOrder: 'desc',
   deletable: (record) => text(record.status) === 'draft',
   // Beside 提交审批 and the other steps in the header; deletion goes in the
   // "more" menu.

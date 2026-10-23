@@ -68,7 +68,9 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
   },
   {
     key: 'result',
-    label: 'fields.repairResult',
+    // 状态 where it is read (2026-10-23): 进行中 or how it ended. Choosing
+    // how it ended, in 完成维修, still asks for the 维修结果.
+    label: 'fields.status',
     type: 'select',
     options: options('repairResult', REPAIR_RESULTS),
     // Right after the device in the list (2026-10-23). Set by completing. The detail page shows it once, as a tag in the

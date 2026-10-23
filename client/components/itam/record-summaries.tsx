@@ -154,7 +154,7 @@ export const RECORD_SUMMARIES: Readonly<Record<string, RecordSummary>> = {
     items: (record, t) => [
       {
         key: 'result',
-        label: t('fields.repairResult'),
+        label: t('fields.status'),
         value: (
           <Badge
             variant={record.result === 'inProgress' ? 'secondary' : 'outline'}
