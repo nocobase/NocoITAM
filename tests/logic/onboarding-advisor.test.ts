@@ -14,6 +14,8 @@ import {
   type OnboardingPlan,
 } from '../../server/providers/itam/onboarding.js';
 import { settingsServiceToken } from '../../server/providers/itam/settings.js';
+import { unrestricted } from '../../server/providers/itam/authz-filter.js';
+import { disposalServiceToken } from '../../server/providers/itam/disposals.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
@@ -157,6 +159,30 @@ describe('onboarding advisor', () => {
     const after = await macbook(person.id);
     expect(after.proposals[0]?.id).toBe(longer.id);
     expect(after.proposals[0]?.reason).toBeUndefined();
+  });
+
+  it('offers no device on an open disposal, a draft included', async () => {
+    // The rule would take the longer warranty, but it is being disposed of
+    // (2026-10-22: a damaged monitor in a draft was offered).
+    const doomed = await laptop('C02ADV0101', '2030-01-01');
+    const kept = await laptop('C02ADV0102', '2028-01-01');
+    await app.container.resolve(disposalServiceToken).create(
+      {
+        method: 'scrap',
+        reason: 'damaged',
+        requestedAt: today(),
+        deviceIds: [doomed.id],
+        recipientName: 'Recycler',
+        description: 'Cracked screen',
+        dataWipe: 'notRequired',
+      } as never,
+      { actorId: 'mia' },
+      unrestricted('disposals', 'create'),
+    );
+    const person = await joiner();
+    expect((await macbook(person.id)).proposals.map((p) => p.id)).toEqual([
+      kept.id,
+    ]);
   });
 
   it('holds a device it picked for one joiner back from the others', async () => {

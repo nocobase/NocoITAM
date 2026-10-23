@@ -838,7 +838,8 @@ describe('CSV import / export and demo data', () => {
     });
     // 入职供需 shows each way a joiner is equipped (2026-10-22): from stock,
     // from an order on its way (the designer's Adobe seat) and short (the
-    // engineer's IntelliJ seat, no seat spare and none on order).
+    // engineer's IntelliJ seat, no seat spare and none on order, and the
+    // designer's test iPhone).
     const supply = await data<{
       shortages: { target: { name: string }; people: { name: string }[] }[];
       joiners: { name: string; plan: { lines: { onOrder: number }[] } }[];
@@ -848,7 +849,11 @@ describe('CSV import / export and demo data', () => {
         entry.target.name,
         entry.people.map((person) => person.name),
       ]),
-    ).toEqual([['IntelliJ IDEA Ultimate', ['Noah Harris']]]);
+    ).toEqual([
+      ['IntelliJ IDEA Ultimate', ['Noah Harris']],
+      // The interaction designer's test phone (2026-10-22): none in stock.
+      ['iPhone 15', ['Grace Lee']],
+    ]);
     expect(
       supply.joiners
         .find((joiner) => joiner.name === 'Grace Lee')

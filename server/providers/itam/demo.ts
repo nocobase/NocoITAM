@@ -1160,6 +1160,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     returnedLoan: 'Back from the customer visit, all accessories present',
     itManagerKit: 'IT asset manager kit',
     salesManagerKit: 'Sales manager kit',
+    interactionDesignerKit: 'Interaction designer kit',
     resellerContact: 'Laura Chen',
     repairShopNotes:
       'Collects on Tuesdays and Fridays; quotes first for anything out of warranty',
@@ -1298,6 +1299,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     returnedLoan: '客户拜访归来，配件齐全',
     itManagerKit: 'IT 资产经理配置',
     salesManagerKit: '销售经理配置',
+    interactionDesignerKit: '交互设计师配置',
     resellerContact: '梁晓',
     repairShopNotes: '每周二、周五上门取件；保外维修先报价',
     recyclerNotes: '每批回收都出具数据销毁证明',
@@ -1390,11 +1392,11 @@ const JOINER_NAMES: Readonly<
 > = {
   'en-US': [
     { name: 'Noah Harris', mail: 'noah.harris', position: 'Frontend Engineer' },
-    { name: 'Grace Lee', mail: 'grace.lee', position: 'Designer' },
+    { name: 'Grace Lee', mail: 'grace.lee', position: 'Interaction Designer' },
   ],
   'zh-CN': [
     { name: '孙浩', mail: 'sun.hao', position: '前端工程师' },
-    { name: '林雪', mail: 'lin.xue', position: '设计师' },
+    { name: '林雪', mail: 'lin.xue', position: '交互设计师' },
   ],
 };
 
@@ -6502,12 +6504,36 @@ export function createDemoService(dependencies: {
         );
 
         await reached(95);
-        // 入职准备: joining in five and nine days, nothing reserved yet. Entered
-        // last, once the spare laptops, monitors, stock and seats exist:
+        // 入职准备: joining in five and twelve days (twelve since 2026-10-22,
+        // so the designer's test iPhone still has a day or two to be
+        // ordered), nothing reserved yet. Entered last, once the spare
+        // laptops, monitors, stock and seats exist:
         // saving a joiner is what sets Asset Steward choosing their equipment
         // (`onboarding-advisor.ts`), and entered first it found nothing in
         // stock to choose from, or half of it.
         const productDept = await seededIn('departments', 'dept-product');
+        // The second joiner is an interaction designer (2026-10-22), a
+        // position of the demo's own: a designer's kit and a test iPhone,
+        // of which none is in stock and none on order — the device
+        // 入职供需 says to buy, beside the seat on its way.
+        const designer = (JOINER_NAMES[locale] ??
+          JOINER_NAMES['en-US'] ??
+          [])[1];
+        await positionKit(
+          productDept.id,
+          designer?.position,
+          texts.interactionDesignerKit,
+          [
+            one(String(mbp.id)),
+            one(String(u2723.id)),
+            one(String(mxMaster.id)),
+            one(String(iphone.id)),
+            seat(String(figma.id)),
+            seat('sp-adobe-creative-cloud'),
+            seat('sp-microsoft-365'),
+            seat(String(zoom.id)),
+          ],
+        );
         const joinerIds: string[] = [];
         for (const [index, entry] of (
           JOINER_NAMES[locale] ??
@@ -6521,7 +6547,7 @@ export function createDemoService(dependencies: {
             position: entry.position,
             departmentId: index === 0 ? rnd.id : productDept.id,
             locationId: floor3.id,
-            hireDate: daysFromNow(index === 0 ? 5 : 9),
+            hireDate: daysFromNow(index === 0 ? 5 : 12),
             // The first is the importer's to equip (2026-10-22), so 入职准备
             // has a joiner under 待办 → 我的; the other stays with 吴静.
             ...(index === 0 && importerId

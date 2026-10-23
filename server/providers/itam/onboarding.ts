@@ -6,6 +6,7 @@ import {
 
 import { asText, decodeRow, type Row } from './collection-query.js';
 import { addDays, isoDate, today } from './dates.js';
+import { OPEN_DISPOSAL_STATUSES } from './recovery.js';
 import { ValidationError } from './errors.js';
 import type { HistoryService } from './history.js';
 import { DEFAULT_ITAM_SETTINGS, type SettingsService } from './settings.js';
@@ -716,12 +717,27 @@ export function createOnboardingService(
       'plannedReplacementDate',
       'notes',
     ] as const;
-    const stockDevices = await q()
-      .selectFrom('devices')
-      .select([...deviceFields])
-      .where('status', '=', 'inStock')
-      .where('reservedForId', 'is', null)
-      .execute<Row>();
+    // A device on an open disposal, a draft included, is on its way out
+    // and no joiner's (2026-10-22: a monitor in a draft for being damaged
+    // was offered).
+    const disposing = new Set(
+      (
+        await q()
+          .selectFrom('disposalDevices')
+          .innerJoin('disposals', 'disposals.id', 'disposalDevices.disposalId')
+          .select(['disposalDevices.deviceId as deviceId'])
+          .where('disposals.status', 'in', [...OPEN_DISPOSAL_STATUSES])
+          .execute<Row>()
+      ).map((row) => String(row.deviceId)),
+    );
+    const stockDevices = (
+      await q()
+        .selectFrom('devices')
+        .select([...deviceFields])
+        .where('status', '=', 'inStock')
+        .where('reservedForId', 'is', null)
+        .execute<Row>()
+    ).filter((row) => !disposing.has(String(row.id)));
 
     // People leaving, or gone and still holding something: what they hand
     // back is a joiner's from the day it is back and made ready.
@@ -745,6 +761,7 @@ export function createOnboardingService(
         .where('status', 'in', ['inUse', 'onLoan'])
         .where('reservedForId', 'is', null)
         .execute<Row>()) {
+        if (disposing.has(String(row.id))) continue;
         const fromId = String(row.assigneeId);
         const availableOn = addDays(backOn(fromId), prepDays);
         // Due for replacement by then, or out of warranty: not something
