@@ -83,8 +83,9 @@ function RecommendationBadge({
           : 'bg-info text-info-foreground'
       }
     >
-      {/* Its own words on a quote: 先核对报价 where the triage says
-          先检测 (2026-10-23). */}
+      {/* The sparkle says the advice is AI's (2026-10-23). Its own words
+          on a quote: 先核对报价 where the triage says 先检测. */}
+      <Sparkles data-icon='inline-start' />
       {t(`enums.repairRecommendation.${recommendation}`)}
     </Badge>
   );

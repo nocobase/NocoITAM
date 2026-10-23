@@ -535,7 +535,7 @@ const messages = {
     quoteAmount: 'Quoted amount',
     quotedAt: 'Quoted on',
     quoteNotes: 'Proposed work',
-    quoteRecommendation: 'Repair or replace',
+    quoteRecommendation: 'Repair or replace advice',
     quoteReasons: 'Reasons',
     quoteDecision: 'Decision',
     attachments: 'Attachments',

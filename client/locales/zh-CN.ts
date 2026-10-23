@@ -524,7 +524,7 @@ const zhCN: AppResource = {
     quoteAmount: '报价金额',
     quotedAt: '报价日期',
     quoteNotes: '维修方案',
-    quoteRecommendation: '修还是换',
+    quoteRecommendation: '评估修还是换',
     quoteReasons: '建议理由',
     quoteDecision: '处理决定',
     attachments: '附件',
