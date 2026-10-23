@@ -2849,7 +2849,7 @@ const zhCN: AppResource = {
       typed: '供应商报价 {{amount}}，维修方案：{{work}}',
       judge: '评估修还是换',
       judgeAgain: '重新评估',
-      judging: '正在判断修还是换…',
+      judging: '正在评估修还是换…',
       noAdvice: '没有建议',
       decided: { repair: '已决定继续维修', replace: '已改为报废' },
       share: '报价约为设备净值 {{bookValue}} 的 {{share}}%',
