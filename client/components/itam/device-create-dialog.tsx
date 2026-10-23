@@ -2,7 +2,12 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useRef, type ReactElement } from 'react';
 
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
-import { useItamMutations, type ItamRecord } from '@/lib/itam/api';
+import {
+  masterDataPath,
+  useItamList,
+  useItamMutations,
+  type ItamRecord,
+} from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import {
   ASSIGNEE_TYPES,
@@ -132,6 +137,11 @@ export function DeviceCreateDialog({
   // date recomputes a date the user never touched.
   const derivedModelRef = useRef<ItamRecord | undefined>(undefined);
   const derivedWarrantyRef = useRef('');
+  // The category's warranty stands in when the model states none, as it
+  // does on the server (2026-10-23); the same tree the path reads, cached.
+  const categories = useItamList<ItamRecord>(masterDataPath('categories'), {
+    pageSize: 500,
+  });
   return (
     <RecordFormDialog
       key={open ? 'create' : 'closed'}
@@ -179,13 +189,19 @@ export function DeviceCreateDialog({
             next.name = derivedNameRef.current || null;
           }
         }
-        // Warranty end = purchase date + the model's warranty months, shown
-        // as soon as both are known; a date typed by hand stays (the server
-        // also fills the category default when the model has none).
+        // Warranty end = purchase date + the model's warranty months, else
+        // its category's, shown as soon as both are known; a date typed by
+        // hand stays.
         const purchaseDate = text(
           change.key === 'purchaseDate' ? change.value : values.purchaseDate,
         );
-        const months = Number(derivedModelRef.current?.warrantyMonths ?? 0);
+        const model = derivedModelRef.current;
+        const category = categories.data?.data.find(
+          (entry) => entry.id === model?.categoryId,
+        );
+        const months = Number(
+          model?.warrantyMonths ?? category?.warrantyMonths ?? 0,
+        );
         const warranty = text(values.warrantyEndDate);
         if (!warranty || warranty === derivedWarrantyRef.current) {
           derivedWarrantyRef.current =

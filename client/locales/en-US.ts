@@ -1386,7 +1386,7 @@ const messages = {
   },
   stock: {
     empty: 'No stock items yet',
-    minimumFromSettings: 'Left empty, the default from settings',
+    minimumFromSettings: 'Left empty, the default of {{value}}',
     quantities: '{{total}} / {{used}} / {{available}}',
     available: '{{count}} available',
     issue: 'Issue',

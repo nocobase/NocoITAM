@@ -1338,7 +1338,7 @@ const zhCN: AppResource = {
   },
   stock: {
     empty: '还没有库存物品',
-    minimumFromSettings: '留空按设置里的默认水位',
+    minimumFromSettings: '留空则用默认水位 {{value}}',
     quantities: '{{total}} / {{used}} / {{available}}',
     available: '可用 {{count}}',
     issue: '发放',

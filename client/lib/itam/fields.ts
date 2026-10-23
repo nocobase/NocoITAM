@@ -1,3 +1,5 @@
+import type { ItamSettings } from './api.js';
+
 /**
  * Field metadata that drives the generic list, form and detail components.
  * Labels and option labels are translation keys resolved by the component.
@@ -114,6 +116,11 @@ export interface FieldDefinition {
    */
   readonly dependent?: DependentField;
   readonly placeholder?: string;
+  /**
+   * A setting the placeholder names (2026-10-23): passed to it as `value`,
+   * so 留空 says what it falls back to rather than only where.
+   */
+  readonly placeholderSetting?: keyof ItamSettings['thresholds'];
   /** Booleans edit with a switch by default; `select` shows a yes / no list. */
   readonly control?: 'select';
   /** Value a create form starts with. */

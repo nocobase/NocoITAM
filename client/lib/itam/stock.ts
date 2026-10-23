@@ -105,6 +105,7 @@ export function stockFields(kind: StockKind): readonly FieldDefinition[] {
       type: 'number',
       min: 0,
       placeholder: 'stock.minimumFromSettings',
+      placeholderSetting: 'defaultStockMinimum',
       column: true,
       group: 'groups.quantity',
     },

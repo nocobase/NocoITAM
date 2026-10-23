@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import type { ItamRecord } from '@/lib/itam/api';
+import { useItamSettings, type ItamRecord } from '@/lib/itam/api';
 import { CURRENCIES } from '@/lib/itam/currencies';
 import type { FieldDefinition } from '@/lib/itam/fields';
 import { text } from '@/lib/itam/format';
@@ -45,7 +45,38 @@ export interface FieldInputProps {
 }
 
 /** One editable control per field type; forms and inline editing share it. */
-export function FieldInput({
+/**
+ * A field whose placeholder names a setting reads that setting first and
+ * passes it the value; every other field renders as it is.
+ */
+export function FieldInput(props: FieldInputProps): ReactElement {
+  return props.field.placeholderSetting ? (
+    <SettingPlaceholder {...props} />
+  ) : (
+    <FieldControl {...props} />
+  );
+}
+
+function SettingPlaceholder(props: FieldInputProps): ReactElement {
+  const { t } = useTranslation();
+  const settings = useItamSettings();
+  const { placeholderSetting: setting, ...field } = props.field;
+  const value = setting ? settings.data?.thresholds[setting] : undefined;
+  return (
+    <FieldControl
+      {...props}
+      field={{
+        ...field,
+        placeholder:
+          field.placeholder && value !== undefined
+            ? t(field.placeholder, { value })
+            : undefined,
+      }}
+    />
+  );
+}
+
+function FieldControl({
   field,
   value,
   onChange,
