@@ -16,20 +16,27 @@ export function DeviceDisposalSummary({
   readonly disposal: ItamRecord;
 }): ReactElement {
   const { t } = useTranslation();
-  return (
-    <span className='inline-flex flex-wrap items-center gap-2'>
-      <RecordLink to={`/disposals/${text(disposal.id)}`} className='text-link'>
-        {text(disposal.disposalNo)}
-      </RecordLink>
-      {/* Carried out, it says when, which says 已执行 too: no tag beside
-          it (2026-10-23). Before that, the tag says how far it got. */}
-      {disposal.status === 'executed' && disposal.disposedAt ? (
+  const link = (
+    <RecordLink to={`/disposals/${text(disposal.id)}`} className='text-link'>
+      {text(disposal.disposalNo)}
+    </RecordLink>
+  );
+  // Carried out, it says when, which says 已执行 too: no tag, the date
+  // after the number with a comma (2026-10-23). Before that, the tag says
+  // how far it got.
+  if (disposal.status === 'executed' && disposal.disposedAt)
+    return (
+      <span>
+        {link}
         <span className='text-muted-foreground'>
           {t('devices.disposedOn', { date: formatDate(disposal.disposedAt) })}
         </span>
-      ) : (
-        <EnumBadge field={STATUS_FIELD} value={disposal.status} />
-      )}
+      </span>
+    );
+  return (
+    <span className='inline-flex flex-wrap items-center gap-2'>
+      {link}
+      <EnumBadge field={STATUS_FIELD} value={disposal.status} />
     </span>
   );
 }

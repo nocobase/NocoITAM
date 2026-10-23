@@ -1534,7 +1534,7 @@ const messages = {
     replacementRule:
       "Computed from the purchase date plus the category's replacement cycle",
     returnExpected: ', due back {{date}}',
-    disposedOn: 'executed {{date}}',
+    disposedOn: ', executed {{date}}',
     assignedTo: 'Assigned to',
     loanedTo: 'Loaned to',
     reservedFor: 'Reserved for',

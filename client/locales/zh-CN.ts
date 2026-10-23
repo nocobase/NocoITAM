@@ -1481,7 +1481,7 @@ const zhCN: AppResource = {
     followsOrder: '随采购单',
     replacementRule: '由 采购日期 + 分类更换周期 自动计算',
     returnExpected: '，预计 {{date}} 归还',
-    disposedOn: '{{date}} 已执行',
+    disposedOn: '，{{date}} 已执行',
     assignedTo: '分配给',
     loanedTo: '借给',
     reservedFor: '预留给',
