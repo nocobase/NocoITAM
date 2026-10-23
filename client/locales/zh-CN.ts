@@ -499,6 +499,7 @@ const zhCN: AppResource = {
     },
   },
   groups: {
+    dates: '时间',
     quote: '报价',
     basic: '基本信息',
     contact: '联系方式',

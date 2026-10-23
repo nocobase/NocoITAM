@@ -510,6 +510,7 @@ const messages = {
     },
   },
   groups: {
+    dates: 'Dates',
     quote: 'Quote',
     basic: 'Basic information',
     contact: 'Contact',

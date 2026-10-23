@@ -98,13 +98,22 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     options: options('faultCategory', REPAIR_FAULT_CATEGORIES),
     column: true,
   },
-  { key: 'sentAt', label: 'fields.sentAt', type: 'date', column: true },
+  // 时间 (2026-10-23): when it went, when it is due and when it came back,
+  // a group of their own under 基本信息.
+  {
+    key: 'sentAt',
+    label: 'fields.sentAt',
+    type: 'date',
+    column: true,
+    group: 'groups.dates',
+  },
   {
     key: 'expectedReturnAt',
     label: 'fields.expectedReturnAt',
     type: 'date',
     required: true,
     column: true,
+    group: 'groups.dates',
   },
   {
     key: 'actualReturnAt',
@@ -113,6 +122,7 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     // Set by completing; corrected afterwards.
     column: true,
     readonlyWhen: (values) => values.result === 'inProgress',
+    group: 'groups.dates',
   },
   {
     key: 'result',
