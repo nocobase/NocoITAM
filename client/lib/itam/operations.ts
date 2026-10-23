@@ -123,9 +123,11 @@ export const REPAIR_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.vendor',
     type: 'reference',
     reference: { collection: 'vendors' },
-    // Every repair but an internal one goes to a vendor.
+    // Every repair but an internal one goes to a vendor; an internal one
+    // shows none, in the form or on its page (2026-10-23).
     requiredWhen: (values) =>
       Boolean(values.method) && values.method !== 'internal',
+    visibleWhen: (values) => values.method !== 'internal',
     column: true,
   },
   {

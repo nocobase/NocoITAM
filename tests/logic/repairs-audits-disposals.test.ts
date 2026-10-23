@@ -169,6 +169,34 @@ describe('repairs, audits and disposals', () => {
     await app.destroy();
   });
 
+  // An internal repair has no vendor (2026-10-23): made internal, the one
+  // it had goes.
+  it('drops the vendor of a repair made internal', async () => {
+    const device = await createDevice();
+    const repair = await data<{ id: string; vendorId: string | null }>(
+      await post('repairs', {
+        deviceId: device.id,
+        method: 'sendOut',
+        vendorId: fixture.vendorId,
+        expectedReturnAt: '2030-01-01',
+        faultDescription: 'Fan noise',
+        faultCategory: 'other',
+      }),
+    );
+    expect(repair.vendorId).toBe(fixture.vendorId);
+    const changed = await app.request(`/api/itam/repairs/${repair.id}`, {
+      ...json({ method: 'internal' }),
+      method: 'PATCH',
+      ...manager,
+    });
+    expect(changed.status).toBe(200);
+    expect(
+      await data<{ vendorId: string | null }>(
+        await get(`repairs/${repair.id}`),
+      ),
+    ).toMatchObject({ method: 'internal', vendorId: null });
+  });
+
   it('deletes a repair created by mistake, restoring the device', async () => {
     const device = await createDevice();
     await assign(device.id, fixture.personId);

@@ -263,7 +263,9 @@ export function createRepairService(dependencies: {
           repairNo: await numbering.next('repair', { connection }),
           deviceId: input.deviceId,
           method: input.method,
-          vendorId: input.vendorId ?? null,
+          // An internal repair has no vendor (2026-10-23).
+          vendorId:
+            input.method === 'internal' ? null : (input.vendorId ?? null),
           faultDescription: input.faultDescription,
           faultCategory: input.faultCategory ?? null,
           sentAt: input.sentAt ?? today(),
@@ -365,7 +367,11 @@ export function createRepairService(dependencies: {
           );
         // A corrected result is a move of its own; the rest is a plain
         // write, and the change log tells both as one edit.
-        const { result, ...fields } = input;
+        const { result, ...rest } = input;
+        // Made internal, a repair drops its vendor, which nothing shows any
+        // more (2026-10-23).
+        const fields =
+          rest.method === 'internal' ? { ...rest, vendorId: null } : rest;
         if (result !== undefined && result !== repair.result)
           await move(connection, id, 'correct', context, {
             result: asText(result) ?? '',
