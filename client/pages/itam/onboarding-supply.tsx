@@ -194,7 +194,7 @@ function Shortages({
                     button is the same thing. */}
                 {sorted.length > 1 && ai.available ? (
                   <AiShortcut
-                    className='ml-0 text-xs'
+                    className='-mx-1 px-1 text-xs'
                     onClick={() => draft([entry])}
                   >
                     {t('onboarding.draftOrder')}
