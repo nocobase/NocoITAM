@@ -50,12 +50,6 @@ function figures(row: SupplyRow) {
   };
 }
 
-/** Anything coming in or going out, beyond what sits in stock. */
-const moves = (row: SupplyRow) =>
-  row.entries.some(
-    (entry) => entry.kind !== 'stock' && entry.kind !== 'minimum',
-  );
-
 /**
  * 供需分析 (2026-10-23): whether each item — device and stock models,
  * software products' seats — is enough for the next days, and when to order
@@ -65,24 +59,22 @@ const moves = (row: SupplyRow) =>
  * a column per source was not readable — most rows changed nothing, and a
  * minimum counted as a need): each short item says in words what needs it,
  * what there is, how many are missing and the last day to order, with
- * 创建采购单. Then 够用, the items with something coming or going (all of
- * them on request), as 现有 + 将到 − 将用 = 剩余, the minimum beside it; a
+ * 创建采购单. Then 够用, every other model and software product (only those
+ * with something coming or going until the user asked for all, the same
+ * day), as 现有 + 将到 − 将用 = 剩余, the minimum beside it; a
  * row opens to the records behind its numbers.
  */
 export default function SupplyDemandPage(): ReactElement {
   const { t } = useTranslation();
   const [days, setDays] = useState<number>(60);
   const [replacements, setReplacements] = useState(false);
-  const [everything, setEverything] = useState(false);
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set());
   const result = useSupplyDemand(days, replacements);
   const all = result.data?.rows ?? [];
   const short = all.filter(isShort);
   const enough = all.filter((row) => !isShort(row));
   const rows: readonly Row[] | undefined = result.data
-    ? enough
-        .filter((row) => everything || moves(row))
-        .map((row) => ({ ...row, id: row.key }))
+    ? enough.map((row) => ({ ...row, id: row.key }))
     : undefined;
 
   /** An order per vendor last bought from, for these rows. */
@@ -261,19 +253,8 @@ export default function SupplyDemandPage(): ReactElement {
           <section className='space-y-2'>
             <div className='flex min-h-8 flex-wrap items-center justify-between gap-2'>
               <h2 className='text-base font-semibold'>
-                {t('supplyDemand.enough.title')}
+                {t('supplyDemand.enough.title', { count: enough.length })}
               </h2>
-              <label className='flex items-center gap-2 text-sm'>
-                <Switch
-                  checked={everything}
-                  onCheckedChange={(checked) => setEverything(checked)}
-                />
-                <span className='text-muted-foreground'>
-                  {t('supplyDemand.enough.everything', {
-                    count: enough.length,
-                  })}
-                </span>
-              </label>
             </div>
             <p className='text-xs text-muted-foreground'>
               {t('supplyDemand.enough.hint')}

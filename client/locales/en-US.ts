@@ -3252,8 +3252,7 @@ const messages = {
       orderToday: 'Order today',
     },
     enough: {
-      title: 'Enough',
-      everything: 'Include unchanged ({{count}} in all)',
+      title: '{{count}} enough',
       hint: 'Left = have + coming − using; enough while left is not below the minimum. Open a row for the records.',
       empty: 'Nothing comes in or goes out',
     },

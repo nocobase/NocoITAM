@@ -141,7 +141,7 @@ beforeEach(() => {
   ];
 });
 
-it('puts what is short first, in words, and the rest as have + coming − using', () => {
+it('puts what is short first, in words, and every other item as have + coming − using', () => {
   show();
   // 60 days, replacements left out, unless asked.
   expect(state.asked.at(-1)).toEqual({ days: 60, replacements: false });
@@ -151,13 +151,10 @@ it('puts what is short first, in words, and the rest as have + coming − using'
   expect(screen.getByText('supplyDemand.entry.minimum')).toBeTruthy();
   expect(screen.getByText('supplyDemand.short.missing:2')).toBeTruthy();
 
-  // 够用 lists only what changes, unless asked for everything.
-  expect(screen.queryByText('dock')).toBeNull();
-  expect(screen.getByText('stand')).toBeTruthy();
-  fireEvent.click(
-    screen.getByRole('switch', { name: /supplyDemand\.enough\.everything/ }),
-  );
+  // 够用 lists every other item, changing or not.
+  expect(screen.getByText('supplyDemand.enough.title:2')).toBeTruthy();
   expect(screen.getByText('dock')).toBeTruthy();
+  expect(screen.getByText('stand')).toBeTruthy();
 
   fireEvent.click(screen.getByRole('radio', { name: 'supplyDemand.days:90' }));
   fireEvent.click(

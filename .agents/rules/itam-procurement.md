@@ -182,7 +182,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
 - **供需分析 is where what is short is bought** (2026-10-23,
   `/supply-demand`, under 收件箱 in the menu; `supplyDemand` in
   `server/providers/itam/supply-demand.ts`, `GET
-/itam/reports/supply-demand?days=&replacements=`). One row per item —
+/itam/reports/supply-demand?days=&replacements=`). A row for every model
+  and software product, nothing coming or going included (2026-10-23) —
   `model:<id>` for devices and stock, `softwareProduct:<id>` for seats,
   `category:<id>` for a kit item naming a category — with, over the next 30 /
   60 / 90 days: supply from stock (free devices not reserved or on an open
@@ -205,8 +206,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   item with a column per source was not readable — most rows changed
   nothing, and a minimum read as somebody's need): each short item says in
   words what needs it, what there is, how many are missing and the last day
-  to order. Then 够用, only items with something coming or going unless
-  asked for all, as 现有 + 将到 − 将用 = 剩余 beside the minimum; a row opens
+  to order. Then 够用, every other item, as 现有 + 将到 − 将用 = 剩余 beside the minimum; a row opens
   to its records.
   创建采购单 (an item) and 全部创建采购单 (the heading) open the create dialog
   filled in (`ProposedOrdersButton`), an order per vendor each item was last

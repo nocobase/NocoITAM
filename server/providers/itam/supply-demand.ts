@@ -563,27 +563,36 @@ export async function supplyDemand(
       });
     }
 
-  // Names, for rows that met no joiner line.
-  const modelIds = [...rows.values()]
-    .filter((row) => row.target.type === 'model' && !row.target.name)
-    .map((row) => row.target.id);
-  if (modelIds.length > 0)
-    for (const row of await q()
-      .selectFrom('models')
-      .select(['id', 'name'])
-      .where('id', 'in', modelIds)
-      .execute<Row>())
-      names.models.set(String(row.id), String(row.name));
-  const productIds = [...rows.values()]
-    .filter((row) => row.target.type === 'softwareProduct' && !row.target.name)
-    .map((row) => row.target.id);
-  if (productIds.length > 0)
-    for (const row of await q()
-      .selectFrom('softwareProducts')
-      .select(['id', 'name'])
-      .where('id', 'in', productIds)
-      .execute<Row>())
-      names.products.set(String(row.id), String(row.name));
+  // Every model and software product has a row (2026-10-23), nothing
+  // coming or going included: the page lists all of them on request.
+  const appliesTo = new Map(
+    (
+      await q()
+        .selectFrom('categories')
+        .select(['id', 'appliesTo'])
+        .execute<Row>()
+    ).map((row) => [String(row.id), asText(row.appliesTo) ?? '']),
+  );
+  const STOCK_KINDS = new Set(['accessory', 'consumable', 'component']);
+  for (const row of await q()
+    .selectFrom('models')
+    .select(['id', 'name', 'categoryId'])
+    .execute<Row>()) {
+    const applies = appliesTo.get(String(row.categoryId)) ?? '';
+    rowOf(
+      'model',
+      String(row.id),
+      STOCK_KINDS.has(applies) ? applies : 'device',
+    );
+    names.models.set(String(row.id), String(row.name));
+  }
+  for (const row of await q()
+    .selectFrom('softwareProducts')
+    .select(['id', 'name'])
+    .execute<Row>()) {
+    rowOf('softwareProduct', String(row.id), 'entitlement');
+    names.products.set(String(row.id), String(row.name));
+  }
 
   const result: SupplyRow[] = [];
   for (const [key, row] of rows) {
@@ -601,8 +610,6 @@ export async function supplyDemand(
     const demand = -row.entries
       .filter((entry) => entry.quantity < 0)
       .reduce((sum, entry) => sum + entry.quantity, 0);
-    // Nothing coming or going: not worth a row.
-    if (supply === 0 && demand === 0) continue;
     const balance = row.unlimited ? null : supply - demand;
     const firstNeed = [...row.needs].sort()[0] ?? null;
     // Below the minimum level alone, it is wanted now.
