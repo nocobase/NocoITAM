@@ -305,13 +305,13 @@ function JoinerRow({
       {!plan.kit ? (
         <p className='text-xs text-muted-foreground'>{t('onboarding.noKit')}</p>
       ) : special.length > 0 ? (
-        // The tags inside on a white ground of their own (2026-10-22): on
-        // the box's grey they read as part of it.
-        <ul className='space-y-1 rounded-md bg-muted/50 px-3 py-2 [&_[data-slot=badge]]:bg-card'>
+        // In a hairline frame on white, a line between items (2026-10-22):
+        // on a grey box the outlined tags read as part of the ground.
+        <ul className='divide-y divide-border/60 rounded-md border border-border/60 px-3'>
           {special.map((line) => (
             <li
               key={line.key}
-              className='flex flex-wrap items-center gap-x-3 gap-y-1'
+              className='flex flex-wrap items-center gap-x-3 gap-y-1 py-2'
             >
               {/* At least 10rem for the item, so on a narrow screen what it
                   comes from takes the next line rather than covering it. */}
