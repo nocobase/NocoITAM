@@ -35,6 +35,18 @@ const isShort = (row: SupplyRow) => row.balance !== null && row.balance < 0;
 const buyable = (row: SupplyRow) =>
   isShort(row) && row.itemType !== null && row.target.type !== 'category';
 
+const KIND_ORDER = [
+  'device',
+  'accessory',
+  'consumable',
+  'component',
+  'entitlement',
+];
+const kindOrder = (row: SupplyRow) => {
+  const at = KIND_ORDER.indexOf(row.kind);
+  return at === -1 ? KIND_ORDER.length : at;
+};
+
 /** What a row's numbers come to, in the words the page uses. */
 function figures(row: SupplyRow) {
   const { totals } = row;
@@ -72,7 +84,15 @@ export default function SupplyDemandPage(): ReactElement {
   const result = useSupplyDemand(days, replacements);
   const all = result.data?.rows ?? [];
   const short = all.filter(isShort);
-  const enough = all.filter((row) => !isShort(row));
+  // By type as the menu lists them, then by name (2026-10-23); what is
+  // short keeps its most pressing first.
+  const enough = all
+    .filter((row) => !isShort(row))
+    .sort(
+      (a, b) =>
+        kindOrder(a) - kindOrder(b) ||
+        a.target.name.localeCompare(b.target.name),
+    );
   const rows: readonly Row[] | undefined = result.data
     ? enough.map((row) => ({ ...row, id: row.key }))
     : undefined;
