@@ -75,7 +75,6 @@ export function LongTextField({
     // 编辑 and 复制 on hover, as every other field has (2026-10-16).
     <FieldActions
       copyText={value}
-      leading='relaxed'
       onEdit={
         editable
           ? () => {
@@ -201,9 +200,11 @@ function FadePreview({
     return () => observer.disconnect();
   }, [children]);
   return (
+    // The row's own line height (2026-10-23): relaxed, a one-line value
+    // stood taller than its neighbours and its icons sat off its line.
     <div
       ref={ref}
-      className={`line-clamp-3 leading-relaxed whitespace-pre-wrap wrap-anywhere ${
+      className={`line-clamp-3 whitespace-pre-wrap wrap-anywhere ${
         overflows
           ? '[mask-image:linear-gradient(to_bottom,black_55%,transparent)]'
           : ''
