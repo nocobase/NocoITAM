@@ -106,12 +106,15 @@ departments/:id/positions/rename`): its holders and its kit move to the
   counted. 入职供需 (`/onboarding-supply`, linked beside the
   heading of the workbench's 入职准备 column, no menu entry and no page grant; `GET
 /itam/workbench/onboarding-supply`, people `read` and devices `reserve`)
-  is the buying view (2026-10-22): 需要采购 first, the earliest last order
-  day first, with 起草采购单 for all of it and one per row; then one row per joiner (date, progress,
-  缺 / 在途 / 归还 counts) and under it only the lines not taken straight
-  from stock. It listed every line until then, repeating each joiner's
+  is one row per joiner (2026-10-22): date, progress, 缺 / 在途 / 归还
+  counts (缺 red once a last order day has passed, orange before), and under
+  it only the lines not taken straight from stock — short, with the last day
+  to order and 起草采购单 for that item, or coming on an order or back from a
+  leaver. 起草采购单 above the list drafts for every shortage. A 需要采购
+  card listing the shortages across joiners stood above it for the day and
+  was removed as a repetition; listing every line repeated each joiner's
   入职配备 card. The demo shows all three sources: stock, an Adobe seat on
-  a placed order, an IntelliJ seat short. 全部执行 carries on past a refused item and
+  a placed order, an IntelliJ seat and a test iPhone short. 全部执行 carries on past a refused item and
   names each refusal, and its toast counts what went through.
   `GET /itam/master/people/:id/onboarding` returns it; it writes nothing.
   The 归属 tab of an active person whose 入职日期 is ahead or within the

@@ -997,8 +997,6 @@ const zhCN: AppResource = {
       description:
         '所有还没配齐的新人按入职日期统一分配：先用库存，再算已下单的采购，最后是离职人员归还的设备和席位。只是计划，预留了才算定下。',
       link: '入职供需',
-      shortages: '需要采购',
-      noShortages: '没有缺口：库存、在途采购和离职归还够用。',
       empty: '没有待配齐的新人。',
       joiners: '待配齐的新人',
       onOrder: '在途 {{count}}',

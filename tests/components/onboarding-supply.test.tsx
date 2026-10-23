@@ -1,10 +1,4 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { expect, it, vi } from 'vitest';
@@ -103,6 +97,24 @@ const supply: OnboardingSupply = {
           proposals: [{ type: 'seat', id: 'e1', label: 'M365' }],
         }),
         line('ide', 'IntelliJ', { missing: 1, shortfall: 1 }),
+        line('adobe', 'Adobe', {
+          planned: [
+            {
+              type: 'seat',
+              id: 'po1',
+              label: 'Adobe',
+              quantity: 1,
+              supply: {
+                kind: 'order',
+                availableOn: '2099-01-05',
+                orderId: 'po1',
+                orderNo: 'PO-1',
+                orderStatus: 'ordered',
+              },
+            },
+          ],
+          onOrder: 1,
+        }),
       ]),
     },
   ],
@@ -117,14 +129,14 @@ const show = () =>
     </QueryClientProvider>,
   );
 
-it('leads with what to buy, and proposes orders for all of it', async () => {
+it('drafts orders for every shortage from the list’s heading', async () => {
   state.supply = supply;
   state.requests = [];
   show();
   fireEvent.click(
-    screen.getByRole('button', { name: /onboarding\.draftOrder/ }),
+    screen.getAllByRole('button', { name: /onboarding\.draftOrder/ })[0]!,
   );
-  // Every joiner's shortfall, without the chat (2026-10-22).
+  // Every joiner's shortfall, in the create dialog (2026-10-22).
   await waitFor(() =>
     expect(state.requests).toEqual([
       expect.objectContaining({
@@ -135,53 +147,35 @@ it('leads with what to buy, and proposes orders for all of it', async () => {
   );
 });
 
-it('lists each joiner once, with only what is not taken from stock', () => {
+it('lists under each joiner only what is short or on its way, once', async () => {
   state.supply = supply;
-  show();
-  const name = screen.getAllByRole('link', { name: 'Sun Hao' });
-  expect(name.map((link) => link.getAttribute('href'))).toContain(
-    '/people/p1/holdings',
-  );
-  // From stock, on their own card: not repeated here (2026-10-22).
-  expect(screen.queryByText('Microsoft 365')).toBeNull();
-  // Short: said, with the item opening its product.
-  const joiners = screen
-    .getByText('onboarding.supply.joiners')
-    .closest('[data-slot=card]') as HTMLElement;
-  expect(
-    within(joiners)
-      .getByRole('link', { name: 'IntelliJ' })
-      .getAttribute('href'),
-  ).toBe('/software-products/ide');
-});
-
-it('drafts one item on its own from its row when there are several', async () => {
-  state.supply = {
-    ...supply,
-    shortages: [
-      ...supply.shortages,
-      {
-        key: 'model:iphone',
-        target: { type: 'model', id: 'iphone', name: 'iPhone 15' },
-        kind: 'device',
-        itemType: 'device',
-        quantity: 1,
-        orderBy: '2099-01-05',
-        people: [{ id: 'p2', name: 'Lin Xue' }],
-      },
-    ],
-  };
   state.requests = [];
   show();
+  expect(
+    screen
+      .getAllByRole('link', { name: 'Sun Hao' })
+      .map((link) => link.getAttribute('href')),
+  ).toContain('/people/p1/holdings');
+  // From stock, on their own card: not repeated here.
+  expect(screen.queryByText('Microsoft 365')).toBeNull();
+  // No 需要采购 card listing the shortages a second time (2026-10-22).
+  expect(screen.queryByText('onboarding.supply.shortages')).toBeNull();
+  // Short and on its way: each listed, the item opening its product.
+  expect(
+    screen.getByRole('link', { name: 'IntelliJ' }).getAttribute('href'),
+  ).toBe('/software-products/ide');
+  expect(screen.getByRole('link', { name: 'Adobe' }).getAttribute('href')).toBe(
+    '/software-products/adobe',
+  );
+  // The shortage's own button: this item, for this joiner.
   const buttons = screen.getAllByRole('button', {
     name: /onboarding\.draftOrder/,
   });
-  // The heading's, then one per row.
-  expect(buttons).toHaveLength(3);
-  fireEvent.click(buttons[2]!);
+  expect(buttons).toHaveLength(2);
+  fireEvent.click(buttons[1]!);
   await waitFor(() =>
     expect(state.requests).toEqual([
-      expect.objectContaining({ json: { keys: ['model:iphone'] } }),
+      expect.objectContaining({ json: { personId: 'p1', keys: ['ide'] } }),
     ]),
   );
 });

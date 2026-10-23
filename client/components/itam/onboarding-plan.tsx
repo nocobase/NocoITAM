@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import {
   Tooltip,
   TooltipContent,
@@ -670,7 +671,16 @@ export function LineOutlook({
         );
       })}
       {line.shortfall > 0 ? (
-        <span className='text-xs text-destructive'>
+        // Red once its last day to order has passed, orange before
+        // (2026-10-22), as the workbench's joiner cards say it.
+        <span
+          className={cn(
+            'text-xs',
+            line.orderBy && line.orderBy >= today
+              ? 'text-warning-foreground'
+              : 'text-destructive',
+          )}
+        >
           {t('onboarding.shortfall', { count: line.shortfall })}
           {line.orderBy
             ? ` · ${

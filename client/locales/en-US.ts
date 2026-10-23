@@ -1011,9 +1011,6 @@ const messages = {
       description:
         'Every joiner not yet equipped, worked out together by joining day: stock first, then purchases already placed, then the devices and seats people leaving hand back. A plan only: a reservation is what commits it.',
       link: 'Onboarding supply',
-      shortages: 'To buy',
-      noShortages:
-        'Nothing short: stock, orders on their way and returns cover it.',
       empty: 'No joiners waiting to be equipped.',
       joiners: 'Joiners to equip',
       onOrder: '{{count}} on order',

@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { Package } from 'lucide-react';
-import { Fragment, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
 import { DraftOrdersButton } from '@/components/itam/draft-orders-button';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
@@ -28,11 +28,13 @@ import {
  * 入职准备 column, so it has no menu entry and checks no page grant: the
  * endpoint answers only a reader that column is for.
  *
- * The buying view since 2026-10-22: 需要采购 first, with Asset Steward to
- * draft one order for all of it; then one row per joiner — when, how far
- * along, how much is short, on its way or coming back — and under it only
- * the items not taken straight from stock. Listing every item repeated each
- * joiner's 入职配备 card, which is a click away.
+ * Since 2026-10-22 one row per joiner — when, how far along, how much is
+ * short, on its way or coming back — and under it only the items not taken
+ * straight from stock: short, each with its last day to order and 起草采购单,
+ * or coming on an order or back from a leaver. 起草采购单 at the top drafts
+ * for every shortage. A 需要采购 card above it listed the shortages again,
+ * across joiners, for the day; listing every item repeated each joiner's
+ * 入职配备 card, which is a click away.
  */
 export default function OnboardingSupplyPage(): ReactElement {
   const { t } = useTranslation();
@@ -49,10 +51,7 @@ export default function OnboardingSupplyPage(): ReactElement {
       {supply.isLoading ? (
         <Skeleton className='h-40 w-full rounded-xl' />
       ) : supply.data ? (
-        <>
-          <Shortages shortages={supply.data.shortages} />
-          <Joiners joiners={supply.data.joiners} />
-        </>
+        <Joiners joiners={supply.data.joiners} />
       ) : null}
     </Page>
   );
@@ -102,104 +101,25 @@ function Quantity({ count }: { readonly count: number }): ReactElement | null {
   ) : null;
 }
 
-function Shortages({
-  shortages,
-}: {
-  readonly shortages: OnboardingSupply['shortages'];
-}): ReactElement {
-  const { t } = useTranslation();
-  const today = todayIso();
-  // The most pressing first: the earliest last day to order.
-  const sorted = [...shortages].sort((a, b) =>
-    (a.orderBy ?? '9999').localeCompare(b.orderBy ?? '9999'),
-  );
-  // All of it, or one row (2026-10-22): drafted straight away, an order
-  // per vendor and joiner, the first opened to check (`DraftOrdersButton`;
-  // asked of Asset Steward in the chat until then).
-  return (
-    <Card className='py-0'>
-      <CardContent className='space-y-2 p-4'>
-        <div className='flex min-h-8 items-center gap-3 border-b border-border/60 pb-2'>
-          <h2 className='font-heading text-sm font-semibold'>
-            {t('onboarding.supply.shortages')}
-          </h2>
-          {sorted.length > 0 ? <DraftOrdersButton className='ml-auto' /> : null}
-        </div>
-        {sorted.length === 0 ? (
-          <p className='text-sm text-muted-foreground'>
-            {t('onboarding.supply.noShortages')}
-          </p>
-        ) : (
-          <ul className='divide-y divide-border/60 text-sm'>
-            {sorted.map((entry) => (
-              <li
-                key={entry.key}
-                className='flex flex-wrap items-center gap-x-3 gap-y-1 py-2'
-              >
-                <span className='flex min-w-0 flex-1 basis-40 items-center gap-2'>
-                  <ItemTag kind={entry.kind} itemType={entry.itemType} />
-                  <TargetLink target={entry.target} />
-                  <Quantity count={entry.quantity} />
-                </span>
-                {/* Whom it is for, each opening their 入职配备. */}
-                <span className='min-w-0 truncate text-xs text-muted-foreground'>
-                  {entry.people.map((person, index) => (
-                    <Fragment key={person.id}>
-                      {index > 0 ? t('common.listSeparator') : null}
-                      <RecordLink
-                        to={`/people/${person.id}/holdings`}
-                        className='transition-colors hover:text-primary'
-                      >
-                        {person.name}
-                      </RecordLink>
-                    </Fragment>
-                  ))}
-                </span>
-                {entry.orderBy ? (
-                  <span
-                    className={
-                      entry.orderBy < today
-                        ? 'shrink-0 text-xs font-medium text-destructive tabular-nums'
-                        : 'shrink-0 text-xs text-muted-foreground tabular-nums'
-                    }
-                  >
-                    {entry.orderBy < today
-                      ? t('onboarding.orderNow')
-                      : t('onboarding.orderBy', {
-                          date: formatDate(entry.orderBy),
-                        })}
-                  </span>
-                ) : null}
-                {/* One item on its own; with a single row the heading's
-                    button is the same thing. */}
-                {sorted.length > 1 ? (
-                  <DraftOrdersButton
-                    keys={[entry.key]}
-                    icon={false}
-                    className='-mx-1.5 h-6 px-1.5 text-xs'
-                  />
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 function Joiners({
   joiners,
 }: {
   readonly joiners: OnboardingSupply['joiners'];
 }): ReactElement {
   const { t } = useTranslation();
+  const short = joiners.some((joiner) =>
+    joiner.plan.lines.some((line) => !line.waived && line.shortfall > 0),
+  );
   return (
     <Card className='py-0'>
       <CardContent className='space-y-2 p-4'>
-        <h2 className='border-b border-border/60 pb-2 font-heading text-sm font-semibold'>
-          {t('onboarding.supply.joiners')}
-        </h2>
+        <div className='flex min-h-8 items-center gap-3 border-b border-border/60 pb-2'>
+          <h2 className='font-heading text-sm font-semibold'>
+            {t('onboarding.supply.joiners')}
+          </h2>
+          {/* Orders for every shortage, a dialog each. */}
+          {short ? <DraftOrdersButton className='ml-auto' /> : null}
+        </div>
         {joiners.length === 0 ? (
           <p className='text-sm text-muted-foreground'>
             {t('onboarding.supply.empty')}
@@ -225,6 +145,11 @@ function JoinerRow({
   const plan = joiner.plan;
   const lines = plan.lines.filter((line) => !line.waived);
   const short = lines.reduce((sum, line) => sum + line.shortfall, 0);
+  // Red once a last day to order has passed, orange before, as the lines.
+  const today = todayIso();
+  const late = lines.some(
+    (line) => line.shortfall > 0 && (!line.orderBy || line.orderBy < today),
+  );
   const ordered = lines.reduce((sum, line) => sum + line.onOrder, 0);
   const returning = lines.reduce((sum, line) => sum + line.returning, 0);
   // What only this page says: the items not taken straight from stock.
@@ -278,7 +203,13 @@ function JoinerRow({
           </span>
         </span>
         {short > 0 ? (
-          <Badge className='bg-destructive/10 text-destructive'>
+          <Badge
+            className={
+              late
+                ? 'bg-destructive/10 text-destructive'
+                : 'bg-warning/15 text-warning-foreground'
+            }
+          >
             {t('onboarding.shortfall', { count: short })}
           </Badge>
         ) : null}
@@ -311,8 +242,17 @@ function JoinerRow({
                 <TargetLink target={line.target} />
                 <Quantity count={line.required} />
               </span>
-              <span className='flex flex-wrap items-center justify-end gap-1.5'>
+              <span className='flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5'>
                 <LineOutlook line={line} />
+                {/* This item for this joiner, in the create dialog. */}
+                {line.shortfall > 0 ? (
+                  <DraftOrdersButton
+                    personId={joiner.id}
+                    keys={[line.key]}
+                    icon={false}
+                    className='-mx-1.5 h-6 px-1.5 text-xs'
+                  />
+                ) : null}
               </span>
             </li>
           ))}
