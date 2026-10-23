@@ -1042,6 +1042,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     dockOrder: 'Docking station stock',
     keyboardOrder: 'Keyboards for the new desks',
     catalogueStockOrder: '{name} for stock',
+    firstStockOrder: '{name}: first stock',
     mouseRestock: 'Mice to restock',
     dockRestock: 'Docks for the R&D desks',
     headsetRestock: 'Headsets for the sales team',
@@ -1186,6 +1187,7 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     dockOrder: '扩展坞补货',
     keyboardOrder: '新工位键盘',
     catalogueStockOrder: '{name} 备货',
+    firstStockOrder: '{name} 首批备货',
     mouseRestock: '鼠标补货',
     dockRestock: '研发工位扩展坞',
     headsetRestock: '销售团队耳机',
@@ -3530,6 +3532,36 @@ export function createDemoService(dependencies: {
           if (!itemId) throw new Error(`${order.description}: no stock item`);
           return track('stockItems', { id: itemId });
         };
+        // An accessory's first stock, bought by an order received into a
+        // record of its own on the day it came in (2026-10-22: it was
+        // simply there, and its page showed no purchase but a restock).
+        const boughtStock = async (
+          input: Row,
+          day: number,
+          unitPrice: number,
+        ): Promise<Row> => {
+          const received = await purchasedStock({
+            description: texts.firstStockOrder.replace(
+              '{name}',
+              String(input.name),
+            ),
+            itemType: input.kind as 'accessory',
+            modelId: String(input.modelId),
+            quantity: Number(input.totalQuantity),
+            unitPrice,
+            orderedDaysAgo: 8 - day,
+            name: String(input.name),
+            minimumQuantity: Number(input.minimumQuantity),
+          });
+          return (
+            (await database
+              .query()
+              .selectFrom('stockItems')
+              .selectAll()
+              .where('id', '=', String(received.id))
+              .executeTakeFirst<Row>()) ?? received
+          );
+        };
         await reached(40);
         // An entitlement bought through an order: the receipt is its purchase
         // record (the entitlement itself keeps no price).
@@ -3619,7 +3651,7 @@ export function createDemoService(dependencies: {
         };
         // Keyboards from the shelf for two years, topped up by an order for
         // the new desks a month ago.
-        const keyboards = await stockItem(
+        const keyboards = await boughtStock(
           {
             kind: 'accessory',
             name: 'Logitech MX Keys',
@@ -3630,6 +3662,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 3,
           },
           -700,
+          799,
         );
         await issue(keyboards, 'person', liNa, 1, -695);
         await issue(keyboards, 'person', wangFang, 1, -690);
@@ -3659,7 +3692,7 @@ export function createDemoService(dependencies: {
         for (const holder of [zhangWei, liuYang])
           await issue(keyboards, 'person', holder, 1, -30);
         await toCrew(keyboards, -700, crewWants.keyboard);
-        const docks = await stockItem(
+        const docks = await boughtStock(
           {
             kind: 'accessory',
             name: 'Dell WD22TB4 dock',
@@ -3670,6 +3703,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 2,
           },
           -800,
+          2299,
         );
         await issue(docks, 'person', liNa, 1, -795);
         await issue(docks, 'person', zhangWei, 1, -790);
@@ -3692,7 +3726,7 @@ export function createDemoService(dependencies: {
         await issue(docks, 'person', liuYang, 1, -280);
         if (supportPerson) await issue(docks, 'person', supportPerson, 1, -294);
         await toCrew(docks, -800, crewWants.dock);
-        const headsets = await stockItem(
+        const headsets = await boughtStock(
           {
             kind: 'accessory',
             name: 'Logitech Zone Vibe 100',
@@ -3703,6 +3737,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 3,
           },
           -400,
+          599,
         );
         await issue(headsets, 'person', wangFang, 1, -390);
         await issue(headsets, 'person', zhaoMin, 1, -325);
@@ -3728,7 +3763,7 @@ export function createDemoService(dependencies: {
           code: '470-AEUP',
           specification: texts.hubSpec,
         });
-        const hubs = await stockItem(
+        const hubs = await boughtStock(
           {
             kind: 'accessory',
             name: texts.hubItem,
@@ -3739,6 +3774,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 2,
           },
           -540,
+          399,
         );
         await issue(hubs, 'person', wangFang, 1, -400);
         await takeBack(hubs, 'person', wangFang, -380);
@@ -3773,7 +3809,7 @@ export function createDemoService(dependencies: {
           ...(await picture('brio-301.jpg')),
           specification: texts.webcamSpec,
         });
-        const webcams = await stockItem(
+        const webcams = await boughtStock(
           {
             kind: 'accessory',
             name: texts.webcamItem,
@@ -3784,6 +3820,7 @@ export function createDemoService(dependencies: {
             minimumQuantity: 1,
           },
           -700,
+          499,
         );
         await issue(webcams, 'location', meetingRoom, 1, -650);
         await issue(webcams, 'person', wangFang, 1, -640);

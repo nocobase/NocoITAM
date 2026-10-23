@@ -230,7 +230,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   docks, headsets, hubs and webcams a restock received into their record,
   each starting that much lower so it ends where it did; the catalogue's
   stock (`CATALOGUE_ASSETS`, each with its `price`) is bought by an order
-  received into a record of its own. Their platform ids start `demo-` (or `computer:demo-` /
+  received into a record of its own; so is the first stock of the
+  keyboards, docks, headsets, hubs and webcams (`boughtStock`), before
+  their restocks. Their platform ids start `demo-` (or `computer:demo-` /
   `mobile:demo-`), which is how `device-demo-source.ts` knows them: with no
   connection, a platform holding demo records reads as connected (`demo`)
   and its pulls replay them, last syncs moved on by the time since the
