@@ -1110,7 +1110,7 @@ export function createEntitlementService(
             ? null
             : String(seat.account ?? '')
                 .trim()
-                .toLowerCase();
+                .toLowerCase() || null;
           // Either kind's seat may carry a key of its own: a perpetual copy's,
           // or a subscription's where the vendor activates by key (2026-10-23).
           const seatKey = String(seat.productKey ?? '').trim() || null;
@@ -1128,7 +1128,9 @@ export function createEntitlementService(
                 'holderType',
               );
           } else {
-            if (!account)
+            // A person or an account (2026-10-23): a subscription that
+            // activates by key may have no account to name.
+            if (!account && !holderId)
               throw new ValidationError('account is required', 'account');
             if (holderType !== 'person')
               throw new ValidationError(
@@ -1136,8 +1138,9 @@ export function createEntitlementService(
                 'holderType',
               );
           }
-          // One holder (or account) once per call and once per entitlement.
-          const key = perpetual ? `${holderType}:${holderId}` : account!;
+          // One holder (or account) once per call and once per entitlement;
+          // a subscription seat without an account is its person's.
+          const key = account ?? `${holderType}:${holderId}`;
           if (seen.has(key)) continue;
           seen.add(key);
           let duplicate = connection.query
@@ -1145,16 +1148,16 @@ export function createEntitlementService(
             .select('id')
             .where('entitlementId', '=', id)
             .where('releasedAt', 'is', null);
-          duplicate = perpetual
-            ? duplicate
+          duplicate = account
+            ? duplicate.where('account', '=', account)
+            : duplicate
                 .where('holderType', '=', holderType)
-                .where('holderId', '=', holderId)
-            : duplicate.where('account', '=', account);
+                .where('holderId', '=', holderId);
           if (await duplicate.executeTakeFirst())
             throw new BusinessRuleError(
-              perpetual
-                ? 'Holder already has a seat'
-                : `Account ${account} already has a seat`,
+              account
+                ? `Account ${account} already has a seat`
+                : 'Holder already has a seat',
               'DUPLICATE_SEAT',
             );
           let label = account ?? '';

@@ -1480,6 +1480,7 @@ const messages = {
     keyCopied: 'Copied',
     revealFailed: 'Could not reveal the key',
     seatKey: 'Seat key',
+    seatAccountHint: 'Choose a person, enter an account, or both',
     seatKeyHint: "This seat's own key; leave empty to use the shared key",
     setSeatKey: 'Set key',
     unlimited: 'Unlimited · {{assigned}} assigned',

@@ -268,7 +268,8 @@ function EntitlementActions({
         }
         busy={assign.isPending}
         error={assign.error}
-        disabled={subscription ? !account.trim() : !holderId}
+        // A subscription seat names a person, an account or both.
+        disabled={subscription ? !account.trim() && !holderId : !holderId}
         confirmLabel={t('entitlements.assignSeat')}
         onConfirm={() => assign.mutate()}
       >
@@ -291,15 +292,16 @@ function EntitlementActions({
         </div>
         {subscription ? (
           <div className='grid gap-1.5'>
-            <Label htmlFor='seat-account'>
-              {t('fields.account')} <span className='text-destructive'>*</span>
-            </Label>
+            <Label htmlFor='seat-account'>{t('fields.account')}</Label>
             <Input
               id='seat-account'
               type='email'
               value={account}
               onChange={(event) => setAccount(event.target.value)}
             />
+            <p className='text-xs text-muted-foreground'>
+              {t('entitlements.seatAccountHint')}
+            </p>
           </div>
         ) : null}
         {/* Optional on either kind: a subscription may activate by key too

@@ -1427,6 +1427,7 @@ const zhCN: AppResource = {
     keyCopied: '已复制',
     revealFailed: '无法查看密钥',
     seatKey: '席位密钥',
+    seatAccountHint: '人员和账号至少填一项',
     seatKeyHint: '这个席位自己的密钥；留空表示使用共用密钥',
     setSeatKey: '设置密钥',
     unlimited: '不限 · 已分配 {{assigned}}',

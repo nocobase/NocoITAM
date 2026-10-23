@@ -738,11 +738,11 @@ describe('stock and software entitlements', () => {
     // A subscription renews unless told otherwise.
     expect(subscription.autoRenew).toBe(true);
 
-    const noAccount = await post(
-      `entitlements/${subscription.id}/assign-seats`,
-      { seats: [{ holderId: fixture.personId }] },
-    );
-    expect(noAccount.status).toBe(400);
+    // A seat names a person, an account or both, never neither.
+    const nobody = await post(`entitlements/${subscription.id}/assign-seats`, {
+      seats: [{ productKey: 'SUB-KEY' }],
+    });
+    expect(nobody.status).toBe(400);
     const assigned = await post(
       `entitlements/${subscription.id}/assign-seats`,
       {
@@ -778,6 +778,11 @@ describe('stock and software entitlements', () => {
     expect((await data<{ productKey: string }>(seatKey)).productKey).toBe(
       'SUB-KEY',
     );
+    // Without an account the person is the seat, and holds it once.
+    const again = await post(`entitlements/${subscription.id}/assign-seats`, {
+      seats: [{ holderId: fixture.personId }],
+    });
+    expect(again.status).toBe(422);
 
     // Usage is not tracked: there is no import to feed a last-used date.
     const usage = await post(`entitlements/${subscription.id}/import-usage`, {
