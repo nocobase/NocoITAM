@@ -313,8 +313,10 @@ export function InfoSection({
   return (
     <section>
       {/* A primary-colored bar marks each group and a rule closes its
-          heading, so the eye finds the sections of a long card. */}
-      <div className='mb-2 flex min-h-9 flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2'>
+          heading, so the eye finds the sections of a long card. As much
+          room under the rule as over it (2026-10-23): the heading sits in
+          a taller box, so mb-3 matches what min-h-9 and pb-2 leave above. */}
+      <div className='mb-3 flex min-h-9 flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2'>
         <h2 className='flex shrink-0 items-center gap-2 font-heading text-sm font-semibold'>
           <span
             aria-hidden='true'
