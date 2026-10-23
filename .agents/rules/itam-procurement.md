@@ -166,37 +166,3 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `quoteRecommendation`, table `purchaseQuoteComparisons`) went from the
   order page, the approval assistant's material and the reading tasks. A
   supplier's quote can still fill a draft's lines through 解析单据.
-- **供需分析 is where what is short is bought** (2026-10-23,
-  `/supply-demand`, under 收件箱 in the menu; `supplyDemand` in
-  `server/providers/itam/supply-demand.ts`, `GET
-/itam/reports/supply-demand?days=&replacements=`). A row for every model
-  and software product, nothing coming or going included (2026-10-23) —
-  `model:<id>` for devices and stock, `softwareProduct:<id>` for seats,
-  `category:<id>` for a kit item naming a category — with, over the next 30 /
-  60 / 90 days: supply from stock (free devices not reserved or on an open
-  disposal, a stock item's total less used, free seats), open purchase
-  order lines (draft to partly received, by `expectedAt` or `neededBy`),
-  devices at the repairer by their expected return, and what leavers hand
-  back (devices from the leave date plus `onboardingPrepDays`, accessories,
-  seats); demand from joiners (required less prepared, waived items out; a
-  category line counts only the plan's own shortfall), a stock item's
-  minimum, a subscription ending unrenewed (all its seats), and, when asked,
-  devices due for replacement. An entitlement with no seat count makes its
-  product 不限, named in the row, only while it lasts the window (no expiry,
-  auto-renewing, or ending after it); a trial ending sooner counts nothing.
-  Short, a row says the last day to order: the
-  earliest dated need less `purchaseLeadDays` (and the preparation days for
-  a device), or today when only the minimum is short. It reads every record
-  regardless of record scope, so it asks for `read` on devices, stock items,
-  entitlements, purchase orders and people.
-  The page reads 不够用 first (2026-10-23, the same day: one table of every
-  item with a column per source was not readable — most rows changed
-  nothing, and a minimum read as somebody's need): each short item says in
-  words what needs it, what there is, how many are missing and the last day
-  to order. Then 全部, every item, the short ones' 剩余 in red, as 现有 + 将到 − 将用 = 剩余 beside the minimum; a row opens
-  to its records.
-  创建采购单 (an item) and 全部创建采购单 (the heading) open the create dialog
-  filled in (`ProposedOrdersButton`), an order per vendor each item was last
-  bought from, the reason 新员工配备 when only joiners need it, 批量更换 when
-  only replacements do, else 库存补充, needed by the earliest dated need.
-  Nothing is created until a dialog is saved.

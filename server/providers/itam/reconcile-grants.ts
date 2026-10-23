@@ -63,6 +63,8 @@ const STALE_PAGES = new Set([
   'notifications',
   // 入职配置 moved into the department's page as a tab (2026-10-06).
   'onboarding-kits',
+  // 供需分析, added and removed on 2026-10-23.
+  'supply-demand',
 ]);
 
 /**
@@ -489,8 +491,6 @@ const IT_PAGES: readonly string[] = [
 const IT_ROLE_PAGES: readonly string[] = [
   ...IT_PAGES,
   'reports',
-  // 供需分析 (2026-10-23): buying what is short is the IT roles' work.
-  'supply-demand',
   'scheduler.schedules',
   // Granted by its own seed (`202609130004_seed_itam_p5_grants`), which
   // used to give it to the Asset Manager alone.

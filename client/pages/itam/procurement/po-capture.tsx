@@ -144,12 +144,9 @@ export function CaptureNotice({
   currency,
   priced,
   onPlace,
-  intro,
 }: {
   readonly capture: PurchaseOrderCaptureState;
   readonly result: PurchaseCapture;
-  /** What the column first says, for a form not filled by AI 整理. */
-  readonly intro?: string;
   /** An unmatched line the reader picked or created a record for. */
   readonly onPlace: UnmatchedPickerProps['onPlace'];
   readonly currency: string | null;
@@ -172,7 +169,7 @@ export function CaptureNotice({
           {capture.summary ? (
             <CollapsibleText text={capture.summary} chars={200} lines={3} />
           ) : (
-            (intro ?? t('procurement.capture.filled'))
+            t('procurement.capture.filled')
           )}
         </span>
       </p>

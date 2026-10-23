@@ -72,7 +72,6 @@ const messages = {
     inboxGroup: 'Inbox',
     // The inbox, first in the menu (2026-10-16); it said To-dos before, unused.
     inbox: 'Inbox',
-    supplyDemand: 'Supply & demand',
     notifications: 'Notifications',
     assetsGroup: 'Assets',
     operationsGroup: 'Operations',
@@ -1777,8 +1776,6 @@ const messages = {
     saveDraft: 'Save draft',
     title: 'Procurement',
     object: 'purchase order',
-    moveLine: 'Move to another order',
-    moveLineTo: 'Move to {{order}}',
     new: 'New purchase order',
     capture: {
       unreadable:
@@ -1798,8 +1795,6 @@ const messages = {
         'The AI did not organise a purchase order. Add to the text and try again.',
       filled:
         'The AI filled in the order from the text. Check it before saving.',
-      proposed:
-        'Filled in from what supply & demand finds short. To change it, tell AI: another vendor, the last unit prices, other quantities.',
       reviewHint: 'The AI was not sure of this one. Check it.',
       check: 'Check',
       vendorNotFound: 'The text says {{name}}, which is not on the vendor list',
@@ -3197,67 +3192,6 @@ const messages = {
     loading: 'Laying out diagram…',
     nodeHelp: 'Press Enter or Space to select a state.',
     edgeHelp: 'Press Enter or Space to select a transition.',
-  },
-  supplyDemand: {
-    title: 'Supply & demand',
-    description:
-      'Whether each item is enough for the coming days, and when to order what is not.',
-    horizon: 'Period',
-    days: '{{count}} days',
-    replacements: 'Include due replacements',
-    unlimited: 'Unlimited',
-    short: {
-      title: '{{count}} items short in the next {{days}} days',
-      none: 'Everything is enough for the next {{days}} days',
-      missing: '{{count}} short',
-      orderBy: 'Order by {{date}}',
-      orderByPassed: 'Order by {{date}}, passed',
-      orderToday: 'Order today',
-    },
-    enough: {
-      title: 'All {{count}}',
-      hint: 'Left = have + coming − using; enough while left is not below the minimum. Open a row for the records.',
-      empty: 'Nothing comes in or goes out',
-    },
-    columns: {
-      item: 'Item',
-      category: 'Category',
-      have: 'Have',
-      coming: 'Coming',
-      using: 'Using',
-      left: 'Left',
-      minimum: 'Minimum',
-    },
-    explain: {
-      needs: 'Needs',
-      has: 'Has',
-      noNeeds: 'Nobody needs it; it is below its minimum',
-      nothing: 'Nothing free, nothing on its way',
-    },
-    entry: {
-      unlimited: 'seats not counted',
-      inStock: '{{number}} in stock',
-      freeSeats: '{{number}} free seats',
-      minimum: 'keep {{number}} in stock',
-      joiner: 'joins {{date}}',
-      replacement: 'due for replacement {{date}}',
-      expiring: 'ends unrenewed, {{number}} seats',
-      expiringDated: 'ends unrenewed {{date}}, {{number}} seats',
-      order: '{{number}} on order',
-      orderDated: '{{number}} on order, due {{date}}',
-      repair: 'back from repair {{date}}',
-      return: 'handed back {{date}}',
-    },
-    orders: {
-      create: 'Create order',
-      createAll: 'Create all orders',
-      description: 'Restock from supply & demand: {{items}}',
-      titleMany: '{{items}} and {{count}} items in all',
-      noVendor: 'No vendor',
-      created_one: 'Created purchase order {{orders}}',
-      created_other: 'Created {{count}} purchase orders: {{orders}}',
-      nothing: 'Nothing to buy',
-    },
   },
   reports: {
     unassigned: 'Not set',

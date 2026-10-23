@@ -18,7 +18,6 @@ import {
   Gauge,
   Settings2,
   BarChart3,
-  ArrowRightLeft,
   Briefcase,
   Building2,
   ClipboardCheck,
@@ -294,17 +293,6 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       authz: 'skip',
       navigation: { title: 'navigation.inbox', icon: Inbox },
       componentLoader: () => import('./pages/itam/inbox.js'),
-    },
-    // 供需分析 (2026-10-23): what each item has coming in and going out over
-    // the next days, and where what is short is bought. Under 收件箱 at the
-    // user's word, beside the day's work rather than with the reports; a
-    // page grant like any menu page (the IT roles, `reconcile-grants.ts`).
-    {
-      name: 'supply-demand',
-      path: '/supply-demand',
-      auth: 'required',
-      navigation: { title: 'navigation.supplyDemand', icon: ArrowRightLeft },
-      componentLoader: () => import('./pages/itam/supply-demand.js'),
     },
     // 通知 has no menu entry: it opens from the bell in the header
     // (2026-10-05), and 待办 is the workbench's board rather than a page of

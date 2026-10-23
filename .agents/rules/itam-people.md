@@ -106,9 +106,7 @@ departments/:id/positions/rename`): its holders and its kit move to the
   counted. 入职供需, a page of every joiner's plan together
   (`/onboarding-supply`), was removed on 2026-10-23 with its endpoint: each
   joiner's 入职配备 card, their workbench card (缺 N · 应尽快下单) and
-  需要关注's 入职缺口已过最晚下单日 said all of it. What joiners are short of
-  is bought on 供需分析 (see [purchasing](itam-procurement.md)), which the
-  人员变动 column's heading links to. 全部执行 carries on past a refused item and
+  需要关注's 入职缺口已过最晚下单日 said all of it. 全部执行 carries on past a refused item and
   names each refusal, and its toast counts what went through.
   `GET /itam/master/people/:id/onboarding` returns it; it writes nothing.
   The 归属 tab of an active person whose 入职日期 is ahead or within the
@@ -119,14 +117,16 @@ departments/:id/positions/rename`): its holders and its kit move to the
   The card's only AI is 挑选 / 重新挑选 in its strip. The header's 准备
   (配备计划), a chat that proposed the plan 全部执行 already runs, was
   removed on 2026-10-22.
-- The 入职配备 card and the workbench buy nothing (2026-10-23): 创建采购单
-  on a short item's row and 全部创建采购单 on the 人员变动 column
-  (2026-10-22, `DraftOrdersButton` and `POST
-/itam/purchase-orders/joiner-proposals`) went to 供需分析, which weighs a
-  joiner's need against every other on the same item before proposing an
-  order. An order made there counts for a joiner once placed and expected
-  in time; only one raised as theirs (department and needed-by date,
-  `ownOrders`) counts while still a draft.
+- The 入职配备 card and the workbench buy nothing (2026-10-23): what a
+  joiner is short of is ordered as any purchase order is. 创建采购单 on a
+  short item's row and 全部创建采购单 on the 人员变动 column (2026-10-22,
+  the create dialog filled in, an order per vendor and joiner) moved to a
+  供需分析 page of every item's supply and demand, and that page was
+  removed the same day as too involved: a daily, rule-counted list of what
+  to buy, pushed to the asset managers, is the direction under discussion.
+  An order counts for a joiner once placed and expected in time; only one
+  raised as theirs (department and needed-by date, `ownOrders`) counts
+  while still a draft.
   The workbench's 入职准备 (`pendingOnboarding`, right after 离职交接) lists
   **joiners** — people entered in the register no more than 30 days before
   their first day (`isJoiner`; staff entered long after they started, such

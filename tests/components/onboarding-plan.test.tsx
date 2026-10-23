@@ -399,15 +399,17 @@ it('says where planned things come from, with no button, and when to order the r
   expect(screen.getByText(/onboarding\.orderNow/)).toBeTruthy();
 });
 
-it('leaves buying a shortfall to 供需分析', () => {
+it('says what is short without buying it from the card', () => {
   state.aiAvailable = true;
   state.plan = plan('2099-01-10');
   show();
-  // 创建采购单 left the row on 2026-10-23; the page weighs every need.
+  // 创建采购单 left the row on 2026-10-23.
   expect(
     screen.queryByRole('button', { name: /onboarding\.draftOrder/ }),
   ).toBeNull();
-  expect(screen.getAllByText(/onboarding\.shortfall/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/onboarding\.shortfall/).length).toBeGreaterThan(
+    0,
+  );
 });
 
 it('lets a proposed device be looked at before it is reserved', () => {

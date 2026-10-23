@@ -1,14 +1,8 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowRightLeft, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
-import {
-  useMemo,
-  useState,
-  type DragEvent,
-  type ReactElement,
-  type ReactNode,
-} from 'react';
+import { useMemo, useState, type DragEvent, type ReactElement } from 'react';
 
 import { ApproverHint } from '@/components/itam/approver-hint';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
@@ -17,12 +11,6 @@ import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
 import { ReviewMark } from '@/components/itam/review-mark';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import {
   Table,
@@ -73,53 +61,6 @@ import { CaptureNotice, CapturePane } from './po-capture.js';
 /** A line as the dialog edits it: AI 整理 may mark its item 请核对. */
 type DialogLine = PurchaseLineDraft & { readonly uncertain?: boolean };
 
-/** Nothing read yet: the column a proposed order opens with. */
-const EMPTY_CAPTURE: PurchaseCapture = {
-  values: {},
-  lines: [],
-  unmatched: [],
-  vendorName: null,
-  departmentName: null,
-  uncertain: [],
-};
-
-/** 移到…: a line moved to another of the proposed orders. */
-function MoveLine({
-  targets,
-  disabled,
-  onMove,
-}: {
-  readonly targets: readonly { readonly key: string; readonly label: string }[];
-  readonly disabled: boolean;
-  readonly onMove: (target: string) => void;
-}): ReactElement {
-  const { t } = useTranslation();
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        disabled={disabled}
-        render={
-          <Button
-            size='icon-xs'
-            variant='ghost'
-            aria-label={t('procurement.moveLine')}
-            title={t('procurement.moveLine')}
-          />
-        }
-      >
-        <ArrowRightLeft />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>
-        {targets.map((target) => (
-          <DropdownMenuItem key={target.key} onClick={() => onMove(target.key)}>
-            {t('procurement.moveLineTo', { order: target.label })}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 const HEADER_FIELDS = PO_CREATE_FIELDS.map((key) =>
   PO_FIELDS.find((field) => field.key === key)!,
 );
@@ -146,79 +87,24 @@ export function PurchaseOrderCreateDialog({
   open,
   onOpenChange,
   onCreated,
-  initialValues,
-  initialLines,
-  header,
-  moveTargets,
-  onMoveLine,
-  inbox,
 }: {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly onCreated: (record: ItamRecord) => void;
-  /**
-   * An order proposed rather than started empty (2026-10-22, 起草采购单 for
-   * joiners): the form opens filled, on the form tab, to be checked.
-   */
-  readonly initialValues?: Readonly<Record<string, unknown>>;
-  readonly initialLines?: readonly Pick<
-    PurchaseLineDraft,
-    'itemType' | 'modelId' | 'softwareProductId' | 'quantity'
-  >[];
-  /**
-   * Above the form: several proposed orders to switch between (2026-10-22,
-   * 起草采购单 for every joiner's shortfall).
-   */
-  readonly header?: ReactNode;
-  /**
-   * The other orders a line may be moved to (2026-10-22): the proposed
-   * ones, so an item put on its own order can join another vendor's.
-   */
-  readonly moveTargets?: readonly {
-    readonly key: string;
-    readonly label: string;
-  }[];
-  readonly onMoveLine?: (line: PurchaseLineDraft, target: string) => void;
-  /** Lines moved here from another of the proposed orders. */
-  readonly inbox?: readonly {
-    readonly id: string;
-    readonly line: PurchaseLineDraft;
-  }[];
 }): ReactElement {
   const { t } = useTranslation();
   const api = useApi();
   const queryClient = useQueryClient();
   // A new order is in the default currency until someone says otherwise.
   const currency = useItamSettings().data?.general.currency ?? null;
-  const [values, setValues] = useState<Record<string, unknown>>(() => ({
-    ...initialValues,
-  }));
-  const [lines, setLines] = useState<readonly DialogLine[]>(() =>
-    initialLines && initialLines.length > 0
-      ? initialLines.map((line) => ({ ...newPurchaseLine(), ...line }))
-      : [newPurchaseLine()],
-  );
-  const [tab, setTab] = useState<'ai' | 'form' | undefined>(
-    initialValues ? 'form' : undefined,
-  );
+  const [values, setValues] = useState<Record<string, unknown>>({});
+  const [lines, setLines] = useState<readonly DialogLine[]>(() => [
+    newPurchaseLine(),
+  ]);
+  const [tab, setTab] = useState<'ai' | 'form'>();
   const [pasted, setPasted] = useState('');
   const [file, setFile] = useState<File>();
-  // A proposed order opens with the assistant's column beside it, to be
-  // adjusted in words (2026-10-22), as one AI 整理 filled does.
-  const [result, setResult] = useState<PurchaseCapture | undefined>(() =>
-    initialValues ? EMPTY_CAPTURE : undefined,
-  );
-  // Lines moved in from another proposed order, each taken once — while
-  // rendering, when the inbox changes, rather than in an effect.
-  const [taken, setTaken] = useState<ReadonlySet<string>>(() => new Set());
-  const fresh = (inbox ?? []).filter((item) => !taken.has(item.id));
-  if (fresh.length > 0) {
-    setTaken(new Set([...taken, ...fresh.map((item) => item.id)]));
-    setLines((rows) => [
-      ...rows.filter((row) => !blankLine(row)),
-      ...fresh.map((item) => ({ ...item.line, key: crypto.randomUUID() })),
-    ]);
-  }
+  const [result, setResult] = useState<PurchaseCapture>();
   // Header fields the assistant filled without being sure; a field leaves
   // the set when somebody changes it.
   const [review, setReview] = useState<ReadonlySet<string>>(() => new Set());
@@ -275,7 +161,6 @@ export function PurchaseOrderCreateDialog({
   });
   const capture = usePurchaseOrderCapture({
     form,
-    ...(initialValues ? { seed: text(initialValues.description) } : {}),
     onFill: (next) => {
       setValues((current) => applyCaptureValues(current, next));
       const captured = captureLines(next);
@@ -450,7 +335,6 @@ export function PurchaseOrderCreateDialog({
       onSecondary={() => save.mutate(false)}
     >
       <div className='grid gap-3'>
-        {header}
         {current === 'ai' ? (
           <CapturePane
             capture={capture}
@@ -599,22 +483,6 @@ export function PurchaseOrderCreateDialog({
                                 ),
                               )
                             }
-                            extraAction={
-                              moveTargets && moveTargets.length > 0 ? (
-                                <MoveLine
-                                  targets={moveTargets}
-                                  disabled={save.isPending || Boolean(created)}
-                                  onMove={(target) => {
-                                    setLines((rows) =>
-                                      rows.filter(
-                                        (row) => row.key !== line.key,
-                                      ),
-                                    );
-                                    onMoveLine?.(line, target);
-                                  }}
-                                />
-                              ) : undefined
-                            }
                             onAdd={() => insertAfter(line.key)}
                             onRemove={() =>
                               setLines((rows) =>
@@ -678,9 +546,6 @@ export function PurchaseOrderCreateDialog({
                   <CaptureNotice
                     capture={capture}
                     result={result}
-                    {...(initialValues
-                      ? { intro: t('procurement.capture.proposed') }
-                      : {})}
                     currency={text(values.currency) || currency}
                     priced={priced}
                     onPlace={async (line, pick) => {

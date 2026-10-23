@@ -379,22 +379,7 @@ function WorkColumn({
       dimmed={card.count === 0}
       layout={layout}
       action={
-        // A joiner short of something is bought for on 供需分析, which
-        // weighs it against stock, orders and leavers' returns (2026-10-23;
-        // 全部创建采购单 here, a dialog per order, until then).
-        card.key === 'people' &&
-        card.records.some(
-          (record) =>
-            record.origin === 'pendingOnboarding' && Boolean(record.shortfall),
-        ) ? (
-          <Link
-            to='/supply-demand'
-            className='flex items-center gap-0.5 text-xs text-link'
-          >
-            {t('navigation.supplyDemand')}
-            <ArrowRight aria-hidden='true' className='size-3' />
-          </Link>
-        ) : // MDM 核对, empty column or not: the page has no menu entry,
+        // MDM 核对, empty column or not: the page has no menu entry,
         // and what is settled there — ignored records, the rules — is
         // not on the board.
         // 查看详情 rather than 查看全部 (2026-10-22): the column holds counts,

@@ -450,12 +450,8 @@ it('says on a joiner’s card what is still to buy, red past its last order day'
   ];
   show();
   const people = column('workbench.work.people');
-  // And the column heading leads to 供需分析, where it is bought.
-  expect(
-    within(people)
-      .getByRole('link', { name: 'navigation.supplyDemand' })
-      .getAttribute('href'),
-  ).toBe('/supply-demand');
+  // The column heading buys nothing (2026-10-23).
+  expect(within(people).queryByText(/draftAll|supplyDemand/)).toBeNull();
   const late = within(people).getByText(
     'onboarding.shortfall · onboarding.orderNow',
   );
