@@ -5,7 +5,6 @@ import { useState, type ReactElement } from 'react';
 import { useParams } from 'react-router';
 
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
-import { InfoRow } from '@/components/itam/detail-page';
 import { purchasesRequest } from '@/lib/itam/purchases';
 import { DataTable } from '@/components/itam/data-table';
 import { HolderCell } from '@/components/itam/holder-link';
@@ -114,7 +113,6 @@ export const entitlementDomain: DomainConfig = {
   summaryTimestamps: false,
   // 合规状态, the seat counts and who holds the seats lead 基本信息
   // (2026-10-16), as a device's status and holder do.
-  BasicLead: EntitlementLead,
   // Assigning a seat is what this page is for; deletion sits in the "more"
   // menu, as it does on a device or a stock item.
   deleteInMenu: true,
@@ -546,36 +544,6 @@ export default function EntitlementSeatsTab(): ReactElement {
         )}
       />
     </div>
-  );
-}
-
-/**
- * The top of an entitlement's 基本信息, above 负责人: whether its seats
- * are in order, and how many there are, are taken and are free. Who holds
- * them is the 席位 tab, not a row here as well (2026-10-16).
- */
-function EntitlementLead({
-  record,
-}: {
-  readonly record: ItamRecord;
-}): ReactElement {
-  const { t } = useTranslation();
-  const count = (value: unknown) =>
-    value === null || value === undefined || value === '' ? '—' : text(value);
-  const compliance = text(record.complianceStatus);
-  return (
-    <>
-      <InfoRow label={t('fields.complianceStatus')}>
-        {compliance ? t(`enums.complianceStatus.${compliance}`) : '—'}
-      </InfoRow>
-      <InfoRow label={t('fields.seatCount')}>{count(record.seatCount)}</InfoRow>
-      <InfoRow label={t('fields.assignedCount')}>
-        {count(record.assignedCount)}
-      </InfoRow>
-      <InfoRow label={t('fields.availableSeats')}>
-        {count(record.availableSeats)}
-      </InfoRow>
-    </>
   );
 }
 

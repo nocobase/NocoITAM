@@ -130,9 +130,9 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     // quantity works the same way.
     readonlyWhen: (values) => values.id !== undefined,
     column: true,
-    // Leads 基本信息 on the detail page (`EntitlementLead`).
-    detail: false,
-    group: 'groups.seats',
+    // In 数量 (2026-10-22; leading 基本信息 from 2026-10-16), as a
+    // stock item's quantities are.
+    group: 'groups.quantity',
   },
   {
     key: 'assignedCount',
@@ -140,9 +140,7 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     type: 'number',
     form: false,
     column: true,
-    // Leads 基本信息 on the detail page (`EntitlementLead`).
-    detail: false,
-    group: 'groups.seats',
+    group: 'groups.quantity',
   },
   {
     // Derived on the server: seats minus what is assigned. Unlimited seats
@@ -151,9 +149,7 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.availableSeats',
     type: 'number',
     form: false,
-    // Leads 基本信息 on the detail page (`EntitlementLead`).
-    detail: false,
-    group: 'groups.seats',
+    group: 'groups.quantity',
   },
   {
     key: 'complianceStatus',
@@ -162,9 +158,9 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     options: options('complianceStatus', COMPLIANCE_STATUSES),
     column: true,
     form: false,
-    // Leads 基本信息 on the detail page (`EntitlementLead`).
-    detail: false,
-    group: 'groups.seats',
+    // Under 授权类型 in 基本信息 (2026-10-22).
+    group: 'groups.basic',
+    detailOrder: -1500,
   },
   {
     key: 'reassignable',
