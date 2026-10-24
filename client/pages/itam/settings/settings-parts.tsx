@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiErrorBody } from '@/lib/itam/api';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { errorMessage } from '@/lib/itam/format';
 
 /**
@@ -47,11 +48,11 @@ export function SettingsCard({
             <Save data-icon='inline-start' />
             {t('actions.save')}
           </Button>
-          {error ? (
+          {error && !isDemoReadOnlyError(error) ? (
             <span className='text-sm text-destructive'>
               {apiErrorBody(error)?.message ?? errorMessage(error)}
             </span>
-          ) : saved ? (
+          ) : !error && saved ? (
             <span className='text-sm text-muted-foreground'>
               {t('settings.saved')}
             </span>

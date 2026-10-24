@@ -20,6 +20,7 @@ import {
   type ItamRecord,
 } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { ASSIGNEE_TYPES, type AssigneeType } from '@/lib/itam/devices';
 import {
   defaultLoanReturnDate,
@@ -118,17 +119,24 @@ export function AssignDialog({
     defaultLoanReturnDate,
   );
   const body = apiErrorBody(error);
-  const message = error ? (body?.message ?? errorMessage(error)) : undefined;
+  const message =
+    error && !isDemoReadOnlyError(error)
+      ? (body?.message ?? errorMessage(error))
+      : undefined;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!targetId) return;
-    await onSubmit({
-      targetType,
-      targetId,
-      locationId: locationId ?? undefined,
-      expectedReturnDate: mode === 'loan' ? expectedReturnDate : undefined,
-    });
+    try {
+      await onSubmit({
+        targetType,
+        targetId,
+        locationId: locationId ?? undefined,
+        expectedReturnDate: mode === 'loan' ? expectedReturnDate : undefined,
+      });
+    } catch (caught) {
+      if (!isDemoReadOnlyError(caught)) throw caught;
+    }
   };
 
   const types = mode === 'loan' ? (['person'] as const) : ASSIGNEE_TYPES;

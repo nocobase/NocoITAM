@@ -13,6 +13,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { errorMessage } from '@/lib/itam/format';
 import { FieldActions } from './field-actions.js';
 
@@ -63,6 +64,12 @@ export function LongTextField({
       setEditing(false);
       return true;
     } catch (caught) {
+      if (isDemoReadOnlyError(caught)) {
+        setDraft(value);
+        setEditing(false);
+        setOpen(false);
+        return false;
+      }
       setError(errorMessage(caught));
       return false;
     } finally {

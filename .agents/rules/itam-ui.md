@@ -496,4 +496,11 @@ and the comment keeps their names; they are not the record's attachments.
 - Standard API errors (2026-10-23): `apiErrorBody` unwraps `{ error }` while
   accepting the older flat ITAM body. Prefer the server's `localizedMessage`
   for inline failures; otherwise use the existing application translations.
-  Demo Mode refusals must stay localized in forms as well as the global toast.
+  Demo Mode refusals (2026-10-24) use only the plugin's localized global toast.
+  Identify them by `DEMO_READ_ONLY`, including an API error wrapped in `cause`,
+  through `isDemoReadOnlyError`; never match the displayed message or suppress
+  every error just because Demo Mode is on. Inline fields, titles and long
+  text restore the saved value and leave editing on refusal. Submit forms
+  stay open with their drafts and omit the duplicate inline error. Keep
+  normal validation and failure messages, and never turn a refused request
+  into a successful mutation.

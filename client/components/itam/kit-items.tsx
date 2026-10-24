@@ -19,6 +19,7 @@ import {
   type KitItemType,
 } from '@/lib/itam/kit-items';
 import { masterDataPath, useItamList } from '@/lib/itam/api';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { text } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
 import { cn } from '@/lib/utils';
@@ -167,7 +168,8 @@ export function KitItems({
       await onSave(serializeKitItems(rows));
       setEditing(false);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      if (!isDemoReadOnlyError(caught))
+        setError(caught instanceof Error ? caught.message : String(caught));
     } finally {
       setSaving(false);
     }
