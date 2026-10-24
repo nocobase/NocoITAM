@@ -1,6 +1,7 @@
 import type { ApplicationServiceProviderConstructor } from '@nocobase/app-server/application';
 
 import ItamProvider from './itam/index.js';
+import ItamDemoModeProvider from './itam-demo-mode.js';
 import ItamSchedulesProvider from './itam-schedules.js';
 import ItamAgentsProvider from './itam-agents/index.js';
 
@@ -33,6 +34,7 @@ export {
 
 const serviceProviders: readonly ApplicationServiceProviderConstructor[] = [
   ItamProvider,
+  ItamDemoModeProvider,
   ItamSchedulesProvider,
   ItamAgentsProvider,
 ];

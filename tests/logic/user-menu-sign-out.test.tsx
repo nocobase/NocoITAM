@@ -105,3 +105,8 @@ describe('account menu sign out', () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 });
+
+// Demo switching is exercised against the real plugin in the browser test.
+vi.mock('@nocobase/app-plugin-demo-mode/client/account-menu', () => ({
+  DemoAccountMenu: () => null,
+}));

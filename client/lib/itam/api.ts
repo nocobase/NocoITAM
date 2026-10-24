@@ -44,6 +44,10 @@ export interface ListResponse<T = ItamRecord> {
 }
 
 export interface ApiErrorBody {
+  readonly localizedMessage?: {
+    readonly locale: string;
+    readonly message: string;
+  };
   readonly code?: string;
   readonly message?: string;
   readonly field?: string;
@@ -287,7 +291,11 @@ export function useItamSettings(): UseQueryResult<ItamSettings> {
 /** Reads the structured error body an ITAM route returned, if any. */
 export function apiErrorBody(error: unknown): ApiErrorBody | undefined {
   if (!(error instanceof ApiClientError)) return undefined;
-  const payload = error.payload;
+  const envelope = error.payload;
+  const payload =
+    envelope && typeof envelope === 'object' && 'error' in envelope
+      ? envelope.error
+      : envelope;
   return payload && typeof payload === 'object'
     ? localizeErrorBody(payload)
     : undefined;

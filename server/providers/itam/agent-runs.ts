@@ -233,6 +233,7 @@ export function createAgentRunService(
    * the routes' own signal does not cover them.
    */
   touched: () => void = () => undefined,
+  readOnly: () => boolean = () => false,
 ): AgentRunService {
   const query = (connection?: DatabaseConnection) =>
     connection ? connection.query : database.query();
@@ -388,6 +389,7 @@ export function createAgentRunService(
     },
 
     async expireStale(now = new Date()) {
+      if (readOnly()) return 0;
       const working = new Date(now.getTime() - RUN_LIMIT_MS);
       const queued = new Date(now.getTime() - QUEUE_LIMIT_MS);
       // Datetime columns are text: compared through `dbDateTime`, as a bound

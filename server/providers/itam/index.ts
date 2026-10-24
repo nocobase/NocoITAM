@@ -1,3 +1,4 @@
+import { isDemoMode } from './demo-mode.js';
 import {
   createDeviceSyncFollowUp,
   deviceSyncFollowUpToken,
@@ -302,10 +303,22 @@ function demoAccounts(container: ServiceContainer): DemoAccounts {
       });
       return assignment.id ? String(assignment.id) : null;
     },
-    async revoke(assignmentId) {
-      await container
-        .resolve(authorizationToken)
-        .permissionSets.revoke(assignmentId);
+    async revoke(assignmentId, preserveUserId) {
+      const permissionSets =
+        container.resolve(authorizationToken).permissionSets;
+      // Demo Mode beta.2 keeps the executing administrator's existing grants.
+      // ITAM's legacy importer grant is application-owned, so preserve it here.
+      if (preserveUserId) {
+        const assignment = (await permissionSets.listAssignments()).find(
+          (entry) => String(entry.id) === assignmentId,
+        );
+        if (
+          assignment?.subject.type === 'user' &&
+          String(assignment.subject.id) === preserveUserId
+        )
+          return;
+      }
+      await permissionSets.revoke(assignmentId);
     },
     async describe(userId) {
       const user = await container
@@ -357,6 +370,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
 
   private effectJobs(): LifecycleJobs | undefined {
     const container = this.app.container;
+    if (isDemoMode(container)) return undefined;
     if (this.lifecycleJobs || !container.has(jobExecutorServiceToken))
       return this.lifecycleJobs;
     const executors = container.resolve(jobExecutorServiceToken);
@@ -449,7 +463,8 @@ export default class ItamProvider extends ServiceProvider<Application> {
     container.singleton(itamNotifierToken, () =>
       createItamNotifier(
         async (input) => {
-          if (!container.has(notificationServiceToken)) return;
+          if (isDemoMode(container) || !container.has(notificationServiceToken))
+            return;
           await container.resolve(notificationServiceToken).send(input);
         },
         (message, error) => {
@@ -515,10 +530,14 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // plan "Work agents"); the agents' provider starts it on each request
     // and gives it the jobs service.
     container.singleton(agentRunServiceToken, () =>
-      createAgentRunService(container.resolve(databaseManagerToken), () => {
-        if (container.has(itamChangesToken))
-          container.resolve(itamChangesToken).touched();
-      }),
+      createAgentRunService(
+        container.resolve(databaseManagerToken),
+        () => {
+          if (container.has(itamChangesToken))
+            container.resolve(itamChangesToken).touched();
+        },
+        () => isDemoMode(container),
+      ),
     );
     container.singleton(approvalReviewerToken, () =>
       createApprovalReviewer({
@@ -662,6 +681,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
     );
     container.singleton(workbenchServiceToken, () =>
       createWorkbenchService({
+        readOnly: () => isDemoMode(container),
         database: container.resolve(databaseManagerToken),
         approvals: container.resolve(approvalServiceToken),
         onboarding: container.resolve(onboardingServiceToken),
@@ -883,7 +903,7 @@ export default class ItamProvider extends ServiceProvider<Application> {
     // queued. Like the agents' setup, it never stops the application
     // starting — a database not yet migrated has no log to recover from —
     // and is tried again at the next start.
-    const jobs = this.effectJobs();
+    const jobs = isDemoMode(this.app.container) ? undefined : this.effectJobs();
     if (jobs)
       try {
         await jobs.start(this.app.container.resolve(lifecycleRuntimeToken));

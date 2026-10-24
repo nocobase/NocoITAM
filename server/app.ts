@@ -23,6 +23,7 @@ import {
 } from '@nocobase/app-server/runtime';
 import { spaRootRoutes } from '@nocobase/app-server/spa';
 
+import { demoEffectsHttpMiddleware } from './demo-mode.js';
 import { itamChangesHttpMiddleware } from './itam-changes.js';
 import { securityHeadersHttpMiddleware } from './security-headers.js';
 
@@ -51,6 +52,8 @@ export function createApp(runtime: AppRuntimeContext): Application {
   // Application change (ITAM): signals the pages showing live to-dos after
   // every successful ITAM write (`server/itam-changes.ts`).
   app.addHttpMiddleware(itamChangesHttpMiddleware);
+  // Demo Mode SQL protection cannot stop outbound calls or deferred work.
+  app.addHttpMiddleware(demoEffectsHttpMiddleware);
   app.addRoutes(healthCheckApiRoutes);
   app.addRuntimeContributions(runtime);
   app.addRoutes(spaRootRoutes);

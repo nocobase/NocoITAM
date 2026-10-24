@@ -3578,3 +3578,24 @@ Agents plugin to 1.0 as well and migrate fully:
   edited its released `202610020003_ag_create_runs` (documented in its
   changelog, for MySQL), so an existing database warns of that checksum
   until `pnpm nocobase db repair` acknowledges it.
+
+## Dedicated Demo Mode (2026-10-23)
+
+`@nocobase/app-plugin-demo-mode` 0.1.0-beta.0 supplies request-scoped SQL
+protection, localized refusals, management, quick entry and daily reset. The
+application registers its config factory and adapts the existing ITAM demo
+service; data content and normal sample generation remain the same.
+
+Demo deployments use separate databases and storage. `/settings/demo` uses the
+plugin management page when enabled and the existing sample-data page otherwise.
+The initial administrator manages resets; visitor accounts retain their existing
+ITAM permission sets. Existing sample records can be adopted on first import,
+without rewriting them; their legacy accounts use password sign-in until the
+first reset replaces them with plugin-owned accounts. Reset retains installation
+reference records and seeded onboarding kits, clears the rest of the business
+records, and invokes the original generator.
+
+The application rejects mutation entry points that could upload files, contact
+external services, or enqueue work beyond the SQL guard's request lifetime.
+ITAM background maintenance, sync and work agents stay idle. Read-side caches
+(completed onboarding and stale agent runs) do not write in Demo Mode.

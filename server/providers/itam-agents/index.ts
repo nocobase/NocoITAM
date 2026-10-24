@@ -1,3 +1,4 @@
+import { isDemoMode } from '../itam/demo-mode.js';
 import {
   agentsAccessToken,
   agentsToken,
@@ -104,7 +105,7 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
       key: SEARCH_SOURCE,
       title: { key: 'ai.searchSource', ns: 'itam' },
     });
-    await this.startWorkAgents();
+    if (!isDemoMode(this.app.container)) await this.startWorkAgents();
   }
 
   /**
@@ -223,7 +224,8 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
         businessNotes: (await settings.get('ai')).businessNotes,
         timeZone: (await settings.get('general')).timeZone,
       };
-      await provisionModelServices(this.app, agents);
+      if (!isDemoMode(this.app.container))
+        await provisionModelServices(this.app, agents);
       await provisionSkills(agents, database);
     } catch (error) {
       if (this.app.container.has(loggingToken))

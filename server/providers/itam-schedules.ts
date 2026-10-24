@@ -1,3 +1,4 @@
+import { isDemoMode } from './itam/demo-mode.js';
 import type { Application } from '@nocobase/app-server/application';
 import type { AppI18nConfig } from '@nocobase/app-server/i18n';
 import { schedulerServiceToken } from '@nocobase/app-plugin-scheduler/server/tokens';
@@ -114,6 +115,12 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
           ? { valid: true }
           : { valid: false, reason: 'unknown-maintenance-job' },
       async start(config) {
+        if (isDemoMode(container))
+          return {
+            state: 'completed',
+            outcome: 'succeeded',
+            result: { demoMode: true },
+          };
         try {
           const summary = await container
             .resolve(maintenanceServiceToken)
@@ -141,6 +148,12 @@ export default class ItamSchedulesProvider extends ServiceProvider<Application> 
       title: 'ITAM device sync',
       validate: () => ({ valid: true }),
       async start() {
+        if (isDemoMode(container))
+          return {
+            state: 'completed',
+            outcome: 'succeeded',
+            result: { demoMode: true },
+          };
         try {
           const runs = await container
             .resolve(deviceSyncServiceToken)

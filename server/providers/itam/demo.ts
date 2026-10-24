@@ -85,7 +85,11 @@ let importFailure: DemoSummary['failure'] = null;
 export interface DemoService {
   status(): Promise<DemoSummary>;
   /** Without a language, the demo follows the deployment's default locale. */
-  generate(actorId: string, language?: DemoLanguage): Promise<DemoSummary>;
+  generate(
+    actorId: string,
+    language?: DemoLanguage,
+    integration?: DemoGenerationIntegration,
+  ): Promise<DemoSummary>;
   /**
    * Starts `generate` without waiting for it (2026-10-16): the import takes
    * minutes on a slow disk, longer than a proxy in front of the application
@@ -94,7 +98,17 @@ export interface DemoService {
    * far it got, and `failure` why it stopped.
    */
   start(actorId: string, language?: DemoLanguage): Promise<DemoSummary>;
-  clear(actorId: string): Promise<DemoSummary>;
+  clear(
+    actorId: string,
+    options?: { allBusiness?: boolean },
+  ): Promise<DemoSummary>;
+}
+
+/** The plugin owns identities and progress; the business story stays shared. */
+export interface DemoGenerationIntegration {
+  createAccount(spec: DemoAccountSpec): Promise<string>;
+  progress(fraction: number): Promise<void>;
+  track(collection: string, id: string): Promise<void>;
 }
 
 /** One sign-in the demo creates, with the Permission Set it is given. */
@@ -121,7 +135,7 @@ export interface DemoAccounts {
    */
   grant(userId: string, permissionSet: string): Promise<string | null>;
   /** Takes back an assignment `grant` made. */
-  revoke(assignmentId: string): Promise<void>;
+  revoke(assignmentId: string, preserveUserId?: string): Promise<void>;
   /** The account's own name and address, for the person record behind it. */
   describe(
     userId: string,
@@ -1923,7 +1937,7 @@ export function createDemoService(dependencies: {
       return { ...(await this.status()), importing: { percent: 0 } };
     },
 
-    async generate(actorId, language) {
+    async generate(actorId, language, integration) {
       const locale = language ?? dependencies.locale?.() ?? 'en-US';
       if (importPercent !== undefined)
         throw new BusinessRuleError(
@@ -1941,6 +1955,7 @@ export function createDemoService(dependencies: {
       // polls with wait until the whole import is over.
       const reached = async (percent: number): Promise<void> => {
         importPercent = percent;
+        await integration?.progress(percent / 100);
         await new Promise<void>((done) => setImmediate(done));
       };
       try {
@@ -1968,6 +1983,7 @@ export function createDemoService(dependencies: {
               createdAt: new Date(),
             })
             .execute();
+          await integration?.track(collection, String(row.id));
           return row;
         };
         // The demo's clock (2026-10-16). The services stamp every history
@@ -2083,6 +2099,7 @@ export function createDemoService(dependencies: {
         const account = async (
           spec: DemoAccountSpec,
         ): Promise<string | undefined> => {
+          if (integration) return integration.createAccount(spec);
           if (!dependencies.accounts) return undefined;
           const id = await dependencies.accounts.create(spec);
           await track('accounts', { id });
@@ -7639,7 +7656,7 @@ export function createDemoService(dependencies: {
       }
     },
 
-    async clear(actorId) {
+    async clear(actorId, options) {
       const tracked = [
         ...(await database
           .query()
@@ -7647,6 +7664,52 @@ export function createDemoService(dependencies: {
           .select(['collection', 'recordId'])
           .execute<{ collection: string; recordId: string }>()),
       ];
+      // A dedicated Demo Mode reset clears visitor/business records too, while
+      // retaining the installation catalogue required by the shared generator.
+      // Ordinary sample-data clearing still removes only its tracked records.
+      if (options?.allBusiness) {
+        const installed = await database
+          .query()
+          .selectFrom('changeLogs')
+          .select(['subjectType', 'subjectId'])
+          .where('origin', '=', 'install')
+          .where('action', '=', 'create')
+          .execute<{ subjectType: string; subjectId: string }>();
+        const existing = new Set(
+          tracked.map((row) => `${row.collection}:${row.recordId}`),
+        );
+        for (const collection of ORDER) {
+          if (collection === 'historyEvents') continue;
+          const kept = new Set(
+            installed
+              .filter((row) => row.subjectType === collection)
+              .map((row) => row.subjectId),
+          );
+          if (collection === 'onboardingKits')
+            for (const id of [
+              'kit-rd',
+              'kit-qa',
+              'kit-it',
+              'kit-product',
+              'kit-product-designer',
+              'kit-marketing',
+              'kit-sales',
+              'kit-customer',
+              'kit-hr',
+              'kit-finance',
+              'kit-admin',
+            ])
+              kept.add(id);
+          const rows = await database
+            .query()
+            .selectFrom(collection)
+            .select('id')
+            .execute<{ id: string }>();
+          for (const { id } of rows)
+            if (!kept.has(String(id)) && !existing.has(`${collection}:${id}`))
+              tracked.push({ collection, recordId: String(id) });
+        }
+      }
       // The devices registered from the demo's platform records (2026-10-21):
       // by 补登记 or a follow-up's plan, someone trying the demo out put
       // LAPTOP-PF5DEMO01 on the register; cleared with the demo it stayed,
@@ -8019,7 +8082,7 @@ export function createDemoService(dependencies: {
       // The importer's asset manager set, which the demo gave.
       for (const assignmentId of byCollection.get('importerGrants') ?? [])
         await dependencies.accounts
-          ?.revoke(assignmentId)
+          ?.revoke(assignmentId, options?.allBusiness ? actorId : undefined)
           .catch(() => undefined);
       return this.status();
     },

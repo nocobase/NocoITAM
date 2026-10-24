@@ -470,3 +470,8 @@ and the comment keeps their names; they are not the record's attachments.
   for 基本信息, 2026-10-23). A stocktake's 盘点进度 and 待处理 open 进度,
   above when the count started and finished, through `SummaryLead`'s
   `only`.
+
+- Standard API errors (2026-10-23): `apiErrorBody` unwraps `{ error }` while
+  accepting the older flat ITAM body. Prefer the server's `localizedMessage`
+  for inline failures; otherwise use the existing application translations.
+  Demo Mode refusals must stay localized in forms as well as the global toast.
