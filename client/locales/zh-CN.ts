@@ -103,7 +103,7 @@ const zhCN: AppResource = {
     systemSettings: '系统设置',
     settingsGeneral: '通用',
     users: '用户',
-    permissionSets: '权限集',
+    roles: '角色',
     apiKeys: 'API 密钥',
     scheduledTasks: '定时任务',
     breadcrumb: '面包屑',

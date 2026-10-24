@@ -29,8 +29,8 @@ import {
 } from '#components/ui/tooltip';
 
 import { AutoLoadMore } from '../../../components/settings/auto-load.js';
-import { LoadFailure } from '../shared.js';
-import { useAdminText, useDateTime } from '../hooks.js';
+import { LoadFailure } from '../common/shared.js';
+import { useAdminText, useDateTime } from '../common/hooks.js';
 import { ScheduleSwitch } from './index.js';
 import { ScheduleStatusBadge } from './status.js';
 import {

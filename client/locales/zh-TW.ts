@@ -100,7 +100,7 @@ const zhTW: AppResource = {
     systemSettings: '系統設定',
     settingsGeneral: '一般',
     users: '使用者',
-    permissionSets: '權限集',
+    roles: '角色',
     apiKeys: 'API 金鑰',
     scheduledTasks: '排程任務',
     breadcrumb: '麵包屑',

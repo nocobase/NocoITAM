@@ -11,7 +11,6 @@ const adminFrFR: AdminResource = {
     sessionEnded: 'Votre session a pris fin.',
     notFound: 'Cette fiche n’existe pas ou a été supprimée.',
     backToList: 'Retour à la liste',
-    clearFilters: 'Effacer les filtres',
     cancel: 'Annuler',
     save: 'Enregistrer',
     create: 'Créer',
@@ -24,52 +23,16 @@ const adminFrFR: AdminResource = {
     copied: 'Copié',
     failed: 'Une erreur est survenue. Réessayez.',
     network: 'Le serveur est injoignable. Vérifiez la connexion et réessayez.',
-    previous: 'Page précédente',
-    next: 'Page suivante',
-    pageOf: 'Page {{page}} sur {{pages}}',
   },
   users: {
-    title: 'Utilisateurs',
     what: 'les utilisateurs',
-    description: 'Qui peut se connecter, et les rôles qu’il détient.',
-    new: 'Nouvel utilisateur',
     invite: 'Inviter des utilisateurs',
-    search: 'Rechercher par nom, identifiant ou e-mail',
-    statusFilter: 'Statut',
-    roleFilter: 'Rôle',
-    status: {
-      all: 'Tous les statuts',
-      enabled: 'Activé',
-      disabled: 'Désactivé',
-    },
-    roleAll: 'Tous les rôles',
-    columns: {
-      name: 'Nom',
-      username: 'Identifiant',
-      email: 'E-mail',
-      roles: 'Rôles',
-      status: 'Statut',
-    },
-    you: 'Vous',
-    noRoles: 'Aucun rôle',
-    pagination: 'Pagination',
     managedRole: 'Géré par l’application',
-    noResults: 'Aucun utilisateur ne correspond à ces filtres.',
-    range: '{{from}}–{{to}} sur {{total}}',
     actions: {
-      edit: 'Modifier',
-      roles: 'Modifier les rôles',
       password: 'Réinitialiser le mot de passe',
-      signOut: 'Déconnecter partout',
-      disable: 'Désactiver',
-      enable: 'Activer',
       delete: 'Supprimer',
     },
     dialogs: {
-      newTitle: 'Nouvel utilisateur',
-      editTitle: 'Modifier l’utilisateur',
-      rolesTitle: 'Modifier les rôles',
-      rolesDescription: 'Rôles de « {{name}} »',
       passwordTitle: 'Réinitialiser le mot de passe',
       passwordDescription:
         'Un nouveau mot de passe pour « {{name}} ». Ses autres sessions restent connectées ; déconnectez-le aussi partout si l’ancien mot de passe a fuité.',
@@ -78,18 +41,12 @@ const adminFrFR: AdminResource = {
         'Chaque adresse reçoit un lien pour créer un compte, valable sept jours.',
     },
     fields: {
-      name: 'Nom',
-      username: 'Identifiant',
-      email: 'E-mail',
-      password: 'Mot de passe',
       newPassword: 'Nouveau mot de passe',
       confirmPassword: 'Confirmer le mot de passe',
       roles: 'Rôles',
       emails: 'Adresses e-mail',
     },
     hints: {
-      username:
-        'Facultatif ; il peut l’utiliser pour se connecter à la place de l’adresse e-mail.',
       password: 'Au moins 8 caractères.',
       emails:
         'Une par ligne, ou séparées par des virgules, des points-virgules ou des espaces.',
@@ -98,11 +55,9 @@ const adminFrFR: AdminResource = {
     },
     errors: {
       name: 'Saisissez un nom',
-      email: 'Saisissez une adresse e-mail',
       emailFormat: 'L’adresse e-mail n’est pas valide',
       username:
         'Un identifiant utilise des lettres, des chiffres, des points, des traits d’union et des tirets bas',
-      tooLong: 'Utilisez au plus {{max}} caractères',
       password: 'Le mot de passe doit comporter au moins 8 caractères',
       mismatch: 'Les mots de passe ne correspondent pas',
       roles: 'Choisissez au moins un rôle',
@@ -110,8 +65,6 @@ const adminFrFR: AdminResource = {
       usernameTaken: 'Cet identifiant est déjà utilisé',
       lastAdministrator:
         'Le dernier administrateur ne peut pas perdre ce rôle.',
-      lastAdministratorDisable:
-        'Le dernier administrateur ne peut pas être désactivé.',
       self: 'Vous ne pouvez pas vous supprimer vous-même.',
       holdsRecords:
         'Cet utilisateur est encore responsable de fiches ; désactivez-le plutôt.',
@@ -120,23 +73,10 @@ const adminFrFR: AdminResource = {
       emailsTooMany: 'Invitez au plus {{max}} adresses à la fois',
     },
     toasts: {
-      created: 'Utilisateur « {{name}} » créé',
-      saved: 'Utilisateur « {{name}} » enregistré',
-      roles: 'Rôles de « {{name}} » enregistrés',
       password: 'Mot de passe de « {{name}} » réinitialisé',
-      signedOut: '« {{name}} » déconnecté partout',
-      disabled: '« {{name}} » désactivé',
-      enabled: '« {{name}} » activé',
       deleted: 'Utilisateur « {{name}} » supprimé',
     },
     confirm: {
-      signOutTitle: 'Déconnecter « {{name}} » partout ?',
-      signOutBody:
-        'Toutes les sessions de ce compte prennent fin ; il se reconnecte avec son mot de passe.',
-      signOut: 'Déconnecter',
-      disableTitle: 'Désactiver « {{name}} » ?',
-      disableBody:
-        'Il est déconnecté immédiatement et ne peut plus se connecter tant qu’il n’est pas réactivé.',
       deleteTitle: 'Supprimer l’utilisateur « {{name}} » ?',
       deleteBody:
         'Cette action est irréversible. Une personne encore responsable de fiches ne peut pas être supprimée ; désactivez-la plutôt.',
@@ -165,120 +105,12 @@ const adminFrFR: AdminResource = {
       'Un nouveau lien a été créé ; copiez-le pour l’envoyer vous-même',
     what: 'les invitations',
   },
-  sets: {
-    title: 'Jeux de permissions',
-    what: 'les jeux de permissions',
-    whatOne: 'ce jeu de permissions',
-    description:
-      'Les rôles que les personnes détiennent, et ce que chacun permet de faire.',
-    new: 'Nouveau jeu de permissions',
-    rename: 'Renommer',
-    renameTitle: 'Renommer le jeu de permissions',
-    delete: 'Supprimer',
-    columns: {
-      name: 'Nom',
-      key: 'Clé',
-      kind: 'Type',
-    },
-    kinds: {
-      unrestricted: 'Sans restriction',
-      builtIn: 'Intégré',
-    },
-    openPermissions: 'Permissions',
-    openMembers: 'Membres',
-    permissionsOf: 'Permissions de « {{name}} »',
-    membersOf: 'Membres de « {{name}} »',
-    permissionsDescription:
-      'Les pages, opérations métier et fonctions d’administration qu’accorde ce jeu de permissions.',
-    areaEmptyTitle: 'Rien à accorder ici',
-    areaEmptyBody:
-      'L’application ne propose aucune permission dans cette partie.',
-    noUpdate:
-      'Vous pouvez consulter ce jeu de permissions, mais pas modifier ses permissions.',
-    discardTitle: 'Abandonner les modifications de « {{name}} » ?',
-    discardBody: 'Vos modifications de ses permissions seront perdues.',
-    keepEditing: 'Continuer à modifier',
-    topPages: 'Essentiel',
+  keys: {
     headings: {
-      pages: 'Pages',
       business: 'Opérations métier',
       administration: 'Administration',
     },
-    pages: {
-      'master-data-overview': 'Vue d’ensemble des données de référence',
-      'itam-settings':
-        'Paramètres : général, MDM, réception par bon de livraison, données de démonstration',
-      scheduler: { schedules: 'Paramètres : tâches planifiées' },
-    },
-    unrestricted:
-      'Ce jeu de permissions est sans restriction : qui le détient peut tout faire.',
-    readOnly:
-      'Ce jeu de permissions est maintenu par l’application ; ses permissions ne peuvent pas être modifiées ici.',
-    customFilter: 'Filtre personnalisé',
     levelFor: 'Portée de « {{name}} »',
-    unsaved: 'Modifications non enregistrées',
-    discard: 'Abandonner',
-    leaveConfirm:
-      'Quitter sans enregistrer ? Vos modifications des permissions seront perdues.',
-    stale:
-      'Quelqu’un d’autre a modifié ce jeu de permissions. Rechargez pour voir ses modifications, puis refaites les vôtres.',
-    reload: 'Recharger',
-    fields: {
-      name: 'Nom',
-      key: 'Clé',
-      keyHint:
-        'Lettres minuscules, chiffres et traits d’union ; elle ne peut plus être modifiée ensuite.',
-    },
-    errors: {
-      name: 'Saisissez un nom',
-      key: 'Une clé utilise des lettres minuscules, des chiffres et des traits d’union',
-      keyTaken: 'Cette clé est déjà prise',
-      tooLong: 'Utilisez au plus {{max}} caractères',
-      protected:
-        'Ce jeu de permissions est maintenu par l’application et ne peut pas être modifié de cette manière.',
-      lastAssignment: 'Le dernier administrateur ne peut pas être retiré.',
-      subjectNotAllowed:
-        'Ce jeu de permissions ne peut pas être attribué à ce membre.',
-    },
-    members: {
-      what: 'les membres',
-      heading: 'Personnes et groupes qui détiennent ce jeu de permissions',
-      add: 'Ajouter des membres',
-      addSubmit: 'Ajouter',
-      addTitle: 'Ajouter des membres',
-      everyone: 'Tous les utilisateurs connectés',
-      everyoneHint:
-        'Toute personne qui se connecte le détient, maintenant et à l’avenir.',
-      user: 'Utilisateur',
-      type: 'Type',
-      name: 'Nom',
-      emptyTitle: 'Personne ne détient ce jeu de permissions',
-      emptyBody: 'Une fois ajoutés, les membres reçoivent ce qu’il accorde.',
-      emptyReadOnly: 'Demandez à un administrateur d’ajouter des membres.',
-      search: 'Rechercher des utilisateurs',
-      noUsers: 'Aucun utilisateur ne correspond.',
-      already: 'Déjà membre',
-      remove: 'Retirer',
-      removeTitle: 'Retirer « {{name}} » de « {{set}} » ?',
-      removeBody: 'Il perd ce qu’accorde ce jeu de permissions.',
-      addedOne: '1 membre ajouté',
-      added: '{{count}} membres ajoutés',
-      removed: '« {{name}} » retiré',
-      chooseOne: 'Choisissez au moins un membre',
-      unknown: 'Inconnu ({{id}})',
-    },
-    toasts: {
-      created: 'Jeu de permissions « {{name}} » créé',
-      saved: 'Jeu de permissions « {{name}} » enregistré',
-      deleted: 'Jeu de permissions « {{name}} » supprimé',
-    },
-    confirm: {
-      deleteTitle: 'Supprimer le jeu de permissions « {{name}} » ?',
-      deleteBody:
-        'Les personnes qui le détiennent perdent ce qu’il accorde. Cette action est irréversible.',
-    },
-  },
-  keys: {
     title: 'Clés API',
     what: 'vos clés API',
     description:
@@ -339,6 +171,12 @@ const adminFrFR: AdminResource = {
       deleteBody:
         'Tout ce qui l’utilise cesse immédiatement de fonctionner. Cette action est irréversible.',
     },
+  },
+  pages: {
+    itamSettings:
+      'Paramètres : général, MDM, processus, réception d’après les bons de livraison, données de démonstration ; repères métier',
+    scheduledTasks: 'Paramètres : tâches planifiées',
+    runnerAgents: 'Agents (des exécuteurs)',
   },
   authz: {
     settings: 'Paramètres ITAM',
@@ -459,7 +297,6 @@ const adminFrFR: AdminResource = {
       succeeded: 'Réussies',
       lastRun: 'Dernière exécution',
       nextRun: 'Prochaine exécution',
-      description: 'Description',
     },
     history: 'Historique des exécutions',
     historyEmpty: 'Cette tâche ne s’est pas encore exécutée.',

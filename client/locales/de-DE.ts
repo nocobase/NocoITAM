@@ -101,7 +101,7 @@ const deDE: AppResource = {
     systemSettings: 'Systemeinstellungen',
     settingsGeneral: 'Allgemein',
     users: 'Benutzer',
-    permissionSets: 'Berechtigungssätze',
+    roles: 'Rollen',
     apiKeys: 'API-Schlüssel',
     scheduledTasks: 'Geplante Aufgaben',
     breadcrumb: 'Brotkrümelnavigation',

@@ -101,7 +101,7 @@ const idID: AppResource = {
     systemSettings: 'Pengaturan sistem',
     settingsGeneral: 'Umum',
     users: 'Pengguna',
-    permissionSets: 'Set izin',
+    roles: 'Peran',
     apiKeys: 'Kunci API',
     scheduledTasks: 'Tugas terjadwal',
     breadcrumb: 'Jejak navigasi',

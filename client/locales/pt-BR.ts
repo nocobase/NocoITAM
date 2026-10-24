@@ -100,7 +100,7 @@ const ptBR: AppResource = {
     systemSettings: 'Configurações do sistema',
     settingsGeneral: 'Geral',
     users: 'Usuários',
-    permissionSets: 'Conjuntos de permissões',
+    roles: 'Funções',
     apiKeys: 'Chaves de API',
     scheduledTasks: 'Tarefas agendadas',
     breadcrumb: 'Trilha de navegação',

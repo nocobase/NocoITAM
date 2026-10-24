@@ -1,8 +1,11 @@
-// The administration pages of 设置: Users, Permission
-// sets, API keys and Scheduled tasks (client/pages/settings/), built on the
-// plugins' APIs once the template stopped shipping a settings area and the
-// plugins stopped shipping pages (template 1.0.0-beta.64, ported from
-// NocoCRM's). English first, Chinese second; `adminIn` picks one.
+// ITAM's own copy for the administration pages of 设置 (client/pages/settings/):
+// what it adds to NocoBase 3's prepared Users page (inviting, the pending
+// invitations, a password reset, deletion; accounts/), API keys and
+// Scheduled tasks, the page grants' titles in the role editor, and the
+// titles authorization shows for ITAM's resources. The prepared Users and
+// Roles pages and the permission editor read the template's copy instead
+// (client/locales/system/settings-*.ts, 2026-10-24). English first, Chinese
+// second; `adminIn` picks one.
 export const adminWording = {
   common: {
     loading: ['Loading', '加载中'],
@@ -19,7 +22,6 @@ export const adminWording = {
       '记录不存在或已被删除。',
     ],
     backToList: ['Back to the list', '返回列表'],
-    clearFilters: ['Clear filters', '清除筛选'],
     cancel: ['Cancel', '取消'],
     save: ['Save', '保存'],
     create: ['Create', '创建'],
@@ -35,59 +37,16 @@ export const adminWording = {
       'The server could not be reached. Check the connection and try again.',
       '无法连接服务器，请检查网络后重试。',
     ],
-    previous: ['Previous page', '上一页'],
-    next: ['Next page', '下一页'],
-    pageOf: ['Page {{page}} of {{pages}}', '第 {{page}} / {{pages}} 页'],
   },
   users: {
-    // The page's title, the menu entry's words (navigation).
-    title: ['Users', '用户'],
     what: ['the users', '用户'],
-    description: [
-      'Who can sign in, and the roles they hold.',
-      '可以登录系统的人，以及他们的角色。',
-    ],
-    new: ['New user', '新建用户'],
     invite: ['Invite users', '邀请用户'],
-    search: ['Search by name, username or email', '按姓名、用户名或邮箱搜索'],
-    statusFilter: ['Status', '状态'],
-    roleFilter: ['Role', '角色'],
-    status: {
-      all: ['All statuses', '全部状态'],
-      enabled: ['Enabled', '已启用'],
-      disabled: ['Disabled', '已停用'],
-    },
-    roleAll: ['All roles', '全部角色'],
-    columns: {
-      name: ['Name', '姓名'],
-      username: ['Username', '用户名'],
-      email: ['Email', '邮箱'],
-      roles: ['Roles', '角色'],
-      status: ['Status', '状态'],
-    },
-    you: ['You', '你'],
-    noRoles: ['No role', '无角色'],
-    pagination: ['Pagination', '分页'],
     managedRole: ['Managed by the application', '由应用管理'],
-    noResults: ['No users match these filters.', '没有符合筛选条件的用户。'],
-    range: [
-      'Showing {{from}}–{{to}} of {{total}}',
-      '第 {{from}}–{{to}} 条，共 {{total}} 条',
-    ],
     actions: {
-      edit: ['Edit', '编辑'],
-      roles: ['Change roles', '修改角色'],
       password: ['Reset password', '重置密码'],
-      signOut: ['Sign out everywhere', '退出所有登录'],
-      disable: ['Disable', '停用'],
-      enable: ['Enable', '启用'],
       delete: ['Delete', '删除'],
     },
     dialogs: {
-      newTitle: ['New user', '新建用户'],
-      editTitle: ['Edit user', '编辑用户'],
-      rolesTitle: ['Change roles', '修改角色'],
-      rolesDescription: ['Roles of "{{name}}"', '“{{name}}”的角色'],
       passwordTitle: ['Reset password', '重置密码'],
       passwordDescription: [
         'A new password for "{{name}}". Their other sessions stay signed in; sign them out everywhere as well if the old password leaked.',
@@ -100,20 +59,12 @@ export const adminWording = {
       ],
     },
     fields: {
-      name: ['Name', '姓名'],
-      username: ['Username', '用户名'],
-      email: ['Email', '邮箱'],
-      password: ['Password', '密码'],
       newPassword: ['New password', '新密码'],
       confirmPassword: ['Confirm password', '确认密码'],
       roles: ['Roles', '角色'],
       emails: ['Email addresses', '邮箱地址'],
     },
     hints: {
-      username: [
-        'Optional; they can sign in with it instead of the email address.',
-        '选填；可以用它代替邮箱登录。',
-      ],
       password: ['At least 8 characters.', '至少 8 位。'],
       emails: [
         'One per line, or separated by commas, semicolons or spaces.',
@@ -126,13 +77,11 @@ export const adminWording = {
     },
     errors: {
       name: ['Enter a name', '请输入姓名'],
-      email: ['Enter an email address', '请输入邮箱'],
       emailFormat: ['The email address is invalid', '邮箱格式不正确'],
       username: [
         'A username uses letters, digits, dots, hyphens and underscores',
         '用户名只能包含字母、数字、点、连字符和下划线',
       ],
-      tooLong: ['Use at most {{max}} characters', '最多 {{max}} 个字符'],
       password: ['The password needs at least 8 characters', '密码至少 8 位'],
       mismatch: ['The passwords do not match', '两次输入的密码不一致'],
       roles: ['Choose at least one role', '至少选择一个角色'],
@@ -141,10 +90,6 @@ export const adminWording = {
       lastAdministrator: [
         'The last administrator cannot lose the role.',
         '最后一位管理员不能失去这个角色。',
-      ],
-      lastAdministratorDisable: [
-        'The last administrator cannot be disabled.',
-        '最后一位管理员不能被停用。',
       ],
       self: ['You cannot delete yourself.', '不能删除自己。'],
       holdsRecords: [
@@ -162,33 +107,10 @@ export const adminWording = {
       ],
     },
     toasts: {
-      created: ['Created user "{{name}}"', '已创建用户“{{name}}”'],
-      saved: ['Saved user "{{name}}"', '已保存用户“{{name}}”'],
-      roles: ['Saved the roles of "{{name}}"', '已保存“{{name}}”的角色'],
       password: ['Reset the password of "{{name}}"', '已重置“{{name}}”的密码'],
-      signedOut: [
-        'Signed "{{name}}" out everywhere',
-        '已让“{{name}}”退出所有登录',
-      ],
-      disabled: ['Disabled "{{name}}"', '已停用“{{name}}”'],
-      enabled: ['Enabled "{{name}}"', '已启用“{{name}}”'],
       deleted: ['Deleted user "{{name}}"', '已删除用户“{{name}}”'],
     },
     confirm: {
-      signOutTitle: [
-        'Sign "{{name}}" out everywhere?',
-        '让“{{name}}”退出所有登录？',
-      ],
-      signOutBody: [
-        'Every session of this account ends; they sign in again with their password.',
-        '这个账号的所有登录都会结束，需要用密码重新登录。',
-      ],
-      signOut: ['Sign out', '退出登录'],
-      disableTitle: ['Disable "{{name}}"?', '停用“{{name}}”？'],
-      disableBody: [
-        'They are signed out at once and cannot sign in until enabled again.',
-        '对方会立即退出，重新启用前无法登录。',
-      ],
       deleteTitle: ['Delete user "{{name}}"?', '删除用户“{{name}}”？'],
       deleteBody: [
         'This cannot be undone. Someone who still answers for records cannot be deleted; disable them instead.',
@@ -238,191 +160,14 @@ export const adminWording = {
     ],
     what: ['the invitations', '邀请'],
   },
-  sets: {
-    // The page's title, the menu entry's words (navigation).
-    title: ['Permission sets', '权限集'],
-    what: ['the permission sets', '权限集'],
-    whatOne: ['this permission set', '这个权限集'],
-    description: [
-      'The roles people hold, and what each one may do.',
-      '每个角色可以做什么，以及谁拥有它。',
-    ],
-    new: ['New permission set', '新建权限集'],
-    rename: ['Rename', '重命名'],
-    renameTitle: ['Rename permission set', '重命名权限集'],
-    delete: ['Delete', '删除'],
-    columns: {
-      name: ['Name', '名称'],
-      key: ['Key', '标识'],
-      kind: ['Kind', '类型'],
-    },
-    kinds: {
-      unrestricted: ['Unrestricted', '不受限'],
-      builtIn: ['Built-in', '内置'],
-    },
-    // A row's two views of a set, each a drawer over the list.
-    openPermissions: ['Permissions', '权限'],
-    openMembers: ['Members', '成员'],
-    permissionsOf: ['Permissions of "{{name}}"', '“{{name}}”的权限'],
-    membersOf: ['Members of "{{name}}"', '“{{name}}”的成员'],
-    permissionsDescription: [
-      'Which pages, business operations and administration this permission set grants.',
-      '这个权限集可以访问的页面、业务操作和管理功能。',
-    ],
-    areaEmptyTitle: ['Nothing to grant here', '这里没有可授予的权限'],
-    areaEmptyBody: [
-      'The application offers no permissions in this area.',
-      '应用在这一部分没有提供可授予的权限。',
-    ],
-    noUpdate: [
-      'You can view this permission set but not change its permissions.',
-      '你可以查看这个权限集，但不能修改它的权限。',
-    ],
-    discardTitle: [
-      'Discard changes to "{{name}}"?',
-      '放弃对“{{name}}”的更改？',
-    ],
-    discardBody: [
-      'Your changes to its permissions will be lost.',
-      '你对它的权限所做的更改将丢失。',
-    ],
-    keepEditing: ['Keep editing', '继续编辑'],
-    // The Pages area's first group: the menu's entries above its headings,
-    // and the pages no menu entry names.
-    topPages: ['Essentials', '基础'],
+  keys: {
+    // The access a limited key is given (new.tsx), as the permission editor
+    // lays it out.
     headings: {
-      pages: ['Pages', '页面'],
       business: ['Business operations', '业务操作'],
       administration: ['Administration', '管理'],
     },
-    // Page grants whose routes name no menu entry of their own, or whose
-    // menu title reads ambiguously out of its menu, by the page id
-    // `client/routes.ts` declares; every other page takes its title.
-    pages: {
-      'master-data-overview': ['Reference data overview', '主数据概览'],
-      // 设置's tabs name no menu entry since it became one page (2026-10-16).
-      'itam-settings': [
-        'Settings: General, MDM, receiving by delivery note, demo data',
-        '设置：通用、MDM、按送货单入库、演示数据',
-      ],
-      // `scheduler.schedules`, nested: the lookup reads the dot as a level.
-      scheduler: { schedules: ['Settings: Scheduled tasks', '设置：定时任务'] },
-    },
-    unrestricted: [
-      'This permission set is unrestricted: whoever holds it may do everything.',
-      '这个权限集不受限：拥有它的人可以做任何事。',
-    ],
-    readOnly: [
-      'This permission set is maintained by the application; its permissions cannot be changed here.',
-      '这个权限集由应用维护，不能在这里修改权限。',
-    ],
-    customFilter: ['Custom filter', '自定义筛选'],
     levelFor: ['How far "{{name}}" reaches', '“{{name}}”的范围'],
-    unsaved: ['Unsaved changes', '有未保存的更改'],
-    discard: ['Discard', '放弃'],
-    leaveConfirm: [
-      'Leave without saving? Your changes to the permissions are lost.',
-      '不保存就离开？你对权限所做的更改将丢失。',
-    ],
-    stale: [
-      'Someone else changed this permission set. Reload to see their changes, then make yours again.',
-      '其他人修改了这个权限集。请重新加载查看他们的更改，然后再修改。',
-    ],
-    reload: ['Reload', '重新加载'],
-    fields: {
-      name: ['Name', '名称'],
-      key: ['Key', '标识'],
-      keyHint: [
-        'Lowercase letters, digits and hyphens; it cannot be changed later.',
-        '小写字母、数字和连字符；创建后不能修改。',
-      ],
-    },
-    errors: {
-      name: ['Enter a name', '请输入名称'],
-      key: [
-        'A key uses lowercase letters, digits and hyphens',
-        '标识只能包含小写字母、数字和连字符',
-      ],
-      keyTaken: ['This key is taken', '这个标识已被使用'],
-      tooLong: ['Use at most {{max}} characters', '最多 {{max}} 个字符'],
-      protected: [
-        'This permission set is maintained by the application and cannot be changed this way.',
-        '这个权限集由应用维护，不能这样修改。',
-      ],
-      lastAssignment: [
-        'The last administrator cannot be removed.',
-        '最后一位管理员不能被移除。',
-      ],
-      subjectNotAllowed: [
-        'This permission set cannot be given to that member.',
-        '这个权限集不能分配给该成员。',
-      ],
-    },
-    members: {
-      what: ['the members', '成员'],
-      heading: [
-        'People and groups who hold this permission set',
-        '拥有这个权限集的人和群组',
-      ],
-      add: ['Add members', '添加成员'],
-      // The Add members dialog's submit button, the verb alone (C3).
-      addSubmit: ['Add', '添加'],
-      addTitle: ['Add members', '添加成员'],
-      everyone: ['All signed-in users', '所有已登录用户'],
-      everyoneHint: [
-        'Everyone who signs in holds it, now and later.',
-        '所有登录的人都拥有它，包括以后加入的人。',
-      ],
-      user: ['User', '用户'],
-      type: ['Type', '类型'],
-      name: ['Name', '名称'],
-      emptyTitle: [
-        'Nobody holds this permission set',
-        '还没有人拥有这个权限集',
-      ],
-      emptyBody: [
-        'Once added, they get what it grants.',
-        '添加成员后，他们即获得这里的权限。',
-      ],
-      emptyReadOnly: [
-        'Ask an administrator to add members.',
-        '请联系管理员添加成员。',
-      ],
-      search: ['Search users', '搜索用户'],
-      noUsers: ['No users match.', '没有匹配的用户。'],
-      already: ['Already a member', '已是成员'],
-      remove: ['Remove', '移除'],
-      removeTitle: [
-        'Remove "{{name}}" from "{{set}}"?',
-        '从“{{set}}”移除“{{name}}”？',
-      ],
-      removeBody: [
-        'They lose what this permission set grants.',
-        '对方将失去这个权限集授予的权限。',
-      ],
-      addedOne: ['Added 1 member', '已添加 1 位成员'],
-      added: ['Added {{count}} members', '已添加 {{count}} 位成员'],
-      removed: ['Removed "{{name}}"', '已移除“{{name}}”'],
-      chooseOne: ['Choose at least one member', '至少选择一位成员'],
-      unknown: ['Unknown ({{id}})', '未知（{{id}}）'],
-    },
-    toasts: {
-      created: ['Created permission set "{{name}}"', '已创建权限集“{{name}}”'],
-      saved: ['Saved permission set "{{name}}"', '已保存权限集“{{name}}”'],
-      deleted: ['Deleted permission set "{{name}}"', '已删除权限集“{{name}}”'],
-    },
-    confirm: {
-      deleteTitle: [
-        'Delete permission set "{{name}}"?',
-        '删除权限集“{{name}}”？',
-      ],
-      deleteBody: [
-        'The people who hold it lose what it grants. This cannot be undone.',
-        '拥有它的人将失去它授予的权限，删除后无法恢复。',
-      ],
-    },
-  },
-  keys: {
     // The page's title, the menu entry's words (navigation).
     title: ['API keys', 'API 密钥'],
     what: ['your API keys', 'API 密钥'],
@@ -503,6 +248,18 @@ export const adminWording = {
   // these keys as the titles (`authzTitle`), worded as the pages word the
   // actions. Every Collection and operation needs one —
   // tests/logic/authz-titles.test.ts checks it.
+  // The page grants the role editor names that no menu entry of their own
+  // titles (client/pages/settings/page-permission-titles.ts): 设置's tabs,
+  // which became one page (2026-10-16), and the Agents plugin's page of the
+  // runners' agents, routed without a menu entry.
+  pages: {
+    itamSettings: [
+      'Settings: General, MDM, Flows, Receiving from delivery notes, Demo data; Business guidance',
+      '设置：通用、MDM、流程、按送货单入库、演示数据；业务指导',
+    ],
+    scheduledTasks: ['Settings: Scheduled tasks', '设置：定时任务'],
+    runnerAgents: ['Agents (from runners)', 'Agent（来自运行器）'],
+  },
   authz: {
     settings: ['ITAM settings', 'ITAM 设置'],
     settingsActions: { read: ['View', '查看'], update: ['Edit', '编辑'] },
@@ -633,7 +390,6 @@ export const adminWording = {
       succeeded: ['Succeeded', '成功次数'],
       lastRun: ['Last run', '上次运行'],
       nextRun: ['Next run', '下次运行'],
-      description: ['Description', '说明'],
     },
     history: ['Run history', '运行记录'],
     historyEmpty: ['This task has not run yet.', '这个任务还没有运行过。'],

@@ -97,7 +97,15 @@ describe('app client routes', () => {
       'itam-settings',
       'itam-settings',
       'itam-settings',
+      // NocoBase 3's prepared Users page (2026-10-24): the list, creating
+      // and inviting check the users plugin's own actions.
       'user:*',
+      'user:*',
+      'user:*',
+      // Its Roles page and creating a role; then /settings/permission-sets,
+      // ITAM's own page until then, now a redirect to it.
+      'settings:authorization.permission-sets',
+      'settings:authorization.permission-sets',
       'settings:authorization.permission-sets',
       'scheduler.schedules',
       'itam-settings',

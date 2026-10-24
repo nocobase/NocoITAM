@@ -11,7 +11,6 @@ const adminDeDE: AdminResource = {
     sessionEnded: 'Ihre Sitzung ist beendet.',
     notFound: 'Dieser Datensatz existiert nicht oder wurde gelöscht.',
     backToList: 'Zurück zur Liste',
-    clearFilters: 'Filter zurücksetzen',
     cancel: 'Abbrechen',
     save: 'Speichern',
     create: 'Erstellen',
@@ -25,52 +24,16 @@ const adminDeDE: AdminResource = {
     failed: 'Etwas ist schiefgelaufen. Versuchen Sie es erneut.',
     network:
       'Der Server ist nicht erreichbar. Prüfen Sie die Verbindung und versuchen Sie es erneut.',
-    previous: 'Vorherige Seite',
-    next: 'Nächste Seite',
-    pageOf: 'Seite {{page}} von {{pages}}',
   },
   users: {
-    title: 'Benutzer',
     what: 'die Benutzer',
-    description: 'Wer sich anmelden kann und welche Rollen er hat.',
-    new: 'Neuer Benutzer',
     invite: 'Benutzer einladen',
-    search: 'Nach Name, Benutzername oder E-Mail-Adresse suchen',
-    statusFilter: 'Status',
-    roleFilter: 'Rolle',
-    status: {
-      all: 'Alle Status',
-      enabled: 'Aktiviert',
-      disabled: 'Deaktiviert',
-    },
-    roleAll: 'Alle Rollen',
-    columns: {
-      name: 'Name',
-      username: 'Benutzername',
-      email: 'E-Mail-Adresse',
-      roles: 'Rollen',
-      status: 'Status',
-    },
-    you: 'Sie',
-    noRoles: 'Keine Rolle',
-    pagination: 'Seitennavigation',
     managedRole: 'Von der Anwendung verwaltet',
-    noResults: 'Keine Benutzer entsprechen diesen Filtern.',
-    range: '{{from}}–{{to}} von {{total}}',
     actions: {
-      edit: 'Bearbeiten',
-      roles: 'Rollen ändern',
       password: 'Passwort zurücksetzen',
-      signOut: 'Überall abmelden',
-      disable: 'Deaktivieren',
-      enable: 'Aktivieren',
       delete: 'Löschen',
     },
     dialogs: {
-      newTitle: 'Neuer Benutzer',
-      editTitle: 'Benutzer bearbeiten',
-      rolesTitle: 'Rollen ändern',
-      rolesDescription: 'Rollen von „{{name}}“',
       passwordTitle: 'Passwort zurücksetzen',
       passwordDescription:
         'Ein neues Passwort für „{{name}}“. Andere Sitzungen bleiben angemeldet; melden Sie die Person zusätzlich überall ab, wenn das alte Passwort bekannt geworden ist.',
@@ -79,18 +42,12 @@ const adminDeDE: AdminResource = {
         'Jede Adresse erhält einen Link zum Erstellen eines Kontos, sieben Tage gültig.',
     },
     fields: {
-      name: 'Name',
-      username: 'Benutzername',
-      email: 'E-Mail-Adresse',
-      password: 'Passwort',
       newPassword: 'Neues Passwort',
       confirmPassword: 'Passwort bestätigen',
       roles: 'Rollen',
       emails: 'E-Mail-Adressen',
     },
     hints: {
-      username:
-        'Optional; damit kann man sich statt mit der E-Mail-Adresse anmelden.',
       password: 'Mindestens 8 Zeichen.',
       emails:
         'Eine pro Zeile oder getrennt durch Kommas, Semikolons oder Leerzeichen.',
@@ -99,11 +56,9 @@ const adminDeDE: AdminResource = {
     },
     errors: {
       name: 'Geben Sie einen Namen ein',
-      email: 'Geben Sie eine E-Mail-Adresse ein',
       emailFormat: 'Die E-Mail-Adresse ist ungültig',
       username:
         'Ein Benutzername besteht aus Buchstaben, Ziffern, Punkten, Bindestrichen und Unterstrichen',
-      tooLong: 'Verwenden Sie höchstens {{max}} Zeichen',
       password: 'Das Passwort braucht mindestens 8 Zeichen',
       mismatch: 'Die Passwörter stimmen nicht überein',
       roles: 'Wählen Sie mindestens eine Rolle',
@@ -111,8 +66,6 @@ const adminDeDE: AdminResource = {
       usernameTaken: 'Dieser Benutzername wird bereits verwendet',
       lastAdministrator:
         'Der letzten Administratorin oder dem letzten Administrator kann die Rolle nicht entzogen werden.',
-      lastAdministratorDisable:
-        'Die letzte Administratorin oder der letzte Administrator kann nicht deaktiviert werden.',
       self: 'Sie können sich nicht selbst löschen.',
       holdsRecords:
         'Dieser Benutzer ist noch für Datensätze verantwortlich; deaktivieren Sie ihn stattdessen.',
@@ -121,23 +74,10 @@ const adminDeDE: AdminResource = {
       emailsTooMany: 'Laden Sie höchstens {{max}} Adressen auf einmal ein',
     },
     toasts: {
-      created: 'Benutzer „{{name}}“ angelegt',
-      saved: 'Benutzer „{{name}}“ gespeichert',
-      roles: 'Rollen von „{{name}}“ gespeichert',
       password: 'Passwort von „{{name}}“ zurückgesetzt',
-      signedOut: '„{{name}}“ überall abgemeldet',
-      disabled: '„{{name}}“ deaktiviert',
-      enabled: '„{{name}}“ aktiviert',
       deleted: 'Benutzer „{{name}}“ gelöscht',
     },
     confirm: {
-      signOutTitle: '„{{name}}“ überall abmelden?',
-      signOutBody:
-        'Alle Sitzungen dieses Kontos enden; die Person meldet sich mit ihrem Passwort erneut an.',
-      signOut: 'Abmelden',
-      disableTitle: '„{{name}}“ deaktivieren?',
-      disableBody:
-        'Die Person wird sofort abgemeldet und kann sich erst nach erneuter Aktivierung wieder anmelden.',
       deleteTitle: 'Benutzer „{{name}}“ löschen?',
       deleteBody:
         'Dies kann nicht rückgängig gemacht werden. Wer noch für Datensätze verantwortlich ist, kann nicht gelöscht werden; deaktivieren Sie die Person stattdessen.',
@@ -167,120 +107,12 @@ const adminDeDE: AdminResource = {
       'Ein neuer Link wurde erstellt; kopieren Sie ihn, um ihn selbst zu versenden',
     what: 'die Einladungen',
   },
-  sets: {
-    title: 'Berechtigungssätze',
-    what: 'die Berechtigungssätze',
-    whatOne: 'diesen Berechtigungssatz',
-    description: 'Die Rollen der Personen und was jede davon tun darf.',
-    new: 'Neuer Berechtigungssatz',
-    rename: 'Umbenennen',
-    renameTitle: 'Berechtigungssatz umbenennen',
-    delete: 'Löschen',
-    columns: {
-      name: 'Name',
-      key: 'Schlüssel',
-      kind: 'Art',
-    },
-    kinds: {
-      unrestricted: 'Uneingeschränkt',
-      builtIn: 'Integriert',
-    },
-    openPermissions: 'Berechtigungen',
-    openMembers: 'Mitglieder',
-    permissionsOf: 'Berechtigungen von „{{name}}“',
-    membersOf: 'Mitglieder von „{{name}}“',
-    permissionsDescription:
-      'Welche Seiten, Geschäftsvorgänge und Verwaltungsfunktionen dieser Berechtigungssatz gewährt.',
-    areaEmptyTitle: 'Hier gibt es nichts zu gewähren',
-    areaEmptyBody:
-      'Die Anwendung bietet in diesem Bereich keine Berechtigungen.',
-    noUpdate:
-      'Sie können diesen Berechtigungssatz ansehen, aber seine Berechtigungen nicht ändern.',
-    discardTitle: 'Änderungen an „{{name}}“ verwerfen?',
-    discardBody: 'Ihre Änderungen an seinen Berechtigungen gehen verloren.',
-    keepEditing: 'Weiter bearbeiten',
-    topPages: 'Grundlagen',
+  keys: {
     headings: {
-      pages: 'Seiten',
       business: 'Geschäftsvorgänge',
       administration: 'Verwaltung',
     },
-    pages: {
-      'master-data-overview': 'Stammdaten im Überblick',
-      'itam-settings':
-        'Einstellungen: Allgemein, MDM, Wareneingang per Lieferschein, Demodaten',
-      scheduler: { schedules: 'Einstellungen: Geplante Aufgaben' },
-    },
-    unrestricted:
-      'Dieser Berechtigungssatz ist uneingeschränkt: Wer ihn hat, darf alles.',
-    readOnly:
-      'Dieser Berechtigungssatz wird von der Anwendung gepflegt; seine Berechtigungen können hier nicht geändert werden.',
-    customFilter: 'Eigener Filter',
     levelFor: 'Wie weit „{{name}}“ reicht',
-    unsaved: 'Ungespeicherte Änderungen',
-    discard: 'Verwerfen',
-    leaveConfirm:
-      'Ohne Speichern verlassen? Ihre Änderungen an den Berechtigungen gehen verloren.',
-    stale:
-      'Jemand anderes hat diesen Berechtigungssatz geändert. Laden Sie neu, um diese Änderungen zu sehen, und nehmen Sie Ihre dann erneut vor.',
-    reload: 'Neu laden',
-    fields: {
-      name: 'Name',
-      key: 'Schlüssel',
-      keyHint:
-        'Kleinbuchstaben, Ziffern und Bindestriche; kann später nicht geändert werden.',
-    },
-    errors: {
-      name: 'Geben Sie einen Namen ein',
-      key: 'Ein Schlüssel besteht aus Kleinbuchstaben, Ziffern und Bindestrichen',
-      keyTaken: 'Dieser Schlüssel ist bereits vergeben',
-      tooLong: 'Verwenden Sie höchstens {{max}} Zeichen',
-      protected:
-        'Dieser Berechtigungssatz wird von der Anwendung gepflegt und kann so nicht geändert werden.',
-      lastAssignment:
-        'Die letzte Administratorin oder der letzte Administrator kann nicht entfernt werden.',
-      subjectNotAllowed:
-        'Dieser Berechtigungssatz kann diesem Mitglied nicht gegeben werden.',
-    },
-    members: {
-      what: 'die Mitglieder',
-      heading: 'Personen und Gruppen mit diesem Berechtigungssatz',
-      add: 'Mitglieder hinzufügen',
-      addSubmit: 'Hinzufügen',
-      addTitle: 'Mitglieder hinzufügen',
-      everyone: 'Alle angemeldeten Benutzer',
-      everyoneHint: 'Alle, die sich anmelden, haben ihn – jetzt und künftig.',
-      user: 'Benutzer',
-      type: 'Typ',
-      name: 'Name',
-      emptyTitle: 'Niemand hat diesen Berechtigungssatz',
-      emptyBody: 'Nach dem Hinzufügen erhalten Mitglieder, was er gewährt.',
-      emptyReadOnly:
-        'Bitten Sie eine Administratorin oder einen Administrator, Mitglieder hinzuzufügen.',
-      search: 'Benutzer suchen',
-      noUsers: 'Keine passenden Benutzer.',
-      already: 'Bereits Mitglied',
-      remove: 'Entfernen',
-      removeTitle: '„{{name}}“ aus „{{set}}“ entfernen?',
-      removeBody: 'Die Person verliert, was dieser Berechtigungssatz gewährt.',
-      addedOne: '1 Mitglied hinzugefügt',
-      added: '{{count}} Mitglieder hinzugefügt',
-      removed: '„{{name}}“ entfernt',
-      chooseOne: 'Wählen Sie mindestens ein Mitglied',
-      unknown: 'Unbekannt ({{id}})',
-    },
-    toasts: {
-      created: 'Berechtigungssatz „{{name}}“ erstellt',
-      saved: 'Berechtigungssatz „{{name}}“ gespeichert',
-      deleted: 'Berechtigungssatz „{{name}}“ gelöscht',
-    },
-    confirm: {
-      deleteTitle: 'Berechtigungssatz „{{name}}“ löschen?',
-      deleteBody:
-        'Wer ihn hat, verliert, was er gewährt. Dies kann nicht rückgängig gemacht werden.',
-    },
-  },
-  keys: {
     title: 'API-Schlüssel',
     what: 'Ihre API-Schlüssel',
     description:
@@ -341,6 +173,12 @@ const adminDeDE: AdminResource = {
       deleteBody:
         'Alles, was ihn nutzt, funktioniert sofort nicht mehr. Dies kann nicht rückgängig gemacht werden.',
     },
+  },
+  pages: {
+    itamSettings:
+      'Einstellungen: Allgemein, MDM, Abläufe, Wareneingang per Lieferschein, Demodaten; Fachliche Anleitung',
+    scheduledTasks: 'Einstellungen: Geplante Aufgaben',
+    runnerAgents: 'Agents (von Runnern)',
   },
   authz: {
     settings: 'ITAM-Einstellungen',
@@ -461,7 +299,6 @@ const adminDeDE: AdminResource = {
       succeeded: 'Erfolgreich',
       lastRun: 'Letzter Lauf',
       nextRun: 'Nächster Lauf',
-      description: 'Beschreibung',
     },
     history: 'Laufverlauf',
     historyEmpty: 'Diese Aufgabe ist noch nicht gelaufen.',

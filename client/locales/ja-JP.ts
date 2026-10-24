@@ -101,7 +101,7 @@ const jaJP: AppResource = {
     systemSettings: 'システム設定',
     settingsGeneral: '一般',
     users: 'ユーザー',
-    permissionSets: '権限セット',
+    roles: 'ロール',
     apiKeys: 'API キー',
     scheduledTasks: 'スケジュールタスク',
     breadcrumb: 'パンくずリスト',
