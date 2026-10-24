@@ -378,3 +378,18 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   importer otherwise. Keep the ordinary sample-data banner. Use the plugin's
   route helper and deployment reset settings; do not duplicate its entry,
   account-switching or scheduling logic.
+
+- **The demo comes with Asset Steward conversations** (2026-10-25,
+  `demo-conversations.ts`), so the chat has something to read where no model
+  is set up (cn and global). They are real conversations held on a fresh
+  import, kept as fixtures (`demo-conversations/<language>.ts`): questions,
+  the tools each answer called and the answer, without tool results or
+  reasoning. Dates, record numbers and ids are placeholders filled at import
+  (days from the import day; the n-th demo record of a kind by number; a
+  record found by e-mail or name). The importer gets all six with the two
+  plans (expiry pushed out a year); the demo's staff get the ones their role
+  would ask, without plans. They are written only with the Agents plugin, as
+  `assistantBinding` resolves a new conversation's config, and only when the
+  register's currency is the one the answers quote (CNY for Chinese, USD for
+  English). To change one, capture again and regenerate both files rather
+  than editing an answer by hand.

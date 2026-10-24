@@ -1,4 +1,5 @@
 import type {
+  OnlineAgentContext,
   OnlineAgentJson,
   OnlineAgentToolContext,
 } from '@nocobase/app-plugin-agents/server/online-agent';
@@ -320,6 +321,28 @@ export function registerAssistant(
       model: await chatModels(agents),
       systemPromptTemplate: systemPrompt(notes(), web),
     };
+  });
+}
+
+/**
+ * The OnlineAgent metadata a new Asset Steward conversation of `userId` is
+ * saved with, resolved by the plugin from the global scope above as the chat
+ * panel's own would be. The demo writes its conversations with it
+ * (`demo-conversations.ts`) so one carried on answers as Asset Steward; the
+ * envelope is the plugin's `OnlineAgentMetadata`, which it does not export a
+ * builder for.
+ */
+export async function assistantBinding(
+  agents: Agents,
+  userId: string,
+): Promise<OnlineAgentJson> {
+  const config = await agents.onlineAgent.configurator.resolve(
+    // The global scope reads nobody's context; resolving needs only the user.
+    { user: { id: userId } } as OnlineAgentContext,
+    { agentId: 'online' },
+  );
+  return asJson({
+    onlineAgent: { version: 1, kind: 'realtime', config, call: null },
   });
 }
 

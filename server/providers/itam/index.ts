@@ -25,6 +25,9 @@ import {
 } from '@nocobase/app-server/realtime';
 import { secretsServiceToken } from '@nocobase/app-server/secrets';
 import { databaseManagerToken } from '@nocobase/db';
+import { agentsToken } from '@nocobase/app-plugin-agents/server/tokens';
+import { idGeneratorToken } from '@nocobase/app-server/id-generator';
+import { assistantBinding } from '../itam-agents/assistant.js';
 import {
   ServiceProvider,
   type ServiceContainer,
@@ -713,6 +716,14 @@ export default class ItamProvider extends ServiceProvider<Application> {
           runs: container.resolve(agentRunServiceToken),
           followUp: container.resolve(deviceSyncFollowUpToken),
           advisor: container.resolve(onboardingAdvisorToken),
+        },
+        conversations: {
+          plans: container.resolve(planServiceToken),
+          binding: async (userId) =>
+            container.has(agentsToken)
+              ? assistantBinding(container.resolve(agentsToken), userId)
+              : null,
+          nextId: () => container.resolve(idGeneratorToken).generateString(),
         },
         // Who stands in as the colleague deciding the demo's requests:
         // another account that may approve purchase orders, else any other

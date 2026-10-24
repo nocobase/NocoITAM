@@ -8,6 +8,13 @@ import type { DeviceService, OperationContext } from './devices.js';
 import type { ObservedDevice } from './device-sources.js';
 import type { DeviceSyncService } from './device-sync.js';
 import { writeDemoSuggestions, type DemoAgents } from './demo-suggestions.js';
+import {
+  seedDemoConversations,
+  type DemoConversationSet,
+  type DemoConversations,
+} from './demo-conversations.js';
+import { EN_US as EN_US_CONVERSATIONS } from './demo-conversations/en-US.js';
+import { ZH_CN as ZH_CN_CONVERSATIONS } from './demo-conversations/zh-CN.js';
 import { pruneKitItems } from './kit-prune.js';
 import type { AuditService, CountInput } from './audits.js';
 import type { CommentService } from './comments.js';
@@ -318,6 +325,9 @@ const DEPENDENTS: readonly { table: string; column: string }[] = [
   // made, and the notifications those owed.
   { table: 'lifecycleEffectRuns', column: 'recordId' },
   { table: 'lifecycleTransitions', column: 'recordId' },
+  // The steps of the plans the demo proposed (2026-10-25): they stayed
+  // behind every clear, under plans that were gone.
+  { table: 'itamPlanSteps', column: 'planId' },
 ];
 
 /**
@@ -379,8 +389,17 @@ async function noticesOfGoneRecords(
   return gone;
 }
 
+/** The demo's conversations by language; another falls back to English. */
+const DEMO_CONVERSATIONS: Readonly<Record<string, DemoConversationSet>> = {
+  'zh-CN': ZH_CN_CONVERSATIONS,
+  'en-US': EN_US_CONVERSATIONS,
+};
+
 /** Deleted in dependency order: children before the master data they reference. */
 const ORDER: readonly string[] = [
+  // Asset Steward's conversations the demo comes with (2026-10-25); their
+  // messages go first, in `clear`.
+  'agConversations',
   // The work agents' suggestions the demo wrote (2026-10-16): the plans,
   // then the runs that proposed them.
   'itamPlans',
@@ -1827,6 +1846,11 @@ export function createDemoService(dependencies: {
    * asking a model (2026-10-16); absent in a bare harness.
    */
   agents?: DemoAgents;
+  /**
+   * Writes Asset Steward's conversations the demo comes with (2026-10-25);
+   * absent in a bare harness, and without the Agents plugin.
+   */
+  conversations?: DemoConversations;
 }): DemoService {
   const { database, masterData, audits } = dependencies;
   // Prices in the register's currency while the demo is generated.
@@ -7648,6 +7672,28 @@ export function createDemoService(dependencies: {
             joiners: joinerIds,
           });
 
+        // Conversations with Asset Steward about the demo (2026-10-25), so
+        // the chat opens on something to read and the importer on two plans
+        // to confirm, where no model is set up as well (cn and global). The
+        // staff each get the ones their role would have asked.
+        if (dependencies.conversations)
+          await seedDemoConversations({
+            database,
+            conversations: dependencies.conversations,
+            set: DEMO_CONVERSATIONS[locale] ?? EN_US_CONVERSATIONS,
+            currency: settings.currency ?? 'CNY',
+            owners: {
+              importer: actorId,
+              ...(managerUserId ? { approver: managerUserId } : {}),
+              ...(deskManagerUserId ? { writer: deskManagerUserId } : {}),
+              ...(supportUserId ? { support: supportUserId } : {}),
+            },
+            today: isoDate(new Date()),
+            track: async (collection, id) => {
+              await track(collection, { id });
+            },
+          });
+
         importPercent = 100;
         return await this.status();
       } finally {
@@ -7680,6 +7726,10 @@ export function createDemoService(dependencies: {
         );
         for (const collection of ORDER) {
           if (collection === 'historyEvents') continue;
+          // The Agents plugin's table, not a business record: a reset clears
+          // the conversations the demo wrote, which are tracked, and leaves
+          // the plugin's own.
+          if (collection === 'agConversations') continue;
           const kept = new Set(
             installed
               .filter((row) => row.subjectType === collection)
@@ -7923,6 +7973,12 @@ export function createDemoService(dependencies: {
               .execute();
           }
         }
+        const conversations = byCollection.get('agConversations');
+        if (conversations?.length)
+          await connection.query
+            .deleteFrom('agConversationMessages')
+            .where('conversationId', 'in', conversations)
+            .execute();
         for (const collection of ORDER) {
           const ids = byCollection.get(collection);
           if (!ids || ids.length === 0) continue;
