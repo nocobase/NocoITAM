@@ -101,7 +101,7 @@ const viVN: AppResource = {
     systemSettings: 'Cài đặt hệ thống',
     settingsGeneral: 'Chung',
     users: 'Người dùng',
-    permissionSets: 'Bộ quyền',
+    roles: 'Vai trò',
     apiKeys: 'Khóa API',
     scheduledTasks: 'Tác vụ định kỳ',
     breadcrumb: 'Đường dẫn',
@@ -3907,6 +3907,9 @@ const viVN: AppResource = {
         by: 'Kiểm kê quý 3 · Ryan Mitchell',
       },
     },
+  },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Vai trò' } },
   },
 };
 

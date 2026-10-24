@@ -5,6 +5,12 @@ import { adminIn, adminWording } from './admin/index.js';
 import systemEnUS from './system/en-US.js';
 
 const messages = {
+  // The users plugin's role scope labels itself with `page.roles`, which
+  // the plugin (2.0) no longer ships, so the user form read
+  // "Permission sets" in English (2026-10-24). Drop this once it does.
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Roles' } },
+  },
   // The agents' chat (client/extensions/nocobase-agent-chat), whose views
   // read `chat.*` here and fall back to their own English.
   ...agentChatEnUS,
@@ -106,7 +112,7 @@ const messages = {
     systemSettings: 'System settings',
     settingsGeneral: 'General',
     users: 'Users',
-    permissionSets: 'Permission sets',
+    roles: 'Roles',
     apiKeys: 'API keys',
     scheduledTasks: 'Scheduled tasks',
     breadcrumb: 'Breadcrumb',

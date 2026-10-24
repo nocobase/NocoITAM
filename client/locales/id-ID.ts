@@ -101,7 +101,7 @@ const idID: AppResource = {
     systemSettings: 'Pengaturan sistem',
     settingsGeneral: 'Umum',
     users: 'Pengguna',
-    permissionSets: 'Set izin',
+    roles: 'Peran',
     apiKeys: 'Kunci API',
     scheduledTasks: 'Tugas terjadwal',
     breadcrumb: 'Jejak navigasi',
@@ -3945,6 +3945,9 @@ const idID: AppResource = {
         by: 'Stock opname Q3 · Ryan Mitchell',
       },
     },
+  },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Peran' } },
   },
 };
 

@@ -101,7 +101,7 @@ const jaJP: AppResource = {
     systemSettings: 'システム設定',
     settingsGeneral: '一般',
     users: 'ユーザー',
-    permissionSets: '権限セット',
+    roles: 'ロール',
     apiKeys: 'API キー',
     scheduledTasks: 'スケジュールタスク',
     breadcrumb: 'パンくずリスト',
@@ -3912,6 +3912,9 @@ const jaJP: AppResource = {
         by: '第 3 四半期の棚卸 · Ryan Mitchell',
       },
     },
+  },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'ロール' } },
   },
 };
 

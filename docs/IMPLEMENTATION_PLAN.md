@@ -3599,3 +3599,18 @@ The application rejects mutation entry points that could upload files, contact
 external services, or enqueue work beyond the SQL guard's request lifetime.
 ITAM background maintenance, sync and work agents stay idle. Read-side caches
 (completed onboarding and stale agent runs) do not write in Demo Mode.
+
+## Settings: NocoBase 3's prepared Users and Roles pages (2026-10-24)
+
+With template 1.0.0-beta.77, Settings → 用户 and 权限集 are no longer ITAM's
+own pages but the template's prepared Users and Roles pages with its
+permission editor, as NocoCRM took them: 权限集 becomes 角色 at
+`/settings/roles` (the old address redirects), there is no Default access
+page, and a role opens in a drawer. ITAM keeps what the prepared Users page
+leaves out — inviting by email with the pending invitations, a password
+reset, and deletion that says why it is refused — in
+`client/pages/settings/accounts/`. The editor shows only what
+`permission-workspace.ts` selects, so it lists every `itam.<collection>`
+operation and the `itam.settings` item explicitly. Nothing stored changed:
+page grant ids, permission set keys and grants are as they were. See
+`.agents/rules/itam-ui.md` and `.agents/rules/itam-authorization.md`.

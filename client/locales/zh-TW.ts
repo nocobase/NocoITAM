@@ -100,7 +100,7 @@ const zhTW: AppResource = {
     systemSettings: '系統設定',
     settingsGeneral: '一般',
     users: '使用者',
-    permissionSets: '權限集',
+    roles: '角色',
     apiKeys: 'API 金鑰',
     scheduledTasks: '排程任務',
     breadcrumb: '麵包屑',
@@ -3698,6 +3698,9 @@ const zhTW: AppResource = {
         by: '第三季盤點 · 周宇',
       },
     },
+  },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: '角色' } },
   },
 };
 

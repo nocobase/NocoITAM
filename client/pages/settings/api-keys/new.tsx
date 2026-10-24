@@ -41,14 +41,14 @@ import {
   FormDialog,
   LoadFailure,
   TextField,
-} from '../shared.js';
+} from '../common/shared.js';
 import {
   errorReason,
   errorStatus,
   useAdminText,
   useFormState,
   useLocalized,
-} from '../hooks.js';
+} from '../common/hooks.js';
 import type { ApiKeysOutletContext } from './index.js';
 
 const FORM_ID = 'settings-api-key-new';
@@ -324,7 +324,7 @@ function NewKeyForm({
               <PermissionEditor
                 sections={sections}
                 labels={{
-                  levelFor: (label) => text('sets.levelFor', { name: label }),
+                  levelFor: (label) => text('keys.levelFor', { name: label }),
                 }}
                 onEnabledChange={(id, on) => {
                   const group = groups.find((item) => item.id === id);
@@ -364,9 +364,9 @@ function editorSections(
     id: category,
     title: text(
       category === 'business'
-        ? 'sets.headings.business'
+        ? 'keys.headings.business'
         : category === 'administration'
-          ? 'sets.headings.administration'
+          ? 'keys.headings.administration'
           : 'keys.fields.access',
     ),
     groups: [

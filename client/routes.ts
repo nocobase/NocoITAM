@@ -781,47 +781,100 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
                 import('./pages/itam/settings/receipt-agent.js'),
             },
             {
-              // The users plugin's `user` record type, which it does not place
-              // in the permission catalog: only the unrestricted root set opens
-              // it.
+              // NocoBase 3's prepared Users page (pages/settings/users.tsx,
+              // 2026-10-24, after NocoCRM's), on the users plugin's `user`
+              // record type; ITAM's additions are in pages/settings/accounts/.
               name: 'settings-users',
               path: 'users',
               authz: { resource: { type: 'user', id: '*' }, action: 'read' },
-              componentLoader: () => import('./pages/settings/users/index.js'),
+              componentLoader: () => import('./pages/settings/users.js'),
               children: [
                 {
-                  name: 'settings-users-new',
-                  path: 'new',
+                  name: 'settings-users-create',
+                  path: 'create',
+                  authz: {
+                    resource: { type: 'user', id: '*' },
+                    action: 'create',
+                  },
                   componentLoader: () =>
-                    import('./pages/settings/users/new.js'),
+                    import('./pages/settings/user-form.js'),
                 },
                 {
+                  // Application addition: inviting by email, which the
+                  // prepared pages leave out (pages/settings/accounts/).
                   name: 'settings-users-invite',
                   path: 'invite',
+                  authz: {
+                    resource: { type: 'user', id: '*' },
+                    action: 'invite',
+                  },
                   componentLoader: () =>
-                    import('./pages/settings/users/invite.js'),
+                    import('./pages/settings/accounts/invite.js'),
                 },
                 {
-                  name: 'settings-users-edit',
-                  path: ':userId/edit',
-                  componentLoader: () =>
-                    import('./pages/settings/users/edit.js'),
-                },
-                {
-                  name: 'settings-users-roles',
-                  path: ':userId/roles',
-                  componentLoader: () =>
-                    import('./pages/settings/users/roles.js'),
-                },
-                {
+                  // Application addition: a new password set by an
+                  // administrator.
                   name: 'settings-users-password',
                   path: ':userId/password',
                   componentLoader: () =>
-                    import('./pages/settings/users/password.js'),
+                    import('./pages/settings/accounts/password.js'),
+                },
+                {
+                  name: 'settings-user',
+                  path: ':userId',
+                  componentLoader: () =>
+                    import('./pages/settings/user-detail.js'),
+                  children: [
+                    {
+                      name: 'settings-user-edit',
+                      path: 'edit',
+                      componentLoader: () =>
+                        import('./pages/settings/user-form.js'),
+                    },
+                  ],
                 },
               ],
             },
             {
+              // NocoBase 3's prepared Roles page and its permission editor
+              // (pages/settings/roles.tsx, role-form.tsx), without the
+              // Default access page. A role is a permission set; the stored
+              // keys (`itam-it-support`, `itam-asset-manager`) are unchanged.
+              name: 'settings-roles',
+              path: 'roles',
+              authz: {
+                resource: {
+                  type: 'settings',
+                  id: 'authorization.permission-sets',
+                },
+                action: 'read',
+              },
+              componentLoader: () => import('./pages/settings/roles.js'),
+              children: [
+                {
+                  name: 'settings-role-create',
+                  path: 'create',
+                  authz: {
+                    resource: {
+                      type: 'settings',
+                      id: 'authorization.permission-sets',
+                    },
+                    action: 'create',
+                  },
+                  componentLoader: () =>
+                    import('./pages/settings/role-form.js'),
+                },
+                {
+                  name: 'settings-role-edit',
+                  path: ':key/edit',
+                  componentLoader: () =>
+                    import('./pages/settings/role-form.js'),
+                },
+              ],
+            },
+            {
+              // The address ITAM's own Permission sets page had, kept for
+              // links and bookmarks.
               name: 'settings-permission-sets',
               path: 'permission-sets',
               authz: {
@@ -832,63 +885,7 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
                 action: 'read',
               },
               componentLoader: () =>
-                import('./pages/settings/permission-sets/index.js'),
-              children: [
-                {
-                  name: 'settings-permission-sets-new',
-                  path: 'new',
-                  componentLoader: () =>
-                    import('./pages/settings/permission-sets/new.js'),
-                },
-                {
-                  name: 'settings-permission-sets-rename',
-                  path: 'edit/:setKey',
-                  componentLoader: () =>
-                    import('./pages/settings/permission-sets/rename.js'),
-                },
-                {
-                  // A set's address: its permissions and its members are drawers
-                  // over the list (pages/settings/permission-sets/detail/, after
-                  // NocoCRM's, 2026-10-16); the address alone opens the
-                  // permissions.
-                  name: 'settings-permission-set',
-                  path: ':setKey',
-                  componentLoader: () =>
-                    import('./pages/settings/permission-sets/detail/index.js'),
-                  children: [
-                    {
-                      // One draft for the three areas: the drawer stays mounted
-                      // while :section changes.
-                      name: 'settings-permission-set-permissions',
-                      path: 'permissions',
-                      componentLoader: () =>
-                        import('./pages/settings/permission-sets/detail/permissions.js'),
-                      children: [
-                        {
-                          name: 'settings-permission-set-area',
-                          path: ':section',
-                          componentLoader: () =>
-                            import('./pages/settings/permission-sets/detail/area.js'),
-                        },
-                      ],
-                    },
-                    {
-                      name: 'settings-permission-set-members',
-                      path: 'members',
-                      componentLoader: () =>
-                        import('./pages/settings/permission-sets/detail/members.js'),
-                      children: [
-                        {
-                          name: 'settings-permission-set-members-add',
-                          path: 'add',
-                          componentLoader: () =>
-                            import('./pages/settings/permission-sets/detail/add-members.js'),
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
+                import('./pages/settings/permission-sets-redirect.js'),
             },
             {
               // Every signed-in person manages their own keys only; the API

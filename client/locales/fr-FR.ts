@@ -101,7 +101,7 @@ const frFR: AppResource = {
     systemSettings: 'Paramètres système',
     settingsGeneral: 'Général',
     users: 'Utilisateurs',
-    permissionSets: 'Jeux de permissions',
+    roles: 'Rôles',
     apiKeys: 'Clés API',
     scheduledTasks: 'Tâches planifiées',
     breadcrumb: 'Fil d’Ariane',
@@ -3982,6 +3982,9 @@ const frFR: AppResource = {
         by: 'Inventaire du T3 · Ryan Mitchell',
       },
     },
+  },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Rôles' } },
   },
 };
 

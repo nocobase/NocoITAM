@@ -65,6 +65,34 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   listed `markLeft` and `correctStatus` under PEOPLE and DEVICES in Chinese
   too. A new operation or Collection needs its key in both languages;
   `tests/logic/authz-titles.test.ts` fails without it.
+- The role editor is the template's (Settings → 角色, 2026-10-24, after
+  NocoCRM's; ITAM's own 权限集 page until then), and it shows **only what the
+  application opts into**: `permissionWorkspaceSelection` in
+  `client/pages/settings/permission-workspace.ts` lists every
+  `itam.<collection>` composite with all its operations — a new operation
+  goes there too, or nobody can grant or see it;
+  `tests/logic/itam-permission-workspace.test.ts` holds the list equal to
+  the server's — and the settings items: `itam.settings` (read, update),
+  `authorization.permission-sets` and `agents.services`. The template shows a
+  settings item only when a route checks it, and ITAM's settings tabs check
+  the page grant `itam-settings` while their API checks `itam.settings`, so
+  a settings entry may name the routes that configure it (`routes`, an
+  application change). Collection grants (`main.<collection>` read, create,
+  update, delete with their fields) are not in the catalogue the editor
+  draws and pass through a save untouched, as they did on the old page.
+  Page grants are drawn as the menu's tree; those checked under the
+  `settings` route — `itam-settings` (also checked by 业务指导) and
+  `scheduler.schedules` — under 配置权限 instead. A page grant whose routes
+  have no menu title of their own is named in
+  `client/pages/settings/page-permission-titles.ts` by route name
+  (`admin.pages.*`); `tests/logic/page-permission-titles.test.ts` fails on
+  one without a name. Nothing stored changed: page grant ids, the set keys
+  `itam-it-support` / `itam-asset-manager` and their translated titles are
+  as they were. Known gap: the users plugin's standard role scope labels
+  itself with `page.roles` in its own namespace, which its 2.0 no longer
+  ships, so the user form's role field reads "Permission sets" in every
+  language until the plugin is fixed (NocoCRM avoids it with a role scope
+  of its own).
 - An `itam.<collection>` operation grants **no readable field of its own**
   (`resourceOf` in `authz-resources.ts` declares `.read([])`). It used to
   grant the Collection's whole field list, reasoning that a response is
@@ -163,3 +191,9 @@ key>', ns: 'itam' }`, the way the plugin's own 成员 and 系统管理员 are
   operation, which `root` holds none of, so a fresh deployment's one account
   could not be asked to approve anything. It is a seed, run once: an
   administrator who removes it keeps it removed.
+- The users plugin's role scope labels itself with `page.roles` in its own
+  namespace, a key the plugin (2.0) no longer ships, so the prepared user
+  form's role field read "Permission sets" in English (2026-10-24). Every
+  locale file supplies it through `overrides['@nocobase/app-plugin-users']`,
+  worded as that language's `navigation.roles`; drop the override once the
+  plugin ships the key.

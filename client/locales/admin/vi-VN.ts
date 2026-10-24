@@ -11,7 +11,6 @@ const adminViVN: AdminResource = {
     sessionEnded: 'Phiên làm việc của bạn đã kết thúc.',
     notFound: 'Hồ sơ này không tồn tại hoặc đã bị xóa.',
     backToList: 'Quay lại danh sách',
-    clearFilters: 'Xóa bộ lọc',
     cancel: 'Hủy',
     save: 'Lưu',
     create: 'Tạo',
@@ -24,53 +23,16 @@ const adminViVN: AdminResource = {
     copied: 'Đã sao chép',
     failed: 'Đã xảy ra lỗi. Hãy thử lại.',
     network: 'Không thể kết nối đến máy chủ. Hãy kiểm tra kết nối và thử lại.',
-    previous: 'Trang trước',
-    next: 'Trang sau',
-    pageOf: 'Trang {{page}} / {{pages}}',
   },
   users: {
-    // The page's title, the menu entry's words (navigation).
-    title: 'Người dùng',
     what: 'danh sách người dùng',
-    description: 'Những ai có thể đăng nhập, và vai trò của họ.',
-    new: 'Người dùng mới',
     invite: 'Mời người dùng',
-    search: 'Tìm theo tên, tên người dùng hoặc email',
-    statusFilter: 'Trạng thái',
-    roleFilter: 'Vai trò',
-    status: {
-      all: 'Tất cả trạng thái',
-      enabled: 'Đã bật',
-      disabled: 'Đã vô hiệu hóa',
-    },
-    roleAll: 'Tất cả vai trò',
-    columns: {
-      name: 'Họ tên',
-      username: 'Tên người dùng',
-      email: 'Email',
-      roles: 'Vai trò',
-      status: 'Trạng thái',
-    },
-    you: 'Bạn',
-    noRoles: 'Không có vai trò',
-    pagination: 'Phân trang',
     managedRole: 'Do ứng dụng quản lý',
-    noResults: 'Không có người dùng nào khớp với bộ lọc này.',
-    range: 'Đang hiển thị {{from}}–{{to}} / {{total}}',
     actions: {
-      edit: 'Sửa',
-      roles: 'Đổi vai trò',
       password: 'Đặt lại mật khẩu',
-      signOut: 'Đăng xuất khỏi mọi nơi',
-      disable: 'Vô hiệu hóa',
-      enable: 'Bật',
       delete: 'Xóa',
     },
     dialogs: {
-      newTitle: 'Người dùng mới',
-      editTitle: 'Sửa người dùng',
-      rolesTitle: 'Đổi vai trò',
-      rolesDescription: 'Vai trò của "{{name}}"',
       passwordTitle: 'Đặt lại mật khẩu',
       passwordDescription:
         'Mật khẩu mới cho "{{name}}". Các phiên khác của người này vẫn giữ đăng nhập; nếu mật khẩu cũ bị lộ, hãy đăng xuất họ khỏi mọi nơi.',
@@ -79,18 +41,12 @@ const adminViVN: AdminResource = {
         'Mỗi địa chỉ nhận một liên kết để tạo tài khoản, có hiệu lực trong bảy ngày.',
     },
     fields: {
-      name: 'Họ tên',
-      username: 'Tên người dùng',
-      email: 'Email',
-      password: 'Mật khẩu',
       newPassword: 'Mật khẩu mới',
       confirmPassword: 'Xác nhận mật khẩu',
       roles: 'Vai trò',
       emails: 'Địa chỉ email',
     },
     hints: {
-      username:
-        'Không bắt buộc; có thể dùng để đăng nhập thay cho địa chỉ email.',
       password: 'Ít nhất 8 ký tự.',
       emails:
         'Mỗi dòng một địa chỉ, hoặc phân tách bằng dấu phẩy, dấu chấm phẩy hay khoảng trắng.',
@@ -99,19 +55,15 @@ const adminViVN: AdminResource = {
     },
     errors: {
       name: 'Hãy nhập họ tên',
-      email: 'Hãy nhập địa chỉ email',
       emailFormat: 'Địa chỉ email không hợp lệ',
       username:
         'Tên người dùng chỉ gồm chữ cái, chữ số, dấu chấm, dấu gạch ngang và dấu gạch dưới',
-      tooLong: 'Tối đa {{max}} ký tự',
       password: 'Mật khẩu cần ít nhất 8 ký tự',
       mismatch: 'Mật khẩu không khớp',
       roles: 'Hãy chọn ít nhất một vai trò',
       emailTaken: 'Địa chỉ email này đã được sử dụng',
       usernameTaken: 'Tên người dùng này đã được sử dụng',
       lastAdministrator: 'Quản trị viên cuối cùng không thể mất vai trò này.',
-      lastAdministratorDisable:
-        'Không thể vô hiệu hóa quản trị viên cuối cùng.',
       self: 'Bạn không thể xóa chính mình.',
       holdsRecords:
         'Người dùng này vẫn đang phụ trách một số hồ sơ; hãy vô hiệu hóa thay vì xóa.',
@@ -120,23 +72,10 @@ const adminViVN: AdminResource = {
       emailsTooMany: 'Mỗi lần chỉ mời tối đa {{max}} địa chỉ',
     },
     toasts: {
-      created: 'Đã tạo người dùng "{{name}}"',
-      saved: 'Đã lưu người dùng "{{name}}"',
-      roles: 'Đã lưu vai trò của "{{name}}"',
       password: 'Đã đặt lại mật khẩu của "{{name}}"',
-      signedOut: 'Đã đăng xuất "{{name}}" khỏi mọi nơi',
-      disabled: 'Đã vô hiệu hóa "{{name}}"',
-      enabled: 'Đã bật "{{name}}"',
       deleted: 'Đã xóa người dùng "{{name}}"',
     },
     confirm: {
-      signOutTitle: 'Đăng xuất "{{name}}" khỏi mọi nơi?',
-      signOutBody:
-        'Mọi phiên của tài khoản này sẽ kết thúc; người dùng phải đăng nhập lại bằng mật khẩu.',
-      signOut: 'Đăng xuất',
-      disableTitle: 'Vô hiệu hóa "{{name}}"?',
-      disableBody:
-        'Người dùng bị đăng xuất ngay và không thể đăng nhập cho đến khi được bật lại.',
       deleteTitle: 'Xóa người dùng "{{name}}"?',
       deleteBody:
         'Không thể hoàn tác. Người vẫn đang phụ trách hồ sơ thì không thể xóa; hãy vô hiệu hóa thay vì xóa.',
@@ -164,127 +103,12 @@ const adminViVN: AdminResource = {
     resentLink: 'Đã tạo liên kết mới; hãy sao chép để tự gửi',
     what: 'các lời mời',
   },
-  sets: {
-    // The page's title, the menu entry's words (navigation).
-    title: 'Bộ quyền',
-    what: 'các bộ quyền',
-    whatOne: 'bộ quyền này',
-    description:
-      'Các vai trò mà mọi người nắm giữ, và mỗi vai trò được làm gì.',
-    new: 'Bộ quyền mới',
-    rename: 'Đổi tên',
-    renameTitle: 'Đổi tên bộ quyền',
-    delete: 'Xóa',
-    columns: {
-      name: 'Tên',
-      key: 'Khóa',
-      kind: 'Loại',
-    },
-    kinds: {
-      unrestricted: 'Không giới hạn',
-      builtIn: 'Có sẵn',
-    },
-    // A row's two views of a set, each a drawer over the list.
-    openPermissions: 'Quyền',
-    openMembers: 'Thành viên',
-    permissionsOf: 'Quyền của "{{name}}"',
-    membersOf: 'Thành viên của "{{name}}"',
-    permissionsDescription:
-      'Những trang, thao tác nghiệp vụ và chức năng quản trị mà bộ quyền này cấp.',
-    areaEmptyTitle: 'Không có gì để cấp ở đây',
-    areaEmptyBody: 'Ứng dụng không cung cấp quyền nào trong phần này.',
-    noUpdate: 'Bạn có thể xem bộ quyền này nhưng không thể thay đổi quyền.',
-    discardTitle: 'Bỏ các thay đổi với "{{name}}"?',
-    discardBody: 'Các thay đổi bạn đã thực hiện với quyền sẽ bị mất.',
-    keepEditing: 'Tiếp tục sửa',
-    // The Pages area's first group: the menu's entries above its headings,
-    // and the pages no menu entry names.
-    topPages: 'Cơ bản',
+  keys: {
     headings: {
-      pages: 'Trang',
       business: 'Thao tác nghiệp vụ',
       administration: 'Quản trị',
     },
-    // Page grants whose routes name no menu entry of their own, or whose
-    // menu title reads ambiguously out of its menu, by the page id
-    // `client/routes.ts` declares; every other page takes its title.
-    pages: {
-      'master-data-overview': 'Tổng quan dữ liệu danh mục',
-      // The settings page's tabs name no menu entry since it became one page (2026-10-16).
-      'itam-settings':
-        'Cài đặt: Chung, MDM, nhận hàng theo phiếu giao hàng, dữ liệu demo',
-      // `scheduler.schedules`, nested: the lookup reads the dot as a level.
-      scheduler: { schedules: 'Cài đặt: Tác vụ định kỳ' },
-    },
-    unrestricted:
-      'Bộ quyền này không giới hạn: ai nắm giữ nó đều có thể làm mọi việc.',
-    readOnly:
-      'Bộ quyền này do ứng dụng duy trì; không thể thay đổi quyền của nó tại đây.',
-    customFilter: 'Bộ lọc tùy chỉnh',
     levelFor: 'Phạm vi của "{{name}}"',
-    unsaved: 'Thay đổi chưa lưu',
-    discard: 'Bỏ',
-    leaveConfirm:
-      'Rời đi mà không lưu? Các thay đổi của bạn với quyền sẽ bị mất.',
-    stale:
-      'Người khác đã thay đổi bộ quyền này. Hãy tải lại để xem thay đổi của họ, rồi thực hiện lại thay đổi của bạn.',
-    reload: 'Tải lại',
-    fields: {
-      name: 'Tên',
-      key: 'Khóa',
-      keyHint:
-        'Chữ thường, chữ số và dấu gạch ngang; không thể thay đổi sau này.',
-    },
-    errors: {
-      name: 'Hãy nhập tên',
-      key: 'Khóa chỉ gồm chữ thường, chữ số và dấu gạch ngang',
-      keyTaken: 'Khóa này đã được sử dụng',
-      tooLong: 'Tối đa {{max}} ký tự',
-      protected:
-        'Bộ quyền này do ứng dụng duy trì và không thể thay đổi theo cách này.',
-      lastAssignment: 'Không thể gỡ bỏ quản trị viên cuối cùng.',
-      subjectNotAllowed: 'Không thể cấp bộ quyền này cho thành viên đó.',
-    },
-    members: {
-      what: 'các thành viên',
-      heading: 'Những người và nhóm nắm giữ bộ quyền này',
-      add: 'Thêm thành viên',
-      // The Add members dialog's submit button, the verb alone (C3).
-      addSubmit: 'Thêm',
-      addTitle: 'Thêm thành viên',
-      everyone: 'Mọi người dùng đã đăng nhập',
-      everyoneHint:
-        'Mọi người đăng nhập đều nắm giữ nó, cả hiện tại và sau này.',
-      user: 'Người dùng',
-      type: 'Loại',
-      name: 'Tên',
-      emptyTitle: 'Chưa ai nắm giữ bộ quyền này',
-      emptyBody: 'Sau khi được thêm, họ sẽ có những gì bộ quyền này cấp.',
-      emptyReadOnly: 'Hãy nhờ quản trị viên thêm thành viên.',
-      search: 'Tìm người dùng',
-      noUsers: 'Không có người dùng phù hợp.',
-      already: 'Đã là thành viên',
-      remove: 'Gỡ bỏ',
-      removeTitle: 'Gỡ "{{name}}" khỏi "{{set}}"?',
-      removeBody: 'Họ sẽ mất những gì bộ quyền này cấp.',
-      addedOne: 'Đã thêm 1 thành viên',
-      added: 'Đã thêm {{count}} thành viên',
-      removed: 'Đã gỡ bỏ "{{name}}"',
-      chooseOne: 'Hãy chọn ít nhất một thành viên',
-      unknown: 'Không xác định ({{id}})',
-    },
-    toasts: {
-      created: 'Đã tạo bộ quyền "{{name}}"',
-      saved: 'Đã lưu bộ quyền "{{name}}"',
-      deleted: 'Đã xóa bộ quyền "{{name}}"',
-    },
-    confirm: {
-      deleteTitle: 'Xóa bộ quyền "{{name}}"?',
-      deleteBody:
-        'Những người nắm giữ nó sẽ mất những gì nó cấp. Không thể hoàn tác.',
-    },
-  },
-  keys: {
     // The page's title, the menu entry's words (navigation).
     title: 'Khóa API',
     what: 'các khóa API của bạn',
@@ -348,6 +172,12 @@ const adminViVN: AdminResource = {
   },
   // How a permission set's permissions drawer names this application's Collections
   // and their operations; see `./index.ts`.
+  pages: {
+    itamSettings:
+      'Cài đặt: Chung, MDM, Quy trình, Nhận hàng từ phiếu giao hàng, Dữ liệu demo; Hướng dẫn nghiệp vụ',
+    scheduledTasks: 'Cài đặt: Tác vụ định kỳ',
+    runnerAgents: 'Agent (từ runner)',
+  },
   authz: {
     settings: 'Cài đặt ITAM',
     settingsActions: { read: 'Xem', update: 'Sửa' },
@@ -473,7 +303,6 @@ const adminViVN: AdminResource = {
       succeeded: 'Số lần thành công',
       lastRun: 'Lần chạy trước',
       nextRun: 'Lần chạy tiếp theo',
-      description: 'Mô tả',
     },
     history: 'Lịch sử chạy',
     historyEmpty: 'Tác vụ này chưa chạy lần nào.',

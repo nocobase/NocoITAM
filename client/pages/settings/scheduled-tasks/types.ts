@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { useAdminQueryKey } from '../hooks.js';
+import { useAdminQueryKey } from '../common/hooks.js';
 
 // The scheduler plugin's API shapes (`/api/scheduler`, documented under the
 // Scheduler tag of the API document); the plugin ships no client types.

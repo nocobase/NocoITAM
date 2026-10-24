@@ -11,7 +11,6 @@ const adminPtBR: AdminResource = {
     sessionEnded: 'Sua sessão terminou.',
     notFound: 'Este registro não existe ou foi excluído.',
     backToList: 'Voltar à lista',
-    clearFilters: 'Limpar filtros',
     cancel: 'Cancelar',
     save: 'Salvar',
     create: 'Criar',
@@ -25,52 +24,16 @@ const adminPtBR: AdminResource = {
     failed: 'Algo deu errado. Tente novamente.',
     network:
       'Não foi possível acessar o servidor. Verifique a conexão e tente novamente.',
-    previous: 'Página anterior',
-    next: 'Próxima página',
-    pageOf: 'Página {{page}} de {{pages}}',
   },
   users: {
-    title: 'Usuários',
     what: 'os usuários',
-    description: 'Quem pode entrar e as funções que cada um tem.',
-    new: 'Novo usuário',
     invite: 'Convidar usuários',
-    search: 'Pesquisar por nome, nome de usuário ou e-mail',
-    statusFilter: 'Status',
-    roleFilter: 'Função',
-    status: {
-      all: 'Todos os status',
-      enabled: 'Ativado',
-      disabled: 'Desativado',
-    },
-    roleAll: 'Todas as funções',
-    columns: {
-      name: 'Nome',
-      username: 'Nome de usuário',
-      email: 'E-mail',
-      roles: 'Funções',
-      status: 'Status',
-    },
-    you: 'Você',
-    noRoles: 'Sem função',
-    pagination: 'Paginação',
     managedRole: 'Gerenciado pelo aplicativo',
-    noResults: 'Nenhum usuário corresponde a estes filtros.',
-    range: 'Mostrando {{from}}–{{to}} de {{total}}',
     actions: {
-      edit: 'Editar',
-      roles: 'Alterar funções',
       password: 'Redefinir senha',
-      signOut: 'Encerrar todas as sessões',
-      disable: 'Desativar',
-      enable: 'Ativar',
       delete: 'Excluir',
     },
     dialogs: {
-      newTitle: 'Novo usuário',
-      editTitle: 'Editar usuário',
-      rolesTitle: 'Alterar funções',
-      rolesDescription: 'Funções de "{{name}}"',
       passwordTitle: 'Redefinir senha',
       passwordDescription:
         'Uma nova senha para "{{name}}". As outras sessões continuam abertas; encerre também todas as sessões se a senha antiga vazou.',
@@ -79,18 +42,12 @@ const adminPtBR: AdminResource = {
         'Cada endereço recebe um link para criar uma conta, válido por sete dias.',
     },
     fields: {
-      name: 'Nome',
-      username: 'Nome de usuário',
-      email: 'E-mail',
-      password: 'Senha',
       newPassword: 'Nova senha',
       confirmPassword: 'Confirmar senha',
       roles: 'Funções',
       emails: 'Endereços de e-mail',
     },
     hints: {
-      username:
-        'Opcional; a pessoa pode entrar com ele em vez do endereço de e-mail.',
       password: 'Pelo menos 8 caracteres.',
       emails:
         'Um por linha, ou separados por vírgulas, ponto e vírgula ou espaços.',
@@ -99,19 +56,15 @@ const adminPtBR: AdminResource = {
     },
     errors: {
       name: 'Informe um nome',
-      email: 'Informe um endereço de e-mail',
       emailFormat: 'O endereço de e-mail é inválido',
       username:
         'Um nome de usuário usa letras, dígitos, pontos, hífens e sublinhados',
-      tooLong: 'Use no máximo {{max}} caracteres',
       password: 'A senha precisa de pelo menos 8 caracteres',
       mismatch: 'As senhas não coincidem',
       roles: 'Escolha pelo menos uma função',
       emailTaken: 'Este endereço de e-mail já está em uso',
       usernameTaken: 'Este nome de usuário já está em uso',
       lastAdministrator: 'O último administrador não pode perder a função.',
-      lastAdministratorDisable:
-        'O último administrador não pode ser desativado.',
       self: 'Você não pode excluir a si mesmo.',
       holdsRecords:
         'Este usuário ainda responde por registros; desative-o em vez disso.',
@@ -120,23 +73,10 @@ const adminPtBR: AdminResource = {
       emailsTooMany: 'Convide no máximo {{max}} endereços por vez',
     },
     toasts: {
-      created: 'Usuário "{{name}}" criado',
-      saved: 'Usuário "{{name}}" salvo',
-      roles: 'Funções de "{{name}}" salvas',
       password: 'Senha de "{{name}}" redefinida',
-      signedOut: 'Todas as sessões de "{{name}}" encerradas',
-      disabled: '"{{name}}" desativado',
-      enabled: '"{{name}}" ativado',
       deleted: 'Usuário "{{name}}" excluído',
     },
     confirm: {
-      signOutTitle: 'Encerrar todas as sessões de "{{name}}"?',
-      signOutBody:
-        'Todas as sessões desta conta terminam; a pessoa entra novamente com a senha.',
-      signOut: 'Encerrar sessões',
-      disableTitle: 'Desativar "{{name}}"?',
-      disableBody:
-        'As sessões terminam imediatamente e a pessoa não pode entrar até ser ativada novamente.',
       deleteTitle: 'Excluir o usuário "{{name}}"?',
       deleteBody:
         'Esta ação não pode ser desfeita. Quem ainda responde por registros não pode ser excluído; desative-o em vez disso.',
@@ -164,119 +104,12 @@ const adminPtBR: AdminResource = {
     resentLink: 'Um novo link foi criado; copie-o para enviá-lo você mesmo',
     what: 'os convites',
   },
-  sets: {
-    title: 'Conjuntos de permissões',
-    what: 'os conjuntos de permissões',
-    whatOne: 'este conjunto de permissões',
-    description: 'As funções que as pessoas têm e o que cada uma pode fazer.',
-    new: 'Novo conjunto de permissões',
-    rename: 'Renomear',
-    renameTitle: 'Renomear conjunto de permissões',
-    delete: 'Excluir',
-    columns: {
-      name: 'Nome',
-      key: 'Chave',
-      kind: 'Tipo',
-    },
-    kinds: {
-      unrestricted: 'Sem restrições',
-      builtIn: 'Integrado',
-    },
-    openPermissions: 'Permissões',
-    openMembers: 'Membros',
-    permissionsOf: 'Permissões de "{{name}}"',
-    membersOf: 'Membros de "{{name}}"',
-    permissionsDescription:
-      'Quais páginas, operações de negócio e áreas de administração este conjunto de permissões concede.',
-    areaEmptyTitle: 'Nada a conceder aqui',
-    areaEmptyBody: 'O aplicativo não oferece permissões nesta área.',
-    noUpdate:
-      'Você pode ver este conjunto de permissões, mas não alterar suas permissões.',
-    discardTitle: 'Descartar as alterações em "{{name}}"?',
-    discardBody: 'Suas alterações nas permissões serão perdidas.',
-    keepEditing: 'Continuar editando',
-    topPages: 'Essenciais',
+  keys: {
     headings: {
-      pages: 'Páginas',
       business: 'Operações de negócio',
       administration: 'Administração',
     },
-    pages: {
-      'master-data-overview': 'Visão geral dos dados de referência',
-      'itam-settings':
-        'Configurações: Geral, MDM, recebimento pela nota de entrega, dados de demonstração',
-      scheduler: {
-        schedules: 'Configurações: Tarefas agendadas',
-      },
-    },
-    unrestricted:
-      'Este conjunto de permissões não tem restrições: quem o tem pode fazer tudo.',
-    readOnly:
-      'Este conjunto de permissões é mantido pelo aplicativo; suas permissões não podem ser alteradas aqui.',
-    customFilter: 'Filtro personalizado',
     levelFor: 'Até onde "{{name}}" alcança',
-    unsaved: 'Alterações não salvas',
-    discard: 'Descartar',
-    leaveConfirm:
-      'Sair sem salvar? Suas alterações nas permissões serão perdidas.',
-    stale:
-      'Outra pessoa alterou este conjunto de permissões. Recarregue para ver as alterações dela e depois refaça as suas.',
-    reload: 'Recarregar',
-    fields: {
-      name: 'Nome',
-      key: 'Chave',
-      keyHint:
-        'Letras minúsculas, dígitos e hífens; não pode ser alterada depois.',
-    },
-    errors: {
-      name: 'Informe um nome',
-      key: 'Uma chave usa letras minúsculas, dígitos e hífens',
-      keyTaken: 'Esta chave já está em uso',
-      tooLong: 'Use no máximo {{max}} caracteres',
-      protected:
-        'Este conjunto de permissões é mantido pelo aplicativo e não pode ser alterado desta forma.',
-      lastAssignment: 'O último administrador não pode ser removido.',
-      subjectNotAllowed:
-        'Este conjunto de permissões não pode ser dado a esse membro.',
-    },
-    members: {
-      what: 'os membros',
-      heading: 'Pessoas e grupos que têm este conjunto de permissões',
-      add: 'Adicionar membros',
-      addSubmit: 'Adicionar',
-      addTitle: 'Adicionar membros',
-      everyone: 'Todos os usuários conectados',
-      everyoneHint: 'Todos que entram o têm, agora e no futuro.',
-      user: 'Usuário',
-      type: 'Tipo',
-      name: 'Nome',
-      emptyTitle: 'Ninguém tem este conjunto de permissões',
-      emptyBody: 'Depois de adicionados, os membros recebem o que ele concede.',
-      emptyReadOnly: 'Peça a um administrador para adicionar membros.',
-      search: 'Pesquisar usuários',
-      noUsers: 'Nenhum usuário corresponde.',
-      already: 'Já é membro',
-      remove: 'Remover',
-      removeTitle: 'Remover "{{name}}" de "{{set}}"?',
-      removeBody: 'A pessoa perde o que este conjunto de permissões concede.',
-      addedOne: '1 membro adicionado',
-      added: '{{count}} membros adicionados',
-      removed: '"{{name}}" removido',
-      chooseOne: 'Escolha pelo menos um membro',
-      unknown: 'Desconhecido ({{id}})',
-    },
-    toasts: {
-      created: 'Conjunto de permissões "{{name}}" criado',
-      saved: 'Conjunto de permissões "{{name}}" salvo',
-      deleted: 'Conjunto de permissões "{{name}}" excluído',
-    },
-    confirm: {
-      deleteTitle: 'Excluir o conjunto de permissões "{{name}}"?',
-      deleteBody:
-        'Quem o tem perde o que ele concede. Esta ação não pode ser desfeita.',
-    },
-  },
-  keys: {
     title: 'Chaves de API',
     what: 'suas chaves de API',
     description:
@@ -337,6 +170,12 @@ const adminPtBR: AdminResource = {
       deleteBody:
         'Tudo o que a usa deixa de funcionar imediatamente. Esta ação não pode ser desfeita.',
     },
+  },
+  pages: {
+    itamSettings:
+      'Configurações: Geral, MDM, Fluxos, Recebimento por notas de entrega, Dados de demonstração; Orientações de negócio',
+    scheduledTasks: 'Configurações: Tarefas agendadas',
+    runnerAgents: 'Agentes (de executores)',
   },
   authz: {
     settings: 'Configurações do ITAM',
@@ -466,7 +305,6 @@ const adminPtBR: AdminResource = {
       succeeded: 'Bem-sucedidas',
       lastRun: 'Última execução',
       nextRun: 'Próxima execução',
-      description: 'Descrição',
     },
     history: 'Histórico de execuções',
     historyEmpty: 'Esta tarefa ainda não foi executada.',

@@ -1,7 +1,7 @@
 {
   "name": "itam",
   "displayName": "NocoITAM",
-  "version": "1.0.0-beta.29",
+  "version": "1.0.0-beta.30",
   "type": "module",
   "prettier": "@nocobase/dev-config/prettier",
   "engines": {
@@ -9,7 +9,7 @@
   },
   "nocobase": {
     "templateKind": "app",
-    "defaultTemplateVersion": "1.0.0-beta.76",
+    "defaultTemplateVersion": "1.0.0-beta.77",
     "templatePackage": "@nocobase/app-template-default"
   },
   "devDependencies": {
@@ -18,7 +18,7 @@
     "@dicebear/core": "^9.4.3",
     "@hookform/resolvers": "^5.0.1",
     "@nocobase/app-client": "4.0.0-beta.3",
-    "@nocobase/app-skills": "0.1.0-beta.44",
+    "@nocobase/app-skills": "0.1.0-beta.46",
     "@nocobase/app-testing": "0.1.0-beta.6",
     "@nocobase/app-websocket": "^0.1.0-beta.1",
     "@nocobase/dev-config": "0.1.0-beta.24",

@@ -101,7 +101,7 @@ const esES: AppResource = {
     systemSettings: 'Configuración del sistema',
     settingsGeneral: 'General',
     users: 'Usuarios',
-    permissionSets: 'Conjuntos de permisos',
+    roles: 'Roles',
     apiKeys: 'Claves de API',
     scheduledTasks: 'Tareas programadas',
     breadcrumb: 'Ruta de navegación',
@@ -3990,6 +3990,9 @@ const esES: AppResource = {
         by: 'Inventario del T3 · Ryan Mitchell',
       },
     },
+  },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Roles' } },
   },
 };
 

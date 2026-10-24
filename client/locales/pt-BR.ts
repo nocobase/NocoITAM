@@ -100,7 +100,7 @@ const ptBR: AppResource = {
     systemSettings: 'Configurações do sistema',
     settingsGeneral: 'Geral',
     users: 'Usuários',
-    permissionSets: 'Conjuntos de permissões',
+    roles: 'Funções',
     apiKeys: 'Chaves de API',
     scheduledTasks: 'Tarefas agendadas',
     breadcrumb: 'Trilha de navegação',
@@ -3965,6 +3965,9 @@ const ptBR: AppResource = {
         by: 'Inventário do 3º tri · Ryan Mitchell',
       },
     },
+  },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Funções' } },
   },
 };
 

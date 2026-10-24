@@ -148,8 +148,8 @@ importers:
         specifier: 4.0.0-beta.3
         version: 4.0.0-beta.3(@nocobase/i18n@2.0.0-beta.1(hono@4.13.7)(react-i18next@17.0.13(i18next@26.4.2(typescript@6.0.3))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@6.0.3))(react@19.3.0)(typescript@6.0.3))(@nocobase/repository-input@0.1.0-beta.3)(@nocobase/service-provider@0.0.2-beta.2)(@tanstack/react-query@5.102.8(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react-i18next@17.0.13(i18next@26.4.2(typescript@6.0.3))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@6.0.3))(react-router@7.18.3(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       '@nocobase/app-skills':
-        specifier: 0.1.0-beta.44
-        version: 0.1.0-beta.44(@playwright/test@1.63.0)(prettier@3.9.6)
+        specifier: 0.1.0-beta.46
+        version: 0.1.0-beta.46(@playwright/test@1.63.0)(prettier@3.9.6)
       '@nocobase/app-testing':
         specifier: 0.1.0-beta.6
         version: 0.1.0-beta.6(9c1966bcc36fe40e993894f8868d5829)
@@ -1989,8 +1989,8 @@ packages:
       '@nocobase/db-sqlite':
         optional: true
 
-  '@nocobase/app-skills@0.1.0-beta.44':
-    resolution: {integrity: sha512-vKg25CVEdW9omLTtGvfGAlSrvNcFbztwG1etNAm6cxGGjX+dC0UNTGPMWSrCtbkFwrQOtokmCOxsr5/m6PFaxA==, tarball: https://registry.npmjs.org/@nocobase/app-skills/-/app-skills-0.1.0-beta.44.tgz}
+  '@nocobase/app-skills@0.1.0-beta.46':
+    resolution: {integrity: sha512-raQxNYC6Vy5ZHd2KC8u/lpbHQO/OhSpOFlhL6LnJK2TSMPD6zkr1uC/B3doHDH3sDjxsMJenur/1/eshCCOY8w==, tarball: https://registry.npmjs.org/@nocobase/app-skills/-/app-skills-0.1.0-beta.46.tgz}
     peerDependencies:
       '@playwright/test': ^1.62.1
       prettier: ^3.9.6
@@ -9610,7 +9610,7 @@ snapshots:
       - zod-openapi
       - zod-to-json-schema
 
-  '@nocobase/app-skills@0.1.0-beta.44(@playwright/test@1.63.0)(prettier@3.9.6)':
+  '@nocobase/app-skills@0.1.0-beta.46(@playwright/test@1.63.0)(prettier@3.9.6)':
     optionalDependencies:
       '@playwright/test': 1.63.0
       prettier: 3.9.6

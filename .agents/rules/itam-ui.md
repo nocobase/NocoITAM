@@ -15,24 +15,45 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
   section of five entries, the first of them ITAM's settings with tabs of
   its own): 通用 (`/settings/itam`: 基本设置, 提醒阈值, 编号规则 and AI 助手,
   one card under another, each saved by its own button), MDM, 按送货单入库,
-  用户, 权限集, API 密钥, 定时任务 and 演示数据, each tab a route of its own.
-  ITAM's four tabs all check the page grant `itam-settings`, so no stored
-  grant changed; the permission editor names it and `scheduler.schedules`
-  through `admin.sets.pages`, since neither has a menu entry any more. A
-  link written for the old `?tab=` still lands (`MOVED` in
+  用户, 角色, API 密钥, 定时任务 and 演示数据, each tab a route of its own.
+  ITAM's tabs all check the page grant `itam-settings`, so no stored
+  grant changed. A link written for the old `?tab=` still lands (`MOVED` in
   `itam-settings.tsx`).
-- 权限集 follows NocoCRM's current pages (2026-10-16): each row of the list
-  opens two drawers over it, 权限 at `…/:setKey/permissions/:section` and 成员
-  at `…/:setKey/members` (the set's address alone opens 权限), and the
-  permissions show in three tabs by area — 页面, 业务操作, 管理
-  (`detail/areas.ts`) — over one draft the drawer keeps while the tabs
-  change, saved from its footer, asking before it closes with unsaved
-  changes. `client/pages/settings/permission-sets/`,
-  `client/components/permission-editor.tsx` and `client/pages/settings/
-shared.tsx` are NocoCRM's files with this application's adaptations: the
-  `admin.*` namespace rather than `crm.admin.*`, `ToneBadge` for tags, the
-  settings' own `sortable-table` and `auto-load`, and the bordered card
-  `shared.tsx` draws on `bg-card`. Port a later CRM change the same way.
+- 用户 and 角色 are **NocoBase 3's prepared pages** (2026-10-24, after
+  NocoCRM's; ITAM's own Users and 权限集 pages until then): `users.tsx`,
+  `user-detail.tsx`, `user-form.tsx`, `roles.tsx`, `role-form.tsx`,
+  `permission-management-page.tsx` and their helpers in
+  `client/pages/settings/`, with `#components/permission-editor`,
+  `permission-filter`, `role-list`, `long-text`, `record-link`,
+  `data-table` and `ui/combobox`, as the template ships them, worded by the
+  template's copy (`client/locales/system/settings-*.ts`). There is no
+  Default access page. A role is a permission set: the stored keys
+  (`itam-it-support`, `itam-asset-manager`) and grants are unchanged, and
+  `/settings/permission-sets` redirects to `/settings/roles`. Their
+  application changes, each marked `Application change (ITAM, 2026-10-24)`:
+  the Users page carries ITAM's additions (below); a role opens in a drawer
+  over the list, as a user does, rather than on a page covering 设置's tabs
+  (`role-form.tsx`); `permission-management-page.tsx` draws no strip of its
+  one Roles tab nor a link to Default access; `permission-workspace.ts`
+  lists ITAM's composites and settings items (see
+  [authorization](itam-authorization.md)); `page-permission-titles.ts` names
+  the page grants no menu entry titles. Take a later template change to
+  these files as the template has it and keep the marked changes.
+- What the prepared Users page leaves out ITAM keeps, in
+  `client/pages/settings/accounts/` (its own Users page's files): inviting by
+  email and the pending invitations under the table (`user-extras.tsx`,
+  `invite.tsx`, `invitations.tsx`, `role-checks.tsx`), and a row's Reset
+  password and Delete (`user-row-extras.tsx`, `password.tsx`), each offered
+  only to whoever holds the users plugin's action; a refused deletion says
+  why (oneself, records still naming the person, the last administrator).
+  The row's buttons are `size='xs'`, as the prepared page's own Disable and
+  Revoke sessions beside them. API keys and scheduled tasks are still
+  ITAM's own pages, after NocoCRM's, with their shared helpers in
+  `client/pages/settings/common/` (`hooks.ts`, `shared.tsx`), worded through
+  `admin.*` (`client/locales/admin/index.ts`), tagged with `ToneBadge`, using
+  the settings' own `sortable-table` and `auto-load`, and with the bordered
+  card `common/shared.tsx` draws on `bg-card`. Port a later CRM change the
+  same way.
   Every route overlay's footer is `py-3` rather than the UI Library's `p-6`
   (an application change in `client/components/route-overlay.tsx`,
   2026-10-16): the drawers' 保存 row stood too tall.
@@ -304,9 +325,10 @@ cells. Give a short column a smaller bound (`max-w-48` for a person,
 `max-w-56` for a model or a place) and leave dates, numbers, tags and
 buttons alone; a row's buttons sit on one line (`flex`, not `flex-wrap`).
 An import's error messages are the exception — they wrap, since they must
-be read whole. The settings pages the template owns (users, permission
-sets, API keys, scheduled tasks) have their own `TruncatedText` with the
-bound on the cell.
+be read whole. ITAM's own settings pages (API keys, scheduled tasks,
+invitations) have their own `TruncatedText` with the bound on the cell; the
+prepared Users and Roles pages bound their text with the template's
+`LongText` and `DataTable`.
 
 ## A label's qualifier
 

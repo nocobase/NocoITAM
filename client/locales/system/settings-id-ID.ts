@@ -1,4 +1,9 @@
-const settings = {
+import type { LocaleResource } from '@nocobase/i18n';
+import type settingsEnUS from './settings-en-US.js';
+
+// The template's Settings copy (client/locales/system/settings-en-US.ts): the
+// prepared Users and Roles pages and the permission editor, in id-ID.
+const settings: LocaleResource<typeof settingsEnUS> = {
   setup: {
     title: 'Prasyarat fitur',
     checking: 'Memeriksa konfigurasi saat ini…',
@@ -12,14 +17,8 @@ const settings = {
     forbidden:
       'Anda tidak memiliki akses untuk memeriksa konfigurasi ini. Hubungi administrator.',
     invalid:
-      'Prasyarat ini tidak dapat diverifikasi. Minta pengelola aplikasi memeriksa konfigurasinya.',
+      'Prasyarat ini tidak dapat diverifikasi. Minta pengelola aplikasi untuk memeriksa konfigurasinya.',
   },
-  roleFilterIncomplete:
-    'Pilih cakupan peran dan peran sekaligus, atau hapus filter.',
-  backToSource: 'Kembali ke halaman sebelumnya',
-  roleFilter: 'Filter menurut peran',
-  allRoles: 'Semua peran',
-
   permissionManagement: 'Manajemen izin',
   defaultAccess: {
     noResourcesShort: 'Tidak ada objek yang dapat dikonfigurasi',
@@ -27,67 +26,66 @@ const settings = {
       'Pilih cakupan data yang valid atau lengkapi kondisi filternya.',
 
     deleteChanged:
-      'Aturan ini telah berubah atau dihapus. Daftar telah dimuat ulang; tinjau sebelum menghapus.',
+      'Aturan ini telah diubah atau dihapus. Daftar telah dimuat ulang; periksa lagi sebelum menghapus.',
     filterDescription:
-      'Terapkan kondisi pada draf aturan ini, lalu simpan aturan agar berlaku.',
+      'Terapkan kondisi pada draf aturan ini, lalu simpan aturan agar kondisinya berlaku.',
     fieldLabels: { name: 'Nama', id: 'ID' },
     delete: 'Hapus',
-    title: 'Cakupan data bawaan',
+    title: 'Cakupan data default',
     description:
-      'Menambahkan akses data bagi pengguna yang memiliki izin operasi, digabungkan dengan cakupan yang diberikan peran dan tunduk pada aturan pembatasan.',
-    manage: 'Kelola cakupan data bawaan',
-    new: 'Cakupan bawaan baru',
-    edit: 'Detail cakupan bawaan',
+      'Menambahkan akses data bagi pengguna yang memiliki izin operasi, digabungkan dengan cakupan dari peran dan tetap tunduk pada aturan pembatasan.',
+    manage: 'Kelola cakupan data default',
+    new: 'Cakupan default baru',
+    edit: 'Detail cakupan default',
     resource: 'Objek bisnis',
     chooseResource: 'Pilih objek bisnis',
     action: 'Operasi',
     scope: 'Cakupan data',
     scopes: 'Operasi dan cakupan data',
-    none: 'Tidak ada cakupan bawaan',
-    all: 'Semua catatan',
-    custom: 'Filter khusus',
-    records: 'Catatan terpilih ({{count}})',
+    none: 'Tanpa cakupan default',
+    all: 'Semua data',
+    custom: 'Filter kustom',
+    records: 'Data terpilih ({{count}})',
     retained: 'Pertahankan konfigurasi yang ada',
     search: 'Cari objek bisnis atau kunci',
-    empty: 'Tidak ada cakupan data bawaan',
-    emptyHint:
-      'Buat aturan untuk mengonfigurasi akses dasar suatu objek bisnis.',
-    readOnlyEmpty: 'Minta administrator mengonfigurasi akses data dasar.',
+    empty: 'Belum ada cakupan data default',
+    emptyHint: 'Buat aturan untuk mengatur akses dasar ke suatu objek bisnis.',
+    readOnlyEmpty: 'Minta administrator untuk mengatur akses data dasar.',
     noResources:
-      'Setiap objek bisnis yang tersedia sudah memiliki aturan bawaan, atau tidak ada objek yang dapat dikonfigurasi yang terdaftar.',
+      'Setiap objek bisnis yang tersedia sudah memiliki aturan default, atau tidak ada objek yang dapat dikonfigurasi.',
     unsupported:
-      'Aturan ini mencakup konfigurasi yang tidak ada di katalog plugin saat ini. Aturan tetap dipertahankan dan ditampilkan hanya-baca.',
+      'Aturan ini berisi konfigurasi yang tidak ada di katalog plugin saat ini. Konfigurasi tersebut dipertahankan dan hanya dapat dilihat.',
     changed:
-      'Aturan ini berubah atau dihapus saat Anda mengubahnya. Muat ulang sebelum menyimpan. Draf Anda belum disimpan.',
+      'Aturan ini diubah atau dihapus saat Anda mengedit. Muat ulang sebelum menyimpan. Draf Anda belum disimpan.',
     duplicate:
-      'Kunci atau objek bisnis ini sudah memiliki aturan bawaan. Gunakan kunci lain atau ubah aturan yang ada.',
+      'Kunci atau objek bisnis ini sudah memiliki aturan default. Gunakan kunci lain atau edit aturan yang ada.',
     invalid:
-      'Konfigurasi tidak diterima. Periksa objek bisnis, operasi, dan cakupan data.',
+      'Konfigurasi tidak diterima. Periksa objek bisnis, operasi, dan cakupan datanya.',
     keyRequired: 'Masukkan kunci selain options, subjects, atau records.',
     resourceRequired: 'Pilih objek bisnis.',
     reload: 'Muat ulang aturan',
-    saved: 'Cakupan bawaan “{{name}}” disimpan',
-    deleted: 'Cakupan bawaan “{{name}}” dihapus',
-    deleteTitle: 'Hapus cakupan bawaan “{{name}}”?',
+    saved: 'Cakupan default “{{name}}” disimpan',
+    deleted: 'Cakupan default “{{name}}” dihapus',
+    deleteTitle: 'Hapus cakupan default “{{name}}”?',
     deleteHint:
-      'Tindakan ini menghapus akses dasar yang diberikan aturan ini. Pemberian izin peran yang ada dan aturan lain tetap berlaku. Tindakan ini tidak dapat dibatalkan.',
-    back: 'Kembali ke cakupan bawaan',
-    open: 'Lihat / ubah',
+      'Ini menghapus akses dasar yang diberikan aturan ini. Pemberian dari peran dan aturan lain tetap ada. Tindakan ini tidak dapat dibatalkan.',
+    back: 'Kembali ke cakupan default',
+    open: 'Lihat / edit',
   },
   scopeHintFor: 'Tentang rentang data untuk {{name}}',
   scopeExplanation:
-    'Setiap rentang berlaku untuk datanya masing-masing. Operasi juga harus lolos pemeriksaan otorisasinya.',
+    'Setiap rentang berlaku untuk datanya masing-masing. Operasinya juga harus lolos pemeriksaan otorisasinya.',
   noAdditionalScopeHint:
-    'Tindakan ini tidak memberikan akses catatan tambahan di sini. Akses bawaan, aturan berbagi, dan aturan pembatasan tetap menentukan akses sebenarnya.',
+    'Peran ini tidak menambahkan data. Akses sebenarnya juga bergantung pada peran lain serta aturan default, berbagi, dan pembatasan.',
   systemToolsHint:
-    'Kelola konfigurasi dan alat sistem. Tinjau kemampuan yang dicakup setiap tindakan sebelum memberikan akses.',
+    'Kelola konfigurasi dan alat sistem. Periksa kemampuan yang dicakup setiap tindakan sebelum memberikan akses.',
   userAccountsHint:
-    'Kelola informasi pengguna, keamanan akun, dan penugasan peran. Tinjau setiap izin secara terpisah.',
+    'Kelola informasi pengguna, keamanan akun, dan penetapan peran. Periksa setiap izin secara terpisah.',
   businessOperationsHint:
     'Pilih operasi yang dapat dilakukan peran ini dan data yang dapat digunakan setiap operasi.',
   pageAccessHint:
-    'Mengatur halaman mana yang dapat dibuka peran ini. Data dan tindakan di setiap halaman memerlukan izinnya sendiri.',
-  roleAssignment: 'Penugasan peran',
+    'Pilih halaman bisnis yang dapat dibuka peran ini. Semua pengaturan sistem, termasuk pengelolaan pengguna dan konfigurasi bisnis, diatur di Izin konfigurasi. Data dan tindakan bisnis memerlukan izin tersendiri.',
+  roleAssignment: 'Penetapan peran',
   accountSecurity: 'Keamanan akun',
   userInformation: 'Informasi pengguna',
   unnamedPage: 'Halaman tanpa nama ({{path}})',
@@ -96,7 +94,7 @@ const settings = {
   userPermissions: 'Pengguna dan akun',
   readUsers: 'Lihat pengguna',
   createUsers: 'Buat pengguna',
-  updateUsers: 'Ubah pengguna',
+  updateUsers: 'Edit pengguna',
   inviteUsers: 'Undang pengguna',
   deleteUsers: 'Hapus pengguna',
   resetUserPassword: 'Atur ulang kata sandi',
@@ -104,11 +102,6 @@ const settings = {
 
   assignedRoles: 'Peran yang ditetapkan',
   actionSaved: 'Akses untuk "{{name}}" diperbarui',
-  userActionSaved: {
-    disable: 'Pengguna "{{name}}" dinonaktifkan',
-    enable: 'Pengguna "{{name}}" diaktifkan',
-    revokeSessions: 'Sesi aktif "{{name}}" dicabut',
-  },
 
   identityConflict: 'Email atau nama pengguna ini sudah digunakan.',
   signInAgain: 'Masuk lagi',
@@ -124,10 +117,9 @@ const settings = {
   userSearch: 'Cari nama, nama pengguna, atau email',
   roleSearch: 'Cari nama peran',
   newUser: 'Pengguna baru',
-  editUserFor: 'Ubah {{name}}',
-  editUser: 'Ubah pengguna',
+  editUser: 'Edit pengguna',
   newRole: 'Peran baru',
-  editRole: 'Ubah peran',
+  editRole: 'Edit peran',
   name: 'Nama',
   username: 'Nama pengguna',
   email: 'Email',
@@ -145,16 +137,9 @@ const settings = {
   noResults: 'Tidak ada hasil yang cocok',
   clearHint: 'Coba pencarian lain atau hapus filter.',
   noUsers: 'Belum ada pengguna',
-  usersReadOnlyEmpty:
-    'Hubungi administrator untuk menambahkan pengguna atau memberikan izin yang diperlukan untuk membuat pengguna dan menetapkan peran.',
-  rolesReadOnlyEmpty:
-    'Hubungi administrator untuk membuat peran atau memberi Anda izin membuat peran.',
   noRoles: 'Belum ada peran',
   create: 'Buat',
-  edit: 'Ubah',
-  selectRoles: 'Pilih peran',
-  searchRoles: 'Cari peran',
-  noRolesFound: 'Peran tidak ditemukan.',
+  edit: 'Edit',
   save: 'Simpan',
   cancel: 'Batal',
   saving: 'Menyimpan…',
@@ -166,9 +151,9 @@ const settings = {
   disableHint:
     'Pengguna ini tidak akan dapat masuk dan sesi yang ada akan berakhir.',
   enableTitle: 'Aktifkan pengguna "{{name}}"?',
-  enableHint: 'Pengguna ini akan dapat masuk kembali.',
+  enableHint: 'Pengguna ini akan dapat masuk lagi.',
   revokeTitle: 'Cabut sesi "{{name}}"?',
-  revokeHint: 'Pengguna ini perlu masuk lagi.',
+  revokeHint: 'Pengguna ini harus masuk lagi.',
   revokeRoleTitle: 'Cabut peran dari "{{name}}"?',
   revokeRoleHint:
     'Akses yang diberikan oleh peran yang tercantum akan dihapus.',
@@ -178,21 +163,19 @@ const settings = {
   required: 'Masukkan nilai untuk kolom ini',
   invalidEmail: 'Masukkan alamat email yang valid',
   protected: 'Dilindungi',
-  custom: 'Khusus',
+  custom: 'Kustom',
   protectedHint:
     'Peran ini dilindungi. Hanya perubahan yang diizinkan secara eksplisit yang tersedia.',
   unsaved: 'Perubahan belum disimpan',
   discardTitle: 'Buang perubahan?',
-  discardHint: 'Perubahan yang belum disimpan akan hilang.',
-  failed: 'Tidak dapat menyelesaikan permintaan. Coba lagi.',
-  invalidRequest:
-    'Beberapa nilai tidak valid. Periksa input atau filter Anda dan coba lagi.',
+  discardHint: 'Perubahan Anda yang belum disimpan akan hilang.',
+  failed: 'Permintaan tidak dapat diselesaikan. Coba lagi.',
   retry: 'Coba lagi',
   loading: 'Memuat',
   denied: 'Anda tidak memiliki akses. Hubungi administrator.',
-  missing: 'Catatan ini tidak ada atau telah dihapus.',
+  missing: 'Data ini tidak ada atau telah dihapus.',
   conflict:
-    'Permintaan bertentangan dengan data saat ini. Tinjau catatan terbaru sebelum mencoba lagi.',
+    'Permintaan bertentangan dengan data saat ini. Tinjau data terbaru sebelum mencoba lagi.',
   sessionEnded: 'Sesi Anda telah berakhir. Masuk lagi.',
   previous: 'Sebelumnya',
   next: 'Berikutnya',
@@ -208,13 +191,13 @@ const settings = {
   selectVisiblePermissions: 'Pilih izin yang terlihat di {{name}}',
   permissionSummary: '{{enabled}} dari {{total}} aktif',
   preservedRecordScope: 'Pertahankan konfigurasi yang ada',
-  noRecordScope: 'Tidak ada akses catatan tambahan',
+  noRecordScope: 'Gunakan aturan default',
   permissionFilter: {
-    limit: 'Hingga 20 kondisi',
+    limit: 'Maksimal 20 kondisi',
     configure: 'Kondisi',
-    title: 'Atur filter catatan',
+    title: 'Konfigurasi filter data',
     description:
-      'Terapkan kondisi pada draf peran, lalu simpan peran agar berlaku.',
+      'Terapkan kondisi pada draf peran, lalu simpan peran agar kondisinya berlaku.',
     all: 'Cocok dengan semua kondisi',
     any: 'Cocok dengan salah satu kondisi',
     field: 'Kolom',
@@ -227,27 +210,58 @@ const settings = {
     true: 'Ya',
     false: 'Tidak',
     add: 'Tambah kondisi',
-    remove: 'Lepas',
+    remove: 'Hapus',
     cancel: 'Batal',
     apply: 'Terapkan',
     invalid:
-      'Pilih kolom yang valid dan lengkapi semua nilai. Sertakan setidaknya satu kondisi.',
+      'Pilih kolom yang valid dan lengkapi semua nilai. Sertakan minimal satu kondisi.',
     advanced:
-      'Filter yang ada ini menggunakan kondisi lanjutan. Filter akan dipertahankan kecuali Anda mengonfigurasinya ulang secara eksplisit.',
-    reconfigure: 'Atur ulang',
+      'Filter yang ada ini memakai kondisi lanjutan. Filter ini dipertahankan kecuali Anda mengonfigurasinya ulang secara eksplisit.',
+    reconfigure: 'Konfigurasi ulang',
     operators: {
       $eq: 'Sama dengan',
       $ne: 'Tidak sama dengan',
-      $includes: 'Mengandung',
+      $includes: 'Berisi',
       $gt: 'Lebih dari',
-      $gte: 'Setidaknya',
+      $gte: 'Minimal',
       $lt: 'Kurang dari',
-      $lte: 'Paling banyak',
+      $lte: 'Maksimal',
       $empty: 'Kosong',
       $notEmpty: 'Tidak kosong',
     },
   },
-  recordScope: 'Cakupan catatan',
-  levelFor: 'Cakupan untuk {{name}}',
+  recordScope: 'Cakupan data',
+  levelFor: 'Cakupan "{{name}}"',
+  userActionSaved: {
+    disable: 'Pengguna "{{name}}" dinonaktifkan',
+    enable: 'Pengguna "{{name}}" diaktifkan',
+    revokeSessions: 'Sesi aktif "{{name}}" dicabut',
+  },
+  roleFilterIncomplete:
+    'Pilih cakupan peran dan peran sekaligus, atau hapus filter.',
+  backToSource: 'Kembali ke halaman sebelumnya',
+  roleFilter: 'Filter menurut peran',
+  allRoles: 'Semua peran',
+  editUserFor: 'Edit {{name}}',
+  usersReadOnlyEmpty:
+    'Hubungi administrator untuk menambahkan pengguna atau memberi izin membuat pengguna dan menetapkan peran.',
+  rolesReadOnlyEmpty:
+    'Hubungi administrator untuk membuat peran atau memberi izin membuat peran.',
+  selectRoles: 'Pilih peran',
+  searchRoles: 'Cari peran',
+  noRolesFound: 'Peran tidak ditemukan.',
+  invalidRequest:
+    'Beberapa nilai tidak valid. Periksa masukan atau filter Anda, lalu coba lagi.',
+  expandPermissionGroup: 'Bentangkan {{name}}',
+  collapsePermissionGroup: 'Ciutkan {{name}}',
+  pagesOutsideNavigation: 'Halaman di luar navigasi',
+  configurationPermissions: 'Izin konfigurasi',
+  configurationPermissionsHint:
+    'Mengatur akses dan tindakan untuk pengaturan sistem, pengelolaan pengguna, dan konfigurasi bisnis. Hanya fitur aplikasi yang benar-benar ada yang ditampilkan.',
+  permissionEmptyHint:
+    'Minta pengembang aplikasi membuka izin yang dapat dikonfigurasi untuk peran ini.',
+  permissionReadOnlyHint: 'Izin ini hanya baca.',
+  permissionManagedHint: 'Izin ini dikelola oleh aplikasi.',
+  permissionSaveHint: 'Perubahan izin berlaku setelah disimpan.',
 };
 export default settings;

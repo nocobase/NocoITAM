@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 
 import { ToneBadge as Badge } from '@/components/settings/tone-badge';
 
-import { useAdminText } from '../hooks.js';
+import { useAdminText } from '../common/hooks.js';
 import { scheduleState, type Schedule } from './types.js';
 
 /**

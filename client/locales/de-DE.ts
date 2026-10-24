@@ -101,7 +101,7 @@ const deDE: AppResource = {
     systemSettings: 'Systemeinstellungen',
     settingsGeneral: 'Allgemein',
     users: 'Benutzer',
-    permissionSets: 'Berechtigungssätze',
+    roles: 'Rollen',
     apiKeys: 'API-Schlüssel',
     scheduledTasks: 'Geplante Aufgaben',
     breadcrumb: 'Brotkrümelnavigation',
@@ -3980,6 +3980,9 @@ const deDE: AppResource = {
         by: 'Inventur Q3 · Ryan Mitchell',
       },
     },
+  },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Rollen' } },
   },
 };
 
