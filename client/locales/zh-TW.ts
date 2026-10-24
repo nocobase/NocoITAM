@@ -3699,6 +3699,9 @@ const zhTW: AppResource = {
       },
     },
   },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: '角色' } },
+  },
 };
 
 export default zhTW;

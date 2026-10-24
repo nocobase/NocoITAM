@@ -3913,6 +3913,9 @@ const jaJP: AppResource = {
       },
     },
   },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'ロール' } },
+  },
 };
 
 export default jaJP;

@@ -3983,6 +3983,9 @@ const frFR: AppResource = {
       },
     },
   },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Rôles' } },
+  },
 };
 
 export default frFR;

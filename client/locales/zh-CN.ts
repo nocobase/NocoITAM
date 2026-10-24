@@ -3739,6 +3739,9 @@ const zhCN: AppResource = {
       },
     },
   },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: '角色' } },
+  },
 };
 
 export default zhCN;

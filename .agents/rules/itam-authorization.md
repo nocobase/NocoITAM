@@ -191,3 +191,9 @@ key>', ns: 'itam' }`, the way the plugin's own 成员 and 系统管理员 are
   operation, which `root` holds none of, so a fresh deployment's one account
   could not be asked to approve anything. It is a seed, run once: an
   administrator who removes it keeps it removed.
+- The users plugin's role scope labels itself with `page.roles` in its own
+  namespace, a key the plugin (2.0) no longer ships, so the prepared user
+  form's role field read "Permission sets" in English (2026-10-24). Every
+  locale file supplies it through `overrides['@nocobase/app-plugin-users']`,
+  worded as that language's `navigation.roles`; drop the override once the
+  plugin ships the key.

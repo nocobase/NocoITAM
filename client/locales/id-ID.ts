@@ -3946,6 +3946,9 @@ const idID: AppResource = {
       },
     },
   },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Peran' } },
+  },
 };
 
 export default idID;

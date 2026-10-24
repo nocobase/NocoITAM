@@ -3991,6 +3991,9 @@ const esES: AppResource = {
       },
     },
   },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Roles' } },
+  },
 };
 
 export default esES;

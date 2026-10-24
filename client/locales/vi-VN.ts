@@ -3908,6 +3908,9 @@ const viVN: AppResource = {
       },
     },
   },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Vai trò' } },
+  },
 };
 
 export default viVN;

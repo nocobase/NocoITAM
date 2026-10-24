@@ -3966,6 +3966,9 @@ const ptBR: AppResource = {
       },
     },
   },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Funções' } },
+  },
 };
 
 export default ptBR;

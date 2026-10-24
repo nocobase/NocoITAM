@@ -3981,6 +3981,9 @@ const deDE: AppResource = {
       },
     },
   },
+  overrides: {
+    '@nocobase/app-plugin-users': { page: { roles: 'Rollen' } },
+  },
 };
 
 export default deDE;
