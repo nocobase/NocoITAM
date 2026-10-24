@@ -1,4 +1,9 @@
-const settings = {
+import type { LocaleResource } from '@nocobase/i18n';
+import type settingsEnUS from './settings-en-US.js';
+
+// The template's Settings copy (client/locales/system/settings-en-US.ts): the
+// prepared Users and Roles pages and the permission editor, in pt-BR.
+const settings: LocaleResource<typeof settingsEnUS> = {
   setup: {
     title: 'Pré-requisitos do recurso',
     checking: 'Verificando a configuração atual…',
@@ -7,35 +12,29 @@ const settings = {
     missing: 'Revise os itens de configuração abaixo.',
     manageMembers: 'Gerenciar membros',
     manageMembersFor: 'Gerenciar membros de {{role}}',
-    unavailable: 'Não é possível verificar agora. Tente novamente.',
+    unavailable: 'Não foi possível verificar agora. Tente novamente.',
     signIn:
       'Sua sessão expirou. Entre novamente para verificar a configuração.',
     forbidden:
-      'Você não tem acesso para verificar esta configuração. Contate um administrador.',
+      'Você não tem acesso para verificar esta configuração. Fale com um administrador.',
     invalid:
-      'Não foi possível verificar este pré-requisito. Peça ao mantenedor do aplicativo para verificar a configuração.',
+      'Não foi possível verificar este pré-requisito. Peça a quem mantém o aplicativo para verificar a configuração.',
   },
-  roleFilterIncomplete:
-    'Escolha um escopo de função e uma função, ou limpe os filtros.',
-  backToSource: 'Voltar à página anterior',
-  roleFilter: 'Filtrar por função',
-  allRoles: 'Todas as funções',
-
   permissionManagement: 'Gerenciamento de permissões',
   defaultAccess: {
     noResourcesShort: 'Nenhum objeto configurável disponível',
     scopeInvalid:
-      'Escolha um escopo de dados válido ou complete suas condições de filtro.',
+      'Escolha um escopo de dados válido ou complete as condições do filtro.',
 
     deleteChanged:
       'Esta regra foi alterada ou removida. A lista foi atualizada; revise-a antes de excluir.',
     filterDescription:
-      'Aplique condições a este rascunho de regra e salve a regra para que entrem em vigor.',
+      'Aplique as condições a este rascunho de regra e depois salve a regra para que entrem em vigor.',
     fieldLabels: { name: 'Nome', id: 'ID' },
     delete: 'Excluir',
     title: 'Escopos de dados padrão',
     description:
-      'Adiciona acesso a dados para usuários com permissão de operação, combinado com os escopos concedidos pelas funções e sujeito às regras de restrição.',
+      'Concede acesso a dados a usuários com permissão de operação, somado aos escopos concedidos pelas funções e sujeito às regras de restrição.',
     manage: 'Gerenciar escopos de dados padrão',
     new: 'Novo escopo padrão',
     edit: 'Detalhes do escopo padrão',
@@ -58,9 +57,9 @@ const settings = {
     noResources:
       'Todos os objetos de negócio disponíveis já têm uma regra padrão, ou nenhum objeto configurável está registrado.',
     unsupported:
-      'Esta regra inclui configurações ausentes do catálogo de plugins atual. Ela é preservada e mostrada somente para leitura.',
+      'Esta regra inclui configurações ausentes do catálogo atual de plugins. Ela é mantida e exibida somente para leitura.',
     changed:
-      'Esta regra foi alterada ou removida enquanto você editava. Recarregue-a antes de salvar. Seu rascunho não foi salvo.',
+      'Esta regra foi alterada ou removida enquanto você a editava. Recarregue-a antes de salvar. Seu rascunho não foi salvo.',
     duplicate:
       'Esta chave ou objeto de negócio já tem uma regra padrão. Use outra chave ou edite a regra existente.',
     invalid:
@@ -72,23 +71,23 @@ const settings = {
     deleted: 'Escopo padrão “{{name}}” excluído',
     deleteTitle: 'Excluir o escopo padrão “{{name}}”?',
     deleteHint:
-      'Isso remove o acesso básico fornecido por esta regra. As concessões das funções e as outras regras permanecem. Esta ação não pode ser desfeita.',
+      'Isto remove o acesso básico concedido por esta regra. As concessões das funções e as outras regras continuam valendo. Esta ação não pode ser desfeita.',
     back: 'Voltar aos escopos padrão',
     open: 'Ver / editar',
   },
   scopeHintFor: 'Sobre o alcance dos dados de {{name}}',
   scopeExplanation:
-    'Cada alcance se aplica aos dados correspondentes. A operação também precisa passar pelas verificações de autorização.',
+    'Cada alcance se aplica aos dados correspondentes. A operação também precisa passar pelas próprias verificações de autorização.',
   noAdditionalScopeHint:
-    'Esta ação não concede acesso adicional a registros aqui. O acesso padrão e as regras de compartilhamento e de restrição ainda determinam o acesso real.',
+    'Esta função não adiciona registros. O acesso efetivo também depende de outras funções e das regras padrão, de compartilhamento e de restrição.',
   systemToolsHint:
-    'Gerencie a configuração e as ferramentas do sistema. Revise os recursos incluídos em cada ação antes de conceder acesso.',
+    'Gerencie a configuração e as ferramentas do sistema. Revise os recursos que cada ação inclui antes de conceder acesso.',
   userAccountsHint:
-    'Gerencie informações de usuários, segurança das contas e atribuição de funções. Revise cada permissão separadamente.',
+    'Gerencie as informações dos usuários, a segurança das contas e a atribuição de funções. Revise cada permissão separadamente.',
   businessOperationsHint:
-    'Escolha as operações que esta função pode executar e os dados que cada operação pode usar.',
+    'Escolha as operações que esta função pode realizar e os dados que cada operação pode usar.',
   pageAccessHint:
-    'Controla quais páginas esta função pode abrir. Os dados e as ações de cada página exigem permissões próprias.',
+    'Escolha as páginas de negócio que esta função pode abrir. Todas as configurações do sistema, incluindo o gerenciamento de usuários e a configuração do negócio, são controladas em Permissões de configuração. Dados e ações de negócio exigem permissões próprias.',
   roleAssignment: 'Atribuição de funções',
   accountSecurity: 'Segurança da conta',
   userInformation: 'Informações do usuário',
@@ -106,11 +105,6 @@ const settings = {
 
   assignedRoles: 'Funções atribuídas',
   actionSaved: 'Acesso de "{{name}}" atualizado',
-  userActionSaved: {
-    disable: 'Usuário "{{name}}" desativado',
-    enable: 'Usuário "{{name}}" ativado',
-    revokeSessions: 'Sessões ativas de "{{name}}" revogadas',
-  },
 
   identityConflict: 'Este e-mail ou nome de usuário já está em uso.',
   signInAgain: 'Entrar novamente',
@@ -122,10 +116,9 @@ const settings = {
   roles: 'Funções e permissões',
   usersDescription: 'Gerencie contas, acessos e sessões ativas.',
   rolesDescription: 'Defina o que cada função pode acessar e fazer.',
-  userSearch: 'Pesquisar nomes, nomes de usuário ou e-mails',
+  userSearch: 'Pesquisar por nome, nome de usuário ou e-mail',
   roleSearch: 'Pesquisar nomes de funções',
   newUser: 'Novo usuário',
-  editUserFor: 'Editar {{name}}',
   editUser: 'Editar usuário',
   newRole: 'Nova função',
   editRole: 'Editar função',
@@ -146,16 +139,9 @@ const settings = {
   noResults: 'Nenhum resultado correspondente',
   clearHint: 'Tente outra pesquisa ou limpe os filtros.',
   noUsers: 'Nenhum usuário ainda',
-  usersReadOnlyEmpty:
-    'Contate um administrador para adicionar usuários ou conceder as permissões necessárias para criar usuários e atribuir funções.',
-  rolesReadOnlyEmpty:
-    'Contate um administrador para criar uma função ou conceder a você permissão para criar funções.',
   noRoles: 'Nenhuma função ainda',
   create: 'Criar',
   edit: 'Editar',
-  selectRoles: 'Selecionar funções',
-  searchRoles: 'Pesquisar funções',
-  noRolesFound: 'Nenhuma função encontrada.',
   save: 'Salvar',
   cancel: 'Cancelar',
   saving: 'Salvando…',
@@ -170,7 +156,7 @@ const settings = {
   enableHint: 'Este usuário poderá entrar novamente.',
   revokeTitle: 'Revogar as sessões de "{{name}}"?',
   revokeHint: 'Este usuário precisará entrar novamente.',
-  revokeRoleTitle: 'Revogar funções de "{{name}}"?',
+  revokeRoleTitle: 'Revogar as funções de "{{name}}"?',
   revokeRoleHint: 'O acesso concedido pelas funções listadas será removido.',
   created: 'Usuário "{{name}}" criado',
   saved: '"{{name}}" salvo',
@@ -180,20 +166,18 @@ const settings = {
   protected: 'Protegida',
   custom: 'Personalizada',
   protectedHint:
-    'Esta função é protegida. Somente as alterações explicitamente permitidas estão disponíveis.',
+    'Esta função é protegida. Apenas as alterações explicitamente permitidas estão disponíveis.',
   unsaved: 'Alterações não salvas',
-  discardTitle: 'Descartar alterações?',
+  discardTitle: 'Descartar as alterações?',
   discardHint: 'Suas alterações não salvas serão perdidas.',
   failed: 'Não foi possível concluir a solicitação. Tente novamente.',
-  invalidRequest:
-    'Alguns valores são inválidos. Verifique os dados ou filtros e tente novamente.',
   retry: 'Tentar novamente',
   loading: 'Carregando',
-  denied: 'Você não tem acesso. Contate um administrador.',
+  denied: 'Você não tem acesso. Fale com um administrador.',
   missing: 'Este registro não existe ou foi excluído.',
   conflict:
-    'A solicitação entra em conflito com os dados atuais. Revise o registro mais recente antes de tentar novamente.',
-  sessionEnded: 'Sua sessão terminou. Entre novamente.',
+    'A solicitação conflita com os dados atuais. Revise o registro mais recente antes de tentar novamente.',
+  sessionEnded: 'Sua sessão foi encerrada. Entre novamente.',
   previous: 'Anterior',
   next: 'Próxima',
   total_one: '{{count}} usuário',
@@ -201,22 +185,22 @@ const settings = {
   access: 'Acesso',
   permissionSearch: 'Pesquisar categorias, grupos ou permissões',
   enabledOnly: 'Somente ativadas',
-  noPermissions: 'Nenhuma permissão a configurar',
+  noPermissions: 'Nenhuma permissão para configurar',
   permissionCategories: 'Categorias de permissões',
   selectAllPermissions: 'Todas',
   dataRanges: 'Alcances de dados ({{count}})',
   selectVisiblePermissions: 'Selecionar as permissões visíveis em {{name}}',
   permissionSummary: '{{enabled}} de {{total}} ativadas',
   preservedRecordScope: 'Manter a configuração existente',
-  noRecordScope: 'Sem acesso adicional a registros',
+  noRecordScope: 'Usar as regras padrão',
   permissionFilter: {
     limit: 'Até 20 condições',
     configure: 'Condições',
-    title: 'Configurar filtro de registros',
+    title: 'Configurar o filtro de registros',
     description:
-      'Aplique condições ao rascunho da função e salve a função para que entrem em vigor.',
-    all: 'Corresponder a todas as condições',
-    any: 'Corresponder a qualquer condição',
+      'Aplique as condições ao rascunho da função e depois salve a função para que entrem em vigor.',
+    all: 'Atender a todas as condições',
+    any: 'Atender a qualquer condição',
     field: 'Campo',
     operator: 'Operador',
     valueType: 'Tipo de valor',
@@ -233,7 +217,7 @@ const settings = {
     invalid:
       'Escolha campos válidos e preencha todos os valores. Inclua pelo menos uma condição.',
     advanced:
-      'Este filtro existente usa condições avançadas. Ele será preservado, a menos que você o reconfigure explicitamente.',
+      'Este filtro existente usa condições avançadas. Ele será mantido, a menos que você o reconfigure explicitamente.',
     reconfigure: 'Reconfigurar',
     operators: {
       $eq: 'É igual a',
@@ -248,6 +232,37 @@ const settings = {
     },
   },
   recordScope: 'Escopo de registros',
-  levelFor: 'Escopo de {{name}}',
+  levelFor: 'Alcance de {{name}}',
+  userActionSaved: {
+    disable: 'Usuário "{{name}}" desativado',
+    enable: 'Usuário "{{name}}" ativado',
+    revokeSessions: 'Sessões ativas de "{{name}}" revogadas',
+  },
+  roleFilterIncomplete:
+    'Escolha um escopo de função e uma função, ou limpe os filtros.',
+  backToSource: 'Voltar à página anterior',
+  roleFilter: 'Filtrar por função',
+  allRoles: 'Todas as funções',
+  editUserFor: 'Editar {{name}}',
+  usersReadOnlyEmpty:
+    'Fale com um administrador para adicionar usuários ou obter permissão para criar usuários e atribuir funções.',
+  rolesReadOnlyEmpty:
+    'Fale com um administrador para criar uma função ou obter permissão para criar funções.',
+  selectRoles: 'Selecionar funções',
+  searchRoles: 'Pesquisar funções',
+  noRolesFound: 'Nenhuma função encontrada.',
+  invalidRequest:
+    'Alguns valores são inválidos. Verifique o que foi digitado ou os filtros e tente novamente.',
+  expandPermissionGroup: 'Expandir {{name}}',
+  collapsePermissionGroup: 'Recolher {{name}}',
+  pagesOutsideNavigation: 'Páginas fora da navegação',
+  configurationPermissions: 'Permissões de configuração',
+  configurationPermissionsHint:
+    'Controla o acesso e as ações das configurações do sistema, do gerenciamento de usuários e da configuração do negócio. Só aparecem recursos reais do aplicativo.',
+  permissionEmptyHint:
+    'Peça ao desenvolvedor do aplicativo para expor as permissões que esta função pode configurar.',
+  permissionReadOnlyHint: 'Estas permissões são somente leitura.',
+  permissionManagedHint: 'Esta permissão é gerenciada pelo aplicativo.',
+  permissionSaveHint: 'As alterações de permissões valem depois de salvar.',
 };
 export default settings;
