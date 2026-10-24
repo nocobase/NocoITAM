@@ -106,7 +106,7 @@ const messages = {
     systemSettings: 'System settings',
     settingsGeneral: 'General',
     users: 'Users',
-    permissionSets: 'Permission sets',
+    roles: 'Roles',
     apiKeys: 'API keys',
     scheduledTasks: 'Scheduled tasks',
     breadcrumb: 'Breadcrumb',

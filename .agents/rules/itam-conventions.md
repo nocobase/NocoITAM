@@ -40,11 +40,14 @@ beside the logo (`AppSidebar`'s `action`), falling back to an entry under
 待办 (`after`) when the sidebar is collapsed. 设置 is one menu entry opening one page of tabs (2026-10-16, after
 NocoCRM's; `client/pages/settings/index.tsx`): ITAM's own settings (通用,
 MDM, 按送货单入库 and, last, 演示数据, in `client/pages/itam/settings/`) and
-the administration pages in `client/pages/settings/` (users, permission
-sets, API keys, scheduled tasks), each tab its own child route at
-`/settings/<tab>` checking its own grant and shown only to whoever it lets in,
-built on the plugins' client APIs and worded through `admin.*`
-(`client/locales/admin/index.ts`). AI is a section too, holding the Agents
+the administration pages in `client/pages/settings/`, each tab its own child
+route at `/settings/<tab>` checking its own grant and shown only to whoever it
+lets in: NocoBase 3's prepared Users and Roles pages with the template's
+permission editor (2026-10-24, worded by `client/locales/system/settings-*.ts`;
+ITAM's additions in `accounts/`), and ITAM's own API keys and scheduled tasks
+pages, built on the plugins' client APIs and worded through `admin.*`
+(`client/locales/admin/index.ts`); see [pages and interface
+conventions](itam-ui.md). AI is a section too, holding the Agents
 plugin's own pages; its model services page is at `/ai-models`, since
 `/models` is the asset models page.
 

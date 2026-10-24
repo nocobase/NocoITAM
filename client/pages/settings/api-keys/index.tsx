@@ -70,8 +70,12 @@ import {
   LoadFailure,
   TableSkeleton,
   TruncatedText,
-} from '../shared.js';
-import { useAdminQueryKey, useAdminText, useDateTime } from '../hooks.js';
+} from '../common/shared.js';
+import {
+  useAdminQueryKey,
+  useAdminText,
+  useDateTime,
+} from '../common/hooks.js';
 
 export interface ApiKeysOutletContext {
   readonly scopeOptions: KeyScopeOptions | undefined;

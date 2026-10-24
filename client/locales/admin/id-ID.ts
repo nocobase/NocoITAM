@@ -11,7 +11,6 @@ const adminIdID: AdminResource = {
     sessionEnded: 'Sesi Anda telah berakhir.',
     notFound: 'Catatan ini tidak ada atau telah dihapus.',
     backToList: 'Kembali ke daftar',
-    clearFilters: 'Hapus filter',
     cancel: 'Batal',
     save: 'Simpan',
     create: 'Buat',
@@ -25,52 +24,16 @@ const adminIdID: AdminResource = {
     failed: 'Terjadi kesalahan. Coba lagi.',
     network:
       'Server tidak dapat dijangkau. Periksa koneksi Anda dan coba lagi.',
-    previous: 'Halaman sebelumnya',
-    next: 'Halaman berikutnya',
-    pageOf: 'Halaman {{page}} dari {{pages}}',
   },
   users: {
-    title: 'Pengguna',
     what: 'pengguna',
-    description: 'Siapa yang dapat masuk, dan peran yang mereka pegang.',
-    new: 'Pengguna baru',
     invite: 'Undang pengguna',
-    search: 'Cari berdasarkan nama, nama pengguna, atau email',
-    statusFilter: 'Status',
-    roleFilter: 'Peran',
-    status: {
-      all: 'Semua status',
-      enabled: 'Aktif',
-      disabled: 'Nonaktif',
-    },
-    roleAll: 'Semua peran',
-    columns: {
-      name: 'Nama',
-      username: 'Nama pengguna',
-      email: 'Email',
-      roles: 'Peran',
-      status: 'Status',
-    },
-    you: 'Anda',
-    noRoles: 'Tanpa peran',
-    pagination: 'Penomoran halaman',
     managedRole: 'Dikelola oleh aplikasi',
-    noResults: 'Tidak ada pengguna yang cocok dengan filter ini.',
-    range: 'Menampilkan {{from}}–{{to}} dari {{total}}',
     actions: {
-      edit: 'Ubah',
-      roles: 'Ubah peran',
       password: 'Atur ulang kata sandi',
-      signOut: 'Keluarkan dari semua sesi',
-      disable: 'Nonaktifkan',
-      enable: 'Aktifkan',
       delete: 'Hapus',
     },
     dialogs: {
-      newTitle: 'Pengguna baru',
-      editTitle: 'Ubah pengguna',
-      rolesTitle: 'Ubah peran',
-      rolesDescription: 'Peran "{{name}}"',
       passwordTitle: 'Atur ulang kata sandi',
       passwordDescription:
         'Kata sandi baru untuk "{{name}}". Sesi lainnya tetap masuk; keluarkan juga dari semua sesi jika kata sandi lama bocor.',
@@ -79,18 +42,12 @@ const adminIdID: AdminResource = {
         'Setiap alamat menerima tautan untuk membuat akun, berlaku selama tujuh hari.',
     },
     fields: {
-      name: 'Nama',
-      username: 'Nama pengguna',
-      email: 'Email',
-      password: 'Kata sandi',
       newPassword: 'Kata sandi baru',
       confirmPassword: 'Konfirmasi kata sandi',
       roles: 'Peran',
       emails: 'Alamat email',
     },
     hints: {
-      username:
-        'Opsional; dapat digunakan untuk masuk sebagai pengganti alamat email.',
       password: 'Minimal 8 karakter.',
       emails:
         'Satu per baris, atau dipisahkan dengan koma, titik koma, atau spasi.',
@@ -99,11 +56,9 @@ const adminIdID: AdminResource = {
     },
     errors: {
       name: 'Masukkan nama',
-      email: 'Masukkan alamat email',
       emailFormat: 'Alamat email tidak valid',
       username:
         'Nama pengguna hanya boleh berisi huruf, angka, titik, tanda hubung, dan garis bawah',
-      tooLong: 'Gunakan paling banyak {{max}} karakter',
       password: 'Kata sandi memerlukan minimal 8 karakter',
       mismatch: 'Kata sandi tidak cocok',
       roles: 'Pilih setidaknya satu peran',
@@ -111,8 +66,6 @@ const adminIdID: AdminResource = {
       usernameTaken: 'Nama pengguna ini sudah digunakan',
       lastAdministrator:
         'Administrator terakhir tidak dapat kehilangan peran ini.',
-      lastAdministratorDisable:
-        'Administrator terakhir tidak dapat dinonaktifkan.',
       self: 'Anda tidak dapat menghapus diri sendiri.',
       holdsRecords:
         'Pengguna ini masih menjadi penanggung jawab sejumlah catatan; nonaktifkan saja.',
@@ -121,23 +74,10 @@ const adminIdID: AdminResource = {
       emailsTooMany: 'Undang paling banyak {{max}} alamat sekaligus',
     },
     toasts: {
-      created: 'Pengguna "{{name}}" dibuat',
-      saved: 'Pengguna "{{name}}" disimpan',
-      roles: 'Peran "{{name}}" disimpan',
       password: 'Kata sandi "{{name}}" diatur ulang',
-      signedOut: '"{{name}}" dikeluarkan dari semua sesi',
-      disabled: '"{{name}}" dinonaktifkan',
-      enabled: '"{{name}}" diaktifkan',
       deleted: 'Pengguna "{{name}}" dihapus',
     },
     confirm: {
-      signOutTitle: 'Keluarkan "{{name}}" dari semua sesi?',
-      signOutBody:
-        'Setiap sesi akun ini berakhir; pengguna harus masuk lagi dengan kata sandinya.',
-      signOut: 'Keluarkan',
-      disableTitle: 'Nonaktifkan "{{name}}"?',
-      disableBody:
-        'Pengguna langsung dikeluarkan dan tidak dapat masuk sampai diaktifkan kembali.',
       deleteTitle: 'Hapus pengguna "{{name}}"?',
       deleteBody:
         'Tindakan ini tidak dapat dibatalkan. Pengguna yang masih menjadi penanggung jawab catatan tidak dapat dihapus; nonaktifkan saja.',
@@ -165,119 +105,12 @@ const adminIdID: AdminResource = {
     resentLink: 'Tautan baru dibuat; salin untuk mengirimnya sendiri',
     what: 'undangan',
   },
-  sets: {
-    title: 'Set izin',
-    what: 'set izin',
-    whatOne: 'set izin ini',
-    description:
-      'Peran yang dipegang orang, dan apa yang boleh dilakukan masing-masing.',
-    new: 'Set izin baru',
-    rename: 'Ganti nama',
-    renameTitle: 'Ganti nama set izin',
-    delete: 'Hapus',
-    columns: {
-      name: 'Nama',
-      key: 'Kunci',
-      kind: 'Jenis',
-    },
-    kinds: {
-      unrestricted: 'Tanpa batasan',
-      builtIn: 'Bawaan',
-    },
-    openPermissions: 'Izin',
-    openMembers: 'Anggota',
-    permissionsOf: 'Izin "{{name}}"',
-    membersOf: 'Anggota "{{name}}"',
-    permissionsDescription:
-      'Halaman, operasi bisnis, dan administrasi yang diberikan set izin ini.',
-    areaEmptyTitle: 'Tidak ada yang dapat diberikan di sini',
-    areaEmptyBody: 'Aplikasi tidak menyediakan izin di bagian ini.',
-    noUpdate:
-      'Anda dapat melihat set izin ini tetapi tidak dapat mengubah izinnya.',
-    discardTitle: 'Buang perubahan pada "{{name}}"?',
-    discardBody: 'Perubahan Anda pada izinnya akan hilang.',
-    keepEditing: 'Lanjutkan mengubah',
-    topPages: 'Dasar',
+  keys: {
     headings: {
-      pages: 'Halaman',
       business: 'Operasi bisnis',
       administration: 'Administrasi',
     },
-    pages: {
-      'master-data-overview': 'Ikhtisar data referensi',
-      'itam-settings':
-        'Pengaturan: Umum, MDM, penerimaan berdasarkan surat jalan, data demo',
-      scheduler: { schedules: 'Pengaturan: Tugas terjadwal' },
-    },
-    unrestricted:
-      'Set izin ini tanpa batasan: siapa pun yang memegangnya dapat melakukan apa saja.',
-    readOnly:
-      'Set izin ini dikelola oleh aplikasi; izinnya tidak dapat diubah di sini.',
-    customFilter: 'Filter khusus',
     levelFor: 'Jangkauan "{{name}}"',
-    unsaved: 'Perubahan belum disimpan',
-    discard: 'Buang',
-    leaveConfirm:
-      'Keluar tanpa menyimpan? Perubahan Anda pada izin akan hilang.',
-    stale:
-      'Orang lain telah mengubah set izin ini. Muat ulang untuk melihat perubahan mereka, lalu lakukan perubahan Anda lagi.',
-    reload: 'Muat ulang',
-    fields: {
-      name: 'Nama',
-      key: 'Kunci',
-      keyHint:
-        'Huruf kecil, angka, dan tanda hubung; tidak dapat diubah setelah dibuat.',
-    },
-    errors: {
-      name: 'Masukkan nama',
-      key: 'Kunci hanya boleh berisi huruf kecil, angka, dan tanda hubung',
-      keyTaken: 'Kunci ini sudah digunakan',
-      tooLong: 'Gunakan paling banyak {{max}} karakter',
-      protected:
-        'Set izin ini dikelola oleh aplikasi dan tidak dapat diubah dengan cara ini.',
-      lastAssignment: 'Administrator terakhir tidak dapat dilepas.',
-      subjectNotAllowed:
-        'Set izin ini tidak dapat diberikan kepada anggota tersebut.',
-    },
-    members: {
-      what: 'anggota',
-      heading: 'Orang dan grup yang memegang set izin ini',
-      add: 'Tambah anggota',
-      addSubmit: 'Tambah',
-      addTitle: 'Tambah anggota',
-      everyone: 'Semua pengguna yang masuk',
-      everyoneHint: 'Setiap orang yang masuk memegangnya, sekarang dan nanti.',
-      user: 'Pengguna',
-      type: 'Jenis',
-      name: 'Nama',
-      emptyTitle: 'Belum ada yang memegang set izin ini',
-      emptyBody:
-        'Setelah ditambahkan, mereka mendapatkan apa yang diberikannya.',
-      emptyReadOnly: 'Minta administrator menambahkan anggota.',
-      search: 'Cari pengguna',
-      noUsers: 'Tidak ada pengguna yang cocok.',
-      already: 'Sudah menjadi anggota',
-      remove: 'Lepas',
-      removeTitle: 'Lepas "{{name}}" dari "{{set}}"?',
-      removeBody: 'Mereka kehilangan apa yang diberikan set izin ini.',
-      addedOne: '1 anggota ditambahkan',
-      added: '{{count}} anggota ditambahkan',
-      removed: '"{{name}}" dilepas',
-      chooseOne: 'Pilih setidaknya satu anggota',
-      unknown: 'Tidak dikenal ({{id}})',
-    },
-    toasts: {
-      created: 'Set izin "{{name}}" dibuat',
-      saved: 'Set izin "{{name}}" disimpan',
-      deleted: 'Set izin "{{name}}" dihapus',
-    },
-    confirm: {
-      deleteTitle: 'Hapus set izin "{{name}}"?',
-      deleteBody:
-        'Orang yang memegangnya kehilangan apa yang diberikannya. Tindakan ini tidak dapat dibatalkan.',
-    },
-  },
-  keys: {
     title: 'Kunci API',
     what: 'kunci API Anda',
     description:
@@ -338,6 +171,12 @@ const adminIdID: AdminResource = {
       deleteBody:
         'Apa pun yang menggunakannya langsung berhenti berfungsi. Tindakan ini tidak dapat dibatalkan.',
     },
+  },
+  pages: {
+    itamSettings:
+      'Pengaturan: Umum, MDM, Alur, Penerimaan dari surat jalan, Data demo; Panduan bisnis',
+    scheduledTasks: 'Pengaturan: Tugas terjadwal',
+    runnerAgents: 'Agen (dari runner)',
   },
   authz: {
     settings: 'Pengaturan ITAM',
@@ -457,7 +296,6 @@ const adminIdID: AdminResource = {
       succeeded: 'Berhasil',
       lastRun: 'Eksekusi terakhir',
       nextRun: 'Eksekusi berikutnya',
-      description: 'Deskripsi',
     },
     history: 'Riwayat eksekusi',
     historyEmpty: 'Tugas ini belum pernah dijalankan.',

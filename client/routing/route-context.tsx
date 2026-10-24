@@ -50,15 +50,6 @@ export function RouteTreeProvider({
 }
 
 /**
- * Application change (ITAM, after NocoCRM's): the route tree the shell publishes, for a page that lists the
- * application's pages, such as the permission sets page, which grants page access from it
- * (client/pages/settings/permission-sets/).
- */
-export function useRouteTree(): readonly AppClientRegisteredRoute[] {
-  return useContext(RouteTreeContext);
-}
-
-/**
  * The trail of route levels leading to the current location.
  *
  * Every level the location matches is returned, structure included; whether a level is named, and what it is

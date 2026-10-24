@@ -11,7 +11,6 @@ const adminEsES: AdminResource = {
     sessionEnded: 'Su sesión ha terminado.',
     notFound: 'Este registro no existe o se ha eliminado.',
     backToList: 'Volver a la lista',
-    clearFilters: 'Borrar los filtros',
     cancel: 'Cancelar',
     save: 'Guardar',
     create: 'Crear',
@@ -25,52 +24,16 @@ const adminEsES: AdminResource = {
     failed: 'Algo ha salido mal. Inténtelo de nuevo.',
     network:
       'No se ha podido conectar con el servidor. Compruebe la conexión e inténtelo de nuevo.',
-    previous: 'Página anterior',
-    next: 'Página siguiente',
-    pageOf: 'Página {{page}} de {{pages}}',
   },
   users: {
-    title: 'Usuarios',
     what: 'los usuarios',
-    description: 'Quién puede iniciar sesión y qué roles tiene.',
-    new: 'Nuevo usuario',
     invite: 'Invitar usuarios',
-    search: 'Buscar por nombre, nombre de usuario o correo electrónico',
-    statusFilter: 'Estado',
-    roleFilter: 'Rol',
-    status: {
-      all: 'Todos los estados',
-      enabled: 'Activado',
-      disabled: 'Desactivado',
-    },
-    roleAll: 'Todos los roles',
-    columns: {
-      name: 'Nombre',
-      username: 'Nombre de usuario',
-      email: 'Correo electrónico',
-      roles: 'Roles',
-      status: 'Estado',
-    },
-    you: 'Usted',
-    noRoles: 'Sin rol',
-    pagination: 'Paginación',
     managedRole: 'Gestionado por la aplicación',
-    noResults: 'Ningún usuario coincide con estos filtros.',
-    range: 'Mostrando {{from}}–{{to}} de {{total}}',
     actions: {
-      edit: 'Editar',
-      roles: 'Cambiar los roles',
       password: 'Restablecer la contraseña',
-      signOut: 'Cerrar todas las sesiones',
-      disable: 'Desactivar',
-      enable: 'Activar',
       delete: 'Eliminar',
     },
     dialogs: {
-      newTitle: 'Nuevo usuario',
-      editTitle: 'Editar el usuario',
-      rolesTitle: 'Cambiar los roles',
-      rolesDescription: 'Roles de «{{name}}»',
       passwordTitle: 'Restablecer la contraseña',
       passwordDescription:
         'Una nueva contraseña para «{{name}}». Sus demás sesiones siguen abiertas; si la contraseña anterior se ha filtrado, cierre también todas sus sesiones.',
@@ -79,18 +42,12 @@ const adminEsES: AdminResource = {
         'Cada dirección recibe un enlace para crear una cuenta, válido durante siete días.',
     },
     fields: {
-      name: 'Nombre',
-      username: 'Nombre de usuario',
-      email: 'Correo electrónico',
-      password: 'Contraseña',
       newPassword: 'Nueva contraseña',
       confirmPassword: 'Confirmar la contraseña',
       roles: 'Roles',
       emails: 'Direcciones de correo electrónico',
     },
     hints: {
-      username:
-        'Opcional; puede usarlo para iniciar sesión en lugar de la dirección de correo electrónico.',
       password: 'Al menos 8 caracteres.',
       emails:
         'Una por línea, o separadas por comas, puntos y comas o espacios.',
@@ -99,19 +56,15 @@ const adminEsES: AdminResource = {
     },
     errors: {
       name: 'Introduzca un nombre',
-      email: 'Introduzca una dirección de correo electrónico',
       emailFormat: 'La dirección de correo electrónico no es válida',
       username:
         'Un nombre de usuario usa letras, dígitos, puntos, guiones y guiones bajos',
-      tooLong: 'Use como máximo {{max}} caracteres',
       password: 'La contraseña necesita al menos 8 caracteres',
       mismatch: 'Las contraseñas no coinciden',
       roles: 'Elija al menos un rol',
       emailTaken: 'Esta dirección de correo electrónico ya está en uso',
       usernameTaken: 'Este nombre de usuario ya está en uso',
       lastAdministrator: 'El último administrador no puede perder el rol.',
-      lastAdministratorDisable:
-        'El último administrador no se puede desactivar.',
       self: 'No puede eliminarse a sí mismo.',
       holdsRecords:
         'Este usuario sigue siendo responsable de registros; desactívelo en su lugar.',
@@ -120,23 +73,10 @@ const adminEsES: AdminResource = {
       emailsTooMany: 'Invite como máximo {{max}} direcciones a la vez',
     },
     toasts: {
-      created: 'Se ha creado el usuario «{{name}}»',
-      saved: 'Se ha guardado el usuario «{{name}}»',
-      roles: 'Se han guardado los roles de «{{name}}»',
       password: 'Se ha restablecido la contraseña de «{{name}}»',
-      signedOut: 'Se han cerrado todas las sesiones de «{{name}}»',
-      disabled: 'Se ha desactivado «{{name}}»',
-      enabled: 'Se ha activado «{{name}}»',
       deleted: 'Se ha eliminado el usuario «{{name}}»',
     },
     confirm: {
-      signOutTitle: '¿Cerrar todas las sesiones de «{{name}}»?',
-      signOutBody:
-        'Terminan todas las sesiones de esta cuenta; tendrá que volver a iniciar sesión con su contraseña.',
-      signOut: 'Cerrar sesión',
-      disableTitle: '¿Desactivar «{{name}}»?',
-      disableBody:
-        'Su sesión se cierra de inmediato y no podrá iniciar sesión hasta que se vuelva a activar.',
       deleteTitle: '¿Eliminar el usuario «{{name}}»?',
       deleteBody:
         'Esta acción no se puede deshacer. Quien sigue siendo responsable de registros no se puede eliminar; desactívelo en su lugar.',
@@ -165,119 +105,12 @@ const adminEsES: AdminResource = {
       'Se ha creado un nuevo enlace; cópielo para enviarlo usted mismo',
     what: 'las invitaciones',
   },
-  sets: {
-    title: 'Conjuntos de permisos',
-    what: 'los conjuntos de permisos',
-    whatOne: 'este conjunto de permisos',
-    description:
-      'Los roles que tienen las personas y lo que puede hacer cada uno.',
-    new: 'Nuevo conjunto de permisos',
-    rename: 'Cambiar el nombre',
-    renameTitle: 'Cambiar el nombre del conjunto de permisos',
-    delete: 'Eliminar',
-    columns: {
-      name: 'Nombre',
-      key: 'Clave',
-      kind: 'Tipo',
-    },
-    kinds: {
-      unrestricted: 'Sin restricciones',
-      builtIn: 'Integrado',
-    },
-    openPermissions: 'Permisos',
-    openMembers: 'Miembros',
-    permissionsOf: 'Permisos de «{{name}}»',
-    membersOf: 'Miembros de «{{name}}»',
-    permissionsDescription:
-      'Qué páginas, operaciones de negocio y funciones de administración concede este conjunto de permisos.',
-    areaEmptyTitle: 'No hay nada que conceder aquí',
-    areaEmptyBody: 'La aplicación no ofrece permisos en esta área.',
-    noUpdate:
-      'Puede ver este conjunto de permisos, pero no cambiar sus permisos.',
-    discardTitle: '¿Descartar los cambios en «{{name}}»?',
-    discardBody: 'Se perderán los cambios en sus permisos.',
-    keepEditing: 'Seguir editando',
-    topPages: 'Esenciales',
+  keys: {
     headings: {
-      pages: 'Páginas',
       business: 'Operaciones de negocio',
       administration: 'Administración',
     },
-    pages: {
-      'master-data-overview': 'Resumen de los datos maestros',
-      'itam-settings':
-        'Configuración: General, MDM, recepción por albarán, datos de demostración',
-      scheduler: { schedules: 'Configuración: Tareas programadas' },
-    },
-    unrestricted:
-      'Este conjunto de permisos no tiene restricciones: quien lo tenga puede hacerlo todo.',
-    readOnly:
-      'La aplicación mantiene este conjunto de permisos; sus permisos no se pueden cambiar aquí.',
-    customFilter: 'Filtro personalizado',
     levelFor: 'Alcance de «{{name}}»',
-    unsaved: 'Cambios sin guardar',
-    discard: 'Descartar',
-    leaveConfirm:
-      '¿Salir sin guardar? Se perderán los cambios en los permisos.',
-    stale:
-      'Otra persona ha cambiado este conjunto de permisos. Vuelva a cargarlo para ver sus cambios y, después, haga de nuevo los suyos.',
-    reload: 'Volver a cargar',
-    fields: {
-      name: 'Nombre',
-      key: 'Clave',
-      keyHint:
-        'Letras minúsculas, dígitos y guiones; no se puede cambiar más adelante.',
-    },
-    errors: {
-      name: 'Introduzca un nombre',
-      key: 'Una clave usa letras minúsculas, dígitos y guiones',
-      keyTaken: 'Esta clave ya está en uso',
-      tooLong: 'Use como máximo {{max}} caracteres',
-      protected:
-        'La aplicación mantiene este conjunto de permisos y no se puede cambiar de esta forma.',
-      lastAssignment: 'El último administrador no se puede quitar.',
-      subjectNotAllowed:
-        'Este conjunto de permisos no se puede dar a ese miembro.',
-    },
-    members: {
-      what: 'los miembros',
-      heading: 'Personas y grupos que tienen este conjunto de permisos',
-      add: 'Añadir miembros',
-      addSubmit: 'Añadir',
-      addTitle: 'Añadir miembros',
-      everyone: 'Todos los usuarios con sesión iniciada',
-      everyoneHint:
-        'Lo tiene todo aquel que inicia sesión, ahora y en el futuro.',
-      user: 'Usuario',
-      type: 'Tipo',
-      name: 'Nombre',
-      emptyTitle: 'Nadie tiene este conjunto de permisos',
-      emptyBody: 'Una vez añadidos, obtienen lo que concede.',
-      emptyReadOnly: 'Pida a un administrador que añada miembros.',
-      search: 'Buscar usuarios',
-      noUsers: 'Ningún usuario coincide.',
-      already: 'Ya es miembro',
-      remove: 'Quitar',
-      removeTitle: '¿Quitar a «{{name}}» de «{{set}}»?',
-      removeBody: 'Pierde lo que concede este conjunto de permisos.',
-      addedOne: 'Se ha añadido 1 miembro',
-      added: 'Se han añadido {{count}} miembros',
-      removed: 'Se ha quitado a «{{name}}»',
-      chooseOne: 'Elija al menos un miembro',
-      unknown: 'Desconocido ({{id}})',
-    },
-    toasts: {
-      created: 'Se ha creado el conjunto de permisos «{{name}}»',
-      saved: 'Se ha guardado el conjunto de permisos «{{name}}»',
-      deleted: 'Se ha eliminado el conjunto de permisos «{{name}}»',
-    },
-    confirm: {
-      deleteTitle: '¿Eliminar el conjunto de permisos «{{name}}»?',
-      deleteBody:
-        'Las personas que lo tienen pierden lo que concede. Esta acción no se puede deshacer.',
-    },
-  },
-  keys: {
     title: 'Claves de API',
     what: 'sus claves de API',
     description:
@@ -337,6 +170,12 @@ const adminEsES: AdminResource = {
       deleteBody:
         'Todo lo que la usa deja de funcionar de inmediato. Esta acción no se puede deshacer.',
     },
+  },
+  pages: {
+    itamSettings:
+      'Configuración: General, MDM, Flujos, Recepción desde albaranes, Datos de demostración; Guía de negocio',
+    scheduledTasks: 'Configuración: Tareas programadas',
+    runnerAgents: 'Agentes (de ejecutores)',
   },
   authz: {
     settings: 'Configuración de ITAM',
@@ -457,7 +296,6 @@ const adminEsES: AdminResource = {
       succeeded: 'Correctas',
       lastRun: 'Última ejecución',
       nextRun: 'Próxima ejecución',
-      description: 'Descripción',
     },
     history: 'Historial de ejecuciones',
     historyEmpty: 'Esta tarea aún no se ha ejecutado.',

@@ -35,8 +35,8 @@ import {
 } from '#components/ui/tooltip';
 
 import { SortableHead } from '../../../components/settings/sortable-table.js';
-import { LoadFailure, TableSkeleton, TruncatedText } from '../shared.js';
-import { useAdminText, useDateTime, useFailureText } from '../hooks.js';
+import { LoadFailure, TableSkeleton, TruncatedText } from '../common/shared.js';
+import { useAdminText, useDateTime, useFailureText } from '../common/hooks.js';
 import {
   useSchedulesKey,
   scheduleState,
