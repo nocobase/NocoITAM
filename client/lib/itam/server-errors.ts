@@ -1,8 +1,8 @@
 import type { ApiErrorBody } from './api.js';
 
 /**
- * Server errors arrive in English (services and routes are not localized);
- * the client translates them by exact message, by pattern for messages that
+ * Prefer a localized message supplied by the server. Legacy English errors
+ * are translated by exact message, by pattern for messages that
  * embed values, and by code for duplicates and missing records. Anything
  * unmatched is shown as sent.
  */
@@ -135,6 +135,8 @@ export function translateServerMessage(message: string): string {
 
 /** Returns the body with its messages translated where a translation exists. */
 export function localizeErrorBody(body: ApiErrorBody): ApiErrorBody {
+  if (body.localizedMessage?.message)
+    return { ...body, message: body.localizedMessage.message };
   if (!translate) return body;
   return {
     ...body,

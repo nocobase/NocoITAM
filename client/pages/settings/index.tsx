@@ -1,3 +1,4 @@
+import { useDemoMode } from '@/lib/itam/demo-mode';
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import {
@@ -67,6 +68,18 @@ const TABS: readonly Tab[] = [
 export default function SettingsPage(): ReactElement {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const mode = useDemoMode();
+  const demoAccess = useCan(
+    mode.data
+      ? {
+          resource: { type: 'settings', id: 'demoMode.data' },
+          action: 'read',
+        }
+      : {
+          resource: { type: 'page', id: 'itam-settings' },
+          action: 'access',
+        },
+  );
   // The same checks as the tabs' routes in client/routes.ts; API keys are
   // everyone's own.
   const itam = useCan({
@@ -78,7 +91,7 @@ export default function SettingsPage(): ReactElement {
     mdm: itam,
     flows: itam,
     'receipt-agent': itam,
-    demo: itam,
+    demo: demoAccess,
     users: useCan({ resource: { type: 'user', id: '*' }, action: 'read' }),
     roles: useCan({
       resource: { type: 'settings', id: 'authorization.permission-sets' },

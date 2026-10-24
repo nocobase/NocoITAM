@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { apiErrorBody } from '@/lib/itam/api';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { errorMessage } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
 
@@ -74,9 +75,10 @@ export function ConfirmDialog({
   size = 'default',
 }: ConfirmDialogProps): ReactElement {
   const { t } = useTranslation();
-  const message = error
-    ? (apiErrorBody(error)?.message ?? errorMessage(error))
-    : undefined;
+  const message =
+    error && !isDemoReadOnlyError(error)
+      ? (apiErrorBody(error)?.message ?? errorMessage(error))
+      : undefined;
   return (
     <Dialog
       open={open}

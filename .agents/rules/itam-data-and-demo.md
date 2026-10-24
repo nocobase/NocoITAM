@@ -354,3 +354,59 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   for an amount the demo writes itself (a quote, a sentence naming one). A
   new deployment's currency follows its default locale (the settings seed:
   CNY for Chinese, USD otherwise), so the English demo reads in dollars.
+
+- **Dedicated Demo Mode (2026-10-23)** uses `@nocobase/app-plugin-demo-mode`
+  0.1.0-beta.2, enabled only by its `demoMode` configuration or
+  `NOCOBASE_DEMO_MODE=true`. Normal installations keep the sample-data page.
+  In Demo Mode `/settings/demo` mounts the plugin management page; the initial
+  administrator manages data and reset policies. Ordinary business writes are
+  refused, including asynchronous commands and external-effect entry points.
+  Never use the flag against an ordinary installation's database or storage.
+- `ItamDemoModeProvider` adapts the existing generator, not a second story.
+  The plugin owns new accounts, progress, tracking and daily resets. The first
+  import can adopt already generated business records without recreating them;
+  legacy accounts keep password sign-in until the first reset creates plugin-owned
+  accounts and enables quick entry. Reset keeps the installation catalogue and
+  seeded onboarding kits, removes other ITAM business records (including untracked
+  additions), and uses the same generator. Never change migration/seed history
+  as part of demo reset. New business collections must join the cleanup order.
+- Demo Mode leaves the ITAM maintenance/sync targets idle, does not start lifecycle
+  effect workers or automatic work agents, and does not provision real model
+  credentials. Workbench completion caching and agent-run expiry are skipped on
+  read paths, preserving browsing without allowing business-table write exceptions.
+
+- **Demo Mode beta.1 (2026-10-24)** keeps only Overview and Daily reset in
+  its management UI; old writes/simulation tab links fall back to Overview.
+  Collection policies still exist in the API. Keep ITAM's empty write exceptions
+  and effect guard: the plugin's newly default-enabled integrated chat does not
+  opt ITAM into conversation writes or real model calls. Dataset and reset
+  contracts are unchanged; keep using the existing generator. The plugin requires
+  Agents beta.22, whose runner repair migration fills missing model entries and
+  clears stale runner markers without changing status; it does not regenerate
+  ITAM data.
+
+- **Demo Mode beta.2 (2026-10-24)** replaces the beta.1 tabs with one page:
+  dataset, daily reset and visitor accounts appear together; old `?tab=` values
+  are ignored. The host Header slot needs no tab prop or tabs replacements.
+  Keep the upper-right `DemoAccountMenu` integration. Agents beta.23 and App
+  Client beta.3 supply compatible HTTP clipboard/UUID helpers.
+  The plugin preserves the executing dataset account and its grants on clear
+  and failed reset, and records the actor for scheduled retries. ITAM also
+  preserves its application-owned importer grant for that actor during full
+  business cleanup; ordinary sample-data cleanup retains its previous behavior.
+  No regeneration is needed to upgrade, and deployment must preserve the existing
+  records and saved schedule. Verify clear, regeneration and failed reset only
+  against an isolated test database.
+
+- **Demo settings toolbar (2026-10-24)**: use the public `Header` slot returning
+  `null`; the Settings page already owns its heading, and the user requested no
+  separate refresh button or empty toolbar. Keep the data and reset controls.
+
+- **Demo administrator (2026-10-24)**: the dedicated dataset lists `admin`
+  alongside the three active staff accounts. Its shared definition supplies both
+  the visitor menu and `context.createAccount`; the installation's `nocobase`
+  account remains separate. The plugin owns `itam-demo-administrator`, granting
+  demo data read/manage and configuration read/configure; `admin` also holds the
+  existing asset-manager role. Do not assign protected root just to enable demo
+  management. Business writes remain refused. Account-definition changes require
+  a dataset reset; verify the administrator survives clear and failed reset.

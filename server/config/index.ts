@@ -25,6 +25,7 @@ import users from './users.js';
 import ai from './ai.js';
 import agents from './agents.js';
 import deviceSync from './device-sync.js';
+import demoMode from './demo-mode.js';
 
 const defaultConfigs: AppConfigFactory<{
   auth: ReturnType<typeof auth>;
@@ -52,6 +53,7 @@ const defaultConfigs: AppConfigFactory<{
   ai: ReturnType<typeof ai>;
   agents: ReturnType<typeof agents>;
   deviceSync: ReturnType<typeof deviceSync>;
+  demoMode: ReturnType<typeof demoMode>;
 }> = defaultAppConfigs({
   auth,
   authorization,
@@ -76,6 +78,7 @@ const defaultConfigs: AppConfigFactory<{
   ai,
   agents,
   deviceSync,
+  demoMode,
 });
 
 export default defaultConfigs;

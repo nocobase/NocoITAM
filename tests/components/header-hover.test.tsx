@@ -28,7 +28,8 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  localStorage.clear();
+  // Node 26 can expose localStorage as undefined without a storage-file flag.
+  localStorage?.clear();
   document.documentElement.removeAttribute('class');
   document.documentElement.removeAttribute('style');
   document.documentElement.removeAttribute('data-theme');
@@ -85,3 +86,8 @@ it.each(panels)(
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   },
 );
+
+// Demo switching is exercised against the real plugin in the browser test.
+vi.mock('@nocobase/app-plugin-demo-mode/client/account-menu', () => ({
+  DemoAccountMenu: () => null,
+}));
