@@ -493,14 +493,10 @@ and the comment keeps their names; they are not the record's attachments.
   above when the count started and finished, through `SummaryLead`'s
   `only`.
 
-- Standard API errors (2026-10-23): `apiErrorBody` unwraps `{ error }` while
-  accepting the older flat ITAM body. Prefer the server's `localizedMessage`
-  for inline failures; otherwise use the existing application translations.
-  Demo Mode refusals (2026-10-24) use only the plugin's localized global toast.
-  Identify them by `DEMO_READ_ONLY`, including an API error wrapped in `cause`,
-  through `isDemoReadOnlyError`; never match the displayed message or suppress
-  every error just because Demo Mode is on. Inline fields, titles and long
-  text restore the saved value and leave editing on refusal. Submit forms
-  stay open with their drafts and omit the duplicate inline error. Keep
-  normal validation and failure messages, and never turn a refused request
-  into a successful mutation.
+- **Demo write feedback (2026-10-25)** uses only the plugin's global Toast.
+  Identify `DEMO_READ_ONLY` with `isDemoReadOnlyError`, including errors wrapped
+  in `cause`; never match displayed text or suppress every error in Demo Mode.
+  Automatic edits restore the saved value; submitted forms retain their drafts.
+  Keep ordinary validation/failure messages and never treat refusal as success.
+  `apiErrorBody` accepts the standard `{ error }` envelope and legacy flat bodies;
+  prefer the server's localized message for ordinary inline errors.

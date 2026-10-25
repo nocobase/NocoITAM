@@ -355,73 +355,18 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   new deployment's currency follows its default locale (the settings seed:
   CNY for Chinese, USD otherwise), so the English demo reads in dollars.
 
-- **Dedicated Demo Mode (2026-10-23)** uses `@nocobase/app-plugin-demo-mode`
-  0.1.0-beta.3, enabled only by its `demoMode` configuration or
-  `NOCOBASE_DEMO_MODE=true`. Normal installations keep the sample-data page and banner.
-  In Demo Mode `/settings/demo` mounts the plugin management page; the initial
-  administrator manages data; reset timing belongs to deployment configuration. Ordinary business writes are
-  refused, including asynchronous commands and external-effect entry points.
-  Never use the flag against an ordinary installation's database or storage.
-- `ItamDemoModeProvider` adapts the existing generator, not a second story.
-  The plugin owns new accounts, progress, tracking and daily resets. The first
-  import can adopt already generated business records without recreating them;
-  all enabled person accounts support quick entry without a reset. Reset keeps the installation catalogue and
-  seeded onboarding kits, removes other ITAM business records (including untracked
-  additions), and uses the same generator. Never change migration/seed history
-  as part of demo reset. New business collections must join the cleanup order.
-- Demo Mode leaves the ITAM maintenance/sync targets idle, does not start lifecycle
-  effect workers or automatic work agents, and does not provision real model
-  credentials. Workbench completion caching and agent-run expiry are skipped on
-  read paths, preserving browsing without allowing business-table write exceptions.
-
-- **Demo Mode beta.1 (2026-10-24)** keeps only Overview and Daily reset in
-  its management UI; old writes/simulation tab links fall back to Overview.
-  Collection policies still exist in the API. Keep ITAM's empty write exceptions
-  and effect guard: the plugin's newly default-enabled integrated chat does not
-  opt ITAM into conversation writes or real model calls. Dataset and reset
-  contracts are unchanged; keep using the existing generator. The plugin requires
-  Agents beta.22, whose runner repair migration fills missing model entries and
-  clears stale runner markers without changing status; it does not regenerate
-  ITAM data.
-
-- **Demo Mode beta.2 (2026-10-24)** replaces the beta.1 tabs with one page:
-  dataset, daily reset and visitor accounts appear together; old `?tab=` values
-  are ignored. The host Header slot needs no tab prop or tabs replacements.
-  Keep the upper-right `DemoAccountMenu` integration. Agents beta.23 and App
-  Client beta.3 supply compatible HTTP clipboard/UUID helpers.
-  The plugin preserves the executing dataset account and its grants on clear
-  and failed reset, and records the actor for scheduled retries. ITAM also
-  preserves its application-owned importer grant for that actor during full
-  business cleanup; ordinary sample-data cleanup retains its previous behavior.
-  No regeneration is needed to upgrade, and deployment must preserve the existing
-  records and saved schedule. Verify clear, regeneration and failed reset only
-  against an isolated test database.
-
-- **Demo settings toolbar (2026-10-24)**: use the public `Header` slot returning
-  `null`; the Settings page already owns its heading, and the user requested no
-  separate refresh button or empty toolbar. Keep the data controls and reset overview.
-
-- **Demo Mode beta.3 (2026-10-25)** requires Authentication beta.14 and Agents
-  beta.24. Use `demoModeRoutes` for `/settings/demo`; the settings tab checks the
-  same exported route list. Disabled or missing public configuration omits the
-  plugin management route, even for root, and registers the original sample
-  importer at the same URL under `itam-settings` page access. Its banner stays.
-  Dedicated management checks `settings:demoMode.data/read` directly. Anonymous home entry uses the
-  plugin's existing Super Admin; account switching includes every enabled person,
-  without requiring dataset ownership, known passwords or regeneration.
-  Daily reset is always enabled after generation and comes from the four
-  `NOCOBASE_DEMO_RESET_*` environment variables (03:00 UTC, en-US by default).
-  Old saved schedules are ignored: explicitly preserve the desired schedule in
-  deployment variables during upgrade. Do not call the removed schedule write
-  API. Preserve all data and test clear/reset only on isolated databases.
-
-- **Demo administrator (2026-10-25)**: use the installation's existing Super
-  Admin for demo management. The dataset creates only the business staff accounts;
-  it does not create a separate `admin` account or `itam-demo-administrator`
-  permission set. Quick entry includes the existing administrator automatically.
-  Test generation, clear and failed reset with that administrator and verify its
-  access survives. Never remove an ordinary installation's account merely because
-  its username is `admin`.
-  On an older demo deployment, retire the verified dataset-owned account through
-  Users by disabling it and revoking its roles. Keep its tracked identity: the
-  plugin still needs it when clearing the old dataset on the next reset.
+- **Dedicated Demo Mode (2026-10-25)** reuses the existing ITAM generator
+  through `ItamDemoModeProvider`. Enable it only on a separate demo database
+  and storage. The dataset creates business staff accounts; management uses
+  the installation's existing Super Admin.
+- Demo cleanup retains the installation catalogue and seeded onboarding kits,
+  and removes all other business records, including visitor additions. Extend
+  its cleanup order when adding collections; never change migration or seed
+  history during reset. Verify clear/reset against isolated databases.
+- Keep ITAM's write exceptions empty. External effects, background maintenance,
+  sync, lifecycle effect workers and automatic work agents stay idle; read-side
+  caches must not write. Do not provision real model credentials in Demo Mode.
+- `/settings/demo` uses plugin management in Demo Mode and the original sample
+  importer otherwise. Keep the ordinary sample-data banner. Use the plugin's
+  route helper and deployment reset settings; do not duplicate its entry,
+  account-switching or scheduling logic.

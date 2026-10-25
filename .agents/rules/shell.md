@@ -46,12 +46,7 @@ The shared list of shell behaviors to keep when customizing is in [customizing t
 The details are in [ITAM's conventions](itam-conventions.md), [the assistant](itam-assistant.md) and [ITAM's interface conventions](itam-ui.md).
 The signed-in region waits in `client/routing/session-preparation.tsx` before mounting `AppLayout`: the authentication provider first reconnects active realtime subscriptions as the current session and waits for the open notification, including permission invalidation. A ten-second timeout shows a localized retry/sign-out screen. Keep this boundary inside `RequiredAuthentication`; guest login must remain reachable without realtime. Readiness is only for initial session preparation. Subsequent permission notifications and reconnects still use normal fail-closed route unmounting, including portal and effect cleanup.
 
-- **Demo account switching (2026-10-24).** Register Demo Mode with
-  `accountSwitcher: 'menu'` and mount its public `DemoAccountMenu` inside
-  `UserMenu` before sign-out. Signed-in users switch from the header account
-  submenu; guests retain the plugin entry. Do not reintroduce a signed-in
-  floating switcher or duplicate its sign-in/session logic. Since beta.3
-  (2026-10-25), the plugin preloads accounts and handles anonymous home entry.
-  The settings tab follows the registered route: dedicated demo management in
-  Demo Mode, the existing sample importer otherwise. Preserve the ordinary
-  sample-data banner.
+- **Demo account menu (2026-10-25):** register Demo Mode with
+  `accountSwitcher: 'menu'` and mount its public `DemoAccountMenu` in `UserMenu`
+  before sign-out. The plugin owns entry and session switching; keep this
+  integration when reconciling template updates.
