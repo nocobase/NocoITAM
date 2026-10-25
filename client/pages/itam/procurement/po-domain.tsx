@@ -35,6 +35,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useApi, useItamList, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { useOpenRecord } from '@/lib/itam/record-drawer';
 import type { DomainConfig } from '@/lib/itam/domain';
 import {
@@ -419,7 +420,7 @@ function PurchaseOrderActions({
     <>
       {confirm.dialog}
       {buttons}
-      {run.error && !dialog ? (
+      {run.error && !dialog && !isDemoReadOnlyError(run.error) ? (
         <span className='text-sm text-destructive'>
           {(run.error as { message?: string }).message}
         </span>
