@@ -1,23 +1,14 @@
 import { expect, test } from '@playwright/test';
 
 const entry = process.env.APP_URL;
-test.skip(!entry || !process.env.E2E_USERNAME || !process.env.E2E_PASSWORD);
+test.skip(!entry);
 
 test('demo settings has no redundant refresh toolbar', async ({ page }) => {
   test.setTimeout(120_000);
   const base = new URL(`${entry!.replace(/\/+$/, '')}/`);
-  const login = await page.request.post(
-    new URL('api/auth/sign-in/username', base).href,
-    {
-      data: {
-        username: process.env.E2E_USERNAME,
-        password: process.env.E2E_PASSWORD,
-      },
-      headers: { Origin: base.origin },
-    },
+  await page.goto(
+    new URL('demo-sign-in?as=admin&redirect=/settings/demo', base).href,
   );
-  expect(login.status()).toBe(200);
-  await page.goto(new URL('settings/demo', base).href);
   await expect(
     page.getByRole('button', { name: /^(Reset|重置)$/ }),
   ).toBeVisible({ timeout: 60_000 });
@@ -27,6 +18,14 @@ test('demo settings has no redundant refresh toolbar', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Refresh|刷新/i })).toHaveCount(
     0,
   );
+  await expect(page.getByRole('button', { name: /^(Save|保存)$/ })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole('switch')).toHaveCount(0);
+  await expect(page.getByText(/03:00/).first()).toBeVisible();
+  await expect(
+    page.getByText('nocobase', { exact: true }).first(),
+  ).toBeVisible();
   if (process.env.DEMO_SCREENSHOT)
     await page.screenshot({
       path: process.env.DEMO_SCREENSHOT,

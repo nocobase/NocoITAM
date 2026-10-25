@@ -32,6 +32,19 @@ test('demo permits browsing, refuses writes, and resets the existing ITAM story 
     data: { enabled: true },
   });
   expect((await request('/itam/devices')).status).toBe(401);
+  // beta.3 offers existing accounts before any dataset has been generated.
+  const initialAccounts = await (await request('/demoMode/accounts')).json();
+  expect(initialAccounts.data).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ username: DEFAULT_ADMIN_CREDENTIALS.username }),
+    ]),
+  );
+  const quickEntry = await request('/demoMode/accounts/signInDefault', {
+    method: 'POST',
+  });
+  expect(quickEntry.status).toBe(200);
+  expect(await quickEntry.json()).toMatchObject({ data: { signedIn: true } });
+  expect(quickEntry.headers.getSetCookie().length).toBeGreaterThan(0);
   const admin = await signIn(testApp, DEFAULT_ADMIN_CREDENTIALS);
   const session = await (await admin.fetch('/auth/get-session')).json();
   const actorId = String(session.user.id);
@@ -154,6 +167,18 @@ test('demo permits browsing, refuses writes, and resets the existing ITAM story 
     username: 'daniel',
     password: 'daniel123',
   });
+  const visitorBefore = await (await visitor.fetch('/auth/get-session')).json();
+  expect(
+    (
+      await visitor.fetch('/demoMode/accounts/signInDefault', {
+        method: 'POST',
+        headers: { Origin: 'http://localhost' },
+      })
+    ).status,
+  ).toBe(200);
+  expect(
+    (await (await visitor.fetch('/auth/get-session')).json()).user.id,
+  ).toBe(visitorBefore.user.id);
   expect((await visitor.fetch('/itam/devices')).status).toBe(200);
   expect((await visitor.fetch('/demoMode/configuration')).status).toBe(403);
   const demoAdmin = await signIn(testApp, {
@@ -201,9 +226,16 @@ test('demo permits browsing, refuses writes, and resets the existing ITAM story 
     (await (await retained.fetch('/auth/get-session')).json()).user.id,
   ).toBe(visitorId);
   expect((await data.status()).present).toBe(false);
-  expect(await (await request('/demoMode/accounts')).json()).toEqual({
-    data: [],
-  });
+  const afterClear = await (await request('/demoMode/accounts')).json();
+  expect(
+    afterClear.data
+      .map((account: { username: string }) => account.username)
+      .sort(),
+  ).toEqual([DEFAULT_ADMIN_CREDENTIALS.username, 'admin'].sort());
+  expect(
+    (await request('/demoMode/accounts/admin/signIn', { method: 'POST' }))
+      .status,
+  ).toBe(200);
   const regenerated = await data.importNow(visitorId, 'en-US');
   expect(regenerated.failure).toBeNull();
   expect(

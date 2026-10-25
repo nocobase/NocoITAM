@@ -78,14 +78,14 @@ test('demo browsing and mutation refusal', async ({ page }) => {
       ).toHaveCount(0);
     });
   }
-  // beta.2 renders every management card together and ignores old tab links.
+  // Management cards remain together; legacy tab links are ignored.
   for (const tab of ['overview', 'schedule', 'writes', 'simulation']) {
     await page.goto(new URL(`settings/demo?tab=${tab}`, base).href);
     await expect(
       page.getByText(/^(Daily reset|每日重置)$/, { exact: true }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(
-      page.getByText(/^(Demo accounts|演示账号)$/, { exact: true }),
+      page.getByText(/^(Accounts|账号)$/, { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole('tab', { name: /^(Overview|概览|Daily reset|每日重置)$/ }),

@@ -66,6 +66,16 @@ A banner offers the **demo data**, imported and removed on **Settings → Demo d
 
 The administrator who imports it becomes an IT asset manager too, with approvals, orders, repairs, disposals and a stocktake of their own. The demo's prices are written in yuan and converted to the register's currency when it is imported. Removing the demo data removes all of it, its accounts and its notifications.
 
+### Dedicated Demo Mode
+
+Enable `NOCOBASE_DEMO_MODE=true` only on a dedicated deployment with its own database and storage. Its **Settings → Demo data** page uses the plugin's management UI and permissions. Ordinary deployments keep the original sample importer and banner; the dedicated management route and controls are omitted, including for root.
+
+Anonymous visitors opening the demo home page automatically enter an existing Super Admin account. The header account menu offers every enabled person account, including administrators created outside the dataset; existing sessions, passwords and permissions are preserved. No dataset generation is required for quick entry.
+
+Daily reset is always enabled after the first generation. Configure `NOCOBASE_DEMO_RESET_HOUR` (default `3`), `NOCOBASE_DEMO_RESET_MINUTE` (`0`), `NOCOBASE_DEMO_RESET_TIMEZONE` (`UTC`) and `NOCOBASE_DEMO_RESET_LANGUAGE` (`en-US`), then restart. The management page displays the effective schedule and next run without editing controls. Previously saved schedules are ignored.
+
+Clear/reset in dedicated Demo Mode removes business records, including additions outside the generated dataset. The executing administrator retains access; other dataset accounts are disabled on clear. The ordinary sample importer continues removing only its own tracked records.
+
 ### Roles
 
 Accounts are created on **Settings → Users**, each with one or more roles; there is no self-registration.

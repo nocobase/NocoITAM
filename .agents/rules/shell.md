@@ -50,4 +50,8 @@ The signed-in region waits in `client/routing/session-preparation.tsx` before mo
   `accountSwitcher: 'menu'` and mount its public `DemoAccountMenu` inside
   `UserMenu` before sign-out. Signed-in users switch from the header account
   submenu; guests retain the plugin entry. Do not reintroduce a signed-in
-  floating switcher or duplicate its sign-in/session logic.
+  floating switcher or duplicate its sign-in/session logic. Since beta.3
+  (2026-10-25), the plugin preloads accounts and handles anonymous home entry.
+  The settings tab follows the registered route: dedicated demo management in
+  Demo Mode, the existing sample importer otherwise. Preserve the ordinary
+  sample-data banner.

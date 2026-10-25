@@ -1,3 +1,4 @@
+import { demoSettingsRoutes } from './lib/itam/demo-routes.js';
 import {
   defineAppRoutes,
   type AppClientRouteComponentLoader,
@@ -923,16 +924,7 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
                 },
               ],
             },
-            {
-              // Last: a trial's, rarely opened once ITAM is in use.
-              name: 'itam-settings-demo',
-              path: 'demo',
-              authz: {
-                resource: { type: 'page', id: 'itam-settings' },
-                action: 'access',
-              },
-              componentLoader: () => import('./pages/itam/settings/demo.js'),
-            },
+            ...demoSettingsRoutes,
           ],
         },
       ],

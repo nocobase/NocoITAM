@@ -1,4 +1,4 @@
-import { useDemoMode } from '@/lib/itam/demo-mode';
+import { demoManagementRoutes } from '@/lib/itam/demo-routes';
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import {
@@ -61,24 +61,17 @@ const TABS: readonly Tab[] = [
     label: 'navigation.scheduledTasks',
     icon: CalendarClock,
   },
-  // Last: a trial's, rarely opened once ITAM is in use.
+  // Dedicated demo management or the ordinary sample importer, as the route declares.
   { path: 'demo', label: 'settings.demo.title', icon: Database },
 ];
 
 export default function SettingsPage(): ReactElement {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const mode = useDemoMode();
   const demoAccess = useCan(
-    mode.data
-      ? {
-          resource: { type: 'settings', id: 'demoMode.data' },
-          action: 'read',
-        }
-      : {
-          resource: { type: 'page', id: 'itam-settings' },
-          action: 'access',
-        },
+    demoManagementRoutes.length
+      ? { resource: { type: 'settings', id: 'demoMode.data' }, action: 'read' }
+      : { resource: { type: 'page', id: 'itam-settings' }, action: 'access' },
   );
   // The same checks as the tabs' routes in client/routes.ts; API keys are
   // everyone's own.
