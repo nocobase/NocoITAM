@@ -46,13 +46,6 @@ const viVN: AppResource = {
     add: 'Thêm',
     create: 'Tạo',
   },
-  demoMode: {
-    badge: 'Chế độ demo',
-    title: 'Đây là bản demo',
-    hint: 'Dữ liệu được đặt lại mỗi ngày và các thay đổi không được lưu. Chuyển sang một tài khoản bên dưới để xem mỗi vai trò thấy gì.',
-    accounts: 'Chuyển tài khoản',
-    switchFailed: 'Không chuyển được tài khoản. Vui lòng thử lại.',
-  },
   account: {
     ...systemViVN.account,
     openMenu: 'Mở menu tài khoản',
@@ -2631,6 +2624,9 @@ const viVN: AppResource = {
   },
   settings: {
     ...systemViVN.settings,
+    noRoleAccess:
+      'Người dùng này vẫn có thể đăng nhập và sử dụng các chức năng cơ bản của tài khoản. Vai trò không cấp quyền truy cập nghiệp vụ.',
+    noAssignedRoles: 'Chưa gán vai trò',
     title: 'Cài đặt',
     deviceSyncRules: {
       title: 'Quy tắc rà soát',

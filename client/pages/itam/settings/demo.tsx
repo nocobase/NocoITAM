@@ -91,12 +91,6 @@ function DemoSettingsSkeleton(): ReactElement {
 const DEMO_COMPONENTS = {
   // Settings already provides the page heading; no separate refresh toolbar.
   Header: () => null,
-  // No generate, clear or reset here (2026-10-25): every visitor may enter
-  // a Demo Mode deployment as its administrator, and could wipe the demo
-  // under everyone else. The data card's actions are its only `CardAction`;
-  // the demo resets daily, and by hand through the plugin's API
-  // (`.agents/rules/itam-data-and-demo.md`).
-  CardAction: () => null,
 };
 
 function PluginDemoSettings(): ReactElement {

@@ -2,6 +2,10 @@
 
 import { expect, it } from 'vitest';
 import { createAppTest } from '@nocobase/app-testing/server';
+import {
+  DEFAULT_ADMIN_CREDENTIALS,
+  signIn,
+} from '@nocobase/app-plugin-authentication/testing';
 import { createStandaloneServer } from '../../server/standalone.js';
 
 type Assignment = {
@@ -13,14 +17,7 @@ type Assignment = {
 function unexpectedGlobalAssignments(
   assignments: readonly Assignment[],
 ): Assignment[] {
-  return assignments.filter(
-    (assignment) =>
-      assignment.subjectId === '*' &&
-      !(
-        assignment.subjectType === 'authenticated' &&
-        assignment.permissionSetKey === 'member'
-      ),
-  );
+  return assignments.filter((assignment) => assignment.subjectId === '*');
 }
 
 const test = createAppTest({
@@ -73,6 +70,52 @@ test('initialization does not silently grant business roles to every signed-in u
   expect(held).toEqual(expect.arrayContaining(['root', 'itam-asset-manager']));
 });
 
+test('uses explicit Member defaults without restoring removed roles or granting roleless business access', async ({
+  testApp,
+}) => {
+  const admin = await signIn(testApp, DEFAULT_ADMIN_CREDENTIALS);
+  const create = async (email: string, roleScopes?: { app: string[] }) => {
+    const response = await admin.fetch('/users', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        origin: 'http://localhost',
+      },
+      body: JSON.stringify({
+        name: 'Role behavior test',
+        email,
+        password: 'isolated-test-password',
+        ...(roleScopes ? { roleScopes } : {}),
+      }),
+    });
+    expect(response.status, await response.clone().text()).toBe(201);
+    return (await response.json()).data;
+  };
+  const member = await create('member-test@example.test');
+  expect(member.roleScopes.app).toEqual(['member']);
+  const empty = await create('roleless-test@example.test', { app: [] });
+  expect(empty.roleScopes.app).toEqual([]);
+  const removed = await admin.fetch(`/users/${member.id}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+    body: JSON.stringify({ roleScopes: { app: [] } }),
+  });
+  expect(removed.status).toBe(200);
+  const updated = await admin.fetch(`/users/${member.id}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+    body: JSON.stringify({ name: 'Still roleless' }),
+  });
+  expect(updated.status).toBe(200);
+  expect((await updated.json()).data.roleScopes.app).toEqual([]);
+  const person = await signIn(testApp, {
+    email: 'member-test@example.test',
+    password: 'isolated-test-password',
+  });
+  expect((await person.fetch('/auth/get-session')).status).toBe(200);
+  expect((await person.fetch('/itam/devices')).status).toBe(403);
+});
+
 it('detects wildcard recipients regardless of the role name, while preserving explicit user assignments', () => {
   const global = {
     subjectType: 'authenticated',
@@ -94,5 +137,13 @@ it('detects wildcard recipients regardless of the role name, while preserving ex
       global,
       { ...global, subjectType: 'everyone' },
     ]),
-  ).toEqual([global, { ...global, subjectType: 'everyone' }]);
+  ).toEqual([
+    {
+      subjectType: 'authenticated',
+      subjectId: '*',
+      permissionSetKey: 'member',
+    },
+    global,
+    { ...global, subjectType: 'everyone' },
+  ]);
 });

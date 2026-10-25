@@ -46,14 +46,6 @@ const jaJP: AppResource = {
     add: '追加',
     create: '作成',
   },
-  demoMode: {
-    badge: 'デモモード',
-    title: 'これはデモ環境です',
-    hint: 'データは毎日リセットされ、変更は保存されません。下のアカウントに切り替えて、役割ごとの見え方を確認できます。',
-    accounts: 'アカウントを切り替え',
-    switchFailed:
-      'アカウントを切り替えられませんでした。もう一度お試しください。',
-  },
   account: {
     ...systemJaJP.account,
     openMenu: 'アカウントメニューを開く',
@@ -2642,6 +2634,9 @@ const jaJP: AppResource = {
   },
   settings: {
     ...systemJaJP.settings,
+    noRoleAccess:
+      'このユーザーは引き続きサインインしてアカウントの基本機能を使用できます。ロールによる業務アクセス権はありません。',
+    noAssignedRoles: 'ロール未割り当て',
     title: '設定',
     deviceSyncRules: {
       title: '照合ルール',

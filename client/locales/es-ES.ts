@@ -46,13 +46,6 @@ const esES: AppResource = {
     add: 'Añadir',
     create: 'Crear',
   },
-  demoMode: {
-    badge: 'Modo demo',
-    title: 'Esto es una demostración',
-    hint: 'Los datos se restablecen cada día y los cambios no se guardan. Cambia a cualquiera de estas cuentas para ver lo que ve cada rol.',
-    accounts: 'Cambiar de cuenta',
-    switchFailed: 'No se pudo cambiar de cuenta. Inténtalo de nuevo.',
-  },
   account: {
     ...systemEsES.account,
     openMenu: 'Abrir el menú de la cuenta',
@@ -2683,6 +2676,9 @@ const esES: AppResource = {
   },
   settings: {
     ...systemEsES.settings,
+    noRoleAccess:
+      'Este usuario puede iniciar sesión y usar las funciones básicas de la cuenta. Los roles no conceden acceso a las operaciones.',
+    noAssignedRoles: 'Sin roles asignados',
     title: 'Configuración',
     deviceSyncRules: {
       title: 'Reglas de revisión',

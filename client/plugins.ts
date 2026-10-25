@@ -39,7 +39,7 @@ const clientPlugins: AppClientPlugins = defineClientPlugins([
   mail(),
   foundation({ settingsGroup: true }),
   agents(),
-  demoMode({ accountSwitcher: 'menu' }),
+  demoMode(),
 ]);
 
 export default clientPlugins;

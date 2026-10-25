@@ -46,13 +46,6 @@ const frFR: AppResource = {
     add: 'Ajouter',
     create: 'Créer',
   },
-  demoMode: {
-    badge: 'Mode démo',
-    title: 'Ceci est une démo',
-    hint: "Les données sont réinitialisées chaque jour et les modifications ne sont pas enregistrées. Passez à l'un des comptes ci-dessous pour voir ce que voit chaque rôle.",
-    accounts: 'Changer de compte',
-    switchFailed: 'Impossible de changer de compte. Veuillez réessayer.',
-  },
   account: {
     ...systemFrFR.account,
     openMenu: 'Ouvrir le menu du compte',
@@ -2678,6 +2671,9 @@ const frFR: AppResource = {
   },
   settings: {
     ...systemFrFR.settings,
+    noRoleAccess:
+      'Cet utilisateur peut se connecter et utiliser les fonctions de base du compte. Aucun accès métier ne lui est accordé par les rôles.',
+    noAssignedRoles: 'Aucun rôle attribué',
     title: 'Paramètres',
     deviceSyncRules: {
       title: 'Règles de revue',

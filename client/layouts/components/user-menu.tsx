@@ -75,8 +75,6 @@ export function UserMenu(): ReactElement {
         <DropdownMenuSeparator />
         <LanguageSwitcher />
         <DropdownMenuSeparator />
-        {/* ITAM (2026-10-25): no demo account submenu here; the header's
-            demo mode badge switches accounts (`DemoModeBadge`). */}
         <DropdownMenuItem
           disabled={isLoggingOut}
           onClick={() => {
