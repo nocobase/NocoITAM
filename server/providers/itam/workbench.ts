@@ -186,6 +186,7 @@ function isMine(row: Row, userId: string): boolean {
 export function createWorkbenchService(dependencies: {
   database: DatabaseManager;
   approvals: ApprovalService;
+  readOnly?: () => boolean;
   /** For 入职准备; a container without it shows no such column. */
   onboarding?: OnboardingService;
   /** For 设备核对 and the leavers' online tag; absent, neither shows. */
@@ -870,12 +871,13 @@ export function createWorkbenchService(dependencies: {
           const plan = plans.get(String(row.id));
           if (!plan) continue;
           if (isPrepared(plan)) {
-            await database
-              .query()
-              .updateTable('people')
-              .set({ onboardingCompletedAt: new Date() })
-              .where('id', '=', String(row.id))
-              .execute();
+            if (!dependencies.readOnly?.())
+              await database
+                .query()
+                .updateTable('people')
+                .set({ onboardingCompletedAt: new Date() })
+                .where('id', '=', String(row.id))
+                .execute();
             continue;
           }
           open += 1;

@@ -20,6 +20,7 @@ import {
   type ApprovalReviewResult,
 } from '@/lib/itam/agents';
 import { relativeTime } from '@/lib/itam/format';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { useCurrentUserId } from '@/lib/itam/permissions';
 
 import { AiShortcut } from './ai-shortcut.js';
@@ -227,7 +228,7 @@ export function ApprovalReviewCard({
           ) : null}
         </div>
       ) : null}
-      {error ? (
+      {error && !isDemoReadOnlyError(error) ? (
         <p className='mt-2 text-sm text-destructive'>{error.message}</p>
       ) : null}
     </section>
@@ -358,7 +359,7 @@ export function ApprovalReviewBlock({
           >
             {t('review.ask')}
           </AiShortcut>
-          {ask.error ? (
+          {ask.error && !isDemoReadOnlyError(ask.error) ? (
             <span className='text-destructive'>{ask.error.message}</span>
           ) : null}
         </p>

@@ -39,6 +39,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { apiErrorBody } from '@/lib/itam/api';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { errorMessage } from '@/lib/itam/format';
 import {
   parseTemplate,
@@ -272,7 +273,8 @@ export function FieldTemplateEditor({
       setFreshRows(new Set());
       setChangedRows(new Map());
     } catch (caught) {
-      setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
+      if (!isDemoReadOnlyError(caught))
+        setError(apiErrorBody(caught)?.message ?? errorMessage(caught));
     } finally {
       setSaving(false);
     }

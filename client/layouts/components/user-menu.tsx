@@ -1,3 +1,4 @@
+import { DemoAccountMenu } from '@nocobase/app-plugin-demo-mode/client/account-menu';
 import { useAuthenticationErrorResolver } from '@nocobase/app-plugin-authentication/client/actions';
 import { useToaster } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
@@ -75,6 +76,8 @@ export function UserMenu(): ReactElement {
         <DropdownMenuSeparator />
         <LanguageSwitcher />
         <DropdownMenuSeparator />
+        {/* ITAM: use the plugin submenu so demo switching belongs to the account menu. */}
+        <DemoAccountMenu />
         <DropdownMenuItem
           disabled={isLoggingOut}
           onClick={() => {

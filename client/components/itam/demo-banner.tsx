@@ -1,3 +1,4 @@
+import { useDemoMode } from '@/lib/itam/demo-mode';
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
@@ -32,6 +33,7 @@ function readDismissed(): boolean {
 export function DemoBanner(): ReactElement | null {
   const { t } = useTranslation();
   const api = useApi();
+  const mode = useDemoMode();
   const [dismissed, setDismissed] = useState(readDismissed);
   const { can } = useCan({
     resource: { type: 'settings', id: 'itam.settings' },
@@ -52,9 +54,10 @@ export function DemoBanner(): ReactElement | null {
           path: 'itam/demo',
         })
       ).data,
-    enabled: can === true,
+    enabled: can === true && mode.data === false,
     refetchInterval: (query) => (query.state.data?.importing ? 1000 : false),
   });
+  if (mode.data !== false) return null;
   const importing = status.data?.importing ?? null;
   if (can === true && importing)
     return (

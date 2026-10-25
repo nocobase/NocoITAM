@@ -3,6 +3,7 @@ import { useRef, useState, type ReactElement, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import type { FieldDefinition } from '@/lib/itam/fields';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { errorMessage, text } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
 
@@ -50,6 +51,16 @@ export function InlineField({
   // dismiss that follows a change from closing the editor mid-save.
   const savingRef = useRef(false);
 
+  const saveFailed = (caught: unknown) => {
+    if (isDemoReadOnlyError(caught)) {
+      setDraft(value);
+      setError(undefined);
+      setEditing(false);
+    } else {
+      setError(errorMessage(caught));
+    }
+  };
+
   const startEditing = () => {
     // A write-only field shows a mask, never its value: the editor starts
     // empty so a save can never write the mask back.
@@ -75,7 +86,7 @@ export function InlineField({
       await onSave(draft);
       setEditing(false);
     } catch (caught) {
-      setError(errorMessage(caught));
+      saveFailed(caught);
     } finally {
       setSaving(false);
     }
@@ -144,7 +155,7 @@ export function InlineField({
                   // A refused choice snaps back to the saved value so the
                   // control never shows a state the record does not have.
                   setDraft(value);
-                  setError(errorMessage(caught));
+                  saveFailed(caught);
                 },
               )
               .finally(() => {
@@ -195,10 +206,7 @@ export function InlineField({
                 setSaving(true);
                 void Promise.resolve()
                   .then(() => onSave(null))
-                  .then(
-                    () => setEditing(false),
-                    (caught: unknown) => setError(errorMessage(caught)),
-                  )
+                  .then(() => setEditing(false), saveFailed)
                   .finally(() => {
                     savingRef.current = false;
                     setSaving(false);

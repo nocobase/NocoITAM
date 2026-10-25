@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { apiErrorBody, type ItamRecord } from '@/lib/itam/api';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import {
   resolveFormField,
   changeFormField,
@@ -191,7 +192,10 @@ export function RecordFormDialog({
       field.required &&
       (values[field.key] == null || String(values[field.key]).trim() === ''),
   );
-  const body = apiErrorBody(error);
+  // A refused demo write remains a failed submission, with the draft intact.
+  // Its one notification is supplied by the Demo Mode plugin.
+  const visibleError = isDemoReadOnlyError(error) ? undefined : error;
+  const body = apiErrorBody(visibleError);
   const fieldErrors = new Map<string, string>();
   // An issue only becomes a field's message when the form actually shows
   // that field. A rejection about something else — a value passed through
@@ -206,12 +210,12 @@ export function RecordFormDialog({
     else unattached.push(issue.message);
   }
   if (body?.field && body.message) fieldErrors.set(body.field, body.message);
-  const generalError = !error
+  const generalError = !visibleError
     ? undefined
     : unattached.length > 0
       ? unattached.join('\n')
       : fieldErrors.size === 0
-        ? (body?.message ?? errorMessage(error))
+        ? (body?.message ?? errorMessage(visibleError))
         : undefined;
 
   const submit = async (event: FormEvent) => {
@@ -234,7 +238,13 @@ export function RecordFormDialog({
       if (value === null && !editingRecord) continue;
       payload[field.key] = value;
     }
-    await onSubmit(payload, files);
+    try {
+      await onSubmit(payload, files);
+    } catch (caught) {
+      // The mutation still failed; consume the expected demo refusal at the
+      // DOM event boundary so it does not become an unhandled rejection.
+      if (!isDemoReadOnlyError(caught)) throw caught;
+    }
   };
 
   const twoColumns = columns === 2;

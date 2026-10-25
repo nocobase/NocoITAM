@@ -492,3 +492,11 @@ and the comment keeps their names; they are not the record's attachments.
   for 基本信息, 2026-10-23). A stocktake's 盘点进度 and 待处理 open 进度,
   above when the count started and finished, through `SummaryLead`'s
   `only`.
+
+- **Demo write feedback (2026-10-25)** uses only the plugin's global Toast.
+  Identify `DEMO_READ_ONLY` with `isDemoReadOnlyError`, including errors wrapped
+  in `cause`; never match displayed text or suppress every error in Demo Mode.
+  Automatic edits restore the saved value; submitted forms retain their drafts.
+  Keep ordinary validation/failure messages and never treat refusal as success.
+  `apiErrorBody` accepts the standard `{ error }` envelope and legacy flat bodies;
+  prefer the server's localized message for ordinary inline errors.

@@ -1,3 +1,9 @@
+import { DemoModeSettings } from '@nocobase/app-plugin-demo-mode/client/settings';
+import { useCan } from '@nocobase/app-plugin-authorization/client';
+import { useDemoMode } from '@/lib/itam/demo-mode';
+import { ApiClientError } from '@nocobase/app-client';
+import { Skeleton } from '#components/ui/skeleton';
+import { Alert, AlertTitle } from '#components/ui/alert';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Database, Trash2 } from 'lucide-react';
@@ -31,12 +37,107 @@ import { errorMessage, formatDate } from '@/lib/itam/format';
 /** 设置 → 演示数据, the last tab: a trial's, rarely opened once ITAM is in use. */
 export default function DemoSettingsPage(): ReactElement {
   const { t } = useTranslation();
+  const mode = useDemoMode();
+  if (mode.isPending) return <DemoSettingsSkeleton />;
+  if (mode.error)
+    return (
+      <PageContainer>
+        <Alert variant='destructive'>
+          <AlertTitle>
+            {t(
+              mode.error instanceof ApiClientError && mode.error.status === 403
+                ? 'status.denied'
+                : mode.error instanceof ApiClientError &&
+                    mode.error.status === 404
+                  ? 'common.notFound'
+                  : 'status.pageFailed',
+            )}
+          </AlertTitle>
+        </Alert>
+        {!(
+          mode.error instanceof ApiClientError &&
+          [401, 403, 404].includes(mode.error.status)
+        ) && (
+          <Button onClick={() => void mode.refetch()}>
+            {t('status.retry')}
+          </Button>
+        )}
+      </PageContainer>
+    );
+  if (mode.data) return <PluginDemoSettings />;
   return (
     <PageContainer>
       <PageHeader title={t('settings.demo.title')} />
       <div className='max-w-4xl'>
         <DemoCard />
       </div>
+    </PageContainer>
+  );
+}
+
+function DemoSettingsSkeleton(): ReactElement {
+  const { t } = useTranslation();
+  return (
+    <PageContainer>
+      <div aria-label={t('status.loading')} role='status' className='space-y-4'>
+        <Skeleton className='h-8 w-64' />
+        <Skeleton className='h-64 w-full' />
+        <Skeleton className='h-32 w-full' />
+      </div>
+    </PageContainer>
+  );
+}
+
+const DEMO_COMPONENTS = {
+  // Settings already provides the page heading; no separate refresh toolbar.
+  Header: () => null,
+};
+
+function PluginDemoSettings(): ReactElement {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const access = useCan({
+    resource: { type: 'settings', id: 'demoMode.data' },
+    action: 'read',
+  });
+  if (access.isPending) return <DemoSettingsSkeleton />;
+  if (!access.can)
+    return (
+      <PageContainer>
+        <p>
+          {t('status.deniedDescription', { label: t('settings.demo.title') })}
+        </p>
+      </PageContainer>
+    );
+  return (
+    <PageContainer>
+      <DemoModeSettings
+        components={DEMO_COMPONENTS}
+        label={(kind, id) => {
+          if (kind !== 'count') return undefined;
+          const keys: Record<string, string> = {
+            stockItems: 'references.stockItems',
+            purchaseOrders: 'navigation.procurement',
+            auditTasks: 'navigation.audits',
+            accounts: 'references.accounts',
+            importerGrants: 'navigation.permissionSets',
+            permissionSets: 'navigation.permissionSets',
+            permissionSetAssignments: 'navigation.permissionSets',
+            historyEvents: 'tabs.history',
+            itamAgentRuns: 'navigation.agentWork',
+            itamPlans: 'navigation.agentWork',
+            deviceSyncRuns: 'settings.deviceSync.title',
+            managedDevices: 'settings.deviceSync.title',
+          };
+          return t(keys[id] ?? `navigation.${id}`);
+        }}
+        onDataChange={() => {
+          void queryClient.invalidateQueries({ queryKey: ['itam'] });
+          void queryClient.invalidateQueries({
+            queryKey: ['notificationInApp'],
+          });
+        }}
+      />
     </PageContainer>
   );
 }

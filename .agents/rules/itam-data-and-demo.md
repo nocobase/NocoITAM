@@ -354,3 +354,19 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   for an amount the demo writes itself (a quote, a sentence naming one). A
   new deployment's currency follows its default locale (the settings seed:
   CNY for Chinese, USD otherwise), so the English demo reads in dollars.
+
+- **Dedicated Demo Mode (2026-10-25)** reuses the existing ITAM generator
+  through `ItamDemoModeProvider`. Enable it only on a separate demo database
+  and storage. The dataset creates business staff accounts; management uses
+  the installation's existing Super Admin.
+- Demo cleanup retains the installation catalogue and seeded onboarding kits,
+  and removes all other business records, including visitor additions. Extend
+  its cleanup order when adding collections; never change migration or seed
+  history during reset. Verify clear/reset against isolated databases.
+- Keep ITAM's write exceptions empty. External effects, background maintenance,
+  sync, lifecycle effect workers and automatic work agents stay idle; read-side
+  caches must not write. Do not provision real model credentials in Demo Mode.
+- `/settings/demo` uses plugin management in Demo Mode and the original sample
+  importer otherwise. Keep the ordinary sample-data banner. Use the plugin's
+  route helper and deployment reset settings; do not duplicate its entry,
+  account-switching or scheduling logic.

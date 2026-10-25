@@ -2,6 +2,7 @@ import { defineCliPlugins, type AppCliPlugins } from '@nocobase/app-cli';
 import scheduler from '@nocobase/app-plugin-scheduler/cli';
 import agents from '@nocobase/app-plugin-agents/cli';
 import foundation from '@nocobase/app-plugin-foundation/cli';
+import demoMode from '@nocobase/app-plugin-demo-mode/cli';
 
 import itam from './itam.js';
 
@@ -13,6 +14,7 @@ const cliPlugins: AppCliPlugins = defineCliPlugins([
   foundation,
   agents,
   itam,
+  demoMode,
 ]);
 
 export default cliPlugins;

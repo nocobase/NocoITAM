@@ -2,6 +2,7 @@ import { ApiClientError } from '@nocobase/app-client';
 import { Link } from 'react-router';
 import { useTranslation } from '@nocobase/i18n/client';
 import type { ReactElement, ReactNode } from 'react';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { Button } from '#components/ui/button';
 import { Alert, AlertDescription } from '#components/ui/alert';
 import { Skeleton } from '#components/ui/skeleton';
@@ -23,7 +24,8 @@ export function SettingsError({
   readonly retry?: () => void;
 }): ReactElement | null {
   const { t } = useTranslation();
-  if (!error) return null;
+  // Application change (ITAM): Demo Mode already displays this refusal once.
+  if (!error || isDemoReadOnlyError(error)) return null;
   const status: unknown =
     typeof error === 'object' && error !== null
       ? Reflect.get(error, 'status')

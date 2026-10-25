@@ -202,3 +202,12 @@ logging:
 #     url: https://example.jamfcloud.com
 #     clientId: 00000000-0000-0000-0000-000000000000
 #     clientSecret: your-client-secret
+
+# Dedicated read-only demo deployment. Keep its database and storage separate.
+# NOCOBASE_DEMO_MODE=true enables the plugin; existing ITAM sample data is reused.
+# Daily reset is always enabled after generation, configured at deployment:
+# NOCOBASE_DEMO_RESET_HOUR=3, NOCOBASE_DEMO_RESET_MINUTE=0,
+# NOCOBASE_DEMO_RESET_TIMEZONE=UTC, NOCOBASE_DEMO_RESET_LANGUAGE=en-US.
+# Restart after changing them. Previously saved schedules are ignored.
+demoMode:
+  enabled: false

@@ -3,6 +3,7 @@ import { Pencil } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
 
 import { Input } from '@/components/ui/input';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { errorMessage } from '@/lib/itam/format';
 
 export interface EditableTitleProps {
@@ -45,7 +46,12 @@ export function EditableTitle({
       await onSave(next);
       setEditing(false);
     } catch (caught) {
-      setError(errorMessage(caught));
+      if (isDemoReadOnlyError(caught)) {
+        setDraft(value);
+        setEditing(false);
+      } else {
+        setError(errorMessage(caught));
+      }
     } finally {
       setSaving(false);
     }
