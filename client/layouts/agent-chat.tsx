@@ -12,7 +12,10 @@ import type { ReactElement, ReactNode } from 'react';
 import { useAiStatus } from '@/lib/itam/ai';
 import { ITAM_CHAT_EXTENSIONS } from '@/lib/itam/chat-extensions';
 import { ITAM_TOOL_RENDERERS } from '@/lib/itam/tool-renderers';
-import { useToggleAssistant } from '@/lib/itam/conversations';
+import {
+  useDemoConversationFallback,
+  useToggleAssistant,
+} from '@/lib/itam/conversations';
 import { ChatPanel } from '#extensions/nocobase-agent-chat/chat-panel';
 import { ChatFloatingButton } from '#extensions/nocobase-agent-chat/launchers';
 import { useDemoChatInput } from '#components/itam/ai/demo-chat';
@@ -58,6 +61,7 @@ export function AgentChatShell({
 
 /** The panel, its composer closed on a Demo Mode deployment (`useDemoChatInput`). */
 function ItamChatPanel(): ReactElement {
+  useDemoConversationFallback();
   return <ChatPanel inputAvailability={useDemoChatInput()} />;
 }
 

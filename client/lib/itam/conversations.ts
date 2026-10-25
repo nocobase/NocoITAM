@@ -3,9 +3,10 @@ import {
   useConversationList,
 } from '@nocobase/app-plugin-agents/client/chat';
 import type { ConversationSummary } from '@nocobase/app-plugin-agents/shared/conversations';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import { SEARCH_SOURCE } from './ask.js';
+import { useDemoMode } from './demo-mode.js';
 
 /**
  * The assistant's conversations as ITAM lists them (2026-10-16, after
@@ -42,16 +43,53 @@ export function markdownLine(text: string): string {
  * button (2026-10-16): open, it closes; closed, it opens where it was left,
  * or — holding no conversation, as on arriving — on the latest one, a new
  * conversation being the panel's +.
+ *
+ * On a Demo Mode deployment (2026-10-25) it opens on the latest one, the
+ * demo's first, unless the one it was left on is still among the account's:
+ * the demo is reset daily and its accounts switched, so the panel's
+ * remembered conversation was often gone and it opened on "cannot be
+ * opened".
  */
 export function useToggleAssistant(): () => void {
   const panel = useChatPanel();
   const list = useConversationList({});
-  const latest = listedConversations(list.data?.pages)[0]?.id ?? null;
+  const demo = useDemoMode().data === true;
+  const listed = listedConversations(list.data?.pages);
+  const latest = listed[0]?.id ?? null;
   const { open, conversationId, closeChat, openChat } = panel;
+  const gone =
+    demo &&
+    conversationId !== null &&
+    list.isSuccess &&
+    !listed.some((conversation) => conversation.id === conversationId);
   return useCallback(() => {
     if (open) closeChat();
-    else if (conversationId === null && latest)
+    else if ((conversationId === null || gone) && latest)
       openChat({ conversationId: latest, view: 'chat' });
     else openChat();
-  }, [open, conversationId, latest, closeChat, openChat]);
+  }, [open, conversationId, gone, latest, closeChat, openChat]);
+}
+
+/**
+ * On a Demo Mode deployment, the panel open on a conversation the account no
+ * longer has (it was open before the demo's daily reset, or under another
+ * account) moves to the latest one, the demo's first (2026-10-25), rather
+ * than say it cannot be opened.
+ */
+export function useDemoConversationFallback(): void {
+  const panel = useChatPanel();
+  const list = useConversationList({});
+  const demo = useDemoMode().data === true;
+  const listed = listedConversations(list.data?.pages);
+  const latest = listed[0]?.id ?? null;
+  const { open, conversationId, openChat } = panel;
+  const gone =
+    demo &&
+    open &&
+    conversationId !== null &&
+    list.isSuccess &&
+    !listed.some((conversation) => conversation.id === conversationId);
+  useEffect(() => {
+    if (gone && latest) openChat({ conversationId: latest, view: 'chat' });
+  }, [gone, latest, openChat]);
 }

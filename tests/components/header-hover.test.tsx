@@ -88,6 +88,3 @@ it.each(panels)(
 );
 
 // Demo switching is exercised against the real plugin in the browser test.
-vi.mock('@nocobase/app-plugin-demo-mode/client/account-menu', () => ({
-  DemoAccountMenu: () => null,
-}));

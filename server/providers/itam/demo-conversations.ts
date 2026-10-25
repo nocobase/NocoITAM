@@ -353,9 +353,10 @@ export async function seedDemoConversations(options: {
   for (const [index, { fixture, owner, userId }] of entries.entries()) {
     const missing: string[] = [];
     const id = conversations.nextId();
-    // The newest last, two minutes apart, so the list reads in the order
-    // the questions were asked.
-    let at = now - (entries.length - index) * 2 * 60_000;
+    // Two minutes apart, the fixture's first the newest (2026-10-25): it
+    // heads the chat's list, and ✨ opens the latest conversation, so a
+    // visitor lands on the leaver's, with its plan to confirm.
+    let at = now - (index + 1) * 2 * 60_000;
     const stamp = () => new Date((at += 1500)).toISOString();
     const firstQuestion = fill(fixture.turns[0]?.user ?? '', values, missing);
     const createdAt = stamp();

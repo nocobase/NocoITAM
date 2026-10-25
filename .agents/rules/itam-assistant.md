@@ -634,3 +634,11 @@ document-text`, which reads only a file uploaded within the hour and
   it in the composer (`useAskDraft`), so a visitor sees the step up to the
   send. The conversations the demo comes with stay readable. A question the dock could not send now says why in a toast
   and stays in the box; before, the box stayed open on it without a word.
+- **Demo Mode opens on the demo's first conversation** (2026-10-25). The
+  demo writes its conversations so the fixture's first (the leaver's, with
+  its plan) is the newest and heads the list. ✨ opens the latest when the
+  panel holds none, and on a Demo Mode deployment also when the one it was
+  left on is no longer the account's (`useToggleAssistant`); a panel
+  restored open on such a conversation moves to it as well
+  (`useDemoConversationFallback`, in `ItamChatPanel`). The daily reset and
+  the account switcher made the remembered one gone more often than not.

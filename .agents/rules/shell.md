@@ -46,13 +46,12 @@ The shared list of shell behaviors to keep when customizing is in [customizing t
 The details are in [ITAM's conventions](itam-conventions.md), [the assistant](itam-assistant.md) and [ITAM's interface conventions](itam-ui.md).
 The signed-in region waits in `client/routing/session-preparation.tsx` before mounting `AppLayout`: the authentication provider first reconnects active realtime subscriptions as the current session and waits for the open notification, including permission invalidation. A ten-second timeout shows a localized retry/sign-out screen. Keep this boundary inside `RequiredAuthentication`; guest login must remain reachable without realtime. Readiness is only for initial session preparation. Subsequent permission notifications and reconnects still use normal fail-closed route unmounting, including portal and effect cleanup.
 
-- **Demo account menu (2026-10-25):** register Demo Mode with
-  `accountSwitcher: 'menu'` and mount its public `DemoAccountMenu` in `UserMenu`
-  before sign-out. The plugin owns entry and session switching; keep this
-  integration when reconciling template updates.
 - **Demo mode badge (2026-10-25):** on a Demo Mode deployment the header's
   actions start with `DemoModeBadge` (`client/layouts/components/demo-mode-badge.tsx`),
   a small "Demo mode · Switch account" pill whose menu says the data resets
   daily and lists the demo accounts to switch to (`useDemoAccounts` from the
-  plugin). It shows nothing while the plugin offers no account. NocoCRM
-  carries the same badge.
+  plugin). It shows nothing while the plugin offers no account, and is the
+  only switcher: the plugin's `DemoAccountMenu` is no longer mounted in
+  `UserMenu`. Demo Mode stays registered with `accountSwitcher: 'menu'`, so
+  the plugin draws no floating switcher of its own. NocoCRM carries the same
+  badge.

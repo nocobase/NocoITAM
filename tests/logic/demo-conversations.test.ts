@@ -188,6 +188,13 @@ describe('the demo’s Asset Steward conversations', () => {
       expect(byOwner('staff-1')).toBe(1);
       expect(byOwner('staff-2')).toBe(1);
       expect(byOwner('staff-3')).toBe(2);
+      // The fixture's first, the leaver's with its plan, is the newest, so
+      // it heads the list and ✨ opens it.
+      const newest = conversations
+        .filter((row) => row.userId === 'mia')
+        .sort((a, b) =>
+          String(b.lastMessageAt).localeCompare(String(a.lastMessageAt)),
+        )[0];
       expect(conversations[0]).toMatchObject({
         source: 'panel',
         mode: 'online',
@@ -206,6 +213,9 @@ describe('the demo’s Asset Steward conversations', () => {
       // The importer's two plans wait on their conversations, for longer
       // than a plan the assistant proposes.
       const plans = await rows('itamPlans');
+      expect(plans.some((plan) => plan.conversationId === newest?.id)).toBe(
+        true,
+      );
       expect(plans).toHaveLength(2);
       for (const plan of plans) {
         expect(plan.proposerUserId).toBe('mia');
