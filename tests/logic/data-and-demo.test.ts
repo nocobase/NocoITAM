@@ -33,10 +33,11 @@ import { purchaseOrderRoutes } from '../../server/routes/itam/purchase-orders.js
 import { stockRoutes } from '../../server/routes/itam/stock.js';
 import { workbenchRoutes } from '../../server/routes/itam/workbench.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
+import { timeLimit } from '../support/test-database.js';
 
 // Full-story imports exercise the real services and exceed the default 30-second budget.
 // Keep the longer budget local to this integration file.
-vi.setConfig({ testTimeout: 120_000 });
+vi.setConfig({ testTimeout: timeLimit(120_000) });
 
 const manager = { user: 'mia', role: 'manager' as const };
 const employee = { user: 'li', role: 'employee' as const };
@@ -502,6 +503,8 @@ describe('CSV import / export and demo data', () => {
 
   it('clears the orders raised for its joiners, and leaves a real joiner’s', async () => {
     expect((await generateDemo()).status).toBe(200);
+    // Found by name: it can lie past the first page, where a database's own
+    // order of names puts it (2026-10-25: MySQL's sorts unlike SQLite's).
     const people = await data<
       {
         id: string;
@@ -509,7 +512,7 @@ describe('CSV import / export and demo data', () => {
         departmentId: string;
         hireDate: string | null;
       }[]
-    >(await get('master/people?pageSize=100'));
+    >(await get(`master/people?q=${encodeURIComponent('Noah Harris')}`));
     const noah = people.find((person) => person.name === 'Noah Harris')!;
     const [vendor] = await data<{ id: string }[]>(
       await get('master/vendors?pageSize=1'),
@@ -1296,115 +1299,123 @@ describe('CSV import / export and demo data', () => {
   // The account importing the demo — the system administrator, who holds no
   // ITAM grant — is an asset manager while the demo is there, and is not
   // once it is cleared; the demo takes back only what it gave.
-  it('makes the importer an asset manager while the demo is there', async () => {
-    const grants: string[] = [];
-    const revoked: string[] = [];
-    let created = 0;
-    let held = false;
-    const written: { actor: string; mentions: readonly string[] }[] = [];
-    const resolve = app.container.resolve.bind(app.container);
-    const demo = createDemoService({
-      database: resolve(databaseManagerToken),
-      masterData: resolve(masterDataServiceToken),
-      devices: resolve(deviceServiceToken),
-      stock: resolve(stockServiceToken),
-      entitlements: resolve(entitlementServiceToken),
-      procurement: resolve(procurementServiceToken),
-      repairs: resolve(repairServiceToken),
-      audits: resolve(auditServiceToken),
-      disposals: resolve(disposalServiceToken),
-      numbering: resolve(numberingServiceToken),
-      deviceSync: resolve(deviceSyncServiceToken),
-      // The comment service needs the users table, which this harness has
-      // not; a recorder stands in for it.
-      comments: {
-        add: async (actor: string, input: CommentInput) => {
-          written.push({ actor, mentions: input.mentions ?? [] });
-          return { id: `comment-${String(written.length)}` } as never;
+  it(
+    'makes the importer an asset manager while the demo is there',
+    async () => {
+      const grants: string[] = [];
+      const revoked: string[] = [];
+      let created = 0;
+      let held = false;
+      const written: { actor: string; mentions: readonly string[] }[] = [];
+      const resolve = app.container.resolve.bind(app.container);
+      const demo = createDemoService({
+        database: resolve(databaseManagerToken),
+        masterData: resolve(masterDataServiceToken),
+        devices: resolve(deviceServiceToken),
+        stock: resolve(stockServiceToken),
+        entitlements: resolve(entitlementServiceToken),
+        procurement: resolve(procurementServiceToken),
+        repairs: resolve(repairServiceToken),
+        audits: resolve(auditServiceToken),
+        disposals: resolve(disposalServiceToken),
+        numbering: resolve(numberingServiceToken),
+        deviceSync: resolve(deviceSyncServiceToken),
+        // The comment service needs the users table, which this harness has
+        // not; a recorder stands in for it.
+        comments: {
+          add: async (actor: string, input: CommentInput) => {
+            written.push({ actor, mentions: input.mentions ?? [] });
+            return { id: `comment-${String(written.length)}` } as never;
+          },
+          edit: async () => ({}) as never,
+          remove: async () => undefined,
+          subjectOf: async () => ({ subjectType: '', subjectId: '' }),
         },
-        edit: async () => ({}) as never,
-        remove: async () => undefined,
-        subjectOf: async () => ({ subjectType: '', subjectId: '' }),
-      },
-      accounts: {
-        create: async () => `staff-${String((created += 1))}`,
-        remove: async () => undefined,
-        describe: async () => ({ name: 'Staff', email: 'staff@example.com' }),
-        grant: async (userId, permissionSet) => {
-          grants.push(`${userId}:${permissionSet}`);
-          return held ? null : 'assignment-1';
+        accounts: {
+          create: async () => `staff-${String((created += 1))}`,
+          remove: async () => undefined,
+          describe: async () => ({ name: 'Staff', email: 'staff@example.com' }),
+          grant: async (userId, permissionSet) => {
+            grants.push(`${userId}:${permissionSet}`);
+            return held ? null : 'assignment-1';
+          },
+          revoke: async (id) => {
+            revoked.push(id);
+          },
         },
-        revoke: async (id) => {
-          revoked.push(id);
-        },
-      },
-    });
-    await demo.generate('admin', 'en-US');
-    expect(grants).toEqual(['admin:itam-asset-manager']);
-    // And answers for a share of the to-dos, so 我负责的 is not empty.
-    const owned = async (table: string) =>
-      (
-        await resolve(databaseManagerToken)
-          .query()
-          .selectFrom(table)
-          .select('id')
-          .where('ownerId', '=', 'admin')
-          .execute()
-      ).length;
-    expect(await owned('purchaseOrders')).toBe(4);
-    // One in progress and four ended (2026-10-23), so 我的 on the repairs
-    // list has some of each.
-    expect(await owned('repairs')).toBe(5);
-    expect(await owned('disposals')).toBe(2);
-    // 信息不一致's devices answer to several people, not all to 吴静
-    // (2026-10-17).
-    const checks = await resolve(deviceReviewServiceToken).checks();
-    expect(checks.length).toBeGreaterThanOrEqual(4);
-    expect(
-      new Set(checks.map((check) => check.ownerId)).size,
-    ).toBeGreaterThanOrEqual(3);
-    // Two of them the importer's own.
-    expect(checks.filter((check) => check.ownerId === 'admin')).toHaveLength(2);
-    // Under 待办 → 我的, every column has something (2026-10-22): a leaver
-    // holding the importer's laptop, a joiner they equip, a loan overdue.
-    const everything = async (collection: string, action: string) =>
-      ({
-        type: 'database',
-        collection,
-        action,
-        scope: true,
-        fields: [],
-        fieldAccess: { input: '*', output: '*' },
-      }) as never;
-    const mine = await resolve(workbenchServiceToken).myWork(
-      'admin',
-      everything,
-      { scope: 'mine' },
-    );
-    expect(mine.map((item) => item.key)).toEqual(
-      expect.arrayContaining([
-        'leaverRecovery',
-        'pendingOnboarding',
-        'loansDueToday',
-      ]),
-    );
-    expect(mine.filter((item) => !item.count).map((item) => item.key)).toEqual(
-      [],
-    );
-    // And its records carry comment threads, three of which mention it.
-    expect(written.length).toBeGreaterThanOrEqual(8);
-    expect(written.filter((entry) => entry.actor === 'admin')).toHaveLength(1);
-    expect(
-      written.filter((entry) => entry.mentions.includes('admin')),
-    ).toHaveLength(3);
-    await demo.clear('admin');
-    expect(revoked).toEqual(['assignment-1']);
+      });
+      await demo.generate('admin', 'en-US');
+      expect(grants).toEqual(['admin:itam-asset-manager']);
+      // And answers for a share of the to-dos, so 我负责的 is not empty.
+      const owned = async (table: string) =>
+        (
+          await resolve(databaseManagerToken)
+            .query()
+            .selectFrom(table)
+            .select('id')
+            .where('ownerId', '=', 'admin')
+            .execute()
+        ).length;
+      expect(await owned('purchaseOrders')).toBe(4);
+      // One in progress and four ended (2026-10-23), so 我的 on the repairs
+      // list has some of each.
+      expect(await owned('repairs')).toBe(5);
+      expect(await owned('disposals')).toBe(2);
+      // 信息不一致's devices answer to several people, not all to 吴静
+      // (2026-10-17).
+      const checks = await resolve(deviceReviewServiceToken).checks();
+      expect(checks.length).toBeGreaterThanOrEqual(4);
+      expect(
+        new Set(checks.map((check) => check.ownerId)).size,
+      ).toBeGreaterThanOrEqual(3);
+      // Two of them the importer's own.
+      expect(checks.filter((check) => check.ownerId === 'admin')).toHaveLength(
+        2,
+      );
+      // Under 待办 → 我的, every column has something (2026-10-22): a leaver
+      // holding the importer's laptop, a joiner they equip, a loan overdue.
+      const everything = async (collection: string, action: string) =>
+        ({
+          type: 'database',
+          collection,
+          action,
+          scope: true,
+          fields: [],
+          fieldAccess: { input: '*', output: '*' },
+        }) as never;
+      const mine = await resolve(workbenchServiceToken).myWork(
+        'admin',
+        everything,
+        { scope: 'mine' },
+      );
+      expect(mine.map((item) => item.key)).toEqual(
+        expect.arrayContaining([
+          'leaverRecovery',
+          'pendingOnboarding',
+          'loansDueToday',
+        ]),
+      );
+      expect(
+        mine.filter((item) => !item.count).map((item) => item.key),
+      ).toEqual([]);
+      // And its records carry comment threads, three of which mention it.
+      expect(written.length).toBeGreaterThanOrEqual(8);
+      expect(written.filter((entry) => entry.actor === 'admin')).toHaveLength(
+        1,
+      );
+      expect(
+        written.filter((entry) => entry.mentions.includes('admin')),
+      ).toHaveLength(3);
+      await demo.clear('admin');
+      expect(revoked).toEqual(['assignment-1']);
 
-    // An importer who held the set already keeps it.
-    held = true;
-    await demo.generate('admin', 'en-US');
-    await demo.clear('admin');
-    expect(revoked).toEqual(['assignment-1']);
-    // Two whole imports and two clearings.
-  }, 120_000);
+      // An importer who held the set already keeps it.
+      held = true;
+      await demo.generate('admin', 'en-US');
+      await demo.clear('admin');
+      expect(revoked).toEqual(['assignment-1']);
+      // Two whole imports and two clearings.
+    },
+    timeLimit(120_000),
+  );
 });

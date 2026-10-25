@@ -11,6 +11,7 @@ import {
 } from './errors.js';
 import type { HistoryEventRecord, HistoryService } from './history.js';
 import type { ItamNotifier } from './notifier.js';
+import { isFileId } from './attachments.js';
 
 /**
  * What people write on a record's history (2026-10-14, after NocoCRM's 动态):
@@ -229,7 +230,9 @@ export function createCommentService(
   const freshFiles = async (ids: readonly string[]): Promise<CommentFile[]> => {
     const wanted = [...new Set(ids)];
     if (wanted.length === 0) return [];
-    const rows = await query()
+    if (!wanted.every(isFileId))
+      throw new ValidationError('A file is not available to attach', 'fileIds');
+    const found = await query()
       .selectFrom('itamFiles')
       .select(['id', 'filename', 'ext', 'mimeType', 'size'])
       .where('id', 'in', wanted)
@@ -239,16 +242,6 @@ export function createCommentService(
         '>=',
         new Date(Date.now() - UPLOAD_WINDOW_MS).toISOString().slice(0, -1),
       )
-      .where((eb) =>
-        eb.not(
-          eb.exists(
-            eb
-              .selectFrom('attachmentLinks')
-              .select('id')
-              .whereRef('attachmentLinks.fileId', '=', 'itamFiles.id'),
-          ),
-        ),
-      )
       .execute<{
         id: unknown;
         filename: unknown;
@@ -256,6 +249,18 @@ export function createCommentService(
         mimeType: unknown;
         size: unknown;
       }>();
+    // Those on a record already, asked apart: a link's file id is text and
+    // the file's a UUID, which PostgreSQL does not compare (2026-10-25).
+    const linked = new Set(
+      (
+        await query()
+          .selectFrom('attachmentLinks')
+          .select('fileId')
+          .where('fileId', 'in', wanted)
+          .execute<{ fileId: unknown }>()
+      ).map((row) => String(row.fileId)),
+    );
+    const rows = found.filter((row) => !linked.has(String(row.id)));
     if (rows.length !== wanted.length)
       throw new ValidationError('A file is not available to attach', 'fileIds');
     const byId = new Map(rows.map((row) => [String(row.id), row]));

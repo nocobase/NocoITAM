@@ -14,6 +14,18 @@ import type { OperationContext } from './devices.js';
  * business records. A record's attachment tab shows only the files linked
  * to that record; an order's files stay on the order.
  */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Whether `id` can be an uploaded file's (2026-10-25): the file plugin's ids
+ * are UUIDs, held in a UUID column on PostgreSQL, which refuses any other
+ * text outright where SQLite and MySQL found no row. An id from a request is
+ * checked first, so it is not found rather than an error.
+ */
+export function isFileId(id: string): boolean {
+  return UUID.test(id);
+}
+
 export const ATTACHMENT_OWNER_TYPES = [
   'devices',
   'stockItems',
@@ -106,12 +118,15 @@ export function createAttachmentService(
     async link(ownerType, ownerId, fileIds, context) {
       if (fileIds.length === 0)
         throw new ValidationError('fileIds is required', 'fileIds');
-      const files = await database
-        .query()
-        .selectFrom('itamFiles')
-        .select(['id', 'filename'])
-        .where('id', 'in', [...fileIds])
-        .execute<{ id: string; filename: string }>();
+      const candidates = fileIds.filter(isFileId);
+      const files = candidates.length
+        ? await database
+            .query()
+            .selectFrom('itamFiles')
+            .select(['id', 'filename'])
+            .where('id', 'in', candidates)
+            .execute<{ id: string; filename: string }>()
+        : [];
       const known = new Set(files.map((file) => file.id));
       const nameOf = new Map(files.map((file) => [file.id, file.filename]));
       const missing = fileIds.filter((id) => !known.has(id));

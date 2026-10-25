@@ -10,6 +10,7 @@ import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { purchaseOrderRoutes } from '../../server/routes/itam/purchase-orders.js';
 import { stockRoutes } from '../../server/routes/itam/stock.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
+import { uuidOf } from '../support/ids.js';
 
 const manager = { user: 'mia', role: 'manager' as const };
 const approver = { user: 'ann', role: 'manager' as const };
@@ -404,7 +405,7 @@ describe('receiving in batch and by delivery document', () => {
     await query()
       .insertInto('itamFiles')
       .values({
-        id: 'file-note',
+        id: uuidOf('file-note'),
         disk: 'local',
         key: 'objects/file-note.csv',
         filename: 'note.csv',
@@ -426,7 +427,7 @@ describe('receiving in batch and by delivery document', () => {
     } as never);
     const run = await data<{ documentText: string | null }>(
       await post(`purchase-orders/${order.id}/receipt-runs`, {
-        fileId: 'file-note',
+        fileId: uuidOf('file-note'),
         documentName: 'note.csv',
       }),
     );
@@ -442,7 +443,7 @@ describe('receiving in batch and by delivery document', () => {
       await query()
         .insertInto('itamFiles')
         .values({
-          id: fileId,
+          id: uuidOf(fileId),
           disk: 'local',
           key: `objects/${fileId}.csv`,
           filename: 'quote.csv',
@@ -457,7 +458,7 @@ describe('receiving in batch and by delivery document', () => {
       .insertInto('attachmentLinks')
       .values({
         id: 'link-quote',
-        fileId: 'file-quote',
+        fileId: uuidOf('file-quote'),
         ownerType: 'purchaseOrders',
         ownerId: order.id,
         createdAt: new Date(),
@@ -468,7 +469,11 @@ describe('receiving in batch and by delivery document', () => {
       use: () => ({ getBytes: async () => new TextEncoder().encode(quote) }),
     } as never);
     const read = (fileId: string, who: Record<string, string> = manager) =>
-      post(`purchase-orders/${order.id}/document-text`, { fileId }, who);
+      post(
+        `purchase-orders/${order.id}/document-text`,
+        { fileId: uuidOf(fileId) },
+        who,
+      );
     expect(
       await data<{ text: string | null }>(await read('file-quote')),
     ).toEqual({ text: quote.trim(), truncated: false });

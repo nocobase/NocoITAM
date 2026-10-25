@@ -6,15 +6,34 @@ NocoITAM is an IT asset management system for IT teams, built on [NocoBase 3](ht
 
 ## Getting started
 
-You need nothing but Node.js and pnpm to run NocoITAM on your own computer: it keeps its data in a SQLite file, and every feature except the AI works without any account or key. Setting it up takes about ten minutes.
+You need nothing but Node.js and pnpm to run NocoITAM on your own computer: it keeps its data in a SQLite file by default (PostgreSQL and MySQL work too), and every feature except the AI works without any account or key. Install it with a coding agent, or by hand in about ten minutes; then sign in and take the first steps.
 
-### 1. Install the tools
+### Install with a coding agent
+
+The easiest way is to let a coding agent do it. Open Claude Code, Codex, Cursor or another coding agent in the folder where NocoITAM should go, and give it this:
+
+```text
+Install NocoITAM from https://github.com/nocobase/NocoITAM on this computer and start it.
+Clone it into a NocoITAM folder, make sure Node.js 24 or later and pnpm 10 are available,
+then follow the repository's AGENTS.md and README.
+Language: English.
+Database: the default, SQLite.
+Start it with pnpm dev, then tell me the Local: address and how to sign in.
+```
+
+For Chinese, change the language line to `Language: Chinese`. For PostgreSQL or MySQL, change the database line to its connection, for example: `Database: PostgreSQL, host localhost, port 5432, database nocoitam, username postgres; I'll give you the password separately.`
+
+The repository's `AGENTS.md` guides the agent, so later on you can ask the same agent to connect a model service or an MDM platform, or to change the application itself. Then go on with [Sign in](#sign-in).
+
+### Install by hand
+
+#### 1. Install the tools
 
 - **Node.js 24 or later.** Check with `node -v`.
 - **pnpm 10.** Install it with `npm install -g pnpm@10`, or run `corepack enable`.
-- **Optional: an API key for a large-model service**, which the assistant and the AI agents need, such as DeepSeek, OpenAI, Claude, Gemini or Qwen. You add it once the application runs (step 6).
+- **Optional: an API key for a large-model service**, which the assistant and the AI agents need, such as DeepSeek, OpenAI, Claude, Gemini or Qwen. You add it once the application runs (see [First steps](#first-steps)).
 
-### 2. Get the code
+#### 2. Get the code
 
 ```bash
 git clone https://github.com/nocobase/NocoITAM.git
@@ -22,17 +41,17 @@ cd NocoITAM
 pnpm install
 ```
 
-### 3. Create the configuration
+#### 3. Create the configuration
 
 ```bash
-pnpm nocobase config init
+pnpm nocobase config init --dialect sqlite
 ```
 
-This writes the configuration file `config.yml`, whose `secrets` section holds a generated key that encrypts the model keys and MDM credentials the application saves. Keep that key: what it encrypted cannot be read without it. `config.yml` is not committed to Git.
+This writes the configuration file `config.yml`, whose `secrets` section holds a generated key that encrypts the model keys and MDM credentials the application saves. Keep that key: what it encrypted cannot be read without it. `config.yml` is not committed to Git. `--dialect sqlite` keeps the data in a file; to run on PostgreSQL or MySQL instead, see [Database](#configuration) under Configuration.
 
 Before the first start, choose the language: `pnpm nocobase config set i18n.defaultLocale=zh-CN` for Chinese (English is the default). It decides the language the seeded categories, locations, departments and business guidance are written in, and the currency and time zone the application starts with (CNY and Shanghai for Chinese, USD and New York otherwise; both can be changed later on **Settings → General**).
 
-### 4. Start the application
+#### 4. Start the application
 
 ```bash
 pnpm dev
@@ -40,13 +59,13 @@ pnpm dev
 
 The first start creates the database, `storage/itam.sqlite`, and sets it up. When it is ready, it prints a `Local:` address, normally `http://127.0.0.1:13000/main/`. Open that address; if port 13000 is taken, the next free port is used, so always use the address it prints.
 
-### 5. Sign in
+### Sign in
 
 Sign in as the first administrator: username `nocobase` (or email `admin@nocobase.com`), password `admin123`. Once signed in, you can change the password on **Settings → Users**. There is no self-registration: the administrator creates every other account.
 
 The interface language can be switched from the avatar menu at the top right.
 
-### 6. First steps
+### First steps
 
 1. **Look around with the demo data.** The banner at the top offers it, or open **Settings → Demo data**, choose English or Chinese and import it (see [Demo data](#demo-data) below).
 2. **Add your team.** Create accounts or send invitations on **Settings → Users**, and give each person a role (see [Roles](#roles) below). Only IT signs in; employees are people in the register, without accounts.
@@ -82,7 +101,7 @@ What each role may do is adjusted on **Settings → Permission sets**.
 
 | What you see                                         | What to do                                                                                                                                                     |
 | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm install` refuses to run or fails on the engine | Use Node.js 24 or later and pnpm 10 (step 1).                                                                                                                  |
+| `pnpm install` refuses to run or fails on the engine | Use Node.js 24 or later and pnpm 10 (see [Install the tools](#1-install-the-tools)).                                                                           |
 | The page does not open                               | Use the `Local:` address `pnpm dev` printed, including `/main/`. Only one `pnpm dev` runs per folder; stop the other one first.                                |
 | The AI buttons do not show, or the assistant is off  | No model is connected yet. Add a model service with its key on **Agent team → Models**.                                                                        |
 | A document is not read                               | The AI reads text: Excel, CSV, Word and text PDFs. A photo or a scanned PDF has no text to read; type or paste what it says.                                   |
@@ -175,7 +194,14 @@ On start, a service declared there and not yet on **Agent team → Models** is c
 
 **Where it is served.** `APP_BASE_PATH` is the mount path (`/main` by default) and `APP_PUBLIC_ORIGIN` the public origin without the path. A deployment must set the origin: without it, the browser's writes are refused with `403`.
 
-**Database.** SQLite at `storage/itam.sqlite` by default; migrations and seeds run on start. For PostgreSQL, add `@nocobase/db-postgres` and run `pnpm nocobase config init --dialect postgres --force`.
+**Database.** SQLite at `storage/itam.sqlite` by default; migrations and seeds run on start. NocoITAM also runs on PostgreSQL and MySQL (MariaDB uses the MySQL driver). Their drivers are installed for development and tests only, so a build carries SQLite alone; to run on one of them:
+
+1. Move its driver into the dependencies a build carries with `pnpm add --save-prod @nocobase/db-postgres` (or `@nocobase/db-mysql`).
+2. Create an empty database (for MySQL with the `utf8mb4` character set) and a user that may create tables in it.
+3. Write the configuration for it with `pnpm nocobase config init --dialect postgres` (or `mysql`; add `--force` to replace an existing `config.yml`), set the connection with `pnpm nocobase config set database.connections.main.host=… database.connections.main.port=… database.connections.main.database=… database.connections.main.username=…` and its password with `pnpm nocobase config set --from-env database.connections.main.password=<variable>`, and check it with `pnpm nocobase config check`.
+4. Choose the language as in [Create the configuration](#3-create-the-configuration), then start with `pnpm dev`, or build and deploy as below: the first start creates the tables.
+
+The environment variables `DB_DIALECT`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD` override `config.yml`. Changing the database does not move data: the new one starts empty, and **Settings → Demo data** can fill it. The tests run on SQLite; `NOCOBASE_TEST_DB_DIALECT=postgres` runs the database tests on a PostgreSQL server (read from `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`, each test in a database of its own), and `NOCOBASE_TEST_DB_DIALECT=mysql` on a MySQL server (`MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_ADMIN_USER` and `MYSQL_ADMIN_PASSWORD`).
 
 ## Built on NocoBase 3
 

@@ -67,12 +67,95 @@ export function searchWords(q: string | undefined): string[] {
     .slice(0, 8);
 }
 
+/**
+ * A search word's matches found ignoring case, where LIKE would not
+ * (`caselessMatches`): the ids of the collection's own records, and of each
+ * reference's (by its index in `searchByReference`). Absent where LIKE
+ * stands: SQLite and MySQL, a word with no letters that have a case, or one
+ * so common it matches more than `CASELESS_LIMIT` rows.
+ */
+export type CaselessMatches = ReadonlyMap<
+  string,
+  {
+    readonly own?: readonly string[];
+    readonly references: ReadonlyMap<number, readonly string[]>;
+  }
+>;
+
+/** Matches of one word an id list may carry; more fall back to LIKE. */
+const CASELESS_LIMIT = 1000;
+
+/**
+ * The search's words matched ignoring case on PostgreSQL (2026-10-25), as
+ * SQLite (for ASCII letters) and MySQL (by its default collation) match them
+ * with LIKE: there LIKE matches case exactly, and the query layer has neither
+ * ILIKE nor lower(). The Repository's match can ignore case, so the ids it
+ * finds stand in for each LIKE. Empty on every other database.
+ */
+export async function caselessMatches(
+  database: DatabaseManager,
+  definition: ItamCollectionDefinition,
+  q: string | undefined,
+): Promise<CaselessMatches> {
+  const found = new Map<
+    string,
+    { own?: readonly string[]; references: Map<number, readonly string[]> }
+  >();
+  if (database.connection().dialect !== 'postgres') return found;
+  const ids = async (
+    collection: string,
+    fields: readonly string[],
+    word: string,
+  ): Promise<readonly string[] | undefined> => {
+    if (fields.length === 0) return undefined;
+    // A long text field is matched as `text`, a short one as `string`: the
+    // Repository refuses the other.
+    const types = new Map(
+      (
+        (await database.connection().collections.get(collection))?.fields ?? []
+      ).map((field) => [field.name, field.type]),
+    );
+    const rows = await database.repository(collection).findMany({
+      filter: (filter) =>
+        filter.or(
+          fields.map((field) =>
+            (types.get(field) === 'text'
+              ? filter.text(field)
+              : filter.string(field)
+            ).includes(word, { mode: 'insensitive' }),
+          ),
+        ),
+      select: (select) => select.fields('id'),
+      limit: CASELESS_LIMIT + 1,
+    });
+    return rows.length > CASELESS_LIMIT
+      ? undefined
+      : rows.map((row) => String((row as { id: unknown }).id));
+  };
+  for (const word of searchWords(q)) {
+    if (word.toLowerCase() === word.toUpperCase()) continue;
+    const references = new Map<number, readonly string[]>();
+    for (const [index, reference] of (
+      definition.searchByReference ?? []
+    ).entries()) {
+      const matched = await ids(reference.collection, [reference.column], word);
+      if (matched) references.set(index, matched);
+    }
+    found.set(word, {
+      own: await ids(definition.name, definition.searchFields, word),
+      references,
+    });
+  }
+  return found;
+}
+
 export function applyListFilters(
   query: SelectQuery,
   definition: ItamCollectionDefinition,
   options: ListOptions,
   conditions: DatabaseAuthorizationConditions,
   extra?: ExtraWhere,
+  caseless?: CaselessMatches,
 ): SelectQuery {
   // Columns are qualified with the table so a sort join (see
   // `listCollection`) cannot make `name` or `id` ambiguous.
@@ -115,23 +198,33 @@ export function applyListFilters(
   const throughReferences = definition.searchByReference ?? [];
   if (definition.searchFields.length + throughReferences.length > 0) {
     for (const word of words) {
+      // Found ignoring case first, on PostgreSQL (`caselessMatches`).
+      const ignoringCase = caseless?.get(word);
+      const own = ignoringCase?.own;
       next = next.where((eb) =>
         eb.or([
-          ...definition.searchFields.map((field) =>
-            eb(col(field), 'like', `%${word}%`),
-          ),
+          ...(own
+            ? [own.length ? eb(col('id'), 'in', own) : eb(col('id'), '=', '')]
+            : definition.searchFields.map((field) =>
+                eb(col(field), 'like', `%${word}%`),
+              )),
           // A match on the referenced record's name, e.g. a device by its
           // model: what the record points at, not a column of its own.
-          ...throughReferences.map((reference) =>
-            eb(
+          ...throughReferences.map((reference, index) => {
+            const matched = ignoringCase?.references.get(index);
+            if (matched)
+              return matched.length
+                ? eb(col(reference.field), 'in', matched)
+                : eb(col('id'), '=', '');
+            return eb(
               col(reference.field),
               'in',
               eb
                 .selectFrom(reference.collection)
                 .select('id')
                 .where(reference.column, 'like', `%${word}%`),
-            ),
-          ),
+            );
+          }),
         ]),
       );
     }
@@ -198,6 +291,7 @@ export async function listCollection(
         ? undefined
         : definition.defaultSort;
   const order = options.order === 'desc' ? 'desc' : 'asc';
+  const caseless = await caselessMatches(database, definition, options.q);
 
   const countRow = await applyListFilters(
     database
@@ -208,6 +302,7 @@ export async function listCollection(
     options,
     conditions,
     extra,
+    caseless,
   ).executeTakeFirst<{ total: number | string }>();
   // Sorting by a referenced record's name joins that table under an alias;
   // ties fall back to the record's own name.
@@ -226,6 +321,7 @@ export async function listCollection(
     options,
     conditions,
     extra,
+    caseless,
   );
   if (byReference) {
     listQuery = listQuery

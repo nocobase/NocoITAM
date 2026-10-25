@@ -3,6 +3,7 @@ import {
   createServiceToken,
   type ServiceToken,
 } from '@nocobase/service-provider';
+import { isFileId } from './attachments.js';
 
 /**
  * A document as text, read on the server: a delivery note when a receipt
@@ -60,6 +61,7 @@ export function createDocumentReader(deps: {
   readonly readBytes: () => ReadBytes | undefined;
 }): ReadDocument {
   return async (fileId) => {
+    if (!isFileId(fileId)) return undefined;
     const file = await deps.database
       .query()
       .selectFrom('itamFiles')
