@@ -50,3 +50,9 @@ The signed-in region waits in `client/routing/session-preparation.tsx` before mo
   `accountSwitcher: 'menu'` and mount its public `DemoAccountMenu` in `UserMenu`
   before sign-out. The plugin owns entry and session switching; keep this
   integration when reconciling template updates.
+- **Demo mode badge (2026-10-25):** on a Demo Mode deployment the header's
+  actions start with `DemoModeBadge` (`client/layouts/components/demo-mode-badge.tsx`),
+  a small "Demo mode · Switch account" pill whose menu says the data resets
+  daily and lists the demo accounts to switch to (`useDemoAccounts` from the
+  plugin). It shows nothing while the plugin offers no account. NocoCRM
+  carries the same badge.

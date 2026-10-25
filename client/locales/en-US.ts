@@ -55,6 +55,13 @@ const messages = {
     add: 'Add',
     create: 'Create',
   },
+  demoMode: {
+    badge: 'Demo mode',
+    title: 'This is a demo',
+    hint: 'The data resets every day and changes are not saved. Switch to any account below to see what each role sees.',
+    accounts: 'Switch account',
+    switchFailed: 'Could not switch accounts. Please try again.',
+  },
   account: {
     ...systemEnUS.account,
     openMenu: 'Open account menu',

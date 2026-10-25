@@ -46,6 +46,13 @@ const viVN: AppResource = {
     add: 'Thêm',
     create: 'Tạo',
   },
+  demoMode: {
+    badge: 'Chế độ demo',
+    title: 'Đây là bản demo',
+    hint: 'Dữ liệu được đặt lại mỗi ngày và các thay đổi không được lưu. Chuyển sang một tài khoản bên dưới để xem mỗi vai trò thấy gì.',
+    accounts: 'Chuyển tài khoản',
+    switchFailed: 'Không chuyển được tài khoản. Vui lòng thử lại.',
+  },
   account: {
     ...systemViVN.account,
     openMenu: 'Mở menu tài khoản',
