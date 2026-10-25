@@ -2676,6 +2676,9 @@ const deDE: AppResource = {
   },
   settings: {
     ...systemDeDE.settings,
+    noRoleAccess:
+      'Dieser Benutzer kann sich weiterhin anmelden und grundlegende Kontofunktionen nutzen. Rollen gewähren keinen Zugriff auf Geschäftsfunktionen.',
+    noAssignedRoles: 'Keine Rollen zugewiesen',
     title: 'Einstellungen',
     deviceSyncRules: {
       title: 'Prüfregeln',

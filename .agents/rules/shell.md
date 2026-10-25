@@ -48,7 +48,7 @@ The signed-in region waits in `client/routing/session-preparation.tsx` before mo
 
 - **Demo mode menu (2026-10-25):** the header actions start with the plugin's
   `DemoModeMenu` from `@nocobase/app-plugin-demo-mode/client/menu`. Version
-  0.2.0-beta.0 owns the notice, account list, switching and translations;
+  0.2.0-beta.1 owns the compact styling, notice, account list, switching and translations;
   register `demoMode()` without presentation options. Keep one menu in the
   header, before the assistant, theme and account controls.
 - **Inbox count in the tab title (2026-10-25):** `AppLayout` puts 收件箱's

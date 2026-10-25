@@ -2634,6 +2634,9 @@ const jaJP: AppResource = {
   },
   settings: {
     ...systemJaJP.settings,
+    noRoleAccess:
+      'このユーザーは引き続きサインインしてアカウントの基本機能を使用できます。ロールによる業務アクセス権はありません。',
+    noAssignedRoles: 'ロール未割り当て',
     title: '設定',
     deviceSyncRules: {
       title: '照合ルール',

@@ -2507,6 +2507,8 @@ const zhCN: AppResource = {
   },
   settings: {
     ...systemZhCN.settings,
+    noRoleAccess: '此用户仍可登录并使用账号基础功能，角色未授予业务访问。',
+    noAssignedRoles: '未分配角色',
     title: '设置',
     deviceSyncRules: {
       title: '核对规则',

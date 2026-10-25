@@ -2663,6 +2663,9 @@ const ptBR: AppResource = {
   },
   settings: {
     ...systemPtBR.settings,
+    noRoleAccess:
+      'Este usuário ainda pode entrar e usar as funções básicas da conta. Nenhum acesso às operações é concedido por funções.',
+    noAssignedRoles: 'Nenhuma função atribuída',
     title: 'Configurações',
     deviceSyncRules: {
       title: 'Regras de revisão',

@@ -2664,6 +2664,9 @@ const messages = {
   },
   settings: {
     ...systemEnUS.settings,
+    noRoleAccess:
+      'This user can still sign in and use account basics. Roles grant no business access.',
+    noAssignedRoles: 'No assigned roles',
     title: 'Settings',
     deviceSyncRules: {
       title: 'Review rules',

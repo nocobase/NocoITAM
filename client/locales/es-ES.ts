@@ -2676,6 +2676,9 @@ const esES: AppResource = {
   },
   settings: {
     ...systemEsES.settings,
+    noRoleAccess:
+      'Este usuario puede iniciar sesión y usar las funciones básicas de la cuenta. Los roles no conceden acceso a las operaciones.',
+    noAssignedRoles: 'Sin roles asignados',
     title: 'Configuración',
     deviceSyncRules: {
       title: 'Reglas de revisión',

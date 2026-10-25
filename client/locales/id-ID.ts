@@ -2656,6 +2656,9 @@ const idID: AppResource = {
   },
   settings: {
     ...systemIdID.settings,
+    noRoleAccess:
+      'Pengguna ini tetap dapat masuk dan menggunakan fungsi dasar akun. Peran tidak memberikan akses bisnis.',
+    noAssignedRoles: 'Belum ada peran yang ditetapkan',
     title: 'Pengaturan',
     deviceSyncRules: {
       title: 'Aturan tinjauan',

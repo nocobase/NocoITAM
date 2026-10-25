@@ -2480,6 +2480,8 @@ const zhTW: AppResource = {
   },
   settings: {
     ...systemZhTW.settings,
+    noRoleAccess: '此使用者仍可登入並使用帳號基本功能，角色未授予業務存取權。',
+    noAssignedRoles: '未指派角色',
     title: '設定',
     deviceSyncRules: {
       title: '核對規則',

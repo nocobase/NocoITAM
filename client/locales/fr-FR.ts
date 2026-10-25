@@ -2671,6 +2671,9 @@ const frFR: AppResource = {
   },
   settings: {
     ...systemFrFR.settings,
+    noRoleAccess:
+      'Cet utilisateur peut se connecter et utiliser les fonctions de base du compte. Aucun accès métier ne lui est accordé par les rôles.',
+    noAssignedRoles: 'Aucun rôle attribué',
     title: 'Paramètres',
     deviceSyncRules: {
       title: 'Règles de revue',

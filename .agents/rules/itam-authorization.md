@@ -197,3 +197,16 @@ key>', ns: 'itam' }`, the way the plugin's own 成员 and 系统管理员 are
   locale file supplies it through `overrides['@nocobase/app-plugin-users']`,
   worded as that language's `navigation.roles`; drop the override once the
   plugin ships the key.
+
+- **Explicit Member roles (2026-10-25):** Demo Mode 0.2.0-beta.1 requires
+  Authentication beta.15, Authorization beta.32 and Users beta.10 together.
+  The Users form applies the server's `defaultValue` only on creation; saved
+  roles and explicit empty selections win. The role list names an empty
+  assignment, and the editor explains retained account basics. These targeted
+  user-page changes were reconciled with Default template beta.81; the full
+  template baseline remains beta.77. The new Authorization seed converts the
+  old Member wildcard assignment to direct assignments without changing
+  existing grants. Stop old account writers, back up database/configuration/
+  storage, and apply the seed before reopening traffic. Recovery needs the
+  coordinated database backup and old packages. Never recreate a wildcard
+  Member assignment; the initialization safety test now rejects it too.

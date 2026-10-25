@@ -2624,6 +2624,9 @@ const viVN: AppResource = {
   },
   settings: {
     ...systemViVN.settings,
+    noRoleAccess:
+      'Người dùng này vẫn có thể đăng nhập và sử dụng các chức năng cơ bản của tài khoản. Vai trò không cấp quyền truy cập nghiệp vụ.',
+    noAssignedRoles: 'Chưa gán vai trò',
     title: 'Cài đặt',
     deviceSyncRules: {
       title: 'Quy tắc rà soát',
