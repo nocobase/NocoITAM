@@ -40,6 +40,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   pictures the way an upload does (bytes under `<storage>/objects/`, a row
   in `itamFiles`), so tests point `APP_STORAGE_DIR` at a temporary
   directory (`tests/support/setup.ts`).
+  In an application, picture writes use its shared Drive service, or the
+  resolved Drive configuration when seeds run before that service is registered
+  (2026-10-25); never infer a hosted app's volume from `process.env` or the
+  process working directory. Bare seed runners retain the temporary-storage
+  fallback. Startup repairs missing objects for unchanged built-in picture
+  records through the same disk, without replaying seeds, recreating deleted
+  records, or replacing existing files. This also repairs earlier hosted
+  installations whose seed history already says the pictures were installed.
   It stores every picture in `assets/models/`, those no seeded model uses
   too (2026-10-20): they are the picture library the demo's own models
   point at by the same file ids (`DEMO_PICTURES` in `demo.ts`, a photo's

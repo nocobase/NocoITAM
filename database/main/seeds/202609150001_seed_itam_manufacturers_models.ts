@@ -1,6 +1,12 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { driveManagerToken } from '@nocobase/app-server/drive';
+import {
+  createDriveManager,
+  prepareDriveStorage,
+  type AppDriveConfig,
+} from '@nocobase/drive';
 
 import {
   defineSeed,
@@ -79,7 +85,7 @@ interface ModelSeed {
 }
 
 /** Fixed file ids so a repeated run finds its pictures instead of adding them. */
-const PICTURE_FILE_IDS: Readonly<Record<string, string>> = {
+export const PICTURE_FILE_IDS: Readonly<Record<string, string>> = {
   'macbook-pro-14-m3.jpg': '419aaaa2-bf99-515c-b4ae-78dbe21e061e',
   'macbook-air-13-m3.jpg': 'f6052130-a7ea-5f17-b613-43e11def712b',
   'thinkpad-t14.jpg': '287c9828-3e32-5202-b14c-7465548bac62',
@@ -297,7 +303,8 @@ const MODELS: readonly ModelSeed[] = [
   {
     id: 'model-ddr5-32gb-sodimm',
     image: 'ddr5-sodimm.jpg',
-    imageCredit: 'ITEagle Europe – Sebastiaan Broekhoven, CC BY-SA 4.0, Wikimedia Commons',
+    imageCredit:
+      'ITEagle Europe – Sebastiaan Broekhoven, CC BY-SA 4.0, Wikimedia Commons',
     name: 'DDR5-5600 32 GB SO-DIMM',
     manufacturerId: 'mfr-crucial',
     categoryId: 'cat-memory',
@@ -418,9 +425,29 @@ const seed: SeedDefinition = defineSeed({
       path.dirname(fileURLToPath(import.meta.url)),
       'assets/models',
     );
-    const storageDir = process.env.APP_STORAGE_DIR
-      ? path.resolve(process.env.APP_STORAGE_DIR)
-      : path.resolve(process.cwd(), 'storage');
+    // Seeds can run before DriveProvider registers its service. The resolved
+    // configuration still contains the host-provided application volume.
+    const configured = context.config.get<AppDriveConfig>('drive');
+    const driveConfig: AppDriveConfig = {
+      default: 'local',
+      disks: {
+        local: configured?.disks.local ?? {
+          driver: 'fs',
+          // Only bare seed runners lack application configuration.
+          location: process.env.APP_STORAGE_DIR
+            ? path.resolve(process.env.APP_STORAGE_DIR)
+            : path.resolve(process.cwd(), 'storage'),
+          visibility: 'private',
+        },
+      },
+    };
+    if (!context.container.has(driveManagerToken))
+      await prepareDriveStorage(driveConfig);
+    const disk = (
+      context.container.has(driveManagerToken)
+        ? context.container.resolve(driveManagerToken)
+        : createDriveManager(driveConfig)
+    ).use('local');
     /** The file row for a picture, created with its bytes when absent. */
     const pictureFile = async (image: string): Promise<string> => {
       const id = PICTURE_FILE_IDS[image];
@@ -434,9 +461,7 @@ const seed: SeedDefinition = defineSeed({
       const ext = path.extname(image).slice(1);
       const key = `objects/${id}.${ext}`;
       const bytes = readFileSync(path.join(assetsDir, image));
-      const target = path.join(storageDir, key);
-      mkdirSync(path.dirname(target), { recursive: true });
-      writeFileSync(target, bytes);
+      await disk.put(key, bytes);
       // The file plugin writes datetimes as ISO strings without the zone.
       const stamp = now.toISOString().slice(0, -1);
       await query
@@ -505,8 +530,7 @@ const seed: SeedDefinition = defineSeed({
         .execute();
     }
     // The rest of the pictures, for the demo's models.
-    for (const image of Object.keys(PICTURE_FILE_IDS))
-      await pictureFile(image);
+    for (const image of Object.keys(PICTURE_FILE_IDS)) await pictureFile(image);
   },
 });
 
