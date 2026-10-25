@@ -625,3 +625,11 @@ document-text`, which reads only a file uploaded within the hour and
   later does not reach it. The plugin stores keys encrypted with
   `secrets.keys`, so a configuration without one cannot create them: the
   start logs a warning and the assistant has no model until it is added.
+- **On a Demo Mode deployment nothing can be sent to Asset Steward**
+  (2026-10-25). The plugin refuses every write, and a new conversation is
+  one (`DEMO_READ_ONLY`), so `useAgentReadiness` answers unavailable with
+  `ai.demoReadOnly`: the dock and the global search take no question, and
+  the panel's and the conversation page's composers get
+  `useDemoChatInput()`. The conversations the demo comes with stay
+  readable. A question the dock could not send now says why in a toast
+  and stays in the box; before, the box stayed open on it without a word.

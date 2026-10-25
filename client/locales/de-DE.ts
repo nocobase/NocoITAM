@@ -3494,6 +3494,9 @@ const deDE: AppResource = {
     closeChat: 'KI-Chat schließen',
     sendFailed:
       'Die Frage konnte nicht gesendet werden. Versuchen Sie es im Chat erneut.',
+    askFailed: 'Die Frage konnte nicht gesendet werden.',
+    demoReadOnly:
+      'Dies ist eine Demo: Neue Fragen können nicht gesendet werden. Die vorhandenen Unterhaltungen lassen sich lesen.',
     conversationSource: 'IT-Asset-Management',
     searchSource: 'Globale Suche',
     assistantName: 'Asset Steward',

@@ -3230,6 +3230,8 @@ const zhTW: AppResource = {
     openChat: '開啟 AI 對話',
     closeChat: '收合 AI 對話',
     sendFailed: '問題未能送出，請在對話中重試。',
+    askFailed: '問題沒有送出。',
+    demoReadOnly: '這是示範環境，無法發起新對話，可以查看既有的示範對話。',
     conversationSource: 'IT 資產管理',
     searchSource: '全域搜尋',
     assistantName: '資產管家',

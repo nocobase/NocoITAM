@@ -3496,6 +3496,9 @@ const frFR: AppResource = {
     closeChat: 'Fermer la conversation IA',
     sendFailed:
       'La question n’a pas pu être envoyée. Réessayez depuis la conversation.',
+    askFailed: "La question n'a pas pu être envoyée.",
+    demoReadOnly:
+      "Ceci est une démo : impossible d'envoyer de nouvelles questions. Les conversations existantes restent consultables.",
     conversationSource: 'Gestion des actifs informatiques',
     searchSource: 'Recherche globale',
     assistantName: 'Intendant des actifs',

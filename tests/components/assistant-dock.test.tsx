@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 
@@ -10,6 +10,10 @@ const state = vi.hoisted(() => ({
   dock: true as boolean | undefined,
   ready: true,
   ask: vi.fn(() => Promise.resolve()),
+  toast: vi.fn(),
+}));
+vi.mock('@nocobase/app-client', () => ({
+  useToaster: () => ({ show: state.toast }),
 }));
 vi.mock('@nocobase/app-plugin-agents/client/chat', () => ({
   useChatPanel: () => ({ open: state.panelOpen }),
@@ -50,7 +54,9 @@ beforeEach(() => {
   state.record = undefined;
   state.dock = true;
   state.ready = true;
-  state.ask.mockClear();
+  state.ask.mockReset();
+  state.ask.mockImplementation(() => Promise.resolve());
+  state.toast.mockClear();
 });
 
 const at = (path: string) =>
@@ -139,4 +145,24 @@ it('gets focus back, still one line, when the panel closes', () => {
   expect(screen.queryByRole('list')).toBeNull();
   fireEvent.pointerDown(box);
   expect(screen.getByRole('list')).toBeTruthy();
+});
+
+// A refused send (Demo Mode refuses every write, 2026-10-25) used to leave
+// the question in the box, open, without a word.
+it('says why a question was not sent, and gives it back', async () => {
+  state.ask.mockImplementation(() =>
+    Promise.reject(new Error('This is a demo. Changes cannot be saved.')),
+  );
+  at('/devices');
+  const box = screen.getByRole('textbox', { name: 'ai.dock.placeholder' });
+  fireEvent.change(box, { target: { value: 'hi' } });
+  fireEvent.keyDown(box, { key: 'Enter' });
+  await waitFor(() =>
+    expect(state.toast).toHaveBeenCalledWith({
+      type: 'error',
+      title: 'ai.askFailed',
+      description: 'This is a demo. Changes cannot be saved.',
+    }),
+  );
+  expect(box).toHaveValue('hi');
 });

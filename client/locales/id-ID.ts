@@ -3464,6 +3464,9 @@ const idID: AppResource = {
     openChat: 'Buka obrolan AI',
     closeChat: 'Tutup obrolan AI',
     sendFailed: 'Pertanyaan tidak dapat dikirim. Coba lagi dari obrolan.',
+    askFailed: 'Pertanyaan tidak dapat dikirim.',
+    demoReadOnly:
+      'Ini adalah demo: pertanyaan baru tidak dapat dikirim. Percakapan yang ada tetap dapat dibaca.',
     conversationSource: 'Manajemen aset TI',
     searchSource: 'Pencarian global',
     assistantName: 'Penjaga Aset',

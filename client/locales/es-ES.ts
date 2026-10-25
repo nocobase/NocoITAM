@@ -3502,6 +3502,9 @@ const esES: AppResource = {
     closeChat: 'Cerrar el chat de IA',
     sendFailed:
       'No se ha podido enviar la pregunta. Inténtelo de nuevo desde el chat.',
+    askFailed: 'No se pudo enviar la pregunta.',
+    demoReadOnly:
+      'Esto es una demostración: no se pueden enviar preguntas nuevas. Las conversaciones existentes se pueden leer.',
     conversationSource: 'Gestión de activos de TI',
     searchSource: 'Búsqueda global',
     assistantName: 'Custodio de Activos',

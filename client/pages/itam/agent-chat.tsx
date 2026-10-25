@@ -10,6 +10,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { BackButton } from '#components/back-button';
 import { ConversationList } from '#components/itam/ai/conversation-list';
+import { useDemoChatInput } from '#components/itam/ai/demo-chat';
 import { PageHeader } from '#components/page-header';
 import { Button } from '#components/ui/button';
 import {
@@ -45,6 +46,7 @@ const PATH = '/agent-chat';
  */
 export default function AgentChatPage(): ReactElement {
   const { t } = useTranslation();
+  const demoInput = useDemoChatInput();
   const navigate = useNavigate();
   const chat = useChatPanel();
   const { conversationId } = useParams();
@@ -201,6 +203,7 @@ export default function AgentChatPage(): ReactElement {
               <ChatConversationPage
                 conversationId={openId}
                 newConversationPath={`${PATH}/new`}
+                inputAvailability={demoInput}
                 onArchived={() => {
                   void navigate(`${PATH}${suffix}`);
                   // The open conversation left the view: on to the list.

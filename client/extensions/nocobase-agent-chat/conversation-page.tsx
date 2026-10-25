@@ -50,6 +50,7 @@ import { Skeleton } from '#components/ui/skeleton';
 
 import { useChatTranslation } from './chat-i18n.js';
 import { ConversationView } from './conversation-view.js';
+import type { ChatInputAvailability } from './input-availability.js';
 import { ConversationTitle } from './panel-header.js';
 // Application change (ITAM, Agents plugin 1.0): Asset Steward's name for
 // the plugin's native online agent (lib/itam/agent-text.ts).
@@ -76,12 +77,15 @@ export interface ChatConversationPageProps {
   readonly newConversationPath: string;
   /** Application change (ITAM, 2026-10-16): the conversation was archived from its menu. */
   readonly onArchived: () => void;
+  /** Application change (ITAM, 2026-10-25): whether the composer may send, as the panel's `inputAvailability`. */
+  readonly inputAvailability?: ChatInputAvailability;
 }
 
 export function ChatConversationPage({
   conversationId,
   newConversationPath,
   onArchived,
+  inputAvailability,
 }: ChatConversationPageProps): ReactElement {
   const outer = useChatPanel();
   const tracking = useChatPageTracking();
@@ -153,6 +157,7 @@ export function ChatConversationPage({
           conversationId={conversationId}
           variant='page'
           className='flex-1'
+          inputAvailability={inputAvailability}
         />
       </div>
     </ChatPanelScope>

@@ -15,6 +15,7 @@ import { ITAM_TOOL_RENDERERS } from '@/lib/itam/tool-renderers';
 import { useToggleAssistant } from '@/lib/itam/conversations';
 import { ChatPanel } from '#extensions/nocobase-agent-chat/chat-panel';
 import { ChatFloatingButton } from '#extensions/nocobase-agent-chat/launchers';
+import { useDemoChatInput } from '#components/itam/ai/demo-chat';
 import { Button } from '#components/ui/button';
 import {
   Tooltip,
@@ -46,13 +47,18 @@ export function AgentChatShell({
       <ChatExtensionsContext.Provider value={ITAM_CHAT_EXTENSIONS}>
         <AIToolRendererProvider renderers={ITAM_TOOL_RENDERERS}>
           {children}
-          <ChatPanel />
+          <ItamChatPanel />
           {/* Below `md` the panel opens from a floating button. */}
           <ChatFloatingButton />
         </AIToolRendererProvider>
       </ChatExtensionsContext.Provider>
     </ChatProvider>
   );
+}
+
+/** The panel, its composer closed on a Demo Mode deployment (`useDemoChatInput`). */
+function ItamChatPanel(): ReactElement {
+  return <ChatPanel inputAvailability={useDemoChatInput()} />;
 }
 
 /**

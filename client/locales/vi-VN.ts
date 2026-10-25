@@ -3428,6 +3428,9 @@ const viVN: AppResource = {
     openChat: 'Mở trò chuyện AI',
     closeChat: 'Đóng trò chuyện AI',
     sendFailed: 'Không thể gửi câu hỏi. Hãy thử lại từ khung trò chuyện.',
+    askFailed: 'Không gửi được câu hỏi.',
+    demoReadOnly:
+      'Đây là bản demo: không thể gửi câu hỏi mới. Bạn vẫn có thể xem các cuộc trò chuyện có sẵn.',
     conversationSource: 'Quản lý tài sản CNTT',
     searchSource: 'Tìm kiếm toàn cục',
     assistantName: 'Quản gia Tài sản',

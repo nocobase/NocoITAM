@@ -3266,6 +3266,8 @@ const zhCN: AppResource = {
     openChat: '打开 AI 对话',
     closeChat: '收起 AI 对话',
     sendFailed: '问题没能发出，请在对话里重试。',
+    askFailed: '问题没有发出去。',
+    demoReadOnly: '这是演示环境，不能发起新对话，可以查看已有的示例对话。',
     conversationSource: 'IT 资产管理',
     searchSource: '全局搜索',
     // The assistant's name (2026-10-16; it was Noco until then).

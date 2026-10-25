@@ -2,6 +2,8 @@ import {
   useChatPanel,
   type ChatContextItem,
 } from '@nocobase/app-plugin-agents/client/chat';
+import { useToaster } from '@nocobase/app-client';
+import { useTranslation } from '@nocobase/i18n/client';
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -12,6 +14,7 @@ import {
   type AskFiles,
   type AskModel,
 } from '@/lib/itam/ask';
+import { errorMessage } from '@/lib/itam/format';
 
 /**
  * When the panel closes, focus left inside it (or fallen to the page) comes
@@ -60,6 +63,8 @@ export function useAskDraft(
   record: ChatContextItem | undefined,
   disabled: boolean,
 ): AskDraft {
+  const { t } = useTranslation();
+  const toaster = useToaster();
   const readiness = useAgentReadiness();
   const files = useAskFiles();
   const { models, model, select } = useAskModels();
@@ -83,8 +88,17 @@ export function useAskDraft(
       ...(model ? { model } : {}),
       items: record ? [record] : [],
     })
-      // Not even created: the question comes back to the box.
-      .catch(() => setValue(typed))
+      // Not even created: the question comes back to the box, and the
+      // reader is told why (2026-10-25: a refused send used to leave the
+      // box open on the question with no word of it).
+      .catch((error: unknown) => {
+        setValue(typed);
+        toaster.show({
+          type: 'error',
+          title: t('ai.askFailed'),
+          description: errorMessage(error) || undefined,
+        });
+      })
       .finally(() => setSending(false));
     return true;
   };

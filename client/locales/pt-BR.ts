@@ -3479,6 +3479,9 @@ const ptBR: AppResource = {
     closeChat: 'Fechar o chat de IA',
     sendFailed:
       'Não foi possível enviar a pergunta. Tente novamente pelo chat.',
+    askFailed: 'Não foi possível enviar a pergunta.',
+    demoReadOnly:
+      'Esta é uma demonstração: não é possível enviar novas perguntas. As conversas existentes podem ser lidas.',
     conversationSource: 'Gestão de ativos de TI',
     searchSource: 'Pesquisa global',
     assistantName: 'Guardião de Ativos',

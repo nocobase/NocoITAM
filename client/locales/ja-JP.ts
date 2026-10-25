@@ -3429,6 +3429,9 @@ const jaJP: AppResource = {
     closeChat: 'AI チャットを閉じる',
     sendFailed:
       '質問を送信できませんでした。チャットからもう一度お試しください。',
+    askFailed: '質問を送信できませんでした。',
+    demoReadOnly:
+      'これはデモ環境のため、新しい質問は送信できません。既存の会話は閲覧できます。',
     conversationSource: 'IT 資産管理',
     searchSource: '全体検索',
     assistantName: '資産管理エージェント',

@@ -3472,6 +3472,9 @@ const messages = {
     openChat: 'Open the AI chat',
     closeChat: 'Close the AI chat',
     sendFailed: 'The question could not be sent. Try again from the chat.',
+    askFailed: 'The question could not be sent.',
+    demoReadOnly:
+      'This is a demo: new questions cannot be sent. The conversations already here can be read.',
     conversationSource: 'IT asset management',
     searchSource: 'Global search',
     // The assistant's name (2026-10-16; it was Noco until then).
