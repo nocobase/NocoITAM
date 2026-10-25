@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { purchaseOrderRoutes } from '../../server/routes/itam/purchase-orders.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
+import { uuidOf } from '../support/ids.js';
 
 const manager = { user: 'mia', role: 'manager' as const };
 const employee = { user: 'eve', role: 'employee' as const };
@@ -250,7 +251,7 @@ describe('AI 整理 for a new purchase order', () => {
       await query()
         .insertInto('itamFiles')
         .values({
-          id: file.id,
+          id: uuidOf(file.id),
           disk: 'local',
           key: `objects/${file.id}.csv`,
           filename: 'quote.csv',
@@ -265,7 +266,7 @@ describe('AI 整理 for a new purchase order', () => {
       .insertInto('attachmentLinks')
       .values({
         id: 'link-attached',
-        fileId: 'file-attached',
+        fileId: uuidOf('file-attached'),
         ownerType: 'purchaseOrders',
         ownerId: 'po-somebody-else',
         createdAt: new Date(),
@@ -276,7 +277,11 @@ describe('AI 整理 for a new purchase order', () => {
       use: () => ({ getBytes: async () => new TextEncoder().encode(quote) }),
     } as never);
     const read = (fileId: string, who: Record<string, string> = manager) =>
-      post('purchase-orders/capture/document-text', { fileId }, who);
+      post(
+        'purchase-orders/capture/document-text',
+        { fileId: uuidOf(fileId) },
+        who,
+      );
     expect(await data(await read('file-fresh'))).toEqual({
       text: quote.trim(),
       truncated: false,
@@ -284,5 +289,14 @@ describe('AI 整理 for a new purchase order', () => {
     expect((await read('file-old')).status).toBe(404);
     expect((await read('file-attached')).status).toBe(404);
     expect((await read('file-fresh', employee)).status).toBe(403);
+    // An id that cannot be a file's is not found, on every database: a UUID
+    // column on PostgreSQL refused it with a 500 (2026-10-25).
+    expect(
+      (
+        await post('purchase-orders/capture/document-text', {
+          fileId: 'not-a-file',
+        })
+      ).status,
+    ).toBe(404);
   });
 });

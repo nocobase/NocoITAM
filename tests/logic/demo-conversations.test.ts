@@ -19,6 +19,7 @@ import {
 } from '../../server/providers/itam/index.js';
 import { planServiceToken } from '../../server/providers/itam/plans.js';
 import { createTestApp, type TestApp } from '../support/test-app.js';
+import { timeLimit } from '../support/test-database.js';
 
 it('writes a date placeholder in each form the answers use', () => {
   expect(demoDate('date', 7, '2026-10-24')).toBe('2026-10-31');
@@ -174,76 +175,84 @@ describe('the demo’s Asset Steward conversations', () => {
     ['en-US', 'USD'],
     ['zh-CN', 'CNY'],
   ] as const)
-    it(`gives the importer every ${language} conversation and its plans, the staff theirs, and clears them`, async () => {
-      await currency(code);
-      const demo = demoService(true);
-      await demo.generate('mia', language);
+    it(
+      `gives the importer every ${language} conversation and its plans, the staff theirs, and clears them`,
+      async () => {
+        await currency(code);
+        const demo = demoService(true);
+        await demo.generate('mia', language);
 
-      const conversations = await rows('agConversations');
-      const byOwner = (userId: string) =>
-        conversations.filter((row) => row.userId === userId).length;
-      expect(byOwner('mia')).toBe(6);
-      // The approving manager, the one who writes the records, the support
-      // desk.
-      expect(byOwner('staff-1')).toBe(1);
-      expect(byOwner('staff-2')).toBe(1);
-      expect(byOwner('staff-3')).toBe(2);
-      // The fixture's first, the leaver's with its plan, is the newest, so
-      // it heads the list and ✨ opens it.
-      const newest = conversations
-        .filter((row) => row.userId === 'mia')
-        .sort((a, b) =>
-          String(b.lastMessageAt).localeCompare(String(a.lastMessageAt)),
-        )[0];
-      expect(conversations[0]).toMatchObject({
-        source: 'panel',
-        mode: 'online',
-        modelService: 'deepseek',
-        model: 'deepseek-flash',
-      });
+        const conversations = await rows('agConversations');
+        const byOwner = (userId: string) =>
+          conversations.filter((row) => row.userId === userId).length;
+        expect(byOwner('mia')).toBe(6);
+        // The approving manager, the one who writes the records, the support
+        // desk.
+        expect(byOwner('staff-1')).toBe(1);
+        expect(byOwner('staff-2')).toBe(1);
+        expect(byOwner('staff-3')).toBe(2);
+        // The fixture's first, the leaver's with its plan, is the newest, so
+        // it heads the list and ✨ opens it.
+        const newest = conversations
+          .filter((row) => row.userId === 'mia')
+          .sort((a, b) =>
+            String(b.lastMessageAt).localeCompare(String(a.lastMessageAt)),
+          )[0];
+        expect(conversations[0]).toMatchObject({
+          source: 'panel',
+          mode: 'online',
+          modelService: 'deepseek',
+          model: 'deepseek-flash',
+        });
 
-      // Every placeholder filled: no `{{…}}`, and no record key left where
-      // an id should be.
-      const messages = await rows('agConversationMessages');
-      expect(messages.length).toBeGreaterThanOrEqual(20);
-      const text = JSON.stringify(messages);
-      expect(text).not.toMatch(/\{\{/);
-      expect(text).not.toMatch(/"(device|person|seat|stockItem):/);
+        // Every placeholder filled: no `{{…}}`, and no record key left where
+        // an id should be.
+        const messages = await rows('agConversationMessages');
+        expect(messages.length).toBeGreaterThanOrEqual(20);
+        const text = JSON.stringify(messages);
+        expect(text).not.toMatch(/\{\{/);
+        expect(text).not.toMatch(/"(device|person|seat|stockItem):/);
 
-      // The importer's two plans wait on their conversations, for longer
-      // than a plan the assistant proposes.
-      const plans = await rows('itamPlans');
-      expect(plans.some((plan) => plan.conversationId === newest?.id)).toBe(
-        true,
-      );
-      expect(plans).toHaveLength(2);
-      for (const plan of plans) {
-        expect(plan.proposerUserId).toBe('mia');
-        expect(plan.status).toBe('pending');
-        expect(
-          conversations.some((row) => row.id === plan.conversationId),
-        ).toBe(true);
-        expect(new Date(String(plan.expiresAt)).getTime()).toBeGreaterThan(
-          Date.now() + 300 * 86_400_000,
+        // The importer's two plans wait on their conversations, for longer
+        // than a plan the assistant proposes.
+        const plans = await rows('itamPlans');
+        expect(plans.some((plan) => plan.conversationId === newest?.id)).toBe(
+          true,
         );
-      }
+        expect(plans).toHaveLength(2);
+        for (const plan of plans) {
+          expect(plan.proposerUserId).toBe('mia');
+          expect(plan.status).toBe('pending');
+          expect(
+            conversations.some((row) => row.id === plan.conversationId),
+          ).toBe(true);
+          expect(new Date(String(plan.expiresAt)).getTime()).toBeGreaterThan(
+            Date.now() + 300 * 86_400_000,
+          );
+        }
 
-      await demo.clear('mia');
+        await demo.clear('mia');
+        expect(await rows('agConversations')).toEqual([]);
+        expect(await rows('agConversationMessages')).toEqual([]);
+        expect(await rows('itamPlans')).toEqual([]);
+        expect(await rows('itamPlanSteps')).toEqual([]);
+      },
+      timeLimit(120_000),
+    );
+
+  it(
+    'writes none without the Agents plugin, or in another currency than the answers',
+    async () => {
+      const without = demoService(false);
+      await without.generate('mia', 'en-US');
       expect(await rows('agConversations')).toEqual([]);
-      expect(await rows('agConversationMessages')).toEqual([]);
-      expect(await rows('itamPlans')).toEqual([]);
-      expect(await rows('itamPlanSteps')).toEqual([]);
-    }, 120_000);
+      await without.clear('mia');
 
-  it('writes none without the Agents plugin, or in another currency than the answers', async () => {
-    const without = demoService(false);
-    await without.generate('mia', 'en-US');
-    expect(await rows('agConversations')).toEqual([]);
-    await without.clear('mia');
-
-    // The Chinese answers were given in yuan; the register is in dollars.
-    const demo = demoService(true);
-    await demo.generate('mia', 'zh-CN');
-    expect(await rows('agConversations')).toEqual([]);
-  }, 120_000);
+      // The Chinese answers were given in yuan; the register is in dollars.
+      const demo = demoService(true);
+      await demo.generate('mia', 'zh-CN');
+      expect(await rows('agConversations')).toEqual([]);
+    },
+    timeLimit(120_000),
+  );
 });

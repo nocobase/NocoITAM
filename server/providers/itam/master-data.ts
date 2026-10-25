@@ -814,10 +814,12 @@ export function createMasterDataService(
           filter: {
             ...rest,
             // The impossible id keeps the IN list non-empty, so a type
-            // with no categories yields no rows rather than every row.
+            // with no categories yields no rows rather than every row. An
+            // empty id, not a NUL character, which PostgreSQL refuses in
+            // text (2026-10-25).
             categoryId: rest.categoryId ?? [
               ...categories.map((row) => row.id),
-              '\u0000',
+              '',
             ],
           },
         };
