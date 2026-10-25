@@ -11,12 +11,21 @@ const state = vi.hoisted(() => ({
   ready: true,
   ask: vi.fn(() => Promise.resolve()),
   toast: vi.fn(),
+  demo: false,
+  openChat: vi.fn(),
+}));
+vi.mock('../../client/lib/itam/demo-mode.js', () => ({
+  useDemoMode: () => ({ isLoading: false, data: state.demo }),
 }));
 vi.mock('@nocobase/app-client', () => ({
   useToaster: () => ({ show: state.toast }),
 }));
 vi.mock('@nocobase/app-plugin-agents/client/chat', () => ({
-  useChatPanel: () => ({ open: state.panelOpen }),
+  useChatPanel: () => ({
+    open: state.panelOpen,
+    clearPinned: vi.fn(),
+    openChat: state.openChat,
+  }),
   useChatSources: () => ({ items: state.record ? [state.record] : [] }),
 }));
 vi.mock('@nocobase/i18n/client', () => ({
@@ -33,9 +42,11 @@ vi.mock('../../client/lib/itam/ask.js', () => ({
   modelKey: (model: { modelService: string; model: string }) =>
     `${model.modelService}/${model.model}`,
   useAgentReadiness: () =>
-    state.ready
-      ? { state: 'ready', agent: { id: 'online' } }
-      : { state: 'unavailable', agent: null, reason: 'ai.unavailable' },
+    state.demo
+      ? { state: 'unavailable', agent: { id: 'online' }, reason: 'demo' }
+      : state.ready
+        ? { state: 'ready', agent: { id: 'online' } }
+        : { state: 'unavailable', agent: null, reason: 'ai.unavailable' },
   useDiscuss: () => vi.fn(),
   useAskModels: () => ({ models: [], model: undefined, select: vi.fn() }),
   useAskAgent: () => state.ask,
@@ -57,6 +68,8 @@ beforeEach(() => {
   state.ask.mockReset();
   state.ask.mockImplementation(() => Promise.resolve());
   state.toast.mockClear();
+  state.demo = false;
+  state.openChat.mockClear();
 });
 
 const at = (path: string) =>
@@ -165,4 +178,25 @@ it('says why a question was not sent, and gives it back', async () => {
     }),
   );
   expect(box).toHaveValue('hi');
+});
+
+// A Demo Mode deployment cannot start a conversation, yet asking from a page
+// still opens the panel, the question in its composer (2026-10-25).
+it('opens the panel on the question in Demo Mode, sending nothing', () => {
+  state.demo = true;
+  state.record = { kind: 'devices', id: 'd1', label: 'DE-000004' };
+  at('/devices/d1');
+  const box = screen.getByRole('textbox', { name: 'ai.dock.placeholder' });
+  expect(box).toBeEnabled();
+  fireEvent.change(box, { target: { value: 'Is it under warranty?' } });
+  fireEvent.keyDown(box, { key: 'Enter' });
+  expect(state.ask).not.toHaveBeenCalled();
+  expect(state.openChat).toHaveBeenCalledWith(
+    expect.objectContaining({
+      conversationId: null,
+      draft: 'Is it under warranty?',
+    }),
+  );
+  expect(state.openChat).toHaveBeenCalledWith({ pin: state.record });
+  expect(box).toHaveValue('');
 });

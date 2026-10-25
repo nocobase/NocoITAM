@@ -14,6 +14,8 @@ import {
   type AskFiles,
   type AskModel,
 } from '@/lib/itam/ask';
+import { ITAM_AGENT } from '@/lib/itam/ai-chat';
+import { useDemoMode } from '@/lib/itam/demo-mode';
 import { errorMessage } from '@/lib/itam/format';
 
 /**
@@ -65,6 +67,8 @@ export function useAskDraft(
 ): AskDraft {
   const { t } = useTranslation();
   const toaster = useToaster();
+  const panel = useChatPanel();
+  const demo = useDemoMode().data === true;
   const readiness = useAgentReadiness();
   const files = useAskFiles();
   const { models, model, select } = useAskModels();
@@ -75,6 +79,24 @@ export function useAskDraft(
   const send = (prompt?: string): boolean => {
     const question = (prompt ?? value).trim();
     const agent = readiness.agent;
+    // On a Demo Mode deployment, which refuses a new conversation, the
+    // question still opens the panel (2026-10-25): a new conversation with
+    // it in the composer, which says the demo cannot send it. Asking from a
+    // page then reads as it does anywhere else, up to the send.
+    if (demo) {
+      if (blocked || !question) return false;
+      setValue('');
+      files.clear();
+      panel.clearPinned();
+      panel.openChat({
+        conversationId: null,
+        agentId: ITAM_AGENT,
+        view: 'chat',
+        draft: question,
+      });
+      if (record) panel.openChat({ pin: record });
+      return true;
+    }
     if (blocked || !agent || (!question && !files.ready.length)) return false;
     const typed = value;
     const attachments = files.ready;

@@ -628,8 +628,9 @@ document-text`, which reads only a file uploaded within the hour and
 - **On a Demo Mode deployment nothing can be sent to Asset Steward**
   (2026-10-25). The plugin refuses every write, and a new conversation is
   one (`DEMO_READ_ONLY`), so `useAgentReadiness` answers unavailable with
-  `ai.demoReadOnly`: the dock and the global search take no question, and
-  the panel's and the conversation page's composers get
-  `useDemoChatInput()`. The conversations the demo comes with stay
-  readable. A question the dock could not send now says why in a toast
+  `ai.demoReadOnly`: the global search takes no question, and the
+  panel's and the conversation page's composers get `useDemoChatInput()`.
+  The dock still takes one and opens the panel on a new conversation with
+  it in the composer (`useAskDraft`), so a visitor sees the step up to the
+  send. The conversations the demo comes with stay readable. A question the dock could not send now says why in a toast
   and stays in the box; before, the box stayed open on it without a word.
