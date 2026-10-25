@@ -348,6 +348,27 @@ describe('the assistant’s commands and plans', () => {
       .set({ expiresAt: new Date(Date.now() - 60_000) })
       .where('id', '=', stale.id)
       .execute();
+    // Read as expired, listed with the expired ones, and nothing written
+    // (2026-10-25: Demo Mode refuses a write while reading).
+    expect((await plans.get(manager.user, stale.id)).status).toBe('expired');
+    expect(
+      (
+        await plans.list(manager.user, {
+          status: 'pending',
+          page: 1,
+          pageSize: 20,
+        })
+      ).data.map((plan) => plan.id),
+    ).not.toContain(stale.id);
+    expect(
+      (
+        await plans.list(manager.user, {
+          status: 'expired',
+          page: 1,
+          pageSize: 20,
+        })
+      ).data.map((plan) => plan.id),
+    ).toContain(stale.id);
     expect(await plans.expireDue()).toBe(1);
     expect((await plans.get(manager.user, stale.id)).status).toBe('expired');
   });

@@ -378,6 +378,15 @@ export function createPlanService(container: ServiceContainer): PlanService {
       .where('id', '=', id)
       .executeTakeFirst<Row>();
     if (!plan) throw new PlanError('NOT_FOUND', 'No such plan');
+    const expiresAt = iso(plan.expiresAt) ?? '';
+    // A waiting plan past its time reads as expired whether or not
+    // `expireDue` has written it so (2026-10-25): reading a plan writes
+    // nothing, which a Demo Mode deployment would refuse.
+    const status = String(plan.status) as PlanStatus;
+    const overdue =
+      status === 'pending' &&
+      expiresAt !== '' &&
+      Date.parse(expiresAt) < Date.now();
     const rows = await query()
       .selectFrom('itamPlanSteps')
       .selectAll()
@@ -388,7 +397,7 @@ export function createPlanService(container: ServiceContainer): PlanService {
       id: String(plan.id),
       title: String(plan.title),
       summary: text(plan.summary),
-      status: String(plan.status) as PlanStatus,
+      status: overdue ? 'expired' : status,
       revision: Number(plan.revision),
       proposerUserId: String(plan.proposerUserId),
       agentId: text(plan.agentId),
@@ -398,7 +407,7 @@ export function createPlanService(container: ServiceContainer): PlanService {
       deciderUserId: text(plan.deciderUserId),
       decidedAt: iso(plan.decidedAt),
       failure: json(plan.failure) as PlanFailure | null,
-      expiresAt: iso(plan.expiresAt) ?? '',
+      expiresAt,
       createdAt: iso(plan.createdAt) ?? '',
       steps: rows.map((row) => ({
         id: String(row.id),
@@ -507,18 +516,22 @@ export function createPlanService(container: ServiceContainer): PlanService {
     get,
 
     async list(actorId, options) {
-      await expireDue();
+      // Read only (2026-10-25): it used to expire the overdue plans first,
+      // a write Demo Mode refuses, and the chat then showed no plan at all.
+      // `load` reads an overdue plan as expired, so the status is filtered
+      // on what it reads.
       let select = query()
         .selectFrom('itamPlans')
         .select(['id'])
         .where('proposerUserId', '=', actorId);
-      if (options.status) select = select.where('status', '=', options.status);
       if (options.conversationId)
         select = select.where('conversationId', '=', options.conversationId);
       const ids = (
         await select.orderBy('createdAt', 'desc').execute<{ id: unknown }>()
       ).map((row) => String(row.id));
-      const plans = await Promise.all(ids.map((id) => load(id)));
+      const plans = (await Promise.all(ids.map((id) => load(id)))).filter(
+        (plan) => !options.status || plan.status === options.status,
+      );
       // Waiting ones first, then the newest.
       plans.sort(
         (a, b) =>
