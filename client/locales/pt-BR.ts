@@ -45,13 +45,6 @@ const ptBR: AppResource = {
     add: 'Adicionar',
     create: 'Criar',
   },
-  demoMode: {
-    badge: 'Modo demo',
-    title: 'Esta é uma demonstração',
-    hint: 'Os dados são redefinidos todos os dias e as alterações não são salvas. Troque para qualquer conta abaixo para ver o que cada função vê.',
-    accounts: 'Trocar de conta',
-    switchFailed: 'Não foi possível trocar de conta. Tente novamente.',
-  },
   account: {
     ...systemPtBR.account,
     openMenu: 'Abrir menu da conta',

@@ -46,14 +46,6 @@ const deDE: AppResource = {
     add: 'Hinzufügen',
     create: 'Erstellen',
   },
-  demoMode: {
-    badge: 'Demo-Modus',
-    title: 'Dies ist eine Demo',
-    hint: 'Die Daten werden täglich zurückgesetzt, Änderungen werden nicht gespeichert. Wechseln Sie zu einem der Konten unten, um zu sehen, was jede Rolle sieht.',
-    accounts: 'Konto wechseln',
-    switchFailed:
-      'Das Konto konnte nicht gewechselt werden. Bitte versuchen Sie es erneut.',
-  },
   account: {
     ...systemDeDE.account,
     openMenu: 'Kontomenü öffnen',

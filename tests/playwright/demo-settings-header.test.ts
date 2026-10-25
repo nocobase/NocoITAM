@@ -10,11 +10,8 @@ test('demo settings has no redundant refresh toolbar', async ({ page }) => {
     new URL('demo-sign-in?as=nocobase&redirect=/settings/demo', base).href,
   );
   await expect(
-    page.getByRole('button', { name: /^(Reset|重置)$/ }),
-  ).toBeEnabled({ timeout: 60_000 });
-  await expect(
     page.getByText(/^(Daily reset|每日重置)$/, { exact: true }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole('button', { name: /Refresh|刷新/i })).toHaveCount(
     0,
   );
@@ -26,9 +23,4 @@ test('demo settings has no redundant refresh toolbar', async ({ page }) => {
   await expect(
     page.locator('a[href*="demo-sign-in?as=nocobase"]'),
   ).toBeVisible();
-  if (process.env.DEMO_SCREENSHOT)
-    await page.screenshot({
-      path: process.env.DEMO_SCREENSHOT,
-      fullPage: true,
-    });
 });

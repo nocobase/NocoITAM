@@ -46,13 +46,6 @@ const esES: AppResource = {
     add: 'Añadir',
     create: 'Crear',
   },
-  demoMode: {
-    badge: 'Modo demo',
-    title: 'Esto es una demostración',
-    hint: 'Los datos se restablecen cada día y los cambios no se guardan. Cambia a cualquiera de estas cuentas para ver lo que ve cada rol.',
-    accounts: 'Cambiar de cuenta',
-    switchFailed: 'No se pudo cambiar de cuenta. Inténtalo de nuevo.',
-  },
   account: {
     ...systemEsES.account,
     openMenu: 'Abrir el menú de la cuenta',

@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
+import { DemoModeMenu } from '@nocobase/app-plugin-demo-mode/client/menu';
 import { TooltipProvider } from '#components/ui/tooltip';
 
 import { ThemeSettings } from '../../theme/index.js';
 import { AgentChatButton } from '../agent-chat.js';
-import { DemoModeBadge } from './demo-mode-badge.js';
 import { UserMenu } from './user-menu.js';
 
 /** The header's right-hand actions, shared by every authenticated page. */
@@ -13,7 +13,7 @@ export function HeaderActions(): ReactElement {
       <div className='flex shrink-0 items-center gap-2'>
         {/* Application change (ITAM, 2026-10-25): a Demo Mode deployment
             says so, with its accounts to switch to. */}
-        <DemoModeBadge />
+        <DemoModeMenu />
         {/* Application change (ITAM): the assistant's ✨ leads the actions
             (2026-10-16, after NocoCRM's); it opens the Agents plugin's chat
             panel where it was left and closes it again. */}

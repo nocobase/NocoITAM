@@ -90,9 +90,6 @@ test('demo browsing and mutation refusal', async ({ page }) => {
     await expect(
       page.getByRole('tab', { name: /^(Overview|概览|Daily reset|每日重置)$/ }),
     ).toHaveCount(0);
-    await expect(
-      page.getByRole('button', { name: /^(Reset|重置)$/ }),
-    ).toBeVisible();
   }
   expect(errors).toEqual([]);
   expect(failures).toEqual([]);

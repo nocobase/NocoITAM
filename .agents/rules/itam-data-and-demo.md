@@ -396,10 +396,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
 - **A Demo Mode deployment's demo data page has no actions** (2026-10-25).
   Every visitor may enter as its administrator, so 设置 → 演示数据's
   Generate, Clear and Reset let anyone wipe the demo under everyone else.
-  The page stays, showing the data, the accounts and the daily reset; its
-  data card's actions, the plugin's only `CardAction`, are replaced by
-  nothing (`DEMO_COMPONENTS` in `client/pages/itam/settings/demo.tsx`). The
-  demo resets daily (`NOCOBASE_DEMO_RESET_*`). To reset it by hand, call the
+  The plugin's settings page is read-only from 0.2.0-beta.0, showing the
+  data, the accounts and the daily reset without application overrides for
+  its actions. ITAM only omits its header because the settings layout owns
+  the heading. The demo resets daily (`NOCOBASE_DEMO_RESET_*`). To reset it
+  by hand, call the
   plugin's API as the administrator:
   `POST <app>/api/demoMode/data/reset` with `{"language":"zh-CN"}` (or
   `en-US`), signed in or with an `x-api-key`, then follow

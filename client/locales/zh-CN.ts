@@ -46,13 +46,6 @@ const zhCN: AppResource = {
     add: '添加',
     create: '创建',
   },
-  demoMode: {
-    badge: '演示模式',
-    title: '这是演示环境',
-    hint: '数据每天自动重置，修改不会保存。可以直接切换到下面的账户，看看不同角色看到的内容。',
-    accounts: '切换账户',
-    switchFailed: '切换账户失败，请重试。',
-  },
   account: {
     ...systemZhCN.account,
     openMenu: '打开账户菜单',
