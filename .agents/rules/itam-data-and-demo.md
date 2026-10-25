@@ -393,3 +393,17 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   register's currency is the one the answers quote (CNY for Chinese, USD for
   English). To change one, capture again and regenerate both files rather
   than editing an answer by hand.
+- **A Demo Mode deployment's demo data page has no actions** (2026-10-25).
+  Every visitor may enter as its administrator, so 设置 → 演示数据's
+  Generate, Clear and Reset let anyone wipe the demo under everyone else.
+  The page stays, showing the data, the accounts and the daily reset; its
+  data card's actions, the plugin's only `CardAction`, are replaced by
+  nothing (`DEMO_COMPONENTS` in `client/pages/itam/settings/demo.tsx`). The
+  demo resets daily (`NOCOBASE_DEMO_RESET_*`). To reset it by hand, call the
+  plugin's API as the administrator:
+  `POST <app>/api/demoMode/data/reset` with `{"language":"zh-CN"}` (or
+  `en-US`), signed in or with an `x-api-key`, then follow
+  `GET <app>/api/demoMode/data` until `state` is `ready`; on a server with
+  the CLI, `pnpm nocobase demo-mode data reset --force`. The API still
+  answers any administrator: hiding the buttons stops the casual reset, not
+  a determined one.
