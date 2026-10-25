@@ -1,4 +1,3 @@
-import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
 import { databaseManagerToken } from '@nocobase/db';
 import type { Application } from '@nocobase/app-server/application';
 import { demoDataToken } from '@nocobase/app-plugin-demo-mode/server/tokens';
@@ -11,14 +10,6 @@ import {
   type DemoLanguage,
 } from './itam/demo.js';
 
-const demoAdministrator = (language: string) => ({
-  username: 'admin',
-  name: language === 'zh-CN' ? '演示管理员' : 'Demo Admin',
-  email: 'admin@demo.nocoitam.example',
-  password: 'Demo@2026',
-  role: language === 'zh-CN' ? '演示管理员' : 'Demo Administrator',
-});
-
 /** Adapt the existing ITAM story; Demo Mode owns lifecycle, accounts and resets. */
 export default class ItamDemoModeProvider extends ServiceProvider<Application> {
   public readonly name = 'itam/demo-mode';
@@ -29,38 +20,16 @@ export default class ItamDemoModeProvider extends ServiceProvider<Application> {
     data.register({
       id: 'itam',
       languages: DEMO_LANGUAGES,
-      accounts: (language) => [
-        demoAdministrator(language),
-        ...demoAccountsIn(language as DemoLanguage).map((account) => ({
+      accounts: (language) =>
+        demoAccountsIn(language as DemoLanguage).map((account) => ({
           ...account,
           role:
             DEMO_STAFF[language as DemoLanguage].find(
               (spec) => spec.username === account.username,
             )?.position ?? DEMO_STAFF[language as DemoLanguage][2].position,
         })),
-      ],
       timeZone: (language) => (language === 'zh-CN' ? 'Asia/Shanghai' : 'UTC'),
       generate: async (context) => {
-        const authz = this.app.container.resolve(authorizationToken);
-        // A dataset-owned management role can be cleaned up independently of
-        // the installation's protected root role and its initial administrator.
-        await context.createPermissionSet({
-          key: 'itam-demo-administrator',
-          title: 'Demo Administrator',
-          grants: [
-            authz.settings.grant('demoMode.data', ['read', 'manage']),
-            authz.settings.grant('demoMode.configuration', [
-              'read',
-              'configure',
-            ]),
-          ],
-        });
-        await context.createAccount({
-          ...demoAdministrator(context.language),
-          roleScopes: {
-            app: ['itam-asset-manager', 'itam-demo-administrator'],
-          },
-        });
         // First import can adopt the already generated story without rewriting
         // any business row. Legacy identities stay under the old cleanup until
         // the first reset; new identities then belong entirely to the plugin.

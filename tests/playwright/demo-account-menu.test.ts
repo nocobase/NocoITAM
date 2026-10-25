@@ -34,8 +34,11 @@ test('switches demo accounts from the header menu without a signed-in floating e
     page.getByRole('button', { name: /^(Enter|进入)$/ }),
   ).toHaveCount(0);
   await submenu.hover();
+  await expect(
+    page.getByRole('menuitemradio', { name: /Demo Admin|演示管理员/ }),
+  ).toHaveCount(0);
   const account = page.getByRole('menuitemradio', {
-    name: process.env.E2E_DEMO_ACCOUNT_NAME ?? 'Demo Admin',
+    name: process.env.E2E_DEMO_ACCOUNT_NAME ?? 'Daniel Brooks',
   });
   await expect(account).toBeVisible();
   if (process.env.MENU_SCREENSHOT)
@@ -56,7 +59,7 @@ test('switches demo accounts from the header menu without a signed-in floating e
   await expect(page).toHaveURL(new URL('devices', base).href);
   await expect(page.locator('h1').first()).toBeVisible({ timeout: 60_000 });
   expect(await username()).toBe(
-    process.env.E2E_DEMO_ACCOUNT_USERNAME ?? 'admin',
+    process.env.E2E_DEMO_ACCOUNT_USERNAME ?? 'daniel',
   );
   await expect(
     page.getByRole('button', { name: /^(Enter|进入)$/ }),
@@ -65,20 +68,20 @@ test('switches demo accounts from the header menu without a signed-in floating e
   await page.goto(base.href);
   await expect(page.locator('h1').first()).toBeVisible({ timeout: 30_000 });
   expect(await username()).toBe(
-    process.env.E2E_DEMO_ACCOUNT_USERNAME ?? 'admin',
+    process.env.E2E_DEMO_ACCOUNT_USERNAME ?? 'daniel',
   );
-  if ((process.env.E2E_DEMO_ACCOUNT_USERNAME ?? 'admin') === 'admin') {
-    await page.goto(new URL('settings/demo', base).href);
-    await expect(
-      page.getByRole('button', { name: /^(Reset|重置)$/ }),
-    ).toBeEnabled({ timeout: 30_000 });
-    const write = await page.request.post(
-      new URL('api/itam/devices', base).href,
-      { data: {} },
+  if ((process.env.E2E_DEMO_ACCOUNT_USERNAME ?? 'daniel') === 'daniel') {
+    const management = await page.request.get(
+      new URL('api/demoMode/configuration', base).href,
     );
-    expect(write.status()).toBe(400);
-    expect(await write.json()).toMatchObject({
-      error: { reason: 'DEMO_READ_ONLY' },
-    });
+    expect(management.status()).toBe(403);
   }
+  const write = await page.request.post(
+    new URL('api/itam/devices', base).href,
+    { data: {} },
+  );
+  expect(write.status()).toBe(400);
+  expect(await write.json()).toMatchObject({
+    error: { reason: 'DEMO_READ_ONLY' },
+  });
 });

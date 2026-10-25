@@ -415,11 +415,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   deployment variables during upgrade. Do not call the removed schedule write
   API. Preserve all data and test clear/reset only on isolated databases.
 
-- **Demo administrator (2026-10-24)**: the dedicated dataset lists `admin`
-  alongside the three active staff accounts. Its shared definition supplies both
-  the visitor menu and `context.createAccount`; the installation's `nocobase`
-  account remains separate. The plugin owns `itam-demo-administrator`, granting
-  demo data read/manage and configuration read/configure; `admin` also holds the
-  existing asset-manager role. Do not assign protected root just to enable demo
-  management. Business writes remain refused. Account-definition changes require
-  a dataset reset; verify the administrator survives clear and failed reset.
+- **Demo administrator (2026-10-25)**: use the installation's existing Super
+  Admin for demo management. The dataset creates only the business staff accounts;
+  it does not create a separate `admin` account or `itam-demo-administrator`
+  permission set. Quick entry includes the existing administrator automatically.
+  Test generation, clear and failed reset with that administrator and verify its
+  access survives. Never remove an ordinary installation's account merely because
+  its username is `admin`.

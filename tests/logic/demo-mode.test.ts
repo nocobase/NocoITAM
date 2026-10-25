@@ -55,13 +55,12 @@ test('demo permits browsing, refuses writes, and resets the existing ITAM story 
   expect(generated.counts.devices).toBeGreaterThan(50);
   const accounts = await (await request('/demoMode/accounts')).json();
   expect(
-    accounts.data.map((account: { username: string }) => account.username),
-  ).toEqual(expect.arrayContaining(['admin', 'daniel', 'emily', 'ryanm']));
-  expect(
-    accounts.data.some(
-      (account: { username: string }) => account.username === 'markt',
-    ),
-  ).toBe(false);
+    accounts.data
+      .map((account: { username: string }) => account.username)
+      .sort(),
+  ).toEqual(
+    [DEFAULT_ADMIN_CREDENTIALS.username, 'daniel', 'emily', 'ryanm'].sort(),
+  );
 
   for (const path of [
     '/itam/settings',
@@ -131,6 +130,11 @@ test('demo permits browsing, refuses writes, and resets the existing ITAM story 
     .execute();
   const permissionSets =
     testApp.application.container.resolve(authorizationToken).permissionSets;
+  expect(
+    (await permissionSets.list()).some(
+      (set) => set.key === 'itam-demo-administrator',
+    ),
+  ).toBe(false);
   const importerGrant = (await permissionSets.listAssignments()).find(
     (assignment) =>
       assignment.subject.type === 'user' &&
@@ -181,25 +185,6 @@ test('demo permits browsing, refuses writes, and resets the existing ITAM story 
   ).toBe(visitorBefore.user.id);
   expect((await visitor.fetch('/itam/devices')).status).toBe(200);
   expect((await visitor.fetch('/demoMode/configuration')).status).toBe(403);
-  const demoAdmin = await signIn(testApp, {
-    username: 'admin',
-    password: 'Demo@2026',
-  });
-  expect((await demoAdmin.fetch('/demoMode/configuration')).status).toBe(200);
-  expect((await demoAdmin.fetch('/demoMode/data')).status).toBe(200);
-  const deniedWrite = await demoAdmin.fetch('/itam/devices', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: '{}',
-  });
-  expect(deniedWrite.status).toBe(400);
-  expect(await deniedWrite.json()).toMatchObject({
-    error: { reason: 'DEMO_READ_ONLY' },
-  });
-  const visitorSession = await (
-    await demoAdmin.fetch('/auth/get-session')
-  ).json();
-  const visitorId = String(visitorSession.user.id);
   const assignments = () =>
     permissionSets
       .listAssignments()
@@ -207,40 +192,46 @@ test('demo permits browsing, refuses writes, and resets the existing ITAM story 
         rows.filter(
           (assignment) =>
             assignment.subject.type === 'user' &&
-            String(assignment.subject.id) === visitorId,
+            String(assignment.subject.id) === actorId,
         ),
       );
   const beforeClear = await assignments();
   expect(beforeClear.length).toBeGreaterThan(0);
-  // Exercise a dataset-owned actor, not only the initial root administrator.
-  await data.clear(visitorId);
+  // Demo management uses the existing installation administrator throughout.
+  await data.clear(actorId);
   expect(await assignments()).toEqual(beforeClear);
-  expect(
-    (await (await demoAdmin.fetch('/auth/get-session')).json()).user.id,
-  ).toBe(visitorId);
-  const retained = await signIn(testApp, {
-    username: 'admin',
-    password: 'Demo@2026',
-  });
+  expect((await (await admin.fetch('/auth/get-session')).json()).user.id).toBe(
+    actorId,
+  );
+  const retained = await signIn(testApp, DEFAULT_ADMIN_CREDENTIALS);
   expect(
     (await (await retained.fetch('/auth/get-session')).json()).user.id,
-  ).toBe(visitorId);
+  ).toBe(actorId);
   expect((await data.status()).present).toBe(false);
   const afterClear = await (await request('/demoMode/accounts')).json();
   expect(
     afterClear.data
       .map((account: { username: string }) => account.username)
       .sort(),
-  ).toEqual([DEFAULT_ADMIN_CREDENTIALS.username, 'admin'].sort());
+  ).toEqual([DEFAULT_ADMIN_CREDENTIALS.username]);
   expect(
-    (await request('/demoMode/accounts/admin/signIn', { method: 'POST' }))
-      .status,
+    (
+      await request(
+        `/demoMode/accounts/${DEFAULT_ADMIN_CREDENTIALS.username}/signIn`,
+        { method: 'POST' },
+      )
+    ).status,
   ).toBe(200);
-  const regenerated = await data.importNow(visitorId, 'en-US');
+  const regenerated = await data.importNow(actorId, 'en-US');
   expect(regenerated.failure).toBeNull();
+  expect((await (await admin.fetch('/auth/get-session')).json()).user.id).toBe(
+    actorId,
+  );
   expect(
-    (await (await demoAdmin.fetch('/auth/get-session')).json()).user.id,
-  ).toBe(visitorId);
+    (await (await request('/demoMode/accounts')).json()).data.map(
+      (account: { username: string }) => account.username,
+    ),
+  ).not.toContain('admin');
   const demo = testApp.application.container.resolve(demoServiceToken);
   const failure = vi
     .spyOn(demo, 'generate')
@@ -253,8 +244,8 @@ test('demo permits browsing, refuses writes, and resets the existing ITAM story 
     expect((await data.status()).failure).not.toBeNull();
     expect((await assignments()).length).toBeGreaterThan(0);
     expect(
-      (await (await demoAdmin.fetch('/auth/get-session')).json()).user.id,
-    ).toBe(visitorId);
+      (await (await admin.fetch('/auth/get-session')).json()).user.id,
+    ).toBe(actorId);
   } finally {
     failure.mockRestore();
   }

@@ -7,11 +7,11 @@ test('demo settings has no redundant refresh toolbar', async ({ page }) => {
   test.setTimeout(120_000);
   const base = new URL(`${entry!.replace(/\/+$/, '')}/`);
   await page.goto(
-    new URL('demo-sign-in?as=admin&redirect=/settings/demo', base).href,
+    new URL('demo-sign-in?as=nocobase&redirect=/settings/demo', base).href,
   );
   await expect(
     page.getByRole('button', { name: /^(Reset|重置)$/ }),
-  ).toBeVisible({ timeout: 60_000 });
+  ).toBeEnabled({ timeout: 60_000 });
   await expect(
     page.getByText(/^(Daily reset|每日重置)$/, { exact: true }),
   ).toBeVisible();

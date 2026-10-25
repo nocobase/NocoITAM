@@ -19,7 +19,7 @@ test('demo writes show one toast, restore inline values and keep form drafts', a
       new URL(response.url()).pathname.endsWith('/api/itam/devices') &&
       response.request().method() === 'GET',
   );
-  await page.goto(`${base}demo-sign-in?as=admin&redirect=/devices`);
+  await page.goto(`${base}demo-sign-in?as=nocobase&redirect=/devices`);
   const records = (await (await listed).json()) as { data: { id: string }[] };
   expect(records.data.length).toBeGreaterThan(0);
   await page.goto(`${base}devices/${records.data[0]!.id}`);
