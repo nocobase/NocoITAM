@@ -17,6 +17,7 @@ import { RecordDrawerProvider } from '@/components/itam/record-drawer';
 import { useNavigationCounts } from '@/lib/itam/navigation-counts';
 import { useLiveWork } from '@/lib/itam/live-work';
 import { useItamQueryDefaults } from '@/lib/itam/query-defaults';
+import { titleBadgeText, useDocumentTitleBadge } from '@/lib/itam/title-badge';
 
 import { RouteTreeProvider } from '../routing/route-context.js';
 
@@ -55,6 +56,9 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
   useLiveWork();
   // Application change (ITAM): the numbers beside 待办 and 收件箱.
   const counts = useNavigationCounts();
+  // Application change (ITAM, 2026-10-25): 收件箱's number also leads the
+  // browser tab's title, as NocoCRM's does.
+  useDocumentTitleBadge(titleBadgeText(counts.inbox));
 
   const { t } = useTranslation();
   const { items: menuItems, denied } = useRouteNavigation(routes);

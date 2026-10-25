@@ -55,3 +55,7 @@ The signed-in region waits in `client/routing/session-preparation.tsx` before mo
   `UserMenu`. Demo Mode stays registered with `accountSwitcher: 'menu'`, so
   the plugin draws no floating switcher of its own. NocoCRM carries the same
   badge.
+- **Inbox count in the tab title (2026-10-25):** `AppLayout` puts 收件箱's
+  number (`useNavigationCounts().inbox`) in front of the browser tab's title,
+  "(3) NocoITAM", through `useDocumentTitleBadge` in
+  `client/lib/itam/title-badge.ts`, as NocoCRM's `inbox-badge.ts` does.
