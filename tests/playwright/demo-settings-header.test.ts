@@ -24,7 +24,7 @@ test('demo settings has no redundant refresh toolbar', async ({ page }) => {
   await expect(page.getByRole('switch')).toHaveCount(0);
   await expect(page.getByText(/03:00/).first()).toBeVisible();
   await expect(
-    page.getByText('nocobase', { exact: true }).first(),
+    page.locator('a[href*="demo-sign-in?as=nocobase"]'),
   ).toBeVisible();
   if (process.env.DEMO_SCREENSHOT)
     await page.screenshot({
