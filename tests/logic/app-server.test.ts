@@ -340,10 +340,9 @@ describe('app server', () => {
             new Hono().get('/test-runtime', (c) => c.json({ ok: true })),
           ),
         ],
-        serviceProviders: [
-          ...appRuntime.serviceProviders,
-          TestRuntimeApplicationProvider,
-        ],
+        // This composition fixture replaces plugins and their dependent providers together.
+        // The real application providers are covered by the application integration tests.
+        serviceProviders: [TestRuntimeApplicationProvider],
       },
       scope,
     );

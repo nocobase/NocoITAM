@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { databaseManagerToken } from '@nocobase/db';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   maintenanceServiceToken,
@@ -33,6 +33,10 @@ import { purchaseOrderRoutes } from '../../server/routes/itam/purchase-orders.js
 import { stockRoutes } from '../../server/routes/itam/stock.js';
 import { workbenchRoutes } from '../../server/routes/itam/workbench.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
+
+// Full-story imports exercise the real services and exceed the default 30-second budget.
+// Keep the longer budget local to this integration file.
+vi.setConfig({ testTimeout: 120_000 });
 
 const manager = { user: 'mia', role: 'manager' as const };
 const employee = { user: 'li', role: 'employee' as const };
