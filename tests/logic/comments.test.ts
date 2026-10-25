@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { commentRoutes } from '../../server/routes/itam/comments.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
+import { uuidOf } from '../support/ids.js';
 import { attachmentServiceToken } from '../../server/providers/itam/attachments.js';
 
 interface Line {
@@ -192,7 +193,7 @@ describe('comments', () => {
   it('attaches a file just uploaded and refuses one already on a record', async () => {
     const stamp = new Date().toISOString().slice(0, -1);
     const file = (id: string) => ({
-      id,
+      id: uuidOf(id),
       disk: 'local',
       key: id,
       filename: `${id}.pdf`,
@@ -212,23 +213,28 @@ describe('comments', () => {
       .insertInto('attachmentLinks')
       .values({
         id: 'link',
-        fileId: 'taken',
+        fileId: uuidOf('taken'),
         ownerType: 'vendors',
         ownerId: vendorId,
         createdAt: new Date(),
       })
       .execute();
 
-    const attached = await comment({ body: '', fileIds: ['fresh'] });
+    const attached = await comment({ body: '', fileIds: [uuidOf('fresh')] });
     expect(attached.status).toBe(201);
     const line = (await timeline()).find(
       (entry) => entry.event?.type === 'comment',
     );
     expect(line?.event?.payload?.files).toEqual([
-      expect.objectContaining({ id: 'fresh', filename: 'fresh.pdf' }),
+      expect.objectContaining({
+        id: uuidOf('fresh'),
+        filename: 'fresh.pdf',
+      }),
     ]);
 
-    expect((await comment({ body: 'x', fileIds: ['taken'] })).status).toBe(400);
+    expect(
+      (await comment({ body: 'x', fileIds: [uuidOf('taken')] })).status,
+    ).toBe(400);
   });
 
   it('lets its author take one file off, and lists its files among the record’s attachments', async () => {
@@ -238,7 +244,7 @@ describe('comments', () => {
       .insertInto('itamFiles')
       .values(
         ['one', 'two'].map((id) => ({
-          id,
+          id: uuidOf(id),
           disk: 'local',
           key: id,
           filename: `${id}.pdf`,
@@ -250,13 +256,16 @@ describe('comments', () => {
         })),
       )
       .execute();
-    const created = await comment({ body: 'Quotes', fileIds: ['one', 'two'] });
+    const created = await comment({
+      body: 'Quotes',
+      fileIds: [uuidOf('one'), uuidOf('two')],
+    });
     const id = ((await created.json()) as { data: { id: string } }).data.id;
 
     // Somebody else may not; its author may, keeping the text.
     const edit = (user: string) =>
       app.request(`/api/itam/comments/${id}`, {
-        ...json({ body: 'Quotes', mentions: [], keepFileIds: ['two'] }),
+        ...json({ body: 'Quotes', mentions: [], keepFileIds: [uuidOf('two')] }),
         method: 'PATCH',
         user,
         role: 'manager',
@@ -268,7 +277,7 @@ describe('comments', () => {
     );
     expect(line?.event?.payload).toMatchObject({
       body: 'Quotes',
-      files: [expect.objectContaining({ id: 'two' })],
+      files: [expect.objectContaining({ id: uuidOf('two') })],
     });
 
     // Files uploaded while editing join the ones it keeps.
@@ -276,7 +285,7 @@ describe('comments', () => {
       .query()
       .insertInto('itamFiles')
       .values({
-        id: 'three',
+        id: uuidOf('three'),
         disk: 'local',
         key: 'three',
         filename: 'three.pdf',
@@ -291,8 +300,8 @@ describe('comments', () => {
       ...json({
         body: 'Quotes',
         mentions: [],
-        keepFileIds: ['two'],
-        fileIds: ['three'],
+        keepFileIds: [uuidOf('two')],
+        fileIds: [uuidOf('three')],
       }),
       method: 'PATCH',
       user: 'mia',
@@ -304,9 +313,9 @@ describe('comments', () => {
         (await timeline()).find((entry) => entry.event?.type === 'comment')
           ?.event?.payload?.files as { id: string }[]
       ).map((file) => file.id),
-    ).toEqual(['two', 'three']);
+    ).toEqual([uuidOf('two'), uuidOf('three')]);
     await app.request(`/api/itam/comments/${id}`, {
-      ...json({ body: 'Quotes', mentions: [], keepFileIds: ['two'] }),
+      ...json({ body: 'Quotes', mentions: [], keepFileIds: [uuidOf('two')] }),
       method: 'PATCH',
       user: 'mia',
       role: 'manager',
@@ -320,7 +329,7 @@ describe('comments', () => {
       source: 'comments',
       files: [
         expect.objectContaining({
-          id: 'two',
+          id: uuidOf('two'),
           commentId: id,
           uploadedById: 'mia',
         }),

@@ -396,18 +396,21 @@ export function createOnboardingAdvisor(deps: {
       ownerId,
       plan.kit?.id ?? '',
     ].join('|');
-    const latest = await q()
+    // The joiner's runs still going, rather than the latest: MySQL keeps
+    // the time to the second, so a run started in the same second as the
+    // last one ended could sort below it (2026-10-25).
+    const running = await q()
       .selectFrom('onboardingRuns')
-      .select(['id', 'status', 'createdAt'])
+      .select(['id', 'createdAt'])
       .where('personId', '=', personId)
-      .orderBy('createdAt', 'desc')
-      .executeTakeFirst<Row>();
-    if (latest?.status === 'running') {
-      const age = Date.now() - new Date(String(latest.createdAt)).getTime();
-      if (active.has(String(latest.id)) || age < STALE_MS)
+      .where('status', '=', 'running')
+      .execute<Row>();
+    for (const run of running) {
+      const age = Date.now() - new Date(String(run.createdAt)).getTime();
+      if (active.has(String(run.id)) || age < STALE_MS)
         return { started: false, reason: 'running' };
       // Left running by a process that stopped.
-      await finish(String(latest.id), {
+      await finish(String(run.id), {
         status: 'failed',
         failure: 'Interrupted',
       });

@@ -6,15 +6,34 @@ NocoITAM 是面向 IT 团队的 IT 资产管理系统，基于 [NocoBase 3](http
 
 ## 快速开始
 
-在自己电脑上运行 NocoITAM，只需要 Node.js 和 pnpm：数据存在一个 SQLite 文件里，除了 AI，所有功能都不需要任何账号或密钥。整个过程大约十分钟。
+在自己电脑上运行 NocoITAM，只需要 Node.js 和 pnpm：数据默认存在一个 SQLite 文件里（也支持 PostgreSQL 和 MySQL），除了 AI，所有功能都不需要任何账号或密钥。可以让编程 Agent 帮你安装，也可以手动安装，大约十分钟；装好后登录并开始上手。
 
-### 1. 安装工具
+### 用编程 Agent 安装
+
+最省事的办法是交给编程 Agent。在准备放 NocoITAM 的文件夹里打开 Claude Code、Codex、Cursor 或其他编程 Agent，把下面这段交给它：
+
+```text
+从 https://github.com/nocobase/NocoITAM 把 NocoITAM 安装到这台电脑上并启动。
+克隆到 NocoITAM 文件夹，确认有 Node.js 24 或更高版本和 pnpm 10，
+然后按仓库里的 AGENTS.md 和 README 操作。
+语言：中文。
+数据库：默认的 SQLite。
+用 pnpm dev 启动，然后告诉我 Local: 地址和怎么登录。
+```
+
+要用英文，把语言那一行改成 `语言：英文`。要用 PostgreSQL 或 MySQL，把数据库那一行改成它的连接信息，例如：`数据库：PostgreSQL，主机 localhost，端口 5432，数据库 nocoitam，用户名 postgres；密码我单独告诉你。`
+
+仓库里的 `AGENTS.md` 会指导 Agent 操作，之后也可以让同一个 Agent 帮你连接模型服务或 MDM 平台，或者修改应用本身。装好后继续看[登录](#登录)。
+
+### 手动安装
+
+#### 1. 安装工具
 
 - **Node.js 24 或更高版本**。用 `node -v` 查看。
 - **pnpm 10**。用 `npm install -g pnpm@10` 安装，或运行 `corepack enable`。
-- **可选：一个大模型服务的 API Key**，资产管家和 AI 功能需要它，例如 DeepSeek、OpenAI、Claude、Gemini 或通义千问。应用运行起来后再添加（第 6 步）。
+- **可选：一个大模型服务的 API Key**，资产管家和 AI 功能需要它，例如 DeepSeek、OpenAI、Claude、Gemini 或通义千问。应用运行起来后再添加（见[上手](#上手)）。
 
-### 2. 获取代码
+#### 2. 获取代码
 
 ```bash
 git clone https://github.com/nocobase/NocoITAM.git
@@ -22,17 +41,17 @@ cd NocoITAM
 pnpm install
 ```
 
-### 3. 生成配置
+#### 3. 生成配置
 
 ```bash
-pnpm nocobase config init
+pnpm nocobase config init --dialect sqlite
 ```
 
-这会生成配置文件 `config.yml`，其中 `secrets` 部分有一个自动生成的密钥，用来加密应用保存的模型密钥和 MDM 凭据。请保管好这个密钥：没有它，加密过的内容就无法读取。`config.yml` 不会提交到 Git。
+这会生成配置文件 `config.yml`，其中 `secrets` 部分有一个自动生成的密钥，用来加密应用保存的模型密钥和 MDM 凭据。请保管好这个密钥：没有它，加密过的内容就无法读取。`config.yml` 不会提交到 Git。`--dialect sqlite` 把数据存在文件里；要改用 PostgreSQL 或 MySQL，见[配置](#配置)里的数据库一节。
 
 第一次启动前先选好语言：中文用 `pnpm nocobase config set i18n.defaultLocale=zh-CN`（默认是英文）。它决定初始化写入的分类、地点、部门和业务指导用哪种语言，以及系统初始的币种和时区（中文为人民币和上海，其他为美元和纽约；之后都可以在**设置 → 通用**里修改）。
 
-### 4. 启动应用
+#### 4. 启动应用
 
 ```bash
 pnpm dev
@@ -40,13 +59,13 @@ pnpm dev
 
 第一次启动会创建并初始化数据库 `storage/itam.sqlite`。准备好后会打印一个 `Local:` 地址，通常是 `http://127.0.0.1:13000/main/`。打开这个地址；如果 13000 端口被占用，会自动换到下一个空闲端口，所以请以打印出来的地址为准。
 
-### 5. 登录
+### 登录
 
 用初始管理员登录：用户名 `nocobase`（或邮箱 `admin@nocobase.com`），密码 `admin123`。登录后可以在**设置 → 用户**里修改密码。系统不开放自助注册，其他账号都由管理员创建。
 
 界面语言可以在右上角头像菜单里切换。
 
-### 6. 上手
+### 上手
 
 1. **用演示数据看看**。页面顶部的横幅会提示导入，也可以打开**设置 → 演示数据**，选择中文或英文导入（见下方[演示数据](#演示数据)）。
 2. **添加团队成员**。在**设置 → 用户**里创建账号或发送邀请，并给每个人分配角色（见下方[角色](#角色)）。只有 IT 人员需要登录；员工是台账里的人员，没有账号。
@@ -82,7 +101,7 @@ pnpm dev
 
 | 遇到的情况                              | 怎么办                                                                                                                     |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm install` 拒绝运行或报 engine 错误 | 使用 Node.js 24 或更高版本和 pnpm 10（第 1 步）。                                                                          |
+| `pnpm install` 拒绝运行或报 engine 错误 | 使用 Node.js 24 或更高版本和 pnpm 10（见[安装工具](#1-安装工具)）。                                                        |
 | 页面打不开                              | 使用 `pnpm dev` 打印的 `Local:` 地址，包括 `/main/`。同一个目录只能运行一个 `pnpm dev`，先停掉另一个。                     |
 | 看不到 AI 按钮，或资产管家不可用        | 还没有连接模型。在 **Agent 团队 → 模型**里添加模型服务和密钥。                                                             |
 | 单据读不出来                            | AI 读的是文字：Excel、CSV、Word 和文字版 PDF。照片和扫描版 PDF 没有文字可读，请手动输入或粘贴内容。                        |
@@ -175,7 +194,14 @@ ai:
 
 **访问地址**。`APP_BASE_PATH` 是挂载路径（默认 `/main`），`APP_PUBLIC_ORIGIN` 是不含路径的公开地址。部署时必须设置公开地址，否则浏览器的写操作会被拒绝（`403`）。
 
-**数据库**。默认使用 SQLite，文件是 `storage/itam.sqlite`；迁移和初始化数据在启动时执行。要用 PostgreSQL，添加 `@nocobase/db-postgres` 并运行 `pnpm nocobase config init --dialect postgres --force`。
+**数据库**。默认使用 SQLite，文件是 `storage/itam.sqlite`；迁移和初始化数据在启动时执行。NocoITAM 也能运行在 PostgreSQL 和 MySQL 上（MariaDB 用 MySQL 驱动）。这两个驱动只装在开发和测试依赖里，所以构建产物只带 SQLite；要换用其中一个：
+
+1. 用 `pnpm add --save-prod @nocobase/db-postgres`（或 `@nocobase/db-mysql`）把驱动移到构建会带上的依赖里。
+2. 建一个空数据库（MySQL 用 `utf8mb4` 字符集），以及一个能在里面建表的用户。
+3. 用 `pnpm nocobase config init --dialect postgres`（或 `mysql`；已有 `config.yml` 时加 `--force` 覆盖）生成配置，用 `pnpm nocobase config set database.connections.main.host=… database.connections.main.port=… database.connections.main.database=… database.connections.main.username=…` 设置连接，用 `pnpm nocobase config set --from-env database.connections.main.password=<变量名>` 设置密码，再用 `pnpm nocobase config check` 检查。
+4. 按[生成配置](#3-生成配置)里的说明选好语言，然后用 `pnpm dev` 启动，或按下文构建部署：第一次启动会建好所有表。
+
+环境变量 `DB_DIALECT`、`DB_HOST`、`DB_PORT`、`DB_DATABASE`、`DB_USERNAME` 和 `DB_PASSWORD` 会覆盖 `config.yml`。换数据库不会迁移数据：新库从空开始，可以用**设置 → 演示数据**填充。测试默认在 SQLite 上运行；`NOCOBASE_TEST_DB_DIALECT=postgres` 会在 PostgreSQL 服务器上运行数据库测试（连接信息读自 `PGHOST`、`PGPORT`、`PGUSER`、`PGPASSWORD` 和 `PGDATABASE`，每个测试用一个独立的库），`NOCOBASE_TEST_DB_DIALECT=mysql` 则在 MySQL 服务器上运行（`MYSQL_HOST`、`MYSQL_PORT`、`MYSQL_ADMIN_USER` 和 `MYSQL_ADMIN_PASSWORD`）。
 
 ## 基于 NocoBase 3
 

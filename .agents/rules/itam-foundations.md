@@ -155,3 +155,22 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   comment was never recorded. `summary: null` is only for a writer that has
   already recorded the act; a transition nobody else described keeps its
   summary.
+- **Every query runs on SQLite, PostgreSQL and MySQL** (2026-10-25). The
+  application is developed on SQLite, which forgives what the others refuse;
+  `NOCOBASE_TEST_DB_DIALECT=postgres` (or `mysql`) runs the tests on a server
+  (`tests/support/test-database.ts`) and shows it. What it found:
+  - LIKE matches case exactly on PostgreSQL, and the query layer has neither
+    ILIKE nor `lower()`. A list's search goes through `listCollection`, which
+    on PostgreSQL finds each word's matches through the Repository, ignoring
+    case, first (`caselessMatches`); a search written elsewhere does the
+    same or matches case.
+  - An uploaded file's id (`itamFiles.id`) is a UUID column on PostgreSQL,
+    which refuses other text with an error rather than finding no row: an id
+    from a request is checked with `isFileId` first. A link's `fileId` is
+    text, and PostgreSQL does not compare text with a UUID, so the two are
+    queried apart, never joined or compared in one statement.
+  - PostgreSQL refuses a NUL character in text: an id that matches nothing
+    is `''`, not `'\u0000'`.
+  - A test's fixtures follow the column types: file ids from `uuidOf()`
+    (`tests/support/ids.ts`), and a test's own time limit through
+    `timeLimit()` so it holds on a server.

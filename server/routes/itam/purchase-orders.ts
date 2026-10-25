@@ -41,6 +41,7 @@ import {
   readJsonObject,
   requireGrant,
 } from './http.js';
+import { isFileId } from '../../providers/itam/attachments.js';
 
 /** `/api/itam/purchase-orders`: lines, the approval steps, ordering and receiving. */
 const id = z.string().min(1).max(64);
@@ -310,6 +311,8 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
               .object({ fileId: id })
               .strict()
               .parse(await readJsonObject(context));
+            if (!isFileId(fileId))
+              throw new RecordNotFoundError('itamFiles', fileId);
             const fresh = await database
               .query()
               .selectFrom('itamFiles')
@@ -325,18 +328,18 @@ export const purchaseOrderRoutes: AppApiRouteContribution<Application> =
                   .toISOString()
                   .slice(0, -1),
               )
-              .where((eb) =>
-                eb.not(
-                  eb.exists(
-                    eb
-                      .selectFrom('attachmentLinks')
-                      .select('id')
-                      .whereRef('attachmentLinks.fileId', '=', 'itamFiles.id'),
-                  ),
-                ),
-              )
               .executeTakeFirst();
-            if (!fresh) throw new RecordNotFoundError('itamFiles', fileId);
+            // On a record already, asked apart: a link's file id is text and
+            // the file's a UUID, which PostgreSQL does not compare
+            // (2026-10-25).
+            const linked = await database
+              .query()
+              .selectFrom('attachmentLinks')
+              .select('id')
+              .where('fileId', '=', fileId)
+              .executeTakeFirst();
+            if (!fresh || linked)
+              throw new RecordNotFoundError('itamFiles', fileId);
             const document = await readDocument(fileId).catch(() => undefined);
             return context.json({
               data: {

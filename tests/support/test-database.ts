@@ -1,8 +1,7 @@
 import path from 'node:path';
 
-import { sqliteDriver } from '@nocobase/db-sqlite';
+import { createTestDatabase as openTestDatabase } from '@nocobase/app-testing/server';
 import {
-  createDatabaseManager,
   createMigrator,
   type DatabaseManager,
   type Migrator,
@@ -21,28 +20,24 @@ export interface TestDatabase {
   destroy(): Promise<void>;
 }
 
-/** An in-memory SQLite database with this application's migrations applied. */
+/**
+ * An isolated database with this application's migrations applied: SQLite
+ * unless `NOCOBASE_TEST_DB_DIALECT` names another (2026-10-25), postgres or
+ * mysql on the server `POSTGRES_*` / `MYSQL_*` point at, so the tests show
+ * the application runs there too. `destroy()` drops it again.
+ */
 export async function createTestDatabase(): Promise<TestDatabase> {
-  const database = createDatabaseManager({
-    default: 'main',
-    // Since template beta.43 sqlite is its own driver package, and a manager
-    // built directly (rather than through the application, which loads the
-    // official drivers) registers it explicitly.
-    drivers: { sqlite: sqliteDriver },
-    connections: {
-      main: { dialect: 'sqlite', filename: ':memory:' },
-    },
-  });
+  const test = await openTestDatabase();
   const migrator = createMigrator({
-    database,
+    database: test.database,
     packageName: 'itam',
     directory: migrationsDirectory,
   });
   await migrator.latest();
   return {
-    database,
+    database: test.database,
     migrator,
-    destroy: () => database.destroy(),
+    destroy: () => test.destroy(),
   };
 }
 
@@ -57,4 +52,14 @@ export async function schemaClient(
   database: DatabaseManager,
 ): Promise<SchemaClient> {
   return database.connection().client<SchemaClient>();
+}
+
+/**
+ * A test's own time limit, five times as long on a database server
+ * (2026-10-25): the demo's tests import it whole, which takes minutes there
+ * rather than seconds.
+ */
+export function timeLimit(ms: number): number {
+  const dialect = process.env.NOCOBASE_TEST_DB_DIALECT?.trim();
+  return dialect && dialect !== 'sqlite' ? ms * 5 : ms;
 }
