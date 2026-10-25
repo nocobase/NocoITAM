@@ -46,7 +46,8 @@ vi.mock('@nocobase/i18n/client', () => ({
 vi.mock('@nocobase/app-plugin-authorization/client', () => ({
   useCan: () => ({ can: false, isPending: false }),
 }));
-vi.mock('@tanstack/react-query', () => ({
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-query')>()),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 vi.mock('../../client/lib/itam/device-sync.js', () => ({

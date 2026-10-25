@@ -1,4 +1,5 @@
 import type { PagePermissionTitles } from './page-permissions.js';
+import { demoSettingsRoutes } from '../../lib/itam/demo-routes.js';
 
 /** Permission labels for application pages without navigation/breadcrumb titles (including overlays).
  * Keys are existing route names; values are application translation keys.
@@ -16,7 +17,7 @@ export const pagePermissionTitles: PagePermissionTitles = {
       'itam-settings-mdm',
       'itam-settings-flows',
       'itam-settings-receipt-agent',
-      'itam-settings-demo',
+      ...demoSettingsRoutes.map((route) => route.name),
     ].map((name) => [name, 'admin.pages.itamSettings']),
   ),
   'settings-scheduled-tasks': 'admin.pages.scheduledTasks',
