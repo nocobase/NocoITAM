@@ -32,6 +32,10 @@ vi.mock('@nocobase/i18n/client', () => ({
 vi.mock('../../client/lib/itam/ai.js', () => ({
   useAiStatus: () => state.status,
 }));
+// Not a Demo Mode deployment (`useToggleAssistant` asks, 2026-10-25).
+vi.mock('../../client/lib/itam/demo-mode.js', () => ({
+  useDemoMode: () => ({ isLoading: false, data: false }),
+}));
 vi.mock('#extensions/nocobase-agent-chat/chat-panel', () => ({
   ChatPanel: () => null,
 }));
