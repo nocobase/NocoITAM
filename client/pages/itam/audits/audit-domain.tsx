@@ -24,6 +24,7 @@ import {
   type ItamRecord,
 } from '@/lib/itam/api';
 import type { DomainConfig } from '@/lib/itam/domain';
+import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
 import { errorMessage, text } from '@/lib/itam/format';
 import {
   AUDITS_PATH,
@@ -578,7 +579,7 @@ function AuditActions({
     <>
       {confirm.dialog}
       {buttons}
-      {run.error && !dialog ? (
+      {run.error && !dialog && !isDemoReadOnlyError(run.error) ? (
         <span className='text-sm text-destructive'>
           {apiErrorBody(run.error)?.message ?? errorMessage(run.error)}
         </span>

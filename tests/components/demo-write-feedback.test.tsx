@@ -1,6 +1,7 @@
 import { ApiClientError, useApiClient } from '@nocobase/app-client';
 import { answerApi, renderWithApp } from '@nocobase/app-testing/client';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { expect, it, vi } from 'vitest';
 
@@ -10,6 +11,7 @@ import { InlineField } from '../../client/components/itam/inline-field.js';
 import { RecordFormDialog } from '../../client/components/itam/record-form-dialog.js';
 import { isDemoReadOnlyError } from '../../client/lib/itam/demo-errors.js';
 import type { FieldDefinition } from '../../client/lib/itam/fields.js';
+import { auditDomain } from '../../client/pages/itam/audits/audit-domain.js';
 import { SettingsCard } from '../../client/pages/itam/settings/settings-parts.js';
 import { SettingsError } from '../../client/pages/settings/shared.js';
 import enUS from '../../client/locales/en-US.js';
@@ -268,6 +270,59 @@ it('keeps a confirmation open without repeating the demo refusal', async () => {
   expect(screen.queryByText(refusal)).toBeNull();
   expect(screen.queryByText('Saved successfully')).toBeNull();
 });
+
+it.each([true, false])(
+  'shows only ordinary failures beside the Start audit button (demo=%s)',
+  async (demo) => {
+    const Actions = auditDomain.Actions!;
+    const start = vi.fn(() =>
+      Response.json(
+        {
+          error: {
+            reason: demo ? 'DEMO_READ_ONLY' : 'VALIDATION_ERROR',
+            message: demo ? refusal : failure,
+          },
+        },
+        { status: 400 },
+      ),
+    );
+    await renderWithApp(
+      <QueryClientProvider client={new QueryClient()}>
+        <Actions record={{ id: 'audit-1', status: 'notStarted' }} />
+      </QueryClientProvider>,
+      {
+        namespace: 'itam',
+        namespaces: { itam: enUS },
+        fetch: answerApi(({ method, path }) => {
+          if (path === 'itam/settings/permissions')
+            return { data: { start: true } };
+          if (method === 'POST' && path === 'itam/audits/audit-1/start')
+            return start();
+          return new Response(null, { status: 404 });
+        }),
+      },
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: enUS.audits.start }),
+    );
+    const dialog = screen.getByRole('dialog');
+    const confirm = within(dialog).getByRole('button', {
+      name: enUS.audits.start,
+    });
+    fireEvent.click(confirm);
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(confirm).toBeEnabled());
+    if (demo) expect(screen.queryByText(refusal)).toBeNull();
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: enUS.actions.cancel }),
+    );
+    if (demo) expect(screen.queryByText(refusal)).toBeNull();
+    else expect(screen.getByText(failure)).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: enUS.audits.start }),
+    ).toBeEnabled();
+  },
+);
 
 it('handles a rejected submission at the form event boundary', async () => {
   const onSubmit = vi.fn(async () => {
