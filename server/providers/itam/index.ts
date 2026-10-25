@@ -7,6 +7,7 @@ import { userAdministrationServiceToken } from '@nocobase/app-plugin-authenticat
 import { userManagementServiceToken } from '@nocobase/app-plugin-users/server/tokens';
 
 import { reconcileGrants } from './reconcile-grants.js';
+import { restoreModelPictures } from './model-pictures.js';
 import type { Application } from '@nocobase/app-server/application';
 import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
 import { notificationServiceToken } from '@nocobase/app-plugin-notification/server';
@@ -892,6 +893,21 @@ export default class ItamProvider extends ServiceProvider<Application> {
   }
 
   public override async start(): Promise<void> {
+    if (this.app.container.has(driveManagerToken)) {
+      try {
+        const restored = await restoreModelPictures(this.app);
+        if (restored && this.app.container.has(loggingToken))
+          this.app.container
+            .resolve(loggingToken)
+            .getLogger('itam')
+            .info({ restored }, 'Restored missing built-in model pictures');
+      } catch (error) {
+        this.lifecycleLogger().error(
+          'Model pictures could not be restored',
+          error,
+        );
+      }
+    }
     // The AI working language as saved; a database not yet migrated keeps
     // the deployment's locale until the next start.
     try {
