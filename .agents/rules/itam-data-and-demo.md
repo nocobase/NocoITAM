@@ -422,3 +422,6 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   Test generation, clear and failed reset with that administrator and verify its
   access survives. Never remove an ordinary installation's account merely because
   its username is `admin`.
+  On an older demo deployment, retire the verified dataset-owned account through
+  Users by disabling it and revoking its roles. Keep its tracked identity: the
+  plugin still needs it when clearing the old dataset on the next reset.
