@@ -12,6 +12,9 @@ const state = vi.hoisted(() => ({
     instruction?: string;
   }[],
   requests: [] as { path: string; json?: unknown }[],
+  // The unmatched picker's starting search: the first wording that found a
+  // record, or '' when none did (2026-10-26).
+  pickerStart: 'Testbook Pro 14 T4' as string | undefined,
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -136,8 +139,8 @@ vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCurrentUserId: () => 'mia',
 }));
 vi.mock('@tanstack/react-query', () => ({
-  // The unmatched pickers' starting search; none is found here.
-  useQuery: () => ({ data: undefined }),
+  // The unmatched pickers' starting search.
+  useQuery: () => ({ data: state.pickerStart }),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   useMutation: () => ({
     mutate: vi.fn(),
@@ -151,6 +154,7 @@ beforeEach(() => {
   state.available = true;
   state.asked = [];
   state.requests = [];
+  state.pickerStart = 'Testbook Pro 14 T4';
 });
 
 const dialog = () => (
@@ -214,7 +218,7 @@ it('opens on AI 整理 and fills the form from what the model read', async () =>
   ).toBeVisible();
 
   // The row the books did not hold is placed from its own picker, which
-  // starts at the document's wording and offers to create the model.
+  // starts at the document's wording when a model is found by it.
   expect(screen.getByText(/procurement\.linesTotal:1\b/)).toBeVisible();
   const picker = screen
     .getAllByRole('button', { name: 'procurement.selectModel' })
@@ -275,4 +279,28 @@ it('is the plain form when the assistant is not available', () => {
   expect(
     screen.queryByRole('button', { name: 'procurement.addLine' }),
   ).toBeNull();
+});
+
+// When no wording of the line finds a record, its picker opens on the whole
+// list rather than on a search that only offers to create one (2026-10-26).
+it('opens an unmatched line’s picker on the whole list when nothing is found', async () => {
+  state.pickerStart = '';
+  render(dialog());
+  fireEvent.change(
+    screen.getByRole('textbox', { name: 'procurement.capture.material' }),
+    { target: { value: 'Three Testbooks for the lab from Northwind' } },
+  );
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole('button', { name: 'procurement.capture.organise' }),
+    );
+    await Promise.resolve();
+  });
+  const pickers = await screen.findAllByRole('button', {
+    name: 'procurement.selectModel',
+  });
+  expect(pickers.some((button) => button.dataset.search === '')).toBe(true);
+  expect(
+    pickers.some((button) => button.dataset.search === 'Testbook Pro 14 T4'),
+  ).toBe(false);
 });
