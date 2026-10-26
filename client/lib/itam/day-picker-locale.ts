@@ -5,7 +5,9 @@ import {
   fr,
   id,
   ja,
+  ko,
   ptBR,
+  ru,
   vi,
   zhCN,
   zhTW,
@@ -29,6 +31,8 @@ const DAY_PICKER_LOCALES: Readonly<Record<string, DayPickerLocale>> = {
   'de-DE': de,
   'vi-VN': vi,
   'id-ID': id,
+  'ko-KR': ko,
+  'ru-RU': ru,
 };
 
 export function dayPickerLocale(language: string): DayPickerLocale {
