@@ -308,7 +308,9 @@ function UnmatchedPicker({
   const [placing, setPlacing] = useState(false);
   const [failure, setFailure] = useState<string>();
   // The first of the searches that finds something is what the picker
-  // opens on, so it does not open on an empty list.
+  // opens on, so it does not open on an empty list; when none finds
+  // anything, it opens on the whole list rather than on a search that
+  // offers only to create a record of that name (2026-10-26).
   const api = useApi();
   const searches = pickerSearches(line.description, line.partCode);
   const start = useQuery({
@@ -321,7 +323,7 @@ function UnmatchedPicker({
         });
         if (found.total > 0) return q;
       }
-      return searches[0] ?? '';
+      return '';
     },
   });
   const place = (id: string) => {
@@ -339,7 +341,7 @@ function UnmatchedPicker({
         reference={{ collection }}
         value={null}
         disabled={placing}
-        initialSearch={start.data ?? searches[0]}
+        initialSearch={start.data ?? ''}
         placeholder={t(
           software ? 'procurement.selectProduct' : 'procurement.selectModel',
         )}
