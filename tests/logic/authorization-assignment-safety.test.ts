@@ -88,7 +88,10 @@ test('uses explicit Member defaults without restoring removed roles or granting 
         ...(roleScopes ? { roleScopes } : {}),
       }),
     });
-    expect(response.status, await response.clone().text()).toBe(201);
+    expect(
+      response.status,
+      `Create user response: ${await response.clone().text()}`,
+    ).toBe(201);
     return (await response.json()).data;
   };
   const member = await create('member-test@example.test');
