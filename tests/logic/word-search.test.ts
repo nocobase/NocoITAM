@@ -33,6 +33,10 @@ describe('searching a list word by word', () => {
     );
     expect(pickerSearch('联想 笔记本')).toBe('联想 笔记本');
     expect(pickerSearch('Figma')).toBe('Figma');
+    // A bracketed note says what the line is for, not what it is
+    // (2026-10-26); a bracketed code stays.
+    expect(pickerSearch('电脑（更换销售部小王修不好的电脑）')).toBe('电脑');
+    expect(pickerSearch('MacBook Pro 14 (M3) 16GB')).toBe('MacBook Pro 14 M3');
   });
 
   it('falls back to the model number, then the part code', () => {

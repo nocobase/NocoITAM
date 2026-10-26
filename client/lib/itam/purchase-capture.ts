@@ -165,10 +165,15 @@ const NAMED = /[A-Za-z0-9]/;
  * wording without the configuration (16GB/512GB, 27英寸), since a list search
  * wants every word and a model is named without those — nor, when there are
  * other words, the Chinese that only says what kind of thing it is
- * (显示器, 笔记本内存), which no model name carries (2026-10-06).
+ * (显示器, 笔记本内存), which no model name carries (2026-10-06), nor a
+ * bracketed note in words.
  */
 export function pickerSearch(description: string): string {
+  // A bracketed note in words rather than a code — 电脑（更换销售部小王修不好的
+  // 电脑） — says what the line is for, which no model name carries; a
+  // bracketed code such as (M3) stays (2026-10-26).
   const words = description
+    .replace(/[(（][^()（）]*[\u3400-\u9fff][^()（）]*[)）]/gu, ' ')
     .split(/[\s/,，、()（）]+/u)
     .filter((word) => word && !SPEC_WORD.test(word));
   const named = words.filter((word) => NAMED.test(word));

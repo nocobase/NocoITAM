@@ -315,7 +315,7 @@ const SHAPES: Readonly<Record<ReadingTask, z.ZodType>> = {
 };
 
 const LINE_RULES =
-  'One line per item: description is the item as written, partCode the part code when one is printed, quantity, unitPrice per unit when stated (not the line total), itemType for software (perpetual or subscription). Give modelId or softwareProductId only when the `catalog` in the context lists that very model or product — another generation, size or edition is not it; otherwise leave it out and the person places the line. Set uncertain on a line whose item you are not sure of; source says where in the material the line is.';
+  "One line per item: description is the item as written — its name and specification only, never who or what it is for, which belongs in the order's description — partCode the part code when one is printed, quantity, unitPrice per unit when stated (not the line total), itemType for software (perpetual or subscription). Give modelId or softwareProductId only when the `catalog` in the context lists that very model or product — another generation, size or edition is not it; otherwise leave it out and the person places the line. Set uncertain on a line whose item you are not sure of; source says where in the material the line is.";
 
 /** What each task asks, in English like the other prompts. */
 const TASKS: Readonly<Record<ReadingTask, string>> = {
