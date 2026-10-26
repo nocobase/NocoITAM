@@ -975,7 +975,16 @@ function AttentionBand(): ReactElement | null {
                 >
                   {entry.count}
                 </span>
-                <span className='shrink-0 text-sm'>{label(entry.kind)}</span>
+                {/* Cut short rather than run into the next column
+                    (2026-10-26: Russian labels are twice as long). The
+                    records after it give way first; the whole label shows
+                    on hover. */}
+                <span
+                  className='min-w-0 truncate text-sm'
+                  title={label(entry.kind)}
+                >
+                  {label(entry.kind)}
+                </span>
                 <PreviewLine entry={entry} />
               </Link>
             ))}

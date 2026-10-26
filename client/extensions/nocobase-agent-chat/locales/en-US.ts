@@ -120,6 +120,10 @@ export interface AgentChatLocale {
       readonly reading: string;
       readonly working: string;
       readonly count_one: string;
+      // Application change (ITAM, 2026-10-26): the CLDR forms a language
+      // such as Russian adds beside one / other.
+      readonly count_few?: string;
+      readonly count_many?: string;
       readonly count_other: string;
       readonly started: string;
       readonly finished: string;
