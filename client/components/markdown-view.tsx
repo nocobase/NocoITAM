@@ -1,7 +1,8 @@
 /**
- * Markdown as compact prose for descriptions and comments: GitHub-flavoured Markdown, mention links
- * (`[@Name](mention://<kind>/<id>)`, as `RichTextEditor` writes them) shown as chips, and fenced code a consumer may
- * draw itself (`renderCodeBlock`, for diagrams). Every other URL keeps react-markdown's sanitisation.
+ * Markdown as compact prose for descriptions, comments and the agents' chat: GitHub-flavoured Markdown, mention links
+ * (`[@Name](mention://<kind>/<id>)`) shown as chips, and fenced code a consumer may draw itself (`renderCodeBlock`,
+ * for diagrams). Every other URL keeps react-markdown's sanitisation, and an image from another site is shown as a
+ * link rather than loaded (`MarkdownImage`).
  */
 import { UserIcon } from 'lucide-react';
 import type { ComponentProps, ReactElement, ReactNode } from 'react';
@@ -16,6 +17,59 @@ const MENTION_HREF = /^mention:\/\/([a-z][a-z0-9_]{1,31})\//u;
 
 function urlTransform(url: string): string {
   return MENTION_HREF.test(url) ? url : defaultUrlTransform(url);
+}
+
+/**
+ * Whether an image URL stays on this site. A relative target resolves against the application; an absolute one must
+ * name its origin. Anything that cannot be parsed is treated as foreign.
+ */
+function sameOrigin(url: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return new URL(url, window.location.href).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * An image in rendered Markdown. The agents' answers are Markdown a model wrote, and the register's own fields reach
+ * the conversation, so an instruction planted in a device's notes or an imported row can ask for an image whose URL
+ * carries what the model just read: rendering that `<img>` sends the data before anybody has looked at the reply. So
+ * only an image on this site is loaded (the application's own uploads); any other is shown as a link to its target,
+ * which keeps it on screen without fetching anything. The server's `img-src` policy (`server/security-headers.ts`) is
+ * the second line of the same defence.
+ */
+function MarkdownImage({
+  src,
+  alt,
+  title,
+  node: _node,
+  ...props
+}: ComponentProps<'img'> & { readonly node?: unknown }): ReactElement {
+  const target = typeof src === 'string' ? src : '';
+  if (target && sameOrigin(target))
+    return (
+      <img
+        src={target}
+        alt={alt}
+        title={title}
+        className='my-2 max-w-full rounded-md'
+        {...props}
+      />
+    );
+  const label = alt?.trim() || title?.trim() || target;
+  if (!target) return <span>{label}</span>;
+  return (
+    <a
+      href={target}
+      target='_blank'
+      rel='noreferrer noopener'
+      className='font-medium text-primary underline underline-offset-4'
+    >
+      {label}
+    </a>
+  );
 }
 
 interface HastNode {
@@ -150,6 +204,7 @@ export function MarkdownView({
       <td className='border px-2 py-1' {...props} />
     ),
     hr: ({ node: _node, ...props }) => <hr className='my-3' {...props} />,
+    img: MarkdownImage,
     h1: ({ node: _node, ...props }) => (
       <h1
         id={nextId()}

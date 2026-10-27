@@ -201,13 +201,6 @@ async function requireDialogFields(
   }
 }
 
-/** The conditional requirements, told to the model beside the field list. */
-export const CREATE_REQUIREMENTS: string = [
-  "devices: ownership and locationId are required; lenderVendorId and returnDueDate when ownership is leased or borrowed; serialNo when the model's category requires serials (laptops, desktops, phones… do — ask for it). assignTo { targetType, targetId } creates it in use, assigned in the same step.",
-  'entitlements: licensingModel for a perpetual; billingModel, billingCycle and expiryDate for a subscription; seatCount unless the licence is site / free or the subscription is billed flat.',
-  'repairs: expectedReturnAt is required (sentAt defaults to today); vendorId unless the method is internal.',
-].join('\n');
-
 /** One line per collection naming its fields: `name`, optional `name?`, enums. */
 function describeFields(schema: z.ZodObject): string {
   const json = z.toJSONSchema(schema, { unrepresentable: 'any' }) as {

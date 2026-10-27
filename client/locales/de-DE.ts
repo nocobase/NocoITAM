@@ -3602,11 +3602,6 @@ const deDE: AppResource = {
     reportInsight: 'Diesen Bericht auswerten',
     parseDocument: 'Dokument auslesen',
     groupDifferences: 'Abweichungen erklären',
-    quick: {
-      planToday: 'Heutige Arbeit planen',
-      inspectRisks: 'Geräterisiken prüfen',
-      costAnalysis: 'Kosten & Optimierung',
-    },
     prompts: {
       globalSearch:
         'Finde, wonach ich frage: „{{text}}“. Wenn nach Datensätzen einer Art gefragt wird, suche sie und liste sie kurz mit Nummer oder Namen auf; andernfalls antworte direkt und knapp.',
@@ -3614,12 +3609,6 @@ const deDE: AppResource = {
         'Werte den Bericht {{report}} mit diesen Filtern aus: {{filters}}. Führe ihn mit itam stats aus und nenne dann in drei bis fünf Sätzen zuerst die wichtigste Zahl und Veränderung, etwaige Auffälligkeiten und zum Schluss eine Empfehlung.',
       groupDifferences:
         'Analysiere die offenen Abweichungen dieser Inventur (lies ihre Positionen): Gruppiere sie nach ihrer wahrscheinlichsten Ursache (Arbeitsplatz gewechselt, falscher Inhaber erfasst, in Reparatur, von Ausgeschiedenen nicht zurückgegeben, tatsächlich verloren, nicht erfasstes Gerät …), liste die Geräte jeder Gruppe auf und sage, wie jede zu behandeln ist.',
-      planToday:
-        'Plane meine Arbeit für heute: Lies meine Freigaben, Wareneingänge, Inventuren und Erinnerungen, ordne sie nach Dringlichkeit und schlage die Aktionen vor, die ich sofort ausführen kann.',
-      inspectRisks:
-        'Führe eine Asset-Risikoprüfung durch: Nutze die Erinnerungen und Berichte, um die Risiken aufzulisten (ablaufende Garantien, ungenutzte Geräte, nicht inventarisierte Geräte, Ausgeschiedene mit Assets, überbelegte Nutzungsrechte, beendete Abonnements mit belegten Plätzen, niedriger Bestand, überfällige Leihen), beziffere jedes und schlage je Risiko einen nächsten Schritt vor.',
-      costAnalysis:
-        'Analysiere unsere IT-Kosten: Nutze die Berichte zu Kosten, Kosten pro Person und Software-Compliance, um zu zeigen, wohin das Geld fließt, und schlage konkrete Optimierungen vor (ungenutzte Plätze zurückholen, Abonnements reduzieren, Geräte stilllegen oder wiederverwenden).',
     },
   },
   board: {

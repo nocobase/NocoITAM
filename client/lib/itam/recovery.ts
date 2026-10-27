@@ -91,13 +91,6 @@ export interface PersonRecovery {
   } | null;
 }
 
-/** Which handlings a person carries out here, rather than somewhere else. */
-export const RECOVERY_ACTIONS: readonly RecoveryHandling[] = [
-  'return',
-  'takeBack',
-  'reclaim',
-];
-
 /** The query a person's recovery plan is read under, wherever it is read. */
 export function personRecoveryQuery(
   api: ReturnType<typeof useApi>,

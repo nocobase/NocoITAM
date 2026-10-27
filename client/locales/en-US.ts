@@ -3584,11 +3584,6 @@ const messages = {
     reportInsight: 'Interpret this report',
     parseDocument: 'Parse a document',
     groupDifferences: 'Explain the differences',
-    quick: {
-      planToday: "Plan today's work",
-      inspectRisks: 'Inspect device risks',
-      costAnalysis: 'Cost & optimisation',
-    },
     prompts: {
       globalSearch:
         'Find what I am asking for: "{{text}}". If it asks for records of one kind, look them up and list them briefly with their numbers or names; otherwise answer directly and briefly.',
@@ -3596,12 +3591,6 @@ const messages = {
         'Interpret the {{report}} report with these filters: {{filters}}. Run it with itam stats, then in three to five sentences give the most important number and change first, any anomaly, then one recommendation.',
       groupDifferences:
         'Analyse the open differences of this audit (read its items): group them by their most likely cause (moved desk, wrong holder record, in repair, leaver not returned, truly lost, unregistered device…), list the devices in each group, and say how to handle each.',
-      planToday:
-        'Plan my work for today: read my approvals, receipts, audits and the reminders, order them by urgency, and propose the actions I can take right away.',
-      inspectRisks:
-        'Run an asset risk inspection: use the reminders and the reports to list the risks (expiring warranties, idle devices, unaudited devices, leavers still holding items, over-allocated entitlements, ended subscriptions still holding seats, low stock, overdue loans), quantify each, and suggest one next step per risk.',
-      costAnalysis:
-        'Analyse our IT cost: use the costs, per-person cost and software compliance reports to show where the money goes, and propose concrete optimisations (idle seats to reclaim, subscriptions to reduce, devices to retire or reuse).',
     },
   },
   board: {

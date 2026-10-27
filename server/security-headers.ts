@@ -7,11 +7,9 @@ import type { Application } from '@nocobase/app-server/application';
  * The model's answers are rendered as Markdown, and the register's own fields
  * reach the conversation, so an instruction planted in a device's notes or an
  * imported row can ask for an image whose URL carries what the model just
- * read. The renderers refuse to load one
- * (`client/components/itam/ai/markdown-safety.tsx`), but they are used from
- * `client/extensions/nocobase-ai`, the Registry copy a future three-way merge
- * could take from upstream — and this header does not depend on that file
- * surviving.
+ * read. The renderer loads only images on this site
+ * (`MarkdownImage` in `client/components/markdown-view.tsx`), and this header
+ * holds the same line in the browser should a renderer ever miss it.
  *
  * Only `img-src` is set. A fuller policy would have to account for the
  * client's inline styles and the dev server, and getting one wrong breaks the

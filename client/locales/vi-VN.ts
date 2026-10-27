@@ -3535,11 +3535,6 @@ const viVN: AppResource = {
     reportInsight: 'Diễn giải báo cáo này',
     parseDocument: 'Phân tích tài liệu',
     groupDifferences: 'Giải thích các chênh lệch',
-    quick: {
-      planToday: 'Lập kế hoạch công việc hôm nay',
-      inspectRisks: 'Rà soát rủi ro thiết bị',
-      costAnalysis: 'Chi phí & tối ưu',
-    },
     prompts: {
       globalSearch:
         'Tìm những gì tôi đang hỏi: "{{text}}". Nếu cần tìm hồ sơ của một loại, hãy tra cứu và liệt kê ngắn gọn kèm số hiệu hoặc tên; nếu không, hãy trả lời trực tiếp và ngắn gọn.',
@@ -3547,12 +3542,6 @@ const viVN: AppResource = {
         'Diễn giải báo cáo {{report}} với các bộ lọc sau: {{filters}}. Chạy báo cáo bằng itam stats, sau đó trong ba đến năm câu, nêu con số và thay đổi quan trọng nhất trước, rồi các bất thường, sau đó là một khuyến nghị.',
       groupDifferences:
         'Phân tích các chênh lệch chưa xử lý của đợt kiểm kê này (đọc các mục của nó): nhóm chúng theo nguyên nhân có khả năng nhất (đổi chỗ ngồi, ghi sai người giữ, đang sửa chữa, người nghỉ việc chưa trả, thực sự bị mất, thiết bị chưa đăng ký…), liệt kê thiết bị trong từng nhóm và nêu cách xử lý cho từng nhóm.',
-      planToday:
-        'Lập kế hoạch công việc hôm nay cho tôi: đọc các phê duyệt, nhận hàng, kiểm kê và nhắc nhở của tôi, sắp xếp theo mức độ khẩn cấp và đề xuất các thao tác tôi có thể làm ngay.',
-      inspectRisks:
-        'Rà soát rủi ro tài sản: dùng các nhắc nhở và báo cáo để liệt kê rủi ro (bảo hành sắp hết, thiết bị nhàn rỗi, thiết bị chưa kiểm kê, người nghỉ việc vẫn giữ đồ, quyền sử dụng bị cấp vượt, thuê bao đã kết thúc vẫn còn suất, tồn kho thấp, cho mượn quá hạn), định lượng từng rủi ro và gợi ý một bước tiếp theo cho mỗi rủi ro.',
-      costAnalysis:
-        'Phân tích chi phí CNTT của chúng tôi: dùng các báo cáo chi phí, chi phí theo đầu người và tuân thủ phần mềm để cho thấy tiền đi đâu, và đề xuất các biện pháp tối ưu cụ thể (suất nhàn rỗi cần thu hồi, thuê bao cần cắt giảm, thiết bị cần ngừng sử dụng hoặc tái sử dụng).',
     },
   },
   board: {

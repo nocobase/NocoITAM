@@ -22,17 +22,9 @@ function translationKeys(
   });
 }
 
-/**
- * Application change (ITAM): the AI chat is the AI plugin's Registry item copied verbatim, and it translates through
- * its own `useAITranslate()` from its own `locales/`, not the application's namespace — its `t()` keys are not this
- * application's to define. The sign-in extension does use the application's keys, so it stays in the scan.
- */
-const OWN_TRANSLATOR = path.join(clientDirectory, 'extensions', 'nocobase-ai');
-
 function sourceFiles(directory: string): string[] {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(directory, entry.name);
-    if (entryPath === OWN_TRANSLATOR) return [];
     if (entry.isDirectory()) return sourceFiles(entryPath);
     return /\.tsx?$/u.test(entry.name) &&
       !entryPath.includes(`${path.sep}locales${path.sep}`)

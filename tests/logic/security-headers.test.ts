@@ -6,10 +6,9 @@ import { describe, expect, it } from 'vitest';
 import { securityHeadersHttpMiddleware } from '../../server/security-headers.js';
 
 /**
- * The header is the half of the Markdown exfiltration defence that does not
- * live in `client/extensions/nocobase-ai`, the Registry copy a future
- * three-way merge could take from upstream. It is asserted here so that half
- * cannot go quietly.
+ * The header is the server's half of the Markdown exfiltration defence; the
+ * renderer's half is `MarkdownImage` (tests/components/markdown-images.test.tsx).
+ * It is asserted here so that half cannot go quietly.
  */
 describe('security headers', () => {
   const respond = async (path = '/anything') => {

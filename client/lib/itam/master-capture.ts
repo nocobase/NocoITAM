@@ -23,14 +23,6 @@ export interface MasterCapture {
   readonly sources: readonly { readonly title: string; readonly url: string }[];
 }
 
-/** The page tool each dialog hands its reading back through. */
-export const MASTER_CAPTURE_TOOLS: Readonly<
-  Record<MasterCaptureCollection, string>
-> = {
-  models: 'fillModel',
-  softwareProducts: 'fillSoftwareProduct',
-};
-
 export const isMasterCaptureCollection = (
   collection: string,
 ): collection is MasterCaptureCollection =>
