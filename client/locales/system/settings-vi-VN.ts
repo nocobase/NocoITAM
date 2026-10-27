@@ -138,6 +138,9 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   noResults: 'Không có kết quả phù hợp',
   clearHint: 'Hãy thử tìm kiếm khác hoặc xóa bộ lọc.',
   noUsers: 'Chưa có người dùng',
+  noRoleAccess:
+    'Người dùng này vẫn có thể đăng nhập và sử dụng các chức năng cơ bản của tài khoản. Vai trò không cấp quyền truy cập nghiệp vụ.',
+  noAssignedRoles: 'Chưa gán vai trò',
   noRoles: 'Chưa có vai trò',
   create: 'Tạo',
   edit: 'Sửa',

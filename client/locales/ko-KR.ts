@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatKoKR from '../extensions/nocobase-agent-chat/locales/ko-KR.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/ko-KR.js';
 import adminKoKR from './admin/ko-KR.js';
 import systemKoKR from './system/ko-KR.js';
 
 const koKR: AppResource = {
   ...systemKoKR,
   ...agentChatKoKR,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminKoKR,
   home: {
     ...systemKoKR.home,

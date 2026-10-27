@@ -1,5 +1,6 @@
 import type { AppResource } from './en-US.js';
 import agentChatZhCN from '../extensions/nocobase-agent-chat/locales/zh-CN.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/zh-CN.js';
 import { adminIn, adminWording } from './admin/index.js';
 import systemZhCN from './system/zh-CN.js';
 
@@ -7,6 +8,8 @@ const zhCN: AppResource = {
   // The template's own copy; see `./en-US.ts`.
   ...systemZhCN,
   ...agentChatZhCN,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminIn(adminWording, 1),
   home: {
     ...systemZhCN.home,

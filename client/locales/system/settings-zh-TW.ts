@@ -128,6 +128,8 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   noResults: '沒有符合的結果',
   clearHint: '請換個搜尋條件或清除篩選。',
   noUsers: '目前沒有使用者',
+  noRoleAccess: '此使用者仍可登入並使用帳號基本功能，角色未授予業務存取權。',
+  noAssignedRoles: '未指派角色',
   noRoles: '目前沒有角色',
   create: '建立',
   edit: '編輯',

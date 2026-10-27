@@ -1,6 +1,7 @@
 import type { LocaleResource } from '@nocobase/i18n';
 
 import agentChatEnUS from '../extensions/nocobase-agent-chat/locales/en-US.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/en-US.js';
 import { adminIn, adminWording } from './admin/index.js';
 import systemEnUS from './system/en-US.js';
 
@@ -14,6 +15,8 @@ const messages = {
   // The agents' chat (client/extensions/nocobase-agent-chat), whose views
   // read `chat.*` here and fall back to their own English.
   ...agentChatEnUS,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   // The settings section's administration pages (client/pages/settings/).
   admin: adminIn(adminWording, 0),
   home: {
