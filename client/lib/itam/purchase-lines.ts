@@ -1,4 +1,5 @@
 import type { LineItemType } from './procurement.js';
+import { createUuid } from '@nocobase/app-client';
 
 /**
  * A purchase order line while it is being written, shared by the lines card
@@ -27,7 +28,7 @@ const ENTITLEMENT = new Set<string>(['perpetual', 'subscription']);
 /** A fresh line: a device, one of it, no price yet. */
 export function newPurchaseLine(): PurchaseLineDraft {
   return {
-    key: crypto.randomUUID(),
+    key: createUuid(),
     itemType: 'device',
     modelId: null,
     softwareProductId: null,

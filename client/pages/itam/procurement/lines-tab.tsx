@@ -1,4 +1,5 @@
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
+import { createUuid } from '@nocobase/app-client';
 import { EntitlementKindBadge } from '@/components/itam/status-badge';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -341,7 +342,7 @@ export function PurchaseOrderLinesCard({
     return event.clientY - rect.top < rect.height / 2 ? index : index + 1;
   };
   const blankLine = (): LineDraft => ({
-    key: crypto.randomUUID(),
+    key: createUuid(),
     itemType: 'device',
     modelId: null,
     softwareProductId: null,

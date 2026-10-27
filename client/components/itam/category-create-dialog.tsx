@@ -1,4 +1,4 @@
-import { resolveAppUrl } from '@nocobase/app-client';
+import { createUuid, resolveAppUrl } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { Sparkles } from 'lucide-react';
 import {
@@ -306,7 +306,7 @@ function CategoryCreateForm({
         setTurns((known) => [
           ...known,
           {
-            id: crypto.randomUUID(),
+            id: createUuid(),
             from: 'ai',
             text: answer.said || t('masterCapture.filled'),
           },
@@ -379,7 +379,7 @@ function CategoryCreateForm({
     if (!words) return;
     setTurns((known) => [
       ...known,
-      { id: crypto.randomUUID(), from: 'user', text: words },
+      { id: createUuid(), from: 'user', text: words },
     ]);
     void ask(words);
   };

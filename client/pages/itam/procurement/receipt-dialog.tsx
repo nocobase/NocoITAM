@@ -1,4 +1,4 @@
-import { useService } from '@nocobase/app-client';
+import { createUuid, useService } from '@nocobase/app-client';
 import { clientFileRepositoryManagerToken } from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -160,7 +160,7 @@ const outstandingOf = (line: ItamRecord): number =>
   Math.max(0, Number(line.quantity) - Number(line.receivedQuantity));
 
 const newUnit = (serialNo = '', source?: string): UnitDraft => ({
-  key: crypto.randomUUID(),
+  key: createUuid(),
   serialNo,
   ...(source ? { source } : {}),
 });

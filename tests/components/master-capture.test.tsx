@@ -33,6 +33,8 @@ vi.mock('@nocobase/i18n/client', () => ({
 }));
 vi.mock('@nocobase/app-client', () => ({
   resolveAppUrl: (path: string) => `/main${path}`,
+  // Unique enough for the row keys and message ids these tests create.
+  createUuid: () => Math.random().toString(36).slice(2),
 }));
 vi.mock('../../client/lib/itam/api.js', () => ({
   apiErrorBody: () => undefined,

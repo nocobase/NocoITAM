@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { copyText as copyToClipboard } from '@nocobase/app-client';
 import { Check, Copy, Pencil } from 'lucide-react';
 import { useRef, useState, type ReactElement, type ReactNode } from 'react';
 
@@ -29,7 +30,8 @@ export function FieldActions({
   const copy = () => {
     const shown = (copyText ?? valueRef.current?.innerText ?? '').trim();
     if (!shown || shown === '—') return;
-    void navigator.clipboard.writeText(shown).then(() => {
+    void copyToClipboard(shown).then((done) => {
+      if (!done) return;
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     });

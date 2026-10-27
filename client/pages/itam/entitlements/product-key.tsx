@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { copyText } from '@nocobase/app-client';
 import { useMutation } from '@tanstack/react-query';
 import { Check, Copy, Eye, EyeOff } from 'lucide-react';
 import { useEffect, useState, type MouseEvent, type ReactElement } from 'react';
@@ -50,14 +51,9 @@ export function ProductKeyValue({
     mutationFn: async () => {
       const key = revealed ?? (await fetchKey());
       if (!key) return { key, copied: false };
-      try {
-        await navigator.clipboard.writeText(key);
-        return { key, copied: true };
-      } catch {
-        // A browser may refuse the clipboard (no focus, no permission):
-        // show the key instead so it can be copied by hand.
-        return { key, copied: false };
-      }
+      // A browser may refuse the clipboard (no focus, no permission): then
+      // the key is shown instead so it can be copied by hand.
+      return { key, copied: await copyText(key) };
     },
     onSuccess: ({ key, copied: done }) => {
       if (done) {

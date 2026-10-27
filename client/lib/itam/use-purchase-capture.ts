@@ -1,4 +1,4 @@
-import { useService } from '@nocobase/app-client';
+import { createUuid, useService } from '@nocobase/app-client';
 import { clientFileRepositoryManagerToken } from '@nocobase/app-plugin-file/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -169,7 +169,7 @@ export function usePurchaseOrderCapture({
         } else if (answer.said)
           setTurns((current) => [
             ...current,
-            { id: crypto.randomUUID(), from: 'ai', text: answer.said },
+            { id: createUuid(), from: 'ai', text: answer.said },
           ]);
         setSession({ mode, phase: 'done' });
       } catch (error) {
@@ -242,7 +242,7 @@ export function usePurchaseOrderCapture({
     if (!said || !materialRef.current) return;
     setTurns((current) => [
       ...current,
-      { id: crypto.randomUUID(), from: 'user', text: said },
+      { id: createUuid(), from: 'user', text: said },
     ]);
     ask('adjust', materialRef.current, said);
   };

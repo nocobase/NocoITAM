@@ -1,4 +1,4 @@
-import { useToaster } from '@nocobase/app-client';
+import { createUuid, useToaster } from '@nocobase/app-client';
 import {
   chatKeys,
   useChatAgents,
@@ -195,7 +195,7 @@ export function useAskFiles(): AskFiles {
       const pending = accepted.map((file) => ({
         file,
         entry: {
-          uid: crypto.randomUUID(),
+          uid: createUuid(),
           filename: file.name || `pasted-${String(Date.now())}`,
           size: file.size,
           mimeType: file.type,

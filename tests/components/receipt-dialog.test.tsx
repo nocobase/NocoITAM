@@ -16,7 +16,11 @@ vi.mock('@nocobase/i18n/client', () => ({
       options?.count === undefined ? key : `${key}:${options.count}`,
   }),
 }));
-vi.mock('@nocobase/app-client', () => ({ useService: () => ({}) }));
+vi.mock('@nocobase/app-client', () => ({
+  useService: () => ({}),
+  // Unique enough for the row keys and message ids these tests create.
+  createUuid: () => Math.random().toString(36).slice(2),
+}));
 vi.mock('@nocobase/app-plugin-file/client', () => ({
   clientFileRepositoryManagerToken: Symbol('files'),
 }));

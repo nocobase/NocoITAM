@@ -1,4 +1,4 @@
-import { useToaster } from '@nocobase/app-client';
+import { createUuid, useToaster } from '@nocobase/app-client';
 import {
   buildPageContext,
   useChatAgents,
@@ -130,7 +130,7 @@ export function useStartConversation(): (input: {
           context,
           attachments,
           conversationId: null,
-          editorKey: `itam:${source}:${crypto.randomUUID()}`,
+          editorKey: `itam:${source}:${createUuid()}`,
           create: {
             agentId: ITAM_AGENT,
             source,

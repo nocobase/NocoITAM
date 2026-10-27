@@ -13,6 +13,7 @@ import {
   type AppUIToolApprovalInput,
   type ChatMessageSegment,
 } from '@nocobase/app-plugin-agents/client/chat';
+import { copyText } from '@nocobase/app-client';
 import type { ConversationNotice } from '@nocobase/app-plugin-agents/shared/conversations';
 import { getToolName, isToolUIPart } from 'ai';
 import {
@@ -432,10 +433,9 @@ function SentAt({
           aria-label={label}
           title={label}
           onClick={() =>
-            void navigator.clipboard
-              ?.writeText(content)
-              .then(() => setCopied(true))
-              .catch(() => undefined)
+            void copyText(content).then((done) => {
+              if (done) setCopied(true);
+            })
           }
         >
           {copied ? <CheckIcon /> : <CopyIcon />}

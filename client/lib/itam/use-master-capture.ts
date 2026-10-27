@@ -1,4 +1,5 @@
 import { useTranslation } from '@nocobase/i18n/client';
+import { createUuid } from '@nocobase/app-client';
 import { useMemo, useRef, useState } from 'react';
 
 import { useAiStatus } from './ai.js';
@@ -162,7 +163,7 @@ export function useMasterCapture({
         } else if (answer.said)
           setTurns((current) => [
             ...current,
-            { id: crypto.randomUUID(), from: 'ai', text: answer.said },
+            { id: createUuid(), from: 'ai', text: answer.said },
           ]);
         setSession({ mode, phase: 'done' });
       } catch (error) {
@@ -193,7 +194,7 @@ export function useMasterCapture({
       if (!said || materialRef.current === undefined) return;
       setTurns((current) => [
         ...current,
-        { id: crypto.randomUUID(), from: 'user', text: said },
+        { id: createUuid(), from: 'user', text: said },
       ]);
       ask('adjust', materialRef.current, said);
     },

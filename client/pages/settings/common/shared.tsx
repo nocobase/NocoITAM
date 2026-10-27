@@ -4,7 +4,7 @@
 // action, a field that copies a secret, a form in a route dialog, a text
 // field and truncated cells. The prepared Users and Roles pages have their
 // own in ../shared.tsx. Functions and hooks are in ./hooks.ts.
-import { useToaster } from '@nocobase/app-client';
+import { copyText, useToaster } from '@nocobase/app-client';
 import { useAuthentication } from '@nocobase/app-plugin-authentication/client';
 import { AlertCircleIcon, CheckIcon, CopyIcon } from 'lucide-react';
 import {
@@ -284,13 +284,14 @@ export function CopyField({
         <InputGroupButton
           aria-label={text('common.copy')}
           onClick={() => {
-            void navigator.clipboard.writeText(value).then(
-              () => {
-                setCopied(true);
-                toaster.show({ type: 'success', title: text('common.copied') });
-              },
-              () => document.getElementById(id)?.focus(),
-            );
+            void copyText(value).then((done) => {
+              if (!done) {
+                document.getElementById(id)?.focus();
+                return;
+              }
+              setCopied(true);
+              toaster.show({ type: 'success', title: text('common.copied') });
+            });
           }}
         >
           {copied ? <CheckIcon /> : <CopyIcon />}

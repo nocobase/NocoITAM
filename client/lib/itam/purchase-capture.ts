@@ -1,4 +1,5 @@
 import { LINE_ITEM_TYPES, type LineItemType } from './procurement.js';
+import { createUuid } from '@nocobase/app-client';
 import type { PurchaseLineDraft } from './purchase-lines.js';
 
 /**
@@ -119,7 +120,7 @@ export function captureLine(
   line: PurchaseCapture['lines'][number],
 ): PurchaseLineDraft & { readonly uncertain: boolean } {
   return {
-    key: crypto.randomUUID(),
+    key: createUuid(),
     itemType: (LINE_ITEM_TYPES as readonly string[]).includes(line.itemType)
       ? line.itemType
       : 'device',
@@ -149,7 +150,7 @@ export function keyedUnmatched(
   unmatched: PurchaseCapture['unmatched'],
 ): PurchaseCapture['unmatched'] {
   return unmatched.map((line) =>
-    line.key ? line : { ...line, key: crypto.randomUUID() },
+    line.key ? line : { ...line, key: createUuid() },
   );
 }
 
