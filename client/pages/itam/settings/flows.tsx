@@ -138,7 +138,7 @@ const drawn = (description: Description, flow: Flow): Description => {
 };
 
 /**
- * 设置 → 流程 (2026-10-19, docs/adr/0001-record-lifecycles.md): the record
+ * 设置 → 流程 (2026-10-19): the record
  * lifecycles, a tab each — purchase orders, repairs, stocktakes, disposals,
  * devices (2026-10-19) — with the
  * one thing an administrator sets on those approved, whom a submitter may

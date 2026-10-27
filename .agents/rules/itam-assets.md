@@ -31,8 +31,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   requests reach IT through an external ITSM or directly on the asset.
   Repairs, disposals and purchase orders are created from the device, list
   or their own pages. Do not reintroduce a
-  `tickets` collection or employee request pages without a new decision in
-  `docs/IMPLEMENTATION_PLAN.md`.
+  `tickets` collection or employee request pages without the user's decision, recorded
+  here.
 - There is no contract module either (removed 2026-09-25, migration
   `202609250006_drop_contracts`): signed terms live in the legal or
   contract system, and what the register needs from them is on its own
@@ -40,8 +40,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   price. Purchase orders stay and carry no contract. The seeds grant
   neither tickets nor contracts, so a data reset leaves nothing for
   `reconcile-grants.ts` to strip; it still strips them from sets saved
-  before. Do not reintroduce `contracts` / `contractCoverages` without a
-  new decision in `docs/IMPLEMENTATION_PLAN.md`.
+  before. Do not reintroduce `contracts` / `contractCoverages` without the
+  user's decision, recorded here.
 - There is no device discovery either (removed 2026-09-27, migration
   `202609270004_drop_discovery`): it only reconciled a CSV exported from an
   MDM or scanner by hand, so a device's last-discovered time and the
@@ -51,14 +51,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `devices.lastDiscoveredAt`, the `notDiscovered` reminder, the `discovery`
   settings section and the `discoveryNormalization` AI capability. A match
   used to copy hardware details into a device's `attributes.hardware`; those
-  stay as facts about the device. Do not reintroduce discovery without a new
-  decision in `docs/IMPLEMENTATION_PLAN.md` — a live MDM / Intune connection
+  stay as facts about the device. Do not reintroduce discovery without the user's
+  decision, recorded here — a live MDM / Intune connection
   would be that decision, not a CSV page.
 - Stock items (accessories, consumables, components) link to purchase orders
   and nothing else: no repair order (`repairs.device_id` is a device), no
   disposal (`disposal_devices` holds devices), no audit task (`AuditScope`
-  counts devices). Confirmed 2026-09-24; see the decision in
-  `docs/IMPLEMENTATION_PLAN.md`. A device's disposal still returns its
+  counts devices). Confirmed 2026-09-24. A device's disposal still returns its
   installed components to stock, as a movement whose source is that disposal.
   A quantity is corrected by 调整数量 (`POST /itam/stock/:id/adjust`,
   `stock.adjust`, 2026-09-28): a signed quantity, a reason from a list that
@@ -229,7 +228,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   movement log, and the history tab carries what happened. Stock is the other
   way round (`historyTab: false`) because a stock item's whole life is in and
   out; an entitlement's is not. Confirmed 2026-09-24 — do not "unify" the two
-  without a new decision in `docs/IMPLEMENTATION_PLAN.md`.
+  without the user's decision, recorded here.
 - An entitlement's seat count is stated when it is created and never edited
   afterwards: the field is read-only on the detail page
   (`readonlyWhen: values.id !== undefined`), and the count moves through

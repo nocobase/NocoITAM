@@ -22,8 +22,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   person picked. `reconcile-grants.ts` deletes the stored Employee set with
   its assignments (`REMOVED_SETS`), strips the `my-assets` page grant and
   renames `requesterId` in saved field lists (`RENAMED_FIELDS`). Do not
-  reintroduce employee sign-in or self-service pages without a new
-  decision in `docs/IMPLEMENTATION_PLAN.md`.
+  reintroduce employee sign-in or self-service pages without the user's
+  decision, recorded here.
 - A person's 归属 tab **is** the recovery table, for everybody (2026-10-04,
   `client/components/itam/person-belongings.tsx`, the route child
   `holdings`). It was three plain lists — devices, stock, seats — with

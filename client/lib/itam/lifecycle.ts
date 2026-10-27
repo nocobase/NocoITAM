@@ -4,8 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from './api.js';
 
 /**
- * A lifecycle as 设置 → 报废流程 reads it (2026-10-18,
- * docs/adr/0001-record-lifecycles.md): the states and moves from source
+ * A lifecycle as 设置 → 报废流程 reads it (2026-10-18): the states and moves from source
  * (`GET <path>/lifecycle`), and the approver range set on it.
  */
 export function useLifecycleDescription(path: string) {

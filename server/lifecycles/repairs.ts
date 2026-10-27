@@ -8,7 +8,7 @@ import {
 
 /**
  * A repair's lifecycle (2026-10-19, after the disposals' and purchase
- * orders', docs/adr/0001-record-lifecycles.md). Its state is the repair's
+ * orders'). Its state is the repair's
  * result: in progress from the moment it is filed, then repaired,
  * unrepairable or replaced once it is completed. A finished repair's result
  * may be corrected among the three, never back to in progress. The runtime

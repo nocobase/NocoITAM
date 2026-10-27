@@ -19,8 +19,7 @@ import type { Row } from '../providers/itam/collection-query.js';
 import type { ItamNotifier } from '../providers/itam/notifier.js';
 
 /**
- * A purchase order's lifecycle (2026-10-19, after the disposals' pilot,
- * docs/adr/0001-record-lifecycles.md): draft → pendingApproval → approved →
+ * A purchase order's lifecycle (2026-10-19, after the disposals'): draft → pendingApproval → approved →
  * ordered → partiallyReceived → completed, rejected as the side exit of the
  * decision, withdrawal back to draft, and cancelled from any step before
  * goods arrive. The runtime writes the state, its version and the log entry

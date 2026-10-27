@@ -24,7 +24,7 @@ import type { ItamNotifier } from './notifier.js';
 
 /**
  * The application's one lifecycle runtime (`@nocobase/lifecycle`,
- * 2026-10-18, docs/adr/0001-record-lifecycles.md), which every record
+ * 2026-10-18; the reasons are in .agents/rules/itam-foundations.md), which every record
  * lifecycle registers on: the disposals' (`server/lifecycles/disposals.ts`)
  * the purchase orders' (`server/lifecycles/purchase-orders.ts`), the
  * repairs' (`server/lifecycles/repairs.ts`), the stocktakes'

@@ -10,7 +10,7 @@ import type { ItamNotifier } from '../providers/itam/notifier.js';
 
 /**
  * A stocktake's lifecycle (2026-10-19, after the disposals', purchase
- * orders' and repairs', docs/adr/0001-record-lifecycles.md): not started →
+ * orders' and repairs'): not started →
  * in progress → pending differences → completed, and cancelled while it is
  * under way. Starting snapshots the devices in scope; finishing the count
  * goes straight to completed when nothing differs, else to pending

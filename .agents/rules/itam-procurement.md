@@ -5,7 +5,8 @@ Read this before changing purchase orders, their lines, receiving, approvals or 
 Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small; each rule is as it was written, with the date it was decided.
 
 - **The order's state moves through its lifecycle** (2026-10-19,
-  `server/lifecycles/purchase-orders.ts`, [ADR 0001](../../docs/adr/0001-record-lifecycles.md)):
+  `server/lifecycles/purchase-orders.ts`, see the record lifecycle in
+  [itam-foundations](itam-foundations.md)):
   submit, withdraw, approve / reject, order, `receivePartly`, `complete` and
   cancel are transitions fired in the service's transaction. Receiving fires
   only when the lines change where the order stands — the first delivery

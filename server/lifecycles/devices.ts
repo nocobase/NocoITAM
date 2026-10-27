@@ -14,8 +14,7 @@ import {
 } from '../providers/itam/device-status.js';
 
 /**
- * A device's lifecycle (2026-10-19, after the four documents',
- * docs/adr/0001-record-lifecycles.md): the single-device state machine of
+ * A device's lifecycle (2026-10-19, after the four documents'): the single-device state machine of
  * the specification, from stock through use, loan, repair, retirement and
  * loss to pending disposal and disposed. Where each move may start is still
  * `OPERATION_FROM` (`server/providers/itam/device-status.ts`), which the

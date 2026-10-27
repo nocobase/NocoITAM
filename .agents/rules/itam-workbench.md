@@ -83,8 +83,8 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   itself — it judged the most recent N arrivals with no time limit, so a
   vendor you stopped buying from kept the warning for ever. Both facts are
   worth having as **statistics on the vendor and the model**; that is not a
-  reminder. Do not reintroduce either without a new decision in
-  `docs/IMPLEMENTATION_PLAN.md`.
+  reminder. Do not reintroduce either without the user's decision, recorded
+  here.
 - 待办 (it was 我的待办) is **one queue for the whole team** (2026-10-05):
   `GET /itam/workbench/my-work` lists everybody's records on every card,
   so work addressed to somebody away is still seen, and `?scope=mine`

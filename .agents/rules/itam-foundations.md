@@ -4,7 +4,7 @@ Read this before writing a service, a route, a transaction, a query on dates or 
 
 Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small; each rule is as it was written, with the date it was decided.
 
-- **A record lifecycle** (2026-10-18, [ADR 0001](../../docs/adr/0001-record-lifecycles.md)):
+- **A record lifecycle** (2026-10-18):
   disposals and, since 2026-10-19, purchase orders, repairs, stocktakes and
   devices move only through
   `@nocobase/lifecycle` — the definitions in `server/lifecycles/`, the one
@@ -21,6 +21,15 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   had. Deleting such a record deletes its rows in `lifecycleTransitions` and
   `lifecycleEffectRuns`; the demo lists both as dependents. Read the
   development guide's `references/lifecycle.md` before adding the next one.
+  Why: each move used to read the record, check its status in memory and
+  write the new one unconditionally, safe only under SQLite's single
+  connection, and a failed notification was logged and dropped. The runtime
+  writes the state, a version and a log entry in one conditional update, so
+  two decisions at once leave one refused with `CONFLICT` on any database,
+  and runs effects after commit, retried and recorded in
+  `lifecycleEffectRuns`. Not adopted: people (state derived from dates),
+  entitlements and sync differences (computed views), agent runs and plans
+  (already conditional updates).
 - A device's moves (2026-10-19, `server/lifecycles/devices.ts`) are the
   device service's alone: repairs, disposals, stocktakes, receiving, the
   demo and the assistant call `devices.transition()`, `correctStatus()` and

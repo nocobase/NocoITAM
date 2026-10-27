@@ -23,10 +23,9 @@ Default is the clean application starting point. It registers product capabiliti
 
 This application is the IT Asset Management system described in its
 specification, `nocosolution/NocoITAM/SPEC.md` (in the optional NocoSolution clone; edit it
-with targeted replacements only, never a formatter), built phase by phase per
-`docs/IMPLEMENTATION_PLAN.md`. Read both before adding a feature; the plan
-records which phase owns what and the decisions already taken, and stands on
-its own when the clone is unavailable.
+with targeted replacements only, never a formatter). Read it before adding a
+feature when the clone is available. The decisions already taken are recorded
+in `.agents/rules/itam-*.md`, which stand on their own without it.
 
 Where ITAM code lives, on top of the template layout below:
 

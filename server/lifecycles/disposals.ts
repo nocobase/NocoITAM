@@ -19,8 +19,7 @@ import type { Row } from '../providers/itam/collection-query.js';
 import type { ItamNotifier } from '../providers/itam/notifier.js';
 
 /**
- * A disposal's lifecycle (2026-10-18, the pilot of
- * docs/adr/0001-record-lifecycles.md): draft → pendingApproval → approved →
+ * A disposal's lifecycle (2026-10-18, the first record lifecycle): draft → pendingApproval → approved →
  * executed, rejected as the side exit, and withdrawal back to draft. The
  * runtime writes the state, its version and the log entry in the disposal
  * service's own transaction, and refuses a stale or concurrent decision; the
