@@ -10,12 +10,6 @@ const deDE: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminDeDE,
-  home: {
-    ...systemDeDE.home,
-    title: 'Beginnen Sie mit Ihrer Anwendung',
-    description:
-      'Beschreiben Sie Ihrem KI-Agenten, was Sie brauchen, und bauen Sie Seiten, Datenmodelle und Geschäftsabläufe auf.',
-  },
 
   appearance: {
     ...systemDeDE.appearance,

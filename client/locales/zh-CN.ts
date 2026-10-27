@@ -11,11 +11,6 @@ const zhCN: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminIn(adminWording, 1),
-  home: {
-    ...systemZhCN.home,
-    title: '开始构建你的应用',
-    description: '向 AI 助手描述你的需求，逐步构建页面、数据模型和业务流程',
-  },
 
   appearance: {
     ...systemZhCN.appearance,

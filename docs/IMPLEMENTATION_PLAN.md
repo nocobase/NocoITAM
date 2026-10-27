@@ -3352,8 +3352,9 @@ What the upgrade changed inside ITAM:
 
 Manual steps for an existing database, before `pnpm db:apply`: three
 authorization migrations moved into the new `authz-*` plugin packages and two
-were retired, so their history rows must be re-homed and removed — see
-`docs/UPGRADE-beta43.md`.
+were retired, so their history rows must be re-homed and removed. The guide
+for that, `docs/UPGRADE-beta43.md`, was removed on 2026-10-27; it is in the
+history of this repository.
 
 ## Template upgrade: beta.43 → beta.49 (2026-09-28)
 

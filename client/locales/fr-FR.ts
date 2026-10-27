@@ -10,12 +10,6 @@ const frFR: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminFrFR,
-  home: {
-    ...systemFrFR.home,
-    title: 'Commencez à construire votre application',
-    description:
-      'Décrivez votre besoin à votre agent IA, puis construisez pages, modèles de données et processus métier.',
-  },
 
   appearance: {
     ...systemFrFR.appearance,

@@ -136,7 +136,6 @@
     "#hooks/*": "./client/hooks/*.js",
     "#lib/*": "./client/lib/*.js",
     "#extensions/*": "./client/extensions/*.js",
-    "#pages/*": "./client/pages/*.js",
     "#components/data-table": "./client/components/data-table/index.js"
   },
   "scripts": {

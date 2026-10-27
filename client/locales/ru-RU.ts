@@ -10,12 +10,6 @@ const ruRU: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminRuRU,
-  home: {
-    ...systemRuRU.home,
-    title: 'Начните создавать приложение',
-    description:
-      'Опишите ИИ-агенту, что вам нужно, и создавайте страницы, модели данных и бизнес-процессы.',
-  },
 
   appearance: {
     ...systemRuRU.appearance,

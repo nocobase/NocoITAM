@@ -10,12 +10,6 @@ const jaJP: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminJaJP,
-  home: {
-    ...systemJaJP.home,
-    title: 'アプリケーションの構築を始める',
-    description:
-      'AI エージェントに必要なことを伝え、ページ、データモデル、業務フローを構築します。',
-  },
 
   appearance: {
     ...systemJaJP.appearance,

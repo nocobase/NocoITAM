@@ -10,12 +10,6 @@ const koKR: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminKoKR,
-  home: {
-    ...systemKoKR.home,
-    title: '애플리케이션 구축 시작하기',
-    description:
-      'AI 에이전트에게 필요한 내용을 설명하고 페이지, 데이터 모델, 업무 흐름을 구축하십시오.',
-  },
 
   appearance: {
     ...systemKoKR.appearance,

@@ -10,12 +10,6 @@ const ptBR: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminPtBR,
-  home: {
-    ...systemPtBR.home,
-    title: 'Comece a construir seu aplicativo',
-    description:
-      'Descreva o que você precisa ao seu agente de IA e construa páginas, modelos de dados e fluxos de negócio.',
-  },
   appearance: {
     ...systemPtBR.appearance,
     title: 'Aparência',

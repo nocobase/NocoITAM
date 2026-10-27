@@ -10,11 +10,6 @@ const zhTW: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminZhTW,
-  home: {
-    ...systemZhTW.home,
-    title: '開始建構你的應用',
-    description: '向 AI 助理描述你的需求，逐步建構頁面、資料模型和業務流程',
-  },
 
   appearance: {
     ...systemZhTW.appearance,

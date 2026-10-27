@@ -19,12 +19,6 @@ const messages = {
   ...fileUi,
   // The settings section's administration pages (client/pages/settings/).
   admin: adminIn(adminWording, 0),
-  home: {
-    ...systemEnUS.home,
-    title: 'Start building your application',
-    description:
-      'Describe what you need to your AI Agent, then build pages, data models, and business workflows.',
-  },
 
   appearance: {
     ...systemEnUS.appearance,

@@ -10,12 +10,6 @@ const esES: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminEsES,
-  home: {
-    ...systemEsES.home,
-    title: 'Empiece a construir su aplicación',
-    description:
-      'Describa lo que necesita a su agente de IA y construya páginas, modelos de datos y flujos de negocio.',
-  },
 
   appearance: {
     ...systemEsES.appearance,

@@ -10,12 +10,6 @@ const viVN: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminViVN,
-  home: {
-    ...systemViVN.home,
-    title: 'Bắt đầu xây dựng ứng dụng của bạn',
-    description:
-      'Mô tả nhu cầu của bạn với tác tử AI, sau đó xây dựng trang, mô hình dữ liệu và quy trình nghiệp vụ.',
-  },
 
   appearance: {
     ...systemViVN.appearance,

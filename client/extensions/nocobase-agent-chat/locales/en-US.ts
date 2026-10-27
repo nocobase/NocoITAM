@@ -37,7 +37,6 @@ export interface AgentChatLocale {
     readonly openInPanel: string;
     readonly more: string;
     readonly newConversation: string;
-    readonly untitled: string;
     readonly rename: string;
     readonly renameHint: string;
     readonly archive: string;
@@ -60,9 +59,6 @@ export interface AgentChatLocale {
     readonly chooseAgent: string;
     readonly messages: string;
     readonly olderMessages: string;
-    readonly sources: {
-      readonly panel: string;
-    };
     readonly availability: {
       readonly online: string;
       readonly agentMissing: string;
@@ -198,22 +194,6 @@ export interface AgentChatLocale {
     };
     readonly history: {
       readonly title: string;
-      readonly search: string;
-      readonly show: string;
-      readonly active: string;
-      readonly archived: string;
-      readonly agent: string;
-      readonly allAgents: string;
-      readonly source: string;
-      readonly allSources: string;
-      readonly loadFailed: string;
-      readonly noMatch: string;
-      readonly clearFilters: string;
-      readonly noArchived: string;
-      readonly empty: string;
-      readonly more: string;
-      readonly unread: string;
-      readonly actions: string;
     };
     readonly loading: string;
     readonly retry: string;
@@ -299,7 +279,6 @@ const agentChatEnUS: AgentChatLocale = {
     openInPanel: 'Open in side panel',
     more: 'More',
     newConversation: 'New conversation',
-    untitled: 'Untitled conversation',
     rename: 'Rename',
     renameHint: '{{title}} (click to rename)',
     archive: 'Archive',
@@ -325,9 +304,6 @@ const agentChatEnUS: AgentChatLocale = {
       'Choose who to chat with below. To start with an agent every time, set your default in your profile.',
     messages: 'Messages',
     olderMessages: 'Earlier messages',
-    sources: {
-      panel: 'Chat panel',
-    },
     availability: {
       online: 'Online',
       agentMissing: 'Deleted',
@@ -467,22 +443,6 @@ const agentChatEnUS: AgentChatLocale = {
     },
     history: {
       title: 'Conversations',
-      search: 'Search conversations',
-      show: 'Show',
-      active: 'Open',
-      archived: 'Archived',
-      agent: 'Agent',
-      allAgents: 'All agents',
-      source: 'Started from',
-      allSources: 'Anywhere',
-      loadFailed: 'Could not load conversations',
-      noMatch: 'No conversation matches',
-      clearFilters: 'Clear filters',
-      noArchived: 'No archived conversations',
-      empty: 'No conversations yet',
-      more: 'Load more',
-      unread: 'New reply',
-      actions: 'Actions for {{title}}',
     },
     loading: 'Loading',
     retry: 'Retry',

@@ -10,12 +10,6 @@ const idID: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminIdID,
-  home: {
-    ...systemIdID.home,
-    title: 'Mulai bangun aplikasi Anda',
-    description:
-      'Jelaskan kebutuhan Anda kepada Agen AI, lalu bangun halaman, model data, dan alur kerja bisnis.',
-  },
 
   appearance: {
     ...systemIdID.appearance,
