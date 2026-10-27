@@ -230,14 +230,15 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   approval names its subject in the singular (`ApprovalSubject`:
   `purchaseOrder` / `disposal`), which is not the collection a grant is
   asked for — filtering by the collection name matches nothing, silently.
-- 待我审批 is one component, `createMyApprovalView` in
-  `client/components/itam/my-approval-view.tsx`, given a collection, a list
-  path and a label; purchase orders and disposals both mount it as their
-  domain's `Views`. Which records are waiting on _this_ reader lives in the
-  approval rather than the record, so the list route answers
-  `filter[view]=myApproval` by resolving the reader's pending approvals to
-  ids (`approvals.pendingFor`) and listing those. A reader who cannot
-  approve that kind of request sees no toggle.
+- 全部 | 我的 is one component, `MineView` in
+  `client/components/itam/mine-view.tsx`; purchase orders and disposals both
+  mount it as their domain's `Views`. Which records are waiting on _this_
+  reader lives in the approval rather than the record, so the list route
+  (`server/routes/itam/mine-view.ts`) answers `filter[view]=mine` (waiting
+  on the reader, or theirs as 负责人) and `filter[view]=myApproval` (waiting
+  on them alone, where the workbench's 待我审批 links) by resolving the
+  reader's pending approvals to ids (`approvals.pendingFor`) and listing
+  those; `MineView` shows `myApproval` under 我的.
 
 ## Boards and exports
 

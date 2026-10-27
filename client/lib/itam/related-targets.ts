@@ -2,8 +2,6 @@ import { masterDataPath, type ItamRecord } from './api.js';
 import { ENTITLEMENT_FIELDS, ENTITLEMENTS_PATH } from './entitlements.js';
 import type { FieldDefinition } from './fields.js';
 import { masterDataByName } from './master-data.js';
-import { DISPOSAL_FIELDS, DISPOSALS_PATH } from './operations.js';
-import { PO_FIELDS, PURCHASE_ORDERS_PATH } from './procurement.js';
 import {
   STOCK_PATH,
   STOCK_ROUTES,
@@ -81,24 +79,4 @@ export const entitlementTarget: RelatedTarget = {
   i18n: 'entitlements',
   defaultSort: 'name',
   routeFor: (row) => `/entitlements/${row.id}`,
-};
-
-export const purchaseOrderTarget: RelatedTarget = {
-  path: PURCHASE_ORDERS_PATH,
-  fields: PO_FIELDS,
-  nameField: 'orderNo',
-  i18n: 'procurement',
-  defaultSort: 'createdAt',
-  defaultOrder: 'desc',
-  routeFor: (row) => `/procurement/${row.id}`,
-};
-
-export const disposalTarget: RelatedTarget = {
-  path: DISPOSALS_PATH,
-  fields: DISPOSAL_FIELDS,
-  nameField: 'disposalNo',
-  i18n: 'disposals',
-  defaultSort: 'createdAt',
-  defaultOrder: 'desc',
-  routeFor: (row) => `/disposals/${row.id}`,
 };

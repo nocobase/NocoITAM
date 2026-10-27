@@ -10,12 +10,6 @@ const esES: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminEsES,
-  home: {
-    ...systemEsES.home,
-    title: 'Empiece a construir su aplicación',
-    description:
-      'Describa lo que necesita a su agente de IA y construya páginas, modelos de datos y flujos de negocio.',
-  },
 
   appearance: {
     ...systemEsES.appearance,
@@ -3611,11 +3605,6 @@ const esES: AppResource = {
     reportInsight: 'Interpretar este informe',
     parseDocument: 'Analizar un documento',
     groupDifferences: 'Explicar las diferencias',
-    quick: {
-      planToday: 'Planificar el trabajo de hoy',
-      inspectRisks: 'Revisar los riesgos de los dispositivos',
-      costAnalysis: 'Costes y optimización',
-    },
     prompts: {
       globalSearch:
         'Encuentra lo que pido: «{{text}}». Si pide registros de un tipo, búscalos y enuméralos brevemente con sus números o nombres; si no, responde directamente y de forma breve.',
@@ -3623,12 +3612,6 @@ const esES: AppResource = {
         'Interpreta el informe {{report}} con estos filtros: {{filters}}. Ejecútalo con itam stats y, en tres a cinco frases, da primero la cifra y el cambio más importantes, luego cualquier anomalía y después una recomendación.',
       groupDifferences:
         'Analiza las diferencias abiertas de este inventario (lee sus elementos): agrúpalas por su causa más probable (cambio de puesto, registro de titular erróneo, en reparación, salida sin devolución, pérdida real, dispositivo no registrado…), enumera los dispositivos de cada grupo y di cómo tratar cada uno.',
-      planToday:
-        'Planifica mi trabajo de hoy: lee mis aprobaciones, recepciones, inventarios y recordatorios, ordénalos por urgencia y propón las acciones que puedo realizar de inmediato.',
-      inspectRisks:
-        'Haz una revisión de riesgos de los activos: usa los recordatorios y los informes para enumerar los riesgos (garantías a punto de caducar, dispositivos sin uso, dispositivos sin inventariar, personas que han salido y aún tienen artículos, licencias sobreasignadas, suscripciones terminadas que aún tienen puestos, existencias bajas, préstamos vencidos), cuantifica cada uno y sugiere un siguiente paso por riesgo.',
-      costAnalysis:
-        'Analiza nuestro coste de TI: usa los informes de costes, coste por persona y cumplimiento de software para mostrar adónde va el dinero, y propón optimizaciones concretas (puestos sin uso que recuperar, suscripciones que reducir, dispositivos que retirar o reutilizar).',
     },
   },
   board: {

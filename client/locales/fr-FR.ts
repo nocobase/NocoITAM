@@ -10,12 +10,6 @@ const frFR: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminFrFR,
-  home: {
-    ...systemFrFR.home,
-    title: 'Commencez à construire votre application',
-    description:
-      'Décrivez votre besoin à votre agent IA, puis construisez pages, modèles de données et processus métier.',
-  },
 
   appearance: {
     ...systemFrFR.appearance,
@@ -3606,11 +3600,6 @@ const frFR: AppResource = {
     reportInsight: 'Interpréter ce rapport',
     parseDocument: 'Analyser un document',
     groupDifferences: 'Expliquer les écarts',
-    quick: {
-      planToday: 'Planifier ma journée',
-      inspectRisks: 'Inspecter les risques des appareils',
-      costAnalysis: 'Coûts et optimisation',
-    },
     prompts: {
       globalSearch:
         'Trouve ce que je demande : « {{text}} ». S’il s’agit de fiches d’un même type, recherche-les et liste-les brièvement avec leurs numéros ou noms ; sinon, réponds directement et brièvement.',
@@ -3618,12 +3607,6 @@ const frFR: AppResource = {
         'Interprète le rapport {{report}} avec ces filtres : {{filters}}. Exécute-le avec itam stats, puis en trois à cinq phrases donne d’abord le chiffre et l’évolution les plus importants, toute anomalie, puis une recommandation.',
       groupDifferences:
         'Analyse les écarts ouverts de cet inventaire (lis ses éléments) : regroupe-les selon leur cause la plus probable (changement de bureau, détenteur mal enregistré, en réparation, partant n’ayant pas rendu, réellement perdu, appareil non enregistré…), liste les appareils de chaque groupe, et indique comment traiter chacun.',
-      planToday:
-        'Planifie mon travail du jour : lis mes approbations, réceptions, inventaires et rappels, classe-les par urgence, et propose les actions que je peux faire tout de suite.',
-      inspectRisks:
-        'Effectue une inspection des risques sur les actifs : utilise les rappels et les rapports pour lister les risques (garanties qui expirent, appareils inutilisés, appareils non inventoriés, partants détenant encore des articles, droits d’utilisation surattribués, abonnements terminés détenant encore des sièges, stock bas, prêts en retard), quantifie chacun, et suggère une prochaine étape par risque.',
-      costAnalysis:
-        'Analyse nos coûts informatiques : utilise les rapports de coûts, de coût par personne et de conformité logicielle pour montrer où va l’argent, et propose des optimisations concrètes (sièges inutilisés à récupérer, abonnements à réduire, appareils à retirer du service ou à réutiliser).',
     },
   },
   board: {

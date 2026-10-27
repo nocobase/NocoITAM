@@ -10,12 +10,6 @@ const idID: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminIdID,
-  home: {
-    ...systemIdID.home,
-    title: 'Mulai bangun aplikasi Anda',
-    description:
-      'Jelaskan kebutuhan Anda kepada Agen AI, lalu bangun halaman, model data, dan alur kerja bisnis.',
-  },
 
   appearance: {
     ...systemIdID.appearance,
@@ -3571,11 +3565,6 @@ const idID: AppResource = {
     reportInsight: 'Tafsirkan laporan ini',
     parseDocument: 'Uraikan dokumen',
     groupDifferences: 'Jelaskan perbedaannya',
-    quick: {
-      planToday: 'Rencanakan pekerjaan hari ini',
-      inspectRisks: 'Periksa risiko perangkat',
-      costAnalysis: 'Biaya & optimalisasi',
-    },
     prompts: {
       globalSearch:
         'Temukan yang saya tanyakan: "{{text}}". Jika yang diminta adalah catatan dari satu jenis, cari dan cantumkan secara singkat beserta nomor atau namanya; jika tidak, jawab langsung dan singkat.',
@@ -3583,12 +3572,6 @@ const idID: AppResource = {
         'Tafsirkan laporan {{report}} dengan filter berikut: {{filters}}. Jalankan dengan itam stats, lalu dalam tiga sampai lima kalimat sampaikan terlebih dahulu angka dan perubahan terpenting, anomali jika ada, lalu satu rekomendasi.',
       groupDifferences:
         'Analisis perbedaan yang belum selesai pada stock opname ini (baca itemnya): kelompokkan menurut penyebab yang paling mungkin (pindah meja, catatan pemegang salah, dalam perbaikan, karyawan keluar belum mengembalikan, benar-benar hilang, perangkat tak terdaftar…), cantumkan perangkat di setiap kelompok, dan jelaskan cara menangani masing-masing.',
-      planToday:
-        'Rencanakan pekerjaan saya hari ini: baca persetujuan, penerimaan, stock opname, dan pengingat saya, urutkan menurut urgensi, dan usulkan tindakan yang dapat langsung saya lakukan.',
-      inspectRisks:
-        'Lakukan pemeriksaan risiko aset: gunakan pengingat dan laporan untuk mencantumkan risiko (garansi yang segera berakhir, perangkat menganggur, perangkat yang belum diperiksa, karyawan keluar yang masih memegang barang, lisensi melebihi alokasi, langganan berakhir yang masih memegang kursi, stok menipis, pinjaman terlambat), hitung besarnya masing-masing, dan sarankan satu langkah berikutnya untuk setiap risiko.',
-      costAnalysis:
-        'Analisis biaya TI kami: gunakan laporan biaya, biaya per orang, dan kepatuhan perangkat lunak untuk menunjukkan ke mana uang mengalir, dan usulkan optimalisasi konkret (kursi menganggur untuk ditarik kembali, langganan untuk dikurangi, perangkat untuk dipensiunkan atau dipakai ulang).',
     },
   },
   board: {

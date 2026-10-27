@@ -158,10 +158,6 @@ export function defineInboxRenderer<M>(
   return renderer as unknown as InboxEntryRenderer<never>;
 }
 
-export function defineInboxFeed<T>(feed: InboxFeed<T>): InboxFeed<never> {
-  return feed as unknown as InboxFeed<never>;
-}
-
 /** The decisions an item asks the viewer to take: its notice's kind is `decision`. They wait until settled. */
 export const decisionCategory: InboxEntryCategory = {
   type: 'entries',

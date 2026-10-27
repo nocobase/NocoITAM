@@ -268,7 +268,7 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
   again (2026-10-16, as NocoCRM does; `SearchAnswer` in
   `client/components/itam/ai/search-answer.tsx`): the question goes to Asset Steward
   on a conversation of the source `itam-search`, which the conversation
-  lists leave out (`history-list.tsx`), and the reply replaces the results.
+  lists leave out (`client/lib/itam/conversations.ts`), and the reply replaces the results.
   返回搜索 and closing the dialog delete it (stopping a reply still being
   written); 继续追问 keeps it as one of ITAM's conversations, titled by the
   question, and opens it in the panel. One left behind is swept by the daily

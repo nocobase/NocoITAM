@@ -10,12 +10,6 @@ const ptBR: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminPtBR,
-  home: {
-    ...systemPtBR.home,
-    title: 'Comece a construir seu aplicativo',
-    description:
-      'Descreva o que você precisa ao seu agente de IA e construa páginas, modelos de dados e fluxos de negócio.',
-  },
   appearance: {
     ...systemPtBR.appearance,
     title: 'Aparência',
@@ -3589,11 +3583,6 @@ const ptBR: AppResource = {
     reportInsight: 'Interpretar este relatório',
     parseDocument: 'Analisar um documento',
     groupDifferences: 'Explicar as diferenças',
-    quick: {
-      planToday: 'Planejar o trabalho de hoje',
-      inspectRisks: 'Inspecionar riscos dos dispositivos',
-      costAnalysis: 'Custos e otimização',
-    },
     prompts: {
       globalSearch:
         'Encontre o que estou pedindo: "{{text}}". Se for um pedido de registros de um tipo, consulte-os e liste-os brevemente com seus números ou nomes; caso contrário, responda de forma direta e breve.',
@@ -3601,12 +3590,6 @@ const ptBR: AppResource = {
         'Interprete o relatório {{report}} com estes filtros: {{filters}}. Execute-o com itam stats e, em três a cinco frases, apresente primeiro o número e a mudança mais importantes, depois qualquer anomalia e, por fim, uma recomendação.',
       groupDifferences:
         'Analise as diferenças em aberto deste inventário (leia seus itens): agrupe-as pela causa mais provável (mudança de mesa, registro de detentor errado, em reparo, desligado que não devolveu, realmente perdido, dispositivo não cadastrado…), liste os dispositivos de cada grupo e diga como tratar cada um.',
-      planToday:
-        'Planeje meu trabalho de hoje: leia minhas aprovações, recebimentos, inventários e lembretes, ordene-os por urgência e proponha as ações que posso tomar imediatamente.',
-      inspectRisks:
-        'Faça uma inspeção de riscos dos ativos: use os lembretes e os relatórios para listar os riscos (garantias vencendo, dispositivos ociosos, dispositivos não inventariados, desligados que ainda têm itens, direitos de uso superalocados, assinaturas encerradas que ainda ocupam assentos, estoque baixo, empréstimos atrasados), quantifique cada um e sugira um próximo passo por risco.',
-      costAnalysis:
-        'Analise nosso custo de TI: use os relatórios de custos, de custo por pessoa e de conformidade de software para mostrar para onde vai o dinheiro e proponha otimizações concretas (assentos ociosos a recuperar, assinaturas a reduzir, dispositivos a aposentar ou reaproveitar).',
     },
   },
   board: {

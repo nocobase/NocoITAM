@@ -10,11 +10,6 @@ const zhTW: AppResource = {
   // The file components' copy (client/extensions/nocobase-file-component-ui).
   ...fileUi,
   admin: adminZhTW,
-  home: {
-    ...systemZhTW.home,
-    title: '開始建構你的應用',
-    description: '向 AI 助理描述你的需求，逐步建構頁面、資料模型和業務流程',
-  },
 
   appearance: {
     ...systemZhTW.appearance,
@@ -3335,11 +3330,6 @@ const zhTW: AppResource = {
     reportInsight: 'AI 報表解讀',
     parseDocument: '解析單據',
     groupDifferences: '分析盤點差異',
-    quick: {
-      planToday: '安排今日工作',
-      inspectRisks: '資產風險巡檢',
-      costAnalysis: '成本與最佳化分析',
-    },
     prompts: {
       globalSearch:
         '幫我找：「{{text}}」。如果問的是某一類記錄，就查出來，用編號或名稱簡短列出；如果問的是別的，直接簡短回答。',
@@ -3347,12 +3337,6 @@ const zhTW: AppResource = {
         '請解讀報表 {{report}}，篩選條件：{{filters}}。先用 itam stats 跑出這張報表，再用三到五句話說明：最重要的數字和變化、異常，最後提供一條建議。',
       groupDifferences:
         '請分析這次盤點的未處理差異（讀取它的盤點明細）：依最可能的原因分組（座位調整、使用人記錄錯誤、送修中、離職未還、確實遺失、帳外設備等），列出每組的設備，並提供處理建議。',
-      planToday:
-        '請安排我今天的工作：讀取我的待簽核、待到貨入庫、進行中的盤點和提醒，依緊急程度排序，並提出我可以立即執行的動作。',
-      inspectRisks:
-        '請進行一次資產風險巡檢：結合提醒和報表列出風險（保固到期、閒置設備、逾期未盤點、離職人員仍持有、授權超量、已結束仍佔席位的訂閱、庫存低於水位、借出逾期），逐項量化，並提供下一步建議。',
-      costAnalysis:
-        '請分析我們的 IT 成本：用成本、人均成本和軟體合規報表說明錢花在哪裡，並提出具體的最佳化建議（可收回的閒置席位、可縮減的訂閱、可淘汰或再利用的設備）。',
     },
   },
   board: {

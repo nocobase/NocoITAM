@@ -1,30 +1,6 @@
-import {
-  type ColumnDef,
-  type SortingState,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { useState, type ReactElement, type ReactNode } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../ui/table.js';
-
-export interface SortableColumn<T> {
-  readonly id: string;
-  readonly title: ReactNode;
-  // What the column sorts by: a number, a text, or undefined for a blank,
-  // which always sorts last.
-  readonly sortValue: (row: T) => number | string | undefined;
-  readonly cell: (row: T) => ReactNode;
-  readonly className?: string;
-}
+import { TableHead } from '../ui/table.js';
 
 const ariaSort = (
   direction: 'asc' | 'desc' | false,
@@ -74,87 +50,5 @@ export function SortableHead({
         />
       </button>
     </TableHead>
-  );
-}
-
-// A small table whose headers sort it, for the workspace's summaries: a click
-// on a header sorts by that column at once (TanStack Table's sorting), a
-// second click reverses it, a third restores the original order. A number
-// column starts from the largest, a text column from A.
-export function SortableTable<T>({
-  rows,
-  columns,
-  rowKey,
-}: {
-  rows: readonly T[];
-  columns: readonly SortableColumn<T>[];
-  rowKey: (row: T) => string;
-}): ReactElement {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const definitions: ColumnDef<T, number | string | undefined>[] = columns.map(
-    (column) => ({
-      id: column.id,
-      accessorFn: (row: T) => column.sortValue(row),
-      sortUndefined: 'last',
-      sortingFn: (a, b, id) => {
-        const x = a.getValue<number | string | undefined>(id);
-        const y = b.getValue<number | string | undefined>(id);
-        return typeof x === 'number' && typeof y === 'number'
-          ? x - y
-          : String(x).localeCompare(String(y));
-      },
-    }),
-  );
-  // TanStack Table hands back one mutable instance that the React Compiler
-  // cannot memoize, so it skips compiling this component; the table is still
-  // correct without it.
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data: rows as T[],
-    columns: definitions,
-    state: { sorting },
-    onSortingChange: setSorting,
-    getRowId: (row) => rowKey(row),
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  });
-  return (
-    <Table>
-      <TableHeader>
-        {table.getHeaderGroups().map((group) => (
-          <TableRow key={group.id}>
-            {group.headers.map((header, index) => {
-              // Rendered here rather than through flexRender: the column
-              // definitions are rebuilt on each render, and a header given as
-              // a function would be a new component each time, so React would
-              // replace the button a click had just focused.
-              const direction = header.column.getIsSorted();
-              return (
-                <SortableHead
-                  key={header.id}
-                  title={columns[index]?.title}
-                  direction={direction}
-                  onClick={() => header.column.toggleSorting()}
-                />
-              );
-            })}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
-            {row.getVisibleCells().map((cell, index) => (
-              <TableCell
-                key={cell.id}
-                className={columns[index]?.className ?? 'tabular-nums'}
-              >
-                {columns[index]?.cell(row.original)}
-              </TableCell>
-            ))}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
   );
 }

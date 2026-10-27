@@ -4,4 +4,3 @@ export const themePresets = [
 ] as const;
 
 export type ThemePresetId = (typeof themePresets)[number]['id'];
-export const defaultThemePreset: ThemePresetId = 'compact';

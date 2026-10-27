@@ -202,21 +202,3 @@ export function searchRowDetail(
     .filter(Boolean)
     .join(' · ');
 }
-
-/** The records Asset Steward found for a question, as its tool handed them over. */
-export interface FoundRecordSet {
-  /** A key of `SEARCH_PAGES`. */
-  readonly list: string;
-  readonly ids: readonly string[];
-  /** A few words saying what they are, in Asset Steward's words. */
-  readonly title: string;
-}
-
-/** The link that opens a list narrowed to `found`. */
-export function foundListUrl(found: FoundRecordSet): string | undefined {
-  const page = SEARCH_PAGES[found.list];
-  if (!page) return undefined;
-  const params = new URLSearchParams({ [FOUND_IDS]: found.ids.join(',') });
-  if (found.title) params.set(FOUND_TITLE, found.title);
-  return `/${page.route}?${params.toString()}`;
-}

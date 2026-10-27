@@ -58,17 +58,3 @@ export async function writeMarker(
     .where('key', '=', key)
     .execute();
 }
-
-/** The installation's first account, its initial administrator. */
-export async function firstAccount(
-  database: DatabaseManager,
-): Promise<string | null> {
-  const row = await database
-    .query()
-    .selectFrom('user')
-    .select('id')
-    .where('deletedAt', 'is', null)
-    .orderBy('createdAt')
-    .executeTakeFirst<{ id: unknown }>();
-  return row ? String(row.id) : null;
-}

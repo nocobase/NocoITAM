@@ -78,8 +78,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   committed; it never notifies the actor, never throws, and needs the
   `notification.channels` in-app entry in `config.yml` to deliver.
 - `pnpm` 11 prints "Already up to date" on stdout before a script runs; a
-  script whose stdout is parsed (see `scripts/utils/cli-hooks.mjs`) must pass
-  `--silent`.
+  script whose stdout another program parses must pass `--silent`.
 - CSV in and out goes through `server/providers/itam/csv.ts`; an importable
   collection is an entry in `IMPORT_SPECS` (`imports.ts`) naming its fields,
   header aliases and the reference collections resolved by name, plus its
