@@ -8,7 +8,8 @@ const RUNTIME_CONFIG_ELEMENT_ID = 'nocobase-runtime-config';
  * at `/main`. A test that needs other values removes it and renders its own.
  */
 function renderClientConfig(): void {
-  // Server-side tests run under `@vitest-environment node`, where there is no page to render into.
+  // Application change (ITAM): the `itam` project's tests that run under
+  // `@vitest-environment node` load this file too, with no page to render into.
   if (typeof document === 'undefined') return;
   if (document.getElementById(RUNTIME_CONFIG_ELEMENT_ID)) return;
   const element = document.createElement('script');

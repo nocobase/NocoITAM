@@ -137,6 +137,9 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   noResults: 'Tidak ada hasil yang cocok',
   clearHint: 'Coba pencarian lain atau hapus filter.',
   noUsers: 'Belum ada pengguna',
+  noRoleAccess:
+    'Pengguna ini tetap dapat masuk dan menggunakan fungsi dasar akun. Peran tidak memberikan akses bisnis.',
+  noAssignedRoles: 'Belum ada peran yang ditetapkan',
   noRoles: 'Belum ada peran',
   create: 'Buat',
   edit: 'Edit',

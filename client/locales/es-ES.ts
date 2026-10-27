@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatEsES from '../extensions/nocobase-agent-chat/locales/es-ES.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/es-ES.js';
 import adminEsES from './admin/es-ES.js';
 import systemEsES from './system/es-ES.js';
 
 const esES: AppResource = {
   ...systemEsES,
   ...agentChatEsES,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminEsES,
   home: {
     ...systemEsES.home,

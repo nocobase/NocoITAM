@@ -21,17 +21,21 @@ function walk(dir: string, files: string[] = []): string[] {
   return files;
 }
 
-function lookup(resource: Record<string, unknown>, key: string): unknown {
-  // The template's system copy keys some groups flat, by their whole dotted
-  // name (`'auth.loading'`), beside the nested groups.
-  if (key in resource) return resource[key];
+function lookup(resource: unknown, key: string): unknown {
+  if (!resource || typeof resource !== 'object') return undefined;
+  const group = resource as Record<string, unknown>;
+  // Some groups key their entries flat, by their whole dotted name: the
+  // template's system copy at the root (`'auth.loading'`), the file
+  // components inside `fileUi` (`'files.empty'`).
+  if (key in group) return group[key];
   const parts = key.split('.');
-  let current: unknown = resource;
-  for (const part of parts) {
-    if (!current || typeof current !== 'object') return undefined;
-    current = (current as Record<string, unknown>)[part];
+  for (let index = 1; index < parts.length; index += 1) {
+    const head = parts.slice(0, index).join('.');
+    if (!(head in group)) continue;
+    const value = lookup(group[head], parts.slice(index).join('.'));
+    if (value !== undefined) return value;
   }
-  return current;
+  return undefined;
 }
 
 function has(resource: Record<string, unknown>, key: string): boolean {

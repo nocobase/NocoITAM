@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatFrFR from '../extensions/nocobase-agent-chat/locales/fr-FR.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/fr-FR.js';
 import adminFrFR from './admin/fr-FR.js';
 import systemFrFR from './system/fr-FR.js';
 
 const frFR: AppResource = {
   ...systemFrFR,
   ...agentChatFrFR,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminFrFR,
   home: {
     ...systemFrFR.home,

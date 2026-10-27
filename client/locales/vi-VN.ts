@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatViVN from '../extensions/nocobase-agent-chat/locales/vi-VN.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/vi-VN.js';
 import adminViVN from './admin/vi-VN.js';
 import systemViVN from './system/vi-VN.js';
 
 const viVN: AppResource = {
   ...systemViVN,
   ...agentChatViVN,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminViVN,
   home: {
     ...systemViVN.home,

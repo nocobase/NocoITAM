@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatPtBR from '../extensions/nocobase-agent-chat/locales/pt-BR.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/pt-BR.js';
 import adminPtBR from './admin/pt-BR.js';
 import systemPtBR from './system/pt-BR.js';
 
 const ptBR: AppResource = {
   ...systemPtBR,
   ...agentChatPtBR,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminPtBR,
   home: {
     ...systemPtBR.home,

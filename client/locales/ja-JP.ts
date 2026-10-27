@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatJaJP from '../extensions/nocobase-agent-chat/locales/ja-JP.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/ja-JP.js';
 import adminJaJP from './admin/ja-JP.js';
 import systemJaJP from './system/ja-JP.js';
 
 const jaJP: AppResource = {
   ...systemJaJP,
   ...agentChatJaJP,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminJaJP,
   home: {
     ...systemJaJP.home,

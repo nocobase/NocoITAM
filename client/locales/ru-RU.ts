@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatRuRU from '../extensions/nocobase-agent-chat/locales/ru-RU.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/ru-RU.js';
 import adminRuRU from './admin/ru-RU.js';
 import systemRuRU from './system/ru-RU.js';
 
 const ruRU: AppResource = {
   ...systemRuRU,
   ...agentChatRuRU,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminRuRU,
   home: {
     ...systemRuRU.home,

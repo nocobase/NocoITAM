@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatDeDE from '../extensions/nocobase-agent-chat/locales/de-DE.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/de-DE.js';
 import adminDeDE from './admin/de-DE.js';
 import systemDeDE from './system/de-DE.js';
 
 const deDE: AppResource = {
   ...systemDeDE,
   ...agentChatDeDE,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminDeDE,
   home: {
     ...systemDeDE.home,

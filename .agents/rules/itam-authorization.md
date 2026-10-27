@@ -20,7 +20,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `WITHDRAWN_PAGES` is the other direction, for a page a role should no
   longer reach. A page's route name is the identifier stored
   grants reference, so renaming one migrates data;
-  `tests/logic/client-routes.test.ts` pins the list. A page grant decides
+  `tests/client/client-routes.test.ts` pins the list. A page grant decides
   what is offered, never what is allowed — every endpoint still enforces its
   own authorization.
 - Authorization conditions carry `scope` (`true` or a `FilterAst`) and
@@ -85,7 +85,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   `scheduler.schedules` — under 配置权限 instead. A page grant whose routes
   have no menu title of their own is named in
   `client/pages/settings/page-permission-titles.ts` by route name
-  (`admin.pages.*`); `tests/logic/page-permission-titles.test.ts` fails on
+  (`admin.pages.*`); `tests/client/page-permission-titles.test.ts` fails on
   one without a name. Nothing stored changed: page grant ids, the set keys
   `itam-it-support` / `itam-asset-manager` and their translated titles are
   as they were. Known gap: the users plugin's standard role scope labels

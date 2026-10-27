@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatZhTW from '../extensions/nocobase-agent-chat/locales/zh-TW.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/zh-TW.js';
 import adminZhTW from './admin/zh-TW.js';
 import systemZhTW from './system/zh-TW.js';
 
 const zhTW: AppResource = {
   ...systemZhTW,
   ...agentChatZhTW,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminZhTW,
   home: {
     ...systemZhTW.home,

@@ -300,7 +300,7 @@ ITAM's own pages load data with the hooks in `client/lib/itam/api.ts` rather tha
   a group reads as part of it. 业务 holds 采购, 维修, 报废, 盘点 and 报表 (盘点 below 报废 since
   2026-10-06).
   Route names are what stored page grants reference, so regrouping changes
-  no grant — `tests/logic/client-routes.test.ts` pins only their order.
+  no grant — `tests/client/client-routes.test.ts` pins only their order.
 
 ## Page width, not window width
 

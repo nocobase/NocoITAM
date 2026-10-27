@@ -1,11 +1,14 @@
 import type { AppResource } from './en-US.js';
 import agentChatIdID from '../extensions/nocobase-agent-chat/locales/id-ID.js';
+import fileUi from '../extensions/nocobase-file-component-ui/locales/id-ID.js';
 import adminIdID from './admin/id-ID.js';
 import systemIdID from './system/id-ID.js';
 
 const idID: AppResource = {
   ...systemIdID,
   ...agentChatIdID,
+  // The file components' copy (client/extensions/nocobase-file-component-ui).
+  ...fileUi,
   admin: adminIdID,
   home: {
     ...systemIdID.home,
