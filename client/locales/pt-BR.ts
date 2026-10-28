@@ -2061,7 +2061,8 @@ const ptBR: AppResource = {
       supply: 'Estoque e compras',
     },
     reminders: {
-      warrantyExpiring: 'Garantia termina em até {{warrantyDays}} dias',
+      warrantyExpiring:
+        'Garantia de dispositivos termina em até {{warrantyDays}} dias',
       entitlementRenewing:
         'Assinaturas com renovação automática em até {{subscriptionExpiryDays}} dias',
       entitlementEnding:
@@ -2069,9 +2070,10 @@ const ptBR: AppResource = {
       entitlementMaintenance:
         'Manutenção de perpétuos terminando em até {{maintenanceExpiryDays}} dias',
       entitlementEnded: 'Assinaturas encerradas que ainda ocupam assentos',
-      idleDevice: 'Em estoque há mais de {{idleDays}} dias',
-      auditOverdue: 'Não inventariados há {{auditDays}} dias',
-      departmentMismatch: 'Departamento diferente do departamento do detentor',
+      idleDevice: 'Dispositivos em estoque há mais de {{idleDays}} dias',
+      auditOverdue: 'Dispositivos não inventariados há {{auditDays}} dias',
+      departmentMismatch:
+        'Departamento do dispositivo diferente do do detentor',
       entitlementOverAllocated: 'Direitos de uso superalocados',
       lowAccessories: 'Acessórios abaixo do mínimo',
       lowConsumables: 'Consumíveis abaixo do mínimo',

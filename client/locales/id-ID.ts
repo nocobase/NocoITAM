@@ -2058,7 +2058,8 @@ const idID: AppResource = {
       supply: 'Stok dan pembelian',
     },
     reminders: {
-      warrantyExpiring: 'Garansi berakhir dalam {{warrantyDays}} hari',
+      warrantyExpiring:
+        'Garansi perangkat berakhir dalam {{warrantyDays}} hari',
       entitlementRenewing:
         'Langganan diperpanjang otomatis dalam {{subscriptionExpiryDays}} hari',
       entitlementEnding:
@@ -2066,9 +2067,10 @@ const idID: AppResource = {
       entitlementMaintenance:
         'Pemeliharaan lisensi permanen berakhir dalam {{maintenanceExpiryDays}} hari',
       entitlementEnded: 'Langganan berakhir yang masih memegang kursi',
-      idleDevice: 'Di stok lebih dari {{idleDays}} hari',
-      auditOverdue: 'Tidak diperiksa selama {{auditDays}} hari',
-      departmentMismatch: 'Departemen berbeda dari departemen pemegang',
+      idleDevice: 'Perangkat di stok lebih dari {{idleDays}} hari',
+      auditOverdue: 'Perangkat tidak diperiksa selama {{auditDays}} hari',
+      departmentMismatch:
+        'Departemen perangkat berbeda dari departemen pemegang',
       entitlementOverAllocated: 'Lisensi melebihi alokasi',
       lowAccessories: 'Aksesori di bawah minimum',
       lowConsumables: 'Barang habis pakai di bawah minimum',

@@ -2044,7 +2044,7 @@ const viVN: AppResource = {
       supply: 'Tồn kho và mua sắm',
     },
     reminders: {
-      warrantyExpiring: 'Hết bảo hành trong {{warrantyDays}} ngày',
+      warrantyExpiring: 'Thiết bị hết bảo hành trong {{warrantyDays}} ngày',
       entitlementRenewing:
         'Thuê bao tự động gia hạn trong {{subscriptionExpiryDays}} ngày',
       entitlementEnding:
@@ -2052,9 +2052,10 @@ const viVN: AppResource = {
       entitlementMaintenance:
         'Bảo trì giấy phép vĩnh viễn kết thúc trong {{maintenanceExpiryDays}} ngày',
       entitlementEnded: 'Thuê bao đã kết thúc nhưng vẫn còn suất được giao',
-      idleDevice: 'Nằm trong kho quá {{idleDays}} ngày',
-      auditOverdue: 'Chưa kiểm kê trong {{auditDays}} ngày',
-      departmentMismatch: 'Phòng ban khác với phòng ban của người giữ',
+      idleDevice: 'Thiết bị nằm trong kho quá {{idleDays}} ngày',
+      auditOverdue: 'Thiết bị chưa kiểm kê trong {{auditDays}} ngày',
+      departmentMismatch:
+        'Phòng ban của thiết bị khác với phòng ban của người giữ',
       entitlementOverAllocated: 'Quyền sử dụng bị cấp vượt',
       lowAccessories: 'Phụ kiện dưới mức tối thiểu',
       lowConsumables: 'Vật tư tiêu hao dưới mức tối thiểu',

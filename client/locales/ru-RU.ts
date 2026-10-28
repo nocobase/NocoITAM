@@ -2188,19 +2188,19 @@ const ruRU: AppResource = {
       supply: 'Запасы и закупки',
     },
     reminders: {
-      warrantyExpiring: 'Гарантия истекает в течение {{warrantyDays}} дн.',
+      warrantyExpiring:
+        'Гарантия на устройства истекает в течение {{warrantyDays}} дн.',
       entitlementRenewing:
         'Подписки с автопродлением в течение {{subscriptionExpiryDays}} дн.',
       entitlementEnding:
         'Подписки, заканчивающиеся в течение {{subscriptionExpiryDays}} дн.',
       entitlementMaintenance:
         'Поддержка бессрочных лицензий заканчивается в течение {{maintenanceExpiryDays}} дн.',
-      entitlementEnded:
-        'Закончившиеся подписки, которые всё ещё занимают места',
-      idleDevice: 'На складе более {{idleDays}} дн.',
-      auditOverdue: 'Не проверялись {{auditDays}} дн.',
+      entitlementEnded: 'Подписки закончились, но всё ещё занимают места',
+      idleDevice: 'Устройства на складе более {{idleDays}} дн.',
+      auditOverdue: 'Устройства не проверялись {{auditDays}} дн.',
       departmentMismatch:
-        'Подразделение не совпадает с подразделением держателя',
+        'Подразделение устройства не совпадает с подразделением держателя',
       entitlementOverAllocated: 'Лицензии сверх лимита',
       lowAccessories: 'Аксессуары ниже минимума',
       lowConsumables: 'Расходные материалы ниже минимума',

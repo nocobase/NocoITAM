@@ -889,10 +889,17 @@ const SEVERITY_TEXT: Readonly<Record<string, string>> = {
   critical: 'text-destructive',
 };
 
+/** What 需要关注 lists last (2026-10-28): stock running low. */
+const LAST_REMINDERS: readonly string[] = [
+  'lowAccessories',
+  'lowConsumables',
+  'lowComponents',
+];
+
 /**
  * What 需要关注 lists first, in this order (2026-10-28): what is happening
  * to the entitlements, the dates before what has already ended, and a
- * joiner's order now late. The rest follow worst first.
+ * joiner's order now late. The rest follow worst first, then low stock.
  */
 const LEFT_REMINDERS: readonly string[] = [
   'entitlementOverAllocated',
@@ -942,11 +949,15 @@ function AttentionBand(): ReactElement | null {
       maintenanceExpiryDays: thresholds?.maintenanceExpiryDays ?? 30,
     });
 
+  const placed = [...LEFT_REMINDERS, ...LAST_REMINDERS];
   const rows = [
     ...LEFT_REMINDERS.flatMap((kind) =>
       found.filter((entry) => entry.kind === kind),
     ),
-    ...found.filter((entry) => !LEFT_REMINDERS.includes(entry.kind)),
+    ...found.filter((entry) => !placed.includes(entry.kind)),
+    ...LAST_REMINDERS.flatMap((kind) =>
+      found.filter((entry) => entry.kind === kind),
+    ),
   ];
 
   // Nothing at risk, no band (2026-10-22).

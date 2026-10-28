@@ -2073,7 +2073,8 @@ const esES: AppResource = {
       supply: 'Existencias y compras',
     },
     reminders: {
-      warrantyExpiring: 'La garantía termina en {{warrantyDays}} días o menos',
+      warrantyExpiring:
+        'Garantía de dispositivos que termina en {{warrantyDays}} días o menos',
       entitlementRenewing:
         'Suscripciones que se renuevan automáticamente en {{subscriptionExpiryDays}} días o menos',
       entitlementEnding:
@@ -2081,10 +2082,11 @@ const esES: AppResource = {
       entitlementMaintenance:
         'Mantenimiento de licencias perpetuas que termina en {{maintenanceExpiryDays}} días o menos',
       entitlementEnded: 'Suscripciones terminadas que aún tienen puestos',
-      idleDevice: 'En existencias durante más de {{idleDays}} días',
-      auditOverdue: 'Sin inventariar en {{auditDays}} días',
+      idleDevice:
+        'Dispositivos en existencias durante más de {{idleDays}} días',
+      auditOverdue: 'Dispositivos sin inventariar en {{auditDays}} días',
       departmentMismatch:
-        'El departamento difiere del departamento del titular',
+        'Departamento del dispositivo distinto del del titular',
       entitlementOverAllocated: 'Licencias sobreasignadas',
       lowAccessories: 'Accesorios por debajo del mínimo',
       lowConsumables: 'Consumibles por debajo del mínimo',

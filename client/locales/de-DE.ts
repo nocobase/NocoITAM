@@ -2077,18 +2077,19 @@ const deDE: AppResource = {
       supply: 'Bestand und Einkauf',
     },
     reminders: {
-      warrantyExpiring: 'Garantie endet innerhalb von {{warrantyDays}} Tagen',
+      warrantyExpiring:
+        'Gerätegarantie endet innerhalb von {{warrantyDays}} Tagen',
       entitlementRenewing:
         'Abonnements mit automatischer Verlängerung innerhalb von {{subscriptionExpiryDays}} Tagen',
       entitlementEnding:
         'Abonnements, die innerhalb von {{subscriptionExpiryDays}} Tagen enden',
       entitlementMaintenance:
         'Wartung dauerhafter Lizenzen endet innerhalb von {{maintenanceExpiryDays}} Tagen',
-      entitlementEnded: 'Beendete Abonnements mit belegten Plätzen',
-      idleDevice: 'Seit über {{idleDays}} Tagen auf Lager',
-      auditOverdue: 'Seit {{auditDays}} Tagen nicht inventarisiert',
-      departmentMismatch: 'Abteilung weicht von der Abteilung des Nutzers ab',
-      entitlementOverAllocated: 'Überbelegte Nutzungsrechte',
+      entitlementEnded: 'Abonnements beendet, Plätze noch belegt',
+      idleDevice: 'Geräte seit über {{idleDays}} Tagen auf Lager',
+      auditOverdue: 'Geräte seit {{auditDays}} Tagen nicht inventarisiert',
+      departmentMismatch: 'Abteilung des Geräts weicht von der des Nutzers ab',
+      entitlementOverAllocated: 'Nutzungsrechte überbelegt',
       lowAccessories: 'Zubehör unter Mindestbestand',
       lowConsumables: 'Verbrauchsmaterial unter Mindestbestand',
       lowComponents: 'Komponenten unter Mindestbestand',

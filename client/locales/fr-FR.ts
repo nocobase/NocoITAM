@@ -2067,7 +2067,8 @@ const frFR: AppResource = {
       supply: 'Stock et achats',
     },
     reminders: {
-      warrantyExpiring: 'Garantie se terminant sous {{warrantyDays}} jours',
+      warrantyExpiring:
+        'Garantie des appareils se terminant sous {{warrantyDays}} jours',
       entitlementRenewing:
         'Abonnements renouvelés automatiquement sous {{subscriptionExpiryDays}} jours',
       entitlementEnding:
@@ -2075,9 +2076,10 @@ const frFR: AppResource = {
       entitlementMaintenance:
         'Maintenance de licences perpétuelles se terminant sous {{maintenanceExpiryDays}} jours',
       entitlementEnded: 'Abonnements terminés détenant encore des sièges',
-      idleDevice: 'En stock depuis plus de {{idleDays}} jours',
-      auditOverdue: 'Non inventoriés depuis {{auditDays}} jours',
-      departmentMismatch: 'Le service diffère de celui du détenteur',
+      idleDevice: 'Appareils en stock depuis plus de {{idleDays}} jours',
+      auditOverdue: 'Appareils non inventoriés depuis {{auditDays}} jours',
+      departmentMismatch:
+        'Service de l’appareil différent de celui du détenteur',
       entitlementOverAllocated: 'Droits d’utilisation surattribués',
       lowAccessories: 'Accessoires sous le minimum',
       lowConsumables: 'Consommables sous le minimum',
