@@ -628,7 +628,6 @@ const jaJP: AppResource = {
     assignedCount: '割り当て済み',
     availableSeats: '割り当て可能',
     complianceStatus: 'コンプライアンス状況',
-    reassignable: '再割り当て可能',
     effectiveDate: '有効開始日',
     expiryDate: '有効期限',
     maintenanceExpiryDate: '保守期限',

@@ -166,14 +166,6 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.quantity',
   },
   {
-    key: 'reassignable',
-    label: 'fields.reassignable',
-    type: 'boolean',
-    visibleWhen: perpetual,
-    // With the seat counts (2026-10-22), not a group of its own.
-    group: 'groups.quantity',
-  },
-  {
     key: 'billingModel',
     label: 'fields.billingModel',
     type: 'select',
@@ -306,7 +298,6 @@ export const ENTITLEMENT_CREATE_FIELDS: readonly string[] = [
   'maintenanceExpiryDate',
   'autoRenew',
   'productKey',
-  'reassignable',
   'consoleUrl',
   // 负责人 above 备注, the long text closing the dialog (2026-10-23).
   'ownerId',

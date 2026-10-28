@@ -632,7 +632,6 @@ const esES: AppResource = {
     assignedCount: 'Asignados',
     availableSeats: 'Disponibles',
     complianceStatus: 'Cumplimiento',
-    reassignable: 'Reasignable',
     effectiveDate: 'Vigente desde',
     expiryDate: 'Caduca',
     maintenanceExpiryDate: 'Mantenimiento hasta',

@@ -6,6 +6,7 @@ import auditOwner from '../../database/main/migrations/202610050002_audit_owner.
 import disposalLifecycle from '../../database/main/migrations/202610180001_disposal_lifecycle.js';
 import repairQuotes from '../../database/main/migrations/202610270004_repair_quotes.js';
 import subscriptionLicensing from '../../database/main/migrations/202610280001_subscription_licensing_model.js';
+import dropReassignable from '../../database/main/migrations/202610280002_drop_entitlement_reassignable.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -546,13 +547,31 @@ describe('ITAM migrations', () => {
     });
   });
 
+  it("drops an entitlement's reassignable, and restores it on down", async () => {
+    db = await createTestDatabase();
+    const client = await schemaClient(db.database);
+    const present = () =>
+      client.schema.hasColumn('entitlements', 'reassignable');
+    expect(await present()).toBe(false);
+    const connection = db.database.connection();
+    const context = {
+      connection,
+      query: connection.query,
+      builder: connection.builder,
+    };
+    await dropReassignable.down!(context);
+    expect(await present()).toBe(true);
+    await dropReassignable.up(context);
+    expect(await present()).toBe(false);
+  });
+
   it('is applied once and rolls back cleanly', async () => {
     db = await createTestDatabase();
     const again = await db.migrator.latest();
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(117);
+    expect(rolledBack.rolledBack.length).toBe(118);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

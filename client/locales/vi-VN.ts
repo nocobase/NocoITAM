@@ -629,7 +629,6 @@ const viVN: AppResource = {
     assignedCount: 'Đã giao',
     availableSeats: 'Còn trống',
     complianceStatus: 'Tuân thủ',
-    reassignable: 'Có thể giao lại',
     effectiveDate: 'Hiệu lực từ',
     expiryDate: 'Hết hạn',
     maintenanceExpiryDate: 'Bảo trì đến',

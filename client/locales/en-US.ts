@@ -641,7 +641,6 @@ const messages = {
     assignedCount: 'Assigned',
     availableSeats: 'Available',
     complianceStatus: 'Compliance',
-    reassignable: 'Reassignable',
     effectiveDate: 'Effective from',
     expiryDate: 'Expires',
     maintenanceExpiryDate: 'Maintenance until',

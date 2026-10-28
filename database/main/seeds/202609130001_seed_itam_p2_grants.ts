@@ -37,7 +37,6 @@ const ENTITLEMENT_FIELDS = [
   'assignedCount',
   'complianceStatus',
   'productKey',
-  'reassignable',
   'startDate',
   'expiryDate',
   'maintenanceExpiryDate',

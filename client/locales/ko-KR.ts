@@ -625,7 +625,6 @@ const koKR: AppResource = {
     assignedCount: '할당됨',
     availableSeats: '가용',
     complianceStatus: '컴플라이언스',
-    reassignable: '재할당 가능',
     effectiveDate: '효력 시작일',
     expiryDate: '만료일',
     maintenanceExpiryDate: '유지보수 만료일',

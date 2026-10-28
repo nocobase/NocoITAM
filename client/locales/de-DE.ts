@@ -636,7 +636,6 @@ const deDE: AppResource = {
     assignedCount: 'Zugewiesen',
     availableSeats: 'Verfügbar',
     complianceStatus: 'Compliance',
-    reassignable: 'Neu zuweisbar',
     effectiveDate: 'Gültig ab',
     expiryDate: 'Läuft ab',
     maintenanceExpiryDate: 'Wartung bis',

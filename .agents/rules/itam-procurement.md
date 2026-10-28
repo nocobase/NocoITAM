@@ -75,7 +75,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   that product, and adds its seats there or opens a new one. **Joining
   changes no term**: a renewal is its own act on the entitlement's page, so
   the form asks for the terms only when opening one (授权方式, 维保到期,
-  共用密钥, 可重新分配 for a perpetual; 计费方式, 计费周期, 单价, 到期日期,
+  共用密钥 for a perpetual; 计费方式, 计费周期, 单价, 到期日期,
   自动续订 for a subscription, rendered from `ENTITLEMENT_FIELDS` so the
   labels match its page), and shows the joined record's terms disabled, so
   the receiver sees what the seats inherit. What the order already answers
