@@ -4,7 +4,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { useAgentReadiness } from '../../client/lib/itam/ask.js';
 
 const state = vi.hoisted(() => ({
-  demo: false as boolean | undefined,
+  demo: false,
   available: true,
 }));
 vi.mock('@nocobase/app-plugin-agents/client/chat', () => ({
@@ -22,11 +22,8 @@ vi.mock('../../client/lib/itam/ai.js', () => ({
     data: { available: state.available },
   }),
 }));
-vi.mock('../../client/lib/itam/demo-mode.js', () => ({
-  useDemoMode: () => ({
-    isLoading: state.demo === undefined,
-    data: state.demo,
-  }),
+vi.mock('@nocobase/app-plugin-demo-mode/client', () => ({
+  useDemoMode: () => state.demo,
 }));
 
 beforeEach(() => {
@@ -48,11 +45,4 @@ it('cannot take a question in Demo Mode, and says why', () => {
     state: 'unavailable',
     reason: 'ai.demoReadOnly',
   });
-});
-
-it('waits for Demo Mode’s status before saying either', () => {
-  state.demo = undefined;
-  expect(renderHook(() => useAgentReadiness()).result.current.state).toBe(
-    'loading',
-  );
 });

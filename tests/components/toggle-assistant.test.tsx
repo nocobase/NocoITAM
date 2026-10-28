@@ -24,8 +24,8 @@ vi.mock('@nocobase/app-plugin-agents/client/chat', () => ({
     data: { pages: [{ items: [{ id: 'leaver' }, { id: 'loans' }] }] },
   }),
 }));
-vi.mock('../../client/lib/itam/demo-mode.js', () => ({
-  useDemoMode: () => ({ data: state.demo }),
+vi.mock('@nocobase/app-plugin-demo-mode/client', () => ({
+  useDemoMode: () => state.demo,
 }));
 
 beforeEach(() => {

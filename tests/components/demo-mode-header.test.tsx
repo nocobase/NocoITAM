@@ -1,4 +1,5 @@
 import demoMode from '@nocobase/app-plugin-demo-mode/client';
+import { createAppClientConfig } from '@nocobase/app-client';
 import { answerApi, renderWithApp } from '@nocobase/app-testing/client';
 import { fireEvent, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
@@ -21,10 +22,17 @@ it.each([
   async (locale, label) => {
     await renderWithApp(<HeaderActions />, {
       plugins: [demoMode()],
+      services: (app) => {
+        Object.defineProperty(app.config, 'public', {
+          value: createAppClientConfig({
+            rawConfig: {},
+            rawPublicConfig: { demoMode: { enabled: true } },
+          }).public,
+        });
+      },
       route: '/devices',
       locale,
       fetch: answerApi(({ path }) => {
-        if (path === 'demoMode/status') return { data: { enabled: true } };
         if (path === 'demoMode/accounts')
           return {
             data: [

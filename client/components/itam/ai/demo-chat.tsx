@@ -1,7 +1,7 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import type { ChatInputAvailability } from '#extensions/nocobase-agent-chat/input-availability';
 
-import { useDemoMode } from '@/lib/itam/demo-mode';
+import { useDemoMode } from '@nocobase/app-plugin-demo-mode/client';
 
 /**
  * The chat's composers on a Demo Mode deployment (2026-10-25): it refuses
@@ -12,7 +12,7 @@ import { useDemoMode } from '@/lib/itam/demo-mode';
 export function useDemoChatInput(): ChatInputAvailability | undefined {
   const { t } = useTranslation();
   const demo = useDemoMode();
-  if (demo.data !== true) return undefined;
+  if (!demo) return undefined;
   return {
     canSend: false,
     notice: (

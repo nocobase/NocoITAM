@@ -1,4 +1,4 @@
-import { isDemoMode } from '../itam/demo-mode.js';
+import { isDemoMode } from '@nocobase/app-plugin-demo-mode/server';
 import {
   agentsAccessToken,
   agentsToken,

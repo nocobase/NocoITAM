@@ -97,6 +97,13 @@ test(
       ['DELETE', `/itam/devices/${device.id}`, {}],
       ['POST', '/itam/demo/generate', {}],
       ['POST', '/agents/conversations', {}],
+      ['POST', '/assistant/plans', {}],
+      ['POST', '/files/upload', {}],
+      ['POST', '/itamAttachments/uploadOne', {}],
+      ['POST', '/itamAttachments/uploadMany', {}],
+      ['POST', '/itamAttachments/deleteOne', {}],
+      ['POST', '/mail/messages', {}],
+      ['POST', '/scheduler/tasks', {}],
     ] as const) {
       const response = await admin.fetch(path, {
         method,
@@ -107,8 +114,12 @@ test(
         body: JSON.stringify(body),
       });
       expect(response.status).toBe(400);
+      expect(response.headers.get('Server-Timing')).toContain('demo-read-only');
       expect(await response.json()).toMatchObject({
-        error: { reason: 'DEMO_READ_ONLY' },
+        error: {
+          reason: 'DEMO_READ_ONLY',
+          localizedMessage: { locale: 'zh-CN' },
+        },
       });
     }
     expect(

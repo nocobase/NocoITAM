@@ -17,7 +17,7 @@ import {
 } from '#components/ui/tooltip';
 import { useItamSettings } from '@/lib/itam/api';
 import { useAgentReadiness, useDiscuss } from '@/lib/itam/ask';
-import { useDemoMode } from '@/lib/itam/demo-mode';
+import { useDemoMode } from '@nocobase/app-plugin-demo-mode/client';
 
 import { AskComposer } from './ask-composer.js';
 import { useAskDraft, useFocusReturn } from './ask-draft.js';
@@ -93,7 +93,7 @@ export function AssistantDock(): ReactElement | null {
   // On a Demo Mode deployment the dock takes a question all the same and
   // opens the panel on it, which says the demo cannot send it (2026-10-25,
   // `useAskDraft`).
-  const demo = useDemoMode().data === true;
+  const demo = useDemoMode();
   const unavailable =
     readiness.state === 'unavailable' && !demo ? readiness.reason : undefined;
   const draft = useAskDraft(record, readiness.state !== 'ready' && !demo);
