@@ -770,7 +770,7 @@ const zhCN: AppResource = {
     deliveryMethod: {
       onPremise: '本地安装',
       saas: 'SaaS',
-      both: '两者',
+      both: '本地安装和 SaaS',
     },
     locationType: {
       company: '公司',

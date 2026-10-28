@@ -775,7 +775,7 @@ const viVN: AppResource = {
     deliveryMethod: {
       onPremise: 'Tại chỗ',
       saas: 'SaaS',
-      both: 'Cả hai',
+      both: 'Tại chỗ và SaaS',
     },
     locationType: {
       company: 'Công ty',

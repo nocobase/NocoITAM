@@ -777,7 +777,7 @@ const frFR: AppResource = {
     deliveryMethod: {
       onPremise: 'Sur site',
       saas: 'SaaS',
-      both: 'Les deux',
+      both: 'Sur site et SaaS',
     },
     locationType: {
       company: 'Entreprise',

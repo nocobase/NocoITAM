@@ -774,7 +774,7 @@ const jaJP: AppResource = {
     deliveryMethod: {
       onPremise: 'オンプレミス',
       saas: 'SaaS',
-      both: '両方',
+      both: 'オンプレミスと SaaS',
     },
     locationType: {
       company: '会社',

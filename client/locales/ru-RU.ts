@@ -810,7 +810,7 @@ const ruRU: AppResource = {
     deliveryMethod: {
       onPremise: 'Локально',
       saas: 'SaaS',
-      both: 'Оба варианта',
+      both: 'Локально и SaaS',
     },
     locationType: {
       company: 'Компания',

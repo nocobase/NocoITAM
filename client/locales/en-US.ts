@@ -788,7 +788,7 @@ const messages = {
     deliveryMethod: {
       onPremise: 'On-premises',
       saas: 'SaaS',
-      both: 'Both',
+      both: 'On-premises and SaaS',
     },
     locationType: {
       company: 'Company',

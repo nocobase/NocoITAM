@@ -782,7 +782,7 @@ const deDE: AppResource = {
     deliveryMethod: {
       onPremise: 'On-Premises',
       saas: 'SaaS',
-      both: 'Beides',
+      both: 'On-Premises und SaaS',
     },
     locationType: {
       company: 'Unternehmen',

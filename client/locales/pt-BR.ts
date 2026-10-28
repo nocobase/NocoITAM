@@ -774,7 +774,7 @@ const ptBR: AppResource = {
     deliveryMethod: {
       onPremise: 'Local (on-premises)',
       saas: 'SaaS',
-      both: 'Ambos',
+      both: 'Local e SaaS',
     },
     locationType: {
       company: 'Empresa',

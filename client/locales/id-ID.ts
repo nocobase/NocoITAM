@@ -778,7 +778,7 @@ const idID: AppResource = {
     deliveryMethod: {
       onPremise: 'On-premise',
       saas: 'SaaS',
-      both: 'Keduanya',
+      both: 'On-premise dan SaaS',
     },
     locationType: {
       company: 'Perusahaan',

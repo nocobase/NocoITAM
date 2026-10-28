@@ -771,7 +771,7 @@ const koKR: AppResource = {
     deliveryMethod: {
       onPremise: '온프레미스',
       saas: 'SaaS',
-      both: '둘 다',
+      both: '온프레미스 및 SaaS',
     },
     locationType: {
       company: '회사',

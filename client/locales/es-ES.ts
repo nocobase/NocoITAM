@@ -778,7 +778,7 @@ const esES: AppResource = {
     deliveryMethod: {
       onPremise: 'Local',
       saas: 'SaaS',
-      both: 'Ambos',
+      both: 'Local y SaaS',
     },
     locationType: {
       company: 'Empresa',

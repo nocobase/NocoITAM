@@ -762,7 +762,7 @@ const zhTW: AppResource = {
     deliveryMethod: {
       onPremise: '本機安裝',
       saas: 'SaaS',
-      both: '兩者',
+      both: '本機安裝和 SaaS',
     },
     locationType: {
       company: '公司',
