@@ -34,6 +34,15 @@ vi.mock('../../client/lib/itam/ai-chat.js', () => ({
     openConversation: (id: string) => state.opened.push(id),
   }),
 }));
+// The category and maker under each name come from master data the card
+// reads on its own; the card's behaviour here does not depend on them.
+vi.mock('../../client/lib/itam/kit-items.js', async (original) => ({
+  ...(await original<object>()),
+  useItemFacts: () => ({
+    kindOf: () => undefined,
+    detailOf: () => '笔记本电脑 · Apple',
+  }),
+}));
 vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCurrentUserId: () => state.me,
 }));
