@@ -1217,22 +1217,23 @@ export function createOnboardingService(
 
     /**
      * The device a per-device licence's seat goes to: theirs that makes up
-     * the kit's first device item (the computer, in every kit so far), or
-     * else any device of theirs; none while they have none.
+     * the kit's first device item, the computer in every kit so far. Only
+     * that one: a monitor reserved before the laptop must not take the
+     * licence. None while they do not have it yet; a kit without device
+     * items falls back to any device of theirs.
      */
     const seatDevice = (() => {
-      for (const item of items) {
-        const modelId = asText(item.modelId);
-        const categoryId = asText(item.categoryId);
-        if (!modelId && !categoryId) continue;
-        const found = devices.find(({ row }) =>
-          modelId
-            ? asText(row.modelId) === modelId
-            : asText(row.categoryId) === categoryId,
-        );
-        if (found) return found.row;
-      }
-      return devices[0]?.row;
+      const first = items.find(
+        (item) => asText(item.modelId) || asText(item.categoryId),
+      );
+      if (!first) return devices[0]?.row;
+      const modelId = asText(first.modelId);
+      const categoryId = asText(first.categoryId);
+      return devices.find(({ row }) =>
+        modelId
+          ? asText(row.modelId) === modelId
+          : asText(row.categoryId) === categoryId,
+      )?.row;
     })();
 
     const lines: OnboardingPlanLine[] = [];

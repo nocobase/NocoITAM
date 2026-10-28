@@ -76,6 +76,29 @@ function waitingFor(thing: PlanThing): string | undefined {
   if (thing.needsDevice) return 'onboarding.needsDevice';
   return undefined;
 }
+
+/**
+ * A button that waits says why on hover (2026-10-28). A disabled button
+ * takes no pointer events, so a `title` on it never shows: the tooltip
+ * hangs on a wrapper instead.
+ */
+function WhyDisabled({
+  reason,
+  children,
+}: {
+  readonly reason: string | undefined;
+  readonly children: ReactElement;
+}): ReactElement {
+  if (!reason) return children;
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span className='inline-flex' />}>
+        {children}
+      </TooltipTrigger>
+      <TooltipContent>{reason}</TooltipContent>
+    </Tooltip>
+  );
+}
 export function OnboardingPlanCard({
   personId,
   personName,
@@ -533,22 +556,23 @@ function PlanLine({
                 {/* Words like 更换 and 不需要 beside it (2026-10-22), the
                     action in the brand colour so it still leads; the
                     padding taken back like theirs. */}
-                <Button
-                  variant='ghost'
-                  className={`-mx-2.5 text-primary hover:text-primary ${TEXT_BUTTON}`}
-                  disabled={busy || waitingFor(thing) !== undefined}
-                  title={translated(waitingFor(thing))}
-                  onClick={() => onRun(thing)}
-                >
-                  {thing.type === 'device'
-                    ? t(started ? 'onboarding.assign' : 'onboarding.reserve')
-                    : thing.type === 'stock'
-                      ? // ×N only when more than one.
-                        (thing.quantity ?? 1) > 1
-                        ? t('onboarding.issueMany', { count: thing.quantity })
-                        : t('onboarding.issue')
-                      : t('onboarding.seat')}
-                </Button>
+                <WhyDisabled reason={translated(waitingFor(thing))}>
+                  <Button
+                    variant='ghost'
+                    className={`-mx-2.5 text-primary hover:text-primary ${TEXT_BUTTON}`}
+                    disabled={busy || waitingFor(thing) !== undefined}
+                    onClick={() => onRun(thing)}
+                  >
+                    {thing.type === 'device'
+                      ? t(started ? 'onboarding.assign' : 'onboarding.reserve')
+                      : thing.type === 'stock'
+                        ? // ×N only when more than one.
+                          (thing.quantity ?? 1) > 1
+                          ? t('onboarding.issueMany', { count: thing.quantity })
+                          : t('onboarding.issue')
+                        : t('onboarding.seat')}
+                  </Button>
+                </WhyDisabled>
                 {thing.type === 'device' ? (
                   <Button
                     variant='ghost'

@@ -85,8 +85,9 @@ departments/:id/positions/rename`): its holders and its kit move to the
   none, and a subscription seat is proposed under the person's e-mail as
   its account — with no e-mail it cannot be assigned from the card; a
   per-device licence's seat, of either kind, goes to their device that makes
-  up the kit's first device item, else any of theirs, its `holder`, and with
-  none assigned or reserved yet it waits, `needsDevice`, rather than
+  up the kit's first device item (the computer; never a monitor reserved
+  before it), its `holder`, and until they have that one it waits,
+  `needsDevice`, rather than
   counting as a shortfall, 2026-10-28; seats on their devices count as
   theirs) —
   and what an **open 新员工配备 order** for their department and joining

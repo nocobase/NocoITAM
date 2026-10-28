@@ -167,6 +167,22 @@ describe('onboarding', () => {
       proposals: [{ id: licence.id, needsDevice: true }],
     });
 
+    // A monitor of theirs is not where the licence goes: only the device
+    // making up the kit's first device item, the computer.
+    const monitor = await create('devices', {
+      modelId: 'model-u2723qe',
+      serialNo: 'MONTEST0001',
+      locationId,
+    });
+    await post(`devices/${monitor.id}/reserve`, {
+      reservedForType: 'person',
+      reservedForId: joiner.id,
+      reservedUntil: addDays(today(), 5),
+    });
+    expect(await ide()).toMatchObject({
+      proposals: [{ id: licence.id, needsDevice: true }],
+    });
+
     const laptop = await create('devices', {
       modelId: 'model-macbook-pro-14-m3',
       serialNo: 'C02TEST0002',
