@@ -188,6 +188,16 @@ export interface OnboardingPlanLine {
    * `required + fewer`.
    */
   readonly fewer: number;
+  /**
+   * With more than one asked for and Asset Steward choosing otherwise, what
+   * the rule alone would have proposed, all of it (2026-10-28): set beside
+   * the picks it reads as the whole choice, where one `instead` per pick
+   * left out what the rule and Asset Steward both chose.
+   */
+  readonly ruleChoice?: readonly {
+    readonly id: string;
+    readonly label: string;
+  }[];
   /** How many stock is asked for: required less what they have. */
   readonly missing: number;
   /** Only when asked for (`candidates: true`): what stock could give. */
@@ -376,6 +386,7 @@ function finishLine(input: {
   readonly planned: readonly PlanThing[];
   readonly waived: boolean;
   readonly fewer: number;
+  readonly ruleChoice?: OnboardingPlanLine['ruleChoice'];
   /** Required less what they have. */
   readonly asked: number;
   /** What is still uncovered. */
@@ -398,6 +409,7 @@ function finishLine(input: {
     planned: input.planned,
     waived: input.waived,
     fewer: input.fewer,
+    ...(input.ruleChoice ? { ruleChoice: input.ruleChoice } : {}),
     missing: input.waived ? 0 : Math.max(0, input.asked),
     ...(input.candidates ? { candidates: input.candidates } : {}),
     onOrder: count(
@@ -1511,6 +1523,7 @@ export function createOnboardingService(
       const waived = waivedKeys.has(key);
       const prepared: PlanThing[] = [];
       const proposals: PlanThing[] = [];
+      let ruleChoiceShown: OnboardingPlanLine['ruleChoice'];
       const planned: PlanThing[] = [];
       const candidates: PlanCandidate[] = [];
       let missing = required;
@@ -1623,7 +1636,23 @@ export function createOnboardingService(
           const displaced = ruleChoice.filter(
             (row) => !proposedIds.has(String(row.id)),
           );
+          const label = (row: Row) =>
+            `${String(row.deviceNo)} / ${String(row.name)}`;
+          // Several asked for: the rule's whole choice, once, when a pick
+          // differs from it.
+          const several = ruleChoice.length > 1;
+          ruleChoiceShown =
+            several &&
+            proposals.some(
+              (thing) => thing.source === 'noco' && !ruleIds.has(thing.id),
+            )
+              ? ruleChoice.map((row) => ({
+                  id: String(row.id),
+                  label: label(row),
+                }))
+              : undefined;
           proposals.forEach((thing, index) => {
+            if (several) return;
             if (thing.source !== 'noco' || ruleIds.has(thing.id)) return;
             const row = displaced.shift();
             if (row)
@@ -1730,6 +1759,7 @@ export function createOnboardingService(
           planned,
           waived,
           fewer,
+          ruleChoice: ruleChoiceShown,
           asked,
           missing,
           orderBy: orderBy(kind === 'device' ? pools.prepDays : 0),

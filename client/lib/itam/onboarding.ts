@@ -83,6 +83,11 @@ export interface OnboardingPlanLine {
   readonly waived: boolean;
   /** How many of the kit's quantity are 不需要; it asked for required + fewer. */
   readonly fewer: number;
+  /** Several asked for and Asset Steward chose otherwise: the rule's whole choice. */
+  readonly ruleChoice?: readonly {
+    readonly id: string;
+    readonly label: string;
+  }[];
   readonly missing: number;
   /** How many of `planned` are on order, and how many come back. */
   readonly onOrder: number;

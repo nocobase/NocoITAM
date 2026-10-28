@@ -8,7 +8,7 @@ import {
   Truck,
   Undo2,
 } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { Fragment, useState, type ReactElement } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
@@ -543,7 +543,14 @@ function PlanLine({
     );
   return (
     <li className='py-2 text-sm'>
-      <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
+      {/* Several things start level with the name (2026-10-28), a line
+          each, rather than the name floating between them. */}
+      <div
+        className={cn(
+          'flex flex-wrap gap-x-3 gap-y-1.5',
+          several ? 'items-start' : 'items-center',
+        )}
+      >
         <span className='flex min-w-0 flex-1 items-center gap-2'>
           {tag}
           <span className='flex min-w-0 flex-col'>
@@ -782,7 +789,8 @@ function PlanLine({
       </div>
       {reasons.length > 0 ? (
         // In a light box like the strip above (2026-10-22), each with the
-        // device the rule would have proposed when it chose another.
+        // device the rule would have proposed when it chose another — or,
+        // with several, the rule's whole choice once at the end.
         <ul className='mt-1.5 space-y-1.5 rounded-md bg-accent px-3 py-2 text-xs text-muted-foreground'>
           {reasons.map((thing) => (
             <li key={`r:${thing.id}`} className='flex gap-1.5'>
@@ -812,6 +820,22 @@ function PlanLine({
               </div>
             </li>
           ))}
+          {line.ruleChoice && line.ruleChoice.length > 0 ? (
+            <li className='pl-5'>
+              {t('onboarding.instead')}
+              {line.ruleChoice.map((row, index) => (
+                <Fragment key={row.id}>
+                  {index > 0 ? '、' : null}
+                  <RecordLink
+                    to={`/devices/${row.id}`}
+                    className='text-foreground'
+                  >
+                    {row.label}
+                  </RecordLink>
+                </Fragment>
+              ))}
+            </li>
+          ) : null}
         </ul>
       ) : null}
     </li>
