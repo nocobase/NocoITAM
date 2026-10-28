@@ -20,11 +20,13 @@ import {
   type KitItemType,
 } from '@/lib/itam/kit-items';
 import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
+import { TARGET_ROUTES } from '@/lib/itam/onboarding';
 import { useReferenceNames } from '@/lib/itam/references';
 import { cn } from '@/lib/utils';
 
 import { AssetTypeBadge } from './asset-type-badge.js';
 import { ItemOwners } from './item-owners.js';
+import { RecordLink } from './record-link.js';
 import { ReferenceSelect } from './reference-select.js';
 
 /**
@@ -187,8 +189,18 @@ export function KitItems({
                       ) : (
                         <Icon type={item.type} />
                       )}
+                      {/* The name opens its record in the drawer, like
+                          the joiner's card (2026-10-28). */}
                       <span className='min-w-0 flex-1 truncate'>
-                        {nameOf(item)}
+                        {item.id ? (
+                          <RecordLink
+                            to={`/${TARGET_ROUTES[item.type]}/${item.id}`}
+                          >
+                            {nameOf(item)}
+                          </RecordLink>
+                        ) : (
+                          nameOf(item)
+                        )}
                         {item.type === 'category' ? (
                           <span className='ml-1.5 text-xs text-muted-foreground'>
                             {t('onboardingKits.anyModel')}
