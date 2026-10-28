@@ -1083,7 +1083,7 @@ const ruRU: AppResource = {
         running: 'Хранитель активов уже выбирает',
       },
     },
-    waive: 'Не нужно',
+    waive: 'Отметить как ненужное',
     restore: 'Отменить',
     waived: 'Не нужно',
     waivedTotal_one: '{{count}} позиция не нужна',

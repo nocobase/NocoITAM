@@ -1046,7 +1046,7 @@ const deDE: AppResource = {
         running: 'Asset Steward wählt bereits aus',
       },
     },
-    waive: 'Nicht benötigt',
+    waive: 'Als nicht benötigt markieren',
     restore: 'Rückgängig',
     waived: 'Nicht benötigt',
     waivedTotal_one: '{{count}} Artikel nicht benötigt',

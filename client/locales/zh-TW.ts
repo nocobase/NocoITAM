@@ -1019,7 +1019,7 @@ const zhTW: AppResource = {
         running: '資產管家正在挑選',
       },
     },
-    waive: '不需要',
+    waive: '標記為不需要',
     restore: '撤回',
     waived: '不需要',
     waivedTotal_one: '{{count}} 項不需要',

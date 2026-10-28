@@ -1052,7 +1052,7 @@ const messages = {
         running: 'Asset Steward is already choosing',
       },
     },
-    waive: 'Not needed',
+    waive: 'Mark as not needed',
     restore: 'Undo',
     waived: 'Not needed',
     waivedTotal_one: '{{count}} item not needed',

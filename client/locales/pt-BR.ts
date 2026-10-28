@@ -1038,7 +1038,7 @@ const ptBR: AppResource = {
         running: 'O Guardião de Ativos já está escolhendo',
       },
     },
-    waive: 'Não necessário',
+    waive: 'Marcar como não necessário',
     restore: 'Desfazer',
     waived: 'Não necessário',
     waivedTotal_one: '{{count}} item não necessário',

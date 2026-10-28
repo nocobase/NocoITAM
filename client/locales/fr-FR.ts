@@ -1041,7 +1041,7 @@ const frFR: AppResource = {
         running: 'L’Intendant des actifs est déjà en train de choisir',
       },
     },
-    waive: 'Non nécessaire',
+    waive: 'Marquer comme non nécessaire',
     restore: 'Annuler',
     waived: 'Non nécessaire',
     waivedTotal_one: '{{count}} article non nécessaire',

@@ -1029,7 +1029,7 @@ const zhCN: AppResource = {
         running: '资产管家正在挑选',
       },
     },
-    waive: '不需要',
+    waive: '标记为不需要',
     restore: '撤回',
     waived: '不需要',
     waivedTotal_one: '{{count}} 项不需要',

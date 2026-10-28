@@ -1033,7 +1033,7 @@ const koKR: AppResource = {
         running: '자산 관리 에이전트가 이미 선택 중입니다',
       },
     },
-    waive: '불필요',
+    waive: '불필요로 표시',
     restore: '되돌리기',
     waived: '불필요',
     waivedTotal_one: '{{count}}건 불필요',

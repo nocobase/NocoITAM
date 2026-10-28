@@ -1038,7 +1038,7 @@ const viVN: AppResource = {
         running: 'Quản gia Tài sản đang chọn',
       },
     },
-    waive: 'Không cần',
+    waive: 'Đánh dấu không cần',
     restore: 'Hoàn tác',
     waived: 'Không cần',
     waivedTotal_one: '{{count}} mục không cần',

@@ -1041,7 +1041,7 @@ const idID: AppResource = {
         running: 'Penjaga Aset sedang memilih',
       },
     },
-    waive: 'Tidak diperlukan',
+    waive: 'Tandai tidak diperlukan',
     restore: 'Urungkan',
     waived: 'Tidak diperlukan',
     waivedTotal_one: '{{count}} item tidak diperlukan',

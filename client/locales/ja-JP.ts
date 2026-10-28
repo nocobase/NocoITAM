@@ -1035,7 +1035,7 @@ const jaJP: AppResource = {
         running: '資産管理エージェントが選択中です',
       },
     },
-    waive: '不要',
+    waive: '不要としてマーク',
     restore: '元に戻す',
     waived: '不要',
     waivedTotal_one: '{{count}} 件は不要',

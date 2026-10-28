@@ -1042,7 +1042,7 @@ const esES: AppResource = {
         running: 'Custodio de Activos ya está eligiendo',
       },
     },
-    waive: 'No necesario',
+    waive: 'Marcar como no necesario',
     restore: 'Deshacer',
     waived: 'No necesario',
     waivedTotal_one: '{{count}} artículo no necesario',
