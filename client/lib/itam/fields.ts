@@ -88,6 +88,11 @@ export interface FieldDefinition {
   readonly reference?: ReferenceTarget;
   /** Shown as a list column. */
   readonly column?: boolean;
+  /**
+   * The list column this one follows, where the list's order differs from
+   * the detail's (which follows the fields' order).
+   */
+  readonly columnAfter?: string;
   /** Editable in the create / edit form. Defaults to true. */
   readonly form?: boolean;
   /**
