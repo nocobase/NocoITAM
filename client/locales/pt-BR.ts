@@ -988,6 +988,9 @@ const ptBR: AppResource = {
     instead: 'A regra havia proposto ',
     needsAccount:
       'Um assento de assinatura precisa de uma conta: informe um e-mail para esta pessoa ou atribua-o no direito de uso',
+    needsDevice:
+      'O assento de uma licença por dispositivo vai para o computador da pessoa: atribua ou reserve um primeiro',
+    onDevice: 'em {{label}}',
     change: 'Alterar',
     order: '{{orderNo}} {{status}}',
     planned: {

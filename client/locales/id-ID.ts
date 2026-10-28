@@ -992,6 +992,9 @@ const idID: AppResource = {
     instead: 'Aturan sebelumnya mengusulkan ',
     needsAccount:
       'Kursi langganan memerlukan akun: berikan email kepada orang ini, atau berikan kursinya dari lisensi',
+    needsDevice:
+      'Seat lisensi per perangkat diberikan ke komputernya: tetapkan atau pesan satu terlebih dahulu',
+    onDevice: 'di {{label}}',
     change: 'Ganti',
     order: '{{orderNo}} {{status}}',
     planned: {

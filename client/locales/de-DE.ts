@@ -996,6 +996,9 @@ const deDE: AppResource = {
     instead: 'Die Regel hatte vorgeschlagen: ',
     needsAccount:
       'Ein Abonnementplatz braucht ein Konto: Hinterlegen Sie eine E-Mail-Adresse für diese Person oder weisen Sie den Platz beim Nutzungsrecht zu',
+    needsDevice:
+      'Ein Platz einer gerätebezogenen Lizenz geht an den Computer der Person: zuerst einen zuweisen oder reservieren',
+    onDevice: 'auf {{label}}',
     change: 'Ändern',
     order: '{{orderNo}} {{status}}',
     planned: {

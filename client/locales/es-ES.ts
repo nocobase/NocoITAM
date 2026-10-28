@@ -992,6 +992,9 @@ const esES: AppResource = {
     instead: 'La regla había propuesto ',
     needsAccount:
       'Un puesto de suscripción necesita una cuenta: indique un correo electrónico para esta persona o asígnelo desde la licencia',
+    needsDevice:
+      'El puesto de una licencia por dispositivo va a su equipo: asigna o reserva uno primero',
+    onDevice: 'en {{label}}',
     change: 'Cambiar',
     order: '{{orderNo}} {{status}}',
     planned: {

@@ -974,6 +974,8 @@ const zhTW: AppResource = {
     noKit: '此人員的部門和職位沒有適用的入職配置。',
     instead: '規則原本挑選的：',
     needsAccount: '訂閱席位需要帳號：先為此人填寫電子郵件，或到授權頁分配',
+    needsDevice: '按裝置授權的席位分給新人的電腦：先替新人分配或預留一台',
+    onDevice: '裝到 {{label}}',
     change: '更換',
     order: '{{orderNo}} {{status}}',
     planned: {

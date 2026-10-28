@@ -991,6 +991,9 @@ const frFR: AppResource = {
     instead: 'La règle avait proposé ',
     needsAccount:
       'Un siège d’abonnement nécessite un compte : donnez une adresse e-mail à cette personne, ou attribuez-le depuis le droit d’utilisation',
+    needsDevice:
+      'Le siège d’une licence par appareil va sur son ordinateur : attribuez-en ou réservez-en d’abord un',
+    onDevice: 'sur {{label}}',
     change: 'Changer',
     order: '{{orderNo}} {{status}}',
     planned: {

@@ -984,6 +984,9 @@ const koKR: AppResource = {
     instead: '규칙이 처음 제안한 항목: ',
     needsAccount:
       '구독 시트에는 계정이 필요합니다. 이 직원에게 이메일을 지정하거나 라이선스 페이지에서 할당하십시오',
+    needsDevice:
+      '기기 단위 라이선스의 시트는 신규 입사자의 컴퓨터에 할당됩니다. 먼저 컴퓨터를 할당하거나 예약하세요',
+    onDevice: '{{label}}에 할당',
     change: '변경',
     order: '{{orderNo}} {{status}}',
     planned: {

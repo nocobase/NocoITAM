@@ -73,6 +73,17 @@ export interface PlanThing {
    */
   readonly needsAccount?: boolean;
   readonly account?: string;
+  /**
+   * A per-device licence's seat goes to a device of theirs, not to them
+   * (2026-10-28): the device it is proposed for, or `needsDevice` while
+   * they have none assigned or reserved yet.
+   */
+  readonly holder?: {
+    readonly type: 'device';
+    readonly id: string;
+    readonly label: string;
+  };
+  readonly needsDevice?: boolean;
   /** A proposal Asset Steward chose in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;
@@ -839,6 +850,7 @@ export function createOnboardingService(
         'expiryDate',
         'maintenanceExpiryDate',
         'billingModel',
+        'licensingModel',
       ])
       .orderBy('name', 'asc')
       .execute<Row>();
@@ -1154,8 +1166,28 @@ export function createOnboardingService(
         'entitlements.name as name',
         'entitlements.softwareProductId as softwareProductId',
       ])
-      .where('entitlementSeats.holderType', '=', 'person')
-      .where('entitlementSeats.holderId', '=', personId)
+      // Theirs, and those on their devices: a per-device licence's seat is
+      // held by the computer, not the person (2026-10-28).
+      .where((eb) =>
+        eb.or([
+          eb.and([
+            eb('entitlementSeats.holderType', '=', 'person'),
+            eb('entitlementSeats.holderId', '=', personId),
+          ]),
+          ...(devices.length > 0
+            ? [
+                eb.and([
+                  eb('entitlementSeats.holderType', '=', 'device'),
+                  eb(
+                    'entitlementSeats.holderId',
+                    'in',
+                    devices.map(({ row }) => String(row.id)),
+                  ),
+                ]),
+              ]
+            : []),
+        ]),
+      )
       .where('entitlementSeats.releasedAt', 'is', null)
       .execute<Row>();
 
@@ -1182,6 +1214,26 @@ export function createOnboardingService(
       (item): item is Record<string, unknown> =>
         typeof item === 'object' && item !== null,
     );
+
+    /**
+     * The device a per-device licence's seat goes to: theirs that makes up
+     * the kit's first device item (the computer, in every kit so far), or
+     * else any device of theirs; none while they have none.
+     */
+    const seatDevice = (() => {
+      for (const item of items) {
+        const modelId = asText(item.modelId);
+        const categoryId = asText(item.categoryId);
+        if (!modelId && !categoryId) continue;
+        const found = devices.find(({ row }) =>
+          modelId
+            ? asText(row.modelId) === modelId
+            : asText(row.categoryId) === categoryId,
+        );
+        if (found) return found.row;
+      }
+      return devices[0]?.row;
+    })();
 
     const lines: OnboardingPlanLine[] = [];
     for (const item of items) {
@@ -1252,9 +1304,23 @@ export function createOnboardingService(
               type: 'seat',
               id: String(entry.row.id),
               label: String(entry.row.name),
-              ...(asText(entry.row.kind) === 'subscription'
-                ? { needsAccount: true, ...(email ? { account: email } : {}) }
-                : {}),
+              ...(asText(entry.row.licensingModel) === 'perDevice'
+                ? seatDevice
+                  ? {
+                      holder: {
+                        type: 'device' as const,
+                        id: String(seatDevice.id),
+                        // Its name alone: the row is narrow already.
+                        label: String(seatDevice.name),
+                      },
+                    }
+                  : { needsDevice: true }
+                : asText(entry.row.kind) === 'subscription'
+                  ? {
+                      needsAccount: true,
+                      ...(email ? { account: email } : {}),
+                    }
+                  : {}),
               ...advised(picks, String(entry.row.id)),
             });
             missing -= 1;

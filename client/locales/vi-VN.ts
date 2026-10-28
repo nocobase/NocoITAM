@@ -989,6 +989,9 @@ const viVN: AppResource = {
     instead: 'Quy tắc đã đề xuất ',
     needsAccount:
       'Suất thuê bao cần một tài khoản: hãy bổ sung email cho người này, hoặc giao suất trên trang quyền sử dụng',
+    needsDevice:
+      'Suất của giấy phép theo thiết bị được giao cho máy tính của họ: hãy cấp hoặc giữ một máy trước',
+    onDevice: 'trên {{label}}',
     change: 'Đổi',
     order: '{{orderNo}} {{status}}',
     planned: {

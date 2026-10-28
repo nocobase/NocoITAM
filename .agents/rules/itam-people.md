@@ -83,7 +83,12 @@ departments/:id/positions/rename`): its holders and its kit move to the
   own location first, then the longest warranty; a stock item with enough
   on hand; an entitlement with a free seat (an ended subscription offers
   none, and a subscription seat is proposed under the person's e-mail as
-  its account — with no e-mail it cannot be assigned from the card) —
+  its account — with no e-mail it cannot be assigned from the card; a
+  per-device licence's seat, of either kind, goes to their device that makes
+  up the kit's first device item, else any of theirs, its `holder`, and with
+  none assigned or reserved yet it waits, `needsDevice`, rather than
+  counting as a shortfall, 2026-10-28; seats on their devices count as
+  theirs) —
   and what an **open 新员工配备 order** for their department and joining
   day still has to deliver counts as `onOrder` (the plan lists those
   `orders`), so asking again never orders the same laptop twice; what is

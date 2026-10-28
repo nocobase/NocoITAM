@@ -987,6 +987,9 @@ const jaJP: AppResource = {
     instead: 'ルールが当初選んだもの：',
     needsAccount:
       'サブスクリプションのシートにはアカウントが必要です。この従業員にメールアドレスを設定するか、利用権のページで割り当ててください',
+    needsDevice:
+      'デバイス単位のライセンスは新入社員の PC に割り当てます。先に PC を割り当てるか予約してください',
+    onDevice: '{{label}} に割り当て',
     change: '変更',
     order: '{{orderNo}} {{status}}',
     planned: {

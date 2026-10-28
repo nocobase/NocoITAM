@@ -13,6 +13,16 @@ export interface PlanThing {
   /** A subscription seat: held under an account, the person's e-mail. */
   readonly needsAccount?: boolean;
   readonly account?: string;
+  /**
+   * A per-device licence's seat: the device of theirs it goes to, or
+   * `needsDevice` while they have none yet.
+   */
+  readonly holder?: {
+    readonly type: 'device';
+    readonly id: string;
+    readonly label: string;
+  };
+  readonly needsDevice?: boolean;
   /** Chosen by Asset Steward in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;

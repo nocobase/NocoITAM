@@ -1002,6 +1002,9 @@ const messages = {
     instead: 'The rule had proposed ',
     needsAccount:
       'A subscription seat needs an account: give this person an e-mail, or assign it on the entitlement',
+    needsDevice:
+      "A per-device licence's seat goes to their computer: assign or reserve one first",
+    onDevice: 'on {{label}}',
     change: 'Change',
     order: '{{orderNo}} {{status}}',
     // Sources other than stock: an open order, or somebody leaving, with

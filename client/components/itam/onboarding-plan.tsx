@@ -65,6 +65,17 @@ import { TEXT_BUTTON } from '@/lib/itam/text-button';
  * picks come first with the reason beneath, and the strip under the heading
  * says how that run went. The buttons stay the person's.
  */
+
+/**
+ * Why a proposal cannot be carried out yet, as a translation key: a seat
+ * that needs an account it has none for waits for a person; one that needs
+ * a device of theirs waits for the device (2026-10-28).
+ */
+function waitingFor(thing: PlanThing): string | undefined {
+  if (thing.needsAccount && !thing.account) return 'onboarding.needsAccount';
+  if (thing.needsDevice) return 'onboarding.needsDevice';
+  return undefined;
+}
 export function OnboardingPlanCard({
   personId,
   personName,
@@ -159,12 +170,16 @@ export function OnboardingPlanCard({
         method: 'POST',
         json: {
           seats: [
-            {
-              holderType: 'person',
-              holderId: personId,
-              // A subscription seat is held under an account: their e-mail.
-              ...(thing.account ? { account: thing.account } : {}),
-            },
+            // A per-device licence's seat goes to their device.
+            thing.holder
+              ? { holderType: 'device', holderId: thing.holder.id }
+              : {
+                  holderType: 'person',
+                  holderId: personId,
+                  // A subscription seat is held under an account: their
+                  // e-mail.
+                  ...(thing.account ? { account: thing.account } : {}),
+                },
           ],
         },
       });
@@ -207,8 +222,7 @@ export function OnboardingPlanCard({
     if (failed.length > 0) setError(failed.join('\n'));
     if (done > 0) await announce(title(done), []);
   };
-  /** A seat that needs an account it has none for waits for a person. */
-  const runnable = (thing: PlanThing) => !thing.needsAccount || thing.account;
+  const runnable = (thing: PlanThing) => waitingFor(thing) === undefined;
   const proposals = data.lines
     .flatMap((line) => line.proposals)
     .map(effective)
@@ -371,6 +385,7 @@ function PlanLine({
   readonly onWaive: (waived: boolean) => void;
 }): ReactElement {
   const { t } = useTranslation();
+  const translated = (key: string | undefined) => (key ? t(key) : undefined);
   // The proposal whose device is being chosen again, if any.
   const [changing, setChanging] = useState<string>();
   // The item's asset type leads its row, as on the kit it comes from:
@@ -508,18 +523,21 @@ function PlanLine({
                 <RecordLink to={recordOf(thing)} className='min-w-0 truncate'>
                   {thing.label}
                 </RecordLink>
+                {/* A per-device licence's seat names the device it goes to
+                    (2026-10-28). */}
+                {thing.holder ? (
+                  <span className='min-w-0 truncate text-muted-foreground'>
+                    {t('onboarding.onDevice', { label: thing.holder.label })}
+                  </span>
+                ) : null}
                 {/* Words like 更换 and 不需要 beside it (2026-10-22), the
                     action in the brand colour so it still leads; the
                     padding taken back like theirs. */}
                 <Button
                   variant='ghost'
                   className={`-mx-2.5 text-primary hover:text-primary ${TEXT_BUTTON}`}
-                  disabled={busy || (thing.needsAccount && !thing.account)}
-                  title={
-                    thing.needsAccount && !thing.account
-                      ? t('onboarding.needsAccount')
-                      : undefined
-                  }
+                  disabled={busy || waitingFor(thing) !== undefined}
+                  title={translated(waitingFor(thing))}
                   onClick={() => onRun(thing)}
                 >
                   {thing.type === 'device'
