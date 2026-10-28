@@ -1,7 +1,10 @@
 import { I18nRuntime } from '@nocobase/i18n';
 import { expect, it } from 'vitest';
 
-import { describeEvent } from '../../client/lib/itam/history-event.js';
+import {
+  describeEvent,
+  eventTargetLink,
+} from '../../client/lib/itam/history-event.js';
 import zhCN from '../../client/locales/zh-CN.js';
 import enUS from '../../client/locales/en-US.js';
 
@@ -146,4 +149,29 @@ it("adds a stock movement's note after it", async () => {
   expect(describe('issue', { quantity: 1, targetLabel: '王芳' })).toBe(
     '1 给 王芳',
   );
+});
+
+it('names the account on a reclaimed seat as on an assigned one', () => {
+  const event = (type: string, targetLabel: string) => ({
+    id: type,
+    actorId: 'user',
+    createdAt: '2026-10-28',
+    type,
+    summary: '',
+    payload: {
+      holderType: 'person',
+      holderId: 'p1',
+      account: 'liu.yang@northbridge.example',
+      targetLabel,
+    },
+  });
+  for (const row of [
+    event('seatReclaim', '刘洋'),
+    event('seatAssign', '刘洋 (liu.yang@northbridge.example)'),
+  ])
+    expect(eventTargetLink(row)).toEqual({
+      to: '/people/p1',
+      label: '刘洋 (liu.yang@northbridge.example)',
+      slot: 'target',
+    });
 });

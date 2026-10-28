@@ -614,8 +614,16 @@ export function eventTargetLink(row: HistoryEvent):
     holderRoute[label('reservedForType')];
   const holderId =
     label('targetId') || label('holderId') || label('reservedForId');
+  // A seat names the account it was held under, given back as when it was
+  // assigned (2026-10-28): a reclaim recorded the account but not in its
+  // label.
+  const account = label('account');
   if (route && holderId)
-    return { to: `/${route}/${holderId}`, label: name, slot: 'target' };
+    return {
+      to: `/${route}/${holderId}`,
+      label: account && !name.includes(account) ? `${name} (${account})` : name,
+      slot: 'target',
+    };
   const byKey: readonly (readonly [string, string])[] = [
     ['entitlementId', 'entitlements'],
     ['deviceId', 'devices'],
