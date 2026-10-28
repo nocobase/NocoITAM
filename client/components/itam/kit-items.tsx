@@ -191,18 +191,21 @@ export function KitItems({
                       )}
                       {/* The name opens its record in the drawer, like
                           the joiner's card (2026-10-28). */}
-                      <span className='min-w-0 flex-1 truncate'>
+                      {/* The link truncates itself, so its underline is
+                          not clipped by a box around it. */}
+                      <span className='flex min-w-0 flex-1 items-center gap-1.5'>
                         {item.id ? (
                           <RecordLink
                             to={`/${TARGET_ROUTES[item.type]}/${item.id}`}
+                            className='truncate'
                           >
                             {nameOf(item)}
                           </RecordLink>
                         ) : (
-                          nameOf(item)
+                          <span className='truncate'>{nameOf(item)}</span>
                         )}
                         {item.type === 'category' ? (
-                          <span className='ml-1.5 text-xs text-muted-foreground'>
+                          <span className='shrink-0 text-xs text-muted-foreground'>
                             {t('onboardingKits.anyModel')}
                           </span>
                         ) : null}

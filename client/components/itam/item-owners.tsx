@@ -18,8 +18,12 @@ export function ItemOwners({
   readonly className?: string;
 }): ReactElement | null {
   if (owners.length === 0) return null;
+  // Room below the truncating box for the links' underline, which it
+  // would clip otherwise, without moving the row.
   return (
-    <span className={cn('truncate text-muted-foreground', className)}>
+    <span
+      className={cn('-mb-1 truncate pb-1 text-muted-foreground', className)}
+    >
       {owners.map((owner, index) => (
         <Fragment key={`${owner.route}:${owner.id}`}>
           {index > 0 ? ' · ' : null}
