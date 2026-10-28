@@ -1206,10 +1206,21 @@ describe('CSV import / export and demo data', () => {
         .where('sourceType', '=', 'demo')
         .execute();
     expect((await onSeeded()).length).toBeGreaterThan(0);
+    // So do the changes its kits told on the seeded departments
+    // (2026-10-28).
+    const kitEvents = () =>
+      database
+        .query()
+        .selectFrom('historyEvents')
+        .select('id')
+        .where('type', '=', 'onboardingKitChanged')
+        .execute();
+    expect((await kitEvents()).length).toBeGreaterThan(0);
     const cleared = await data<{ generated: boolean }>(
       await post('demo/clear'),
     );
     expect(await onSeeded()).toEqual([]);
+    expect(await kitEvents()).toEqual([]);
     expect(
       await database
         .query()

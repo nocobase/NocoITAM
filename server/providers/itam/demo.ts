@@ -6998,6 +6998,20 @@ export function createDemoService(dependencies: {
           ],
         };
         const ENGINEERING = new Set(['dept-tech', 'dept-rd', 'dept-qa']);
+        // A kit's change is told on its department's history (2026-10-28),
+        // and the departments are seeded, not the demo's: the events its
+        // kits write are marked as the demo's below, so a clear takes them
+        // too instead of leaving 已删除的用户 设置 … 的配置 import after import.
+        const kitEventsBefore = new Set(
+          (
+            await database
+              .query()
+              .selectFrom('historyEvents')
+              .select(['id'])
+              .where('type', '=', 'onboardingKitChanged')
+              .execute<{ id: string }>()
+          ).map((row) => row.id),
+        );
         const departments = await database
           .query()
           .selectFrom('departments')
@@ -7135,6 +7149,23 @@ export function createDemoService(dependencies: {
             seat(String(zoom.id)),
           ],
         );
+        const kitEvents = (
+          await database
+            .query()
+            .selectFrom('historyEvents')
+            .select(['id'])
+            .where('type', '=', 'onboardingKitChanged')
+            .execute<{ id: string }>()
+        )
+          .map((row) => row.id)
+          .filter((id) => !kitEventsBefore.has(id));
+        if (kitEvents.length > 0)
+          await database
+            .query()
+            .updateTable('historyEvents')
+            .set({ sourceType: 'demo' })
+            .where('id', 'in', kitEvents)
+            .execute();
         const joinerIds: string[] = [];
         for (const [index, entry] of (
           JOINER_NAMES[locale] ??
