@@ -2041,21 +2041,21 @@ const jaJP: AppResource = {
       supply: '在庫と調達',
     },
     reminders: {
-      warrantyExpiring: '{{warrantyDays}} 日以内に保証が終了',
+      warrantyExpiring: '保証が {{warrantyDays}} 日以内に終了',
       entitlementRenewing:
-        '{{subscriptionExpiryDays}} 日以内に自動更新されるサブスクリプション',
+        'サブスクリプションが {{subscriptionExpiryDays}} 日以内に自動更新',
       entitlementEnding:
-        '{{subscriptionExpiryDays}} 日以内に終了するサブスクリプション',
+        'サブスクリプションが {{subscriptionExpiryDays}} 日以内に終了',
       entitlementMaintenance:
-        '{{maintenanceExpiryDays}} 日以内に保守が終了する永続ライセンス',
-      entitlementEnded: '終了後もシートを保有しているサブスクリプション',
-      idleDevice: '在庫に {{idleDays}} 日以上',
-      auditOverdue: '{{auditDays}} 日以上棚卸されていない',
+        '永続ライセンスの保守が {{maintenanceExpiryDays}} 日以内に終了',
+      entitlementEnded: 'サブスクリプションが終了後もシートを保有',
+      idleDevice: 'デバイスが在庫に {{idleDays}} 日以上',
+      auditOverdue: 'デバイスが {{auditDays}} 日以上棚卸されていない',
       departmentMismatch: '所管部署が使用者の部署と異なる',
-      entitlementOverAllocated: '超過割り当ての利用権',
-      lowAccessories: '最低在庫数を下回るアクセサリ',
-      lowConsumables: '最低在庫数を下回る消耗品',
-      lowComponents: '最低在庫数を下回る部品',
+      entitlementOverAllocated: '利用権が超過割り当て',
+      lowAccessories: 'アクセサリが最低在庫数を下回る',
+      lowConsumables: '消耗品が最低在庫数を下回る',
+      lowComponents: '部品が最低在庫数を下回る',
       onboardingOrderOverdue: '発注期限を過ぎた入社準備の不足品',
     },
     reminderCaptions: {

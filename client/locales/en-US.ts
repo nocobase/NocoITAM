@@ -2079,7 +2079,7 @@ const messages = {
       supply: 'Stock and purchasing',
     },
     reminders: {
-      warrantyExpiring: 'Warranty ends within {{warrantyDays}} days',
+      warrantyExpiring: 'Device warranty ends within {{warrantyDays}} days',
       entitlementRenewing:
         'Subscriptions auto-renewing within {{subscriptionExpiryDays}} days',
       entitlementEnding:
@@ -2087,8 +2087,8 @@ const messages = {
       entitlementMaintenance:
         'Perpetual maintenance ending within {{maintenanceExpiryDays}} days',
       entitlementEnded: 'Ended subscriptions still holding seats',
-      idleDevice: 'In stock over {{idleDays}} days',
-      auditOverdue: 'Not audited for {{auditDays}} days',
+      idleDevice: 'Devices in stock over {{idleDays}} days',
+      auditOverdue: 'Devices not audited for {{auditDays}} days',
       departmentMismatch: 'Department differs from the holder’s department',
       entitlementOverAllocated: 'Over-allocated entitlements',
       lowAccessories: 'Accessories below minimum',

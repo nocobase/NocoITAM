@@ -890,6 +890,20 @@ const SEVERITY_TEXT: Readonly<Record<string, string>> = {
 };
 
 /**
+ * What 需要关注 lists first, in this order (2026-10-28): what is happening
+ * to the entitlements, the dates before what has already ended, and a
+ * joiner's order now late. The rest follow worst first.
+ */
+const LEFT_REMINDERS: readonly string[] = [
+  'entitlementOverAllocated',
+  'entitlementRenewing',
+  'entitlementEnding',
+  'entitlementMaintenance',
+  'entitlementEnded',
+  'onboardingOrderOverdue',
+];
+
+/**
  * 需要关注, the board's first column: the rule-layer reminders, one row each,
  * grouped. Every rule stays listed, the empty ones last **within their
  * group** and dimmed: a rule that vanishes at zero cannot be told from one
@@ -928,6 +942,13 @@ function AttentionBand(): ReactElement | null {
       maintenanceExpiryDays: thresholds?.maintenanceExpiryDays ?? 30,
     });
 
+  const rows = [
+    ...LEFT_REMINDERS.flatMap((kind) =>
+      found.filter((entry) => entry.kind === kind),
+    ),
+    ...found.filter((entry) => !LEFT_REMINDERS.includes(entry.kind)),
+  ];
+
   // Nothing at risk, no band (2026-10-22).
   if (!reminders.isLoading && found.length === 0) return null;
   return (
@@ -951,43 +972,58 @@ function AttentionBand(): ReactElement | null {
               wide screen, one on a narrow, each the number, the rule and the
               first record it found, a hairline between them. */}
           <div className='grid grid-cols-1 gap-x-8 lg:grid-cols-2'>
-            {found.map((entry) => (
-              <Link
-                key={entry.kind}
-                to={REMINDER_ROUTES[entry.kind]}
-                title={t(`workbench.reminderCaptions.${entry.kind}`, {
-                  subscriptionExpiryDays:
-                    thresholds?.subscriptionExpiryDays ?? 7,
-                  maintenanceExpiryDays:
-                    thresholds?.maintenanceExpiryDays ?? 30,
-                })}
-                // A risk row says what is at risk without being opened
-                // (2026-10-05). Only a critical rule is red; severity is the
-                // rule's, not today's. A hairline between rows, none above
-                // the first of a column nor under the last (2026-10-22).
-                className='flex min-w-0 items-baseline gap-3 border-t border-border/60 px-1.5 py-2 transition-colors first:border-t-0 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:nth-2:border-t-0'
-              >
-                <span
-                  className={cn(
-                    'w-7 shrink-0 text-right text-sm font-semibold tabular-nums',
-                    SEVERITY_TEXT[entry.severity],
-                  )}
-                >
-                  {entry.count}
-                </span>
-                {/* Cut short rather than run into the next column
+            {/* The entitlements and the joiner's late order first, then
+                the devices and the stock worst first (2026-10-28), read
+                down the left column and on down the right; the left holds
+                the odd one. One column on a narrow screen. */}
+            {(
+              [
+                ['left', rows.slice(0, Math.ceil(rows.length / 2))],
+                ['right', rows.slice(Math.ceil(rows.length / 2))],
+              ] as const
+            ).map(([side, column]) =>
+              column.length === 0 ? null : (
+                <div key={side} className='flex min-w-0 flex-col'>
+                  {column.map((entry) => (
+                    <Link
+                      key={entry.kind}
+                      to={REMINDER_ROUTES[entry.kind]}
+                      title={t(`workbench.reminderCaptions.${entry.kind}`, {
+                        subscriptionExpiryDays:
+                          thresholds?.subscriptionExpiryDays ?? 7,
+                        maintenanceExpiryDays:
+                          thresholds?.maintenanceExpiryDays ?? 30,
+                      })}
+                      // A risk row says what is at risk without being opened
+                      // (2026-10-05). Only a critical rule is red; severity is the
+                      // rule's, not today's. A hairline between rows, none above
+                      // the first of a column nor under the last (2026-10-22).
+                      className='flex min-w-0 items-baseline gap-3 border-t border-border/60 px-1.5 py-2 transition-colors first:border-t-0 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                    >
+                      <span
+                        className={cn(
+                          'w-7 shrink-0 text-right text-sm font-semibold tabular-nums',
+                          SEVERITY_TEXT[entry.severity],
+                        )}
+                      >
+                        {entry.count}
+                      </span>
+                      {/* Cut short rather than run into the next column
                     (2026-10-26: Russian labels are twice as long). The
                     records after it give way first; the whole label shows
                     on hover. */}
-                <span
-                  className='min-w-0 truncate text-sm'
-                  title={label(entry.kind)}
-                >
-                  {label(entry.kind)}
-                </span>
-                <PreviewLine entry={entry} />
-              </Link>
-            ))}
+                      <span
+                        className='min-w-0 truncate text-sm'
+                        title={label(entry.kind)}
+                      >
+                        {label(entry.kind)}
+                      </span>
+                      <PreviewLine entry={entry} />
+                    </Link>
+                  ))}
+                </div>
+              ),
+            )}
           </div>
           {/* A rule that found nothing is left out (2026-10-22; listed
               dimmed as 0 from 2026-10-06), and with nothing found the band
