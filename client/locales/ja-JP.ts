@@ -1464,6 +1464,7 @@ const jaJP: AppResource = {
     seatKey: 'シートキー',
     seatAccountHint: '従業員とアカウントの少なくとも一方を入力してください',
     seatKeyHint: 'このシート独自のキー。空欄の場合は共有キーを使用します',
+    seatKeyHintNoShared: 'このシート独自のキー。ない場合は空欄のままにします',
     setSeatKey: 'キーを設定',
     unlimited: '無制限 · 割り当て済み {{assigned}}',
     unlimitedSeats: 'シート数無制限',

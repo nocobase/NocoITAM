@@ -314,8 +314,14 @@ function EntitlementActions({
             value={seatKey}
             onChange={(event) => setSeatKey(event.target.value)}
           />
+          {/* Falls back to the shared key only when there is one
+              (2026-10-28). */}
           <p className='text-xs text-muted-foreground'>
-            {t('entitlements.seatKeyHint')}
+            {t(
+              record.hasProductKey
+                ? 'entitlements.seatKeyHint'
+                : 'entitlements.seatKeyHintNoShared',
+            )}
           </p>
         </div>
       </ConfirmDialog>

@@ -1473,6 +1473,7 @@ const idID: AppResource = {
     seatAccountHint: 'Pilih orang, masukkan akun, atau keduanya',
     seatKeyHint:
       'Kunci khusus kursi ini; kosongkan untuk memakai kunci bersama',
+    seatKeyHintNoShared: 'Kunci milik kursi ini; kosongkan jika tidak ada',
     setSeatKey: 'Tetapkan kunci',
     unlimited: 'Tak terbatas · {{assigned}} diberikan',
     unlimitedSeats: 'Kursi tak terbatas',

@@ -1420,6 +1420,7 @@ const zhTW: AppResource = {
     seatKey: '席位金鑰',
     seatAccountHint: '人員和帳號至少填寫一項',
     seatKeyHint: '此席位專屬的金鑰；留空表示使用共用金鑰',
+    seatKeyHintNoShared: '此席位專屬的金鑰；沒有可以留空',
     setSeatKey: '設定金鑰',
     unlimited: '不限 · 已分配 {{assigned}}',
     unlimitedSeats: '席位不限',

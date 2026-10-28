@@ -1478,6 +1478,8 @@ const frFR: AppResource = {
       'Choisissez une personne, saisissez un compte, ou les deux',
     seatKeyHint:
       'La clé propre à ce siège ; laissez vide pour utiliser la clé partagée',
+    seatKeyHintNoShared:
+      "La clé propre à ce poste ; laissez vide s'il n'en a pas",
     setSeatKey: 'Définir la clé',
     unlimited: 'Illimité · {{assigned}} attribué(s)',
     unlimitedSeats: 'Sièges illimités',

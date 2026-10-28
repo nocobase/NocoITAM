@@ -1473,6 +1473,8 @@ const ptBR: AppResource = {
     seatAccountHint: 'Escolha uma pessoa, informe uma conta ou ambos',
     seatKeyHint:
       'A chave própria deste assento; deixe vazio para usar a chave compartilhada',
+    seatKeyHintNoShared:
+      'A chave própria desta licença; deixe em branco se não houver',
     setSeatKey: 'Definir chave',
     unlimited: 'Ilimitado · {{assigned}} atribuídos',
     unlimitedSeats: 'Assentos ilimitados',

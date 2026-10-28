@@ -1460,6 +1460,7 @@ const koKR: AppResource = {
     seatKey: '시트 키',
     seatAccountHint: '직원을 선택하거나 계정을 입력하거나 둘 다 입력하십시오',
     seatKeyHint: '이 시트 고유의 키입니다. 비워 두면 공유 키를 사용합니다',
+    seatKeyHintNoShared: '이 시트 고유의 키입니다. 없으면 비워 두세요',
     setSeatKey: '키 설정',
     unlimited: '무제한 · {{assigned}}개 할당됨',
     unlimitedSeats: '시트 무제한',
