@@ -497,6 +497,7 @@ const messages = {
       adjustAdded: 'up {{quantity}}: {{reason}}',
       adjustRemoved: 'down {{quantity}}: {{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}} (purchase order {{target}})',
       seatsAddedWithReason: '{{quantity}} — {{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}} — {{reason}}',

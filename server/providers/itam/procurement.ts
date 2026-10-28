@@ -645,6 +645,7 @@ export function createProcurementService(deps: {
         {
           quantity: input.quantity,
           expiryDate: str(input.extra?.expiryDate) || null,
+          order: { id, orderNo: String(order.orderNo) },
         },
         source,
       );

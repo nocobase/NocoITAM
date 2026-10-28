@@ -482,6 +482,7 @@ const zhCN: AppResource = {
       adjustAdded: '增加 {{quantity}}：{{reason}}',
       adjustRemoved: '减少 {{quantity}}：{{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}}（采购单 {{target}}）',
       seatsAddedWithReason: '{{quantity}}：{{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}}：{{reason}}',

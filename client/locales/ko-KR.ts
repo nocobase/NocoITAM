@@ -482,6 +482,7 @@ const koKR: AppResource = {
       adjustAdded: '{{quantity}} 증가: {{reason}}',
       adjustRemoved: '{{quantity}} 감소: {{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}} (구매 주문 {{target}})',
       seatsAddedWithReason: '{{quantity}} — {{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}} — {{reason}}',

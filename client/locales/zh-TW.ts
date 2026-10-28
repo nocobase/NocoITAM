@@ -476,6 +476,7 @@ const zhTW: AppResource = {
       adjustAdded: '增加 {{quantity}}：{{reason}}',
       adjustRemoved: '減少 {{quantity}}：{{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}}（採購單 {{target}}）',
       seatsAddedWithReason: '{{quantity}}：{{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}}：{{reason}}',

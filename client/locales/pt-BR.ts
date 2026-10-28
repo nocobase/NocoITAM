@@ -485,6 +485,7 @@ const ptBR: AppResource = {
       adjustAdded: 'aumento de {{quantity}}: {{reason}}',
       adjustRemoved: 'redução de {{quantity}}: {{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}} (pedido de compra {{target}})',
       seatsAddedWithReason: '{{quantity}} — {{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}} — {{reason}}',

@@ -30,6 +30,14 @@ it('translates counted events in both languages without rewriting comments', asy
     );
   // The type label already says 席位增加: the summary is the count alone.
   expect(describe('seatsAdded', 'Seats added: 1', { quantity: 1 })).toBe('1');
+  // Received on an order, it names the order (2026-10-28).
+  expect(
+    describe('seatsAdded', 'Seats added: 1', {
+      quantity: 1,
+      purchaseOrderId: 'po1',
+      targetLabel: 'PO-000085',
+    }),
+  ).toBe('1（采购单 PO-000085）');
   expect(
     describe('issue', 'Issued 1', { quantity: 1, targetLabel: '刘洋' }),
   ).toBe('1 给 刘洋');

@@ -489,6 +489,7 @@ const esES: AppResource = {
       adjustAdded: '{{quantity}} más: {{reason}}',
       adjustRemoved: '{{quantity}} menos: {{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}} (orden de compra {{target}})',
       seatsAddedWithReason: '{{quantity}} — {{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}} — {{reason}}',

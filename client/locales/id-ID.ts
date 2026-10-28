@@ -489,6 +489,7 @@ const idID: AppResource = {
       adjustAdded: 'naik {{quantity}}: {{reason}}',
       adjustRemoved: 'turun {{quantity}}: {{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}} (pesanan pembelian {{target}})',
       seatsAddedWithReason: '{{quantity}} — {{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}} — {{reason}}',

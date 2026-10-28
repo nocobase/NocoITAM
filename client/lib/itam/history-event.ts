@@ -288,41 +288,46 @@ export function describeEvent(
                         ? 'Cleared'
                         : 'Set'
                     }${label('targetLabel') ? 'For' : ''}`
-                  : // A decision reads with its comment when one was left.
-                    (row.type === 'approvalApproved' ||
-                        row.type === 'approvalRejected') &&
-                      label('comment')
-                    ? `history.summaries.${row.type}WithComment`
-                    : ((row.type === 'linesChanged' && label('reason')
-                          ? 'history.summaries.linesChangedWithReason'
-                          : undefined) ??
-                        // Seats gained or dropped outside an order say why, the
-                        // way a status change does.
-                        ((row.type === 'seatsAdded' ||
-                          row.type === 'seatsRemoved') &&
-                          label('notes')))
-                      ? `history.summaries.${row.type}WithReason`
-                      : // A device moved by a disposal names it.
-                        row.type === 'statusChange' &&
-                          label('disposalId') &&
-                          label('targetLabel')
-                        ? 'history.summaries.statusChangeByDisposal'
-                        : row.type === 'statusChange' &&
-                            label('auditTaskId') &&
+                  : // Seats received on an order name it (2026-10-28).
+                    row.type === 'seatsAdded' &&
+                      label('purchaseOrderId') &&
+                      label('targetLabel')
+                    ? 'history.summaries.seatsAddedByOrder'
+                    : // A decision reads with its comment when one was left.
+                      (row.type === 'approvalApproved' ||
+                          row.type === 'approvalRejected') &&
+                        label('comment')
+                      ? `history.summaries.${row.type}WithComment`
+                      : ((row.type === 'linesChanged' && label('reason')
+                            ? 'history.summaries.linesChangedWithReason'
+                            : undefined) ??
+                          // Seats gained or dropped outside an order say why, the
+                          // way a status change does.
+                          ((row.type === 'seatsAdded' ||
+                            row.type === 'seatsRemoved') &&
+                            label('notes')))
+                        ? `history.summaries.${row.type}WithReason`
+                        : // A device moved by a disposal names it.
+                          row.type === 'statusChange' &&
+                            label('disposalId') &&
                             label('targetLabel')
-                          ? 'history.summaries.statusChangeByAudit'
-                          : // A request approved without anybody deciding it
-                            // says so, rather than reading as a decision.
-                            row.type === 'statusChange' &&
-                              label('approvalSkipped') === 'disabled'
-                            ? 'history.summaries.statusChangeApprovalDisabled'
-                            : row.type === 'statusChange' &&
-                                (label('reason') || label('notes'))
-                              ? 'history.summaries.statusChangeWithReason'
-                              : row.type === 'unreserve' &&
-                                  payload.expired === true
-                                ? 'history.summaries.unreserveExpired'
-                                : `history.summaries.${row.type}`;
+                          ? 'history.summaries.statusChangeByDisposal'
+                          : row.type === 'statusChange' &&
+                              label('auditTaskId') &&
+                              label('targetLabel')
+                            ? 'history.summaries.statusChangeByAudit'
+                            : // A request approved without anybody deciding it
+                              // says so, rather than reading as a decision.
+                              row.type === 'statusChange' &&
+                                label('approvalSkipped') === 'disabled'
+                              ? 'history.summaries.statusChangeApprovalDisabled'
+                              : row.type === 'statusChange' &&
+                                  (label('reason') || label('notes'))
+                                ? 'history.summaries.statusChangeWithReason'
+                                : row.type === 'unreserve' &&
+                                    payload.expired === true
+                                  ? 'history.summaries.unreserveExpired'
+                                  : `history.summaries.${row.type}`;
   const said = t(key, {
     defaultValue: row.summary,
     count: Number(payload.count ?? 0),

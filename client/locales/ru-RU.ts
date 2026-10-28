@@ -521,6 +521,7 @@ const ruRU: AppResource = {
       adjustAdded: '+{{quantity}}: {{reason}}',
       adjustRemoved: '−{{quantity}}: {{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}} (заказ на закупку {{target}})',
       seatsAddedWithReason: '{{quantity}} — {{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}} — {{reason}}',

@@ -122,7 +122,12 @@ export interface EntitlementService {
   receiveWithin(
     connection: DatabaseConnection,
     id: string,
-    input: { readonly quantity: number; readonly expiryDate?: string | null },
+    input: {
+      readonly quantity: number;
+      readonly expiryDate?: string | null;
+      /** The order the seats came in on, which the history names. */
+      readonly order?: { readonly id: string; readonly orderNo: string };
+    },
     context: OperationContext,
   ): Promise<Row>;
   /** The purchase orders the entitlement came in through, newest receipt first. */
@@ -866,6 +871,13 @@ export function createEntitlementService(
                 quantity: input.quantity,
                 seatCount,
                 ...(expiryDate ? { expiryDate } : {}),
+                // 席位增加 1（采购单 PO-000085） (2026-10-28).
+                ...(input.order
+                  ? {
+                      purchaseOrderId: input.order.id,
+                      targetLabel: input.order.orderNo,
+                    }
+                  : {}),
               },
               ...context,
             },

@@ -485,6 +485,7 @@ const jaJP: AppResource = {
       adjustAdded: '{{quantity}} 増加：{{reason}}',
       adjustRemoved: '{{quantity}} 減少：{{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}}（発注書 {{target}}）',
       seatsAddedWithReason: '{{quantity}}：{{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}}：{{reason}}',

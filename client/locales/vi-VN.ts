@@ -486,6 +486,7 @@ const viVN: AppResource = {
       adjustAdded: 'tăng {{quantity}}: {{reason}}',
       adjustRemoved: 'giảm {{quantity}}: {{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}} (đơn mua hàng {{target}})',
       seatsAddedWithReason: '{{quantity}} — {{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}} — {{reason}}',

@@ -8,6 +8,7 @@ import repairQuotes from '../../database/main/migrations/202610270004_repair_quo
 import subscriptionLicensing from '../../database/main/migrations/202610280001_subscription_licensing_model.js';
 import dropReassignable from '../../database/main/migrations/202610280002_drop_entitlement_reassignable.js';
 import reassignableGrants from '../../database/main/migrations/202610280003_drop_reassignable_from_grants.js';
+import seatsAddedOrder from '../../database/main/migrations/202610280004_seats_added_order.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -634,13 +635,80 @@ describe('ITAM migrations', () => {
     ]);
   });
 
+  it('names the order on seats it brought in, and takes it off on down', async () => {
+    db = await createTestDatabase();
+    const connection = db.database.connection();
+    const context = {
+      connection,
+      query: connection.query,
+      builder: connection.builder,
+    };
+    const now = new Date();
+    await connection.query
+      .insertInto('purchaseOrders')
+      .values({
+        id: 'po1',
+        orderNo: 'PO-000085',
+        reason: 'r',
+        status: 'received',
+        createdAt: now,
+        updatedAt: now,
+      })
+      .execute();
+    const event = (id: string, source?: string) => ({
+      id,
+      subjectType: 'entitlements',
+      subjectId: 'e1',
+      type: 'seatsAdded',
+      summary: 'Seats added: 1',
+      payload: { quantity: 1, seatCount: 6 },
+      sourceType: source ? 'purchaseOrder' : null,
+      sourceId: source ?? null,
+      createdAt: now,
+    });
+    await connection.query
+      .insertInto('historyEvents')
+      .values([event('received', 'po1'), event('byHand')])
+      .execute();
+    const payloads = async () =>
+      Object.fromEntries(
+        (
+          await connection.query
+            .selectFrom('historyEvents')
+            .select(['id', 'payload'])
+            .where('id', 'in', ['received', 'byHand'])
+            .execute<{ id: string; payload: unknown }>()
+        ).map((row) => [
+          row.id,
+          typeof row.payload === 'string'
+            ? JSON.parse(row.payload)
+            : row.payload,
+        ]),
+      );
+    await seatsAddedOrder.up(context);
+    expect(await payloads()).toEqual({
+      received: {
+        quantity: 1,
+        seatCount: 6,
+        purchaseOrderId: 'po1',
+        targetLabel: 'PO-000085',
+      },
+      byHand: { quantity: 1, seatCount: 6 },
+    });
+    await seatsAddedOrder.down!(context);
+    expect(await payloads()).toEqual({
+      received: { quantity: 1, seatCount: 6 },
+      byHand: { quantity: 1, seatCount: 6 },
+    });
+  });
+
   it('is applied once and rolls back cleanly', async () => {
     db = await createTestDatabase();
     const again = await db.migrator.latest();
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(119);
+    expect(rolledBack.rolledBack.length).toBe(120);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

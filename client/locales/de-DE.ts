@@ -493,6 +493,7 @@ const deDE: AppResource = {
       adjustAdded: '+{{quantity}}: {{reason}}',
       adjustRemoved: '−{{quantity}}: {{reason}}',
       seatsAdded: '{{quantity}}',
+      seatsAddedByOrder: '{{quantity}} (Bestellung {{target}})',
       seatsAddedWithReason: '{{quantity}} — {{reason}}',
       seatsRemoved: '{{quantity}}',
       seatsRemovedWithReason: '{{quantity}} — {{reason}}',
