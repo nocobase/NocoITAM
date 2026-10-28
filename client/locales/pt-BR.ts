@@ -628,7 +628,6 @@ const ptBR: AppResource = {
     assignedCount: 'Atribuídos',
     availableSeats: 'Disponíveis',
     complianceStatus: 'Conformidade',
-    reassignable: 'Reatribuível',
     effectiveDate: 'Vigente desde',
     expiryDate: 'Expira em',
     maintenanceExpiryDate: 'Manutenção até',

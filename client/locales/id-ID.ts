@@ -632,7 +632,6 @@ const idID: AppResource = {
     assignedCount: 'Diberikan',
     availableSeats: 'Tersedia',
     complianceStatus: 'Kepatuhan',
-    reassignable: 'Dapat dialihkan',
     effectiveDate: 'Berlaku sejak',
     expiryDate: 'Kedaluwarsa',
     maintenanceExpiryDate: 'Pemeliharaan hingga',

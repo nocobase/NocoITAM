@@ -631,7 +631,6 @@ const frFR: AppResource = {
     assignedCount: 'Attribués',
     availableSeats: 'Disponibles',
     complianceStatus: 'Conformité',
-    reassignable: 'Réattribuable',
     effectiveDate: 'En vigueur à partir du',
     expiryDate: 'Expire le',
     maintenanceExpiryDate: 'Maintenance jusqu’au',

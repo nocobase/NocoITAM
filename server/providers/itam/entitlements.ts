@@ -581,7 +581,6 @@ export function createEntitlementService(
       seatCount: seatsUnlimited(input) ? null : Number(input.seatCount),
       assignedCount: 0,
       complianceStatus: 'compliant',
-      reassignable: input.reassignable ?? true,
       // A subscription renews unless told otherwise, as SaaS does; a
       // perpetual licence has nothing to renew.
       autoRenew: perpetual ? false : (input.autoRenew ?? true),

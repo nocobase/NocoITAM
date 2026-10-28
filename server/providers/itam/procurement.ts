@@ -272,7 +272,6 @@ const RECEIVE_EXTRA: Readonly<Record<LineItemType, readonly string[]>> = {
     'licensingModel',
     'maintenanceExpiryDate',
     'productKey',
-    'reassignable',
     'ownerId',
   ],
   subscription: [

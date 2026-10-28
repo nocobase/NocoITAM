@@ -183,6 +183,11 @@ const RENAMED_FIELDS: ReadonlyMap<
   ],
   // A location's 负责人 went too (`202610060007_drop_location_owner`).
   ['main.locations', new Map<string, string | null>([['ownerId', null]])],
+  // And an entitlement's 可重新分配 (`202610280002_drop_entitlement_reassignable`).
+  [
+    'main.entitlements',
+    new Map<string, string | null>([['reassignable', null]]),
+  ],
 ]);
 
 /** Renames (or drops) the fields above in every list a stored policy states. */

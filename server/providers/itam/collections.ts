@@ -397,7 +397,6 @@ export const ENTITLEMENTS_COLLECTION: ItamCollectionDefinition = {
     'assignedCount',
     'complianceStatus',
     'productKey',
-    'reassignable',
     'startDate',
     'expiryDate',
     'maintenanceExpiryDate',

@@ -41,7 +41,6 @@ export const entitlementSchema = z.object({
   licensingModel: z.enum(LICENSING_MODELS).nullable().optional(),
   seatCount: z.number().int().min(0).nullable().optional(),
   productKey: z.string().max(4000).nullable().optional(),
-  reassignable: z.boolean().optional(),
   startDate: date.nullable().optional(),
   expiryDate: date.nullable().optional(),
   maintenanceExpiryDate: date.nullable().optional(),

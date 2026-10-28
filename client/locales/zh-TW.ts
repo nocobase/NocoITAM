@@ -619,7 +619,6 @@ const zhTW: AppResource = {
     assignedCount: '已分配',
     availableSeats: '可分配',
     complianceStatus: '合規狀態',
-    reassignable: '可重新分配',
     effectiveDate: '生效日期',
     expiryDate: '到期日期',
     maintenanceExpiryDate: '維護到期日期',

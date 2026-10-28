@@ -664,7 +664,6 @@ const ruRU: AppResource = {
     assignedCount: 'Закреплено',
     availableSeats: 'Свободно',
     complianceStatus: 'Соответствие',
-    reassignable: 'Можно переназначить',
     effectiveDate: 'Действует с',
     expiryDate: 'Действует до',
     maintenanceExpiryDate: 'Поддержка до',
