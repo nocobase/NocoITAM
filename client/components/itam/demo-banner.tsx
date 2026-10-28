@@ -64,12 +64,9 @@ export function DemoBanner(): ReactElement | null {
       <div
         role='region'
         aria-label={t('settings.demo.title')}
-        className='flex items-center gap-3 border-b bg-info px-4 py-2 text-sm sm:px-6'
+        className='flex items-center gap-3 border-b bg-primary/8 px-4 py-2 text-sm sm:px-6'
       >
-        <Database
-          className='size-4 shrink-0 text-info-foreground'
-          aria-hidden
-        />
+        <Database className='size-4 shrink-0 text-primary' aria-hidden />
         <p className='min-w-0 flex-1 text-foreground'>
           {t('settings.demo.importing')}
         </p>
@@ -97,9 +94,9 @@ export function DemoBanner(): ReactElement | null {
     <div
       role='region'
       aria-label={t('settings.demo.title')}
-      className='flex items-center gap-3 border-b bg-info px-4 py-2 text-sm sm:px-6'
+      className='flex items-center gap-3 border-b bg-primary/8 px-4 py-2 text-sm sm:px-6'
     >
-      <Database className='size-4 shrink-0 text-info-foreground' aria-hidden />
+      <Database className='size-4 shrink-0 text-primary' aria-hidden />
       <p className='min-w-0 flex-1 text-foreground'>
         {t('settings.demo.banner')}
       </p>
