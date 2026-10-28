@@ -7,6 +7,7 @@ import disposalLifecycle from '../../database/main/migrations/202610180001_dispo
 import repairQuotes from '../../database/main/migrations/202610270004_repair_quotes.js';
 import subscriptionLicensing from '../../database/main/migrations/202610280001_subscription_licensing_model.js';
 import dropReassignable from '../../database/main/migrations/202610280002_drop_entitlement_reassignable.js';
+import reassignableGrants from '../../database/main/migrations/202610280003_drop_reassignable_from_grants.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -565,13 +566,81 @@ describe('ITAM migrations', () => {
     expect(await present()).toBe(false);
   });
 
+  it('takes reassignable out of the stored entitlement grants', async () => {
+    db = await createTestDatabase();
+    const connection = db.database.connection();
+    const context = {
+      connection,
+      query: connection.query,
+      builder: connection.builder,
+    };
+    // The authorization plugin owns this table; the ITAM migrations alone
+    // do not create it.
+    await connection.builder.createCollection(
+      'authorizationPermissionSets',
+      (collection) => {
+        collection.string('id', { length: 64, primary: true });
+        collection.string('key', { length: 255, nullable: false });
+        collection.json('grants', { nullable: false });
+        collection.datetime('createdAt', { nullable: false });
+        collection.datetime('updatedAt', { nullable: false });
+      },
+    );
+    const devices = {
+      resource: { type: 'database.collection', id: 'main.devices' },
+      actions: [{ action: 'update', policy: { fields: ['reassignable'] } }],
+    };
+    const now = new Date();
+    await connection.query
+      .insertInto('authorizationPermissionSets')
+      .values({
+        id: 'set',
+        key: 'set',
+        grants: [
+          devices,
+          {
+            resource: { type: 'database.collection', id: 'main.entitlements' },
+            actions: [
+              { action: 'read', policy: { fields: '*' } },
+              {
+                action: 'update',
+                policy: { fields: ['name', 'reassignable', 'notes'] },
+              },
+            ],
+          },
+        ],
+        createdAt: now,
+        updatedAt: now,
+      })
+      .execute();
+    await reassignableGrants.up(context);
+    expect(
+      (
+        await connection.query
+          .selectFrom('authorizationPermissionSets')
+          .select('grants')
+          .where('id', '=', 'set')
+          .executeTakeFirst<{ grants: unknown }>()
+      )?.grants,
+    ).toEqual([
+      devices,
+      {
+        resource: { type: 'database.collection', id: 'main.entitlements' },
+        actions: [
+          { action: 'read', policy: { fields: '*' } },
+          { action: 'update', policy: { fields: ['name', 'notes'] } },
+        ],
+      },
+    ]);
+  });
+
   it('is applied once and rolls back cleanly', async () => {
     db = await createTestDatabase();
     const again = await db.migrator.latest();
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(118);
+    expect(rolledBack.rolledBack.length).toBe(119);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

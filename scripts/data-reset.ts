@@ -17,6 +17,10 @@ import {
   type ServiceToken,
 } from '@nocobase/service-provider';
 
+// The application first (2026-10-28): entered through the demo module, the
+// providers' index was reached while ItamProvider was still initializing.
+import { createApp } from '../server/app.js';
+import appRuntime from '../server/runtime.js';
 import {
   approverDirectoryToken,
   type ApproverDirectory,
@@ -25,8 +29,6 @@ import { demoAccountUsernames } from '../server/providers/itam/demo.js';
 import ItamProvider, {
   demoServiceToken,
 } from '../server/providers/itam/index.js';
-import { createApp } from '../server/app.js';
-import appRuntime from '../server/runtime.js';
 
 /**
  * Development only: wipe ITAM data and re-run the seeds.

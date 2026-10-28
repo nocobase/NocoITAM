@@ -109,6 +109,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   double grants by role and never evaluates a real policy, so this is not
   covered by a test — check it against a running application, by reading a
   list as a role whose `read` excludes a cost field.
+- **Dropping or renaming a field needs a migration on the stored grants**
+  (2026-10-28, `202610280003_drop_reassignable_from_grants`): the
+  authorization plugin checks every stored grant when it starts and refuses
+  to start on a field list naming a column that is gone, before
+  `reconcileGrants` runs in ITAM's start, so its `RENAMED_FIELDS` alone is
+  too late. Test the upgrade by starting the application on a copy of a
+  database that has the old grants, not only a fresh one.
 - A stored grant states **one field list per action** — `fields: '*'` or a
   list of names, what a read returns and what a write accepts — not the
   pre-beta.43 `{ input, output }` pair. The plugin validates the shape and
