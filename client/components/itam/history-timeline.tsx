@@ -66,6 +66,28 @@ const holderTypeOf = (to: string): string | undefined =>
         : undefined;
 
 /**
+ * A seat's holder is recorded as 赵敏 (zhao.min@…): the name opens the
+ * person, the account beside it is plain text (2026-10-28).
+ */
+function TargetName({
+  to,
+  label,
+}: {
+  readonly to: string;
+  readonly label: string;
+}): ReactElement {
+  const match = /^(.+) (\([^()\s]+@[^()\s]+\))$/.exec(label);
+  return (
+    <>
+      <RecordLink to={to} className='text-link'>
+        {match?.[1] ?? label}
+      </RecordLink>
+      {match?.[2] ? ` ${match[2]}` : null}
+    </>
+  );
+}
+
+/**
  * What put the line there, beside who it is attributed to. Absent on rows
  * written before it was recorded, and `human` on a person's own edit —
  * neither is shown, because saying so on every line says nothing.
@@ -705,9 +727,7 @@ function TimelineRow({
                             }
                           />
                         ) : (
-                          <RecordLink to={target.to} className='text-link'>
-                            {target.label}
-                          </RecordLink>
+                          <TargetName to={target.to} label={target.label} />
                         )}
                         {summaryParts?.after ? (
                           <CollapsibleText text={summaryParts.after} />
