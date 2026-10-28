@@ -438,7 +438,7 @@ const ptBR: AppResource = {
       statusChangeWithReason: '{{from}} → {{to}}: {{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}}: aprovado sem análise, a aprovação está desativada',
-      renewalAdvanced: 'Próxima renovação {{from}} → {{to}}',
+      renewalAdvanced: 'Data de renovação {{from}} → {{to}}',
       left: 'Marcado como desligado',
       onboardingWaived: '{{target}} marcado como desnecessário',
       onboardingRestored: '{{target}} necessário novamente',
@@ -642,8 +642,7 @@ const ptBR: AppResource = {
     cyclePrice: 'Preço por ciclo',
     annualCost: 'Custo anualizado',
     startDate: 'Data de início',
-    nextRenewalDate: 'Próxima renovação',
-    subscriptionEnd: 'Termina em',
+    renewalDate: 'Data de renovação',
     autoRenew: 'Renovação automática',
     renewalDecision: 'Decisão de renovação',
     account: 'Conta',
@@ -1472,6 +1471,8 @@ const ptBR: AppResource = {
     revealFailed: 'Não foi possível revelar a chave',
     seatKey: 'Chave do assento',
     seatAccountHint: 'Escolha uma pessoa, informe uma conta ou ambos',
+    autoRenewHint:
+      'O fornecedor cobra e renova automaticamente na data de renovação. Ligado: a data avança um ciclo depois que passa. Desligado: a assinatura termina nessa data.',
     seatKeyHint:
       'A chave própria desta licença; deixe em branco para usar a chave compartilhada ou se não houver',
     setSeatKey: 'Definir chave',

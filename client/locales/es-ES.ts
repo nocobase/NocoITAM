@@ -440,7 +440,7 @@ const esES: AppResource = {
       statusChangeWithReason: '{{from}} → {{to}}: {{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}}: aprobado sin revisión, la aprobación está desactivada',
-      renewalAdvanced: 'Próxima renovación {{from}} → {{to}}',
+      renewalAdvanced: 'Fecha de renovación {{from}} → {{to}}',
       left: 'Marcado como salida',
       onboardingWaived: '{{target}} marcado como no necesario',
       onboardingRestored: '{{target}} vuelve a ser necesario',
@@ -646,8 +646,7 @@ const esES: AppResource = {
     cyclePrice: 'Precio por ciclo',
     annualCost: 'Coste anualizado',
     startDate: 'Fecha de inicio',
-    nextRenewalDate: 'Próxima renovación',
-    subscriptionEnd: 'Finaliza el',
+    renewalDate: 'Fecha de renovación',
     autoRenew: 'Renovación automática',
     renewalDecision: 'Decisión de renovación',
     account: 'Cuenta',
@@ -1480,6 +1479,8 @@ const esES: AppResource = {
     revealFailed: 'No se ha podido mostrar la clave',
     seatKey: 'Clave del puesto',
     seatAccountHint: 'Elija una persona, introduzca una cuenta o ambas cosas',
+    autoRenewHint:
+      'El proveedor cobra y renueva automáticamente en la fecha de renovación. Activado: la fecha avanza un ciclo al pasar. Desactivado: la suscripción termina en esa fecha.',
     seatKeyHint:
       'La clave propia de este puesto; déjalo vacío para usar la clave compartida o si no tiene',
     setSeatKey: 'Establecer la clave',

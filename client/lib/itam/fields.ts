@@ -145,6 +145,12 @@ export interface FieldDefinition {
   /** Translation key explaining why the field is read-only when it is. */
   readonly readonlyHint?: string;
   /**
+   * What the field means, as a translation key, behind the ⓘ beside its
+   * label on the page and in the form (2026-10-28); a read-only reason
+   * takes its place while it applies.
+   */
+  readonly hint?: string;
+  /**
    * A note under the field in a form, as a translation key, while the
    * values call for one (2026-10-22): what the value entered will mean.
    */

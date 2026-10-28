@@ -438,7 +438,7 @@ const jaJP: AppResource = {
       statusChangeWithReason: '{{from}} → {{to}}：{{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}}：承認がオフのため承認なしで実行',
-      renewalAdvanced: '次回更新日 {{from}} → {{to}}',
+      renewalAdvanced: '更新日 {{from}} → {{to}}',
       left: '退職済みに設定',
       onboardingWaived: '{{target}} を不要に設定',
       onboardingRestored: '{{target}} を再び必要に設定',
@@ -642,8 +642,7 @@ const jaJP: AppResource = {
     cyclePrice: '1 期あたりの料金',
     annualCost: '年換算コスト',
     startDate: '開始日',
-    nextRenewalDate: '次回更新日',
-    subscriptionEnd: '終了日',
+    renewalDate: '更新日',
     autoRenew: '自動更新',
     renewalDecision: '更新の判断',
     account: 'アカウント',
@@ -1464,6 +1463,8 @@ const jaJP: AppResource = {
     revealFailed: 'キーを表示できませんでした',
     seatKey: 'シートキー',
     seatAccountHint: '従業員とアカウントの少なくとも一方を入力してください',
+    autoRenewHint:
+      '更新日にサービス提供元が自動で課金して更新します。オンの場合、更新日を過ぎると1期間延長されます。オフの場合、更新日で契約が終了します。',
     seatKeyHint:
       'このシート独自のキー。空欄の場合は共有キーを使用するか、キーなしになります',
     setSeatKey: 'キーを設定',

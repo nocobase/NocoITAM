@@ -215,13 +215,10 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
   },
   {
     key: 'expiryDate',
-    label: 'fields.expiryDate',
-    // The date the subscription renews on, or ends on when it does not
-    // renew; rolled forward a cycle each time it passes while it renews.
-    labelWhen: (values) =>
-      values.autoRenew === false
-        ? 'fields.subscriptionEnd'
-        : 'fields.nextRenewalDate',
+    // 续订日 whether or not it renews itself (2026-10-28): the end of the
+    // current term either way, and 自动续订 says what happens on it. Rolled
+    // forward a cycle each time it passes while it renews.
+    label: 'fields.renewalDate',
     type: 'date',
     // A perpetual entitlement never expires; its maintenance may.
     requiredWhen: subscription,
@@ -240,6 +237,7 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     key: 'autoRenew',
     label: 'fields.autoRenew',
     type: 'boolean',
+    hint: 'entitlements.autoRenewHint',
     // On: the renewal date moves on by itself. Off: that date is the end.
     defaultValue: true,
     visibleWhen: subscription,

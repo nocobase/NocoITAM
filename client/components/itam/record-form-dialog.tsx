@@ -313,7 +313,7 @@ export function RecordFormDialog({
             hint={
               field.readonlyHint && field.readonlyWhen?.(values)
                 ? field.readonlyHint
-                : undefined
+                : field.hint
             }
           >
             {field.required ? (

@@ -445,7 +445,7 @@ const deDE: AppResource = {
       statusChangeWithReason: '{{from}} → {{to}}: {{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}}: ohne Prüfung freigegeben, die Freigabe ist ausgeschaltet',
-      renewalAdvanced: 'Nächste Verlängerung {{from}} → {{to}}',
+      renewalAdvanced: 'Verlängerungsdatum {{from}} → {{to}}',
       left: 'Als ausgeschieden markiert',
       onboardingWaived: '{{target}} als nicht benötigt markiert',
       onboardingRestored: '{{target}} wieder benötigt',
@@ -650,8 +650,7 @@ const deDE: AppResource = {
     cyclePrice: 'Preis pro Zyklus',
     annualCost: 'Jahreskosten',
     startDate: 'Startdatum',
-    nextRenewalDate: 'Nächste Verlängerung',
-    subscriptionEnd: 'Endet am',
+    renewalDate: 'Verlängerungsdatum',
     autoRenew: 'Automatische Verlängerung',
     renewalDecision: 'Verlängerungsentscheidung',
     account: 'Konto',
@@ -1490,6 +1489,8 @@ const deDE: AppResource = {
     seatKey: 'Platzschlüssel',
     seatAccountHint:
       'Wählen Sie eine Person, geben Sie ein Konto ein oder beides',
+    autoRenewHint:
+      'Der Anbieter belastet und verlängert am Verlängerungsdatum automatisch. An: Das Datum rückt nach Ablauf um einen Zeitraum vor. Aus: Das Abonnement endet an diesem Datum.',
     seatKeyHint:
       'Der eigene Schlüssel dieses Platzes; leer lassen für den gemeinsamen Schlüssel oder keinen',
     setSeatKey: 'Schlüssel festlegen',

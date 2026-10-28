@@ -471,7 +471,7 @@ const ruRU: AppResource = {
       statusChangeWithReason: '{{from}} → {{to}}: {{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}}: согласовано без проверки, согласование отключено',
-      renewalAdvanced: 'Следующее продление: {{from}} → {{to}}',
+      renewalAdvanced: 'Дата продления: {{from}} → {{to}}',
       left: 'Отмечен как уволенный',
       onboardingWaived: '{{target}}: отмечено как ненужное',
       onboardingRestored: '{{target}}: снова нужно',
@@ -678,8 +678,7 @@ const ruRU: AppResource = {
     cyclePrice: 'Цена за период',
     annualCost: 'Стоимость в год',
     startDate: 'Дата начала',
-    nextRenewalDate: 'Следующее продление',
-    subscriptionEnd: 'Окончание',
+    renewalDate: 'Дата продления',
     autoRenew: 'Автопродление',
     renewalDecision: 'Решение о продлении',
     account: 'Учётная запись',
@@ -1563,6 +1562,8 @@ const ruRU: AppResource = {
     seatKey: 'Ключ места',
     seatAccountHint:
       'Выберите сотрудника, укажите учётную запись или и то и другое',
+    autoRenewHint:
+      'Поставщик автоматически списывает оплату и продлевает подписку в дату продления. Вкл.: после этой даты она переносится на следующий период. Выкл.: подписка заканчивается в эту дату.',
     seatKeyHint:
       'Собственный ключ этого места; оставьте пустым, чтобы использовать общий ключ, или если ключа нет',
     setSeatKey: 'Задать ключ',

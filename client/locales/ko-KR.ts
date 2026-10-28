@@ -437,7 +437,7 @@ const koKR: AppResource = {
       statusChangeWithReason: '{{from}} → {{to}}: {{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}}: 승인 기능이 꺼져 있어 검토 없이 처리',
-      renewalAdvanced: '다음 갱신일 {{from}} → {{to}}',
+      renewalAdvanced: '갱신일 {{from}} → {{to}}',
       left: '퇴사로 표시',
       onboardingWaived: '{{target}}을(를) 불필요로 표시',
       onboardingRestored: '{{target}}을(를) 다시 필요로 표시',
@@ -639,8 +639,7 @@ const koKR: AppResource = {
     cyclePrice: '주기당 요금',
     annualCost: '연간 환산 비용',
     startDate: '시작일',
-    nextRenewalDate: '다음 갱신일',
-    subscriptionEnd: '종료일',
+    renewalDate: '갱신일',
     autoRenew: '자동 갱신',
     renewalDecision: '갱신 결정',
     account: '계정',
@@ -1460,6 +1459,8 @@ const koKR: AppResource = {
     revealFailed: '키를 표시할 수 없습니다',
     seatKey: '시트 키',
     seatAccountHint: '직원을 선택하거나 계정을 입력하거나 둘 다 입력하십시오',
+    autoRenewHint:
+      '서비스 제공자가 갱신일에 자동으로 결제하고 갱신합니다. 켜면 갱신일이 지난 뒤 한 주기 연장되고, 끄면 갱신일에 구독이 끝납니다.',
     seatKeyHint:
       '이 시트 고유의 키입니다. 비워 두면 공유 키를 사용하거나 키가 없는 것으로 봅니다',
     setSeatKey: '키 설정',

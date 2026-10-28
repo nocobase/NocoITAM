@@ -441,7 +441,7 @@ const idID: AppResource = {
       statusChangeWithReason: '{{from}} → {{to}}: {{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}}: disetujui tanpa peninjauan, persetujuan dinonaktifkan',
-      renewalAdvanced: 'Perpanjangan berikutnya {{from}} → {{to}}',
+      renewalAdvanced: 'Tanggal perpanjangan {{from}} → {{to}}',
       left: 'Ditandai keluar',
       onboardingWaived: '{{target}} ditandai tidak diperlukan',
       onboardingRestored: '{{target}} diperlukan lagi',
@@ -646,8 +646,7 @@ const idID: AppResource = {
     cyclePrice: 'Harga per siklus',
     annualCost: 'Biaya tahunan',
     startDate: 'Tanggal mulai',
-    nextRenewalDate: 'Perpanjangan berikutnya',
-    subscriptionEnd: 'Berakhir pada',
+    renewalDate: 'Tanggal perpanjangan',
     autoRenew: 'Perpanjangan otomatis',
     renewalDecision: 'Keputusan perpanjangan',
     account: 'Akun',
@@ -1472,6 +1471,8 @@ const idID: AppResource = {
     revealFailed: 'Tidak dapat menampilkan kunci',
     seatKey: 'Kunci kursi',
     seatAccountHint: 'Pilih orang, masukkan akun, atau keduanya',
+    autoRenewHint:
+      'Penyedia menagih dan memperpanjang otomatis pada tanggal perpanjangan. Aktif: tanggal maju satu siklus setelah lewat. Nonaktif: langganan berakhir pada tanggal itu.',
     seatKeyHint:
       'Kunci milik kursi ini; kosongkan untuk memakai kunci bersama, atau jika tidak ada',
     setSeatKey: 'Tetapkan kunci',

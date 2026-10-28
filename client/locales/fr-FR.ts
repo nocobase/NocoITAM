@@ -441,7 +441,7 @@ const frFR: AppResource = {
       statusChangeWithReason: '{{from}} → {{to}} : {{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}} : approuvé sans examen, l’approbation est désactivée',
-      renewalAdvanced: 'Prochain renouvellement {{from}} → {{to}}',
+      renewalAdvanced: 'Date de renouvellement {{from}} → {{to}}',
       left: 'Marqué comme parti',
       onboardingWaived: '{{target}} marqué comme non nécessaire',
       onboardingRestored: '{{target}} de nouveau nécessaire',
@@ -645,8 +645,7 @@ const frFR: AppResource = {
     cyclePrice: 'Prix par cycle',
     annualCost: 'Coût annualisé',
     startDate: 'Date de début',
-    nextRenewalDate: 'Prochain renouvellement',
-    subscriptionEnd: 'Se termine le',
+    renewalDate: 'Date de renouvellement',
     autoRenew: 'Renouvellement automatique',
     renewalDecision: 'Décision de renouvellement',
     account: 'Compte',
@@ -1477,6 +1476,8 @@ const frFR: AppResource = {
     seatKey: 'Clé du siège',
     seatAccountHint:
       'Choisissez une personne, saisissez un compte, ou les deux',
+    autoRenewHint:
+      "Le fournisseur prélève et renouvelle automatiquement à la date de renouvellement. Activé : la date avance d'un cycle une fois passée. Désactivé : l'abonnement se termine à cette date.",
     seatKeyHint:
       "La clé propre à ce poste ; laissez vide pour utiliser la clé partagée, ou s'il n'en a pas",
     setSeatKey: 'Définir la clé',

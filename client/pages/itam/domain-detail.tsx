@@ -500,7 +500,7 @@ export function DomainDetailPage({
                                   !domain.fieldEditor?.(field, data)) ||
                                   field.readonlyWhen?.(data))
                                   ? field.readonlyHint
-                                  : undefined
+                                  : field.hint
                               }
                             />
                           }

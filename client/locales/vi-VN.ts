@@ -437,7 +437,7 @@ const viVN: AppResource = {
       statusChangeWithReason: '{{from}} → {{to}}: {{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}}: được duyệt không qua xem xét vì phê duyệt đang tắt',
-      renewalAdvanced: 'Lần gia hạn tiếp theo {{from}} → {{to}}',
+      renewalAdvanced: 'Ngày gia hạn {{from}} → {{to}}',
       left: 'Đã đánh dấu nghỉ việc',
       onboardingWaived: '{{target}} được đánh dấu là không cần',
       onboardingRestored: '{{target}} cần lại',
@@ -643,8 +643,7 @@ const viVN: AppResource = {
     cyclePrice: 'Giá mỗi chu kỳ',
     annualCost: 'Chi phí quy đổi theo năm',
     startDate: 'Ngày bắt đầu',
-    nextRenewalDate: 'Gia hạn tiếp theo',
-    subscriptionEnd: 'Kết thúc vào',
+    renewalDate: 'Ngày gia hạn',
     autoRenew: 'Tự động gia hạn',
     renewalDecision: 'Quyết định gia hạn',
     account: 'Tài khoản',
@@ -1466,6 +1465,8 @@ const viVN: AppResource = {
     revealFailed: 'Không thể hiển thị khóa',
     seatKey: 'Khóa của suất',
     seatAccountHint: 'Chọn một người, nhập một tài khoản, hoặc cả hai',
+    autoRenewHint:
+      'Nhà cung cấp tự động thu phí và gia hạn vào ngày gia hạn. Bật: ngày gia hạn tự lùi thêm một kỳ khi đã qua. Tắt: gói đăng ký kết thúc vào ngày đó.',
     seatKeyHint:
       'Khóa riêng của suất này; để trống để dùng khóa dùng chung, hoặc nếu không có khóa',
     setSeatKey: 'Đặt khóa',

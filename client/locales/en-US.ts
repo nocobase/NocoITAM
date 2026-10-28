@@ -449,7 +449,7 @@ const messages = {
       statusChangeWithReason: '{{from}} → {{to}}: {{reason}}',
       statusChangeApprovalDisabled:
         '{{from}} → {{to}}: approved without review, approval is switched off',
-      renewalAdvanced: 'Next renewal {{from}} → {{to}}',
+      renewalAdvanced: 'Renewal date {{from}} → {{to}}',
       left: 'Marked as left',
       onboardingWaived: '{{target}} marked not needed',
       onboardingRestored: '{{target}} needed again',
@@ -655,8 +655,7 @@ const messages = {
     cyclePrice: 'Price per cycle',
     annualCost: 'Annualised cost',
     startDate: 'Start date',
-    nextRenewalDate: 'Next renewal',
-    subscriptionEnd: 'Ends on',
+    renewalDate: 'Renewal date',
     autoRenew: 'Auto-renews',
     renewalDecision: 'Renewal decision',
     account: 'Account',
@@ -1492,6 +1491,8 @@ const messages = {
     revealFailed: 'Could not reveal the key',
     seatKey: 'Seat key',
     seatAccountHint: 'Choose a person, enter an account, or both',
+    autoRenewHint:
+      'The provider charges and renews it on the renewal date. On: the renewal date moves on a cycle once it passes. Off: the subscription ends on that date.',
     seatKeyHint:
       "This seat's own key; leave empty to use the shared key, or for none",
     setSeatKey: 'Set key',
