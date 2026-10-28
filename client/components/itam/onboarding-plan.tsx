@@ -2,6 +2,7 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
+  ChevronDown,
   MoreHorizontal,
   Package,
   PackageCheck,
@@ -424,7 +425,7 @@ export function OnboardingPlanCard({
                 ))}
               </p>
             </div>
-            <ul className='divide-y divide-border/60'>
+            <ul className='divide-y divide-border/60 border-t border-border/60'>
               {data.lines.map((line) => (
                 <PlanLine
                   key={`${line.target.type}:${line.target.id}`}
@@ -556,6 +557,15 @@ function PlanLine({
     });
     onWaiveSome(line.fewer + 1, keep);
   };
+  const chooseHolder = (
+    original: PlanThing,
+    choice: NonNullable<PlanThing['holderChoices']>[number],
+  ) =>
+    onChoose(original, {
+      ...original,
+      holder: { type: 'device', ...choice },
+      needsDevice: undefined,
+    });
   // Marked 不需要: the item stays in the list, dimmed, so the mark can be
   // seen and taken back, with nothing offered for it.
   if (line.waived)
@@ -705,8 +715,48 @@ function PlanLine({
                     {thing.label}
                   </RecordLink>
                   {/* A per-device licence's seat names the device it goes to
-                    (2026-10-28). */}
-                  {thing.holder ? (
+                    (2026-10-28); with another device of theirs to choose,
+                    the name itself opens the choice. */}
+                  {thing.holder &&
+                  (original.holderChoices ?? []).some(
+                    (choice) => choice.id !== thing.holder?.id,
+                  ) ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            className={`-mx-2.5 min-w-0 gap-1 text-muted-foreground hover:text-muted-foreground aria-expanded:text-muted-foreground ${TEXT_BUTTON}`}
+                            disabled={busy}
+                          />
+                        }
+                      >
+                        <span className='truncate'>
+                          {t('onboarding.onDevice', {
+                            label: thing.holder.label,
+                          })}
+                        </span>
+                        <ChevronDown />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align='end'
+                        className='w-auto min-w-32'
+                      >
+                        <DropdownMenuGroup>
+                          {(original.holderChoices ?? []).map((choice) => (
+                            <DropdownMenuItem
+                              key={choice.id}
+                              disabled={choice.id === thing.holder?.id}
+                              onClick={() => chooseHolder(original, choice)}
+                            >
+                              {choice.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : thing.holder ? (
                     <span className='min-w-0 truncate text-muted-foreground'>
                       {t('onboarding.onDevice', { label: thing.holder.label })}
                     </span>
@@ -763,13 +813,7 @@ function PlanLine({
                             <DropdownMenuItem
                               key={choice.id}
                               disabled={choice.id === thing.holder?.id}
-                              onClick={() =>
-                                onChoose(original, {
-                                  ...original,
-                                  holder: { type: 'device', ...choice },
-                                  needsDevice: undefined,
-                                })
-                              }
+                              onClick={() => chooseHolder(original, choice)}
                             >
                               {choice.label}
                             </DropdownMenuItem>

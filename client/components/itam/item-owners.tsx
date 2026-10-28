@@ -25,7 +25,7 @@ export function ItemOwners({
           {index > 0 ? ' · ' : null}
           <RecordLink
             to={`/${owner.route}/${owner.id}`}
-            className='text-muted-foreground hover:text-foreground'
+            className='text-muted-foreground'
           >
             {owner.name}
           </RecordLink>
