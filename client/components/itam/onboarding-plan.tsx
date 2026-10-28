@@ -530,149 +530,166 @@ function PlanLine({
             negative margin, so their words sit a gap from their
             neighbours like the name and the outlined button do. */}
         <span className='flex max-w-full min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1.5'>
-          {line.prepared.map((thing) => (
-            <RecordLink
-              key={`p:${thing.type}:${thing.id}`}
-              to={recordOf(thing)}
-              className='max-w-full'
-            >
-              <Badge variant='secondary' className='max-w-full'>
-                <Check className='size-3' />
-                <span className='truncate'>
-                  {thing.type === 'device'
-                    ? `${thing.label} · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
-                    : thing.label}
-                </span>
-              </Badge>
-            </RecordLink>
-          ))}
-          {line.proposals.map((original) => {
-            const thing = effective(original);
-            if (changing === proposalKey(original))
-              return (
-                // 更换: any device of this model (or category) that is in
-                // stock and held for nobody.
-                <span key={`c:${proposalKey(original)}`} className='w-56'>
-                  <ReferenceSelect
-                    reference={{
-                      collection: 'devices',
-                      filter: {
-                        view: 'available',
-                        ...(line.target.type === 'model'
-                          ? { modelId: line.target.id }
-                          : { categoryId: line.target.id }),
-                      },
-                    }}
-                    value={thing.id}
-                    defaultOpen
-                    onOpenChange={(open) => {
-                      if (!open) setChanging(undefined);
-                    }}
-                    onChange={(id, record) => {
-                      if (id && record)
-                        onChoose(original, {
-                          type: 'device',
-                          id,
-                          label: `${text(record.deviceNo)} / ${text(record.name)}`,
-                        });
-                      setChanging(undefined);
-                    }}
-                  />
-                </span>
-              );
-            return (
-              <span
-                key={`o:${original.type}:${proposalKey(original)}`}
-                className='inline-flex max-w-full min-w-0 items-center gap-3'
+          {/* An item asked for more than once lists each thing on its own
+              line (2026-10-28): two laptops side by side ran into each
+              other. One thing stays in the row. */}
+          <span
+            className={
+              line.prepared.length + line.proposals.length > 1
+                ? 'flex max-w-full min-w-0 flex-col items-end gap-y-1.5'
+                : 'contents'
+            }
+          >
+            {line.prepared.map((thing) => (
+              <RecordLink
+                key={`p:${thing.type}:${thing.id}`}
+                to={recordOf(thing)}
+                className='max-w-full'
               >
-                {/* What is proposed opens its record, to be looked at
+                <Badge variant='secondary' className='max-w-full'>
+                  <Check className='size-3' />
+                  <span className='truncate'>
+                    {thing.type === 'device'
+                      ? `${thing.label} · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
+                      : thing.label}
+                  </span>
+                </Badge>
+              </RecordLink>
+            ))}
+            {line.proposals.map((original) => {
+              const thing = effective(original);
+              if (changing === proposalKey(original))
+                return (
+                  // 更换: any device of this model (or category) that is in
+                  // stock and held for nobody.
+                  <span key={`c:${proposalKey(original)}`} className='w-56'>
+                    <ReferenceSelect
+                      reference={{
+                        collection: 'devices',
+                        filter: {
+                          view: 'available',
+                          ...(line.target.type === 'model'
+                            ? { modelId: line.target.id }
+                            : { categoryId: line.target.id }),
+                        },
+                      }}
+                      value={thing.id}
+                      defaultOpen
+                      onOpenChange={(open) => {
+                        if (!open) setChanging(undefined);
+                      }}
+                      onChange={(id, record) => {
+                        if (id && record)
+                          onChoose(original, {
+                            type: 'device',
+                            id,
+                            label: `${text(record.deviceNo)} / ${text(record.name)}`,
+                          });
+                        setChanging(undefined);
+                      }}
+                    />
+                  </span>
+                );
+              return (
+                <span
+                  key={`o:${original.type}:${proposalKey(original)}`}
+                  className='inline-flex max-w-full min-w-0 items-center gap-3'
+                >
+                  {/* What is proposed opens its record, to be looked at
                     before it is reserved; the button beside it only acts
                     (2026-10-22: the label was inside the button). */}
-                <RecordLink to={recordOf(thing)} className='min-w-0 truncate'>
-                  {thing.label}
-                </RecordLink>
-                {/* A per-device licence's seat names the device it goes to
+                  <RecordLink to={recordOf(thing)} className='min-w-0 truncate'>
+                    {thing.label}
+                  </RecordLink>
+                  {/* A per-device licence's seat names the device it goes to
                     (2026-10-28). */}
-                {thing.holder ? (
-                  <span className='min-w-0 truncate text-muted-foreground'>
-                    {t('onboarding.onDevice', { label: thing.holder.label })}
-                  </span>
-                ) : null}
-                {/* Words like 更换 and 不需要 beside it (2026-10-22), the
+                  {thing.holder ? (
+                    <span className='min-w-0 truncate text-muted-foreground'>
+                      {t('onboarding.onDevice', { label: thing.holder.label })}
+                    </span>
+                  ) : null}
+                  {/* Words like 更换 and 不需要 beside it (2026-10-22), the
                     action in the brand colour so it still leads; the
                     padding taken back like theirs. */}
-                <WhyDisabled reason={translated(waitingFor(thing))}>
-                  <Button
-                    variant='ghost'
-                    className={`-mx-2.5 text-primary hover:text-primary ${TEXT_BUTTON}`}
-                    disabled={busy || waitingFor(thing) !== undefined}
-                    onClick={() => onRun(thing)}
-                  >
-                    {thing.type === 'device'
-                      ? t(started ? 'onboarding.assign' : 'onboarding.reserve')
-                      : thing.type === 'stock'
-                        ? // ×N only when more than one.
-                          (thing.quantity ?? 1) > 1
-                          ? t('onboarding.issueMany', { count: thing.quantity })
-                          : t('onboarding.issue')
-                        : t('onboarding.seat')}
-                  </Button>
-                </WhyDisabled>
-                {thing.type === 'device' ? (
-                  <Button
-                    variant='ghost'
-                    className={`-mx-2.5 ${TEXT_BUTTON}`}
-                    disabled={busy}
-                    onClick={() => setChanging(proposalKey(original))}
-                  >
-                    {t('onboarding.change')}
-                  </Button>
-                ) : null}
-                {/* 更换 for a per-device seat (2026-10-28): another device of
-                    theirs, when there is one to choose. */}
-                {thing.type === 'seat' &&
-                (original.holderChoices ?? []).some(
-                  (choice) => choice.id !== thing.holder?.id,
-                ) ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={
-                        <Button
-                          variant='ghost'
-                          className={`-mx-2.5 ${TEXT_BUTTON}`}
-                          disabled={busy}
-                        />
-                      }
+                  <WhyDisabled reason={translated(waitingFor(thing))}>
+                    <Button
+                      variant='ghost'
+                      className={`-mx-2.5 text-primary hover:text-primary ${TEXT_BUTTON}`}
+                      disabled={busy || waitingFor(thing) !== undefined}
+                      onClick={() => onRun(thing)}
+                    >
+                      {thing.type === 'device'
+                        ? t(
+                            started
+                              ? 'onboarding.assign'
+                              : 'onboarding.reserve',
+                          )
+                        : thing.type === 'stock'
+                          ? // ×N only when more than one.
+                            (thing.quantity ?? 1) > 1
+                            ? t('onboarding.issueMany', {
+                                count: thing.quantity,
+                              })
+                            : t('onboarding.issue')
+                          : t('onboarding.seat')}
+                    </Button>
+                  </WhyDisabled>
+                  {thing.type === 'device' ? (
+                    <Button
+                      variant='ghost'
+                      className={`-mx-2.5 ${TEXT_BUTTON}`}
+                      disabled={busy}
+                      onClick={() => setChanging(proposalKey(original))}
                     >
                       {t('onboarding.change')}
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align='end'
-                      className='w-auto min-w-40'
-                    >
-                      <DropdownMenuGroup>
-                        {(original.holderChoices ?? []).map((choice) => (
-                          <DropdownMenuItem
-                            key={choice.id}
-                            disabled={choice.id === thing.holder?.id}
-                            onClick={() =>
-                              onChoose(original, {
-                                ...original,
-                                holder: { type: 'device', ...choice },
-                                needsDevice: undefined,
-                              })
-                            }
-                          >
-                            {choice.label}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : null}
-              </span>
-            );
-          })}
+                    </Button>
+                  ) : null}
+                  {/* 更换 for a per-device seat (2026-10-28): another device of
+                    theirs, when there is one to choose. */}
+                  {thing.type === 'seat' &&
+                  (original.holderChoices ?? []).some(
+                    (choice) => choice.id !== thing.holder?.id,
+                  ) ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant='ghost'
+                            className={`-mx-2.5 ${TEXT_BUTTON}`}
+                            disabled={busy}
+                          />
+                        }
+                      >
+                        {t('onboarding.change')}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align='end'
+                        className='w-auto min-w-40'
+                      >
+                        <DropdownMenuGroup>
+                          {(original.holderChoices ?? []).map((choice) => (
+                            <DropdownMenuItem
+                              key={choice.id}
+                              disabled={choice.id === thing.holder?.id}
+                              onClick={() =>
+                                onChoose(original, {
+                                  ...original,
+                                  holder: { type: 'device', ...choice },
+                                  needsDevice: undefined,
+                                })
+                              }
+                            >
+                              {choice.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : null}
+                </span>
+              );
+            })}
+          </span>
           {/* What is short is bought on 供需分析 (2026-10-23; 创建采购单
               on this row until then), weighed against what else wants it. */}
           <LineOutlook line={line} />
