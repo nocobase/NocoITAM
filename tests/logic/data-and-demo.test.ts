@@ -731,6 +731,8 @@ describe('CSV import / export and demo data', () => {
     expect(count('warrantyExpiring')).toBeGreaterThanOrEqual(4);
     expect(count('idleDevice')).toBeGreaterThanOrEqual(1);
     expect(count('entitlementOverAllocated')).toBe(1);
+    // Subscriptions paying for idle seats, not perpetual ones (2026-10-28).
+    expect(count('entitlementIdle')).toBeGreaterThanOrEqual(1);
     // Every status has a device (2026-10-22): a spare phone is retired.
     const statuses = await app.container
       .resolve(databaseManagerToken)

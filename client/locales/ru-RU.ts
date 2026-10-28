@@ -2202,6 +2202,7 @@ const ruRU: AppResource = {
       departmentMismatch:
         'Подразделение устройства не совпадает с подразделением держателя',
       entitlementOverAllocated: 'Лицензии сверх лимита',
+      entitlementIdle: 'Подписки со слишком большим числом свободных мест',
       lowAccessories: 'Аксессуары ниже минимума',
       lowConsumables: 'Расходные материалы ниже минимума',
       lowComponents: 'Комплектующие ниже минимума',
@@ -2222,6 +2223,8 @@ const ruRU: AppResource = {
       departmentMismatch:
         'Держатель перешёл в другое подразделение, а устройство числится за прежним',
       entitlementOverAllocated: 'Закреплено больше мест, чем приобретено',
+      entitlementIdle:
+        'Подписки, где свободных мест больше порога; сократите места до продления',
       lowAccessories: 'Доступное количество ниже минимума',
       lowConsumables: 'Доступное количество ниже минимума',
       lowComponents: 'Доступное количество ниже минимума',

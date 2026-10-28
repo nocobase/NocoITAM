@@ -2072,6 +2072,7 @@ const idID: AppResource = {
       departmentMismatch:
         'Departemen perangkat berbeda dari departemen pemegang',
       entitlementOverAllocated: 'Lisensi melebihi alokasi',
+      entitlementIdle: 'Langganan dengan terlalu banyak kursi kosong',
       lowAccessories: 'Aksesori di bawah minimum',
       lowConsumables: 'Barang habis pakai di bawah minimum',
       lowComponents: 'Komponen di bawah minimum',
@@ -2092,6 +2093,8 @@ const idID: AppResource = {
       departmentMismatch:
         'Pemegang telah pindah; perangkat masih tercatat di departemen lama',
       entitlementOverAllocated: 'Kursi yang diberikan melebihi yang dimiliki',
+      entitlementIdle:
+        'Langganan yang kursi kosongnya melebihi ambang; kurangi kursi sebelum perpanjangan',
       lowAccessories: 'Jumlah tersedia di bawah minimumnya',
       lowConsumables: 'Jumlah tersedia di bawah minimumnya',
       lowComponents: 'Jumlah tersedia di bawah minimumnya',

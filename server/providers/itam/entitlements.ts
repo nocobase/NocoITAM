@@ -1687,6 +1687,9 @@ async function viewWhere(
       return { filter: { complianceStatus: 'overAllocated' } };
     case 'idle':
       return { filter: { complianceStatus: 'idle' } };
+    // 需要关注's idle rule counts subscriptions only (2026-10-28).
+    case 'idleSubscriptions':
+      return { filter: { complianceStatus: 'idle', kind: 'subscription' } };
     case 'expiring':
       return {
         filter: {},

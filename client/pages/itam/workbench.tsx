@@ -907,6 +907,7 @@ const LEFT_REMINDERS: readonly string[] = [
   'entitlementEnding',
   'entitlementMaintenance',
   'entitlementEnded',
+  'entitlementIdle',
   'onboardingOrderOverdue',
 ];
 

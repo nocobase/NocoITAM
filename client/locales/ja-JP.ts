@@ -2053,6 +2053,7 @@ const jaJP: AppResource = {
       auditOverdue: 'デバイスが {{auditDays}} 日以上棚卸されていない',
       departmentMismatch: 'デバイスの所管部署が使用者の部署と異なる',
       entitlementOverAllocated: '利用権が超過割り当て',
+      entitlementIdle: 'サブスクリプションの未使用シートが多い',
       lowAccessories: 'アクセサリが最低在庫数を下回る',
       lowConsumables: '消耗品が最低在庫数を下回る',
       lowComponents: '部品が最低在庫数を下回る',
@@ -2072,6 +2073,8 @@ const jaJP: AppResource = {
       departmentMismatch:
         '使用者が異動しましたが、デバイスはまだ元の部署のままです',
       entitlementOverAllocated: '割り当て済みシートが保有数を上回っています',
+      entitlementIdle:
+        '未使用シートが設定比率を超えるサブスクリプション。更新前にシートを減らせます',
       lowAccessories: '利用可能数が最低在庫数を下回っています',
       lowConsumables: '利用可能数が最低在庫数を下回っています',
       lowComponents: '利用可能数が最低在庫数を下回っています',

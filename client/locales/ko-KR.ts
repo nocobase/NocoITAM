@@ -2042,6 +2042,7 @@ const koKR: AppResource = {
       auditOverdue: '기기가 {{auditDays}}일 동안 재고 실사되지 않음',
       departmentMismatch: '기기의 관리 부서가 사용자의 부서와 다름',
       entitlementOverAllocated: '라이선스 초과 할당',
+      entitlementIdle: '구독의 유휴 시트가 많음',
       lowAccessories: '액세서리가 최소 재고 미만',
       lowConsumables: '소모품이 최소 재고 미만',
       lowComponents: '부품이 최소 재고 미만',
@@ -2061,6 +2062,8 @@ const koKR: AppResource = {
       departmentMismatch:
         '사용자가 부서를 옮겼지만 기기는 아직 이전 부서에 있습니다',
       entitlementOverAllocated: '할당된 시트가 보유 수량보다 많습니다',
+      entitlementIdle:
+        '빈 시트가 설정 비율을 넘는 구독. 갱신 전에 시트를 줄일 수 있습니다',
       lowAccessories: '사용 가능 수량이 최소 재고보다 적습니다',
       lowConsumables: '사용 가능 수량이 최소 재고보다 적습니다',
       lowComponents: '사용 가능 수량이 최소 재고보다 적습니다',

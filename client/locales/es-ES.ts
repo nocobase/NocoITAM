@@ -2088,6 +2088,7 @@ const esES: AppResource = {
       departmentMismatch:
         'Departamento del dispositivo distinto del del titular',
       entitlementOverAllocated: 'Licencias sobreasignadas',
+      entitlementIdle: 'Suscripciones con demasiados puestos libres',
       lowAccessories: 'Accesorios por debajo del mínimo',
       lowConsumables: 'Consumibles por debajo del mínimo',
       lowComponents: 'Componentes por debajo del mínimo',
@@ -2108,6 +2109,8 @@ const esES: AppResource = {
       departmentMismatch:
         'El titular ha cambiado de departamento; el dispositivo sigue en el anterior',
       entitlementOverAllocated: 'Más puestos asignados que adquiridos',
+      entitlementIdle:
+        'Suscripciones cuyos puestos libres superan el umbral; reduce puestos antes de renovar',
       lowAccessories: 'Cantidad disponible por debajo de su mínimo',
       lowConsumables: 'Cantidad disponible por debajo de su mínimo',
       lowComponents: 'Cantidad disponible por debajo de su mínimo',

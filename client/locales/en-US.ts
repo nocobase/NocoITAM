@@ -2091,6 +2091,7 @@ const messages = {
       auditOverdue: 'Devices not audited for {{auditDays}} days',
       departmentMismatch: 'Device department differs from the holder’s',
       entitlementOverAllocated: 'Entitlements over-allocated',
+      entitlementIdle: 'Subscriptions with too many idle seats',
       lowAccessories: 'Accessories below minimum',
       lowConsumables: 'Consumables below minimum',
       lowComponents: 'Components below minimum',
@@ -2110,6 +2111,8 @@ const messages = {
       departmentMismatch:
         'The holder moved; the device is still on the old department',
       entitlementOverAllocated: 'More seats assigned than owned',
+      entitlementIdle:
+        'Subscriptions whose free seats exceed the idle ratio; cut seats before renewal',
       lowAccessories: 'Available quantity below its minimum',
       lowConsumables: 'Available quantity below its minimum',
       lowComponents: 'Available quantity below its minimum',

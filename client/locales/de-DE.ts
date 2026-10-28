@@ -2090,6 +2090,7 @@ const deDE: AppResource = {
       auditOverdue: 'Geräte seit {{auditDays}} Tagen nicht inventarisiert',
       departmentMismatch: 'Abteilung des Geräts weicht von der des Nutzers ab',
       entitlementOverAllocated: 'Nutzungsrechte überbelegt',
+      entitlementIdle: 'Abonnements mit zu vielen freien Plätzen',
       lowAccessories: 'Zubehör unter Mindestbestand',
       lowConsumables: 'Verbrauchsmaterial unter Mindestbestand',
       lowComponents: 'Komponenten unter Mindestbestand',
@@ -2109,6 +2110,8 @@ const deDE: AppResource = {
       departmentMismatch:
         'Der Nutzer ist gewechselt; das Gerät steht noch bei der alten Abteilung',
       entitlementOverAllocated: 'Mehr Plätze zugewiesen als vorhanden',
+      entitlementIdle:
+        'Abonnements, deren freie Plätze den Schwellenwert überschreiten; vor der Verlängerung Plätze reduzieren',
       lowAccessories: 'Verfügbare Menge unter dem Mindestbestand',
       lowConsumables: 'Verfügbare Menge unter dem Mindestbestand',
       lowComponents: 'Verfügbare Menge unter dem Mindestbestand',

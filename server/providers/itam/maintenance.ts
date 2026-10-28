@@ -37,6 +37,9 @@ export const REMINDER_KINDS = [
   // A device still on the department its holder has left (2026-10-20).
   'departmentMismatch',
   'entitlementOverAllocated',
+  // A subscription paying for more free seats than the idle ratio allows
+  // (2026-10-28); a perpetual licence's idle seats cost nothing more.
+  'entitlementIdle',
   // One rule per kind kept as a quantity (2026-10-05): each opens its own
   // page, and "below its level" means a different errand for a cable, a
   // toner and a spare SSD.
@@ -465,6 +468,26 @@ export function createMaintenanceService(dependencies: {
         },
       });
 
+    const idleSubscriptions = await query
+      .selectFrom('entitlements')
+      .select(['id', 'kind', 'name', 'seatCount', 'assignedCount'])
+      .where('kind', '=', 'subscription')
+      .where('complianceStatus', '=', 'idle')
+      .execute<Row>();
+    for (const entitlement of idleSubscriptions)
+      rows.push({
+        kind: 'entitlementIdle',
+        subjectType: 'entitlements',
+        subjectId: String(entitlement.id),
+        severity: 'info',
+        data: {
+          name: entitlement.name,
+          kind: entitlement.kind,
+          seatCount: entitlement.seatCount,
+          assignedCount: entitlement.assignedCount,
+        },
+      });
+
     const stock = await query
       .selectFrom('stockItems')
       .select([
@@ -552,6 +575,7 @@ export function createMaintenanceService(dependencies: {
     const coming = RENEWAL_KINDS.has(row.kind);
     const figures: readonly [number, number] | undefined =
       row.kind === 'entitlementOverAllocated' ||
+      row.kind === 'entitlementIdle' ||
       // Seats in use against those bought, where it counts seats.
       (coming && data.seatCount !== null && data.seatCount !== undefined)
         ? [Number(data.assignedCount ?? 0), Number(data.seatCount ?? 0)]

@@ -2075,6 +2075,7 @@ const ptBR: AppResource = {
       departmentMismatch:
         'Departamento do dispositivo diferente do do detentor',
       entitlementOverAllocated: 'Direitos de uso superalocados',
+      entitlementIdle: 'Assinaturas com assentos livres demais',
       lowAccessories: 'Acessórios abaixo do mínimo',
       lowConsumables: 'Consumíveis abaixo do mínimo',
       lowComponents: 'Componentes abaixo do mínimo',
@@ -2095,6 +2096,8 @@ const ptBR: AppResource = {
       departmentMismatch:
         'O detentor mudou; o dispositivo ainda está no departamento antigo',
       entitlementOverAllocated: 'Mais assentos atribuídos do que adquiridos',
+      entitlementIdle:
+        'Assinaturas cujos assentos livres passam do limite; reduza assentos antes da renovação',
       lowAccessories: 'Quantidade disponível abaixo do mínimo',
       lowConsumables: 'Quantidade disponível abaixo do mínimo',
       lowComponents: 'Quantidade disponível abaixo do mínimo',

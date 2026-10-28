@@ -2081,6 +2081,7 @@ const frFR: AppResource = {
       departmentMismatch:
         'Service de l’appareil différent de celui du détenteur',
       entitlementOverAllocated: 'Droits d’utilisation surattribués',
+      entitlementIdle: 'Abonnements avec trop de sièges libres',
       lowAccessories: 'Accessoires sous le minimum',
       lowConsumables: 'Consommables sous le minimum',
       lowComponents: 'Composants sous le minimum',
@@ -2101,6 +2102,8 @@ const frFR: AppResource = {
       departmentMismatch:
         'Le détenteur a changé de service ; l’appareil est toujours sur l’ancien',
       entitlementOverAllocated: 'Plus de sièges attribués que possédés',
+      entitlementIdle:
+        'Abonnements dont les sièges libres dépassent le seuil ; réduisez-les avant le renouvellement',
       lowAccessories: 'Quantité disponible sous son minimum',
       lowConsumables: 'Quantité disponible sous son minimum',
       lowComponents: 'Quantité disponible sous son minimum',

@@ -9,6 +9,7 @@ import {
 } from '../../server/providers/index.js';
 import { addDays, today } from '../../server/providers/itam/dates.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
+import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { repairRoutes } from '../../server/routes/itam/repairs.js';
 import { reportRoutes } from '../../server/routes/itam/reports.js';
@@ -63,6 +64,7 @@ describe('maintenance, reminders, workbench and reports', () => {
       workbenchRoutes,
       reportRoutes,
       repairRoutes,
+      entitlementRoutes,
     ]) {
       await app.mount(routes);
     }
@@ -290,6 +292,39 @@ describe('maintenance, reminders, workbench and reports', () => {
       await get('stock?filter[kind]=component&filter[view]=lowStock'),
     );
     expect(listed.map((row) => row.id)).toEqual([spare.id]);
+  });
+
+  it('counts subscriptions paying for idle seats, not perpetual licences', async () => {
+    // Both have every seat free, past the idle ratio (2026-10-28).
+    const subscription = await create('entitlements', {
+      kind: 'subscription',
+      softwareProductId: 'sp-microsoft-365',
+      name: 'Idle subscription',
+      licensingModel: 'perUser',
+      billingModel: 'perSeat',
+      seatCount: 10,
+      billingCycle: 'month',
+      unitPrice: 10,
+      expiryDate: '2999-01-01',
+    });
+    await create('entitlements', {
+      kind: 'perpetual',
+      softwareProductId: 'sp-microsoft-365',
+      name: 'Idle licence',
+      licensingModel: 'perUser',
+      seatCount: 10,
+    });
+    const reminders = await app.container
+      .resolve(maintenanceServiceToken)
+      .reminderCounts();
+    expect(
+      reminders.find((entry) => entry.kind === 'entitlementIdle')?.count,
+    ).toBe(1);
+    // The rule opens the subscriptions alone.
+    const listed = await data<{ id: string }[]>(
+      await get('entitlements?filter[view]=idleSubscriptions'),
+    );
+    expect(listed.map((row) => row.id)).toEqual([subscription.id]);
   });
 
   it('answers 需要关注 live, without waiting for the daily job', async () => {
