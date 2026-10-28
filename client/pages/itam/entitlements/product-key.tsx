@@ -2,7 +2,19 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { copyText } from '@nocobase/app-client';
 import { useMutation } from '@tanstack/react-query';
 import { Check, Copy, Eye, EyeOff } from 'lucide-react';
-import { useEffect, useState, type MouseEvent, type ReactElement } from 'react';
+import {
+  useContext,
+  useEffect,
+  useState,
+  type MouseEvent,
+  type ReactElement,
+} from 'react';
+import { createPortal } from 'react-dom';
+
+import {
+  FIELD_ACTION_ICON,
+  FieldActionsSlotContext,
+} from '@/lib/itam/field-actions-slot';
 
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/lib/itam/api';
@@ -33,6 +45,8 @@ export function ProductKeyValue({
   const permissions = useCollectionPermissions('entitlements', ['viewKey']);
   const [revealed, setRevealed] = useState<string | null>();
   const [copied, setCopied] = useState(false);
+  // Inside a field, the controls join its hover icons at the end.
+  const slot = useContext(FieldActionsSlotContext);
   const fetchKey = async () =>
     (
       await api.request<{ data: { productKey: string | null } }>({
@@ -78,7 +92,7 @@ export function ProductKeyValue({
       <Button
         variant='ghost'
         size='icon'
-        className='size-6'
+        className={slot ? FIELD_ACTION_ICON : 'size-6'}
         aria-label={
           revealed === undefined
             ? t('entitlements.revealKey')
@@ -104,15 +118,15 @@ export function ProductKeyValue({
         onDoubleClick={stop}
       >
         {revealed === undefined ? (
-          <Eye className='size-4' />
+          <Eye className={slot ? 'size-3' : 'size-4'} />
         ) : (
-          <EyeOff className='size-4' />
+          <EyeOff className={slot ? 'size-3' : 'size-4'} />
         )}
       </Button>
       <Button
         variant='ghost'
         size='icon'
-        className='size-6'
+        className={slot ? FIELD_ACTION_ICON : 'size-6'}
         aria-label={copied ? t('entitlements.keyCopied') : t('actions.copy')}
         title={copied ? t('entitlements.keyCopied') : t('actions.copy')}
         disabled={copy.isPending}
@@ -125,9 +139,9 @@ export function ProductKeyValue({
         {/* A square glyph beside a wide, flat one: the same box reads as
             bigger, so the copy is drawn one step smaller. */}
         {copied ? (
-          <Check className='size-3.5 text-primary' />
+          <Check className={slot ? 'size-3' : 'size-3.5 text-primary'} />
         ) : (
-          <Copy className='size-3.5' />
+          <Copy className={slot ? 'size-3' : 'size-3.5'} />
         )}
       </Button>
     </>
@@ -142,7 +156,7 @@ export function ProductKeyValue({
           {revealed ?? '—'}
         </code>
       )}
-      {controls}
+      {slot && controls ? createPortal(controls, slot) : controls}
       {/* A failure keeps the value and its controls: it is one request that
           did not answer, not a reason to take the key away. */}
       {reveal.error || copy.error ? (
