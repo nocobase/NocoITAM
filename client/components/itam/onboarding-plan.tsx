@@ -30,6 +30,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useAiPageContext } from '@/lib/itam/ai-chat';
+import { useItemFacts } from '@/lib/itam/kit-items';
 import { useAnnounce } from '@/lib/itam/announce';
 import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
@@ -138,6 +139,14 @@ export function OnboardingPlanCard({
   const effective = (thing: PlanThing): PlanThing =>
     chosen[proposalKey(thing)] ?? thing;
   const data = plan.data;
+  // Each item's category and maker, read the way the kit reads them.
+  const { detailOf } = useItemFacts(
+    (data?.lines ?? []).map((line) => ({
+      type: line.target.type,
+      id: line.target.id,
+      quantity: line.required,
+    })),
+  );
   // The person goes along as page context, so Asset Steward asked about
   // them in the chat reads this very plan (`itam onboarding plan`).
   const { available: aiAvailable } = useAiPageContext({
@@ -379,6 +388,11 @@ export function OnboardingPlanCard({
                 <PlanLine
                   key={`${line.target.type}:${line.target.id}`}
                   line={line}
+                  detail={detailOf({
+                    type: line.target.type,
+                    id: line.target.id,
+                    quantity: line.required,
+                  })}
                   busy={busy}
                   started={started}
                   effective={effective}
@@ -407,6 +421,7 @@ export function OnboardingPlanCard({
 
 function PlanLine({
   line,
+  detail,
   busy,
   started,
   effective,
@@ -415,6 +430,8 @@ function PlanLine({
   onWaive,
 }: {
   readonly line: OnboardingPlanLine;
+  /** Its category and maker, as the kit shows them. */
+  readonly detail: string;
   readonly busy: boolean;
   readonly started: boolean;
   /** The proposal as it stands: the one chosen instead, if any. */
@@ -480,21 +497,32 @@ function PlanLine({
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
         <span className='flex min-w-0 flex-1 items-center gap-2'>
           {tag}
-          {/* The kit's item opens its record too: the model, the category
-              or the software product (2026-10-22). */}
-          <RecordLink
-            to={`/${TARGET_ROUTES[line.target.type]}/${line.target.id}`}
-            className='truncate'
-          >
-            {line.target.name}
-          </RecordLink>
-          {line.target.type === 'category' ? (
-            <span className='shrink-0 text-xs text-muted-foreground'>
-              {t('onboardingKits.anyModel')}
+          <span className='flex min-w-0 flex-col'>
+            <span className='flex min-w-0 items-center gap-2'>
+              {/* The kit's item opens its record too: the model, the
+                  category or the software product (2026-10-22). */}
+              <RecordLink
+                to={`/${TARGET_ROUTES[line.target.type]}/${line.target.id}`}
+                className='truncate'
+              >
+                {line.target.name}
+              </RecordLink>
+              {line.target.type === 'category' ? (
+                <span className='shrink-0 text-xs text-muted-foreground'>
+                  {t('onboardingKits.anyModel')}
+                </span>
+              ) : null}
+              <span className='shrink-0 text-muted-foreground tabular-nums'>
+                ×{line.required}
+              </span>
             </span>
-          ) : null}
-          <span className='shrink-0 text-muted-foreground tabular-nums'>
-            ×{line.required}
+            {/* Its category and maker (2026-10-28), under the name: the
+                row's width is the proposals'. */}
+            {detail ? (
+              <span className='truncate text-xs text-muted-foreground'>
+                {detail}
+              </span>
+            ) : null}
           </span>
         </span>
         {/* One even gap between every word on the row (2026-10-22): the

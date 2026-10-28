@@ -15,12 +15,11 @@ import {
 import {
   parseKitItems,
   serializeKitItems,
+  useItemFacts,
   type KitItem,
   type KitItemType,
 } from '@/lib/itam/kit-items';
-import { masterDataPath, useItamList } from '@/lib/itam/api';
 import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
-import { text } from '@/lib/itam/format';
 import { useReferenceNames } from '@/lib/itam/references';
 import { cn } from '@/lib/utils';
 
@@ -62,95 +61,6 @@ function Icon({ type }: { readonly type: KitItemType }): ReactElement {
       className='size-4 shrink-0 text-muted-foreground'
     />
   );
-}
-
-/**
- * What kind of asset each item is — 设备, 配件, 耗材, 组件 or 授权 — the way
- * every list of this application tags it: a model's comes from its
- * category, a category's is its own, and a software product is always an
- * entitlement. And what the row says beside its name (2026-10-28): the
- * category and maker of a model or software product, as their own lists
- * show them. Reads only the records the kit names.
- */
-function useItemFacts(items: readonly KitItem[]): {
-  readonly kindOf: (item: KitItem) => string | undefined;
-  readonly detailOf: (item: KitItem) => string;
-} {
-  const idsOf = (type: KitItemType) => [
-    ...new Set(
-      items
-        .filter((item) => item.type === type && item.id)
-        .map((item) => String(item.id)),
-    ),
-  ];
-  const modelIds = idsOf('model');
-  const models = useItamList(
-    masterDataPath('models'),
-    { ids: modelIds, pageSize: 200 },
-    { enabled: modelIds.length > 0 },
-  );
-  const productIds = idsOf('softwareProduct');
-  const products = useItamList(
-    masterDataPath('softwareProducts'),
-    { ids: productIds, pageSize: 200 },
-    { enabled: productIds.length > 0 },
-  );
-  // A model's or product's category and maker, by its id.
-  const owners = new Map(
-    [...(models.data?.data ?? []), ...(products.data?.data ?? [])].map(
-      (row) => [
-        row.id,
-        {
-          categoryId: text(row.categoryId),
-          manufacturerId: text(row.manufacturerId),
-        },
-      ],
-    ),
-  );
-  const categoryIds = [
-    ...new Set([
-      ...idsOf('category'),
-      ...[...owners.values()].map((owner) => owner.categoryId),
-    ]),
-  ].filter(Boolean);
-  const categories = useItamList(
-    masterDataPath('categories'),
-    { ids: categoryIds, pageSize: 200 },
-    { enabled: categoryIds.length > 0 },
-  );
-  const category = new Map(
-    (categories.data?.data ?? []).map((row) => [
-      row.id,
-      { appliesTo: text(row.appliesTo), name: text(row.name) },
-    ]),
-  );
-  const makers = useReferenceNames([
-    {
-      collection: 'manufacturers',
-      ids: [...owners.values()].map((owner) => owner.manufacturerId),
-    },
-  ]).manufacturers;
-  const categoryOf = (item: KitItem) =>
-    item.type === 'category' ? item.id : owners.get(item.id ?? '')?.categoryId;
-  return {
-    kindOf: (item) => {
-      if (item.type === 'softwareProduct') return 'entitlement';
-      const id = categoryOf(item);
-      return (id && category.get(id)?.appliesTo) || undefined;
-    },
-    // A category item is its own category, with no maker.
-    detailOf: (item) => {
-      if (item.type === 'category') return '';
-      const owner = owners.get(item.id ?? '');
-      if (!owner) return '';
-      return [
-        category.get(owner.categoryId)?.name,
-        makers?.get(owner.manufacturerId),
-      ]
-        .filter(Boolean)
-        .join(' · ');
-    },
-  };
 }
 
 export function KitItems({
