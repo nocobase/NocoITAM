@@ -68,11 +68,14 @@ function Icon({ type }: { readonly type: KitItemType }): ReactElement {
  * What kind of asset each item is — 设备, 配件, 耗材, 组件 or 授权 — the way
  * every list of this application tags it: a model's comes from its
  * category, a category's is its own, and a software product is always an
- * entitlement. Reads only the models and categories the kit names.
+ * entitlement. And what the row says beside its name (2026-10-28): the
+ * category and maker of a model or software product, as their own lists
+ * show them. Reads only the records the kit names.
  */
-function useItemKinds(
-  items: readonly KitItem[],
-): (item: KitItem) => string | undefined {
+function useItemFacts(items: readonly KitItem[]): {
+  readonly kindOf: (item: KitItem) => string | undefined;
+  readonly detailOf: (item: KitItem) => string;
+} {
   const idsOf = (type: KitItemType) => [
     ...new Set(
       items
@@ -86,25 +89,67 @@ function useItemKinds(
     { ids: modelIds, pageSize: 200 },
     { enabled: modelIds.length > 0 },
   );
-  const categoryOfModel = new Map(
-    (models.data?.data ?? []).map((row) => [row.id, text(row.categoryId)]),
+  const productIds = idsOf('softwareProduct');
+  const products = useItamList(
+    masterDataPath('softwareProducts'),
+    { ids: productIds, pageSize: 200 },
+    { enabled: productIds.length > 0 },
+  );
+  // A model's or product's category and maker, by its id.
+  const owners = new Map(
+    [...(models.data?.data ?? []), ...(products.data?.data ?? [])].map(
+      (row) => [
+        row.id,
+        {
+          categoryId: text(row.categoryId),
+          manufacturerId: text(row.manufacturerId),
+        },
+      ],
+    ),
   );
   const categoryIds = [
-    ...new Set([...idsOf('category'), ...categoryOfModel.values()]),
+    ...new Set([
+      ...idsOf('category'),
+      ...[...owners.values()].map((owner) => owner.categoryId),
+    ]),
   ].filter(Boolean);
   const categories = useItamList(
     masterDataPath('categories'),
     { ids: categoryIds, pageSize: 200 },
     { enabled: categoryIds.length > 0 },
   );
-  const appliesTo = new Map(
-    (categories.data?.data ?? []).map((row) => [row.id, text(row.appliesTo)]),
+  const category = new Map(
+    (categories.data?.data ?? []).map((row) => [
+      row.id,
+      { appliesTo: text(row.appliesTo), name: text(row.name) },
+    ]),
   );
-  return (item) => {
-    if (item.type === 'softwareProduct') return 'entitlement';
-    const category =
-      item.type === 'category' ? item.id : categoryOfModel.get(item.id ?? '');
-    return (category && appliesTo.get(category)) || undefined;
+  const makers = useReferenceNames([
+    {
+      collection: 'manufacturers',
+      ids: [...owners.values()].map((owner) => owner.manufacturerId),
+    },
+  ]).manufacturers;
+  const categoryOf = (item: KitItem) =>
+    item.type === 'category' ? item.id : owners.get(item.id ?? '')?.categoryId;
+  return {
+    kindOf: (item) => {
+      if (item.type === 'softwareProduct') return 'entitlement';
+      const id = categoryOf(item);
+      return (id && category.get(id)?.appliesTo) || undefined;
+    },
+    // A category item is its own category, with no maker.
+    detailOf: (item) => {
+      if (item.type === 'category') return '';
+      const owner = owners.get(item.id ?? '');
+      if (!owner) return '';
+      return [
+        category.get(owner.categoryId)?.name,
+        makers?.get(owner.manufacturerId),
+      ]
+        .filter(Boolean)
+        .join(' · ');
+    },
   };
 }
 
@@ -140,7 +185,7 @@ export function KitItems({
       ids: shown.filter((row) => row.type === type).map((row) => row.id),
     })),
   );
-  const kindOf = useItemKinds(stored);
+  const { kindOf, detailOf } = useItemFacts(stored);
   // A row being edited says its asset type once chosen; a stored one reads
   // it from its model, category or product.
   const rowKind = (row: KitItem) => row.kind ?? kindOf(row);
@@ -239,6 +284,13 @@ export function KitItems({
                           </span>
                         ) : null}
                       </span>
+                      {/* Its category and maker (2026-10-28), between the
+                          name and how many. */}
+                      {detailOf(item) ? (
+                        <span className='min-w-0 shrink truncate text-muted-foreground'>
+                          {detailOf(item)}
+                        </span>
+                      ) : null}
                       <span className='shrink-0 text-muted-foreground tabular-nums'>
                         ×{item.quantity}
                       </span>
