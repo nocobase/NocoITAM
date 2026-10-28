@@ -33,6 +33,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { lastApproverOf } from '@/lib/itam/approval-trail';
 import { useApi, useItamList, type ItamRecord } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
 import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
@@ -285,7 +286,9 @@ function PurchaseOrderActions({
           path: `${PURCHASE_ORDERS_PATH}/${record.id}/approvals`,
         })
       ).data,
-    enabled: status !== 'draft',
+    // A draft may have been withdrawn, and asking again names who was
+    // asked before (2026-10-28).
+    enabled: Boolean(record.id),
   });
   const asked = approvalTrail.data?.find(
     (entry) => text(entry.status) === 'pending',
@@ -302,6 +305,7 @@ function PurchaseOrderActions({
   const askedIds = Array.isArray(asked?.approverIds)
     ? (asked.approverIds as string[])
     : [];
+  const lastApprover = lastApproverOf(approvalTrail.data);
   // The 负责人 may be the person named — a deployment with a single
   // Asset Manager has nobody else to ask (2026-09-27), so the page no
   // longer hides what the service allows.
@@ -327,7 +331,7 @@ function PurchaseOrderActions({
         title={hasLines ? undefined : t('procurement.submitNeedsLines')}
         onClick={() => {
           run.reset();
-          setApproverId(null);
+          setApproverId(lastApprover);
           setDialog('submit');
         }}
       >

@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { lastApproverOf } from '@/lib/itam/approval-trail';
 import { apiErrorBody, useApi, type ItamRecord } from '@/lib/itam/api';
 import { CURRENCIES } from '@/lib/itam/currencies';
 import type { FieldDefinition } from '@/lib/itam/fields';
@@ -239,7 +240,9 @@ function DisposalActions({
           path: `${DISPOSALS_PATH}/${text(record.id)}/approvals`,
         })
       ).data,
-    enabled: ['pendingApproval', 'approved'].includes(status),
+    // Rejected or withdrawn, asking again names who was asked before
+    // (2026-10-28).
+    enabled: Boolean(record.id),
   });
   const asked = approvalTrail.data?.find(
     (entry) => text(entry.status) === 'pending',
@@ -247,6 +250,7 @@ function DisposalActions({
   const askedIds = Array.isArray(asked?.approverIds)
     ? (asked.approverIds as string[])
     : [];
+  const lastApprover = lastApproverOf(approvalTrail.data);
   // Either nobody was named or it is this reader. The 负责人 may be the
   // one named — a deployment with a single Asset Manager has nobody else to
   // ask (2026-09-27), so the page no longer hides what the service allows.
@@ -282,7 +286,7 @@ function DisposalActions({
         title={hasDevices ? undefined : t('disposals.submitNeedsDevices')}
         onClick={() => {
           run.reset();
-          setApproverId(null);
+          setApproverId(lastApprover);
           setDialog('submit');
         }}
       >
