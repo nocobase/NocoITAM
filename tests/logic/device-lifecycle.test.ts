@@ -13,7 +13,7 @@ import {
   type DeviceStatus,
 } from '../../server/providers/itam/device-status.js';
 
-// A device's lifecycle on its own (2026-10-19): the specification's state
+// A device's lifecycle on its own (2026-10-19): the single-device state
 // machine, built from `OPERATION_FROM`. What each move carries along — the
 // holder, the ledger, the timeline — is `devices.test.ts`'s.
 

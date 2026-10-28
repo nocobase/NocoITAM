@@ -99,7 +99,7 @@ const messages = {
     departments: 'Departments',
     people: 'People',
     onboardingKits: 'Onboarding kits',
-    // Named as NocoCRM's and the NocoSolution front-end standard's (§S1).
+    // Named as NocoCRM's.
     aiGroup: 'Agent team',
     agents: 'Agents',
     skills: 'Skills',
@@ -215,11 +215,6 @@ const messages = {
       'This {{object}} will be permanently deleted. This cannot be undone.',
     reference_one: 'Referenced by {{count}} record in {{collection}}',
     reference_other: 'Referenced by {{count}} records in {{collection}}',
-  },
-  comingSoon: {
-    title: 'Coming in a later phase',
-    description:
-      'This page is scheduled for phase {{phase}} of the implementation plan.',
   },
   tabs: {
     history: 'History',

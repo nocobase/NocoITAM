@@ -206,11 +206,6 @@ const idID: AppResource = {
     reference_one: 'Dirujuk oleh {{count}} catatan di {{collection}}',
     reference_other: 'Dirujuk oleh {{count}} catatan di {{collection}}',
   },
-  comingSoon: {
-    title: 'Hadir di fase berikutnya',
-    description:
-      'Halaman ini dijadwalkan untuk fase {{phase}} dari rencana implementasi.',
-  },
   tabs: {
     history: 'Riwayat',
     children: 'Sub-item',

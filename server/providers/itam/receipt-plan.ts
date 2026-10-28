@@ -360,7 +360,7 @@ const ZERO: FieldStats = { accepted: 0, changed: 0, removed: 0, added: 0 };
  * How much of the plan the receiver kept: per line for the quantity, per
  * unit for the serials. A serial replaced by another counts as changed, one
  * dropped as removed and one typed in as added — the counts the trust ladder
- * reads (guideline 3.5).
+ * reads.
  */
 export function receiptStats(
   plan: ReceiptPlan,

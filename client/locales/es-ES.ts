@@ -207,11 +207,6 @@ const esES: AppResource = {
     reference_one: 'Referenciado por {{count}} registro en {{collection}}',
     reference_other: 'Referenciado por {{count}} registros en {{collection}}',
   },
-  comingSoon: {
-    title: 'Llegará en una fase posterior',
-    description:
-      'Esta página está prevista para la fase {{phase}} del plan de implementación.',
-  },
   tabs: {
     history: 'Historial',
     children: 'Subelementos',

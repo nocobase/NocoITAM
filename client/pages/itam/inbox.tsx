@@ -41,7 +41,7 @@ import {
 } from '#extensions/nocobase-inbox/registry';
 
 /**
- * 收件箱 (2026-10-16, plan "Work agents", step 1, after NocoCRM's
+ * 收件箱 (2026-10-16, after NocoCRM's
  * `pages/inbox.tsx`): the UI Library's inbox block
  * over the in-app notification plugin, first in the menu, its count the
  * runs waiting on the reader. Its two views are AI 建议 (first, the

@@ -25,7 +25,7 @@ import {
 import { relativeTime } from '@/lib/itam/format';
 
 /**
- * 智能体工作 (2026-10-16, plan "Work agents", step 1; after NocoCRM's Agent
+ * 智能体工作 (2026-10-16, after NocoCRM's Agent
  * work page): what the work agents do on their own. A tab per agent — so
  * far 审批审阅 — with what it does and that it only suggests, its model and
  * skill and where to change them (AI → 智能体, AI → 技能), whether it runs

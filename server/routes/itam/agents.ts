@@ -48,7 +48,7 @@ import {
 } from './http.js';
 
 /**
- * The work agents (2026-10-16, plan "Work agents", step 1):
+ * The work agents (2026-10-16):
  *
  * - `/itam/agents` — 智能体工作: each agent with its model, skill,
  *   switches and how it did over 7 and 30 days; its runs, on the records the

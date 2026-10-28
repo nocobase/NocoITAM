@@ -205,11 +205,6 @@ const viVN: AppResource = {
     reference_one: 'Được {{count}} hồ sơ trong {{collection}} tham chiếu',
     reference_other: 'Được {{count}} hồ sơ trong {{collection}} tham chiếu',
   },
-  comingSoon: {
-    title: 'Sẽ có ở giai đoạn sau',
-    description:
-      'Trang này được lên lịch cho giai đoạn {{phase}} của kế hoạch triển khai.',
-  },
   tabs: {
     history: 'Lịch sử',
     children: 'Mục con',

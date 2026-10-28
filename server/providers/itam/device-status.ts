@@ -1,5 +1,5 @@
 /**
- * The single-device state machine from the specification. Status changes only
+ * The single-device state machine. Status changes only
  * happen through the operations below; a manual correction is its own
  * operation that records a reason.
  */

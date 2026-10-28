@@ -119,7 +119,7 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
 
     // What the assistant has done reading delivery documents: every run by
     // how it ended, what the receivers kept of its proposals field by field
-    // — the record the trust ladder reads (guideline 3.5) — and the latest
+    // — the record the trust ladder reads — and the latest
     // runs, each naming who started it. Shown on the settings page, so it
     // takes the settings grant.
     routes.get(
@@ -142,8 +142,8 @@ export const aiRoutes: AppApiRouteContribution<Application> = defineApiRoutes(
 
     // A method skill's eval set, run against the model Asset Steward answers with
     // (device sync, step 4, 2026-10-15): what to run before changing a
-    // skill, its instructions or the model, and attach to the change
-    // (NocoSolution guideline 3.5). Slow — one model call per case — and an
+    // skill, its instructions or the model, and attach to the change.
+    // Slow — one model call per case — and an
     // administrator's, so it takes the settings grant.
     routes.post(
       '/evals/:skill',

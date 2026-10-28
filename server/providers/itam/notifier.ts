@@ -4,7 +4,7 @@ import {
 } from '@nocobase/service-provider';
 
 /**
- * In-app notifications for the events the specification lists. The
+ * In-app notifications for the events ITAM tells people about. The
  * notification plugin does the delivery; this wrapper applies the design
  * rules — never notify the actor about their own action, deduplicate
  * recipients, and never let a delivery failure fail the business operation.

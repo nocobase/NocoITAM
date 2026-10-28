@@ -207,11 +207,6 @@ const deDE: AppResource = {
     reference_one: 'Referenziert von {{count}} Datensatz in {{collection}}',
     reference_other: 'Referenziert von {{count}} Datensätzen in {{collection}}',
   },
-  comingSoon: {
-    title: 'Folgt in einer späteren Phase',
-    description:
-      'Diese Seite ist für Phase {{phase}} des Umsetzungsplans vorgesehen.',
-  },
   tabs: {
     history: 'Verlauf',
     children: 'Unterelemente',

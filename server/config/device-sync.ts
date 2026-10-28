@@ -69,7 +69,7 @@ function checkSource<K extends string>(
  * connected on 设置 → 设备同步 instead (2026-10-15,
  * `providers/itam/device-connections.ts`), its secret sealed with
  * `secrets.keys`. Either way the credential stays on the machine that runs
- * the application (NocoSolution guideline 1.5). A secret is written as the
+ * the application. A secret is written as the
  * value itself — a `${NAME}` placeholder is not expanded — or set from the
  * environment variables below. None of them is required (2026-10-16): with
  * no code default and nothing in `config.example.yml`, the build's

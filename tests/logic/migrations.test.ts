@@ -68,7 +68,7 @@ describe('ITAM migrations', () => {
     db = undefined;
   });
 
-  it('creates every P0 table on up', async () => {
+  it('creates every core table on up', async () => {
     db = await createTestDatabase();
     const client = await schemaClient(db.database);
     const present = Object.fromEntries(

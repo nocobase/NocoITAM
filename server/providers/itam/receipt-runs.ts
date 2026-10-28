@@ -290,7 +290,7 @@ export function createReceiptRunService(deps: {
           actorId: context.actorId,
           ownerId: order.ownerId ?? null,
           // The one trigger so far: a person handing the assistant a
-          // document. A run never starts itself (guideline 3.2).
+          // document. A run never starts itself.
           trigger: 'upload',
           status: 'reading',
           createdAt: now,

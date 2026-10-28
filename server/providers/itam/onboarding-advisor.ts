@@ -32,7 +32,7 @@ import type { SettingsService } from './settings.js';
  * pauses for a confirmation nobody is there to give). It writes nothing but
  * its own row: the plan puts its picks first while they are still free, and
  * the 入职负责人 reserves or changes them on the card. Agent does the work,
- * a person decides (guideline 3.3).
+ * a person decides.
  *
  * A run starts only when the 入职负责人 asks for one on the card (挑选 /
  * 重新建议), for a joiner not yet equipped, with an owner, and with

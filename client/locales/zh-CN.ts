@@ -91,7 +91,7 @@ const zhCN: AppResource = {
     departments: '部门',
     people: '人员',
     onboardingKits: '入职配置',
-    // Named as NocoCRM's and the NocoSolution front-end standard's (§S1).
+    // Named as NocoCRM's.
     aiGroup: 'Agent 团队',
     agents: 'Agent',
     skills: '技能',
@@ -204,10 +204,6 @@ const zhCN: AppResource = {
     plain: '该{{object}}将被永久删除，无法撤销',
     reference_one: '被 {{collection}} 中的 {{count}} 条记录引用',
     reference_other: '被 {{collection}} 中的 {{count}} 条记录引用',
-  },
-  comingSoon: {
-    title: '后续阶段提供',
-    description: '本页面计划在实施计划的 {{phase}} 阶段交付',
   },
   tabs: {
     history: '历史',

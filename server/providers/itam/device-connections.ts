@@ -30,7 +30,7 @@ import type { HistoryService } from './history.js';
  * an IT team without access to the server. The client secret is sealed with
  * the deployment's `secrets.keys` and never leaves the server again: the
  * page learns only that one is set. The credential stays on the machine
- * that runs the application (NocoSolution guideline 1.5), in its own
+ * that runs the application, in its own
  * database instead of its configuration file.
  *
  * `config.yml` wins for a platform it configures: the page then shows that

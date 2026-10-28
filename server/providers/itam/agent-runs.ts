@@ -8,7 +8,7 @@ import { asText } from './collection-query.js';
 import { dbDateTime } from './dates.js';
 
 /**
- * The work agents' runs (2026-10-16, plan "Work agents"; table
+ * The work agents' runs (2026-10-16; table
  * `itamAgentRuns`, migration `202610160001_agent_runs`). An agent working
  * on a record without being asked in a conversation writes one: running
  * while it works, then waiting for its decider with its result, or failed
@@ -18,7 +18,7 @@ import { dbDateTime } from './dates.js';
  * the person who asked, or the trigger an administrator left switched on.
  */
 
-// 离职回收 and 授权续费 (plan "Work agents", step 2) were built on
+// 离职回收 and 授权续费 (the work agents' second step) were built on
 // 2026-10-17 and removed the same day: what a leaver hands back and what a
 // renewal needs are rules (`recovery.ts`, the renewal reminders), not
 // judgements a model adds to.

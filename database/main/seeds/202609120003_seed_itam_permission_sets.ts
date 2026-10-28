@@ -1,7 +1,7 @@
 import { defineSeed, type SeedDefinition } from '@nocobase/db';
 
 /**
- * The ITAM roles from the specification as Permission Sets: IT Support and
+ * The ITAM roles as Permission Sets: IT Support and
  * IT Asset Manager. Only IT signs in (2026-10-05); the employees are people
  * in the register, not accounts, so there is no Employee set.
  *

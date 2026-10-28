@@ -1,7 +1,7 @@
 import type { AgentName } from '../itam/agent-runs.js';
 
 /**
- * ITAM's work agents (2026-10-16, plan "Work agents"), one per kind of work
+ * ITAM's work agents (2026-10-16), one per kind of work
  * the AI does on its own: 审批助手 and MDM 跟进. The work is one model call
  * at a time made by ITAM's code with the material it gathered as the person
  * who decides (`itam/approval-review.ts`, `itam/device-sync-followup.ts`),

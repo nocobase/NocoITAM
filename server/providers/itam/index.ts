@@ -530,8 +530,8 @@ export default class ItamProvider extends ServiceProvider<Application> {
         container.resolve(historyServiceToken),
       ),
     );
-    // The work agents' runs and the first of them, 审批审阅 (2026-10-16,
-    // plan "Work agents"); the agents' provider starts it on each request
+    // The work agents' runs and the first of them, 审批审阅 (2026-10-16);
+    // the agents' provider starts it on each request
     // and gives it the jobs service.
     container.singleton(agentRunServiceToken, () =>
       createAgentRunService(

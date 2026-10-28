@@ -1,13 +1,13 @@
 import type { ApprovalReview, ReviewSubject } from '../approval-review.js';
 
 /**
- * The eval set of the `approval-review` skill (2026-10-16, plan "Work
- * agents", step 1): requests as the review reads them, and the
+ * The eval set of the `approval-review` skill (2026-10-16):
+ * requests as the review reads them, and the
  * recommendations a person who knows the method would accept. What the
  * skill teaches is the judgement — buy, take from stock, ask for more,
  * dispose or keep using — so that is what is scored; the wording is not.
  * Run them before changing the skill, the work agent's instructions or its
- * model (NocoSolution guideline 1.3, 3.5): `POST
+ * model: `POST
  * /api/itam/ai/evals/approval-review`. A case added from real use — a
  * request an approver decided otherwise than the review recommended — is
  * the most useful kind.

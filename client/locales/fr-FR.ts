@@ -207,11 +207,6 @@ const frFR: AppResource = {
     reference_one: 'Référencé par {{count}} fiche dans {{collection}}',
     reference_other: 'Référencé par {{count}} fiches dans {{collection}}',
   },
-  comingSoon: {
-    title: 'Prévu dans une phase ultérieure',
-    description:
-      'Cette page est prévue pour la phase {{phase}} du plan de mise en œuvre.',
-  },
   tabs: {
     history: 'Historique',
     children: 'Sous-éléments',

@@ -206,10 +206,6 @@ const koKR: AppResource = {
     reference_other:
       '{{collection}}의 레코드 {{count}}건에서 참조하고 있습니다',
   },
-  comingSoon: {
-    title: '이후 단계에서 제공 예정',
-    description: '이 페이지는 구현 계획의 {{phase}}단계에서 제공될 예정입니다.',
-  },
   tabs: {
     history: '이력',
     children: '하위 항목',

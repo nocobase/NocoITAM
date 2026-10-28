@@ -15,8 +15,8 @@ export interface AppBrandProps {
 
 // Application change to the template's brand (2026-10-19, as NocoCRM's): the
 // official NocoBase lockup with the application's name, "Noco" heavy and
-// "ITAM" light (components/brand-logo.tsx, NocoSolution's logo script's
-// small-size version), in place of the template's logo image beside its name
+// "ITAM" light (components/brand-logo.tsx, the logo tool's small-size
+// version), in place of the template's logo image beside its name
 // in the heading font; collapsed, the mark alone. Both fill with the text
 // colour, so one drawing serves light and dark.
 export function AppBrand(inputProps: AppBrandProps): ReactElement {

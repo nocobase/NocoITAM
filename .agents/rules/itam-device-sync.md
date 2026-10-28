@@ -2,7 +2,7 @@
 
 Read this before changing device sync: the platform connectors, the `managedDevices` and `deviceSyncRuns` tables, matching by serial, the device page's MDM group, 设置 → MDM or the nightly pull.
 
-The design is the NocoSolution document `NocoITAM/NocoITAM 设备同步方案.md` (in the optional clone); all four steps are built.
+Device sync was built in four steps, all done; comments refer to them as step 1 to 4.
 
 **MDM 差异跟进** (2026-10-21): the follow-up Asset Steward writes after a
 pull is called MDM 差异跟进 (MDM difference follow-up) wherever a person
@@ -134,7 +134,7 @@ product or in release notes, until it is listed here.
   the last sync, the other person, the register status) and a
   `managedDismissed` event, at one click (no confirmation since 2026-10-16:
   恢复 takes it back); the same difference with
-  another value is raised again (guideline 3.4). An ignored difference
+  another value is raised again. An ignored difference
   that still holds is listed, not lost: `checks({ dismissed: true })`
   (view `dismissed`) is 信息不一致's 已忽略 section, with who and when and
   恢复 (`POST …/checks/:deviceId/undismiss`, the device's `update`, a

@@ -207,10 +207,6 @@ const jaJP: AppResource = {
     reference_other:
       '{{collection}} の {{count}} 件のレコードから参照されています',
   },
-  comingSoon: {
-    title: '今後のフェーズで提供予定',
-    description: 'このページは実装計画のフェーズ {{phase}} で提供予定です。',
-  },
   tabs: {
     history: '履歴',
     children: '下位項目',

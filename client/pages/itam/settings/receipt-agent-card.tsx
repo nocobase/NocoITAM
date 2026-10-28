@@ -49,7 +49,7 @@ const STATUS_TONE: Readonly<
 /**
  * The assistant's first piece of carried work (2026-10-05): what it may do
  * on its own and what stays with a person, how often its reading was kept
- * as it was — the only ground for ever letting it do more (guideline 3.5) —
+ * as it was — the only ground for ever letting it do more —
  * and its latest runs, each naming who started it.
  */
 export function ReceiptAgentCard(): ReactElement {

@@ -5,7 +5,7 @@ import type { EvalCase } from '../skill-evals.js';
  * 2026-10-15): situations as `itam device-sync review` shows them, and what
  * a person who knows the method would propose for each — the standard
  * answers. Run them before changing the skill, its instructions or Asset Steward's
- * model (NocoSolution guideline 1.3, 3.5): `POST
+ * model: `POST
  * /api/itam/ai/evals/device-sync`. A case added from real use — a
  * difference a person settled otherwise than Asset Steward proposed — is the most
  * useful kind.

@@ -12,7 +12,7 @@ import { useApi } from './api.js';
 import type { Plan } from './plans.js';
 
 /**
- * The work agents on the client (2026-10-16, plan "Work agents", step 1;
+ * The work agents on the client (2026-10-16;
  * `server/routes/itam/agents.ts`): 智能体工作's overview, switches and
  * runs; 收件箱's 待我决定 and its count; and one record's newest review,
  * asked for, redone, decided or set aside.

@@ -34,7 +34,7 @@ import { repairServiceToken } from './repairs.js';
 import { settingsServiceToken } from './settings.js';
 
 /**
- * 审批审阅 (2026-10-16, plan "Work agents", step 1; after NocoCRM's
+ * 审批审阅 (2026-10-16, after NocoCRM's
  * approval review): once a purchase order or a disposal is sent for
  * approval, the approval-review work agent reads it as the person asked to
  * approve it — exactly what they may read — with the `approval-review`

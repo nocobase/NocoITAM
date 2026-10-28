@@ -206,11 +206,6 @@ const ptBR: AppResource = {
     reference_one: 'Referenciado por {{count}} registro em {{collection}}',
     reference_other: 'Referenciado por {{count}} registros em {{collection}}',
   },
-  comingSoon: {
-    title: 'Disponível em uma fase posterior',
-    description:
-      'Esta página está prevista para a fase {{phase}} do plano de implementação.',
-  },
   tabs: {
     history: 'Histórico',
     children: 'Subitens',

@@ -26,7 +26,7 @@ import { useCurrentUserId } from '@/lib/itam/permissions';
 import { AiShortcut } from './ai-shortcut.js';
 
 /**
- * 审批审阅's card (2026-10-16, plan "Work agents", step 1): a decision card for the approver —
+ * 审批审阅's card (2026-10-16): a decision card for the approver —
  * an amber edge, what the review recommends in one line, what is asked,
  * and the basis folded away; the decision comment ready to edit; the
  * recommended decision as the one solid button, the other beside it, then

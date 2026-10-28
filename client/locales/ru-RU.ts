@@ -210,11 +210,6 @@ const ruRU: AppResource = {
     reference_many: 'На неё ссылаются {{count}} записей в «{{collection}}»',
     reference_other: 'На неё ссылаются {{count}} записи в «{{collection}}»',
   },
-  comingSoon: {
-    title: 'Появится на следующем этапе',
-    description:
-      'Эта страница запланирована на этап {{phase}} плана внедрения.',
-  },
   tabs: {
     history: 'История',
     children: 'Вложенные',

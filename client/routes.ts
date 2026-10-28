@@ -48,13 +48,6 @@ import {
 import { LANDING_PATH } from './routing/landing.js';
 
 /**
- * ITAM navigation, following the specification's 导航 section. Detail pages
- * are children of their list page so they inherit its access check; their
- * tabs are child routes of the detail page.
- */
-const comingSoon = () => import('./pages/itam/coming-soon-page.js');
-
-/**
  * One of the Agents plugin's pages drawn in ITAM's look
  * (components/itam/plugin-page.tsx, 2026-10-16, after NocoCRM's): its
  * component loaded as the plugin declares it and wrapped, the route
@@ -75,16 +68,16 @@ const itamStyled = <
   },
 });
 
+const DEVICE_TABS = ['history', 'related', 'attachments', 'documents'] as const;
+
 const deviceTabLoaders: Readonly<
-  Record<string, AppClientRouteComponentLoader>
+  Record<(typeof DEVICE_TABS)[number], AppClientRouteComponentLoader>
 > = {
   history: () => import('./pages/itam/devices/tab-history.js'),
   related: () => import('./pages/itam/devices/tab-related.js'),
   documents: () => import('./pages/itam/devices/tab-documents.js'),
   attachments: () => import('./pages/itam/devices/tab-attachments.js'),
 };
-const deviceTab = (tab: string): AppClientRouteComponentLoader =>
-  deviceTabLoaders[tab] ?? comingSoon;
 
 interface MasterRoute {
   readonly file: string;
@@ -236,7 +229,9 @@ const withPageGrants = (
 
 /**
  * The application's page routes, also read by the record drawer, which
- * mounts a record's own detail page (and its tabs) inside the drawer.
+ * mounts a record's own detail page (and its tabs) inside the drawer. Detail
+ * pages are children of their list page so they inherit its access check;
+ * their tabs are child routes of the detail page.
  */
 export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
   withPageGrants([
@@ -282,7 +277,7 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       navigation: { title: 'navigation.workbench', icon: LayoutDashboard },
       componentLoader: () => import('./pages/itam/workbench.js'),
     },
-    // 收件箱 (2026-10-16, plan "Work agents"):
+    // 收件箱 (2026-10-16):
     // under 待办 in the menu (2026-10-17; it was first), its count the runs
     // waiting on the reader. Everyone
     // has one and it shows only the reader's own, so it checks no page
@@ -356,14 +351,12 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
               componentLoader: () =>
                 import('./pages/itam/devices/device-detail.js'),
               children: [
-                ...landingRoute('devices', deviceTab('history')),
-                ...['history', 'related', 'attachments', 'documents'].map(
-                  (tab) => ({
-                    name: `devices-${tab}`,
-                    path: tab,
-                    componentLoader: deviceTab(tab),
-                  }),
-                ),
+                ...landingRoute('devices', deviceTabLoaders.history),
+                ...DEVICE_TABS.map((tab) => ({
+                  name: `devices-${tab}`,
+                  path: tab,
+                  componentLoader: deviceTabLoaders[tab],
+                })),
               ],
             },
           ],
@@ -668,8 +661,8 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       name: 'ai-group',
       navigation: { title: 'navigation.aiGroup', icon: Bot },
       children: [
-        // What the work agents do on their own (2026-10-16, plan "Work
-        // agents"); the page grant `agent-work` both IT roles hold.
+        // What the work agents do on their own (2026-10-16); the page
+        // grant `agent-work` both IT roles hold.
         {
           name: 'agent-work',
           path: '/agent-work',

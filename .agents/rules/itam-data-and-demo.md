@@ -164,8 +164,7 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   characters, and the users plugin refused theirs) — rather
   than the Chinese names romanised, and its employees, joiners and vendor
   contacts are English names too. Inside the generator the staff are known
-  by what they do (`approver`, `writer`, `support`), not by a username. They are listed in `nocosolution/NocoITAM/SPEC.md ## 演示数据`
-  and go through `DemoAccounts` (`demoAccounts()` in
+  by what they do (`approver`, `writer`, `support`), not by a username. They go through `DemoAccounts` (`demoAccounts()` in
   `server/providers/itam/index.ts`) rather than the `user` table, are tracked
   in `demoRecords` under `accounts`, and each is written to its person's
   `userId` — the staff have a person record in IT, named as their account

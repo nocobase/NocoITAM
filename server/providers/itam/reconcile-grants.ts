@@ -35,7 +35,7 @@ const STALE_COLLECTIONS = new Set([
  * The operations each `itam.*` resource declares today. A stored grant on
  * anything else — an operation removed with its feature (the seat usage
  * import, subscription bills) or a resource removed with its collection
- * (`itam.tickets`, which the P4 seed still produces from the tickets grant) —
+ * (`itam.tickets`, which an older seed still produces from the tickets grant) —
  * makes the authorization plugin skip it with a warning, and throw at a
  * development start, so it is dropped here rather than listed by hand.
  */
@@ -495,7 +495,7 @@ const IT_ROLE_PAGES: readonly string[] = [
   // Granted by its own seed (`202609130004_seed_itam_p5_grants`), which
   // used to give it to the Asset Manager alone.
   'itam-settings',
-  // 智能体工作 (2026-10-16, plan "Work agents"): what the agents do on
+  // 智能体工作 (2026-10-16): what the agents do on
   // their own, and their switches (changing them needs the settings grant).
   'agent-work',
 ];

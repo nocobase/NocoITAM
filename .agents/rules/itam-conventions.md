@@ -25,7 +25,7 @@ the same arrow with `PageHeader`'s `back` (2026-10-17, replacing its
 
 The ITAM feature code and the rules learned while building it are described in
 the other `itam-*.md` files beside this one, indexed in `AGENTS.md`. New
-ITAM domains follow the P0 pattern: a service under `server/providers/itam/`
+ITAM domains follow one pattern: a service under `server/providers/itam/`
 registered in `server/providers/itam/index.ts`, a route under
 `server/routes/itam/` using `http.ts`, field metadata under `client/lib/itam/`,
 and pages composed from `client/components/itam/`.

@@ -202,10 +202,6 @@ const zhTW: AppResource = {
     reference_one: '被 {{collection}} 中的 {{count}} 筆記錄引用',
     reference_other: '被 {{collection}} 中的 {{count}} 筆記錄引用',
   },
-  comingSoon: {
-    title: '後續階段提供',
-    description: '本頁面預計在實施計畫的 {{phase}} 階段交付',
-  },
   tabs: {
     history: '歷程',
     children: '子層級',

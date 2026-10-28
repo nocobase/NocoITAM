@@ -284,7 +284,7 @@ triage.tsx`, under the description) fills only what is still empty,
   to pending disposal, and opens a disposal
   filled from the quote. A new quote clears the decision; completing
   defaults its cost to the quote.
-- **Work agents** (2026-10-16, plan "Work agents", step 1, after
+- **Work agents** (2026-10-16, after
   NocoCRM's): agents that work on a record without being asked in a
   conversation, and only suggest. Until plugin 1.0 each was an online
   agent of the plugin, created at start, whose model and instructions an

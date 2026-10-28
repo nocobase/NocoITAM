@@ -49,7 +49,7 @@ const requester = { user: 'mia', role: 'manager' as const };
 const approver = { user: 'ann', role: 'manager' as const };
 const employee = { user: 'eve', role: 'employee' as const };
 
-// 审批审阅 (plan "Work agents", step 1): a purchase order sent for approval
+// 审批审阅: a purchase order sent for approval
 // is reviewed for its approver alone, who decides from the review with the
 // request's own `approve`; a decision elsewhere or a withdrawal retires it;
 // the agent's switch stops automatic reviews but never a person asking.

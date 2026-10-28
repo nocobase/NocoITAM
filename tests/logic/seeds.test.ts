@@ -596,7 +596,7 @@ describe('ITAM seeds', () => {
           key: 'manager',
           grants: [
             grant(['assignSeat', 'importUsage', 'recordBill']),
-            // The P4 seed still turns the removed tickets grant into this.
+            // An older seed still turns the removed tickets grant into this.
             grant(['accept', 'close'], 'itam.tickets'),
           ],
         },

@@ -109,7 +109,7 @@ export default class ItamAgentsProvider extends ServiceProvider<Application> {
   }
 
   /**
-   * The work agents (2026-10-16, plan "Work agents"): 审批审阅 reviews each
+   * The work agents (2026-10-16): 审批审阅 reviews each
    * approval request for its approver once it is committed, and a decision
    * or a withdrawal retires a review still open. Their runs are tasks of the
    * jobs service (`itamAgentRuns`), kept across a restart; without it they
