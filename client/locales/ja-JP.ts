@@ -1463,8 +1463,8 @@ const jaJP: AppResource = {
     revealFailed: 'キーを表示できませんでした',
     seatKey: 'シートキー',
     seatAccountHint: '従業員とアカウントの少なくとも一方を入力してください',
-    seatKeyHint: 'このシート独自のキー。空欄の場合は共有キーを使用します',
-    seatKeyHintNoShared: 'このシート独自のキー。ない場合は空欄のままにします',
+    seatKeyHint:
+      'このシート独自のキー。空欄の場合は共有キーを使用するか、キーなしになります',
     setSeatKey: 'キーを設定',
     unlimited: '無制限 · 割り当て済み {{assigned}}',
     unlimitedSeats: 'シート数無制限',

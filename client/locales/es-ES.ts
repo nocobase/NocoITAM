@@ -1480,9 +1480,7 @@ const esES: AppResource = {
     seatKey: 'Clave del puesto',
     seatAccountHint: 'Elija una persona, introduzca una cuenta o ambas cosas',
     seatKeyHint:
-      'La clave propia de este puesto; déjela vacía para usar la clave compartida',
-    seatKeyHintNoShared:
-      'La clave propia de este puesto; déjalo vacío si no tiene',
+      'La clave propia de este puesto; déjalo vacío para usar la clave compartida o si no tiene',
     setSeatKey: 'Establecer la clave',
     unlimited: 'Ilimitados · {{assigned}} asignados',
     unlimitedSeats: 'Puestos ilimitados',

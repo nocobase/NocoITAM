@@ -1465,8 +1465,8 @@ const viVN: AppResource = {
     revealFailed: 'Không thể hiển thị khóa',
     seatKey: 'Khóa của suất',
     seatAccountHint: 'Chọn một người, nhập một tài khoản, hoặc cả hai',
-    seatKeyHint: 'Khóa riêng của suất này; để trống để dùng khóa dùng chung',
-    seatKeyHintNoShared: 'Khóa riêng của suất này; để trống nếu không có',
+    seatKeyHint:
+      'Khóa riêng của suất này; để trống để dùng khóa dùng chung, hoặc nếu không có khóa',
     setSeatKey: 'Đặt khóa',
     unlimited: 'Không giới hạn · đã giao {{assigned}}',
     unlimitedSeats: 'Số suất không giới hạn',

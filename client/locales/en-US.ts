@@ -1491,8 +1491,8 @@ const messages = {
     revealFailed: 'Could not reveal the key',
     seatKey: 'Seat key',
     seatAccountHint: 'Choose a person, enter an account, or both',
-    seatKeyHint: "This seat's own key; leave empty to use the shared key",
-    seatKeyHintNoShared: "This seat's own key; leave empty if it has none",
+    seatKeyHint:
+      "This seat's own key; leave empty to use the shared key, or for none",
     setSeatKey: 'Set key',
     unlimited: 'Unlimited · {{assigned}} assigned',
     unlimitedSeats: 'Unlimited seats',

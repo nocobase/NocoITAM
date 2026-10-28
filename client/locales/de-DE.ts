@@ -1490,9 +1490,7 @@ const deDE: AppResource = {
     seatAccountHint:
       'Wählen Sie eine Person, geben Sie ein Konto ein oder beides',
     seatKeyHint:
-      'Eigener Schlüssel dieses Platzes; leer lassen, um den gemeinsamen Schlüssel zu nutzen',
-    seatKeyHintNoShared:
-      'Der eigene Schlüssel dieses Platzes; leer lassen, wenn es keinen gibt',
+      'Der eigene Schlüssel dieses Platzes; leer lassen für den gemeinsamen Schlüssel oder keinen',
     setSeatKey: 'Schlüssel festlegen',
     unlimited: 'Unbegrenzt · {{assigned}} zugewiesen',
     unlimitedSeats: 'Unbegrenzte Plätze',
