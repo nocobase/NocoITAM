@@ -649,7 +649,7 @@ function PlanLine({
           <span
             className={
               several
-                ? 'flex max-w-full min-w-0 flex-col items-end'
+                ? 'flex max-w-full min-w-0 flex-col items-end gap-1.5'
                 : 'contents'
             }
           >
@@ -657,14 +657,20 @@ function PlanLine({
               <RecordLink
                 key={`p:${thing.type}:${thing.id}`}
                 to={recordOf(thing)}
-                className='max-w-full'
+                // The tag does not underline; its name does (2026-10-28),
+                // nearer the text than elsewhere, as the tag's own edge
+                // would clip it.
+                className='group max-w-full hover:no-underline'
               >
                 <Badge variant='secondary' className='max-w-full'>
                   <Check className='size-3' />
-                  <span className='truncate'>
+                  <span className='-mb-1 truncate pb-1'>
+                    <span className='underline-offset-2 group-hover:underline'>
+                      {thing.label}
+                    </span>
                     {thing.type === 'device'
-                      ? `${thing.label} · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
-                      : thing.label}
+                      ? ` · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
+                      : null}
                   </span>
                 </Badge>
               </RecordLink>
