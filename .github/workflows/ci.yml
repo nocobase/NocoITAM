@@ -1,0 +1,45 @@
+name: CI
+
+# The release checks on every push to main and every pull request
+# (2026-10-28), so a break shows on the change that made it rather than at
+# the next release. A pull request is also built; main is built when a
+# release tag runs deploy-studio.yml.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+        with:
+          # package.json names no packageManager; the lockfile is pnpm 10's.
+          version: 10.34.5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The checks a release starts with (.agents/rules/build-and-deploy.md).
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm test --maxWorkers=2 --passWithNoTests=false
+      - if: github.event_name == 'pull_request'
+        run: pnpm build --target linux-x64 --node-version 24
+        env:
+          # The client build outgrows Node's default heap on the runner.
+          NODE_OPTIONS: --max-old-space-size=6144
