@@ -733,7 +733,7 @@ function PlanLine({
                           <Button
                             type='button'
                             variant='ghost'
-                            className={`-mx-2.5 min-w-0 gap-1 text-muted-foreground hover:text-muted-foreground aria-expanded:text-muted-foreground ${TEXT_BUTTON}`}
+                            className={`-mx-2.5 min-w-0 gap-1 text-muted-foreground hover:text-muted-foreground aria-expanded:text-muted-foreground ${TEXT_BUTTON} hover:no-underline`}
                             disabled={busy}
                           />
                         }
