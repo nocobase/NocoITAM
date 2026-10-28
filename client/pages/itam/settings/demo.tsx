@@ -1,9 +1,7 @@
 import { DemoModeSettings } from '@nocobase/app-plugin-demo-mode/client/settings';
 import { useCan } from '@nocobase/app-plugin-authorization/client';
-import { useDemoMode } from '@/lib/itam/demo-mode';
-import { ApiClientError } from '@nocobase/app-client';
+import { useDemoMode } from '@nocobase/app-plugin-demo-mode/client';
 import { Skeleton } from '#components/ui/skeleton';
-import { Alert, AlertTitle } from '#components/ui/alert';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Database, Trash2 } from 'lucide-react';
@@ -38,33 +36,7 @@ import { errorMessage, formatDate } from '@/lib/itam/format';
 export default function DemoSettingsPage(): ReactElement {
   const { t } = useTranslation();
   const mode = useDemoMode();
-  if (mode.isPending) return <DemoSettingsSkeleton />;
-  if (mode.error)
-    return (
-      <PageContainer>
-        <Alert variant='destructive'>
-          <AlertTitle>
-            {t(
-              mode.error instanceof ApiClientError && mode.error.status === 403
-                ? 'status.denied'
-                : mode.error instanceof ApiClientError &&
-                    mode.error.status === 404
-                  ? 'common.notFound'
-                  : 'status.pageFailed',
-            )}
-          </AlertTitle>
-        </Alert>
-        {!(
-          mode.error instanceof ApiClientError &&
-          [401, 403, 404].includes(mode.error.status)
-        ) && (
-          <Button onClick={() => void mode.refetch()}>
-            {t('status.retry')}
-          </Button>
-        )}
-      </PageContainer>
-    );
-  if (mode.data) return <PluginDemoSettings />;
+  if (mode) return <PluginDemoSettings />;
   return (
     <PageContainer>
       <PageHeader title={t('settings.demo.title')} />

@@ -1,4 +1,4 @@
-import { useDemoMode } from '@/lib/itam/demo-mode';
+import { useDemoMode } from '@nocobase/app-plugin-demo-mode/client';
 import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
@@ -54,10 +54,10 @@ export function DemoBanner(): ReactElement | null {
           path: 'itam/demo',
         })
       ).data,
-    enabled: can === true && mode.data === false,
+    enabled: can === true && !mode,
     refetchInterval: (query) => (query.state.data?.importing ? 1000 : false),
   });
-  if (mode.data !== false) return null;
+  if (mode) return null;
   const importing = status.data?.importing ?? null;
   if (can === true && importing)
     return (

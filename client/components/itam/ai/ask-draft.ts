@@ -15,7 +15,7 @@ import {
   type AskModel,
 } from '@/lib/itam/ask';
 import { ITAM_AGENT } from '@/lib/itam/ai-chat';
-import { useDemoMode } from '@/lib/itam/demo-mode';
+import { useDemoMode } from '@nocobase/app-plugin-demo-mode/client';
 import { errorMessage } from '@/lib/itam/format';
 
 /**
@@ -68,7 +68,7 @@ export function useAskDraft(
   const { t } = useTranslation();
   const toaster = useToaster();
   const panel = useChatPanel();
-  const demo = useDemoMode().data === true;
+  const demo = useDemoMode();
   const readiness = useAgentReadiness();
   const files = useAskFiles();
   const { models, model, select } = useAskModels();

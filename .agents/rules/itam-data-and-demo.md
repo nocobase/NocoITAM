@@ -373,6 +373,15 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
 - Keep ITAM's write exceptions empty. External effects, background maintenance,
   sync, lifecycle effect workers and automatic work agents stay idle; read-side
   caches must not write. Do not provision real model credentials in Demo Mode.
+- **Plugin integration, 0.2.0-beta.5 (2026-10-28).** Import `isDemoMode`
+  from the plugin's server entry and the boolean `useDemoMode` from its client
+  entry. The client uses published startup configuration, with no status query
+  or loading state. `server/app.ts` registers the plugin's `demoEffectsGuard`
+  after i18n with ITAM's protected paths. Keep background/service checks and
+  the form-specific `isDemoReadOnlyError` handling: the plugin owns the refusal
+  and toast, while ITAM restores inline values and retains form drafts.
+  Visitor preference cookies, account role translations and the reset schedule
+  belong to the plugin; do not duplicate them in the application.
 - `/settings/demo` uses plugin management in Demo Mode and the original sample
   importer otherwise. Keep the ordinary sample-data banner. Use the plugin's
   route helper and deployment reset settings; do not duplicate its entry,

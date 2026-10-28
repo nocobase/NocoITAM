@@ -6,7 +6,7 @@ import type { ConversationSummary } from '@nocobase/app-plugin-agents/shared/con
 import { useCallback, useEffect } from 'react';
 
 import { SEARCH_SOURCE } from './ask.js';
-import { useDemoMode } from './demo-mode.js';
+import { useDemoMode } from '@nocobase/app-plugin-demo-mode/client';
 
 /**
  * The assistant's conversations as ITAM lists them (2026-10-16, after
@@ -53,7 +53,7 @@ export function markdownLine(text: string): string {
 export function useToggleAssistant(): () => void {
   const panel = useChatPanel();
   const list = useConversationList({});
-  const demo = useDemoMode().data === true;
+  const demo = useDemoMode();
   const listed = listedConversations(list.data?.pages);
   const latest = listed[0]?.id ?? null;
   const { open, conversationId, closeChat, openChat } = panel;
@@ -79,7 +79,7 @@ export function useToggleAssistant(): () => void {
 export function useDemoConversationFallback(): void {
   const panel = useChatPanel();
   const list = useConversationList({});
-  const demo = useDemoMode().data === true;
+  const demo = useDemoMode();
   const listed = listedConversations(list.data?.pages);
   const latest = listed[0]?.id ?? null;
   const { open, conversationId, openChat } = panel;

@@ -14,8 +14,8 @@ const state = vi.hoisted(() => ({
   demo: false,
   openChat: vi.fn(),
 }));
-vi.mock('../../client/lib/itam/demo-mode.js', () => ({
-  useDemoMode: () => ({ isLoading: false, data: state.demo }),
+vi.mock('@nocobase/app-plugin-demo-mode/client', () => ({
+  useDemoMode: () => state.demo,
 }));
 vi.mock('@nocobase/app-client', () => ({
   useToaster: () => ({ show: state.toast }),

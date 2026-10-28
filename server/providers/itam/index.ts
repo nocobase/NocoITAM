@@ -1,4 +1,4 @@
-import { isDemoMode } from './demo-mode.js';
+import { isDemoMode } from '@nocobase/app-plugin-demo-mode/server';
 import {
   createDeviceSyncFollowUp,
   deviceSyncFollowUpToken,

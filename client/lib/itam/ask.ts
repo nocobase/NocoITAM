@@ -27,7 +27,7 @@ import {
   useStartConversation,
 } from './ai-chat.js';
 import { useApi } from './api.js';
-import { useDemoMode } from './demo-mode.js';
+import { useDemoMode } from '@nocobase/app-plugin-demo-mode/client';
 
 /** A question asked from the global search, answered in its dialog (`itam-agents/search-answers.ts`). */
 export const SEARCH_SOURCE = 'itam-search';
@@ -67,13 +67,13 @@ export function useAgentReadiness(): AgentReadiness {
   const agents = useChatAgents(panel.available);
   const status = useAiStatus();
   const demo = useDemoMode();
-  if (agents.isLoading || status.isLoading || demo.isLoading)
+  if (agents.isLoading || status.isLoading)
     return { state: 'loading', agent: null };
   const agent = agents.data?.find((item) => item.id === ITAM_AGENT) ?? null;
   // A Demo Mode deployment refuses every write, a new conversation's too
   // (2026-10-25): the boxes say so rather than take a question they cannot
   // send. The conversations the demo comes with can still be read.
-  if (demo.data === true)
+  if (demo)
     return { state: 'unavailable', agent, reason: t('ai.demoReadOnly') };
   if (!agent || status.data?.available !== true)
     return { state: 'unavailable', agent, reason: t('ai.unavailable') };

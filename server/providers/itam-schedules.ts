@@ -1,4 +1,4 @@
-import { isDemoMode } from './itam/demo-mode.js';
+import { isDemoMode } from '@nocobase/app-plugin-demo-mode/server';
 import type { Application } from '@nocobase/app-server/application';
 import type { AppI18nConfig } from '@nocobase/app-server/i18n';
 import { schedulerServiceToken } from '@nocobase/app-plugin-scheduler/server/tokens';
