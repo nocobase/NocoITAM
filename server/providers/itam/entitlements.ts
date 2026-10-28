@@ -262,23 +262,26 @@ export function annualCost(input: {
   return Math.round(cycle * perYear * 100) / 100;
 }
 
+/** Site and free licences count no seats, whichever the kind. */
+const countsNoSeats = (record: Row): boolean =>
+  record.licensingModel === 'site' || record.licensingModel === 'free';
+
 /**
- * Whether the entitlement must state a seat count: every perpetual one but
- * site and free licences, and subscriptions billed per seat. A flat-priced
- * subscription may state one as its cap.
+ * Whether the entitlement must state a seat count: every per-user or
+ * per-device licence, except a flat-priced subscription, which may state one
+ * as its cap.
  */
 export function seatsRequired(record: Row): boolean {
-  return record.kind === 'perpetual'
-    ? record.licensingModel !== 'site' && record.licensingModel !== 'free'
-    : record.billingModel === 'perSeat';
+  if (countsNoSeats(record)) return false;
+  return record.kind === 'perpetual' || record.billingModel === 'perSeat';
 }
 
 /**
- * Whether the entitlement counts no seats: site and free perpetual licences
- * always, a flat-priced subscription when it states no cap.
+ * Whether the entitlement counts no seats: site and free licences always, a
+ * flat-priced subscription when it states no cap.
  */
 export function seatsUnlimited(record: Row): boolean {
-  if (record.kind === 'perpetual') return !seatsRequired(record);
+  if (countsNoSeats(record)) return true;
   return (
     !seatsRequired(record) &&
     (record.seatCount === null ||
@@ -287,12 +290,29 @@ export function seatsUnlimited(record: Row): boolean {
   );
 }
 
-/** The holder a perpetual entitlement's seats go to, by licensing model. */
+/**
+ * The holder an entitlement's seats go to, by licensing model: devices for
+ * a per-device licence of either kind (2026-10-28), people otherwise.
+ */
 export function defaultHolderType(record: Row): SeatHolderType {
-  return record.kind === 'perpetual' && record.licensingModel === 'perDevice'
-    ? 'device'
-    : 'person';
+  return record.licensingModel === 'perDevice' ? 'device' : 'person';
 }
+
+/**
+ * A site or free subscription is not billed per seat: it counts none
+ * (2026-10-28).
+ */
+const assertBillingFitsLicence = (record: Row) => {
+  if (
+    record.kind === 'subscription' &&
+    countsNoSeats(record) &&
+    record.billingModel === 'perSeat'
+  )
+    throw new ValidationError(
+      'Site and free subscriptions are billed for the whole cycle',
+      'billingModel',
+    );
+};
 
 export function createEntitlementService(
   database: DatabaseManager,
@@ -470,12 +490,14 @@ export function createEntitlementService(
     const kind = input.kind;
     if (!(ENTITLEMENT_KINDS as readonly unknown[]).includes(kind))
       throw new ValidationError('kind is required', 'kind');
+    // Both kinds state how they are licensed (2026-10-28; perpetual ones
+    // alone before): it decides whether seats are counted and who holds one.
+    if (!input.licensingModel)
+      throw new ValidationError(
+        'Entitlements need a licensing model',
+        'licensingModel',
+      );
     if (kind === 'perpetual') {
-      if (!input.licensingModel)
-        throw new ValidationError(
-          'Perpetual entitlements need a licensing model',
-          'licensingModel',
-        );
       if (
         seatsRequired(input) &&
         (input.seatCount === null || input.seatCount === undefined)
@@ -508,6 +530,7 @@ export function createEntitlementService(
           'Per-seat subscriptions need a seat count',
           'seatCount',
         );
+      assertBillingFitsLicence(input);
     }
   };
 
@@ -923,13 +946,9 @@ export function createEntitlementService(
             : rest;
         // Required at creation and just as required afterwards: it decides
         // whether seats are counted and who may hold one.
-        if (
-          record.kind === 'perpetual' &&
-          'licensingModel' in input &&
-          !input.licensingModel
-        )
+        if ('licensingModel' in input && !input.licensingModel)
           throw new ValidationError(
-            'Perpetual entitlements need a licensing model',
+            'Entitlements need a licensing model',
             'licensingModel',
           );
         if (record.kind === 'subscription' && input.expiryDate === null)
@@ -944,6 +963,7 @@ export function createEntitlementService(
           );
         // The seat rule follows the record as it will be after the change.
         const next = { ...record, ...input };
+        assertBillingFitsLicence(next);
         const unlimited = seatsUnlimited(next);
         if (
           seatsRequired(next) &&
@@ -1106,37 +1126,36 @@ export function createEntitlementService(
           if (!(SEAT_HOLDER_TYPES as readonly string[]).includes(holderType))
             throw new ValidationError('Invalid holder', 'holderType');
           const holderId = seat.holderId ? String(seat.holderId) : null;
-          const account = perpetual
-            ? null
-            : String(seat.account ?? '')
-                .trim()
-                .toLowerCase() || null;
+          // An account is a person's: a subscription seat held by a device
+          // has none.
+          const account =
+            perpetual || holderType !== 'person'
+              ? null
+              : String(seat.account ?? '')
+                  .trim()
+                  .toLowerCase() || null;
           // Either kind's seat may carry a key of its own: a perpetual copy's,
           // or a subscription's where the vendor activates by key (2026-10-23).
           const seatKey = String(seat.productKey ?? '').trim() || null;
-          if (perpetual) {
+          // The licensing model says who holds a seat, whichever the kind
+          // (2026-10-28; a subscription's went to people alone before).
+          if (model === 'perDevice' && holderType === 'person')
+            throw new ValidationError(
+              'Per-device entitlements are assigned to devices',
+              'holderType',
+            );
+          if (model === 'perUser' && holderType === 'device')
+            throw new ValidationError(
+              'Per-user entitlements are assigned to people',
+              'holderType',
+            );
+          if (perpetual || holderType === 'device') {
             if (!holderId)
               throw new ValidationError('holderId is required', 'holderId');
-            if (model === 'perDevice' && holderType === 'person')
-              throw new ValidationError(
-                'Per-device entitlements are assigned to devices',
-                'holderType',
-              );
-            if (model === 'perUser' && holderType === 'device')
-              throw new ValidationError(
-                'Per-user entitlements are assigned to people',
-                'holderType',
-              );
-          } else {
+          } else if (!account && !holderId) {
             // A person or an account (2026-10-23): a subscription that
             // activates by key may have no account to name.
-            if (!account && !holderId)
-              throw new ValidationError('account is required', 'account');
-            if (holderType !== 'person')
-              throw new ValidationError(
-                'Subscription seats are assigned to people',
-                'holderType',
-              );
+            throw new ValidationError('account is required', 'account');
           }
           // One holder (or account) once per call and once per entitlement;
           // a subscription seat without an account is its person's.
@@ -1166,7 +1185,7 @@ export function createEntitlementService(
               connection,
               holderType,
               holderId,
-              perpetual ? 'holderId' : 'personId',
+              perpetual || holderType === 'device' ? 'holderId' : 'personId',
             );
             label = account ? `${holder} (${account})` : holder;
           }

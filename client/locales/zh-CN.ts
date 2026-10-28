@@ -983,6 +983,9 @@ const zhCN: AppResource = {
     noKit: '该人员的部门和职位没有适用的入职配置。',
     instead: '规则原本挑的：',
     needsAccount: '订阅席位需要账号：先给这个人填写邮箱，或到授权页分配',
+    needsDevice: '按设备授权的席位分给新人的电脑：先给新人分配或预留一台',
+    onDevice: '装到 {{label}}',
+    fewer: '{{count}} 个不需要',
     change: '更换',
     order: '{{orderNo}} {{status}}',
     // 库存以外的来源：在途采购单和离职人员归还的，写明哪天起能用。
@@ -1026,7 +1029,7 @@ const zhCN: AppResource = {
         running: '资产管家正在挑选',
       },
     },
-    waive: '不需要',
+    waive: '标记为不需要',
     restore: '撤回',
     waived: '不需要',
     waivedTotal_one: '{{count}} 项不需要',
@@ -2339,12 +2342,11 @@ const zhCN: AppResource = {
       'Perpetual entitlements need a seat count': '永久授权需要填写席位数',
       'Per-user entitlements are assigned to people':
         '按用户授权只能分配给人员',
-      'Perpetual entitlements need a licensing model':
-        '永久授权需要选择授权方式',
+      'Entitlements need a licensing model': '授权需要选择授权方式',
       'Person has already left': '该人员已离职',
       'Request body must be a JSON object': '请求体必须是 JSON 对象',
-      'Subscription seats are assigned to people':
-        '订阅授权的席位只能分配给人员',
+      'Site and free subscriptions are billed for the whole cycle':
+        '站点许可和免费的订阅只能按固定费用计费',
       'Subscriptions need a billing cycle': '订阅授权需要选择计费周期',
       'Subscriptions need a billing model': '订阅授权需要选择计费方式',
       'Subscriptions need an expiry date': '订阅授权需要填写到期日',

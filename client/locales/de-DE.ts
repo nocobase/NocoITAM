@@ -996,6 +996,10 @@ const deDE: AppResource = {
     instead: 'Die Regel hatte vorgeschlagen: ',
     needsAccount:
       'Ein Abonnementplatz braucht ein Konto: Hinterlegen Sie eine E-Mail-Adresse für diese Person oder weisen Sie den Platz beim Nutzungsrecht zu',
+    needsDevice:
+      'Ein Platz einer gerätebezogenen Lizenz geht an den Computer der Person: zuerst einen zuweisen oder reservieren',
+    onDevice: 'auf {{label}}',
+    fewer: '{{count}} nicht benötigt',
     change: 'Ändern',
     order: '{{orderNo}} {{status}}',
     planned: {
@@ -1042,7 +1046,7 @@ const deDE: AppResource = {
         running: 'Asset Steward wählt bereits aus',
       },
     },
-    waive: 'Nicht benötigt',
+    waive: 'Als nicht benötigt markieren',
     restore: 'Rückgängig',
     waived: 'Nicht benötigt',
     waivedTotal_one: '{{count}} Artikel nicht benötigt',
@@ -2462,13 +2466,13 @@ const deDE: AppResource = {
         'Dauerhafte Nutzungsrechte brauchen eine Platzanzahl',
       'Per-user entitlements are assigned to people':
         'Nutzungsrechte pro Benutzer werden Personen zugewiesen',
-      'Perpetual entitlements need a licensing model':
-        'Dauerhafte Nutzungsrechte brauchen ein Lizenzmodell',
+      'Entitlements need a licensing model':
+        'Nutzungsrechte brauchen ein Lizenzmodell',
       'Person has already left': 'Die Person ist bereits ausgeschieden',
       'Request body must be a JSON object':
         'Der Request-Body muss ein JSON-Objekt sein',
-      'Subscription seats are assigned to people':
-        'Abonnementplätze werden Personen zugewiesen',
+      'Site and free subscriptions are billed for the whole cycle':
+        'Standortlizenzen und kostenlose Abonnements werden nur pauschal abgerechnet',
       'Subscriptions need a billing cycle':
         'Abonnements brauchen einen Abrechnungszyklus',
       'Subscriptions need a billing model':

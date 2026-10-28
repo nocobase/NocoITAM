@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { addDays, today } from '../../server/providers/itam/dates.js';
 import { onboardingServiceToken } from '../../server/providers/itam/onboarding.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
+import { entitlementRoutes } from '../../server/routes/itam/entitlements.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { workbenchRoutes } from '../../server/routes/itam/workbench.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
@@ -57,7 +58,12 @@ describe('onboarding', () => {
 
   beforeEach(async () => {
     app = await createTestApp({ seeds: true });
-    for (const routes of [masterDataRoutes, deviceRoutes, workbenchRoutes])
+    for (const routes of [
+      masterDataRoutes,
+      deviceRoutes,
+      entitlementRoutes,
+      workbenchRoutes,
+    ])
       await app.mount(routes);
     locationId = (
       await create('master/locations', { name: 'Test HQ', type: 'company' })
@@ -122,6 +128,208 @@ describe('onboarding', () => {
     });
     expect(line.proposals).toEqual([]);
     expect((await plan(joiner.id)).prepared).toBe(before.prepared + 1);
+  });
+
+  it("puts a per-device licence's seat on the joiner's computer (2026-10-28)", async () => {
+    const licence = await create('entitlements', {
+      kind: 'perpetual',
+      softwareProductId: 'sp-intellij-idea',
+      name: 'IDE per device',
+      licensingModel: 'perDevice',
+      seatCount: 2,
+    });
+    const joiner = await person('Sun Hao', 'dept-rd', 'Frontend Engineer');
+    const ide = async () =>
+      (
+        await data<{
+          lines: {
+            target: { id: string };
+            preparedCount: number;
+            shortfall: number;
+            proposals: {
+              id: string;
+              holder?: { type: string; id: string };
+              needsDevice?: boolean;
+              needsAccount?: boolean;
+              holderChoices?: { id: string }[];
+            }[];
+          }[];
+        }>(
+          await app.request(
+            `/api/itam/master/people/${joiner.id}/onboarding`,
+            manager,
+          ),
+        )
+      ).lines.find((line) => line.target.id === 'sp-intellij-idea')!;
+    // No computer of theirs yet: the seat is there, and waits for one; it is
+    // not something to buy.
+    expect(await ide()).toMatchObject({
+      shortfall: 0,
+      proposals: [{ id: licence.id, needsDevice: true }],
+    });
+
+    // A monitor of theirs is not where the licence goes: only the device
+    // making up the kit's first device item, the computer.
+    const monitor = await create('devices', {
+      modelId: 'model-u2723qe',
+      serialNo: 'MONTEST0001',
+      locationId,
+    });
+    await post(`devices/${monitor.id}/reserve`, {
+      reservedForType: 'person',
+      reservedForId: joiner.id,
+      reservedUntil: addDays(today(), 5),
+    });
+    expect(await ide()).toMatchObject({
+      proposals: [{ id: licence.id, needsDevice: true, holderChoices: [] }],
+    });
+
+    const laptop = await create('devices', {
+      modelId: 'model-macbook-pro-14-m3',
+      serialNo: 'C02TEST0002',
+      locationId,
+    });
+    await post(`devices/${laptop.id}/reserve`, {
+      reservedForType: 'person',
+      reservedForId: joiner.id,
+      reservedUntil: addDays(today(), 5),
+    });
+    const proposal = (await ide()).proposals[0]!;
+    expect(proposal).toMatchObject({
+      id: licence.id,
+      holder: { type: 'device', id: laptop.id },
+    });
+    expect(proposal.needsDevice).toBeUndefined();
+    expect(proposal.needsAccount).toBeUndefined();
+
+    // Carried out as the card does: the seat goes to the computer, and
+    // counts as theirs.
+    const assigned = await post(`entitlements/${licence.id}/assign-seats`, {
+      seats: [{ holderType: 'device', holderId: laptop.id }],
+    });
+    expect(assigned.status).toBe(200);
+    expect(await ide()).toMatchObject({ preparedCount: 1, proposals: [] });
+  });
+
+  it('gives a per-device licence asked for twice to two of their computers, each one choosable', async () => {
+    // R&D's kit asks for the IDE twice.
+    const kit = await data<{ items: Record<string, unknown>[] }>(
+      await app.request('/api/itam/master/onboardingKits/kit-rd', manager),
+    );
+    await app.request('/api/itam/master/onboardingKits/kit-rd', {
+      ...json({
+        items: kit.items.map((item) =>
+          item.softwareProductId === 'sp-intellij-idea'
+            ? { ...item, quantity: 2 }
+            : item,
+        ),
+      }),
+      method: 'PATCH',
+      ...manager,
+    });
+    const licence = await create('entitlements', {
+      kind: 'perpetual',
+      softwareProductId: 'sp-intellij-idea',
+      name: 'IDE per device',
+      licensingModel: 'perDevice',
+      seatCount: 5,
+    });
+    const joiner = await person('Sun Hao', 'dept-rd', 'Frontend Engineer');
+    const laptops: string[] = [];
+    for (const serialNo of ['C02TEST0003', 'C02TEST0004']) {
+      const laptop = await create('devices', {
+        modelId: 'model-macbook-pro-14-m3',
+        serialNo,
+        locationId,
+      });
+      await post(`devices/${laptop.id}/reserve`, {
+        reservedForType: 'person',
+        reservedForId: joiner.id,
+        reservedUntil: addDays(today(), 5),
+      });
+      laptops.push(laptop.id);
+    }
+    const line = (
+      await data<{
+        lines: {
+          target: { id: string };
+          proposals: {
+            id: string;
+            slot?: number;
+            holder?: { id: string };
+            holderChoices?: { id: string }[];
+          }[];
+        }[];
+      }>(
+        await app.request(
+          `/api/itam/master/people/${joiner.id}/onboarding`,
+          manager,
+        ),
+      )
+    ).lines.find((entry) => entry.target.id === 'sp-intellij-idea')!;
+    // One seat on each computer, told apart by slot, either one changeable
+    // to any device of theirs.
+    expect(line.proposals.map((proposal) => proposal.slot)).toEqual([0, 1]);
+    expect(
+      line.proposals.map((proposal) => proposal.holder?.id).sort(),
+    ).toEqual([...laptops].sort());
+    for (const proposal of line.proposals) {
+      expect(proposal.id).toBe(licence.id);
+      expect(
+        (proposal.holderChoices ?? []).map((choice) => choice.id).sort(),
+      ).toEqual([...laptops].sort());
+    }
+  });
+
+  it('takes some of an item off as 不需要, and gives it back (2026-10-28)', async () => {
+    const kit = await data<{ items: Record<string, unknown>[] }>(
+      await app.request('/api/itam/master/onboardingKits/kit-rd', manager),
+    );
+    await app.request('/api/itam/master/onboardingKits/kit-rd', {
+      ...json({
+        items: kit.items.map((item) =>
+          item.modelId === 'model-macbook-pro-14-m3'
+            ? { ...item, quantity: 3 }
+            : item,
+        ),
+      }),
+      method: 'PATCH',
+      ...manager,
+    });
+    const joiner = await person('Sun Hao', 'dept-rd', 'Frontend Engineer');
+    const key = 'model:model-macbook-pro-14-m3';
+    const macbook = async () =>
+      (
+        await data<{
+          required: number;
+          lines: {
+            key: string;
+            required: number;
+            fewer: number;
+            waived: boolean;
+          }[];
+        }>(
+          await app.request(
+            `/api/itam/master/people/${joiner.id}/onboarding`,
+            manager,
+          ),
+        )
+      ).lines.find((line) => line.key === key)!;
+    expect(await macbook()).toMatchObject({ required: 3, fewer: 0 });
+    const waive = (body: Record<string, unknown>) =>
+      post(`master/people/${joiner.id}/onboarding/waive`, { key, ...body });
+
+    expect((await waive({ fewer: 2 })).status).toBe(200);
+    expect(await macbook()).toMatchObject({
+      required: 1,
+      fewer: 2,
+      waived: false,
+    });
+    // Never all of it: that is the whole item's 不需要.
+    expect((await waive({ fewer: 3 })).status).toBe(400);
+    // Back to what the kit asks.
+    expect((await waive({ fewer: 0 })).status).toBe(200);
+    expect(await macbook()).toMatchObject({ required: 3, fewer: 0 });
   });
 
   it('counts what an open new-hire order already brings, and seats under their e-mail', async () => {

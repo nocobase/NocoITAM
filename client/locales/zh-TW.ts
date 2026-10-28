@@ -974,6 +974,9 @@ const zhTW: AppResource = {
     noKit: '此人員的部門和職位沒有適用的入職配置。',
     instead: '規則原本挑選的：',
     needsAccount: '訂閱席位需要帳號：先為此人填寫電子郵件，或到授權頁分配',
+    needsDevice: '按裝置授權的席位分給新人的電腦：先替新人分配或預留一台',
+    onDevice: '裝到 {{label}}',
+    fewer: '{{count}} 個不需要',
     change: '更換',
     order: '{{orderNo}} {{status}}',
     planned: {
@@ -1016,7 +1019,7 @@ const zhTW: AppResource = {
         running: '資產管家正在挑選',
       },
     },
-    waive: '不需要',
+    waive: '標記為不需要',
     restore: '撤回',
     waived: '不需要',
     waivedTotal_one: '{{count}} 項不需要',
@@ -2312,12 +2315,11 @@ const zhTW: AppResource = {
       'Perpetual entitlements need a seat count': '永久授權需要填寫席位數',
       'Per-user entitlements are assigned to people':
         '依使用者授權只能分配給人員',
-      'Perpetual entitlements need a licensing model':
-        '永久授權需要選擇授權方式',
+      'Entitlements need a licensing model': '授權需要選擇授權方式',
       'Person has already left': '此人員已離職',
       'Request body must be a JSON object': '請求本文必須是 JSON 物件',
-      'Subscription seats are assigned to people':
-        '訂閱授權的席位只能分配給人員',
+      'Site and free subscriptions are billed for the whole cycle':
+        '站台授權和免費的訂閱只能按固定費用計費',
       'Subscriptions need a billing cycle': '訂閱授權需要選擇計費週期',
       'Subscriptions need a billing model': '訂閱授權需要選擇計費方式',
       'Subscriptions need an expiry date': '訂閱授權需要填寫到期日',

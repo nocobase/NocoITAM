@@ -277,6 +277,7 @@ const RECEIVE_EXTRA: Readonly<Record<LineItemType, readonly string[]>> = {
   ],
   subscription: [
     'name',
+    'licensingModel',
     'billingModel',
     'billingCycle',
     'unitPrice',
@@ -676,6 +677,7 @@ export function createProcurementService(deps: {
           kind: 'subscription',
           softwareProductId: String(line.softwareProductId),
           name: str(input.extra?.name) || 'Subscription',
+          licensingModel: str(input.extra?.licensingModel) || 'perUser',
           billingModel: str(input.extra?.billingModel) || 'perSeat',
           seatCount: input.quantity,
           billingCycle: str(input.extra?.billingCycle) || 'year',

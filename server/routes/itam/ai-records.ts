@@ -152,7 +152,7 @@ const REQUIRED_ON_CREATE: Readonly<
       : []),
   ],
   entitlements: (input) => [
-    ...(input.kind === 'perpetual' ? ['licensingModel'] : []),
+    'licensingModel',
     ...(input.kind === 'subscription'
       ? ['billingModel', 'billingCycle', 'expiryDate']
       : []),

@@ -991,6 +991,10 @@ const frFR: AppResource = {
     instead: 'La règle avait proposé ',
     needsAccount:
       'Un siège d’abonnement nécessite un compte : donnez une adresse e-mail à cette personne, ou attribuez-le depuis le droit d’utilisation',
+    needsDevice:
+      'Le siège d’une licence par appareil va sur son ordinateur : attribuez-en ou réservez-en d’abord un',
+    onDevice: 'sur {{label}}',
+    fewer: '{{count}} non nécessaire(s)',
     change: 'Changer',
     order: '{{orderNo}} {{status}}',
     planned: {
@@ -1037,7 +1041,7 @@ const frFR: AppResource = {
         running: 'L’Intendant des actifs est déjà en train de choisir',
       },
     },
-    waive: 'Non nécessaire',
+    waive: 'Marquer comme non nécessaire',
     restore: 'Annuler',
     waived: 'Non nécessaire',
     waivedTotal_one: '{{count}} article non nécessaire',
@@ -2457,13 +2461,13 @@ const frFR: AppResource = {
         'Les droits d’utilisation perpétuels nécessitent un nombre de sièges',
       'Per-user entitlements are assigned to people':
         'Les droits d’utilisation par utilisateur s’attribuent à des personnes',
-      'Perpetual entitlements need a licensing model':
-        'Les droits d’utilisation perpétuels nécessitent un modèle de licence',
+      'Entitlements need a licensing model':
+        'Les droits d’utilisation nécessitent un modèle de licence',
       'Person has already left': 'La personne est déjà partie',
       'Request body must be a JSON object':
         'Le corps de la requête doit être un objet JSON',
-      'Subscription seats are assigned to people':
-        'Les sièges d’abonnement s’attribuent à des personnes',
+      'Site and free subscriptions are billed for the whole cycle':
+        'Les abonnements en licence site ou gratuits se facturent uniquement au forfait',
       'Subscriptions need a billing cycle':
         'Les abonnements nécessitent un cycle de facturation',
       'Subscriptions need a billing model':

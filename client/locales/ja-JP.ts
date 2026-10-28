@@ -987,6 +987,10 @@ const jaJP: AppResource = {
     instead: 'ルールが当初選んだもの：',
     needsAccount:
       'サブスクリプションのシートにはアカウントが必要です。この従業員にメールアドレスを設定するか、利用権のページで割り当ててください',
+    needsDevice:
+      'デバイス単位のライセンスは新入社員の PC に割り当てます。先に PC を割り当てるか予約してください',
+    onDevice: '{{label}} に割り当て',
+    fewer: '{{count}} 個は不要',
     change: '変更',
     order: '{{orderNo}} {{status}}',
     planned: {
@@ -1031,7 +1035,7 @@ const jaJP: AppResource = {
         running: '資産管理エージェントが選択中です',
       },
     },
-    waive: '不要',
+    waive: '不要としてマーク',
     restore: '元に戻す',
     waived: '不要',
     waivedTotal_one: '{{count}} 件は不要',
@@ -2426,13 +2430,13 @@ const jaJP: AppResource = {
         '永続ライセンスにはシート数が必要です',
       'Per-user entitlements are assigned to people':
         'ユーザー単位の利用権は従業員にのみ割り当てられます',
-      'Perpetual entitlements need a licensing model':
-        '永続ライセンスにはライセンス形態の選択が必要です',
+      'Entitlements need a licensing model':
+        'ライセンスにはライセンス形態の選択が必要です',
       'Person has already left': 'この従業員は既に退職しています',
       'Request body must be a JSON object':
         'リクエスト本文は JSON オブジェクトにしてください',
-      'Subscription seats are assigned to people':
-        'サブスクリプションのシートは従業員にのみ割り当てられます',
+      'Site and free subscriptions are billed for the whole cycle':
+        'サイトライセンスと無償のサブスクリプションは定額でのみ課金できます',
       'Subscriptions need a billing cycle':
         'サブスクリプションには請求サイクルの選択が必要です',
       'Subscriptions need a billing model':

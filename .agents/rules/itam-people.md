@@ -83,7 +83,15 @@ departments/:id/positions/rename`): its holders and its kit move to the
   own location first, then the longest warranty; a stock item with enough
   on hand; an entitlement with a free seat (an ended subscription offers
   none, and a subscription seat is proposed under the person's e-mail as
-  its account — with no e-mail it cannot be assigned from the card) —
+  its account — with no e-mail it cannot be assigned from the card; a
+  per-device licence's seat, of either kind, goes to their device that makes
+  up the kit's first device item (the computer; never a monitor reserved
+  before it), its `holder`, one seat per device when the kit asks for
+  more (`slot`), 更换 offering their other devices in that item's category
+  (`holderChoices`); until they have one it waits, `needsDevice`, rather
+  than
+  counting as a shortfall, 2026-10-28; seats on their devices count as
+  theirs) —
   and what an **open 新员工配备 order** for their department and joining
   day still has to deliver counts as `onOrder` (the plan lists those
   `orders`), so asking again never orders the same laptop twice; what is
@@ -142,7 +150,13 @@ departments/:id/positions/rename`): its holders and its kit move to the
 waive`, people `update`, `people.onboardingWaived`, migration
   `202610060003_joiner_status`): nothing is proposed, ordered or chosen
   for it, it counts on neither side of 已配备 N / M, and taking the mark
-  back (撤回) reopens the joiner. Once in hand a joiner is stamped
+  back (撤回) reopens the joiner. Some of an item's quantity can be marked too
+  (2026-10-28, `{ key, fewer }`, stored as `key#n` beside the whole-item
+  keys, `waiveSome`): one of two laptops; the line's `required` is what is
+  left and `fewer` what was taken off, never all of it. An item asked for
+  more than once lists each thing on a line of its own with its own 不需要,
+  and the card keeps the remaining proposals as they stood, so taking the
+  first laptop off leaves the second. Once in hand a joiner is stamped
   `onboardingCompletedAt` and not worked out again, so the register's
   history of joiners is not recomputed on every reading; the card steps
   aside once they are equipped and a month in. 在职状态 is the two dates

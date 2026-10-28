@@ -13,6 +13,23 @@ export interface PlanThing {
   /** A subscription seat: held under an account, the person's e-mail. */
   readonly needsAccount?: boolean;
   readonly account?: string;
+  /**
+   * A per-device licence's seat: the device of theirs it goes to, or
+   * `needsDevice` while they have none yet.
+   */
+  readonly holder?: {
+    readonly type: 'device';
+    readonly id: string;
+    readonly label: string;
+  };
+  readonly needsDevice?: boolean;
+  /** Their devices a per-device seat may go to instead (更换). */
+  readonly holderChoices?: readonly {
+    readonly id: string;
+    readonly label: string;
+  }[];
+  /** Which of a line's per-device seats, when it asks for several. */
+  readonly slot?: number;
   /** Chosen by Asset Steward in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;
@@ -64,6 +81,13 @@ export interface OnboardingPlanLine {
   readonly planned: readonly PlanThing[];
   /** Marked 不需要 for this person. */
   readonly waived: boolean;
+  /** How many of the kit's quantity are 不需要; it asked for required + fewer. */
+  readonly fewer: number;
+  /** Several asked for and Asset Steward chose otherwise: the rule's whole choice. */
+  readonly ruleChoice?: readonly {
+    readonly id: string;
+    readonly label: string;
+  }[];
   readonly missing: number;
   /** How many of `planned` are on order, and how many come back. */
   readonly onOrder: number;

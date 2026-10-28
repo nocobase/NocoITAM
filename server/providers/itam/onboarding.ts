@@ -73,6 +73,30 @@ export interface PlanThing {
    */
   readonly needsAccount?: boolean;
   readonly account?: string;
+  /**
+   * A per-device licence's seat goes to a device of theirs, not to them
+   * (2026-10-28): the device it is proposed for, or `needsDevice` while
+   * they have none assigned or reserved yet.
+   */
+  readonly holder?: {
+    readonly type: 'device';
+    readonly id: string;
+    readonly label: string;
+  };
+  readonly needsDevice?: boolean;
+  /**
+   * Their devices a per-device seat may go to instead (更换, 2026-10-28):
+   * each one not holding this product yet.
+   */
+  readonly holderChoices?: readonly {
+    readonly id: string;
+    readonly label: string;
+  }[];
+  /**
+   * Which of a line's per-device seats this is, when it asks for more than
+   * one: the same entitlement may be proposed twice, for two devices.
+   */
+  readonly slot?: number;
   /** A proposal Asset Steward chose in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;
@@ -158,6 +182,22 @@ export interface OnboardingPlanLine {
    * or ordered for it, and it counts towards neither total.
    */
   readonly waived: boolean;
+  /**
+   * How many of the kit's quantity are 不需要 for this person (2026-10-28):
+   * one of two laptops, say. `required` is what is left; the kit asked for
+   * `required + fewer`.
+   */
+  readonly fewer: number;
+  /**
+   * With more than one asked for and Asset Steward choosing otherwise, what
+   * the rule alone would have proposed, all of it (2026-10-28): set beside
+   * the picks it reads as the whole choice, where one `instead` per pick
+   * left out what the rule and Asset Steward both chose.
+   */
+  readonly ruleChoice?: readonly {
+    readonly id: string;
+    readonly label: string;
+  }[];
   /** How many stock is asked for: required less what they have. */
   readonly missing: number;
   /** Only when asked for (`candidates: true`): what stock could give. */
@@ -345,6 +385,8 @@ function finishLine(input: {
   readonly proposals: readonly PlanThing[];
   readonly planned: readonly PlanThing[];
   readonly waived: boolean;
+  readonly fewer: number;
+  readonly ruleChoice?: OnboardingPlanLine['ruleChoice'];
   /** Required less what they have. */
   readonly asked: number;
   /** What is still uncovered. */
@@ -366,6 +408,8 @@ function finishLine(input: {
     proposals: input.proposals,
     planned: input.planned,
     waived: input.waived,
+    fewer: input.fewer,
+    ...(input.ruleChoice ? { ruleChoice: input.ruleChoice } : {}),
     missing: input.waived ? 0 : Math.max(0, input.asked),
     ...(input.candidates ? { candidates: input.candidates } : {}),
     onOrder: count(
@@ -404,6 +448,17 @@ export interface OnboardingService {
     personId: string,
     key: string,
     waived: boolean,
+    actorId: string,
+  ): Promise<OnboardingPlan | null>;
+  /**
+   * Marks some of an item's quantity 不需要 (2026-10-28): `fewer` of the
+   * kit's two laptops, from 0 (all needed again) to one less than the kit
+   * asks; the whole item is `waive`'s.
+   */
+  waiveSome(
+    personId: string,
+    key: string,
+    fewer: number,
     actorId: string,
   ): Promise<OnboardingPlan | null>;
   /**
@@ -839,6 +894,7 @@ export function createOnboardingService(
         'expiryDate',
         'maintenanceExpiryDate',
         'billingModel',
+        'licensingModel',
       ])
       .orderBy('name', 'asc')
       .execute<Row>();
@@ -999,7 +1055,14 @@ export function createOnboardingService(
   ): Promise<OnboardingPlan> => {
     const personId = String(person.id);
     const { advice, picks: advisedPicks } = await adviceFor(personId);
-    const waivedKeys = new Set(stringList(person.onboardingWaived));
+    // A key alone is the whole item 不需要; `key#n` is n of its quantity.
+    const waivedKeys = new Set<string>();
+    const waivedSome = new Map<string, number>();
+    for (const entry of stringList(person.onboardingWaived)) {
+      const some = /^(.*)#(\d+)$/.exec(entry);
+      if (some) waivedSome.set(some[1], Number(some[2]));
+      else waivedKeys.add(entry);
+    }
     const kit = await kitFor(
       asText(person.departmentId) ?? null,
       asText(person.position) ?? null,
@@ -1153,9 +1216,31 @@ export function createOnboardingService(
         'entitlements.id as id',
         'entitlements.name as name',
         'entitlements.softwareProductId as softwareProductId',
+        'entitlementSeats.holderType as holderType',
+        'entitlementSeats.holderId as holderId',
       ])
-      .where('entitlementSeats.holderType', '=', 'person')
-      .where('entitlementSeats.holderId', '=', personId)
+      // Theirs, and those on their devices: a per-device licence's seat is
+      // held by the computer, not the person (2026-10-28).
+      .where((eb) =>
+        eb.or([
+          eb.and([
+            eb('entitlementSeats.holderType', '=', 'person'),
+            eb('entitlementSeats.holderId', '=', personId),
+          ]),
+          ...(devices.length > 0
+            ? [
+                eb.and([
+                  eb('entitlementSeats.holderType', '=', 'device'),
+                  eb(
+                    'entitlementSeats.holderId',
+                    'in',
+                    devices.map(({ row }) => String(row.id)),
+                  ),
+                ]),
+              ]
+            : []),
+        ]),
+      )
       .where('entitlementSeats.releasedAt', 'is', null)
       .execute<Row>();
 
@@ -1183,12 +1268,54 @@ export function createOnboardingService(
         typeof item === 'object' && item !== null,
     );
 
+    /**
+     * Where a per-device licence's seats go (2026-10-28). By default, to
+     * their devices that make up the kit's first device item, the computer
+     * in every kit so far; 更换 offers any device of theirs in that item's
+     * category, so a second laptop of another model can take it but a
+     * monitor reserved before the laptop never does. A kit without device
+     * items offers every device of theirs.
+     */
+    const { seatDevices, seatChoices } = (() => {
+      const all = devices.map(({ row }) => row);
+      const first = items.find(
+        (item) => asText(item.modelId) || asText(item.categoryId),
+      );
+      if (!first) return { seatDevices: all, seatChoices: all };
+      const modelId = asText(first.modelId);
+      const categoryId = modelId
+        ? asText(pools.models.get(modelId)?.categoryId)
+        : asText(first.categoryId);
+      return {
+        seatDevices: all.filter((row) =>
+          modelId
+            ? asText(row.modelId) === modelId
+            : asText(row.categoryId) === categoryId,
+        ),
+        seatChoices: all.filter((row) => asText(row.categoryId) === categoryId),
+      };
+    })();
+    const deviceChoice = (row: Row) => ({
+      id: String(row.id),
+      // Its name alone: the row is narrow already.
+      label: String(row.name),
+    });
+
     const lines: OnboardingPlanLine[] = [];
     for (const item of items) {
-      const required = Math.max(1, Number(item.quantity) || 1);
       const modelId = asText(item.modelId);
       const categoryId = asText(item.categoryId);
       const productId = asText(item.softwareProductId);
+      const itemKey = productId
+        ? `softwareProduct:${productId}`
+        : modelId
+          ? `model:${modelId}`
+          : `category:${String(categoryId)}`;
+      // What the kit asks, less what is 不需要 of it; never below one,
+      // the whole item being `waived`.
+      const asks = Math.max(1, Number(item.quantity) || 1);
+      const fewer = Math.min(asks - 1, waivedSome.get(itemKey) ?? 0);
+      const required = asks - fewer;
 
       if (productId) {
         const product = await q()
@@ -1239,25 +1366,62 @@ export function createOnboardingService(
                 },
               });
           const email = asText(person.email);
+          // A device holds one seat of a product: not one that has it, nor
+          // one this line already proposes it for.
+          const busyDevices = new Set(
+            seats
+              .filter(
+                (seat) =>
+                  asText(seat.softwareProductId) === productId &&
+                  asText(seat.holderType) === 'device',
+              )
+              .map((seat) => String(seat.holderId)),
+          );
+          const holderChoices = seatChoices
+            .filter((row) => !busyDevices.has(String(row.id)))
+            .map(deviceChoice);
+          let slot = 0;
+          const perDevice = () => {
+            const row = seatDevices.find(
+              (candidate) => !busyDevices.has(String(candidate.id)),
+            );
+            if (row) busyDevices.add(String(row.id));
+            return {
+              ...(row
+                ? { holder: { type: 'device' as const, ...deviceChoice(row) } }
+                : { needsDevice: true }),
+              holderChoices,
+              ...(required > 1 ? { slot: slot++ } : {}),
+            };
+          };
           for (const entry of preferred(
             open,
             (entry) => String(entry.row.id),
             picks,
           )) {
             if (missing <= 0) break;
-            if (entry.free <= 0) continue;
-            entry.free -= 1;
-            // One person holds one seat of a product.
-            proposals.push({
-              type: 'seat',
-              id: String(entry.row.id),
-              label: String(entry.row.name),
-              ...(asText(entry.row.kind) === 'subscription'
-                ? { needsAccount: true, ...(email ? { account: email } : {}) }
-                : {}),
-              ...advised(picks, String(entry.row.id)),
-            });
-            missing -= 1;
+            const byDevice = asText(entry.row.licensingModel) === 'perDevice';
+            // One person holds one seat of a product; a per-device licence
+            // gives one to each of their devices the kit asks it for.
+            do {
+              if (entry.free <= 0) break;
+              entry.free -= 1;
+              proposals.push({
+                type: 'seat',
+                id: String(entry.row.id),
+                label: String(entry.row.name),
+                ...(byDevice
+                  ? perDevice()
+                  : asText(entry.row.kind) === 'subscription'
+                    ? {
+                        needsAccount: true,
+                        ...(email ? { account: email } : {}),
+                      }
+                    : {}),
+                ...advised(picks, String(entry.row.id)),
+              });
+              missing -= 1;
+            } while (byDevice && missing > 0);
           }
           // Then seats being bought, then those somebody leaving frees.
           const ordered = fromOrders(
@@ -1305,6 +1469,7 @@ export function createOnboardingService(
             proposals,
             planned,
             waived,
+            fewer,
             asked,
             missing,
             orderBy: orderBy(0),
@@ -1358,6 +1523,7 @@ export function createOnboardingService(
       const waived = waivedKeys.has(key);
       const prepared: PlanThing[] = [];
       const proposals: PlanThing[] = [];
+      let ruleChoiceShown: OnboardingPlanLine['ruleChoice'];
       const planned: PlanThing[] = [];
       const candidates: PlanCandidate[] = [];
       let missing = required;
@@ -1470,7 +1636,23 @@ export function createOnboardingService(
           const displaced = ruleChoice.filter(
             (row) => !proposedIds.has(String(row.id)),
           );
+          const label = (row: Row) =>
+            `${String(row.deviceNo)} / ${String(row.name)}`;
+          // Several asked for: the rule's whole choice, once, when a pick
+          // differs from it.
+          const several = ruleChoice.length > 1;
+          ruleChoiceShown =
+            several &&
+            proposals.some(
+              (thing) => thing.source === 'noco' && !ruleIds.has(thing.id),
+            )
+              ? ruleChoice.map((row) => ({
+                  id: String(row.id),
+                  label: label(row),
+                }))
+              : undefined;
           proposals.forEach((thing, index) => {
+            if (several) return;
             if (thing.source !== 'noco' || ruleIds.has(thing.id)) return;
             const row = displaced.shift();
             if (row)
@@ -1576,6 +1758,8 @@ export function createOnboardingService(
           proposals,
           planned,
           waived,
+          fewer,
+          ruleChoice: ruleChoiceShown,
           asked,
           missing,
           orderBy: orderBy(kind === 'device' ? pools.prepDays : 0),
@@ -1737,5 +1921,64 @@ export function createOnboardingService(
     };
   };
 
-  return { kitFor, plan, plans, waive, departmentKits };
+  const waiveSome: OnboardingService['waiveSome'] = async (
+    personId,
+    key,
+    fewer,
+    actorId,
+  ) => {
+    const current = await plan(personId);
+    if (!current) return null;
+    const line = current.lines.find((entry) => entry.key === key);
+    if (!line)
+      throw new ValidationError('No such item in their onboarding kit', 'key');
+    const asks = line.required + line.fewer;
+    if (!Number.isInteger(fewer) || fewer < 0 || fewer >= asks)
+      throw new ValidationError(
+        'fewer is between 0 and one less than the kit asks',
+        'fewer',
+      );
+    if (fewer === line.fewer) return current;
+    const person = await q()
+      .selectFrom('people')
+      .select(['onboardingWaived'])
+      .where('id', '=', personId)
+      .executeTakeFirst<Row>();
+    const entries = stringList(person?.onboardingWaived).filter(
+      (entry) => !entry.startsWith(`${key}#`),
+    );
+    if (fewer > 0) entries.push(`${key}#${String(fewer)}`);
+    const more = fewer > line.fewer;
+    await database.transaction(async (connection) => {
+      await connection.query
+        .updateTable('people')
+        .set({
+          onboardingWaived: entries,
+          // Needing more again reopens a joiner counted as equipped.
+          ...(more ? {} : { onboardingCompletedAt: null }),
+          updatedAt: new Date(),
+        })
+        .where('id', '=', personId)
+        .execute();
+      await history?.record(
+        {
+          subjectType: 'people',
+          subjectId: personId,
+          type: more ? 'onboardingWaived' : 'onboardingRestored',
+          summary: `${more ? 'Not needed' : 'Needed again'}: ${line.target.name} ×${String(Math.abs(fewer - line.fewer))}`,
+          payload: {
+            key,
+            targetLabel: line.target.name,
+            fewer,
+            asks,
+          },
+          actorId,
+        },
+        connection,
+      );
+    });
+    return plan(personId);
+  };
+
+  return { kitFor, plan, plans, waive, waiveSome, departmentKits };
 }

@@ -688,6 +688,7 @@ describe('stock and software entitlements', () => {
       kind: 'subscription',
       softwareProductId: fixture.productId,
       name: 'Figma Org',
+      licensingModel: 'perUser',
       billingModel: 'perSeat',
       seatCount: 3,
       billingCycle: 'month',
@@ -722,6 +723,7 @@ describe('stock and software entitlements', () => {
       kind: 'subscription',
       softwareProductId: fixture.productId,
       name: 'Figma Org',
+      licensingModel: 'perUser',
       billingModel: 'perSeat',
       seatCount: 3,
       billingCycle: 'month',
@@ -848,12 +850,65 @@ describe('stock and software entitlements', () => {
     ).toBeNull();
   });
 
+  it('licenses a subscription per device as well as per user (2026-10-28)', async () => {
+    const subscription = (values: Record<string, unknown>) =>
+      post('entitlements', {
+        kind: 'subscription',
+        softwareProductId: fixture.productId,
+        name: 'Endpoint protection',
+        billingModel: 'perSeat',
+        seatCount: 3,
+        billingCycle: 'year',
+        unitPrice: 30,
+        expiryDate: '2027-03-01',
+        ...values,
+      });
+    // Both kinds state how they are licensed.
+    const unlicensed = await subscription({});
+    expect(unlicensed.status).toBe(400);
+    // A site or free subscription counts no seats, so it is not billed per
+    // seat.
+    const siteBilledPerSeat = await subscription({ licensingModel: 'site' });
+    expect(siteBilledPerSeat.status).toBe(400);
+
+    const created = await subscription({ licensingModel: 'perDevice' });
+    expect(created.status).toBe(201);
+    const { id } = await data<{ id: string }>(created);
+    // Its seats go to devices, never to people, and carry no account.
+    const toPerson = await post(`entitlements/${id}/assign-seats`, {
+      seats: [
+        { holderType: 'person', holderId: fixture.personId, account: 'a@b.c' },
+      ],
+    });
+    expect(toPerson.status).toBe(400);
+    const toDevice = await post(`entitlements/${id}/assign-seats`, {
+      seats: [{ holderId: fixture.deviceId, account: 'ignored@example.com' }],
+    });
+    expect(toDevice.status).toBe(200);
+    const { seats } = await data<{
+      seats: { holderType: string; holderId: string; account: string | null }[];
+    }>(await app.request(`/api/itam/entitlements/${id}/seats`, manager));
+    expect(seats).toEqual([
+      expect.objectContaining({
+        holderType: 'device',
+        holderId: fixture.deviceId,
+        account: null,
+      }),
+    ]);
+    // A device holds a seat once.
+    const again = await post(`entitlements/${id}/assign-seats`, {
+      seats: [{ holderId: fixture.deviceId }],
+    });
+    expect(again.status).toBe(422);
+  });
+
   it('rolls a renewing subscription forward and lets a stopped one end', async () => {
     const renewing = await data<{ id: string }>(
       await post('entitlements', {
         kind: 'subscription',
         softwareProductId: fixture.productId,
         name: 'Monthly',
+        licensingModel: 'perUser',
         billingModel: 'perSeat',
         seatCount: 2,
         billingCycle: 'month',
@@ -866,6 +921,7 @@ describe('stock and software entitlements', () => {
         kind: 'subscription',
         softwareProductId: fixture.productId,
         name: 'Stopped',
+        licensingModel: 'perUser',
         billingModel: 'perSeat',
         seatCount: 2,
         billingCycle: 'year',
@@ -944,6 +1000,7 @@ describe('stock and software entitlements', () => {
       kind: 'subscription',
       name: 'Bundle',
       softwareProductId: fixture.productId,
+      licensingModel: 'perUser',
       billingModel: 'flat',
       billingCycle: 'year',
       unitPrice: 400000,
@@ -971,6 +1028,7 @@ describe('stock and software entitlements', () => {
         kind: 'subscription',
         name: 'Uncapped',
         softwareProductId: fixture.productId,
+        licensingModel: 'perUser',
         billingModel: 'flat',
         billingCycle: 'year',
         unitPrice: 1200,

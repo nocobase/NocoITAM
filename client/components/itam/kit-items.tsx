@@ -15,16 +15,18 @@ import {
 import {
   parseKitItems,
   serializeKitItems,
+  useItemFacts,
   type KitItem,
   type KitItemType,
 } from '@/lib/itam/kit-items';
-import { masterDataPath, useItamList } from '@/lib/itam/api';
 import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
-import { text } from '@/lib/itam/format';
+import { TARGET_ROUTES } from '@/lib/itam/onboarding';
 import { useReferenceNames } from '@/lib/itam/references';
 import { cn } from '@/lib/utils';
 
 import { AssetTypeBadge } from './asset-type-badge.js';
+import { ItemOwners } from './item-owners.js';
+import { RecordLink } from './record-link.js';
 import { ReferenceSelect } from './reference-select.js';
 
 /**
@@ -64,50 +66,6 @@ function Icon({ type }: { readonly type: KitItemType }): ReactElement {
   );
 }
 
-/**
- * What kind of asset each item is — 设备, 配件, 耗材, 组件 or 授权 — the way
- * every list of this application tags it: a model's comes from its
- * category, a category's is its own, and a software product is always an
- * entitlement. Reads only the models and categories the kit names.
- */
-function useItemKinds(
-  items: readonly KitItem[],
-): (item: KitItem) => string | undefined {
-  const idsOf = (type: KitItemType) => [
-    ...new Set(
-      items
-        .filter((item) => item.type === type && item.id)
-        .map((item) => String(item.id)),
-    ),
-  ];
-  const modelIds = idsOf('model');
-  const models = useItamList(
-    masterDataPath('models'),
-    { ids: modelIds, pageSize: 200 },
-    { enabled: modelIds.length > 0 },
-  );
-  const categoryOfModel = new Map(
-    (models.data?.data ?? []).map((row) => [row.id, text(row.categoryId)]),
-  );
-  const categoryIds = [
-    ...new Set([...idsOf('category'), ...categoryOfModel.values()]),
-  ].filter(Boolean);
-  const categories = useItamList(
-    masterDataPath('categories'),
-    { ids: categoryIds, pageSize: 200 },
-    { enabled: categoryIds.length > 0 },
-  );
-  const appliesTo = new Map(
-    (categories.data?.data ?? []).map((row) => [row.id, text(row.appliesTo)]),
-  );
-  return (item) => {
-    if (item.type === 'softwareProduct') return 'entitlement';
-    const category =
-      item.type === 'category' ? item.id : categoryOfModel.get(item.id ?? '');
-    return (category && appliesTo.get(category)) || undefined;
-  };
-}
-
 export function KitItems({
   value,
   editable,
@@ -140,7 +98,7 @@ export function KitItems({
       ids: shown.filter((row) => row.type === type).map((row) => row.id),
     })),
   );
-  const kindOf = useItemKinds(stored);
+  const { kindOf, detailOf } = useItemFacts(stored);
   // A row being edited says its asset type once chosen; a stored one reads
   // it from its model, category or product.
   const rowKind = (row: KitItem) => row.kind ?? kindOf(row);
@@ -231,14 +189,33 @@ export function KitItems({
                       ) : (
                         <Icon type={item.type} />
                       )}
-                      <span className='min-w-0 flex-1 truncate'>
-                        {nameOf(item)}
+                      {/* The name opens its record in the drawer, like
+                          the joiner's card (2026-10-28). */}
+                      {/* The link truncates itself, so its underline is
+                          not clipped by a box around it. */}
+                      <span className='flex min-w-0 flex-1 items-center gap-1.5'>
+                        {item.id ? (
+                          <RecordLink
+                            to={`/${TARGET_ROUTES[item.type]}/${item.id}`}
+                            className='truncate'
+                          >
+                            {nameOf(item)}
+                          </RecordLink>
+                        ) : (
+                          <span className='truncate'>{nameOf(item)}</span>
+                        )}
                         {item.type === 'category' ? (
-                          <span className='ml-1.5 text-xs text-muted-foreground'>
+                          <span className='shrink-0 text-xs text-muted-foreground'>
                             {t('onboardingKits.anyModel')}
                           </span>
                         ) : null}
                       </span>
+                      {/* Its category and maker (2026-10-28), between the
+                          name and how many. */}
+                      <ItemOwners
+                        owners={detailOf(item)}
+                        className='min-w-0 shrink'
+                      />
                       <span className='shrink-0 text-muted-foreground tabular-nums'>
                         ×{item.quantity}
                       </span>

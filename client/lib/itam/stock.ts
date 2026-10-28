@@ -111,7 +111,10 @@ export function stockFields(kind: StockKind): readonly FieldDefinition[] {
     },
     {
       // In 归属与位置, under 数量 (2026-10-22), as a device's place is.
+      // In the list it follows the name (2026-10-28): a model is stocked once
+      // per place, so the place tells its rows apart.
       key: 'locationId',
+      columnAfter: 'name',
       label: 'fields.location',
       type: 'reference',
       required: true,

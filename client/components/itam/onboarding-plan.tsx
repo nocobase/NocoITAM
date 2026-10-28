@@ -2,19 +2,31 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
+  ChevronDown,
+  MoreHorizontal,
   Package,
   PackageCheck,
   Sparkles,
   Truck,
   Undo2,
 } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { Fragment, useState, type ReactElement, type ReactNode } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import {
@@ -23,6 +35,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useAiPageContext } from '@/lib/itam/ai-chat';
+import { useItemFacts, type ItemOwner } from '@/lib/itam/kit-items';
 import { useAnnounce } from '@/lib/itam/announce';
 import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
@@ -45,6 +58,7 @@ import {
 import { useCurrentUserId } from '@/lib/itam/permissions';
 import { STOCK_PATH, STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
 
+import { ItemOwners } from './item-owners.js';
 import { CollapsibleText } from './collapsible-text.js';
 import { RecordLink } from './record-link.js';
 import { ReferenceSelect } from './reference-select.js';
@@ -65,6 +79,81 @@ import { TEXT_BUTTON } from '@/lib/itam/text-button';
  * picks come first with the reason beneath, and the strip under the heading
  * says how that run went. The buttons stay the person's.
  */
+
+/**
+ * Why a proposal cannot be carried out yet, as a translation key: a seat
+ * that needs an account it has none for waits for a person; one that needs
+ * a device of theirs waits for the device (2026-10-28).
+ */
+function waitingFor(thing: PlanThing): string | undefined {
+  if (thing.needsAccount && !thing.account) return 'onboarding.needsAccount';
+  if (thing.needsDevice && !thing.holder) return 'onboarding.needsDevice';
+  return undefined;
+}
+
+/**
+ * A proposal's identity on the card: the thing it proposes, and for a
+ * per-device licence asked for more than once, which of its seats — the
+ * same entitlement may be proposed for two devices.
+ */
+function proposalKey(thing: PlanThing): string {
+  return thing.slot === undefined ? thing.id : `${thing.id}#${thing.slot}`;
+}
+
+/**
+ * A button that waits says why on hover (2026-10-28). A disabled button
+ * takes no pointer events, so a `title` on it never shows: the tooltip
+ * hangs on a wrapper instead.
+ */
+function WhyDisabled({
+  reason,
+  children,
+}: {
+  readonly reason: string | undefined;
+  readonly children: ReactElement;
+}): ReactElement {
+  if (!reason) return children;
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span className='inline-flex' />}>
+        {children}
+      </TooltipTrigger>
+      <TooltipContent>{reason}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+/** A proposal's other actions (更换, 不需要) behind ⋯ (2026-10-28). */
+function MoreMenu({
+  disabled,
+  children,
+}: {
+  readonly disabled: boolean;
+  readonly children: ReactNode;
+}): ReactElement {
+  const { t } = useTranslation();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            type='button'
+            size='icon-sm'
+            variant='ghost'
+            className='-mx-1.5 text-muted-foreground'
+            aria-label={t('common.more')}
+            disabled={disabled}
+          />
+        }
+      >
+        <MoreHorizontal />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end' className='w-auto min-w-32'>
+        <DropdownMenuGroup>{children}</DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 export function OnboardingPlanCard({
   personId,
   personName,
@@ -85,8 +174,17 @@ export function OnboardingPlanCard({
   // 更换: a device the person chose instead of the one proposed, by the
   // proposal's id. Every action takes the chosen one.
   const [chosen, setChosen] = useState<Readonly<Record<string, PlanThing>>>({});
-  const effective = (thing: PlanThing): PlanThing => chosen[thing.id] ?? thing;
+  const effective = (thing: PlanThing): PlanThing =>
+    chosen[proposalKey(thing)] ?? thing;
   const data = plan.data;
+  // Each item's category and maker, read the way the kit reads them.
+  const { detailOf } = useItemFacts(
+    (data?.lines ?? []).map((line) => ({
+      type: line.target.type,
+      id: line.target.id,
+      quantity: line.required,
+    })),
+  );
   // The person goes along as page context, so Asset Steward asked about
   // them in the chat reads this very plan (`itam onboarding plan`).
   const { available: aiAvailable } = useAiPageContext({
@@ -106,14 +204,18 @@ export function OnboardingPlanCard({
   const started = !data.hireDate || data.hireDate <= todayIso();
 
   /** Marks an item 不需要 for this person, or takes the mark back. */
-  const waive = async (key: string, waived: boolean) => {
+  const waive = async (
+    key: string,
+    // The whole item, or how many of its quantity (2026-10-28).
+    change: { readonly waived: boolean } | { readonly fewer: number },
+  ) => {
     setBusy(true);
     setError(undefined);
     try {
       await api.request({
         path: `${masterDataPath('people')}/${personId}/onboarding/waive`,
         method: 'POST',
-        json: { key, waived },
+        json: { key, ...change },
       });
       await queryClient.invalidateQueries({ queryKey: ['itam'] });
     } catch (caught) {
@@ -159,12 +261,16 @@ export function OnboardingPlanCard({
         method: 'POST',
         json: {
           seats: [
-            {
-              holderType: 'person',
-              holderId: personId,
-              // A subscription seat is held under an account: their e-mail.
-              ...(thing.account ? { account: thing.account } : {}),
-            },
+            // A per-device licence's seat goes to their device.
+            thing.holder
+              ? { holderType: 'device', holderId: thing.holder.id }
+              : {
+                  holderType: 'person',
+                  holderId: personId,
+                  // A subscription seat is held under an account: their
+                  // e-mail.
+                  ...(thing.account ? { account: thing.account } : {}),
+                },
           ],
         },
       });
@@ -207,8 +313,7 @@ export function OnboardingPlanCard({
     if (failed.length > 0) setError(failed.join('\n'));
     if (done > 0) await announce(title(done), []);
   };
-  /** A seat that needs an account it has none for waits for a person. */
-  const runnable = (thing: PlanThing) => !thing.needsAccount || thing.account;
+  const runnable = (thing: PlanThing) => waitingFor(thing) === undefined;
   const proposals = data.lines
     .flatMap((line) => line.proposals)
     .map(effective)
@@ -320,22 +425,37 @@ export function OnboardingPlanCard({
                 ))}
               </p>
             </div>
-            <ul className='divide-y divide-border/60'>
+            <ul className='divide-y divide-border/60 border-t border-border/60'>
               {data.lines.map((line) => (
                 <PlanLine
                   key={`${line.target.type}:${line.target.id}`}
                   line={line}
+                  detail={detailOf({
+                    type: line.target.type,
+                    id: line.target.id,
+                    quantity: line.required,
+                  })}
                   busy={busy}
                   started={started}
                   effective={effective}
                   onChoose={(original, replacement) =>
                     setChosen((current) => ({
                       ...current,
-                      [original.id]: replacement,
+                      [proposalKey(original)]: replacement,
                     }))
                   }
                   onRun={(thing) => void run([thing], () => titleFor(thing))}
-                  onWaive={(waived) => void waive(line.key, waived)}
+                  onWaive={(waived) => void waive(line.key, { waived })}
+                  onWaiveSome={(fewer, keep = []) => {
+                    // What the person keeps stays chosen once the plan
+                    // proposes one fewer.
+                    if (keep.length > 0)
+                      setChosen((current) => ({
+                        ...current,
+                        ...Object.fromEntries(keep),
+                      }));
+                    void waive(line.key, { fewer });
+                  }}
                 />
               ))}
             </ul>
@@ -353,14 +473,18 @@ export function OnboardingPlanCard({
 
 function PlanLine({
   line,
+  detail,
   busy,
   started,
   effective,
   onChoose,
   onRun,
   onWaive,
+  onWaiveSome,
 }: {
   readonly line: OnboardingPlanLine;
+  /** Its category and maker, as the kit shows them. */
+  readonly detail: readonly ItemOwner[];
   readonly busy: boolean;
   readonly started: boolean;
   /** The proposal as it stands: the one chosen instead, if any. */
@@ -369,8 +493,18 @@ function PlanLine({
   readonly onRun: (thing: PlanThing) => void;
   /** Marks the item 不需要 for this person, or takes the mark back. */
   readonly onWaive: (waived: boolean) => void;
+  /**
+   * Marks how many of its quantity are 不需要 for this person; `keep` is
+   * what each remaining proposal should stay, by its key once there is one
+   * fewer.
+   */
+  readonly onWaiveSome: (
+    fewer: number,
+    keep?: readonly (readonly [string, PlanThing])[],
+  ) => void;
 }): ReactElement {
   const { t } = useTranslation();
+  const translated = (key: string | undefined) => (key ? t(key) : undefined);
   // The proposal whose device is being chosen again, if any.
   const [changing, setChanging] = useState<string>();
   // The item's asset type leads its row, as on the kit it comes from:
@@ -399,6 +533,39 @@ function PlanLine({
   const reasons = line.proposals.filter(
     (thing) => thing.reason && effective(thing) === thing,
   );
+  // Asked for more than once (2026-10-28): each thing on a line of its
+  // own, each with its own 不需要, which takes one off the quantity.
+  const several = line.required > 1;
+  /**
+   * 不需要 on one of several (2026-10-28): the plan then proposes one fewer,
+   * from the first, so the things left are kept as they stood — taking the
+   * first laptop off leaves the second, not the first again.
+   */
+  const waiveOne = (index: number) => {
+    const left = line.required - 1;
+    const rest = line.proposals
+      .filter((_, at) => at !== index)
+      .map((thing) => effective(thing));
+    const keep = rest.flatMap((thing, at) => {
+      const original = line.proposals[at];
+      if (!original || thing === original) return [];
+      const key =
+        original.slot === undefined || left <= 1
+          ? original.id
+          : `${original.id}#${String(at)}`;
+      return [[key, thing] as const];
+    });
+    onWaiveSome(line.fewer + 1, keep);
+  };
+  const chooseHolder = (
+    original: PlanThing,
+    choice: NonNullable<PlanThing['holderChoices']>[number],
+  ) =>
+    onChoose(original, {
+      ...original,
+      holder: { type: 'device', ...choice },
+      needsDevice: undefined,
+    });
   // Marked 不需要: the item stays in the list, dimmed, so the mark can be
   // seen and taken back, with nothing offered for it.
   if (line.waived)
@@ -422,24 +589,53 @@ function PlanLine({
     );
   return (
     <li className='py-2 text-sm'>
-      <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5'>
+      {/* Several things start level with the name (2026-10-28), a line
+          each, rather than the name floating between them. */}
+      <div
+        className={cn(
+          'flex flex-wrap gap-x-3 gap-y-1.5',
+          several ? 'items-start' : 'items-center',
+        )}
+      >
         <span className='flex min-w-0 flex-1 items-center gap-2'>
           {tag}
-          {/* The kit's item opens its record too: the model, the category
-              or the software product (2026-10-22). */}
-          <RecordLink
-            to={`/${TARGET_ROUTES[line.target.type]}/${line.target.id}`}
-            className='truncate'
-          >
-            {line.target.name}
-          </RecordLink>
-          {line.target.type === 'category' ? (
-            <span className='shrink-0 text-xs text-muted-foreground'>
-              {t('onboardingKits.anyModel')}
+          <span className='flex min-w-0 flex-col'>
+            <span className='flex min-w-0 items-center gap-2'>
+              {/* The kit's item opens its record too: the model, the
+                  category or the software product (2026-10-22). */}
+              <RecordLink
+                to={`/${TARGET_ROUTES[line.target.type]}/${line.target.id}`}
+                className='truncate'
+              >
+                {line.target.name}
+              </RecordLink>
+              {line.target.type === 'category' ? (
+                <span className='shrink-0 text-xs text-muted-foreground'>
+                  {t('onboardingKits.anyModel')}
+                </span>
+              ) : null}
+              <span className='shrink-0 text-muted-foreground tabular-nums'>
+                ×{line.required}
+              </span>
+              {/* Some of the kit's quantity not needed (2026-10-28), with
+                  the way to need it again. */}
+              {line.fewer > 0 ? (
+                <span className='inline-flex shrink-0 items-center gap-3 text-muted-foreground'>
+                  {t('onboarding.fewer', { count: line.fewer })}
+                  <Button
+                    variant='ghost'
+                    className={`-mx-2.5 ${TEXT_BUTTON}`}
+                    disabled={busy}
+                    onClick={() => onWaiveSome(0)}
+                  >
+                    {t('onboarding.restore')}
+                  </Button>
+                </span>
+              ) : null}
             </span>
-          ) : null}
-          <span className='shrink-0 text-muted-foreground tabular-nums'>
-            ×{line.required}
+            {/* Its category and maker (2026-10-28), under the name: the
+                row's width is the proposals'. */}
+            <ItemOwners owners={detail} className='text-xs' />
           </span>
         </span>
         {/* One even gap between every word on the row (2026-10-22): the
@@ -447,123 +643,222 @@ function PlanLine({
             negative margin, so their words sit a gap from their
             neighbours like the name and the outlined button do. */}
         <span className='flex max-w-full min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1.5'>
-          {line.prepared.map((thing) => (
-            <RecordLink
-              key={`p:${thing.type}:${thing.id}`}
-              to={recordOf(thing)}
-              className='max-w-full'
-            >
-              <Badge variant='secondary' className='max-w-full'>
-                <Check className='size-3' />
-                <span className='truncate'>
-                  {thing.type === 'device'
-                    ? `${thing.label} · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
-                    : thing.label}
-                </span>
-              </Badge>
-            </RecordLink>
-          ))}
-          {line.proposals.map((original) => {
-            const thing = effective(original);
-            if (changing === original.id)
-              return (
-                // 更换: any device of this model (or category) that is in
-                // stock and held for nobody.
-                <span key={`c:${original.id}`} className='w-56'>
-                  <ReferenceSelect
-                    reference={{
-                      collection: 'devices',
-                      filter: {
-                        view: 'available',
-                        ...(line.target.type === 'model'
-                          ? { modelId: line.target.id }
-                          : { categoryId: line.target.id }),
-                      },
-                    }}
-                    value={thing.id}
-                    defaultOpen
-                    onOpenChange={(open) => {
-                      if (!open) setChanging(undefined);
-                    }}
-                    onChange={(id, record) => {
-                      if (id && record)
-                        onChoose(original, {
-                          type: 'device',
-                          id,
-                          label: `${text(record.deviceNo)} / ${text(record.name)}`,
-                        });
-                      setChanging(undefined);
-                    }}
-                  />
-                </span>
-              );
-            return (
-              <span
-                key={`o:${original.type}:${original.id}`}
-                className='inline-flex max-w-full min-w-0 items-center gap-3'
+          {/* An item asked for more than once lists each thing on its own
+              line (2026-10-28): two laptops side by side ran into each
+              other. One thing stays in the row. */}
+          <span
+            className={
+              several
+                ? 'flex max-w-full min-w-0 flex-col items-end gap-1.5'
+                : 'contents'
+            }
+          >
+            {line.prepared.map((thing) => (
+              <RecordLink
+                key={`p:${thing.type}:${thing.id}`}
+                to={recordOf(thing)}
+                // The tag does not underline; its name does (2026-10-28),
+                // nearer the text than elsewhere, as the tag's own edge
+                // would clip it.
+                className='group max-w-full hover:no-underline'
               >
-                {/* What is proposed opens its record, to be looked at
+                <Badge variant='secondary' className='max-w-full'>
+                  <Check className='size-3' />
+                  <span className='-mb-1 truncate pb-1'>
+                    <span className='underline-offset-2 group-hover:underline'>
+                      {thing.label}
+                    </span>
+                    {thing.type === 'device'
+                      ? ` · ${t(`onboarding.state.${thing.state ?? 'assigned'}`)}`
+                      : null}
+                  </span>
+                </Badge>
+              </RecordLink>
+            ))}
+            {line.proposals.map((original, index) => {
+              const thing = effective(original);
+              if (changing === proposalKey(original))
+                return (
+                  // 更换: any device of this model (or category) that is in
+                  // stock and held for nobody.
+                  <span key={`c:${proposalKey(original)}`} className='w-56'>
+                    <ReferenceSelect
+                      reference={{
+                        collection: 'devices',
+                        filter: {
+                          view: 'available',
+                          ...(line.target.type === 'model'
+                            ? { modelId: line.target.id }
+                            : { categoryId: line.target.id }),
+                        },
+                      }}
+                      value={thing.id}
+                      defaultOpen
+                      onOpenChange={(open) => {
+                        if (!open) setChanging(undefined);
+                      }}
+                      onChange={(id, record) => {
+                        if (id && record)
+                          onChoose(original, {
+                            type: 'device',
+                            id,
+                            label: `${text(record.deviceNo)} / ${text(record.name)}`,
+                          });
+                        setChanging(undefined);
+                      }}
+                    />
+                  </span>
+                );
+              return (
+                <span
+                  key={`o:${original.type}:${proposalKey(original)}`}
+                  className='inline-flex max-w-full min-w-0 items-center gap-3'
+                >
+                  {/* What is proposed opens its record, to be looked at
                     before it is reserved; the button beside it only acts
                     (2026-10-22: the label was inside the button). */}
-                <RecordLink to={recordOf(thing)} className='min-w-0 truncate'>
-                  {thing.label}
-                </RecordLink>
-                {/* Words like 更换 and 不需要 beside it (2026-10-22), the
+                  <RecordLink to={recordOf(thing)} className='min-w-0 truncate'>
+                    {thing.label}
+                  </RecordLink>
+                  {/* A per-device licence's seat names the device it goes to
+                    (2026-10-28); with another device of theirs to choose,
+                    the name itself opens the choice. */}
+                  {thing.holder &&
+                  (original.holderChoices ?? []).some(
+                    (choice) => choice.id !== thing.holder?.id,
+                  ) ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            className={`-mx-2.5 min-w-0 gap-1 text-muted-foreground hover:text-muted-foreground aria-expanded:text-muted-foreground ${TEXT_BUTTON} hover:no-underline`}
+                            disabled={busy}
+                          />
+                        }
+                      >
+                        <span className='truncate'>
+                          {t('onboarding.onDevice', {
+                            label: thing.holder.label,
+                          })}
+                        </span>
+                        <ChevronDown />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align='end'
+                        className='w-auto min-w-32'
+                      >
+                        <DropdownMenuGroup>
+                          {(original.holderChoices ?? []).map((choice) => (
+                            <DropdownMenuItem
+                              key={choice.id}
+                              disabled={choice.id === thing.holder?.id}
+                              onClick={() => chooseHolder(original, choice)}
+                            >
+                              {choice.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : thing.holder ? (
+                    <span className='min-w-0 truncate text-muted-foreground'>
+                      {t('onboarding.onDevice', { label: thing.holder.label })}
+                    </span>
+                  ) : null}
+                  {/* Words like 更换 and 不需要 beside it (2026-10-22), the
                     action in the brand colour so it still leads; the
                     padding taken back like theirs. */}
-                <Button
-                  variant='ghost'
-                  className={`-mx-2.5 text-primary hover:text-primary ${TEXT_BUTTON}`}
-                  disabled={busy || (thing.needsAccount && !thing.account)}
-                  title={
-                    thing.needsAccount && !thing.account
-                      ? t('onboarding.needsAccount')
-                      : undefined
-                  }
-                  onClick={() => onRun(thing)}
-                >
-                  {thing.type === 'device'
-                    ? t(started ? 'onboarding.assign' : 'onboarding.reserve')
-                    : thing.type === 'stock'
-                      ? // ×N only when more than one.
-                        (thing.quantity ?? 1) > 1
-                        ? t('onboarding.issueMany', { count: thing.quantity })
-                        : t('onboarding.issue')
-                      : t('onboarding.seat')}
-                </Button>
-                {thing.type === 'device' ? (
-                  <Button
-                    variant='ghost'
-                    className={`-mx-2.5 ${TEXT_BUTTON}`}
-                    disabled={busy}
-                    onClick={() => setChanging(original.id)}
-                  >
-                    {t('onboarding.change')}
-                  </Button>
-                ) : null}
-              </span>
-            );
-          })}
+                  <WhyDisabled reason={translated(waitingFor(thing))}>
+                    <Button
+                      variant='ghost'
+                      className={`-mx-2.5 text-primary hover:text-primary ${TEXT_BUTTON}`}
+                      disabled={busy || waitingFor(thing) !== undefined}
+                      onClick={() => onRun(thing)}
+                    >
+                      {thing.type === 'device'
+                        ? t(
+                            started
+                              ? 'onboarding.assign'
+                              : 'onboarding.reserve',
+                          )
+                        : thing.type === 'stock'
+                          ? // ×N only when more than one.
+                            (thing.quantity ?? 1) > 1
+                            ? t('onboarding.issueMany', {
+                                count: thing.quantity,
+                              })
+                            : t('onboarding.issue')
+                          : t('onboarding.seat')}
+                    </Button>
+                  </WhyDisabled>
+                  {/* 更换 and 不需要 in a menu (2026-10-28): the action
+                      that carries the item out stays in sight, the rest
+                      keep the row short. */}
+                  <MoreMenu disabled={busy}>
+                    {thing.type === 'device' ? (
+                      <DropdownMenuItem
+                        onClick={() => setChanging(proposalKey(original))}
+                      >
+                        {t('onboarding.change')}
+                      </DropdownMenuItem>
+                    ) : null}
+                    {/* 更换 for a per-device seat: another device of
+                        theirs, when there is one to choose. */}
+                    {thing.type === 'seat' &&
+                    (original.holderChoices ?? []).some(
+                      (choice) => choice.id !== thing.holder?.id,
+                    ) ? (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          {t('onboarding.change')}
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className='w-auto min-w-40'>
+                          {(original.holderChoices ?? []).map((choice) => (
+                            <DropdownMenuItem
+                              key={choice.id}
+                              disabled={choice.id === thing.holder?.id}
+                              onClick={() => chooseHolder(original, choice)}
+                            >
+                              {choice.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    ) : null}
+                    <DropdownMenuItem
+                      onClick={() =>
+                        several ? waiveOne(index) : onWaive(true)
+                      }
+                    >
+                      {t('onboarding.waive')}
+                    </DropdownMenuItem>
+                  </MoreMenu>
+                </span>
+              );
+            })}
+          </span>
           {/* What is short is bought on 供需分析 (2026-10-23; 创建采购单
               on this row until then), weighed against what else wants it. */}
           <LineOutlook line={line} />
           {/* Something they will not be given — their own monitor, another
               laptop — is marked rather than left outstanding for ever. */}
-          {line.preparedCount < line.required ? (
-            <Button
-              variant='ghost'
-              className={`-mx-2.5 text-muted-foreground hover:text-muted-foreground ${TEXT_BUTTON}`}
-              disabled={busy}
-              onClick={() => onWaive(true)}
-            >
-              {t('onboarding.waive')}
-            </Button>
+          {/* Each proposal has its own 不需要 in its menu; the item's own
+              shows only while nothing is proposed for it. */}
+          {line.preparedCount < line.required && line.proposals.length === 0 ? (
+            <MoreMenu disabled={busy}>
+              <DropdownMenuItem onClick={() => onWaive(true)}>
+                {t('onboarding.waive')}
+              </DropdownMenuItem>
+            </MoreMenu>
           ) : null}
         </span>
       </div>
       {reasons.length > 0 ? (
         // In a light box like the strip above (2026-10-22), each with the
-        // device the rule would have proposed when it chose another.
+        // device the rule would have proposed when it chose another — or,
+        // with several, the rule's whole choice once at the end.
         <ul className='mt-1.5 space-y-1.5 rounded-md bg-accent px-3 py-2 text-xs text-muted-foreground'>
           {reasons.map((thing) => (
             <li key={`r:${thing.id}`} className='flex gap-1.5'>
@@ -593,6 +888,22 @@ function PlanLine({
               </div>
             </li>
           ))}
+          {line.ruleChoice && line.ruleChoice.length > 0 ? (
+            <li className='pl-5'>
+              {t('onboarding.instead')}
+              {line.ruleChoice.map((row, index) => (
+                <Fragment key={row.id}>
+                  {index > 0 ? '、' : null}
+                  <RecordLink
+                    to={`/devices/${row.id}`}
+                    className='text-foreground'
+                  >
+                    {row.label}
+                  </RecordLink>
+                </Fragment>
+              ))}
+            </li>
+          ) : null}
         </ul>
       ) : null}
     </li>

@@ -273,8 +273,9 @@ export const IMPORT_SPECS: Readonly<Record<string, ImportSpec>> = {
     match: ['name'],
   },
   // Both kinds in one file: the kind column says which of the remaining
-  // columns apply (licensing model, product key and maintenance for
-  // perpetual; billing, console and auto-renew for subscriptions).
+  // columns apply (the licensing model for both; product key and
+  // maintenance for perpetual; billing, console and auto-renew for
+  // subscriptions).
   entitlements: {
     fields: [
       en('kind', ['perpetual', 'subscription'], true),

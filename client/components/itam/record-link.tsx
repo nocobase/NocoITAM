@@ -39,8 +39,14 @@ export function RecordLink({
       target={target}
       // A text link underlines on hover, across the application
       // (2026-10-23): not a ground, not another colour. A link wrapping a
-      // tag says hover:no-underline.
-      className={cn('underline-offset-4 hover:underline', className)}
+      // tag says hover:no-underline. A truncated one clips what overflows
+      // its box, and the underline sits just below it (2026-10-28: it
+      // showed as a hairline under full-width brackets); room is made for
+      // it without moving the row.
+      className={cn(
+        'underline-offset-4 hover:underline [&.truncate]:-mb-0.5 [&.truncate]:pb-0.5',
+        className,
+      )}
       onClick={(event) => {
         onClick?.(event);
         if (

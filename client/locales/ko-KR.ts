@@ -984,6 +984,10 @@ const koKR: AppResource = {
     instead: '규칙이 처음 제안한 항목: ',
     needsAccount:
       '구독 시트에는 계정이 필요합니다. 이 직원에게 이메일을 지정하거나 라이선스 페이지에서 할당하십시오',
+    needsDevice:
+      '기기 단위 라이선스의 시트는 신규 입사자의 컴퓨터에 할당됩니다. 먼저 컴퓨터를 할당하거나 예약하세요',
+    onDevice: '{{label}}에 할당',
+    fewer: '{{count}}개 불필요',
     change: '변경',
     order: '{{orderNo}} {{status}}',
     planned: {
@@ -1029,7 +1033,7 @@ const koKR: AppResource = {
         running: '자산 관리 에이전트가 이미 선택 중입니다',
       },
     },
-    waive: '불필요',
+    waive: '불필요로 표시',
     restore: '되돌리기',
     waived: '불필요',
     waivedTotal_one: '{{count}}건 불필요',
@@ -2411,12 +2415,12 @@ const koKR: AppResource = {
         '영구 라이선스에는 시트 수가 필요합니다',
       'Per-user entitlements are assigned to people':
         '사용자 단위 라이선스는 직원에게만 할당할 수 있습니다',
-      'Perpetual entitlements need a licensing model':
-        '영구 라이선스에는 라이선스 방식이 필요합니다',
+      'Entitlements need a licensing model':
+        '라이선스에는 라이선스 방식이 필요합니다',
       'Person has already left': '이미 퇴사한 직원입니다',
       'Request body must be a JSON object': '요청 본문은 JSON 객체여야 합니다',
-      'Subscription seats are assigned to people':
-        '구독 시트는 직원에게만 할당할 수 있습니다',
+      'Site and free subscriptions are billed for the whole cycle':
+        '사이트 라이선스와 무료 구독은 정액으로만 청구할 수 있습니다',
       'Subscriptions need a billing cycle': '구독에는 청구 주기가 필요합니다',
       'Subscriptions need a billing model': '구독에는 과금 방식이 필요합니다',
       'Subscriptions need an expiry date': '구독에는 만료일이 필요합니다',

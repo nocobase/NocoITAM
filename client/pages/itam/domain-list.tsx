@@ -205,6 +205,15 @@ function DomainList({
   const columns = domain.fields.filter(
     (field) => field.column && field.key !== prefixField?.key,
   );
+  // A field may name the column it follows (`columnAfter`).
+  for (const field of columns.filter((field) => field.columnAfter)) {
+    if (!columns.some((other) => other.key === field.columnAfter)) continue;
+    columns.splice(columns.indexOf(field), 1);
+    const anchor = columns.findIndex(
+      (other) => other.key === field.columnAfter,
+    );
+    columns.splice(anchor + 1, 0, field);
+  }
   const rows = useMemo(() => list.data?.data ?? [], [list.data]);
   const referenceRequests = useMemo(
     () =>

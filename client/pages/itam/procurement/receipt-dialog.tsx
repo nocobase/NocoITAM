@@ -111,6 +111,7 @@ const TERM_KEYS: Readonly<Record<string, readonly string[]>> = {
     'ownerId',
   ],
   subscription: [
+    'licensingModel',
     'billingModel',
     'billingCycle',
     'unitPrice',
