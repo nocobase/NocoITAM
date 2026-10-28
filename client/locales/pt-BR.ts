@@ -2452,13 +2452,13 @@ const ptBR: AppResource = {
         'Direitos de uso perpétuos precisam de uma quantidade de assentos',
       'Per-user entitlements are assigned to people':
         'Direitos de uso por usuário são atribuídos a pessoas',
-      'Perpetual entitlements need a licensing model':
-        'Direitos de uso perpétuos precisam de um modelo de licenciamento',
+      'Entitlements need a licensing model':
+        'Direitos de uso precisam de um modelo de licenciamento',
       'Person has already left': 'A pessoa já foi desligada',
       'Request body must be a JSON object':
         'O corpo da requisição deve ser um objeto JSON',
-      'Subscription seats are assigned to people':
-        'Assentos de assinatura são atribuídos a pessoas',
+      'Site and free subscriptions are billed for the whole cycle':
+        'Assinaturas com licença corporativa ou gratuitas só podem ter valor fixo',
       'Subscriptions need a billing cycle':
         'Assinaturas precisam de um ciclo de cobrança',
       'Subscriptions need a billing model':

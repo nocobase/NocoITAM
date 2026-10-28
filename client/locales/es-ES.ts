@@ -2465,13 +2465,13 @@ const esES: AppResource = {
         'Las licencias perpetuas necesitan un número de puestos',
       'Per-user entitlements are assigned to people':
         'Las licencias por usuario se asignan a personas',
-      'Perpetual entitlements need a licensing model':
-        'Las licencias perpetuas necesitan un modelo de licenciamiento',
+      'Entitlements need a licensing model':
+        'Las licencias necesitan un modelo de licenciamiento',
       'Person has already left': 'La persona ya ha salido',
       'Request body must be a JSON object':
         'El cuerpo de la solicitud debe ser un objeto JSON',
-      'Subscription seats are assigned to people':
-        'Los puestos de suscripción se asignan a personas',
+      'Site and free subscriptions are billed for the whole cycle':
+        'Las suscripciones con licencia de sitio o gratuitas solo se facturan con tarifa plana',
       'Subscriptions need a billing cycle':
         'Las suscripciones necesitan un ciclo de facturación',
       'Subscriptions need a billing model':

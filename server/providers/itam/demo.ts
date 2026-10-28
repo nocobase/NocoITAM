@@ -4547,6 +4547,7 @@ export function createDemoService(dependencies: {
           {
             name: texts.zoomYearlyLicense,
             softwareProductId: zoom.id,
+            licensingModel: 'perUser',
             billingModel: 'perSeat',
             seatCount: 9 + crewCount(crewWants.zoom),
             billingCycle: 'year',
@@ -4569,6 +4570,7 @@ export function createDemoService(dependencies: {
           {
             name: texts.figmaTrialLicense,
             softwareProductId: figma.id,
+            licensingModel: 'perUser',
             billingModel: 'flat',
             billingCycle: 'year',
             unitPrice: 900,
@@ -4582,6 +4584,7 @@ export function createDemoService(dependencies: {
           {
             name: 'Figma Organization',
             softwareProductId: figma.id,
+            licensingModel: 'perUser',
             billingModel: 'perSeat',
             seatCount: 6 + crewCount(crewWants.figma),
             billingCycle: 'month',
@@ -4603,6 +4606,7 @@ export function createDemoService(dependencies: {
           {
             name: 'Zoom Workplace Pro',
             softwareProductId: zoom.id,
+            licensingModel: 'perUser',
             billingModel: 'perSeat',
             seatCount: 3,
             billingCycle: 'year',
@@ -4623,6 +4627,7 @@ export function createDemoService(dependencies: {
             softwareProductId: (
               await seededIn('softwareProducts', 'sp-microsoft-365')
             ).id,
+            licensingModel: 'perUser',
             billingModel: 'perSeat',
             // Everybody has one (2026-10-16), five to spare once it grew.
             seatCount: 9 + crewCount(() => true),
@@ -4675,6 +4680,7 @@ export function createDemoService(dependencies: {
             softwareProductId: (
               await seededIn('softwareProducts', 'sp-adobe-creative-cloud')
             ).id,
+            licensingModel: 'perUser',
             billingModel: 'perSeat',
             seatCount: 2 + crewCount(crewWants.adobe),
             billingCycle: 'year',
@@ -4697,6 +4703,7 @@ export function createDemoService(dependencies: {
             softwareProductId: (
               await seededIn('softwareProducts', 'sp-chatgpt')
             ).id,
+            licensingModel: 'perUser',
             billingModel: 'perSeat',
             seatCount: 5,
             billingCycle: 'year',

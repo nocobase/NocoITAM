@@ -2458,13 +2458,13 @@ const messages = {
         'Perpetual entitlements need a seat count',
       'Per-user entitlements are assigned to people':
         'Per-user entitlements are assigned to people',
-      'Perpetual entitlements need a licensing model':
-        'Perpetual entitlements need a licensing model',
+      'Entitlements need a licensing model':
+        'Entitlements need a licensing model',
       'Person has already left': 'Person has already left',
       'Request body must be a JSON object':
         'Request body must be a JSON object',
-      'Subscription seats are assigned to people':
-        'Subscription seats are assigned to people',
+      'Site and free subscriptions are billed for the whole cycle':
+        'Site and free subscriptions are billed for the whole cycle',
       'Subscriptions need a billing cycle':
         'Subscriptions need a billing cycle',
       'Subscriptions need a billing model':

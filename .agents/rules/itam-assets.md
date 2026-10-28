@@ -109,7 +109,18 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   manufacturer follow the software product (`fromProduct` on create and
   product change; never edited directly), the way a device's follow its
   model; there is no vendor, price, contract, data-region or sensitive-data
-  field on the record. The receipts show in its 采购单 tab. A subscription has one price, `unitPrice`,
+  field on the record.
+  Both kinds state a **licensing model** (2026-10-28; perpetual ones alone
+  before, so a subscription could not be per device): per user, per device,
+  site or free. It decides whether seats are counted (site and free count
+  none, of either kind) and who holds a seat (devices for per device,
+  people otherwise; a per-user licence refuses devices), and it leads the
+  数量 group beside the seat count. The billing model stays the
+  subscription's and only prices it: per seat or flat; a site or free
+  subscription is billed flat. A subscription seat held by a person carries
+  an account; one held by a device does not.
+  `202610280001_subscription_licensing_model` made every existing
+  subscription per user, the only holders it could have. The receipts show in its 采购单 tab. A subscription has one price, `unitPrice`,
   read per seat per cycle (`perSeat`) or for the whole cycle (`flat`):
   there is no cycle cost and no usage model (migration
   `202609250004_single_subscription_price`), and `annualCost()` is the only

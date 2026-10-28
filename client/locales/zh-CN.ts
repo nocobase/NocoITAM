@@ -2339,12 +2339,11 @@ const zhCN: AppResource = {
       'Perpetual entitlements need a seat count': '永久授权需要填写席位数',
       'Per-user entitlements are assigned to people':
         '按用户授权只能分配给人员',
-      'Perpetual entitlements need a licensing model':
-        '永久授权需要选择授权方式',
+      'Entitlements need a licensing model': '授权需要选择授权方式',
       'Person has already left': '该人员已离职',
       'Request body must be a JSON object': '请求体必须是 JSON 对象',
-      'Subscription seats are assigned to people':
-        '订阅授权的席位只能分配给人员',
+      'Site and free subscriptions are billed for the whole cycle':
+        '站点许可和免费的订阅只能按固定费用计费',
       'Subscriptions need a billing cycle': '订阅授权需要选择计费周期',
       'Subscriptions need a billing model': '订阅授权需要选择计费方式',
       'Subscriptions need an expiry date': '订阅授权需要填写到期日',

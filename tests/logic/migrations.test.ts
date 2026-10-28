@@ -5,6 +5,7 @@ import requestOwner from '../../database/main/migrations/202610050001_request_ow
 import auditOwner from '../../database/main/migrations/202610050002_audit_owner.js';
 import disposalLifecycle from '../../database/main/migrations/202610180001_disposal_lifecycle.js';
 import repairQuotes from '../../database/main/migrations/202610270004_repair_quotes.js';
+import subscriptionLicensing from '../../database/main/migrations/202610280001_subscription_licensing_model.js';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -481,13 +482,77 @@ describe('ITAM migrations', () => {
     expect(await present()).toEqual(columns.map(() => true));
   });
 
+  it('makes every subscription per user, and takes it back on down', async () => {
+    db = await createTestDatabase();
+    const connection = db.database.connection();
+    const context = {
+      connection,
+      query: connection.query,
+      builder: connection.builder,
+    };
+    const now = new Date();
+    const row = (
+      id: string,
+      kind: string,
+      values: Record<string, unknown>,
+    ) => ({
+      id,
+      name: id,
+      kind,
+      softwareProductId: 'product',
+      complianceStatus: 'compliant',
+      ownerId: 'owner',
+      createdAt: now,
+      updatedAt: now,
+      ...values,
+    });
+    await connection.query
+      .insertInto('entitlements')
+      .values([
+        row('perSeat', 'subscription', {
+          billingModel: 'perSeat',
+          seatCount: 5,
+        }),
+        row('capped', 'subscription', { billingModel: 'flat', seatCount: 10 }),
+        row('open', 'subscription', { billingModel: 'flat', seatCount: null }),
+        row('licence', 'perpetual', {
+          licensingModel: 'perDevice',
+          seatCount: 3,
+        }),
+      ])
+      .execute();
+    const models = async () =>
+      Object.fromEntries(
+        (
+          await connection.query
+            .selectFrom('entitlements')
+            .select(['id', 'licensingModel'])
+            .execute<{ id: string; licensingModel: string | null }>()
+        ).map((entry) => [entry.id, entry.licensingModel]),
+      );
+    await subscriptionLicensing.up(context);
+    expect(await models()).toEqual({
+      perSeat: 'perUser',
+      capped: 'perUser',
+      open: 'perUser',
+      licence: 'perDevice',
+    });
+    await subscriptionLicensing.down!(context);
+    expect(await models()).toEqual({
+      perSeat: null,
+      capped: null,
+      open: null,
+      licence: 'perDevice',
+    });
+  });
+
   it('is applied once and rolls back cleanly', async () => {
     db = await createTestDatabase();
     const again = await db.migrator.latest();
     expect(again.executed).toEqual([]);
 
     const rolledBack = await db.migrator.rollback();
-    expect(rolledBack.rolledBack.length).toBe(116);
+    expect(rolledBack.rolledBack.length).toBe(117);
     const client = await schemaClient(db.database);
     const remaining = Object.fromEntries(
       await Promise.all(

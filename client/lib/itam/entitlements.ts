@@ -38,13 +38,14 @@ const perpetual = (values: Readonly<Record<string, unknown>>): boolean =>
 const subscription = (values: Readonly<Record<string, unknown>>): boolean =>
   values.kind === 'subscription';
 /**
- * A seat count is required unless the entitlement is unlimited by nature;
- * a flat-priced subscription may state one as its cap.
+ * A seat count is required unless the entitlement is unlimited by nature
+ * (a site or free licence of either kind); a flat-priced subscription may
+ * state one as its cap.
  */
 const seatsRequired = (values: Readonly<Record<string, unknown>>): boolean =>
-  values.kind === 'perpetual'
-    ? values.licensingModel !== 'site' && values.licensingModel !== 'free'
-    : values.billingModel === 'perSeat';
+  values.licensingModel !== 'site' &&
+  values.licensingModel !== 'free' &&
+  (values.kind === 'perpetual' || values.billingModel === 'perSeat');
 
 export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
   {
@@ -63,7 +64,7 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     required: true,
     options: options('entitlementKind', ENTITLEMENT_KINDS),
     defaultValue: 'perpetual',
-    clearOnChange: ['licensingModel', 'billingModel', 'billingCycle'],
+    clearOnChange: ['billingModel', 'billingCycle'],
     readonlyWhen: (values) => values.id !== undefined,
     column: true,
     group: 'groups.basic',
@@ -108,22 +109,24 @@ export const ENTITLEMENT_FIELDS: readonly FieldDefinition[] = [
     group: 'groups.basic',
     detailOrder: -800,
   },
+  // Both kinds (2026-10-28; perpetual ones alone before): it decides
+  // whether seats are counted and whether people or devices hold them, so
+  // it leads 数量.
   {
     key: 'licensingModel',
     label: 'fields.licensingModel',
     type: 'select',
-    requiredWhen: perpetual,
-    visibleWhen: perpetual,
+    required: true,
     options: options('licensingModel', LICENSING_MODELS),
-    group: 'groups.basic',
+    group: 'groups.quantity',
   },
   {
     key: 'seatCount',
     label: 'fields.seatCount',
     type: 'number',
     min: 0,
-    // Site / free perpetual entitlements leave it empty (unlimited); a
-    // flat-priced subscription may state it as a cap or leave it empty.
+    // Site and free licences leave it empty (unlimited); a flat-priced
+    // subscription may state it as a cap or leave it empty.
     requiredWhen: seatsRequired,
     // Stated when the entitlement is created; afterwards it moves through
     // the seat operations, which record how many and why — a stock item's

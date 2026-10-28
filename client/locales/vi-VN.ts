@@ -2425,13 +2425,13 @@ const viVN: AppResource = {
         'Quyền sử dụng vĩnh viễn cần có số suất',
       'Per-user entitlements are assigned to people':
         'Quyền sử dụng theo người dùng được giao cho người',
-      'Perpetual entitlements need a licensing model':
-        'Quyền sử dụng vĩnh viễn cần có mô hình cấp phép',
+      'Entitlements need a licensing model':
+        'Quyền sử dụng cần có mô hình cấp phép',
       'Person has already left': 'Người này đã nghỉ việc',
       'Request body must be a JSON object':
         'Nội dung yêu cầu phải là một đối tượng JSON',
-      'Subscription seats are assigned to people':
-        'Suất thuê bao được giao cho người',
+      'Site and free subscriptions are billed for the whole cycle':
+        'Thuê bao giấy phép toàn đơn vị và miễn phí chỉ tính phí cố định',
       'Subscriptions need a billing cycle': 'Thuê bao cần có chu kỳ thanh toán',
       'Subscriptions need a billing model': 'Thuê bao cần có cách tính phí',
       'Subscriptions need an expiry date': 'Thuê bao cần có ngày hết hạn',

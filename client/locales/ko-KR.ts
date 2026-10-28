@@ -2411,12 +2411,12 @@ const koKR: AppResource = {
         '영구 라이선스에는 시트 수가 필요합니다',
       'Per-user entitlements are assigned to people':
         '사용자 단위 라이선스는 직원에게만 할당할 수 있습니다',
-      'Perpetual entitlements need a licensing model':
-        '영구 라이선스에는 라이선스 방식이 필요합니다',
+      'Entitlements need a licensing model':
+        '라이선스에는 라이선스 방식이 필요합니다',
       'Person has already left': '이미 퇴사한 직원입니다',
       'Request body must be a JSON object': '요청 본문은 JSON 객체여야 합니다',
-      'Subscription seats are assigned to people':
-        '구독 시트는 직원에게만 할당할 수 있습니다',
+      'Site and free subscriptions are billed for the whole cycle':
+        '사이트 라이선스와 무료 구독은 정액으로만 청구할 수 있습니다',
       'Subscriptions need a billing cycle': '구독에는 청구 주기가 필요합니다',
       'Subscriptions need a billing model': '구독에는 과금 방식이 필요합니다',
       'Subscriptions need an expiry date': '구독에는 만료일이 필요합니다',

@@ -2448,13 +2448,12 @@ const idID: AppResource = {
         'Lisensi permanen memerlukan jumlah kursi',
       'Per-user entitlements are assigned to people':
         'Lisensi per pengguna diberikan kepada orang',
-      'Perpetual entitlements need a licensing model':
-        'Lisensi permanen memerlukan model lisensi',
+      'Entitlements need a licensing model': 'Lisensi memerlukan model lisensi',
       'Person has already left': 'Orang ini sudah keluar',
       'Request body must be a JSON object':
         'Isi permintaan harus berupa objek JSON',
-      'Subscription seats are assigned to people':
-        'Kursi langganan diberikan kepada orang',
+      'Site and free subscriptions are billed for the whole cycle':
+        'Langganan lisensi situs dan gratis hanya dapat ditagih dengan biaya tetap',
       'Subscriptions need a billing cycle':
         'Langganan memerlukan siklus penagihan',
       'Subscriptions need a billing model':

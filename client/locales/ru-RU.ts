@@ -2601,13 +2601,13 @@ const ruRU: AppResource = {
         'Для бессрочной лицензии нужно число мест',
       'Per-user entitlements are assigned to people':
         'Лицензии на пользователя закрепляются за сотрудниками',
-      'Perpetual entitlements need a licensing model':
-        'Для бессрочной лицензии нужна модель лицензирования',
+      'Entitlements need a licensing model':
+        'Для лицензии нужна модель лицензирования',
       'Person has already left': 'Сотрудник уже уволен',
       'Request body must be a JSON object':
         'Тело запроса должно быть объектом JSON',
-      'Subscription seats are assigned to people':
-        'Места подписки закрепляются за сотрудниками',
+      'Site and free subscriptions are billed for the whole cycle':
+        'Подписки на площадку и бесплатные подписки оплачиваются только фиксированной платой',
       'Subscriptions need a billing cycle': 'Для подписки нужен период оплаты',
       'Subscriptions need a billing model': 'Для подписки нужна модель оплаты',
       'Subscriptions need an expiry date': 'Для подписки нужна дата окончания',

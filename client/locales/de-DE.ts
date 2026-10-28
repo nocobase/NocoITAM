@@ -2462,13 +2462,13 @@ const deDE: AppResource = {
         'Dauerhafte Nutzungsrechte brauchen eine Platzanzahl',
       'Per-user entitlements are assigned to people':
         'Nutzungsrechte pro Benutzer werden Personen zugewiesen',
-      'Perpetual entitlements need a licensing model':
-        'Dauerhafte Nutzungsrechte brauchen ein Lizenzmodell',
+      'Entitlements need a licensing model':
+        'Nutzungsrechte brauchen ein Lizenzmodell',
       'Person has already left': 'Die Person ist bereits ausgeschieden',
       'Request body must be a JSON object':
         'Der Request-Body muss ein JSON-Objekt sein',
-      'Subscription seats are assigned to people':
-        'Abonnementplätze werden Personen zugewiesen',
+      'Site and free subscriptions are billed for the whole cycle':
+        'Standortlizenzen und kostenlose Abonnements werden nur pauschal abgerechnet',
       'Subscriptions need a billing cycle':
         'Abonnements brauchen einen Abrechnungszyklus',
       'Subscriptions need a billing model':

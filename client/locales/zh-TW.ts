@@ -2312,12 +2312,11 @@ const zhTW: AppResource = {
       'Perpetual entitlements need a seat count': '永久授權需要填寫席位數',
       'Per-user entitlements are assigned to people':
         '依使用者授權只能分配給人員',
-      'Perpetual entitlements need a licensing model':
-        '永久授權需要選擇授權方式',
+      'Entitlements need a licensing model': '授權需要選擇授權方式',
       'Person has already left': '此人員已離職',
       'Request body must be a JSON object': '請求本文必須是 JSON 物件',
-      'Subscription seats are assigned to people':
-        '訂閱授權的席位只能分配給人員',
+      'Site and free subscriptions are billed for the whole cycle':
+        '站台授權和免費的訂閱只能按固定費用計費',
       'Subscriptions need a billing cycle': '訂閱授權需要選擇計費週期',
       'Subscriptions need a billing model': '訂閱授權需要選擇計費方式',
       'Subscriptions need an expiry date': '訂閱授權需要填寫到期日',

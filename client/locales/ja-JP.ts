@@ -2426,13 +2426,13 @@ const jaJP: AppResource = {
         '永続ライセンスにはシート数が必要です',
       'Per-user entitlements are assigned to people':
         'ユーザー単位の利用権は従業員にのみ割り当てられます',
-      'Perpetual entitlements need a licensing model':
-        '永続ライセンスにはライセンス形態の選択が必要です',
+      'Entitlements need a licensing model':
+        'ライセンスにはライセンス形態の選択が必要です',
       'Person has already left': 'この従業員は既に退職しています',
       'Request body must be a JSON object':
         'リクエスト本文は JSON オブジェクトにしてください',
-      'Subscription seats are assigned to people':
-        'サブスクリプションのシートは従業員にのみ割り当てられます',
+      'Site and free subscriptions are billed for the whole cycle':
+        'サイトライセンスと無償のサブスクリプションは定額でのみ課金できます',
       'Subscriptions need a billing cycle':
         'サブスクリプションには請求サイクルの選択が必要です',
       'Subscriptions need a billing model':

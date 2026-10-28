@@ -123,10 +123,9 @@ export const entitlementDomain: DomainConfig = {
   deleteInMenu: true,
 };
 
+/** Devices hold a per-device licence's seats, of either kind (2026-10-28). */
 const seatHolderType = (record: ItamRecord): 'person' | 'device' =>
-  record.kind === 'perpetual' && record.licensingModel === 'perDevice'
-    ? 'device'
-    : 'person';
+  record.licensingModel === 'perDevice' ? 'device' : 'person';
 
 function EntitlementActions({
   record,
@@ -143,8 +142,10 @@ function EntitlementActions({
     // update the record states a reason for.
     'update',
   ]);
-  const subscription = record.kind === 'subscription';
   const holderType = seatHolderType(record);
+  // A subscription seat held by a person carries an account; one held by a
+  // device (a per-device subscription) does not.
+  const byAccount = record.kind === 'subscription' && holderType === 'person';
   const [dialog, setDialog] = useState<'seat' | 'seats'>();
   // Seats bought or dropped outside an order, as a stock item takes manual
   // stock in: a direction, a number and why.
@@ -158,7 +159,7 @@ function EntitlementActions({
   const [filledAccount, setFilledAccount] = useState('');
   const chooseHolder = (next: string | null) => {
     setHolderId(next);
-    if (!subscription || !next) return;
+    if (!byAccount || !next) return;
     void api
       .request<{ data: ItamRecord }>({
         path: `${masterDataPath('people')}/${next}`,
@@ -185,7 +186,7 @@ function EntitlementActions({
         json: {
           seats: [
             {
-              ...(subscription
+              ...(byAccount
                 ? { holderType: 'person', holderId, account }
                 : { holderType, holderId }),
               productKey: seatKey.trim() || null,
@@ -269,14 +270,14 @@ function EntitlementActions({
         busy={assign.isPending}
         error={assign.error}
         // A subscription seat names a person, an account or both.
-        disabled={subscription ? !account.trim() && !holderId : !holderId}
+        disabled={byAccount ? !account.trim() && !holderId : !holderId}
         confirmLabel={t('entitlements.assignSeat')}
         onConfirm={() => assign.mutate()}
       >
         <div className='grid gap-1.5'>
           <Label htmlFor='seat-holder'>
             {t(`enums.assigneeType.${holderType}`)}
-            {subscription ? null : <span className='text-destructive'> *</span>}
+            {byAccount ? null : <span className='text-destructive'> *</span>}
           </Label>
           <ReferenceSelect
             id='seat-holder'
@@ -290,7 +291,7 @@ function EntitlementActions({
             onChange={chooseHolder}
           />
         </div>
-        {subscription ? (
+        {byAccount ? (
           <div className='grid gap-1.5'>
             <Label htmlFor='seat-account'>{t('fields.account')}</Label>
             <Input
