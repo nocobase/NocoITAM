@@ -15,6 +15,13 @@ import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import {
@@ -73,8 +80,17 @@ import { TEXT_BUTTON } from '@/lib/itam/text-button';
  */
 function waitingFor(thing: PlanThing): string | undefined {
   if (thing.needsAccount && !thing.account) return 'onboarding.needsAccount';
-  if (thing.needsDevice) return 'onboarding.needsDevice';
+  if (thing.needsDevice && !thing.holder) return 'onboarding.needsDevice';
   return undefined;
+}
+
+/**
+ * A proposal's identity on the card: the thing it proposes, and for a
+ * per-device licence asked for more than once, which of its seats — the
+ * same entitlement may be proposed for two devices.
+ */
+function proposalKey(thing: PlanThing): string {
+  return thing.slot === undefined ? thing.id : `${thing.id}#${thing.slot}`;
 }
 
 /**
@@ -119,7 +135,8 @@ export function OnboardingPlanCard({
   // 更换: a device the person chose instead of the one proposed, by the
   // proposal's id. Every action takes the chosen one.
   const [chosen, setChosen] = useState<Readonly<Record<string, PlanThing>>>({});
-  const effective = (thing: PlanThing): PlanThing => chosen[thing.id] ?? thing;
+  const effective = (thing: PlanThing): PlanThing =>
+    chosen[proposalKey(thing)] ?? thing;
   const data = plan.data;
   // The person goes along as page context, so Asset Steward asked about
   // them in the chat reads this very plan (`itam onboarding plan`).
@@ -368,7 +385,7 @@ export function OnboardingPlanCard({
                   onChoose={(original, replacement) =>
                     setChosen((current) => ({
                       ...current,
-                      [original.id]: replacement,
+                      [proposalKey(original)]: replacement,
                     }))
                   }
                   onRun={(thing) => void run([thing], () => titleFor(thing))}
@@ -503,11 +520,11 @@ function PlanLine({
           ))}
           {line.proposals.map((original) => {
             const thing = effective(original);
-            if (changing === original.id)
+            if (changing === proposalKey(original))
               return (
                 // 更换: any device of this model (or category) that is in
                 // stock and held for nobody.
-                <span key={`c:${original.id}`} className='w-56'>
+                <span key={`c:${proposalKey(original)}`} className='w-56'>
                   <ReferenceSelect
                     reference={{
                       collection: 'devices',
@@ -537,7 +554,7 @@ function PlanLine({
               );
             return (
               <span
-                key={`o:${original.type}:${original.id}`}
+                key={`o:${original.type}:${proposalKey(original)}`}
                 className='inline-flex max-w-full min-w-0 items-center gap-3'
               >
                 {/* What is proposed opens its record, to be looked at
@@ -578,10 +595,52 @@ function PlanLine({
                     variant='ghost'
                     className={`-mx-2.5 ${TEXT_BUTTON}`}
                     disabled={busy}
-                    onClick={() => setChanging(original.id)}
+                    onClick={() => setChanging(proposalKey(original))}
                   >
                     {t('onboarding.change')}
                   </Button>
+                ) : null}
+                {/* 更换 for a per-device seat (2026-10-28): another device of
+                    theirs, when there is one to choose. */}
+                {thing.type === 'seat' &&
+                (original.holderChoices ?? []).some(
+                  (choice) => choice.id !== thing.holder?.id,
+                ) ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant='ghost'
+                          className={`-mx-2.5 ${TEXT_BUTTON}`}
+                          disabled={busy}
+                        />
+                      }
+                    >
+                      {t('onboarding.change')}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align='end'
+                      className='w-auto min-w-40'
+                    >
+                      <DropdownMenuGroup>
+                        {(original.holderChoices ?? []).map((choice) => (
+                          <DropdownMenuItem
+                            key={choice.id}
+                            disabled={choice.id === thing.holder?.id}
+                            onClick={() =>
+                              onChoose(original, {
+                                ...original,
+                                holder: { type: 'device', ...choice },
+                                needsDevice: undefined,
+                              })
+                            }
+                          >
+                            {choice.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : null}
               </span>
             );

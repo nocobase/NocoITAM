@@ -151,6 +151,7 @@ describe('onboarding', () => {
               holder?: { type: string; id: string };
               needsDevice?: boolean;
               needsAccount?: boolean;
+              holderChoices?: { id: string }[];
             }[];
           }[];
         }>(
@@ -180,7 +181,7 @@ describe('onboarding', () => {
       reservedUntil: addDays(today(), 5),
     });
     expect(await ide()).toMatchObject({
-      proposals: [{ id: licence.id, needsDevice: true }],
+      proposals: [{ id: licence.id, needsDevice: true, holderChoices: [] }],
     });
 
     const laptop = await create('devices', {
@@ -208,6 +209,76 @@ describe('onboarding', () => {
     });
     expect(assigned.status).toBe(200);
     expect(await ide()).toMatchObject({ preparedCount: 1, proposals: [] });
+  });
+
+  it('gives a per-device licence asked for twice to two of their computers, each one choosable', async () => {
+    // R&D's kit asks for the IDE twice.
+    const kit = await data<{ items: Record<string, unknown>[] }>(
+      await app.request('/api/itam/master/onboardingKits/kit-rd', manager),
+    );
+    await app.request('/api/itam/master/onboardingKits/kit-rd', {
+      ...json({
+        items: kit.items.map((item) =>
+          item.softwareProductId === 'sp-intellij-idea'
+            ? { ...item, quantity: 2 }
+            : item,
+        ),
+      }),
+      method: 'PATCH',
+      ...manager,
+    });
+    const licence = await create('entitlements', {
+      kind: 'perpetual',
+      softwareProductId: 'sp-intellij-idea',
+      name: 'IDE per device',
+      licensingModel: 'perDevice',
+      seatCount: 5,
+    });
+    const joiner = await person('Sun Hao', 'dept-rd', 'Frontend Engineer');
+    const laptops: string[] = [];
+    for (const serialNo of ['C02TEST0003', 'C02TEST0004']) {
+      const laptop = await create('devices', {
+        modelId: 'model-macbook-pro-14-m3',
+        serialNo,
+        locationId,
+      });
+      await post(`devices/${laptop.id}/reserve`, {
+        reservedForType: 'person',
+        reservedForId: joiner.id,
+        reservedUntil: addDays(today(), 5),
+      });
+      laptops.push(laptop.id);
+    }
+    const line = (
+      await data<{
+        lines: {
+          target: { id: string };
+          proposals: {
+            id: string;
+            slot?: number;
+            holder?: { id: string };
+            holderChoices?: { id: string }[];
+          }[];
+        }[];
+      }>(
+        await app.request(
+          `/api/itam/master/people/${joiner.id}/onboarding`,
+          manager,
+        ),
+      )
+    ).lines.find((entry) => entry.target.id === 'sp-intellij-idea')!;
+    // One seat on each computer, told apart by slot, either one changeable
+    // to any device of theirs.
+    expect(line.proposals.map((proposal) => proposal.slot)).toEqual([0, 1]);
+    expect(
+      line.proposals.map((proposal) => proposal.holder?.id).sort(),
+    ).toEqual([...laptops].sort());
+    for (const proposal of line.proposals) {
+      expect(proposal.id).toBe(licence.id);
+      expect(
+        (proposal.holderChoices ?? []).map((choice) => choice.id).sort(),
+      ).toEqual([...laptops].sort());
+    }
   });
 
   it('counts what an open new-hire order already brings, and seats under their e-mail', async () => {

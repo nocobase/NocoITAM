@@ -84,6 +84,19 @@ export interface PlanThing {
     readonly label: string;
   };
   readonly needsDevice?: boolean;
+  /**
+   * Their devices a per-device seat may go to instead (更换, 2026-10-28):
+   * each one not holding this product yet.
+   */
+  readonly holderChoices?: readonly {
+    readonly id: string;
+    readonly label: string;
+  }[];
+  /**
+   * Which of a line's per-device seats this is, when it asks for more than
+   * one: the same entitlement may be proposed twice, for two devices.
+   */
+  readonly slot?: number;
   /** A proposal Asset Steward chose in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;
@@ -1165,6 +1178,8 @@ export function createOnboardingService(
         'entitlements.id as id',
         'entitlements.name as name',
         'entitlements.softwareProductId as softwareProductId',
+        'entitlementSeats.holderType as holderType',
+        'entitlementSeats.holderId as holderId',
       ])
       // Theirs, and those on their devices: a per-device licence's seat is
       // held by the computer, not the person (2026-10-28).
@@ -1216,25 +1231,37 @@ export function createOnboardingService(
     );
 
     /**
-     * The device a per-device licence's seat goes to: theirs that makes up
-     * the kit's first device item, the computer in every kit so far. Only
-     * that one: a monitor reserved before the laptop must not take the
-     * licence. None while they do not have it yet; a kit without device
-     * items falls back to any device of theirs.
+     * Where a per-device licence's seats go (2026-10-28). By default, to
+     * their devices that make up the kit's first device item, the computer
+     * in every kit so far; 更换 offers any device of theirs in that item's
+     * category, so a second laptop of another model can take it but a
+     * monitor reserved before the laptop never does. A kit without device
+     * items offers every device of theirs.
      */
-    const seatDevice = (() => {
+    const { seatDevices, seatChoices } = (() => {
+      const all = devices.map(({ row }) => row);
       const first = items.find(
         (item) => asText(item.modelId) || asText(item.categoryId),
       );
-      if (!first) return devices[0]?.row;
+      if (!first) return { seatDevices: all, seatChoices: all };
       const modelId = asText(first.modelId);
-      const categoryId = asText(first.categoryId);
-      return devices.find(({ row }) =>
-        modelId
-          ? asText(row.modelId) === modelId
-          : asText(row.categoryId) === categoryId,
-      )?.row;
+      const categoryId = modelId
+        ? asText(pools.models.get(modelId)?.categoryId)
+        : asText(first.categoryId);
+      return {
+        seatDevices: all.filter((row) =>
+          modelId
+            ? asText(row.modelId) === modelId
+            : asText(row.categoryId) === categoryId,
+        ),
+        seatChoices: all.filter((row) => asText(row.categoryId) === categoryId),
+      };
     })();
+    const deviceChoice = (row: Row) => ({
+      id: String(row.id),
+      // Its name alone: the row is narrow already.
+      label: String(row.name),
+    });
 
     const lines: OnboardingPlanLine[] = [];
     for (const item of items) {
@@ -1292,39 +1319,62 @@ export function createOnboardingService(
                 },
               });
           const email = asText(person.email);
+          // A device holds one seat of a product: not one that has it, nor
+          // one this line already proposes it for.
+          const busyDevices = new Set(
+            seats
+              .filter(
+                (seat) =>
+                  asText(seat.softwareProductId) === productId &&
+                  asText(seat.holderType) === 'device',
+              )
+              .map((seat) => String(seat.holderId)),
+          );
+          const holderChoices = seatChoices
+            .filter((row) => !busyDevices.has(String(row.id)))
+            .map(deviceChoice);
+          let slot = 0;
+          const perDevice = () => {
+            const row = seatDevices.find(
+              (candidate) => !busyDevices.has(String(candidate.id)),
+            );
+            if (row) busyDevices.add(String(row.id));
+            return {
+              ...(row
+                ? { holder: { type: 'device' as const, ...deviceChoice(row) } }
+                : { needsDevice: true }),
+              holderChoices,
+              ...(required > 1 ? { slot: slot++ } : {}),
+            };
+          };
           for (const entry of preferred(
             open,
             (entry) => String(entry.row.id),
             picks,
           )) {
             if (missing <= 0) break;
-            if (entry.free <= 0) continue;
-            entry.free -= 1;
-            // One person holds one seat of a product.
-            proposals.push({
-              type: 'seat',
-              id: String(entry.row.id),
-              label: String(entry.row.name),
-              ...(asText(entry.row.licensingModel) === 'perDevice'
-                ? seatDevice
-                  ? {
-                      holder: {
-                        type: 'device' as const,
-                        id: String(seatDevice.id),
-                        // Its name alone: the row is narrow already.
-                        label: String(seatDevice.name),
-                      },
-                    }
-                  : { needsDevice: true }
-                : asText(entry.row.kind) === 'subscription'
-                  ? {
-                      needsAccount: true,
-                      ...(email ? { account: email } : {}),
-                    }
-                  : {}),
-              ...advised(picks, String(entry.row.id)),
-            });
-            missing -= 1;
+            const byDevice = asText(entry.row.licensingModel) === 'perDevice';
+            // One person holds one seat of a product; a per-device licence
+            // gives one to each of their devices the kit asks it for.
+            do {
+              if (entry.free <= 0) break;
+              entry.free -= 1;
+              proposals.push({
+                type: 'seat',
+                id: String(entry.row.id),
+                label: String(entry.row.name),
+                ...(byDevice
+                  ? perDevice()
+                  : asText(entry.row.kind) === 'subscription'
+                    ? {
+                        needsAccount: true,
+                        ...(email ? { account: email } : {}),
+                      }
+                    : {}),
+                ...advised(picks, String(entry.row.id)),
+              });
+              missing -= 1;
+            } while (byDevice && missing > 0);
           }
           // Then seats being bought, then those somebody leaving frees.
           const ordered = fromOrders(

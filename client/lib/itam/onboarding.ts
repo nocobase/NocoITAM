@@ -23,6 +23,13 @@ export interface PlanThing {
     readonly label: string;
   };
   readonly needsDevice?: boolean;
+  /** Their devices a per-device seat may go to instead (更换). */
+  readonly holderChoices?: readonly {
+    readonly id: string;
+    readonly label: string;
+  }[];
+  /** Which of a line's per-device seats, when it asks for several. */
+  readonly slot?: number;
   /** Chosen by Asset Steward in the background, with the reason it gave. */
   readonly source?: 'noco';
   readonly reason?: string;
