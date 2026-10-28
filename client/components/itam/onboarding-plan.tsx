@@ -603,7 +603,7 @@ function PlanLine({
           <span
             className={
               several
-                ? 'flex max-w-full min-w-0 flex-col items-end gap-y-1.5'
+                ? 'flex max-w-full min-w-0 flex-col items-end'
                 : 'contents'
             }
           >
