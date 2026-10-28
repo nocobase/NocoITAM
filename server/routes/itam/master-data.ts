@@ -316,14 +316,37 @@ export const masterDataRoutes: AppApiRouteContribution<Application> =
             404,
           );
         }
+        // The whole item (`waived`), or some of its quantity (`fewer`,
+        // 2026-10-28).
         const input = z
-          .object({ key: z.string().min(1).max(200), waived: z.boolean() })
-          .strict()
+          .union([
+            z
+              .object({ key: z.string().min(1).max(200), waived: z.boolean() })
+              .strict(),
+            z
+              .object({
+                key: z.string().min(1).max(200),
+                fewer: z.number().int().min(0).max(1000),
+              })
+              .strict(),
+          ])
           .parse(await readJsonObject(context));
+        const onboarding = app.container.resolve(onboardingServiceToken);
         return context.json({
-          data: await app.container
-            .resolve(onboardingServiceToken)
-            .waive(id, input.key, input.waived, principalId(context)),
+          data:
+            'fewer' in input
+              ? await onboarding.waiveSome(
+                  id,
+                  input.key,
+                  input.fewer,
+                  principalId(context),
+                )
+              : await onboarding.waive(
+                  id,
+                  input.key,
+                  input.waived,
+                  principalId(context),
+                ),
         });
       } catch (error) {
         return errorResponse(context, error);

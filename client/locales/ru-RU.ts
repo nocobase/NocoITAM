@@ -1027,6 +1027,7 @@ const ruRU: AppResource = {
     needsDevice:
       'Место лицензии на устройство закрепляется за компьютером сотрудника: сначала выдайте или зарезервируйте его',
     onDevice: 'на {{label}}',
+    fewer: 'не нужно: {{count}}',
     change: 'Изменить',
     order: '{{orderNo}} {{status}}',
     planned: {

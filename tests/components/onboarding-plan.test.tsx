@@ -40,7 +40,9 @@ vi.mock('../../client/lib/itam/kit-items.js', async (original) => ({
   ...(await original<object>()),
   useItemFacts: () => ({
     kindOf: () => undefined,
-    detailOf: () => '笔记本电脑 · Apple',
+    detailOf: () => [
+      { route: 'categories', id: 'cat-laptop', name: '笔记本电脑' },
+    ],
   }),
 }));
 vi.mock('../../client/lib/itam/permissions.js', () => ({

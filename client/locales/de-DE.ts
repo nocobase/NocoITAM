@@ -999,6 +999,7 @@ const deDE: AppResource = {
     needsDevice:
       'Ein Platz einer gerätebezogenen Lizenz geht an den Computer der Person: zuerst einen zuweisen oder reservieren',
     onDevice: 'auf {{label}}',
+    fewer: '{{count}} nicht benötigt',
     change: 'Ändern',
     order: '{{orderNo}} {{status}}',
     planned: {

@@ -1005,6 +1005,7 @@ const messages = {
     needsDevice:
       "A per-device licence's seat goes to their computer: assign or reserve one first",
     onDevice: 'on {{label}}',
+    fewer: '{{count}} not needed',
     change: 'Change',
     order: '{{orderNo}} {{status}}',
     // Sources other than stock: an open order, or somebody leaving, with

@@ -976,6 +976,7 @@ const zhTW: AppResource = {
     needsAccount: '訂閱席位需要帳號：先為此人填寫電子郵件，或到授權頁分配',
     needsDevice: '按裝置授權的席位分給新人的電腦：先替新人分配或預留一台',
     onDevice: '裝到 {{label}}',
+    fewer: '{{count}} 個不需要',
     change: '更換',
     order: '{{orderNo}} {{status}}',
     planned: {

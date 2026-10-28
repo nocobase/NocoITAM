@@ -24,6 +24,7 @@ import { useReferenceNames } from '@/lib/itam/references';
 import { cn } from '@/lib/utils';
 
 import { AssetTypeBadge } from './asset-type-badge.js';
+import { ItemOwners } from './item-owners.js';
 import { ReferenceSelect } from './reference-select.js';
 
 /**
@@ -196,11 +197,10 @@ export function KitItems({
                       </span>
                       {/* Its category and maker (2026-10-28), between the
                           name and how many. */}
-                      {detailOf(item) ? (
-                        <span className='min-w-0 shrink truncate text-muted-foreground'>
-                          {detailOf(item)}
-                        </span>
-                      ) : null}
+                      <ItemOwners
+                        owners={detailOf(item)}
+                        className='min-w-0 shrink'
+                      />
                       <span className='shrink-0 text-muted-foreground tabular-nums'>
                         ×{item.quantity}
                       </span>

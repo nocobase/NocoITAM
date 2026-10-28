@@ -30,7 +30,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useAiPageContext } from '@/lib/itam/ai-chat';
-import { useItemFacts } from '@/lib/itam/kit-items';
+import { useItemFacts, type ItemOwner } from '@/lib/itam/kit-items';
 import { useAnnounce } from '@/lib/itam/announce';
 import { apiErrorBody, masterDataPath, useApi } from '@/lib/itam/api';
 import { DEVICES_PATH } from '@/lib/itam/device-api';
@@ -53,6 +53,7 @@ import {
 import { useCurrentUserId } from '@/lib/itam/permissions';
 import { STOCK_PATH, STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
 
+import { ItemOwners } from './item-owners.js';
 import { CollapsibleText } from './collapsible-text.js';
 import { RecordLink } from './record-link.js';
 import { ReferenceSelect } from './reference-select.js';
@@ -166,14 +167,18 @@ export function OnboardingPlanCard({
   const started = !data.hireDate || data.hireDate <= todayIso();
 
   /** Marks an item 不需要 for this person, or takes the mark back. */
-  const waive = async (key: string, waived: boolean) => {
+  const waive = async (
+    key: string,
+    // The whole item, or how many of its quantity (2026-10-28).
+    change: { readonly waived: boolean } | { readonly fewer: number },
+  ) => {
     setBusy(true);
     setError(undefined);
     try {
       await api.request({
         path: `${masterDataPath('people')}/${personId}/onboarding/waive`,
         method: 'POST',
-        json: { key, waived },
+        json: { key, ...change },
       });
       await queryClient.invalidateQueries({ queryKey: ['itam'] });
     } catch (caught) {
@@ -403,7 +408,17 @@ export function OnboardingPlanCard({
                     }))
                   }
                   onRun={(thing) => void run([thing], () => titleFor(thing))}
-                  onWaive={(waived) => void waive(line.key, waived)}
+                  onWaive={(waived) => void waive(line.key, { waived })}
+                  onWaiveSome={(fewer, keep = []) => {
+                    // What the person keeps stays chosen once the plan
+                    // proposes one fewer.
+                    if (keep.length > 0)
+                      setChosen((current) => ({
+                        ...current,
+                        ...Object.fromEntries(keep),
+                      }));
+                    void waive(line.key, { fewer });
+                  }}
                 />
               ))}
             </ul>
@@ -428,10 +443,11 @@ function PlanLine({
   onChoose,
   onRun,
   onWaive,
+  onWaiveSome,
 }: {
   readonly line: OnboardingPlanLine;
   /** Its category and maker, as the kit shows them. */
-  readonly detail: string;
+  readonly detail: readonly ItemOwner[];
   readonly busy: boolean;
   readonly started: boolean;
   /** The proposal as it stands: the one chosen instead, if any. */
@@ -440,6 +456,15 @@ function PlanLine({
   readonly onRun: (thing: PlanThing) => void;
   /** Marks the item 不需要 for this person, or takes the mark back. */
   readonly onWaive: (waived: boolean) => void;
+  /**
+   * Marks how many of its quantity are 不需要 for this person; `keep` is
+   * what each remaining proposal should stay, by its key once there is one
+   * fewer.
+   */
+  readonly onWaiveSome: (
+    fewer: number,
+    keep?: readonly (readonly [string, PlanThing])[],
+  ) => void;
 }): ReactElement {
   const { t } = useTranslation();
   const translated = (key: string | undefined) => (key ? t(key) : undefined);
@@ -471,6 +496,30 @@ function PlanLine({
   const reasons = line.proposals.filter(
     (thing) => thing.reason && effective(thing) === thing,
   );
+  // Asked for more than once (2026-10-28): each thing on a line of its
+  // own, each with its own 不需要, which takes one off the quantity.
+  const several = line.required > 1;
+  /**
+   * 不需要 on one of several (2026-10-28): the plan then proposes one fewer,
+   * from the first, so the things left are kept as they stood — taking the
+   * first laptop off leaves the second, not the first again.
+   */
+  const waiveOne = (index: number) => {
+    const left = line.required - 1;
+    const rest = line.proposals
+      .filter((_, at) => at !== index)
+      .map((thing) => effective(thing));
+    const keep = rest.flatMap((thing, at) => {
+      const original = line.proposals[at];
+      if (!original || thing === original) return [];
+      const key =
+        original.slot === undefined || left <= 1
+          ? original.id
+          : `${original.id}#${String(at)}`;
+      return [[key, thing] as const];
+    });
+    onWaiveSome(line.fewer + 1, keep);
+  };
   // Marked 不需要: the item stays in the list, dimmed, so the mark can be
   // seen and taken back, with nothing offered for it.
   if (line.waived)
@@ -515,14 +564,25 @@ function PlanLine({
               <span className='shrink-0 text-muted-foreground tabular-nums'>
                 ×{line.required}
               </span>
+              {/* Some of the kit's quantity not needed (2026-10-28), with
+                  the way to need it again. */}
+              {line.fewer > 0 ? (
+                <span className='inline-flex shrink-0 items-center gap-3 text-muted-foreground'>
+                  {t('onboarding.fewer', { count: line.fewer })}
+                  <Button
+                    variant='ghost'
+                    className={`-mx-2.5 ${TEXT_BUTTON}`}
+                    disabled={busy}
+                    onClick={() => onWaiveSome(0)}
+                  >
+                    {t('onboarding.restore')}
+                  </Button>
+                </span>
+              ) : null}
             </span>
             {/* Its category and maker (2026-10-28), under the name: the
                 row's width is the proposals'. */}
-            {detail ? (
-              <span className='truncate text-xs text-muted-foreground'>
-                {detail}
-              </span>
-            ) : null}
+            <ItemOwners owners={detail} className='text-xs' />
           </span>
         </span>
         {/* One even gap between every word on the row (2026-10-22): the
@@ -535,7 +595,7 @@ function PlanLine({
               other. One thing stays in the row. */}
           <span
             className={
-              line.prepared.length + line.proposals.length > 1
+              several
                 ? 'flex max-w-full min-w-0 flex-col items-end gap-y-1.5'
                 : 'contents'
             }
@@ -556,7 +616,7 @@ function PlanLine({
                 </Badge>
               </RecordLink>
             ))}
-            {line.proposals.map((original) => {
+            {line.proposals.map((original, index) => {
               const thing = effective(original);
               if (changing === proposalKey(original))
                 return (
@@ -686,6 +746,16 @@ function PlanLine({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   ) : null}
+                  {several ? (
+                    <Button
+                      variant='ghost'
+                      className={`-mx-2.5 text-muted-foreground hover:text-muted-foreground ${TEXT_BUTTON}`}
+                      disabled={busy}
+                      onClick={() => waiveOne(index)}
+                    >
+                      {t('onboarding.waive')}
+                    </Button>
+                  ) : null}
                 </span>
               );
             })}
@@ -695,7 +765,10 @@ function PlanLine({
           <LineOutlook line={line} />
           {/* Something they will not be given — their own monitor, another
               laptop — is marked rather than left outstanding for ever. */}
-          {line.preparedCount < line.required ? (
+          {/* With a line per thing, each proposal has its own 不需要; the
+              item's own shows only while nothing is proposed for it. */}
+          {line.preparedCount < line.required &&
+          !(several && line.proposals.length > 0) ? (
             <Button
               variant='ghost'
               className={`-mx-2.5 text-muted-foreground hover:text-muted-foreground ${TEXT_BUTTON}`}

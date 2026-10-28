@@ -995,6 +995,7 @@ const esES: AppResource = {
     needsDevice:
       'El puesto de una licencia por dispositivo va a su equipo: asigna o reserva uno primero',
     onDevice: 'en {{label}}',
+    fewer: '{{count}} no necesarios',
     change: 'Cambiar',
     order: '{{orderNo}} {{status}}',
     planned: {

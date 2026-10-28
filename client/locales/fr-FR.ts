@@ -994,6 +994,7 @@ const frFR: AppResource = {
     needsDevice:
       'Le siège d’une licence par appareil va sur son ordinateur : attribuez-en ou réservez-en d’abord un',
     onDevice: 'sur {{label}}',
+    fewer: '{{count}} non nécessaire(s)',
     change: 'Changer',
     order: '{{orderNo}} {{status}}',
     planned: {

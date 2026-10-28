@@ -150,7 +150,13 @@ departments/:id/positions/rename`): its holders and its kit move to the
 waive`, people `update`, `people.onboardingWaived`, migration
   `202610060003_joiner_status`): nothing is proposed, ordered or chosen
   for it, it counts on neither side of 已配备 N / M, and taking the mark
-  back (撤回) reopens the joiner. Once in hand a joiner is stamped
+  back (撤回) reopens the joiner. Some of an item's quantity can be marked too
+  (2026-10-28, `{ key, fewer }`, stored as `key#n` beside the whole-item
+  keys, `waiveSome`): one of two laptops; the line's `required` is what is
+  left and `fewer` what was taken off, never all of it. An item asked for
+  more than once lists each thing on a line of its own with its own 不需要,
+  and the card keeps the remaining proposals as they stood, so taking the
+  first laptop off leaves the second. Once in hand a joiner is stamped
   `onboardingCompletedAt` and not worked out again, so the register's
   history of joiners is not recomputed on every reading; the card steps
   aside once they are equipped and a month in. 在职状态 is the two dates

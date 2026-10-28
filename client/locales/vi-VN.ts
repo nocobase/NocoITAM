@@ -992,6 +992,7 @@ const viVN: AppResource = {
     needsDevice:
       'Suất của giấy phép theo thiết bị được giao cho máy tính của họ: hãy cấp hoặc giữ một máy trước',
     onDevice: 'trên {{label}}',
+    fewer: '{{count}} không cần',
     change: 'Đổi',
     order: '{{orderNo}} {{status}}',
     planned: {

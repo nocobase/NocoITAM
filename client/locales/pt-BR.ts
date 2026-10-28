@@ -991,6 +991,7 @@ const ptBR: AppResource = {
     needsDevice:
       'O assento de uma licença por dispositivo vai para o computador da pessoa: atribua ou reserve um primeiro',
     onDevice: 'em {{label}}',
+    fewer: '{{count}} não necessário(s)',
     change: 'Alterar',
     order: '{{orderNo}} {{status}}',
     planned: {

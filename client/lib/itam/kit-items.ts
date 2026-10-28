@@ -63,9 +63,16 @@ export function serializeKitItems(
  * category and maker of a model or software product, as their own lists
  * show them. Reads only the records the kit names.
  */
+/** A record the row names beside an item, opening in the drawer. */
+export interface ItemOwner {
+  readonly route: 'categories' | 'manufacturers';
+  readonly id: string;
+  readonly name: string;
+}
+
 export function useItemFacts(items: readonly KitItem[]): {
   readonly kindOf: (item: KitItem) => string | undefined;
-  readonly detailOf: (item: KitItem) => string;
+  readonly detailOf: (item: KitItem) => readonly ItemOwner[];
 } {
   const idsOf = (type: KitItemType) => [
     ...new Set(
@@ -131,15 +138,31 @@ export function useItemFacts(items: readonly KitItem[]): {
     },
     // A category item is its own category, with no maker.
     detailOf: (item) => {
-      if (item.type === 'category') return '';
+      if (item.type === 'category') return [];
       const owner = owners.get(item.id ?? '');
-      if (!owner) return '';
+      if (!owner) return [];
+      const categoryName = category.get(owner.categoryId)?.name;
+      const makerName = makers?.get(owner.manufacturerId);
       return [
-        category.get(owner.categoryId)?.name,
-        makers?.get(owner.manufacturerId),
-      ]
-        .filter(Boolean)
-        .join(' · ');
+        ...(categoryName
+          ? [
+              {
+                route: 'categories' as const,
+                id: owner.categoryId,
+                name: categoryName,
+              },
+            ]
+          : []),
+        ...(makerName
+          ? [
+              {
+                route: 'manufacturers' as const,
+                id: owner.manufacturerId,
+                name: makerName,
+              },
+            ]
+          : []),
+      ];
     },
   };
 }

@@ -182,6 +182,12 @@ export interface OnboardingPlanLine {
    * or ordered for it, and it counts towards neither total.
    */
   readonly waived: boolean;
+  /**
+   * How many of the kit's quantity are 不需要 for this person (2026-10-28):
+   * one of two laptops, say. `required` is what is left; the kit asked for
+   * `required + fewer`.
+   */
+  readonly fewer: number;
   /** How many stock is asked for: required less what they have. */
   readonly missing: number;
   /** Only when asked for (`candidates: true`): what stock could give. */
@@ -369,6 +375,7 @@ function finishLine(input: {
   readonly proposals: readonly PlanThing[];
   readonly planned: readonly PlanThing[];
   readonly waived: boolean;
+  readonly fewer: number;
   /** Required less what they have. */
   readonly asked: number;
   /** What is still uncovered. */
@@ -390,6 +397,7 @@ function finishLine(input: {
     proposals: input.proposals,
     planned: input.planned,
     waived: input.waived,
+    fewer: input.fewer,
     missing: input.waived ? 0 : Math.max(0, input.asked),
     ...(input.candidates ? { candidates: input.candidates } : {}),
     onOrder: count(
@@ -428,6 +436,17 @@ export interface OnboardingService {
     personId: string,
     key: string,
     waived: boolean,
+    actorId: string,
+  ): Promise<OnboardingPlan | null>;
+  /**
+   * Marks some of an item's quantity 不需要 (2026-10-28): `fewer` of the
+   * kit's two laptops, from 0 (all needed again) to one less than the kit
+   * asks; the whole item is `waive`'s.
+   */
+  waiveSome(
+    personId: string,
+    key: string,
+    fewer: number,
     actorId: string,
   ): Promise<OnboardingPlan | null>;
   /**
@@ -1024,7 +1043,14 @@ export function createOnboardingService(
   ): Promise<OnboardingPlan> => {
     const personId = String(person.id);
     const { advice, picks: advisedPicks } = await adviceFor(personId);
-    const waivedKeys = new Set(stringList(person.onboardingWaived));
+    // A key alone is the whole item 不需要; `key#n` is n of its quantity.
+    const waivedKeys = new Set<string>();
+    const waivedSome = new Map<string, number>();
+    for (const entry of stringList(person.onboardingWaived)) {
+      const some = /^(.*)#(\d+)$/.exec(entry);
+      if (some) waivedSome.set(some[1], Number(some[2]));
+      else waivedKeys.add(entry);
+    }
     const kit = await kitFor(
       asText(person.departmentId) ?? null,
       asText(person.position) ?? null,
@@ -1265,10 +1291,19 @@ export function createOnboardingService(
 
     const lines: OnboardingPlanLine[] = [];
     for (const item of items) {
-      const required = Math.max(1, Number(item.quantity) || 1);
       const modelId = asText(item.modelId);
       const categoryId = asText(item.categoryId);
       const productId = asText(item.softwareProductId);
+      const itemKey = productId
+        ? `softwareProduct:${productId}`
+        : modelId
+          ? `model:${modelId}`
+          : `category:${String(categoryId)}`;
+      // What the kit asks, less what is 不需要 of it; never below one,
+      // the whole item being `waived`.
+      const asks = Math.max(1, Number(item.quantity) || 1);
+      const fewer = Math.min(asks - 1, waivedSome.get(itemKey) ?? 0);
+      const required = asks - fewer;
 
       if (productId) {
         const product = await q()
@@ -1422,6 +1457,7 @@ export function createOnboardingService(
             proposals,
             planned,
             waived,
+            fewer,
             asked,
             missing,
             orderBy: orderBy(0),
@@ -1693,6 +1729,7 @@ export function createOnboardingService(
           proposals,
           planned,
           waived,
+          fewer,
           asked,
           missing,
           orderBy: orderBy(kind === 'device' ? pools.prepDays : 0),
@@ -1854,5 +1891,64 @@ export function createOnboardingService(
     };
   };
 
-  return { kitFor, plan, plans, waive, departmentKits };
+  const waiveSome: OnboardingService['waiveSome'] = async (
+    personId,
+    key,
+    fewer,
+    actorId,
+  ) => {
+    const current = await plan(personId);
+    if (!current) return null;
+    const line = current.lines.find((entry) => entry.key === key);
+    if (!line)
+      throw new ValidationError('No such item in their onboarding kit', 'key');
+    const asks = line.required + line.fewer;
+    if (!Number.isInteger(fewer) || fewer < 0 || fewer >= asks)
+      throw new ValidationError(
+        'fewer is between 0 and one less than the kit asks',
+        'fewer',
+      );
+    if (fewer === line.fewer) return current;
+    const person = await q()
+      .selectFrom('people')
+      .select(['onboardingWaived'])
+      .where('id', '=', personId)
+      .executeTakeFirst<Row>();
+    const entries = stringList(person?.onboardingWaived).filter(
+      (entry) => !entry.startsWith(`${key}#`),
+    );
+    if (fewer > 0) entries.push(`${key}#${String(fewer)}`);
+    const more = fewer > line.fewer;
+    await database.transaction(async (connection) => {
+      await connection.query
+        .updateTable('people')
+        .set({
+          onboardingWaived: entries,
+          // Needing more again reopens a joiner counted as equipped.
+          ...(more ? {} : { onboardingCompletedAt: null }),
+          updatedAt: new Date(),
+        })
+        .where('id', '=', personId)
+        .execute();
+      await history?.record(
+        {
+          subjectType: 'people',
+          subjectId: personId,
+          type: more ? 'onboardingWaived' : 'onboardingRestored',
+          summary: `${more ? 'Not needed' : 'Needed again'}: ${line.target.name} ×${String(Math.abs(fewer - line.fewer))}`,
+          payload: {
+            key,
+            targetLabel: line.target.name,
+            fewer,
+            asks,
+          },
+          actorId,
+        },
+        connection,
+      );
+    });
+    return plan(personId);
+  };
+
+  return { kitFor, plan, plans, waive, waiveSome, departmentKits };
 }

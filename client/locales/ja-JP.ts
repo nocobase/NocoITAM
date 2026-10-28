@@ -990,6 +990,7 @@ const jaJP: AppResource = {
     needsDevice:
       'デバイス単位のライセンスは新入社員の PC に割り当てます。先に PC を割り当てるか予約してください',
     onDevice: '{{label}} に割り当て',
+    fewer: '{{count}} 個は不要',
     change: '変更',
     order: '{{orderNo}} {{status}}',
     planned: {

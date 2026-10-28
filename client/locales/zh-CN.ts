@@ -985,6 +985,7 @@ const zhCN: AppResource = {
     needsAccount: '订阅席位需要账号：先给这个人填写邮箱，或到授权页分配',
     needsDevice: '按设备授权的席位分给新人的电脑：先给新人分配或预留一台',
     onDevice: '装到 {{label}}',
+    fewer: '{{count}} 个不需要',
     change: '更换',
     order: '{{orderNo}} {{status}}',
     // 库存以外的来源：在途采购单和离职人员归还的，写明哪天起能用。

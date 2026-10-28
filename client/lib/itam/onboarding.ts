@@ -81,6 +81,8 @@ export interface OnboardingPlanLine {
   readonly planned: readonly PlanThing[];
   /** Marked 不需要 for this person. */
   readonly waived: boolean;
+  /** How many of the kit's quantity are 不需要; it asked for required + fewer. */
+  readonly fewer: number;
   readonly missing: number;
   /** How many of `planned` are on order, and how many come back. */
   readonly onOrder: number;

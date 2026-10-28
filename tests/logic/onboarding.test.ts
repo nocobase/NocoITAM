@@ -281,6 +281,57 @@ describe('onboarding', () => {
     }
   });
 
+  it('takes some of an item off as 不需要, and gives it back (2026-10-28)', async () => {
+    const kit = await data<{ items: Record<string, unknown>[] }>(
+      await app.request('/api/itam/master/onboardingKits/kit-rd', manager),
+    );
+    await app.request('/api/itam/master/onboardingKits/kit-rd', {
+      ...json({
+        items: kit.items.map((item) =>
+          item.modelId === 'model-macbook-pro-14-m3'
+            ? { ...item, quantity: 3 }
+            : item,
+        ),
+      }),
+      method: 'PATCH',
+      ...manager,
+    });
+    const joiner = await person('Sun Hao', 'dept-rd', 'Frontend Engineer');
+    const key = 'model:model-macbook-pro-14-m3';
+    const macbook = async () =>
+      (
+        await data<{
+          required: number;
+          lines: {
+            key: string;
+            required: number;
+            fewer: number;
+            waived: boolean;
+          }[];
+        }>(
+          await app.request(
+            `/api/itam/master/people/${joiner.id}/onboarding`,
+            manager,
+          ),
+        )
+      ).lines.find((line) => line.key === key)!;
+    expect(await macbook()).toMatchObject({ required: 3, fewer: 0 });
+    const waive = (body: Record<string, unknown>) =>
+      post(`master/people/${joiner.id}/onboarding/waive`, { key, ...body });
+
+    expect((await waive({ fewer: 2 })).status).toBe(200);
+    expect(await macbook()).toMatchObject({
+      required: 1,
+      fewer: 2,
+      waived: false,
+    });
+    // Never all of it: that is the whole item's 不需要.
+    expect((await waive({ fewer: 3 })).status).toBe(400);
+    // Back to what the kit asks.
+    expect((await waive({ fewer: 0 })).status).toBe(200);
+    expect(await macbook()).toMatchObject({ required: 3, fewer: 0 });
+  });
+
   it('counts what an open new-hire order already brings, and seats under their e-mail', async () => {
     const joiner = await create('master/people', {
       name: 'Lin Xue',

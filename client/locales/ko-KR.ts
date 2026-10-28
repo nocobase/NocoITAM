@@ -987,6 +987,7 @@ const koKR: AppResource = {
     needsDevice:
       '기기 단위 라이선스의 시트는 신규 입사자의 컴퓨터에 할당됩니다. 먼저 컴퓨터를 할당하거나 예약하세요',
     onDevice: '{{label}}에 할당',
+    fewer: '{{count}}개 불필요',
     change: '변경',
     order: '{{orderNo}} {{status}}',
     planned: {

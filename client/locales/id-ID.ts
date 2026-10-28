@@ -995,6 +995,7 @@ const idID: AppResource = {
     needsDevice:
       'Seat lisensi per perangkat diberikan ke komputernya: tetapkan atau pesan satu terlebih dahulu',
     onDevice: 'di {{label}}',
+    fewer: '{{count}} tidak diperlukan',
     change: 'Ganti',
     order: '{{orderNo}} {{status}}',
     planned: {
