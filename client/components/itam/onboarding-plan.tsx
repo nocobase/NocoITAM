@@ -2,13 +2,14 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
+  MoreHorizontal,
   Package,
   PackageCheck,
   Sparkles,
   Truck,
   Undo2,
 } from 'lucide-react';
-import { Fragment, useState, type ReactElement } from 'react';
+import { Fragment, useState, type ReactElement, type ReactNode } from 'react';
 
 import { AiShortcut } from '@/components/itam/ai/ai-shortcut';
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
@@ -20,6 +21,9 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
@@ -115,6 +119,38 @@ function WhyDisabled({
       </TooltipTrigger>
       <TooltipContent>{reason}</TooltipContent>
     </Tooltip>
+  );
+}
+
+/** A proposal's other actions (更换, 不需要) behind ⋯ (2026-10-28). */
+function MoreMenu({
+  disabled,
+  children,
+}: {
+  readonly disabled: boolean;
+  readonly children: ReactNode;
+}): ReactElement {
+  const { t } = useTranslation();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            type='button'
+            size='icon-sm'
+            variant='ghost'
+            className='-mx-1.5 text-muted-foreground'
+            aria-label={t('common.more')}
+            disabled={disabled}
+          />
+        }
+      >
+        <MoreHorizontal />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end' className='w-auto min-w-32'>
+        <DropdownMenuGroup>{children}</DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 export function OnboardingPlanCard({
@@ -701,39 +737,28 @@ function PlanLine({
                           : t('onboarding.seat')}
                     </Button>
                   </WhyDisabled>
-                  {thing.type === 'device' ? (
-                    <Button
-                      variant='ghost'
-                      className={`-mx-2.5 ${TEXT_BUTTON}`}
-                      disabled={busy}
-                      onClick={() => setChanging(proposalKey(original))}
-                    >
-                      {t('onboarding.change')}
-                    </Button>
-                  ) : null}
-                  {/* 更换 for a per-device seat (2026-10-28): another device of
-                    theirs, when there is one to choose. */}
-                  {thing.type === 'seat' &&
-                  (original.holderChoices ?? []).some(
-                    (choice) => choice.id !== thing.holder?.id,
-                  ) ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant='ghost'
-                            className={`-mx-2.5 ${TEXT_BUTTON}`}
-                            disabled={busy}
-                          />
-                        }
+                  {/* 更换 and 不需要 in a menu (2026-10-28): the action
+                      that carries the item out stays in sight, the rest
+                      keep the row short. */}
+                  <MoreMenu disabled={busy}>
+                    {thing.type === 'device' ? (
+                      <DropdownMenuItem
+                        onClick={() => setChanging(proposalKey(original))}
                       >
                         {t('onboarding.change')}
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align='end'
-                        className='w-auto min-w-40'
-                      >
-                        <DropdownMenuGroup>
+                      </DropdownMenuItem>
+                    ) : null}
+                    {/* 更换 for a per-device seat: another device of
+                        theirs, when there is one to choose. */}
+                    {thing.type === 'seat' &&
+                    (original.holderChoices ?? []).some(
+                      (choice) => choice.id !== thing.holder?.id,
+                    ) ? (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          {t('onboarding.change')}
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className='w-auto min-w-40'>
                           {(original.holderChoices ?? []).map((choice) => (
                             <DropdownMenuItem
                               key={choice.id}
@@ -749,20 +774,17 @@ function PlanLine({
                               {choice.label}
                             </DropdownMenuItem>
                           ))}
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : null}
-                  {several ? (
-                    <Button
-                      variant='ghost'
-                      className={`-mx-2.5 text-muted-foreground hover:text-muted-foreground ${TEXT_BUTTON}`}
-                      disabled={busy}
-                      onClick={() => waiveOne(index)}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    ) : null}
+                    <DropdownMenuItem
+                      onClick={() =>
+                        several ? waiveOne(index) : onWaive(true)
+                      }
                     >
                       {t('onboarding.waive')}
-                    </Button>
-                  ) : null}
+                    </DropdownMenuItem>
+                  </MoreMenu>
                 </span>
               );
             })}
@@ -772,18 +794,14 @@ function PlanLine({
           <LineOutlook line={line} />
           {/* Something they will not be given — their own monitor, another
               laptop — is marked rather than left outstanding for ever. */}
-          {/* With a line per thing, each proposal has its own 不需要; the
-              item's own shows only while nothing is proposed for it. */}
-          {line.preparedCount < line.required &&
-          !(several && line.proposals.length > 0) ? (
-            <Button
-              variant='ghost'
-              className={`-mx-2.5 text-muted-foreground hover:text-muted-foreground ${TEXT_BUTTON}`}
-              disabled={busy}
-              onClick={() => onWaive(true)}
-            >
-              {t('onboarding.waive')}
-            </Button>
+          {/* Each proposal has its own 不需要 in its menu; the item's own
+              shows only while nothing is proposed for it. */}
+          {line.preparedCount < line.required && line.proposals.length === 0 ? (
+            <MoreMenu disabled={busy}>
+              <DropdownMenuItem onClick={() => onWaive(true)}>
+                {t('onboarding.waive')}
+              </DropdownMenuItem>
+            </MoreMenu>
           ) : null}
         </span>
       </div>

@@ -317,7 +317,12 @@ it('carries on past a refused item, and gives a subscription seat its account', 
 it('reserves the device the person chose instead of the proposed one', async () => {
   state.plan = plan('2099-01-10');
   show();
-  fireEvent.click(screen.getByRole('button', { name: 'onboarding.change' }));
+  // 更换 is in the row's ⋯ menu (2026-10-28).
+  // The first row's menu: the laptop's.
+  fireEvent.click(screen.getAllByRole('button', { name: 'common.more' })[0]!);
+  fireEvent.click(
+    await screen.findByRole('menuitem', { name: 'onboarding.change' }),
+  );
   fireEvent.click(screen.getByRole('button', { name: 'pick another' }));
   fireEvent.click(screen.getByRole('button', { name: 'onboarding.reserve' }));
   await settle();
@@ -355,7 +360,12 @@ it('shows Asset Steward’s reason under its pick, and the run under the heading
     }),
   ]);
   // A pick replaced by 更换 is the person's choice, and its reason goes.
-  fireEvent.click(screen.getByRole('button', { name: 'onboarding.change' }));
+  // 更换 is in the row's ⋯ menu (2026-10-28).
+  // The first row's menu: the laptop's.
+  fireEvent.click(screen.getAllByRole('button', { name: 'common.more' })[0]!);
+  fireEvent.click(
+    await screen.findByRole('menuitem', { name: 'onboarding.change' }),
+  );
   fireEvent.click(screen.getByRole('button', { name: 'pick another' }));
   expect(screen.queryByText('Never repaired, same office')).toBeNull();
 });
