@@ -2057,7 +2057,7 @@ const viVN: AppResource = {
       departmentMismatch:
         'Phòng ban của thiết bị khác với phòng ban của người giữ',
       entitlementOverAllocated: 'Quyền sử dụng bị cấp vượt',
-      entitlementIdle: 'Thuê bao có quá nhiều suất trống',
+      entitlementIdle: 'Thuê bao có hơn {{idleSeatPercent}}% suất trống',
       lowAccessories: 'Phụ kiện dưới mức tối thiểu',
       lowConsumables: 'Vật tư tiêu hao dưới mức tối thiểu',
       lowComponents: 'Linh kiện dưới mức tối thiểu',
@@ -2078,7 +2078,7 @@ const viVN: AppResource = {
         'Người giữ đã chuyển phòng ban; thiết bị vẫn thuộc phòng ban cũ',
       entitlementOverAllocated: 'Số suất đã giao nhiều hơn số đang sở hữu',
       entitlementIdle:
-        'Thuê bao có số suất trống vượt tỷ lệ đã đặt; có thể giảm suất trước khi gia hạn',
+        'Thuê bao có hơn {{idleSeatPercent}}% suất trống; có thể giảm suất trước khi gia hạn',
       lowAccessories: 'Số lượng còn lại dưới mức tối thiểu',
       lowConsumables: 'Số lượng còn lại dưới mức tối thiểu',
       lowComponents: 'Số lượng còn lại dưới mức tối thiểu',
@@ -2840,7 +2840,7 @@ const viVN: AppResource = {
       idleDays: 'Thiết bị nằm trong kho lâu hơn mức này được tính là nhàn rỗi',
       auditDays: 'Cảnh báo thiết bị chưa kiểm kê trong khoảng thời gian này',
       idleSeatRatio:
-        'Quyền sử dụng được coi là nhàn rỗi khi tỷ lệ suất chưa giao đạt mức này (0.3 là một phần ba)',
+        'Quyền sử dụng được coi là nhàn rỗi khi số suất chưa giao vượt quá tỷ lệ phần trăm này',
       defaultStockMinimum:
         'Mức tồn kho tối thiểu ban đầu của hồ sơ tồn kho mới',
       onboardingPrepDays:

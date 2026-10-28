@@ -5,6 +5,12 @@ import type { ReactElement } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from '@/components/ui/input-group';
 import { Label } from '@/components/ui/label';
 import { apiErrorBody } from '@/lib/itam/api';
 import { isDemoReadOnlyError } from '@/lib/itam/demo-errors';
@@ -70,6 +76,7 @@ export function NumberField({
   onChange,
   step,
   hint,
+  unit,
 }: {
   readonly id: string;
   readonly label: string;
@@ -78,17 +85,34 @@ export function NumberField({
   readonly step?: number;
   /** What the number decides, in a line. A threshold's name rarely says. */
   readonly hint?: string;
+  /** A unit after the number, such as %. */
+  readonly unit?: string;
 }): ReactElement {
   return (
     <div className='grid gap-1.5'>
       <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type='number'
-        step={step ?? 1}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
+      {unit ? (
+        <InputGroup>
+          <InputGroupInput
+            id={id}
+            type='number'
+            step={step ?? 1}
+            value={value}
+            onChange={(event) => onChange(Number(event.target.value))}
+          />
+          <InputGroupAddon align='inline-end'>
+            <InputGroupText>{unit}</InputGroupText>
+          </InputGroupAddon>
+        </InputGroup>
+      ) : (
+        <Input
+          id={id}
+          type='number'
+          step={step ?? 1}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+        />
+      )}
       {hint ? <p className='text-xs text-muted-foreground'>{hint}</p> : null}
     </div>
   );

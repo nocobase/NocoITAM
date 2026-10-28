@@ -2042,7 +2042,7 @@ const koKR: AppResource = {
       auditOverdue: '기기가 {{auditDays}}일 동안 재고 실사되지 않음',
       departmentMismatch: '기기의 관리 부서가 사용자의 부서와 다름',
       entitlementOverAllocated: '라이선스 초과 할당',
-      entitlementIdle: '구독의 유휴 시트가 많음',
+      entitlementIdle: '구독의 유휴 시트가 {{idleSeatPercent}}% 초과',
       lowAccessories: '액세서리가 최소 재고 미만',
       lowConsumables: '소모품이 최소 재고 미만',
       lowComponents: '부품이 최소 재고 미만',
@@ -2063,7 +2063,7 @@ const koKR: AppResource = {
         '사용자가 부서를 옮겼지만 기기는 아직 이전 부서에 있습니다',
       entitlementOverAllocated: '할당된 시트가 보유 수량보다 많습니다',
       entitlementIdle:
-        '빈 시트가 설정 비율을 넘는 구독. 갱신 전에 시트를 줄일 수 있습니다',
+        '빈 시트가 {{idleSeatPercent}}%를 넘는 구독. 갱신 전에 시트를 줄일 수 있습니다',
       lowAccessories: '사용 가능 수량이 최소 재고보다 적습니다',
       lowConsumables: '사용 가능 수량이 최소 재고보다 적습니다',
       lowComponents: '사용 가능 수량이 최소 재고보다 적습니다',
@@ -2825,7 +2825,7 @@ const koKR: AppResource = {
       idleDays: '이 일수보다 오래 재고에 있는 기기는 유휴로 봅니다',
       auditDays: '이 기간 동안 실사되지 않은 기기를 알립니다',
       idleSeatRatio:
-        '할당되지 않은 시트 비율이 이 값에 이르면 라이선스를 유휴로 봅니다(0.3은 3분의 1)',
+        '할당되지 않은 시트가 전체의 이 비율(%)을 넘으면 그 라이선스를 유휴로 봅니다',
       defaultStockMinimum: '새 재고 레코드의 기본 최소 재고 수준',
       onboardingPrepDays:
         '기기가 반납되거나 도착한 후 초기화, 설치, 라벨 부착에 걸리는 일수입니다. 온보딩 공급은 이만큼 여유가 있을 때만 제때 준비된 것으로 계산합니다',

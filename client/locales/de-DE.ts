@@ -2090,7 +2090,8 @@ const deDE: AppResource = {
       auditOverdue: 'Geräte seit {{auditDays}} Tagen nicht inventarisiert',
       departmentMismatch: 'Abteilung des Geräts weicht von der des Nutzers ab',
       entitlementOverAllocated: 'Nutzungsrechte überbelegt',
-      entitlementIdle: 'Abonnements mit zu vielen freien Plätzen',
+      entitlementIdle:
+        'Abonnements mit über {{idleSeatPercent}} % freien Plätzen',
       lowAccessories: 'Zubehör unter Mindestbestand',
       lowConsumables: 'Verbrauchsmaterial unter Mindestbestand',
       lowComponents: 'Komponenten unter Mindestbestand',
@@ -2111,7 +2112,7 @@ const deDE: AppResource = {
         'Der Nutzer ist gewechselt; das Gerät steht noch bei der alten Abteilung',
       entitlementOverAllocated: 'Mehr Plätze zugewiesen als vorhanden',
       entitlementIdle:
-        'Abonnements, deren freie Plätze den Schwellenwert überschreiten; vor der Verlängerung Plätze reduzieren',
+        'Abonnements mit mehr als {{idleSeatPercent}} % freien Plätzen; vor der Verlängerung Plätze reduzieren',
       lowAccessories: 'Verfügbare Menge unter dem Mindestbestand',
       lowConsumables: 'Verfügbare Menge unter dem Mindestbestand',
       lowComponents: 'Verfügbare Menge unter dem Mindestbestand',
@@ -2895,7 +2896,7 @@ const deDE: AppResource = {
       auditDays:
         'Warnung bei einem Gerät, das so lange nicht inventarisiert wurde',
       idleSeatRatio:
-        'Ein Nutzungsrecht gilt als ungenutzt, wenn dieser Anteil seiner Plätze nicht zugewiesen ist (0,3 ist ein knappes Drittel)',
+        'Ein Nutzungsrecht gilt als ungenutzt, wenn mehr als dieser Prozentsatz seiner Plätze nicht zugewiesen ist',
       defaultStockMinimum:
         'Der Mindestbestand, mit dem ein neuer Bestandsdatensatz beginnt',
       onboardingPrepDays:

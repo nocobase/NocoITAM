@@ -2091,7 +2091,7 @@ const messages = {
       auditOverdue: 'Devices not audited for {{auditDays}} days',
       departmentMismatch: 'Device department differs from the holder’s',
       entitlementOverAllocated: 'Entitlements over-allocated',
-      entitlementIdle: 'Subscriptions with too many idle seats',
+      entitlementIdle: 'Subscriptions over {{idleSeatPercent}}% idle seats',
       lowAccessories: 'Accessories below minimum',
       lowConsumables: 'Consumables below minimum',
       lowComponents: 'Components below minimum',
@@ -2112,7 +2112,7 @@ const messages = {
         'The holder moved; the device is still on the old department',
       entitlementOverAllocated: 'More seats assigned than owned',
       entitlementIdle:
-        'Subscriptions whose free seats exceed the idle ratio; cut seats before renewal',
+        'Subscriptions with more than {{idleSeatPercent}}% of their seats free; cut seats before renewal',
       lowAccessories: 'Available quantity below its minimum',
       lowConsumables: 'Available quantity below its minimum',
       lowComponents: 'Available quantity below its minimum',
@@ -2881,7 +2881,7 @@ const messages = {
       idleDays: 'A device in stock longer than this counts as idle',
       auditDays: 'Warn about a device not audited for this long',
       idleSeatRatio:
-        'An entitlement is idle when this share of its seats is unassigned (0.3 is a third)',
+        'An entitlement is idle when more than this percentage of its seats is unassigned',
       defaultStockMinimum: 'The water level a new stock record starts at',
       onboardingPrepDays:
         'Days to wipe, install and label a device once it is back or has arrived; onboarding supply counts it in time only with these to spare',

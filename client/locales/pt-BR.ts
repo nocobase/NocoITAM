@@ -2075,7 +2075,8 @@ const ptBR: AppResource = {
       departmentMismatch:
         'Departamento do dispositivo diferente do do detentor',
       entitlementOverAllocated: 'Direitos de uso superalocados',
-      entitlementIdle: 'Assinaturas com assentos livres demais',
+      entitlementIdle:
+        'Assinaturas com mais de {{idleSeatPercent}}% de assentos livres',
       lowAccessories: 'Acessórios abaixo do mínimo',
       lowConsumables: 'Consumíveis abaixo do mínimo',
       lowComponents: 'Componentes abaixo do mínimo',
@@ -2097,7 +2098,7 @@ const ptBR: AppResource = {
         'O detentor mudou; o dispositivo ainda está no departamento antigo',
       entitlementOverAllocated: 'Mais assentos atribuídos do que adquiridos',
       entitlementIdle:
-        'Assinaturas cujos assentos livres passam do limite; reduza assentos antes da renovação',
+        'Assinaturas com mais de {{idleSeatPercent}}% dos assentos livres; reduza assentos antes da renovação',
       lowAccessories: 'Quantidade disponível abaixo do mínimo',
       lowConsumables: 'Quantidade disponível abaixo do mínimo',
       lowComponents: 'Quantidade disponível abaixo do mínimo',
@@ -2884,7 +2885,7 @@ const ptBR: AppResource = {
         'Um dispositivo em estoque há mais tempo que isso é considerado ocioso',
       auditDays: 'Avisar sobre um dispositivo não inventariado há esse tempo',
       idleSeatRatio:
-        'Um direito de uso é ocioso quando esta fração dos assentos não está atribuída (0,3 é um terço)',
+        'Um direito de uso fica ocioso quando mais que esta porcentagem dos assentos não está atribuída',
       defaultStockMinimum:
         'O nível mínimo com que um novo registro de estoque começa',
       onboardingPrepDays:

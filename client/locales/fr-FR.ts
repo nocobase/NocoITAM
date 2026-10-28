@@ -2081,7 +2081,8 @@ const frFR: AppResource = {
       departmentMismatch:
         'Service de l’appareil différent de celui du détenteur',
       entitlementOverAllocated: 'Droits d’utilisation surattribués',
-      entitlementIdle: 'Abonnements avec trop de sièges libres',
+      entitlementIdle:
+        'Abonnements avec plus de {{idleSeatPercent}} % de sièges libres',
       lowAccessories: 'Accessoires sous le minimum',
       lowConsumables: 'Consommables sous le minimum',
       lowComponents: 'Composants sous le minimum',
@@ -2103,7 +2104,7 @@ const frFR: AppResource = {
         'Le détenteur a changé de service ; l’appareil est toujours sur l’ancien',
       entitlementOverAllocated: 'Plus de sièges attribués que possédés',
       entitlementIdle:
-        'Abonnements dont les sièges libres dépassent le seuil ; réduisez-les avant le renouvellement',
+        'Abonnements dont plus de {{idleSeatPercent}} % des sièges sont libres ; réduisez-les avant le renouvellement',
       lowAccessories: 'Quantité disponible sous son minimum',
       lowConsumables: 'Quantité disponible sous son minimum',
       lowComponents: 'Quantité disponible sous son minimum',
@@ -2896,7 +2897,7 @@ const frFR: AppResource = {
       auditDays:
         'Avertir pour un appareil non inventorié depuis aussi longtemps',
       idleSeatRatio:
-        'Un droit d’utilisation est inutilisé lorsque cette part de ses sièges n’est pas attribuée (0,3 correspond à un tiers)',
+        'Un droit d’utilisation est inactif quand plus de ce pourcentage de ses sièges n’est pas attribué',
       defaultStockMinimum:
         'Le niveau minimum de départ d’une nouvelle fiche de stock',
       onboardingPrepDays:

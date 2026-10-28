@@ -2088,7 +2088,8 @@ const esES: AppResource = {
       departmentMismatch:
         'Departamento del dispositivo distinto del del titular',
       entitlementOverAllocated: 'Licencias sobreasignadas',
-      entitlementIdle: 'Suscripciones con demasiados puestos libres',
+      entitlementIdle:
+        'Suscripciones con más del {{idleSeatPercent}} % de puestos libres',
       lowAccessories: 'Accesorios por debajo del mínimo',
       lowConsumables: 'Consumibles por debajo del mínimo',
       lowComponents: 'Componentes por debajo del mínimo',
@@ -2110,7 +2111,7 @@ const esES: AppResource = {
         'El titular ha cambiado de departamento; el dispositivo sigue en el anterior',
       entitlementOverAllocated: 'Más puestos asignados que adquiridos',
       entitlementIdle:
-        'Suscripciones cuyos puestos libres superan el umbral; reduce puestos antes de renovar',
+        'Suscripciones con más del {{idleSeatPercent}} % de sus puestos libres; reduce puestos antes de renovar',
       lowAccessories: 'Cantidad disponible por debajo de su mínimo',
       lowConsumables: 'Cantidad disponible por debajo de su mínimo',
       lowComponents: 'Cantidad disponible por debajo de su mínimo',
@@ -2902,7 +2903,7 @@ const esES: AppResource = {
       auditDays:
         'Avisar de un dispositivo que no se ha inventariado durante este tiempo',
       idleSeatRatio:
-        'Una licencia está sin uso cuando esta proporción de sus puestos está sin asignar (0.3 es un tercio)',
+        'Una licencia está inactiva cuando más de este porcentaje de sus puestos no está asignado',
       defaultStockMinimum:
         'El nivel mínimo con el que empieza un nuevo registro de existencias',
       onboardingPrepDays:

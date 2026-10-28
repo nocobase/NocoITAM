@@ -2072,7 +2072,8 @@ const idID: AppResource = {
       departmentMismatch:
         'Departemen perangkat berbeda dari departemen pemegang',
       entitlementOverAllocated: 'Lisensi melebihi alokasi',
-      entitlementIdle: 'Langganan dengan terlalu banyak kursi kosong',
+      entitlementIdle:
+        'Langganan dengan lebih dari {{idleSeatPercent}}% kursi kosong',
       lowAccessories: 'Aksesori di bawah minimum',
       lowConsumables: 'Barang habis pakai di bawah minimum',
       lowComponents: 'Komponen di bawah minimum',
@@ -2094,7 +2095,7 @@ const idID: AppResource = {
         'Pemegang telah pindah; perangkat masih tercatat di departemen lama',
       entitlementOverAllocated: 'Kursi yang diberikan melebihi yang dimiliki',
       entitlementIdle:
-        'Langganan yang kursi kosongnya melebihi ambang; kurangi kursi sebelum perpanjangan',
+        'Langganan dengan lebih dari {{idleSeatPercent}}% kursi kosong; kurangi kursi sebelum perpanjangan',
       lowAccessories: 'Jumlah tersedia di bawah minimumnya',
       lowConsumables: 'Jumlah tersedia di bawah minimumnya',
       lowComponents: 'Jumlah tersedia di bawah minimumnya',
@@ -2874,7 +2875,7 @@ const idID: AppResource = {
         'Perangkat yang di stok lebih lama dari ini dianggap menganggur',
       auditDays: 'Peringatkan perangkat yang tidak diperiksa selama ini',
       idleSeatRatio:
-        'Lisensi dianggap menganggur jika porsi kursinya sebesar ini belum diberikan (0,3 berarti sepertiga)',
+        'Lisensi dianggap menganggur bila kursi yang belum diberikan melebihi persentase ini',
       defaultStockMinimum: 'Batas minimum awal untuk catatan stok baru',
       onboardingPrepDays:
         'Hari untuk menghapus data, menginstal, dan memberi label perangkat setelah kembali atau tiba; pasokan onboarding hanya menghitungnya tepat waktu jika ada sisa waktu sebanyak ini',

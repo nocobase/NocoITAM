@@ -2053,7 +2053,8 @@ const jaJP: AppResource = {
       auditOverdue: 'デバイスが {{auditDays}} 日以上棚卸されていない',
       departmentMismatch: 'デバイスの所管部署が使用者の部署と異なる',
       entitlementOverAllocated: '利用権が超過割り当て',
-      entitlementIdle: 'サブスクリプションの未使用シートが多い',
+      entitlementIdle:
+        'サブスクリプションの未使用シートが {{idleSeatPercent}}% 超',
       lowAccessories: 'アクセサリが最低在庫数を下回る',
       lowConsumables: '消耗品が最低在庫数を下回る',
       lowComponents: '部品が最低在庫数を下回る',
@@ -2074,7 +2075,7 @@ const jaJP: AppResource = {
         '使用者が異動しましたが、デバイスはまだ元の部署のままです',
       entitlementOverAllocated: '割り当て済みシートが保有数を上回っています',
       entitlementIdle:
-        '未使用シートが設定比率を超えるサブスクリプション。更新前にシートを減らせます',
+        '未使用シートが {{idleSeatPercent}}% を超えるサブスクリプション。更新前にシートを減らせます',
       lowAccessories: '利用可能数が最低在庫数を下回っています',
       lowConsumables: '利用可能数が最低在庫数を下回っています',
       lowComponents: '利用可能数が最低在庫数を下回っています',
@@ -2849,7 +2850,7 @@ const jaJP: AppResource = {
       idleDays: 'この日数を超えて在庫にあるデバイスは未使用とみなします',
       auditDays: 'この日数を超えて棚卸されていないデバイスを通知します',
       idleSeatRatio:
-        '未割り当てのシートが総シート数に占める割合がこの値を超えると、その利用権を未使用とみなします（0.3 は 3 割）',
+        '未割り当てのシートが総シート数に占める割合がこの百分率を超えると、その利用権を未使用とみなします',
       defaultStockMinimum:
         '新しい在庫レコードを作成するときの最低在庫数の既定値',
       onboardingPrepDays:

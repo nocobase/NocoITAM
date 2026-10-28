@@ -148,17 +148,31 @@ function ThresholdsCard({
       saved={save.isSuccess}
     >
       <div className='grid gap-3 sm:grid-cols-2'>
-        {keys.map((key) => (
-          <NumberField
-            key={key}
-            id={`threshold-${key}`}
-            label={t(`settings.thresholds.${key}`)}
-            hint={t(`settings.thresholdHints.${key}`, { defaultValue: '' })}
-            value={draft[key]}
-            step={key === 'idleSeatRatio' ? 0.05 : 1}
-            onChange={(next) => setDraft({ ...draft, [key]: next })}
-          />
-        ))}
+        {keys.map((key) =>
+          // The idle ratio is stored as a fraction and edited as a
+          // percentage (2026-10-28): 30 %, not 0.3.
+          key === 'idleSeatRatio' ? (
+            <NumberField
+              key={key}
+              id={`threshold-${key}`}
+              label={t(`settings.thresholds.${key}`)}
+              hint={t(`settings.thresholdHints.${key}`, { defaultValue: '' })}
+              value={Math.round(draft[key] * 100)}
+              step={5}
+              unit='%'
+              onChange={(next) => setDraft({ ...draft, [key]: next / 100 })}
+            />
+          ) : (
+            <NumberField
+              key={key}
+              id={`threshold-${key}`}
+              label={t(`settings.thresholds.${key}`)}
+              hint={t(`settings.thresholdHints.${key}`, { defaultValue: '' })}
+              value={draft[key]}
+              onChange={(next) => setDraft({ ...draft, [key]: next })}
+            />
+          ),
+        )}
       </div>
     </SettingsCard>
   );

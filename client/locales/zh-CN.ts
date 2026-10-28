@@ -1998,7 +1998,7 @@ const zhCN: AppResource = {
       auditOverdue: '设备超过 {{auditDays}} 天未盘点',
       departmentMismatch: '设备所属部门与使用人不一致',
       entitlementOverAllocated: '授权超量使用',
-      entitlementIdle: '订阅闲置席位过多',
+      entitlementIdle: '订阅闲置席位超过 {{idleSeatPercent}}%',
       lowAccessories: '配件低于水位',
       lowConsumables: '耗材低于水位',
       lowComponents: '组件低于水位',
@@ -2014,7 +2014,8 @@ const zhCN: AppResource = {
       auditOverdue: '未报废的设备',
       departmentMismatch: '设备所属部门与使用人当前的部门不同',
       entitlementOverAllocated: '已分配席位多于授权数',
-      entitlementIdle: '空闲席位超过设定比例的订阅，续订前可以减少席位',
+      entitlementIdle:
+        '空闲席位超过 {{idleSeatPercent}}% 的订阅，续订前可以减少席位',
       lowAccessories: '可用数量低于最低库存水位',
       lowConsumables: '可用数量低于最低库存水位',
       lowComponents: '可用数量低于最低库存水位',
@@ -2706,8 +2707,7 @@ const zhCN: AppResource = {
       subscriptionExpiryDays: '订阅续订或到期前这么多天开始提醒',
       idleDays: '设备在库超过这么多天算闲置',
       auditDays: '设备超过这么多天没盘点过就提醒',
-      idleSeatRatio:
-        '未分配席位占总席位超过这个比例，这份授权算闲置（0.3 即三成）',
+      idleSeatRatio: '未分配席位占总席位超过这个百分比，这份授权算闲置',
       defaultStockMinimum: '新建库存记录时默认填的最低水位',
       onboardingPrepDays:
         '设备归还或到货后，清数据、装系统、贴标签要的天数；入职配备按它判断来不来得及',

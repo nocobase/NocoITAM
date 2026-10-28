@@ -1970,7 +1970,7 @@ const zhTW: AppResource = {
       auditOverdue: '設備超過 {{auditDays}} 天未盤點',
       departmentMismatch: '設備所屬部門與使用人不一致',
       entitlementOverAllocated: '授權超量使用',
-      entitlementIdle: '訂閱閒置席位過多',
+      entitlementIdle: '訂閱閒置席位超過 {{idleSeatPercent}}%',
       lowAccessories: '配件低於水位',
       lowConsumables: '耗材低於水位',
       lowComponents: '元件低於水位',
@@ -1987,7 +1987,8 @@ const zhTW: AppResource = {
       auditOverdue: '未報廢的設備',
       departmentMismatch: '設備所屬部門與使用人目前的部門不同',
       entitlementOverAllocated: '已分配席位多於授權數',
-      entitlementIdle: '空閒席位超過設定比例的訂閱，續訂前可以減少席位',
+      entitlementIdle:
+        '空閒席位超過 {{idleSeatPercent}}% 的訂閱，續訂前可以減少席位',
       lowAccessories: '可用數量低於最低庫存水位',
       lowConsumables: '可用數量低於最低庫存水位',
       lowComponents: '可用數量低於最低庫存水位',
@@ -2675,8 +2676,7 @@ const zhTW: AppResource = {
       subscriptionExpiryDays: '訂閱續訂或到期前這麼多天開始提醒',
       idleDays: '設備在庫超過這麼多天算閒置',
       auditDays: '設備超過這麼多天未盤點就提醒',
-      idleSeatRatio:
-        '未分配席位佔總席位超過此比例，這份授權即算閒置（0.3 即三成）',
+      idleSeatRatio: '未分配席位佔總席位超過這個百分比，這份授權算閒置',
       defaultStockMinimum: '新建庫存記錄時預設填入的最低水位',
       onboardingPrepDays:
         '設備歸還或到貨後，清除資料、安裝系統、貼標籤所需的天數；入職配備依此判斷是否來得及',
