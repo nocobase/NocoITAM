@@ -154,6 +154,7 @@ export function PurchaseOrderCreateDialog({
       description: values.description ?? null,
       neededBy: values.neededBy ?? null,
       vendorId: values.vendorId ?? null,
+      currency: values.currency ?? currency,
       vendor: names.vendors?.get(text(values.vendorId)) ?? null,
       department: names.departments?.get(text(values.departmentId)) ?? null,
     },

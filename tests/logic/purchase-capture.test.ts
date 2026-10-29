@@ -188,6 +188,14 @@ describe('AI 整理 for a new purchase order', () => {
     expect(capture.vendorName).toBe('Contoso Hardware');
   });
 
+  it('takes the currency the material states, and only a currency code', async () => {
+    // A quote in yen was entered as yuan (2026-10-29).
+    expect((await match({ currency: 'jpy', lines: [] })).values).toEqual({
+      currency: 'JPY',
+    });
+    expect((await match({ currency: '日元', lines: [] })).values).toEqual({});
+  });
+
   it('places an edition or plan of a product on the product', async () => {
     // A quote names the edition; the register keeps the product (2026-10-28).
     const capture = await match({

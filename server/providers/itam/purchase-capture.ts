@@ -34,6 +34,8 @@ export interface CaptureInput {
   readonly vendorName?: string | null;
   readonly departmentId?: string | null;
   readonly departmentName?: string | null;
+  /** The ISO code the prices are in, when the material states one. */
+  readonly currency?: string | null;
   readonly lines?: readonly CaptureLineInput[];
   readonly uncertain?: readonly string[];
 }
@@ -90,6 +92,7 @@ const UNCERTAIN_KEYS: Readonly<Record<string, string>> = {
   reason: 'reason',
   description: 'description',
   neededBy: 'neededBy',
+  currency: 'currency',
   vendor: 'vendorId',
   vendorId: 'vendorId',
   department: 'departmentId',
@@ -195,6 +198,10 @@ export async function matchPurchaseCapture(
   if (description) values.description = description;
   const neededBy = clip(input.neededBy, 10);
   if (DATE.test(neededBy)) values.neededBy = neededBy;
+  // A quote in yen is entered in yen (2026-10-29): the form kept the
+  // register's currency and took ¥9,800 as yuan.
+  const currency = clip(input.currency, 8).toUpperCase();
+  if (/^[A-Z]{3}$/.test(currency)) values.currency = currency;
 
   const vendorName = clip(input.vendorName, 255);
   const vendor =

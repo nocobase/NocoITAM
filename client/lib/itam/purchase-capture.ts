@@ -41,6 +41,7 @@ export const CAPTURED_FIELDS = [
   'departmentId',
   'neededBy',
   'vendorId',
+  'currency',
 ] as const;
 
 const clip = (value: unknown, length: number): string | null => {
@@ -92,6 +93,7 @@ export function captureArgs(args: unknown): Record<string, unknown> {
     vendorName: clip(input.vendorName, 255),
     departmentId: clip(input.departmentId, 64),
     departmentName: clip(input.departmentName, 255),
+    currency: clip(input.currency, 8),
     uncertain: (Array.isArray(input.uncertain) ? input.uncertain : [])
       .map((key: unknown) => clip(key, 64))
       .filter((key): key is string => Boolean(key))
