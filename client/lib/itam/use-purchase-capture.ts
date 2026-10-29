@@ -94,7 +94,11 @@ export function usePurchaseOrderCapture({
 }: {
   /** The form as it stands, sent with each reading. */
   readonly form: () => CaptureForm;
-  readonly onFill: (capture: PurchaseCapture) => void;
+  /**
+   * `mode` says whether it is a new reading of the material (`organise`) or
+   * an adjustment of the form as it stands (`adjust`).
+   */
+  readonly onFill: (capture: PurchaseCapture, mode: Mode) => void;
   /** The draft whose lines a document is read into. */
   readonly orderId?: string;
 }): PurchaseOrderCapture {
@@ -162,7 +166,7 @@ export function usePurchaseOrderCapture({
           json: captureArgs(answer.reading),
         });
         if (asked !== askedRef.current) return;
-        onFill(data);
+        onFill(data, mode);
         if (mode === 'organise') {
           setSummary(answer.said || undefined);
           setTurns([]);

@@ -195,7 +195,7 @@ export function PurchaseOrderLinesCard({
           .map(plain),
       };
     },
-    onFill: (next) => {
+    onFill: (next, mode) => {
       const added = captureLines(next);
       const replaced = addedRef.current;
       addedRef.current = new Set(added.map((line) => line.key));
@@ -207,11 +207,13 @@ export function PurchaseOrderLinesCard({
         return all.length > 0 ? all : [blankLine()];
       });
       // A line the first reading could not place is still unplaced after
-      // an adjustment, which hands back only what is on the form.
+      // an adjustment, which hands back only what is on the form; a new
+      // reading of the material starts over (2026-10-28: the lines of an
+      // earlier paste stayed listed under the next one).
       setCaptured((previous) => ({
         ...next,
         unmatched: keyedUnmatched(
-          previous
+          previous && mode === 'adjust'
             ? [
                 ...previous.unmatched,
                 ...next.unmatched.filter(

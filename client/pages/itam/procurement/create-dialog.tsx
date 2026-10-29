@@ -161,17 +161,19 @@ export function PurchaseOrderCreateDialog({
   });
   const capture = usePurchaseOrderCapture({
     form,
-    onFill: (next) => {
+    onFill: (next, mode) => {
       setValues((current) => applyCaptureValues(current, next));
       const captured = captureLines(next);
       setLines(captured.length > 0 ? captured : [newPurchaseLine()]);
       setReview(new Set(next.uncertain));
       // A line the first reading could not place is still unplaced after
-      // an adjustment, which hands back only what is on the form.
+      // an adjustment, which hands back only what is on the form; a new
+      // reading of the material starts over (2026-10-28: the lines of an
+      // earlier paste stayed listed under the next one).
       setResult((previous) => ({
         ...next,
         unmatched: keyedUnmatched(
-          previous
+          previous && mode === 'adjust'
             ? [
                 ...previous.unmatched,
                 ...next.unmatched.filter(

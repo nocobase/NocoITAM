@@ -246,7 +246,7 @@ export async function matchPurchaseCapture(
     const product = model
       ? undefined
       : (products.find((row) => row.id === line.softwareProductId) ??
-        byExactName(products, text));
+        productByName(products, text));
     if (model && HARDWARE.has(model.appliesTo))
       lines.push({
         itemType: model.appliesTo as LineItemType,
@@ -301,15 +301,26 @@ export async function matchPurchaseCapture(
   };
 }
 
-/** Only an identical name counts for a product: names are unique. */
-function byExactName<T extends { readonly id: string; readonly name: string }>(
-  rows: readonly T[],
-  name: string,
-): T | undefined {
+/**
+ * A product by its name, or by its name followed by an edition or a plan
+ * (2026-10-28): a quote says "Microsoft 365 商业标准版" or "Zoom Workplace
+ * Pro", and the register keeps the product, "Microsoft 365", whose
+ * entitlements are those editions. Of the products a name starts with, the
+ * longest counts, so "Adobe Acrobat Pro" is Adobe Acrobat, not Adobe.
+ */
+export function productByName<
+  T extends { readonly id: string; readonly name: string },
+>(rows: readonly T[], name: string): T | undefined {
   const wanted = bareName(name);
   if (!wanted) return undefined;
   const same = rows.filter((row) => bareName(row.name) === wanted);
-  return same.length === 1 ? same[0] : undefined;
+  if (same.length > 0) return same.length === 1 ? same[0] : undefined;
+  const prefixed = rows
+    .map((row) => ({ row, bare: bareName(row.name) }))
+    .filter(({ bare }) => bare.length >= 4 && wanted.startsWith(bare));
+  const longest = Math.max(0, ...prefixed.map(({ bare }) => bare.length));
+  const best = prefixed.filter(({ bare }) => bare.length === longest);
+  return best.length === 1 ? best[0]?.row : undefined;
 }
 
 /**

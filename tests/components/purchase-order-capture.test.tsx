@@ -15,6 +15,8 @@ const state = vi.hoisted(() => ({
   // The unmatched picker's starting search: the first wording that found a
   // record, or '' when none did (2026-10-26).
   pickerStart: 'Testbook Pro 14 T4' as string | undefined,
+  // What the check cannot place, per reading.
+  unmatched: 'Testbook Pro 14 (T4)',
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -61,7 +63,7 @@ vi.mock('../../client/lib/itam/api.js', () => ({
               ],
               unmatched: [
                 {
-                  description: 'Testbook Pro 14 (T4)',
+                  description: state.unmatched,
                   partCode: null,
                   quantity: 10,
                   unitPrice: null,
@@ -159,6 +161,7 @@ beforeEach(() => {
   state.asked = [];
   state.requests = [];
   state.pickerStart = 'Testbook Pro 14 T4';
+  state.unmatched = 'Testbook Pro 14 (T4)';
 });
 
 const dialog = () => (
@@ -307,4 +310,30 @@ it('opens an unmatched line’s picker on the whole list when nothing is found',
   expect(
     pickers.some((button) => button.dataset.search === 'Testbook Pro 14 T4'),
   ).toBe(false);
+});
+
+it('lists only the new reading’s unplaced lines when the material is read again', async () => {
+  // An earlier paste's lines stayed listed under the next one (2026-10-28).
+  render(dialog());
+  const organise = async (material: string) => {
+    fireEvent.click(
+      screen.getByRole('tab', { name: 'procurement.capture.aiTab' }),
+    );
+    fireEvent.change(
+      screen.getByRole('textbox', { name: 'procurement.capture.material' }),
+      { target: { value: material } },
+    );
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'procurement.capture.organise' }),
+      );
+    });
+  };
+  await organise('Ten Testbook T4s');
+  expect(screen.getByText(/Testbook Pro 14 \(T4\) × 10/)).toBeVisible();
+  state.unmatched = 'Test Painter';
+  await organise('Test Painter for the design team');
+  expect(screen.getByText('procurement.capture.unmatched:1')).toBeVisible();
+  expect(screen.getByText(/Test Painter × 10/)).toBeVisible();
+  expect(screen.queryByText(/Testbook Pro 14 \(T4\) × 10/)).toBeNull();
 });

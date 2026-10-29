@@ -188,6 +188,29 @@ describe('AI 整理 for a new purchase order', () => {
     expect(capture.vendorName).toBe('Contoso Hardware');
   });
 
+  it('places an edition or plan of a product on the product', async () => {
+    // A quote names the edition; the register keeps the product (2026-10-28).
+    const capture = await match({
+      lines: [
+        {
+          description: 'Test Sketcher 团队版',
+          itemType: 'subscription',
+          quantity: 10,
+          unitPrice: 98,
+        },
+      ],
+    });
+    expect(capture.lines).toEqual([
+      expect.objectContaining({
+        itemType: 'subscription',
+        softwareProductId: ids.sketcher,
+        quantity: 10,
+        unitPrice: 98,
+      }),
+    ]);
+    expect(capture.unmatched).toEqual([]);
+  });
+
   it('places a part code misread off the page on the one code it starts with', async () => {
     const capture = await match({
       lines: [
