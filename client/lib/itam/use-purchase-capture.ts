@@ -147,6 +147,19 @@ export function usePurchaseOrderCapture({
               label: t(`enums.poReason.${value}`),
             })),
             form: form(),
+            // What the form calls its fields, so the assistant's note uses
+            // the same words (2026-10-28: it asked for a 到货日期 the form
+            // does not have).
+            fieldLabels: {
+              reason: t('fields.poReason'),
+              description: t('fields.description'),
+              neededBy: t('fields.neededBy'),
+              vendor: t('fields.vendor'),
+              department: t('fields.department'),
+              item: t('procurement.modelOrProduct'),
+              quantity: t('fields.quantity'),
+              unitPrice: t('fields.unitPrice'),
+            },
           },
           ...(instruction ? { instruction } : {}),
         });
