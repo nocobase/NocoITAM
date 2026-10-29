@@ -337,3 +337,10 @@ it('lists only the new reading’s unplaced lines when the material is read agai
   expect(screen.getByText(/Test Painter × 10/)).toBeVisible();
   expect(screen.queryByText(/Testbook Pro 14 \(T4\) × 10/)).toBeNull();
 });
+
+it('starts the owner at whoever files the order', () => {
+  // As a disposal does (2026-10-29).
+  state.available = false;
+  render(dialog());
+  expect(screen.getByTestId('po-ownerId')).toHaveTextContent('mia');
+});

@@ -29,7 +29,10 @@ import {
 } from '@/lib/itam/api';
 import { formatMoney, text } from '@/lib/itam/format';
 import { masterDataByName } from '@/lib/itam/master-data';
-import { useCollectionPermissions } from '@/lib/itam/permissions';
+import {
+  useCollectionPermissions,
+  useCurrentUserId,
+} from '@/lib/itam/permissions';
 import {
   PO_CREATE_FIELDS,
   PO_FIELDS,
@@ -98,6 +101,15 @@ export function PurchaseOrderCreateDialog({
   // A new order is in the default currency until someone says otherwise.
   const currency = useItamSettings().data?.general.currency ?? null;
   const [values, setValues] = useState<Record<string, unknown>>({});
+  // Whoever files it is its 负责人 until they name someone else (2026-10-29),
+  // as on a disposal. The signed-in id arrives after the first render, so it
+  // is read here rather than stored: untouched means the filer, and clearing
+  // the field means empty, which the required check then refuses.
+  const currentUserId = useCurrentUserId();
+  const filled =
+    'ownerId' in values || !currentUserId
+      ? values
+      : { ...values, ownerId: currentUserId };
   const [lines, setLines] = useState<readonly DialogLine[]>(() => [
     newPurchaseLine(),
   ]);
@@ -204,7 +216,7 @@ export function PurchaseOrderCreateDialog({
       let order = created;
       if (!order) {
         const header = Object.fromEntries(
-          Object.entries(values).filter(
+          Object.entries(filled).filter(
             ([, value]) =>
               value !== null && value !== undefined && value !== '',
           ),
@@ -250,7 +262,7 @@ export function PurchaseOrderCreateDialog({
   });
 
   const headerComplete = HEADER_FIELDS.every(
-    (field) => !field.required || Boolean(values[field.key]),
+    (field) => !field.required || Boolean(filled[field.key]),
   );
   const linesComplete = !lines.some((line) => purchaseLineIncomplete(line));
   const total = lines.reduce(
@@ -383,7 +395,7 @@ export function PurchaseOrderCreateDialog({
                         value={
                           field.key === 'currency'
                             ? (values.currency ?? currency)
-                            : values[field.key]
+                            : filled[field.key]
                         }
                         // Once created, the header is the order's; a retry only
                         // finishes the lines and the submission.
