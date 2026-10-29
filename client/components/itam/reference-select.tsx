@@ -281,7 +281,9 @@ export function ReferenceSelect({
               ))}
             </CommandGroup>
             {onCreate ? (
-              <>
+              // Pinned under the list (2026-10-28): opened on the whole list,
+              // a picker put 新建 forty rows down, out of sight.
+              <div className='sticky bottom-0 bg-popover'>
                 <CommandSeparator />
                 <CommandGroup>
                   <CommandItem
@@ -298,7 +300,7 @@ export function ReferenceSelect({
                     </span>
                   </CommandItem>
                 </CommandGroup>
-              </>
+              </div>
             ) : null}
             {reference.filterHint ? (
               <p className='border-t border-border px-3 py-2 text-xs text-muted-foreground'>
