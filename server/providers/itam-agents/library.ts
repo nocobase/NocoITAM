@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +7,7 @@ import type { Agents } from '@nocobase/app-plugin-agents/server/tokens';
 import type { DatabaseManager } from '@nocobase/db';
 
 import { claimMarker, readMarker, writeMarker } from './markers.js';
+import { SHIPPED_SKILL_HASHES } from './shipped-skills.js';
 import { METHOD_SKILLS, WORK_SKILLS } from './skill.js';
 
 /**
@@ -48,7 +50,14 @@ export async function provisionSkills(
     !(await claimMarker(database, SKILLS_MARKER, { skillIds: {} }))
   )
     return;
-  const known = skillIdsOf(marker);
+  const recorded = skillIdsOf(marker);
+  await refreshShippedSkills(agents, recorded);
+  const retired = await retireShippedSkills(agents, recorded);
+  const known = Object.fromEntries(
+    Object.entries(recorded).filter(([slug]) => !retired.includes(slug)),
+  );
+  if (retired.length)
+    await writeMarker(database, SKILLS_MARKER, { skillIds: known });
   const missing = [...METHOD_SKILLS, ...WORK_SKILLS].filter(
     (slug) => !known[slug],
   );
@@ -89,4 +98,74 @@ export function skillIdsOf(
         ),
       )
     : {};
+}
+
+/**
+ * Brings a library skill nobody has edited up to the SKILL.md shipped now
+ * (2026-10-29, when the skills were rewritten in English): one whose current
+ * version is still word for word a version ITAM shipped
+ * (`SHIPPED_SKILL_HASHES`) is saved again as the current file, as a new
+ * version; one an administrator changed is left as they left it. A skill
+ * that fails to save is skipped, never stopping the start.
+ */
+export async function refreshShippedSkills(
+  agents: Agents,
+  known: Readonly<Record<string, string>>,
+): Promise<void> {
+  for (const [slug, id] of Object.entries(known)) {
+    const shipped = SHIPPED_SKILL_HASHES[slug];
+    if (!shipped) continue;
+    try {
+      const content = await readFile(
+        join(SKILLS_DIR, slug, 'SKILL.md'),
+        'utf8',
+      ).catch(() => null);
+      if (!content) continue;
+      const current = await agents.skills.get(id);
+      if (current.content === content || current.files.length > 0) continue;
+      const hash = createHash('sha256').update(current.content).digest('hex');
+      if (!shipped.includes(hash)) continue;
+      await agents.skills.save(id, null, {
+        content,
+        files: [],
+        note: 'Updated to the version ITAM ships',
+        expectedRevision: current.version,
+      });
+    } catch {
+      // Deleted, or saved by someone meanwhile: left as it is.
+    }
+  }
+}
+
+/**
+ * Skills ITAM once shipped and no longer uses (2026-10-29): the renewal
+ * review agent's, replaced by renewal rules (627db8a).
+ */
+export const RETIRED_SKILLS: readonly string[] = ['renewal-review'];
+
+/**
+ * Takes a retired skill out of the library when nobody has edited it — its
+ * current version is still one ITAM shipped — and returns the slugs it took
+ * out; one an administrator changed stays theirs.
+ */
+export async function retireShippedSkills(
+  agents: Agents,
+  known: Readonly<Record<string, string>>,
+): Promise<string[]> {
+  const removed: string[] = [];
+  for (const slug of RETIRED_SKILLS) {
+    const id = known[slug];
+    const shipped = SHIPPED_SKILL_HASHES[slug];
+    if (!id || !shipped) continue;
+    try {
+      const current = await agents.skills.get(id);
+      const hash = createHash('sha256').update(current.content).digest('hex');
+      if (!shipped.includes(hash) || current.files.length > 0) continue;
+      await agents.skills.remove(id);
+      removed.push(slug);
+    } catch {
+      // Already gone, or the library cannot be reached: tried next start.
+    }
+  }
+  return removed;
 }

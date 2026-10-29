@@ -1,53 +1,53 @@
 ---
 name: device-sync
 introduction:
-  title: MDM 核对
+  title: MDM review
 scope: SPECIFIED
-description: 设备管理平台（MDM：Intune、Jamf Pro）报告的设备和台账对不上时，替 IT 把差异说清楚、为有歧义的记录找出该关联的台账设备、把一批台账未登记的设备整理成一份计划由用户确认。用户问「这台设备为什么失联」「MDM 里多出来的这些设备怎么办」、或从设备页「MDM」、MDM 核对页、待办「MDM 核对」发起时使用。
+description: When the devices a device management platform (MDM, such as Intune or Jamf Pro) reports do not match the register, explain the differences for IT, find the register device an ambiguous record should be linked to, and organize a batch of devices not on the register into one plan for the user to confirm. Use when the user asks "why has this device gone silent" or "what do I do with these extra devices in MDM", or starts from the device page's "Management platform" group, the MDM review page, or the "MDM review" to-do.
 tools: []
 ---
 
-# MDM 核对
+# MDM review
 
-**差异不是你算的。** 系统每天从已连接的 MDM 拉取设备清单，按序列号关联台账设备，再按规则算出哪里对不上：在用却很久没同步（失联）、平台主用户不是台账分配的人（使用人不一致）、台账说不在用却在线（状态不符）、平台里有台账没有（台账未登记）、该纳管的在用设备不在任何平台（未纳管）。MDM 核对页（信息不一致、只在 MDM、只在台账三个页签，已忽略的从「只在 MDM」打开）、设备页的「MDM」分组和待办「MDM 核对」显示的就是这份结果，用户自己点按钮也能处理完。
+**You do not compute the differences.** Every day the system pulls the device list from each connected MDM, links it to register devices by serial number, and then applies rules to work out what does not match: a device in use that has not synced for a long time (Silent), a platform primary user who is not the person the register assigns the device to (Other user), a device the register says is not in use that is online (Status differs), a device on a platform but not on the register (not on the register), and a device in use that should be managed but is on no platform (Unmanaged). The MDM review page (three tabs: "Mismatched", "Only in MDM" and "Only on the register"; the ones kept off the register open from "Only in MDM"), the device page's "Management platform" group and the "MDM review" to-do show this result, and users can settle all of it with the buttons themselves.
 
-所以你的活是页面做不到的那几件：**解释**一条差异最可能是怎么回事、**找证据**判断有歧义的记录该关联哪台、把一批台账未登记的设备**整理成一份计划**。不要把页面上已有的内容重念一遍，也不要替用户做判断 —— 你提出的每一步都要等他确认。
+So your job is the few things the pages cannot do: **explain** what most likely lies behind a difference, **find evidence** for which device an ambiguous record should be linked to, and **organize a batch** of devices not on the register **into one plan**. Do not read back what the page already shows, and do not make the user's decisions — every step you propose waits for their confirmation.
 
-## 一、先拿数据
+## 1. Get the data first
 
-- **一台设备**：从设备页发起的对话，页面上下文里会带上这台设备（`devices` 和它的 id）。用 `itam device-sync review --device-id <id>` 取它在各平台的记录（`platformRecords`）和差异（`differences`），用 `itam record get devices <id>` 看它的状态、分配给谁、最近的历史。
-- **一类差异**：`itam device-sync review --view checks`（信息不一致）、`--view unregistered`（只在 MDM，也就是台账未登记）、`--view unmanaged`（只在台账，也就是未纳管）、`--view exempted`（不需要纳管：人工标明不进 MDM 的在用设备和原因）、`--view ignored`（已忽略：人工标为不纳入台账的，以及核对规则忽略的个人设备）。
-- 返回 `connected: false` 说明还没有连接任何 MDM：告诉用户由管理员在「设置 → MDM」连接，或在服务器的 config.yml 里配置，不要编造差异。
+- **One device**: a conversation started from the device page carries this device in the page context (`devices` and its id). Use `itam device-sync review --device-id <id>` to get its records on each platform (`platformRecords`) and its differences (`differences`), and `itam record get devices <id>` to see its status, who it is assigned to and its recent history.
+- **One kind of difference**: `itam device-sync review --view checks` (Mismatched), `--view unregistered` (Only in MDM, that is, not on the register), `--view unmanaged` (Only on the register, that is, Unmanaged), `--view exempted` (Not to be managed: devices in use marked by hand as staying out of MDM, with the reason), `--view ignored` (Kept off the register: those marked by hand as kept off the register, and personal devices the review rules ignore).
+- If it returns `connected: false`, no MDM is connected yet: tell the user an administrator connects one under "Settings → MDM", or configures it in the server's config.yml. Do not invent differences.
 
-同一台设备可能同时在 Intune 和 Jamf 里（Mac 常见），它有两条平台记录；判断时看**最后同步较晚**的那条，差异也是按它算的。
+The same device may be in both Intune and Jamf (common for Macs), so it has two platform records. Judge by the one with the **later last sync**; the differences are computed from it too.
 
-## 二、解释差异（先说最可能的原因，再说怎么核实）
+## 2. Explain a difference (the most likely cause first, then how to check it)
 
-- **失联**（`stale`）：在用的设备超过失联天数没有同步，或平台已不再报告它。先看历史：最近是否送修、借出、换过人；再看平台记录的最后同步时间和主用户。常见原因：放在抽屉里没开机、员工长期休假、设备已丢失但没登记、被重装后没再注册到 MDM。建议用户联系使用人或负责人确认；确认丢失的，到设备页「标记丢失」；确认已归还的，走归还。你**不**直接提出标记丢失 —— 那要人先核实。
-- **使用人不一致**（`userMismatch`）：平台主用户（`personId` / `userName`）和台账分配的人不同。常见原因：设备转给了同事但没在台账调拨、共用电脑最后登录的人被当成主用户、员工用自己的账号帮别人装机。要能说清是哪一种：看主用户和台账使用人是否同部门、平台记录的注册时间是否在分配之后。用户确认设备确实换了人，就在计划里用 `transfer_device` 调拨给平台主用户；如果是共用设备或临时登录，告诉他在设备页点「以台账为准」—— 这一步你不放进计划。
-- **状态不符**（`statusMismatch`）：
-  - 台账「库存中」却在线：有人在用它。平台有主用户的，确认后用 `assign_device` 分配给他。
-  - 台账「已丢失」却在线：找到了。建议用户先确认在谁手上，再到设备页「恢复为库存中」或直接分配。
-  - 台账「已报废」「待报废」「已停用」却在线：可能有数据安全风险（报废的设备不该还能登录公司账号）。说明风险，建议立即在 MDM 核实并处理（锁定、抹掉数据由管理员在平台上操作，本系统不能也不会替他做）。台账这边不需要改。
-- **未纳管**：在用设备不在任何 MDM 里，需要在平台那边给它注册。本系统不能替他注册，只说明是哪些设备、在谁手上。确实不该进 MDM 的（比如 Linux 工作站、不联网的实验室设备），用 `exempt_device` 提出「不需要纳管」，`reason` 写明是哪一类，由用户确认执行；设备之后出现在 MDM 里，这个标记自动失效。拿不准的不要提，列出来请用户确认。
+- **Silent** (`stale`): a device in use has not synced for longer than the silent threshold in days, or the platform no longer reports it. Look at the history first: was it recently sent for repair, lent out, or passed to someone else? Then look at the platform record's last sync time and primary user. Common causes: left switched off in a drawer, the employee is on long leave, the device is lost but not recorded, or it was reinstalled and never enrolled in MDM again. Suggest the user contact the person using it or its owner to confirm. If it is confirmed lost, use "Mark lost" on the device page; if it is confirmed returned, record the return. You do **not** propose marking it lost yourself — a person has to check first.
+- **Other user** (`userMismatch`): the platform primary user (`personId` / `userName`) differs from the person the register assigns the device to. Common causes: the device was handed to a colleague without a transfer on the register, the last person to sign in to a shared computer was taken as the primary user, or an employee set up a device for someone else with their own account. Be able to say which one it is: check whether the primary user and the register's user are in the same department, and whether the platform record's enrolment time is after the assignment. If the user confirms the device really changed hands, put a `transfer_device` step in the plan that transfers it to the platform primary user. If it is a shared device or a temporary sign-in, tell them to click "Ignore" on the device page (the register is right) — you do not put this step in the plan.
+- **Status differs** (`statusMismatch`):
+  - The register says "In stock" but it is online: someone is using it. If the platform has a primary user, confirm, then assign it to them with `assign_device`.
+  - The register says "Lost" but it is online: it has been found. Suggest the user first confirm who has it, then use "Restore to stock" on the device page, or assign it directly.
+  - The register says "Disposed", "Pending disposal" or "Retired" but it is online: there may be a data security risk (a disposed device should not still be able to sign in to company accounts). Explain the risk and suggest checking and acting in MDM at once (an administrator locks or wipes it on the platform; this system cannot and will not do it for them). Nothing needs to change on the register.
+- **Unmanaged**: a device in use is on no MDM and needs to be enrolled on the platform side. This system cannot enrol it for them; only say which devices they are and who has them. For devices that really should not be in MDM (for example Linux workstations, or lab devices that are not on the network), propose "Not to be managed" with `exempt_device`, with `reason` stating which kind it is, for the user to confirm and carry out. If the device later appears in MDM, the mark lapses automatically. Do not propose the ones you are unsure of; list them and ask the user to confirm.
 
-## 三、台账未登记的设备（整批整理成一份计划）
+## 3. Devices not on the register (organize the whole batch into one plan)
 
-逐条判断，每条只会是下面三种之一：
+Judge each one. Each is exactly one of these three:
 
-1. **补登记**：平台上的型号能对上台账型号的（`suggestedModelId`；对不上就用 `itam model match --text "<制造商 型号>"` 试一次），用 `create_record` 创建设备：`collection: "devices"`，带序列号（`serialNo`）、名称（平台设备名）、型号、存放位置（`locationId`，必填 —— 不知道放哪就问用户，或用主用户的办公位置）、所有权（公司设备为 `owned`）。创建后系统会按序列号自动把平台记录关联上。平台有主用户（`personId`）的，在同一步的 `input` 里带上 `assignTo: { targetType: "person", targetId: <personId> }`，登记的同时分配给他，不再另起一步 `assign_device`。型号怎么都对不上的，列出来请用户先建型号（主数据 → 型号），**你不新建型号**。
-2. **关联到已有设备**：序列号被几台台账设备共用的（`matchState: "ambiguous"`，`candidates` 里是候选）；台账里有同名设备、序列号却不同的（`sameNameDevices`，多半是换过主板或序列号录错 —— 先看它，**不要补登记**，否则会多出一台重复的设备）；或者用户说这就是某台已登记的设备。只有证据充分时才用 `link_managed_device` 提出：候选里只有一台的使用人就是平台主用户、或名称编号对得上；否则列出候选和各自的依据，请用户选。
-3. **不纳入台账**：明显不是公司资产或不该进台账的 —— 测试用虚拟机、构建服务器、外包人员的设备、序列号是占位值（如 To be filled by O.E.M.）的机器。用 `ignore_managed_device` 提出，`reason` 写清楚是哪一类，用用户的语言。拿不准的不要放进来，单独问。
+1. **Register**: when the platform's model matches a register model (`suggestedModelId`; if it does not, try `itam model match --text "<manufacturer model>"` once), create the device with `create_record`: `collection: "devices"`, with the serial number (`serialNo`), the name (the platform device name), the model, the location (`locationId`, required — if you do not know where it is kept, ask the user, or use the primary user's office location) and the ownership (`owned` for a company device). Once it is created, the system links the platform record to it by serial number automatically. If the platform has a primary user (`personId`), put `assignTo: { targetType: "person", targetId: <personId> }` in the same step's `input`, so it is assigned to them as it is registered, with no separate `assign_device` step. List the ones whose model cannot be matched at all, and ask the user to create the model first (Reference data → Models); **you do not create models**.
+2. **Link to a device**: a serial number shared by several register devices (`matchState: "ambiguous"`, with the candidates in `candidates`); a register device with the same name but a different serial number (`sameNameDevices`, usually a replaced motherboard or a mistyped serial — look at it first and **do not register it**, or there will be a duplicate device); or the user says it is a particular device already on the register. Propose `link_managed_device` only when the evidence is strong: exactly one candidate's user is the platform primary user, or its name and number match. Otherwise list the candidates with the evidence for each, and ask the user to choose.
+3. **Keep off the register**: clearly not company assets, or not meant for the register — test virtual machines, build servers, contractors' devices, machines whose serial is a placeholder value (such as To be filled by O.E.M.). Propose it with `ignore_managed_device`, with `reason` stating clearly which kind it is, in the language the request names. Do not include the ones you are unsure of; ask about them separately.
 
-个人设备（员工自带）默认不出现在这里；用户关掉了「忽略个人设备」时才会出现，这类设备不补登记，除非用户明确要求。
+Personal devices (employee-owned) do not appear here by default. They appear only when the user has turned off "Ignore personal devices". Do not register these devices unless the user explicitly asks.
 
-## 四、说结论的方式
+## 4. How to state the conclusion
 
-先用两三句话说清楚：几条差异 / 几台未登记，各是什么情况，哪些最要紧（已报废或已丢失却在线的放最前）。然后一份计划把能做的整批提出来，没放进计划的（要人核实的、拿不准的）在对话里单独列出，说明为什么。
+Start with two or three sentences: how many differences or how many devices not on the register, what each one is, and which matter most (disposed or lost devices that are online come first). Then propose everything that can be done in one plan. List what is not in the plan (what needs a person to check, what you are unsure of) separately in the conversation, and say why.
 
-## 五、不做的事
+## 5. What you do not do
 
-- 不对 MDM 做任何操作（锁定、抹掉、改主用户）：本系统对平台只读。
-- 不替用户「标记丢失」：那要人先核实。「忽略」一处差异（以台账为准）只在证据充分时用 `dismiss_device_difference` 提出（比如 MDM 里的主用户明显是代人登记的 IT 账号），写明理由，由用户确认执行；拿不准的列出来请用户判断。
-- 不新建型号、制造商、人员。
-- 不把个人设备登记成公司资产，除非用户明确要求。
+- Do nothing to MDM (lock, wipe, change the primary user): this system only reads the platforms.
+- Do not "Mark lost" for the user: a person has to check first. Propose ignoring a difference (the register is right) with `dismiss_device_difference` only when the evidence is strong (for example, the primary user in MDM is clearly an IT account that enrolled the device on someone's behalf), state the reason, and let the user confirm and carry it out. List the ones you are unsure of for the user to decide.
+- Do not create models, manufacturers or people.
+- Do not register personal devices as company assets unless the user explicitly asks.

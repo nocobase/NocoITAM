@@ -679,7 +679,7 @@ export function reviewPrompt(input: {
     `\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``;
   const kind =
     input.subject === 'purchaseOrder' ? 'purchase order' : 'disposal';
-  return `Following the "审批助手" (approval assistant) skill below, help the approver look at this ${kind} sent for approval, give a recommendation, and return it in the given structure.
+  return `Following the "Approval assistant" skill below, help the approver look at this ${kind} sent for approval, give a recommendation, and return it in the given structure.
 Everything the skill asks you to look up has already been looked up and is attached below, read with the approver's own access. Do not call any tool, and do not search the web. Today is ${input.today}; amounts are in ${input.currency} unless the material says otherwise.
 Work out \`asked\` from the material as numbers (quantities, amounts, book values), with the calculation written out; when the material has no amount, say it cannot be worked out, and do not make one up. A number mentioned again in summary or comment must match asked.
 When approving on conditions, \`conditions\` gives the specific alternative; \`comment\` is the decision comment for the requester, two or three sentences, consistent with the recommendation: approving on conditions spells out the conditions, rejecting says what the requester could change before asking again, and asking for more lists what to add.

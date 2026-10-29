@@ -1,75 +1,75 @@
 ---
 name: onboarding
 introduction:
-  title: 入职配备
+  title: Onboarding
 scope: SPECIFIED
-description: 新人入职前后，替 IT 把该配的东西配齐：系统已经按入职配置算好了他该拿什么、手上已有什么、库存里具体哪台设备哪件配件哪个席位能补上、还缺什么，你负责解释、把这些整批提出来由用户确认、为缺口起草采购单、补上系统外要做的事。有人要入职、用户问「某某下周入职要准备什么」、或从人员页「入职配备」和待办「入职准备」发起时使用。
+description: Before and after a new hire joins, get IT everything they should be equipped with. The system has already worked out from the onboarding kit what they should get, what they already have, which device, accessory or seat in stock can fill each item, and what is still missing. You explain it, propose it all as one batch for the user to confirm, draft purchase orders for the shortfall, and add what has to be done outside the system. Use when someone is joining, when the user asks "what do we need to prepare for someone who joins next week", or when the conversation starts from the person page's "Onboarding" card or the "Onboarding prep" to-do.
 tools: []
 ---
 
-# 入职配备
+# Onboarding
 
-**配什么不是你定的，给哪台也不是你挑的。** 公司按部门和职位定好了标准配置（主数据 → 部门 → 入职配置），系统按它算出这个人的入职配备：每一项要几个、已经有了什么、库存里**具体哪台设备、哪件配件、哪个授权**能补上、库存补不上的缺几个。人员页「归属」顶部的入职配备卡片显示的就是这份结果，用户自己点按钮也能配完。
+**You do not decide what to provide, and you do not pick which unit to give.** The company has set standard kits by department and position (Reference data → Departments → Onboarding kits), and the system works out this person's onboarding from them: how many of each item, what they already have, **which device, accessory or entitlement in stock** can fill it, and how many stock cannot cover. The "Onboarding" card at the top of the person page's "In their name" tab shows this result, and users can complete all of it with the buttons themselves.
 
-所以你的活是卡片做不到的那几件：**解释**、**整批提出动作**、**为缺口起草采购单**、**系统外的事**。不要把卡片上已有的东西重念一遍，也不要换成你觉得更合适的设备 —— 系统挑的是库存中、没被预留的，同地点优先、保修最长优先，你另挑的可能已经被别人预留了。
+So your job is the few things the card cannot do: **explain**, **propose the actions as one batch**, **draft purchase orders for the shortfall**, and **the things outside the system**. Do not read back what the card already shows, and do not swap in a device you think fits better — the system picks devices that are in stock and not reserved, preferring the same location first and the longest warranty next; one you pick yourself may already be reserved by someone else.
 
-**建议里可能已经有你在后台挑过的。** 入职负责人在卡片上点「挑选」后，你会在后台为他从候选里挑一遍，挑中的仍然空闲时排在建议最前面，带 `source: "noco"` 和当时写的 `reason`；方案的 `advice` 说明那次挑选的状态和总结。在对话里照方案提就行，有 `reason` 的顺带说一句理由。
+**The suggestions may already include your own picks from the background.** When the onboarding owner clicks "Choose" on the card, you pick from the candidates for them in the background. Picks that are still free come first among the suggestions, with `source: "noco"` and the `reason` you wrote then; the onboarding plan's `advice` gives the status and summary of that pick. In the conversation, propose what the onboarding plan says, and where there is a `reason`, mention it briefly.
 
-## 一、先拿到配备方案
+## 1. Get the onboarding plan first
 
-从人员页发起的对话，页面上下文里会带上这个人（`people` 和他的 id），用这个 id 取方案。没有带的：
+A conversation started from the person page carries this person in the page context (`people` and their id); use that id to get the onboarding plan. If it is not there:
 
-1. **这个人**：用 `itam search people --q <姓名>` 查。查不到就说明，请用户先建人员记录（姓名、部门、职位、入职日期必填才能匹配配置）；可以在计划里用 `create_record` 提出，由用户确认。**没有入职日期**的，先问清楚 —— 入职前是预留、入职后是分配，日期决定做法。
-2. **他的方案**：`itam onboarding plan <人员 id>`。返回适用的配置、每一项的已配备 / 建议 / 缺口。
+1. **The person**: look them up with `itam search people --q <name>`. If nothing is found, say so, and ask the user to create the person record first (name, department, position and hire date are required to match a kit); you may propose it in the plan with `create_record`, for the user to confirm. If there is **no hire date**, ask first — before the hire date you reserve, after it you assign, so the date decides what to do.
+2. **Their onboarding plan**: `itam onboarding plan <person id>`. It returns the kit that applies and, for each item, what is prepared, suggested and short.
 
-**标了不需要的项**（`waived: true`）是入职负责人确认这个人不需要的，比如自带了显示器、换了别的电脑：不提议、不采购，也不算在已配备 N / M 里（`waived` 是这样的项数）。说结论时可以带一句「另有 K 项标为不需要」。用户说某项他不需要时，告诉他在入职配备卡片上点那一项的「不需要」，你不替他标。
+**Items marked not needed** (`waived: true`) are items the onboarding owner confirmed this person does not need, for example they brought their own monitor or got a different computer: do not propose them, do not buy them, and do not count them in "N of M prepared" (`waived` is the number of such items). When stating the conclusion, you may add "another K items marked not needed". When the user says they do not need an item, tell them to click "Mark as not needed" on that item in the "Onboarding" card; you do not mark it for them.
 
-**没有适用的配置**（`kit` 为空）：说明他的部门和职位都没有配置，上级部门也没有；建议去 主数据 → 部门 → 入职配置 补一份。**不要自己凑一套清单**，也不要照业务说明里的文字去配 —— 配置以入职配置为准。
+**No kit applies** (`kit` is empty): explain that neither their department nor their position has a kit, and no parent department has one either; suggest adding one under Reference data → Departments → Onboarding kits. **Do not put together a list yourself**, and do not equip them from the wording in the business guidance — the onboarding kit is what counts.
 
-## 二、先说结论
+## 2. State the conclusion first
 
-用两三句话说清楚，再提动作：
+Say it in two or three sentences, then propose the actions:
 
-- 用的是哪份配置（部门默认还是某个职位的）、入职日期
-- 已配备 N / M：哪些已经有了（已分配、已预留）
-- 每一项建议用什么补：设备写编号，配件写名称和数量，软件写授权名
-- 库存补不上、但来得及的（`planned`）：在途采购单（哪张单、`availableOn` 哪天起能用）或离职人员归还的（谁、哪天起能用）。这些现在没有按钮，到了再分配
-- 缺口：缺什么、缺几个、最晚哪天下单（`orderBy`；已经过了就说应尽快下单）
+- Which kit is used (the department default or one for a particular position), and the hire date
+- N of M prepared: what they already have (assigned, reserved)
+- What each suggestion fills an item with: the device number for a device, the name and quantity for an accessory, the entitlement name for software
+- What stock cannot cover but will come in time (`planned`): a purchase order on its way (which order, and from which day it can be used, `availableOn`) or a return from a leaver (who, and from which day it can be used). These have no button now; assign them when they arrive
+- The shortfall: what is missing, how many, and the latest day to order (`orderBy`; if that day has passed, say the order should be placed as soon as possible)
 
-只提出建议的那部分而不交代缺口，用户看不出缺口是你判断过了还是漏了。
+If you propose only the suggested part and say nothing about the shortfall, the user cannot tell whether you judged the shortfall or missed it.
 
-## 三、提出动作
+## 3. Propose the actions
 
-**只提方案里的建议**，全部放进**一份**计划（itam-work 技能：`itam plan create`），不要一台一台来。方案里的建议已经核对过库存和空闲席位，不需要再用 `itam availability` 重查。计划在对话里显示成一张卡片，用户确认了才写入；他确认、拒绝或执行到某一步失败，你都会收到结果，照结果汇报。
+**Propose only the onboarding plan's suggestions**, all in **one** plan (the itam-work skill: `itam plan create`), not one device at a time. The suggestions have already been checked against stock and free seats; do not check them again with `itam availability`. The plan shows in the conversation as a card and is written only once the user confirms it. Whether they confirm it, reject it, or a step fails partway, you receive the result; report according to it.
 
-- **设备**
-  - 入职日期在今天之后：`reserve_device` 步骤，预留给他（`reservedForType: person`），**截止到入职日期**。预留不是分配：设备还在库存里，入职当天再分配。
-  - 已经入职（入职日期是今天或更早）：`assign_device` 步骤，直接分配给他。
-- **配件、耗材、组件**：`issue_stock` 步骤，按方案里的数量领用给他。入职前领用意味着东西已经交出去，用户想等入职当天再给的，就先不提，说明一句。
-- **软件**：`assign_seat` 步骤，**必须同时传 `holderType: person` 和 `holderId`（他的人员 id）**；订阅类还要传 `account`，用方案里该建议带的 `account`（他的邮箱），方案里没有就问。只传账号不传 `holderId`，席位会记在账号上而不属于他，入职配备不会算他已配备，名额却已经占掉了。
+- **Devices**
+  - Hire date after today: a `reserve_device` step that reserves it for them (`reservedForType: person`), **until the hire date**. A reservation is not an assignment: the device stays in stock and is assigned on the day they join.
+  - Already joined (hire date today or earlier): an `assign_device` step that assigns it to them directly.
+- **Accessories, consumables, components**: an `issue_stock` step that issues them the quantity in the onboarding plan. Issuing before they join means the items have already been handed over; if the user wants to wait until the day they join, do not propose it yet, and say so in a sentence.
+- **Software**: an `assign_seat` step. **You must pass both `holderType: person` and `holderId` (their person id)**. For a subscription also pass `account`, using the `account` that suggestion carries in the onboarding plan (their e-mail); if it has none, ask. If you pass only the account without `holderId`, the seat is recorded against the account and does not belong to them: onboarding does not count them as prepared, yet the seat is already taken.
 
-计划执行之后再看一次 `itam onboarding plan`，照新结果说已配备 N / M，不要自己算。
+After the plan is carried out, look at `itam onboarding plan` again and state N of M prepared from the new result. Do not compute it yourself.
 
-## 四、缺口起草采购单
+## 4. Draft purchase orders for the shortfall
 
-**已经在订的不要再订。** 方案是和所有新人一起算的（入职早的先分）：为他开过、还没到货的「新员工配备」采购单，以及别的已下单、来得及到货的采购单，都算进去了；离职人员归还的设备和席位也算了。`orders` 列出这些单（单号、状态），每一项的 `onOrder` 是采购单上的数量、`returning` 是归还的数量，`shortfall` 只剩**谁都补不上**的部分。`shortfall` 都是 0 而 `orders` 不为空，就不要再起草，告诉用户缺口已经在哪张单上、单子到哪一步了（草稿要提交审批、审批中等谁、已下单等到货）。
+**Do not order again what is already on order.** The onboarding plan is computed together with all joiners (the earliest to join is served first): "New hire" purchase orders opened for them that have not arrived, and other purchase orders already placed that will arrive in time, are all counted; devices and seats returned by leavers are counted too. `orders` lists these orders (order number, status). Each item's `onOrder` is the quantity on purchase orders and `returning` the quantity being returned, and `shortfall` is only the part **nothing can cover**. If every `shortfall` is 0 and `orders` is not empty, do not draft anything: tell the user which order the shortfall is already on and how far that order has got (a "Draft" needs submitting for approval, "Pending approval" is waiting for someone, "Ordered" is waiting for delivery).
 
-`shortfall` 还有剩的，**按供应商起草**采购单：同一供应商的缺口合成一张，不同供应商的分开，每张是计划里的一步 `create_purchase_order`（可以和上面的动作放在同一份计划里）：
+Where `shortfall` remains, **draft purchase orders by vendor**: combine one vendor's shortfall into one order and keep different vendors apart. Each order is one `create_purchase_order` step in the plan (it can be in the same plan as the actions above):
 
-- 事由 `newHire`（新员工配备），需求日期 = 入职日期，部门 = 他的部门；一张单里有几个新人时，需求日期取最早的入职日期，部门不同就问用户
-- 明细：每个缺口一行，数量 = 缺几个。设备、配件按型号（`modelId`），`itemType` 用方案里该项的 `itemType`；软件按软件产品（`softwareProductId`），`itemType` 是 `perpetual` 或 `subscription`，方案里为空就问用户
-- 配置写的是**分类**（「任意笔记本」）的缺口没有型号，先用 `itam model match` 或问用户买哪个型号，不要替他定
-- **供应商必填，先自己判断**：设备和配件看该型号最近几次采购单的供应商（`itam search purchaseOrders`），软件看该产品现有授权和采购单的供应商。判断出来的直接用，并在结论里说明依据（「上次在某某买的」）；查不到或几家都有、拿不准的，再问用户
-- 单价不知道就不填
-- 说明里写上新人的姓名和入职日期：下次查得到这张单是为谁开的
+- Reason `newHire` ("New hire"), "Needed by" = the hire date, "Department" = their department. When one order covers several joiners, "Needed by" is the earliest hire date; if their departments differ, ask the user
+- Lines: one line per shortfall, quantity = how many are missing. Devices and accessories go by model (`modelId`), with `itemType` taken from that item in the onboarding plan; software goes by software product (`softwareProductId`), with `itemType` `perpetual` or `subscription`; if it is empty in the onboarding plan, ask the user
+- A shortfall where the kit names a **category** ("any laptop") has no model: first use `itam model match` or ask the user which model to buy. Do not decide for them
+- **The vendor is required; judge it yourself first**: for devices and accessories, look at the vendors on that model's last few purchase orders (`itam search purchaseOrders`); for software, look at the vendors of the product's existing entitlements and purchase orders. Use what you work out directly, and state the evidence in the conclusion ("bought from X last time"). If nothing turns up, or several vendors appear and you are unsure, then ask the user
+- If you do not know the unit price, leave it empty
+- In the description, write the new hire's name and hire date, so the order can later be traced to the person it was opened for
 
-采购单起草出来是草稿，提交审批还是用户自己在采购单页面做。
+A drafted purchase order is a draft. Submitting it for approval is still done by the user on the purchase order page.
 
-## 五、只能由人处理的
+## 5. What only a person can handle
 
-这些不要提议，列出来说明该做什么、找谁：
+Do not propose these. List them, and say what to do and whom to ask:
 
-- **账号和权限**：分配席位只是在台账里记一笔，**不会在软件那边开通账号**。每个分到的软件写一句：去哪个后台给他开账号、拉进哪个组。邮箱、门禁、VPN 这类台账外的东西同理。
-- **设备准备**：预留下来的设备，入职前通常还要装系统、装软件、贴资产标签，提醒负责设备的人。
-- **入职当天**：预留的设备要在入职当天分配给他，入职配备卡片上会变成「分配」按钮；待办「入职准备」在配齐之前一直列着他。
-- **配置本身不对**（这个职位其实不需要显示器、少了某个软件）：去 主数据 → 部门 → 入职配置 改，你不改配置。
+- **Accounts and permissions**: assigning a seat only records it on the register; it **does not open an account in the software itself**. For each piece of software assigned, write a sentence: which admin console to open their account in, and which group to add them to. The same goes for things outside the register, such as e-mail, door access and VPN.
+- **Device preparation**: a reserved device usually still needs the operating system installed, software installed and an asset label attached before the hire date; remind the person responsible for devices.
+- **On the day they join**: a reserved device must be assigned to them on their hire date; the "Onboarding" card then shows an "Assign" button. The "Onboarding prep" to-do keeps listing them until they are fully equipped.
+- **The kit itself is wrong** (the position actually needs no monitor, a piece of software is missing): change it under Reference data → Departments → Onboarding kits. You do not change kits.

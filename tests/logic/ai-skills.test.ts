@@ -3,6 +3,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
+import { parseSkillMarkdown } from '@nocobase/app-plugin-agents/shared/skills';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -45,5 +46,22 @@ describe('the skills this Solution delivers', () => {
         /^description: \S.*$/m.test(read(name)),
     );
     expect(wellFormed).toEqual(directories);
+  });
+
+  it('each pass the library’s own check', () => {
+    // The library refuses a SKILL.md its parser rejects, and the start that
+    // puts it there swallows the refusal (2026-10-29: "MDM: Intune" in a
+    // description read as YAML and the skill stayed in Chinese).
+    const problems = Object.fromEntries(
+      directories.map((name) => [
+        name,
+        parseSkillMarkdown(
+          readFileSync(path.join(skillsDir, name, 'SKILL.md'), 'utf8'),
+        ).problems,
+      ]),
+    );
+    expect(problems).toEqual(
+      Object.fromEntries(directories.map((name) => [name, []])),
+    );
   });
 });

@@ -34,7 +34,12 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   stored encrypted, so `secrets.keys` must be configured) and puts the
   method skills of `ai/skills/` in the plugin's library (`library.ts`,
   copied into `dist` by the build hook; marker `agents-skills-v1`, so what
-  an administrator changes on Agent 团队 → 技能 is kept). Nothing of it may
+  an administrator changes on Agent 团队 → 技能 is kept). The skills are
+  written in English (2026-10-29); the model still answers in the AI working
+  language. A library skill still word for word a version ITAM shipped is
+  brought up to the current SKILL.md at start (`refreshShippedSkills`, by
+  the hashes in `shipped-skills.ts`), so a release that changes a SKILL.md
+  adds the hash of the version it replaces there; an edited one is kept. Nothing of it may
   stop the application starting: a failure is logged and retried at the
   next start. The conversations from before 1.0 carry no binding the plugin
   can open, so ITAM's migration `202610270003_delete_pre_agents_1_conversations`
