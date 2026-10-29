@@ -1766,6 +1766,8 @@ const viVN: AppResource = {
       check: 'Kiểm tra',
       vendorNotFound:
         'Nội dung ghi {{name}}, không có trong danh sách nhà cung cấp',
+      ownerNotFound:
+        'Văn bản ghi {{name}}, không khớp với người dùng nào đăng nhập được',
       departmentNotFound: 'Nội dung ghi {{name}}, không khớp với phòng ban nào',
       unmatched_one:
         '{{count}} mục không khớp với mẫu hay sản phẩm phần mềm nào: hãy chọn một mục có sẵn, hoặc tạo mới, để thêm vào các dòng.',

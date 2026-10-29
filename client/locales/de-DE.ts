@@ -1796,6 +1796,8 @@ const deDE: AppResource = {
       check: 'Prüfen',
       vendorNotFound:
         'Im Text steht {{name}}, das nicht in der Lieferantenliste ist',
+      ownerNotFound:
+        'Im Text steht {{name}}, das passt zu niemandem, der sich anmelden kann',
       departmentNotFound:
         'Im Text steht {{name}}, das keiner Abteilung entspricht',
       unmatched_one:

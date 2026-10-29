@@ -426,7 +426,9 @@ export function PurchaseOrderCreateDialog({
                             : field.key === 'departmentId' &&
                                 !values.departmentId
                               ? result?.departmentName
-                              : null
+                              : field.key === 'ownerId'
+                                ? result?.ownerName
+                                : null
                         }
                         onCreate={
                           mayCreateVendor && !created
@@ -644,7 +646,9 @@ function UnplacedNote({
       {t(
         vendor
           ? 'procurement.capture.vendorNotFound'
-          : 'procurement.capture.departmentNotFound',
+          : field === 'ownerId'
+            ? 'procurement.capture.ownerNotFound'
+            : 'procurement.capture.departmentNotFound',
         { name },
       )}
       {vendor && onCreate ? (

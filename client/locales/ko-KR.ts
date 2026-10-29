@@ -1758,6 +1758,8 @@ const koKR: AppResource = {
       check: '확인 필요',
       vendorNotFound:
         '원문에는 {{name}}(으)로 되어 있으나 공급업체 목록에 없습니다',
+      ownerNotFound:
+        '원문은 {{name}}이지만 로그인할 수 있는 사용자와 일치하지 않습니다',
       departmentNotFound:
         '원문에는 {{name}}(으)로 되어 있으나 일치하는 부서가 없습니다',
       unmatched_one:

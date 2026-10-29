@@ -1722,6 +1722,7 @@ const zhCN: AppResource = {
       reviewHint: 'AI 不确定这一项，请核对',
       check: '请核对',
       vendorNotFound: '原文：{{name}}，不在供应商列表里',
+      ownerNotFound: '原文：{{name}}，没有对上可登录的用户',
       departmentNotFound: '原文：{{name}}，没有对上部门',
       unmatched_one:
         '有 {{count}} 行没有对上型号或软件产品：选一个已有的，或新建后加入明细。',

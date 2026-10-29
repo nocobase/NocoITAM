@@ -188,6 +188,49 @@ describe('AI 整理 for a new purchase order', () => {
     expect(capture.vendorName).toBe('Contoso Hardware');
   });
 
+  it('sets the owner the material names, by name or sign-in', async () => {
+    // A 负责人 stated in the material was ignored (2026-10-29).
+    const database = app.container.resolve(databaseManagerToken);
+    const client = await database.connection().client<{
+      schema: {
+        createTable(
+          name: string,
+          build: (table: Record<string, (name: string) => unknown>) => void,
+        ): Promise<void>;
+      };
+    }>();
+    await client.schema.createTable('user', (table) => {
+      table.string!('id');
+      table.string!('name');
+      table.string!('username');
+      table.datetime!('deleted_at');
+      table.datetime!('disabled_at');
+    });
+    await database
+      .query()
+      .insertInto('user')
+      .values([
+        { id: 'u-wu', name: '吴静', username: 'wujing' },
+        {
+          id: 'u-gone',
+          name: '陈杰',
+          username: 'chenjie',
+          disabledAt: new Date(),
+        },
+      ])
+      .execute();
+    expect((await match({ ownerName: '吴静', lines: [] })).values).toEqual({
+      ownerId: 'u-wu',
+    });
+    expect((await match({ ownerName: 'WuJing', lines: [] })).values).toEqual({
+      ownerId: 'u-wu',
+    });
+    // Someone who cannot sign in is named back rather than set.
+    const gone = await match({ ownerName: '陈杰', lines: [] });
+    expect(gone.values).toEqual({});
+    expect(gone.ownerName).toBe('陈杰');
+  });
+
   it('takes the currency the material states, and only a currency code', async () => {
     // A quote in yen was entered as yuan (2026-10-29).
     expect((await match({ currency: 'jpy', lines: [] })).values).toEqual({

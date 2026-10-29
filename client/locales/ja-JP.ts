@@ -1766,6 +1766,8 @@ const jaJP: AppResource = {
       reviewHint: 'AI はこの項目に確信がありません。確認してください',
       check: '要確認',
       vendorNotFound: '原文では {{name}} ですが、仕入先一覧にありません',
+      ownerNotFound:
+        '原文は {{name}} ですが、サインインできるユーザーに一致しません',
       departmentNotFound: '原文では {{name}} ですが、一致する部署がありません',
       unmatched_one:
         '{{count}} 行がモデルまたはソフトウェア製品と一致しませんでした。既存のものを選ぶか、作成してから明細に追加してください。',

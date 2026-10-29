@@ -1776,6 +1776,8 @@ const idID: AppResource = {
       check: 'Periksa',
       vendorNotFound:
         'Teks menyebut {{name}}, yang tidak ada dalam daftar vendor',
+      ownerNotFound:
+        'Teks menyebut {{name}}, yang tidak cocok dengan pengguna mana pun yang bisa masuk',
       departmentNotFound:
         'Teks menyebut {{name}}, yang tidak cocok dengan departemen mana pun',
       unmatched_one:

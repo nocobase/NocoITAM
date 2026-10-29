@@ -34,6 +34,8 @@ export interface CaptureInput {
   readonly vendorName?: string | null;
   readonly departmentId?: string | null;
   readonly departmentName?: string | null;
+  /** The IT person the material names to follow the order through. */
+  readonly ownerName?: string | null;
   /** The ISO code the prices are in, when the material states one. */
   readonly currency?: string | null;
   readonly lines?: readonly CaptureLineInput[];
@@ -74,6 +76,8 @@ export interface PurchaseCapture {
   readonly vendorName: string | null;
   /** A department the text names that is not on the books. */
   readonly departmentName: string | null;
+  /** An owner the text names who has no account. */
+  readonly ownerName: string | null;
   /** Header fields filled but not certain (`reason`, `vendorId`, …). */
   readonly uncertain: readonly string[];
 }
@@ -97,6 +101,8 @@ const UNCERTAIN_KEYS: Readonly<Record<string, string>> = {
   vendorId: 'vendorId',
   department: 'departmentId',
   departmentId: 'departmentId',
+  owner: 'ownerId',
+  ownerId: 'ownerId',
 };
 
 /** A name as compared: case, spaces and punctuation do not tell two apart. */
@@ -213,6 +219,30 @@ export async function matchPurchaseCapture(
     departments.find((row) => row.id === input.departmentId) ??
     (departmentName ? byName(departments, departmentName) : undefined);
   if (department) values.departmentId = department.id;
+  // A 负责人 the material names (2026-10-29), by name or sign-in; the
+  // dialog keeps whoever it has otherwise.
+  const ownerName = clip(input.ownerName, 255);
+  // Who may follow it through: the accounts that can sign in.
+  const users = ownerName
+    ? await query
+        .selectFrom('user')
+        .select(['id', 'name', 'username'])
+        .where('deletedAt', 'is', null)
+        .where('disabledAt', 'is', null)
+        .execute<{
+          id: string;
+          name: string | null;
+          username: string | null;
+        }>()
+    : [];
+  const owner = ownerName
+    ? (users.find((row) => bareName(row.username) === bareName(ownerName)) ??
+      byName(
+        users.map((row) => ({ id: row.id, name: row.name ?? '' })),
+        ownerName,
+      ))
+    : undefined;
+  if (owner) values.ownerId = owner.id;
 
   const lines: CapturedLine[] = [];
   const unmatched: UnmatchedLine[] = [];
@@ -298,6 +328,7 @@ export async function matchPurchaseCapture(
     unmatched,
     vendorName: vendor || !vendorName ? null : vendorName,
     departmentName: department || !departmentName ? null : departmentName,
+    ownerName: owner || !ownerName ? null : ownerName,
     uncertain: [
       ...new Set(
         (input.uncertain ?? [])

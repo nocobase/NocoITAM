@@ -31,10 +31,15 @@ export interface PurchaseCapture {
   }[];
   readonly vendorName: string | null;
   readonly departmentName: string | null;
+  /** A 负责人 the text names who has no account. */
+  readonly ownerName?: string | null;
   readonly uncertain: readonly string[];
 }
 
-/** The header fields AI 整理 fills; 负责人 stays whoever the dialog has. */
+/**
+ * The header fields AI 整理 fills; 负责人 stays whoever the dialog has unless
+ * the material names one (2026-10-29), which the check then sets.
+ */
 export const CAPTURED_FIELDS = [
   'reason',
   'description',
@@ -93,6 +98,7 @@ export function captureArgs(args: unknown): Record<string, unknown> {
     vendorName: clip(input.vendorName, 255),
     departmentId: clip(input.departmentId, 64),
     departmentName: clip(input.departmentName, 255),
+    ownerName: clip(input.ownerName, 255),
     currency: clip(input.currency, 8),
     uncertain: (Array.isArray(input.uncertain) ? input.uncertain : [])
       .map((key: unknown) => clip(key, 64))

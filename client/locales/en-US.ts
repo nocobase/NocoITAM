@@ -1802,6 +1802,8 @@ const messages = {
       reviewHint: 'The AI was not sure of this one. Check it.',
       check: 'Check',
       vendorNotFound: 'The text says {{name}}, which is not on the vendor list',
+      ownerNotFound:
+        'The text says {{name}}, which matched no one who signs in',
       departmentNotFound: 'The text says {{name}}, which matched no department',
       unmatched_one:
         '{{count}} item matched no model or software product: pick one that exists, or create it, to add it to the lines.',

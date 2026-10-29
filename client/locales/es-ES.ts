@@ -1790,6 +1790,8 @@ const esES: AppResource = {
       check: 'Revisar',
       vendorNotFound:
         'El texto indica {{name}}, que no está en la lista de proveedores',
+      ownerNotFound:
+        'El texto dice {{name}}, que no coincide con nadie que inicie sesión',
       departmentNotFound:
         'El texto indica {{name}}, que no coincide con ningún departamento',
       unmatched_one:

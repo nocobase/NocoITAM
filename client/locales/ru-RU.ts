@@ -1882,6 +1882,8 @@ const ruRU: AppResource = {
       check: 'Проверить',
       vendorNotFound:
         'В тексте указано «{{name}}», но такого поставщика нет в списке',
+      ownerNotFound:
+        'В тексте указано {{name}}, но среди пользователей с входом такого нет',
       departmentNotFound:
         'В тексте указано «{{name}}», но такое подразделение не найдено',
       unmatched_one:

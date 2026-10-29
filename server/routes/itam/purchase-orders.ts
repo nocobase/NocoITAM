@@ -143,6 +143,7 @@ const captureSchema = z
     vendorName: nullableText(255),
     departmentId: nullableText(64),
     departmentName: nullableText(255),
+    ownerName: nullableText(255),
     currency: nullableText(8),
     uncertain: z.array(z.string().max(64)).max(20).optional(),
     lines: z

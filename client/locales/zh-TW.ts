@@ -1700,6 +1700,7 @@ const zhTW: AppResource = {
       reviewHint: 'AI 不確定這一項，請核對',
       check: '請核對',
       vendorNotFound: '原文：{{name}}，不在供應商清單中',
+      ownerNotFound: '原文：{{name}}，沒有對上可登入的使用者',
       departmentNotFound: '原文：{{name}}，沒有對上部門',
       unmatched_one:
         '有 {{count}} 列沒有對上型號或軟體產品：選擇一個既有的，或新建後加入明細。',

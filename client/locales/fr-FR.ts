@@ -1785,6 +1785,8 @@ const frFR: AppResource = {
       check: 'Vérifier',
       vendorNotFound:
         'Le texte indique {{name}}, qui ne figure pas dans la liste des fournisseurs',
+      ownerNotFound:
+        'Le texte indique {{name}}, qui ne correspond à aucun utilisateur pouvant se connecter',
       departmentNotFound:
         'Le texte indique {{name}}, qui ne correspond à aucun service',
       unmatched_one:

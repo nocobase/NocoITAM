@@ -1781,6 +1781,8 @@ const ptBR: AppResource = {
       check: 'Conferir',
       vendorNotFound:
         'O texto menciona {{name}}, que não está na lista de fornecedores',
+      ownerNotFound:
+        'O texto diz {{name}}, que não corresponde a ninguém que entra no sistema',
       departmentNotFound:
         'O texto menciona {{name}}, que não corresponde a nenhum departamento',
       unmatched_one:
