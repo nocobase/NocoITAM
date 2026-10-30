@@ -1,7 +1,19 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render as renderInPage,
+  screen,
+  within,
+} from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { MemoryRouter } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import { PurchaseOrderLinesCard } from '../../client/pages/itam/procurement/lines-tab.js';
+
+// A line's model is a link (2026-10-30), which needs a router.
+const render = (ui: ReactElement) =>
+  renderInPage(ui, { wrapper: MemoryRouter });
 
 const state = vi.hoisted(() => ({
   status: 'draft',
@@ -80,6 +92,8 @@ vi.mock('../../client/lib/itam/permissions.js', () => ({
 }));
 vi.mock('../../client/lib/itam/references.js', () => ({
   referencePath: (collection: string) => `itam/master/${collection}`,
+  referenceRoute: (collection: string) =>
+    collection === 'softwareProducts' ? 'software-products' : collection,
   useReferenceNames: () => ({ models: new Map([['m1', 'MacBook Pro 14']]) }),
 }));
 // The assistant is not configured unless a test says so: the order is the
@@ -141,6 +155,10 @@ it('reads as a document: every line, and what the order comes to', () => {
   );
   const rows = screen.getAllByRole('row');
   expect(within(rows[1]!).getByText('MacBook Pro 14')).toBeVisible();
+  // The model opens in the drawer (2026-10-30).
+  expect(
+    within(rows[1]!).getByRole('link', { name: 'MacBook Pro 14' }),
+  ).toHaveAttribute('href', '/models/m1');
   expect(within(rows[1]!).getByText('1 / 2')).toBeVisible();
   // The totals row: how many units, what it costs, what came.
   const footer = rows.at(-1)!;

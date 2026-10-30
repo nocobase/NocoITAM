@@ -712,25 +712,43 @@ export function PurchaseOrderGeneratedTab(): ReactElement {
                           <TableCell className='w-px whitespace-nowrap'>
                             <AssetTypeBadge value={assetTypeOf(row)} />
                           </TableCell>
+                          {/* The record's name in the list's own voice,
+                              and what it is of as a link that opens it
+                              (2026-10-30). */}
                           <TableCell>
-                            <CellText>
-                              <ReferenceLink
-                                collection={collection}
-                                route={route}
-                                id={row.id}
-                                names={names[collection]}
-                              />
+                            <CellText className='font-medium'>
+                              {route ? (
+                                <RecordLink
+                                  to={`/${route}/${row.id}`}
+                                  className='text-foreground'
+                                >
+                                  {names[collection]?.get(row.id) ?? '…'}
+                                </RecordLink>
+                              ) : (
+                                (names[collection]?.get(row.id) ?? '…')
+                              )}
                             </CellText>
                           </TableCell>
-                          <TableCell className='text-muted-foreground'>
+                          <TableCell>
                             <CellText>
-                              {(row.modelId
-                                ? names.models?.get(row.modelId)
-                                : row.softwareProductId
-                                  ? names.softwareProducts?.get(
-                                      row.softwareProductId,
-                                    )
-                                  : undefined) ?? '—'}
+                              {row.modelId || row.softwareProductId ? (
+                                <ReferenceLink
+                                  collection={
+                                    row.modelId ? 'models' : 'softwareProducts'
+                                  }
+                                  route={referenceRoute(
+                                    row.modelId ? 'models' : 'softwareProducts',
+                                  )}
+                                  id={row.modelId ?? row.softwareProductId}
+                                  names={
+                                    row.modelId
+                                      ? names.models
+                                      : names.softwareProducts
+                                  }
+                                />
+                              ) : (
+                                '—'
+                              )}
                             </CellText>
                           </TableCell>
                           <TableCell className='text-right tabular-nums'>
@@ -787,6 +805,10 @@ function GeneratedDevices({
           <Table>
             <TableHeader>
               <TableRow>
+                {/* As the table of other records beside it (2026-10-30). */}
+                <TableHead className='w-px whitespace-nowrap'>
+                  {t('fields.appliesTo')}
+                </TableHead>
                 <TableHead>{t('devices.noAndName')}</TableHead>
                 <TableHead>{t('fields.serialNo')}</TableHead>
                 <TableHead className='w-px whitespace-nowrap'>
@@ -808,11 +830,14 @@ function GeneratedDevices({
                     className='cursor-pointer'
                     onClick={() => openRecord(`/devices/${id}`)}
                   >
+                    <TableCell className='w-px whitespace-nowrap'>
+                      <AssetTypeBadge value='device' />
+                    </TableCell>
                     <TableCell>
                       <CellText>
                         <RecordLink
                           to={`/devices/${id}`}
-                          className='font-medium text-link'
+                          className='font-medium text-foreground'
                         >
                           {device ? deviceLabel(device) : '…'}
                         </RecordLink>

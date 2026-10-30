@@ -64,7 +64,12 @@ import {
 } from '@/lib/itam/purchase-capture';
 import { usePurchaseOrderCapture } from '@/lib/itam/use-purchase-capture';
 import { cn } from '@/lib/utils';
-import { useReferenceNames, type ReferenceNames } from '@/lib/itam/references';
+import {
+  referenceRoute,
+  useReferenceNames,
+  type ReferenceNames,
+} from '@/lib/itam/references';
+import { ReferenceLink } from '@/components/itam/cells';
 import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 
 import { CaptureNotice } from './po-capture';
@@ -755,12 +760,23 @@ function LineItem({
   readonly row: ItamRecord;
   readonly names: Readonly<Record<string, ReferenceNames | undefined>>;
 }): ReactElement {
-  const item = row.modelId
-    ? (names.models?.get(text(row.modelId)) ?? '…')
+  // The model or product opens in the drawer (2026-10-30).
+  const collection = row.modelId
+    ? 'models'
     : row.softwareProductId
-      ? (names.softwareProducts?.get(text(row.softwareProductId)) ?? '…')
-      : '';
-  return <CellText className='font-medium'>{item || '—'}</CellText>;
+      ? 'softwareProducts'
+      : undefined;
+  if (!collection) return <CellText className='font-medium'>—</CellText>;
+  return (
+    <CellText className='font-medium'>
+      <ReferenceLink
+        collection={collection}
+        route={referenceRoute(collection)}
+        id={text(row.modelId ?? row.softwareProductId)}
+        names={names[collection]}
+      />
+    </CellText>
+  );
 }
 
 /** How much of the line has arrived, muted until something has. */
