@@ -552,7 +552,10 @@ document-text`, which reads only a file uploaded within the hour and
   answers `{ values, uncertain, lines }`. The shared method is the
   **`form-capture`** skill (`ai/skills/form-capture/SKILL.md`, title AI
   organise, `READING_SKILLS`), which names no ITAM object so any form can
-  use it; what is particular to a form stays in its task prompt
+  use it. The file is the same one NocoCRM ships, byte for byte (2026-10-30):
+  a change to it in either repository goes to the other in the same form, with
+  the replaced version's hash added to `SHIPPED_SKILL_HASHES`; under it a
+  cleared field comes back as `null`, which the checks keep as a clearing; what is particular to a form stays in its task prompt
   (`TASKS.purchaseOrder`: the lines and the catalog) and in its fields'
   `aiHint`. The server adds `records`, the names each reference's register
   holds (`referenceNames`, at most 300, only registers the person may read),
