@@ -463,6 +463,19 @@ describe('CSV import / export and demo data', () => {
     expect(types[0]).toBe('created');
     expect(types).toContain('received');
     expect(types.at(-1)).toBe('statusChange');
+    // It arrived with its last delivery, not the day after.
+    const [order] = await query
+      .selectFrom('purchaseOrders')
+      .select(['expectedAt', 'receivedAt'])
+      .where('id', '=', historical!.id)
+      .execute<{ expectedAt: string; receivedAt: string }>();
+    const [last] = await query
+      .selectFrom('devices')
+      .select('purchaseDate')
+      .where('purchaseOrderId', '=', historical!.id)
+      .orderBy('purchaseDate', 'desc')
+      .execute<{ purchaseDate: string }>();
+    expect(order?.receivedAt).toBe(last?.purchaseDate);
   });
 
   it('reports how far an import has got while it runs, and runs one at a time', async () => {

@@ -3148,6 +3148,11 @@ export function createDemoService(dependencies: {
         // Numbered before the demo's own orders, as the older ones.
         // Kept to call again for a device entered later (2026-10-22: the
         // laptop sold off was, and showed no order).
+        // The orders entered with the register, whose dates are their
+        // devices' own: the arrival dates set for received orders at the end
+        // leave them be (2026-10-30; one arrived a day after its last
+        // delivery).
+        const historicalOrderIds = new Set<string>();
         const enterHistoricalOrders = async (only?: readonly string[]) => {
           if (dependencies.numbering) {
             const tracked = only
@@ -3243,6 +3248,7 @@ export function createDemoService(dependencies: {
                 })
                 .execute();
               await track('purchaseOrders', { id: orderId });
+              historicalOrderIds.add(orderId);
               // Its timeline, as the order flow writes it (2026-10-30): it
               // was raised and placed in one go, each model came in on its
               // day, and the last delivery completed it. Written straight
@@ -7033,7 +7039,9 @@ export function createDemoService(dependencies: {
             asText(a.expectedAt) ?? '',
           ),
         );
-        for (const [index, row] of newestFirst.entries()) {
+        for (const [index, row] of newestFirst
+          .filter((order) => !historicalOrderIds.has(String(order.id)))
+          .entries()) {
           const late = RECENT_ARRIVALS[index];
           const expected = late
             ? daysFromNow(-late.expectedDaysAgo)
