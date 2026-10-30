@@ -1519,7 +1519,7 @@ const ptBR: AppResource = {
       '{{count}} números de série para {{quantity}} dispositivos',
     createCount_one: 'Criar {{count}} dispositivo',
     createCount_other: 'Criar {{count}} dispositivos',
-    empty: 'Nenhum dispositivo corresponde',
+    empty: 'Nenhum dispositivo',
     noAndName: 'Nº / Nome',
     noPurchaseOrder: 'Não recebido por pedido de compra',
     noRepairs: 'Nunca foi reparado',

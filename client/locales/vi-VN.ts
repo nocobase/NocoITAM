@@ -1512,7 +1512,7 @@ const viVN: AppResource = {
     serialCount_other: '{{count}} số sê-ri cho {{quantity}} thiết bị',
     createCount_one: 'Tạo {{count}} thiết bị',
     createCount_other: 'Tạo {{count}} thiết bị',
-    empty: 'Không có thiết bị phù hợp',
+    empty: 'Không có thiết bị',
     noAndName: 'Số hiệu / Tên',
     noPurchaseOrder: 'Không nhận qua đơn mua hàng',
     noRepairs: 'Chưa từng sửa chữa',

@@ -1616,7 +1616,7 @@ const ruRU: AppResource = {
     createCount_few: 'Создать {{count}} устройства',
     createCount_many: 'Создать {{count}} устройств',
     createCount_other: 'Создать {{count}} устройства',
-    empty: 'Нет подходящих устройств',
+    empty: 'Устройств нет',
     noAndName: '№ / Название',
     noPurchaseOrder: 'Не принято по заказу на закупку',
     noRepairs: 'Ремонтов не было',

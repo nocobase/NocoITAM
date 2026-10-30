@@ -1484,7 +1484,7 @@ const zhCN: AppResource = {
     serialCount_other: '{{count}} 个序列号，共 {{quantity}} 台',
     createCount_one: '创建 {{count}} 台',
     createCount_other: '创建 {{count}} 台',
-    empty: '没有符合条件的设备',
+    empty: '暂无设备',
     noAndName: '编号 / 名称',
     noneInTab: '暂无设备',
     noPurchaseOrder: '没有采购记录',

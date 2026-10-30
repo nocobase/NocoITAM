@@ -1506,7 +1506,7 @@ const koKR: AppResource = {
     serialCount_other: '일련번호 {{count}}개, 총 {{quantity}}대',
     createCount_one: '{{count}}대 만들기',
     createCount_other: '{{count}}대 만들기',
-    empty: '조건에 맞는 기기가 없습니다',
+    empty: '기기가 없습니다',
     noAndName: '번호 / 이름',
     noneInTab: '기기 없음',
     noPurchaseOrder: '구매 주문으로 입고된 기기가 아닙니다',

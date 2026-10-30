@@ -1537,7 +1537,7 @@ const deDE: AppResource = {
     serialCount_other: '{{count}} Seriennummern für {{quantity}} Geräte',
     createCount_one: '{{count}} Gerät erstellen',
     createCount_other: '{{count}} Geräte erstellen',
-    empty: 'Keine passenden Geräte',
+    empty: 'Keine Geräte',
     noAndName: 'Nr. / Name',
     noPurchaseOrder: 'Nicht über eine Bestellung eingegangen',
     noRepairs: 'Nie repariert',

@@ -1518,7 +1518,7 @@ const idID: AppResource = {
     serialCount_other: '{{count}} nomor seri untuk {{quantity}} perangkat',
     createCount_one: 'Buat {{count}} perangkat',
     createCount_other: 'Buat {{count}} perangkat',
-    empty: 'Tidak ada perangkat yang cocok',
+    empty: 'Tidak ada perangkat',
     noAndName: 'No. / Nama',
     noPurchaseOrder: 'Tidak diterima melalui pesanan pembelian',
     noRepairs: 'Belum pernah diperbaiki',

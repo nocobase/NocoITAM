@@ -1465,7 +1465,7 @@ const zhTW: AppResource = {
     serialCount_other: '{{count}} 個序號，共 {{quantity}} 台',
     createCount_one: '建立 {{count}} 台',
     createCount_other: '建立 {{count}} 台',
-    empty: '沒有符合條件的設備',
+    empty: '暫無設備',
     noAndName: '編號 / 名稱',
     noneInTab: '暫無設備',
     noPurchaseOrder: '沒有採購記錄',

@@ -1510,7 +1510,7 @@ const jaJP: AppResource = {
     serialCount_other: 'シリアル番号 {{count}} 件、計 {{quantity}} 台',
     createCount_one: '{{count}} 台を作成',
     createCount_other: '{{count}} 台を作成',
-    empty: '条件に一致するデバイスはありません',
+    empty: 'デバイスはありません',
     noAndName: '番号 / 名前',
     noneInTab: 'デバイスはありません',
     noPurchaseOrder: '発注書による入荷ではありません',

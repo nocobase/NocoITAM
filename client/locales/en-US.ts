@@ -1540,7 +1540,7 @@ const messages = {
     serialCount_other: '{{count}} serial numbers for {{quantity}} devices',
     createCount_one: 'Create {{count}} device',
     createCount_other: 'Create {{count}} devices',
-    empty: 'No devices match',
+    empty: 'No devices',
     noAndName: 'No. / Name',
     noPurchaseOrder: 'Not received through a purchase order',
     noRepairs: 'Never repaired',

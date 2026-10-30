@@ -205,8 +205,10 @@ function WorkViewToggle({
 }
 
 /**
- * What is waiting, one count per column that holds something, each a link
- * to its column: the board scrolls sideways to it, the list down.
+ * What is waiting, one count per column, each a link to its column: the
+ * board scrolls sideways to it, the list down. A column holding nothing
+ * keeps its capsule, greyed and not a link (2026-10-30), so the bar does not
+ * vanish when everything is done.
  */
 function WorkCounts({
   cards,
@@ -216,17 +218,17 @@ function WorkCounts({
   /** The pinned bar's height: a column lands below it, its title in view. */
   readonly offset: number;
 }): ReactElement | null {
-  const waiting = cards.filter((card) => card.count > 0);
-  if (waiting.length === 0) return null;
+  if (cards.length === 0) return null;
   // Each a small capsule (2026-10-17): the name, then its count in the pill
   // the columns' headings wear, so the line reads as the columns it leads to.
   return (
     <nav className='flex min-w-0 flex-1 basis-80 flex-wrap items-center gap-1.5'>
-      {waiting.map((card) => (
+      {cards.map((card) => (
         <button
           key={card.key}
           type='button'
-          className='flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card pr-1 pl-3.5 text-sm text-muted-foreground shadow-xs transition-colors hover:border-border hover:text-foreground'
+          disabled={card.count === 0}
+          className='flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card pr-1 pl-3.5 text-sm text-muted-foreground shadow-xs transition-colors hover:border-border hover:text-foreground disabled:pointer-events-none disabled:opacity-50'
           onClick={() => {
             const target = document.getElementById(`work-${card.key}`);
             if (!target) return;

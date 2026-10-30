@@ -1524,7 +1524,7 @@ const frFR: AppResource = {
       '{{count}} numéros de série pour {{quantity}} appareil(s)',
     createCount_one: 'Créer {{count}} appareil',
     createCount_other: 'Créer {{count}} appareils',
-    empty: 'Aucun appareil correspondant',
+    empty: 'Aucun appareil',
     noAndName: 'N° / Nom',
     noPurchaseOrder: 'Non réceptionné par un bon de commande',
     noRepairs: 'Jamais réparé',

@@ -1527,7 +1527,7 @@ const esES: AppResource = {
       '{{count}} números de serie para {{quantity}} dispositivos',
     createCount_one: 'Crear {{count}} dispositivo',
     createCount_other: 'Crear {{count}} dispositivos',
-    empty: 'Ningún dispositivo coincide',
+    empty: 'No hay dispositivos',
     noAndName: 'N.º / Nombre',
     noPurchaseOrder: 'No se recibió mediante una orden de compra',
     noRepairs: 'Nunca reparado',
