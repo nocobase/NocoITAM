@@ -1721,6 +1721,10 @@ const viVN: AppResource = {
         '“{{description}}” không khớp với dòng nào của đơn hàng ({{source}}) nên đã bị bỏ qua.',
       matchConflict:
         '“{{description}}” được khớp với dòng này theo mã linh kiện, không theo gợi ý của AI.',
+      codeNameConflict:
+        '“{{description}}” mang mã của một dòng khác nhưng tên rõ ràng là món hàng khác, nên chưa được điền; hãy kiểm tra ({{source}}).',
+      orderMismatch:
+        'Phiếu giao hàng ghi đơn hàng {{orderNo}}, không phải đơn này; hãy kiểm tra đúng chứng từ.',
       shortDelivery:
         '“{{line}}” còn thiếu {{expected}}; phiếu giao hàng ghi {{actual}}.',
       serialCount:

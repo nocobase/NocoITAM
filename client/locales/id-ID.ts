@@ -1730,6 +1730,10 @@ const idID: AppResource = {
         '“{{description}}” tidak cocok dengan baris mana pun pada pesanan ({{source}}) dan dilewati.',
       matchConflict:
         '“{{description}}” dicocokkan ke baris ini berdasarkan nomor part, bukan seperti saran AI.',
+      codeNameConflict:
+        '“{{description}}” memakai kode baris lain, tetapi namanya jelas barang yang berbeda, jadi tidak diisi; periksa ({{source}}).',
+      orderMismatch:
+        'Surat jalan menyebut pesanan {{orderNo}}, bukan pesanan ini; pastikan dokumennya benar.',
       shortDelivery:
         '“{{line}}” masih {{expected}} belum diterima; surat jalan mencantumkan {{actual}}.',
       serialCount:

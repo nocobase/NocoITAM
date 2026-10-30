@@ -32,11 +32,19 @@ export interface DocumentRow {
   readonly warrantyMonths?: number | null;
   /** …or an end date it prints. */
   readonly warrantyEndDate?: string | null;
+  /**
+   * The row's name plainly names another item than the model its code is
+   * (2026-10-30: a battery printed with a MacBook's code): the code then
+   * decides nothing, and the receiver places the row.
+   */
+  readonly nameDiffers?: boolean | null;
 }
 
 /** What the assistant hands over (the `prefillReceipt` page tool). */
 export interface ReceiptDraft {
   readonly deliveryNo?: string | null;
+  /** The purchase order number the document prints, when it prints one. */
+  readonly orderNo?: string | null;
   readonly deliveryDate?: string | null;
   readonly vendorName?: string | null;
   readonly rows: readonly DocumentRow[];
@@ -76,6 +84,8 @@ export interface PlannedLine {
 export type ReceiptIssueCode =
   | 'unmatched'
   | 'matchConflict'
+  | 'codeNameConflict'
+  | 'orderMismatch'
   | 'shortDelivery'
   | 'serialCount'
   | 'overReceipt'
@@ -93,6 +103,8 @@ export interface ReceiptIssue {
   readonly source?: string;
   readonly expected?: number;
   readonly actual?: number;
+  /** `orderMismatch`: the order number the document prints. */
+  readonly orderNo?: string;
 }
 
 export interface ReceiptPlan {
@@ -162,8 +174,17 @@ export function planReceipt(
   draft: ReceiptDraft,
   lines: readonly PlanLine[],
   today = '',
+  /** The order's own number, which a printed one must be (2026-10-30). */
+  orderNo = '',
 ): ReceiptPlan {
   const issues: ReceiptIssue[] = [];
+  const printedOrder = draft.orderNo?.trim();
+  if (
+    printedOrder &&
+    orderNo &&
+    normalizeCode(printedOrder) !== normalizeCode(orderNo)
+  )
+    issues.push(issue('orderMismatch', { orderNo: printedOrder }));
   const delivered = draft.deliveryDate?.trim();
   const start = isDate(delivered) ? delivered : today;
   const byId = new Map(lines.map((line) => [line.id, line]));
@@ -192,6 +213,15 @@ export function planReceipt(
     // Only an unambiguous code decides: two lines of the same model leave
     // the choice to the assistant.
     const ruled = coded?.length === 1 ? coded[0] : undefined;
+    // A code is evidence, not proof (2026-10-30): a row whose name plainly
+    // names something else is left for the receiver, rather than matched
+    // to a line that would look as right as a correct one.
+    if (ruled && row.nameDiffers) {
+      issues.push(
+        issue('codeNameConflict', { lineId: ruled.id, description, source }),
+      );
+      continue;
+    }
     const guessed = row.lineId ? byId.get(row.lineId) : undefined;
     if (ruled && guessed && ruled.id !== guessed.id)
       issues.push(

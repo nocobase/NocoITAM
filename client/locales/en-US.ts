@@ -1755,6 +1755,10 @@ const messages = {
         '“{{description}}” matches no line of the order ({{source}}) and was left out.',
       matchConflict:
         '“{{description}}” was matched to this line by its part number, not as AI suggested.',
+      codeNameConflict:
+        '“{{description}}” prints another line’s code, but its name is plainly a different item, so it was not filled in; check it ({{source}}).',
+      orderMismatch:
+        'The delivery note names order {{orderNo}}, not this one; make sure it is the right document.',
       shortDelivery:
         '“{{line}}” has {{expected}} outstanding; the delivery note has {{actual}}.',
       serialCount:

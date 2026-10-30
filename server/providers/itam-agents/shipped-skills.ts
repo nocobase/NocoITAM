@@ -84,6 +84,7 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       '18aa18fcf9605139e0c77ccfef7dbd5ffa81a8e2a5c0cd57d432da112da96d17',
       '47159d0995cbb68315fd6f89ec19987cd7bf58f767d135434f5d9d5efa168127',
       '5fa407ba8e48d8e78f5aafe4dbfe8203bbabd9e2e694e03bf57f0a40e0771d23',
+      '2cbb3a40a513220f021100b69e94cfb6f46a9d82bdb18f74ee46a0a0e35a6361',
     ],
     // Retired with the renewal review agent (`RETIRED_SKILLS` in library.ts).
     'renewal-review': [

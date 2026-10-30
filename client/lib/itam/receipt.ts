@@ -7,6 +7,8 @@
 export type ReceiptIssueCode =
   | 'unmatched'
   | 'matchConflict'
+  | 'codeNameConflict'
+  | 'orderMismatch'
   | 'shortDelivery'
   | 'serialCount'
   | 'overReceipt'
@@ -23,6 +25,8 @@ export interface ReceiptIssue {
   readonly source?: string;
   readonly expected?: number;
   readonly actual?: number;
+  /** `orderMismatch`: the order number the document prints. */
+  readonly orderNo?: string;
 }
 
 export interface PlannedUnit {

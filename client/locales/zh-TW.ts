@@ -1658,7 +1658,11 @@ const zhTW: AppResource = {
       unmatched:
         '「{{description}}」沒有對上採購單的列（{{source}}），這一列沒有填入。',
       matchConflict:
-        '「{{description}}」依料號對到了這一列，與 AI 的判斷不同，以料號為準。',
+        '「{{description}}」依型號編碼對到了這一列，與 AI 的判斷不同，以型號編碼為準。',
+      codeNameConflict:
+        '「{{description}}」的型號編碼屬於另一列，但品名明顯不是同一樣東西，這一列沒有填入，請核對（{{source}}）。',
+      orderMismatch:
+        '送貨單上的訂單號是 {{orderNo}}，和這張採購單不一致，請確認沒有拿錯單據。',
       shortDelivery: '「{{line}}」未到 {{expected}}，單據上只有 {{actual}}。',
       serialCount:
         '「{{description}}」數量 {{expected}}，單據上只有 {{actual}} 個序號。',

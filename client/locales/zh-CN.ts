@@ -1679,7 +1679,11 @@ const zhCN: AppResource = {
       unmatched:
         '「{{description}}」没有对上采购单的行（{{source}}），这一行没有填入。',
       matchConflict:
-        '「{{description}}」按料号对到了这一行，与 AI 的判断不同，以料号为准。',
+        '「{{description}}」按型号编码对到了这一行，与 AI 的判断不同，以型号编码为准。',
+      codeNameConflict:
+        '「{{description}}」的型号编码属于另一行，但品名明显不是同一样东西，这一行没有填入，请核对（{{source}}）。',
+      orderMismatch:
+        '送货单上的订单号是 {{orderNo}}，和这张采购单不一致，请确认没有拿错单据。',
       shortDelivery: '「{{line}}」未到 {{expected}}，单据上只有 {{actual}}。',
       serialCount:
         '「{{description}}」数量 {{expected}}，单据上只有 {{actual}} 个序列号。',

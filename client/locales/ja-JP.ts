@@ -1719,6 +1719,10 @@ const jaJP: AppResource = {
         '「{{description}}」は発注書のどの行とも一致しない（{{source}}）ため、入力されませんでした。',
       matchConflict:
         '「{{description}}」は AI の判断とは異なり、品番によってこの行に一致させました。',
+      codeNameConflict:
+        '「{{description}}」は別の行のコードが記載されていますが、品名は明らかに別の品物のため反映していません。確認してください（{{source}}）。',
+      orderMismatch:
+        '納品書の注文番号は {{orderNo}} で、この発注書と一致しません。書類が正しいか確認してください。',
       shortDelivery:
         '「{{line}}」は未入荷 {{expected}} ですが、納品書には {{actual}} しかありません。',
       serialCount:

@@ -1743,6 +1743,10 @@ const esES: AppResource = {
         '«{{description}}» no coincide con ninguna línea del pedido ({{source}}) y se ha omitido.',
       matchConflict:
         '«{{description}}» se ha asociado a esta línea por su número de pieza, no como sugirió la IA.',
+      codeNameConflict:
+        '«{{description}}» lleva el código de otra línea, pero su nombre es claramente otro artículo; no se ha rellenado, revísalo ({{source}}).',
+      orderMismatch:
+        'El albarán indica el pedido {{orderNo}}, no este; comprueba que sea el documento correcto.',
       shortDelivery:
         '«{{line}}» tiene {{expected}} pendientes; el albarán indica {{actual}}.',
       serialCount:

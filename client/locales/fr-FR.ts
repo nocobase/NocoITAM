@@ -1737,6 +1737,10 @@ const frFR: AppResource = {
         '« {{description}} » ne correspond à aucune ligne de la commande ({{source}}) et a été écarté.',
       matchConflict:
         '« {{description}} » a été rapproché de cette ligne par sa référence, et non comme l’IA le suggérait.',
+      codeNameConflict:
+        '« {{description}} » porte le code d’une autre ligne, mais son nom désigne clairement un autre article ; elle n’a pas été reprise, vérifiez-la ({{source}}).',
+      orderMismatch:
+        'Le bon de livraison indique la commande {{orderNo}}, pas celle-ci ; vérifiez qu’il s’agit du bon document.',
       shortDelivery:
         '« {{line}} » a {{expected}} restant(s) ; le bon de livraison en indique {{actual}}.',
       serialCount:

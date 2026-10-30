@@ -328,7 +328,13 @@ export function createReceiptRunService(deps: {
       const run = await load(orderId, runId, context);
       requireOpen(run, new Set(['reading']));
       const lines = await planLines(orderId);
-      const planned = planReceipt(draft, lines, today());
+      const order = await database
+        .query()
+        .selectFrom('purchaseOrders')
+        .select('orderNo')
+        .where('id', '=', orderId)
+        .executeTakeFirst<{ orderNo: string }>();
+      const planned = planReceipt(draft, lines, today(), order?.orderNo ?? '');
       // The register check needs the database; the rest of the plan's
       // issues are the rules' own.
       const plan: ReceiptPlan = {

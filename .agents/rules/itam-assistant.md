@@ -474,7 +474,12 @@ locale })` — its own plans, the answers given — and the joiners'
   rules turn that into the plan the form opens on (`planReceipt`): a row
   whose part code is a line's model `code` goes there whatever the
   assistant guessed (`matchConflict` says when they differ), entitlements
-  and unmatched rows are listed, never forced onto a line. Every value it
+  and unmatched rows are listed, never forced onto a line. A code is evidence, not proof (2026-10-30): a row whose name plainly
+  names another item than its code's line (the assistant's `nameDiffers`)
+  is left unmatched with `codeNameConflict`, and the order number the
+  document's content prints (`orderNo`, never the file name) raises
+  `orderMismatch` when it is not this order's; notes print the code under
+  many names (料号, 物料编码, 货号, P/N, SKU) or none at all. Every value it
   filled carries a sparkle naming where in the document it came from, and
   loses it once the receiver types over it. A warranty the document states
   (保修 36 个月, or an end date) fills a device line's 保修截止日期, counted

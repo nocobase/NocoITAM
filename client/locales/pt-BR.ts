@@ -1734,6 +1734,10 @@ const ptBR: AppResource = {
         '“{{description}}” não corresponde a nenhuma linha do pedido ({{source}}) e foi deixado de fora.',
       matchConflict:
         '“{{description}}” foi associado a esta linha pelo número da peça, e não como a IA sugeriu.',
+      codeNameConflict:
+        '“{{description}}” traz o código de outra linha, mas o nome é claramente outro item; não foi preenchida, confira ({{source}}).',
+      orderMismatch:
+        'A nota de entrega cita o pedido {{orderNo}}, não este; confirme que é o documento certo.',
       shortDelivery:
         '“{{line}}” tem {{expected}} pendentes; a nota de entrega tem {{actual}}.',
       serialCount:

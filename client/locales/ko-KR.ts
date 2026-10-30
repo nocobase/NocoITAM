@@ -1712,6 +1712,10 @@ const koKR: AppResource = {
         '“{{description}}”은(는) 주문의 어느 품목과도 일치하지 않아({{source}}) 제외되었습니다.',
       matchConflict:
         '“{{description}}”은(는) AI의 제안과 달리 부품 번호에 따라 이 품목에 연결되었습니다.',
+      codeNameConflict:
+        '“{{description}}”에 다른 품목의 코드가 적혀 있지만 품명이 분명히 다른 물품이라 채우지 않았습니다. 확인하세요({{source}}).',
+      orderMismatch:
+        '납품서의 주문 번호가 {{orderNo}}(으)로 이 구매 주문과 다릅니다. 올바른 문서인지 확인하세요.',
       shortDelivery:
         '“{{line}}”의 미입고 수량은 {{expected}}이지만 납품서에는 {{actual}}뿐입니다.',
       serialCount:

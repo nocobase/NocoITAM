@@ -1751,6 +1751,10 @@ const deDE: AppResource = {
         '„{{description}}“ passt zu keiner Bestellposition ({{source}}) und wurde ausgelassen.',
       matchConflict:
         '„{{description}}“ wurde über die Teilenummer dieser Position zugeordnet, nicht wie von der KI vorgeschlagen.',
+      codeNameConflict:
+        '„{{description}}“ trägt den Code einer anderen Position, der Name nennt aber eindeutig einen anderen Artikel; die Zeile wurde nicht übernommen, bitte prüfen ({{source}}).',
+      orderMismatch:
+        'Der Lieferschein nennt die Bestellung {{orderNo}}, nicht diese; prüfen Sie, ob es das richtige Dokument ist.',
       shortDelivery:
         'Bei „{{line}}“ sind {{expected}} offen; der Lieferschein nennt {{actual}}.',
       serialCount:

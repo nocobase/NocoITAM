@@ -1124,6 +1124,7 @@ function IssueText({
         expected: issue.expected ?? 0,
         actual: issue.actual ?? 0,
         line: line ? names(line) : '',
+        orderNo: issue.orderNo ?? '',
       })}
     </>
   );
@@ -1378,6 +1379,7 @@ function useDeliveryDocument({
   /** The model's rows as the run's draft takes them, read defensively. */
   const draftOf = (input: Record<string, unknown>) => ({
     deliveryNo: clip(input.deliveryNo, 128) || null,
+    orderNo: clip(input.orderNo, 128) || null,
     deliveryDate: clip(input.deliveryDate, 32) || null,
     vendorName: clip(input.vendorName, 255) || null,
     notes: clip(input.notes, 2000) || null,
@@ -1402,6 +1404,7 @@ function useDeliveryDocument({
             ? Math.min(240, Math.max(0, Number(row.warrantyMonths)))
             : null,
           warrantyEndDate: clip(row.warrantyEndDate, 32) || null,
+          nameDiffers: row.nameDiffers === true,
         };
       }),
   });

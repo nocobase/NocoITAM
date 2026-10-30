@@ -49,6 +49,57 @@ describe('receipt plan', () => {
     expect(normalizeCode(null)).toBe('');
   });
 
+  // A code is evidence, not proof (2026-10-30): a battery printed with a
+  // laptop's code is left for the receiver rather than matched.
+  it('leaves a row whose name plainly contradicts its code unmatched', () => {
+    const plan = planReceipt(
+      {
+        rows: [
+          {
+            lineId: null,
+            description: 'Dell Latitude 5440 battery',
+            partCode: 'MRX63CH/A',
+            quantity: 2,
+            serialNos: ['S1', 'S2'],
+            nameDiffers: true,
+          },
+          {
+            lineId: null,
+            description: 'MacBook Pro 14 space black 16GB',
+            partCode: 'mrx63ch-a',
+            quantity: 1,
+            serialNos: ['S3'],
+          },
+        ],
+      },
+      LINES,
+    );
+    expect(plan.lines).toEqual([
+      expect.objectContaining({ lineId: 'line-laptop', quantity: 1 }),
+    ]);
+    expect(plan.issues).toContainEqual(
+      expect.objectContaining({
+        code: 'codeNameConflict',
+        lineId: 'line-laptop',
+        blocking: false,
+      }),
+    );
+  });
+
+  // Read from the document's content, never its file name (2026-10-30).
+  it('warns when the document prints another order number', () => {
+    const plan = (orderNo: string) =>
+      planReceipt({ orderNo, rows: [] }, LINES, '', 'PO-000067');
+    expect(codes(plan('PO-000066').issues)).toEqual(['orderMismatch']);
+    expect(plan('PO-000066').issues[0]).toMatchObject({
+      orderNo: 'PO-000066',
+    });
+    expect(plan('po 000067').issues).toEqual([]);
+    expect(
+      planReceipt({ orderNo: null, rows: [] }, LINES, '', 'PO-000067').issues,
+    ).toEqual([]);
+  });
+
   it('dates a warranty the document states, for devices', () => {
     const plan = planReceipt(
       {

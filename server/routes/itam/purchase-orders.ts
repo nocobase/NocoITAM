@@ -99,6 +99,7 @@ const batchLineSchema = z
 const draftSchema = z
   .object({
     deliveryNo: z.string().max(128).nullable().optional(),
+    orderNo: z.string().max(128).nullable().optional(),
     deliveryDate: z.string().max(32).nullable().optional(),
     vendorName: z.string().max(255).nullable().optional(),
     notes: z.string().max(2000).nullable().optional(),
@@ -120,6 +121,7 @@ const draftSchema = z
               .nullable()
               .optional(),
             warrantyEndDate: z.string().max(32).nullable().optional(),
+            nameDiffers: z.boolean().nullable().optional(),
           })
           .strict(),
       )
