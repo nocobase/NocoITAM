@@ -569,7 +569,7 @@ document-text`, which reads only a file uploaded within the hour and
   checks `values` as before, and the task prompt keeps the extended fields'
   rules and that an adjustment changes them only as asked (it once added
   fields nobody asked for). Models and
-  software products keep the catalog skill, and the repair and disposal
+  software products keep the product-lookup skill, and the repair and disposal
   diagnoses are judgements rather than forms, so they keep their own
   prompts; moving a form onto the skill means giving its fields an
   `aiHint` where the generic method is not enough. Beside the form
@@ -607,7 +607,7 @@ document-text`, which reads only a file uploaded within the hour and
   types the maker and the model, and the model fills the rest from the web
   when it can be searched (see the web above), else from what it reliably
   knows, and the dialog says which. How to look a record up
-  and fill the form is the `catalog` skill (`ai/skills/catalog/SKILL.md`,
+  and fill the form is the `product-lookup` skill (`ai/skills/product-lookup/SKILL.md`; `catalog` until 2026-10-30, when it was renamed and the old library copy retired,
   型号与软件产品资料, 2026-10-06), read from the plugin's skill library into
   the system prompt, so the rules are a document the business can change.
   One gateway call (`POST /itam/ai/read`, task `model` or
@@ -623,7 +623,7 @@ document-text`, which reads only a file uploaded within the hour and
   every word of one name inside the other, as the lists search
   (2026-10-06), since "MacBook Air 13 英寸（M3）" is the books' "MacBook Air
   13 M3" without matching it exactly. That check is the server's, not the
-  `catalog` skill's. Only dates a page states are filled; the prompt forbids
+  `product-lookup` skill's. Only dates a page states are filled; the prompt forbids
   estimating them. A model the search cannot confirm is still handed back
   with what the reader's own words give — name, maker, closest category,
   marked 请核对 — and nothing else (2026-10-06): the empty form it used to
@@ -646,7 +646,7 @@ document-text`, which reads only a file uploaded within the hour and
   goes beside the form, and saving updates the record with `$origin: 'ai'`
   (AI 建议 in its history). Until then (2026-10-06, as AI 补充) it asked
   Asset Steward in the chat for an `update_master_record` plan, which the
-  catalog skill and the tool still support.
+  product-lookup skill and the tool still support.
 - A manufacturer is looked up on the web too (2026-10-21, the `manufacturer`
   reading: name, official site, support site, business support phone and
   mailbox, only when a page states them). `ManufacturerCaptureDialog` is

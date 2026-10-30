@@ -52,7 +52,7 @@ export type MasterCaptureHandle = MasterCaptureState;
 /**
  * AI 整理 for a new model or software product (2026-10-06): what the reader
  * knows — a maker and a model, usually — goes to the model on the server
- * (`POST /itam/ai/read`, template 1.0.0-beta.64) under the catalog skill.
+ * (`POST /itam/ai/read`, template 1.0.0-beta.64) under the product-lookup skill.
  * With a DeepSeek model service the server searches the web first and the
  * reading cites the pages it used (2026-10-20); otherwise it fills from what
  * the model reliably knows and marks the rest uncertain. The server checks the reading

@@ -17,7 +17,7 @@ import { METHOD_SKILLS, READING_SKILLS, WORK_SKILLS } from './skill.js';
  * when it has one.
  *
  * ITAM's method skills (ai/skills: onboarding, offboarding, receiving,
- * catalog, device-sync, and AI 整理's form-capture) as skills of the library, where people read and edit them under
+ * product-lookup, device-sync, and AI 整理's form-capture) as skills of the library, where people read and edit them under
  * AI → 技能: each is added once, from its SKILL.md as shipped, and attached
  * to Asset Steward — a work agent's skill (approval-review) to its agent instead
  * (work-agents.ts); the marker keeps their ids, so a skill an administrator edited,
@@ -141,7 +141,12 @@ export async function refreshShippedSkills(
  * Skills ITAM once shipped and no longer uses (2026-10-29): the renewal
  * review agent's, replaced by renewal rules (627db8a).
  */
-export const RETIRED_SKILLS: readonly string[] = ['renewal-review'];
+export const RETIRED_SKILLS: readonly string[] = [
+  'renewal-review',
+  // Renamed product-lookup (2026-10-30): the library takes it in under its
+  // new name, and an unedited copy under the old one goes.
+  'catalog',
+];
 
 /**
  * Takes a retired skill out of the library when nobody has edited it — its

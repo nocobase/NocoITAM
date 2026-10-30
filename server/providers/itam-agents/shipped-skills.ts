@@ -26,6 +26,8 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       '22ee2bfbba965f8e19624b714f5f7c8785c242bb11d294226a5276bfa2ebadd6',
       '86a74f888b79f216d250f71f13e519e5544bb18cb55af6396ca7182f3a0e4b11',
       'de2dbf1862c911ff5b14662a3f537e78c1824dbab80c22bde38b57aba55357d2',
+      // The last version shipped as catalog, before it became product-lookup.
+      'f2d72d7d23f52840e0db344256d96fb8e2ca016d3a0356bf1af7399d677cf1d1',
     ],
     'device-sync': [
       'fb6a1824830e1279ded309d25b4642cea1f7e3c96f5b319cfd85812aa90fdcaa',

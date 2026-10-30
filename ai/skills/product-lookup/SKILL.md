@@ -1,13 +1,13 @@
 ---
-name: catalog
+name: product-lookup
 introduction:
-  title: Model and software product details
+  title: Model and product lookup
 scope: SPECIFIED
 description: When a model or software product is being created, look up its details from the manufacturer and model (or vendor and product name) the user gives, and fill in the new-record form for the user to check before saving. Use it when the user runs AI organise in the New model or New software product dialog, or asks you to add details on a model's or software product's detail page.
 tools: []
 ---
 
-# Model and software product details
+# Model and product lookup
 
 The user wants to create a model or a software product in the reference data. Usually they give you only the manufacturer and the model (or the vendor and the product name), sometimes with a part code, a specification or a line from a quote. Your job is to **look up accurate details and fill in the new-record form**. The user checks it, corrects it and saves it. **You do not create the record, and you do not decide for them.**
 

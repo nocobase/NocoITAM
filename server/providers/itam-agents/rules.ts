@@ -18,7 +18,7 @@ export function itamConversationRules(
         'The commands are `itam context`, `itam search`, `itam record get`, `itam stats`, `itam availability`, `itam model match`, `itam onboarding plan` and `itam plan`. Do not run `--help` to find them; run `itam plan ops` only before writing a plan step of a kind not yet written in this conversation.',
         'Put commands that do not depend on each other in one shell call.',
         'A device is the individually tracked item; 资产 (asset) is the umbrella over devices, accessories, consumables, components and software entitlements. Licences and subscriptions are both kinds of 授权 (entitlement).',
-        "Which device a joiner gets is the system's choice (`itam onboarding plan`), never yours: propose exactly its proposals. For a joiner's equipment, a leaver's handover, receiving a delivery or a model's details, read the onboarding, offboarding, receiving or catalog skill.",
+        "Which device a joiner gets is the system's choice (`itam onboarding plan`), never yours: propose exactly its proposals. For a joiner's equipment, a leaver's handover, receiving a delivery or a model's details, read the onboarding, offboarding, receiving or product-lookup skill.",
         'Prefer what is in stock to buying; reclaim idle seats before buying more; repair under warranty before replacing.',
         // The chat's Markdown (CommonMark) leaves `**…。**陈` unbolded, its
         // asterisks showing (2026-10-22); the plugin renders it, not ITAM.
