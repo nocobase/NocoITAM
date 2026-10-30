@@ -93,6 +93,12 @@ export interface ApproverDirectory {
    * the approver decides, as it always was.
    */
   mayApprove(subject: ApprovalSubject, userId: string): Promise<boolean>;
+  /**
+   * Somebody besides this person may be asked (2026-10-30): then a
+   * submitter asks them rather than approving their own request. A lone
+   * approver still may, or their requests could never be decided.
+   */
+  othersMayApprove(subject: ApprovalSubject, userId: string): Promise<boolean>;
   /** 设置 → 流程: the approver range, and what it offers now. */
   approverRangeView(subject: ApprovalSubject): Promise<ApproverRangeView>;
   /**
@@ -296,6 +302,11 @@ export function createApproverDirectory(
     approverRangeView: (subject) => approverRangeView(subject),
     saveApproverRange: (subject, input, actorId) =>
       saveApproverRange(subject, input, actorId),
+    async othersMayApprove(subject, userId) {
+      return (await directory.approversFor(subject, '')).some(
+        (candidate) => candidate.id !== userId,
+      );
+    },
     async mayApprove(subject, userId) {
       const range = await currentRange(subject);
       if (range.some((selection) => selection.type === 'anyone')) return true;

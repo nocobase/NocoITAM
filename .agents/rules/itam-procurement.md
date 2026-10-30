@@ -142,9 +142,13 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   reading the permission sets that grant `itam.<collection>/approve` and their
   user assignments. Naming one is required — `approvals.request` refuses an
   empty `approverId` ("Choose an approver") — and only that person may decide
-  it (`NOT_APPROVER`). The requester **may** name themselves (2026-09-27): a
-  deployment with one Asset Manager has nobody else who may approve, and
-  refusing it left that person's own requests undecidable forever. So an
+  it (`NOT_APPROVER`). The requester names themselves only when nobody else
+  may approve (2026-10-30, `othersMayApprove`): `submit` refuses it with
+  `SELF_APPROVAL` while someone else is in the range, and the picker leaves
+  the reader out then (it still reads their name back when asked by `ids`).
+  The lone Asset Manager may still ask themselves, as allowed since
+  2026-09-27, since refusing it left that person's own requests undecidable
+  forever. Whoever is named must still hold the approval. So an
   approval addressed to an id that belongs to nobody can never be decided,
   which is why the demo asks a real second account. The
   amount tiers that used to route it were removed on 2026-09-25 with

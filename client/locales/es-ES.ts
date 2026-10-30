@@ -1837,7 +1837,6 @@ const esES: AppResource = {
     myApproval: 'Pendientes de mí',
     anyApprover: 'Cualquiera que pueda aprobar',
     noApprovalNeeded: 'No requiere aprobación',
-    approverHint: 'Solo la persona elegida puede decidir.',
     linesTotal_one: '{{count}} línea',
     linesTotal_other: '{{count}} líneas',
     overdueDays_one: 'Entrega con {{count}} día de retraso',
@@ -1879,7 +1878,7 @@ const esES: AppResource = {
   },
   confirmations: {
     submit:
-      'La orden pasa a aprobación (o se aprueba de inmediato si la aprobación está desactivada) y no se puede editar mientras tanto.',
+      'La solicitud pasa a aprobación y no se puede editar mientras tanto.',
     withdraw: 'El registro vuelve a edición y habrá que enviarlo de nuevo.',
     startAudit:
       'Al iniciar se toma una instantánea del alcance como elementos del inventario y se avisa a los ejecutores.',

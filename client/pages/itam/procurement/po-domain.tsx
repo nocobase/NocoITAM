@@ -459,10 +459,7 @@ function PurchaseOrderActions({
             value={approverId}
             onChange={setApproverId}
           />
-          <ApproverHint
-            subject='purchaseOrder'
-            hint={t('procurement.approverHint')}
-          />
+          <ApproverHint subject='purchaseOrder' />
         </div>
       </ConfirmDialog>
       <ConfirmDialog

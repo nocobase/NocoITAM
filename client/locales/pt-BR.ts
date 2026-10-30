@@ -1828,7 +1828,6 @@ const ptBR: AppResource = {
     myApproval: 'Aguardando por mim',
     anyApprover: 'Qualquer pessoa que possa aprovar',
     noApprovalNeeded: 'Não precisa de aprovação',
-    approverHint: 'Somente a pessoa escolhida pode decidir.',
     linesTotal_one: '{{count}} linha',
     linesTotal_other: '{{count}} linhas',
     overdueDays_one: 'Entrega atrasada há {{count}} dia',
@@ -1870,7 +1869,7 @@ const ptBR: AppResource = {
   },
   confirmations: {
     submit:
-      'O pedido vai para aprovação (ou é aprovado na hora quando a aprovação está desativada) e não pode ser editado nesse meio-tempo.',
+      'A solicitação vai para aprovação e não pode ser editada nesse meio-tempo.',
     withdraw: 'O registro volta para edição e precisa ser enviado novamente.',
     startAudit:
       'Iniciar registra o escopo atual como itens do inventário e notifica os executores.',

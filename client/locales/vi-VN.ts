@@ -1812,7 +1812,6 @@ const viVN: AppResource = {
     myApproval: 'Chờ tôi',
     anyApprover: 'Bất kỳ ai có quyền phê duyệt',
     noApprovalNeeded: 'Không cần phê duyệt',
-    approverHint: 'Chỉ người được chọn mới có thể quyết định.',
     linesTotal_one: '{{count}} dòng',
     linesTotal_other: '{{count}} dòng',
     overdueDays_one: 'Giao hàng trễ {{count}} ngày',
@@ -1854,7 +1853,7 @@ const viVN: AppResource = {
   },
   confirmations: {
     submit:
-      'Đơn hàng sẽ được chuyển phê duyệt (hoặc được duyệt ngay khi phê duyệt đang tắt) và không thể sửa trong thời gian này.',
+      'Yêu cầu sẽ được chuyển phê duyệt và không thể sửa trong thời gian này.',
     withdraw: 'Hồ sơ trở về trạng thái chỉnh sửa và cần được gửi lại.',
     startAudit:
       'Khi bắt đầu, phạm vi sẽ được chụp lại thành các mục kiểm kê và người thực hiện sẽ được thông báo.',

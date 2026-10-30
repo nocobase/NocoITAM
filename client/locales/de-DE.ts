@@ -1844,7 +1844,6 @@ const deDE: AppResource = {
     myApproval: 'Wartet auf mich',
     anyApprover: 'Alle Freigabeberechtigten',
     noApprovalNeeded: 'Keine Freigabe nötig',
-    approverHint: 'Nur die gewählte Person kann entscheiden.',
     linesTotal_one: '{{count}} Position',
     linesTotal_other: '{{count}} Positionen',
     overdueDays_one: 'Lieferung {{count}} Tag überfällig',
@@ -1886,7 +1885,7 @@ const deDE: AppResource = {
   },
   confirmations: {
     submit:
-      'Die Bestellung geht in die Freigabe (oder wird bei ausgeschalteter Freigabe sofort freigegeben) und kann so lange nicht bearbeitet werden.',
+      'Der Antrag geht in die Freigabe und kann so lange nicht bearbeitet werden.',
     withdraw:
       'Der Datensatz geht zurück in die Bearbeitung und muss erneut eingereicht werden.',
     startAudit:

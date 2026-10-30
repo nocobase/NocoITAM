@@ -1833,7 +1833,6 @@ const frFR: AppResource = {
     myApproval: 'En attente de moi',
     anyApprover: 'Toute personne habilitée à approuver',
     noApprovalNeeded: 'Aucune approbation nécessaire',
-    approverHint: 'Seule la personne choisie peut décider.',
     linesTotal_one: '{{count}} ligne',
     linesTotal_other: '{{count}} lignes',
     overdueDays_one: 'Livraison en retard de {{count}} jour',
@@ -1875,7 +1874,7 @@ const frFR: AppResource = {
   },
   confirmations: {
     submit:
-      'La commande part en approbation (ou est approuvée immédiatement si l’approbation est désactivée) et ne peut pas être modifiée entre-temps.',
+      'La demande part en approbation et ne peut pas être modifiée entre-temps.',
     withdraw: 'La fiche repasse en édition et doit être soumise à nouveau.',
     startAudit:
       'Le démarrage fige le périmètre sous forme d’éléments d’inventaire et prévient les exécutants.',

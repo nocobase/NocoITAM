@@ -1804,7 +1804,6 @@ const koKR: AppResource = {
     myApproval: '내 승인 대기',
     anyApprover: '승인 권한이 있는 누구나',
     noApprovalNeeded: '승인 불필요',
-    approverHint: '선택한 사람만 승인 결정을 할 수 있습니다.',
     lineReceived: '입고 기록이 있는 품목은 삭제할 수 없습니다',
     linesTotal_one: '품목 {{count}}개',
     linesTotal_other: '품목 {{count}}개',
@@ -1846,8 +1845,7 @@ const koKR: AppResource = {
       '이미지가 레코드에서 제거됩니다. 업로드한 파일은 파일 저장소에 남습니다.',
   },
   confirmations: {
-    submit:
-      '구매 주문이 승인 절차로 넘어가며(승인이 꺼져 있으면 즉시 승인됩니다), 그동안에는 편집할 수 없습니다.',
+    submit: '요청이 승인 절차로 넘어가며, 그동안에는 편집할 수 없습니다.',
     withdraw: '레코드가 편집 상태로 돌아가며 다시 승인을 요청해야 합니다.',
     startAudit:
       '시작하면 범위 내 대상을 재고 실사 항목으로 기록하고 실사 담당자에게 알립니다.',

@@ -805,6 +805,14 @@ export function createDisposalService(dependencies: {
           'Choose an approver from the range set for disposals',
           'APPROVER_NOT_IN_RANGE',
         );
+      if (
+        approverId === context.actorId &&
+        (await approvers.othersMayApprove('disposal', approverId))
+      )
+        throw new BusinessRuleError(
+          'Ask someone else to approve your own request',
+          'SELF_APPROVAL',
+        );
       return records.mutate(id, conditions, async (connection, disposal) => {
         // The guard reads the count the devices make now.
         await recomputeTotals(connection, id);

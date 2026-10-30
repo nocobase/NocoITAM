@@ -1824,7 +1824,6 @@ const idID: AppResource = {
     myApproval: 'Menunggu saya',
     anyApprover: 'Siapa pun yang berwenang menyetujui',
     noApprovalNeeded: 'Tidak perlu persetujuan',
-    approverHint: 'Hanya orang yang dipilih yang dapat memutuskan.',
     linesTotal_one: '{{count}} baris',
     linesTotal_other: '{{count}} baris',
     overdueDays_one: 'Pengiriman terlambat {{count}} hari',
@@ -1866,7 +1865,7 @@ const idID: AppResource = {
   },
   confirmations: {
     submit:
-      'Pesanan diajukan untuk persetujuan (atau langsung disetujui jika persetujuan dinonaktifkan) dan tidak dapat diubah selama proses.',
+      'Pengajuan diteruskan untuk persetujuan dan tidak dapat diubah selama proses.',
     withdraw: 'Catatan kembali ke tahap pengeditan dan harus diajukan lagi.',
     startAudit:
       'Memulai akan merekam cakupan sebagai item stock opname dan memberi tahu para pelaksana.',

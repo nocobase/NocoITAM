@@ -498,10 +498,7 @@ function DisposalActions({
             value={approverId}
             onChange={setApproverId}
           />
-          <ApproverHint
-            subject='disposal'
-            hint={t('procurement.approverHint')}
-          />
+          <ApproverHint subject='disposal' />
         </div>
       </ConfirmDialog>
       <ConfirmDialog

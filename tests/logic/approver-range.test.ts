@@ -82,6 +82,20 @@ describe('approver range', () => {
       required: () => (async (_context, next) => next()) as MiddlewareHandler,
     } as never);
     container.instance(authorizationToken, {
+      // Who reads the picker (`x-test-user`), so they are not offered
+      // themselves while somebody else may approve (2026-10-30).
+      middleware: () =>
+        (async (context, next) => {
+          context.set('authz', {
+            identity: {
+              principal: {
+                type: 'user',
+                id: context.req.header('x-test-user') ?? 'reader',
+              },
+            },
+          });
+          await next();
+        }) as MiddlewareHandler,
       permissionSets: {
         list: async () => SETS,
         listAssignments: async (key: string) =>
@@ -180,6 +194,29 @@ describe('approver range', () => {
     expect(
       ids(((await orders.json()) as { data: { id: string }[] }).data),
     ).toEqual(['mia']);
+  });
+
+  // A submitter asks someone else while somebody else may approve
+  // (2026-10-30); the lone approver of a kind still asks themselves.
+  it('offers the reader themselves only when nobody else may approve', async () => {
+    const picker = async (subject: string) =>
+      ids(
+        (
+          (await (
+            await root.request(
+              `/api/itam/users/approvers?filter[subject]=${subject}`,
+              { headers: { 'x-test-user': 'mia' } },
+            )
+          ).json()) as { data: { id: string }[] }
+        ).data,
+      );
+    expect(await picker('disposal')).not.toContain('mia');
+    expect(await picker('disposal')).toContain('ann');
+    expect(await picker('purchaseOrder')).toEqual(['mia']);
+    expect(await directory.othersMayApprove('disposal', 'mia')).toBe(true);
+    expect(await directory.othersMayApprove('purchaseOrder', 'mia')).toBe(
+      false,
+    );
   });
 
   it('conflicts on a stale page and saves a resent request once', async () => {

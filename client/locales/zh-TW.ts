@@ -1742,7 +1742,6 @@ const zhTW: AppResource = {
     myApproval: '待我簽核',
     anyApprover: '未指定 (任何簽核人)',
     noApprovalNeeded: '無需簽核',
-    approverHint: '只有選中的人能簽核。',
     lineReceived: '已有到貨的明細不能刪除',
     linesTotal_one: '合計 {{count}} 筆明細',
     linesTotal_other: '合計 {{count}} 筆明細',
@@ -1782,7 +1781,7 @@ const zhTW: AppResource = {
     removeDescription: '圖片將從記錄中移除；已上傳的檔案仍保留在檔案庫中',
   },
   confirmations: {
-    submit: '送出後進入簽核（未啟用簽核時直接核准），簽核期間不能修改。',
+    submit: '送出後進入簽核，簽核期間不能修改。',
     withdraw: '撤回後單據回到可編輯狀態，需要重新送出簽核。',
     startAudit: '開始後依範圍產生盤點明細快照，並通知執行人。',
     removeAttachment: '「{{name}}」將從本記錄移除，並記入歷程。',

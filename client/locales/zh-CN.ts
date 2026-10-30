@@ -1764,7 +1764,6 @@ const zhCN: AppResource = {
     myApproval: '待我审批',
     anyApprover: '未指定 (任何审批人)',
     noApprovalNeeded: '无需审批',
-    approverHint: '只有选中的人能审批。',
     lineReceived: '已有到货的明细不能删除',
     linesTotal_one: '合计 {{count}} 条明细',
     linesTotal_other: '合计 {{count}} 条明细',
@@ -1804,7 +1803,7 @@ const zhCN: AppResource = {
     removeDescription: '图片将从记录中移除；已上传的文件仍保留在文件库中',
   },
   confirmations: {
-    submit: '提交后进入审批（未启用审批时直接批准），审批期间不能修改。',
+    submit: '提交后进入审批，审批期间不能修改。',
     withdraw: '撤回后单据回到可编辑状态，需要重新提交审批。',
     startAudit: '开始后按范围生成盘点明细快照，并通知执行人。',
     removeAttachment: '「{{name}}」将从本记录移除，并记入历史。',

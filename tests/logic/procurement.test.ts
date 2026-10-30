@@ -6,6 +6,7 @@ import {
   maintenanceServiceToken,
   procurementServiceToken,
 } from '../../server/providers/index.js';
+import { approverDirectoryToken } from '../../server/providers/itam/approvers.js';
 import { unrestricted } from '../../server/providers/itam/authz-filter.js';
 import { approvalRoutes } from '../../server/routes/itam/approvals.js';
 import { deviceRoutes } from '../../server/routes/itam/devices.js';
@@ -294,6 +295,39 @@ describe('procurement', () => {
       ).toEqual([]);
   });
 
+  // A submitter asks someone else while somebody else may approve, and
+  // still may ask themselves when nobody else can (2026-10-30).
+  it('refuses the submitter as approver only while someone else may approve', async () => {
+    const directory = app.container.resolve(approverDirectoryToken);
+    let others = true;
+    directory.othersMayApprove = async () => others;
+    const order = await data<{ id: string }>(
+      await post('purchase-orders', {
+        reason: 'newHire',
+        vendorId: fixture.vendorId,
+        departmentId: fixture.departmentId,
+      }),
+    );
+    await app.request(`/api/itam/purchase-orders/${order.id}/lines`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        lines: [{ itemType: 'device', modelId: fixture.modelId, quantity: 1 }],
+      }),
+      ...manager,
+    });
+    const own = await post(`purchase-orders/${order.id}/submit`, {
+      approverId: 'mia',
+    });
+    expect(own.status).toBe(422);
+    expect(await own.json()).toMatchObject({ rule: 'SELF_APPROVAL' });
+    others = false;
+    expect(
+      (await post(`purchase-orders/${order.id}/submit`, { approverId: 'mia' }))
+        .status,
+    ).toBe(200);
+  });
+
   it('runs request → approval → order → receipt → stock-in, generating records', async () => {
     const created = await post('purchase-orders', {
       reason: 'newHire',
@@ -354,6 +388,7 @@ describe('procurement', () => {
 
     // An approver must be named.
     expect((await post(`purchase-orders/${order.id}/submit`)).status).toBe(400);
+
     // The submitter names who should approve, and only they see it queued.
     const submitted = await post(`purchase-orders/${order.id}/submit`, {
       approverId: 'ann',

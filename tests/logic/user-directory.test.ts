@@ -82,6 +82,14 @@ describe('user directory', () => {
       required: () => (async (_context, next) => next()) as MiddlewareHandler,
     } as never);
     container.instance(authorizationToken, {
+      // The approver list knows its reader (2026-10-30).
+      middleware: () =>
+        (async (context, next) => {
+          context.set('authz', {
+            identity: { principal: { type: 'user', id: 'reader' } },
+          });
+          await next();
+        }) as MiddlewareHandler,
       permissionSets: {
         list: async () => SETS,
         listAssignments: async (key: string) =>

@@ -1847,7 +1847,6 @@ const messages = {
     myApproval: 'Waiting for me',
     anyApprover: 'Anyone who may approve',
     noApprovalNeeded: 'No approval needed',
-    approverHint: 'Only the person chosen can decide.',
     linesTotal_one: '{{count}} line',
     linesTotal_other: '{{count}} lines',
     overdueDays_one: 'Delivery {{count}} day overdue',
@@ -1888,8 +1887,7 @@ const messages = {
       'The picture is removed from the record; an uploaded file stays in the file store.',
   },
   confirmations: {
-    submit:
-      'The order goes to approval (or is approved at once when approval is off) and cannot be edited meanwhile.',
+    submit: 'The request goes to approval and cannot be edited meanwhile.',
     withdraw: 'The record returns to editing and has to be submitted again.',
     startAudit:
       'Starting snapshots the scope as the audit items and notifies the executors.',

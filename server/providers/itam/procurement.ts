@@ -1299,6 +1299,14 @@ export function createProcurementService(deps: {
           'Choose an approver from the range set for purchase orders',
           'APPROVER_NOT_IN_RANGE',
         );
+      if (
+        approverId === context.actorId &&
+        (await approvers.othersMayApprove('purchaseOrder', approverId))
+      )
+        throw new BusinessRuleError(
+          'Ask someone else to approve your own request',
+          'SELF_APPROVAL',
+        );
       return mutate(id, conditions, async (connection, order) => {
         // The approval asks for the amount the lines make now.
         await recomputeTotals(connection, id);

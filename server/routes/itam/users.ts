@@ -2,6 +2,7 @@ import {
   authenticationToken,
   userAdministrationServiceToken,
 } from '@nocobase/app-plugin-authentication';
+import { authorizationToken } from '@nocobase/app-plugin-authorization/server';
 import type { Application } from '@nocobase/app-server/application';
 import {
   defineApiRoutes,
@@ -10,6 +11,7 @@ import {
 import { Hono } from 'hono';
 
 import type { ApprovalSubject } from '../../providers/itam/approvals.js';
+import { principalId, type ItamContext } from './http.js';
 import {
   approverDirectoryToken,
   type ApproverCandidate,
@@ -35,6 +37,7 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
   defineApiRoutes((app) => {
     const router = new Hono();
     const auth = app.container.resolve(authenticationToken);
+    const authorization = app.container.resolve(authorizationToken);
     // Who holds what, as the pickers offer people (`approvers.ts`).
     const directory = app.container.resolve(approverDirectoryToken);
     const leftUserIds = (userIds: readonly string[]) =>
@@ -113,24 +116,35 @@ export const userDirectoryRoutes: AppApiRouteContribution<Application> =
       pageSize: data.length,
     });
 
-    router.get('/itam/users/approvers', auth.required(), async (context) => {
-      const url = new URL(context.req.url);
-      const subject = url.searchParams.get('filter[subject]') ?? '';
-      if (!APPROVAL_SUBJECTS.has(subject)) return context.json(listed([]));
-      // Whoever holds the approval, narrowed by the kind's approver range
-      // (设置 → 流程; disposals 2026-10-18, purchase orders 2026-10-19). The
-      // requester is a candidate like anyone else who may approve: an Asset
-      // Manager filing a request has nobody else to ask when they are the
-      // only one (2026-09-27).
-      return context.json(
-        listed(
-          await directory.approversFor(
-            subject as ApprovalSubject,
-            url.searchParams.get('q') ?? '',
-          ),
-        ),
-      );
-    });
+    router.get(
+      '/itam/users/approvers',
+      auth.required(),
+      // Who is reading (`principalId`), so they are not offered themselves.
+      authorization.middleware(),
+      async (context) => {
+        const url = new URL(context.req.url);
+        const subject = url.searchParams.get('filter[subject]') ?? '';
+        if (!APPROVAL_SUBJECTS.has(subject)) return context.json(listed([]));
+        // Whoever holds the approval, narrowed by the kind's approver range
+        // (设置 → 流程; disposals 2026-10-18, purchase orders 2026-10-19). The
+        // reader is offered only when nobody else may approve (2026-10-30):
+        // an Asset Manager who is the only one still asks themselves, as since
+        // 2026-09-27, but with a colleague to ask, asks them. Asked for ids,
+        // it reads names back, the reader's included.
+        const candidates = await directory.approversFor(
+          subject as ApprovalSubject,
+          url.searchParams.get('q') ?? '',
+        );
+        const reader = principalId(context as unknown as ItamContext);
+        const others = url.searchParams.has('ids')
+          ? candidates
+          : candidates.filter((candidate) => candidate.id !== reader);
+        const anyOther = (
+          await directory.approversFor(subject as ApprovalSubject, '')
+        ).some((candidate) => candidate.id !== reader);
+        return context.json(listed(anyOther ? others : candidates));
+      },
+    );
 
     // Who a repair may be made the responsibility of: whoever may finish
     // one, which the deployment's sets decide.

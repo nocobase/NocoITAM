@@ -1810,7 +1810,6 @@ const jaJP: AppResource = {
     myApproval: '自分の承認待ち',
     anyApprover: '承認権限のある誰でも',
     noApprovalNeeded: '承認不要',
-    approverHint: '選択した人だけが承認判断できます。',
     lineReceived: '入荷済みの明細は削除できません',
     linesTotal_one: '明細 {{count}} 件',
     linesTotal_other: '明細 {{count}} 件',
@@ -1852,8 +1851,7 @@ const jaJP: AppResource = {
       '画像はレコードから外されます。アップロード済みのファイルはファイルストアに残ります。',
   },
   confirmations: {
-    submit:
-      '発注書は承認に回り（承認がオフの場合はすぐに承認されます）、その間は編集できません。',
+    submit: '申請は承認に回り、その間は編集できません。',
     withdraw:
       'レコードは編集可能な状態に戻り、再度承認を申請する必要があります。',
     startAudit:
