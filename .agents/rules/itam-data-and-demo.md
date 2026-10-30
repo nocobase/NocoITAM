@@ -196,7 +196,14 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   orders alternate between 吴静 and 孙强 as 负责人, and 周宇 hands things
   out (`desk`: devices assigned, lent and returned, stock issued, taken back
   and reordered, seats given and reclaimed), so 动态 and the lists read as a
-  team's. `demoAccountUsernames()`
+  team's. Orders carry several lines (2026-10-30): the historical device
+  orders gather what one vendor delivered within a quarter, and the open
+  orders not tied to an AI review carry what goes with the item (a dock and
+  cable with the laptops, toner with the printer). The orders the demo's
+  AI reviews read (`demo-suggestions.ts`: the monitors, the R&D MacBook
+  Air, the core switch, the interns' laptops) stay one line, since the
+  review reads the first line as the order; the first stock of each item
+  is still an order of its own, on the day the item came in. `demoAccountUsernames()`
   keeps the retired `manager` / `support`, and the pinyin usernames an English
   demo had before 2026-10-06, so a reset still removes them.
   The requests are addressed to 孙强, not to whatever `otherUser` finds.

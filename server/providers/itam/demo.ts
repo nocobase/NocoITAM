@@ -1190,13 +1190,13 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     syncLost: 'Not found at the stocktake',
     syncTestPhone: 'Test phone, wiped for every release; not enrolled in MDM',
     historicalOrder: 'Bought before the register; entered with it',
-    itSpareOrder: 'Spare laptops for IT',
+    itSpareOrder: 'Spare laptops for IT, with docks',
     salesPhoneOrder: 'Phones for the new sales hires',
     airOrder: 'MacBook Air for the R&D hires',
     switchOrder: 'Second core switch for the server room',
-    printerReplaceOrder: 'Replacement printer for the third floor',
-    mouseOrder: 'Mouse stock',
-    ssdOrder: 'Spare SSDs',
+    printerReplaceOrder: 'Replacement printer for the third floor, with toner',
+    mouseOrder: 'Mice, keyboards and cables for stock',
+    ssdOrder: 'Spare SSDs and memory',
     desktopOrder: 'Three new sales desks, everything they need',
     serverOrder: 'Two more file servers',
     serverRejection: 'Size the virtual capacity first, then ask again',
@@ -1363,13 +1363,13 @@ const TEXTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     syncLost: '盘点时没找到',
     syncTestPhone: '研发测试机，每次发版都要刷机，不注册 MDM',
     historicalOrder: '上线前的采购，随台账一起录入',
-    itSpareOrder: 'IT 备用笔记本',
+    itSpareOrder: 'IT 备用笔记本及扩展坞',
     salesPhoneOrder: '销售新员工手机',
     airOrder: '研发新员工 MacBook Air',
     switchOrder: '机房第二台核心交换机',
-    printerReplaceOrder: '3 楼打印机更换',
-    mouseOrder: '鼠标补货',
-    ssdOrder: '固态硬盘备件',
+    printerReplaceOrder: '3 楼打印机更换及硒鼓',
+    mouseOrder: '鼠标、键盘和线缆补货',
+    ssdOrder: '固态硬盘和内存备件',
     desktopOrder: '销售部新增三个工位，整套配齐',
     serverOrder: '新增两台文件服务器',
     serverRejection: '先评估虚拟化资源，再决定是否采购',
@@ -3179,17 +3179,34 @@ export function createDemoService(dependencies: {
                   .where('purchaseDate', 'is not', null)
                   .execute<Row>()
               : [];
-            const batches = new Map<string, Row[]>();
-            for (const row of unordered) {
-              const key = `${String(row.vendorId)}|${String(row.purchaseDate)}`;
-              batches.set(key, [...(batches.get(key) ?? []), row]);
+            // One order per vendor and quarter (2026-10-30): what a vendor
+            // delivered within three months of the order's first delivery
+            // came on that order, so an order holds the laptops with their
+            // monitors and docks rather than one model each.
+            const byDate = [...unordered].sort((a, b) =>
+              String(a.purchaseDate).localeCompare(String(b.purchaseDate)),
+            );
+            const open = new Map<string, Row[]>();
+            const batchList: Row[][] = [];
+            for (const row of byDate) {
+              const vendor = String(row.vendorId);
+              const current = open.get(vendor);
+              const started = current
+                ? Date.parse(String(current[0]?.purchaseDate))
+                : Number.NaN;
+              if (
+                current &&
+                Date.parse(String(row.purchaseDate)) - started <= 92 * DAY
+              )
+                current.push(row);
+              else {
+                const fresh = [row];
+                open.set(vendor, fresh);
+                batchList.push(fresh);
+              }
             }
             // Oldest first, so the numbers run with the dates.
-            const ordered = [...batches.values()].sort((a, b) =>
-              String(a[0]?.purchaseDate).localeCompare(
-                String(b[0]?.purchaseDate),
-              ),
-            );
+            const ordered = batchList;
             for (const [index, batch] of ordered.entries()) {
               const first = batch[0];
               // The two asset managers bought the devices in turn
@@ -3216,8 +3233,9 @@ export function createDemoService(dependencies: {
                   currency: asText(first.currency) ?? null,
                   status: 'completed',
                   orderedAt: day,
-                  expectedAt: day,
-                  receivedAt: day,
+                  // The last delivery closed it.
+                  expectedAt: asText(batch.at(-1)?.purchaseDate) ?? day,
+                  receivedAt: asText(batch.at(-1)?.purchaseDate) ?? day,
                   ownerId: buyer,
                   createdById: buyer,
                   createdAt: at,
@@ -5703,7 +5721,12 @@ export function createDemoService(dependencies: {
           reason: 'batchReplacement',
           departmentId: itDept.id,
           neededInDays: 45,
-          lines: [line('device', thinkpad, 2, 9999)],
+          // Most orders carry what goes with the device (2026-10-30).
+          lines: [
+            line('device', thinkpad, 2, 9999),
+            line('accessory', dock, 2, 299),
+            line('consumable', usbCable, 4, 39),
+          ],
           stage: 'draft',
           raisedDaysAgo: 3,
           ownerId: importerId,
@@ -5745,7 +5768,10 @@ export function createDemoService(dependencies: {
           reason: 'faultReplacement',
           departmentId: itDept.id,
           neededInDays: 7,
-          lines: [line('device', laserjet, 1, 2899)],
+          lines: [
+            line('device', laserjet, 1, 2899),
+            line('consumable', hpToner, 2, 629),
+          ],
           stage: 'approved',
           raisedDaysAgo: 9,
           ownerId: importerId,
@@ -5756,7 +5782,11 @@ export function createDemoService(dependencies: {
           reason: 'stockReplenishment',
           departmentId: rnd.id,
           neededInDays: 10,
-          lines: [line('accessory', mxMaster, 20, 599)],
+          lines: [
+            line('accessory', mxMaster, 20, 599),
+            line('accessory', mxKeys, 10, 799),
+            line('consumable', usbCable, 20, 39),
+          ],
           stage: 'approved',
           raisedDaysAgo: 7,
         });
@@ -5765,7 +5795,10 @@ export function createDemoService(dependencies: {
           reason: 'stockReplenishment',
           departmentId: itDept.id,
           neededInDays: 5,
-          lines: [line('component', ssdModel, 10, 899)],
+          lines: [
+            line('component', ssdModel, 10, 899),
+            line('component', ramModel, 6, 899),
+          ],
           stage: 'ordered',
           raisedDaysAgo: 10,
           ownerId: importerId,
