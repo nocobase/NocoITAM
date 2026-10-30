@@ -1713,7 +1713,6 @@ const zhCN: AppResource = {
         '粘贴采购需求、邮件或报价单内容，也可以上传单据。AI 整理成采购单，你核对后再保存或提交审批',
       upload: '上传单据',
       removeFile: '移除文件',
-      hint: '支持 Excel、CSV、Word、PDF 和图片',
       organise: '整理',
       organising: 'AI 正在整理…',
       uploading: '正在上传…',

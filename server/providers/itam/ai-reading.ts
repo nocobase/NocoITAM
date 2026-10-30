@@ -14,6 +14,7 @@ import {
   newCategoryFacts,
 } from './category-reading.js';
 import { aiLanguageToken } from './ai-language.js';
+import { referenceNames } from './purchase-capture.js';
 import { BusinessRuleError, RecordNotFoundError } from './errors.js';
 import {
   DATA_WIPE_OPTIONS,
@@ -144,15 +145,10 @@ const PURCHASE_LINE = z.object({
 export const REPAIR_RECOMMENDATIONS = ['repair', 'replace', 'inspect'] as const;
 
 const SHAPES: Readonly<Record<ReadingTask, z.ZodType>> = {
+  // The form's fields by key (2026-10-29): which ones there are is the
+  // context's `fields`, read from the form's definitions.
   purchaseOrder: z.object({
-    reason: text,
-    description: text,
-    neededBy: text,
-    vendorId: text,
-    vendorName: text,
-    departmentName: text,
-    ownerName: text,
-    currency: text,
+    values: z.record(z.string(), z.unknown()).optional(),
     uncertain: z.array(z.string()).optional(),
     lines: z.array(PURCHASE_LINE),
   }),
@@ -321,7 +317,7 @@ const LINE_RULES =
 
 /** What each task asks, in English like the other prompts. */
 const TASKS: Readonly<Record<ReadingTask, string>> = {
-  purchaseOrder: `Organise the material into one purchase order for the new purchase order form. It may be a purchase request, an email, a quote, an invoice or a delivery note. Fill only what the material states or plainly shows and leave the rest out; never guess. reason: one of the context's \`reasons\` (its value). description: what is bought, for whom and why, close to the material's words. neededBy: YYYY-MM-DD, only when the material gives a date (today is in the context). currency: the ISO 4217 code the prices are in, only when the material states it (JPY, 日元, US$); a bare ¥ is yuan or yen, so leave it out unless the material shows which. ownerName: the person in IT the material names to follow the order through (负责人, owner), as written; leave it out when it names none, and never take the requester or the person it is for. vendorName and departmentName as the material names them (the form matches them); vendorId only when the context's form already names that vendor. ${LINE_RULES} uncertain: the header fields (reason, description, neededBy, owner, vendor, department) you filled but are not sure of. In \`said\`, one plain sentence naming each line by its item, never by its position (not 第一行 or line 2), and each field by the context's \`fieldLabels\`: the form asks for no other field, so never ask for a delivery or arrival date, which is entered when the order is placed. Say only what the order still needs that the material leaves out (a price, a quantity, the reason) or what you filled and are not sure of; neededBy is optional, so its absence is not worth a word. Do not repeat what the form shows, and suggest nothing else. The form itself matches the vendor, department, models and products against the register and marks what it could not match, so never ask the person to check whether one is in the system.`,
+  purchaseOrder: `Organise the material into one purchase order for the new purchase order form, by the form-capture method: fill the context's \`fields\` into \`values\`. The material may be a purchase request, an email, a quote, an invoice or a delivery note. The goods go into \`lines\`, not into a field. ${LINE_RULES} In \`said\`, name each line by its item, never by its position (not 第一行 or line 2). The form itself matches the vendor, department, owner, models and products against the register and marks what it could not match, so never ask the person to check whether one is in the system.`,
   purchaseLines: `Read the lines of the document (a quote, an invoice or a delivery note) for the purchase order on screen. Lines only: the order's reason, description, vendor and department are set already, and the lines in the context's \`form.existingLines\` are not repeated. ${LINE_RULES} In \`said\`, one plain sentence naming each line by its item, never by its position: what to check or add, without repeating what is filled in. The form itself matches the models and products against the register and marks what it could not match, so never ask the person to check whether one is in the system.`,
   model: `Fill the new model form for the model the material names, following the catalog method below. Put every field you are not certain of in \`uncertain\`, and never estimate a date. categoryId: one of the context's \`categories\` ids (the closest; mark it uncertain when unsure). attributes: by the keys of that category's \`fields\`, as defaults every device of the model starts with: never what each unit has of its own (a MAC or IP address, a host name, a serial or asset number); and a configuration that differs from unit to unit (memory, storage, a processor option) only when the part code or the name pins one configuration, else leave it empty and say so in \`said\`. manufacturerName as the maker is called. A model you cannot confirm is still answered with what the material gives — name, maker, the closest category, marked uncertain — and nothing else. In \`said\`, one plain sentence: what you could not fill and what to check.`,
   manufacturer: `Fill the new manufacturer form for the maker the material names. name: as the maker is commonly called in IT (Dell, Lenovo, Anthropic — no Inc., Ltd. or Corporation unless that is the name everyone uses). website: the maker's official home page. supportUrl: its support or help site for business customers. supportPhone and supportEmail: its business support contact, only when a page states it; leave them out rather than guess. Put every field you are not certain of in \`uncertain\`. In \`said\`, one plain sentence: what you could not fill and what to check.`,
@@ -381,6 +377,7 @@ async function webFor(
 
 /** The method skill a task follows, from the Agents plugin's library. */
 const METHOD: Partial<Record<ReadingTask, string>> = {
+  purchaseOrder: 'form-capture',
   model: 'catalog',
   softwareProduct: 'catalog',
   deliveryDocument: 'receiving',
@@ -431,6 +428,33 @@ async function catalogFor(
   };
 }
 
+/**
+ * The names each reference field of a form-capture reading may take
+ * (2026-10-30), by the field's `reference`, so the reading writes the name
+ * the register keeps rather than the material's own wording. A register the
+ * person may not read is left out; the people an owner is picked from are
+ * the ones the form's own picker lists.
+ */
+async function recordsFor(
+  container: ServiceContainer,
+  actorId: string,
+  fields: unknown,
+): Promise<Record<string, string[]> | undefined> {
+  if (!Array.isArray(fields)) return undefined;
+  const scope = scopeFor(container, actorId);
+  const database = container.resolve(databaseManagerToken);
+  const records: Record<string, string[]> = {};
+  for (const field of fields.slice(0, 50)) {
+    const reference = asText((field as Row | null)?.reference);
+    if (!reference || records[reference]) continue;
+    if (reference !== 'users' && !(await scope.may(reference, 'read')))
+      continue;
+    const names = await referenceNames(database, reference);
+    if (names) records[reference] = names;
+  }
+  return Object.keys(records).length ? records : undefined;
+}
+
 export async function readForForm(
   container: ServiceContainer,
   actorId: string,
@@ -453,6 +477,8 @@ export async function readForForm(
   const context: Record<string, unknown> = { ...input.context };
   if (input.task === 'purchaseOrder' || input.task === 'purchaseLines')
     context.catalog = await catalogFor(container, actorId);
+  const records = await recordsFor(container, actorId, input.context.fields);
+  if (records) context.records = records;
   // The device is read here, as the person, not taken from the page.
   const catalogTask =
     input.task === 'model' ||

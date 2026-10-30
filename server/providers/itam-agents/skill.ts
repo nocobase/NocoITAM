@@ -93,3 +93,11 @@ export const METHOD_SKILLS = [
  * Asset Steward to review an approval.
  */
 export const WORK_SKILLS = ['approval-review'] as const;
+
+/**
+ * The method AI 整理 fills a new form by (2026-10-29, ai-reading.ts):
+ * put into the library like the others, so an administrator reads and
+ * edits it on Agent 团队 → 技能, and read by the form reading itself — it is
+ * not Asset Steward's.
+ */
+export const READING_SKILLS = ['form-capture'] as const;

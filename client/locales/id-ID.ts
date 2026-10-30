@@ -1765,7 +1765,6 @@ const idID: AppResource = {
         'Tempelkan permintaan pembelian, email, atau penawaran, atau unggah dokumen. AI merapikannya menjadi pesanan pembelian untuk Anda periksa sebelum menyimpan atau mengajukannya',
       upload: 'Unggah dokumen',
       removeFile: 'Lepas file',
-      hint: 'Excel, CSV, Word, PDF, dan gambar',
       organise: 'Rapikan',
       organising: 'AI sedang merapikan…',
       uploading: 'Mengunggah…',

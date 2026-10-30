@@ -1769,7 +1769,6 @@ const ptBR: AppResource = {
         'Cole uma solicitação de compra, um e-mail ou um orçamento, ou envie um documento. A IA o organiza em um pedido de compra para você conferir antes de salvar ou enviar',
       upload: 'Enviar um documento',
       removeFile: 'Remover o arquivo',
-      hint: 'Excel, CSV, Word, PDF e imagens',
       organise: 'Organizar',
       organising: 'A IA está organizando…',
       uploading: 'Enviando…',

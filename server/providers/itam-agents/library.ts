@@ -8,7 +8,7 @@ import type { DatabaseManager } from '@nocobase/db';
 
 import { claimMarker, readMarker, writeMarker } from './markers.js';
 import { SHIPPED_SKILL_HASHES } from './shipped-skills.js';
-import { METHOD_SKILLS, WORK_SKILLS } from './skill.js';
+import { METHOD_SKILLS, READING_SKILLS, WORK_SKILLS } from './skill.js';
 
 /**
  * @temporary(nocobase-official): an application cannot ship skills into the
@@ -17,7 +17,7 @@ import { METHOD_SKILLS, WORK_SKILLS } from './skill.js';
  * when it has one.
  *
  * ITAM's method skills (ai/skills: onboarding, offboarding, receiving,
- * catalog, device-sync) as skills of the library, where people read and edit them under
+ * catalog, device-sync, and AI 整理's form-capture) as skills of the library, where people read and edit them under
  * AI → 技能: each is added once, from its SKILL.md as shipped, and attached
  * to Asset Steward — a work agent's skill (approval-review) to its agent instead
  * (work-agents.ts); the marker keeps their ids, so a skill an administrator edited,
@@ -58,7 +58,7 @@ export async function provisionSkills(
   );
   if (retired.length)
     await writeMarker(database, SKILLS_MARKER, { skillIds: known });
-  const missing = [...METHOD_SKILLS, ...WORK_SKILLS].filter(
+  const missing = [...METHOD_SKILLS, ...WORK_SKILLS, ...READING_SKILLS].filter(
     (slug) => !known[slug],
   );
   if (!missing.length) return;

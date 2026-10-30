@@ -151,6 +151,13 @@ export interface FieldDefinition {
    */
   readonly hint?: string;
   /**
+   * What AI 整理 should know to fill the field from a person's material, in
+   * English like the other prompts (2026-10-29): the form's fields are what
+   * the assistant fills, each with this line, rather than a list kept
+   * beside each form (`capture-fields.ts`, skill `form-capture`).
+   */
+  readonly aiHint?: string;
+  /**
    * A note under the field in a form, as a translation key, while the
    * values call for one (2026-10-22): what the value entered will mean.
    */

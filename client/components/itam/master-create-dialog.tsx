@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import { CaptureFailure } from '@/components/itam/ai/capture-failure';
+import { CaptureTurns } from '@/components/itam/ai/capture-turns';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { ManufacturerCaptureDialog } from '@/components/itam/manufacturer-capture-dialog';
 import {
@@ -610,35 +611,15 @@ function CaptureNotes({
         </div>
       ) : null}
       <div className='grid gap-2 border-t border-border pt-2'>
-        {capture.turns.map((turn) =>
-          turn.from === 'user' ? (
-            <p
-              key={turn.id}
-              className='ml-auto max-w-[90%] rounded-lg bg-background px-3 py-1.5 whitespace-pre-wrap'
-            >
-              {turn.text}
-            </p>
-          ) : (
-            <p
-              key={turn.id}
-              className='flex max-w-[90%] gap-1.5 text-muted-foreground'
-            >
-              <span className='flex h-[1lh] shrink-0 items-center'>
-                <Sparkles className='size-3.5 text-primary' />
-              </span>
-              <span className='min-w-0'>
-                <CollapsibleText text={turn.text} chars={200} lines={3} />
-              </span>
-            </p>
-          ),
-        )}
-        {capture.failure && capture.mode === 'adjust' ? (
-          <CaptureFailure
-            text={capture.failure}
-            answered={capture.failureAnswered}
-            inline
-          />
-        ) : null}
+        <CaptureTurns turns={capture.turns}>
+          {capture.failure && capture.mode === 'adjust' ? (
+            <CaptureFailure
+              text={capture.failure}
+              answered={capture.failureAnswered}
+              inline
+            />
+          ) : null}
+        </CaptureTurns>
         <Textarea
           value={instruction}
           disabled={busy}

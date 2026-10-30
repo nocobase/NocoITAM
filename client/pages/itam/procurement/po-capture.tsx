@@ -1,9 +1,10 @@
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, Sparkles, Upload, X } from 'lucide-react';
-import { useRef, useState, type ReactElement } from 'react';
+import { useRef, useState, type DragEvent, type ReactElement } from 'react';
 
 import { CaptureFailure } from '@/components/itam/ai/capture-failure';
+import { CaptureTurns } from '@/components/itam/ai/capture-turns';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { QuickCreateDialog } from '@/components/itam/quick-create-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
@@ -19,7 +20,14 @@ import {
 } from '@/lib/itam/purchase-capture';
 import { referencePath } from '@/lib/itam/references';
 import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
+import { cn } from '@/lib/utils';
 import type { PurchaseOrderCaptureState } from '@/lib/itam/use-purchase-capture';
+
+/** A file of a kind `DOCUMENT_ACCEPT` lists, by its extension. */
+const readableDocument = (file: File): boolean =>
+  DOCUMENT_ACCEPT.split(',').some((ext) =>
+    file.name.toLowerCase().endsWith(ext),
+  );
 
 /** The AI 整理 tab: the material, and the button that organises it. */
 export function CapturePane({
@@ -37,19 +45,56 @@ export function CapturePane({
 }): ReactElement {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
+  // Entering a child fires a leave on the pane first, so enters are counted.
+  const [dragging, setDragging] = useState(0);
+  // A dropped file of a kind the server cannot read (a picture), refused
+  // before it is uploaded, as the button's own picker would not offer it.
+  const [refused, setRefused] = useState(false);
   const busy = capture.busy;
   const ready = Boolean(pasted.trim() || file);
+  const carriesFile = (event: DragEvent) =>
+    Array.from(event.dataTransfer.types).includes('Files');
   const go = () => {
     if (ready && !busy) capture.organise(pasted, file);
   };
   return (
-    <div className='grid gap-2'>
+    // A document dropped anywhere on the pane is taken as the upload
+    // (2026-10-30), as the button would take it.
+    <div
+      className='grid gap-2'
+      onDragEnter={(event) => {
+        if (!carriesFile(event)) return;
+        event.preventDefault();
+        setDragging((n) => n + 1);
+      }}
+      onDragOver={(event) => {
+        if (!carriesFile(event)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = busy ? 'none' : 'copy';
+      }}
+      onDragLeave={(event) => {
+        if (carriesFile(event)) setDragging((n) => Math.max(0, n - 1));
+      }}
+      onDrop={(event) => {
+        if (!carriesFile(event)) return;
+        event.preventDefault();
+        setDragging(0);
+        const dropped = event.dataTransfer.files[0];
+        if (!dropped || busy) return;
+        const readable = readableDocument(dropped);
+        setRefused(!readable);
+        if (readable) onFile(dropped);
+      }}
+    >
       <Textarea
         autoFocus
         value={pasted}
         disabled={busy}
         maxLength={20000}
-        className='max-h-[45svh] min-h-40'
+        className={cn(
+          'max-h-[45svh] min-h-40',
+          dragging > 0 && 'border-ring bg-muted/60 ring-3 ring-ring/50',
+        )}
         placeholder={t('procurement.capture.placeholder')}
         aria-label={t('procurement.capture.material')}
         onChange={(event) => onPasted(event.target.value)}
@@ -68,6 +113,7 @@ export function CapturePane({
         onChange={(event) => {
           const chosen = event.target.files?.[0];
           event.target.value = '';
+          setRefused(false);
           if (chosen) onFile(chosen);
         }}
       />
@@ -98,9 +144,6 @@ export function CapturePane({
               {t('procurement.capture.upload')}
             </Button>
           )}
-          <span className='text-xs text-muted-foreground'>
-            {t('procurement.capture.hint')}
-          </span>
         </div>
         {/* Blue like every AI entry (AiShortcut's colour), filled because
             it is this tab's one action. */}
@@ -124,7 +167,12 @@ export function CapturePane({
           )}
         </Button>
       </div>
-      {capture.failure && capture.mode === 'organise' ? (
+      {refused ? (
+        <CaptureFailure
+          text={t('procurement.capture.unreadable')}
+          answered={false}
+        />
+      ) : capture.failure && capture.mode === 'organise' ? (
         <CaptureFailure
           text={capture.failure}
           answered={capture.failureAnswered}
@@ -162,7 +210,7 @@ export function CaptureNotice({
     setInstruction('');
   };
   return (
-    <div className='grid gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm'>
+    <div className='flex flex-col gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm md:h-full md:overflow-y-auto'>
       <p className='flex gap-2'>
         <Sparkles className='mt-0.5 size-4 shrink-0 text-primary' />
         <span className='min-w-0'>
@@ -202,36 +250,21 @@ export function CaptureNotice({
           </ul>
         </div>
       ) : null}
-      <div className='grid gap-2 border-t border-border pt-2'>
-        {capture.turns.map((turn) =>
-          turn.from === 'user' ? (
-            <p
-              key={turn.id}
-              className='ml-auto max-w-[90%] rounded-lg bg-background px-3 py-1.5 whitespace-pre-wrap'
-            >
-              {turn.text}
-            </p>
-          ) : (
-            <p
-              key={turn.id}
-              className='flex max-w-[90%] gap-1.5 text-muted-foreground'
-            >
-              <span className='flex h-[1lh] shrink-0 items-center'>
-                <Sparkles className='size-3.5 text-primary' />
-              </span>
-              <span className='min-w-0'>
-                <CollapsibleText text={turn.text} chars={200} lines={3} />
-              </span>
-            </p>
-          ),
-        )}
-        {capture.failure && capture.mode === 'adjust' ? (
-          <CaptureFailure
-            text={capture.failure}
-            answered={capture.failureAnswered}
-            inline
-          />
-        ) : null}
+      {/* Beside the form, the adjustments fill what the column leaves
+          (2026-10-30): the column is as tall as the form. */}
+      <div className='flex flex-col gap-2 border-t border-border pt-2 md:min-h-0 md:flex-1'>
+        <CaptureTurns
+          turns={capture.turns}
+          className='max-h-64 md:max-h-none md:min-h-0 md:flex-1'
+        >
+          {capture.failure && capture.mode === 'adjust' ? (
+            <CaptureFailure
+              text={capture.failure}
+              answered={capture.failureAnswered}
+              inline
+            />
+          ) : null}
+        </CaptureTurns>
         {/* Stacked: the column beside the form is too narrow for the
             request and its button on one line. */}
         <div className='grid gap-2'>

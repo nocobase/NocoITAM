@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   METHOD_SKILLS,
+  READING_SKILLS,
   WORK_SKILLS,
 } from '../../server/providers/itam-agents/skill.js';
 
@@ -30,7 +31,7 @@ describe('the skills this Solution delivers', () => {
   it('are exactly the ones put into the library', () => {
     // Asset Steward's method skills and the work agents' (2026-10-16).
     expect([...directories].sort()).toEqual(
-      [...METHOD_SKILLS, ...WORK_SKILLS].sort(),
+      [...METHOD_SKILLS, ...WORK_SKILLS, ...READING_SKILLS].sort(),
     );
   });
 

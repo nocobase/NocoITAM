@@ -46,6 +46,7 @@ import {
   keyedUnmatched,
   type PurchaseCapture,
 } from '@/lib/itam/purchase-capture';
+import { captureFields } from '@/lib/itam/capture-fields';
 import {
   newPurchaseLine,
   purchaseLineIncomplete,
@@ -148,12 +149,14 @@ export function PurchaseOrderCreateDialog({
       [values.vendorId, values.departmentId, lines],
     ),
   );
+  // What AI 整理 fills: the form's own fields (2026-10-29).
+  const fields = useMemo(() => captureFields(HEADER_FIELDS, t), [t]);
   const form = (): CaptureForm => ({
+    // Every field as it stands, a reference with the name the person reads.
     header: {
-      reason: values.reason ?? null,
-      description: values.description ?? null,
-      neededBy: values.neededBy ?? null,
-      vendorId: values.vendorId ?? null,
+      ...Object.fromEntries(
+        HEADER_FIELDS.map((field) => [field.key, filled[field.key] ?? null]),
+      ),
       currency: values.currency ?? currency,
       vendor: names.vendors?.get(text(values.vendorId)) ?? null,
       department: names.departments?.get(text(values.departmentId)) ?? null,
@@ -174,8 +177,9 @@ export function PurchaseOrderCreateDialog({
   });
   const capture = usePurchaseOrderCapture({
     form,
+    fields,
     onFill: (next, mode) => {
-      setValues((current) => applyCaptureValues(current, next));
+      setValues((current) => applyCaptureValues(current, next, fields));
       const captured = captureLines(next);
       setLines(captured.length > 0 ? captured : [newPurchaseLine()]);
       setReview(new Set(next.uncertain));
@@ -366,7 +370,7 @@ export function PurchaseOrderCreateDialog({
             <div
               className={
                 result && capture.available
-                  ? 'grid gap-4 md:grid-cols-[minmax(0,1fr)_15rem] md:items-start'
+                  ? 'grid gap-4 md:grid-cols-[minmax(0,1fr)_15rem]'
                   : 'grid'
               }
             >
@@ -412,7 +416,7 @@ export function PurchaseOrderCreateDialog({
                           field.key === 'vendorId' && mayCreateVendor
                             ? (name) =>
                                 setCreatingVendor(
-                                  name || text(result?.vendorName),
+                                  name || text(result?.unplaced.vendorId),
                                 )
                             : undefined
                         }
@@ -420,15 +424,12 @@ export function PurchaseOrderCreateDialog({
                       />
                       <UnplacedNote
                         field={field.key}
+                        // What the text named that the books do not hold, while
+                        // the field has nothing else.
                         name={
-                          field.key === 'vendorId' && !values.vendorId
-                            ? result?.vendorName
-                            : field.key === 'departmentId' &&
-                                !values.departmentId
-                              ? result?.departmentName
-                              : field.key === 'ownerId'
-                                ? result?.ownerName
-                                : null
+                          field.key === 'ownerId' || !values[field.key]
+                            ? result?.unplaced[field.key]
+                            : null
                         }
                         onCreate={
                           mayCreateVendor && !created
@@ -559,36 +560,41 @@ export function PurchaseOrderCreateDialog({
                 </div>
               </div>
               {result && capture.available ? (
-                <aside className='md:sticky md:top-0'>
-                  <CaptureNotice
-                    capture={capture}
-                    result={result}
-                    currency={text(values.currency) || currency}
-                    priced={priced}
-                    onPlace={async (line, pick) => {
-                      const placed = await capture.place(line, pick);
-                      if (!placed)
-                        throw new Error(
-                          t('procurement.capture.stillUnmatched'),
+                // As tall as the form beside it, and no shorter than 24rem:
+                // the panel fills it and its adjustments scroll inside.
+                // Stacked on a phone, it comes first, above the form.
+                <aside className='order-first md:relative md:order-none md:min-h-96'>
+                  <div className='md:absolute md:inset-0'>
+                    <CaptureNotice
+                      capture={capture}
+                      result={result}
+                      currency={text(values.currency) || currency}
+                      priced={priced}
+                      onPlace={async (line, pick) => {
+                        const placed = await capture.place(line, pick);
+                        if (!placed)
+                          throw new Error(
+                            t('procurement.capture.stillUnmatched'),
+                          );
+                        // It joins the lines, taking the place of the blank
+                        // row an order with nothing placed yet opens on.
+                        setLines((rows) => [
+                          ...rows.filter((row) => !blankLine(row)),
+                          captureLine(placed),
+                        ]);
+                        setResult((previous) =>
+                          previous
+                            ? {
+                                ...previous,
+                                unmatched: previous.unmatched.filter(
+                                  (row) => row.key !== line.key,
+                                ),
+                              }
+                            : previous,
                         );
-                      // It joins the lines, taking the place of the blank
-                      // row an order with nothing placed yet opens on.
-                      setLines((rows) => [
-                        ...rows.filter((row) => !blankLine(row)),
-                        captureLine(placed),
-                      ]);
-                      setResult((previous) =>
-                        previous
-                          ? {
-                              ...previous,
-                              unmatched: previous.unmatched.filter(
-                                (row) => row.key !== line.key,
-                              ),
-                            }
-                          : previous,
-                      );
-                    }}
-                  />
+                      }}
+                    />
+                  </div>
                 </aside>
               ) : null}
             </div>

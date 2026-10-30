@@ -1746,7 +1746,6 @@ const koKR: AppResource = {
         '구매 요청, 이메일, 견적서를 붙여 넣거나 문서를 업로드하십시오. AI가 구매 주문으로 정리하면 저장하거나 승인 요청하기 전에 확인하십시오',
       upload: '문서 업로드',
       removeFile: '파일 제거',
-      hint: 'Excel, CSV, Word, PDF, 이미지 지원',
       organise: '정리',
       organising: 'AI가 정리하는 중…',
       uploading: '업로드 중…',

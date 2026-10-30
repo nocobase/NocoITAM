@@ -12,6 +12,7 @@ import {
 } from 'react';
 
 import { CaptureFailure } from '@/components/itam/ai/capture-failure';
+import { CaptureTurns } from '@/components/itam/ai/capture-turns';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import {
   FieldTemplateEditor,
@@ -529,33 +530,15 @@ function CategoryCreateForm({
               </span>
             </p>
             <div className='grid gap-2 border-t border-border pt-2'>
-              {turns.map((turn) =>
-                turn.from === 'user' ? (
-                  <p
-                    key={turn.id}
-                    className='ml-auto max-w-[90%] rounded-lg bg-background px-3 py-1.5 whitespace-pre-wrap'
-                  >
-                    {turn.text}
-                  </p>
-                ) : (
-                  <p
-                    key={turn.id}
-                    className='flex max-w-[90%] gap-1.5 text-muted-foreground'
-                  >
-                    <Sparkles className='mt-1 size-3.5 shrink-0 text-primary' />
-                    <span className='min-w-0'>
-                      <CollapsibleText text={turn.text} chars={200} lines={3} />
-                    </span>
-                  </p>
-                ),
-              )}
-              {failure && turns.length > 0 ? (
-                <CaptureFailure
-                  text={failure}
-                  answered={failureAnswered}
-                  inline
-                />
-              ) : null}
+              <CaptureTurns turns={turns}>
+                {failure && turns.length > 0 ? (
+                  <CaptureFailure
+                    text={failure}
+                    answered={failureAnswered}
+                    inline
+                  />
+                ) : null}
+              </CaptureTurns>
               <Textarea
                 value={instruction}
                 disabled={busy}

@@ -1791,7 +1791,6 @@ const messages = {
         'Paste a purchase request, an email or a quote, or upload a document. AI organises it into a purchase order for you to check before you save or submit it',
       upload: 'Upload a document',
       removeFile: 'Remove the file',
-      hint: 'Excel, CSV, Word, PDF and images',
       organise: 'Organise',
       organising: 'The AI is organising…',
       uploading: 'Uploading…',

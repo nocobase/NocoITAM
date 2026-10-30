@@ -108,6 +108,7 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     type: 'select',
     required: true,
     options: options('poReason', PO_REASONS),
+    aiHint: 'Why it is bought, when the material shows it.',
     column: true,
     group: 'groups.basic',
     readonlyWhen: settled,
@@ -127,6 +128,7 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     detailOrder: 10,
     label: 'fields.description',
     type: 'textarea',
+    aiHint: 'What is bought, for whom and why, close to the material’s words.',
     group: 'groups.basic',
     readonlyWhen: settled,
   },
@@ -138,6 +140,7 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.department',
     type: 'reference',
     reference: { collection: 'departments' },
+    aiHint: 'The department the purchase is for.',
     group: 'groups.basic',
     readonlyWhen: settled,
   },
@@ -146,6 +149,8 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     detailOrder: 21,
     label: 'fields.neededBy',
     type: 'date',
+    aiHint:
+      'The date the requester needs the goods by, when the material gives one ("needed by Friday", "下周五前要到"); never a delivery date a vendor quotes, which is entered when the order is placed. Optional: its absence is not worth a word.',
     column: true,
     group: 'groups.basic',
     readonlyWhen: settled,
@@ -156,6 +161,7 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     label: 'fields.vendor',
     type: 'reference',
     reference: { collection: 'vendors' },
+    aiHint: 'The supplier, as the material names it.',
     required: true,
     column: true,
     group: 'groups.purchase',
@@ -175,6 +181,8 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     detailOrder: -9,
     label: 'fields.currency',
     type: 'currency',
+    aiHint:
+      'The currency the prices are in, only when the material states it (JPY, 日元, US$); a bare ¥ is yuan or yen, so leave it out unless the material shows which.',
     group: 'groups.purchase',
     readonlyWhen: settled,
   },
@@ -217,6 +225,8 @@ export const PO_FIELDS: readonly FieldDefinition[] = [
     // again, and one whose 负责人 has left is not stuck (`handover` on the
     // domain).
     reference: { collection: 'users' },
+    aiHint:
+      'The person in IT the material names to follow the order through (负责人, owner); never the requester or whom it is for. Left out, the person filing it stays.',
     required: true,
     // The detail page puts it first in 基本信息.
     group: 'groups.basic',

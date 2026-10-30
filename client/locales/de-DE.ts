@@ -1784,7 +1784,6 @@ const deDE: AppResource = {
         'Fügen Sie eine Bestellanforderung, eine E-Mail oder ein Angebot ein oder laden Sie ein Dokument hoch. Die KI macht daraus eine Bestellung, die Sie vor dem Speichern oder Einreichen prüfen',
       upload: 'Dokument hochladen',
       removeFile: 'Datei entfernen',
-      hint: 'Excel, CSV, Word, PDF und Bilder',
       organise: 'Aufbereiten',
       organising: 'Die KI bereitet auf…',
       uploading: 'Wird hochgeladen…',

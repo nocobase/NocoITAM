@@ -1,6 +1,6 @@
 import type { DatabaseManager } from '@nocobase/db';
 
-import { PO_REASONS, type LineItemType } from './procurement.js';
+import type { LineItemType } from './procurement.js';
 import { normalizeCode } from './receipt-plan.js';
 
 /**
@@ -26,18 +26,20 @@ export interface CaptureLineInput {
   readonly source?: string | null;
 }
 
+/** A form field as AI 整理 filled it (`client/lib/itam/capture-fields.ts`). */
+export interface CaptureFieldInput {
+  readonly key: string;
+  readonly type: string;
+  /** The register a reference names: one of `REFERENCE_REGISTERS`. */
+  readonly reference?: string | null;
+  /** A choice's values. */
+  readonly options?: readonly string[] | null;
+}
+
 export interface CaptureInput {
-  readonly reason?: string | null;
-  readonly description?: string | null;
-  readonly neededBy?: string | null;
-  readonly vendorId?: string | null;
-  readonly vendorName?: string | null;
-  readonly departmentId?: string | null;
-  readonly departmentName?: string | null;
-  /** The IT person the material names to follow the order through. */
-  readonly ownerName?: string | null;
-  /** The ISO code the prices are in, when the material states one. */
-  readonly currency?: string | null;
+  /** The form's fields, and what the reading put in them by key. */
+  readonly fields?: readonly CaptureFieldInput[];
+  readonly values?: Readonly<Record<string, string | null>>;
   readonly lines?: readonly CaptureLineInput[];
   readonly uncertain?: readonly string[];
 }
@@ -72,12 +74,11 @@ export interface PurchaseCapture {
   readonly values: Readonly<Record<string, string>>;
   readonly lines: readonly CapturedLine[];
   readonly unmatched: readonly UnmatchedLine[];
-  /** A vendor the text names that is not on the books. */
-  readonly vendorName: string | null;
-  /** A department the text names that is not on the books. */
-  readonly departmentName: string | null;
-  /** An owner the text names who has no account. */
-  readonly ownerName: string | null;
+  /**
+   * A reference the text names that matches nothing on the books, by the
+   * field's key: a vendor to create, a department or an owner to pick.
+   */
+  readonly unplaced: Readonly<Record<string, string>>;
   /** Header fields filled but not certain (`reason`, `vendorId`, …). */
   readonly uncertain: readonly string[];
 }
@@ -91,19 +92,6 @@ const HARDWARE = new Set<string>([
 const ENTITLEMENT = new Set<string>(['perpetual', 'subscription']);
 const KNOWN_TYPES = new Set<string>([...HARDWARE, ...ENTITLEMENT]);
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-/** The assistant names the header fields as the form does; refs by their key. */
-const UNCERTAIN_KEYS: Readonly<Record<string, string>> = {
-  reason: 'reason',
-  description: 'description',
-  neededBy: 'neededBy',
-  currency: 'currency',
-  vendor: 'vendorId',
-  vendorId: 'vendorId',
-  department: 'departmentId',
-  departmentId: 'departmentId',
-  owner: 'ownerId',
-  ownerId: 'ownerId',
-};
 
 /** A name as compared: case, spaces and punctuation do not tell two apart. */
 export const bareName = (value: string | null | undefined): string =>
@@ -169,15 +157,7 @@ export async function matchPurchaseCapture(
   input: CaptureInput,
 ): Promise<PurchaseCapture> {
   const query = database.query();
-  const [vendors, departments, models, products] = await Promise.all([
-    query
-      .selectFrom('vendors')
-      .select(['id', 'name'])
-      .execute<{ id: string; name: string }>(),
-    query
-      .selectFrom('departments')
-      .select(['id', 'name'])
-      .execute<{ id: string; name: string }>(),
+  const [models, products] = await Promise.all([
     query
       .selectFrom('models')
       .innerJoin('categories', 'categories.id', 'models.categoryId')
@@ -196,53 +176,11 @@ export async function matchPurchaseCapture(
       .execute<{ id: string; name: string }>(),
   ]);
 
-  const values: Record<string, string> = {};
-  const reason = clip(input.reason, 64);
-  if ((PO_REASONS as readonly string[]).includes(reason))
-    values.reason = reason;
-  const description = clip(input.description, 20000);
-  if (description) values.description = description;
-  const neededBy = clip(input.neededBy, 10);
-  if (DATE.test(neededBy)) values.neededBy = neededBy;
-  // A quote in yen is entered in yen (2026-10-29): the form kept the
-  // register's currency and took ¥9,800 as yuan.
-  const currency = clip(input.currency, 8).toUpperCase();
-  if (/^[A-Z]{3}$/.test(currency)) values.currency = currency;
-
-  const vendorName = clip(input.vendorName, 255);
-  const vendor =
-    vendors.find((row) => row.id === input.vendorId) ??
-    (vendorName ? byName(vendors, vendorName) : undefined);
-  if (vendor) values.vendorId = vendor.id;
-  const departmentName = clip(input.departmentName, 255);
-  const department =
-    departments.find((row) => row.id === input.departmentId) ??
-    (departmentName ? byName(departments, departmentName) : undefined);
-  if (department) values.departmentId = department.id;
-  // A 负责人 the material names (2026-10-29), by name or sign-in; the
-  // dialog keeps whoever it has otherwise.
-  const ownerName = clip(input.ownerName, 255);
-  // Who may follow it through: the accounts that can sign in.
-  const users = ownerName
-    ? await query
-        .selectFrom('user')
-        .select(['id', 'name', 'username'])
-        .where('deletedAt', 'is', null)
-        .where('disabledAt', 'is', null)
-        .execute<{
-          id: string;
-          name: string | null;
-          username: string | null;
-        }>()
-    : [];
-  const owner = ownerName
-    ? (users.find((row) => bareName(row.username) === bareName(ownerName)) ??
-      byName(
-        users.map((row) => ({ id: row.id, name: row.name ?? '' })),
-        ownerName,
-      ))
-    : undefined;
-  if (owner) values.ownerId = owner.id;
+  const { values, unplaced } = await resolveFields(
+    database,
+    input.fields ?? [],
+    input.values ?? {},
+  );
 
   const lines: CapturedLine[] = [];
   const unmatched: UnmatchedLine[] = [];
@@ -326,17 +264,157 @@ export async function matchPurchaseCapture(
     values,
     lines,
     unmatched,
-    vendorName: vendor || !vendorName ? null : vendorName,
-    departmentName: department || !departmentName ? null : departmentName,
-    ownerName: owner || !ownerName ? null : ownerName,
+    unplaced,
+    // Only fields it filled, by the form's own keys.
     uncertain: [
-      ...new Set(
-        (input.uncertain ?? [])
-          .map((key) => UNCERTAIN_KEYS[key])
-          .filter((key): key is string => Boolean(key) && filled.has(key)),
-      ),
+      ...new Set((input.uncertain ?? []).filter((key) => filled.has(key))),
     ],
   };
+}
+
+/**
+ * The registers a form's reference may name, as AI 整理 matches them: a
+ * name the reading gives is the one record with it, never the nearest.
+ * Users are the accounts that can sign in, matched by name or sign-in.
+ */
+const REFERENCE_REGISTERS: Readonly<
+  Record<
+    string,
+    (
+      database: DatabaseManager,
+    ) => Promise<readonly { id: string; name: string; aliases?: string[] }[]>
+  >
+> = {
+  vendors: (database) =>
+    database
+      .query()
+      .selectFrom('vendors')
+      .select(['id', 'name'])
+      .execute<{ id: string; name: string }>(),
+  departments: (database) =>
+    database
+      .query()
+      .selectFrom('departments')
+      .select(['id', 'name'])
+      .execute<{ id: string; name: string }>(),
+  locations: (database) =>
+    database
+      .query()
+      .selectFrom('locations')
+      .select(['id', 'name'])
+      .execute<{ id: string; name: string }>(),
+  users: async (database) =>
+    (
+      await database
+        .query()
+        .selectFrom('user')
+        .select(['id', 'name', 'username'])
+        .where('deletedAt', 'is', null)
+        .where('disabledAt', 'is', null)
+        .execute<{
+          id: string;
+          name: string | null;
+          username: string | null;
+        }>()
+    ).map((row) => ({
+      id: row.id,
+      name: row.name ?? '',
+      aliases: row.username ? [row.username] : [],
+    })),
+};
+
+/**
+ * The names a reference field's register holds, for AI 整理 to pick the one
+ * the material means (2026-10-30): "marketing team" is 市场部, 東京 is 东京.
+ * Undefined for a register it does not match against, or one too long to
+ * list, where the reading writes the name as the material does.
+ */
+export async function referenceNames(
+  database: DatabaseManager,
+  reference: string,
+): Promise<string[] | undefined> {
+  const load = REFERENCE_REGISTERS[reference];
+  if (!load) return undefined;
+  const names = (await load(database))
+    .map((row) => row.name)
+    .filter((name) => name !== '');
+  return names.length <= REFERENCE_NAMES_LIMIT ? names : undefined;
+}
+
+const REFERENCE_NAMES_LIMIT = 300;
+
+/**
+ * The form's values from what AI 整理 read (2026-10-29): each field the form
+ * sent, by its type — a choice only one of its options, a date only a date,
+ * a currency only a code, a reference the record it names. What a reference
+ * names that the books do not hold comes back as unplaced, never forced.
+ */
+export async function resolveFields(
+  database: DatabaseManager,
+  fields: readonly CaptureFieldInput[],
+  read: Readonly<Record<string, string | null>>,
+): Promise<{
+  values: Record<string, string>;
+  unplaced: Record<string, string>;
+}> {
+  const values: Record<string, string> = {};
+  const unplaced: Record<string, string> = {};
+  const registers = new Map<
+    string,
+    Promise<readonly { id: string; name: string; aliases?: string[] }[]>
+  >();
+  const registerOf = (name: string) => {
+    const load = REFERENCE_REGISTERS[name];
+    if (!load) return undefined;
+    if (!registers.has(name)) registers.set(name, load(database));
+    return registers.get(name);
+  };
+  for (const field of fields.slice(0, 50)) {
+    const raw = clip(read[field.key], 20000);
+    if (!raw) continue;
+    switch (field.type) {
+      case 'select':
+        if ((field.options ?? []).includes(raw)) values[field.key] = raw;
+        break;
+      case 'date':
+        if (DATE.test(raw)) values[field.key] = raw;
+        break;
+      case 'currency': {
+        const code = raw.toUpperCase();
+        if (/^[A-Z]{3}$/.test(code)) values[field.key] = code;
+        break;
+      }
+      case 'number':
+      case 'money': {
+        const number = Number(raw.replace(/[,\s]/g, ''));
+        if (Number.isFinite(number)) values[field.key] = String(number);
+        break;
+      }
+      case 'reference': {
+        const rows = await registerOf(field.reference ?? '');
+        if (!rows) break;
+        const name = clip(raw, 255);
+        const record =
+          rows.find((row) => row.id === raw) ??
+          rows.find((row) =>
+            (row.aliases ?? []).some(
+              (alias) => bareName(alias) === bareName(name),
+            ),
+          ) ??
+          byName(rows, name);
+        if (record) values[field.key] = record.id;
+        else unplaced[field.key] = name;
+        break;
+      }
+      case 'text':
+      case 'textarea':
+        values[field.key] = raw;
+        break;
+      default:
+        break;
+    }
+  }
+  return { values, unplaced };
 }
 
 /**

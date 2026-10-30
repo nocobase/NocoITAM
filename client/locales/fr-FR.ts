@@ -1773,7 +1773,6 @@ const frFR: AppResource = {
         'Collez une demande d’achat, un e-mail ou un devis, ou téléversez un document. L’IA en fait un bon de commande, à vérifier avant de l’enregistrer ou de le soumettre',
       upload: 'Téléverser un document',
       removeFile: 'Retirer le fichier',
-      hint: 'Excel, CSV, Word, PDF et images',
       organise: 'Organiser',
       organising: 'L’IA organise…',
       uploading: 'Téléversement…',

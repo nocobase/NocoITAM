@@ -1755,7 +1755,6 @@ const jaJP: AppResource = {
         '購入依頼、メール、見積書の内容を貼り付けるか、書類をアップロードしてください。AI が発注書に整理するので、確認してから保存または承認申請してください',
       upload: '書類をアップロード',
       removeFile: 'ファイルを外す',
-      hint: 'Excel、CSV、Word、PDF、画像に対応',
       organise: '整理',
       organising: 'AI が整理しています…',
       uploading: 'アップロード中…',

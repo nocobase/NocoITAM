@@ -1691,7 +1691,6 @@ const zhTW: AppResource = {
         '貼上採購需求、郵件或報價單內容，也可以上傳單據。AI 會整理成採購單，你核對後再儲存或送出簽核',
       upload: '上傳單據',
       removeFile: '移除檔案',
-      hint: '支援 Excel、CSV、Word、PDF 和圖片',
       organise: '整理',
       organising: 'AI 正在整理…',
       uploading: '正在上傳…',

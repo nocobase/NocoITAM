@@ -544,6 +544,29 @@ document-text`, which reads only a file uploaded within the hour and
   saved order takes it as an attachment. The file plugin stamps `createdAt`
   in UTC without the `Z`, so that window is compared in that form, not
   through `dbDateTime()`.
+- The new purchase order's AI 整理 fills **the form's own fields**
+  (2026-10-30), not a list kept beside them: the dialog sends `fields`, made
+  from the field definitions it shows (`captureFields`,
+  `client/lib/itam/capture-fields.ts`) — key, label, type, options,
+  `reference` and the field's own rule, its `aiHint` — and the reading
+  answers `{ values, uncertain, lines }`. The shared method is the
+  **`form-capture`** skill (`ai/skills/form-capture/SKILL.md`, title AI
+  organise, `READING_SKILLS`), which names no ITAM object so any form can
+  use it; what is particular to a form stays in its task prompt
+  (`TASKS.purchaseOrder`: the lines and the catalog) and in its fields'
+  `aiHint`. The server adds `records`, the names each reference's register
+  holds (`referenceNames`, at most 300, only registers the person may read),
+  so the reading writes the register's name for "marketing team" or 東京
+  rather than the material's own; `resolveFields` in `purchase-capture.ts`
+  then checks each value by its type, and a reference matching nothing
+  comes back in `unplaced` under its key. The other forms' AI 整理 still
+  use their own task prompts; moving one onto the skill means giving its
+  fields an `aiHint` where the generic method is not enough. Beside the form
+  the panel is as tall as the form (at least 24rem) and its adjustments
+  scroll inside it (`CaptureTurns`, shared with the model and category
+  dialogs); on a phone the panel comes above the form. A document dropped
+  on the material is taken as the upload, and a picture is refused before
+  it is uploaded, since only text is read.
 - A line AI 整理 could not place is placed by the reader, never by the
   assistant (2026-10-06): each row in the column beside the form carries a
   picker that starts at the document's own wording without its

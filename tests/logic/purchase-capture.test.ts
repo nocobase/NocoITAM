@@ -3,6 +3,8 @@ import { driveManagerToken } from '@nocobase/app-server/drive';
 import { databaseManagerToken } from '@nocobase/db';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { PO_REASONS } from '../../server/providers/itam/procurement.js';
+import { referenceNames } from '../../server/providers/itam/purchase-capture.js';
 import { masterDataRoutes } from '../../server/routes/itam/master-data.js';
 import { purchaseOrderRoutes } from '../../server/routes/itam/purchase-orders.js';
 import { createTestApp, json, type TestApp } from '../support/test-app.js';
@@ -15,8 +17,7 @@ interface Capture {
   readonly values: Record<string, string>;
   readonly lines: readonly Record<string, unknown>[];
   readonly unmatched: readonly Record<string, unknown>[];
-  readonly vendorName: string | null;
-  readonly departmentName: string | null;
+  readonly unplaced: Record<string, string>;
   readonly uncertain: readonly string[];
 }
 
@@ -36,8 +37,32 @@ describe('AI 整理 for a new purchase order', () => {
       throw new Error(`${path}: ${await response.text()}`);
     return (await data<{ id: string }>(response)).id;
   };
-  const match = async (body: Record<string, unknown>) => {
-    const response = await post('purchase-orders/capture/match', body);
+  // The new order form's fields as the dialog sends them (2026-10-29).
+  const FIELDS = [
+    {
+      key: 'reason',
+      type: 'select',
+      options: [...PO_REASONS],
+    },
+    { key: 'ownerId', type: 'reference', reference: 'users' },
+    { key: 'departmentId', type: 'reference', reference: 'departments' },
+    { key: 'neededBy', type: 'date' },
+    { key: 'vendorId', type: 'reference', reference: 'vendors' },
+    { key: 'currency', type: 'currency' },
+    { key: 'description', type: 'textarea' },
+  ];
+  /** A reading as the dialog sends it: the header by field, then the rest. */
+  const match = async ({
+    lines,
+    uncertain,
+    ...values
+  }: Record<string, unknown>) => {
+    const response = await post('purchase-orders/capture/match', {
+      fields: FIELDS,
+      values,
+      ...(lines ? { lines } : {}),
+      ...(uncertain ? { uncertain } : {}),
+    });
     expect(response.status).toBe(200);
     return data<Capture>(response);
   };
@@ -94,9 +119,9 @@ describe('AI 整理 for a new purchase order', () => {
       reason: 'newHire',
       description: 'Three new starters in the lab',
       neededBy: '2026-11-01',
-      vendorName: 'Northwind Test Supplies',
-      departmentName: 'test laboratory',
-      uncertain: ['vendor', 'neededBy', 'departmentId', 'nonsense'],
+      vendorId: 'Northwind Test Supplies',
+      departmentId: 'test laboratory',
+      uncertain: ['vendorId', 'neededBy', 'departmentId', 'nonsense'],
       lines: [
         // The part code decides, whatever the description says.
         {
@@ -142,7 +167,7 @@ describe('AI 整理 for a new purchase order', () => {
       }),
     ]);
     expect(capture.unmatched).toEqual([]);
-    expect(capture.vendorName).toBeNull();
+    expect(capture.unplaced).toEqual({});
     // Only the header fields that were filled, by the form's own keys.
     expect([...capture.uncertain].sort()).toEqual([
       'departmentId',
@@ -155,8 +180,7 @@ describe('AI 整理 for a new purchase order', () => {
     const capture = await match({
       reason: 'whatever',
       neededBy: 'next week',
-      vendorId: 'no-such-vendor',
-      vendorName: 'Contoso Hardware',
+      vendorId: 'Contoso Hardware',
       lines: [
         // Another generation is another model, however close the name.
         { description: 'Testbook Pro 14 (T4)', quantity: 10, unitPrice: 2299 },
@@ -185,7 +209,7 @@ describe('AI 整理 for a new purchase order', () => {
         itemType: 'subscription',
       }),
     ]);
-    expect(capture.vendorName).toBe('Contoso Hardware');
+    expect(capture.unplaced).toEqual({ vendorId: 'Contoso Hardware' });
   });
 
   it('sets the owner the material names, by name or sign-in', async () => {
@@ -219,16 +243,39 @@ describe('AI 整理 for a new purchase order', () => {
         },
       ])
       .execute();
-    expect((await match({ ownerName: '吴静', lines: [] })).values).toEqual({
+    expect((await match({ ownerId: '吴静', lines: [] })).values).toEqual({
       ownerId: 'u-wu',
     });
-    expect((await match({ ownerName: 'WuJing', lines: [] })).values).toEqual({
+    expect((await match({ ownerId: 'WuJing', lines: [] })).values).toEqual({
       ownerId: 'u-wu',
     });
     // Someone who cannot sign in is named back rather than set.
-    const gone = await match({ ownerName: '陈杰', lines: [] });
+    const gone = await match({ ownerId: '陈杰', lines: [] });
     expect(gone.values).toEqual({});
-    expect(gone.ownerName).toBe('陈杰');
+    expect(gone.unplaced).toEqual({ ownerId: '陈杰' });
+  });
+
+  it('lists the names a reference may take, for the reading to pick from', async () => {
+    // "marketing team" was left unplaced beside 市场部 (2026-10-30).
+    const database = app.container.resolve(databaseManagerToken);
+    expect(await referenceNames(database, 'vendors')).toContain(
+      'Northwind Test Supplies Ltd.',
+    );
+    expect(await referenceNames(database, 'departments')).toContain(
+      'Test Laboratory',
+    );
+    expect(await referenceNames(database, 'models')).toBeUndefined();
+  });
+
+  it('fills only the fields the form sent, each by its type', async () => {
+    // What AI 整理 fills is the form's fields, not a list of its own.
+    const capture = await match({
+      reason: 'not an option',
+      neededBy: '2026-12-01',
+      surprise: 'dropped',
+      lines: [],
+    });
+    expect(capture.values).toEqual({ neededBy: '2026-12-01' });
   });
 
   it('takes the currency the material states, and only a currency code', async () => {

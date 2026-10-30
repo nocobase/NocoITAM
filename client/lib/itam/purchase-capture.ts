@@ -1,3 +1,4 @@
+import type { CaptureField } from './capture-fields.js';
 import { LINE_ITEM_TYPES, type LineItemType } from './procurement.js';
 import { createUuid } from '@nocobase/app-client';
 import type { PurchaseLineDraft } from './purchase-lines.js';
@@ -29,25 +30,13 @@ export interface PurchaseCapture {
     /** The dialog's own handle on the row, so placing one keeps the rest. */
     readonly key?: string;
   }[];
-  readonly vendorName: string | null;
-  readonly departmentName: string | null;
-  /** A 负责人 the text names who has no account. */
-  readonly ownerName?: string | null;
+  /**
+   * A reference the text names that matches nothing on the books, by the
+   * field's key: a vendor to create, a department or an owner to pick.
+   */
+  readonly unplaced: Readonly<Record<string, string>>;
   readonly uncertain: readonly string[];
 }
-
-/**
- * The header fields AI 整理 fills; 负责人 stays whoever the dialog has unless
- * the material names one (2026-10-29), which the check then sets.
- */
-export const CAPTURED_FIELDS = [
-  'reason',
-  'description',
-  'departmentId',
-  'neededBy',
-  'vendorId',
-  'currency',
-] as const;
 
 const clip = (value: unknown, length: number): string | null => {
   if (typeof value !== 'string' && typeof value !== 'number') return null;
@@ -71,7 +60,10 @@ const amount = (value: unknown): number | null => {
  * they are read defensively and only the keys the endpoint's strict schema
  * knows are sent.
  */
-export function captureArgs(args: unknown): Record<string, unknown> {
+export function captureArgs(
+  args: unknown,
+  fields: readonly CaptureField[] = [],
+): Record<string, unknown> {
   const input = (args ?? {}) as Record<string, unknown>;
   const lines = (Array.isArray(input.lines) ? input.lines : [])
     .slice(0, 200)
@@ -90,16 +82,21 @@ export function captureArgs(args: unknown): Record<string, unknown> {
         source: clip(line.source, 200),
       };
     });
+  const read = (input.values ?? {}) as Record<string, unknown>;
+  // The fields and what was read into them, each known field once.
+  const values = Object.fromEntries(
+    fields
+      .map((field) => [field.key, clip(read[field.key], 20000)] as const)
+      .filter(([, value]) => value !== null),
+  );
   return {
-    reason: clip(input.reason, 64),
-    description: clip(input.description, 20000),
-    neededBy: clip(input.neededBy, 32),
-    vendorId: clip(input.vendorId, 64),
-    vendorName: clip(input.vendorName, 255),
-    departmentId: clip(input.departmentId, 64),
-    departmentName: clip(input.departmentName, 255),
-    ownerName: clip(input.ownerName, 255),
-    currency: clip(input.currency, 8),
+    fields: fields.map(({ key, type, reference, options }) => ({
+      key,
+      type,
+      ...(reference ? { reference } : {}),
+      ...(options ? { options: options.map((option) => option.value) } : {}),
+    })),
+    values,
     uncertain: (Array.isArray(input.uncertain) ? input.uncertain : [])
       .map((key: unknown) => clip(key, 64))
       .filter((key): key is string => Boolean(key))
@@ -109,17 +106,19 @@ export function captureArgs(args: unknown): Record<string, unknown> {
 }
 
 /**
- * The dialog's values once a capture is applied. The header fields AI 整理
- * fills are replaced by what it read — an adjustment returns the whole
- * order, so a field it left out is one it cleared — and every other value
- * (负责人) is kept.
+ * The dialog's values once a capture is applied. The fields AI 整理 fills
+ * are replaced by what it read — an adjustment returns the whole order, so a
+ * field it left out is one it cleared — except the 负责人, which stays
+ * whoever the dialog has unless the material names one (2026-10-29).
  */
 export function applyCaptureValues(
   current: Readonly<Record<string, unknown>>,
   capture: PurchaseCapture,
+  fields: readonly CaptureField[],
 ): Record<string, unknown> {
   const next: Record<string, unknown> = { ...current };
-  for (const key of CAPTURED_FIELDS) delete next[key];
+  for (const field of fields)
+    if (field.key !== 'ownerId') delete next[field.key];
   return { ...next, ...capture.values };
 }
 

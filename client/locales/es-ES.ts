@@ -1778,7 +1778,6 @@ const esES: AppResource = {
         'Pegue una solicitud de compra, un correo o un presupuesto, o suba un documento. La IA lo organiza en una orden de compra para que la revise antes de guardarla o enviarla',
       upload: 'Subir un documento',
       removeFile: 'Quitar el archivo',
-      hint: 'Excel, CSV, Word, PDF e imágenes',
       organise: 'Organizar',
       organising: 'La IA está organizando…',
       uploading: 'Subiendo…',

@@ -136,15 +136,24 @@ const nullableText = (limit: number) =>
   z.string().max(limit).nullable().optional();
 const captureSchema = z
   .object({
-    reason: nullableText(64),
-    description: nullableText(20000),
-    neededBy: nullableText(32),
-    vendorId: nullableText(64),
-    vendorName: nullableText(255),
-    departmentId: nullableText(64),
-    departmentName: nullableText(255),
-    ownerName: nullableText(255),
-    currency: nullableText(8),
+    // The form's fields as AI 整理 filled them (2026-10-29): which ones, of
+    // what type, and what was read into each by key.
+    fields: z
+      .array(
+        z
+          .object({
+            key: z.string().trim().min(1).max(64),
+            type: z.string().trim().max(32),
+            reference: nullableText(64),
+            options: z.array(z.string().max(64)).max(100).nullable().optional(),
+          })
+          .strict(),
+      )
+      .max(50)
+      .optional(),
+    values: z
+      .record(z.string().max(64), z.string().max(20000).nullable())
+      .optional(),
     uncertain: z.array(z.string().max(64)).max(20).optional(),
     lines: z
       .array(

@@ -1755,7 +1755,6 @@ const viVN: AppResource = {
         'Dán yêu cầu mua sắm, email hoặc báo giá, hoặc tải tài liệu lên. AI sẽ sắp xếp thành đơn mua hàng để bạn kiểm tra trước khi lưu hoặc gửi',
       upload: 'Tải tài liệu lên',
       removeFile: 'Gỡ tệp',
-      hint: 'Excel, CSV, Word, PDF và hình ảnh',
       organise: 'Sắp xếp',
       organising: 'AI đang sắp xếp…',
       uploading: 'Đang tải lên…',

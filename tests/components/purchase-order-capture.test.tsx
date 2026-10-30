@@ -70,8 +70,7 @@ vi.mock('../../client/lib/itam/api.js', () => ({
                   source: null,
                 },
               ],
-              vendorName: null,
-              departmentName: 'Moon Base',
+              unplaced: { departmentId: 'Moon Base' },
               uncertain: ['vendorId'],
             }
           : {},
@@ -191,14 +190,23 @@ it('opens on AI 整理 and fills the form from what the model read', async () =>
       screen.getByRole('button', { name: 'procurement.capture.organise' }),
     );
   });
-  // The material goes to the model on the server, with the reasons the
-  // form offers and the form as it stands.
+  // The material goes to the model on the server, with the form's own
+  // fields (2026-10-29) and the form as it stands.
   expect(state.asked).toHaveLength(1);
   expect(state.asked[0]).toMatchObject({
     task: 'purchaseOrder',
     material: 'Three Testbooks for the lab from Northwind',
   });
-  expect(state.asked[0]!.context).toHaveProperty('reasons');
+  expect(state.asked[0]!.context).toHaveProperty('fields');
+  // The reason field carries its options, as the form offers them.
+  expect(
+    (
+      state.asked[0]!.context.fields as {
+        key: string;
+        options?: unknown[];
+      }[]
+    ).find((field) => field.key === 'reason')?.options,
+  ).toHaveLength(6);
   expect(state.asked[0]!.context).toHaveProperty('form');
   // Only what the endpoint's strict schema knows is sent to the check.
   const sent = state.requests.find((request) =>
@@ -343,4 +351,43 @@ it('starts the owner at whoever files the order', () => {
   state.available = false;
   render(dialog());
   expect(screen.getByTestId('po-ownerId')).toHaveTextContent('mia');
+});
+
+it('takes a document dropped on the material as its upload', () => {
+  // Dragging a quote in did nothing (2026-10-30).
+  render(dialog());
+  const material = screen.getByRole('textbox', {
+    name: 'procurement.capture.material',
+  });
+  const quote = new File(['Testbook Pro 14 x 3'], 'quote.xlsx');
+  // A drag of text is the text box's own, not an upload.
+  fireEvent.drop(material, {
+    dataTransfer: { types: ['text/plain'], files: [] },
+  });
+  expect(screen.queryByText('quote.xlsx')).toBeNull();
+  fireEvent.dragEnter(material, {
+    dataTransfer: { types: ['Files'], files: [quote] },
+  });
+  fireEvent.drop(material, {
+    dataTransfer: { types: ['Files'], files: [quote] },
+  });
+  expect(screen.getByText('quote.xlsx')).toBeVisible();
+  // A picture is refused before it is uploaded: the server reads text only.
+  fireEvent.click(
+    screen.getByRole('button', { name: 'procurement.capture.removeFile' }),
+  );
+  const photo = new File(['png'], 'photo.png', { type: 'image/png' });
+  fireEvent.drop(material, {
+    dataTransfer: { types: ['Files'], files: [photo] },
+  });
+  expect(screen.queryByText('photo.png')).toBeNull();
+  expect(screen.getByText('procurement.capture.unreadable')).toBeVisible();
+  fireEvent.drop(material, {
+    dataTransfer: { types: ['Files'], files: [quote] },
+  });
+  expect(screen.queryByText('procurement.capture.unreadable')).toBeNull();
+  expect(screen.getByText('quote.xlsx')).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'procurement.capture.organise' }),
+  ).toBeEnabled();
 });

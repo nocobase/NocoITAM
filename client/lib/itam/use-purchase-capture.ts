@@ -7,10 +7,13 @@ import { useRef, useState } from 'react';
 import { useAiReading, useItamAi } from './ai-chat.js';
 import { useApi } from './api.js';
 import { errorMessage, text, todayIso } from './format.js';
-import { PO_REASONS, PURCHASE_ORDERS_PATH } from './procurement.js';
+import { PURCHASE_ORDERS_PATH } from './procurement.js';
+import type { CaptureField } from './capture-fields.js';
 import { captureArgs, type PurchaseCapture } from './purchase-capture.js';
 
 /** What the dialog has on screen, for the assistant to read and adjust. */
+export type { CaptureField };
+
 export interface CaptureForm {
   readonly header: Readonly<Record<string, unknown>>;
   readonly lines: readonly Readonly<Record<string, unknown>>[];
@@ -89,9 +92,12 @@ export type PurchaseOrderCapture = PurchaseOrderCaptureState;
  */
 export function usePurchaseOrderCapture({
   form,
+  fields,
   onFill,
   orderId,
 }: {
+  /** The fields the form asks for, from their definitions. */
+  readonly fields?: readonly CaptureField[];
   /** The form as it stands, sent with each reading. */
   readonly form: () => CaptureForm;
   /**
@@ -142,24 +148,10 @@ export function usePurchaseOrderCapture({
           material: parts.join('\n\n'),
           context: {
             today: todayIso(),
-            reasons: PO_REASONS.map((value) => ({
-              value,
-              label: t(`enums.poReason.${value}`),
-            })),
             form: form(),
-            // What the form calls its fields, so the assistant's note uses
-            // the same words (2026-10-28: it asked for a 到货日期 the form
-            // does not have).
-            fieldLabels: {
-              reason: t('fields.poReason'),
-              description: t('fields.description'),
-              neededBy: t('fields.neededBy'),
-              vendor: t('fields.vendor'),
-              department: t('fields.department'),
-              item: t('procurement.modelOrProduct'),
-              quantity: t('fields.quantity'),
-              unitPrice: t('fields.unitPrice'),
-            },
+            // The form's own fields (2026-10-29), which the assistant fills
+            // by the form-capture skill; a draft's lines have none.
+            ...(fields ? { fields } : {}),
           },
           ...(instruction ? { instruction } : {}),
         });
@@ -176,7 +168,7 @@ export function usePurchaseOrderCapture({
         const { data } = await api.request<{ data: PurchaseCapture }>({
           path: `${PURCHASE_ORDERS_PATH}/capture/match`,
           method: 'POST',
-          json: captureArgs(answer.reading),
+          json: captureArgs(answer.reading, fields),
         });
         if (asked !== askedRef.current) return;
         onFill(data, mode);
