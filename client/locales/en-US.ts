@@ -84,7 +84,7 @@ const messages = {
     components: 'Components',
     softwareProducts: 'Software products',
     entitlements: 'Entitlements',
-    procurement: 'Procurement',
+    procurement: 'Purchases',
     repairs: 'Repairs',
     audits: 'Audits',
     disposals: 'Disposals',
@@ -1764,7 +1764,7 @@ const messages = {
     },
   },
   procurement: {
-    // The moves on Settings → Flows → Procurement, by the lifecycle's
+    // The moves on Settings → Flows → Purchases, by the lifecycle's
     // transition names.
     transitions: {
       $create: 'Create',
@@ -1778,7 +1778,7 @@ const messages = {
       cancel: 'Cancel',
     },
     saveDraft: 'Save draft',
-    title: 'Procurement',
+    title: 'Purchases',
     object: 'purchase order',
     new: 'New purchase order',
     capture: {
@@ -2782,7 +2782,7 @@ const messages = {
       title: 'Flows',
       description:
         'Every step of a purchase order, a repair, a stocktake, a disposal and a device from start to end, and whom a submitter may ask to approve',
-      procurement: 'Procurement',
+      procurement: 'Purchases',
       repairs: 'Repairs',
       audits: 'Stocktakes',
       disposals: 'Disposals',

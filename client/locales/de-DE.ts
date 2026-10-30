@@ -74,7 +74,7 @@ const deDE: AppResource = {
     components: 'Komponenten',
     softwareProducts: 'Softwareprodukte',
     entitlements: 'Nutzungsrechte',
-    procurement: 'Beschaffung',
+    procurement: 'Einkauf',
     repairs: 'Reparaturen',
     audits: 'Inventuren',
     disposals: 'Aussonderungen',
@@ -1771,7 +1771,7 @@ const deDE: AppResource = {
       cancel: 'Stornieren',
     },
     saveDraft: 'Entwurf speichern',
-    title: 'Beschaffung',
+    title: 'Einkauf',
     object: 'Bestellung',
     new: 'Neue Bestellung',
     capture: {
@@ -2796,7 +2796,7 @@ const deDE: AppResource = {
       title: 'Abläufe',
       description:
         'Jeder Schritt einer Bestellung, einer Reparatur, einer Inventur, einer Aussonderung und eines Geräts von Anfang bis Ende, und wen Einreichende um Freigabe bitten dürfen',
-      procurement: 'Beschaffung',
+      procurement: 'Einkauf',
       repairs: 'Reparaturen',
       audits: 'Inventuren',
       disposals: 'Aussonderungen',
