@@ -1,7 +1,5 @@
 ---
 name: receiving
-introduction:
-  title: Receiving by delivery note
 scope: SPECIFIED
 description: Read a vendor's delivery note, packing list or shipping list, match each line of goods (item name, part code, quantity, serial numbers) to a line of the purchase order, and hand it to the receiving form to prefill, for the person receiving to check before stocking in. Use it when the user runs Receive from delivery note on a purchase order.
 tools: []

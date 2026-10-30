@@ -1,7 +1,5 @@
 ---
 name: product-lookup
-introduction:
-  title: Model and product lookup
 scope: SPECIFIED
 description: When a model or software product is being created, look up its details from the manufacturer and model (or vendor and product name) the user gives, and fill in the new-record form for the user to check before saving. Use it when the user runs AI organise in the New model or New software product dialog, or asks you to add details on a model's or software product's detail page.
 tools: []

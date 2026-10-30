@@ -1,7 +1,5 @@
 ---
 name: offboarding
-introduction:
-  title: Offboarding recovery
 scope: SPECIFIED
 description: After someone leaves, recovers for IT everything that should come back. The system has already worked out what they hold and how each item is handled; you explain it, add what has to be done outside the system (disabling accounts, changing keys), and propose everything recoverable as one batch for the user to confirm. Used when someone leaves, or when the user asks "so-and-so has left, what do we take back".
 tools: []
