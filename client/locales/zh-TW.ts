@@ -1767,8 +1767,6 @@ const zhTW: AppResource = {
     nothingGenerated: '尚無入庫記錄',
     readingDocument: '正在讀取「{{file}}」…',
     readDocumentFailed: '讀取失敗，按此重試',
-    generatedDevices: '設備',
-    generatedOthers: '庫存與授權',
   },
   image: {
     dropHint: '或將圖片拖曳到這裡',

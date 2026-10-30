@@ -1830,8 +1830,6 @@ const koKR: AppResource = {
     nothingGenerated: '아직 입고 기록이 없습니다',
     readingDocument: '“{{file}}”을(를) 읽는 중…',
     readDocumentFailed: '읽을 수 없습니다. 다시 시도하십시오',
-    generatedDevices: '기기',
-    generatedOthers: '재고 및 라이선스',
   },
   image: {
     dropHint: '또는 이미지를 여기에 끌어다 놓기',

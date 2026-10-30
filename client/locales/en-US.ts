@@ -1871,8 +1871,6 @@ const messages = {
     nothingGenerated: 'Nothing received yet',
     readingDocument: 'Reading “{{file}}”…',
     readDocumentFailed: 'Could not read it; try again',
-    generatedDevices: 'Devices',
-    generatedOthers: 'Stock and entitlements',
   },
   image: {
     dropHint: 'or drop a picture here',

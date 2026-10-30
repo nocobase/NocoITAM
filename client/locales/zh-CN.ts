@@ -1789,8 +1789,6 @@ const zhCN: AppResource = {
     nothingGenerated: '尚无入库记录',
     readingDocument: '正在读取「{{file}}」…',
     readDocumentFailed: '读取失败，点此重试',
-    generatedDevices: '设备',
-    generatedOthers: '库存与授权',
   },
   image: {
     dropHint: '或把图片拖到这里',

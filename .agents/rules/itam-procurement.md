@@ -111,9 +111,11 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   category requires refuses the **whole** batch (`RECEIPT_ISSUES`), because
   half a delivery on the books is wrong in a way nobody sees. This replaced
   the per-line dialog, which received one device at a time and made twenty
-  laptops twenty dialogs. The order's 入库记录 tab lists its devices in a
-  table of their own — number and name, serial, status, place, arrival —
-  and every row there opens its record in the drawer.
+  laptops twenty dialogs. The order's 入库记录 tab is one table
+  (2026-10-30, devices first): type tag (an entitlement's kind beside it),
+  number and name, model or product, serial, quantity, place (a drawer
+  link) and arrival. A device's status is left out — it is what the device
+  is now, not what arrived — and every row opens its record in the drawer.
 - An approved purchase order states what it asks for: its request fields
   (事由, 说明, 部门, 需求日期, 供应商, 币种) go read-only once it reaches
   `approved` (`SETTLED_STATUSES` / `SETTLED_EDITABLE` in `procurement.ts`,

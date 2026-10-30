@@ -1836,8 +1836,6 @@ const jaJP: AppResource = {
     nothingGenerated: 'まだ入荷記録はありません',
     readingDocument: '「{{file}}」を読み取っています…',
     readDocumentFailed: '読み取れませんでした。クリックして再試行',
-    generatedDevices: 'デバイス',
-    generatedOthers: '在庫と利用権',
   },
   image: {
     dropHint: 'または画像をここにドロップ',

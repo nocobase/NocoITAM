@@ -1529,11 +1529,18 @@ export function createProcurementService(deps: {
         for (const entitlement of await database
           .query()
           .selectFrom('entitlements')
-          .select(['id', 'softwareProductId'])
+          .select(['id', 'kind', 'softwareProductId'])
           .where('id', 'in', entitlementIds)
-          .execute<{ id: string; softwareProductId: string | null }>())
+          .execute<{
+            id: string;
+            kind: string;
+            softwareProductId: string | null;
+          }>()) {
+          // Its kind too (2026-10-30), for the 订阅 / 永久 tag beside 授权.
+          kinds.set(entitlement.id, entitlement.kind);
           if (entitlement.softwareProductId)
             products.set(entitlement.id, entitlement.softwareProductId);
+        }
       return rows.map((row) => ({
         type: row.generatedType,
         id: row.generatedId,

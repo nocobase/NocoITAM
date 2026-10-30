@@ -9,11 +9,10 @@ import { Check, Send, ShoppingCart, Undo2, X } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 import { useParams } from 'react-router';
 
-import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { AttachmentsTab } from '@/components/itam/attachments-tab';
 import { ReferenceLink } from '@/components/itam/cells';
 import { RecordLink } from '@/components/itam/record-link';
-import { DeviceStatusBadge } from '@/components/itam/status-badge';
+import { LineTypeBadge } from '@/components/itam/line-type-badge';
 
 import { PurchaseOrderLinesCard } from './lines-tab.js';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
@@ -59,7 +58,7 @@ import {
   raisedBy,
 } from '@/lib/itam/procurement';
 import { referenceRoute, useReferenceNames } from '@/lib/itam/references';
-import { STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
+import { STOCK_PATH, STOCK_ROUTES, type StockKind } from '@/lib/itam/stock';
 import { useConfirm } from '@/lib/itam/use-confirm';
 import { PurchaseOrderCreateDialog } from './create-dialog.js';
 import { DateField } from '@/components/itam/date-field';
@@ -618,6 +617,36 @@ export function PurchaseOrderGeneratedTab(): ReactElement {
       ids: generated.map((row) => row.softwareProductId ?? null),
     },
   ]);
+  // What a device and a stock record hold now, for their serial and place.
+  const deviceIds = generated
+    .filter((row) => row.type === 'device')
+    .map((row) => row.id);
+  const stockIds = generated
+    .filter((row) => row.type === 'stockItem')
+    .map((row) => row.id);
+  const devices = useItamList(
+    DEVICES_PATH,
+    { ids: deviceIds, pageSize: Math.max(deviceIds.length, 1) },
+    { enabled: deviceIds.length > 0 },
+  );
+  const stock = useItamList(
+    STOCK_PATH,
+    { ids: stockIds, pageSize: Math.max(stockIds.length, 1) },
+    { enabled: stockIds.length > 0 },
+  );
+  const held = new Map(
+    [...(devices.data?.data ?? []), ...(stock.data?.data ?? [])].map(
+      (record) => [text(record.id), record],
+    ),
+  );
+  const places = useReferenceNames([
+    {
+      collection: 'locations',
+      ids: [...held.values()].map(
+        (record) => (record.locationId as string | null) ?? null,
+      ),
+    },
+  ]);
   if (receipts.data && generated.length === 0)
     return (
       <p className='rounded-lg border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground'>
@@ -636,180 +665,28 @@ export function PurchaseOrderGeneratedTab(): ReactElement {
       .map((receipt) => text(receipt.createdAt))
       .sort()
       .at(-1);
-  const devices = generated.filter((row) => row.type === 'device');
-  const others = generated.filter((row) => row.type !== 'device');
+  // One table (2026-10-30): devices first, then stock and entitlements, in
+  // the same columns. A device's status is not shown — it is what the
+  // device is now, not what arrived — and opens with the device.
+  const rows = [
+    ...generated.filter((row) => row.type === 'device'),
+    ...generated.filter((row) => row.type !== 'device'),
+  ];
   return (
-    <div className='space-y-4'>
-      {devices.length > 0 ? (
-        <section className='space-y-2'>
-          {others.length > 0 ? (
-            <h3 className='text-sm font-medium'>
-              {t('procurement.generatedDevices')}
-            </h3>
-          ) : null}
-          <GeneratedDevices
-            ids={devices.map((row) => row.id)}
-            arrivedAt={arrivedAt}
-          />
-        </section>
-      ) : null}
-      {others.length > 0 ? (
-        <section className='space-y-2'>
-          {devices.length > 0 ? (
-            <h3 className='text-sm font-medium'>
-              {t('procurement.generatedOthers')}
-            </h3>
-          ) : null}
-          <Paged rows={others}>
-            {(pageRows) => (
-              <div className='overflow-x-auto rounded-lg border border-border bg-card'>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className='w-px whitespace-nowrap'>
-                        {t('fields.appliesTo')}
-                      </TableHead>
-                      <TableHead>{t('fields.name')}</TableHead>
-                      <TableHead>{t('procurement.modelOrProduct')}</TableHead>
-                      <TableHead className='w-px whitespace-nowrap text-right'>
-                        {t('fields.quantity')}
-                      </TableHead>
-                      <TableHead className='w-px whitespace-nowrap'>
-                        {t('procurement.arrivedAt')}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pageRows.map((row) => {
-                      const collection = collectionOf(row.type);
-                      // Stock has a page per kind: an accessory, a
-                      // consumable and a component are not read in the
-                      // same place.
-                      const route =
-                        (row.kind
-                          ? STOCK_ROUTES[row.kind as StockKind]
-                          : undefined) ?? referenceRoute(collection);
-                      const quantity = (receiptsOf.get(row.id) ?? []).reduce(
-                        (sum, receipt) => sum + Number(receipt.quantity ?? 0),
-                        0,
-                      );
-                      const last = arrivedAt(row.id);
-                      return (
-                        <TableRow
-                          key={`${row.type}:${row.id}`}
-                          className={route ? 'cursor-pointer' : undefined}
-                          // The whole row opens the record, as a list's
-                          // rows do; the name stays a link of its own.
-                          onClick={
-                            route
-                              ? () => openRecord(`/${route}/${row.id}`)
-                              : undefined
-                          }
-                        >
-                          <TableCell className='w-px whitespace-nowrap'>
-                            <AssetTypeBadge value={assetTypeOf(row)} />
-                          </TableCell>
-                          {/* The record's name in the list's own voice,
-                              and what it is of as a link that opens it
-                              (2026-10-30). */}
-                          <TableCell>
-                            <CellText className='font-medium'>
-                              {route ? (
-                                <RecordLink
-                                  to={`/${route}/${row.id}`}
-                                  className='text-foreground'
-                                >
-                                  {names[collection]?.get(row.id) ?? '…'}
-                                </RecordLink>
-                              ) : (
-                                (names[collection]?.get(row.id) ?? '…')
-                              )}
-                            </CellText>
-                          </TableCell>
-                          <TableCell>
-                            <CellText>
-                              {row.modelId || row.softwareProductId ? (
-                                <ReferenceLink
-                                  collection={
-                                    row.modelId ? 'models' : 'softwareProducts'
-                                  }
-                                  route={referenceRoute(
-                                    row.modelId ? 'models' : 'softwareProducts',
-                                  )}
-                                  id={row.modelId ?? row.softwareProductId}
-                                  names={
-                                    row.modelId
-                                      ? names.models
-                                      : names.softwareProducts
-                                  }
-                                />
-                              ) : (
-                                '—'
-                              )}
-                            </CellText>
-                          </TableCell>
-                          <TableCell className='text-right tabular-nums'>
-                            {quantity || '—'}
-                          </TableCell>
-                          <TableCell className='whitespace-nowrap tabular-nums text-muted-foreground'>
-                            {last ? formatDate(last, true) : '—'}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </Paged>
-        </section>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * The devices an order brought in, as a receiver checks a delivery: each
- * by its number and name, its serial, and where it stands now — its status
- * and place, read live from the device. The model is in the name and every
- * row is one device, so neither has a column of its own (2026-10-05).
- */
-function GeneratedDevices({
-  ids,
-  arrivedAt,
-}: {
-  readonly ids: readonly string[];
-  readonly arrivedAt: (id: string) => string | undefined;
-}): ReactElement {
-  const { t } = useTranslation();
-  const openRecord = useOpenRecord();
-  const list = useItamList(DEVICES_PATH, { ids, pageSize: ids.length });
-  const rows = new Map(
-    (list.data?.data ?? []).map((device) => [text(device.id), device]),
-  );
-  const places = useReferenceNames([
-    {
-      collection: 'locations',
-      ids: [...rows.values()].map(
-        (device) => (device.locationId as string | null) ?? null,
-      ),
-    },
-  ]);
-  return (
-    <Paged rows={ids}>
-      {(pageIds) => (
+    <Paged rows={rows}>
+      {(pageRows) => (
         <div className='overflow-x-auto rounded-lg border border-border bg-card'>
           <Table>
             <TableHeader>
               <TableRow>
-                {/* As the table of other records beside it (2026-10-30). */}
                 <TableHead className='w-px whitespace-nowrap'>
                   {t('fields.appliesTo')}
                 </TableHead>
                 <TableHead>{t('devices.noAndName')}</TableHead>
+                <TableHead>{t('procurement.modelOrProduct')}</TableHead>
                 <TableHead>{t('fields.serialNo')}</TableHead>
-                <TableHead className='w-px whitespace-nowrap'>
-                  {t('fields.status')}
+                <TableHead className='w-px whitespace-nowrap text-right'>
+                  {t('fields.quantity')}
                 </TableHead>
                 <TableHead>{t('fields.location')}</TableHead>
                 <TableHead className='w-px whitespace-nowrap'>
@@ -818,35 +695,105 @@ function GeneratedDevices({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pageIds.map((id) => {
-                const device = rows.get(id);
-                const last = arrivedAt(id);
+              {pageRows.map((row) => {
+                const collection = collectionOf(row.type);
+                const record = held.get(row.id);
+                const isDevice = row.type === 'device';
+                // Stock has a page per kind: an accessory, a consumable
+                // and a component are not read in the same place.
+                const route = isDevice
+                  ? 'devices'
+                  : ((row.kind
+                      ? STOCK_ROUTES[row.kind as StockKind]
+                      : undefined) ?? referenceRoute(collection));
+                const quantity = isDevice
+                  ? 1
+                  : (receiptsOf.get(row.id) ?? []).reduce(
+                      (sum, receipt) => sum + Number(receipt.quantity ?? 0),
+                      0,
+                    );
+                const label = isDevice
+                  ? record
+                    ? deviceLabel(record)
+                    : undefined
+                  : names[collection]?.get(row.id);
+                const last = arrivedAt(row.id);
                 return (
                   <TableRow
-                    key={id}
-                    className='cursor-pointer'
-                    onClick={() => openRecord(`/devices/${id}`)}
+                    key={`${row.type}:${row.id}`}
+                    className={route ? 'cursor-pointer' : undefined}
+                    // The whole row opens the record, as a list's rows do;
+                    // the name stays a link of its own.
+                    onClick={
+                      route
+                        ? () => openRecord(`/${route}/${row.id}`)
+                        : undefined
+                    }
                   >
                     <TableCell className='w-px whitespace-nowrap'>
-                      <AssetTypeBadge value='device' />
+                      <LineTypeBadge
+                        itemType={
+                          row.type === 'entitlement'
+                            ? (row.kind ?? 'entitlement')
+                            : assetTypeOf(row)
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <CellText className='font-medium'>
+                        {route ? (
+                          <RecordLink
+                            to={`/${route}/${row.id}`}
+                            className='text-foreground'
+                          >
+                            {label ?? '…'}
+                          </RecordLink>
+                        ) : (
+                          (label ?? '…')
+                        )}
+                      </CellText>
                     </TableCell>
                     <TableCell>
                       <CellText>
-                        <RecordLink
-                          to={`/devices/${id}`}
-                          className='font-medium text-foreground'
-                        >
-                          {device ? deviceLabel(device) : '…'}
-                        </RecordLink>
+                        {row.modelId || row.softwareProductId ? (
+                          <ReferenceLink
+                            collection={
+                              row.modelId ? 'models' : 'softwareProducts'
+                            }
+                            route={referenceRoute(
+                              row.modelId ? 'models' : 'softwareProducts',
+                            )}
+                            id={row.modelId ?? row.softwareProductId}
+                            names={
+                              row.modelId
+                                ? names.models
+                                : names.softwareProducts
+                            }
+                          />
+                        ) : (
+                          '—'
+                        )}
                       </CellText>
                     </TableCell>
-                    <TableCell>{text(device?.serialNo) || '—'}</TableCell>
-                    <TableCell className='w-px whitespace-nowrap'>
-                      <DeviceStatusBadge status={device?.status} />
+                    <TableCell>
+                      {isDevice ? text(record?.serialNo) || '—' : '—'}
                     </TableCell>
-                    <TableCell className='text-muted-foreground'>
+                    <TableCell className='text-right tabular-nums'>
+                      {quantity || '—'}
+                    </TableCell>
+                    <TableCell>
+                      {/* The place opens in the drawer (2026-10-30). */}
                       <CellText className='max-w-56'>
-                        {places.locations?.get(text(device?.locationId)) ?? '—'}
+                        {record?.locationId ? (
+                          <ReferenceLink
+                            collection='locations'
+                            route={referenceRoute('locations')}
+                            id={record.locationId}
+                            names={places.locations}
+                          />
+                        ) : (
+                          '—'
+                        )}
                       </CellText>
                     </TableCell>
                     <TableCell className='whitespace-nowrap tabular-nums text-muted-foreground'>

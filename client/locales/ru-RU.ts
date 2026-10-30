@@ -1962,8 +1962,6 @@ const ruRU: AppResource = {
     nothingGenerated: 'Пока ничего не принято',
     readingDocument: 'Чтение «{{file}}»…',
     readDocumentFailed: 'Не удалось прочитать; попробуйте ещё раз',
-    generatedDevices: 'Устройства',
-    generatedOthers: 'Запасы и лицензии',
   },
   image: {
     dropHint: 'или перетащите изображение сюда',

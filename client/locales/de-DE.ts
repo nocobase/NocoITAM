@@ -1869,8 +1869,6 @@ const deDE: AppResource = {
     nothingGenerated: 'Noch nichts eingegangen',
     readingDocument: '„{{file}}“ wird gelesen…',
     readDocumentFailed: 'Konnte nicht gelesen werden; versuchen Sie es erneut',
-    generatedDevices: 'Geräte',
-    generatedOthers: 'Bestand und Nutzungsrechte',
   },
   image: {
     dropHint: 'oder Bild hier ablegen',

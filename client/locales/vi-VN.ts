@@ -1837,8 +1837,6 @@ const viVN: AppResource = {
     nothingGenerated: 'Chưa nhận gì',
     readingDocument: 'Đang đọc “{{file}}”…',
     readDocumentFailed: 'Không đọc được; hãy thử lại',
-    generatedDevices: 'Thiết bị',
-    generatedOthers: 'Tồn kho và quyền sử dụng',
   },
   image: {
     dropHint: 'hoặc thả ảnh vào đây',

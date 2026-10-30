@@ -670,7 +670,9 @@ describe('procurement', () => {
       ),
     ).toHaveLength(2);
 
-    const generated = await data<{ generated: { type: string }[] }>(
+    const generated = await data<{
+      generated: { type: string; kind?: string }[];
+    }>(
       await app.request(
         `/api/itam/purchase-orders/${order.id}/receipts`,
         manager,
@@ -682,6 +684,10 @@ describe('procurement', () => {
       'entitlement',
       'stockItem',
     ]);
+    // An entitlement says its kind, as stock does (2026-10-30).
+    expect(
+      generated.generated.find((record) => record.type === 'entitlement')?.kind,
+    ).toBeTruthy();
 
     const inStock = (
       (await (

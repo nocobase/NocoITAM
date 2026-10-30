@@ -1849,8 +1849,6 @@ const idID: AppResource = {
     nothingGenerated: 'Belum ada yang diterima',
     readingDocument: 'Membaca “{{file}}”…',
     readDocumentFailed: 'Tidak dapat membacanya; coba lagi',
-    generatedDevices: 'Perangkat',
-    generatedOthers: 'Stok dan lisensi',
   },
   image: {
     dropHint: 'atau seret gambar ke sini',

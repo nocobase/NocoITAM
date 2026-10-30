@@ -1858,8 +1858,6 @@ const frFR: AppResource = {
     nothingGenerated: 'Rien de réceptionné pour l’instant',
     readingDocument: 'Lecture de « {{file}} »…',
     readDocumentFailed: 'Lecture impossible ; réessayez',
-    generatedDevices: 'Appareils',
-    generatedOthers: 'Stock et droits d’utilisation',
   },
   image: {
     dropHint: 'ou déposez une image ici',

@@ -1852,8 +1852,6 @@ const ptBR: AppResource = {
     nothingGenerated: 'Nada recebido ainda',
     readingDocument: 'Lendo “{{file}}”…',
     readDocumentFailed: 'Não foi possível ler; tente novamente',
-    generatedDevices: 'Dispositivos',
-    generatedOthers: 'Estoque e direitos de uso',
   },
   image: {
     dropHint: 'ou solte uma imagem aqui',

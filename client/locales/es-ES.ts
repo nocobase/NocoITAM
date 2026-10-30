@@ -1861,8 +1861,6 @@ const esES: AppResource = {
     nothingGenerated: 'Aún no se ha recibido nada',
     readingDocument: 'Leyendo «{{file}}»…',
     readDocumentFailed: 'No se ha podido leer; inténtelo de nuevo',
-    generatedDevices: 'Dispositivos',
-    generatedOthers: 'Existencias y licencias',
   },
   image: {
     dropHint: 'o suelte una imagen aquí',
