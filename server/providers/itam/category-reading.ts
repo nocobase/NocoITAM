@@ -235,21 +235,15 @@ export async function checkCategoryReading(
     'auditCycleDays',
   ] as const) {
     const number = Number(read[key]);
-    if (
-      read[key] !== null &&
-      read[key] !== undefined &&
-      Number.isFinite(number) &&
-      number >= 0
-    )
+    // A field the person asked to clear comes back as `null` (the form-capture
+    // skill, 2026-10-30) and clears it; a field left out keeps the form's value.
+    if (read[key] === null) values[key] = null;
+    else if (read[key] !== undefined && Number.isFinite(number) && number >= 0)
       values[key] = Math.round(number);
   }
   const rate = Number(read.residualRate);
-  if (
-    read.residualRate !== null &&
-    read.residualRate !== undefined &&
-    rate >= 0 &&
-    rate <= 1
-  )
+  if (read.residualRate === null) values.residualRate = null;
+  else if (read.residualRate !== undefined && rate >= 0 && rate <= 1)
     values.residualRate = rate;
   const same = (text: unknown) =>
     (asText(text) ?? '').replace(/\s+/g, '').toLowerCase();

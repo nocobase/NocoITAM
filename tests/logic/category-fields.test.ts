@@ -30,6 +30,8 @@ vi.mock('../../server/providers/itam/ai-model.js', async (importOriginal) => ({
               assignableToPerson: false,
               usefulLifeMonths: 60,
               residualRate: 7,
+              // Cleared at the person's request (the form-capture skill).
+              warrantyMonths: null,
             },
             fieldTemplate: [
               { key: 'ppm', label: 'Speed', type: 'number' },
@@ -160,6 +162,8 @@ describe('suggesting a category’s fields', () => {
       requiresSerial: true,
       assignableToPerson: false,
       usefulLifeMonths: 60,
+      // A field the model clears comes back empty; one out of range is dropped.
+      warrantyMonths: null,
     });
     expect(data.reading.fieldTemplate.map((field) => field.key)).toEqual([
       'ppm',

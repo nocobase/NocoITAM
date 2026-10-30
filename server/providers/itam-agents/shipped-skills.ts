@@ -93,6 +93,8 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       '04fda7b3379c45f1f978d8544b575c66f3dfa9c8d2ae876c545643795d6f1047',
       '0b14062eefaf78048686edea028db01af19291e7491b523e97211cf243fcd190',
       '2a609a9300d6a0b72d5bc23b9acf7faac5775724017a69badb668ba0a8a68cc8',
+      // Replaced 2026-10-30 by the copy shared with NocoCRM.
+      '2f7a01bc8ada1266132769133a03376d0a0f7daded4ee9bd9d4f36931e63840d',
     ],
     // Shipped as catalog until 2026-10-30.
     'product-lookup': [
