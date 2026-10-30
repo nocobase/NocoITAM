@@ -22,13 +22,15 @@ vi.mock('../../server/providers/itam/ai-model.js', async (importOriginal) => ({
       if (content.includes('Fill the new category form'))
         return {
           reading: {
-            name: 'Printer',
-            parentId: model.parentId,
-            appliesTo: 'consumable',
-            requiresSerial: true,
-            assignableToPerson: false,
-            usefulLifeMonths: 60,
-            residualRate: 7,
+            values: {
+              name: 'Printer',
+              parentId: model.parentId,
+              appliesTo: 'consumable',
+              requiresSerial: true,
+              assignableToPerson: false,
+              usefulLifeMonths: 60,
+              residualRate: 7,
+            },
             fieldTemplate: [
               { key: 'ppm', label: 'Speed', type: 'number' },
               { key: '1bad', label: 'Bad', type: 'text' },

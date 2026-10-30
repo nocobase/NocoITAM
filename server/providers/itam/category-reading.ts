@@ -208,36 +208,48 @@ export async function checkCategoryReading(
   self: string | null = null,
 ): Promise<Record<string, unknown>> {
   const book = await categoryBook(container, actorId);
+  // The form's fields by key (2026-10-30, the form-capture skill).
+  const read = (reading.values ?? {}) as Record<string, unknown>;
   const values: Record<string, unknown> = {};
-  const name = asText(reading.name)?.trim();
+  const name = asText(read.name)?.trim();
   if (name) values.name = name;
   // A category is never its own parent.
-  const parentId = asText(reading.parentId) ?? '';
+  const parentId = asText(read.parentId) ?? '';
   const parent = parentId === self ? undefined : book.byId.get(parentId);
   if (parent) {
     values.parentId = parent.id;
     values.appliesTo = parent.appliesTo;
-  } else if (APPLIES_TO.includes(reading.appliesTo as never))
-    values.appliesTo = reading.appliesTo;
+  } else if (APPLIES_TO.includes(read.appliesTo as never))
+    values.appliesTo = read.appliesTo;
   for (const key of ['requiresSerial', 'assignableToPerson'] as const)
-    if (typeof reading[key] === 'boolean') values[key] = reading[key];
+    if (typeof read[key] === 'boolean') values[key] = read[key];
   if (
-    reading.depreciationMethod === 'none' ||
-    reading.depreciationMethod === 'straightLine'
+    read.depreciationMethod === 'none' ||
+    read.depreciationMethod === 'straightLine'
   )
-    values.depreciationMethod = reading.depreciationMethod;
+    values.depreciationMethod = read.depreciationMethod;
   for (const key of [
     'usefulLifeMonths',
     'warrantyMonths',
     'replacementMonths',
     'auditCycleDays',
   ] as const) {
-    const number = Number(reading[key]);
-    if (reading[key] !== null && Number.isFinite(number) && number >= 0)
+    const number = Number(read[key]);
+    if (
+      read[key] !== null &&
+      read[key] !== undefined &&
+      Number.isFinite(number) &&
+      number >= 0
+    )
       values[key] = Math.round(number);
   }
-  const rate = Number(reading.residualRate);
-  if (reading.residualRate !== null && rate >= 0 && rate <= 1)
+  const rate = Number(read.residualRate);
+  if (
+    read.residualRate !== null &&
+    read.residualRate !== undefined &&
+    rate >= 0 &&
+    rate <= 1
+  )
     values.residualRate = rate;
   const same = (text: unknown) =>
     (asText(text) ?? '').replace(/\s+/g, '').toLowerCase();

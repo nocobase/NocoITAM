@@ -266,6 +266,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
       { key: 'children', label: 'tabs.children' },
     ],
     defaultSort: 'sort',
+    // Each `aiHint` is what AI 整理 fills the field with (2026-10-30), by
+    // the form-capture skill.
     fields: [
       {
         key: 'name',
@@ -274,6 +276,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         required: true,
         column: true,
         group: 'groups.basic',
+        aiHint:
+          "Short, in the language the request names, as the material calls it without its parent's words.",
       },
       {
         key: 'parentId',
@@ -282,6 +286,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         reference: { collection: 'categories' },
         column: true,
         group: 'groups.basic',
+        aiHint:
+          "The id of the category in the context's `categories` it belongs under: the context's `parent` when one is chosen, else the one that plainly holds it, else left out for a top-level category.",
       },
       {
         key: 'appliesTo',
@@ -296,6 +302,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         readonlyWhen: (values) => Boolean(values.parentId),
         readonlyHint: 'categories.appliesToInherited',
         group: 'groups.basic',
+        aiHint:
+          'Only for a top-level category: device (tracked one by one), accessory, consumable, component (stock counted in batches) or entitlement (software licences and subscriptions).',
       },
       {
         key: 'requiresSerial',
@@ -305,6 +313,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         required: true,
         defaultValue: true,
         group: 'groups.rules',
+        aiHint:
+          'true or false: a serial number on every record, for hardware tracked one by one.',
       },
       {
         key: 'assignableToPerson',
@@ -314,6 +324,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         required: true,
         defaultValue: true,
         group: 'groups.rules',
+        aiHint:
+          'true or false: given to a person, unless it stays in a room (a server, a rack, a printer on a floor).',
       },
       {
         key: 'depreciationMethod',
@@ -323,6 +335,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         defaultValue: 'none',
         options: options('depreciationMethod', ['none', 'straightLine']),
         group: 'groups.defaults',
+        aiHint:
+          'As an IT team would set it for this kind of asset, consistent with similar categories.',
       },
       {
         key: 'usefulLifeMonths',
@@ -333,6 +347,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         type: 'number',
         min: 0,
         group: 'groups.defaults',
+        aiHint:
+          'Months, as an IT team would set it; always given with straight-line depreciation.',
       },
       {
         key: 'residualRate',
@@ -342,6 +358,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         defaultValue: 0.05,
         type: 'percent',
         group: 'groups.defaults',
+        aiHint:
+          'A fraction from 0 to 1 (0.05 for 5%); always given with straight-line depreciation.',
       },
       {
         key: 'warrantyMonths',
@@ -349,6 +367,7 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         type: 'number',
         min: 0,
         group: 'groups.defaults',
+        aiHint: 'The usual manufacturer warranty for this kind, in months.',
       },
       {
         key: 'replacementMonths',
@@ -356,6 +375,7 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         type: 'number',
         min: 0,
         group: 'groups.defaults',
+        aiHint: 'After how many months this kind is usually replaced.',
       },
       {
         key: 'auditCycleDays',
@@ -363,6 +383,7 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         type: 'number',
         min: 0,
         group: 'groups.defaults',
+        aiHint: 'How often, in days, records of this kind are counted.',
       },
       ...AUDIT_FIELDS,
     ],

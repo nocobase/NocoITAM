@@ -28,6 +28,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useAiReading, useItamAi } from '@/lib/itam/ai-chat';
+import { captureFields } from '@/lib/itam/capture-fields';
 import {
   apiErrorBody,
   masterDataPath,
@@ -268,6 +269,9 @@ function CategoryCreateForm({
         task: 'category',
         material,
         context: {
+          // The form's own fields, each with its rule (2026-10-30), which
+          // the form-capture skill fills.
+          fields: captureFields(fields, t),
           parentId: text(values.parentId) || null,
           ...(record ? { categoryId: text(record.id) } : {}),
           ...(instruction

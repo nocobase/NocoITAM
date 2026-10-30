@@ -563,7 +563,12 @@ document-text`, which reads only a file uploaded within the hour and
   same way (2026-10-30): its fields' `aiHint` carry what the task prompt
   said of each, the reading answers `{ values, uncertain, sources }`, and
   the task prompt only says the fields come from the web pages rather than
-  the material, which is usually just the maker's name. Models and
+  the material, which is usually just the maker's name. A new category
+  too (2026-10-30): its fields' `aiHint` carry each rule, the reading
+  answers `{ values, uncertain, fieldTemplate }`, `checkCategoryReading`
+  checks `values` as before, and the task prompt keeps the extended fields'
+  rules and that an adjustment changes them only as asked (it once added
+  fields nobody asked for). Models and
   software products keep the catalog skill, and the repair and disposal
   diagnoses are judgements rather than forms, so they keep their own
   prompts; moving a form onto the skill means giving its fields an
