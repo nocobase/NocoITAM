@@ -61,7 +61,7 @@ export const SEARCH_PAGES: Readonly<
   },
   purchaseOrders: {
     collection: 'purchaseOrders',
-    route: 'procurement',
+    route: 'purchases',
     title: 'navigation.procurement',
     status: 'poStatus',
   },

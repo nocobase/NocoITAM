@@ -187,7 +187,7 @@ const notifyApprover = defineEffect<PurchaseOrderTypes>({
         params: { title: titleOf(record) },
       },
       body: { key: 'notifications.approvalBody', params: {} },
-      url: `/procurement/${text(record.id)}`,
+      url: `/purchases/${text(record.id)}`,
       source: { type: 'purchaseOrder', referenceId: text(record.id) },
     });
   },
@@ -212,7 +212,7 @@ const notifyDecision = defineEffect<PurchaseOrderTypes>({
       },
       // The approver's own sentence, passed through as written.
       body: { text: text(input.comment) },
-      url: `/procurement/${text(record.id)}`,
+      url: `/purchases/${text(record.id)}`,
       source: { type: 'purchaseOrder', referenceId: text(record.id) },
     });
   },

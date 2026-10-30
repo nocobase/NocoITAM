@@ -96,7 +96,7 @@ describe('purchase order lifecycle', () => {
           key: 'notifications.approvalRequested',
           params: { title: 'PO-000001 Laptops' },
         },
-        url: `/procurement/${String(draft.id)}`,
+        url: `/purchases/${String(draft.id)}`,
       }),
     ]);
   });

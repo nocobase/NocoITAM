@@ -414,7 +414,7 @@ export function OnboardingPlanCard({
                 ) : null}
                 {/* What is already being bought for them, and where. */}
                 {data.orders.map((order) => (
-                  <RecordLink key={order.id} to={`/procurement/${order.id}`}>
+                  <RecordLink key={order.id} to={`/purchases/${order.id}`}>
                     {t('onboarding.order', {
                       orderNo: order.orderNo,
                       status: t(`enums.poStatus.${order.status}`, {
@@ -942,7 +942,7 @@ export function LineOutlook({
           );
         const count = thing.quantity ?? 1;
         return (
-          <RecordLink key={key} to={`/procurement/${supply.orderId ?? ''}`}>
+          <RecordLink key={key} to={`/purchases/${supply.orderId ?? ''}`}>
             <Badge variant='outline'>
               <Truck className='size-3' />
               {supply.availableOn

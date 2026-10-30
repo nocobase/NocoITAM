@@ -83,7 +83,7 @@ export const COMMENT_SUBJECTS: Readonly<Record<string, Subject>> = {
       `/${STOCK_PAGES[String(row.kind)] ?? 'accessories'}/${String(row.id)}/history`,
   },
   entitlements: { label: 'name', page: page('entitlements') },
-  purchaseOrders: { label: 'orderNo', page: page('procurement') },
+  purchaseOrders: { label: 'orderNo', page: page('purchases') },
   repairs: { label: 'repairNo', page: page('repairs') },
   disposals: { label: 'disposalNo', page: page('disposals') },
   auditTasks: { label: 'name', page: page('audits') },

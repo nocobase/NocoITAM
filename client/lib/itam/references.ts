@@ -17,7 +17,7 @@ const DOMAIN_PATHS: Readonly<Record<string, { path: string; route: string }>> =
     devices: { path: 'itam/devices', route: 'devices' },
     stockItems: { path: 'itam/stock', route: 'accessories' },
     entitlements: { path: 'itam/entitlements', route: 'entitlements' },
-    purchaseOrders: { path: 'itam/purchase-orders', route: 'procurement' },
+    purchaseOrders: { path: 'itam/purchase-orders', route: 'purchases' },
     repairs: { path: 'itam/repairs', route: 'repairs' },
     auditTasks: { path: 'itam/audits', route: 'audits' },
     disposals: { path: 'itam/disposals', route: 'disposals' },

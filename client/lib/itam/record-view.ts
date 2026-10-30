@@ -53,7 +53,7 @@ const DOMAIN_VIEWS: readonly RecordView[] = [
   {
     collection: 'purchaseOrders',
     path: PURCHASE_ORDERS_PATH,
-    route: 'procurement',
+    route: 'purchases',
     i18n: 'procurement',
   },
   {

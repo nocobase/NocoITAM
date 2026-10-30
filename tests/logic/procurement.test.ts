@@ -958,7 +958,7 @@ describe('procurement', () => {
     // with disposals waiting to an empty purchase order list.
     expect(
       forApprover.find((item) => item.key === 'pendingPurchaseApprovals'),
-    ).toMatchObject({ count: 1, url: '/procurement?view=myApproval' });
+    ).toMatchObject({ count: 1, url: '/purchases?view=myApproval' });
     expect(
       forApprover.find((item) => item.key === 'pendingDisposalApprovals'),
     ).toMatchObject({ count: 0, url: '/disposals?view=myApproval' });
@@ -974,7 +974,7 @@ describe('procurement', () => {
       (await work(manager, 'all')).find(
         (item) => item.key === 'pendingPurchaseApprovals',
       ),
-    ).toMatchObject({ count: 1, url: '/procurement?status=pendingApproval' });
+    ).toMatchObject({ count: 1, url: '/purchases?status=pendingApproval' });
 
     // 待验收到货 is the orders this reader raised, by the same rule the
     // service uses for everything the requesting side owns — a purchase
@@ -993,7 +993,7 @@ describe('procurement', () => {
         id: order.id,
         title: order.orderNo,
         date: '2026-12-01',
-        url: `/procurement/${order.id}`,
+        url: `/purchases/${order.id}`,
         mine: true,
       },
     ]);
@@ -1047,7 +1047,7 @@ describe('procurement', () => {
           id: order.id,
           title: order.orderNo,
           date: '2026-12-01',
-          url: `/procurement/${order.id}`,
+          url: `/purchases/${order.id}`,
         },
       ],
     });

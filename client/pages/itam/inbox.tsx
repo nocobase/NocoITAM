@@ -402,7 +402,7 @@ function ReviewDetail({
         </FollowUpFocusContext.Provider>
       </div>
     );
-  const recordPath = `${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`;
+  const recordPath = `${run.subjectType === 'purchaseOrders' ? '/purchases' : '/disposals'}/${encodeURIComponent(run.subjectId)}`;
   // The request itself, as a notification shows its record (2026-10-16):
   // its own page, whose 等你决定 carries the review while it waits on the
   // reader. One already handled is no longer on the page, so its card,

@@ -68,7 +68,7 @@ import { DateField } from '@/components/itam/date-field';
 export const purchaseOrderDomain: DomainConfig = {
   name: 'purchaseOrders',
   path: PURCHASE_ORDERS_PATH,
-  route: 'procurement',
+  route: 'purchases',
   i18n: 'procurement',
   fields: PO_FIELDS,
   createFields: PO_CREATE_FIELDS,
@@ -102,7 +102,7 @@ export const purchaseOrderDomain: DomainConfig = {
   // Opens on a board by status; the list is one click away.
   Board: createStatusBoard({
     path: PURCHASE_ORDERS_PATH,
-    route: 'procurement',
+    route: 'purchases',
     ...PURCHASE_ORDER_CARD,
     dots: PO_STATUS_DOT,
     statuses: [

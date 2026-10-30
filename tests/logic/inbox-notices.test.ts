@@ -48,7 +48,7 @@ describe('inbox notices', () => {
           id: 'i2',
           notificationId: 'n2',
           userId: 'mia',
-          target: route('/procurement/p1'),
+          target: route('/purchases/p1'),
         },
         {
           id: 'i3',
@@ -94,8 +94,8 @@ describe('inbox notices', () => {
       },
       {
         id: 'n2',
-        subject: { type: 'procurement', id: 'p1', label: null },
-        data: { path: '/procurement/p1', focus: null },
+        subject: { type: 'purchases', id: 'p1', label: null },
+        data: { path: '/purchases/p1', focus: null },
       },
     ]);
   });

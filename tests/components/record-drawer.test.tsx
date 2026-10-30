@@ -88,7 +88,7 @@ function Page(): React.JSX.Element {
       <RecordLink to='/disposals/c1' drawer={false}>
         Full disposal
       </RecordLink>
-      <div role='row' onClick={() => openRecord('/procurement/p2')}>
+      <div role='row' onClick={() => openRecord('/purchases/p2')}>
         <RecordLink to='/vendors/v1'>Row vendor</RecordLink>
       </div>
       <button type='button' onClick={() => openRecord('/vendors/v1')}>
@@ -109,9 +109,9 @@ function show(withDrawer = true) {
     <Page />
   );
   return render(
-    <MemoryRouter initialEntries={['/procurement/p1/lines']}>
+    <MemoryRouter initialEntries={['/purchases/p1/lines']}>
       <Routes>
-        <Route path='/procurement/:id/*' element={page} />
+        <Route path='/purchases/:id/*' element={page} />
         <Route path='*' element={<Page />} />
       </Routes>
     </MemoryRouter>,
@@ -133,7 +133,7 @@ it('resolves record links to their collection and rejects everything else', () =
     collection: 'softwareProducts',
     path: 'itam/master/softwareProducts',
   });
-  expect(recordTarget('/procurement')).toBeUndefined();
+  expect(recordTarget('/purchases')).toBeUndefined();
   expect(recordTarget('/devices/d1/history')).toBeUndefined();
   expect(recordTarget('/reports')).toBeUndefined();
   expect(recordTarget('/unknown/x')).toBeUndefined();
@@ -146,7 +146,7 @@ it('opens a linked record on its own detail page in the drawer without leaving t
     name: 'DP-001',
   });
   expect(within(drawer).getByText('Disposal page c1')).toBeVisible();
-  expect(pathname()).toBe('/procurement/p1/lines');
+  expect(pathname()).toBe('/purchases/p1/lines');
   expect(
     within(drawer).queryByRole('button', { name: 'common.back' }),
   ).toBeNull();
@@ -162,7 +162,7 @@ it('switches the page tabs inside the drawer without moving the page behind it',
   const drawer = screen.getByRole('dialog');
   fireEvent.click(within(drawer).getByRole('link', { name: 'Devices tab' }));
   expect(within(drawer).getByText('Devices content')).toBeVisible();
-  expect(pathname()).toBe('/procurement/p1/lines');
+  expect(pathname()).toBe('/purchases/p1/lines');
 });
 
 it('opens the full page on the tab the drawer shows and closes it', () => {
@@ -215,7 +215,7 @@ it('stacks a record opened from inside the drawer and goes back', () => {
       'Disposal page c1',
     ),
   ).toBeVisible();
-  expect(pathname()).toBe('/procurement/p1/lines');
+  expect(pathname()).toBe('/purchases/p1/lines');
 });
 
 it('leaves modified clicks, opted-out links and non-record paths to the router', () => {
@@ -224,7 +224,7 @@ it('leaves modified clicks, opted-out links and non-record paths to the router',
     metaKey: true,
   });
   expect(screen.queryByRole('dialog')).toBeNull();
-  expect(pathname()).toBe('/procurement/p1/lines');
+  expect(pathname()).toBe('/purchases/p1/lines');
   fireEvent.click(screen.getByRole('button', { name: 'Reports' }));
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(pathname()).toBe('/reports');
@@ -248,7 +248,7 @@ it('lets a link inside a clickable row open without the row following', () => {
   show();
   fireEvent.click(screen.getByRole('link', { name: 'Row vendor' }));
   expect(screen.getByRole('dialog', { name: 'Acme' })).toBeVisible();
-  expect(pathname()).toBe('/procurement/p1/lines');
+  expect(pathname()).toBe('/purchases/p1/lines');
 });
 
 it('navigates as an ordinary link outside a detail page', () => {
@@ -266,5 +266,5 @@ it("opens a link that names a record's tab in the drawer, on that tab", () => {
   const drawer = screen.getByRole('dialog');
   expect(within(drawer).getByText('Devices content')).toBeVisible();
   // The page behind stays where it was (2026-10-22: it navigated).
-  expect(pathname()).toBe('/procurement/p1/lines');
+  expect(pathname()).toBe('/purchases/p1/lines');
 });

@@ -320,7 +320,7 @@ function RunRow({
   const sync = run.agent === 'deviceSync';
   const to = sync
     ? '/device-sync'
-    : `${run.subjectType === 'purchaseOrders' ? '/procurement' : '/disposals'}/${encodeURIComponent(run.subjectId)}`;
+    : `${run.subjectType === 'purchaseOrders' ? '/purchases' : '/disposals'}/${encodeURIComponent(run.subjectId)}`;
   return (
     <li className='flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm'>
       <div className='min-w-0 flex-1 space-y-0.5'>

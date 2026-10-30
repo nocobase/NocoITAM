@@ -525,10 +525,10 @@ export function createWorkbenchService(dependencies: {
             key: 'pendingPurchaseApprovals',
             subjectType: 'purchaseOrder',
             collection: 'purchaseOrders',
-            route: '/procurement',
+            route: '/purchases',
             url: everyone
-              ? '/procurement?status=pendingApproval'
-              : '/procurement?view=myApproval',
+              ? '/purchases?status=pendingApproval'
+              : '/purchases?view=myApproval',
             columns: ['id', 'orderNo', 'neededBy'],
           },
           {
@@ -603,12 +603,12 @@ export function createWorkbenchService(dependencies: {
         items.push({
           key: 'pendingOrders',
           count: await count('purchaseOrders', orders, toPlace),
-          url: '/procurement?status=approved',
+          url: '/purchases?status=approved',
           records: rows.map((row) => ({
             id: String(row.id),
             title: String(row.orderNo),
             date: asText(row.neededBy) ?? null,
-            url: `/procurement/${String(row.id)}`,
+            url: `/purchases/${String(row.id)}`,
           })),
         });
       }
@@ -632,12 +632,12 @@ export function createWorkbenchService(dependencies: {
         items.push({
           key: 'awaitingReceipt',
           count: await count('purchaseOrders', orders, awaiting),
-          url: '/procurement?view=awaitingReceipt',
+          url: '/purchases?view=awaitingReceipt',
           records: rows.map((row) => ({
             id: String(row.id),
             title: String(row.orderNo),
             date: asText(row.expectedAt) ?? null,
-            url: `/procurement/${String(row.id)}`,
+            url: `/purchases/${String(row.id)}`,
           })),
         });
       }

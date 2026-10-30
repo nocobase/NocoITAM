@@ -33,7 +33,7 @@ export function PurchaseOrderCard({
     <DocumentCard
       icon={ShoppingCart}
       tone='purchase'
-      to={`/procurement/${text(order.id)}`}
+      to={`/purchases/${text(order.id)}`}
       number={text(order.orderNo)}
       title={text(order.description) || null}
       kind={t(`enums.poReason.${text(order.reason)}`, {

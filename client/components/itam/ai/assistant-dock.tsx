@@ -69,7 +69,7 @@ const RECORD_QUESTIONS: Readonly<Record<string, readonly string[]>> = {
 const PAGE_QUESTIONS: Readonly<Record<string, readonly string[]>> = {
   '/devices': ['devices.idle', 'devices.warranty'],
   '/entitlements': ['entitlements.renewing', 'entitlements.overAllocated'],
-  '/procurement': ['procurement.waiting', 'procurement.late'],
+  '/purchases': ['procurement.waiting', 'procurement.late'],
   '/repairs': ['repairs.open'],
   '/accessories': ['stock.low'],
   '/consumables': ['stock.low'],

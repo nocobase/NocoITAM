@@ -538,7 +538,7 @@ export function quickActionLink(
     typeof payload[key] === 'string' ? payload[key] : '';
   if (label('purchaseOrderId') && label('orderNo'))
     return {
-      to: `/procurement/${label('purchaseOrderId')}`,
+      to: `/purchases/${label('purchaseOrderId')}`,
       label: label('orderNo'),
     };
   if (label('disposalId') && label('disposalNo'))
@@ -628,7 +628,7 @@ export function eventTargetLink(row: HistoryEvent):
     ['entitlementId', 'entitlements'],
     ['deviceId', 'devices'],
     ['personId', 'people'],
-    ['purchaseOrderId', 'procurement'],
+    ['purchaseOrderId', 'purchases'],
     ['disposalId', 'disposals'],
     ['auditTaskId', 'audits'],
   ];

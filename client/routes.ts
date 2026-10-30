@@ -156,6 +156,9 @@ const master = ({
   ],
 });
 
+const movedToPurchases: AppClientRouteComponentLoader = () =>
+  import('./pages/itam/procurement/moved.js');
+
 interface DomainRouteLoaders {
   readonly list: AppClientRouteComponentLoader;
   readonly detail: AppClientRouteComponentLoader;
@@ -164,15 +167,21 @@ interface DomainRouteLoaders {
   readonly landing?: string;
 }
 
-/** A business collection: list page, detail page as child, tabs as grandchildren. */
+/**
+ * A business collection: list page, detail page as child, tabs as
+ * grandchildren. `path` is the address when it is not the name, which is
+ * also the page id stored grants name (purchase orders moved to /purchases
+ * on 2026-10-30 and kept the page `procurement`).
+ */
 const domainRoute = (
   name: string,
   title: string,
   icon: AppClientRouteIcon,
   loaders: DomainRouteLoaders,
+  path: string = name,
 ): AppClientRouteDefinition => ({
   name,
-  path: `/${name}`,
+  path: `/${path}`,
   auth: 'required',
   navigation: { title, icon },
   componentLoader: loaders.list,
@@ -415,18 +424,45 @@ export const appRouteDefinitions: readonly AppClientRouteDefinition[] =
       name: 'operations-group',
       navigation: { title: 'navigation.operationsGroup', icon: Briefcase },
       children: [
-        domainRoute('procurement', 'navigation.procurement', ShoppingCart, {
-          list: () => import('./pages/itam/procurement/procurement.js'),
-          detail: () =>
-            import('./pages/itam/procurement/procurement-detail.js'),
-          tabs: {
-            generated: () =>
-              import('./pages/itam/procurement/tab-generated.js'),
-            attachments: () =>
-              import('./pages/itam/procurement/tab-attachments.js'),
-            history: () => import('./pages/itam/procurement/tab-history.js'),
+        domainRoute(
+          'procurement',
+          'navigation.procurement',
+          ShoppingCart,
+          {
+            list: () => import('./pages/itam/procurement/procurement.js'),
+            detail: () =>
+              import('./pages/itam/procurement/procurement-detail.js'),
+            tabs: {
+              generated: () =>
+                import('./pages/itam/procurement/tab-generated.js'),
+              attachments: () =>
+                import('./pages/itam/procurement/tab-attachments.js'),
+              history: () => import('./pages/itam/procurement/tab-history.js'),
+            },
           },
-        }),
+          'purchases',
+        ),
+        // The address purchase orders had until 2026-10-30, kept for the
+        // links notifications, comments and bookmarks already hold.
+        {
+          name: 'procurement-moved',
+          path: '/procurement',
+          componentLoader: movedToPurchases,
+          children: [
+            {
+              name: 'procurement-moved-record',
+              path: ':id',
+              componentLoader: movedToPurchases,
+              children: [
+                {
+                  name: 'procurement-moved-tab',
+                  path: ':tab',
+                  componentLoader: movedToPurchases,
+                },
+              ],
+            },
+          ],
+        },
         domainRoute('repairs', 'navigation.repairs', Wrench, {
           list: () => import('./pages/itam/repairs/repairs.js'),
           detail: () => import('./pages/itam/repairs/repairs-detail.js'),

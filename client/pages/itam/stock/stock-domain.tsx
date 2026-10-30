@@ -631,7 +631,7 @@ export function StockHoldersTab({
               row.sourceType === 'purchaseOrder' ? (
                 <ReferenceLink
                   collection='purchaseOrders'
-                  route='procurement'
+                  route='purchases'
                   id={row.sourceId}
                   names={orderNames.purchaseOrders}
                 />

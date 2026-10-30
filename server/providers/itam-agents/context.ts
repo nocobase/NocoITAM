@@ -59,7 +59,7 @@ export const CONTEXT_KINDS: Readonly<Record<string, Kind>> = {
     table: 'purchaseOrders',
     title: ['orderNo'],
     key: 'orderNo',
-    path: page('procurement'),
+    path: page('purchases'),
   },
   auditTasks: {
     table: 'auditTasks',

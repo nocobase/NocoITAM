@@ -14,7 +14,7 @@ const paths = [
   '/consumables',
   '/components',
   '/entitlements',
-  '/procurement',
+  '/purchases',
   '/repairs',
   '/audits',
   '/disposals',

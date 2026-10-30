@@ -159,7 +159,7 @@ export default function MasterDataOverviewPage(): ReactElement {
       'purchaseOrders',
       ShoppingCart,
       t('navigation.procurement'),
-      '/procurement',
+      '/purchases',
       PURCHASE_ORDERS_PATH,
     ),
     repairs: record(
