@@ -1,3 +1,6 @@
+import { FeedbackForm } from '#components/feedback-form';
+import { useAuthentication } from '@nocobase/app-plugin-authentication/client';
+import { useSubmission } from '@nocobase/app-client';
 import {
   useSettingsLeave,
   useSettingsData,
@@ -269,7 +272,12 @@ function UserEditor(): ReactElement {
   const [confirmRoles, setConfirmRoles] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [dirty, setDirty] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { session } = useAuthentication();
+  const submission = useSubmission({
+    scope: `${session?.user.id}:settings:user:${userId}`,
+  });
+  const [requestBusy, setRequestBusy] = useState(false);
+  const busy = requestBusy || submission.submitting;
   const leave = useSettingsLeave(dirty, busy);
   const [error, setError] = useState<unknown>();
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
@@ -334,34 +342,43 @@ function UserEditor(): ReactElement {
       setConfirmRoles(true);
       return;
     }
-    setBusy(true);
+    setRequestBusy(true);
     setError(undefined);
     setServerErrors({});
     try {
-      let updated: ManagedUser;
-      if (creating)
-        updated = await client.create({
-          ...fields,
-          name: fields.name.trim(),
-          email: fields.email.trim(),
-          ...(fields.username.trim()
-            ? { username: fields.username.trim() }
-            : { username: undefined }),
-          roleScopes: roles,
-        });
-      else
-        updated = await client.update(userId, {
-          ...(canUpdate
-            ? {
-                name: fields.name.trim(),
-                email: fields.email.trim(),
-                username: fields.username.trim() || null,
-              }
-            : {}),
-          ...(canAssign && Object.keys(changedRoles).length
-            ? { roleScopes: changedRoles }
-            : {}),
-        });
+      const input = creating
+        ? {
+            ...fields,
+            name: fields.name.trim(),
+            email: fields.email.trim(),
+            ...(fields.username.trim()
+              ? { username: fields.username.trim() }
+              : { username: undefined }),
+            roleScopes: roles,
+          }
+        : {
+            ...(canUpdate
+              ? {
+                  name: fields.name.trim(),
+                  email: fields.email.trim(),
+                  username: fields.username.trim() || null,
+                }
+              : {}),
+            ...(canAssign && Object.keys(changedRoles).length
+              ? { roleScopes: changedRoles }
+              : {}),
+          };
+      const updated = await submission.run(
+        { userId, creating, input },
+        (idempotencyKey) =>
+          creating
+            ? client.create(
+                input as Parameters<typeof client.create>[0],
+                idempotencyKey,
+              )
+            : client.update(userId, input, idempotencyKey),
+      );
+      if (!updated) return;
       setDirty(false);
       parent.reload(updated);
       toaster.show({
@@ -397,7 +414,7 @@ function UserEditor(): ReactElement {
         setError(next);
       }
     } finally {
-      setBusy(false);
+      setRequestBusy(false);
     }
   };
   const allowed = creating ? canCreate && canAssign : canUpdate || canAssign;
@@ -455,12 +472,14 @@ function UserEditor(): ReactElement {
     <>
       <SettingsError error={data.error} retry={data.reload} />
       <SettingsError error={options.error} retry={options.reload} />
-      <SettingsError error={error} />
       {!creating && data.loading ? (
         <SettingsLoading />
       ) : (
         !data.error && (
-          <form
+          <FeedbackForm
+            submitting={busy}
+            error={error}
+            errorContent={<SettingsError error={error} inline />}
             id={formId}
             ref={formRef}
             onSubmit={(event) => {
@@ -512,6 +531,7 @@ function UserEditor(): ReactElement {
                 />
                 {fieldError(name) && (
                   <p
+                    data-feedback-field-error
                     id={`${formId}-${name}-error`}
                     className='text-xs text-destructive'
                   >
@@ -538,6 +558,7 @@ function UserEditor(): ReactElement {
                 />
                 {serverErrors[scope.key] && (
                   <p
+                    data-feedback-field-error
                     id={`${formId}-roles-${encodeURIComponent(scope.key)}-error`}
                     className='text-xs text-destructive'
                   >
@@ -546,7 +567,7 @@ function UserEditor(): ReactElement {
                 )}
               </div>
             ))}
-          </form>
+          </FeedbackForm>
         )
       )}
       {leave.dialog}

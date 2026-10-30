@@ -1,6 +1,13 @@
 import type { DeviceApprovalLocale } from './en-US.js';
 
 const koKR: DeviceApprovalLocale = {
+  formFeedback: {
+    field: '이 값이 거부되었습니다. 확인 후 다시 시도하세요.',
+    invalid: '표시된 필드를 확인한 후 다시 시도하세요.',
+    failed: '저장하지 못했습니다. 입력한 내용은 유지됩니다. 다시 시도하세요.',
+    network: '연결할 수 없습니다. 연결을 확인한 후 다시 시도하세요. 입력한 내용은 유지됩니다.',
+    denied: '현재 권한으로는 이 양식을 제출할 수 없습니다. 입력한 내용은 유지됩니다.',
+  },
   'deviceApproval.title': '기기 승인',
   'deviceApproval.description':
     '명령줄 또는 다른 기기가 회원님 계정으로 로그인하려고 합니다. 직접 로그인을 시작한 경우에만 승인하십시오.',

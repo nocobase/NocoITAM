@@ -11,7 +11,7 @@ This repository is a NocoBase Solution. The NocoSolution repository is cloned in
 
 This is a NocoBase 3 application. Do not apply globally installed NocoBase 2 Skills. You are building the application itself — its pages, its API, its database tables. Everything under this directory is application-owned source code that you may edit directly.
 
-Do not create a plugin to add a feature. Plugins are separately published packages for capabilities shared across several applications; building one for this application's own feature adds a package boundary, a version, and a release process to work that belongs in `client/` and `server/`. Create one only when the user explicitly asks for a reusable published package. Ordinary internal workspace packages under `packages/` may share code without becoming plugins or being published; follow [internal packages](.agents/rules/workspace.md) when the application needs that boundary.
+Build application-specific features directly in the application by default. Use a plugin when the user requests one or when code reuse or modular organization calls for a separately registered, maintainable feature. Local plugins belong under `packages/`; the App builds and packages registered local plugins for deployment, so publishing is optional and only needed when distributing the plugin through a package registry. Follow [the project plugin development Skill](.agents/skills/nocobase-app-plugin-development/SKILL.md). Ordinary internal packages can share code without plugin registration; follow [internal packages](.agents/rules/workspace.md) when that is the boundary the application needs.
 
 ## Default template scope
 
@@ -64,6 +64,8 @@ For creating or maintaining a plugin in this App, read [the project plugin devel
 [`.agents/skills/nocobase-app-development/SKILL.md`](.agents/skills/nocobase-app-development/SKILL.md) holds the detailed guidance behind this file. Read it first — it routes to the reference that matches your task. Read the one page your task needs, not the whole directory.
 
 `.agents/skills/nocobase-app-upgrade/` is a separate Skill for a separate job: merging a newer release of the template this application was generated from. Read it when the task is upgrading the template rather than building a feature — including when the user asks to upgrade NocoBase or its core version, because a newer template release is how this application moves to a newer NocoBase — and read it before touching anything — an upgrade done by copying the newest template over this application destroys the work that made it this application.
+
+When upgrading from an older installed Skill, also read the target template package’s `AGENTS.md` and `README.MD` and fetch its declared `@nocobase/app-skills` package before editing. Follow the target’s upgrade requirements in the same upgrade, including application-owned lists and installed Registry copies. Confirm the target baseline only after conflicts are resolved and dependency, source, behavior and retained-data checks pass; see the [upgrade Skill](.agents/skills/nocobase-app-upgrade/SKILL.md).
 
 `.agents/skills/nocobase-deployment/` covers moving this application from source to a production server: building for the target platform, what the archive does and does not carry, migrations and business data, production configuration, and what to verify afterwards. Read it before building for deployment, and when an application starts in production but does not work.
 
@@ -148,6 +150,10 @@ When the built-in mechanism genuinely cannot express what is being asked, changi
 
 - Comment what you changed and why the built-in path did not fit. On upgrade, an agent reconciling the template's version needs to know whether your change is still needed.
 - Record what the next agent needs to know in the matching `.agents/rules/` file, or a new one linked from the index below, so the guidance describes the application as it actually is without growing this file. If the framework's shared guidance is wrong for every application, update the source `@nocobase/app-skills` package instead of editing its synchronized copy.
+
+## Standard submissions
+
+Standard Repository writes require an operation key through the registered submission provider. Forms share `useSubmission` across all entries before asynchronous validation; custom effectful APIs explicitly join the receipt transaction. Follow [submission protection](.agents/skills/nocobase-app-development/references/submission.md) and [source upgrades](.agents/skills/nocobase-app-upgrade/references/submission-upgrade.md). Merge copied source and verify retained customizations on upgrade.
 
 ## Index
 

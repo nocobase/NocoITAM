@@ -1,6 +1,13 @@
 import type { DeviceApprovalLocale } from './en-US.js';
 
 const frFR: DeviceApprovalLocale = {
+  formFeedback: {
+    field: 'Cette valeur a été refusée. Vérifiez-la et réessayez.',
+    invalid: 'Vérifiez les champs signalés et réessayez.',
+    failed: 'Enregistrement impossible. Votre saisie a été conservée. Réessayez.',
+    network: 'Connexion impossible. Vérifiez votre connexion et réessayez. Votre saisie a été conservée.',
+    denied: 'Vos droits actuels ne permettent pas d’envoyer ce formulaire. Votre saisie a été conservée.',
+  },
   'deviceApproval.title': 'Autoriser un appareil',
   'deviceApproval.description':
     'Une ligne de commande ou un autre appareil a demandé à se connecter en votre nom. Ne l’approuvez que si vous avez vous-même lancé la connexion.',

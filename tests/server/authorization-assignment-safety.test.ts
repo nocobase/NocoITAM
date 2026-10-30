@@ -78,6 +78,8 @@ test('uses explicit Member defaults without restoring removed roles or granting 
       headers: {
         'content-type': 'application/json',
         origin: 'http://localhost',
+        // Standard writes carry an operation key (template beta.84's submission protection).
+        'idempotency-key': `${Date.now()}.${crypto.randomUUID()}`,
       },
       body: JSON.stringify({
         name: 'Role behavior test',
@@ -98,13 +100,21 @@ test('uses explicit Member defaults without restoring removed roles or granting 
   expect(empty.roleScopes.app).toEqual([]);
   const removed = await admin.fetch(`/users/${member.id}`, {
     method: 'PATCH',
-    headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+    headers: {
+      'content-type': 'application/json',
+      origin: 'http://localhost',
+      'idempotency-key': `${Date.now()}.${crypto.randomUUID()}`,
+    },
     body: JSON.stringify({ roleScopes: { app: [] } }),
   });
   expect(removed.status).toBe(200);
   const updated = await admin.fetch(`/users/${member.id}`, {
     method: 'PATCH',
-    headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+    headers: {
+      'content-type': 'application/json',
+      origin: 'http://localhost',
+      'idempotency-key': `${Date.now()}.${crypto.randomUUID()}`,
+    },
     body: JSON.stringify({ name: 'Still roleless' }),
   });
   expect(updated.status).toBe(200);

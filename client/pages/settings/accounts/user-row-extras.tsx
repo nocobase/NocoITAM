@@ -1,6 +1,6 @@
 // A row's Reset password and Delete on the prepared Users page
 // (user-extras.tsx says what ITAM adds there and why).
-import { useToaster } from '@nocobase/app-client';
+import { useSubmission, useToaster } from '@nocobase/app-client';
 import type { ManagedUser } from '@nocobase/app-plugin-users/client/user-client';
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
@@ -33,12 +33,18 @@ export function useUserExtras(
   const canDelete = useUserPermission('delete', user.id);
   const [deleting, setDeleting] = useState(false);
   const [busy, setBusy] = useState(false);
+  const removal = useSubmission();
   const [error, setError] = useState<string>();
   const remove = async (): Promise<void> => {
     setBusy(true);
     setError(undefined);
     try {
-      await client.remove(user.id);
+      // Operation key: the Users plugin's delete joins the receipt transaction (template beta.84).
+      const done = await removal.run({ id: user.id }, async (key) => {
+        await client.remove(user.id, key);
+        return true;
+      });
+      if (!done) return;
       toaster.show({
         type: 'success',
         title: text('users.toasts.deleted', { name: user.name }),

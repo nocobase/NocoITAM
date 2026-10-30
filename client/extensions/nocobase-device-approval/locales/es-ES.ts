@@ -1,6 +1,13 @@
 import type { DeviceApprovalLocale } from './en-US.js';
 
 const esES: DeviceApprovalLocale = {
+  formFeedback: {
+    field: 'Este valor no es válido. Revíselo y vuelva a intentarlo.',
+    invalid: 'Revise los campos marcados y vuelva a intentarlo.',
+    failed: 'No se pudo guardar. Se han conservado sus datos. Vuelva a intentarlo.',
+    network: 'No se pudo conectar. Revise su conexión y vuelva a intentarlo. Se han conservado sus datos.',
+    denied: 'Con sus permisos actuales no puede enviar este formulario. Se han conservado sus datos.',
+  },
   'deviceApproval.title': 'Autorizar un dispositivo',
   'deviceApproval.description':
     'Una línea de comandos u otro dispositivo ha pedido iniciar sesión en su nombre. Apruébelo solo si ha iniciado usted mismo el inicio de sesión.',

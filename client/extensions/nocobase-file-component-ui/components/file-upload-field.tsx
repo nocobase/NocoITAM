@@ -1,5 +1,6 @@
 import { messageKey } from '../lib/message-key.js';
 import { useTranslation } from '@nocobase/i18n/client';
+import { useSubmission } from '@nocobase/app-client';
 import { RotateCcw, Trash2, UploadCloud, X } from 'lucide-react';
 import {
   useEffect,
@@ -215,10 +216,17 @@ export function FileUploadField(
     nextItems.forEach((item) => void upload(item));
   };
 
+  // Application change (ITAM, template beta.84 upgrade, 2026-10-30): the delete is a standard
+  // Repository write, so it carries an operation key (submission protection); the copied component
+  // is not updated by the package.
+  const removal = useSubmission();
   const removeRecord = async (record: FileRecord): Promise<void> => {
     if (removeOnDelete) {
       try {
-        await repository.deleteOne({ filter: { id: record.id } });
+        const removed = await removal.run({ id: record.id }, (idempotencyKey) =>
+          repository.deleteOne({ filter: { id: record.id }, idempotencyKey }),
+        );
+        if (!removed) return;
       } catch (error) {
         onError?.(
           error instanceof Error

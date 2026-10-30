@@ -10,15 +10,16 @@
   },
   "nocobase": {
     "templateKind": "app",
-    "defaultTemplateVersion": "1.0.0-beta.83",
+    "defaultTemplateVersion": "1.0.0-beta.84",
     "templatePackage": "@nocobase/app-template-default"
   },
   "devDependencies": {
     "@ai-sdk/react": "4.0.131",
     "@base-ui/react": "^1.6.0",
+    "@noble/hashes": "2.3.0",
     "@nocobase/app-client": "^4.0.0-beta.4",
     "@nocobase/app-plugin-template-print": "0.0.2-beta.2",
-    "@nocobase/app-skills": "0.1.0-beta.53",
+    "@nocobase/app-skills": "0.1.0-beta.54",
     "@nocobase/app-testing": "0.1.0-beta.6",
     "@nocobase/app-websocket": "^0.1.0-beta.1",
     "@nocobase/db-mysql": "0.1.0-beta.5",
@@ -94,7 +95,7 @@
     "@nocobase/app-plugin-api-keys": "^1.0.0-beta.19",
     "@nocobase/app-plugin-authentication": "^2.0.0-beta.15",
     "@nocobase/app-plugin-authorization": "^1.0.0-beta.33",
-    "@nocobase/app-plugin-authz-default-access": "^1.0.0-beta.16",
+    "@nocobase/app-plugin-authz-default-access": "^1.0.0-beta.17",
     "@nocobase/app-plugin-authz-restriction-rules": "^1.0.0-beta.15",
     "@nocobase/app-plugin-authz-sharing-rules": "^1.0.0-beta.16",
     "@nocobase/app-plugin-database-explorer": "^1.0.0-beta.17",

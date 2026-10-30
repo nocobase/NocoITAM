@@ -4,6 +4,7 @@ import type settingsEnUS from './settings-en-US.js';
 // The template's Settings copy (client/locales/system/settings-en-US.ts): the
 // prepared Users and Roles pages and the permission editor, in pt-BR.
 const settings: LocaleResource<typeof settingsEnUS> = {
+  listChanged: 'A lista mudou. Tente novamente.',
   setup: {
     title: 'Pré-requisitos do recurso',
     checking: 'Verificando a configuração atual…',
@@ -267,5 +268,12 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   permissionReadOnlyHint: 'Estas permissões são somente leitura.',
   permissionManagedHint: 'Esta permissão é gerenciada pelo aplicativo.',
   permissionSaveHint: 'As alterações de permissões valem depois de salvar.',
+  permissionAll: 'Todos',
+  permissionGranted: 'Concedido',
+  permissionUngranted: 'Não concedido',
+  permissionStatus: 'Status da autorização',
+  permissionClearSearch: 'Limpar pesquisa',
+  permissionCollapseAll: 'Recolher tudo',
+  permissionExpandAll: 'Expandir tudo',
 };
 export default settings;

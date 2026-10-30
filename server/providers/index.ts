@@ -1,3 +1,4 @@
+import SubmissionProvider from './submission.js';
 import type { ApplicationServiceProviderConstructor } from '@nocobase/app-server/application';
 
 import ItamProvider from './itam/index.js';
@@ -33,6 +34,7 @@ export {
 } from './itam/index.js';
 
 const serviceProviders: readonly ApplicationServiceProviderConstructor[] = [
+  SubmissionProvider,
   ItamProvider,
   ItamDemoModeProvider,
   ItamSchedulesProvider,

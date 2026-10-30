@@ -1,3 +1,6 @@
+import { FeedbackForm } from '#components/feedback-form';
+import { useAuthentication } from '@nocobase/app-plugin-authentication/client';
+import { useSubmission } from '@nocobase/app-client';
 import {
   useSettingsLeave,
   useSettingsData,
@@ -87,7 +90,12 @@ function RoleEditor(): ReactElement {
   const [grantsDraft, setGrantsDraft] = useState<readonly PermissionGrant[]>();
   const [dirty, setDirty] = useState(false);
   const [editingScope, setEditingScope] = useState<string>();
-  const [busy, setBusy] = useState(false);
+  const { session } = useAuthentication();
+  const submission = useSubmission({
+    scope: `${session?.user.id}:settings:role:${key}`,
+  });
+  const [requestBusy, setRequestBusy] = useState(false);
+  const busy = requestBusy || submission.submitting;
   const leave = useSettingsLeave(dirty, busy);
   const [error, setError] = useState<unknown>();
 
@@ -127,57 +135,67 @@ function RoleEditor(): ReactElement {
     pathname: useResolvedPath('..').pathname,
     search: location.search,
   };
-  const save = async (event: React.FormEvent<HTMLFormElement>) => {
+  const originalRevisionRef = useRef<string | undefined>(undefined);
+  const save = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (options.error || !catalog || (!creating && request.error)) return;
-    setSubmitted(true);
-    if (!name.trim() || !roleKey.trim()) {
-      event.currentTarget
-        .querySelector<HTMLInputElement>('input:invalid')
-        ?.focus();
-      return;
-    }
-    const incomplete = unconfiguredFilter(grants);
-    if (incomplete) {
-      setEditingScope(incomplete);
-      return;
-    }
-    setEditingScope(undefined);
-    setBusy(true);
-    setError(undefined);
-    setKeyConflict(false);
-    try {
-      const input = {
-        key: roleKey,
-        title:
-          !creating && initial && nameDraft === undefined
-            ? initial.title
-            : name.trim(),
-        grants,
-        ...(!creating && request.data?.data.revision
-          ? { expectedRevision: request.data.data.revision }
-          : {}),
-      };
-      if (creating) await authz.createPermissionSet(input);
-      else await authz.updatePermissionSet(key, input);
-      setDirty(false);
-      parent.reload();
-      toaster.show({ type: 'success', title: t('settings.saved', { name }) });
-      leave.allow();
-      void navigate(closeTo, { replace: true });
-    } catch (next) {
-      if (
-        creating &&
-        next instanceof Error &&
-        'status' in next &&
-        next.status === 409
-      ) {
-        setKeyConflict(true);
-        document.getElementById('role-key')?.focus();
-      } else setError(next);
-    } finally {
-      setBusy(false);
-    }
+    const form = event.currentTarget;
+    return (async () => {
+      event.preventDefault();
+      if (options.error || !catalog || (!creating && request.error)) return;
+      setSubmitted(true);
+      if (!name.trim() || !roleKey.trim()) {
+        form.querySelector<HTMLInputElement>('input:invalid')?.focus();
+        return;
+      }
+      const incomplete = unconfiguredFilter(grants);
+      if (incomplete) {
+        setEditingScope(incomplete);
+        return;
+      }
+      setEditingScope(undefined);
+      setRequestBusy(true);
+      setError(undefined);
+      setKeyConflict(false);
+      try {
+        originalRevisionRef.current ??= request.data?.data.revision;
+        const input = {
+          key: roleKey,
+          title:
+            !creating && initial && nameDraft === undefined
+              ? initial.title
+              : name.trim(),
+          grants,
+          ...(!creating && request.data?.data.revision
+            ? { expectedRevision: originalRevisionRef.current }
+            : {}),
+        };
+        const saved = await submission.run(
+          { key, creating, input },
+          (idempotencyKey) =>
+            creating
+              ? authz.createPermissionSet(input, idempotencyKey)
+              : authz.updatePermissionSet(key, input, idempotencyKey),
+        );
+        if (!saved) return;
+        setDirty(false);
+        parent.reload();
+        toaster.show({ type: 'success', title: t('settings.saved', { name }) });
+        leave.allow();
+        void navigate(closeTo, { replace: true });
+      } catch (next) {
+        if (
+          creating &&
+          next instanceof Error &&
+          'status' in next &&
+          next.status === 409
+        ) {
+          setKeyConflict(true);
+          document.getElementById('role-key')?.focus();
+        } else setError(next);
+      } finally {
+        setRequestBusy(false);
+      }
+    })();
   };
   const sections = catalog
     ? configurePermissionScopes(
@@ -235,7 +253,6 @@ function RoleEditor(): ReactElement {
       <div className='flex flex-col gap-6'>
         <SettingsError error={request.error} retry={request.reload} />
         <SettingsError error={options.error} retry={options.reload} />
-        <SettingsError error={error} />
         {error instanceof Error &&
           'status' in error &&
           error.status === 409 && (
@@ -248,8 +265,11 @@ function RoleEditor(): ReactElement {
         ) : (
           !request.error &&
           !options.error && (
-            <form
+            <FeedbackForm
               id='role-form'
+              submitting={busy}
+              error={error}
+              errorContent={<SettingsError error={error} inline />}
               onSubmit={(event) => void save(event)}
               noValidate
               className='flex flex-col gap-6'
@@ -259,10 +279,16 @@ function RoleEditor(): ReactElement {
                   <Label htmlFor='role-key'>{t('settings.key')} *</Label>
                   <Input
                     id='role-key'
+                    name='key'
                     required
                     value={roleKey}
                     disabled={!creating || !allowed || busy}
                     aria-invalid={keyConflict || (submitted && !roleKey.trim())}
+                    aria-errormessage={
+                      keyConflict || (submitted && !roleKey.trim())
+                        ? 'role-key-error'
+                        : undefined
+                    }
                     onChange={(event) => {
                       setKeyConflict(false);
                       setKeyDraft(event.target.value);
@@ -270,7 +296,7 @@ function RoleEditor(): ReactElement {
                     }}
                   />
                   {(keyConflict || (submitted && !roleKey.trim())) && (
-                    <p className='text-xs text-destructive'>
+                    <p id='role-key-error' className='text-xs text-destructive'>
                       {t(
                         keyConflict
                           ? 'settings.keyConflict'
@@ -283,17 +309,24 @@ function RoleEditor(): ReactElement {
                   <Label htmlFor='role-name'>{t('settings.roleName')} *</Label>
                   <Input
                     id='role-name'
+                    name='title'
                     required
                     value={name}
                     disabled={!allowed || busy}
                     aria-invalid={submitted && !name.trim()}
+                    aria-errormessage={
+                      submitted && !name.trim() ? 'role-name-error' : undefined
+                    }
                     onChange={(event) => {
                       setNameDraft(event.target.value);
                       setDirty(true);
                     }}
                   />
                   {submitted && !name.trim() && (
-                    <p className='text-xs text-destructive'>
+                    <p
+                      id='role-name-error'
+                      className='text-xs text-destructive'
+                    >
                       {t('settings.required')}
                     </p>
                   )}
@@ -317,6 +350,15 @@ function RoleEditor(): ReactElement {
                   levelFor: (name) => t('settings.levelFor', { name }),
                   search: t('settings.permissionSearch'),
                   enabledOnly: t('settings.enabledOnly'),
+                  granted: t('settings.permissionGranted'),
+                  ungranted: t('settings.permissionUngranted'),
+                  selectAll: t('settings.permissionAll'),
+                  authorizationStatus: t('settings.permissionStatus'),
+                  clearSearch: t('settings.permissionClearSearch'),
+                  collapseAll: t('settings.permissionCollapseAll'),
+                  expandAll: t('settings.permissionExpandAll'),
+                  summary: (enabled, total) =>
+                    t('settings.permissionSummary', { enabled, total }),
                   clear: t('settings.clear'),
                   empty: t('settings.noPermissions'),
                   emptyDescription: t('settings.permissionEmptyHint'),
@@ -349,7 +391,7 @@ function RoleEditor(): ReactElement {
                   setDirty(true);
                 }}
               />
-            </form>
+            </FeedbackForm>
           )
         )}
         {leave.dialog}

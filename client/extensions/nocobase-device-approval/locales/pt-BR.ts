@@ -1,6 +1,13 @@
 import type { DeviceApprovalLocale } from './en-US.js';
 
 const ptBR: DeviceApprovalLocale = {
+  formFeedback: {
+    field: 'Este valor foi recusado. Verifique e tente novamente.',
+    invalid: 'Verifique os campos destacados e tente novamente.',
+    failed: 'Não foi possível salvar. Seus dados foram mantidos. Tente novamente.',
+    network: 'Não foi possível conectar. Verifique sua conexão e tente novamente. Seus dados foram mantidos.',
+    denied: 'Com seu acesso atual, você não pode enviar este formulário. Seus dados foram mantidos.',
+  },
   'deviceApproval.title': 'Autorizar um dispositivo',
   'deviceApproval.description':
     'Uma linha de comando ou outro dispositivo pediu para entrar com a sua conta. Aprove apenas se foi você quem iniciou o acesso.',

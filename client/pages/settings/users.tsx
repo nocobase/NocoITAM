@@ -1,11 +1,15 @@
+import { useListLocation } from '#hooks/use-list-location';
 import { RecordLink } from '#components/record-link';
 import { BackButton } from '#components/back-button';
 import { safeReturnTo } from '../../lib/return-to.js';
-import { useTableUrlState } from '#hooks/use-table-url-state';
+import {
+  readTableUrlState,
+  useTableUrlState,
+} from '#hooks/use-table-url-state';
 import { DataTable, DataTableColumnHeader } from '#components/data-table';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useSettingsData, useUserPermission } from './hooks.js';
-import { useApiClient, useToaster } from '@nocobase/app-client';
+import { useApiClient, useSubmission, useToaster } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import {
   UsersClient,
@@ -20,13 +24,7 @@ import {
   useEffect,
   type ReactElement,
 } from 'react';
-import {
-  Link,
-  Outlet,
-  useLocation,
-  useSearchParams,
-  useResolvedPath,
-} from 'react-router';
+import { Link, Outlet, useLocation, useResolvedPath } from 'react-router';
 import { PlusIcon, UsersIcon } from 'lucide-react';
 import { PageContainer } from '#components/page-container';
 import { PageHeader } from '#components/page-header';
@@ -90,14 +88,21 @@ function UserActions({
   const [action, setAction] = useState<
     'disable' | 'enable' | 'revokeSessions'
   >();
-  const [busy, setBusy] = useState(false);
+  const [requestBusy, setRequestBusy] = useState(false);
   const [error, setError] = useState<unknown>();
+  const submission = useSubmission();
+  const busy = requestBusy || submission.submitting;
   const run = async () => {
     if (!action) return;
-    setBusy(true);
+    setRequestBusy(true);
     setError(undefined);
     try {
-      const updated = await client[action](user.id);
+      const outcome = await submission.run(
+        { action, id: user.id },
+        async (key) => ({ updated: await client[action](user.id, key) }),
+      );
+      if (!outcome) return;
+      const updated = outcome.updated;
       toaster.show({
         type: 'success',
         title: t(`settings.userActionSaved.${action}`, { name: user.name }),
@@ -107,7 +112,7 @@ function UserActions({
     } catch (next) {
       setError(next);
     } finally {
-      setBusy(false);
+      setRequestBusy(false);
     }
   };
   if (
@@ -174,7 +179,7 @@ function UserActions({
 
 export default function UsersPage(): ReactElement {
   const { t } = useTranslation();
-  const [params, setParams] = useSearchParams();
+  const { params, setParams, active } = useListLocation();
   const location = useLocation();
   const listPath = useResolvedPath('.').pathname;
   const searchRef = useRef<HTMLInputElement>(null);
@@ -236,16 +241,14 @@ export default function UsersPage(): ReactElement {
     !roleChoices.some((option) => option.value === selectedRole)
   )
     roleChoices.push({ value: selectedRole, label: `${roleScope} · ${role}` });
-  const page = Math.max(
-    1,
-    Number.isSafeInteger(Number(params.get('page')))
-      ? Number(params.get('page'))
-      : 1,
-  );
+  const { paginationState, sortingState } = readTableUrlState(params, {
+    defaultPageSize: 20,
+    pageSizeOptions: [20, 50, 100],
+    sortColumns: ['name'],
+  });
+  const page = paginationState.pageIndex + 1;
   const status = params.get('status') ?? 'all';
-  const pageSize = [20, 50, 100].includes(Number(params.get('pageSize')))
-    ? Number(params.get('pageSize'))
-    : 20;
+  const pageSize = paginationState.pageSize;
   const update = (key: string, value: string) => {
     setParams(
       (old) => {
@@ -281,15 +284,20 @@ export default function UsersPage(): ReactElement {
     ...(status !== 'all' ? { status } : {}),
     ...(roleScope ? { roleScope } : {}),
     ...(role ? { role } : {}),
-    ...(params.get('order')
-      ? { sort: 'name', order: params.get('order')! }
+    ...(sortingState[0]
+      ? {
+          sort: sortingState[0].id,
+          order: sortingState[0].desc ? 'desc' : 'asc',
+        }
       : {}),
   });
   const request = useSettingsData<{
     data: readonly ManagedUser[];
     meta: { total: number };
-  }>(`users?${remote}`, true);
+  }>(`users?${remote}`, { keepPreviousData: true, active });
   const tableState = useTableUrlState({
+    active,
+    revision: request.revision,
     defaultPageSize: 20,
     pageSizeOptions: [20, 50, 100],
     sortColumns: ['name'],
@@ -506,10 +514,14 @@ export default function UsersPage(): ReactElement {
           </p>
         )}
         <SettingsError error={options.error} retry={options.reload} />
-        <SettingsError error={request.error} retry={request.reload} />
+        <SettingsError
+          error={tableState.error ?? request.error}
+          retry={request.reload}
+        />
         {request.loading && !request.data ? (
           <SettingsLoading />
         ) : (
+          !tableState.error &&
           !request.error &&
           (rows.length ? (
             <DataTable<ManagedUser>

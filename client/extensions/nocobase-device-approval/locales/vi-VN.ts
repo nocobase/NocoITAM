@@ -1,6 +1,13 @@
 import type { DeviceApprovalLocale } from './en-US.js';
 
 const viVN: DeviceApprovalLocale = {
+  formFeedback: {
+    field: 'Giá trị này bị từ chối. Hãy kiểm tra và thử lại.',
+    invalid: 'Hãy kiểm tra các trường được đánh dấu và thử lại.',
+    failed: 'Không thể lưu. Dữ liệu bạn nhập vẫn được giữ lại. Hãy thử lại.',
+    network: 'Không thể kết nối. Hãy kiểm tra kết nối và thử lại. Dữ liệu bạn nhập vẫn được giữ lại.',
+    denied: 'Quyền hiện tại của bạn không cho phép gửi biểu mẫu này. Dữ liệu bạn nhập vẫn được giữ lại.',
+  },
   'deviceApproval.title': 'Cấp quyền cho thiết bị',
   'deviceApproval.description':
     'Một dòng lệnh hoặc thiết bị khác yêu cầu đăng nhập dưới danh nghĩa của bạn. Chỉ phê duyệt nếu chính bạn đã bắt đầu việc đăng nhập.',

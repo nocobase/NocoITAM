@@ -4,6 +4,7 @@ import type settingsEnUS from './settings-en-US.js';
 // The template's Settings copy (client/locales/system/settings-en-US.ts): the
 // prepared Users and Roles pages and the permission editor, in id-ID.
 const settings: LocaleResource<typeof settingsEnUS> = {
+  listChanged: 'Daftar telah berubah. Silakan coba lagi.',
   setup: {
     title: 'Prasyarat fitur',
     checking: 'Memeriksa konfigurasi saat ini…',
@@ -266,5 +267,12 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   permissionReadOnlyHint: 'Izin ini hanya baca.',
   permissionManagedHint: 'Izin ini dikelola oleh aplikasi.',
   permissionSaveHint: 'Perubahan izin berlaku setelah disimpan.',
+  permissionAll: 'Semua',
+  permissionGranted: 'Diberikan',
+  permissionUngranted: 'Tidak diberikan',
+  permissionStatus: 'Status otorisasi',
+  permissionClearSearch: 'Hapus pencarian',
+  permissionCollapseAll: 'Ciutkan semua',
+  permissionExpandAll: 'Bentangkan semua',
 };
 export default settings;

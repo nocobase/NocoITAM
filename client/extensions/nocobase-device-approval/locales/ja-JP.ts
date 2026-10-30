@@ -1,6 +1,13 @@
 import type { DeviceApprovalLocale } from './en-US.js';
 
 const jaJP: DeviceApprovalLocale = {
+  formFeedback: {
+    field: 'この値は受け付けられませんでした。確認してもう一度お試しください。',
+    invalid: '強調表示された項目を確認して、もう一度お試しください。',
+    failed: '保存できませんでした。入力内容は保持されています。もう一度お試しください。',
+    network: '接続できません。接続を確認して、もう一度お試しください。入力内容は保持されています。',
+    denied: '現在の権限ではこのフォームを送信できません。入力内容は保持されています。',
+  },
   'deviceApproval.title': 'デバイスを承認',
   'deviceApproval.description':
     'コマンドラインまたは別のデバイスが、あなたとしてサインインしようとしています。サインインをご自身で開始した場合にのみ承認してください。',

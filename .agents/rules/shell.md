@@ -57,3 +57,7 @@ The signed-in region waits in `client/routing/session-preparation.tsx` before mo
   number (`useNavigationCounts().inbox`) in front of the browser tab's title,
   "(3) NocoITAM", through `useDocumentTitleBadge` in
   `client/lib/itam/title-badge.ts`, as NocoCRM's `inbox-badge.ts` does.
+
+## List context
+
+Keep the identity-keyed `SessionPreparation` boundary: mounted private list conditions and ancestor query memory must be discarded when the signed-in user changes. Public list state uses `useTableUrlState`; tabbed datasets use `useListTabs`, with complete owned parameter keys and permission-filtered tabs. Follow the synchronized [list navigation rules](../skills/nocobase-app-development/references/frontend/references/child-routes.md#list-tab-breadcrumbs-and-private-conditions). Default back links use an empty ancestor query when no source visit exists; explicit return destinations remain application-owned.

@@ -4,6 +4,7 @@ import type settingsEnUS from './settings-en-US.js';
 // The template's Settings copy (client/locales/system/settings-en-US.ts): the
 // prepared Users and Roles pages and the permission editor, in ko-KR.
 const settings: LocaleResource<typeof settingsEnUS> = {
+  listChanged: '목록이 변경되었습니다. 다시 시도하세요.',
   setup: {
     title: '기능 사전 요건',
     checking: '현재 구성을 확인하는 중…',
@@ -259,5 +260,12 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   permissionReadOnlyHint: '이 권한은 읽기 전용입니다.',
   permissionManagedHint: '이 권한은 애플리케이션에서 관리합니다.',
   permissionSaveHint: '권한 변경 사항은 저장한 후에 적용됩니다.',
+  permissionAll: '전체',
+  permissionGranted: '허용됨',
+  permissionUngranted: '허용 안 됨',
+  permissionStatus: '권한 상태',
+  permissionClearSearch: '검색 지우기',
+  permissionCollapseAll: '모두 접기',
+  permissionExpandAll: '모두 펼치기',
 };
 export default settings;
