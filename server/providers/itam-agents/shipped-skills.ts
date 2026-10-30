@@ -20,6 +20,7 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       '2662d17d78c8f916f6c806307b5b85f9b1f61822f1b71de45a2db5d7858ff77b',
       'b8b2d54358b6aa3abefded55fdf3c141241dbecebb354b310d0a95a1ad113f13',
       '6602e656dc59c6e92b45222a70e1cc8d04ab977135d1fcd978a38db4c4c37243',
+      '38715c6b6ec4623902f68f14d1a3edbffee2d449d73ff089a4342b8b8cb15578',
     ],
     catalog: [
       '6cfa943e442efba202ea1cfccd4e648ca96c11370866fdcf2a779858a867998d',

@@ -25,7 +25,7 @@ The system has already gathered the material with the approver's permissions and
 
 ### Purchase orders
 
-1. **Work out what is asked and what it costs**: the total amount, and quantity × unit price for each line; for New hire, what it costs per person.
+1. **Work out what is asked and what it costs**: the total amount, and quantity × unit price for each line; for New hire, what it costs per person. The request's amount is worked out from the same lines when it is sent, so do not say they agree; say so only when they differ (the lines changed after it was sent).
 2. **Can it be avoided**:
    - If the same model is in stock and can be assigned directly, say how many and their numbers, and suggest using stock first, or buying only the shortfall;
    - If other models of the same category could serve, say whether they meet the need (for example, also a laptop with a similar configuration);
