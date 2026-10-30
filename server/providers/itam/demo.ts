@@ -2147,7 +2147,7 @@ export function createDemoService(dependencies: {
         // Who writes the demo: the second asset manager, so the records read
         // as the IT team's work — she raises the requests the first manager
         // decides, and is the creator, requester or 负责人 wherever a service
-        // takes the actor for one. The account that generated the demo only
+        // takes the actor for one, save what IT support hands out (`desk`). The account that generated the demo only
         // stands in for her when the accounts plugins are missing (tests, a
         // reset); it answers for its own share of the to-dos below.
         const writerId = deskManagerUserId ?? actorId;
@@ -2173,6 +2173,15 @@ export function createDemoService(dependencies: {
           dependencies.accounts && managerUserId ? actorId : undefined;
         const context: OperationContext = {
           actorId: writerId,
+          sourceType: 'demo',
+        };
+        // Handing things out is IT support's work (2026-10-30): devices
+        // assigned, lent and returned, stock issued, taken back and
+        // reordered, seats given and reclaimed are his, so the history is
+        // not all one asset manager's. Without the accounts plugins it is
+        // the writer.
+        const desk: OperationContext = {
+          actorId: supportUserId ?? writerId,
           sourceType: 'demo',
         };
         // The route schemas add these defaults; the service expects them
@@ -3181,8 +3190,12 @@ export function createDemoService(dependencies: {
                 String(b[0]?.purchaseDate),
               ),
             );
-            for (const batch of ordered) {
+            for (const [index, batch] of ordered.entries()) {
               const first = batch[0];
+              // The two asset managers bought the devices in turn
+              // (2026-10-30), rather than every order being hers.
+              const buyer =
+                index % 2 === 1 ? (managerUserId ?? writerId) : writerId;
               const day = String(first.purchaseDate);
               const at = new Date(`${day}T09:00:00`);
               const orderId = crypto.randomUUID();
@@ -3205,8 +3218,8 @@ export function createDemoService(dependencies: {
                   orderedAt: day,
                   expectedAt: day,
                   receivedAt: day,
-                  ownerId: writerId,
-                  createdById: writerId,
+                  ownerId: buyer,
+                  createdById: buyer,
                   createdAt: at,
                   updatedAt: at,
                 })
@@ -3249,7 +3262,7 @@ export function createDemoService(dependencies: {
                       generatedType: 'device',
                       generatedId: String(row.id),
                       notes: null,
-                      actorId: writerId,
+                      actorId: buyer,
                       createdAt: at,
                     })
                     .execute();
@@ -3295,7 +3308,7 @@ export function createDemoService(dependencies: {
               targetType: 'person',
               targetId: String(personId),
             },
-            context,
+            desk,
             all('devices', 'assign'),
           );
         };
@@ -3304,7 +3317,7 @@ export function createDemoService(dependencies: {
           return devices.return(
             String(deviceId),
             { condition: texts.returnedGood, locationId: String(warehouse.id) },
-            context,
+            desk,
             all('devices', 'return'),
           );
         };
@@ -3391,7 +3404,7 @@ export function createDemoService(dependencies: {
               targetType: 'location',
               targetId: String(locationId),
             },
-            context,
+            desk,
             all('devices', 'assign'),
           );
         };
@@ -3462,7 +3475,7 @@ export function createDemoService(dependencies: {
             targetId: String(liuYang.id),
             expectedReturnDate: daysFromNow(3),
           },
-          context,
+          desk,
           all('devices', 'loan'),
         );
         await dueOn(laptops[4].id, daysFromNow(-251));
@@ -3470,7 +3483,7 @@ export function createDemoService(dependencies: {
         await devices.return(
           String(laptops[4].id),
           { condition: texts.returnedLoan },
-          context,
+          desk,
           all('devices', 'return'),
         );
         // A loan overdue for a week: lent for a few days, then the return
@@ -3483,7 +3496,7 @@ export function createDemoService(dependencies: {
             targetId: String(zhaoMin.id),
             expectedReturnDate: daysFromNow(3),
           },
-          context,
+          desk,
           all('devices', 'loan'),
         );
         await dueOn(laptops[4].id, daysFromNow(-7));
@@ -3576,7 +3589,7 @@ export function createDemoService(dependencies: {
           await stock.issue(
             String(item.id),
             { holderType, holderId: String(holder.id), quantity },
-            context,
+            desk,
             all('stockItems', 'issue'),
           );
         };
@@ -3591,7 +3604,7 @@ export function createDemoService(dependencies: {
           await stock.takeBack(
             String(item.id),
             { holderType, holderId: String(holder.id), quantity: 1 },
-            context,
+            desk,
             all('stockItems', 'return'),
           );
         };
@@ -3682,7 +3695,7 @@ export function createDemoService(dependencies: {
                 vendorId: reseller.id,
                 departmentId: rnd.id,
               },
-              context,
+              desk,
               all('purchaseOrders', 'create'),
             ),
           );
@@ -3697,13 +3710,13 @@ export function createDemoService(dependencies: {
                 unitPrice: order.unitPrice,
               },
             ],
-            context,
+            desk,
             all('purchaseOrders', 'update'),
           );
           await procurement.submit(
             id,
             approverId,
-            context,
+            desk,
             all('purchaseOrders', 'submit'),
           );
           await on(-order.orderedDaysAgo - 5);
@@ -3725,7 +3738,7 @@ export function createDemoService(dependencies: {
               orderedAt: daysFromNow(-order.orderedDaysAgo),
               expectedAt: daysFromNow(-order.orderedDaysAgo + 7),
             },
-            context,
+            desk,
             all('purchaseOrders', 'order'),
           );
           const lines = await procurement.lines(id);
@@ -3749,7 +3762,7 @@ export function createDemoService(dependencies: {
                     minimumQuantity: order.minimumQuantity,
                   },
                 },
-            context,
+            desk,
             all('purchaseOrders', 'receive'),
           );
           if (order.into) return order.into;
@@ -4434,7 +4447,7 @@ export function createDemoService(dependencies: {
                     account: asText(holder.email) ?? null,
                   },
             ),
-            context,
+            desk,
             all('entitlements', 'assignSeat'),
           );
         };
@@ -4452,7 +4465,7 @@ export function createDemoService(dependencies: {
             await entitlements.reclaimSeats(
               String(entitlement.id),
               [String(seat.id)],
-              context,
+              desk,
               all('entitlements', 'assignSeat'),
             );
         };
@@ -4870,7 +4883,7 @@ export function createDemoService(dependencies: {
               targetId: String(liuYang.id),
               expectedReturnDate: daysFromNow(3),
             },
-            context,
+            desk,
             all('devices', 'loan'),
           );
           await dueOn(loaner.id, daysFromNow(-2));

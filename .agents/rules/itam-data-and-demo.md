@@ -191,7 +191,12 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (their laptop SH-LT-051 already reserved, Asset Steward's picks for the rest); and
   SH-LT-031 is a loaner two days overdue that it answers for. The data test
   checks no column of its 我的 is empty — the demo is written as 吴静 (`writerId`), who
-  raises the requests 孙强 decides; repairs and audits are 周宇's. `demoAccountUsernames()`
+  raises the requests 孙强 decides; repairs and audits are 周宇's. Since
+  2026-10-30 the work is spread rather than all hers: the historical device
+  orders alternate between 吴静 and 孙强 as 负责人, and 周宇 hands things
+  out (`desk`: devices assigned, lent and returned, stock issued, taken back
+  and reordered, seats given and reclaimed), so 动态 and the lists read as a
+  team's. `demoAccountUsernames()`
   keeps the retired `manager` / `support`, and the pinyin usernames an English
   demo had before 2026-10-06, so a reset still removes them.
   The requests are addressed to 孙强, not to whatever `otherUser` finds.
