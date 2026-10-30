@@ -423,6 +423,23 @@ describe('CSV import / export and demo data', () => {
       employmentStatus: 'left',
       leaveDate: addDays(today(), -2),
     });
+    // An order carries what goes together (2026-10-30), not one model
+    // each: the historical orders gather a vendor's deliveries by quarter.
+    const lineRows = await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .selectFrom('purchaseOrderLines')
+      .select('purchaseOrderId')
+      .execute<{ purchaseOrderId: string }>();
+    const linesPerOrder = new Map<string, number>();
+    for (const row of lineRows)
+      linesPerOrder.set(
+        row.purchaseOrderId,
+        (linesPerOrder.get(row.purchaseOrderId) ?? 0) + 1,
+      );
+    expect(
+      [...linesPerOrder.values()].filter((lines) => lines > 1).length,
+    ).toBeGreaterThanOrEqual(15);
   });
 
   it('reports how far an import has got while it runs, and runs one at a time', async () => {
