@@ -4,9 +4,12 @@ const esES: DeviceApprovalLocale = {
   formFeedback: {
     field: 'Este valor no es válido. Revíselo y vuelva a intentarlo.',
     invalid: 'Revise los campos marcados y vuelva a intentarlo.',
-    failed: 'No se pudo guardar. Se han conservado sus datos. Vuelva a intentarlo.',
-    network: 'No se pudo conectar. Revise su conexión y vuelva a intentarlo. Se han conservado sus datos.',
-    denied: 'Con sus permisos actuales no puede enviar este formulario. Se han conservado sus datos.',
+    failed:
+      'No se pudo guardar. Se han conservado sus datos. Vuelva a intentarlo.',
+    network:
+      'No se pudo conectar. Revise su conexión y vuelva a intentarlo. Se han conservado sus datos.',
+    denied:
+      'Con sus permisos actuales no puede enviar este formulario. Se han conservado sus datos.',
   },
   'deviceApproval.title': 'Autorizar un dispositivo',
   'deviceApproval.description':

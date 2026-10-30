@@ -5,8 +5,10 @@ const idID: DeviceApprovalLocale = {
     field: 'Nilai ini ditolak. Periksa lalu coba lagi.',
     invalid: 'Periksa kolom yang ditandai lalu coba lagi.',
     failed: 'Gagal menyimpan. Masukan Anda tetap tersimpan. Coba lagi.',
-    network: 'Tidak dapat terhubung. Periksa koneksi Anda lalu coba lagi. Masukan Anda tetap tersimpan.',
-    denied: 'Akses Anda saat ini tidak dapat mengirim formulir ini. Masukan Anda tetap tersimpan.',
+    network:
+      'Tidak dapat terhubung. Periksa koneksi Anda lalu coba lagi. Masukan Anda tetap tersimpan.',
+    denied:
+      'Akses Anda saat ini tidak dapat mengirim formulir ini. Masukan Anda tetap tersimpan.',
   },
   'deviceApproval.title': 'Otorisasi perangkat',
   'deviceApproval.description':

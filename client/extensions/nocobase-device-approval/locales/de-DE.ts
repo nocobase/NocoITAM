@@ -2,11 +2,15 @@ import type { DeviceApprovalLocale } from './en-US.js';
 
 const deDE: DeviceApprovalLocale = {
   formFeedback: {
-    field: 'Dieser Wert wurde abgelehnt. Prüfen Sie ihn und versuchen Sie es erneut.',
+    field:
+      'Dieser Wert wurde abgelehnt. Prüfen Sie ihn und versuchen Sie es erneut.',
     invalid: 'Prüfen Sie die markierten Felder und versuchen Sie es erneut.',
-    failed: 'Speichern nicht möglich. Ihre Eingaben bleiben erhalten. Versuchen Sie es erneut.',
-    network: 'Keine Verbindung. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut. Ihre Eingaben bleiben erhalten.',
-    denied: 'Mit Ihren aktuellen Berechtigungen können Sie dieses Formular nicht absenden. Ihre Eingaben bleiben erhalten.',
+    failed:
+      'Speichern nicht möglich. Ihre Eingaben bleiben erhalten. Versuchen Sie es erneut.',
+    network:
+      'Keine Verbindung. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut. Ihre Eingaben bleiben erhalten.',
+    denied:
+      'Mit Ihren aktuellen Berechtigungen können Sie dieses Formular nicht absenden. Ihre Eingaben bleiben erhalten.',
   },
   'deviceApproval.title': 'Gerät autorisieren',
   'deviceApproval.description':

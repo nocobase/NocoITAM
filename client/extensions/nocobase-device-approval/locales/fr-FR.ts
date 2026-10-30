@@ -4,9 +4,12 @@ const frFR: DeviceApprovalLocale = {
   formFeedback: {
     field: 'Cette valeur a été refusée. Vérifiez-la et réessayez.',
     invalid: 'Vérifiez les champs signalés et réessayez.',
-    failed: 'Enregistrement impossible. Votre saisie a été conservée. Réessayez.',
-    network: 'Connexion impossible. Vérifiez votre connexion et réessayez. Votre saisie a été conservée.',
-    denied: 'Vos droits actuels ne permettent pas d’envoyer ce formulaire. Votre saisie a été conservée.',
+    failed:
+      'Enregistrement impossible. Votre saisie a été conservée. Réessayez.',
+    network:
+      'Connexion impossible. Vérifiez votre connexion et réessayez. Votre saisie a été conservée.',
+    denied:
+      'Vos droits actuels ne permettent pas d’envoyer ce formulaire. Votre saisie a été conservée.',
   },
   'deviceApproval.title': 'Autoriser un appareil',
   'deviceApproval.description':
