@@ -1,6 +1,5 @@
 import { AssetTypeBadge } from '@/components/itam/asset-type-badge';
 import { createUuid } from '@nocobase/app-client';
-import { EntitlementKindBadge } from '@/components/itam/status-badge';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -70,6 +69,7 @@ import {
   type ReferenceNames,
 } from '@/lib/itam/references';
 import { ReferenceLink } from '@/components/itam/cells';
+import { LineTypeBadge } from '@/components/itam/line-type-badge';
 import { DOCUMENT_ACCEPT } from '@/lib/itam/receipt';
 
 import { CaptureNotice } from './po-capture';
@@ -106,9 +106,6 @@ const LINE_ASSET_TYPES = [
   'entitlement',
 ] as const;
 const ENTITLEMENT_KINDS = new Set<string>(['perpetual', 'subscription']);
-/** The asset type a line's `itemType` belongs to; both kinds are 授权. */
-const assetTypeOf = (itemType: string): string =>
-  ENTITLEMENT_KINDS.has(itemType) ? 'entitlement' : itemType;
 const RECEIVABLE = new Set(['ordered', 'partiallyReceived']);
 const HARDWARE = new Set(['device', 'accessory', 'consumable', 'component']);
 
@@ -629,7 +626,7 @@ export function PurchaseOrderLinesCard({
                 : rows.map((row) => (
                     <TableRow key={text(row.id)}>
                       <TableCell className='w-px whitespace-nowrap'>
-                        <LineType itemType={row.itemType} />
+                        <LineTypeBadge itemType={row.itemType} />
                       </TableCell>
                       <TableCell>
                         <LineItem row={row} names={names} />
@@ -726,29 +723,6 @@ export function PurchaseOrderLinesCard({
         ) : null}
       </CardContent>
     </Card>
-  );
-}
-
-/** What the line is for: its kind, the model or product, and the note. */
-/**
- * What the line buys, as a type: one of the five asset types, and for an
- * entitlement the kind tag its own page uses, so the two say the same thing.
- */
-function LineType({ itemType }: { readonly itemType: unknown }): ReactElement {
-  const { t } = useTranslation();
-  const value = text(itemType);
-  return (
-    <div className='flex items-center gap-2'>
-      <AssetTypeBadge
-        value={ENTITLEMENT_KINDS.has(value) ? 'entitlement' : itemType}
-        label={t(`enums.appliesTo.${assetTypeOf(value)}`, {
-          defaultValue: value,
-        })}
-      />
-      {ENTITLEMENT_KINDS.has(value) ? (
-        <EntitlementKindBadge kind={itemType} />
-      ) : null}
-    </div>
   );
 }
 

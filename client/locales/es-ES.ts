@@ -1187,7 +1187,7 @@ const esES: AppResource = {
     separator: '», «',
     upload: 'Subir documento',
     removeFile: 'Quitar el archivo',
-    read: 'Leer con IA',
+    read: 'Organizar con IA',
     uploading: 'Subiendo…',
     reading: 'Leyendo…',
     noText:
@@ -1697,27 +1697,21 @@ const esES: AppResource = {
   receipt: {
     fromDocument: 'Recibir desde el albarán',
     title: 'Recibir',
-    description:
-      'Reciba lo que haya llegado de este pedido. Una fila por dispositivo: pegue una columna de números de serie desde una hoja de cálculo o escanéelos uno tras otro; los puestos se suman a una licencia ya registrada o abren una nueva.',
+    description: 'Registre lo que llegó esta vez; deje vacío el resto.',
     context: 'Recepción por albarán',
     confirm_one: 'Recibir {{count}} artículo',
     confirm_other: 'Recibir {{count}} artículos',
-    outstanding_one: '{{count}} pendiente',
-    outstanding_other: '{{count}} pendientes',
+    counts: 'Pedido {{ordered}} · Recibido {{received}}',
+    thisTime: '{{count}} esta vez',
+    nameUnavailable: 'No se pudo cargar el nombre',
     units_one: '{{count}} dispositivo esta vez',
     units_other: '{{count}} dispositivos esta vez',
     serialPlaceholder: 'Número de serie',
     serialOf: 'Número de serie del dispositivo {{index}}',
     addUnit: 'Añadir un dispositivo',
-    pasteHint:
-      'Pegue una columna de números de serie en cualquier fila y se convertirá en una fila por dispositivo; un escáner pasa a la fila siguiente tras cada lectura.',
     quantityThisTime: 'Cantidad esta vez',
-    joinStock: 'Añadido a las existencias «{{name}}»',
-    newStock: 'Ubicación del nuevo registro de existencias',
     nothing: 'Ha llegado todo lo de este pedido.',
     aiFilled: 'Rellenado por la IA a partir del albarán',
-    warrantyFromModel:
-      'Si se deja vacío, se calcula a partir de los meses de garantía del modelo',
     aiFilledFrom: 'Rellenado por la IA a partir del albarán: {{source}}',
     documentChecks: 'Comprobaciones del albarán',
     document: {

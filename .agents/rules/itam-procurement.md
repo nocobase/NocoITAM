@@ -68,16 +68,24 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   its serial, while the place (required), owning department (the order's,
   by default), warranty end and keeper are asked once per line, and the
   model, vendor and ownership are the order's. Accessories, consumables and
-  components are a quantity into the stock item of that very model — only
-  that model's, because a batch of docks does not join the keyboards — or,
-  with none, a new record at a place asked for. An entitlement line asks
+  components are a quantity, and ask 加入已有记录 / 创建新记录 the way seats
+  do (2026-10-30): joining picks any stock record of that very model — only
+  that model's, because a batch of docks does not join the keyboards —
+  starting on its first and showing its place and 负责人; creating asks the
+  new record's name, place and 负责人. Both choices keep the same rows, so
+  switching does not move the form. Each line is headed by its type tag,
+  its model or product (a drawer link; "…" while loading, said when it
+  cannot load) and 订购 · 已到 · 本次; 序列号 is starred when the model's
+  category requires serials, and a row 添加一台 just added is not marked
+  missing until it is left empty. An entitlement line asks
   加入已有授权 / 创建新授权, starting on the one already on the books for
   that product, and adds its seats there or opens a new one. **Joining
   changes no term**: a renewal is its own act on the entitlement's page, so
   the form asks for the terms only when opening one (授权方式, 维保到期,
   共用密钥 for a perpetual; 计费方式, 计费周期, 单价, 到期日期,
   自动续订 for a subscription, rendered from `ENTITLEMENT_FIELDS` so the
-  labels match its page), and shows the joined record's terms disabled, so
+  labels match its page; 单价 with its currency beside it, the order's
+  unless changed, and 负责人 required), and shows the joined record's terms disabled, so
   the receiver sees what the seats inherit. What the order already answers
   is never asked again: the name starts at the model's or product's own
   name, the price at the line's, the keeper at the receiver, and

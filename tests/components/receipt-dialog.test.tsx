@@ -1,12 +1,25 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import {
+  fireEvent,
+  render as renderInPage,
+  screen,
+} from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { MemoryRouter } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import { ReceiptDialog } from '../../client/pages/itam/procurement/receipt-dialog.js';
+
+// A line's model is a link (2026-10-30), which needs a router.
+const render = (ui: ReactElement) =>
+  renderInPage(ui, { wrapper: MemoryRouter });
 
 const state = vi.hoisted(() => ({
   requests: [] as { path: string; json?: unknown }[],
   // The accounts that may answer for records; the reader is `mia`.
   owners: ['mia'] as string[],
+  // Stock already on the books, and what the live check finds.
+  stock: [] as Record<string, unknown>[],
+  issues: [] as Record<string, unknown>[],
 }));
 
 vi.mock('@nocobase/i18n/client', () => ({
@@ -32,6 +45,7 @@ vi.mock('../../client/lib/itam/api.js', () => ({
     },
   }),
   useItamRecord: () => ({ data: undefined }),
+  useItamSettings: () => ({ data: { general: { currency: 'CNY' } } }),
   // The line's model, so the devices are named after it; no stock of the
   // mice's model yet, so they start a new record, and no entitlement of the
   // product, so seats open a new one.
@@ -45,7 +59,9 @@ vi.mock('../../client/lib/itam/api.js', () => ({
                 { id: 'm1', name: 'Test Book 14', code: 'TB14' },
                 { id: 'm2', name: 'Test Mouse', code: 'TM' },
               ]
-            : [],
+            : path === 'itam/stock'
+              ? state.stock
+              : [],
     },
   }),
 }));
@@ -53,6 +69,8 @@ vi.mock('../../client/lib/itam/permissions.js', () => ({
   useCurrentUserId: () => 'mia',
 }));
 vi.mock('../../client/lib/itam/references.js', () => ({
+  referencePath: (collection: string) => `itam/master/${collection}`,
+  referenceRoute: (collection: string) => collection,
   useReferenceNames: () => ({}),
 }));
 // No model configured: the form is the batch form alone, with no document
@@ -79,7 +97,7 @@ vi.mock('../../client/components/itam/reference-select.js', () => ({
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   // The rules find nothing wrong with the batch.
-  useQuery: () => ({ data: [], isFetching: false }),
+  useQuery: () => ({ data: state.issues, isFetching: false }),
   useMutation: (options: { mutationFn: () => unknown }) => ({
     mutate: () => options.mutationFn(),
     isPending: false,
@@ -114,6 +132,8 @@ const lines = [
 beforeEach(() => {
   state.requests = [];
   state.owners = ['mia'];
+  state.stock = [];
+  state.issues = [];
 });
 
 it('turns a pasted column of serials into one device each and receives every line at once', () => {
@@ -259,4 +279,97 @@ it('names the order’s 负责人 when the receiver may not answer for records',
     />,
   );
   expect(screen.getByTestId('batch-owner-l1')).toHaveTextContent('wujing');
+});
+
+it('heads each line with its type, its name and how much of it came', () => {
+  render(
+    <ReceiptDialog
+      orderId='po1'
+      order={{ id: 'po1' }}
+      lines={lines}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(screen.getByRole('link', { name: 'Test Mouse' })).toBeVisible();
+  expect(screen.getByText('enums.appliesTo.accessory')).toBeVisible();
+  expect(screen.getAllByText(/receipt\.counts/)).toHaveLength(3);
+});
+
+it('adds stock to any record of the model, or starts a new one with its required fields', () => {
+  state.stock = [
+    {
+      id: 'st1',
+      kind: 'accessory',
+      modelId: 'm2',
+      name: 'Mice',
+      locationId: 'a',
+    },
+  ];
+  render(
+    <ReceiptDialog
+      orderId='po1'
+      order={{ id: 'po1' }}
+      lines={lines}
+      onClose={vi.fn()}
+    />,
+  );
+  fireEvent.change(screen.getAllByLabelText('receipt.quantityThisTime')[0]!, {
+    target: { value: '2' },
+  });
+  // The model's first record by default, and any other of its records.
+  expect(screen.getByTestId('batch-stock-item-l2')).toHaveTextContent('st1');
+  fireEvent.click(screen.getByTestId('batch-stock-item-l2'));
+  fireEvent.click(screen.getByRole('button', { name: 'receipt.confirm:2' }));
+  const joined = state.requests.find((request) =>
+    request.path.endsWith('/receive-batch'),
+  );
+  expect(joined?.json).toMatchObject({
+    receipts: [{ lineId: 'l2', quantity: 2, stockItemId: 'loc1' }],
+  });
+
+  // A new record beside it asks its name, place and 负责人.
+  state.requests = [];
+  fireEvent.click(
+    screen.getByRole('radio', { name: 'procurement.newStockItem' }),
+  );
+  expect(document.getElementById('batch-stock-name-l2')).toHaveValue(
+    'Test Mouse',
+  );
+  expect(screen.getByTestId('batch-stock-owner-l2')).toHaveTextContent('mia');
+  expect(
+    screen.getByRole('button', { name: 'receipt.confirm:2' }),
+  ).toBeDisabled();
+  fireEvent.click(screen.getByTestId('batch-stock-location-l2'));
+  fireEvent.click(screen.getByRole('button', { name: 'receipt.confirm:2' }));
+  const created = state.requests.find((request) =>
+    request.path.endsWith('/receive-batch'),
+  );
+  expect(created?.json).toMatchObject({
+    receipts: [
+      {
+        lineId: 'l2',
+        stockItemId: null,
+        locationId: 'loc1',
+        extra: { name: 'Test Mouse', ownerId: 'mia' },
+      },
+    ],
+  });
+});
+
+it('says a serial number is missing only once a row is left empty', () => {
+  state.issues = [{ code: 'serialRequired', lineId: 'l1', blocking: true }];
+  render(
+    <ReceiptDialog
+      orderId='po1'
+      order={{ id: 'po1' }}
+      lines={lines}
+      onClose={vi.fn()}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'receipt.addUnit' }));
+  expect(screen.queryByText('receipt.issues.serialRequired')).toBeNull();
+  const serial = screen.getByRole('textbox', { name: 'receipt.serialOf' });
+  fireEvent.blur(serial);
+  expect(screen.getByText('receipt.issues.serialRequired')).toBeVisible();
+  expect(serial).toHaveAttribute('aria-invalid', 'true');
 });

@@ -1182,7 +1182,7 @@ const ptBR: AppResource = {
     separator: '", "',
     upload: 'Enviar documento',
     removeFile: 'Remover arquivo',
-    read: 'Ler com IA',
+    read: 'Organizar com IA',
     uploading: 'Enviando…',
     reading: 'Lendo…',
     noText:
@@ -1688,27 +1688,21 @@ const ptBR: AppResource = {
   receipt: {
     fromDocument: 'Receber pela nota de entrega',
     title: 'Receber',
-    description:
-      'Receba o que chegou deste pedido. Uma linha por dispositivo: cole uma coluna de números de série de uma planilha ou escaneie-os um após o outro; os assentos entram em um direito de uso já cadastrado ou abrem um novo.',
+    description: 'Informe o que chegou desta vez; deixe o restante em branco.',
     context: 'Recebimento por documento de entrega',
     confirm_one: 'Receber {{count}} item',
     confirm_other: 'Receber {{count}} itens',
-    outstanding_one: '{{count}} pendente',
-    outstanding_other: '{{count}} pendentes',
+    counts: 'Pedido {{ordered}} · Recebido {{received}}',
+    thisTime: '{{count}} desta vez',
+    nameUnavailable: 'Não foi possível carregar o nome',
     units_one: '{{count}} dispositivo desta vez',
     units_other: '{{count}} dispositivos desta vez',
     serialPlaceholder: 'Número de série',
     serialOf: 'Número de série do dispositivo {{index}}',
     addUnit: 'Adicionar um dispositivo',
-    pasteHint:
-      'Cole uma coluna de números de série em qualquer linha e ela vira uma linha por dispositivo; um leitor passa para a próxima linha após cada leitura.',
     quantityThisTime: 'Quantidade desta vez',
-    joinStock: 'Adicionado ao estoque “{{name}}”',
-    newStock: 'Local do novo registro de estoque',
     nothing: 'Tudo deste pedido já chegou.',
     aiFilled: 'Preenchido pela IA a partir da nota de entrega',
-    warrantyFromModel:
-      'Se vazio, é calculado a partir dos meses de garantia do modelo',
     aiFilledFrom: 'Preenchido pela IA a partir da nota de entrega: {{source}}',
     documentChecks: 'Verificações da nota de entrega',
     document: {

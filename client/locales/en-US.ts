@@ -1196,7 +1196,7 @@ const messages = {
     separator: '", "',
     upload: 'Upload document',
     removeFile: 'Remove file',
-    read: 'Read with AI',
+    read: 'AI organise',
     uploading: 'Uploading…',
     reading: 'Reading…',
     noText:
@@ -1709,27 +1709,21 @@ const messages = {
   receipt: {
     fromDocument: 'Receive from delivery note',
     title: 'Receive',
-    description:
-      'Receive whatever of this order arrived. One row per device: paste a column of serial numbers from a spreadsheet, or scan them one after another; seats join an entitlement on the books or open a new one.',
+    description: 'Enter what arrived this time; leave the rest empty.',
     context: 'Receiving by delivery document',
     confirm_one: 'Receive {{count}} item',
     confirm_other: 'Receive {{count}} items',
-    outstanding_one: '{{count}} outstanding',
-    outstanding_other: '{{count}} outstanding',
+    counts: 'Ordered {{ordered}} · Received {{received}}',
+    thisTime: '{{count}} this time',
+    nameUnavailable: 'Name could not be loaded',
     units_one: '{{count}} device this time',
     units_other: '{{count}} devices this time',
     serialPlaceholder: 'Serial number',
     serialOf: 'Serial number of device {{index}}',
     addUnit: 'Add a device',
-    pasteHint:
-      'Paste a column of serial numbers into any row and it becomes one row per device; a scanner moves to the next row after each scan.',
     quantityThisTime: 'Quantity this time',
-    joinStock: 'Added to stock “{{name}}”',
-    newStock: 'Location of the new stock record',
     nothing: 'Everything on this order has arrived.',
     aiFilled: 'Filled by AI from the delivery note',
-    warrantyFromModel:
-      "Left empty, it is worked out from the model's warranty months",
     aiFilledFrom: 'Filled by AI from the delivery note: {{source}}',
     documentChecks: 'Delivery note checks',
     document: {

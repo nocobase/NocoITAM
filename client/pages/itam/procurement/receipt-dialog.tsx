@@ -12,7 +12,9 @@ import {
   type ReactElement,
 } from 'react';
 
+import { ReferenceLink } from '@/components/itam/cells';
 import { FieldInput } from '@/components/itam/field-input';
+import { LineTypeBadge } from '@/components/itam/line-type-badge';
 import { CollapsibleText } from '@/components/itam/collapsible-text';
 import { ConfirmDialog } from '@/components/itam/confirm-dialog';
 import { ReferenceSelect } from '@/components/itam/reference-select';
@@ -32,6 +34,7 @@ import {
   useApi,
   useItamList,
   useItamRecord,
+  useItamSettings,
   type ItamRecord,
 } from '@/lib/itam/api';
 import { ENTITLEMENT_FIELDS, ENTITLEMENTS_PATH } from '@/lib/itam/entitlements';
@@ -44,7 +47,7 @@ import {
   type ReceiptIssue,
   type ReceiptPlan,
 } from '@/lib/itam/receipt';
-import { useReferenceNames } from '@/lib/itam/references';
+import { referenceRoute, useReferenceNames } from '@/lib/itam/references';
 import { STOCK_PATH } from '@/lib/itam/stock';
 import { cn } from '@/lib/utils';
 import { DateField } from '@/components/itam/date-field';
@@ -60,7 +63,20 @@ interface UnitDraft {
    * came — so it is not received.
    */
   readonly awaiting?: boolean;
+  /**
+   * Left at least once (2026-10-30): a row 添加一台 just added is not yet
+   * missing its serial number, so it is not marked until left empty.
+   */
+  readonly touched?: boolean;
 }
+
+/** Whether a line has a row its receiver left without a serial number. */
+const leftEmpty = (draft: DeviceDraft | undefined): boolean =>
+  Boolean(
+    draft?.units.some(
+      (unit) => unit.touched && !unit.awaiting && !unit.serialNo.trim(),
+    ),
+  );
 
 /** The units a line receives: every row but one still waiting for a scan. */
 const unitsOf = (draft: DeviceDraft): readonly UnitDraft[] =>
@@ -83,6 +99,16 @@ interface StockDraft {
   readonly quantity: string;
   readonly source?: string;
   readonly locationId: string | null;
+  /**
+   * Added to a record already on the books, or a new one started
+   * (2026-10-30: any of the model's records, not only the first, or a new
+   * one beside them). `undefined` is the default the line would take.
+   */
+  readonly mode?: 'join' | 'create';
+  readonly stockItemId?: string | null;
+  /** A new record's required answers; `undefined` takes the default. */
+  readonly name?: string;
+  readonly ownerId?: string | null;
 }
 
 /**
@@ -159,6 +185,12 @@ interface ReceiptInput {
 const outstandingOf = (line: ItamRecord): number =>
   Math.max(0, Number(line.quantity) - Number(line.receivedQuantity));
 
+/** A quantity typed for this receipt, as a count: nothing typed is 0. */
+const thisTimeOf = (quantity: string | undefined): number => {
+  const value = Number.parseInt(quantity ?? '', 10);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+};
+
 const newUnit = (serialNo = '', source?: string): UnitDraft => ({
   key: createUuid(),
   serialNo,
@@ -203,6 +235,10 @@ export function ReceiptDialog({
   const api = useApi();
   const queryClient = useQueryClient();
   const receiverId = useCurrentUserId() ?? null;
+  // The order's currency, or the deployment's for an order without one.
+  const settings = useItamSettings();
+  const currency =
+    text(order.currency) || settings.data?.general.currency || 'CNY';
   // Whoever receives answers for what arrives — when they may answer for
   // records at all. The platform administrator holds no permission set of
   // this application's and is offered as nobody's 负责人, so receiving as
@@ -248,6 +284,27 @@ export function ReceiptDialog({
   const products = useReferenceNames([
     { collection: 'softwareProducts', ids: productIds },
   ]);
+  // Whether a device line's units each need a serial number: its model's
+  // category says (2026-10-30), so 序列号 is marked required up front.
+  const categoryIds = [
+    ...new Set([...modelById.values()].map((model) => text(model.categoryId))),
+  ].filter(Boolean);
+  const categories = useItamList(
+    'itam/master/categories',
+    { ids: categoryIds, pageSize: 100 },
+    { enabled: categoryIds.length > 0 },
+  );
+  const serialRequired = (line: ItamRecord): boolean =>
+    Boolean(
+      categories.data?.data.find(
+        (category) =>
+          text(category.id) ===
+          text(modelById.get(text(line.modelId))?.categoryId),
+      )?.requiresSerial,
+    );
+  const modelNames = new Map(
+    [...modelById].map(([id, model]) => [id, text(model.name)]),
+  );
   /** What a line buys, by its model's or its software product's name. */
   const modelName = (line: ItamRecord): string =>
     text(modelById.get(text(line.modelId))?.name) ||
@@ -262,12 +319,28 @@ export function ReceiptDialog({
     { filter: { modelId: stockModelIds }, pageSize: 100 },
     { enabled: stockModelIds.length > 0 },
   );
-  const stockFor = (line: ItamRecord): ItamRecord | undefined =>
-    sameModelStock.data?.data.find(
+  /** Where a stock line's goods go: the record joined, or a new one. */
+  const stockPlanOf = (line: ItamRecord, draft: StockDraft) => {
+    const first = sameModelStock.data?.data.find(
       (item) =>
         text(item.modelId) === text(line.modelId) &&
         text(item.kind) === text(line.itemType),
     );
+    const canJoin = sameModelStock.isPending || Boolean(first);
+    const mode = canJoin ? (draft.mode ?? 'join') : 'create';
+    return {
+      canJoin,
+      mode,
+      name: draft.name ?? modelName(line),
+      owner: draft.ownerId === undefined ? defaultOwner : draft.ownerId,
+      joining:
+        mode === 'join'
+          ? draft.stockItemId === undefined
+            ? text(first?.id) || null
+            : draft.stockItemId
+          : null,
+    } as const;
+  };
 
   // Seats usually join the entitlement already on the books for the
   // product, so that is where an entitlement line starts.
@@ -299,7 +372,9 @@ export function ReceiptDialog({
             ? defaultOwner
             : key === 'unitPrice'
               ? (line.unitPrice ?? null)
-              : (TERM_DEFAULTS[key] ?? null),
+              : key === 'currency'
+                ? currency
+                : (TERM_DEFAULTS[key] ?? null),
     } as const;
   };
 
@@ -435,7 +510,11 @@ export function ReceiptDialog({
         // service's own defaults.
         const extra: Record<string, unknown> = {};
         if (plan.name.trim()) extra.name = plan.name.trim();
-        for (const key of TERM_KEYS[text(line.itemType)] ?? []) {
+        // Its currency travels with the price (2026-10-30).
+        for (const key of [
+          ...(TERM_KEYS[text(line.itemType)] ?? []),
+          'currency',
+        ]) {
           const value = plan.term(key);
           if (value !== null && value !== undefined && value !== '')
             extra[key] = value;
@@ -445,18 +524,18 @@ export function ReceiptDialog({
       const stock = stocks[lineId];
       const quantity = Number.parseInt(stock?.quantity ?? '', 10);
       if (!stock || !Number.isFinite(quantity) || quantity < 1) return [];
-      const joined = stockFor(line);
+      const target = stockPlanOf(line, stock);
       return [
-        joined
-          ? { lineId, quantity, stockItemId: text(joined.id) }
+        target.mode === 'join'
+          ? { lineId, quantity, stockItemId: target.joining }
           : {
               lineId,
               quantity,
               stockItemId: null,
               locationId: stock.locationId ?? undefined,
               extra: {
-                ...(modelName(line) ? { name: modelName(line) } : {}),
-                ...(defaultOwner ? { ownerId: defaultOwner } : {}),
+                ...(target.name.trim() ? { name: target.name.trim() } : {}),
+                ...(target.owner ? { ownerId: target.owner } : {}),
               },
             },
       ];
@@ -553,19 +632,21 @@ export function ReceiptDialog({
       if (!Number.isFinite(quantity) || quantity < 1) return false;
       const plan = seatsOf(line, seat);
       // Joining needs something to join; a subscription is dated by its
-      // next renewal, which the service refuses to open one without.
+      // next renewal, which the service refuses to open one without; a
+      // new one answers to somebody.
       return plan.mode === 'join'
         ? !plan.joining
-        : text(line.itemType) === 'subscription' && !plan.term('expiryDate');
+        : (text(line.itemType) === 'subscription' &&
+            !plan.term('expiryDate')) ||
+            !plan.term('ownerId');
     }
     const stock = stocks[lineId];
     const quantity = Number.parseInt(stock?.quantity ?? '', 10);
-    return (
-      Number.isFinite(quantity) &&
-      quantity > 0 &&
-      !stockFor(line) &&
-      !stock?.locationId
-    );
+    if (!stock || !Number.isFinite(quantity) || quantity < 1) return false;
+    const target = stockPlanOf(line, stock);
+    return target.mode === 'join'
+      ? !target.joining
+      : !stock.locationId || !target.name.trim() || !target.owner;
   });
   const count = receipts.reduce((sum, receipt) => sum + receipt.quantity, 0);
   const plan = session?.plan;
@@ -610,10 +691,15 @@ export function ReceiptDialog({
       ) : null}
       {receivable.map((line) => {
         const lineId = text(line.id);
-        const lineIssues = issues.filter(
-          (entry) => entry.lineId === lineId && !entry.serialNo,
-        );
         const device = devices[lineId];
+        // 入库 stays off while a serial is missing; saying so waits until
+        // a row has been left empty.
+        const lineIssues = issues.filter(
+          (entry) =>
+            entry.lineId === lineId &&
+            !entry.serialNo &&
+            (entry.code !== 'serialRequired' || leftEmpty(device)),
+        );
         const stock = stocks[lineId];
         const seat = seats[lineId];
         return (
@@ -621,16 +707,38 @@ export function ReceiptDialog({
             key={lineId}
             className='grid gap-3 rounded-lg border border-border p-3'
           >
-            <header className='flex flex-wrap items-baseline justify-between gap-2'>
-              <h3 className='font-medium'>
-                {modelName(line) ||
-                  t(`enums.lineItemType.${text(line.itemType)}`)}
+            {/* What the line buys, whatever has loaded (2026-10-30): its
+                type always, then its name, and how much of it was
+                ordered, has come and comes now. A name still loading is
+                "…", one that could not load says so, rather than the
+                heading falling back to the bare type. */}
+            <header className='flex flex-wrap items-center justify-between gap-2'>
+              <h3 className='flex min-w-0 flex-wrap items-center gap-2 font-medium'>
+                <LineTypeBadge itemType={line.itemType} />
+                <LineName
+                  line={line}
+                  names={
+                    line.modelId
+                      ? models.isError
+                        ? null
+                        : models.data
+                          ? modelNames
+                          : undefined
+                      : products.softwareProducts
+                  }
+                />
               </h3>
               <span className='text-xs text-muted-foreground tabular-nums'>
-                {t('receipt.outstanding', { count: outstandingOf(line) })}
+                {t('receipt.counts', {
+                  ordered: Number(line.quantity),
+                  received: Number(line.receivedQuantity),
+                })}
+                {' · '}
                 {device
-                  ? ` · ${t('receipt.units', { count: unitsOf(device).length })}`
-                  : null}
+                  ? t('receipt.units', { count: unitsOf(device).length })
+                  : t('receipt.thisTime', {
+                      count: thisTimeOf(stock?.quantity ?? seat?.quantity),
+                    })}
               </span>
             </header>
             {lineIssues.map((entry) => (
@@ -643,6 +751,7 @@ export function ReceiptDialog({
                 lineId={lineId}
                 draft={device}
                 owner={ownerOf(device)}
+                serialRequired={serialRequired(line)}
                 issues={issues}
                 onChange={(patch) => patchDevice(lineId, patch)}
               />
@@ -650,7 +759,8 @@ export function ReceiptDialog({
               <StockLine
                 lineId={lineId}
                 draft={stock}
-                joined={stockFor(line)}
+                line={line}
+                plan={stockPlanOf(line, stock)}
                 outstanding={outstandingOf(line)}
                 onChange={(patch) => patchStock(lineId, patch)}
               />
@@ -670,17 +780,51 @@ export function ReceiptDialog({
   );
 }
 
+/**
+ * The model or software product a line buys, opening in the drawer like
+ * the order's own lines. `names` is undefined while it loads, and null when
+ * it could not.
+ */
+function LineName({
+  line,
+  names,
+}: {
+  readonly line: ItamRecord;
+  readonly names: ReadonlyMap<string, string> | null | undefined;
+}): ReactElement {
+  const { t } = useTranslation();
+  const collection = line.modelId ? 'models' : 'softwareProducts';
+  const id = text(line.modelId ?? line.softwareProductId);
+  if (!id) return <span>—</span>;
+  if (names === null)
+    return (
+      <span className='font-normal text-muted-foreground'>
+        {t('receipt.nameUnavailable')}
+      </span>
+    );
+  return (
+    <ReferenceLink
+      collection={collection}
+      route={referenceRoute(collection)}
+      id={id}
+      names={names}
+    />
+  );
+}
+
 /** The shared answers of a device line, then one row per unit. */
 function DeviceLine({
   lineId,
   draft,
   owner,
+  serialRequired,
   issues,
   onChange,
 }: {
   readonly lineId: string;
   readonly draft: DeviceDraft;
   readonly owner: string | null;
+  readonly serialRequired: boolean;
   readonly issues: readonly ReceiptIssue[];
   readonly onChange: (patch: Partial<DeviceDraft>) => void;
 }): ReactElement {
@@ -700,14 +844,18 @@ function DeviceLine({
       ...draft.units.slice(index + 1),
     ]);
   };
-  const hasUnits = draft.units.length > 0;
+  const requiresSerial =
+    serialRequired ||
+    issues.some(
+      (entry) => entry.lineId === lineId && entry.code === 'serialRequired',
+    );
   return (
     <div className='grid gap-3'>
       <div className='grid gap-3 sm:grid-cols-2'>
         <div className='grid gap-1.5'>
           <Label htmlFor={`batch-location-${lineId}`}>
             {t('fields.location')}
-            {hasUnits ? <span className='text-destructive'> *</span> : null}
+            <span className='text-destructive'> *</span>
           </Label>
           <ReferenceSelect
             id={`batch-location-${lineId}`}
@@ -719,7 +867,7 @@ function DeviceLine({
         <div className='grid gap-1.5'>
           <Label htmlFor={`batch-owner-${lineId}`}>
             {t('fields.owner')}
-            {hasUnits ? <span className='text-destructive'> *</span> : null}
+            <span className='text-destructive'> *</span>
           </Label>
           <ReferenceSelect
             id={`batch-owner-${lineId}`}
@@ -756,17 +904,13 @@ function DeviceLine({
               })
             }
           />
-          {/* Empty lets the service work it out from the model's 保修月数,
-              which the form says rather than leaving a blank to wonder at. */}
-          {draft.warrantyEndDate ? null : (
-            <p className='text-xs text-muted-foreground'>
-              {t('receipt.warrantyFromModel')}
-            </p>
-          )}
         </div>
       </div>
       <div className='grid gap-1.5'>
-        <Label>{t('fields.serialNo')}</Label>
+        <Label>
+          {t('fields.serialNo')}
+          {requiresSerial ? <span className='text-destructive'> *</span> : null}
+        </Label>
         {draft.units.map((unit, index) => {
           const problem = unit.serialNo.trim()
             ? issues.find(
@@ -775,6 +919,11 @@ function DeviceLine({
                   entry.serialNo === unit.serialNo.trim(),
               )
             : undefined;
+          const missing =
+            requiresSerial &&
+            unit.touched &&
+            !unit.awaiting &&
+            !unit.serialNo.trim();
           return (
             <div key={unit.key} className='grid gap-1'>
               <div className='flex items-center gap-2'>
@@ -785,9 +934,20 @@ function DeviceLine({
                   value={unit.serialNo}
                   placeholder={t('receipt.serialPlaceholder')}
                   aria-label={t('receipt.serialOf', { index: index + 1 })}
-                  aria-invalid={problem ? true : undefined}
+                  aria-invalid={problem || missing ? true : undefined}
                   data-serial=''
-                  className={cn(problem && 'border-destructive')}
+                  className={cn((problem || missing) && 'border-destructive')}
+                  onBlur={() =>
+                    unit.touched
+                      ? undefined
+                      : setUnits(
+                          draft.units.map((entry) =>
+                            entry.key === unit.key
+                              ? { ...entry, touched: true }
+                              : entry,
+                          ),
+                        )
+                  }
                   onPaste={(event) => paste(index, event)}
                   // Typing over what the document said makes it the
                   // receiver's value: the AI mark goes with it.
@@ -795,7 +955,11 @@ function DeviceLine({
                     setUnits(
                       draft.units.map((entry) =>
                         entry.key === unit.key
-                          ? { key: entry.key, serialNo: event.target.value }
+                          ? {
+                              key: entry.key,
+                              serialNo: event.target.value,
+                              touched: entry.touched,
+                            }
                           : entry,
                       ),
                     )
@@ -849,78 +1013,205 @@ function DeviceLine({
         <div>
           <Button
             variant='outline'
-            onClick={() => setUnits([...draft.units, newUnit()])}
+            onClick={(event) => {
+              // The new row is where the serial number goes next.
+              const section = event.currentTarget.closest('section');
+              setUnits([...draft.units, newUnit()]);
+              requestAnimationFrame(() =>
+                [
+                  ...(section?.querySelectorAll<HTMLInputElement>(
+                    'input[data-serial]',
+                  ) ?? []),
+                ]
+                  .at(-1)
+                  ?.focus(),
+              );
+            }}
           >
             <Plus data-icon='inline-start' />
             {t('receipt.addUnit')}
           </Button>
         </div>
-        {draft.units.length === 0 ? (
-          <p className='text-xs text-muted-foreground'>
-            {t('receipt.pasteHint')}
-          </p>
-        ) : null}
       </div>
     </div>
   );
 }
 
-/** How many of a stock line arrived, and where a new record of it goes. */
+/**
+ * How many of a stock line arrived, and where they go: added to one of the
+ * model's records already on the books, or a new record started at a
+ * location — as seats join an entitlement or open one.
+ */
 function StockLine({
   lineId,
+  line,
   draft,
-  joined,
+  plan,
   outstanding,
   onChange,
 }: {
   readonly lineId: string;
+  readonly line: ItamRecord;
   readonly draft: StockDraft;
-  readonly joined: ItamRecord | undefined;
+  readonly plan: {
+    readonly canJoin: boolean;
+    readonly mode: 'join' | 'create';
+    readonly joining: string | null;
+    readonly name: string;
+    readonly owner: string | null;
+  };
   readonly outstanding: number;
   readonly onChange: (patch: Partial<StockDraft>) => void;
 }): ReactElement {
   const { t } = useTranslation();
-  const quantity = Number.parseInt(draft.quantity, 10);
-  const some = Number.isFinite(quantity) && quantity > 0;
+  const joined = useItamRecord(STOCK_PATH, plan.joining ?? undefined);
   return (
-    <div className='grid gap-3 sm:grid-cols-2'>
-      <div className='grid gap-1.5'>
-        <Label htmlFor={`batch-quantity-${lineId}`}>
-          {t('receipt.quantityThisTime')}
-        </Label>
-        <div className='flex items-center gap-2'>
-          <Input
-            id={`batch-quantity-${lineId}`}
-            type='number'
-            min={0}
-            max={outstanding}
-            value={draft.quantity}
-            onChange={(event) =>
-              // A number the receiver typed is theirs, not the document's.
-              onChange({ quantity: event.target.value, source: undefined })
-            }
-          />
-          {draft.source !== undefined ? <AiMark source={draft.source} /> : null}
+    <div className='grid gap-3'>
+      <div className='grid gap-3 sm:grid-cols-2'>
+        <div className='grid gap-1.5'>
+          <Label htmlFor={`batch-quantity-${lineId}`}>
+            {t('receipt.quantityThisTime')}
+          </Label>
+          <div className='flex items-center gap-2'>
+            <Input
+              id={`batch-quantity-${lineId}`}
+              type='number'
+              min={0}
+              max={outstanding}
+              value={draft.quantity}
+              onChange={(event) =>
+                // A number the receiver typed is theirs, not the document's.
+                onChange({ quantity: event.target.value, source: undefined })
+              }
+            />
+            {draft.source !== undefined ? (
+              <AiMark source={draft.source} />
+            ) : null}
+          </div>
+        </div>
+        <div className='grid gap-1.5'>
+          <Label>{t('procurement.stockTarget')}</Label>
+          <RadioGroup
+            value={plan.mode}
+            onValueChange={(value: unknown) => {
+              if (value === 'join' || value === 'create')
+                onChange({ mode: value });
+            }}
+            className='flex min-h-9 flex-wrap items-center gap-x-6 gap-y-2'
+          >
+            {(['join', 'create'] as const).map((value) => (
+              <Label
+                key={value}
+                htmlFor={`batch-stock-${lineId}-${value}`}
+                className={cn(
+                  'flex items-center gap-2 font-normal',
+                  value === 'join' && !plan.canJoin && 'text-muted-foreground',
+                )}
+              >
+                <RadioGroupItem
+                  value={value}
+                  id={`batch-stock-${lineId}-${value}`}
+                  disabled={value === 'join' && !plan.canJoin}
+                />
+                {t(
+                  value === 'join'
+                    ? 'procurement.joinStockItem'
+                    : 'procurement.newStockItem',
+                )}
+              </Label>
+            ))}
+          </RadioGroup>
         </div>
       </div>
-      <div className='grid gap-1.5'>
-        <Label htmlFor={`batch-stock-location-${lineId}`}>
-          {joined
-            ? t('receipt.joinStock', { name: text(joined.name) })
-            : t('receipt.newStock')}
-          {!joined && some ? (
-            <span className='text-destructive'> *</span>
-          ) : null}
-        </Label>
-        {/* Joining puts the goods where that record already is. */}
-        <ReferenceSelect
-          id={`batch-stock-location-${lineId}`}
-          reference={{ collection: 'locations' }}
-          value={joined ? text(joined.locationId) || null : draft.locationId}
-          disabled={Boolean(joined)}
-          onChange={(locationId) => onChange({ locationId })}
-        />
-      </div>
+      {plan.mode === 'join' ? (
+        <div className='grid gap-3 sm:grid-cols-2'>
+          <div className='grid gap-1.5'>
+            <Label htmlFor={`batch-stock-item-${lineId}`}>
+              {t('procurement.existingStockItem')}
+              <span className='text-destructive'> *</span>
+            </Label>
+            <ReferenceSelect
+              id={`batch-stock-item-${lineId}`}
+              reference={{
+                collection: 'stockItems',
+                filter: {
+                  kind: text(line.itemType),
+                  modelId: text(line.modelId),
+                },
+              }}
+              value={plan.joining}
+              onChange={(stockItemId) => onChange({ stockItemId })}
+            />
+          </div>
+          {/* Joining puts the goods where that record already is. */}
+          <div className='grid gap-1.5'>
+            <Label htmlFor={`batch-stock-location-${lineId}`}>
+              {t('fields.location')}
+            </Label>
+            <ReferenceSelect
+              id={`batch-stock-location-${lineId}`}
+              reference={{ collection: 'locations' }}
+              value={text(joined.data?.locationId) || null}
+              disabled
+              onChange={() => undefined}
+            />
+          </div>
+          {/* Its 负责人 too, so switching between the two choices keeps
+              the same rows and the form below does not jump (2026-10-30). */}
+          <div className='grid gap-1.5'>
+            <Label htmlFor={`batch-stock-owner-${lineId}`}>
+              {t('fields.owner')}
+            </Label>
+            <ReferenceSelect
+              id={`batch-stock-owner-${lineId}`}
+              reference={{ collection: 'users' }}
+              value={text(joined.data?.ownerId) || null}
+              disabled
+              onChange={() => undefined}
+            />
+          </div>
+        </div>
+      ) : (
+        // A new record's required fields (2026-10-30); its model, category
+        // and maker are the line's model's.
+        <div className='grid gap-3 sm:grid-cols-2'>
+          <div className='grid gap-1.5'>
+            <Label htmlFor={`batch-stock-name-${lineId}`}>
+              {t('fields.name')}
+              <span className='text-destructive'> *</span>
+            </Label>
+            <Input
+              id={`batch-stock-name-${lineId}`}
+              value={plan.name}
+              onChange={(event) => onChange({ name: event.target.value })}
+            />
+          </div>
+          <div className='grid gap-1.5'>
+            <Label htmlFor={`batch-stock-location-${lineId}`}>
+              {t('fields.location')}
+              <span className='text-destructive'> *</span>
+            </Label>
+            <ReferenceSelect
+              id={`batch-stock-location-${lineId}`}
+              reference={{ collection: 'locations' }}
+              value={draft.locationId}
+              onChange={(locationId) => onChange({ locationId })}
+            />
+          </div>
+          <div className='grid gap-1.5'>
+            <Label htmlFor={`batch-stock-owner-${lineId}`}>
+              {t('fields.owner')}
+              <span className='text-destructive'> *</span>
+            </Label>
+            <ReferenceSelect
+              id={`batch-stock-owner-${lineId}`}
+              reference={{ collection: 'users' }}
+              value={plan.owner}
+              onChange={(ownerId) => onChange({ ownerId })}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1056,23 +1347,59 @@ function EntitlementLine({
             <div key={field.key} className='grid gap-1.5'>
               <Label htmlFor={`batch-term-${lineId}-${field.key}`}>
                 {t(field.label)}
-                {plan.mode === 'create' && field.requiredWhen?.({ kind }) ? (
+                {plan.mode === 'create' &&
+                (field.required || field.requiredWhen?.({ kind })) ? (
                   <span className='text-destructive'> *</span>
                 ) : null}
               </Label>
-              <FieldInput
-                id={`batch-term-${lineId}-${field.key}`}
-                field={field}
-                value={
-                  plan.mode === 'create'
-                    ? plan.term(field.key)
-                    : (joined.data?.[field.key] ?? null)
-                }
-                disabled={plan.mode === 'join'}
-                onChange={(value) =>
-                  onChange({ terms: { ...draft.terms, [field.key]: value } })
-                }
-              />
+              {field.currencyField ? (
+                // The price with its currency beside it, as the entitlement
+                // form has them (2026-10-30): the joined entitlement's, or a
+                // new one's, in the order's currency unless changed.
+                <FieldInput
+                  id={`batch-term-${lineId}-${field.key}`}
+                  field={field}
+                  value={
+                    plan.mode === 'create'
+                      ? {
+                          amount: plan.term(field.key),
+                          currency: plan.term(field.currencyField),
+                        }
+                      : {
+                          amount: joined.data?.[field.key] ?? null,
+                          currency: joined.data?.[field.currencyField] ?? null,
+                        }
+                  }
+                  disabled={plan.mode === 'join'}
+                  onChange={(value) => {
+                    const pair = value as {
+                      amount?: unknown;
+                      currency?: unknown;
+                    };
+                    onChange({
+                      terms: {
+                        ...draft.terms,
+                        [field.key]: pair.amount ?? null,
+                        [field.currencyField!]: pair.currency ?? null,
+                      },
+                    });
+                  }}
+                />
+              ) : (
+                <FieldInput
+                  id={`batch-term-${lineId}-${field.key}`}
+                  field={field}
+                  value={
+                    plan.mode === 'create'
+                      ? plan.term(field.key)
+                      : (joined.data?.[field.key] ?? null)
+                  }
+                  disabled={plan.mode === 'join'}
+                  onChange={(value) =>
+                    onChange({ terms: { ...draft.terms, [field.key]: value } })
+                  }
+                />
+              )}
             </div>
           ))}
         </div>

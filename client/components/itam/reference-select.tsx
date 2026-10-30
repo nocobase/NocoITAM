@@ -19,7 +19,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useItamList, useItamRecord, type ItamRecord } from '@/lib/itam/api';
-import { text } from '@/lib/itam/format';
+import { formatDate, text } from '@/lib/itam/format';
 import type { ReferenceTarget } from '@/lib/itam/fields';
 import { masterDataByName } from '@/lib/itam/master-data';
 import {
@@ -161,6 +161,24 @@ export function ReferenceSelect({
       .filter(Boolean)
       .join(' · ');
 
+  // A stock record reads with its place, a subscription with its 续订日
+  // (2026-10-30): a model is stocked once per place, and an entitlement
+  // joined on receiving is told apart by its term.
+  const locations = useItamList<ItamRecord>(
+    referencePath('locations'),
+    { pageSize: 500 },
+    { enabled: open && reference.collection === 'stockItems' },
+  );
+  const detailOf = (row: ItamRecord): string => {
+    if (reference.collection === 'stockItems' && row.locationId)
+      return locations.data
+        ? treePathLabel(locations.data.data, text(row.locationId))
+        : '';
+    if (reference.collection === 'entitlements' && row.expiryDate)
+      return `${t('fields.renewalDate')} ${formatDate(row.expiryDate)}`;
+    return '';
+  };
+
   const selected = useItamRecord<ItamRecord>(path, value ?? undefined);
   // A chosen tree node reads with its ancestors: 技术部 › 研发.
   const treeNodes = useItamList<ItamRecord>(
@@ -268,6 +286,11 @@ export function ReferenceSelect({
                   {classified && classifierOf(row) ? (
                     <span className='shrink-0 text-xs text-muted-foreground'>
                       {classifierOf(row)}
+                    </span>
+                  ) : null}
+                  {detailOf(row) ? (
+                    <span className='shrink-0 text-xs text-muted-foreground'>
+                      {detailOf(row)}
                     </span>
                   ) : null}
                   {reference.collection === 'categories' && row.appliesTo ? (
