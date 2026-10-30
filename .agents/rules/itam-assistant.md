@@ -576,7 +576,9 @@ document-text`, which reads only a file uploaded within the hour and
   answers `{ values, uncertain, fieldTemplate }`, `checkCategoryReading`
   checks `values` as before, and the task prompt keeps the extended fields'
   rules and that an adjustment changes them only as asked (it once added
-  fields nobody asked for). Models and
+  fields nobody asked for). 解析单据 on a draft's lines follows the same
+  skill (2026-10-30), its form being the lines alone, and says only what
+  to check. Models and
   software products keep the product-lookup skill, and the repair and disposal
   diagnoses are judgements rather than forms, so they keep their own
   prompts; moving a form onto the skill means giving its fields an
