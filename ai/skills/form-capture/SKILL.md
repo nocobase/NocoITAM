@@ -1,8 +1,6 @@
 ---
 name: form-capture
-scope: SPECIFIED
 description: Turns what a person pastes or uploads (a message, an email, a document, a spreadsheet) into a new record's form, filling the form's fields one by one for the person to check and save. Used when a person clicks Organise or Adjust on the AI organise tab of a new-record form.
-tools: []
 ---
 
 # AI organise

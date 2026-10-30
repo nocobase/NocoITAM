@@ -1,8 +1,6 @@
 ---
 name: device-sync
-scope: SPECIFIED
 description: When the devices a device management platform (MDM, such as Intune or Jamf Pro) reports do not match the register, explain the differences for IT, find the register device an ambiguous record should be linked to, and organize a batch of devices not on the register into one plan for the user to confirm. Use when the user asks "why has this device gone silent" or "what do I do with these extra devices in MDM", or starts from the device page's "Management platform" group, the MDM review page, or the "MDM review" to-do.
-tools: []
 ---
 
 # MDM review

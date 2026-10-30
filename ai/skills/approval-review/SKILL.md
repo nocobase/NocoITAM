@@ -1,8 +1,6 @@
 ---
 name: approval-review
-scope: SPECIFIED
 description: Once a purchase order or a disposal is sent for approval, works out for the approver whether the request deserves approval and how to approve it — what is asked and what it costs, whether stock or idle devices could serve instead, what the same model cost before, how requests of the kind were decided before, what the risks are and what the requester left unclear — then recommends approving, approving on conditions, rejecting or asking for more, and drafts the decision comment. Runs on its own once a request is sent for approval, or when the approver clicks Review on a purchase order or a disposal.
-tools: []
 ---
 
 # Approval assistant

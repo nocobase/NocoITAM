@@ -1,8 +1,6 @@
 ---
 name: onboarding
-scope: SPECIFIED
 description: Before and after a new hire joins, get IT everything they should be equipped with. The system has already worked out from the onboarding kit what they should get, what they already have, which device, accessory or seat in stock can fill each item, and what is still missing. You explain it, propose it all as one batch for the user to confirm, draft purchase orders for the shortfall, and add what has to be done outside the system. Use when someone is joining, when the user asks "what do we need to prepare for someone who joins next week", or when the conversation starts from the person page's "Onboarding" card or the "Onboarding prep" to-do.
-tools: []
 ---
 
 # Onboarding

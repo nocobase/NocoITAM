@@ -4,7 +4,8 @@
  * is brought up to the version shipped now (`refreshShippedSkills` in
  * library.ts). Generated from the repository's history; a release that
  * changes a SKILL.md adds the hash of the version it replaces (2026-10-30:
- * every skill, as the unread `introduction` left their front matter).
+ * every skill, as the unread `introduction`, `scope` and `tools` left their
+ * front matter).
  */
 export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
   {
@@ -18,6 +19,7 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       'ed34fdf231ce965bdc921fb697753af35fedae64c05803ec096d763704ebba36',
       '2662d17d78c8f916f6c806307b5b85f9b1f61822f1b71de45a2db5d7858ff77b',
       'b8b2d54358b6aa3abefded55fdf3c141241dbecebb354b310d0a95a1ad113f13',
+      '6602e656dc59c6e92b45222a70e1cc8d04ab977135d1fcd978a38db4c4c37243',
     ],
     catalog: [
       '6cfa943e442efba202ea1cfccd4e648ca96c11370866fdcf2a779858a867998d',
@@ -42,6 +44,7 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       'ceec4996054036eb7a412b10031f46f82f9ec00a390d54aae2294f51988f0118',
       '47f99bc3cc6c34b2ca353809dc7d2f25ddaff7061ee20f8ef2c3ba25f8074598',
       'ff1bce2c62e1d65341a53aa7143b394d1c1a7dfd80f38d5e97079701bbc0580b',
+      'a5ed2d36a141ea80cab319b1430bcc5d2dad4694157f0c990e6d87c71cf4eef7',
     ],
     offboarding: [
       '5eadad1931a8df51a502ac5d61ee46a7dfcad3d4acf6aecba3fb41dfa6719895',
@@ -55,6 +58,7 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       'e2dc1ed5f950a805d9d97eb678709c23cfd87d9270d03364cdb2b5c9678d6871',
       'e51746196e1671aa8b84570decca7dd14e01171ebe8be8b2a5418017f614ee80',
       '202505641268d45641f55985e3c69c4b5578922a0a100d0c496fa4607756ed15',
+      'da6fe8f6b6ddb311cb6070f8e731f63119b88f60ec704dddda2b778bdc69a5a3',
     ],
     onboarding: [
       '0e4a6f76b73e182f9ff47739d129cc34804c2c188695733b7447d00d1134f661',
@@ -70,6 +74,7 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       'bb25937e7fd2f1fb997eadf3a871a81963e89a8f1579f8e3029e9b51d647b34b',
       'e2efb97c2ef2ef445cd4406196fa490bd1f6f10c7b5d868b9720e95277cdb5b8',
       'b9bbba7717d497906432eab7d5988b465e45534719dd998981a4eaaff7376348',
+      '264e03936102de9a299f46f4389cf9cc87d4e8df5e5bd5e96337303936d6a676',
     ],
     receiving: [
       'd09eadc1a7329e21513cb25bf5c6ef24f010ea29ddb4505a8fd0e02042d3f3d6',
@@ -77,6 +82,7 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       '171dbc8254b226c3586baf0bc4129b032a5188863b66bae80f9eb2ab4958acb0',
       '18aa18fcf9605139e0c77ccfef7dbd5ffa81a8e2a5c0cd57d432da112da96d17',
       '47159d0995cbb68315fd6f89ec19987cd7bf58f767d135434f5d9d5efa168127',
+      '5fa407ba8e48d8e78f5aafe4dbfe8203bbabd9e2e694e03bf57f0a40e0771d23',
     ],
     // Retired with the renewal review agent (`RETIRED_SKILLS` in library.ts).
     'renewal-review': [
@@ -86,9 +92,11 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
     'form-capture': [
       '04fda7b3379c45f1f978d8544b575c66f3dfa9c8d2ae876c545643795d6f1047',
       '0b14062eefaf78048686edea028db01af19291e7491b523e97211cf243fcd190',
+      '2a609a9300d6a0b72d5bc23b9acf7faac5775724017a69badb668ba0a8a68cc8',
     ],
     // Shipped as catalog until 2026-10-30.
     'product-lookup': [
       '83573d8816c30ce9bff766a3697c7d37b01e8ac9446ebc06bb422cf5490564f3',
+      '7c361379a94b5338b33109475522115ddcafdb2c839cb70b22a0501eef0dc799',
     ],
   };
