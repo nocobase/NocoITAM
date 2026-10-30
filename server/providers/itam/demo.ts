@@ -3243,6 +3243,39 @@ export function createDemoService(dependencies: {
                 })
                 .execute();
               await track('purchaseOrders', { id: orderId });
+              // Its timeline, as the order flow writes it (2026-10-30): it
+              // was raised and placed in one go, each model came in on its
+              // day, and the last delivery completed it. Written straight
+              // in, as the order is, at the dates it happened.
+              const event = (
+                type: string,
+                summary: string,
+                payload: Row,
+                when: Date,
+              ) =>
+                database
+                  .query()
+                  .insertInto('historyEvents')
+                  .values({
+                    id: crypto.randomUUID(),
+                    subjectType: 'purchaseOrders',
+                    subjectId: orderId,
+                    type,
+                    summary,
+                    payload: JSON.stringify(payload),
+                    sourceType: 'demo',
+                    actorId: buyer,
+                    createdAt: when,
+                  })
+                  .execute();
+              await event('created', 'Created as draft', { to: 'draft' }, at);
+              await event(
+                'statusChange',
+                'Order placed',
+                { from: 'draft', to: 'ordered' },
+                new Date(at.getTime() + 60_000),
+              );
+              const lastDay = asText(batch.at(-1)?.purchaseDate) ?? day;
               const byModel = new Map<string, Row[]>();
               for (const row of batch)
                 byModel.set(String(row.modelId), [
@@ -3268,6 +3301,32 @@ export function createDemoService(dependencies: {
                     updatedAt: at,
                   })
                   .execute();
+                const arrived = asText(rows.at(-1)?.purchaseDate) ?? day;
+                const modelName =
+                  asText(
+                    (
+                      await database
+                        .query()
+                        .selectFrom('models')
+                        .select('name')
+                        .where('id', '=', modelId)
+                        .executeTakeFirst<{ name: string }>()
+                    )?.name,
+                  ) ?? '';
+                await event(
+                  'received',
+                  `Received ${String(rows.length)} × ${modelName}`,
+                  {
+                    lineId,
+                    quantity: rows.length,
+                    targetLabel: modelName,
+                    generated: rows.map((row) => ({
+                      type: 'device',
+                      id: String(row.id),
+                    })),
+                  },
+                  new Date(`${arrived}T14:00:00`),
+                );
                 for (const row of rows) {
                   await database
                     .query()
@@ -3286,6 +3345,12 @@ export function createDemoService(dependencies: {
                     .execute();
                 }
               }
+              await event(
+                'statusChange',
+                'All lines received',
+                { from: 'ordered', to: 'completed' },
+                new Date(`${lastDay}T14:05:00`),
+              );
               await database
                 .query()
                 .updateTable('devices')

@@ -440,6 +440,29 @@ describe('CSV import / export and demo data', () => {
     expect(
       [...linesPerOrder.values()].filter((lines) => lines > 1).length,
     ).toBeGreaterThanOrEqual(15);
+    // An order entered with the register has the timeline the order flow
+    // writes: raised, placed, each line received, completed (2026-10-30;
+    // it had none).
+    const query = app.container.resolve(databaseManagerToken).query();
+    const historical = await query
+      .selectFrom('purchaseOrders')
+      .select('id')
+      .where('reason', '=', 'other')
+      .where('status', '=', 'completed')
+      .orderBy('orderNo', 'asc')
+      .executeTakeFirst<{ id: string }>();
+    const types = (
+      await query
+        .selectFrom('historyEvents')
+        .select('type')
+        .where('subjectType', '=', 'purchaseOrders')
+        .where('subjectId', '=', historical!.id)
+        .orderBy('createdAt', 'asc')
+        .execute<{ type: string }>()
+    ).map((row) => row.type);
+    expect(types[0]).toBe('created');
+    expect(types).toContain('received');
+    expect(types.at(-1)).toBe('statusChange');
   });
 
   it('reports how far an import has got while it runs, and runs one at a time', async () => {
