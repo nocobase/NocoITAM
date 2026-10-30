@@ -43,7 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useApi, type ItamRecord } from '@/lib/itam/api';
+import { useApi, useItamSettings, type ItamRecord } from '@/lib/itam/api';
 import { errorMessage, formatMoney, text } from '@/lib/itam/format';
 import {
   useCollectionPermissions,
@@ -373,10 +373,20 @@ export function PurchaseOrderLinesCard({
   // left the column out of the editor, so a first line could never be
   // priced. The order's own estimate answers the same question: the grants
   // hold it and the line price together as the cost fields.
+  const settings = useItamSettings();
   const priced =
     rows.length > 0
       ? rows.some((row) => row.unitPrice !== undefined)
       : order.data?.estimatedTotal !== undefined;
+  // The order's one currency (2026-10-30), on the price columns' headings
+  // and the total rather than on every cell; an order without one is in the
+  // deployment's.
+  const currency =
+    text(order.data?.currency ?? record.currency) ||
+    settings.data?.general.currency ||
+    null;
+  const withCurrency = (label: string) =>
+    currency ? `${label} (${currency})` : label;
   const incomplete = (drafts ?? []).some((line) => lineIncomplete(line));
   // item + quantity + received + actions, the unit price when the reader may
   // see it, and the subtotal only outside the editor (which drops it).
@@ -552,7 +562,7 @@ export function PurchaseOrderLinesCard({
                 </TableHead>
                 {priced ? (
                   <TableHead className='w-px whitespace-nowrap text-right'>
-                    {t('fields.unitPrice')}
+                    {withCurrency(t('fields.unitPrice'))}
                   </TableHead>
                 ) : null}
                 {/* While editing, the row's own subtotal is the multiplication
@@ -560,7 +570,7 @@ export function PurchaseOrderLinesCard({
                   column only costs the number inputs the width they need. */}
                 {priced && !drafts ? (
                   <TableHead className='w-px whitespace-nowrap text-right'>
-                    {t('fields.subtotal')}
+                    {withCurrency(t('fields.subtotal'))}
                   </TableHead>
                 ) : null}
                 <TableHead className='w-px whitespace-nowrap text-right'>
@@ -678,13 +688,13 @@ export function PurchaseOrderLinesCard({
                   {priced ? (
                     drafts ? (
                       <TableCell className='text-right font-medium tabular-nums'>
-                        {formatMoney(total)}
+                        {formatMoney(total, currency)}
                       </TableCell>
                     ) : (
                       <>
                         <TableCell />
                         <TableCell className='text-right font-medium tabular-nums'>
-                          {formatMoney(total)}
+                          {formatMoney(total, currency)}
                         </TableCell>
                       </>
                     )

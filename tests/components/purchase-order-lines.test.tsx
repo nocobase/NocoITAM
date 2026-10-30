@@ -47,6 +47,8 @@ vi.mock('@nocobase/i18n/client', () => ({
 vi.mock('../../client/lib/itam/api.js', () => ({
   listQueryParams: (query: unknown) => query,
   useApi: () => ({ request: vi.fn() }),
+  // The deployment's currency, for an order that states none.
+  useItamSettings: () => ({ data: { general: { currency: 'CNY' } } }),
 }));
 // 解析单据 is AI 整理's reading (tested on its own); here, what the card
 // does with what it hands back.
@@ -143,7 +145,10 @@ it('reads as a document: every line, and what the order comes to', () => {
   // The totals row: how many units, what it costs, what came.
   const footer = rows.at(-1)!;
   expect(within(footer).getByText('3')).toBeVisible();
-  expect(within(footer).getByText('18,500.00')).toBeVisible();
+  // In the order's currency, the deployment's when it states none.
+  expect(within(footer).getByText('CNY 18,500.00')).toBeVisible();
+  expect(screen.getByText('fields.unitPrice (CNY)')).toBeVisible();
+  expect(screen.getByText('fields.subtotal (CNY)')).toBeVisible();
   expect(within(footer).getByText('1 / 3')).toBeVisible();
 });
 
@@ -162,7 +167,7 @@ it('edits every line at once and saves them as one set', () => {
   // width and the footer already totals the drafts, which follow the edit.
   expect(within(editing).queryByText('36,000.00')).toBeNull();
   expect(
-    within(screen.getAllByRole('row').at(-1)!).getByText('36,500.00'),
+    within(screen.getAllByRole('row').at(-1)!).getByText('CNY 36,500.00'),
   ).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'actions.save' }));
   expect(state.saved).toHaveLength(1);
@@ -217,7 +222,7 @@ it('prices the first line of an order that has none yet', () => {
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'actions.edit' }));
-  expect(screen.getByText('fields.unitPrice')).toBeVisible();
+  expect(screen.getByText('fields.unitPrice (CNY)')).toBeVisible();
   expect(screen.getAllByRole('spinbutton')).toHaveLength(2);
 });
 
@@ -229,7 +234,7 @@ it('leaves the price out for a reader the order shows no money to', () => {
     />,
   );
   fireEvent.click(screen.getByRole('button', { name: 'actions.edit' }));
-  expect(screen.queryByText('fields.unitPrice')).toBeNull();
+  expect(screen.queryByText(/fields\.unitPrice/)).toBeNull();
   expect(screen.getAllByRole('spinbutton')).toHaveLength(1);
 });
 
