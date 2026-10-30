@@ -9,7 +9,9 @@ const sha = (text: string) => createHash('sha256').update(text).digest('hex');
 // A skill as once shipped, and one an administrator edited (2026-10-29).
 vi.mock('../../server/providers/itam-agents/shipped-skills.js', () => ({
   SHIPPED_SKILL_HASHES: {
-    receiving: [createHash('sha256').update('as shipped before').digest('hex')],
+    'delivery-matching': [
+      createHash('sha256').update('as shipped before').digest('hex'),
+    ],
     catalog: [createHash('sha256').update('as shipped before').digest('hex')],
     'renewal-review': [
       createHash('sha256').update('as shipped before').digest('hex'),
@@ -22,7 +24,7 @@ const { refreshShippedSkills, retireShippedSkills, SKILLS_DIR } =
 
 it('brings an unedited library skill up to the shipped file, and leaves an edited one', async () => {
   const stored: Record<string, string> = {
-    'id-receiving': 'as shipped before',
+    'id-delivery-matching': 'as shipped before',
     'id-catalog': 'as shipped before, then edited by an administrator',
   };
   const save = vi.fn(async () => ({}));
@@ -37,16 +39,16 @@ it('brings an unedited library skill up to the shipped file, and leaves an edite
     },
   };
   await refreshShippedSkills(agents as never, {
-    receiving: 'id-receiving',
+    'delivery-matching': 'id-delivery-matching',
     catalog: 'id-catalog',
   });
   const shipped = await readFile(
-    join(SKILLS_DIR, 'receiving', 'SKILL.md'),
+    join(SKILLS_DIR, 'delivery-matching', 'SKILL.md'),
     'utf8',
   );
   expect(save).toHaveBeenCalledTimes(1);
   expect(save).toHaveBeenCalledWith(
-    'id-receiving',
+    'id-delivery-matching',
     null,
     expect.objectContaining({ content: shipped, expectedRevision: 3 }),
   );

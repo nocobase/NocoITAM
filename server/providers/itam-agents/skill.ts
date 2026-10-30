@@ -18,7 +18,7 @@ export const ITAM_WORK_GUIDE = `# Working in the IT asset register
 - \`itam_model_match\` turns a description ("MacBook Pro 14") into model, category or product ids.
 - \`itam_onboarding_plan\` — a joiner's kit, what they have and the system's proposal for the rest.
 - \`itam_device_sync_review\` — where the device management platforms (Intune, Jamf Pro) and the register disagree (\`view\`: checks, unregistered, unmanaged, ignored, exempted, dismissed); \`deviceId\` for one device's platform records and differences.
-- \`itam_read_skill\` — the method for a joiner's equipment (onboarding), a leaver's handover (offboarding), receiving a delivery (receiving), a model's details (product-lookup) or device sync (device-sync). Read it before such a task.
+- \`itam_read_skill\` — the method for a joiner's equipment (onboarding), a leaver's handover (offboarding), receiving a delivery (delivery-matching), a model's details (product-lookup) or device sync (device-sync). Read it before such a task.
 
 A search's rows carry a \`…Name\` beside each id. Call tools that do not depend on each other together.
 
@@ -81,7 +81,7 @@ There is no web search: when a question needs information from outside the regis
 export const METHOD_SKILLS = [
   'onboarding',
   'offboarding',
-  'receiving',
+  'delivery-matching',
   'product-lookup',
   // Device sync, step 4 (2026-10-15).
   'device-sync',

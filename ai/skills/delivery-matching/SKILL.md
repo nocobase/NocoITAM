@@ -1,9 +1,9 @@
 ---
-name: receiving
+name: delivery-matching
 description: Read a vendor's delivery note, packing list or shipping list, match each line of goods (item name, part code, quantity, serial numbers) to a line of the purchase order, and hand it to the receiving form to prefill, for the person receiving to check before stocking in. Use it when the user runs Receive from delivery note on a purchase order.
 ---
 
-# Receiving by delivery note
+# Delivery note matching
 
 The person receiving hands you a delivery note. Your job is to **fill in the receiving form for them**: what each line of goods on the note is, how many units, which serial numbers, and which line of the purchase order it belongs to. They check the filled form, correct it and save it. **You do not stock anything in, and you do not decide for them.**
 

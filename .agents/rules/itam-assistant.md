@@ -466,8 +466,8 @@ locale })` — its own plans, the answers given — and the joiners'
   lines card picks the file and opens 到货入库 already reading it:
   the file is kept as the order's attachment, a run is started
   (`receiptRuns`, `202610050003_receipt_runs`, `receipt-runs.ts`), and the
-  model reads it on the server under the `receiving` skill
-  (`ai/skills/receiving/SKILL.md`), one gateway call (`POST /itam/ai/read`,
+  model reads it on the server under the `delivery-matching` skill
+  (`ai/skills/delivery-matching/SKILL.md`; `receiving` until 2026-10-30, when it was renamed and the old library copy retired), one gateway call (`POST /itam/ai/read`,
   task `deliveryDocument`, template 1.0.0-beta.64) answering with the rows
   the run's `/draft` takes — what the page tool `prefillReceipt` used to
   hand over. The server's

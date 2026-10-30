@@ -375,7 +375,7 @@ const METHOD: Partial<Record<ReadingTask, string>> = {
   category: 'form-capture',
   model: 'product-lookup',
   softwareProduct: 'product-lookup',
-  deliveryDocument: 'receiving',
+  deliveryDocument: 'delivery-matching',
 };
 
 const SYSTEM = `You fill forms of an IT asset management application from material a person gives you. Nobody chats with you: the application reads your answer, checks it against its records and shows it to the person, who decides.

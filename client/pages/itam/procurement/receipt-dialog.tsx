@@ -1329,7 +1329,7 @@ interface DeliveryDocument {
  * Reading a delivery document. The file is kept on the order (its
  * attachments) and a run is started for it, which reads it as text; then the
  * model reads that text against the order's lines on the server under the
- * receiving skill (`POST /itam/ai/read`, template 1.0.0-beta.64) and answers
+ * delivery-matching skill (`POST /itam/ai/read`, template 1.0.0-beta.64) and answers
  * with the rows the run's draft takes. The rules on the server turn that
  * into the plan the form opens on; the run is the record.
  */

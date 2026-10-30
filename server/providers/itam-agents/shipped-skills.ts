@@ -85,6 +85,9 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       '47159d0995cbb68315fd6f89ec19987cd7bf58f767d135434f5d9d5efa168127',
       '5fa407ba8e48d8e78f5aafe4dbfe8203bbabd9e2e694e03bf57f0a40e0771d23',
       '2cbb3a40a513220f021100b69e94cfb6f46a9d82bdb18f74ee46a0a0e35a6361',
+      // The last version shipped as receiving, before it became
+      // delivery-matching.
+      '8d20fc01a07b53e84b27742de1796977286275918923e5e5cdc08e12a3905c12',
     ],
     // Retired with the renewal review agent (`RETIRED_SKILLS` in library.ts).
     'renewal-review': [
@@ -98,6 +101,8 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
       // Replaced 2026-10-30 by the copy shared with NocoCRM.
       '2f7a01bc8ada1266132769133a03376d0a0f7daded4ee9bd9d4f36931e63840d',
     ],
+    // Shipped as receiving until 2026-10-30.
+    'delivery-matching': [],
     // Shipped as catalog until 2026-10-30.
     'product-lookup': [
       '83573d8816c30ce9bff766a3697c7d37b01e8ac9446ebc06bb422cf5490564f3',

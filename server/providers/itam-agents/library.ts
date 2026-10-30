@@ -16,7 +16,7 @@ import { METHOD_SKILLS, READING_SKILLS, WORK_SKILLS } from './skill.js';
  * once, at start (after NocoCRM's). Replace with the plugin's own mechanism
  * when it has one.
  *
- * ITAM's method skills (ai/skills: onboarding, offboarding, receiving,
+ * ITAM's method skills (ai/skills: onboarding, offboarding, delivery-matching,
  * product-lookup, device-sync, and AI 整理's form-capture) as skills of the library, where people read and edit them under
  * AI → 技能: each is added once, from its SKILL.md as shipped, and attached
  * to Asset Steward — a work agent's skill (approval-review) to its agent instead
@@ -146,6 +146,8 @@ export const RETIRED_SKILLS: readonly string[] = [
   // Renamed product-lookup (2026-10-30): the library takes it in under its
   // new name, and an unedited copy under the old one goes.
   'catalog',
+  // Renamed delivery-matching (2026-10-30), the same way.
+  'receiving',
 ];
 
 /**
