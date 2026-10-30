@@ -51,10 +51,13 @@ vi.mock('../../client/lib/itam/ai-chat.js', () => ({
   useAiReading: () => (input: (typeof state.asked)[number]) => {
     state.asked.push(input);
     return Promise.resolve({
+      // The form's fields by key (2026-10-30), by the form-capture skill.
       reading: {
-        name: 'Dell',
-        website: 'https://www.dell.com',
-        supportUrl: 'https://www.dell.com/support',
+        values: {
+          name: 'Dell',
+          website: 'https://www.dell.com',
+          supportUrl: 'https://www.dell.com/support',
+        },
         sources: [
           { title: 'Dell Support', url: 'https://www.dell.com/support' },
         ],
@@ -145,8 +148,20 @@ it('refines a maker on the books', async () => {
   expect(state.asked[0]).toMatchObject({
     task: 'manufacturer',
     material: 'Dell',
-    context: { refine: true, form: expect.objectContaining({ name: 'Dell' }) },
+    context: {
+      refine: true,
+      form: expect.objectContaining({ name: 'Dell' }),
+      // The form's own fields, each with its rule, and not its notes.
+      fields: expect.arrayContaining([
+        expect.objectContaining({ key: 'website', hint: expect.any(String) }),
+      ]),
+    },
   });
+  expect(
+    (state.asked[0]?.context.fields as { key: string }[]).map(
+      (field) => field.key,
+    ),
+  ).not.toContain('notes');
   // Only the support site is new.
   expect(screen.getAllByText('fieldTemplate.changedTag')).toHaveLength(1);
   await act(async () => {

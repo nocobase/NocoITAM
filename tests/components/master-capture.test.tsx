@@ -356,9 +356,11 @@ it('refines a software product as it opens', async () => {
 it('looks a missing maker up before creating it', async () => {
   state.answers.manufacturer = {
     reading: {
-      name: 'Dell',
-      website: 'https://www.dell.com',
-      supportUrl: 'https://www.dell.com/support',
+      values: {
+        name: 'Dell',
+        website: 'https://www.dell.com',
+        supportUrl: 'https://www.dell.com/support',
+      },
       uncertain: ['supportUrl'],
       sources: [{ title: 'Dell', url: 'https://www.dell.com' }],
     },

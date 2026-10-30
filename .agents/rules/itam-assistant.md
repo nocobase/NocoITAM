@@ -559,9 +559,15 @@ document-text`, which reads only a file uploaded within the hour and
   so the reading writes the register's name for "marketing team" or 東京
   rather than the material's own; `resolveFields` in `purchase-capture.ts`
   then checks each value by its type, and a reference matching nothing
-  comes back in `unplaced` under its key. The other forms' AI 整理 still
-  use their own task prompts; moving one onto the skill means giving its
-  fields an `aiHint` where the generic method is not enough. Beside the form
+  comes back in `unplaced` under its key. A new manufacturer is filled the
+  same way (2026-10-30): its fields' `aiHint` carry what the task prompt
+  said of each, the reading answers `{ values, uncertain, sources }`, and
+  the task prompt only says the fields come from the web pages rather than
+  the material, which is usually just the maker's name. Models and
+  software products keep the catalog skill, and the repair and disposal
+  diagnoses are judgements rather than forms, so they keep their own
+  prompts; moving a form onto the skill means giving its fields an
+  `aiHint` where the generic method is not enough. Beside the form
   the panel is as tall as the form (at least 24rem) and its adjustments
   scroll inside it (`CaptureTurns`, shared with the model and category
   dialogs); on a phone the panel comes above the form. A document dropped

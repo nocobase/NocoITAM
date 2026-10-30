@@ -20,6 +20,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useAiStatus } from '@/lib/itam/ai';
+import { captureFields } from '@/lib/itam/capture-fields';
 import { useAiReading, useItamAi } from '@/lib/itam/ai-chat';
 import { useItamMutations, type ItamRecord } from '@/lib/itam/api';
 import { errorMessage, text, todayIso } from '@/lib/itam/format';
@@ -29,14 +30,13 @@ import { referencePath } from '@/lib/itam/references';
 const FIELDS = masterDataByName('manufacturers')!.fields.filter(
   (field) => field.form !== false,
 );
-/** What a reading may fill: the form's own fields, nothing else. */
-const READ_KEYS = [
-  'name',
-  'website',
-  'supportUrl',
-  'supportPhone',
-  'supportEmail',
-] as const;
+/**
+ * What a reading may fill (2026-10-30, by the form-capture skill): the
+ * form's own fields, each with its `aiHint`, but not its notes, which no
+ * web page writes.
+ */
+const READ_FIELDS = FIELDS.filter((field) => field.key !== 'notes');
+const READ_KEYS = READ_FIELDS.map((field) => field.key);
 
 interface Source {
   readonly title: string;
@@ -110,6 +110,7 @@ function ManufacturerCaptureForm({
         material: maker,
         context: {
           today: todayIso(),
+          fields: captureFields(READ_FIELDS, t),
           // 完善 checks the record rather than filling a blank form.
           ...(record
             ? {
@@ -129,9 +130,10 @@ function ManufacturerCaptureForm({
         });
         return;
       }
+      const found = (reading.values ?? {}) as Record<string, unknown>;
       const next: Record<string, unknown> = {};
       for (const key of READ_KEYS) {
-        const value = text(reading[key]).trim();
+        const value = text(found[key]).trim();
         if (value) next[key] = value;
       }
       setValues((known) => ({ ...known, ...next }));

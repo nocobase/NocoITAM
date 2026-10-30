@@ -126,6 +126,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
       { key: 'softwareProducts', label: 'navigation.softwareProducts' },
     ],
     fields: [
+      // Each `aiHint` is what AI 整理 fills the field with (2026-10-30), by
+      // the form-capture skill.
       {
         key: 'name',
         label: 'fields.name',
@@ -133,6 +135,8 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         required: true,
         column: true,
         group: 'groups.basic',
+        aiHint:
+          'As the maker is commonly called in IT (Dell, Lenovo, Anthropic): no Inc., Ltd. or Corporation unless that is the name everyone uses.',
       },
       {
         key: 'website',
@@ -140,24 +144,30 @@ export const MASTER_DATA: readonly MasterDataCollection[] = [
         type: 'url',
         column: true,
         group: 'groups.basic',
+        aiHint: "The maker's official home page.",
       },
       {
         key: 'supportPhone',
         label: 'fields.supportPhone',
         type: 'text',
         group: 'groups.basic',
+        aiHint:
+          'Its business support phone, only when a page states it; leave it out rather than guess.',
       },
       {
         key: 'supportEmail',
         label: 'fields.supportEmail',
         type: 'text',
         group: 'groups.basic',
+        aiHint:
+          'Its business support email, only when a page states it; leave it out rather than guess.',
       },
       {
         key: 'supportUrl',
         label: 'fields.supportUrl',
         type: 'url',
         group: 'groups.basic',
+        aiHint: 'Its support or help site for business customers.',
       },
       notes,
       ...AUDIT_FIELDS,
