@@ -74,4 +74,8 @@ export const SHIPPED_SKILL_HASHES: Readonly<Record<string, readonly string[]>> =
     'renewal-review': [
       '3f6982b6fa3ca5a132fd17ff090b0a3e614f2195d901552e9658f857c7d1e11a',
     ],
+    // AI 整理's form-capture skill, first shipped 2026-10-30.
+    'form-capture': [
+      '04fda7b3379c45f1f978d8544b575c66f3dfa9c8d2ae876c545643795d6f1047',
+    ],
   };
