@@ -25,8 +25,10 @@ import {
   RecordNotFoundError,
   ValidationError,
   type DeleteImpact,
+  type DeleteOptions,
 } from './errors.js';
 import type { HistoryService } from './history.js';
+import { countRows, reference, unrestrictedImpact } from './delete-parts.js';
 import {
   AUDIT_TASK_LIFECYCLE,
   type AuditTaskState,
@@ -152,11 +154,12 @@ export interface AuditService {
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Row>;
-  deleteImpact(id: string): Promise<DeleteImpact>;
+  deleteImpact(id: string, options?: DeleteOptions): Promise<DeleteImpact>;
   delete(
     id: string,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
+    options?: DeleteOptions,
   ): Promise<void>;
   items(id: string, result?: string): Promise<readonly Row[]>;
   /** How many devices the scope currently matches (preview before starting). */
@@ -556,18 +559,34 @@ export function createAuditService(dependencies: {
       });
     },
 
-    async deleteImpact(id) {
+    async deleteImpact(id, options = {}) {
       const task = await records.findRaw(id);
+      // Root, whatever its state (2026-10-30): its counted items go with it.
+      if (options.unrestricted)
+        return unrestrictedImpact(
+          [],
+          reference(
+            'auditItems',
+            'auditTaskId',
+            await countRows(database, 'auditItems', { auditTaskId: id }),
+          ),
+        );
       return {
         level: task?.status === 'notStarted' ? 'plain' : 'blocked',
         references: [],
       };
     },
 
-    async delete(id, context, conditions) {
+    async delete(id, context, conditions, options = {}) {
       await database.transaction(async (connection) => {
         const task = await records.load(id, conditions, connection);
-        records.requireStatus(task, ['notStarted'], 'delete');
+        if (!options.unrestricted)
+          records.requireStatus(task, ['notStarted'], 'delete');
+        await connection.query
+          .deleteFrom('attachmentLinks')
+          .where('ownerType', '=', 'auditTasks')
+          .where('ownerId', '=', id)
+          .execute();
         await connection.query
           .deleteFrom('auditItems')
           .where('auditTaskId', '=', id)

@@ -41,6 +41,7 @@ import {
   readJsonObject,
   decideFor,
   type ItamContext,
+  isUnrestricted,
 } from './http.js';
 import { ValidationError } from '../../providers/itam/errors.js';
 import { assignSchema, deviceSchema } from './device-schemas.js';
@@ -220,7 +221,9 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
       try {
         await decide(context, 'delete');
         return context.json({
-          data: await devices.deleteImpact(context.req.param('id')),
+          data: await devices.deleteImpact(context.req.param('id'), {
+            unrestricted: await isUnrestricted(context),
+          }),
         });
       } catch (error) {
         return errorResponse(context, error);
@@ -367,6 +370,7 @@ export const deviceRoutes: AppApiRouteContribution<Application> =
           context.req.param('id'),
           operationContext(context),
           conditions,
+          { unrestricted: await isUnrestricted(context) },
         );
         return context.json({ data: { deleted: 1 } });
       } catch (error) {

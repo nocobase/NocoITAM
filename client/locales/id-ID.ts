@@ -205,6 +205,9 @@ const idID: AppResource = {
       'Data {{object}} ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.',
     reference_one: 'Dirujuk oleh {{count}} catatan di {{collection}}',
     reference_other: 'Dirujuk oleh {{count}} catatan di {{collection}}',
+    withParts: 'Semua di bawah ini ikut terhapus, dan tidak dapat dibatalkan',
+    part_one: '{{collection}}: {{count}}',
+    part_other: '{{collection}}: {{count}}',
   },
   tabs: {
     history: 'Riwayat',

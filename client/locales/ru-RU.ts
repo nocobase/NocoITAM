@@ -209,6 +209,10 @@ const ruRU: AppResource = {
     reference_few: 'На неё ссылаются {{count}} записи в «{{collection}}»',
     reference_many: 'На неё ссылаются {{count}} записей в «{{collection}}»',
     reference_other: 'На неё ссылаются {{count}} записи в «{{collection}}»',
+    withParts:
+      'Всё перечисленное ниже удаляется вместе с записью, отменить нельзя',
+    part_one: '{{collection}}: {{count}}',
+    part_other: '{{collection}}: {{count}}',
   },
   tabs: {
     history: 'История',

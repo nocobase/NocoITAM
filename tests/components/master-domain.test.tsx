@@ -13,6 +13,10 @@ import { masterDomain } from '../../client/pages/itam/master/master-domain.js';
 const state = vi.hoisted(() => ({
   records: {} as Record<string, ItamRecord | undefined>,
 }));
+// Not root: a record's own deletable rule decides (2026-10-30).
+vi.mock('@nocobase/app-plugin-authorization/client', () => ({
+  useCan: () => ({ can: false, isPending: false }),
+}));
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));

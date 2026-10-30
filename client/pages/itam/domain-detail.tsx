@@ -1,3 +1,4 @@
+import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useQuery } from '@tanstack/react-query';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
@@ -84,6 +85,9 @@ export function DomainDetailPage({
   // Above the early returns: a record whose edits belong to the person who
   // raised it needs to know who is reading (`editable` takes it).
   const currentUserId = useCurrentUserId();
+  // Root deletes past the state a record is in (2026-10-30); the server
+  // still stops it while another record depends on the one deleted.
+  const unrestricted = useCan('unrestricted').can;
   const [deleting, setDeleting] = useState(false);
   const impact = useDeleteImpact(domain.path, deleting ? id : undefined);
   const data = record.data;
@@ -398,7 +402,8 @@ export function DomainDetailPage({
           <>
             {Actions ? <Actions record={data} /> : null}
             {permissions.delete &&
-            (domain.deletable?.(data, currentUserId) ?? true) ? (
+            (unrestricted ||
+              (domain.deletable?.(data, currentUserId) ?? true)) ? (
               domain.deleteInMenu ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger

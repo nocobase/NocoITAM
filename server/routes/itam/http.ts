@@ -118,6 +118,16 @@ export function operationContextOf(
   };
 }
 
+/**
+ * The caller holds the platform's administrator set, `root` (2026-10-30):
+ * the authorization core permits it everything without a grant, and it may
+ * delete a record past the business rules that keep a record with a life
+ * recorded — only another record still depending on it stops it.
+ */
+export async function isUnrestricted(context: ItamContext): Promise<boolean> {
+  return (await context.get('authz').snapshot()).unrestricted;
+}
+
 export function principalId(context: ItamContext): string {
   return context.get('authz').identity.principal.id;
 }

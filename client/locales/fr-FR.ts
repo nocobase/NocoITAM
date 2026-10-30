@@ -206,6 +206,9 @@ const frFR: AppResource = {
       'Cet élément ({{object}}) sera définitivement supprimé. Cette action est irréversible.',
     reference_one: 'Référencé par {{count}} fiche dans {{collection}}',
     reference_other: 'Référencé par {{count}} fiches dans {{collection}}',
+    withParts: 'Tout ce qui suit est supprimé avec, sans retour possible',
+    part_one: '{{collection}} : {{count}}',
+    part_other: '{{collection}} : {{count}}',
   },
   tabs: {
     history: 'Historique',

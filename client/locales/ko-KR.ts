@@ -205,6 +205,9 @@ const koKR: AppResource = {
     reference_one: '{{collection}}의 레코드 {{count}}건에서 참조하고 있습니다',
     reference_other:
       '{{collection}}의 레코드 {{count}}건에서 참조하고 있습니다',
+    withParts: '아래 항목도 함께 삭제되며 되돌릴 수 없습니다',
+    part_one: '{{collection}} {{count}}건',
+    part_other: '{{collection}} {{count}}건',
   },
   tabs: {
     history: '이력',

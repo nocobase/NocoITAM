@@ -64,6 +64,12 @@ export interface DeleteImpact {
     field: string;
     count: number;
   }[];
+  /** What goes with the record when root deletes it (2026-10-30). */
+  readonly parts?: readonly {
+    collection: string;
+    field: string;
+    count: number;
+  }[];
 }
 
 export type ApiQuery = Readonly<

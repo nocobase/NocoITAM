@@ -206,6 +206,10 @@ const deDE: AppResource = {
       'Dieser Datensatz ({{object}}) wird endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.',
     reference_one: 'Referenziert von {{count}} Datensatz in {{collection}}',
     reference_other: 'Referenziert von {{count}} Datensätzen in {{collection}}',
+    withParts:
+      'Alles Folgende wird mitgelöscht; das lässt sich nicht rückgängig machen',
+    part_one: '{{collection}}: {{count}}',
+    part_other: '{{collection}}: {{count}}',
   },
   tabs: {
     history: 'Verlauf',

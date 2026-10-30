@@ -21,7 +21,7 @@ import { createTestDatabase, type TestDatabase } from './test-database.js';
  * role so route tests cover the 401 / 403 / 200 boundary without the plugin's
  * own permission tables.
  */
-export type TestRole = 'employee' | 'support' | 'manager' | 'noCost';
+export type TestRole = 'employee' | 'support' | 'manager' | 'noCost' | 'root';
 
 // Employees hold no collection grants of their own in this double; their
 // pages read through the programmatic scope instead.
@@ -42,6 +42,9 @@ const ROLE_GRANTS: Readonly<
   // IT support was given the costs (2026-10-05), but a permission set an
   // administrator writes may, and the narrowing is still the routes' job.
   noCost: () => true,
+  // The platform's administrator set: unrestricted, which the snapshot says
+  // (`isUnrestricted` in `server/routes/itam/http.ts`).
+  root: () => true,
 };
 
 /** What a `read` decision lets this role see of a collection. */
@@ -206,6 +209,10 @@ export async function createTestApp(
         resource: { type: string; id: string };
         action: string;
       }) => allowed(request.resource.id, request.action),
+      snapshot: async () => ({
+        unrestricted: role === 'root',
+        permissions: [],
+      }),
       // A settings item (`requireGrant` in `server/routes/itam/http.ts`):
       // refused with the plugin's own error, whose response is the 403.
       require: async (request: {

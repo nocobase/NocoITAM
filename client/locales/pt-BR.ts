@@ -205,6 +205,9 @@ const ptBR: AppResource = {
       'Este item ({{object}}) será excluído permanentemente. Esta ação não pode ser desfeita.',
     reference_one: 'Referenciado por {{count}} registro em {{collection}}',
     reference_other: 'Referenciado por {{count}} registros em {{collection}}',
+    withParts: 'Tudo abaixo é excluído junto, e não é possível desfazer',
+    part_one: '{{collection}}: {{count}}',
+    part_other: '{{collection}}: {{count}}',
   },
   tabs: {
     history: 'Histórico',

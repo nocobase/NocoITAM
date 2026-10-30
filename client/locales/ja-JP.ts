@@ -206,6 +206,9 @@ const jaJP: AppResource = {
       '{{collection}} の {{count}} 件のレコードから参照されています',
     reference_other:
       '{{collection}} の {{count}} 件のレコードから参照されています',
+    withParts: '以下もあわせて削除され、元に戻せません',
+    part_one: '{{collection}} {{count}} 件',
+    part_other: '{{collection}} {{count}} 件',
   },
   tabs: {
     history: '履歴',

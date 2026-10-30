@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { databaseManagerToken } from '@nocobase/db';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -158,6 +159,139 @@ describe('procurement', () => {
     expect((await put()).status).toBe(401);
     expect((await put({ user: 'eve', role: 'employee' })).status).toBe(403);
     expect((await put(manager)).status).toBe(200);
+  });
+
+  // Root deletes past the state a record is in (2026-10-30): a received
+  // order is stopped only while what it brought in is still on the books,
+  // and a device it brought in goes first, taking its receipt with it.
+  it('lets root delete a received order once what it brought in is gone', async () => {
+    const root = { user: 'rob', role: 'root' as const };
+    const order = await data<{ id: string }>(
+      await post('purchase-orders', {
+        reason: 'newHire',
+        vendorId: fixture.vendorId,
+        departmentId: fixture.departmentId,
+      }),
+    );
+    await app.request(`/api/itam/purchase-orders/${order.id}/lines`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        lines: [
+          {
+            itemType: 'device',
+            modelId: fixture.modelId,
+            quantity: 1,
+            unitPrice: 14800,
+          },
+        ],
+      }),
+      ...manager,
+    });
+    await post(`purchase-orders/${order.id}/submit`, { approverId: 'ann' });
+    await post(
+      `purchase-orders/${order.id}/decide`,
+      { decision: 'approved', comment: 'ok' },
+      approver,
+    );
+    await post(`purchase-orders/${order.id}/order`, {
+      orderedAt: '2026-09-13',
+      expectedAt: '2026-09-20',
+    });
+    const [line] = await data<{ id: string }[]>(
+      await app.request(`/api/itam/purchase-orders/${order.id}/lines`, manager),
+    );
+    expect(
+      (
+        await post(`purchase-orders/${order.id}/receive`, {
+          lineId: line!.id,
+          quantity: 1,
+          locationId: fixture.locationId,
+          serialNos: ['ROOT1'],
+        })
+      ).status,
+    ).toBe(200);
+    const impact = (who: typeof manager | typeof root, path: string) =>
+      app
+        .request(`/api/itam/${path}/delete-impact`, who)
+        .then((response) => data<Record<string, unknown>>(response));
+    const remove = (who: typeof manager | typeof root, path: string) =>
+      app.request(`/api/itam/${path}`, { method: 'DELETE', ...who });
+
+    // An asset manager is held to the order's state, as before.
+    expect((await remove(manager, `purchase-orders/${order.id}`)).status).toBe(
+      409,
+    );
+    // Root is stopped by the device the order brought in, and only by it.
+    expect(await impact(root, `purchase-orders/${order.id}`)).toMatchObject({
+      level: 'blocked',
+      references: [{ collection: 'devices', count: 1 }],
+    });
+    expect((await remove(root, `purchase-orders/${order.id}`)).status).toBe(
+      409,
+    );
+    const [device] = await data<{ id: string }[]>(
+      await app.request(
+        `/api/itam/devices?filter[purchaseOrderId]=${order.id}`,
+        manager,
+      ),
+    );
+    // The device came in on the order: its receipt goes with it.
+    expect(await impact(root, `devices/${device!.id}`)).toMatchObject({
+      level: 'warn',
+      references: [],
+      parts: expect.arrayContaining([
+        expect.objectContaining({ collection: 'purchaseOrders' }),
+      ]),
+    });
+    expect((await remove(root, `devices/${device!.id}`)).status).toBe(200);
+    expect(await impact(root, `purchase-orders/${order.id}`)).toMatchObject({
+      level: 'warn',
+      references: [],
+      parts: expect.arrayContaining([
+        expect.objectContaining({ collection: 'purchaseOrderLines', count: 1 }),
+        expect.objectContaining({ collection: 'approvals' }),
+      ]),
+    });
+    // An AI review of it waiting in 收件箱 goes with it.
+    await app.container
+      .resolve(databaseManagerToken)
+      .query()
+      .insertInto('itamAgentRuns')
+      .values({
+        id: 'run-review',
+        agent: 'approvalReview',
+        trigger: 'manual',
+        status: 'done',
+        subjectType: 'purchaseOrders',
+        subjectId: order.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .execute();
+    expect((await remove(root, `purchase-orders/${order.id}`)).status).toBe(
+      200,
+    );
+    const query = app.container.resolve(databaseManagerToken).query();
+    for (const table of [
+      'purchaseOrderLines',
+      'purchaseReceipts',
+      'approvals',
+      'itamAgentRuns',
+    ] as const)
+      expect(
+        await query
+          .selectFrom(table)
+          .select('id')
+          .where(
+            table === 'approvals' || table === 'itamAgentRuns'
+              ? 'subjectId'
+              : 'purchaseOrderId',
+            '=',
+            order.id,
+          )
+          .execute(),
+      ).toEqual([]);
   });
 
   it('runs request → approval → order → receipt → stock-in, generating records', async () => {

@@ -12,13 +12,17 @@ import type {
   ListResult,
   Row,
 } from '../../providers/itam/collection-query.js';
-import type { DeleteImpact } from '../../providers/itam/errors.js';
+import type {
+  DeleteImpact,
+  DeleteOptions,
+} from '../../providers/itam/errors.js';
 import type { HistoryService } from '../../providers/itam/history.js';
 import type { OperationContext } from '../../providers/itam/devices.js';
 import {
   decideFor,
   errorResponse,
   historyKind,
+  isUnrestricted,
   operationContextOf,
   parseListOptions,
   readJsonObject,
@@ -50,11 +54,12 @@ export interface CrudService {
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Row>;
-  deleteImpact(id: string): Promise<DeleteImpact>;
+  deleteImpact(id: string, options?: DeleteOptions): Promise<DeleteImpact>;
   delete(
     id: string,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
+    options?: DeleteOptions,
   ): Promise<void>;
 }
 
@@ -200,7 +205,9 @@ export function createCrudRoutes(
     try {
       await decide(context, 'delete');
       return context.json({
-        data: await options.service.deleteImpact(context.req.param('id')),
+        data: await options.service.deleteImpact(context.req.param('id'), {
+          unrestricted: await isUnrestricted(context),
+        }),
       });
     } catch (error) {
       return errorResponse(context, error);
@@ -267,6 +274,7 @@ export function createCrudRoutes(
         context.req.param('id'),
         operationContext(context),
         conditions,
+        { unrestricted: await isUnrestricted(context) },
       );
       return context.json({ data: { deleted: 1 } });
     } catch (error) {

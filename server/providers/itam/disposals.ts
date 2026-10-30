@@ -16,7 +16,7 @@ import {
   type ApprovalService,
 } from './approvals.js';
 import type { DeviceService, OperationContext } from './devices.js';
-import { assertInputFields } from './authz-filter.js';
+import { assertInputFields, unrestricted } from './authz-filter.js';
 import {
   asText,
   decodeRow,
@@ -31,8 +31,10 @@ import {
   BusinessRuleError,
   ValidationError,
   type DeleteImpact,
+  type DeleteOptions,
 } from './errors.js';
 import type { HistoryService } from './history.js';
+import { countRows, reference, unrestrictedImpact } from './delete-parts.js';
 import type { EntitlementService } from './entitlements.js';
 import type { ApproverDirectory } from './approvers.js';
 import { lifecycleRefusal } from './lifecycles.js';
@@ -130,11 +132,12 @@ export interface DisposalService {
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Row>;
-  deleteImpact(id: string): Promise<DeleteImpact>;
+  deleteImpact(id: string, options?: DeleteOptions): Promise<DeleteImpact>;
   delete(
     id: string,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
+    options?: DeleteOptions,
   ): Promise<void>;
   /** The listed devices with their current device fields. */
   devices(id: string): Promise<readonly Row[]>;
@@ -675,8 +678,29 @@ export function createDisposalService(dependencies: {
       });
     },
 
-    async deleteImpact(id) {
+    async deleteImpact(id, options = {}) {
       const disposal = await records.findRaw(id);
+      // Root, whatever its state (2026-10-30): its device list and its
+      // approvals go with it.
+      if (options.unrestricted)
+        return unrestrictedImpact(
+          [],
+          [
+            ...reference(
+              'disposalDevices',
+              'disposalId',
+              await countRows(database, 'disposalDevices', { disposalId: id }),
+            ),
+            ...reference(
+              'approvals',
+              'subjectId',
+              await countRows(database, 'approvals', {
+                subjectType: 'disposal',
+                subjectId: id,
+              }),
+            ),
+          ],
+        );
       return {
         level:
           disposal && String(disposal.status) === 'draft' ? 'plain' : 'blocked',
@@ -684,10 +708,42 @@ export function createDisposalService(dependencies: {
       };
     },
 
-    async delete(id, context, conditions) {
+    async delete(id, context, conditions, options = {}) {
       await database.transaction(async (connection) => {
         const disposal = await records.load(id, conditions, connection);
-        records.requireStatus(disposal, ['draft'], 'delete');
+        if (!options.unrestricted)
+          records.requireStatus(disposal, ['draft'], 'delete');
+        // Root deleting an approved disposal not yet carried out (2026-10-30):
+        // its devices, held for it, go back to stock, since nothing else
+        // takes them out of 待处置. A carried-out one leaves them disposed.
+        for (const entry of await listDevices(id, connection))
+          if (entry.status === 'pendingDisposal')
+            await devices.correctStatus(
+              String(entry.deviceId),
+              {
+                status: 'inStock',
+                reason: `${String(disposal.disposalNo)} deleted`,
+              },
+              { ...context, sourceType: 'disposal', sourceId: id },
+              unrestricted('devices', 'update'),
+              connection,
+            );
+        await connection.query
+          .deleteFrom('approvals')
+          .where('subjectType', '=', 'disposal')
+          .where('subjectId', '=', id)
+          .execute();
+        await connection.query
+          .deleteFrom('attachmentLinks')
+          .where('ownerType', '=', 'disposals')
+          .where('ownerId', '=', id)
+          .execute();
+        // Its AI reviews in 收件箱 (2026-10-30): nothing is left to decide.
+        await connection.query
+          .deleteFrom('itamAgentRuns')
+          .where('subjectType', '=', 'disposals')
+          .where('subjectId', '=', id)
+          .execute();
         await connection.query
           .deleteFrom('disposalDevices')
           .where('disposalId', '=', id)

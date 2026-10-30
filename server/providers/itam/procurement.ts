@@ -34,8 +34,10 @@ import {
   UnauthorizedFieldsError,
   ValidationError,
   type DeleteImpact,
+  type DeleteOptions,
 } from './errors.js';
 import type { HistoryService } from './history.js';
+import { countRows, reference, unrestrictedImpact } from './delete-parts.js';
 import type { ApproverDirectory } from './approvers.js';
 import { lifecycleRefusal } from './lifecycles.js';
 import type { EntitlementService } from './entitlements.js';
@@ -127,11 +129,12 @@ export interface ProcurementService {
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Row>;
-  deleteImpact(id: string): Promise<DeleteImpact>;
+  deleteImpact(id: string, options?: DeleteOptions): Promise<DeleteImpact>;
   delete(
     id: string,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
+    options?: DeleteOptions,
   ): Promise<void>;
   lines(id: string): Promise<readonly Row[]>;
   /**
@@ -964,10 +967,82 @@ export function createProcurementService(deps: {
       });
     },
 
-    async deleteImpact(id) {
+    async deleteImpact(id, options = {}) {
       const order = await findRaw(id);
-      const generated = await this.generated(id);
       if (!order) return { level: 'plain', references: [] };
+      // Root, whatever the order's state (2026-10-30): only what it brought
+      // in that is still on the books stops it; its lines, approvals and
+      // receipts go with it.
+      if (options.unrestricted) {
+        const received = await database
+          .query()
+          .selectFrom('purchaseReceipts')
+          .select(['generatedType', 'generatedId'])
+          .where('purchaseOrderId', '=', id)
+          .where('generatedId', 'is not', null)
+          .execute<{ generatedType: string; generatedId: string }>();
+        const idsOf = (type: string) =>
+          received
+            .filter((row) => row.generatedType === type)
+            .map((row) => row.generatedId);
+        const devices = await database
+          .query()
+          .selectFrom('devices')
+          .select('id')
+          .where((eb) =>
+            eb.or([
+              eb('purchaseOrderId', '=', id),
+              ...(idsOf('device').length
+                ? [eb('id', 'in', idsOf('device'))]
+                : []),
+            ]),
+          )
+          .execute<{ id: string }>();
+        return unrestrictedImpact(
+          [
+            ...reference('devices', 'purchaseOrderId', devices.length),
+            ...reference(
+              'stockItems',
+              'purchaseOrderId',
+              await countRows(database, 'stockItems', {
+                id: idsOf('stockItem'),
+              }),
+            ),
+            ...reference(
+              'entitlements',
+              'purchaseOrderId',
+              await countRows(database, 'entitlements', {
+                id: idsOf('entitlement'),
+              }),
+            ),
+          ],
+          [
+            ...reference(
+              'purchaseOrderLines',
+              'purchaseOrderId',
+              await countRows(database, 'purchaseOrderLines', {
+                purchaseOrderId: id,
+              }),
+            ),
+            ...reference(
+              'purchaseReceipts',
+              'purchaseOrderId',
+              await countRows(database, 'purchaseReceipts', {
+                purchaseOrderId: id,
+              }),
+            ),
+            ...reference(
+              'approvals',
+              'subjectId',
+              await countRows(database, 'approvals', {
+                subjectType: 'purchaseOrder',
+                subjectId: id,
+              }),
+            ),
+          ],
+        );
+      }
+      const generated = await this.generated(id);
       if (generated.length > 0) {
         return {
           level: 'blocked',
@@ -991,14 +1066,33 @@ export function createProcurementService(deps: {
       return { level: 'plain', references: [] };
     },
 
-    async delete(id, context, conditions) {
-      const impact = await this.deleteImpact(id);
+    async delete(id, context, conditions, options = {}) {
+      const impact = await this.deleteImpact(id, options);
       if (impact.level === 'blocked') throw new DeleteBlockedError(impact);
       await database.transaction(async (connection) => {
         await load(id, conditions, connection);
         await connection.query
           .deleteFrom('purchaseOrderLines')
           .where('purchaseOrderId', '=', id)
+          .execute();
+        // What only a received order has, gone with it when root deletes
+        // one (2026-10-30): the receipts, whose records are gone already,
+        // and the assistant's receiving runs. Its attachments' links too.
+        for (const table of ['purchaseReceipts', 'receiptRuns'])
+          await connection.query
+            .deleteFrom(table)
+            .where('purchaseOrderId', '=', id)
+            .execute();
+        await connection.query
+          .deleteFrom('attachmentLinks')
+          .where('ownerType', '=', 'purchaseOrders')
+          .where('ownerId', '=', id)
+          .execute();
+        // Its AI reviews in 收件箱 (2026-10-30): nothing is left to decide.
+        await connection.query
+          .deleteFrom('itamAgentRuns')
+          .where('subjectType', '=', 'purchaseOrders')
+          .where('subjectId', '=', id)
           .execute();
         await connection.query
           .deleteFrom('approvals')

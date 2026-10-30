@@ -215,6 +215,9 @@ const messages = {
       'This {{object}} will be permanently deleted. This cannot be undone.',
     reference_one: 'Referenced by {{count}} record in {{collection}}',
     reference_other: 'Referenced by {{count}} records in {{collection}}',
+    withParts: 'Everything below goes with it, and it cannot be undone',
+    part_one: '{{collection}}: {{count}}',
+    part_other: '{{collection}}: {{count}}',
   },
   tabs: {
     history: 'History',

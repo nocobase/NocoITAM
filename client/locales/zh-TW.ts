@@ -201,6 +201,9 @@ const zhTW: AppResource = {
     plain: '此{{object}}將被永久刪除，無法復原',
     reference_one: '被 {{collection}} 中的 {{count}} 筆記錄引用',
     reference_other: '被 {{collection}} 中的 {{count}} 筆記錄引用',
+    withParts: '以下內容會一併刪除，無法復原',
+    part_one: '{{collection}} {{count}} 筆',
+    part_other: '{{collection}} {{count}} 筆',
   },
   tabs: {
     history: '歷程',

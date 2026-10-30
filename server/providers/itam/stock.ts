@@ -28,8 +28,10 @@ import {
   RecordNotFoundError,
   ValidationError,
   type DeleteImpact,
+  type DeleteOptions,
 } from './errors.js';
 import type { HistoryService, DerivedEvents } from './history.js';
+import { countRows, reference, unrestrictedImpact } from './delete-parts.js';
 import type { OperationContext } from './devices.js';
 import type { SettingsService } from './settings.js';
 
@@ -133,11 +135,12 @@ export interface StockService {
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Row>;
-  deleteImpact(id: string): Promise<DeleteImpact>;
+  deleteImpact(id: string, options?: DeleteOptions): Promise<DeleteImpact>;
   delete(
     id: string,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
+    options?: DeleteOptions,
   ): Promise<void>;
   stockIn(
     id: string,
@@ -882,7 +885,25 @@ export function createStockService(
       });
     },
 
-    async deleteImpact(id) {
+    async deleteImpact(id, options = {}) {
+      // Root (2026-10-30): what is held and every movement are the item's
+      // own record, and go with it.
+      if (options.unrestricted)
+        return unrestrictedImpact(
+          [],
+          [
+            ...reference(
+              'stockHoldings',
+              'stockItemId',
+              await countRows(database, 'stockHoldings', { stockItemId: id }),
+            ),
+            ...reference(
+              'stockMovements',
+              'stockItemId',
+              await countRows(database, 'stockMovements', { stockItemId: id }),
+            ),
+          ],
+        );
       const holdings = await database
         .query()
         .selectFrom('stockHoldings')
@@ -925,16 +946,33 @@ export function createStockService(
       return { level: references.length > 0 ? 'blocked' : 'plain', references };
     },
 
-    async delete(id, context, conditions) {
+    async delete(id, context, conditions, options = {}) {
       // The impact check runs outside the transaction: SQLite holds one
       // connection, so a manager-level query inside would wait forever.
-      const impact = await this.deleteImpact(id);
+      const impact = await this.deleteImpact(id, options);
       if (impact.level === 'blocked') throw new DeleteBlockedError(impact);
       await database.transaction(async (connection) => {
         await load(id, conditions, connection);
         await connection.query
           .deleteFrom('stockMovements')
           .where('stockItemId', '=', id)
+          .execute();
+        // Root's delete (2026-10-30): what holders have, its receipts on
+        // the orders it came in on (so they may go next), and its
+        // attachments' links.
+        await connection.query
+          .deleteFrom('stockHoldings')
+          .where('stockItemId', '=', id)
+          .execute();
+        await connection.query
+          .deleteFrom('purchaseReceipts')
+          .where('generatedType', '=', 'stockItem')
+          .where('generatedId', '=', id)
+          .execute();
+        await connection.query
+          .deleteFrom('attachmentLinks')
+          .where('ownerType', '=', 'stockItems')
+          .where('ownerId', '=', id)
           .execute();
         await connection.query
           .deleteFrom('stockItems')

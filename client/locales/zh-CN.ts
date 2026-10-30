@@ -204,6 +204,9 @@ const zhCN: AppResource = {
     plain: '该{{object}}将被永久删除，无法撤销',
     reference_one: '被 {{collection}} 中的 {{count}} 条记录引用',
     reference_other: '被 {{collection}} 中的 {{count}} 条记录引用',
+    withParts: '以下内容会一并删除，无法撤销',
+    part_one: '{{collection}} {{count}} 条',
+    part_other: '{{collection}} {{count}} 条',
   },
   tabs: {
     history: '历史',

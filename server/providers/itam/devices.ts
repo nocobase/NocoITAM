@@ -43,9 +43,11 @@ import {
   RecordNotFoundError,
   ValidationError,
   type DeleteImpact,
+  type DeleteOptions,
 } from './errors.js';
 import { addMonths, isoDate, today } from './dates.js';
 import type { HistoryService, HistorySource } from './history.js';
+import { unrestrictedImpact } from './delete-parts.js';
 import type { NumberingService } from './numbering.js';
 import type { SettingsService } from './settings.js';
 import { normalizeSerial } from './device-sources.js';
@@ -193,11 +195,12 @@ export interface DeviceService {
     conditions: DatabaseAuthorizationConditions,
     connection?: DatabaseConnection,
   ): Promise<Row>;
-  deleteImpact(id: string): Promise<DeleteImpact>;
+  deleteImpact(id: string, options?: DeleteOptions): Promise<DeleteImpact>;
   delete(
     id: string,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
+    options?: DeleteOptions,
   ): Promise<void>;
   assign(
     id: string,
@@ -1573,12 +1576,16 @@ export function createDeviceService(
       );
     },
 
-    async deleteImpact(id) {
+    async deleteImpact(id, options = {}) {
       const references = [] as {
         collection: string;
         field: string;
         count: number;
       }[];
+      // Root (2026-10-30): where the device went and the order it came in on
+      // are its own record, and go with it; what else names it still stops
+      // it.
+      const parts = [] as typeof references;
       const allocationCount = await database
         .query()
         .selectFrom('allocations')
@@ -1587,7 +1594,7 @@ export function createDeviceService(
         .where('subjectId', '=', id)
         .executeTakeFirst<{ total: number | string }>();
       if (Number(allocationCount?.total ?? 0) > 0) {
-        references.push({
+        (options.unrestricted ? parts : references).push({
           collection: 'allocations',
           field: 'subjectId',
           count: Number(allocationCount?.total),
@@ -1595,7 +1602,7 @@ export function createDeviceService(
       }
       const device = await findRaw(id);
       if (device?.purchaseOrderId) {
-        references.push({
+        (options.unrestricted ? parts : references).push({
           collection: 'purchaseOrders',
           field: 'purchaseOrderId',
           count: 1,
@@ -1656,16 +1663,36 @@ export function createDeviceService(
             count: Number(row?.total),
           });
       }
+      if (options.unrestricted) return unrestrictedImpact(references, parts);
       return { level: references.length > 0 ? 'blocked' : 'plain', references };
     },
 
-    async delete(id, context, conditions) {
+    async delete(id, context, conditions, options = {}) {
       // The impact check runs outside the transaction: SQLite holds one
       // connection, so a manager-level query inside would wait forever.
-      const impact = await this.deleteImpact(id);
+      const impact = await this.deleteImpact(id, options);
       if (impact.level === 'blocked') throw new DeleteBlockedError(impact);
       await database.transaction(async (connection) => {
         await load(id, conditions, connection);
+        // Root's delete takes the device's own record with it (2026-10-30):
+        // where it went, its receipt on the order it came in on (so the
+        // order may go next), and its attachments' links. A device anyone
+        // else may delete has none of them.
+        await connection.query
+          .deleteFrom('allocations')
+          .where('subjectType', '=', 'device')
+          .where('subjectId', '=', id)
+          .execute();
+        await connection.query
+          .deleteFrom('purchaseReceipts')
+          .where('generatedType', '=', 'device')
+          .where('generatedId', '=', id)
+          .execute();
+        await connection.query
+          .deleteFrom('attachmentLinks')
+          .where('ownerType', '=', 'devices')
+          .where('ownerId', '=', id)
+          .execute();
         await connection.query
           .deleteFrom('devices')
           .where('id', '=', id)

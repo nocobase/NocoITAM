@@ -1,3 +1,4 @@
+import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { AwaitingMeTag } from '@/components/itam/awaiting-me-tag';
 import { useTranslation } from '@nocobase/i18n/client';
 import {
@@ -117,6 +118,9 @@ function DomainList({
   // purchase order (which lost its owner on 2026-09-25) is refused over the
   // unknown key.
   const currentUserId = useCurrentUserId();
+  // Root deletes past the state a record is in (2026-10-30); the server
+  // still stops it while another record depends on the one deleted.
+  const unrestricted = useCan('unrestricted').can;
   const hasOwner =
     domain.ownerFromCreator !== false &&
     domain.fields.some((field) => field.key === 'ownerId');
@@ -316,7 +320,7 @@ function DomainList({
   // ends the same way on every list.
   const rowActions = permissions.delete
     ? (row: ItamRecord) =>
-        (domain.deletable?.(row, currentUserId) ?? true) ? (
+        unrestricted || (domain.deletable?.(row, currentUserId) ?? true) ? (
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -499,6 +503,7 @@ function DomainList({
           onDelete={
             permissions.delete
               ? (row) =>
+                  unrestricted ||
                   (domain.deletable?.(row, currentUserId) ?? true)
                     ? setDeleting(row)
                     : undefined

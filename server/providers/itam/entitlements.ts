@@ -29,8 +29,10 @@ import {
   RecordNotFoundError,
   ValidationError,
   type DeleteImpact,
+  type DeleteOptions,
 } from './errors.js';
 import type { HistoryService } from './history.js';
+import { reference, unrestrictedImpact } from './delete-parts.js';
 import type { OperationContext } from './devices.js';
 import type { SettingsService } from './settings.js';
 import { addDays, isoDate, today } from './dates.js';
@@ -149,11 +151,12 @@ export interface EntitlementService {
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
   ): Promise<Row>;
-  deleteImpact(id: string): Promise<DeleteImpact>;
+  deleteImpact(id: string, options?: DeleteOptions): Promise<DeleteImpact>;
   delete(
     id: string,
     context: OperationContext,
     conditions: DatabaseAuthorizationConditions,
+    options?: DeleteOptions,
   ): Promise<void>;
   assignSeats(
     id: string,
@@ -1032,7 +1035,7 @@ export function createEntitlementService(
       });
     },
 
-    async deleteImpact(id) {
+    async deleteImpact(id, options = {}) {
       const count = async (table: string, extra: ExtraWhere) =>
         Number(
           (
@@ -1072,6 +1075,22 @@ export function createEntitlementService(
           field: 'generatedId',
           count: receipts,
         });
+      // Root (2026-10-30): the seats, given out or not, and the receipt that
+      // brought it in are its own, and go with it.
+      if (options.unrestricted)
+        return unrestrictedImpact(
+          [],
+          [
+            ...reference(
+              'entitlementSeats',
+              'entitlementId',
+              await count('entitlementSeats', (q) =>
+                q.where('entitlementId', '=', id),
+              ),
+            ),
+            ...warn,
+          ],
+        );
       return {
         level:
           references.length > 0
@@ -1083,16 +1102,28 @@ export function createEntitlementService(
       };
     },
 
-    async delete(id, context, conditions) {
+    async delete(id, context, conditions, options = {}) {
       // The impact check runs outside the transaction: SQLite holds one
       // connection, so a manager-level query inside would wait forever.
-      const impact = await this.deleteImpact(id);
+      const impact = await this.deleteImpact(id, options);
       if (impact.level === 'blocked') throw new DeleteBlockedError(impact);
       await database.transaction(async (connection) => {
         await load(id, conditions, connection);
         await connection.query
           .deleteFrom('entitlementSeats')
           .where('entitlementId', '=', id)
+          .execute();
+        // Its receipt on the order that brought it in, so the order may go
+        // next (2026-10-30), and its attachments' links.
+        await connection.query
+          .deleteFrom('purchaseReceipts')
+          .where('generatedType', '=', 'entitlement')
+          .where('generatedId', '=', id)
+          .execute();
+        await connection.query
+          .deleteFrom('attachmentLinks')
+          .where('ownerType', '=', 'entitlements')
+          .where('ownerId', '=', id)
           .execute();
         await connection.query
           .deleteFrom('entitlements')

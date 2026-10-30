@@ -206,6 +206,9 @@ const esES: AppResource = {
       'Este elemento ({{object}}) se eliminará definitivamente. Esta acción no se puede deshacer.',
     reference_one: 'Referenciado por {{count}} registro en {{collection}}',
     reference_other: 'Referenciado por {{count}} registros en {{collection}}',
+    withParts: 'Todo lo siguiente se elimina con él y no se puede deshacer',
+    part_one: '{{collection}}: {{count}}',
+    part_other: '{{collection}}: {{count}}',
   },
   tabs: {
     history: 'Historial',

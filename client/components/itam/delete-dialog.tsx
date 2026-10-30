@@ -60,6 +60,10 @@ export function DeleteDialog({
               <Skeleton className='h-4 w-2/3' />
             ) : blocked ? (
               t('delete.blocked')
+            ) : impact?.parts?.length ? (
+              // Root deleting past the business rules (2026-10-30): what
+              // goes with the record is listed below.
+              t('delete.withParts')
             ) : impact?.level === 'warn' ? (
               t('delete.warned')
             ) : (
@@ -74,6 +78,18 @@ export function DeleteDialog({
                 {t('delete.reference', {
                   count: reference.count,
                   collection: collectionLabel(reference.collection) as string,
+                })}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {!blocked && impact?.parts?.length ? (
+          <ul className='list-disc space-y-1 pl-5 text-sm'>
+            {impact.parts.map((part) => (
+              <li key={`${part.collection}.${part.field}`}>
+                {t('delete.part', {
+                  count: part.count,
+                  collection: collectionLabel(part.collection) as string,
                 })}
               </li>
             ))}

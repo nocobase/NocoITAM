@@ -33,6 +33,20 @@ export interface DeleteImpact {
   /** blocked: dangling references would remain; warn: side effects; plain. */
   readonly level: 'blocked' | 'warn' | 'plain';
   readonly references: readonly DeleteReference[];
+  /**
+   * What goes with the record when an unrestricted caller deletes it past
+   * the business rules (2026-10-30): its lines, approvals, seats, movements.
+   */
+  readonly parts?: readonly DeleteReference[];
+}
+
+/**
+ * How a delete is asked. `unrestricted` is root's (`isUnrestricted`): the
+ * record's state does not matter, its own parts go with it, and only other
+ * records still depending on it block.
+ */
+export interface DeleteOptions {
+  readonly unrestricted?: boolean;
 }
 
 export class DeleteBlockedError extends Error {

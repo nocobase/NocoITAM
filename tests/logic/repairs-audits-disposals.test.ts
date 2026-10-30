@@ -319,6 +319,62 @@ describe('repairs, audits and disposals', () => {
     ).toBe(1);
   });
 
+  // Root deletes a disposal in any state (2026-10-30). One approved and
+  // not carried out held its devices for it: they go back to stock, since
+  // nothing else takes them out of 待处置.
+  it('lets root delete an approved disposal, returning its devices to stock', async () => {
+    const root = { user: 'rob', role: 'root' as const };
+    const device = await createDevice();
+    const disposal = await data<{ id: string }>(
+      await post('disposals', {
+        recipientName: 'Recycler',
+        method: 'scrap',
+        reason: 'damaged',
+        description: 'No longer fit for use',
+        deviceIds: [device.id],
+        dataWipe: 'notRequired',
+      }),
+    );
+    await post(`disposals/${disposal.id}/submit`, {
+      approverId: approver.user,
+    });
+    await post(
+      `disposals/${disposal.id}/decide`,
+      { decision: 'approved' },
+      approver,
+    );
+    expect(
+      (await data<{ status: string }>(await get(`devices/${device.id}`)))
+        .status,
+    ).toBe('pendingDisposal');
+    const remove = (who: typeof manager | typeof root) =>
+      app.request(`/api/itam/disposals/${disposal.id}`, {
+        method: 'DELETE',
+        ...who,
+      });
+    expect((await remove(manager)).status).not.toBe(200);
+    const impact = await data<{
+      level: string;
+      parts: { collection: string }[];
+    }>(
+      await app.request(
+        `/api/itam/disposals/${disposal.id}/delete-impact`,
+        root,
+      ),
+    );
+    expect(impact.level).toBe('warn');
+    expect(impact.parts.map((part) => part.collection)).toEqual([
+      'disposalDevices',
+      'approvals',
+    ]);
+    expect((await remove(root)).status).toBe(200);
+    expect(
+      (await data<{ status: string }>(await get(`devices/${device.id}`)))
+        .status,
+    ).toBe('inStock');
+    expect((await get(`disposals/${disposal.id}`)).status).toBe(404);
+  });
+
   /**
    * A disposal waiting for a decision is not editable at all, but it is
    * still somebody's to follow through — so its 负责人 may be handed over by

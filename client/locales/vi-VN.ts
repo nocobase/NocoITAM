@@ -204,6 +204,9 @@ const viVN: AppResource = {
     plain: '{{object}} này sẽ bị xóa vĩnh viễn. Không thể hoàn tác.',
     reference_one: 'Được {{count}} hồ sơ trong {{collection}} tham chiếu',
     reference_other: 'Được {{count}} hồ sơ trong {{collection}} tham chiếu',
+    withParts: 'Mọi mục dưới đây sẽ bị xóa cùng, không thể hoàn tác',
+    part_one: '{{collection}}: {{count}}',
+    part_other: '{{collection}}: {{count}}',
   },
   tabs: {
     history: 'Lịch sử',

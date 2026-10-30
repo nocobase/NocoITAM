@@ -190,6 +190,24 @@ key>', ns: 'itam' }`, the way the plugin's own 成员 and 系统管理员 are
   deleting. Routes refuse it with
   `requireGrant` (`server/routes/itam/http.ts`), which calls the context's
   `require`: the plugin's `guard` middleware is gone. Deleting a device likewise stays with root.
+- `root` deletes past the business rules (2026-10-30): a record's state
+  does not matter (a submitted, approved or completed order; a disposal or
+  stocktake in any state), and what is its own goes with it — an order's
+  lines, approvals, receipts, receiving runs and AI reviews, a device's
+  allocations and receipt, an entitlement's seats, a stock item's holdings
+  and movements, a disposal's device list (its devices still 待处置 go back
+  to stock), a stocktake's items, and every record's attachment links.
+  Only another record still on the books that depends on it stops it: an
+  order while what it brought in remains, a device while a repair,
+  stocktake, disposal, seat, component or child device names it. The
+  route asks `isUnrestricted` (`server/routes/itam/http.ts`, the
+  authorization snapshot) and passes `{ unrestricted }` to the service's
+  `deleteImpact` / `delete`, whose impact lists what goes as `parts`; the
+  pages offer delete to root whatever a domain's `deletable` says
+  (`useCan('unrestricted')`). Master data keeps its rules: it is deleted
+  only when nothing uses it. Everyone else keeps the rules as they were.
+  Deleting an order or a disposal also removes its AI reviews in 收件箱,
+  whoever deletes it.
 - The initial administrator (`users.initialAdmin.username`) is also
   assigned `itam-asset-manager`, beside `root` (2026-10-23, seed
   `202610230001_assign_initial_admin_asset_manager`). That is not a second
