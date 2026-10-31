@@ -98,6 +98,11 @@ test(
       ['POST', '/itam/demo/generate', {}],
       ['POST', '/agents/conversations', {}],
       ['POST', '/assistant/plans', {}],
+      [
+        'POST',
+        '/auth/request-password-reset',
+        { email: 'admin@nocobase.com', redirectTo: '/reset-password' },
+      ],
       ['POST', '/files/upload', {}],
       ['POST', '/itamAttachments/uploadOne', {}],
       ['POST', '/itamAttachments/uploadMany', {}],

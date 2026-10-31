@@ -20,19 +20,26 @@ trustLockfile: true
 strictDepBuilds: false
 
 minimumReleaseAgeExclude:
-  - '@nocobase/app-plugin-authentication@2.0.0-beta.15'
+  - '@nocobase/app-plugin-authentication@2.0.0-beta.16'
   - '@nocobase/app-cli@1.0.0-beta.30'
-  - '@nocobase/app-client@4.0.0-beta.4'
-  - '@nocobase/app-server@3.0.0-beta.4'
-  - '@nocobase/db@1.0.0-beta.23'
-  - '@nocobase/app-plugin-agents@1.0.0-beta.29'
+  - '@nocobase/app-client@4.0.0-beta.5'
+  - '@nocobase/app-server@3.0.0-beta.5'
+  - '@nocobase/db@1.0.0-beta.24'
+  - '@nocobase/jobs@1.0.0-beta.5'
+  - '@nocobase/queue@1.0.0-beta.10'
+  - '@nocobase/lifecycle@0.1.0-beta.4'
+  - '@nocobase/mailer@0.1.0-beta.1'
+  - '@nocobase/app-plugin-agents@2.0.0-beta.0'
   - '@nocobase/app-plugin-authorization@1.0.0-beta.33'
-  - '@nocobase/app-plugin-demo-mode@0.2.0-beta.5'
+  - '@nocobase/app-plugin-demo-mode@0.2.0-beta.6'
+  - '@nocobase/app-plugin-mail@1.0.0-beta.18'
+  - '@nocobase/app-plugin-notification@2.0.0-beta.2'
+  - '@nocobase/app-plugin-scheduler@1.0.0-beta.21'
   - '@nocobase/app-plugin-users@2.0.0-beta.11'
   - '@nocobase/agent-protocol@0.1.0-beta.16'
   - '@nocobase/api-client@1.0.0-beta.6'
   - '@nocobase/app-cli-client@0.1.0-beta.17'
 
-# Match Agents beta.29 and ai 7.0.128; Ollama otherwise resolves a newer incompatible SDK.
+# Match Agents 2.0.0-beta.0 and ai 7.0.128; Ollama otherwise resolves a newer incompatible SDK.
 overrides:
   ollama-ai-provider-v2>@ai-sdk/provider-utils: 5.0.54

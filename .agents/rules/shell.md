@@ -49,8 +49,8 @@ The details are in [ITAM's conventions](itam-conventions.md), [the assistant](it
 The signed-in region waits in `client/routing/session-preparation.tsx` before mounting `AppLayout`: the authentication provider first reconnects active realtime subscriptions as the current session and waits for the open notification, including permission invalidation. A ten-second timeout shows a localized retry/sign-out screen. Keep this boundary inside `RequiredAuthentication`; guest login must remain reachable without realtime. Readiness is only for initial session preparation. Subsequent permission notifications and reconnects still use normal fail-closed route unmounting, including portal and effect cleanup.
 
 - **Demo mode menu (2026-10-25):** the header actions start with the plugin's
-  `DemoModeMenu` from `@nocobase/app-plugin-demo-mode/client/menu`. Version
-  0.2.0-beta.1 owns the compact styling, notice, account list, switching and translations;
+  `DemoModeMenu` from `@nocobase/app-plugin-demo-mode/client/menu`. The plugin
+  owns the compact styling, notice, account list, switching and translations;
   register `demoMode()` without presentation options. Keep one menu in the
   header, before the assistant, theme and account controls.
 - **Inbox count in the tab title (2026-10-25):** `AppLayout` puts 收件箱's

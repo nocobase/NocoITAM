@@ -52,6 +52,12 @@ TypeScript and compiled JavaScript use the same source checksum for migration hi
 
 The application's one build step is the `afterServerBuild` hook in `cli/itam.ts` (registered in `cli/plugins.ts`). It runs `scripts/copy-seed-assets.mjs`, which copies the seeds' data files (`database/main/seeds/assets/`) next to the compiled seeds and the assistant's skills (`ai/skills/`) to `dist/ai/skills/`, where the server reads them at its first start. A deployment's `config.yml` needs `secrets.keys`, or the assistant's model services cannot be stored; the guide's Configuration section (`docs/guide.md`) shows it.
 
+## Redis jobs and queues
+
+Since `@nocobase/jobs` 1 and `@nocobase/queue` 1 (2026-10-30, with Demo Mode 0.2.0-beta.6), their Redis backends live in the commercial `@nocobase/app-plugin-jobs-redis` and `@nocobase/app-plugin-queue-redis` Server plugins, which come from the customer registry rather than npm, and `server/config/jobs.ts` and `queue.ts` declare memory only. A deployment that names Redis in `jobs`, `queue`, `scheduler.jobs` or `mail.jobs` installs and registers that plugin on every producer and consumer and spells out `adapter: redis`; `connection` alone no longer selects it, and an unregistered backend fails rather than falling back to memory. ITAM's work agents' queue (`itamAgentRuns`) moves the same way.
+
+That upgrade moved the framework packages ahead of the template: `nocobase.defaultTemplateVersion` stays 1.0.0-beta.84 because only these configuration files, their test and `config.example.yml`'s jobs section were taken from 1.0.0-beta.85, so the next template upgrade finds them already merged and everything else still to do.
+
 ## Deploying to Studio
 
 Run release checks under Node 24, matching CI (2026-10-26). Node 26's native `localStorage` conflicts with the jsdom test environment and causes browser-storage tests to fail; on a machine using mise, select the installed Node 24 with `mise exec node@24 -- pnpm test`.

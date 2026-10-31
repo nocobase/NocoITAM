@@ -1,7 +1,5 @@
 import { DemoModeSettings } from '@nocobase/app-plugin-demo-mode/client/settings';
-import { useCan } from '@nocobase/app-plugin-authorization/client';
 import { useDemoMode } from '@nocobase/app-plugin-demo-mode/client';
-import { Skeleton } from '#components/ui/skeleton';
 import { useTranslation } from '@nocobase/i18n/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Database, Trash2 } from 'lucide-react';
@@ -47,19 +45,6 @@ export default function DemoSettingsPage(): ReactElement {
   );
 }
 
-function DemoSettingsSkeleton(): ReactElement {
-  const { t } = useTranslation();
-  return (
-    <PageContainer>
-      <div aria-label={t('status.loading')} role='status' className='space-y-4'>
-        <Skeleton className='h-8 w-64' />
-        <Skeleton className='h-64 w-full' />
-        <Skeleton className='h-32 w-full' />
-      </div>
-    </PageContainer>
-  );
-}
-
 const DEMO_COMPONENTS = {
   // Settings already provides the page heading; no separate refresh toolbar.
   Header: () => null,
@@ -68,19 +53,8 @@ const DEMO_COMPONENTS = {
 function PluginDemoSettings(): ReactElement {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const access = useCan({
-    resource: { type: 'settings', id: 'demoMode.data' },
-    action: 'read',
-  });
-  if (access.isPending) return <DemoSettingsSkeleton />;
-  if (!access.can)
-    return (
-      <PageContainer>
-        <p>
-          {t('status.deniedDescription', { label: t('settings.demo.title') })}
-        </p>
-      </PageContainer>
-    );
+  // The route's `authz` guards this page; the plugin's page shows its own
+  // loading and denied states.
   return (
     <PageContainer>
       <DemoModeSettings

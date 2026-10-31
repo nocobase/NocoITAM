@@ -385,19 +385,28 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
 - Keep ITAM's write exceptions empty. External effects, background maintenance,
   sync, lifecycle effect workers and automatic work agents stay idle; read-side
   caches must not write. Do not provision real model credentials in Demo Mode.
-- **Plugin integration, 0.2.0-beta.5 (2026-10-28).** Import `isDemoMode`
-  from the plugin's server entry and the boolean `useDemoMode` from its client
+- **Plugin integration, 0.2.0-beta.5 (2026-10-28), now 0.2.0-beta.6
+  (2026-10-30).** Import `isDemoMode` from the plugin's server entry and the boolean `useDemoMode` from its client
   entry. The client uses published startup configuration, with no status query
   or loading state. `server/app.ts` registers the plugin's `demoEffectsGuard`
-  after i18n with ITAM's protected paths. Keep background/service checks and
+  after i18n with ITAM's protected paths, `/api/auth/request-password-reset`
+  among them since 2026-10-31: it sends mail and writes only `verification`,
+  which the SQL guard allows. Keep background/service checks and
   the form-specific `isDemoReadOnlyError` handling: the plugin owns the refusal
   and toast, while ITAM restores inline values and retains form drafts.
-  Visitor preference cookies, account role translations and the reset schedule
-  belong to the plugin; do not duplicate them in the application.
+  Visitor preference cookies, account role translations, the reset schedule
+  and, since beta.6, its retries and recovery belong to the plugin; do not
+  duplicate them in the application. A daily reset that fails is tried again
+  up to three times a day (`demoModeDailyResets`); one left interrupted waits
+  for a manual reset until it has not moved for an hour, when the next due run
+  takes it over.
 - `/settings/demo` uses plugin management in Demo Mode and the original sample
   importer otherwise. Keep the ordinary sample-data banner. Use the plugin's
   route helper and deployment reset settings; do not duplicate its entry,
-  account-switching or scheduling logic.
+  account-switching or scheduling logic. The route's `authz` decides who
+  reaches the page, and `DemoModeSettings` shows its own loading and denied
+  states (2026-10-30); ITAM supplies only the frame, the count names and what
+  to refresh afterwards.
 
 - **The demo comes with Asset Steward conversations** (2026-10-25,
   `demo-conversations.ts`), so the chat has something to read where no model

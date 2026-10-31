@@ -60,6 +60,9 @@ export function createApp(runtime: AppRuntimeContext): Application {
         '/api/itam/*',
         '/api/assistant/*',
         '/api/agents/*',
+        // Sends mail where a sender is configured, and writes only `verification`,
+        // which the SQL guard allows for sign-in.
+        '/api/auth/request-password-reset',
         '/api/files/*',
         '/api/itamAttachments/uploadOne',
         '/api/itamAttachments/uploadMany',
