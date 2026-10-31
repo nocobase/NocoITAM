@@ -389,7 +389,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   (2026-10-30).** Import `isDemoMode` from the plugin's server entry and the boolean `useDemoMode` from its client
   entry. The client uses published startup configuration, with no status query
   or loading state. `server/app.ts` registers the plugin's `demoEffectsGuard`
-  after i18n with ITAM's protected paths. Keep background/service checks and
+  after i18n with ITAM's protected paths, `/api/auth/request-password-reset`
+  among them since 2026-10-31: it sends mail and writes only `verification`,
+  which the SQL guard allows. Keep background/service checks and
   the form-specific `isDemoReadOnlyError` handling: the plugin owns the refusal
   and toast, while ITAM restores inline values and retains form drafts.
   Visitor preference cookies, account role translations, the reset schedule
