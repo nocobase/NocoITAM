@@ -5,6 +5,20 @@ import inboxFrFR from '#extensions/nocobase-inbox/locales/fr-FR';
 
 /** The French copy of what the template ships; see `./en-US.ts`. */
 const systemFrFR: SystemResource = {
+  listFeedback: {
+    loading: 'Chargement',
+    empty: 'Aucune donnée pour le moment',
+    noResults: 'Aucun résultat',
+    forbidden: 'Accès refusé',
+    unauthenticated: 'Session expirée',
+    failed: 'Impossible de charger la liste',
+    refreshFailed:
+      'Échec de l’actualisation ; affichage des données précédentes',
+    retry: 'Réessayer',
+    retrying: 'Nouvelle tentative…',
+    clear: 'Effacer les filtres',
+    signIn: 'Se connecter',
+  },
   flowDiagram: {
     controls: 'Commandes du diagramme',
     fitView: 'Ajuster à la vue',
@@ -394,7 +408,7 @@ const systemFrFR: SystemResource = {
     back: 'Retour',
   },
   dataTable: {
-    noResults: 'Aucun résultat.',
+    noResults: 'Aucun résultat',
     sortAscending: 'Croissant',
     sortDescending: 'Décroissant',
     hideColumn: 'Masquer',

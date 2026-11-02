@@ -50,11 +50,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     records: 'Registros seleccionados ({{count}})',
     retained: 'Conservar la configuración existente',
     search: 'Buscar objetos de negocio o claves',
-    empty: 'No hay ámbitos de datos predeterminados',
-    emptyHint:
-      'Crea una regla para configurar el acceso básico a un objeto de negocio.',
-    readOnlyEmpty:
-      'Pide a un administrador que configure el acceso básico a los datos.',
     noResources:
       'Todos los objetos de negocio disponibles ya tienen una regla predeterminada, o no hay objetos configurables registrados.',
     unsupported:
@@ -87,8 +82,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     'Gestiona la información de los usuarios, la seguridad de las cuentas y la asignación de roles. Revisa cada permiso por separado.',
   businessOperationsHint:
     'Elige las operaciones que puede realizar este rol y los datos que puede usar cada operación.',
-  pageAccessHint:
-    'Elige las páginas de negocio que este rol puede abrir. Todos los ajustes del sistema, incluida la gestión de usuarios y la configuración del negocio, se controlan en Permisos de configuración. Los datos y las acciones de negocio requieren permisos aparte.',
   roleAssignment: 'Asignación de roles',
   accountSecurity: 'Seguridad de la cuenta',
   userInformation: 'Información del usuario',
@@ -247,10 +240,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   roleFilter: 'Filtrar por rol',
   allRoles: 'Todos los roles',
   editUserFor: 'Editar {{name}}',
-  usersReadOnlyEmpty:
-    'Contacta con un administrador para añadir usuarios u obtener permiso para crear usuarios y asignar roles.',
-  rolesReadOnlyEmpty:
-    'Contacta con un administrador para crear un rol u obtener permiso para crear roles.',
   selectRoles: 'Seleccionar roles',
   searchRoles: 'Buscar roles',
   noRolesFound: 'No se han encontrado roles.',

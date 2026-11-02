@@ -5,6 +5,19 @@ import inboxViVN from '#extensions/nocobase-inbox/locales/vi-VN';
 
 /** The Vietnamese copy of what the template ships; see `./en-US.ts`. */
 const systemViVN: SystemResource = {
+  listFeedback: {
+    loading: 'Đang tải',
+    empty: 'Chưa có dữ liệu',
+    noResults: 'Không có kết quả',
+    forbidden: 'Truy cập bị từ chối',
+    unauthenticated: 'Phiên đã hết hạn',
+    failed: 'Không thể tải danh sách',
+    refreshFailed: 'Làm mới thất bại; đang hiển thị dữ liệu trước đó',
+    retry: 'Thử lại',
+    retrying: 'Đang thử lại…',
+    clear: 'Xóa bộ lọc',
+    signIn: 'Đăng nhập',
+  },
   flowDiagram: {
     controls: 'Điều khiển sơ đồ',
     fitView: 'Vừa khung nhìn',
@@ -389,7 +402,7 @@ const systemViVN: SystemResource = {
     back: 'Quay lại',
   },
   dataTable: {
-    noResults: 'Không có kết quả.',
+    noResults: 'Không có kết quả',
     sortAscending: 'Tăng dần',
     sortDescending: 'Giảm dần',
     hideColumn: 'Ẩn',

@@ -51,11 +51,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     records: 'Ausgewählte Datensätze ({{count}})',
     retained: 'Bestehende Konfiguration beibehalten',
     search: 'Geschäftsobjekte oder Schlüssel suchen',
-    empty: 'Keine Standard-Datenbereiche',
-    emptyHint:
-      'Erstellen Sie eine Regel, um den Grundzugriff für ein Geschäftsobjekt festzulegen.',
-    readOnlyEmpty:
-      'Bitten Sie einen Administrator, den grundlegenden Datenzugriff einzurichten.',
     noResources:
       'Jedes verfügbare Geschäftsobjekt hat bereits eine Standardregel, oder es sind keine konfigurierbaren Objekte registriert.',
     unsupported:
@@ -89,8 +84,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     'Benutzerdaten, Kontosicherheit und Rollenzuweisungen verwalten. Prüfen Sie jede Berechtigung einzeln.',
   businessOperationsHint:
     'Wählen Sie die Vorgänge, die diese Rolle ausführen darf, und die Daten, die jeder Vorgang verwenden darf.',
-  pageAccessHint:
-    'Wählen Sie die Geschäftsseiten, die diese Rolle öffnen kann. Alle Systemeinstellungen, einschließlich Benutzerverwaltung und Geschäftskonfiguration, werden unter Konfigurationsberechtigungen gesteuert. Daten und Geschäftsaktionen erfordern eigene Berechtigungen.',
   roleAssignment: 'Rollenzuweisung',
   accountSecurity: 'Kontosicherheit',
   userInformation: 'Benutzerdaten',
@@ -256,10 +249,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   roleFilter: 'Nach Rolle filtern',
   allRoles: 'Alle Rollen',
   editUserFor: '{{name}} bearbeiten',
-  usersReadOnlyEmpty:
-    'Wenden Sie sich an einen Administrator, um Benutzer hinzuzufügen oder die Berechtigungen zum Anlegen von Benutzern und Zuweisen von Rollen zu erhalten.',
-  rolesReadOnlyEmpty:
-    'Wenden Sie sich an einen Administrator, um eine Rolle anzulegen oder die Berechtigung zum Anlegen von Rollen zu erhalten.',
   selectRoles: 'Rollen auswählen',
   searchRoles: 'Rollen suchen',
   noRolesFound: 'Keine Rollen gefunden.',

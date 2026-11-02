@@ -5,6 +5,19 @@ import inboxEsES from '#extensions/nocobase-inbox/locales/es-ES';
 
 /** The Spanish (Spain) copy of what the template ships; see `./en-US.ts`. */
 const systemEsES: SystemResource = {
+  listFeedback: {
+    loading: 'Cargando',
+    empty: 'Aún no hay datos',
+    noResults: 'Sin resultados',
+    forbidden: 'Acceso denegado',
+    unauthenticated: 'La sesión ha caducado',
+    failed: 'No se pudo cargar la lista',
+    refreshFailed: 'Error al actualizar; se muestran los datos anteriores',
+    retry: 'Reintentar',
+    retrying: 'Reintentando…',
+    clear: 'Borrar filtros',
+    signIn: 'Iniciar sesión',
+  },
   flowDiagram: {
     controls: 'Controles del diagrama',
     fitView: 'Ajustar a la vista',
@@ -392,7 +405,7 @@ const systemEsES: SystemResource = {
     back: 'Volver',
   },
   dataTable: {
-    noResults: 'Sin resultados.',
+    noResults: 'Sin resultados',
     sortAscending: 'Asc.',
     sortDescending: 'Desc.',
     hideColumn: 'Ocultar',

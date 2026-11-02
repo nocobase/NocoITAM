@@ -5,6 +5,19 @@ import inboxRuRU from '#extensions/nocobase-inbox/locales/ru-RU';
 
 /** The Russian copy of what the template ships; see `./en-US.ts`. */
 const systemRuRU: SystemResource = {
+  listFeedback: {
+    loading: 'Загрузка',
+    empty: 'Данных пока нет',
+    noResults: 'Ничего не найдено',
+    forbidden: 'Доступ запрещён',
+    unauthenticated: 'Сеанс истёк',
+    failed: 'Не удалось загрузить список',
+    refreshFailed: 'Не удалось обновить; показаны прежние данные',
+    retry: 'Повторить',
+    retrying: 'Повтор…',
+    clear: 'Сбросить фильтры',
+    signIn: 'Войти',
+  },
   flowDiagram: {
     controls: 'Управление схемой',
     fitView: 'Вписать в экран',
@@ -390,7 +403,7 @@ const systemRuRU: SystemResource = {
     back: 'Назад',
   },
   dataTable: {
-    noResults: 'Нет результатов.',
+    noResults: 'Нет результатов',
     sortAscending: 'По возр.',
     sortDescending: 'По убыв.',
     hideColumn: 'Скрыть',

@@ -5,6 +5,19 @@ import inboxPtBR from '#extensions/nocobase-inbox/locales/pt-BR';
 
 /** The Brazilian Portuguese copy of what the template ships; see `./en-US.ts`. */
 const systemPtBR: SystemResource = {
+  listFeedback: {
+    loading: 'Carregando',
+    empty: 'Ainda não há dados',
+    noResults: 'Nenhum resultado',
+    forbidden: 'Acesso negado',
+    unauthenticated: 'Sessão expirada',
+    failed: 'Não foi possível carregar a lista',
+    refreshFailed: 'Falha ao atualizar; mostrando os dados anteriores',
+    retry: 'Tentar novamente',
+    retrying: 'Tentando novamente…',
+    clear: 'Limpar filtros',
+    signIn: 'Entrar',
+  },
   flowDiagram: {
     controls: 'Controles do diagrama',
     fitView: 'Ajustar à tela',
@@ -391,7 +404,7 @@ const systemPtBR: SystemResource = {
     back: 'Voltar',
   },
   dataTable: {
-    noResults: 'Nenhum resultado.',
+    noResults: 'Nenhum resultado',
     sortAscending: 'Crescente',
     sortDescending: 'Decrescente',
     hideColumn: 'Ocultar',

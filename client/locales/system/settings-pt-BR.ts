@@ -50,11 +50,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     records: 'Registros selecionados ({{count}})',
     retained: 'Manter a configuração existente',
     search: 'Pesquisar objetos de negócio ou chaves',
-    empty: 'Nenhum escopo de dados padrão',
-    emptyHint:
-      'Crie uma regra para configurar o acesso básico a um objeto de negócio.',
-    readOnlyEmpty:
-      'Peça a um administrador para configurar o acesso básico aos dados.',
     noResources:
       'Todos os objetos de negócio disponíveis já têm uma regra padrão, ou nenhum objeto configurável está registrado.',
     unsupported:
@@ -87,8 +82,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     'Gerencie as informações dos usuários, a segurança das contas e a atribuição de funções. Revise cada permissão separadamente.',
   businessOperationsHint:
     'Escolha as operações que esta função pode realizar e os dados que cada operação pode usar.',
-  pageAccessHint:
-    'Escolha as páginas de negócio que esta função pode abrir. Todas as configurações do sistema, incluindo o gerenciamento de usuários e a configuração do negócio, são controladas em Permissões de configuração. Dados e ações de negócio exigem permissões próprias.',
   roleAssignment: 'Atribuição de funções',
   accountSecurity: 'Segurança da conta',
   userInformation: 'Informações do usuário',
@@ -248,10 +241,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   roleFilter: 'Filtrar por função',
   allRoles: 'Todas as funções',
   editUserFor: 'Editar {{name}}',
-  usersReadOnlyEmpty:
-    'Fale com um administrador para adicionar usuários ou obter permissão para criar usuários e atribuir funções.',
-  rolesReadOnlyEmpty:
-    'Fale com um administrador para criar uma função ou obter permissão para criar funções.',
   selectRoles: 'Selecionar funções',
   searchRoles: 'Pesquisar funções',
   noRolesFound: 'Nenhuma função encontrada.',

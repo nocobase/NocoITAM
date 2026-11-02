@@ -48,11 +48,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     records: 'Bản ghi đã chọn ({{count}})',
     retained: 'Giữ cấu hình hiện có',
     search: 'Tìm đối tượng nghiệp vụ hoặc mã',
-    empty: 'Chưa có phạm vi dữ liệu mặc định',
-    emptyHint:
-      'Tạo một quy tắc để cấu hình quyền truy cập cơ bản cho một đối tượng nghiệp vụ.',
-    readOnlyEmpty:
-      'Hãy nhờ quản trị viên cấu hình quyền truy cập dữ liệu cơ bản.',
     noResources:
       'Mọi đối tượng nghiệp vụ hiện có đều đã có quy tắc mặc định, hoặc chưa có đối tượng nào để cấu hình.',
     unsupported:
@@ -85,8 +80,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     'Quản lý thông tin người dùng, bảo mật tài khoản và việc gán vai trò. Hãy xem xét riêng từng quyền.',
   businessOperationsHint:
     'Chọn các thao tác mà vai trò này được thực hiện và dữ liệu mà mỗi thao tác được dùng.',
-  pageAccessHint:
-    'Chọn các trang nghiệp vụ mà vai trò này có thể mở. Mọi thiết lập hệ thống, kể cả quản lý người dùng và cấu hình nghiệp vụ, được kiểm soát trong Quyền cấu hình. Dữ liệu và thao tác nghiệp vụ cần quyền riêng.',
   roleAssignment: 'Gán vai trò',
   accountSecurity: 'Bảo mật tài khoản',
   userInformation: 'Thông tin người dùng',
@@ -247,10 +240,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   roleFilter: 'Lọc theo vai trò',
   allRoles: 'Tất cả vai trò',
   editUserFor: 'Sửa {{name}}',
-  usersReadOnlyEmpty:
-    'Hãy liên hệ quản trị viên để thêm người dùng hoặc cấp quyền tạo người dùng và gán vai trò.',
-  rolesReadOnlyEmpty:
-    'Hãy liên hệ quản trị viên để tạo vai trò hoặc cấp quyền tạo vai trò.',
   selectRoles: 'Chọn vai trò',
   searchRoles: 'Tìm vai trò',
   noRolesFound: 'Không tìm thấy vai trò.',

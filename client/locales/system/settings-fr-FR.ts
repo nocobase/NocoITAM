@@ -49,11 +49,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     records: 'Fiches sélectionnées ({{count}})',
     retained: 'Conserver la configuration existante',
     search: 'Rechercher des objets métier ou des clés',
-    empty: 'Aucun périmètre de données par défaut',
-    emptyHint:
-      "Créez une règle pour configurer l'accès de base à un objet métier.",
-    readOnlyEmpty:
-      "Demandez à un administrateur de configurer l'accès de base aux données.",
     noResources:
       "Chaque objet métier disponible a déjà une règle par défaut, ou aucun objet configurable n'est enregistré.",
     unsupported:
@@ -86,8 +81,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     'Gérer les informations des utilisateurs, la sécurité des comptes et les attributions de rôles. Examinez chaque autorisation séparément.',
   businessOperationsHint:
     'Choisissez les opérations que ce rôle peut effectuer et les données que chaque opération peut utiliser.',
-  pageAccessHint:
-    'Choisissez les pages métier que ce rôle peut ouvrir. Tous les paramètres système, y compris la gestion des utilisateurs et la configuration métier, sont contrôlés dans Autorisations de configuration. Les données et les actions métier nécessitent des autorisations distinctes.',
   roleAssignment: 'Attribution des rôles',
   accountSecurity: 'Sécurité du compte',
   userInformation: "Informations de l'utilisateur",
@@ -249,10 +242,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   roleFilter: 'Filtrer par rôle',
   allRoles: 'Tous les rôles',
   editUserFor: 'Modifier {{name}}',
-  usersReadOnlyEmpty:
-    "Contactez un administrateur pour ajouter des utilisateurs ou obtenir les autorisations de créer des utilisateurs et d'attribuer des rôles.",
-  rolesReadOnlyEmpty:
-    "Contactez un administrateur pour créer un rôle ou obtenir l'autorisation de créer des rôles.",
   selectRoles: 'Choisir des rôles',
   searchRoles: 'Rechercher des rôles',
   noRolesFound: 'Aucun rôle trouvé.',
