@@ -1,6 +1,9 @@
+import { resolveListState } from '@nocobase/app-client';
 import { useTranslation } from '@nocobase/i18n/client';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { Fragment, type ReactElement, type ReactNode } from 'react';
+
+import { ListFeedback, ListFeedbackActions } from '#components/list-feedback';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -11,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { errorMessage } from '@/lib/itam/format';
 import { cn } from '@/lib/utils';
 
 import { CellText } from './cell-text.js';
@@ -60,6 +62,15 @@ export interface DataTableProps<T extends { readonly id: string }> {
    * record's own.
    */
   readonly rowKey?: (row: T) => string;
+  /**
+   * Whether the reader narrowed the list (a search, a filter), which makes
+   * an empty answer "no results" rather than "nothing yet".
+   */
+  readonly filtered?: boolean;
+  /** Offered as 清除筛选 when a narrowed list finds nothing. */
+  readonly onClearFilters?: () => void;
+  /** Offered as 重试 when the list could not be read. */
+  readonly onRetry?: () => void;
 }
 
 /** Server-paged table with sorting and the three data states. */
@@ -76,24 +87,38 @@ export function DataTable<T extends { readonly id: string }>({
   rowActions,
   subRow,
   rowKey = (row) => row.id,
+  filtered = false,
+  onClearFilters,
+  onRetry,
 }: DataTableProps<T>): ReactElement {
   const { t } = useTranslation();
-  if (error) {
-    return (
-      <EmptyState
-        title={t('common.loadFailed')}
-        description={errorMessage(error)}
-      />
-    );
-  }
-
+  // The template's list feedback (2026-10-30, template 1.0.0-beta.86): what
+  // the list is in — empty, no results, denied, signed out, failed, or rows
+  // kept from a refresh that failed — said the same way as the settings
+  // pages, with the step that helps. A first read keeps the skeleton rows.
+  const state = resolveListState(
+    { data: rows, error, isPending: loading && !rows },
+    rows?.length ?? 0,
+    filtered,
+  );
   // An empty result shows only the hint, never a bare table header: the
   // same reading everywhere, in tabs and on list pages.
-  if (rows && rows.length === 0 && !loading) {
+  if (state === 'empty')
     return <>{empty ?? <EmptyState title={t('common.empty')} />}</>;
-  }
+  if (state !== 'ready' && state !== 'loading' && state !== 'refresh-failed')
+    return (
+      <div className='flex flex-col items-center rounded-lg border border-dashed border-border pb-4'>
+        <ListFeedback state={state} />
+        <ListFeedbackActions
+          state={state}
+          onClear={onClearFilters}
+          onRetry={onRetry}
+          busy={loading}
+        />
+      </div>
+    );
 
-  return (
+  const table = (
     <div className='space-y-3'>
       <div className='overflow-x-auto rounded-lg border border-border bg-card'>
         <Table>
@@ -199,6 +224,13 @@ export function DataTable<T extends { readonly id: string }>({
         </Table>
       </div>
       {pagination ? <Pagination {...pagination} /> : null}
+    </div>
+  );
+  if (state !== 'refresh-failed') return table;
+  return (
+    <div className='space-y-3'>
+      <ListFeedback state={state}>{table}</ListFeedback>
+      <ListFeedbackActions state={state} onRetry={onRetry} busy={loading} />
     </div>
   );
 }

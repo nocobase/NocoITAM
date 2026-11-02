@@ -144,6 +144,19 @@ function DomainList({
   for (const [key, value] of params.entries()) {
     if (!RESERVED.has(key) && !key.startsWith('init.')) filter[key] = value;
   }
+  // What the reader narrowed the list by — a search or a filter in the
+  // address, not the domain's own standing filter, nor a named view (我的,
+  // 待我审批), which is a list of its own: an empty one is nothing yet.
+  const narrowedBy = [...params.keys()].filter(
+    (key) =>
+      key === 'q' ||
+      (!RESERVED.has(key) && !key.startsWith('init.') && key !== 'view'),
+  );
+  const clearFilters = () =>
+    setParam({
+      ...Object.fromEntries(narrowedBy.map((key) => [key, undefined])),
+      page: undefined,
+    });
   // A domain with a board opens on it (?layout=table for the list). A named
   // view (待我审批, 到货逾期) decides the statuses itself, so it reads as a
   // list: every column would otherwise show the same records. 我的
@@ -518,6 +531,9 @@ function DomainList({
           rows={list.data?.data}
           loading={list.isFetching}
           error={list.error}
+          filtered={narrowedBy.length > 0}
+          onClearFilters={clearFilters}
+          onRetry={() => void list.refetch()}
           sort={{ field: sortField, order: sortOrder }}
           onSortChange={(field) =>
             setParam({
