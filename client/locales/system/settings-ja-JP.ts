@@ -49,10 +49,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     records: '選択したレコード（{{count}} 件）',
     retained: '既存の設定を維持',
     search: '業務オブジェクトまたはキーを検索',
-    empty: '既定のデータ範囲はありません',
-    emptyHint:
-      'ルールを作成して、業務オブジェクトの基本のアクセス範囲を設定します。',
-    readOnlyEmpty: '基本のデータアクセスの設定は管理者に依頼してください。',
     noResources:
       '利用できる業務オブジェクトにはすべて既定のルールがあるか、設定できるオブジェクトが登録されていません。',
     unsupported:
@@ -85,8 +81,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     'ユーザー情報、アカウントのセキュリティ、ロールの割り当てを管理します。権限を 1 つずつ確認してください。',
   businessOperationsHint:
     'このロールが実行できる操作と、各操作で利用できるデータを選択します。',
-  pageAccessHint:
-    'このロールが開ける業務ページを選びます。ユーザー管理や業務設定を含むすべてのシステム設定は「設定の権限」で管理します。データと業務操作には別の権限が必要です。',
   roleAssignment: 'ロールの割り当て',
   accountSecurity: 'アカウントのセキュリティ',
   userInformation: 'ユーザー情報',
@@ -248,10 +242,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   roleFilter: 'ロールで絞り込む',
   allRoles: 'すべてのロール',
   editUserFor: '{{name}} を編集',
-  usersReadOnlyEmpty:
-    'ユーザーの追加、またはユーザー作成とロール割り当ての権限については管理者に連絡してください。',
-  rolesReadOnlyEmpty:
-    'ロールの作成、またはロール作成の権限については管理者に連絡してください。',
   selectRoles: 'ロールを選択',
   searchRoles: 'ロールを検索',
   noRolesFound: 'ロールが見つかりません。',

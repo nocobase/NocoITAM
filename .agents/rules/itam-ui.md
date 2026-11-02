@@ -330,6 +330,23 @@ invitations) have their own `TruncatedText` with the bound on the cell; the
 prepared Users and Roles pages bound their text with the template's
 `LongText` and `DataTable`.
 
+## What a list is in
+
+ITAM's `DataTable` (`client/components/itam/data-table.tsx`) says what its
+list is in with the template's list feedback (2026-10-30, template
+1.0.0-beta.86, `client/components/list-feedback.tsx` and `resolveListState`
+from `@nocobase/app-client`), as the settings pages do: a list that read
+nothing without filters keeps its own `empty` hint (with 新建 where the
+reader may create); one the reader narrowed says 没有结果 with 清除筛选;
+a denied, signed-out or failed read says which, with 重试 where it helps;
+and rows kept from a refresh that failed stay, under a line saying they are
+the previous ones. A first read keeps its skeleton rows. A list page passes
+`filtered` (a search or a filter in the address — not the domain's standing
+filter, nor a named view such as 我的 or 待我审批, which is a list of its
+own), `onClearFilters` and `onRetry` (`domain-list.tsx`,
+`devices-list.tsx`); an embedded list passes neither and shows its empty
+hint and the failure line.
+
 ## A label's qualifier
 
 A Chinese label that carries a unit or a qualifier writes it after a space in

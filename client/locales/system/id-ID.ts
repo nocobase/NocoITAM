@@ -5,6 +5,19 @@ import inboxIdID from '#extensions/nocobase-inbox/locales/id-ID';
 
 /** The Indonesian copy of what the template ships; see `./en-US.ts`. */
 const systemIdID: SystemResource = {
+  listFeedback: {
+    loading: 'Memuat',
+    empty: 'Belum ada data',
+    noResults: 'Tidak ada hasil',
+    forbidden: 'Akses ditolak',
+    unauthenticated: 'Sesi berakhir',
+    failed: 'Tidak dapat memuat daftar',
+    refreshFailed: 'Gagal memperbarui; menampilkan data sebelumnya',
+    retry: 'Coba lagi',
+    retrying: 'Mencoba lagi…',
+    clear: 'Hapus filter',
+    signIn: 'Masuk',
+  },
   flowDiagram: {
     controls: 'Kontrol diagram',
     fitView: 'Sesuaikan dengan tampilan',
@@ -392,7 +405,7 @@ const systemIdID: SystemResource = {
     back: 'Kembali',
   },
   dataTable: {
-    noResults: 'Tidak ada hasil.',
+    noResults: 'Tidak ada hasil',
     sortAscending: 'Naik',
     sortDescending: 'Turun',
     hideColumn: 'Sembunyikan',

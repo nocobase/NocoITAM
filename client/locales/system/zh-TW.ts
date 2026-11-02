@@ -5,6 +5,19 @@ import inboxZhTW from '#extensions/nocobase-inbox/locales/zh-TW';
 
 /** The Traditional Chinese (Taiwan) copy of what the template ships; see `./en-US.ts`. */
 const systemZhTW: SystemResource = {
+  listFeedback: {
+    loading: '載入中',
+    empty: '暫無資料',
+    noResults: '沒有結果',
+    forbidden: '無存取權限',
+    unauthenticated: '工作階段已過期',
+    failed: '無法載入清單',
+    refreshFailed: '重新整理失敗，目前顯示先前的資料',
+    retry: '重試',
+    retrying: '正在重試…',
+    clear: '清除篩選',
+    signIn: '登入',
+  },
   flowDiagram: {
     controls: '流程圖控制',
     fitView: '符合畫布',
@@ -367,7 +380,7 @@ const systemZhTW: SystemResource = {
     back: '返回',
   },
   dataTable: {
-    noResults: '沒有結果。',
+    noResults: '沒有結果',
     sortAscending: '升冪',
     sortDescending: '降冪',
     hideColumn: '隱藏',

@@ -44,9 +44,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     records: '指定記錄（{{count}} 筆）',
     retained: '保留現有設定',
     search: '搜尋業務物件或識別碼',
-    empty: '目前沒有預設資料範圍',
-    emptyHint: '新增規則，為業務物件設定基本資料存取範圍。',
-    readOnlyEmpty: '請聯絡管理員設定基本資料存取範圍。',
     noResources: '可用的業務物件都已設定預設規則，或目前沒有可設定的業務物件。',
     unsupported:
       '此規則包含目前外掛程式目錄中不存在的設定，已保留原值並以唯讀方式顯示。',
@@ -76,8 +73,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     '管理使用者資料、帳號安全和角色指派，請逐項確認要授予的權限。',
   businessOperationsHint:
     '設定此角色可以執行的業務操作，以及每項操作可使用的資料範圍。',
-  pageAccessHint:
-    '選擇此角色可以開啟的業務頁面。所有系統設定（包括使用者管理和業務設定）都在「設定權限」中控制。資料和業務操作需要另外授權。',
   roleAssignment: '角色指派',
   accountSecurity: '帳號安全',
   userInformation: '使用者資料',
@@ -229,9 +224,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   roleFilter: '依角色篩選',
   allRoles: '全部角色',
   editUserFor: '編輯 {{name}}',
-  usersReadOnlyEmpty:
-    '請聯絡管理員新增使用者，或授予你建立使用者和指派角色的權限。',
-  rolesReadOnlyEmpty: '請聯絡管理員建立角色，或授予你建立角色的權限。',
   selectRoles: '選擇角色',
   searchRoles: '搜尋角色',
   noRolesFound: '找不到角色。',

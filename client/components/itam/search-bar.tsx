@@ -88,10 +88,23 @@ export function SearchBar({
     else setOwnOpen(next);
   };
   const [draft, setDraft] = useState(value);
+  // What this box last sent, and the value it last saw: a value changed from
+  // outside (清空筛选 under an empty list, 2026-10-30) replaces the draft,
+  // where it used to send the stale draft straight back; the box's own
+  // value coming back does not, so typing on is not undone.
+  const [sent, setSent] = useState(value);
+  const [seen, setSeen] = useState(value);
+  if (value !== seen) {
+    setSeen(value);
+    if (value !== sent) setDraft(value);
+  }
   // Debounce typing into the URL-backed value the parent owns.
   useEffect(() => {
     if (draft === value) return;
-    const handle = setTimeout(() => onChange(draft), 300);
+    const handle = setTimeout(() => {
+      setSent(draft);
+      onChange(draft);
+    }, 300);
     return () => clearTimeout(handle);
   }, [draft, value, onChange]);
 

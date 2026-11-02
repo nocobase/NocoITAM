@@ -5,6 +5,19 @@ import inboxJaJP from '#extensions/nocobase-inbox/locales/ja-JP';
 
 /** The Japanese copy of what the template ships; see `./en-US.ts`. */
 const systemJaJP: SystemResource = {
+  listFeedback: {
+    loading: '読み込み中',
+    empty: 'データはまだありません',
+    noResults: '結果がありません',
+    forbidden: 'アクセスが拒否されました',
+    unauthenticated: 'セッションの有効期限が切れました',
+    failed: '一覧を読み込めません',
+    refreshFailed: '更新に失敗しました。以前のデータを表示しています',
+    retry: '再試行',
+    retrying: '再試行中…',
+    clear: 'フィルターをクリア',
+    signIn: 'サインイン',
+  },
   flowDiagram: {
     controls: 'フロー図の操作',
     fitView: '全体を表示',
@@ -389,7 +402,7 @@ const systemJaJP: SystemResource = {
     back: '戻る',
   },
   dataTable: {
-    noResults: '結果がありません。',
+    noResults: '結果がありません',
     sortAscending: '昇順',
     sortDescending: '降順',
     hideColumn: '隠す',

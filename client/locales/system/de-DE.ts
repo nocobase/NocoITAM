@@ -5,6 +5,20 @@ import inboxDeDE from '#extensions/nocobase-inbox/locales/de-DE';
 
 /** The German copy of what the template ships; see `./en-US.ts`. */
 const systemDeDE: SystemResource = {
+  listFeedback: {
+    loading: 'Wird geladen',
+    empty: 'Noch keine Daten',
+    noResults: 'Keine Ergebnisse',
+    forbidden: 'Zugriff verweigert',
+    unauthenticated: 'Sitzung abgelaufen',
+    failed: 'Liste konnte nicht geladen werden',
+    refreshFailed:
+      'Aktualisierung fehlgeschlagen; vorherige Daten werden angezeigt',
+    retry: 'Erneut versuchen',
+    retrying: 'Wird erneut versucht…',
+    clear: 'Filter zurücksetzen',
+    signIn: 'Anmelden',
+  },
   flowDiagram: {
     controls: 'Diagrammsteuerung',
     fitView: 'An Ansicht anpassen',
@@ -395,7 +409,7 @@ const systemDeDE: SystemResource = {
     back: 'Zurück',
   },
   dataTable: {
-    noResults: 'Keine Ergebnisse.',
+    noResults: 'Keine Ergebnisse',
     sortAscending: 'Aufst.',
     sortDescending: 'Abst.',
     hideColumn: 'Ausblenden',

@@ -258,6 +258,17 @@ export default function DevicesListPage(): ReactElement {
   return outlet ?? <DevicesList />;
 }
 
+/** The address keys that narrow the devices list: its search and filters. */
+const NARROWING = [
+  'q',
+  'modelId',
+  'categoryId',
+  'status',
+  'departmentId',
+  'locationId',
+  'syncState',
+] as const;
+
 function DevicesList(): ReactElement {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -597,6 +608,16 @@ function DevicesList(): ReactElement {
           rows={list.data?.data}
           loading={list.isFetching}
           error={list.error}
+          // A search or a filter narrows the list; a workbench view is a
+          // list of its own (2026-10-30, the template's list feedback).
+          filtered={NARROWING.some((key) => params.has(key))}
+          onClearFilters={() =>
+            setParam({
+              ...Object.fromEntries(NARROWING.map((key) => [key, undefined])),
+              page: undefined,
+            })
+          }
+          onRetry={() => void list.refetch()}
           sort={{ field: sortField, order: sortOrder }}
           onSortChange={(field) =>
             setParam({

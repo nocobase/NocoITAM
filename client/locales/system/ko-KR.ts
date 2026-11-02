@@ -5,6 +5,19 @@ import inboxKoKR from '#extensions/nocobase-inbox/locales/ko-KR';
 
 /** The Korean copy of what the template ships; see `./en-US.ts`. */
 const systemKoKR: SystemResource = {
+  listFeedback: {
+    loading: '불러오는 중',
+    empty: '아직 데이터가 없습니다',
+    noResults: '결과가 없습니다',
+    forbidden: '접근이 거부되었습니다',
+    unauthenticated: '세션이 만료되었습니다',
+    failed: '목록을 불러올 수 없습니다',
+    refreshFailed: '새로 고치지 못했습니다. 이전 데이터를 표시합니다',
+    retry: '다시 시도',
+    retrying: '다시 시도하는 중…',
+    clear: '필터 지우기',
+    signIn: '로그인',
+  },
   flowDiagram: {
     controls: '흐름도 조작',
     fitView: '화면에 맞추기',
@@ -385,7 +398,7 @@ const systemKoKR: SystemResource = {
     back: '뒤로',
   },
   dataTable: {
-    noResults: '결과가 없습니다.',
+    noResults: '결과가 없습니다',
     sortAscending: '오름차순',
     sortDescending: '내림차순',
     hideColumn: '숨기기',

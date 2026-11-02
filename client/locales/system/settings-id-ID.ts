@@ -49,9 +49,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     records: 'Data terpilih ({{count}})',
     retained: 'Pertahankan konfigurasi yang ada',
     search: 'Cari objek bisnis atau kunci',
-    empty: 'Belum ada cakupan data default',
-    emptyHint: 'Buat aturan untuk mengatur akses dasar ke suatu objek bisnis.',
-    readOnlyEmpty: 'Minta administrator untuk mengatur akses data dasar.',
     noResources:
       'Setiap objek bisnis yang tersedia sudah memiliki aturan default, atau tidak ada objek yang dapat dikonfigurasi.',
     unsupported:
@@ -84,8 +81,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
     'Kelola informasi pengguna, keamanan akun, dan penetapan peran. Periksa setiap izin secara terpisah.',
   businessOperationsHint:
     'Pilih operasi yang dapat dilakukan peran ini dan data yang dapat digunakan setiap operasi.',
-  pageAccessHint:
-    'Pilih halaman bisnis yang dapat dibuka peran ini. Semua pengaturan sistem, termasuk pengelolaan pengguna dan konfigurasi bisnis, diatur di Izin konfigurasi. Data dan tindakan bisnis memerlukan izin tersendiri.',
   roleAssignment: 'Penetapan peran',
   accountSecurity: 'Keamanan akun',
   userInformation: 'Informasi pengguna',
@@ -247,10 +242,6 @@ const settings: LocaleResource<typeof settingsEnUS> = {
   roleFilter: 'Filter menurut peran',
   allRoles: 'Semua peran',
   editUserFor: 'Edit {{name}}',
-  usersReadOnlyEmpty:
-    'Hubungi administrator untuk menambahkan pengguna atau memberi izin membuat pengguna dan menetapkan peran.',
-  rolesReadOnlyEmpty:
-    'Hubungi administrator untuk membuat peran atau memberi izin membuat peran.',
   selectRoles: 'Pilih peran',
   searchRoles: 'Cari peran',
   noRolesFound: 'Peran tidak ditemukan.',
