@@ -1961,6 +1961,8 @@ const koKR: AppResource = {
     attentionSoonest: '가장 빠른 날짜 {{date}}',
     attentionMore_one: '외 {{count}}건',
     attentionMore_other: '외 {{count}}건',
+    attentionShowMore_one: '{{count}}건 더 보기',
+    attentionShowMore_other: '{{count}}건 더 보기',
     attention: '확인 필요',
     stats: {
       devices: '기기',

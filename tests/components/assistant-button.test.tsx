@@ -39,9 +39,6 @@ vi.mock('@nocobase/app-plugin-demo-mode/client', () => ({
 vi.mock('#extensions/nocobase-agent-chat/chat-panel', () => ({
   ChatPanel: () => null,
 }));
-vi.mock('#extensions/nocobase-agent-chat/launchers', () => ({
-  ChatFloatingButton: () => null,
-}));
 
 beforeEach(() => {
   state.openChat.mockClear();

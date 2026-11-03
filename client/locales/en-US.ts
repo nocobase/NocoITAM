@@ -2003,6 +2003,8 @@ const messages = {
     attentionSoonest: 'Soonest {{date}}',
     attentionMore_one: '{{count}} more',
     attentionMore_other: '{{count}} more',
+    attentionShowMore_one: 'Show {{count}} more',
+    attentionShowMore_other: 'Show {{count}} more',
     attention: 'Needs attention',
     stats: {
       devices: 'Devices',

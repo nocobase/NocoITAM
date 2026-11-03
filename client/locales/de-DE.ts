@@ -2008,6 +2008,8 @@ const deDE: AppResource = {
     attentionSoonest: 'Frühestens {{date}}',
     attentionMore_one: '{{count}} weitere',
     attentionMore_other: '{{count}} weitere',
+    attentionShowMore_one: '{{count}} weitere anzeigen',
+    attentionShowMore_other: '{{count}} weitere anzeigen',
     attention: 'Braucht Aufmerksamkeit',
     stats: {
       devices: 'Geräte',

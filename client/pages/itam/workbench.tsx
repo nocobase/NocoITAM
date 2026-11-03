@@ -38,6 +38,7 @@ import { WorkScopeToggle } from '@/components/itam/work-scope-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDragPan } from '@/hooks/use-drag-pan';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useItamList, useItamSettings, type ItamRecord } from '@/lib/itam/api';
 import type { DocumentKind } from '@/lib/itam/document-kinds';
 import {
@@ -98,12 +99,17 @@ export default function WorkbenchPage(): ReactElement {
   const layout = view === 'board' ? 'column' : 'section';
   // The bar pinned atop: its height is what the board leaves it.
   const barRef = useRef<HTMLDivElement>(null);
-  const [bar, setBar] = useState(0);
+  const [measured, setMeasured] = useState(0);
+  // Pinned from `md` only (2026-11-03): on a phone its counts wrap to four
+  // lines or five and, pinned, covered half the screen, the board's cards
+  // showing through between the pills. There it scrolls away with the page.
+  const pinned = !useIsMobile();
+  const bar = pinned ? measured : 0;
   useEffect(() => {
     const element = barRef.current;
     if (!element || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(() =>
-      setBar(element.getBoundingClientRect().height),
+      setMeasured(element.getBoundingClientRect().height),
     );
     observer.observe(element);
     return () => observer.disconnect();
@@ -138,7 +144,10 @@ export default function WorkbenchPage(): ReactElement {
         // their own.
         // Its own padding the room either side (2026-10-22): the page's
         // spacing on top of it set the counts far from the band and board.
-        className='sticky top-0 z-10 -mx-6 mb-1 flex flex-wrap-reverse items-end justify-between gap-x-4 gap-y-2 px-6 py-2.5'
+        className={cn(
+          'top-0 z-10 -mx-6 mb-1 flex flex-wrap-reverse items-end justify-between gap-x-4 gap-y-2 px-6 py-2.5',
+          pinned && 'sticky',
+        )}
       >
         {loading ? <span /> : <WorkCounts cards={cards} offset={bar + 8} />}
         <div className='ml-auto flex shrink-0 items-center gap-2'>
@@ -913,6 +922,9 @@ const LEFT_REMINDERS: readonly string[] = [
   'onboardingOrderOverdue',
 ];
 
+/** The rows 需要关注 shows in one column before the rest are asked for. */
+const ATTENTION_FOLDED = 5;
+
 /**
  * 需要关注, the board's first column: the rule-layer reminders, one row each,
  * grouped. Every rule stays listed, the empty ones last **within their
@@ -924,6 +936,8 @@ function AttentionBand(): ReactElement | null {
   const settings = useItamSettings();
   const thresholds = settings.data?.thresholds;
   const reminders = useReminders(true);
+  // One column, below `lg`: the first rows, the rest a press away.
+  const [expanded, setExpanded] = useState(false);
   const rank = { critical: 0, warning: 1, info: 2 } as const;
   // The groups give the order a rule keeps among equals; a card no longer
   // shows its group, since its own sentence says what it is about.
@@ -964,6 +978,10 @@ function AttentionBand(): ReactElement | null {
     ),
   ];
 
+  // In one column (below `lg`) only the worst rows show until the rest are
+  // asked for (2026-11-03): fourteen of them pushed the board off a phone's
+  // screen. Two columns show them all.
+  const folded = expanded ? 0 : Math.max(0, rows.length - ATTENTION_FOLDED);
   // Nothing at risk, no band (2026-10-22).
   if (!reminders.isLoading && found.length === 0) return null;
   return (
@@ -1002,6 +1020,7 @@ function AttentionBand(): ReactElement | null {
                   {column.map((entry) => (
                     <Link
                       key={entry.kind}
+
                       to={REMINDER_ROUTES[entry.kind]}
                       title={t(`workbench.reminderCaptions.${entry.kind}`, {
                         subscriptionExpiryDays:
@@ -1016,7 +1035,13 @@ function AttentionBand(): ReactElement | null {
                       // (2026-10-05). Only a critical rule is red; severity is the
                       // rule's, not today's. A hairline between rows, none above
                       // the first of a column nor under the last (2026-10-22).
-                      className='flex min-w-0 items-baseline gap-3 border-t border-border/60 px-1.5 py-2 transition-colors first:border-t-0 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                      className={cn(
+                        'flex min-w-0 items-baseline gap-3 border-t border-border/60 px-1.5 py-2 transition-colors first:border-t-0 hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                        // Folded away in one column; two columns show it.
+                        folded > 0 &&
+                          rows.indexOf(entry) >= ATTENTION_FOLDED &&
+                          'max-lg:hidden',
+                      )}
                     >
                       <span
                         className={cn(
@@ -1043,6 +1068,16 @@ function AttentionBand(): ReactElement | null {
               ),
             )}
           </div>
+          {folded > 0 ? (
+            <button
+              type='button'
+              // Under the rows' hairline, as a row of its own.
+              className='block w-full border-t border-border/60 py-2 text-center text-xs text-link lg:hidden'
+              onClick={() => setExpanded(true)}
+            >
+              {t('workbench.attentionShowMore', { count: folded })}
+            </button>
+          ) : null}
           {/* A rule that found nothing is left out (2026-10-22; listed
               dimmed as 0 from 2026-10-06), and with nothing found the band
               is not drawn at all. */}

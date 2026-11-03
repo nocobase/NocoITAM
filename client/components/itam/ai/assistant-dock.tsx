@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from '#components/ui/tooltip';
 import { useItamSettings } from '@/lib/itam/api';
-import { useAgentReadiness, useDiscuss } from '@/lib/itam/ask';
+import { useAgentReadiness } from '@/lib/itam/ask';
 import { useDemoMode } from '@nocobase/app-plugin-demo-mode/client';
 
 import { AskComposer } from './ask-composer.js';
@@ -30,10 +30,10 @@ import { useAskDraft, useFocusReturn } from './ask-draft.js';
  * conversation starts from that record (the page offers it through
  * `useAiPageContext`). One line until it is clicked, it then opens into the
  * ask composer with its files and its model, and closes to one line again
- * once focus leaves an empty box. On a phone it is a round button in the
- * corner that opens the panel. It hides while the panel is open, on the
- * pages it would cover, and when 设置 → 通用 → AI 助手 switches it off; the
- * header's ✨ button stays either way. Pages keep room at their foot for it
+ * once focus leaves an empty box. It hides on a phone (2026-11-03, as
+ * NocoCRM's: the round button it was there sat over the page's corner),
+ * while the panel is open, on the pages it would cover, and when 设置 → 通用
+ * → AI 助手 switches it off; the header's ✨ button stays either way. Pages keep room at their foot for it
  * (`Page`, `DetailPage`).
  */
 
@@ -84,7 +84,6 @@ export function AssistantDock(): ReactElement | null {
   const { t } = useTranslation();
   const readiness = useAgentReadiness();
   const panelOpen = useChatPanel().open;
-  const discuss = useDiscuss();
   // The record the page offers, if it offers one.
   const record = useChatSources().items[0];
   const { pathname } = useLocation();
@@ -103,15 +102,14 @@ export function AssistantDock(): ReactElement | null {
   // The suggestions show while the box is focused and empty, until Esc.
   const [listOpen, setListOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const phoneRef = useRef<HTMLButtonElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
   // Focus given back when the panel closes leaves the dock one line: it
   // opens once the reader presses it or types, not by itself (2026-10-16,
   // as NocoCRM's).
   const quietRef = useRef(false);
   useFocusReturn(() => {
-    quietRef.current = !isMobile;
-    return isMobile ? phoneRef.current : inputRef.current;
+    quietRef.current = true;
+    return inputRef.current;
   });
   // A press outside closes it too, focus or not: a page that drags on a
   // press keeps focus where it was, so no blur would come. Its model menu,
@@ -132,6 +130,7 @@ export function AssistantDock(): ReactElement | null {
   }, [focused, modelMenu]);
 
   const absent =
+    isMobile ||
     readiness.state === 'loading' ||
     hiddenOn(pathname) ||
     settings.data?.ai.assistantDock === false;
@@ -202,7 +201,7 @@ export function AssistantDock(): ReactElement | null {
           dialog's backdrop (2026-10-16, as NocoCRM's): a press beside the
           box lands on the veil and only closes the box, rather than on the
           list or the board behind it. */}
-      {focused && !isMobile && !panelOpen ? (
+      {focused && !panelOpen ? (
         <div
           aria-hidden
           data-dock-veil=''
@@ -222,116 +221,94 @@ export function AssistantDock(): ReactElement | null {
         // overlay, above a page's sticky bars (z-10); while in use, over its
         // veil, which covers the header (z-40) as a dialog's backdrop does,
         // every overlay (z-50) still above.
-        className={`pointer-events-none absolute inset-x-0 bottom-4 flex justify-end px-4 md:justify-center ${
-          focused && !isMobile ? 'z-40' : 'z-20'
+        className={`pointer-events-none absolute inset-x-0 bottom-4 flex justify-center px-4 ${
+          focused ? 'z-40' : 'z-20'
         }`}
         hidden={panelOpen}
       >
-        {isMobile ? (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  ref={phoneRef}
-                  size='icon-lg'
-                  aria-label={unavailable ?? t('ai.ask')}
-                  disabled={Boolean(unavailable)}
-                  className='pointer-events-auto rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90'
-                  // A new conversation with the record pinned, nothing
-                  // sent: the person writes in the panel.
-                  onClick={() => discuss(record ? [record] : [])}
-                />
-              }
-            >
-              <Sparkles />
-            </TooltipTrigger>
-            <TooltipContent>{unavailable ?? t('ai.ask')}</TooltipContent>
-          </Tooltip>
-        ) : (
-          <div
-            ref={dockRef}
-            className={`pointer-events-auto relative w-full ${
-              expanded ? 'max-w-[32rem]' : 'max-w-[22rem]'
-            }`}
-            onFocus={() => {
-              if (quietRef.current) {
-                quietRef.current = false;
-                return;
-              }
-              if (!focused) setListOpen(true);
-              setFocused(true);
-            }}
-            // Pressed while it already holds focus (given back quietly):
-            // it opens as a focus would open it.
-            onPointerDown={() => {
-              if (focused) return;
-              setListOpen(true);
-              setFocused(true);
-            }}
-            onBlur={(event) => {
-              const next = event.relatedTarget;
-              if (next) {
-                if (!dockRef.current?.contains(next)) setFocused(false);
-                return;
-              }
-              // Focus went to no element: a click on the page, or another
-              // window (the file picker), which keeps the dock's element
-              // active and so does not close it.
-              window.setTimeout(() => {
-                if (
-                  document.hasFocus() &&
-                  !dockRef.current?.contains(document.activeElement)
-                )
-                  setFocused(false);
-              });
-            }}
-          >
-            {unavailable ? (
-              // Disabled controls take no pointer events, so the reason's
-              // tooltip hangs on a wrapper around the box.
-              <Tooltip>
-                <TooltipTrigger render={<div className='w-full' />}>
-                  {box}
-                </TooltipTrigger>
-                <TooltipContent>{unavailable}</TooltipContent>
-              </Tooltip>
-            ) : (
-              box
-            )}
-            {/* After the box in the document, so Tab moves from the box to
+        <div
+          ref={dockRef}
+          className={`pointer-events-auto relative w-full ${
+            expanded ? 'max-w-[32rem]' : 'max-w-[22rem]'
+          }`}
+          onFocus={() => {
+            if (quietRef.current) {
+              quietRef.current = false;
+              return;
+            }
+            if (!focused) setListOpen(true);
+            setFocused(true);
+          }}
+          // Pressed while it already holds focus (given back quietly):
+          // it opens as a focus would open it.
+          onPointerDown={() => {
+            if (focused) return;
+            setListOpen(true);
+            setFocused(true);
+          }}
+          onBlur={(event) => {
+            const next = event.relatedTarget;
+            if (next) {
+              if (!dockRef.current?.contains(next)) setFocused(false);
+              return;
+            }
+            // Focus went to no element: a click on the page, or another
+            // window (the file picker), which keeps the dock's element
+            // active and so does not close it.
+            window.setTimeout(() => {
+              if (
+                document.hasFocus() &&
+                !dockRef.current?.contains(document.activeElement)
+              )
+                setFocused(false);
+            });
+          }}
+        >
+          {unavailable ? (
+            // Disabled controls take no pointer events, so the reason's
+            // tooltip hangs on a wrapper around the box.
+            <Tooltip>
+              <TooltipTrigger render={<div className='w-full' />}>
+                {box}
+              </TooltipTrigger>
+              <TooltipContent>{unavailable}</TooltipContent>
+            </Tooltip>
+          ) : (
+            box
+          )}
+          {/* After the box in the document, so Tab moves from the box to
                 the suggestions; drawn above it. */}
-            {focused &&
-              listOpen &&
-              !draft.value &&
-              !draft.files.files.length &&
-              questions.length > 0 &&
-              !unavailable && (
-                <ul
-                  aria-label={t('ai.dock.suggestions')}
-                  className='absolute bottom-full mb-2 flex w-full flex-col gap-0.5 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg'
-                >
-                  {questions.map((key) => {
-                    const question = t(`ai.dock.q.${key}`);
-                    return (
-                      <li key={key}>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='w-full justify-start font-normal'
-                          // A click lands before the box's blur hides the list.
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => send(question)}
-                        >
-                          <Sparkles className='text-primary' />
-                          <span className='truncate'>{question}</span>
-                        </Button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-          </div>
-        )}
+          {focused &&
+            listOpen &&
+            !draft.value &&
+            !draft.files.files.length &&
+            questions.length > 0 &&
+            !unavailable && (
+              <ul
+                aria-label={t('ai.dock.suggestions')}
+                className='absolute bottom-full mb-2 flex w-full flex-col gap-0.5 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg'
+              >
+                {questions.map((key) => {
+                  const question = t(`ai.dock.q.${key}`);
+                  return (
+                    <li key={key}>
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        className='w-full justify-start font-normal'
+                        // A click lands before the box's blur hides the list.
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => send(question)}
+                      >
+                        <Sparkles className='text-primary' />
+                        <span className='truncate'>{question}</span>
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+        </div>
       </div>
     </TooltipProvider>
   );

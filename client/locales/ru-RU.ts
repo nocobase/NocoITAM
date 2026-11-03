@@ -2103,6 +2103,10 @@ const ruRU: AppResource = {
     attentionMore_few: 'Ещё {{count}}',
     attentionMore_many: 'Ещё {{count}}',
     attentionMore_other: 'Ещё {{count}}',
+    attentionShowMore_one: 'Показать ещё {{count}}',
+    attentionShowMore_few: 'Показать ещё {{count}}',
+    attentionShowMore_many: 'Показать ещё {{count}}',
+    attentionShowMore_other: 'Показать ещё {{count}}',
     attention: 'Требует внимания',
     stats: {
       devices: 'Устройства',

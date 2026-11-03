@@ -1890,6 +1890,8 @@ const zhTW: AppResource = {
     attentionSoonest: '最早 {{date}}',
     attentionMore_one: '另 {{count}} 個',
     attentionMore_other: '另 {{count}} 個',
+    attentionShowMore_one: '展開其餘 {{count}} 條',
+    attentionShowMore_other: '展開其餘 {{count}} 條',
     attention: '需要關注',
     stats: {
       devices: '在管設備',

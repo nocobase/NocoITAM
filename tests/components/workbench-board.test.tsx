@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
   reminders: [] as Record<string, unknown>[],
   opened: vi.fn(),
 }));
+vi.mock('#hooks/use-mobile', () => ({ useIsMobile: () => false }));
 vi.mock('@nocobase/i18n/client', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
 }));
@@ -127,6 +128,36 @@ it('leaves 需要关注 out when no rule found anything', () => {
   show();
   expect(
     screen.queryByRole('region', { name: 'workbench.attention' }),
+  ).toBeNull();
+  state.reminders = [];
+});
+
+// In one column (below `lg`) the first five rows, the rest a press away
+// (2026-11-03); two columns show them all.
+it('folds 需要关注 after five rows in one column', () => {
+  state.reminders = [
+    'warrantyExpiring',
+    'idleDevice',
+    'auditOverdue',
+    'departmentMismatch',
+    'lowAccessories',
+    'lowConsumables',
+    'lowComponents',
+  ].map((kind) => ({ kind, count: 1, severity: 'info', preview: [] }));
+  state.items = [];
+  show();
+  const band = column('workbench.attention');
+  const folded = () =>
+    within(band)
+      .getAllByRole('link')
+      .filter((row) => row.className.includes('max-lg:hidden'));
+  expect(folded()).toHaveLength(2);
+  fireEvent.click(
+    within(band).getByRole('button', { name: 'workbench.attentionShowMore' }),
+  );
+  expect(folded()).toHaveLength(0);
+  expect(
+    within(band).queryByRole('button', { name: 'workbench.attentionShowMore' }),
   ).toBeNull();
   state.reminders = [];
 });

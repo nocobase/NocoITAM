@@ -1913,6 +1913,8 @@ const zhCN: AppResource = {
     attentionSoonest: '最早 {{date}}',
     attentionMore_one: '另 {{count}} 个',
     attentionMore_other: '另 {{count}} 个',
+    attentionShowMore_one: '展开其余 {{count}} 条',
+    attentionShowMore_other: '展开其余 {{count}} 条',
     attention: '需要关注',
     stats: {
       devices: '在管设备',

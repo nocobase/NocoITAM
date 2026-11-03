@@ -1990,6 +1990,8 @@ const ptBR: AppResource = {
     attentionSoonest: 'Mais próximo: {{date}}',
     attentionMore_one: 'mais {{count}}',
     attentionMore_other: 'mais {{count}}',
+    attentionShowMore_one: 'Mostrar mais {{count}}',
+    attentionShowMore_other: 'Mostrar mais {{count}}',
     attention: 'Precisa de atenção',
     stats: {
       devices: 'Dispositivos',

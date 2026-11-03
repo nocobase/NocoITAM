@@ -328,7 +328,10 @@ template's roomier spacing narrowed the column's text.
   first column (`AttentionBand`; on white since 2026-10-22, its rules as
   rows two to a line — the number, the rule, its first record and how many
   besides — rather than cards, chosen over tiles and chips; a rule that
-  found nothing is left out, and with nothing found the band is not drawn);
+  found nothing is left out, and with nothing found the band is not drawn;
+  in one column, below `lg`, only the first five rows show until 展开其余
+  N 条 is pressed — fourteen pushed the board off a phone's screen,
+  2026-11-03);
   a line under
   it counts each column that
   holds something and scrolls to it (`WorkCounts`); 离职交接 and 入职准备
@@ -347,4 +350,6 @@ template's roomier spacing narrowed the column's text.
   scrolling their own cards. The page reads title, 需要关注 (its cards a
   grid that fills each row), then a bar of the counts and the switches
   pinned atop as the page scrolls (a sticky bar whose measured height the
-  board's leaves); the title and 需要关注 scroll away.
+  board's leaves); the title and 需要关注 scroll away. The bar is pinned
+  from `md` only (2026-11-03): on a phone its counts wrap to four lines or
+  five and, pinned, covered half the screen, so there it scrolls away too.

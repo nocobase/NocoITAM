@@ -1974,6 +1974,8 @@ const viVN: AppResource = {
     attentionSoonest: 'Sớm nhất {{date}}',
     attentionMore_one: 'thêm {{count}}',
     attentionMore_other: 'thêm {{count}}',
+    attentionShowMore_one: 'Xem thêm {{count}}',
+    attentionShowMore_other: 'Xem thêm {{count}}',
     attention: 'Cần chú ý',
     stats: {
       devices: 'Thiết bị',

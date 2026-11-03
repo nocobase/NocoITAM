@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   ask: vi.fn(() => Promise.resolve()),
   toast: vi.fn(),
   demo: false,
+  mobile: false,
   openChat: vi.fn(),
 }));
 vi.mock('@nocobase/app-plugin-demo-mode/client', () => ({
@@ -34,7 +35,7 @@ vi.mock('@nocobase/i18n/client', () => ({
       options?.name ? `${key}:${options.name}` : key,
   }),
 }));
-vi.mock('#hooks/use-mobile', () => ({ useIsMobile: () => false }));
+vi.mock('#hooks/use-mobile', () => ({ useIsMobile: () => state.mobile }));
 vi.mock('../../client/lib/itam/api.js', () => ({
   useItamSettings: () => ({ data: { ai: { assistantDock: state.dock } } }),
 }));
@@ -47,7 +48,6 @@ vi.mock('../../client/lib/itam/ask.js', () => ({
       : state.ready
         ? { state: 'ready', agent: { id: 'online' } }
         : { state: 'unavailable', agent: null, reason: 'ai.unavailable' },
-  useDiscuss: () => vi.fn(),
   useAskModels: () => ({ models: [], model: undefined, select: vi.fn() }),
   useAskAgent: () => state.ask,
   useAskFiles: () => ({
@@ -69,6 +69,7 @@ beforeEach(() => {
   state.ask.mockImplementation(() => Promise.resolve());
   state.toast.mockClear();
   state.demo = false;
+  state.mobile = false;
   state.openChat.mockClear();
 });
 
@@ -117,6 +118,15 @@ it('stays away where it would cover the page, and when switched off', () => {
   state.dock = false;
   const { container } = at('/devices');
   expect(container.querySelector('textarea')).toBeNull();
+});
+
+// The header's ✨ button opens the assistant on a phone; the round button
+// the dock was there sat over the page's corner (2026-11-03, as NocoCRM's).
+it('shows nothing on a phone', () => {
+  state.mobile = true;
+  const { container } = at('/devices');
+  expect(container).toBeEmptyDOMElement();
+  expect(document.documentElement.dataset.askDock).toBeUndefined();
 });
 
 it('says why it cannot answer, and takes no input', () => {

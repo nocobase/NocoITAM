@@ -1988,6 +1988,8 @@ const idID: AppResource = {
     attentionSoonest: 'Paling cepat {{date}}',
     attentionMore_one: '{{count}} lagi',
     attentionMore_other: '{{count}} lagi',
+    attentionShowMore_one: 'Tampilkan {{count}} lagi',
+    attentionShowMore_other: 'Tampilkan {{count}} lagi',
     attention: 'Perlu perhatian',
     stats: {
       devices: 'Perangkat',

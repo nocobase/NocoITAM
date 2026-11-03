@@ -17,7 +17,6 @@ import {
   useToggleAssistant,
 } from '@/lib/itam/conversations';
 import { ChatPanel } from '#extensions/nocobase-agent-chat/chat-panel';
-import { ChatFloatingButton } from '#extensions/nocobase-agent-chat/launchers';
 import { useDemoChatInput } from '#components/itam/ai/demo-chat';
 import { Button } from '#components/ui/button';
 import {
@@ -51,8 +50,9 @@ export function AgentChatShell({
         <AIToolRendererProvider renderers={ITAM_TOOL_RENDERERS}>
           {children}
           <ItamChatPanel />
-          {/* Below `md` the panel opens from a floating button. */}
-          <ChatFloatingButton />
+          {/* Application change (ITAM, 2026-11-03): no floating button
+              below `md`; the header's ✨ button opens the panel on every
+              width, and the button sat over the page's corner. */}
         </AIToolRendererProvider>
       </ChatExtensionsContext.Provider>
     </ChatProvider>

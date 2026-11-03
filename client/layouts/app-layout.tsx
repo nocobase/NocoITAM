@@ -121,9 +121,12 @@ export function AppLayout({ routes }: AppLayoutProps): ReactElement {
                     <div className='hidden sm:block md:hidden'>
                       <AppBrand />
                     </div>
-                    <div className='h-5 w-px shrink-0 bg-border' />
+                    {/* Application change (ITAM, 2026-11-03, as NocoCRM's):
+                        no page name on a phone-width pane, where Demo Mode's
+                        chip and the header's buttons left it no room. */}
+                    <div className='hidden h-5 w-px shrink-0 bg-border sm:block' />
                     {/* The current page's trail: the route tree's, or the one the page declares (`usePageBreadcrumb`). */}
-                    <Breadcrumbs denied={denied} />
+                    <Breadcrumbs denied={denied} className='hidden sm:block' />
                   </div>
                   <HeaderActions />
                 </LayoutHeader>

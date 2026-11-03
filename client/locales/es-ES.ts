@@ -2002,6 +2002,8 @@ const esES: AppResource = {
     attentionSoonest: 'Lo más próximo: {{date}}',
     attentionMore_one: '{{count}} más',
     attentionMore_other: '{{count}} más',
+    attentionShowMore_one: 'Mostrar {{count}} más',
+    attentionShowMore_other: 'Mostrar {{count}} más',
     attention: 'Necesita atención',
     stats: {
       devices: 'Dispositivos',

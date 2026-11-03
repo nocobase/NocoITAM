@@ -130,8 +130,9 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   theme button's frame with the sparkle in the primary colour, toggles the
   panel as ⌘J does — opening on the latest conversation when the panel holds
   none, as on arriving (`useToggleAssistant` in `client/lib/itam/conversations.ts`,
-  2026-10-16; the phone's round button too, a new conversation being the
-  panel's +) — and while `/itam/ai/status` says the assistant cannot
+  2026-10-16; a new conversation being the panel's +) — the assistant's
+  only entry on a phone, where the UI Library's floating launcher
+  (`ChatFloatingButton`) is not mounted either (2026-11-03) — and while `/itam/ai/status` says the assistant cannot
   answer stays, disabled, saying why (`ai.unavailable`). An ask box floats
   at the bottom of the main column (`AssistantDock` in
   `client/components/itam/ai/assistant-dock.tsx`, ported from NocoCRM's dock
@@ -141,9 +142,10 @@ Moved from `AGENTS.md` with template 1.0.0-beta.67, which keeps that file small;
   while in use a veil over the whole page under it, drawn as a dialog's backdrop, so a press beside it only closes it (2026-10-16, as NocoCRM's), and the page's suggested questions above it (`RECORD_QUESTIONS` by the kind
   of record the page offers, else `PAGE_QUESTIONS` by path; `ai.dock.q.*`).
   A question starts a new conversation about that record and opens the
-  panel on it (`useAskAgent` in `client/lib/itam/ask.ts`); on a phone it is
-  a round ✨ button that opens the panel with the record pinned. It hides
-  while the panel is open, on the workbench, a conversation's page and
+  panel on it (`useAskAgent` in `client/lib/itam/ask.ts`). It hides on a
+  phone (below `useIsMobile`'s 768px; 2026-11-03, as NocoCRM's: its round
+  ✨ button there sat over the page's corner, and the header's button does
+  the same), while the panel is open, on the workbench, a conversation's page and
   设置, and for everyone when 设置 → 通用 → AI 助手 switches it off
   (`ai.assistantDock`, on by default); its border is `.itam-ai-border` in
   `client/styles.css`, mixed in oklab since this theme's card colour carries

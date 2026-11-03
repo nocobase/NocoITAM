@@ -1970,6 +1970,8 @@ const jaJP: AppResource = {
     attentionSoonest: '最短 {{date}}',
     attentionMore_one: 'ほか {{count}} 件',
     attentionMore_other: 'ほか {{count}} 件',
+    attentionShowMore_one: '残り {{count}} 件を表示',
+    attentionShowMore_other: '残り {{count}} 件を表示',
     attention: '要注意',
     stats: {
       devices: '管理デバイス',

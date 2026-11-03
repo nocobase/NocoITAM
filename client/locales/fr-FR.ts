@@ -1997,6 +1997,8 @@ const frFR: AppResource = {
     attentionSoonest: 'Au plus tôt le {{date}}',
     attentionMore_one: '{{count}} de plus',
     attentionMore_other: '{{count}} de plus',
+    attentionShowMore_one: 'Afficher {{count}} de plus',
+    attentionShowMore_other: 'Afficher {{count}} de plus',
     attention: 'À surveiller',
     stats: {
       devices: 'Appareils',
