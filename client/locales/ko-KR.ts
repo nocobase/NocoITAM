@@ -161,9 +161,7 @@ const koKR: AppResource = {
     clearDate: '날짜 지우기',
     search: '검색',
     searchPlaceholder: '검색…',
-    searchList: '목록 검색',
     searchIn: '{{list}} 검색…',
-    clearSearch: '검색 지우기',
     loading: '불러오는 중…',
     noResults: '결과가 없습니다',
     empty: '아직 데이터가 없습니다',
@@ -184,6 +182,7 @@ const koKR: AppResource = {
     tableLayout: '표',
   },
   listFilters: {
+    keyword: '키워드',
     filters: '필터',
     filtersApplied: '필터 ({{count}}개 적용)',
     removeFilter: '{{name}} 필터 제거',

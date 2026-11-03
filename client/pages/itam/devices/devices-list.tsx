@@ -22,7 +22,6 @@ import { Page, PageHeader } from '@/components/itam/page-header';
 import { DeviceCreateDialog } from '@/components/itam/device-create-dialog';
 import { FoundRecords } from '@/components/itam/found-records';
 import { ImportExport } from '@/components/itam/import-export';
-import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { OverdueBadge } from '@/components/itam/overdue-badge';
 import { SegmentedControl } from '@/components/itam/segmented-control';
 import { createStatusBoard } from '@/components/itam/status-board';
@@ -387,7 +386,6 @@ function DevicesList(): ReactElement {
       if (key.startsWith('init.')) next.delete(key);
     setParams(next, { replace: true });
   };
-  const [searchOpen, setSearchOpen] = useState(Boolean(q));
 
   // 所属部门、存放位置 and 更新时间 close the table, after the holder column.
   const trailing = ['departmentId', 'locationId', 'updatedAt'];
@@ -491,9 +489,38 @@ function DevicesList(): ReactElement {
                 ]}
               />
             )}
-            <SearchToggle
-              active={searchOpen}
-              onClick={() => setSearchOpen((current) => !current)}
+            {/* The list's search and filters, one menu where the search
+                button was (2026-11-03, as on NocoCRM's lists). */}
+            <FieldFilterMenu
+              fields={
+                syncConnected || syncState
+                  ? [...filterFields, SYNC_STATE_FIELD]
+                  : filterFields
+              }
+              value={{
+                modelId,
+                status,
+                categoryId,
+                locationId,
+                departmentId,
+                syncState,
+              }}
+              keyword={{
+                value: q,
+                onChange: (value) => setParam({ q: value, page: undefined }),
+                placeholder: t('common.searchIn', { list: t('devices.title') }),
+              }}
+              onChange={(key, next) =>
+                setParam({ [key]: next, page: undefined })
+              }
+              onClear={() =>
+                setParam({
+                  ...Object.fromEntries(
+                    NARROWING.map((key) => [key, undefined]),
+                  ),
+                  page: undefined,
+                })
+              }
             />
             <ImportExport
               collection='devices'
@@ -524,54 +551,12 @@ function DevicesList(): ReactElement {
             {/* MDM 核对 has no menu entry (it is empty until a platform
                 is connected), so the device list leads to it while one is. */}
             {syncConnected ? <MdmReviewButton /> : null}
-            {/* The filters, then the primary action on the right
-                (2026-11-03, as on NocoSupport's lists). */}
-            <FieldFilterMenu
-              fields={
-                syncConnected || syncState
-                  ? [...filterFields, SYNC_STATE_FIELD]
-                  : filterFields
-              }
-              value={{
-                modelId,
-                status,
-                categoryId,
-                locationId,
-                departmentId,
-                syncState,
-              }}
-              onChange={(key, next) =>
-                setParam({ [key]: next, page: undefined })
-              }
-              onClear={() =>
-                setParam({
-                  modelId: undefined,
-                  status: undefined,
-                  categoryId: undefined,
-                  locationId: undefined,
-                  departmentId: undefined,
-                  syncState: undefined,
-                  page: undefined,
-                })
-              }
-            />
             <Button onClick={() => setCreating(true)}>
               <Plus data-icon='inline-start' />
               {t('devices.new')}
             </Button>
           </>
         }
-      />
-      {/* The search box takes a row of its own under the header, so it
-          opens below the title rather than beside it; the filters are the
-          menu in the header. */}
-      <SearchBar
-        value={q}
-        placeholder={t('common.searchIn', { list: t('devices.title') })}
-        open={searchOpen}
-        onOpenChange={setSearchOpen}
-        onChange={(value) => setParam({ q: value, page: undefined })}
-        onClear={() => setParam({ q: undefined, page: undefined })}
       />
       {found ? (
         <FoundRecords

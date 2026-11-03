@@ -162,9 +162,7 @@ const ruRU: AppResource = {
     clearDate: 'Очистить дату',
     search: 'Поиск',
     searchPlaceholder: 'Поиск…',
-    searchList: 'Поиск по списку',
     searchIn: 'Поиск: {{list}}…',
-    clearSearch: 'Очистить поиск',
     loading: 'Загрузка…',
     noResults: 'Ничего не найдено',
     empty: 'Здесь пока пусто',
@@ -187,6 +185,7 @@ const ruRU: AppResource = {
     tableLayout: 'Таблица',
   },
   listFilters: {
+    keyword: 'Ключевое слово',
     filters: 'Фильтры',
     filtersApplied: 'Фильтры (применено: {{count}})',
     removeFilter: 'Убрать фильтр «{{name}}»',

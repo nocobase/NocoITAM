@@ -163,9 +163,7 @@ const frFR: AppResource = {
     clearDate: 'Effacer la date',
     search: 'Rechercher',
     searchPlaceholder: 'Rechercher…',
-    searchList: 'Rechercher dans cette liste',
     searchIn: 'Rechercher dans {{list}}…',
-    clearSearch: 'Effacer la recherche',
     loading: 'Chargement…',
     noResults: 'Aucun résultat',
     empty: 'Rien pour l’instant',
@@ -186,6 +184,7 @@ const frFR: AppResource = {
     tableLayout: 'Liste',
   },
   listFilters: {
+    keyword: 'Mot-clé',
     filters: 'Filtres',
     filtersApplied: 'Filtres ({{count}} appliqués)',
     removeFilter: 'Retirer le filtre {{name}}',

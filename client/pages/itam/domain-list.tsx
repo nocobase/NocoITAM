@@ -24,7 +24,6 @@ import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { SegmentedControl } from '@/components/itam/segmented-control';
 import { RecordThumbnail } from '@/components/itam/record-image';
 import { FieldFilterMenu } from '@/components/itam/field-filter-menu';
-import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -256,7 +255,6 @@ function DomainList({
         ? domain.fields.find((field) => field.key === entry)!
         : entry,
   );
-  const [searchOpen, setSearchOpen] = useState(Boolean(q));
   const [creating, setCreating] = useState(params.get('new') === '1');
   const [deleting, setDeleting] = useState<ItamRecord>();
   const impact = useDeleteImpact(domain.path, deleting?.id);
@@ -387,9 +385,22 @@ function DomainList({
                 onFilter={(next) => setParam({ ...next, page: undefined })}
               />
             ) : null}
-            <SearchToggle
-              active={searchOpen}
-              onClick={() => setSearchOpen((current) => !current)}
+            {/* The list's search and filters, one menu where the search
+                button was (2026-11-03, as on NocoCRM's lists). */}
+            <FieldFilterMenu
+              fields={filterFields}
+              value={filter}
+              keyword={{
+                value: q,
+                onChange: (value) => setParam({ q: value, page: undefined }),
+                placeholder: t('common.searchIn', {
+                  list: t(`${domain.i18n}.title`),
+                }),
+              }}
+              onChange={(key, next) =>
+                setParam({ [key]: next, page: undefined })
+              }
+              onClear={clearFilters}
             />
             <ImportExport
               collection={domain.name}
@@ -448,23 +459,6 @@ function DomainList({
                 ]}
               />
             ) : null}
-            {/* The filters, then the primary action on the right
-                (2026-11-03, as on NocoSupport's lists). */}
-            <FieldFilterMenu
-              fields={filterFields}
-              value={filter}
-              onChange={(key, next) =>
-                setParam({ [key]: next, page: undefined })
-              }
-              onClear={() =>
-                setParam({
-                  page: undefined,
-                  ...Object.fromEntries(
-                    filterFields.map((field) => [field.key, undefined]),
-                  ),
-                })
-              }
-            />
             {permissions.create ? (
               <Button onClick={() => setCreating(true)}>
                 <Plus data-icon='inline-start' />
@@ -473,17 +467,6 @@ function DomainList({
             ) : null}
           </>
         }
-      />
-      {/* The search box takes a row of its own under the header, so it
-          opens below the title rather than beside it; the filters are the
-          menu in the header. */}
-      <SearchBar
-        value={q}
-        placeholder={t('common.searchIn', { list: t(`${domain.i18n}.title`) })}
-        open={searchOpen}
-        onOpenChange={setSearchOpen}
-        onChange={(value) => setParam({ q: value, page: undefined })}
-        onClear={() => setParam({ q: undefined, page: undefined })}
       />
       {found ? (
         <FoundRecords

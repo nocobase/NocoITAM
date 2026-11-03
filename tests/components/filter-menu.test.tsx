@@ -130,3 +130,122 @@ it('draws nothing for a list with nothing to filter by', () => {
   );
   expect(container).toBeEmptyDOMElement();
 });
+
+function KeywordHarness({
+  onSearch,
+}: {
+  readonly onSearch: (value: string) => void;
+}): ReactElement {
+  const [q, setQ] = useState('');
+  return (
+    <>
+      <FilterMenu
+        dimensions={[]}
+        keyword={{
+          value: q,
+          onChange: (value) => {
+            onSearch(value);
+            setQ(value);
+          },
+          placeholder: 'Search devices…',
+        }}
+        onClear={() => setQ('')}
+      />
+      {/* Stands in for 清除筛选 under a list that found nothing. */}
+      <button type='button' onClick={() => setQ('')}>
+        Clear from outside
+      </button>
+    </>
+  );
+}
+
+// The list's search sits at the top of the menu (2026-11-03, after NocoCRM's
+// lists), where a separate search button and row used to be.
+it('searches from the box at the top and shows the keyword as a chip', async () => {
+  const onSearch = vi.fn();
+  render(<KeywordHarness onSearch={onSearch} />);
+  const user = userEvent.setup();
+
+  // `/` opens the menu with the caret in the box.
+  await user.keyboard('/');
+  const box = await screen.findByRole('textbox', { name: 'Search devices…' });
+  await waitFor(() => expect(box).toHaveFocus());
+
+  await user.type(box, 'SH-LT');
+  // Typing reaches the list once it pauses.
+  await waitFor(() => expect(onSearch).toHaveBeenLastCalledWith('SH-LT'));
+  expect(onSearch).toHaveBeenCalledOnce();
+
+  // Enter takes it at once and closes the menu.
+  await user.type(box, '-0{Enter}');
+  expect(onSearch).toHaveBeenLastCalledWith('SH-LT-0');
+  await waitFor(() =>
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument(),
+  );
+  expect(screen.getByText('SH-LT-0')).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'listFilters.filtersApplied:1' }),
+  ).toBeInTheDocument();
+
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'listFilters.removeFilter:listFilters.keyword',
+    }),
+  );
+  expect(onSearch).toHaveBeenLastCalledWith('');
+  expect(screen.queryByText('SH-LT-0')).not.toBeInTheDocument();
+});
+
+it('follows a keyword cleared from outside instead of sending it back', async () => {
+  const onSearch = vi.fn();
+  render(<KeywordHarness onSearch={onSearch} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('button', { name: 'listFilters.filters' }));
+  const box = await screen.findByRole('textbox', { name: 'Search devices…' });
+  await user.type(box, 'nothing{Enter}');
+  expect(onSearch).toHaveBeenLastCalledWith('nothing');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Clear from outside' }));
+  await user.click(screen.getByRole('button', { name: 'listFilters.filters' }));
+  expect(
+    await screen.findByRole('textbox', { name: 'Search devices…' }),
+  ).toHaveValue('');
+  // Nothing typed since, so nothing goes back to the list.
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  expect(onSearch).toHaveBeenCalledTimes(1);
+});
+
+it('narrows a tree it holds by the labels typed', async () => {
+  render(
+    <FilterMenu
+      dimensions={[
+        {
+          key: 'locationId',
+          label: 'Location',
+          options: [
+            { value: 'hq', label: 'Shanghai HQ' },
+            { value: 'f3', label: 'Floor 3', depth: 1 },
+            { value: 'wh', label: 'Warehouse', depth: 1 },
+          ],
+          value: null,
+          onChange: () => undefined,
+          search: { placeholder: 'Search locations…' },
+        },
+      ]}
+      onClear={() => undefined}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('button', { name: 'listFilters.filters' }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Location' }));
+  fireEvent.change(
+    await screen.findByRole('textbox', { name: 'Search locations…' }),
+    { target: { value: 'ware' } },
+  );
+  expect(
+    screen.getByRole('menuitemradio', { name: 'Warehouse' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole('menuitemradio', { name: 'Floor 3' }),
+  ).not.toBeInTheDocument();
+});

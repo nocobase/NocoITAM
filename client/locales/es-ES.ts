@@ -163,9 +163,7 @@ const esES: AppResource = {
     clearDate: 'Borrar la fecha',
     search: 'Buscar',
     searchPlaceholder: 'Buscar…',
-    searchList: 'Buscar en esta lista',
     searchIn: 'Buscar en {{list}}…',
-    clearSearch: 'Borrar la búsqueda',
     loading: 'Cargando…',
     noResults: 'Sin resultados',
     empty: 'Aún no hay nada aquí',
@@ -186,6 +184,7 @@ const esES: AppResource = {
     tableLayout: 'Tabla',
   },
   listFilters: {
+    keyword: 'Palabra clave',
     filters: 'Filtros',
     filtersApplied: 'Filtros ({{count}} aplicados)',
     removeFilter: 'Quitar el filtro {{name}}',

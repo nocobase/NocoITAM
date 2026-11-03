@@ -109,17 +109,17 @@ it('filters by status from the menu and drops it through its chip', async () => 
   await waitFor(() => expect(address()).toBeEmptyDOMElement());
 });
 
-it('sends the model filter and clears every filter but the search', async () => {
+it('sends the model filter and clears every filter, the keyword included', async () => {
   land('?q=x1&modelId=m1&status=assigned');
   expect(lastFilter()).toMatchObject({ modelId: 'm1', status: 'assigned' });
   expect(screen.getByText('ThinkPad X1')).toBeInTheDocument();
 
   const user = userEvent.setup();
   await user.click(
-    screen.getByRole('button', { name: 'listFilters.filtersApplied:2' }),
+    screen.getByRole('button', { name: 'listFilters.filtersApplied:3' }),
   );
   await user.click(
     await screen.findByRole('menuitem', { name: 'listFilters.clear' }),
   );
-  await waitFor(() => expect(address()).toHaveTextContent('?q=x1'));
+  await waitFor(() => expect(address()).toBeEmptyDOMElement());
 });

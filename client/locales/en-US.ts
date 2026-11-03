@@ -172,9 +172,7 @@ const messages = {
     clearDate: 'Clear date',
     search: 'Search',
     searchPlaceholder: 'Search…',
-    searchList: 'Search this list',
     searchIn: 'Search {{list}}…',
-    clearSearch: 'Clear search',
     loading: 'Loading…',
     noResults: 'No results',
     empty: 'Nothing here yet',
@@ -195,6 +193,7 @@ const messages = {
     tableLayout: 'Table',
   },
   listFilters: {
+    keyword: 'Keyword',
     filters: 'Filters',
     filtersApplied: 'Filters ({{count}} applied)',
     removeFilter: 'Remove the {{name}} filter',

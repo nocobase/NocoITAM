@@ -163,9 +163,7 @@ const deDE: AppResource = {
     clearDate: 'Datum leeren',
     search: 'Suche',
     searchPlaceholder: 'Suchen…',
-    searchList: 'Diese Liste durchsuchen',
     searchIn: '{{list}} durchsuchen…',
-    clearSearch: 'Suche leeren',
     loading: 'Wird geladen…',
     noResults: 'Keine Ergebnisse',
     empty: 'Noch nichts vorhanden',
@@ -186,6 +184,7 @@ const deDE: AppResource = {
     tableLayout: 'Tabelle',
   },
   listFilters: {
+    keyword: 'Stichwort',
     filters: 'Filter',
     filtersApplied: 'Filter ({{count}} aktiv)',
     removeFilter: 'Filter „{{name}}“ entfernen',

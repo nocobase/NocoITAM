@@ -162,9 +162,7 @@ const viVN: AppResource = {
     clearDate: 'Xóa ngày',
     search: 'Tìm kiếm',
     searchPlaceholder: 'Tìm kiếm…',
-    searchList: 'Tìm trong danh sách này',
     searchIn: 'Tìm {{list}}…',
-    clearSearch: 'Xóa tìm kiếm',
     loading: 'Đang tải…',
     noResults: 'Không có kết quả',
     empty: 'Chưa có gì ở đây',
@@ -185,6 +183,7 @@ const viVN: AppResource = {
     tableLayout: 'Bảng',
   },
   listFilters: {
+    keyword: 'Từ khóa',
     filters: 'Bộ lọc',
     filtersApplied: 'Bộ lọc (đã áp dụng {{count}})',
     removeFilter: 'Bỏ bộ lọc {{name}}',

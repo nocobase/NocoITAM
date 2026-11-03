@@ -164,9 +164,7 @@ const zhCN: AppResource = {
     clearDate: '清除日期',
     search: '搜索',
     searchPlaceholder: '搜索…',
-    searchList: '搜索列表',
     searchIn: '在{{list}}中搜索…',
-    clearSearch: '清除搜索',
     loading: '加载中…',
     noResults: '没有结果',
     empty: '暂无数据',
@@ -187,6 +185,7 @@ const zhCN: AppResource = {
     tableLayout: '列表',
   },
   listFilters: {
+    keyword: '关键词',
     filters: '筛选',
     filtersApplied: '筛选 (已选 {{count}} 项)',
     removeFilter: '移除「{{name}}」筛选',

@@ -162,9 +162,7 @@ const idID: AppResource = {
     clearDate: 'Hapus tanggal',
     search: 'Cari',
     searchPlaceholder: 'Cari…',
-    searchList: 'Cari di daftar ini',
     searchIn: 'Cari {{list}}…',
-    clearSearch: 'Hapus pencarian',
     loading: 'Memuat…',
     noResults: 'Tidak ada hasil',
     empty: 'Belum ada apa pun di sini',
@@ -185,6 +183,7 @@ const idID: AppResource = {
     tableLayout: 'Tabel',
   },
   listFilters: {
+    keyword: 'Kata kunci',
     filters: 'Filter',
     filtersApplied: 'Filter ({{count}} diterapkan)',
     removeFilter: 'Hapus filter {{name}}',

@@ -203,20 +203,21 @@ it('reads a reference only once the menu opens, searched by its box', async () =
   }
 });
 
-it('clears every filter and keeps the search', async () => {
+it('clears every filter, the keyword included', async () => {
   land('?q=lap&method=sell&vendorId=v1&page=2');
   // The applied ones show as chips from the address, the vendor by name.
+  expect(screen.getByText('lap')).toBeInTheDocument();
   expect(screen.getByText('enums.sell')).toBeInTheDocument();
   expect(screen.getByText('Acme')).toBeInTheDocument();
   expect(lastFilter()).toMatchObject({ method: 'sell', vendorId: 'v1' });
 
   const user = userEvent.setup();
   await user.click(
-    screen.getByRole('button', { name: 'listFilters.filtersApplied:2' }),
+    screen.getByRole('button', { name: 'listFilters.filtersApplied:3' }),
   );
   await user.click(
     await screen.findByRole('menuitem', { name: 'listFilters.clear' }),
   );
-  await waitFor(() => expect(address()).toHaveTextContent('?q=lap'));
+  await waitFor(() => expect(address()).toBeEmptyDOMElement());
   expect(screen.queryByText('Acme')).not.toBeInTheDocument();
 });

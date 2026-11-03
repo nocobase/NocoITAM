@@ -161,9 +161,7 @@ const zhTW: AppResource = {
     clearDate: '清除日期',
     search: '搜尋',
     searchPlaceholder: '搜尋…',
-    searchList: '搜尋清單',
     searchIn: '在{{list}}中搜尋…',
-    clearSearch: '清除搜尋',
     loading: '載入中…',
     noResults: '沒有結果',
     empty: '暫無資料',
@@ -184,6 +182,7 @@ const zhTW: AppResource = {
     tableLayout: '清單',
   },
   listFilters: {
+    keyword: '關鍵字',
     filters: '篩選',
     filtersApplied: '篩選 (已選 {{count}} 項)',
     removeFilter: '移除「{{name}}」篩選',

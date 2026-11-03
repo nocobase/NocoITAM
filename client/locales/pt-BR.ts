@@ -162,9 +162,7 @@ const ptBR: AppResource = {
     clearDate: 'Limpar data',
     search: 'Pesquisar',
     searchPlaceholder: 'Pesquisar…',
-    searchList: 'Pesquisar nesta lista',
     searchIn: 'Pesquisar {{list}}…',
-    clearSearch: 'Limpar pesquisa',
     loading: 'Carregando…',
     noResults: 'Nenhum resultado',
     empty: 'Nada aqui ainda',
@@ -185,6 +183,7 @@ const ptBR: AppResource = {
     tableLayout: 'Tabela',
   },
   listFilters: {
+    keyword: 'Palavra-chave',
     filters: 'Filtros',
     filtersApplied: 'Filtros ({{count}} aplicados)',
     removeFilter: 'Remover o filtro {{name}}',

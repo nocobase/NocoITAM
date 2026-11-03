@@ -2,7 +2,11 @@ import { useTranslation } from '@nocobase/i18n/client';
 import { useQueries } from '@tanstack/react-query';
 import { useEffect, useState, type ReactElement } from 'react';
 
-import { type FilterDimension, FilterMenu } from '#components/filter-menu';
+import {
+  type FilterDimension,
+  type FilterKeyword,
+  FilterMenu,
+} from '#components/filter-menu';
 import {
   listQueryParams,
   useApi,
@@ -19,11 +23,12 @@ import {
 } from '@/lib/itam/references';
 
 /**
- * A list's filter fields as the Filters menu in its header: a select's
+ * A list's search and filter fields as the Filters menu in its header: the
+ * keyword box first, then a select's
  * values as they are, a reference's records read from its collection once
  * the menu is first opened — a tree (categories, locations, departments)
- * whole and indented, any other collection searched by the box above its
- * values. Values live in the URL under the field key, so a filtered list is
+ * whole and indented, any other collection searched on the server by the
+ * box above its values. Values live in the URL under the field key, so a filtered list is
  * shareable.
  */
 export function FieldFilterMenu({
@@ -31,11 +36,14 @@ export function FieldFilterMenu({
   value,
   onChange,
   onClear,
+  keyword,
 }: {
   readonly fields: readonly FieldDefinition[];
   readonly value: Readonly<Record<string, string | undefined>>;
   readonly onChange: (key: string, next: string | undefined) => void;
   readonly onClear: () => void;
+  /** The list's own search, at the top of the menu. */
+  readonly keyword?: FilterKeyword;
 }): ReactElement | null {
   const { t } = useTranslation();
   const api = useApi();
@@ -110,8 +118,10 @@ export function FieldFilterMenu({
         depth,
       })),
       valueLabel: applied ? names[collection]?.get(applied) : undefined,
+      // A tree is read whole and narrowed in the menu; any other
+      // collection on the server as it is typed.
       search: tree
-        ? undefined
+        ? { placeholder: t('listFilters.searchIn', { field: t(field.label) }) }
         : {
             value: searches[field.key] ?? '',
             onChange: (next: string) =>
@@ -124,6 +134,7 @@ export function FieldFilterMenu({
   return (
     <FilterMenu
       dimensions={dimensions}
+      keyword={keyword}
       onClear={onClear}
       onOpenChange={(open) => {
         if (open) setOpened(true);

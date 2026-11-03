@@ -494,17 +494,20 @@ and the comment keeps their names; they are not the record's attachments.
   among others — 预留, 更换, 不需要, 暂不处理 — which add `TEXT_BUTTON`
   (`client/lib/itam/text-button.ts`) to the ghost button. Buttons with a
   frame or a fill, cards, tabs and menu items keep their own hover.
-- Every list page filters through the Filters menu in its header
-  (2026-11-03, after NocoSupport's lists, which copy Linear): a ghost
-  筛选 button left of 新建 opens what the list filters by, each opening its
-  values beside it; the applied filters follow the button as chips, each
-  with an × that removes it, and the menu ends with 清除筛选 while any is
-  applied (`FilterMenu` in `client/components/filter-menu.tsx`, built from
-  fields by `FieldFilterMenu` in `client/components/itam/`). A reference's
-  values are read once the menu is first opened: a tree whole and
-  indented, any other collection searched by a box above its values. The
-  values stay in the address under the field key. The search box is the
-  magnifier beside it, on a row of its own and holding the search alone.
+- Every list page searches and filters through one menu in its header
+  (2026-11-03, after NocoSupport's and NocoCRM's lists, which copy
+  Linear): an outlined funnel icon button, framed like 导入 / 导出 and
+  where the search button was, opens the list's keyword box and below it
+  what the list filters by, each opening its values beside it. `/` opens
+  it with the caret in the box; typing reaches the address (`q`) once it
+  pauses, Enter at once. The keyword and the applied filters follow the
+  button as chips, each with an × that removes it, and the menu ends with
+  清除筛选 (the keyword included) while any is applied (`FilterMenu` in
+  `client/components/filter-menu.tsx`, built from fields by
+  `FieldFilterMenu` in `client/components/itam/`). A reference's values are
+  read once the menu is first opened: a tree whole, indented and narrowed in
+  the menu, any other collection searched on the server. The values stay in
+  the address under the field key. There is no separate search row.
   What it filters by (2026-10-23): a domain's
   `filterFields`, in column order — the device list adds 型号 as the stock
   lists have it, and 采购, 维修, 报废 and 盘点 filter by their selects,

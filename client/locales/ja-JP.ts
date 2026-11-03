@@ -162,9 +162,7 @@ const jaJP: AppResource = {
     clearDate: '日付をクリア',
     search: '検索',
     searchPlaceholder: '検索…',
-    searchList: 'リストを検索',
     searchIn: '{{list}}を検索…',
-    clearSearch: '検索をクリア',
     loading: '読み込み中…',
     noResults: '結果がありません',
     empty: 'データはまだありません',
@@ -185,6 +183,7 @@ const jaJP: AppResource = {
     tableLayout: 'テーブル',
   },
   listFilters: {
+    keyword: 'キーワード',
     filters: '絞り込み',
     filtersApplied: '絞り込み ({{count}} 件適用中)',
     removeFilter: '「{{name}}」の絞り込みを解除',
