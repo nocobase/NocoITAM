@@ -494,7 +494,18 @@ and the comment keeps their names; they are not the record's attachments.
   among others — 预留, 更换, 不需要, 暂不处理 — which add `TEXT_BUTTON`
   (`client/lib/itam/text-button.ts`) to the ghost button. Buttons with a
   frame or a fill, cards, tabs and menu items keep their own hover.
-- Every list page filters beside its search box (2026-10-23): a domain's
+- Every list page filters through the Filters menu in its header
+  (2026-11-03, after NocoSupport's lists, which copy Linear): a ghost
+  筛选 button left of 新建 opens what the list filters by, each opening its
+  values beside it; the applied filters follow the button as chips, each
+  with an × that removes it, and the menu ends with 清除筛选 while any is
+  applied (`FilterMenu` in `client/components/filter-menu.tsx`, built from
+  fields by `FieldFilterMenu` in `client/components/itam/`). A reference's
+  values are read once the menu is first opened: a tree whole and
+  indented, any other collection searched by a box above its values. The
+  values stay in the address under the field key. The search box is the
+  magnifier beside it, on a row of its own and holding the search alone.
+  What it filters by (2026-10-23): a domain's
   `filterFields`, in column order — the device list adds 型号 as the stock
   lists have it, and 采购, 维修, 报废 and 盘点 filter by their selects,
   status first among them (a status chosen on a board narrows it to that

@@ -13,7 +13,7 @@ import { createElement, useMemo, useState, type ReactElement } from 'react';
 import { useNavigate, useOutlet, useSearchParams } from 'react-router';
 
 import { FieldValue } from '@/components/itam/cells';
-import { MasterDataFilters } from '@/components/itam/master-data-filters';
+import { FieldFilterMenu } from '@/components/itam/field-filter-menu';
 import { DeviceRelation } from '@/components/itam/device-relation';
 import { TreePath } from '@/components/itam/tree-path';
 import { DataTable, type DataTableColumn } from '@/components/itam/data-table';
@@ -280,6 +280,7 @@ function DevicesList(): ReactElement {
   const sortOrder = params.get('order') === 'desc' ? 'desc' : 'asc';
   const view = params.get('view') ?? undefined;
   const status = params.get('status') ?? undefined;
+  const modelId = params.get('modelId') ?? undefined;
   const categoryId = params.get('categoryId') ?? undefined;
   const locationId = params.get('locationId') ?? undefined;
   const departmentId = params.get('departmentId') ?? undefined;
@@ -306,7 +307,15 @@ function DevicesList(): ReactElement {
     q,
     sort: sortField,
     order: sortOrder,
-    filter: { view, status, categoryId, locationId, departmentId, syncState },
+    filter: {
+      view,
+      status,
+      modelId,
+      categoryId,
+      locationId,
+      departmentId,
+      syncState,
+    },
     ids: found,
     // On the board each column reads its own; this only gives the total.
     ...(board ? { pageSize: 1 } : {}),
@@ -378,9 +387,7 @@ function DevicesList(): ReactElement {
       if (key.startsWith('init.')) next.delete(key);
     setParams(next, { replace: true });
   };
-  const [searchOpen, setSearchOpen] = useState(
-    Boolean(q || status || categoryId || locationId || departmentId),
-  );
+  const [searchOpen, setSearchOpen] = useState(Boolean(q));
 
   // 所属部门、存放位置 and 更新时间 close the table, after the holder column.
   const trailing = ['departmentId', 'locationId', 'updatedAt'];
@@ -517,6 +524,37 @@ function DevicesList(): ReactElement {
             {/* MDM 核对 has no menu entry (it is empty until a platform
                 is connected), so the device list leads to it while one is. */}
             {syncConnected ? <MdmReviewButton /> : null}
+            {/* The filters, then the primary action on the right
+                (2026-11-03, as on NocoSupport's lists). */}
+            <FieldFilterMenu
+              fields={
+                syncConnected || syncState
+                  ? [...filterFields, SYNC_STATE_FIELD]
+                  : filterFields
+              }
+              value={{
+                modelId,
+                status,
+                categoryId,
+                locationId,
+                departmentId,
+                syncState,
+              }}
+              onChange={(key, next) =>
+                setParam({ [key]: next, page: undefined })
+              }
+              onClear={() =>
+                setParam({
+                  modelId: undefined,
+                  status: undefined,
+                  categoryId: undefined,
+                  locationId: undefined,
+                  departmentId: undefined,
+                  syncState: undefined,
+                  page: undefined,
+                })
+              }
+            />
             <Button onClick={() => setCreating(true)}>
               <Plus data-icon='inline-start' />
               {t('devices.new')}
@@ -524,41 +562,16 @@ function DevicesList(): ReactElement {
           </>
         }
       />
-      {/* The search box and filters take a row of their own under the
-          header, so they open below the title rather than beside it. */}
+      {/* The search box takes a row of its own under the header, so it
+          opens below the title rather than beside it; the filters are the
+          menu in the header. */}
       <SearchBar
         value={q}
-        placeholder={t('common.filterIn', { list: t('devices.title') })}
+        placeholder={t('common.searchIn', { list: t('devices.title') })}
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        forceOpen={Boolean(
-          status || categoryId || locationId || departmentId || syncState,
-        )}
         onChange={(value) => setParam({ q: value, page: undefined })}
-        onClear={() =>
-          setParam({
-            q: undefined,
-            status: undefined,
-            categoryId: undefined,
-            locationId: undefined,
-            departmentId: undefined,
-            syncState: undefined,
-            page: undefined,
-          })
-        }
-        filters={
-          // The same controls as the master-data lists, so every list's
-          // filters look alike.
-          <MasterDataFilters
-            fields={
-              syncConnected || syncState
-                ? [...filterFields, SYNC_STATE_FIELD]
-                : filterFields
-            }
-            value={{ status, categoryId, locationId, departmentId, syncState }}
-            onChange={(key, next) => setParam({ [key]: next, page: undefined })}
-          />
-        }
+        onClear={() => setParam({ q: undefined, page: undefined })}
       />
       {found ? (
         <FoundRecords
@@ -595,6 +608,7 @@ function DevicesList(): ReactElement {
           filter={{
             view,
             status,
+            modelId,
             categoryId,
             locationId,
             departmentId,

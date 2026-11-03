@@ -23,7 +23,7 @@ import { Page, PageHeader } from '@/components/itam/page-header';
 import { RecordFormDialog } from '@/components/itam/record-form-dialog';
 import { SegmentedControl } from '@/components/itam/segmented-control';
 import { RecordThumbnail } from '@/components/itam/record-image';
-import { MasterDataFilters } from '@/components/itam/master-data-filters';
+import { FieldFilterMenu } from '@/components/itam/field-filter-menu';
 import { SearchBar, SearchToggle } from '@/components/itam/search-bar';
 import { Button } from '@/components/ui/button';
 import {
@@ -256,8 +256,7 @@ function DomainList({
         ? domain.fields.find((field) => field.key === entry)!
         : entry,
   );
-  const filterActive = filterFields.some((field) => filter[field.key]);
-  const [searchOpen, setSearchOpen] = useState(Boolean(q) || filterActive);
+  const [searchOpen, setSearchOpen] = useState(Boolean(q));
   const [creating, setCreating] = useState(params.get('new') === '1');
   const [deleting, setDeleting] = useState<ItamRecord>();
   const impact = useDeleteImpact(domain.path, deleting?.id);
@@ -449,6 +448,23 @@ function DomainList({
                 ]}
               />
             ) : null}
+            {/* The filters, then the primary action on the right
+                (2026-11-03, as on NocoSupport's lists). */}
+            <FieldFilterMenu
+              fields={filterFields}
+              value={filter}
+              onChange={(key, next) =>
+                setParam({ [key]: next, page: undefined })
+              }
+              onClear={() =>
+                setParam({
+                  page: undefined,
+                  ...Object.fromEntries(
+                    filterFields.map((field) => [field.key, undefined]),
+                  ),
+                })
+              }
+            />
             {permissions.create ? (
               <Button onClick={() => setCreating(true)}>
                 <Plus data-icon='inline-start' />
@@ -459,34 +475,15 @@ function DomainList({
         }
       />
       {/* The search box takes a row of its own under the header, so it
-          opens below the title rather than beside it. */}
+          opens below the title rather than beside it; the filters are the
+          menu in the header. */}
       <SearchBar
         value={q}
-        placeholder={t('common.filterIn', { list: t(`${domain.i18n}.title`) })}
+        placeholder={t('common.searchIn', { list: t(`${domain.i18n}.title`) })}
         open={searchOpen}
         onOpenChange={setSearchOpen}
-        forceOpen={filterActive}
         onChange={(value) => setParam({ q: value, page: undefined })}
-        onClear={() =>
-          setParam({
-            q: undefined,
-            page: undefined,
-            ...Object.fromEntries(
-              filterFields.map((field) => [field.key, undefined]),
-            ),
-          })
-        }
-        filters={
-          filterFields.length > 0 ? (
-            <MasterDataFilters
-              fields={filterFields}
-              value={filter}
-              onChange={(key, next) =>
-                setParam({ [key]: next, page: undefined })
-              }
-            />
-          ) : undefined
-        }
+        onClear={() => setParam({ q: undefined, page: undefined })}
       />
       {found ? (
         <FoundRecords

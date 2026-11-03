@@ -1,6 +1,6 @@
 import { useTranslation } from '@nocobase/i18n/client';
-import { ListFilter, X } from 'lucide-react';
-import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
+import { Search, X } from 'lucide-react';
+import { useEffect, useState, type ReactElement } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,12 +8,10 @@ import { Input } from '@/components/ui/input';
 export interface SearchBarProps {
   readonly value: string;
   readonly onChange: (value: string) => void;
-  /** Extra filter controls, revealed together with the search box. */
-  readonly filters?: ReactNode;
   readonly placeholder?: string;
-  /** Keeps the bar expanded, e.g. while a filter is active. */
+  /** Keeps the bar expanded. */
   readonly forceOpen?: boolean;
-  /** Called when the bar is dismissed, so the page can drop its filters too. */
+  /** Called when the bar is dismissed. */
   readonly onClear?: () => void;
   /**
    * Controlled mode: the page owns the open state and renders the toggle
@@ -24,9 +22,10 @@ export interface SearchBarProps {
 }
 
 /**
- * The button that opens and closes a controlled `SearchBar`: filtering this
- * list, not the global search (⌘K) — a filter, not a magnifier, as on
- * NocoCRM's lists (2026-10-16). `/` opens it too, outside a text field.
+ * The button that opens and closes a controlled `SearchBar`: searching this
+ * list, not the global search (⌘K). A filter icon until 2026-11-03, when
+ * the Filters menu took the list's filters and the funnel with them. `/`
+ * opens it too, outside a text field.
  */
 export function SearchToggle({
   active = false,
@@ -58,21 +57,20 @@ export function SearchToggle({
     <Button
       variant={active ? 'secondary' : 'outline'}
       size='icon'
-      aria-label={t('common.filterList')}
-      title={`${t('common.filterList')} · /`}
+      aria-label={t('common.searchList')}
+      title={`${t('common.searchList')} · /`}
       aria-pressed={active}
       onClick={onClick}
     >
-      <ListFilter />
+      <Search />
     </Button>
   );
 }
 
-/** Collapsed by default; the magnifier expands the search box and filters. */
+/** Collapsed by default; the magnifier expands the search box. */
 export function SearchBar({
   value,
   onChange,
-  filters,
   placeholder,
   forceOpen = false,
   onClear,
@@ -114,10 +112,10 @@ export function SearchBar({
       <Button
         variant='outline'
         size='icon'
-        aria-label={t('common.filterList')}
+        aria-label={t('common.searchList')}
         onClick={() => setOpen(true)}
       >
-        <ListFilter />
+        <Search />
       </Button>
     );
   }
@@ -131,21 +129,20 @@ export function SearchBar({
       }
     >
       <div className='relative'>
-        <ListFilter className='pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground' />
+        <Search className='pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground' />
         <Input
           autoFocus
-          aria-label={placeholder ?? t('common.filterList')}
+          aria-label={placeholder ?? t('common.searchList')}
           className='w-64 pl-8'
-          placeholder={placeholder ?? t('common.filterPlaceholder')}
+          placeholder={placeholder ?? t('common.searchPlaceholder')}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
         />
       </div>
-      {filters}
       <Button
         variant='ghost'
         size='icon'
-        aria-label={t('common.clearFilter')}
+        aria-label={t('common.clearSearch')}
         onClick={() => {
           setDraft('');
           onChange('');
