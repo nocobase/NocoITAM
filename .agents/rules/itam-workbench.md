@@ -328,7 +328,10 @@ template's roomier spacing narrowed the column's text.
   first column (`AttentionBand`; on white since 2026-10-22, its rules as
   rows two to a line — the number, the rule, its first record and how many
   besides — rather than cards, chosen over tiles and chips; a rule that
-  found nothing is left out, and with nothing found the band is not drawn;
+  found nothing is left out, and with nothing found the band is not drawn; a
+  row without room for a useful piece of its records, in a long language on a
+  phone, leaves them out whole rather than squeezing them under the label
+  (2026-11-04);
   in one column, below `lg`, only the first five rows show until 展开其余
   N 条 is pressed — fourteen pushed the board off a phone's screen,
   2026-11-03);

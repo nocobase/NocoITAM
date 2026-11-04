@@ -1060,15 +1060,19 @@ function AttentionBand(): ReactElement | null {
                       </span>
                       {/* Cut short rather than run into the next column
                     (2026-10-26: Russian labels are twice as long). The
-                    records after it give way first; the whole label shows
-                    on hover. */}
-                      <span
-                        className='min-w-0 truncate text-sm'
-                        title={label(entry.kind)}
-                      >
-                        {label(entry.kind)}
+                    records after it give way first, whole (2026-11-04):
+                    without room for a useful piece of them they wrap to a
+                    second line this one-line box clips, where squeezed they
+                    ran under the label. The whole label shows on hover. */}
+                      <span className='flex h-[1lh] min-w-0 flex-1 flex-wrap items-baseline gap-x-3 overflow-hidden text-sm'>
+                        <span
+                          className='max-w-full truncate'
+                          title={label(entry.kind)}
+                        >
+                          {label(entry.kind)}
+                        </span>
+                        <PreviewLine entry={entry} />
                       </span>
-                      <PreviewLine entry={entry} />
                     </Link>
                   ))}
                 </div>
@@ -1131,7 +1135,7 @@ function PreviewLine({
     : undefined;
   // One line: the names give way to the edge, and how many more stays.
   return (
-    <span className='flex min-w-0 flex-1 justify-end gap-1 text-xs text-muted-foreground'>
+    <span className='flex min-w-0 flex-[1_1_6rem] justify-end gap-1 text-xs text-muted-foreground'>
       <span className='min-w-0 truncate'>
         {[date, names[0]].filter(Boolean).join(' · ')}
       </span>

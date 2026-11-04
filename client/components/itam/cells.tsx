@@ -97,7 +97,9 @@ export function ReferenceLink({
         {t('common.missingRecord')}
       </span>
     );
-  if (!route) return <span data-collection={collection}>{name ?? key}</span>;
+  // Still on its way, an ellipsis as a link has, never the raw id (2026-11-04:
+  // a board card showed a vendor's until its name arrived).
+  if (!route) return <span data-collection={collection}>{name ?? '…'}</span>;
   return (
     <RecordLink
       className='text-link'

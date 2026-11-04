@@ -12,6 +12,8 @@ const state = vi.hoisted(() => ({
   items: [] as MyWorkItem[],
   /** Full rows per list path, as the board cards read them; none by default. */
   rows: {} as Record<string, Record<string, unknown>[]>,
+  /** The names the reference lookup has answered with; none by default. */
+  names: {} as Record<string, Map<string, string>>,
   /** 需要关注's rules; none found by default. */
   reminders: [] as Record<string, unknown>[],
   opened: vi.fn(),
@@ -47,7 +49,7 @@ vi.mock('../../client/lib/itam/references.js', async () => ({
   ...(await vi.importActual<Record<string, unknown>>(
     '../../client/lib/itam/references.js',
   )),
-  useReferenceNames: () => ({}),
+  useReferenceNames: () => state.names,
 }));
 vi.mock('../../client/lib/itam/permissions.js', async (original) => ({
   ...(await original<object>()),
@@ -161,6 +163,23 @@ it('folds 需要关注 after five rows in one column', () => {
     within(band).queryByRole('button', { name: 'workbench.attentionShowMore' }),
   ).toBeNull();
   state.reminders = [];
+});
+
+// A board card's vendor, a reference drawn as plain text, says nothing of its
+// id while its name is on its way (2026-11-04).
+it('never shows a raw id while a name is loading', async () => {
+  const { ReferenceLink } =
+    await import('../../client/components/itam/cells.js');
+  render(
+    <ReferenceLink
+      collection='vendors'
+      route=''
+      id='73d50d94-ed4c-40fd'
+      names={undefined}
+    />,
+  );
+  expect(screen.queryByText('73d50d94-ed4c-40fd')).toBeNull();
+  expect(screen.getByText('…')).toBeInTheDocument();
 });
 
 // A phone reads the list, whichever view was chosen (2026-11-03): a column of
@@ -340,13 +359,14 @@ it('marks the approvals that wait on the reader once, with the tag the list uses
       {
         id: 'po-a',
         orderNo: 'PO-000001',
-        ownerId: LONG_NAME,
+        ownerId: 'u-long',
         createdAt: '2026-10-05T21:13:00.000',
         awaitingMe: true,
       },
       { id: 'po-b', orderNo: 'PO-000002' },
     ],
   };
+  state.names = { users: new Map([['u-long', LONG_NAME]]) };
   setWorkScope('all');
   show();
   const approvals = column('workbench.work.pendingApprovals');
@@ -365,6 +385,7 @@ it('marks the approvals that wait on the reader once, with the tag the list uses
     within(footer).getByText(LONG_NAME).closest('.truncate'),
   ).not.toBeNull();
   state.rows = {};
+  state.names = {};
   setWorkScope('mine');
 });
 
